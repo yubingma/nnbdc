@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>背单词 - 拼写过渡页原型 (深色墨绿)</title>
+  <style>
+    :root {
+      --app-bg-gradient: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
+      --ambient-glow: radial-gradient(circle at 18% 12%, rgba(45, 122, 98, 0.35) 0%, transparent 55%);
+
+      --text-main: #E3EDE9;
+      --text-sub: #7D9C94;
+      --text-muted: #5C7770;
+
+      --card-border: rgba(255, 255, 255, 0.085);
+      --accent-cyan: #38BDF8;
+      --capsule-btn-bg: rgba(255, 255, 255, 0.05);
+      --capsule-btn-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #07100D;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 18px 12px;
+      color: var(--text-main);
+      user-select: none;
+    }
+
+    .phone-container {
+      width: 393px;
+      height: 852px;
+      border-radius: 50px;
+      background: var(--app-bg-gradient);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 
+        0 0 0 11px #161D1A,
+        0 0 0 13px rgba(255, 255, 255, 0.12),
+        0 24px 60px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .ambient-glow-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 380px;
+      background: var(--ambient-glow);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .status-bar {
+      height: 44px;
+      padding: 0 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      z-index: 20;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .viewport {
+      flex: 1;
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px 30px;
+    }
+
+    .hand-icon-wrap {
+      font-size: 64px;
+      margin-bottom: 22px;
+      filter: drop-shadow(0 6px 16px rgba(0,0,0,0.3));
+    }
+
+    .spelling-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-main);
+      letter-spacing: 0.2px;
+      margin-bottom: auto;
+    }
+
+    .spelling-buttons-stack {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: auto;
+      margin-bottom: 30px;
+    }
+
+    .capsule-action-btn {
+      width: 100%;
+      height: 52px;
+      border-radius: 9999px;
+      background: var(--capsule-btn-bg);
+      border: 1px solid var(--capsule-btn-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .capsule-action-btn.secondary {
+      color: var(--text-sub);
+    }
+
+    .capsule-action-btn.ghost {
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.08);
+      color: var(--text-sub);
+    }
+
+    .home-indicator {
+      width: 134px;
+      height: 5px;
+      background: var(--text-muted);
+      opacity: 0.4;
+      border-radius: 3px;
+      margin: 8px auto 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-container">
+    <div class="ambient-glow-layer"></div>
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <span>􀙇</span>
+        <span>􀛨</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <div class="viewport">
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+        <div class="hand-icon-wrap">✍️</div>
+        <h2 class="spelling-title">继续拼写，加强记忆</h2>
+      </div>
+
+      <div class="spelling-buttons-stack">
+        <button class="capsule-action-btn">
+          拼写全部（1词）
+        </button>
+        <button class="capsule-action-btn secondary">
+          拼写错词（0词）
+        </button>
+        <button class="capsule-action-btn ghost">
+          跳过拼写
+        </button>
+      </div>
+    </div>
+
+    <div class="home-indicator"></div>
+  </div>
+</body>
+</html>

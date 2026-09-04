@@ -57,6 +57,72 @@
       --shadow-top: 0 10px 30px rgba(0, 0, 0, 0.6);
     }
 
+    /* ========================================================
+       新风格：雾境流光与磨砂质感 (Misty Ambient Glow)
+       ======================================================== */
+    [data-style="mist-glow"] {
+      --bg: radial-gradient(circle at 50% 12%, rgba(204, 226, 219, 0.85) 0%, rgba(214, 230, 225, 0.6) 38%, #D3DFDC 75%, #CBD6D2 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(62, 98, 88, 0.1);
+      --card-hover: rgba(255, 255, 255, 0.9);
+      --divider: rgba(255, 255, 255, 0.65);
+      
+      --text-primary: #1C2724;
+      --text-secondary: #48635B;
+      --text-muted: #7E9790;
+      --text-faint: #A8BDB7;
+
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.14);
+      --primary-border: rgba(16, 185, 129, 0.35);
+      --primary-text: #FFFFFF;
+
+      --pos-tag-bg: rgba(16, 185, 129, 0.15);
+      --pos-tag-text: #10B981;
+
+      --shadow-card: 0 4px 20px rgba(32, 54, 47, 0.04);
+      --shadow-top: 0 8px 24px rgba(32, 54, 47, 0.06);
+    }
+
+    [data-theme="dark"][data-style="mist-glow"],
+    [data-style="mist-glow"] [data-theme="dark"] {
+      --bg: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
+      --card-bg: rgba(255, 255, 255, 0.058);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-hover: rgba(255, 255, 255, 0.1);
+      --divider: rgba(255, 255, 255, 0.085);
+      
+      --text-primary: #E3EDE9;
+      --text-secondary: #8FAEA5;
+      --text-muted: #5C7871;
+      --text-faint: #3B4E49;
+
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-soft: rgba(52, 211, 153, 0.14);
+      --primary-border: rgba(52, 211, 153, 0.35);
+      --primary-text: #061F16;
+
+      --pos-tag-bg: rgba(52, 211, 153, 0.16);
+      --pos-tag-text: #34D399;
+
+      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --shadow-top: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    [data-style="mist-glow"] .device-mockup {
+      background: var(--bg) !important;
+    }
+    [data-style="mist-glow"] .word-top-card,
+    [data-style="mist-glow"] .app-nav-bar,
+    [data-style="mist-glow"] .detail-card,
+    [data-style="mist-glow"] .bottom-bar {
+      backdrop-filter: blur(28px) !important;
+      -webkit-backdrop-filter: blur(28px) !important;
+      border-color: var(--divider) !important;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -552,6 +618,9 @@
       单词详情美学设计
     </div>
     <div style="display: flex; gap: 6px;">
+      <button onclick="toggleStyle()" id="style-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); font-weight: 700;">
+        <span id="style-icon">✨</span> <span id="style-text">风格: 经典温润</span>
+      </button>
       <button onclick="toggleDrawer()">折叠/展开顶部</button>
       <button onclick="toggleTheme()">🌓 切换明暗</button>
     </div>
@@ -728,7 +797,33 @@
 
   <script>
     let isDark = false;
+    let isMistGlow = false;
     let isDrawerExpanded = true;
+
+    function toggleStyle() {
+      isMistGlow = !isMistGlow;
+      const root = document.documentElement;
+      const icon = document.getElementById('style-icon');
+      const text = document.getElementById('style-text');
+
+      if (isMistGlow) {
+        root.setAttribute('data-style', 'mist-glow');
+        icon.textContent = '✨';
+        text.textContent = '风格: 雾境流光';
+      } else {
+        root.removeAttribute('data-style');
+        icon.textContent = '🌿';
+        text.textContent = '风格: 经典温润';
+      }
+      localStorage.setItem('word_detail_style', isMistGlow ? 'mist-glow' : 'classic');
+    }
+
+    (function initSavedStyle() {
+      const saved = localStorage.getItem('word_detail_style');
+      if (saved === 'mist-glow') {
+        toggleStyle();
+      }
+    })();
 
     function toggleTheme() {
       isDark = !isDark;

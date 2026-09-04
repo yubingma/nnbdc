@@ -71,6 +71,86 @@
       --shadow-btn: 0 8px 24px -3px rgba(44, 216, 143, 0.3);
     }
 
+    /* ========================================================
+       新风格：雾境流光与磨砂质感 (Misty Ambient Glow)
+       ======================================================== */
+    [data-style="mist-glow"] {
+      --bg: radial-gradient(circle at 50% 12%, rgba(204, 226, 219, 0.85) 0%, rgba(214, 230, 225, 0.6) 38%, #D3DFDC 75%, #CBD6D2 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(62, 98, 88, 0.1);
+      --card-hover: rgba(255, 255, 255, 0.9);
+      --divider: rgba(255, 255, 255, 0.65);
+      
+      --text-primary: #1C2724;
+      --text-secondary: #48635B;
+      --text-muted: #7E9790;
+      --text-faint: #A8BDB7;
+
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.14);
+      --primary-text: #FFFFFF;
+
+      --green-text: #10B981;
+      --green-bg: rgba(16, 185, 129, 0.14);
+      --green-border: rgba(16, 185, 129, 0.4);
+
+      --coral-text: #EF4444;
+      --coral-bg: rgba(239, 68, 68, 0.12);
+      --coral-border: rgba(239, 68, 68, 0.35);
+
+      --slot-blank-bg: rgba(62, 98, 88, 0.1);
+      --slot-blank-bar: #7E9790;
+
+      --shadow-card: 0 4px 20px rgba(32, 54, 47, 0.04);
+      --shadow-btn: 0 8px 24px -4px rgba(16, 185, 129, 0.35);
+    }
+
+    [data-theme="dark"][data-style="mist-glow"] {
+      --bg: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
+      --card-bg: rgba(255, 255, 255, 0.058);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-hover: rgba(255, 255, 255, 0.1);
+      --divider: rgba(255, 255, 255, 0.085);
+      
+      --text-primary: #E3EDE9;
+      --text-secondary: #8FAEA5;
+      --text-muted: #5C7871;
+      --text-faint: #3B4E49;
+
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-soft: rgba(52, 211, 153, 0.14);
+      --primary-text: #061F16;
+
+      --green-text: #34D399;
+      --green-bg: rgba(52, 211, 153, 0.14);
+      --green-border: rgba(52, 211, 153, 0.45);
+
+      --coral-text: #F87171;
+      --coral-bg: rgba(248, 113, 113, 0.14);
+      --coral-border: rgba(248, 113, 113, 0.4);
+
+      --slot-blank-bg: rgba(255, 255, 255, 0.08);
+      --slot-blank-bar: #5C7871;
+
+      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --shadow-btn: 0 8px 24px -3px rgba(52, 211, 153, 0.3);
+    }
+
+    [data-style="mist-glow"] .device-mockup {
+      background: var(--bg) !important;
+    }
+    [data-style="mist-glow"] .word-main-card,
+    [data-style="mist-glow"] .exercise-card,
+    [data-style="mist-glow"] .nav-btn-back,
+    [data-style="mist-glow"] .nav-action-pill,
+    [data-style="mist-glow"] .tab-pill-btn {
+      backdrop-filter: blur(28px) !important;
+      -webkit-backdrop-filter: blur(28px) !important;
+      border: 1px solid var(--divider) !important;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -606,7 +686,11 @@
 
   <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
-    <span>🌿 扇贝单词护眼美学 · 深度优化版</span>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button onclick="toggleStyle()" id="style-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4);">
+        <span id="style-icon">✨</span> <span id="style-text">风格: 经典温润</span>
+      </button>
+    </div>
     <button onclick="toggleTheme()">
       <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
     </button>
@@ -944,6 +1028,33 @@
       alert('已掌握 brief，进入下一个单词！');
       location.reload();
     }
+
+    let isMistGlow = false;
+
+    function toggleStyle() {
+      isMistGlow = !isMistGlow;
+      const root = document.documentElement;
+      const icon = document.getElementById('style-icon');
+      const text = document.getElementById('style-text');
+
+      if (isMistGlow) {
+        root.setAttribute('data-style', 'mist-glow');
+        icon.textContent = '✨';
+        text.textContent = '风格: 雾境流光';
+      } else {
+        root.removeAttribute('data-style');
+        icon.textContent = '🌿';
+        text.textContent = '风格: 经典温润';
+      }
+      localStorage.setItem('study_preview_style', isMistGlow ? 'mist-glow' : 'classic');
+    }
+
+    (function initSavedStyle() {
+      const saved = localStorage.getItem('study_preview_style');
+      if (saved === 'mist-glow') {
+        toggleStyle();
+      }
+    })();
 
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');

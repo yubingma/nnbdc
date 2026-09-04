@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>背单词主界面 - 雾境流光与磨砂质感美学原型</title>
+  <style>
+    :root {
+      /* 浅色主题 - 雾霭冷玉绿微光体系 (Misty Sage Glow) */
+      --app-bg-gradient: radial-gradient(circle at 50% 12%, rgba(204, 226, 219, 0.85) 0%, rgba(214, 230, 225, 0.6) 38%, #D3DFDC 75%, #CBD6D2 100%);
+      --ambient-glow: radial-gradient(circle at 45% 8%, rgba(255, 255, 255, 0.5) 0%, transparent 60%);
+      
+      --text-main: #1C2724;
+      --text-sub: #536963;
+      --text-muted: #829892;
+      --text-faint: #A6BCB6;
+
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-border: rgba(255, 255, 255, 0.65);
+      --card-shadow: 0 4px 20px rgba(32, 54, 47, 0.04), 0 1px 3px rgba(32, 54, 47, 0.02);
+      --card-hover-bg: rgba(255, 255, 255, 0.9);
+
+      --pill-bg: rgba(62, 98, 88, 0.1);
+      --pill-text: #415A53;
+      --pill-border: rgba(62, 98, 88, 0.15);
+
+      --tab-active-bg: rgba(30, 48, 43, 0.08);
+      --tab-active-text: #1C2724;
+      --tab-inactive-text: #738C85;
+
+      --accent-green: #10B981;
+      --accent-green-light: rgba(16, 185, 129, 0.15);
+      --accent-green-border: rgba(16, 185, 129, 0.4);
+
+      --accent-red: #EF4444;
+      --accent-red-light: rgba(239, 68, 68, 0.12);
+      --accent-red-border: rgba(239, 68, 68, 0.35);
+
+      --accent-cyan: #0E9488;
+      --capsule-btn-bg: rgba(255, 255, 255, 0.4);
+      --capsule-btn-border: rgba(255, 255, 255, 0.6);
+
+      --nav-icon-color: #4A635C;
+      --nav-icon-hover: #1E2E2A;
+    }
+
+    [data-theme="dark"] {
+      /* 深色主题 - 深林冷墨绿夜色体系 (Deep Emerald Obsidian) */
+      --app-bg-gradient: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
+      --ambient-glow: radial-gradient(circle at 18% 12%, rgba(45, 122, 98, 0.32) 0%, transparent 55%);
+
+      --text-main: #E3EDE9;
+      --text-sub: #92ABA4;
+      --text-muted: #5C7770;
+      --text-faint: #3A4E49;
+
+      --card-bg: rgba(255, 255, 255, 0.055);
+      --card-border: rgba(255, 255, 255, 0.085);
+      --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --card-hover-bg: rgba(255, 255, 255, 0.09);
+
+      --pill-bg: rgba(255, 255, 255, 0.08);
+      --pill-text: #9BB8AF;
+      --pill-border: rgba(255, 255, 255, 0.12);
+
+      --tab-active-bg: rgba(255, 255, 255, 0.12);
+      --tab-active-text: #E3EDE9;
+      --tab-inactive-text: #6A867F;
+
+      --accent-green: #34D399;
+      --accent-green-light: rgba(52, 211, 153, 0.16);
+      --accent-green-border: rgba(52, 211, 153, 0.45);
+
+      --accent-red: #F87171;
+      --accent-red-light: rgba(248, 113, 113, 0.15);
+      --accent-red-border: rgba(248, 113, 113, 0.4);
+
+      --accent-cyan: #38BDF8;
+      --capsule-btn-bg: rgba(255, 255, 255, 0.05);
+      --capsule-btn-border: rgba(255, 255, 255, 0.1);
+
+      --nav-icon-color: #839F97;
+      --nav-icon-hover: #E3EDE9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #323E3A;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 18px 12px;
+      color: var(--text-main);
+      user-select: none;
+    }
+
+    /* 顶部设计控制栏 (与真机渲染脚本完美兼容) */
+    .designer-toolbar {
+      width: 100%;
+      max-width: 412px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(18, 25, 23, 0.75);
+      backdrop-filter: blur(16px);
+      padding: 8px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 13px;
+      color: #CADED7;
+      z-index: 100;
+    }
+
+    .tool-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tool-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #E6F3EF;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .tool-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .tool-btn.active {
+      background: var(--accent-green);
+      color: #061A13;
+      border-color: var(--accent-green);
+      font-weight: 600;
+    }
+
+    /* 手机真机容器 (393px × 852px 旗舰真机规格) */
+    .phone-container {
+      width: 393px;
+      height: 852px;
+      border-radius: 50px;
+      background: var(--app-bg-gradient);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 
+        0 0 0 11px #161D1A,
+        0 0 0 13px rgba(255, 255, 255, 0.12),
+        0 24px 60px -10px rgba(0, 0, 0, 0.5);
+      transition: background 0.4s ease;
+    }
+
+    /* 顶部氛围微光叠层 */
+    .ambient-glow-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 380px;
+      background: var(--ambient-glow);
+      pointer-events: none;
+      z-index: 1;
+      transition: background 0.4s ease;
+    }
+
+    /* 顶部状态栏 */
+    .status-bar {
+      height: 44px;
+      padding: 0 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      z-index: 20;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    /* 导航栏 */
+    .nav-bar {
+      height: 44px;
+      padding: 0 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 20;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .nav-back-arrow {
+      font-size: 20px;
+      line-height: 1;
+      color: var(--nav-icon-color);
+      transition: transform 0.2s;
+    }
+
+    .nav-back-arrow:hover {
+      transform: translateX(-2px);
+    }
+
+    .nav-counter {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-sub);
+    }
+
+    .nav-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .nav-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--nav-icon-color);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .nav-action-btn:hover {
+      color: var(--nav-icon-hover);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-pill-tag {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 2px 5px;
+      border-radius: 4px;
+      line-height: 1.1;
+    }
+
+    /* 页面主体滚动/切换区域 */
+    .viewport {
+      flex: 1;
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px 20px 24px;
+    }
+
+    .viewport::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* 状态切换页基类 */
+    .view-stage {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      animation: fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .view-stage.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========================================================
+       STAGE 1: 回忆选择题态 (Range - 图 1 风格)
+       ======================================================== */
+    .word-hero {
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+
+    .word-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .word-text {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      line-height: 1.15;
+    }
+
+    .word-menu-dots {
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .phonetic-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .audio-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--pill-text);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .audio-capsule:active {
+      transform: scale(0.95);
+    }
+
+    .phonetic-text {
+      font-size: 15px;
+      color: var(--text-sub);
+      font-family: ui-monospace, "SF Mono", monospace, sans-serif;
+    }
+
+    .recall-hint {
+      margin-top: 16px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .recall-hint strong {
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    /* 选项卡片列表 */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 12px;
+      margin-bottom: auto;
+    }
+
+    .option-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      cursor: pointer;
+      box-shadow: var(--card-shadow);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .option-card:hover {
+      background: var(--card-hover-bg);
+      transform: translateY(-2px);
+    }
+
+    .option-card:active {
+      transform: scale(0.985);
+    }
+
+    .option-pos {
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .option-def {
+      font-size: 15.5px;
+      color: var(--text-main);
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    /* 选项反馈状态 */
+    .option-card.correct {
+      background: var(--accent-green-light) !important;
+      border-color: var(--accent-green-border) !important;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.25) !important;
+    }
+
+    .option-card.wrong {
+      background: var(--accent-red-light) !important;
+      border-color: var(--accent-red-border) !important;
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
+
+    /* 底部操作区 */
+    .stage-bottom-bar {
+      margin-top: 24px;
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-text-accent {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-text-accent:hover {
+      opacity: 0.85;
+    }
+
+    .accent-bar {
+      width: 16px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    .accent-bar.red { background: var(--accent-red); }
+    .accent-bar.green { background: var(--accent-green); }
+
+    /* ========================================================
+       STAGE 2: 详情与真题例句态 (Conceal - 图 2 风格)
+       ======================================================== */
+    .word-success-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 17px;
+      border-radius: 5px;
+      background: var(--accent-green);
+      color: #061F16;
+      font-size: 11px;
+      font-weight: 900;
+      margin-left: 4px;
+      vertical-align: super;
+    }
+
+    .syllable-dot {
+      opacity: 0.45;
+      font-weight: 400;
+      margin: 0 1px;
+    }
+
+    .meaning-interactive-line {
+      margin-top: 12px;
+      font-size: 16px;
+      color: var(--text-main);
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .pos-tag {
+      font-style: italic;
+      color: var(--text-sub);
+      font-size: 14.5px;
+    }
+
+    .dashed-text {
+      border-bottom: 1.5px dashed var(--text-muted);
+      padding-bottom: 1px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .dashed-text:hover {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+
+    /* 详情卡片 */
+    .detail-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-top: 16px;
+      box-shadow: var(--card-shadow);
+      position: relative;
+    }
+
+    .sentence-en {
+      font-size: 16px;
+      line-height: 1.45;
+      color: var(--text-main);
+    }
+
+    .sentence-en strong {
+      font-weight: 700;
+      color: var(--text-main);
+      text-decoration: underline;
+      text-decoration-color: var(--accent-green);
+      text-underline-offset: 3px;
+    }
+
+    .sentence-zh {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--text-sub);
+      line-height: 1.45;
+    }
+
+    .card-corner-icon {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 15px;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    .card-corner-icon:hover {
+      opacity: 1;
+      color: var(--text-main);
+    }
+
+    /* 词组搭配卡片 */
+    .collocations-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px 18px 12px;
+      margin-top: 14px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .collocation-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 14.5px;
+      line-height: 1.4;
+    }
+
+    .colloc-phrase {
+      color: var(--text-main);
+      font-weight: 500;
+      border-bottom: 1px dotted transparent;
+      transition: border-color 0.2s;
+    }
+
+    .colloc-item:hover .colloc-phrase {
+      border-bottom-color: var(--text-muted);
+    }
+
+    .colloc-zh {
+      color: var(--text-sub);
+      font-size: 14px;
+    }
+
+    .more-exam-link {
+      font-size: 13px;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .more-exam-link:hover {
+      color: var(--accent-green);
+    }
+
+    /* 卡片底部的 Tab 胶囊栏 */
+    .card-tabs-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-pills-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tab-pill {
+      background: transparent;
+      border: none;
+      color: var(--tab-inactive-text);
+      font-size: 12.5px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-pill.active {
+      background: var(--tab-active-bg);
+      color: var(--tab-active-text);
+      font-weight: 600;
+    }
+
+    .tab-side-icons {
+      display: flex;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .tab-side-icons span {
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .tab-side-icons span:hover {
+      color: var(--text-main);
+    }
+
+    /* 底部双按钮 (继续 vs 记错了) */
+    .dual-actions-bar {
+      margin-top: auto;
+      padding-top: 20px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    /* ========================================================
+       STAGE 3: 强化拼写过渡态 (Writing Hand - 图 3 风格)
+       ======================================================== */
+    .spelling-stage-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    .hand-icon-wrap {
+      font-size: 58px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
+      animation: floatHand 2.4s ease-in-out infinite;
+    }
+
+    @keyframes floatHand {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(-3deg); }
+    }
+
+    .spelling-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-main);
+      letter-spacing: 0.2px;
+    }
+
+    .spelling-buttons-stack {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 60px;
+    }
+
+    .capsule-action-btn {
+      width: 100%;
+      height: 52px;
+      border-radius: 9999px;
+      background: var(--capsule-btn-bg);
+      border: 1px solid var(--capsule-btn-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .capsule-action-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1.5px);
+    }
+
+    .capsule-action-btn:active {
+      transform: scale(0.985);
+    }
+
+    .capsule-action-btn.secondary {
+      color: var(--text-sub);
+    }
+
+    .capsule-action-btn.ghost {
+      background: transparent;
+      border-color: var(--card-border);
+      color: var(--text-sub);
+    }
+
+    /* 底部 Home Indicator */
+    .home-indicator {
+      width: 134px;
+      height: 5px;
+      background: var(--text-muted);
+      opacity: 0.4;
+      border-radius: 3px;
+      margin: 8px auto 6px;
+      flex-shrink: 0;
+    }
+
+    /* Toast 反馈小浮层 */
+    .toast-tip {
+      position: absolute;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      background: rgba(18, 28, 24, 0.92);
+      color: #E2F0EA;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 100;
+    }
+
+    .toast-tip.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部设计控制栏 (网页预览时显示，截图渲染脚本中自动隐藏) -->
+  <div class="designer-toolbar">
+    <div class="tool-group">
+      <span>🎨 视觉系统：</span>
+      <button class="tool-btn" id="theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">🌙</span> <span id="theme-text">深色冷墨绿</span>
+      </button>
+    </div>
+    <div class="tool-group">
+      <button class="tool-btn active" id="stage-btn-1" onclick="switchStage(1)">阶段1: 选项回忆</button>
+      <button class="tool-btn" id="stage-btn-2" onclick="switchStage(2)">阶段2: 详情真题</button>
+      <button class="tool-btn" id="stage-btn-3" onclick="switchStage(3)">阶段3: 拼写强化</button>
+    </div>
+  </div>
+
+  <!-- 统一 iPhone 真机容器 -->
+  <div class="phone-container">
+    <!-- 顶部环境漫射流光 -->
+    <div class="ambient-glow-layer"></div>
+
+    <!-- 顶部状态栏 -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <span>􀙇</span>
+        <span>􀛨</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <!-- 顶部交互导航条 -->
+    <div class="nav-bar">
+      <div class="nav-left" onclick="handleNavBack()">
+        <span class="nav-back-arrow">‹</span>
+        <span class="nav-counter" id="nav-counter-text">0/10</span>
+      </div>
+      <div class="nav-right-actions">
+        <button class="nav-action-btn" title="撤回上一步" onclick="showToast('已撤回上一题')">↩</button>
+        <button class="nav-action-btn" id="btn-star" title="收藏单词" onclick="toggleStar()">☆</button>
+        <button class="nav-action-btn" title="拼写/音标模式" onclick="showToast('切换拼写模式')"><span class="nav-pill-tag">abc</span></button>
+        <button class="nav-action-btn" title="熟练度标记" onclick="showToast('当前掌握度: 熟')">熟</button>
+        <button class="nav-action-btn" title="更多" onclick="showToast('展开设置菜单')">···</button>
+      </div>
+    </div>
+
+    <!-- 视口内容区 -->
+    <div class="viewport">
+
+      <!-- ====================================================
+           STAGE 1: 选项回忆态 (图 1 风格)
+           ==================================================== -->
+      <div class="view-stage active" id="stage-1">
+        <div class="word-hero">
+          <div class="word-row">
+            <h1 class="word-text">range</h1>
+            <span class="word-menu-dots" onclick="showToast('词汇设置')">⋮</span>
+          </div>
+          <div class="phonetic-row">
+            <div class="audio-capsule" onclick="speakWord('range')">
+              <span>美</span>
+              <span>🔊</span>
+            </div>
+            <span class="phonetic-text">/reɪndʒ/</span>
+          </div>
+          <p class="recall-hint">先回想词义再选择，想不起来<strong>「看答案」</strong></p>
+        </div>
+
+        <!-- 四个磨砂选项卡片 -->
+        <div class="options-list">
+          <div class="option-card" onclick="handleOptionSelect(this, false)">
+            <div class="option-pos">n.</div>
+            <div class="option-def">暴怒，狂怒；流行一时的事物</div>
+          </div>
+          <div class="option-card" onclick="handleOptionSelect(this, false)">
+            <div class="option-pos">vt. vi.</div>
+            <div class="option-def">安排，筹备</div>
+          </div>
+          <div class="option-card" id="correct-opt-card" onclick="handleOptionSelect(this, true)">
+            <div class="option-pos">n.</div>
+            <div class="option-def">一系列；范围；射程；山脉</div>
+          </div>
+          <div class="option-card" onclick="handleOptionSelect(this, false)">
+            <div class="option-pos">n.</div>
+            <div class="option-def">赛跑，竞速比赛；竞争；种族</div>
+          </div>
+        </div>
+
+        <!-- 底部看答案 -->
+        <div class="stage-bottom-bar">
+          <button class="btn-text-accent" onclick="switchStage(2)">
+            <span>看答案</span>
+            <div class="accent-bar red"></div>
+          </button>
+        </div>
+      </div>
+
+
+      <!-- ====================================================
+           STAGE 2: 详情与真题例句态 (图 2 风格)
+           ==================================================== -->
+      <div class="view-stage" id="stage-2">
+        <div class="word-hero" style="margin-bottom: 14px;">
+          <div class="word-row">
+            <h1 class="word-text">con<span class="syllable-dot">·</span>ceal</h1>
+            <span class="word-success-badge">✓</span>
+          </div>
+          <div class="phonetic-row">
+            <div class="audio-capsule" onclick="speakWord('conceal')">
+              <span>美</span>
+              <span>🔊</span>
+            </div>
+            <span class="phonetic-text">/kən'si:l/</span>
+          </div>
+          <div class="meaning-interactive-line">
+            <span class="pos-tag">vt.</span>
+            <span class="dashed-text" onclick="showToast('展开柯林斯与牛津完整词条')">掩盖，隐藏</span>
+          </div>
+        </div>
+
+        <!-- 例句卡片 -->
+        <div class="detail-card">
+          <p class="sentence-en">
+            Many of Shakespeare's characters <strong>conceal</strong> their true feelings.
+          </p>
+          <p class="sentence-zh">
+            莎士比亚剧中的很多人物都隐藏他们的真实感情。
+          </p>
+          <span class="card-corner-icon" title="朗读例句" onclick="speakSentence()">🔊</span>
+        </div>
+
+        <!-- 搭配与真题卡片 -->
+        <div class="collocations-card">
+          <div id="colloc-content-area">
+            <div class="collocation-item">
+              <span class="colloc-phrase">conceal a fact</span>
+              <span class="colloc-zh">掩盖事实</span>
+            </div>
+            <div class="collocation-item">
+              <span class="colloc-phrase">conceal a weapon</span>
+              <span class="colloc-zh">藏匿武器</span>
+            </div>
+            <div class="collocation-item">
+              <span class="colloc-phrase">conceal your identity</span>
+              <span class="colloc-zh">隐藏身份</span>
+            </div>
+            <div class="collocation-item">
+              <span class="colloc-phrase">conceal sth from sb</span>
+              <span class="colloc-zh">瞒着某人某事</span>
+            </div>
+            <div class="more-exam-link" onclick="showToast('进入高考词组专题训练')">
+              <span>学习所有高考真题词组</span>
+              <span>›</span>
+            </div>
+          </div>
+
+          <!-- 卡片底 Tab 栏 -->
+          <div class="card-tabs-bar">
+            <div class="tab-pills-group">
+              <button class="tab-pill active" onclick="switchTab(this, 'colloc')">词组搭配</button>
+              <button class="tab-pill" onclick="switchTab(this, 'derive')">派生</button>
+              <button class="tab-pill" onclick="switchTab(this, 'root')">词根</button>
+              <button class="tab-pill" onclick="switchTab(this, 'synonym')">近义</button>
+            </div>
+            <div class="tab-side-icons">
+              <span title="写笔记" onclick="showToast('记笔记')">✎</span>
+              <span title="词根思维导图" onclick="showToast('词根思维导图')">🗂</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部双操作 (继续 vs 记错了) -->
+        <div class="dual-actions-bar">
+          <button class="btn-text-accent" onclick="switchStage(3)">
+            <span>继续</span>
+            <div class="accent-bar green"></div>
+          </button>
+          <button class="btn-text-accent" onclick="handleWrongMark()">
+            <span>记错了</span>
+            <div class="accent-bar red"></div>
+          </button>
+        </div>
+      </div>
+
+
+      <!-- ====================================================
+           STAGE 3: 强化拼写过渡态 (图 3 风格)
+           ==================================================== -->
+      <div class="view-stage" id="stage-3">
+        <div class="spelling-stage-content">
+          <div class="hand-icon-wrap">✍️</div>
+          <h2 class="spelling-title">继续拼写，加强记忆</h2>
+
+          <div class="spelling-buttons-stack">
+            <button class="capsule-action-btn" onclick="showToast('开始拼写全部单词')">
+              拼写全部（1词）
+            </button>
+            <button class="capsule-action-btn secondary" onclick="showToast('当前无错词')">
+              拼写错词（0词）
+            </button>
+            <button class="capsule-action-btn ghost" onclick="switchStage(1)">
+              跳过拼写
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部 Home Bar -->
+    <div class="home-indicator"></div>
+
+    <!-- 交互提示 Toast -->
+    <div class="toast-tip" id="toast-el">提示信息</div>
+  </div>
+
+  <script>
+    // 页面状态管理
+    let currentStage = 1;
+    let isStarred = false;
+
+    // 选项选择与反馈
+    function handleOptionSelect(el, isCorrect) {
+      if (isCorrect) {
+        el.classList.add('correct');
+        showToast('回答正确！✨');
+        speakWord('range');
+        setTimeout(() => {
+          switchStage(2);
+        }, 600);
+      } else {
+        el.classList.add('wrong');
+        showToast('记错啦，再看一眼~');
+        setTimeout(() => {
+          document.getElementById('correct-opt-card').classList.add('correct');
+        }, 300);
+      }
+    }
+
+    // 阶段切换
+    function switchStage(stageNum) {
+      currentStage = stageNum;
+      
+      // 更新页面视图
+      document.querySelectorAll('.view-stage').forEach((stage, idx) => {
+        stage.classList.toggle('active', idx + 1 === stageNum);
+      });
+
+      // 更新顶部工具栏按钮高亮
+      document.querySelectorAll('[id^="stage-btn-"]').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx + 1 === stageNum);
+      });
+
+      // 更新导航栏计数器
+      const counterEl = document.getElementById('nav-counter-text');
+      if (stageNum === 1) counterEl.textContent = '0/10';
+      else if (stageNum === 2) counterEl.textContent = '1/10';
+      else counterEl.textContent = '10/10';
+
+      // 阶段 2 自动发音
+      if (stageNum === 2) {
+        speakWord('conceal');
+      }
+    }
+
+    // 导航返回按钮
+    function handleNavBack() {
+      if (currentStage > 1) {
+        switchStage(currentStage - 1);
+      } else {
+        showToast('已是第一题');
+      }
+    }
+
+    // 记错了点击
+    function handleWrongMark() {
+      showToast('已加入生词本，安排强化复习');
+      setTimeout(() => {
+        switchStage(3);
+      }, 500);
+    }
+
+    // 词组 Tab 切换
+    const tabContents = {
+      colloc: `
+        <div class="collocation-item"><span class="colloc-phrase">conceal a fact</span><span class="colloc-zh">掩盖事实</span></div>
+        <div class="collocation-item"><span class="colloc-phrase">conceal a weapon</span><span class="colloc-zh">藏匿武器</span></div>
+        <div class="collocation-item"><span class="colloc-phrase">conceal your identity</span><span class="colloc-zh">隐藏身份</span></div>
+        <div class="collocation-item"><span class="colloc-phrase">conceal sth from sb</span><span class="colloc-zh">瞒着某人某事</span></div>
+        <div class="more-exam-link" onclick="showToast('进入高考词组专题训练')"><span>学习所有高考真题词组</span><span>›</span></div>
+      `,
+      derive: `
+        <div class="collocation-item"><span class="colloc-phrase">concealment (n.)</span><span class="colloc-zh">隐匿；隐藏处</span></div>
+        <div class="collocation-item"><span class="colloc-phrase">concealed (adj.)</span><span class="colloc-zh">隐藏的；隐蔽的</span></div>
+      `,
+      root: `
+        <div class="collocation-item"><span class="colloc-phrase">con- (加强语气)</span><span class="colloc-zh">完全、彻底</span></div>
+        <div class="collocation-item"><span class="colloc-phrase">cel- (源自拉丁语 celare)</span><span class="colloc-zh">隐藏 (同根词 cell/cellar)</span></div>
+      `,
+      synonym: `
+        <div class="collocation-item"><span class="colloc-phrase">hide</span><span class="colloc-zh">最普通用词，隐蔽</span></div>
+        <div class="collocation-item"><span class="colloc-phrase">mask</span><span class="colloc-zh">伪装掩盖真实面目</span></div>
+        <div class="collocation-item"><span class="colloc-phrase">disguise</span><span class="colloc-zh">乔装改扮，掩饰</span></div>
+      `
+    };
+
+    function switchTab(btn, key) {
+      document.querySelectorAll('.tab-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('colloc-content-area').innerHTML = tabContents[key];
+    }
+
+    // 收藏切换
+    function toggleStar() {
+      isStarred = !isStarred;
+      const starBtn = document.getElementById('btn-star');
+      starBtn.textContent = isStarred ? '★' : '☆';
+      starBtn.style.color = isStarred ? '#FBBF24' : 'var(--nav-icon-color)';
+      showToast(isStarred ? '已添加收藏' : '已取消收藏');
+    }
+
+    // 语音朗读
+    function speakWord(word) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(word);
+        u.lang = 'en-US';
+        u.rate = 0.95;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function speakSentence() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance("Many of Shakespeare's characters conceal their true feelings.");
+        u.lang = 'en-US';
+        u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    // Toast 提示
+    let toastTimer;
+    function showToast(msg) {
+      const el = document.getElementById('toast-el');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.classList.remove('show');
+      }, 1800);
+    }
+
+    // 主题深浅切换
+    function toggleTheme() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('theme-icon').textContent = '🌙';
+        document.getElementById('theme-text').textContent = '浅色玉白雾';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-icon').textContent = '☀️';
+        document.getElementById('theme-text').textContent = '深色冷墨绿';
+      }
+    }
+
+    // 默认开启深色模式(更贴近图2和图3的沉浸质感，也可随时一键切换为图1浅色模式)
+    document.documentElement.setAttribute('data-theme', 'dark');
+  </script>
+</body>
+</html>

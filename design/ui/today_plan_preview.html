@@ -124,6 +124,79 @@
       --shadow-btn: 0 6px 18px -2px rgba(0, 0, 0, 0.6);
     }
 
+    /* ========================================================
+       新风格：雾境流光与磨砂质感 (Misty Ambient Glow)
+       ======================================================== */
+    [data-style="mist-glow"] {
+      --bg: radial-gradient(circle at 50% 10%, rgba(204, 226, 219, 0.85) 0%, rgba(214, 230, 225, 0.6) 38%, #D3DFDC 75%, #CBD6D2 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(62, 98, 88, 0.1);
+      --card-active: rgba(62, 98, 88, 0.18);
+      --divider: rgba(255, 255, 255, 0.65);
+      
+      --text-primary: #1C2724;
+      --text-secondary: #48635B;
+      --text-muted: #7E9790;
+      --text-faint: #A8BDB7;
+
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.14);
+      --primary-text: #FFFFFF;
+
+      --accent: #10B981;
+      --accent-soft: rgba(16, 185, 129, 0.1);
+      
+      --green-text: #10B981;
+      --green-bg: rgba(16, 185, 129, 0.12);
+      --amber-text: #EF4444;
+      --amber-bg: rgba(239, 68, 68, 0.12);
+      
+      --shadow-subtle: 0 4px 20px rgba(32, 54, 47, 0.04);
+      --shadow-btn: 0 8px 24px -4px rgba(16, 185, 129, 0.35);
+    }
+
+    [data-theme="dark"][data-style="mist-glow"] {
+      --bg: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
+      --card-bg: rgba(255, 255, 255, 0.058);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(255, 255, 255, 0.085);
+      
+      --text-primary: #E3EDE9;
+      --text-secondary: #8FAEA5;
+      --text-muted: #5C7871;
+      --text-faint: #3B4E49;
+
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-soft: rgba(52, 211, 153, 0.14);
+      --primary-text: #061F16;
+
+      --accent: #34D399;
+      --accent-soft: rgba(52, 211, 153, 0.1);
+
+      --green-text: #34D399;
+      --green-bg: rgba(52, 211, 153, 0.14);
+      --amber-text: #F87171;
+      --amber-bg: rgba(248, 113, 113, 0.14);
+
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --shadow-btn: 0 8px 24px -3px rgba(52, 211, 153, 0.3);
+    }
+
+    [data-style="mist-glow"] .device-mockup {
+      background: var(--bg) !important;
+    }
+    [data-style="mist-glow"] .tree-card,
+    [data-style="mist-glow"] .edit-track-card,
+    [data-style="mist-glow"] .pure-step-pill,
+    [data-style="mist-glow"] .header-action-btn {
+      backdrop-filter: blur(28px) !important;
+      -webkit-backdrop-filter: blur(28px) !important;
+      border: 1px solid var(--divider) !important;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -705,7 +778,10 @@
 
   <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
-    <button onclick="togglePalette()">
+    <button onclick="toggleStyle()" id="style-btn" style="background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.4);">
+      <span id="style-icon">✨</span> <span id="style-text">风格: 经典温润</span>
+    </button>
+    <button onclick="togglePalette()" id="palette-btn">
       <span id="palette-icon">🌿</span> <span id="palette-text">扇贝绿主题</span>
     </button>
     <button onclick="toggleTheme()">
@@ -948,6 +1024,35 @@
   <script>
     let isEditMode = false;
     let isShanbay = true;
+    let isMistGlow = false;
+
+    function toggleStyle() {
+      isMistGlow = !isMistGlow;
+      const root = document.documentElement;
+      const icon = document.getElementById('style-icon');
+      const text = document.getElementById('style-text');
+      const paletteBtn = document.getElementById('palette-btn');
+
+      if (isMistGlow) {
+        root.setAttribute('data-style', 'mist-glow');
+        icon.textContent = '✨';
+        text.textContent = '风格: 雾境流光';
+        if (paletteBtn) paletteBtn.style.opacity = '0.4';
+      } else {
+        root.removeAttribute('data-style');
+        icon.textContent = '🌿';
+        text.textContent = '风格: 经典温润';
+        if (paletteBtn) paletteBtn.style.opacity = '1';
+      }
+      localStorage.setItem('today_plan_style', isMistGlow ? 'mist-glow' : 'classic');
+    }
+
+    (function initSavedStyle() {
+      const saved = localStorage.getItem('today_plan_style');
+      if (saved === 'mist-glow') {
+        toggleStyle();
+      }
+    })();
 
     function openTrackEdit(tabIdx) {
       isEditMode = true;

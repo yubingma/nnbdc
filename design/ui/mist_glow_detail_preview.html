@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>背单词 - 详情与真题例句原型 (深色墨绿)</title>
+  <style>
+    :root {
+      --app-bg-gradient: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
+      --ambient-glow: radial-gradient(circle at 18% 12%, rgba(45, 122, 98, 0.35) 0%, transparent 55%);
+
+      --text-main: #E3EDE9;
+      --text-sub: #92ABA4;
+      --text-muted: #5C7770;
+
+      --card-bg: rgba(255, 255, 255, 0.058);
+      --card-border: rgba(255, 255, 255, 0.085);
+      --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+
+      --pill-bg: rgba(255, 255, 255, 0.08);
+      --pill-text: #9BB8AF;
+      --pill-border: rgba(255, 255, 255, 0.12);
+
+      --tab-active-bg: rgba(255, 255, 255, 0.12);
+      --tab-active-text: #E3EDE9;
+      --tab-inactive-text: #6A867F;
+
+      --accent-green: #34D399;
+      --accent-red: #F87171;
+      --nav-icon-color: #839F97;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #07100D;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 18px 12px;
+      color: var(--text-main);
+      user-select: none;
+    }
+
+    .phone-container {
+      width: 393px;
+      height: 852px;
+      border-radius: 50px;
+      background: var(--app-bg-gradient);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 
+        0 0 0 11px #161D1A,
+        0 0 0 13px rgba(255, 255, 255, 0.12),
+        0 24px 60px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .ambient-glow-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 380px;
+      background: var(--ambient-glow);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .status-bar {
+      height: 44px;
+      padding: 0 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      z-index: 20;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .nav-bar {
+      height: 44px;
+      padding: 0 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 20;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .nav-back-arrow {
+      font-size: 20px;
+      color: var(--nav-icon-color);
+    }
+
+    .nav-counter {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-sub);
+    }
+
+    .nav-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .nav-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--nav-icon-color);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-pill-tag {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.1;
+      text-decoration: underline;
+    }
+
+    .viewport {
+      flex: 1;
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 20px 24px;
+    }
+
+    .word-hero {
+      margin-top: 18px;
+      margin-bottom: 14px;
+    }
+
+    .word-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .word-text {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      line-height: 1.15;
+    }
+
+    .syllable-dot {
+      opacity: 0.45;
+      font-weight: 400;
+      margin: 0 1px;
+    }
+
+    .word-success-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 17px;
+      border-radius: 5px;
+      background: var(--accent-green);
+      color: #061F16;
+      font-size: 11px;
+      font-weight: 900;
+      margin-left: 4px;
+      vertical-align: super;
+    }
+
+    .phonetic-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .audio-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--pill-text);
+    }
+
+    .phonetic-text {
+      font-size: 15px;
+      color: var(--text-sub);
+      font-family: ui-monospace, "SF Mono", monospace, sans-serif;
+    }
+
+    .meaning-interactive-line {
+      margin-top: 14px;
+      font-size: 16px;
+      color: var(--text-main);
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .pos-tag {
+      font-style: italic;
+      color: var(--text-sub);
+      font-size: 14.5px;
+    }
+
+    .dashed-text {
+      border-bottom: 1.5px dashed var(--text-muted);
+      padding-bottom: 1px;
+    }
+
+    .detail-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-top: 16px;
+      box-shadow: var(--card-shadow);
+      position: relative;
+    }
+
+    .sentence-en {
+      font-size: 16px;
+      line-height: 1.45;
+      color: var(--text-main);
+    }
+
+    .sentence-en strong {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .sentence-zh {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--text-sub);
+      line-height: 1.45;
+    }
+
+    .card-corner-icon {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .collocations-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px 18px 12px;
+      margin-top: 14px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .collocation-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 14.5px;
+      line-height: 1.4;
+    }
+
+    .colloc-phrase {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .colloc-zh {
+      color: var(--text-sub);
+      font-size: 14px;
+    }
+
+    .more-exam-link {
+      font-size: 13px;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .card-tabs-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-pills-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tab-pill {
+      background: transparent;
+      border: none;
+      color: var(--tab-inactive-text);
+      font-size: 12.5px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+    }
+
+    .tab-pill.active {
+      background: var(--tab-active-bg);
+      color: var(--tab-active-text);
+      font-weight: 600;
+    }
+
+    .tab-side-icons {
+      display: flex;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .dual-actions-bar {
+      margin-top: auto;
+      padding-top: 20px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .btn-text-accent {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+    }
+
+    .accent-bar {
+      width: 16px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    .accent-bar.green { background: var(--accent-green); }
+    .accent-bar.red { background: var(--accent-red); }
+
+    .home-indicator {
+      width: 134px;
+      height: 5px;
+      background: var(--text-muted);
+      opacity: 0.4;
+      border-radius: 3px;
+      margin: 8px auto 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-container">
+    <div class="ambient-glow-layer"></div>
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <span>􀙇</span>
+        <span>􀛨</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <div class="nav-bar">
+      <div class="nav-left">
+        <span class="nav-back-arrow">‹</span>
+        <span class="nav-counter">1/1</span>
+      </div>
+      <div class="nav-right-actions">
+        <button class="nav-action-btn">↩</button>
+        <button class="nav-action-btn">☆</button>
+        <button class="nav-action-btn"><span class="nav-pill-tag">abc</span></button>
+        <button class="nav-action-btn">熟</button>
+        <button class="nav-action-btn">···</button>
+      </div>
+    </div>
+
+    <div class="viewport">
+      <div class="word-hero">
+        <div class="word-row">
+          <h1 class="word-text">con<span class="syllable-dot">·</span>ceal</h1>
+          <span class="word-success-badge">✓</span>
+        </div>
+        <div class="phonetic-row">
+          <div class="audio-capsule">
+            <span>美</span>
+            <span>🔊</span>
+          </div>
+          <span class="phonetic-text">/kən'si:l/</span>
+        </div>
+        <div class="meaning-interactive-line">
+          <span class="pos-tag">vt.</span>
+          <span class="dashed-text">掩盖，隐藏</span>
+        </div>
+      </div>
+
+      <!-- 例句卡片 -->
+      <div class="detail-card">
+        <p class="sentence-en">
+          Many of Shakespeare's characters <strong>conceal</strong> their true feelings.
+        </p>
+        <p class="sentence-zh">
+          莎士比亚剧中的很多人物都隐藏他们的真实感情。
+        </p>
+        <span class="card-corner-icon">🪟</span>
+      </div>
+
+      <!-- 搭配与真题卡片 -->
+      <div class="collocations-card">
+        <div class="collocation-item">
+          <span class="colloc-phrase">conceal a fact</span>
+          <span class="colloc-zh">掩盖事实</span>
+        </div>
+        <div class="collocation-item">
+          <span class="colloc-phrase">conceal a weapon</span>
+          <span class="colloc-zh">藏匿武器</span>
+        </div>
+        <div class="collocation-item">
+          <span class="colloc-phrase">conceal your identity</span>
+          <span class="colloc-zh">隐藏身份</span>
+        </div>
+        <div class="collocation-item">
+          <span class="colloc-phrase">conceal sth from sb</span>
+          <span class="colloc-zh">瞒着某人某事</span>
+        </div>
+        <div class="more-exam-link">
+          <span>学习所有高考真题词组</span>
+          <span>›</span>
+        </div>
+
+        <div class="card-tabs-bar">
+          <div class="tab-pills-group">
+            <button class="tab-pill active">词组搭配</button>
+            <button class="tab-pill">派生</button>
+            <button class="tab-pill">词根</button>
+            <button class="tab-pill">近义</button>
+          </div>
+          <div class="tab-side-icons">
+            <span>✎</span>
+            <span>🗂</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部双操作 -->
+      <div class="dual-actions-bar">
+        <button class="btn-text-accent">
+          <span>继续</span>
+          <div class="accent-bar green"></div>
+        </button>
+        <button class="btn-text-accent">
+          <span>记错了</span>
+          <div class="accent-bar red"></div>
+        </button>
+      </div>
+    </div>
+
+    <div class="home-indicator"></div>
+  </div>
+</body>
+</html>
