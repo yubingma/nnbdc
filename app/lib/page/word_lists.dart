@@ -323,36 +323,55 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           ),
         ),
 
-        // 词书列表
+        // 词书列表（聚合一体化现代大卡片，收拢多本词书）
         if (deskDicts.isEmpty)
           _buildEmptyDeskCard(isDarkMode)
         else
-          Column(
-            children: [
-              for (int i = 0; i < deskDicts.length; i++) ...[
-                if (i > 0) const SizedBox(height: 9),
-                () {
-                  final dict = deskDicts[i];
-                  final total = dict.wordCount;
-                  final mastered = deskDictMasteredCounts[dict.id] ?? 0;
-                  final progress = total > 0 ? (mastered / total).clamp(0.0, 1.0) : 0.0;
-                  final percent = (progress * 100).toInt();
-                  return _buildHorizontalWordListCard(
-                    isDarkMode: isDarkMode,
-                    icon: Icons.auto_stories_rounded,
-                    iconColor: accentColor,
-                    title: _cleanDictName(dict.name),
-                    subtitle: '已掌握 $mastered / $total 词 · $percent%',
-                    countText: '$total 词',
-                    progress: progress,
-                    onTap: () async {
-                      await toDictWordsListPage(dict.id, true);
-                      loadData();
-                    },
-                  );
-                }(),
+          Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? themeConfig.cardBg : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: themeConfig.cardBorder, width: 1.0),
+              boxShadow: themeConfig.cardShadows,
+            ),
+            child: Column(
+              children: [
+                for (int i = 0; i < deskDicts.length; i++) ...[
+                  if (i > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 48, right: 14),
+                      child: Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: isDarkMode
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.055),
+                      ),
+                    ),
+                  () {
+                    final dict = deskDicts[i];
+                    final total = dict.wordCount;
+                    final mastered = deskDictMasteredCounts[dict.id] ?? 0;
+                    final progress = total > 0 ? (mastered / total).clamp(0.0, 1.0) : 0.0;
+                    final percent = (progress * 100).toInt();
+                    return _buildGroupedItemRow(
+                      icon: Icons.auto_stories_rounded,
+                      iconColor: accentColor,
+                      title: _cleanDictName(dict.name),
+                      subtitle: '已掌握 $mastered / $total 词 · $percent%',
+                      countText: '$total 词',
+                      progress: progress,
+                      isFirst: i == 0,
+                      isLast: i == deskDicts.length - 1,
+                      onTap: () async {
+                        await toDictWordsListPage(dict.id, true);
+                        loadData();
+                      },
+                    );
+                  }(),
+                ],
               ],
-            ],
+            ),
           ),
       ],
     );
@@ -748,11 +767,14 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     required VoidCallback onTap,
     bool isFirst = false,
     bool isLast = false,
+    double? progress,
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
+    final accentColor = themeConfig.primaryColor;
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
+    final isDarkMode = themeStyle.isDark;
 
     return Material(
       color: Colors.transparent,
@@ -795,6 +817,20 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (progress != null) ...[
+                      const SizedBox(height: 7),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 3,
+                          backgroundColor: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : accentColor.withValues(alpha: 0.12),
+                          valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
