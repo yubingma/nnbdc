@@ -523,9 +523,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               '今日学习计划',
                               style: TextStyle(
                                 color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.8,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
                               ),
                             ),
                             const SizedBox(width: 6),
