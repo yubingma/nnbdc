@@ -228,6 +228,28 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     );
   }
 
+  /// 通用板块小节标题（极简现代，无生硬竖条）
+  Widget _buildSectionHeader(String title, Color textColor, {Widget? trailing}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: textColor,
+              letterSpacing: -0.2,
+            ),
+          ),
+          if (trailing != null) trailing,
+        ],
+      ),
+    );
+  }
+
   /// 1. 我的书桌板块 (用户正在背的词书)
   Widget _buildDeskBooksSection(bool isDarkMode) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
@@ -240,56 +262,39 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 标头部
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: BorderRadius.circular(2),
+        // 标题与选词书操作
+        _buildSectionHeader(
+          '我的书桌',
+          textColor,
+          trailing: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              context.push('/select_book').then((_) => loadData());
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: primarySoft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_rounded, size: 13, color: accentColor),
+                  const SizedBox(width: 2),
+                  Text(
+                    '选词书',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: accentColor,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '我的书桌',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
-            InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () {
-                context.push('/select_book').then((_) => loadData());
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                decoration: BoxDecoration(
-                  color: primarySoft,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '+ 选词书',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: accentColor,
-                  ),
-                ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-        const SizedBox(height: 10),
 
         // 词书列表
         if (deskDicts.isEmpty)
@@ -301,6 +306,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 if (i > 0) const SizedBox(height: 9),
                 _buildHorizontalWordListCard(
                   isDarkMode: isDarkMode,
+                  isHighlighted: i == 0,
                   icon: Icons.auto_stories_rounded,
                   iconBgColor: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
                   iconColor: accentColor,
@@ -387,29 +393,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 12,
-              decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '今日学习',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: textColor,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+        _buildSectionHeader('今日学习', textColor),
 
         // 2x2 网格
         Row(
@@ -495,29 +479,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 12,
-              decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '核心词库',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: textColor,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+        _buildSectionHeader('核心词库', textColor),
 
         Column(
           children: [
@@ -579,29 +541,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 12,
-              decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '专项突破',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: textColor,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+        _buildSectionHeader('专项突破', textColor),
 
         _buildHorizontalWordListCard(
           isDarkMode: isDarkMode,
@@ -629,26 +569,57 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     required String subtitle,
     required String countText,
     required VoidCallback onTap,
+    bool isHighlighted = false,
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = themeConfig.cardBg;
-    final cardBorder = themeConfig.cardBorder;
+    final accentColor = themeConfig.primaryColor;
+
+    // 选中/主线高亮时赋予 4.5% 极淡主题微光底色与精致边框，非高亮时保持纯白与常规边框
+    final cardBg = isDarkMode
+        ? (isHighlighted
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), themeConfig.cardBg)
+            : themeConfig.cardBg)
+        : (isHighlighted
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), Colors.white)
+            : Colors.white);
+
+    final cardBorder = isHighlighted
+        ? accentColor.withValues(alpha: isDarkMode ? 0.55 : 0.45)
+        : themeConfig.cardBorder;
+
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
-    final pillBg = themeConfig.subtleBg;
+    final pillBg = isHighlighted
+        ? accentColor.withValues(alpha: isDarkMode ? 0.2 : 0.1)
+        : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.035));
+
+    final cardShadow = isHighlighted
+        ? [
+            BoxShadow(
+              color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 3),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
+            ),
+          ]
+        : themeConfig.cardShadows;
 
     return Container(
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cardBorder, width: 1),
-        boxShadow: themeConfig.cardShadows,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cardBorder, width: isHighlighted ? 1.2 : 1.0),
+        boxShadow: cardShadow,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -656,13 +627,15 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               children: [
                 // 左侧图标容器
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: iconBgColor,
-                    borderRadius: BorderRadius.circular(11),
+                    color: isHighlighted
+                        ? accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.12)
+                        : iconBgColor,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, size: 18, color: iconColor),
+                  child: Icon(icon, size: 19, color: iconColor),
                 ),
                 const SizedBox(width: 12),
 
@@ -677,6 +650,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
                           color: textMain,
+                          letterSpacing: -0.1,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -685,7 +659,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w500,
                           color: textSub,
                         ),
@@ -701,26 +675,32 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                       decoration: BoxDecoration(
                         color: pillBg,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: cardBorder, width: 0.8),
+                        border: Border.all(
+                          color: isHighlighted
+                              ? accentColor.withValues(alpha: 0.3)
+                              : themeConfig.cardBorder,
+                          width: 0.8,
+                        ),
                       ),
                       child: Text(
                         countText,
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: textSub,
+                          color: isHighlighted ? accentColor : textSub,
+                          fontFamily: 'Roboto',
                         ),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
-                      size: 13,
-                      color: textSub.withValues(alpha: 0.6),
+                      size: 12,
+                      color: textSub.withValues(alpha: 0.5),
                     ),
                   ],
                 ),
@@ -745,70 +725,74 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = themeConfig.cardBg;
+    final cardBg = isDarkMode ? themeConfig.cardBg : Colors.white;
     final cardBorder = themeConfig.cardBorder;
     final textMain = themeConfig.textPrimary;
-    final textSecondary = themeConfig.textSecondary;
     final alertColor = isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B);
 
     return Container(
-      height: 84,
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: cardBorder, width: 1),
         boxShadow: themeConfig.cardShadows,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 顶部行：图标 + 箭头
+                // 顶部行：图标 + 右侧轻箭头
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      width: 28,
-                      height: 28,
+                      width: 30,
+                      height: 30,
                       decoration: BoxDecoration(
                         color: iconBgColor,
                         borderRadius: BorderRadius.circular(9),
                       ),
-                      child: Icon(icon, size: 15, color: iconColor),
+                      child: Icon(icon, size: 16, color: iconColor),
                     ),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
-                      size: 12,
-                      color: isDarkMode ? Colors.white24 : Colors.black26,
+                      size: 11,
+                      color: themeConfig.textSecondary.withValues(alpha: 0.35),
                     ),
                   ],
                 ),
 
-                // 底部行：标题 + 数量
+                const SizedBox(height: 10),
+
+                // 底部行：标题 + 醒目大数字（基线对齐）
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                         color: textMain,
                       ),
                     ),
                     Text(
                       '$count',
                       style: TextStyle(
-                        fontSize: 14.5,
+                        fontSize: 19,
                         fontWeight: FontWeight.w800,
-                        color: isAlert ? alertColor : textSecondary,
+                        color: (isAlert && count > 0) ? alertColor : textMain,
+                        fontFamily: 'Roboto',
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
