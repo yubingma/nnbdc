@@ -34,6 +34,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   Map<String, int> deskDictMasteredCounts = {};
   bool _isDirty = false;
   StreamSubscription? _subscription;
+  StreamSubscription? _dictDownloadSub;
 
   @override
   bool get isDirty => _isDirty;
@@ -57,6 +58,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
       Global.logger.d('[EventBus Debug] 词表页内部监听到 NewWrongWordEvent, _isDirty = true');
       _isDirty = true;
     });
+
+    // 监听词书下载完成事件，自动刷新书桌
+    _dictDownloadSub = EventBus.onDictDownloadCompleted().listen((_) {
+      Global.logger.d('[WordLists] 词书下载完成，刷新书桌');
+      loadData();
+    });
   }
 
   @override
@@ -65,6 +72,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
       instance = null;
     }
     _subscription?.cancel();
+    _dictDownloadSub?.cancel();
     super.dispose();
   }
 
@@ -93,6 +101,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             }
           }
         }
+        // 最新选的词书排在首位（书桌主卡片高亮展示）
+        loadedDeskDicts.sort((a, b) => b.updateTime.compareTo(a.updateTime));
       }
 
       if (mounted) {

@@ -170,6 +170,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             vo.wordCount = dict.wordCount;
             vo.visible = true;
             vo.updateTime = dict.updateTime;
+            vo.baseDictId = dict.baseDictId;
             results.add(vo);
           }
         }
@@ -1135,6 +1136,29 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                   }
 
                   final now = AppClock.now();
+
+                  // 同步写入本地 dicts 元数据，保证返回词表页时能立即查到
+                  final existingDict = await db.dictsDao.findById(dictVo.id);
+                  if (existingDict == null && dictVo.name != null) {
+                    await db.dictsDao.saveEntity(
+                      Dict(
+                        id: dictVo.id,
+                        isReady: true,
+                        isShared: true,
+                        name: dictVo.name!,
+                        wordCount: dictVo.wordCount ?? 0,
+                        ownerId: dictVo.owner?.id ?? Global.sysUserId,
+                        visible: true,
+                        editable: dictVo.editable ?? false,
+                        deletable: dictVo.deletable ?? true,
+                        baseDictId: dictVo.baseDictId,
+                        createTime: dictVo.createTime ?? now,
+                        updateTime: dictVo.updateTime ?? now,
+                      ),
+                      false,
+                    );
+                  }
+
                   LearningDict learningDict = LearningDict(
                       userId: user.id!,
                       dictId: dictVo.id,
@@ -1213,20 +1237,16 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
         Dict? existing = await db.dictsDao.findById(dictVo.id);
 
-        // 检查词书是否存在，或存在但没有单词
+        // 词书不存在，或存在但缺少单词内容（无论系统词书还是用户自定义词书）都需要下载
         if (existing == null) {
-          // 词书不存在，需要下载
           if (!dictsToDownload.any((element) => element.id == dictVo.id)) {
             dictsToDownload.add(dictVo);
           }
         } else {
-          // 词书存在，但只有当owner是15118(系统词书)时才需要检查是否有单词
-          if (existing.ownerId == "15118") {
-            bool hasWords = await db.dictWordsDao.hasDictWords(dictVo.id);
-            if (!hasWords) {
-              if (!dictsToDownload.any((element) => element.id == dictVo.id)) {
-                dictsToDownload.add(dictVo);
-              }
+          bool hasWords = await db.dictWordsDao.hasDictWords(dictVo.id);
+          if (!hasWords) {
+            if (!dictsToDownload.any((element) => element.id == dictVo.id)) {
+              dictsToDownload.add(dictVo);
             }
           }
         }
