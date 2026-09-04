@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -2937,19 +2938,16 @@ class WordListPageState extends State<WordListPage>
                       ),
                       tooltip: '更多',
                       position: PopupMenuPosition.under,
-                      color: themeConfig.cardBg,
-                      elevation: 8,
-                      shadowColor: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.12),
+                      color: Colors.transparent,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color: themeConfig.cardBorder,
-                          width: 1,
-                        ),
                       ),
                       constraints: const BoxConstraints(
-                        minWidth: 152,
-                        maxWidth: 180,
+                        minWidth: 156,
+                        maxWidth: 186,
                       ),
                       onOpened: () {
                         isMenuOpen = true;
@@ -3007,146 +3005,201 @@ class WordListPageState extends State<WordListPage>
                         menuItems.add(menuTheme);
                         menuItems.add(menuExportPdf);
 
-                        return menuItems.map((String choice) {
-                          IconData icon;
-                          switch (choice) {
-                            case menuWordList:
-                              icon = Icons.list_alt_rounded;
-                              break;
-                            case menuWalkman:
-                              icon = Icons.headphones_rounded;
-                              break;
-                            case menuImportFromBook:
-                              icon = Icons.import_contacts_rounded;
-                              break;
-                            case menuImportFromScan:
-                              icon = Icons.camera_alt_rounded;
-                              break;
-                            case menuSpeakChinese:
-                              icon = Icons.record_voice_over_rounded;
-                              break;
-                            case menuSpeakEnglish:
-                              icon = Icons.mic_none_rounded;
-                              break;
-                            case menuTranslateSentence:
-                              icon = Icons.hearing_rounded;
-                              break;
-                            case menuWriteSpellTyping:
-                              icon = Icons.keyboard_rounded;
-                              break;
-                            case menuWriteSpellHandwriting:
-                              icon = Icons.gesture_rounded;
-                              break;
-                            case menuHideChinese:
-                            case menuHideEnglish:
-                              icon = Icons.visibility_off_rounded;
-                              break;
-                            case menuExportPdf:
-                              icon = Icons.picture_as_pdf_rounded;
-                              break;
-                            case menuAiStory:
-                              icon = Icons.auto_awesome_rounded;
-                              break;
-                            case menuSettings:
-                              icon = Icons.settings_rounded;
-                              break;
-                            case menuSortSettings:
-                              icon = Icons.sort_rounded;
-                              break;
-                            case menuTheme:
-                              icon = Icons.palette_outlined;
-                              break;
-                            default:
-                              icon = Icons.help_outline_rounded;
-                          }
+                        final double entryHeight = menuItems.length * 40.0 + 16.0;
 
-                          bool isSelected = false;
-                          switch (choice) {
-                            case menuWordList:
-                              isSelected =
-                                  studyMode == WordListStudyMode.list;
-                              break;
-                            case menuHideChinese:
-                              isSelected =
-                                  studyMode == WordListStudyMode.hideChinese;
-                              break;
-                            case menuHideEnglish:
-                              isSelected =
-                                  studyMode == WordListStudyMode.hideEnglish;
-                              break;
-                            case menuSpeakChinese:
-                              isSelected = studyMode ==
-                                  WordListStudyMode.speakChinese;
-                              break;
-                            case menuSpeakEnglish:
-                              isSelected = studyMode ==
-                                  WordListStudyMode.speakEnglish;
-                              break;
-                            case menuTranslateSentence:
-                              isSelected = studyMode ==
-                                  WordListStudyMode.translateSentence;
-                              break;
-                            case menuWriteSpellTyping:
-                              isSelected =
-                                  studyMode == WordListStudyMode.dictation;
-                              break;
-                            case menuWriteSpellHandwriting:
-                              isSelected =
-                                  studyMode == WordListStudyMode.dictationHandwriting;
-                              break;
-                          }
-
-                          return PopupMenuItem<String>(
-                            value: choice,
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        return <PopupMenuEntry<String>>[
+                          _FrostedPopupMenuEntry<String>(
+                            height: entryHeight,
                             child: Container(
-                              width: double.infinity,
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? themeConfig.subtleBg
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                border: isSelected
-                                    ? Border.all(
-                                        color: themeConfig.cardBorder,
-                                        width: 1,
-                                      )
-                                    : null,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 7),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    icon,
-                                    size: 18,
-                                    color: isSelected
-                                        ? themeConfig.primaryColor
-                                        : themeConfig.textSecondary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      choice == menuSortSettings
-                                          ? '排序: ${_currentSortAlg.label}'
-                                          : choice,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: isSelected
-                                            ? themeConfig.primaryColor
-                                            : themeConfig.textPrimary,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                      ),
-                                    ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.12),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
                               ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode
+                                          ? const Color(0xE61E232A)
+                                          : const Color(0xF2FFFFFF),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isDarkMode
+                                            ? Colors.white.withValues(alpha: 0.12)
+                                            : Colors.black.withValues(alpha: 0.08),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxHeight: MediaQuery.sizeOf(context).height - 120,
+                                      ),
+                                      child: SingleChildScrollView(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: menuItems.map((String choice) {
+                                            IconData icon;
+                                            switch (choice) {
+                                              case menuWordList:
+                                                icon = Icons.list_alt_rounded;
+                                                break;
+                                              case menuWalkman:
+                                                icon = Icons.headphones_rounded;
+                                                break;
+                                              case menuImportFromBook:
+                                                icon = Icons.import_contacts_rounded;
+                                                break;
+                                              case menuImportFromScan:
+                                                icon = Icons.camera_alt_rounded;
+                                                break;
+                                              case menuSpeakChinese:
+                                                icon = Icons.record_voice_over_rounded;
+                                                break;
+                                              case menuSpeakEnglish:
+                                                icon = Icons.mic_none_rounded;
+                                                break;
+                                              case menuTranslateSentence:
+                                                icon = Icons.hearing_rounded;
+                                                break;
+                                              case menuWriteSpellTyping:
+                                                icon = Icons.keyboard_rounded;
+                                                break;
+                                              case menuWriteSpellHandwriting:
+                                                icon = Icons.gesture_rounded;
+                                                break;
+                                              case menuHideChinese:
+                                              case menuHideEnglish:
+                                                icon = Icons.visibility_off_rounded;
+                                                break;
+                                              case menuExportPdf:
+                                                icon = Icons.picture_as_pdf_rounded;
+                                                break;
+                                              case menuAiStory:
+                                                icon = Icons.auto_awesome_rounded;
+                                                break;
+                                              case menuSettings:
+                                                icon = Icons.settings_rounded;
+                                                break;
+                                              case menuSortSettings:
+                                                icon = Icons.sort_rounded;
+                                                break;
+                                              case menuTheme:
+                                                icon = Icons.palette_outlined;
+                                                break;
+                                              default:
+                                                icon = Icons.help_outline_rounded;
+                                            }
+
+                                            bool isSelected = false;
+                                            switch (choice) {
+                                              case menuWordList:
+                                                isSelected =
+                                                    studyMode == WordListStudyMode.list;
+                                                break;
+                                              case menuHideChinese:
+                                                isSelected =
+                                                    studyMode == WordListStudyMode.hideChinese;
+                                                break;
+                                              case menuHideEnglish:
+                                                isSelected =
+                                                    studyMode == WordListStudyMode.hideEnglish;
+                                                break;
+                                              case menuSpeakChinese:
+                                                isSelected = studyMode ==
+                                                    WordListStudyMode.speakChinese;
+                                                break;
+                                              case menuSpeakEnglish:
+                                                isSelected = studyMode ==
+                                                    WordListStudyMode.speakEnglish;
+                                                break;
+                                              case menuTranslateSentence:
+                                                isSelected = studyMode ==
+                                                    WordListStudyMode.translateSentence;
+                                                break;
+                                              case menuWriteSpellTyping:
+                                                isSelected =
+                                                    studyMode == WordListStudyMode.dictation;
+                                                break;
+                                              case menuWriteSpellHandwriting:
+                                                isSelected =
+                                                    studyMode == WordListStudyMode.dictationHandwriting;
+                                                break;
+                                            }
+
+                                            return Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 1.5),
+                                              child: Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  onTap: () => Navigator.pop(context, choice),
+                                                  child: Container(
+                                                    width: double.infinity,
+                                                    decoration: BoxDecoration(
+                                                      color: isSelected
+                                                          ? themeConfig.subtleBg
+                                                          : Colors.transparent,
+                                                      borderRadius: BorderRadius.circular(10),
+                                                      border: isSelected
+                                                          ? Border.all(
+                                                              color: themeConfig.cardBorder,
+                                                              width: 1,
+                                                            )
+                                                          : null,
+                                                    ),
+                                                    padding: const EdgeInsets.symmetric(
+                                                        horizontal: 10, vertical: 7),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          icon,
+                                                          size: 18,
+                                                          color: isSelected
+                                                              ? themeConfig.primaryColor
+                                                              : themeConfig.textSecondary,
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Expanded(
+                                                          child: Text(
+                                                            choice == menuSortSettings
+                                                                ? '排序: ${_currentSortAlg.label}'
+                                                                : choice,
+                                                            style: TextStyle(
+                                                              fontSize: 13,
+                                                              color: isSelected
+                                                                  ? themeConfig.primaryColor
+                                                                  : themeConfig.textPrimary,
+                                                              fontWeight: isSelected
+                                                                  ? FontWeight.w700
+                                                                  : FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
-                          );
-                        }).toList();
+                          ),
+                        ];
                       },
                     ),
                   ],
@@ -3991,6 +4044,32 @@ class WordListPageState extends State<WordListPage>
         Global.logger.e('分享 PDF 失败', error: e);
       }
     }
+  }
+}
+
+/// 毛玻璃菜单容器条目，将整个弹出菜单包裹于单一 BackdropFilter 中以实现高清磨砂质感
+class _FrostedPopupMenuEntry<T> extends PopupMenuEntry<T> {
+  const _FrostedPopupMenuEntry({
+    super.key,
+    required this.child,
+    required this.height,
+  });
+
+  final Widget child;
+  @override
+  final double height;
+
+  @override
+  bool represents(T? value) => false;
+
+  @override
+  State<_FrostedPopupMenuEntry<T>> createState() => _FrostedPopupMenuEntryState<T>();
+}
+
+class _FrostedPopupMenuEntryState<T> extends State<_FrostedPopupMenuEntry<T>> {
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }
 
