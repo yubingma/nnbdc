@@ -2342,13 +2342,26 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      '今日最少新词',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                      ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '今日最少新词',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5),
+                                        GestureDetector(
+                                          onTap: () => _showMinNewWordsExplanationDialog(ctx),
+                                          child: Icon(
+                                            Icons.help_outline_rounded,
+                                            size: 15,
+                                            color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
@@ -2574,6 +2587,191 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             fontSize: 11.5,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             color: isSelected ? primaryColor : (isDarkMode ? Colors.white70 : const Color(0xFF475569)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 弹出今日最少新词规则说明（作用与负面效果说明）
+  void _showMinNewWordsExplanationDialog(BuildContext parentCtx) {
+    final darkMode = parentCtx.read<DarkMode>();
+    final isDarkMode = darkMode.isDarkMode;
+    final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
+    final primaryColor = themeConfig.primaryColor;
+
+    showDialog<void>(
+      context: parentCtx,
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.25),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDarkMode
+                      ? [
+                          const Color(0xFF1C2230).withValues(alpha: 0.94),
+                          const Color(0xFF121722).withValues(alpha: 0.90),
+                        ]
+                      : [
+                          Colors.white.withValues(alpha: 0.95),
+                          Colors.white.withValues(alpha: 0.90),
+                        ],
+                ),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.white.withValues(alpha: 0.80),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.10),
+                    blurRadius: 28,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Icon(Icons.help_outline_rounded, size: 17, color: primaryColor),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '今日最少新词规则说明',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 作用说明卡片
+                  Container(
+                    padding: const EdgeInsets.all(11),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF059669).withValues(alpha: isDarkMode ? 0.12 : 0.07),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF059669).withValues(alpha: isDarkMode ? 0.25 : 0.18),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.check_circle_outline_rounded, size: 14, color: Color(0xFF059669)),
+                            SizedBox(width: 4),
+                            Text(
+                              '设置作用',
+                              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '系统默认根据记忆遗忘曲线优先安排复习。当待复习词较多时，今日配额可能全部被复习词占满。设置此项后，系统每天会强制保留至少指定数量的新词，保障背词进度稳步向前。',
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.45,
+                            color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // 负面效果说明卡片
+                  Container(
+                    padding: const EdgeInsets.all(11),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.12 : 0.07),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.25 : 0.18),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFDC2626)),
+                            SizedBox(width: 4),
+                            Text(
+                              '潜在负面效果',
+                              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '每日总词量是固定的，强行增加新词会挤占当天本该复习的单词名额。被挤占的复习词会被延期推迟，若长期新词比例过高，会导致前置单词复习不及时、遗忘率上升，并造成复习负荷滚雪球式积压。',
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.45,
+                            color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 确认按钮
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '我知道了',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
