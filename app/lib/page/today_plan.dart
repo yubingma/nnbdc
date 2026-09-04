@@ -1512,7 +1512,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final textPrimary = themeConfig.textPrimary;
     final textSecondary = themeConfig.textSecondary;
     final themeAccent = themeConfig.primaryColor;
-    final errorCoral = const Color(0xFFEF4444);
+    final successGreen = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
+    final errorCoral = isDarkMode ? const Color(0xFFF87171) : const Color(0xFFEF4444);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1591,7 +1592,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           Icon(
                             Icons.check_rounded,
                             size: 13,
-                            color: themeAccent,
+                            color: successGreen,
                           ),
                           const SizedBox(width: 2),
                           Text(
@@ -1599,7 +1600,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: themeAccent,
+                              color: successGreen,
                             ),
                           ),
                         ],
