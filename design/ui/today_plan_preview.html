@@ -125,76 +125,406 @@
     }
 
     /* ========================================================
-       新风格：雾境流光与磨砂质感 (Misty Ambient Glow)
+       雾境流光与磨砂质感 (Misty Ambient Glow) 9大主题美学系统
        ======================================================== */
-    [data-style="mist-glow"] {
-      --bg: radial-gradient(circle at 50% 10%, rgba(204, 226, 219, 0.85) 0%, rgba(214, 230, 225, 0.6) 38%, #D3DFDC 75%, #CBD6D2 100%);
-      --card-bg: rgba(255, 255, 255, 0.72);
-      --card-subtle: rgba(62, 98, 88, 0.1);
-      --card-active: rgba(62, 98, 88, 0.18);
-      --divider: rgba(255, 255, 255, 0.65);
-      
-      --text-primary: #1C2724;
-      --text-secondary: #48635B;
-      --text-muted: #7E9790;
-      --text-faint: #A8BDB7;
-
-      --primary: #10B981;
-      --primary-hover: #059669;
-      --primary-soft: rgba(16, 185, 129, 0.14);
-      --primary-text: #FFFFFF;
-
-      --accent: #10B981;
-      --accent-soft: rgba(16, 185, 129, 0.1);
-      
-      --green-text: #10B981;
-      --green-bg: rgba(16, 185, 129, 0.12);
-      --amber-text: #EF4444;
-      --amber-bg: rgba(239, 68, 68, 0.12);
-      
-      --shadow-subtle: 0 4px 20px rgba(32, 54, 47, 0.04);
-      --shadow-btn: 0 8px 24px -4px rgba(16, 185, 129, 0.35);
-    }
-
-    [data-theme="dark"][data-style="mist-glow"] {
-      --bg: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
-      --card-bg: rgba(255, 255, 255, 0.058);
-      --card-subtle: rgba(255, 255, 255, 0.08);
-      --card-active: rgba(255, 255, 255, 0.14);
-      --divider: rgba(255, 255, 255, 0.085);
-      
-      --text-primary: #E3EDE9;
-      --text-secondary: #8FAEA5;
-      --text-muted: #5C7871;
-      --text-faint: #3B4E49;
-
-      --primary: #34D399;
-      --primary-hover: #10B981;
-      --primary-soft: rgba(52, 211, 153, 0.14);
-      --primary-text: #061F16;
-
-      --accent: #34D399;
-      --accent-soft: rgba(52, 211, 153, 0.1);
-
-      --green-text: #34D399;
-      --green-bg: rgba(52, 211, 153, 0.14);
-      --amber-text: #F87171;
-      --amber-bg: rgba(248, 113, 113, 0.14);
-
-      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.35);
-      --shadow-btn: 0 8px 24px -3px rgba(52, 211, 153, 0.3);
-    }
-
     [data-style="mist-glow"] .device-mockup {
       background: var(--bg) !important;
     }
     [data-style="mist-glow"] .tree-card,
     [data-style="mist-glow"] .edit-track-card,
     [data-style="mist-glow"] .pure-step-pill,
-    [data-style="mist-glow"] .header-action-btn {
+    [data-style="mist-glow"] .header-action-btn,
+    [data-style="mist-glow"] .designer-toolbar {
       backdrop-filter: blur(28px) !important;
       -webkit-backdrop-filter: blur(28px) !important;
       border: 1px solid var(--divider) !important;
+    }
+
+    /* --- 1. 晨曦流光 (Aurora - 冰川冷蓝) --- */
+    [data-theme-color="aurora"] {
+      --primary: #0284C7;
+      --primary-hover: #0369A1;
+      --primary-soft: rgba(2, 132, 199, 0.12);
+      --primary-text: #FFFFFF;
+      --accent: #0284C7;
+      --accent-soft: rgba(2, 132, 199, 0.08);
+      --green-text: #0284C7;
+      --green-bg: rgba(2, 132, 199, 0.12);
+      --shadow-btn: 0 8px 24px -4px rgba(2, 132, 199, 0.35);
+    }
+    [data-style="mist-glow"][data-theme-color="aurora"],
+    [data-style="mist-glow"]:not([data-theme-color]) {
+      --bg: radial-gradient(circle at 20% 12%, rgba(186, 230, 253, 0.85) 0%, rgba(224, 242, 254, 0.55) 35%, #DFEEF9 70%, #CEE2F2 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(2, 132, 199, 0.08);
+      --card-active: rgba(2, 132, 199, 0.15);
+      --divider: rgba(255, 255, 255, 0.7);
+      --text-primary: #0C2136;
+      --text-secondary: #335372;
+      --text-muted: #6B8BAA;
+      --shadow-subtle: 0 4px 20px rgba(2, 132, 199, 0.06);
+    }
+    [data-theme="dark"][data-theme-color="aurora"] {
+      --primary: #38BDF8;
+      --primary-hover: #0284C7;
+      --primary-soft: rgba(56, 189, 248, 0.15);
+      --primary-text: #031826;
+      --accent: #38BDF8;
+      --green-text: #38BDF8;
+      --green-bg: rgba(56, 189, 248, 0.15);
+      --shadow-btn: 0 8px 24px -3px rgba(56, 189, 248, 0.35);
+    }
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="aurora"] {
+      --bg: radial-gradient(circle at 20% 15%, #0C4A6E 0%, #082F49 32%, #0B192C 68%, #030712 100%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(56, 189, 248, 0.14);
+      --text-primary: #E0F2FE;
+      --text-secondary: #7DD3FC;
+      --text-muted: #38BDF8;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    /* --- 2. 经典翡翠 (Emerald - 扇贝生机绿) --- */
+    [data-theme-color="emerald"] {
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.12);
+      --primary-text: #FFFFFF;
+      --accent: #10B981;
+      --accent-soft: rgba(16, 185, 129, 0.08);
+      --green-text: #10B981;
+      --green-bg: rgba(16, 185, 129, 0.12);
+      --shadow-btn: 0 8px 24px -4px rgba(16, 185, 129, 0.35);
+    }
+    [data-style="mist-glow"][data-theme-color="emerald"] {
+      --bg: radial-gradient(circle at 50% 10%, rgba(204, 226, 219, 0.85) 0%, rgba(214, 230, 225, 0.6) 38%, #D3DFDC 75%, #CBD6D2 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(62, 98, 88, 0.1);
+      --card-active: rgba(62, 98, 88, 0.18);
+      --divider: rgba(255, 255, 255, 0.65);
+      --text-primary: #1C2724;
+      --text-secondary: #48635B;
+      --text-muted: #7E9790;
+      --shadow-subtle: 0 4px 20px rgba(32, 54, 47, 0.04);
+    }
+    [data-theme="dark"][data-theme-color="emerald"] {
+      --primary: #34D399;
+      --primary-hover: #10B981;
+      --primary-soft: rgba(52, 211, 153, 0.15);
+      --primary-text: #061F16;
+      --accent: #34D399;
+      --green-text: #34D399;
+      --green-bg: rgba(52, 211, 153, 0.14);
+      --shadow-btn: 0 8px 24px -3px rgba(52, 211, 153, 0.3);
+    }
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="emerald"] {
+      --bg: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
+      --card-bg: rgba(255, 255, 255, 0.058);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(52, 211, 153, 0.12);
+      --text-primary: #E3EDE9;
+      --text-secondary: #8FAEA5;
+      --text-muted: #5C7871;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    /* --- 3. 暮色落日 (Sunset - 晚霞落日橙) --- */
+    [data-theme-color="sunset"] {
+      --primary: #F97316;
+      --primary-hover: #EA580C;
+      --primary-soft: rgba(249, 115, 22, 0.12);
+      --primary-text: #FFFFFF;
+      --accent: #F97316;
+      --accent-soft: rgba(249, 115, 22, 0.08);
+      --green-text: #F97316;
+      --green-bg: rgba(249, 115, 22, 0.12);
+      --shadow-btn: 0 8px 24px -4px rgba(249, 115, 22, 0.35);
+    }
+    [data-style="mist-glow"][data-theme-color="sunset"] {
+      --bg: radial-gradient(circle at 25% 12%, rgba(254, 215, 170, 0.85) 0%, rgba(255, 237, 213, 0.55) 38%, #F7ECE6 75%, #EADAD3 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(249, 115, 22, 0.08);
+      --card-active: rgba(249, 115, 22, 0.16);
+      --divider: rgba(255, 255, 255, 0.7);
+      --text-primary: #2C1A14;
+      --text-secondary: #6B4E44;
+      --text-muted: #9E7D73;
+      --shadow-subtle: 0 4px 20px rgba(124, 45, 18, 0.05);
+    }
+    [data-theme="dark"][data-theme-color="sunset"] {
+      --primary: #FB923C;
+      --primary-hover: #F97316;
+      --primary-soft: rgba(251, 146, 60, 0.15);
+      --primary-text: #260A02;
+      --accent: #FB923C;
+      --green-text: #FB923C;
+      --green-bg: rgba(251, 146, 60, 0.15);
+      --shadow-btn: 0 8px 24px -3px rgba(251, 146, 60, 0.35);
+    }
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="sunset"] {
+      --bg: radial-gradient(circle at 20% 16%, #431407 0%, #2A0F07 35%, #180B07 70%, #0A0503 100%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(251, 146, 60, 0.14);
+      --text-primary: #FFEDD5;
+      --text-secondary: #FDBA74;
+      --text-muted: #C27848;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    /* --- 4. 极简白墨 (Minimal - 纯粹黑白高对比) --- */
+    [data-theme-color="minimal"] {
+      --primary: #18181B;
+      --primary-hover: #09090B;
+      --primary-soft: rgba(24, 24, 27, 0.08);
+      --primary-text: #FFFFFF;
+      --accent: #18181B;
+      --accent-soft: rgba(24, 24, 27, 0.05);
+      --green-text: #18181B;
+      --green-bg: rgba(24, 24, 27, 0.08);
+      --shadow-btn: 0 8px 22px -4px rgba(24, 24, 27, 0.25);
+    }
+    [data-style="mist-glow"][data-theme-color="minimal"] {
+      --bg: radial-gradient(circle at 50% 12%, #FFFFFF 0%, rgba(244, 244, 246, 0.85) 40%, #E4E5E8 75%, #D3D5DA 100%);
+      --card-bg: rgba(255, 255, 255, 0.78);
+      --card-subtle: rgba(0, 0, 0, 0.06);
+      --card-active: rgba(0, 0, 0, 0.12);
+      --divider: rgba(255, 255, 255, 0.85);
+      --text-primary: #09090B;
+      --text-secondary: #52525B;
+      --text-muted: #71717A;
+      --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.04);
+    }
+    [data-theme="dark"][data-theme-color="minimal"] {
+      --primary: #FAFAFA;
+      --primary-hover: #E4E4E7;
+      --primary-soft: rgba(255, 255, 255, 0.14);
+      --primary-text: #09090B;
+      --accent: #FAFAFA;
+      --green-text: #FAFAFA;
+      --green-bg: rgba(255, 255, 255, 0.14);
+      --shadow-btn: 0 8px 24px -3px rgba(255, 255, 255, 0.25);
+    }
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="minimal"] {
+      --bg: radial-gradient(circle at 22% 15%, #27272A 0%, #18181B 38%, #0F0F12 70%, #09090B 100%);
+      --card-bg: rgba(255, 255, 255, 0.065);
+      --card-subtle: rgba(255, 255, 255, 0.09);
+      --card-active: rgba(255, 255, 255, 0.16);
+      --divider: rgba(255, 255, 255, 0.12);
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    /* --- 5. 深邃曜黑 (Midnight - 赛博暗黑极光绿) --- */
+    [data-theme-color="midnight"] {
+      --primary: #2CD88F;
+      --primary-hover: #10B981;
+      --primary-soft: rgba(44, 216, 143, 0.15);
+      --primary-text: #041D14;
+      --accent: #2CD88F;
+      --accent-soft: rgba(44, 216, 143, 0.1);
+      --green-text: #2CD88F;
+      --green-bg: rgba(44, 216, 143, 0.15);
+      --shadow-btn: 0 8px 24px -3px rgba(44, 216, 143, 0.35);
+    }
+    [data-style="mist-glow"][data-theme-color="midnight"] {
+      --bg: radial-gradient(circle at 25% 12%, rgba(167, 243, 208, 0.75) 0%, rgba(209, 250, 229, 0.45) 40%, #E2EDE9 75%, #D0DFD9 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(5, 150, 105, 0.08);
+      --card-active: rgba(5, 150, 105, 0.16);
+      --divider: rgba(255, 255, 255, 0.7);
+      --text-primary: #0F172A;
+      --text-secondary: #334155;
+      --text-muted: #64748B;
+    }
+    [data-theme="dark"][data-theme-color="midnight"],
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="midnight"] {
+      --bg: radial-gradient(circle at 20% 15%, #064E3B 0%, #022C22 35%, #051410 70%, #020705 100%);
+      --card-bg: rgba(255, 255, 255, 0.055);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(44, 216, 143, 0.16);
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.55);
+    }
+
+    /* --- 6. 京都朱砂 (Crimson - 和风典雅朱砂赤红) --- */
+    [data-theme-color="crimson"] {
+      --primary: #E11D48;
+      --primary-hover: #BE123C;
+      --primary-soft: rgba(225, 29, 72, 0.12);
+      --primary-text: #FFFFFF;
+      --accent: #E11D48;
+      --accent-soft: rgba(225, 29, 72, 0.08);
+      --green-text: #E11D48;
+      --green-bg: rgba(225, 29, 72, 0.12);
+      --shadow-btn: 0 8px 24px -4px rgba(225, 29, 72, 0.35);
+    }
+    [data-style="mist-glow"][data-theme-color="crimson"] {
+      --bg: radial-gradient(circle at 25% 12%, rgba(254, 205, 211, 0.8) 0%, rgba(255, 228, 230, 0.5) 40%, #F6EBEC 75%, #EADBDE 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(225, 29, 72, 0.08);
+      --card-active: rgba(225, 29, 72, 0.16);
+      --divider: rgba(255, 255, 255, 0.7);
+      --text-primary: #2C1418;
+      --text-secondary: #6B4047;
+      --text-muted: #9E7078;
+      --shadow-subtle: 0 4px 20px rgba(136, 19, 55, 0.05);
+    }
+    [data-theme="dark"][data-theme-color="crimson"] {
+      --primary: #FB7185;
+      --primary-hover: #E11D48;
+      --primary-soft: rgba(251, 113, 133, 0.15);
+      --primary-text: #2C040E;
+      --accent: #FB7185;
+      --green-text: #FB7185;
+      --green-bg: rgba(251, 113, 133, 0.15);
+      --shadow-btn: 0 8px 24px -3px rgba(251, 113, 133, 0.35);
+    }
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="crimson"] {
+      --bg: radial-gradient(circle at 20% 16%, #4C0519 0%, #300310 35%, #1D030C 70%, #0C0105 100%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(251, 113, 133, 0.14);
+      --text-primary: #FFE4E6;
+      --text-secondary: #FDA4AF;
+      --text-muted: #C26372;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    /* --- 7. 星云深靛 (Indigo - 极客科技星云靛蓝) --- */
+    [data-theme-color="indigo"] {
+      --primary: #6366F1;
+      --primary-hover: #4F46E5;
+      --primary-soft: rgba(99, 102, 241, 0.12);
+      --primary-text: #FFFFFF;
+      --accent: #6366F1;
+      --accent-soft: rgba(99, 102, 241, 0.08);
+      --green-text: #6366F1;
+      --green-bg: rgba(99, 102, 241, 0.12);
+      --shadow-btn: 0 8px 24px -4px rgba(99, 102, 241, 0.35);
+    }
+    [data-style="mist-glow"][data-theme-color="indigo"] {
+      --bg: radial-gradient(circle at 28% 12%, rgba(224, 231, 255, 0.85) 0%, rgba(238, 242, 255, 0.55) 40%, #E5E8F5 75%, #D4DAEC 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(99, 102, 241, 0.08);
+      --card-active: rgba(99, 102, 241, 0.16);
+      --divider: rgba(255, 255, 255, 0.7);
+      --text-primary: #151833;
+      --text-secondary: #434978;
+      --text-muted: #747EAA;
+      --shadow-subtle: 0 4px 20px rgba(49, 46, 129, 0.05);
+    }
+    [data-theme="dark"][data-theme-color="indigo"] {
+      --primary: #818CF8;
+      --primary-hover: #6366F1;
+      --primary-soft: rgba(129, 140, 248, 0.15);
+      --primary-text: #0B0A26;
+      --accent: #818CF8;
+      --green-text: #818CF8;
+      --green-bg: rgba(129, 140, 248, 0.15);
+      --shadow-btn: 0 8px 24px -3px rgba(129, 140, 248, 0.35);
+    }
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="indigo"] {
+      --bg: radial-gradient(circle at 20% 16%, #1E1B4B 0%, #141338 35%, #0E0D22 70%, #050511 100%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(129, 140, 248, 0.14);
+      --text-primary: #E0E7FF;
+      --text-secondary: #A5B4FC;
+      --text-muted: #6366F1;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    /* --- 8. 鼠尾草森 (Sage - 海盐温润青绿) --- */
+    [data-theme-color="sage"] {
+      --primary: #0D9488;
+      --primary-hover: #0F766E;
+      --primary-soft: rgba(13, 148, 136, 0.12);
+      --primary-text: #FFFFFF;
+      --accent: #0D9488;
+      --accent-soft: rgba(13, 148, 136, 0.08);
+      --green-text: #0D9488;
+      --green-bg: rgba(13, 148, 136, 0.12);
+      --shadow-btn: 0 8px 24px -4px rgba(13, 148, 136, 0.35);
+    }
+    [data-style="mist-glow"][data-theme-color="sage"] {
+      --bg: radial-gradient(circle at 25% 12%, rgba(204, 251, 241, 0.8) 0%, rgba(230, 247, 243, 0.5) 40%, #E2ECE8 75%, #D2DFDB 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(13, 148, 136, 0.08);
+      --card-active: rgba(13, 148, 136, 0.16);
+      --divider: rgba(255, 255, 255, 0.7);
+      --text-primary: #112926;
+      --text-secondary: #3D625D;
+      --text-muted: #6E9690;
+      --shadow-subtle: 0 4px 20px rgba(19, 78, 74, 0.05);
+    }
+    [data-theme="dark"][data-theme-color="sage"] {
+      --primary: #2DD4BF;
+      --primary-hover: #0D9488;
+      --primary-soft: rgba(45, 212, 191, 0.15);
+      --primary-text: #031D1A;
+      --accent: #2DD4BF;
+      --green-text: #2DD4BF;
+      --green-bg: rgba(45, 212, 191, 0.15);
+      --shadow-btn: 0 8px 24px -3px rgba(45, 212, 191, 0.35);
+    }
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="sage"] {
+      --bg: radial-gradient(circle at 20% 16%, #134E4A 0%, #0E3634 35%, #092322 70%, #041211 100%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(45, 212, 191, 0.14);
+      --text-primary: #CCFBF1;
+      --text-secondary: #5EEAD4;
+      --text-muted: #14B8A6;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    /* --- 9. 暮光深空 (Twilight - 曜石深空霓虹紫) --- */
+    [data-theme-color="twilight"] {
+      --primary: #A855F7;
+      --primary-hover: #9333EA;
+      --primary-soft: rgba(168, 85, 247, 0.15);
+      --primary-text: #FFFFFF;
+      --accent: #A855F7;
+      --accent-soft: rgba(168, 85, 247, 0.1);
+      --green-text: #A855F7;
+      --green-bg: rgba(168, 85, 247, 0.15);
+      --shadow-btn: 0 8px 24px -3px rgba(168, 85, 247, 0.35);
+    }
+    [data-style="mist-glow"][data-theme-color="twilight"] {
+      --bg: radial-gradient(circle at 25% 12%, rgba(243, 232, 255, 0.85) 0%, rgba(250, 245, 255, 0.55) 40%, #EBE5F3 75%, #DCD3E8 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-subtle: rgba(168, 85, 247, 0.08);
+      --card-active: rgba(168, 85, 247, 0.16);
+      --divider: rgba(255, 255, 255, 0.7);
+      --text-primary: #241133;
+      --text-secondary: #5F3D7D;
+      --text-muted: #956EB5;
+      --shadow-subtle: 0 4px 20px rgba(88, 28, 135, 0.05);
+    }
+    [data-theme="dark"][data-theme-color="twilight"],
+    [data-theme="dark"][data-style="mist-glow"][data-theme-color="twilight"] {
+      --bg: radial-gradient(circle at 22% 15%, #3B0764 0%, #24053E 35%, #150325 70%, #0B0113 100%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-subtle: rgba(255, 255, 255, 0.08);
+      --card-active: rgba(255, 255, 255, 0.14);
+      --divider: rgba(168, 85, 247, 0.16);
+      --text-primary: #F3E8FF;
+      --text-secondary: #D8B4FE;
+      --text-muted: #A855F7;
+      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.55);
     }
 
     * {
@@ -243,7 +573,7 @@
       border-radius: 30px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       z-index: 1000;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
       color: white;
@@ -254,7 +584,7 @@
       background: rgba(255,255,255,0.15);
       color: white;
       border: 1px solid rgba(255,255,255,0.1);
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
@@ -267,6 +597,40 @@
     .designer-toolbar button:hover {
       background: rgba(255,255,255,0.25);
       transform: scale(1.02);
+    }
+    .theme-picker-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .theme-picker-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+    .theme-swatch {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .theme-swatch:hover {
+      transform: scale(1.25);
+    }
+    .theme-swatch.active {
+      transform: scale(1.25);
+      border-color: #FFFFFF;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 2px 6px rgba(0,0,0,0.4);
     }
 
     /* 状态栏 */
@@ -779,11 +1143,20 @@
   <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
     <button onclick="toggleStyle()" id="style-btn" style="background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.4);">
-      <span id="style-icon">✨</span> <span id="style-text">风格: 经典温润</span>
+      <span id="style-icon">✨</span> <span id="style-text">风格: 雾境流光</span>
     </button>
-    <button onclick="togglePalette()" id="palette-btn">
-      <span id="palette-icon">🌿</span> <span id="palette-text">扇贝绿主题</span>
-    </button>
+    <div class="theme-picker-group" id="theme-picker">
+      <span class="theme-picker-label" id="cur-theme-name">翡翠</span>
+      <div class="theme-swatch" style="background: #0284C7;" title="晨曦流光 (冰川冷蓝)" onclick="setThemeColor('aurora')"></div>
+      <div class="theme-swatch active" style="background: #10B981;" title="经典翡翠 (生机翡翠)" onclick="setThemeColor('emerald')"></div>
+      <div class="theme-swatch" style="background: #F97316;" title="暮色落日 (晚霞落日)" onclick="setThemeColor('sunset')"></div>
+      <div class="theme-swatch" style="background: #18181B;" title="极简白墨 (硬朗黑白)" onclick="setThemeColor('minimal')"></div>
+      <div class="theme-swatch" style="background: #2CD88F;" title="深邃曜黑 (赛博极光)" onclick="setThemeColor('midnight')"></div>
+      <div class="theme-swatch" style="background: #E11D48;" title="京都朱砂 (和风书卷)" onclick="setThemeColor('crimson')"></div>
+      <div class="theme-swatch" style="background: #6366F1;" title="星云深靛 (数码工艺)" onclick="setThemeColor('indigo')"></div>
+      <div class="theme-swatch" style="background: #0D9488;" title="鼠尾草森 (治愈海盐)" onclick="setThemeColor('sage')"></div>
+      <div class="theme-swatch" style="background: #A855F7;" title="暮光深空 (曜石霓虹)" onclick="setThemeColor('twilight')"></div>
+    </div>
     <button onclick="toggleTheme()">
       <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
     </button>
@@ -1026,80 +1399,65 @@
     let isShanbay = true;
     let isMistGlow = false;
 
+    const themeNames = {
+      aurora: '晨曦流光',
+      emerald: '经典翡翠',
+      sunset: '暮色落日',
+      minimal: '极简白墨',
+      midnight: '深邃曜黑',
+      crimson: '京都朱砂',
+      indigo: '星云深靛',
+      sage: '鼠尾草森',
+      twilight: '暮光深空'
+    };
+    let currentThemeColor = 'emerald';
+
+    function setThemeColor(color) {
+      currentThemeColor = color;
+      document.documentElement.setAttribute('data-theme-color', color);
+      const label = document.getElementById('cur-theme-name');
+      if (label) label.textContent = (themeNames[color] || color).substring(0, 4);
+
+      // 更新选中圆点高亮
+      const swatches = document.querySelectorAll('.theme-swatch');
+      const colors = ['aurora', 'emerald', 'sunset', 'minimal', 'midnight', 'crimson', 'indigo', 'sage', 'twilight'];
+      swatches.forEach((sw, idx) => {
+        sw.classList.toggle('active', colors[idx] === color);
+      });
+      localStorage.setItem('today_plan_theme_color', color);
+    }
+
     function toggleStyle() {
       isMistGlow = !isMistGlow;
       const root = document.documentElement;
       const icon = document.getElementById('style-icon');
       const text = document.getElementById('style-text');
-      const paletteBtn = document.getElementById('palette-btn');
 
       if (isMistGlow) {
         root.setAttribute('data-style', 'mist-glow');
         icon.textContent = '✨';
         text.textContent = '风格: 雾境流光';
-        if (paletteBtn) paletteBtn.style.opacity = '0.4';
       } else {
         root.removeAttribute('data-style');
         icon.textContent = '🌿';
         text.textContent = '风格: 经典温润';
-        if (paletteBtn) paletteBtn.style.opacity = '1';
       }
       localStorage.setItem('today_plan_style', isMistGlow ? 'mist-glow' : 'classic');
     }
 
-    (function initSavedStyle() {
-      const saved = localStorage.getItem('today_plan_style');
-      if (saved === 'mist-glow') {
-        toggleStyle();
+    (function initSavedSettings() {
+      const savedStyle = localStorage.getItem('today_plan_style');
+      if (savedStyle === 'mist-glow' || savedStyle === null) {
+        // 默认开启雾境流光
+        if (!isMistGlow) toggleStyle();
+      }
+      const savedColor = localStorage.getItem('today_plan_theme_color');
+      if (savedColor) {
+        setThemeColor(savedColor);
+      } else {
+        setThemeColor('emerald');
       }
     })();
-
-    function openTrackEdit(tabIdx) {
-      isEditMode = true;
-      switchTab(tabIdx);
-      applyEditModeUI();
-    }
-
-    function toggleEditMode() {
-      isEditMode = !isEditMode;
-      applyEditModeUI();
-    }
-
-    function applyEditModeUI() {
-      const displayEl = document.getElementById('display-mode-view');
-      const editEl = document.getElementById('edit-mode-view');
-      const btnText = document.getElementById('edit-btn-text');
-      const btnIcon = document.getElementById('edit-btn-icon');
-
-      if (isEditMode) {
-        displayEl.style.display = 'none';
-        editEl.style.display = 'flex';
-        btnText.textContent = '完成';
-        btnIcon.textContent = '✓';
-      } else {
-        displayEl.style.display = 'flex';
-        editEl.style.display = 'none';
-        btnText.textContent = '调整轨道';
-        btnIcon.textContent = '⚙️';
-      }
-    }
-
-    function togglePalette() {
-      isShanbay = !isShanbay;
-      const root = document.documentElement;
-      const icon = document.getElementById('palette-icon');
-      const text = document.getElementById('palette-text');
-
-      if (isShanbay) {
-        root.removeAttribute('data-palette');
-        icon.textContent = '🌿';
-        text.textContent = '扇贝绿主题';
-      } else {
-        root.setAttribute('data-palette', 'classic');
-        icon.textContent = '🖤';
-        text.textContent = '经典黑白主题';
-      }
-    }
 
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');
