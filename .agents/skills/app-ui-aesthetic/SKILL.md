@@ -163,8 +163,14 @@ Column(
 - ✅ **推荐**：将属于同一分区的项目聚合为**一体化大圆角卡片**（`borderRadius: 16`），内部项之间使用**内缩极细分割线（Hairline Divider）**隔开：
   ```dart
   Padding(
-    padding: const EdgeInsets.only(left: 48),
-    child: Divider(height: 1, thickness: 0.6, color: cardBorder.withValues(alpha: 0.45)),
+    padding: const EdgeInsets.only(left: 48, right: 14),
+    child: Divider(
+      height: 1,
+      thickness: 0.5,
+      color: isDarkMode
+          ? Colors.white.withValues(alpha: 0.08)
+          : Colors.black.withValues(alpha: 0.055), // 严禁使用深黑或过厚粗线
+    ),
   )
   ```
 
