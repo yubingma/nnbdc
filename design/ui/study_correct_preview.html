@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>背单词主界面 - 扇贝温润护眼极致美学原型</title>
+  <style>
+    :root {
+      /* 扇贝单词经典护眼温润绿体系 - 极度柔和舒适 */
+      --bg: #F6F9F8;
+      --card-bg: #FFFFFF;
+      --card-subtle: #F0F6F3;
+      --card-hover: #E6F3ED;
+      --divider: rgba(24, 186, 124, 0.08);
+      
+      --text-primary: #152724;
+      --text-secondary: #425B57;
+      --text-muted: #789691;
+      --text-faint: #B2CDC8;
+
+      /* 扇贝绿 */
+      --primary: #18BA7C;
+      --primary-hover: #15A56E;
+      --primary-soft: #E8F8F1;
+      --primary-text: #FFFFFF;
+
+      --green-text: #18BA7C;
+      --green-bg: #E8F8F1;
+      --green-border: rgba(24, 186, 124, 0.3);
+      
+      --coral-text: #FA6E59;
+      --coral-bg: #FEF2F0;
+      --coral-border: rgba(250, 110, 89, 0.25);
+
+      --slot-blank-bg: #E3ECE8;
+      --slot-blank-bar: #9DBEB8;
+      
+      --shadow-card: 0 8px 24px rgba(24, 186, 124, 0.05), 0 2px 6px rgba(0, 0, 0, 0.02);
+      --shadow-btn: 0 10px 24px -4px rgba(24, 186, 124, 0.38);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0C1312;
+      --card-bg: #131E1C;
+      --card-subtle: #1A2826;
+      --card-hover: #223532;
+      --divider: rgba(255, 255, 255, 0.06);
+      
+      --text-primary: #EAF7F4;
+      --text-secondary: #8EA8A3;
+      --text-muted: #5B7A75;
+      --text-faint: #344B48;
+
+      --primary: #2CD88F;
+      --primary-hover: #26C07F;
+      --primary-soft: rgba(44, 216, 143, 0.12);
+      --primary-text: #0A1613;
+
+      --green-text: #2CD88F;
+      --green-bg: rgba(44, 216, 143, 0.12);
+      --green-border: rgba(44, 216, 143, 0.35);
+
+      --coral-text: #FF7E6C;
+      --coral-bg: rgba(255, 126, 108, 0.12);
+      --coral-border: rgba(255, 126, 108, 0.35);
+
+      --slot-blank-bg: #1A2826;
+      --slot-blank-bar: #3A5551;
+
+      --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.5);
+      --shadow-btn: 0 8px 24px -3px rgba(44, 216, 143, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #DFE7E4;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px 12px;
+      color: var(--text-primary);
+      transition: background-color 0.3s;
+    }
+
+    /* 顶部控制栏 */
+    .designer-toolbar {
+      width: 100%;
+      max-width: 412px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      padding: 8px 14px;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .designer-toolbar button {
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .designer-toolbar button:hover {
+      background: #E2E8F0;
+    }
+
+    /* 手机外壳容器 */
+    .device-mockup {
+      width: 100%;
+      max-width: 412px;
+      height: 844px;
+      background: var(--bg);
+      border-radius: 42px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      height: 40px;
+      padding: 0 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      z-index: 10;
+    }
+
+    /* 1. 分段批次进度条 */
+    .batch-progress-bar {
+      display: flex;
+      gap: 5px;
+      padding: 2px 16px 8px 16px;
+    }
+    .batch-segment {
+      flex: 1;
+      height: 4px;
+      background: var(--card-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .batch-segment.filled {
+      background: var(--primary);
+    }
+    .batch-segment.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 65%;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    /* 2. 顶部工具栏（返回 + 回看 + 掌握 + 报错 + 搜索 + 设置） */
+    .nav-toolbar {
+      padding: 2px 16px 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .nav-btn-back {
+      width: 38px;
+      height: 36px;
+      background: var(--card-bg);
+      border: 1px solid var(--divider);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--text-primary);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      transition: all 0.15s;
+    }
+    .nav-btn-back:hover {
+      background: var(--card-hover);
+    }
+    .nav-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .nav-action-pill {
+      height: 36px;
+      padding: 0 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--divider);
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      transition: all 0.15s;
+    }
+    .nav-action-pill:hover {
+      background: var(--card-hover);
+      color: var(--primary);
+    }
+    .nav-action-icon-only {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    /* 页面主体滚动区 */
+    .app-body {
+      flex: 1;
+      padding: 0 16px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-y: auto;
+    }
+
+    /* 3. 核心单词英雄大卡片 */
+    .word-main-card {
+      background: var(--card-bg);
+      border-radius: 26px;
+      padding: 22px 20px 18px 20px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--divider);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      position: relative;
+    }
+    .word-spelling {
+      font-size: 40px;
+      font-weight: 900;
+      color: var(--text-primary);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    }
+
+    /* 发音胶囊 */
+    .phonetic-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card-subtle);
+      padding: 4px 12px 4px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid var(--divider);
+    }
+    .phonetic-capsule:hover {
+      background: var(--card-hover);
+    }
+    .phonetic-capsule:active {
+      transform: scale(0.96);
+    }
+    .phonetic-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-family: "Lucida Grande", "Segoe UI", sans-serif;
+    }
+    .speaker-icon-small {
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 权威例句盒（浅色微底更通透） */
+    .sentence-block {
+      width: 100%;
+      margin-top: 2px;
+      padding: 14px 16px;
+      background: var(--card-subtle);
+      border-radius: 18px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sentence-en-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .sentence-en-row b {
+      color: var(--primary);
+      font-weight: 800;
+      background: var(--primary-soft);
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+    .sentence-play-btn {
+      color: var(--primary);
+      cursor: pointer;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      transition: transform 0.15s;
+    }
+    .sentence-play-btn:active {
+      transform: scale(0.85);
+    }
+    .sentence-ch-row {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      display: none;
+      padding-left: 24px;
+      animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .btn-show-trans {
+      align-self: flex-end;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      transition: color 0.15s;
+    }
+    .btn-show-trans:hover {
+      color: var(--primary);
+    }
+
+    /* 4. 做题区 Tab 栏（悬浮分段胶囊流） */
+    .tabs-pill-wrap {
+      display: flex;
+      background: var(--card-subtle);
+      border-radius: 16px;
+      padding: 3px;
+      margin-top: 12px;
+      border: 1px solid var(--divider);
+    }
+    .tab-pill-btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px 0;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      border-radius: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tab-pill-btn.active {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    /* 5. 做题卡片主体（浅薄荷卡片） */
+    .exercise-card {
+      background: var(--card-bg);
+      border-radius: 26px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--divider);
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* 收音状态与操作按钮行（提示 + 清除） */
+    .voice-control-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 4px;
+    }
+    .voice-wave-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .audio-bars-wave {
+      display: flex;
+      align-items: center;
+      gap: 2.5px;
+      height: 16px;
+    }
+    .wave-bar {
+      width: 3px;
+      background: var(--primary);
+      border-radius: 2px;
+      animation: soundWave 1.2s infinite ease-in-out;
+    }
+    .wave-bar:nth-child(1) { height: 6px; animation-delay: 0.1s; }
+    .wave-bar:nth-child(2) { height: 14px; animation-delay: 0.3s; }
+    .wave-bar:nth-child(3) { height: 18px; animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { height: 11px; animation-delay: 0.4s; }
+    .wave-bar:nth-child(5) { height: 7px; animation-delay: 0.15s; }
+    @keyframes soundWave {
+      0%, 100% { transform: scaleY(0.4); }
+      50% { transform: scaleY(1); }
+    }
+    .listening-txt {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .voice-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-action-tool {
+      height: 32px;
+      padding: 0 12px;
+      background: var(--card-subtle);
+      border: 1px solid var(--divider);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-action-tool:hover {
+      background: var(--card-hover);
+      color: var(--primary);
+    }
+    .btn-action-tool:active {
+      transform: scale(0.96);
+    }
+
+    /* 6. 核心：每个释义项的下划线字数占位符（升级为极工整的 Slot 槽位） */
+    .meaning-items-block {
+      background: var(--card-subtle);
+      border-radius: 18px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .meaning-prompt-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .meaning-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+    }
+    .cixing-badge {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 2px 6px;
+      border-radius: 6px;
+      min-width: 28px;
+      text-align: center;
+    }
+    .underline-group {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+    
+    /* 极致工整的字符槽位 */
+    .slot-unit {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 17px;
+      height: 22px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      position: relative;
+    }
+    .slot-unit.blank::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 1px;
+      right: 1px;
+      height: 2px;
+      background: var(--slot-blank-bar);
+      border-radius: 2px;
+    }
+    .slot-unit.hinted {
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+    .slot-unit.matched {
+      color: var(--green-text);
+      font-weight: 900;
+      background: var(--green-bg);
+      padding: 0 4px;
+      border-radius: 6px;
+    }
+
+    /* 7. FSRS 评测微标信息 */
+    .fsrs-info-row {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* 8. 底部操作按钮组（不认识 / 再学学） */
+    .bottom-buttons-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .btn-bottom-primary {
+      flex: 1;
+      height: 52px;
+      border-radius: 22px;
+      border: 1px solid var(--divider);
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-bottom-primary:active {
+      transform: scale(0.98);
+    }
+    .btn-not-know {
+      background: var(--coral-bg);
+      color: var(--coral-text);
+      border-color: var(--coral-border);
+    }
+    .btn-study-again {
+      background: var(--card-bg);
+      color: var(--text-secondary);
+    }
+    .btn-next-word {
+      background: var(--primary);
+      color: var(--primary-text);
+      border: none;
+      box-shadow: var(--shadow-btn);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 设计师控制栏 -->
+  <div class="designer-toolbar">
+    <span>🌿 扇贝单词护眼美学 · 深度优化版</span>
+    <button onclick="toggleTheme()">
+      <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
+    </button>
+  </div>
+
+  <div class="device-mockup">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>2:32</span>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <span>5G</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <!-- 1. 分段批次进度条 -->
+    <div class="batch-progress-bar">
+      <div class="batch-segment filled"></div>
+      <div class="batch-segment active"></div>
+      <div class="batch-segment"></div>
+      <div class="batch-segment"></div>
+    </div>
+
+    <!-- 2. 顶部工具栏 -->
+    <div class="nav-toolbar">
+      <div class="nav-btn-back" onclick="alert('返回上一级')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </div>
+
+      <div class="nav-actions-group">
+        <button class="nav-action-pill" onclick="alert('回看上一个单词')">
+          <span>⏮</span> <span>回看</span>
+        </button>
+        <button class="nav-action-pill" onclick="alert('标记为已掌握')">
+          <span>✓</span> <span>掌握</span>
+        </button>
+        <button class="nav-action-pill" onclick="alert('报错反馈')">
+          <span>⚠</span> <span>报错</span>
+        </button>
+        <button class="nav-action-pill nav-action-icon-only" onclick="alert('查词典')">
+          <span>🔍</span>
+        </button>
+        <button class="nav-action-pill nav-action-icon-only" onclick="alert('学习设置')">
+          <span>⚙️</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="app-body">
+      <div>
+        <!-- 3. 核心单词英雄大卡片 -->
+        <div class="word-main-card">
+          <div class="word-spelling">brief</div>
+          
+          <!-- 发音微胶囊 -->
+          <div class="phonetic-capsule" onclick="playPronunciation()">
+            <span class="phonetic-text">[brif]</span>
+            <span class="speaker-icon-small">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+              </svg>
+            </span>
+          </div>
+
+          <!-- 权威双语例句 -->
+          <div class="sentence-block">
+            <div class="sentence-en-row">
+              <span class="sentence-play-btn" onclick="playPronunciation()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                </svg>
+              </span>
+              <div>
+                The manager gave a <b>brief</b> summary of the project.
+              </div>
+            </div>
+            <div class="sentence-ch-row" id="sentence-trans" style="display: block;">
+              经理对该项目作了简短的总结。
+            </div>
+            <button class="btn-show-trans" id="btn-toggle-trans" onclick="toggleTranslation()">隐藏翻译</button>
+          </div>
+        </div>
+
+        <!-- 4. 做题区 Tab 栏（悬浮分段微胶囊） -->
+        <div class="tabs-pill-wrap">
+          <div class="tab-pill-btn active">
+            <span>🎙</span> <span>说释义</span>
+          </div>
+          <div class="tab-pill-btn" onclick="alert('切换至选释义模式')">
+            <span>👆</span> <span>选</span>
+          </div>
+        </div>
+
+        <!-- 5. 做题卡片主体（收音波形 + 提示/清除 + 下划线释义） -->
+        <div class="exercise-card">
+          <!-- 收音状态与操作按钮行 -->
+          <div class="voice-control-bar">
+            <div class="voice-wave-status">
+              <div class="audio-bars-wave">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+              </div>
+              <div class="listening-txt" id="listening-text">正在倾听...</div>
+            </div>
+
+            <div class="voice-actions">
+              <button class="btn-action-tool" onclick="giveHint()">
+                <span>💡</span> <span>提示 (<span id="hint-num">0</span>)</span>
+              </button>
+              <button class="btn-action-tool" onclick="clearInput()">
+                <span>🔄</span> <span>清除</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 精准下划线字数占位符列表 -->
+          <div class="meaning-items-block">
+            <div class="meaning-prompt-title">
+              <span>👥</span> <span>请说出中文释义：</span>
+            </div>
+
+            <!-- adj. 简短的；短暂的 -->
+            <div class="meaning-line">
+              <span class="cixing-badge">adj.</span>
+              <div class="underline-group" id="meaning-slots-adj">
+                <span class="slot-unit matched">简</span>
+                <span class="slot-unit matched">短</span>
+                <span class="slot-unit matched">的</span>
+                <span class="slot-unit">；</span>
+                <span class="slot-unit hinted">短</span>
+                <span class="slot-unit hinted">暂</span>
+                <span class="slot-unit hinted">的</span>
+              </div>
+            </div>
+
+            <!-- n. 摘要；简报 -->
+            <div class="meaning-line">
+              <span class="cixing-badge">n.</span>
+              <div class="underline-group" id="meaning-slots-n">
+                <span class="slot-unit hinted">摘</span>
+                <span class="slot-unit hinted">要</span>
+                <span class="slot-unit">；</span>
+                <span class="slot-unit hinted">简</span>
+                <span class="slot-unit hinted">报</span>
+              </div>
+            </div>
+
+            <!-- v. 向...介绍情况；作简要汇报 -->
+            <div class="meaning-line">
+              <span class="cixing-badge">v.</span>
+              <div class="underline-group" id="meaning-slots-v">
+                <span class="slot-unit hinted">向</span>
+                <span class="slot-unit hinted">...</span>
+                <span class="slot-unit">；</span>
+                <span class="slot-unit hinted">介</span>
+                <span class="slot-unit hinted">绍</span>
+                <span class="slot-unit hinted">情</span>
+                <span class="slot-unit hinted">况</span>
+                <span class="slot-unit">；</span>
+                <span class="slot-unit hinted">简</span>
+                <span class="slot-unit hinted">报</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 模拟语音快速验证交互 -->
+          <div style="display: flex; justify-content: center; padding-top: 2px;">
+            <button onclick="simulateSayBrief()" style="background: none; border: none; font-size: 11.5px; font-weight: 700; color: var(--primary); cursor: pointer; padding: 4px;">
+              🎙️ 模拟说出“简短的”立即答对
+            </button>
+          </div>
+        </div>
+
+        <!-- 7. FSRS 评测微标信息 -->
+        <div class="fsrs-info-row">
+          [测评] 今日测评: 测评中 ｜ 下次复习: --天后
+        </div>
+      </div>
+
+      <!-- 8. 底部操作按钮组 -->
+      <div class="bottom-buttons-row">
+        <button class="btn-bottom-primary btn-not-know" onclick="handleNotKnow()" style="display: none;">
+          <span>不认识</span>
+        </button>
+        <button class="btn-bottom-primary btn-study-again" onclick="handleStudyAgain()" style="display: none;">
+          <span>再学学</span>
+        </button>
+        <button class="btn-bottom-primary btn-next-word" id="btn-next-step" onclick="nextWord()" style="display: flex;">
+          <span>下一词 ➔</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let hintCount = 0;
+    let isAnswered = false;
+
+    // 真实单词 brief 的字数组
+    const adj_chars = ['简', '短', '的', '；', '短', '暂', '的'];
+    const n_chars = ['摘', '要', '；', '简', '报'];
+    const v_chars = ['向', '...', '；', '介', '绍', '情', '况', '；', '简', '报'];
+
+    function renderSlots() {
+      // adj
+      const wrapAdj = document.getElementById('meaning-slots-adj');
+      wrapAdj.innerHTML = '';
+      adj_chars.forEach((c, idx) => {
+        if (c === '；') {
+          wrapAdj.innerHTML += `<span class="slot-unit">；</span>`;
+        } else {
+          if (idx < hintCount || (idx >= 4 && (idx - 4) < (hintCount - 1))) {
+            wrapAdj.innerHTML += `<span class="slot-unit hinted">${c}</span>`;
+          } else {
+            wrapAdj.innerHTML += `<span class="slot-unit blank"></span>`;
+          }
+        }
+      });
+
+      // n
+      const wrapN = document.getElementById('meaning-slots-n');
+      wrapN.innerHTML = '';
+      n_chars.forEach((c, idx) => {
+        if (c === '；') {
+          wrapN.innerHTML += `<span class="slot-unit">；</span>`;
+        } else {
+          if (idx < (hintCount - 1)) {
+            wrapN.innerHTML += `<span class="slot-unit hinted">${c}</span>`;
+          } else {
+            wrapN.innerHTML += `<span class="slot-unit blank"></span>`;
+          }
+        }
+      });
+
+      // v
+      const wrapV = document.getElementById('meaning-slots-v');
+      wrapV.innerHTML = '';
+      v_chars.forEach((c, idx) => {
+        if (c === '；' || c === '...') {
+          wrapV.innerHTML += `<span class="slot-unit">${c}</span>`;
+        } else {
+          if (idx < (hintCount - 2)) {
+            wrapV.innerHTML += `<span class="slot-unit hinted">${c}</span>`;
+          } else {
+            wrapV.innerHTML += `<span class="slot-unit blank"></span>`;
+          }
+        }
+      });
+
+      document.getElementById('hint-num').textContent = hintCount;
+    }
+
+    function giveHint() {
+      if (isAnswered) return;
+      hintCount++;
+      renderSlots();
+    }
+
+    function clearInput() {
+      hintCount = 0;
+      renderSlots();
+    }
+
+    function simulateSayBrief() {
+      if (isAnswered) return;
+      isAnswered = true;
+
+      // 匹配成功：扇贝绿高亮
+      const wrapAdj = document.getElementById('meaning-slots-adj');
+      wrapAdj.innerHTML = `
+        <span class="slot-unit matched">简</span>
+        <span class="slot-unit matched">短</span>
+        <span class="slot-unit matched">的</span>
+        <span class="slot-unit">；</span>
+        <span class="slot-unit hinted">短</span>
+        <span class="slot-unit hinted">暂</span>
+        <span class="slot-unit hinted">的</span>
+      `;
+
+      const wrapN = document.getElementById('meaning-slots-n');
+      wrapN.innerHTML = `
+        <span class="slot-unit hinted">摘</span>
+        <span class="slot-unit hinted">要</span>
+        <span class="slot-unit">；</span>
+        <span class="slot-unit hinted">简</span>
+        <span class="slot-unit hinted">报</span>
+      `;
+
+      // 展开例句中文
+      document.getElementById('sentence-trans').style.display = 'block';
+      document.getElementById('btn-toggle-trans').textContent = '隐藏翻译';
+      document.getElementById('listening-text').textContent = '🎉 识别匹配成功！';
+
+      // 底部切换为下一词
+      document.querySelector('.btn-not-know').style.display = 'none';
+      document.querySelector('.btn-study-again').style.display = 'none';
+      document.getElementById('btn-next-step').style.display = 'flex';
+    }
+
+    function toggleTranslation() {
+      const transEl = document.getElementById('sentence-trans');
+      const btn = document.getElementById('btn-toggle-trans');
+      if (transEl.style.display === 'block') {
+        transEl.style.display = 'none';
+        btn.textContent = '显示翻译';
+      } else {
+        transEl.style.display = 'block';
+        btn.textContent = '隐藏翻译';
+      }
+    }
+
+    function handleNotKnow() {
+      isAnswered = true;
+      hintCount = 10;
+      renderSlots();
+      document.getElementById('sentence-trans').style.display = 'block';
+      document.getElementById('listening-text').textContent = '已揭晓全释义';
+      document.querySelector('.btn-not-know').style.display = 'none';
+      document.querySelector('.btn-study-again').style.display = 'none';
+      document.getElementById('btn-next-step').style.display = 'flex';
+    }
+
+    function handleStudyAgain() {
+      handleNotKnow();
+    }
+
+    function playPronunciation() {
+      if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance('brief');
+        u.lang = 'en-US';
+        speechSynthesis.speak(u);
+      }
+    }
+
+    function nextWord() {
+      alert('已掌握 brief，进入下一个单词！');
+      location.reload();
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('theme-icon').textContent = '🌙';
+        document.getElementById('theme-text').textContent = '暗黑模式';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-icon').textContent = '☀️';
+        document.getElementById('theme-text').textContent = '明亮模式';
+      }
+    }
+  </script>
+</body>
+</html>
