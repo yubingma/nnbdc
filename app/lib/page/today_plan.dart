@@ -1054,24 +1054,23 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           if (!(user?.todayStudyStarted ?? false)) {
             final shouldStart = await showDialog<bool>(
               context: context,
-              barrierColor: Colors.black.withValues(alpha: 0.55),
+              barrierColor: Colors.black.withValues(alpha: 0.35),
               builder: (ctx) {
                 final dialogThemeStyle = ctx.watch<DarkMode>().themeStyle;
                 final dialogConfig = AppThemeConfig.of(dialogThemeStyle);
                 final isDarkMode = dialogThemeStyle.isDark;
-                final cardBg = isDarkMode
-                    ? const Color(0xF0131822)
-                    : const Color(0xF7FFFFFF);
                 final cardBorder = isDarkMode
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : Colors.white.withValues(alpha: 0.95);
+                    ? Colors.white.withValues(alpha: 0.16)
+                    : Colors.white.withValues(alpha: 0.88);
                 final textMain = dialogConfig.textPrimary;
                 final textSub = dialogConfig.textSecondary;
                 final subtleBg = isDarkMode
-                    ? Colors.white.withValues(alpha: 0.06)
-                    : dialogConfig.subtleBg;
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.45);
                 final accentColor = dialogConfig.primaryColor;
-                final primarySoft = dialogConfig.subtleBg;
+                final primarySoft = isDarkMode
+                    ? accentColor.withValues(alpha: 0.18)
+                    : accentColor.withValues(alpha: 0.12);
                 final amberColor = const Color(0xFFF59E0B);
 
                 return Dialog(
@@ -1080,18 +1079,30 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                      filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
                         padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
                         decoration: BoxDecoration(
-                          color: cardBg,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: isDarkMode
+                                ? [
+                                    const Color(0xFF1C2230).withValues(alpha: 0.84),
+                                    const Color(0xFF121722).withValues(alpha: 0.78),
+                                  ]
+                                : [
+                                    Colors.white.withValues(alpha: 0.82),
+                                    Colors.white.withValues(alpha: 0.70),
+                                  ],
+                          ),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: cardBorder, width: 1),
+                          border: Border.all(color: cardBorder, width: 1.2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.12),
-                              blurRadius: 36,
-                              offset: const Offset(0, 12),
+                              color: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.08),
+                              blurRadius: 30,
+                              offset: const Offset(0, 14),
                             ),
                           ],
                         ),
