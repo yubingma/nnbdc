@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -1058,11 +1059,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 final dialogThemeStyle = ctx.watch<DarkMode>().themeStyle;
                 final dialogConfig = AppThemeConfig.of(dialogThemeStyle);
                 final isDarkMode = dialogThemeStyle.isDark;
-                final cardBg = dialogConfig.cardBg;
-                final cardBorder = dialogConfig.cardBorder;
+                final cardBg = isDarkMode
+                    ? const Color(0xF0131822)
+                    : const Color(0xF7FFFFFF);
+                final cardBorder = isDarkMode
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.95);
                 final textMain = dialogConfig.textPrimary;
                 final textSub = dialogConfig.textSecondary;
-                final subtleBg = dialogConfig.subtleBg;
+                final subtleBg = isDarkMode
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : dialogConfig.subtleBg;
                 final accentColor = dialogConfig.primaryColor;
                 final primarySoft = dialogConfig.subtleBg;
                 final amberColor = const Color(0xFFF59E0B);
@@ -1070,20 +1077,24 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 return Dialog(
                   backgroundColor: Colors.transparent,
                   insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: cardBorder, width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.12),
-                          blurRadius: 36,
-                          offset: const Offset(0, 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: cardBorder, width: 1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.12),
+                              blurRadius: 36,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1239,9 +1250,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ],
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             );
+          },
+        );
 
             if (shouldStart != true) {
               return;
