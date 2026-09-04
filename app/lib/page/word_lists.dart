@@ -105,11 +105,16 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             loadedDeskDicts.add(d);
             try {
               final mCount = await db.masteredWordsDao.getMasteredWordsCountInDicts(user.id, [d.id]);
-              final lCount = await db.learningWordsDao.getLearningWordsCountInDicts(user.id, [d.id]);
               loadedMasteredCounts[d.id] = mCount;
-              loadedLearningCounts[d.id] = lCount;
-            } catch (_) {
+            } catch (e, st) {
+              Global.logger.w('获取词书 ${d.id} 已掌握词数失败: $e', stackTrace: st);
               loadedMasteredCounts[d.id] = 0;
+            }
+            try {
+              final lCount = await db.learningWordsDao.getLearningWordsCountInDicts(user.id, [d.id]);
+              loadedLearningCounts[d.id] = lCount;
+            } catch (e, st) {
+              Global.logger.w('获取词书 ${d.id} 学习中词数失败: $e', stackTrace: st);
               loadedLearningCounts[d.id] = 0;
             }
           }
@@ -367,7 +372,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       icon: Icons.auto_stories_rounded,
                       iconColor: accentColor,
                       title: _cleanDictName(dict.name),
-                      subtitle: '已掌握 $mastered · 已取 $fetched / $total 词 · $percent%',
+                      subtitle: '已掌握 $mastered · 已取 $fetched · $percent%',
                       countText: '$total 词',
                       progress: masteryProgress,
                       fetchProgress: fetchProgress,
@@ -725,15 +730,15 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                         ClipRRect(
                           borderRadius: BorderRadius.circular(2),
                           child: SizedBox(
-                            height: 3,
+                            height: 3.5,
                             child: Stack(
                               children: [
                                 Container(
                                   color: isDarkMode
                                       ? Colors.white.withValues(alpha: 0.08)
-                                      : accentColor.withValues(alpha: 0.12),
+                                      : Colors.black.withValues(alpha: 0.055),
                                 ),
-                                if (fetchProgress != null)
+                                if (fetchProgress != null && fetchProgress > 0)
                                   FractionallySizedBox(
                                     widthFactor: fetchProgress.clamp(0.0, 1.0),
                                     alignment: Alignment.centerLeft,
@@ -741,7 +746,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                                       color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.35),
                                     ),
                                   ),
-                                if (progress != null)
+                                if (progress != null && progress > 0)
                                   FractionallySizedBox(
                                     widthFactor: progress.clamp(0.0, 1.0),
                                     alignment: Alignment.centerLeft,
@@ -854,15 +859,15 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       ClipRRect(
                         borderRadius: BorderRadius.circular(2),
                         child: SizedBox(
-                          height: 3,
+                          height: 3.5,
                           child: Stack(
                             children: [
                               Container(
                                 color: isDarkMode
                                     ? Colors.white.withValues(alpha: 0.08)
-                                    : accentColor.withValues(alpha: 0.12),
+                                    : Colors.black.withValues(alpha: 0.055),
                               ),
-                              if (fetchProgress != null)
+                              if (fetchProgress != null && fetchProgress > 0)
                                 FractionallySizedBox(
                                   widthFactor: fetchProgress.clamp(0.0, 1.0),
                                   alignment: Alignment.centerLeft,
@@ -870,7 +875,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                                     color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.35),
                                   ),
                                 ),
-                              if (progress != null)
+                              if (progress != null && progress > 0)
                                 FractionallySizedBox(
                                   widthFactor: progress.clamp(0.0, 1.0),
                                   alignment: Alignment.centerLeft,
