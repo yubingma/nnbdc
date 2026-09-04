@@ -35,6 +35,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   bool _isDirty = false;
   StreamSubscription? _subscription;
   StreamSubscription? _dictDownloadSub;
+  StreamSubscription? _learningDictChangedSub;
 
   @override
   bool get isDirty => _isDirty;
@@ -64,6 +65,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
       Global.logger.d('[WordLists] 词书下载完成，刷新书桌');
       loadData();
     });
+
+    // 监听书桌词书变化事件（停学/选书），自动刷新书桌
+    _learningDictChangedSub = EventBus.onLearningDictChanged().listen((_) {
+      Global.logger.d('[WordLists] 书桌词书发生变化，刷新书桌');
+      loadData();
+    });
   }
 
   @override
@@ -73,6 +80,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     }
     _subscription?.cancel();
     _dictDownloadSub?.cancel();
+    _learningDictChangedSub?.cancel();
     super.dispose();
   }
 

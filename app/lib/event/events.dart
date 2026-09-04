@@ -64,6 +64,17 @@ class EventBus {
   static Stream<DictDownloadCompletedEvent> onDictDownloadCompleted() {
     return _dictDownloadCompletedController.stream;
   }
+
+  /// 书桌词书发生变化事件：发射与监听（停学/选书后通知其他页面刷新书桌）
+  static final _learningDictChangedController = StreamController<LearningDictChangedEvent>.broadcast();
+
+  static void publishLearningDictChanged(LearningDictChangedEvent event) {
+    _learningDictChangedController.add(event);
+  }
+
+  static Stream<LearningDictChangedEvent> onLearningDictChanged() {
+    return _learningDictChangedController.stream;
+  }
 }
 
 /// 产生了新错词的具体业务事件
@@ -109,4 +120,9 @@ abstract class RefreshableTab {
 class DictDownloadCompletedEvent {
   final List<String> dictIds;
   DictDownloadCompletedEvent({required this.dictIds});
+}
+
+/// 书桌词书发生变化事件（停学/选书保存后发射，通知所有页面刷新书桌）
+class LearningDictChangedEvent {
+  const LearningDictChangedEvent();
 }

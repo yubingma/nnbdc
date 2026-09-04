@@ -3543,6 +3543,9 @@ class _DictCardState extends State<DictCard> {
       await db.learningDictsDao.deleteEntity(currentLearningDict, true);
       widget.onDictChanged();
 
+      // 通知书桌词书发生变化，其他页面（如词表页）刷新
+      EventBus.publishLearningDictChanged(const LearningDictChangedEvent());
+
       // 处理相关学习记录
       if (deleteLearningWords) {
         for (final lw in learningWordsOnlyInThisDict) {
