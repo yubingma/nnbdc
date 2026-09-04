@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 
-/// 全局自适应主题背景层组件 (5 款极具鲜明辨识度的主题专属背景)
+/// 全局自适应主题背景层组件 (对标不背单词原版：非对称自然双光源漫反射流光系统)
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
   final bool? isDarkMode;
@@ -13,524 +13,383 @@ class AppThemeBackground extends StatelessWidget {
     this.isDarkMode,
   });
 
+  bool _resolveIsDark(BuildContext context) {
+    if (isDarkMode != null) return isDarkMode!;
+    return themeStyle.isDark;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final dark = _resolveIsDark(context);
+
     switch (themeStyle) {
       case AppThemeStyle.aurora:
-        return _buildAuroraBackground();
+        return _buildAuroraBackground(dark);
       case AppThemeStyle.emerald:
-        return _buildEmeraldBackground();
+        return _buildEmeraldBackground(dark);
       case AppThemeStyle.sunset:
-        return _buildSunsetBackground();
+        return _buildSunsetBackground(dark);
       case AppThemeStyle.minimal:
-        return _buildMinimalBackground();
+        return _buildMinimalBackground(dark);
       case AppThemeStyle.midnight:
-        return _buildMidnightBackground();
+        return _buildMidnightBackground(dark);
       case AppThemeStyle.crimson:
-        return _buildCrimsonBackground();
+        return _buildCrimsonBackground(dark);
       case AppThemeStyle.indigo:
-        return _buildIndigoBackground();
+        return _buildIndigoBackground(dark);
       case AppThemeStyle.sage:
-        return _buildSageBackground();
+        return _buildSageBackground(dark);
       case AppThemeStyle.twilight:
-        return _buildTwilightBackground();
+        return _buildTwilightBackground(dark);
     }
   }
 
-  /// 1. 晨曦流光背景 (冰川冷蓝极光风 - 极轻透通透漫反射)
-  Widget _buildAuroraBackground() {
-    const baseBg = Color(0xFFF8FAFC);
-    const glowBlue = Color(0x1A38BDF8); // 约 10% 轻柔冷蓝
-    const glowCyan = Color(0x1406B6D4); // 约 8% 纯净青蓝
-    const glowIndigo = Color(0x10818CF8); // 约 6% 空灵靛青
-    const glowWhite = Color(0x80FFFFFF);
-
+  /// 统一的高阶非对称自然双光源漫反射构建器 (奥卡姆剃刀：消除重复样板代码)
+  Widget _buildAsymmetricGlow({
+    required Color baseColor,
+    required Color primaryGlowColor,
+    required Alignment primaryAlign,
+    required double primarySize,
+    required double primaryBlur,
+    required Color secondaryGlowColor,
+    required Alignment secondaryAlign,
+    required double secondarySize,
+    required double secondaryBlur,
+    Color? tertiaryGlowColor,
+    Alignment? tertiaryAlign,
+    double? tertiarySize,
+    double? tertiaryBlur,
+  }) {
     return Container(
-      color: baseBg,
+      color: baseColor,
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned(
-            top: 20,
-            left: -40,
-            width: 320,
-            height: 320,
+          // 主光源漫反射 (如晨曦白光或深邃极光)
+          Align(
+            alignment: primaryAlign,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
+              imageFilter: ui.ImageFilter.blur(
+                sigmaX: primaryBlur,
+                sigmaY: primaryBlur,
+              ),
               child: Container(
-                decoration: const BoxDecoration(
+                width: primarySize,
+                height: primarySize,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: glowBlue,
+                  color: primaryGlowColor,
                 ),
               ),
             ),
           ),
-          // 右上方：晨曦初照极光暖金微光
-          Positioned(
-            top: 10,
-            right: -30,
-            width: 300,
-            height: 300,
+          // 辅光源漫反射 (如青绿薄雾或深邃暗潮)
+          Align(
+            alignment: secondaryAlign,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+              imageFilter: ui.ImageFilter.blur(
+                sigmaX: secondaryBlur,
+                sigmaY: secondaryBlur,
+              ),
               child: Container(
-                decoration: const BoxDecoration(
+                width: secondarySize,
+                height: secondarySize,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x12FEF08A), // 约 7% 晨曦暖金光
+                  color: secondaryGlowColor,
                 ),
               ),
             ),
           ),
-          Positioned(
-            top: 130,
-            right: -50,
-            width: 340,
-            height: 360,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 100, sigmaY: 100),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowCyan,
+          // 可选第三环境微光
+          if (tertiaryGlowColor != null && tertiaryAlign != null)
+            Align(
+              alignment: tertiaryAlign,
+              child: ImageFiltered(
+                imageFilter: ui.ImageFilter.blur(
+                  sigmaX: tertiaryBlur ?? 90,
+                  sigmaY: tertiaryBlur ?? 90,
+                ),
+                child: Container(
+                  width: tertiarySize ?? 280,
+                  height: tertiarySize ?? 280,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: tertiaryGlowColor,
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 60,
-            left: 0,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowIndigo,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 230,
-            left: 50,
-            width: 280,
-            height: 280,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 75, sigmaY: 75),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowWhite,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  /// 2. 经典翡翠背景 (扇贝标志性极淡透光 - 98% 纯白基底，边角若有若无空气感微光)
-  Widget _buildEmeraldBackground() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFCFDFD), Color(0xFFF9FAF9)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // 左上方：极淡生机薄荷微光（约 3%~4% 透明度，仅作天光漫透，绝不泛绿）
-          Positioned(
-            top: -40,
-            left: -60,
-            width: 380,
-            height: 380,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 110, sigmaY: 110),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x0910B981), // 约 3.5% 生机微光
-                ),
-              ),
-            ),
-          ),
-          // 右上方：晨曦微光淡暖阳（约 2.5% 透明度，若有若无的舒适暖意）
-          Positioned(
-            top: -20,
-            right: -60,
-            width: 360,
-            height: 360,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 110, sigmaY: 110),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x07FDE047), // 约 2.7% 极淡晨曦金光
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+  /// 1. 晨曦流光背景 (冰川冷蓝)
+  Widget _buildAuroraBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF040D17),
+        primaryGlowColor: const Color(0x660E4466),
+        primaryAlign: const Alignment(0.8, -0.7),
+        primarySize: 380,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x40061C2E),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 320,
+        secondaryBlur: 95,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFD6E8F5),
+      primaryGlowColor: const Color(0xCCFFFFFF),
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 110,
+      secondaryGlowColor: const Color(0x400284C7),
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
     );
   }
 
-  /// 3. 暮色落日背景 (温暖轻柔晚霞光晕 + 晨曦粉金 - 清爽微润，通透无浑浊)
-  Widget _buildSunsetBackground() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFCFBF9), Color(0xFFF8F5F0)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // 左上方：柔和落日暖橘（极淡空气感，约 4%）
-          Positioned(
-            top: -20,
-            left: -30,
-            width: 350,
-            height: 350,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 110, sigmaY: 110),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x0AFB923C), // 约 3.9% 晚霞橘
-                ),
-              ),
-            ),
-          ),
-          // 右上方：蜜桃粉金暖光（约 3%）
-          Positioned(
-            top: 20,
-            right: -40,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 105, sigmaY: 105),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x08FDE047), // 约 3.1% 温暖淡金
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+  /// 2. 经典翡翠背景 (不背单词原版截图同款：浅色高岭土珍珠晨雾 / 深色黑曜石幽微极光)
+  Widget _buildEmeraldBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF0A1411),
+        primaryGlowColor: const Color(0x66183C30),
+        primaryAlign: const Alignment(0.85, -0.75),
+        primarySize: 400,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x380E221B),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 340,
+        secondaryBlur: 100,
+        tertiaryGlowColor: const Color(0x2810B981),
+        tertiaryAlign: const Alignment(0.6, -0.4),
+        tertiarySize: 260,
+        tertiaryBlur: 80,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFDCE7E1),
+      primaryGlowColor: const Color(0xD9FFFFFF), // 晨曦纯净透白高光
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 105,
+      secondaryGlowColor: const Color(0x4D10B981), // 生机翡翠晨雾青绿
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
+      tertiaryGlowColor: const Color(0x33BCE2CE),
+      tertiaryAlign: const Alignment(0.2, 0.4),
+      tertiarySize: 300,
+      tertiaryBlur: 90,
     );
   }
 
-  /// 4. 极简白墨背景 (极客纯白高对比)
-  Widget _buildMinimalBackground() {
-    return Container(color: const Color(0xFFFFFFFF));
-  }
-
-  /// 5. 深邃曜黑背景 (赛博暗黑极光荧光翡翠)
-  Widget _buildMidnightBackground() {
-    const baseBg = Color(0xFF060B09);
-    const glowBlue = Color(0x383B82F6);
-    const glowCyan = Color(0x402CD88F);
-    const glowIndigo = Color(0x26818CF8);
-    const glowCenter = Color(0x3810B981);
-
-    return Container(
-      color: baseBg,
-      child: Stack(
-        children: [
-          Positioned(
-            top: 20,
-            left: -40,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowBlue,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 130,
-            right: -50,
-            width: 340,
-            height: 360,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowCyan,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 60,
-            left: 0,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowIndigo,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 230,
-            left: 50,
-            width: 280,
-            height: 280,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 70, sigmaY: 70),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowCenter,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+  /// 3. 暮色落日背景 (温暖晚霞杏橙)
+  Widget _buildSunsetBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF140703),
+        primaryGlowColor: const Color(0x664E1C0C),
+        primaryAlign: const Alignment(0.8, -0.7),
+        primarySize: 380,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x38200C05),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 320,
+        secondaryBlur: 95,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFF5EAE4),
+      primaryGlowColor: const Color(0xCCFFFFFF),
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 110,
+      secondaryGlowColor: const Color(0x40F97316),
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
     );
   }
 
-  /// 6. 京都朱砂背景 (和纸质感与朱砂微光 + 晨曦暖杏 - 纯净雅致)
-  Widget _buildCrimsonBackground() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFCFBF9), Color(0xFFF9F7F5)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // 左上方：典雅朱砂柔光（约 3.5%）
-          Positioned(
-            top: -20,
-            left: -40,
-            width: 350,
-            height: 350,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 110, sigmaY: 110),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x09E11D48), // 约 3.5% 朱砂微光
-                ),
-              ),
-            ),
-          ),
-          // 右上方：和纸暖杏晨曦金光（约 3%）
-          Positioned(
-            top: 20,
-            right: -40,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 105, sigmaY: 105),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x08FDE047), // 约 3.1% 和纸暖金光
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+  /// 4. 极简白墨背景 (纯粹黑白珍珠灰)
+  Widget _buildMinimalBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF0C0D10),
+        primaryGlowColor: const Color(0x4D2D2D34),
+        primaryAlign: const Alignment(0.8, -0.7),
+        primarySize: 380,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x28141418),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 320,
+        secondaryBlur: 95,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFE5E7EB),
+      primaryGlowColor: const Color(0xF2FFFFFF),
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 105,
+      secondaryGlowColor: const Color(0x2B71717A),
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
     );
   }
 
-  /// 7. 星云深靛背景 (Linear 风格极客冷灰与深靛光晕 + 星云暖光)
-  Widget _buildIndigoBackground() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // 左上方：工艺深靛蓝冷光（约 4%）
-          Positioned(
-            top: -20,
-            left: -40,
-            width: 350,
-            height: 350,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 110, sigmaY: 110),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x0B6366F1), // 约 4.3% 深靛冷光
-                ),
-              ),
-            ),
-          ),
-          // 右上方：星云暖杏微光（约 3%）
-          Positioned(
-            top: 20,
-            right: -40,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 105, sigmaY: 105),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x08FED7AA), // 约 3.1% 暖杏微光
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+  /// 5. 深邃曜黑背景 (极光墨玉)
+  Widget _buildMidnightBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF060E0B),
+        primaryGlowColor: const Color(0x66163A30),
+        primaryAlign: const Alignment(0.8, -0.7),
+        primarySize: 380,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x380A1814),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 320,
+        secondaryBlur: 95,
+        tertiaryGlowColor: const Color(0x332CD88F),
+        tertiaryAlign: const Alignment(0.4, -0.3),
+        tertiarySize: 260,
+        tertiaryBlur: 85,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFD6EAE3),
+      primaryGlowColor: const Color(0xCCFFFFFF),
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 110,
+      secondaryGlowColor: const Color(0x402CD88F),
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
     );
   }
 
-  /// 8. 鼠尾草森背景 (Gentler Streak 风格治愈海盐青木 + 浅草暖阳)
-  Widget _buildSageBackground() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFAFBFB), Color(0xFFF0FDF4)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // 左上方：舒缓海盐青木光（约 4%）
-          Positioned(
-            top: -20,
-            left: -40,
-            width: 350,
-            height: 350,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 110, sigmaY: 110),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x0A0D9488), // 约 3.9% 海盐青木光
-                ),
-              ),
-            ),
-          ),
-          // 右上方：浅草柠檬金阳微光（约 3%）
-          Positioned(
-            top: 20,
-            right: -40,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 105, sigmaY: 105),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x08D9F99D), // 约 3.1% 浅草柠檬金
-                ),
-              ),
-            ),
-          ),
-          // 底部居中：薄荷微光
-          Positioned(
-            bottom: 60,
-            left: 20,
-            width: 280,
-            height: 280,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x0E2DD4BF), // 约 5% 薄荷微光
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+  /// 6. 京都朱砂背景 (山茶绯红)
+  Widget _buildCrimsonBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF140408),
+        primaryGlowColor: const Color(0x664C1020),
+        primaryAlign: const Alignment(0.8, -0.7),
+        primarySize: 380,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x3820080E),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 320,
+        secondaryBlur: 95,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFF5E5E8),
+      primaryGlowColor: const Color(0xCCFFFFFF),
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 110,
+      secondaryGlowColor: const Color(0x40E11D48),
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
     );
   }
 
-  /// 9. 暮光深空背景 (Arc & Linear 曜石深空星云霓虹紫)
-  Widget _buildTwilightBackground() {
-    const baseBg = Color(0xFF07090E);
-    const glowIndigo = Color(0x38818CF8); // 星云紫蓝
-    const glowDeep = Color(0x284F46E5); // 深邃靛青
-    const glowPurple = Color(0x20A855F7); // 暮光紫罗兰
+  /// 7. 星云深靛背景 (梦幻夜空紫)
+  Widget _buildIndigoBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF080917),
+        primaryGlowColor: const Color(0x6626285C),
+        primaryAlign: const Alignment(0.8, -0.7),
+        primarySize: 380,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x3810112A),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 320,
+        secondaryBlur: 95,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFE3E6F8),
+      primaryGlowColor: const Color(0xCCFFFFFF),
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 110,
+      secondaryGlowColor: const Color(0x406366F1),
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
+    );
+  }
 
-    return Container(
-      color: baseBg,
-      child: Stack(
-        children: [
-          Positioned(
-            top: 20,
-            right: -40,
-            width: 340,
-            height: 340,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowIndigo,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 180,
-            left: -50,
-            width: 320,
-            height: 340,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowDeep,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 60,
-            right: 20,
-            width: 280,
-            height: 280,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowPurple,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+  /// 8. 鼠尾草森背景 (静谧苔原青)
+  Widget _buildSageBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF05100F),
+        primaryGlowColor: const Color(0x66123E3A),
+        primaryAlign: const Alignment(0.8, -0.7),
+        primarySize: 380,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x38081A18),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 320,
+        secondaryBlur: 95,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFD7E7E5),
+      primaryGlowColor: const Color(0xCCFFFFFF),
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 110,
+      secondaryGlowColor: const Color(0x400D9488),
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
+    );
+  }
+
+  /// 9. 暮光深空背景 (曜石深空星云霓虹紫)
+  Widget _buildTwilightBackground(bool dark) {
+    if (dark) {
+      return _buildAsymmetricGlow(
+        baseColor: const Color(0xFF0E0516),
+        primaryGlowColor: const Color(0x66381858),
+        primaryAlign: const Alignment(0.8, -0.7),
+        primarySize: 380,
+        primaryBlur: 110,
+        secondaryGlowColor: const Color(0x38180A26),
+        secondaryAlign: const Alignment(-0.8, 0.8),
+        secondarySize: 320,
+        secondaryBlur: 95,
+        tertiaryGlowColor: const Color(0x33A855F7),
+        tertiaryAlign: const Alignment(0.5, -0.4),
+        tertiarySize: 260,
+        tertiaryBlur: 85,
+      );
+    }
+    return _buildAsymmetricGlow(
+      baseColor: const Color(0xFFECE4F6),
+      primaryGlowColor: const Color(0xCCFFFFFF),
+      primaryAlign: const Alignment(-0.7, -0.85),
+      primarySize: 380,
+      primaryBlur: 110,
+      secondaryGlowColor: const Color(0x40A855F7),
+      secondaryAlign: const Alignment(0.9, -0.3),
+      secondarySize: 360,
+      secondaryBlur: 120,
     );
   }
 }

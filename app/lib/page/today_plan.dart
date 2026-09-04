@@ -651,7 +651,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: cardBorder, width: 1),
+        border: cardBorder == Colors.transparent ? null : Border.all(color: cardBorder, width: 1),
         boxShadow: cardShadows,
       ),
       child: Column(
@@ -1024,15 +1024,24 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
-    return SizedBox(
+    return Container(
       width: double.infinity,
       height: 52,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: themeConfig.primaryColor.withValues(alpha: 0.38),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: themeConfig.primaryColor,
           foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-          elevation: 2,
-          shadowColor: themeConfig.primaryColor.withValues(alpha: 0.35),
+          elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         ),
         onPressed: () async {
@@ -1436,7 +1445,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       decoration: BoxDecoration(
         color: themeConfig.cardBg,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: themeConfig.cardBorder, width: 1),
+        border: themeConfig.cardBorder == Colors.transparent ? null : Border.all(color: themeConfig.cardBorder, width: 1),
         boxShadow: themeConfig.cardShadows,
       ),
       child: Column(
@@ -1724,7 +1733,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       decoration: BoxDecoration(
         color: themeConfig.cardBg,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: themeConfig.cardBorder, width: 1),
+        border: themeConfig.cardBorder == Colors.transparent ? null : Border.all(color: themeConfig.cardBorder, width: 1),
         boxShadow: themeConfig.cardShadows,
       ),
       child: Column(

@@ -17,9 +17,9 @@ void main() {
         expect(config.warmAccentColor, isNotNull, reason: '${style.name} 必须配置温和次态色彩');
         expect(config.cardShadows, isNotNull);
 
-        // 2. 亮色主题必须采用纯白卡片底与大圆角轻悬浮阴影
+        // 2. 亮色主题必须采用温润通透磨砂底与大圆角轻悬浮阴影
         if (!config.isDark && style != AppThemeStyle.minimal) {
-          expect(config.cardBg, Colors.white, reason: '${style.name} 亮色卡片底应为纯白以保持通透质感');
+          expect(config.cardBg, const Color(0xB8FFFFFF), reason: '${style.name} 亮色卡片底应为透光磨砂白以保持通透呼吸感');
           expect(config.cardShadows.isNotEmpty, isTrue, reason: '${style.name} 必须具备微悬浮投影');
           expect(config.cardShadows.first.blurRadius >= 16, isTrue, reason: '阴影模糊半径需足够扩散以产生漫反射感');
         }

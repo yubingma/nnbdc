@@ -1267,39 +1267,70 @@ extension BdcPageStateUIComponents on BdcPageState {
                 borderColor = context.cardBorder;
               }
 
+              List<BoxShadow> choiceShadows;
+              if (state.selectedAnswerIndex != null && (index + 1) == state.correctAnswerIndex) {
+                choiceShadows = [
+                  BoxShadow(
+                    color: context.primaryColor.withValues(alpha: isDarkMode ? 0.28 : 0.2),
+                    blurRadius: 18,
+                    offset: const Offset(0, 4),
+                  ),
+                ];
+              } else if (state.selectedAnswerIndex != null && (index + 1) == state.selectedAnswerIndex) {
+                choiceShadows = [
+                  BoxShadow(
+                    color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.28 : 0.2),
+                    blurRadius: 18,
+                    offset: const Offset(0, 4),
+                  ),
+                ];
+              } else {
+                choiceShadows = isDarkMode
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.22),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ];
+              }
+
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3.5),
+                padding: const EdgeInsets.symmetric(vertical: 4.5),
                 child: SizedBox(
                   width: double.infinity,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     decoration: BoxDecoration(
                       color: bgColor,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: borderColor,
-                        width: borderWidth,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(18),
+                      border: borderColor == Colors.transparent
+                          ? null
+                          : Border.all(
+                              color: borderColor,
+                              width: borderWidth,
+                            ),
+                      boxShadow: choiceShadows,
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(18),
                         onTap: () => notifier.onAnswerClicked(index + 1, context),
                         child: Stack(
                           children: [
                             Container(
                               width: double.infinity,
                               padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: isAnswered && !isNoneOfAbove ? 10 : 13.5,
+                                horizontal: 18,
+                                vertical: isAnswered && !isNoneOfAbove ? 11 : 15,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
