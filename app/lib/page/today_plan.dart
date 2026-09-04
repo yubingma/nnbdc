@@ -1615,7 +1615,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                       if (correctSteps.isEmpty)
                         Text(
-                          '直接完成',
+                          '直接结束',
                           style: TextStyle(fontSize: 12, color: subColor, fontWeight: FontWeight.w500),
                         )
                       else
@@ -1681,7 +1681,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                       if (wrongSteps.isEmpty)
                         Text(
-                          '明日重现',
+                          '直接结束',
                           style: TextStyle(fontSize: 12, color: subColor, fontWeight: FontWeight.w500),
                         )
                       else
@@ -1883,7 +1883,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         _buildReviewBranch(
           title: '答对后环节',
           titleColor: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
-          emptyHint: isNew ? '空：测评答对即完成' : '空：答对即完成',
+          emptyHint: '直接结束',
           steps: correctSteps(),
           allStepNames: allStepNames,
           isDarkMode: isDarkMode,
@@ -1907,7 +1907,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         _buildReviewBranch(
           title: '答错后环节',
           titleColor: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
-          emptyHint: isNew ? '空：测评答错即结束，明日重现' : '空：答错即结束，明日重现',
+          emptyHint: '直接结束',
           steps: wrongSteps(),
           allStepNames: allStepNames,
           isDarkMode: isDarkMode,
