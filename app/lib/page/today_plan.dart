@@ -1842,7 +1842,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       decoration: BoxDecoration(
         color: themeConfig.cardBg,
         borderRadius: BorderRadius.circular(24),
@@ -1852,36 +1852,52 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Tab 切换（新词配置 / 旧词配置）
+          // 紧凑分段标签（新词轨道 / 复习轨道）
           Container(
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               color: badgeBg,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildSubtleTabBtn('新词轨道配置', 0, isDarkMode),
-                _buildSubtleTabBtn('旧词轨道配置', 1, isDarkMode),
+                _buildSubtleTabBtn('新词轨道', 0, isDarkMode),
+                _buildSubtleTabBtn('复习轨道', 1, isDarkMode),
               ],
             ),
           ),
           const SizedBox(height: 14),
           _buildReviewStepsInfoCard(scope: _studyStepsTab == 0 ? 'new' : 'review', isDarkMode: isDarkMode),
           const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            height: 42,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: themeConfig.primaryColor,
-                foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+
+          // 次级收起按钮（轻量居中微胶囊，不与页面主按钮抢焦）
+          Center(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _isEditingTracks = false),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.keyboard_arrow_up_rounded, size: 16, color: themeConfig.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      '收起配置',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: themeConfig.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              onPressed: () => setState(() => _isEditingTracks = false),
-              child: const Text('完成配置', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
             ),
           ),
         ],
@@ -1922,6 +1938,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 规则编辑配置内容（测评下拉 + 答对/答错环节列表与拖拽）
   Widget _buildReviewStepsInfoCard({required String scope, required bool isDarkMode}) {
     final textColor = isDarkMode ? Colors.white : const Color(0xFF111827);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
     const allStepNames = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
     String desc(String s) => StudyStepExt.fromString(s).description;
     final isNew = scope == 'new';
@@ -1947,32 +1965,52 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 测评环节下拉
+        // 测评环节下拉条
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF9FAFB),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+              width: 1,
             ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '测评环节',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
-                ),
+              Row(
+                children: [
+                  Icon(
+                    Icons.play_circle_outline_rounded,
+                    size: 16,
+                    color: themeConfig.primaryColor,
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    '测评环节',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                ],
               ),
               DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: checkStep() ?? allStepNames.first,
                   isDense: true,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor),
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                  ),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                  ),
                   dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   items: [
@@ -1995,6 +2033,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         // 答对分支
         _buildReviewBranch(
           title: '答对后环节',
+          icon: Icons.check_circle_rounded,
           titleColor: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
           emptyHint: '直接结束',
           steps: correctSteps(),
@@ -2014,11 +2053,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             unawaited(saveReviewConfig(scope));
           },
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
         // 答错分支
         _buildReviewBranch(
           title: '答错后环节',
+          icon: Icons.cancel_rounded,
           titleColor: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
           emptyHint: '直接结束',
           steps: wrongSteps(),
@@ -2044,6 +2084,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   Widget _buildReviewBranch({
     required String title,
+    required IconData icon,
     required Color titleColor,
     required String emptyHint,
     required List<String> steps,
@@ -2065,12 +2106,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           children: [
             Row(
               children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(color: titleColor, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 6),
+                Icon(icon, size: 14, color: titleColor),
+                const SizedBox(width: 5),
                 Text(
                   title,
                   style: TextStyle(
@@ -2083,23 +2120,64 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             ),
             if (canAdd)
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: onAdd,
-                child: Text(
-                  '+ 添加',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: titleColor.withValues(alpha: isDarkMode ? 0.16 : 0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add_rounded, size: 12, color: titleColor),
+                      const SizedBox(width: 2),
+                      Text(
+                        '添加环节',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: titleColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 7),
         if (steps.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Text(emptyHint, style: TextStyle(fontSize: 11, color: subColor)),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF1F5F9),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.done_all_rounded,
+                  size: 14,
+                  color: isDarkMode ? Colors.white30 : const Color(0xFF94A3B8),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  emptyHint,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                  ),
+                ),
+              ],
+            ),
           )
         else
           ReorderableListView(
@@ -2112,31 +2190,52 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               for (int i = 0; i < steps.length; i++)
                 Container(
                   key: ValueKey('review_${title}_$i'),
-                  margin: const EdgeInsets.symmetric(vertical: 3),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  margin: const EdgeInsets.symmetric(vertical: 2.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF9FAFB),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                      color: isDarkMode ? Colors.white.withValues(alpha: 0.07) : const Color(0xFFE2E8F0),
+                      width: 1,
                     ),
+                    boxShadow: isDarkMode
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                   ),
                   child: Row(
                     children: [
                       ReorderableDragStartListener(
                         index: i,
-                        child: Icon(Icons.drag_indicator_rounded, size: 16, color: subColor),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: Icon(Icons.drag_indicator_rounded, size: 16, color: subColor),
+                        ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           StudyStepExt.fromString(steps[i]).description,
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
                         ),
                       ),
                       GestureDetector(
+                        behavior: HitTestBehavior.opaque,
                         onTap: () => onRemove(steps[i]),
-                        child: Icon(Icons.close_rounded, size: 16, color: subColor),
+                        child: Padding(
+                          padding: const EdgeInsets.all(3),
+                          child: Icon(Icons.close_rounded, size: 15, color: subColor),
+                        ),
                       ),
                     ],
                   ),
