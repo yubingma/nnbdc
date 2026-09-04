@@ -2770,12 +2770,13 @@ class WordListPageState extends State<WordListPage>
         ],
       ),
       child: CupertinoPopupSurface(
+        blurSigma: 14.0,
         isSurfacePainted: false,
         child: Container(
           decoration: BoxDecoration(
             color: isDarkMode
                 ? const Color(0xB81C2127)
-                : const Color(0x40FFFFFF),
+                : const Color(0x66FFFFFF),
             border: Border.all(
               color: isDarkMode
                   ? const Color(0x26FFFFFF)
