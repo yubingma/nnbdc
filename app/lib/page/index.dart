@@ -128,7 +128,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                 style: TextStyle(
                   color: isSelected ? selectedColor : unselectedColor,
                   fontSize: 11,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   fontFamily: 'NotoSansSC',
                   height: 1.2,
                   letterSpacing: 0.4,
