@@ -117,15 +117,12 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center, 
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 12), 
-                decoration: BoxDecoration(
-                  color: isSelected ? selectedColor.withValues(alpha: 0.1) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: isSelected ? selectedColor : unselectedColor, size: isSelected ? 24 : 22),
+              Icon(
+                icon,
+                color: isSelected ? selectedColor : unselectedColor,
+                size: isSelected ? 24 : 22,
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
                 label,
                 style: TextStyle(

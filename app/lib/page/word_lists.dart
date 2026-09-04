@@ -257,7 +257,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
     final textColor = themeConfig.textPrimary;
     final accentColor = themeConfig.primaryColor;
-    final primarySoft = themeConfig.subtleBg;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,28 +266,28 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           '我的书桌',
           textColor,
           trailing: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
             onTap: () {
               context.push('/select_book').then((_) => loadData());
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: primarySoft,
-                borderRadius: BorderRadius.circular(12),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add_rounded, size: 13, color: accentColor),
-                  const SizedBox(width: 2),
                   Text(
                     '选词书',
                     style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
                       color: accentColor,
                     ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 10,
+                    color: accentColor.withValues(alpha: 0.8),
                   ),
                 ],
               ),
@@ -308,7 +307,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                   isDarkMode: isDarkMode,
                   isHighlighted: i == 0,
                   icon: Icons.auto_stories_rounded,
-                  iconBgColor: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
                   iconColor: accentColor,
                   title: _cleanDictName(deskDicts[i].name),
                   subtitle: i == 0 ? '正在学习的主线词书' : '书桌备选词书',
@@ -335,7 +333,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final accentColor = themeConfig.primaryColor;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       onTap: () {
         context.push('/select_book').then((_) => loadData());
       },
@@ -343,21 +341,13 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: cardBorder, width: 1),
           boxShadow: themeConfig.cardShadows,
         ),
         child: Row(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(Icons.bookmark_add_outlined, size: 18, color: accentColor),
-            ),
+            Icon(Icons.bookmark_add_outlined, size: 22, color: accentColor),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -365,7 +355,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 style: TextStyle(fontSize: 13, color: textSub, fontWeight: FontWeight.w500),
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: textSub.withValues(alpha: 0.6)),
+            Icon(Icons.arrow_forward_ios_rounded, size: 12, color: textSub.withValues(alpha: 0.5)),
           ],
         ),
       ),
@@ -378,7 +368,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
     final accentColor = themeConfig.primaryColor;
-    final iconBgColor = isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg;
 
     final todayList = _findListByName('今日单词');
     final todayNewList = _findListByName('今日新词');
@@ -404,7 +393,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日单词',
                 count: todayCount,
                 icon: Icons.calendar_today_rounded,
-                iconBgColor: iconBgColor,
                 iconColor: accentColor,
                 onTap: () {
                   toTodayWordsListPage(true)?.then((_) => loadData());
@@ -418,7 +406,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日新词',
                 count: newCount,
                 icon: Icons.auto_awesome_rounded,
-                iconBgColor: iconBgColor,
                 iconColor: accentColor,
                 onTap: () {
                   toTodayNewWordsListPage(true)?.then((_) => loadData());
@@ -436,7 +423,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日旧词',
                 count: oldCount,
                 icon: Icons.replay_rounded,
-                iconBgColor: iconBgColor,
                 iconColor: accentColor,
                 onTap: () {
                   toTodayOldWordsListPage(true)?.then((_) => loadData());
@@ -450,7 +436,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日错词',
                 count: wrongCount,
                 icon: Icons.cancel_outlined,
-                iconBgColor: iconBgColor,
                 iconColor: accentColor,
                 isAlert: false,
                 onTap: () {
@@ -470,7 +455,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
     final accentColor = themeConfig.primaryColor;
-    final iconBgColor = isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg;
 
     final learningList = _findListByName('学习中');
     final masteredList = _findListByName('已掌握');
@@ -486,7 +470,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             _buildHorizontalWordListCard(
               isDarkMode: isDarkMode,
               icon: Icons.school_rounded,
-              iconBgColor: iconBgColor,
               iconColor: accentColor,
               title: '学习中',
               subtitle: '正在记忆与巩固中的词汇',
@@ -499,7 +482,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             _buildHorizontalWordListCard(
               isDarkMode: isDarkMode,
               icon: Icons.check_circle_rounded,
-              iconBgColor: iconBgColor,
               iconColor: accentColor,
               title: '已掌握',
               subtitle: '已完全牢固掌握的高频词',
@@ -512,7 +494,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             _buildHorizontalWordListCard(
               isDarkMode: isDarkMode,
               icon: Icons.bookmark_rounded,
-              iconBgColor: iconBgColor,
               iconColor: accentColor,
               title: '生词本',
               subtitle: '阅读与查词中标记的高难词',
@@ -535,7 +516,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
     final accentColor = themeConfig.primaryColor;
-    final iconBgColor = isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg;
     final confusableList = _findListByName('易混淆单词');
 
     return Column(
@@ -546,7 +526,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
         _buildHorizontalWordListCard(
           isDarkMode: isDarkMode,
           icon: Icons.compare_arrows_rounded,
-          iconBgColor: iconBgColor,
           iconColor: accentColor,
           title: '易混淆单词',
           subtitle: '形近词、同义辨析强化攻坚',
@@ -563,7 +542,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   Widget _buildHorizontalWordListCard({
     required bool isDarkMode,
     required IconData icon,
-    required Color iconBgColor,
     required Color iconColor,
     required String title,
     required String subtitle,
@@ -590,9 +568,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
-    final pillBg = isHighlighted
-        ? accentColor.withValues(alpha: isDarkMode ? 0.2 : 0.1)
-        : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.035));
 
     final cardShadow = isHighlighted
         ? [
@@ -625,18 +600,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
-                // 左侧图标容器
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: isHighlighted
-                        ? accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.12)
-                        : iconBgColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, size: 19, color: iconColor),
-                ),
+                // 左侧图标（精致通透，无多余色块）
+                Icon(icon, size: 22, color: iconColor),
                 const SizedBox(width: 12),
 
                 // 中间文字
@@ -670,37 +635,24 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                   ),
                 ),
 
-                // 右侧数量胶囊 + 箭头
+                // 右侧数量 + 箭头（纯粹通透排版，无多余药丸底色）
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                      decoration: BoxDecoration(
-                        color: pillBg,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isHighlighted
-                              ? accentColor.withValues(alpha: 0.3)
-                              : themeConfig.cardBorder,
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Text(
-                        countText,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: isHighlighted ? accentColor : textSub,
-                          fontFamily: 'Roboto',
-                        ),
+                    Text(
+                      countText,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isHighlighted ? FontWeight.w700 : FontWeight.w500,
+                        color: isHighlighted ? accentColor : textSub,
+                        fontFamily: 'Roboto',
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
-                      size: 12,
-                      color: textSub.withValues(alpha: 0.5),
+                      size: 11,
+                      color: textSub.withValues(alpha: 0.4),
                     ),
                   ],
                 ),
@@ -718,7 +670,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     required String title,
     required int count,
     required IconData icon,
-    required Color iconBgColor,
     required Color iconColor,
     required VoidCallback onTap,
     bool isAlert = false,
@@ -748,19 +699,11 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 顶部行：图标 + 右侧轻箭头
+                // 顶部行：纯粹轻灵的图标 + 右侧轻箭头
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: iconBgColor,
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Icon(icon, size: 16, color: iconColor),
-                    ),
+                    Icon(icon, size: 20, color: iconColor),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 11,
