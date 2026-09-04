@@ -2732,7 +2732,8 @@ class WordListPageState extends State<WordListPage>
                     ? IconButton(
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
-                          Icons.arrow_back_rounded,
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 19,
                           color: themeConfig.textPrimary,
                         ),
                       )
@@ -2746,24 +2747,25 @@ class WordListPageState extends State<WordListPage>
                           textScaler: TextScaler.linear(1.0),
                           style: TextStyle(
                             fontSize: 17,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             color: themeConfig.textPrimary,
-                            height: 1.3,
                             letterSpacing: -0.2,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (dataLoaded)
-                        Text(
-                          ' ($totalWordCount)',
-                          textScaler: TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: themeConfig.textSecondary,
-                            height: 1.3,
-                            letterSpacing: 0.1,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Text(
+                            '($totalWordCount)',
+                            textScaler: TextScaler.linear(1.0),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: themeConfig.textSecondary.withValues(alpha: 0.8),
+                              letterSpacing: 0.2,
+                            ),
                           ),
                         ),
                     ],
@@ -2929,7 +2931,8 @@ class WordListPageState extends State<WordListPage>
                     PopupMenuButton<String>(
                       key: _menuKey,
                       icon: Icon(
-                        Icons.more_vert_rounded,
+                        Icons.more_horiz_rounded,
+                        size: 22,
                         color: themeConfig.textPrimary,
                       ),
                       tooltip: '更多',
