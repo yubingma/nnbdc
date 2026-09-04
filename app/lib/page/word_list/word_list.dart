@@ -2779,7 +2779,7 @@ class WordListPageState extends State<WordListPage>
               decoration: BoxDecoration(
                 color: isDarkMode
                     ? const Color(0xB81C2127)
-                    : Colors.white.withValues(alpha: 0.70),
+                    : Colors.white.withValues(alpha: 0.50),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isDarkMode
