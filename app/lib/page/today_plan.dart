@@ -1512,9 +1512,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final textPrimary = themeConfig.textPrimary;
     final textSecondary = themeConfig.textSecondary;
     final themeAccent = themeConfig.primaryColor;
-    final themeAccentBg = isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.20) : themeConfig.primaryColor.withValues(alpha: 0.10);
     final errorCoral = const Color(0xFFEF4444);
-    final errorCoralBg = isDarkMode ? const Color(0x28EF4444) : const Color(0xFFFEF2F2);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1584,34 +1582,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   // 答对分支
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 4,
+                    spacing: 6,
                     runSpacing: 4,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: themeAccentBg,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_rounded,
-                              size: 11,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_rounded,
+                            size: 13,
+                            color: themeAccent,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '答对',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
                               color: themeAccent,
                             ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '答对',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                color: themeAccent,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       if (correctSteps.isEmpty)
                         Text(
@@ -1650,34 +1641,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   // 答错分支
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 4,
+                    spacing: 6,
                     runSpacing: 4,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: errorCoralBg,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.close_rounded,
-                              size: 11,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.close_rounded,
+                            size: 13,
+                            color: errorCoral,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '答错',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
                               color: errorCoral,
                             ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '答错',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                color: errorCoral,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       if (wrongSteps.isEmpty)
                         Text(
