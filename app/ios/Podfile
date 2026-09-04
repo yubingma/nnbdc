@@ -62,7 +62,7 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
     
     target.build_configurations.each do |config|
-      # 排除 i386，但保留 arm64 以支持 Apple Silicon 模拟器
+      # 排除 i386，保留 arm64 以原生支持 Apple Silicon 模拟器
       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
       
       # 自动签名设置
@@ -90,4 +90,7 @@ post_install do |installer|
       end
     end
   end
+
+  # 自动为 MLKit 启用 Apple Silicon 模拟器 (arm64-simulator) 支持
+  system("python3", File.join(__dir__, "patch_mlkit.py"))
 end

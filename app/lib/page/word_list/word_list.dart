@@ -2724,22 +2724,6 @@ class WordListPageState extends State<WordListPage>
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: themeConfig.appBarGradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: themeConfig.primaryColor.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-            ),
             titleSpacing: 0,
             automaticallyImplyLeading: false,
             title: Row(
@@ -2747,8 +2731,10 @@ class WordListPageState extends State<WordListPage>
                 args.showBackBtn
                     ? IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon:
-                            const Icon(Icons.arrow_back, color: Colors.white),
+                        icon: Icon(
+                          Icons.arrow_back_rounded,
+                          color: themeConfig.textPrimary,
+                        ),
                       )
                     : const SizedBox(width: 16),
                 Expanded(
@@ -2758,12 +2744,12 @@ class WordListPageState extends State<WordListPage>
                         child: Text(
                           args.appBarTitle,
                           textScaler: TextScaler.linear(1.0),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: themeConfig.textPrimary,
                             height: 1.3,
-                            letterSpacing: 0.3,
+                            letterSpacing: -0.2,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -2774,10 +2760,10 @@ class WordListPageState extends State<WordListPage>
                           textScaler: TextScaler.linear(1.0),
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w500,
+                            color: themeConfig.textSecondary,
                             height: 1.3,
-                            letterSpacing: 0.2,
+                            letterSpacing: 0.1,
                           ),
                         ),
                     ],
@@ -2792,14 +2778,18 @@ class WordListPageState extends State<WordListPage>
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              const Icon(Icons.bookmark,
-                                  color: Colors.white, size: 28),
-                              Text(
+                              Icon(
+                                Icons.bookmark_rounded,
+                                color: themeConfig.primaryColor,
+                                size: 26,
+                              ),
+                              const Text(
                                 'S',
                                 style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: themeConfig.primaryColor),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
                               ),
                             ],
                           ),
@@ -2832,21 +2822,25 @@ class WordListPageState extends State<WordListPage>
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
-                                const Icon(Icons.bookmark,
-                                    color: Colors.white, size: 28),
+                                Icon(
+                                  Icons.bookmark_rounded,
+                                  color: isBookMarkValid(bookMark)
+                                      ? themeConfig.primaryColor
+                                      : Colors.red[300],
+                                  size: 26,
+                                ),
                                 Text(
                                   isBookMarkValid(bookMark)
                                       ? '${getBookMarkRawPosition(bookMark) + 1}'
-                                      : '书签\n无效',
+                                      : '!',
                                   textScaler: TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.1,
-                                      letterSpacing: 0.1,
-                                      color: isBookMarkValid(bookMark)
-                                          ? themeConfig.primaryColor
-                                          : Colors.red[300]),
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.1,
+                                    letterSpacing: 0.1,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ],
                             ),
@@ -2898,14 +2892,18 @@ class WordListPageState extends State<WordListPage>
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              const Icon(Icons.bookmark,
-                                  color: Colors.white, size: 28),
-                              Text(
+                              Icon(
+                                Icons.bookmark_rounded,
+                                color: themeConfig.primaryColor,
+                                size: 26,
+                              ),
+                              const Text(
                                 'E',
                                 style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: themeConfig.primaryColor),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
                               ),
                             ],
                           ),
@@ -2932,14 +2930,17 @@ class WordListPageState extends State<WordListPage>
                   actions: <Widget>[
                     if (args.canAddWord && args.wordsProvider is WordModifier)
                       IconButton(
-                        icon: const Icon(Icons.add, color: Colors.white),
+                        icon: Icon(
+                          Icons.add_rounded,
+                          color: themeConfig.textPrimary,
+                        ),
                         onPressed: _showAddWordDialog,
                       ),
                     PopupMenuButton<String>(
                       key: _menuKey,
-                      icon: const Icon(
-                        Icons.more_vert,
-                        color: Colors.white,
+                      icon: Icon(
+                        Icons.more_vert_rounded,
+                        color: themeConfig.textPrimary,
                       ),
                       tooltip: '更多',
                       position: PopupMenuPosition.under,

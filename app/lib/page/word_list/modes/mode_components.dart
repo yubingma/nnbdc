@@ -12,6 +12,8 @@ class ModeComponents {
   }) {
     final textMain = themeConfig?.textPrimary ?? (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724));
     final textSub = themeConfig?.textSecondary ?? (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570));
+    final phoneticBg = themeConfig?.subtleBg ??
+        (isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,49 +31,131 @@ class ModeComponents {
               fontSize: 16.5,
               fontWeight: FontWeight.w700,
               height: 1.25,
-              letterSpacing: 0.2,
+              letterSpacing: -0.2,
             ),
           ),
         ),
         if (word.word.mergedPronounce.isNotEmpty) ...[
           const SizedBox(height: 3),
-          Text(
-            '[${word.word.mergedPronounce}]',
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              color: textSub,
-              fontSize: 12,
-              fontFamily: 'NotoSans',
-              fontWeight: FontWeight.w400,
-              height: 1.2,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+            decoration: BoxDecoration(
+              color: phoneticBg,
+              borderRadius: BorderRadius.circular(5),
             ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
+            child: Text(
+              '[${word.word.mergedPronounce}]',
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                color: textSub,
+                fontSize: 11.5,
+                fontFamily: 'NotoSans',
+                fontWeight: FontWeight.w500,
+                height: 1.2,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
           ),
         ],
       ],
     );
   }
 
-  static Widget buildWordMeaning(WordWrapper word, bool isDarkMode, {double topPadding = 8}) {
-    final meaning = word.word.getMeaningStr();
-    final textMeaning = isDarkMode ? const Color(0xFFC8DCD8) : const Color(0xFF334B46);
+  static Widget buildWordMeaning(
+    WordWrapper word,
+    bool isDarkMode, {
+    double topPadding = 8,
+    AppThemeConfig? themeConfig,
+  }) {
+    final meaningStr = word.word.getMeaningStr();
+    final textMeaning = themeConfig?.textSecondary ??
+        (isDarkMode ? const Color(0xFFC8DCD8) : const Color(0xFF334B46));
+    final posTagBg = themeConfig?.subtleBg ??
+        (isDarkMode
+            ? Colors.white.withValues(alpha: 0.08)
+            : const Color(0xFFE8F5E9));
+    final posTagText = themeConfig?.primaryColor ??
+        (isDarkMode ? const Color(0xFF66BB6A) : const Color(0xFF2E7D32));
+
+    final posRegex = RegExp(
+        r'(n\.|v\.|adj\.|adv\.|vt\.|vi\.|prep\.|conj\.|pron\.|art\.|num\.|int\.)\s*');
+    final matches = posRegex.allMatches(meaningStr);
+
+    Widget content;
+    if (matches.isEmpty) {
+      content = Text(
+        meaningStr.isNotEmpty ? meaningStr : "（暂无释义）",
+        textScaler: const TextScaler.linear(1.0),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          color: textMeaning,
+          height: 1.45,
+          letterSpacing: 0.15,
+        ),
+      );
+    } else {
+      final List<InlineSpan> spans = [];
+      int lastEnd = 0;
+
+      for (final match in matches) {
+        if (match.start > lastEnd) {
+          spans.add(TextSpan(
+            text: meaningStr.substring(lastEnd, match.start),
+            style: TextStyle(
+              color: textMeaning,
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ));
+        }
+        final posText = match.group(1)!;
+        spans.add(WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Container(
+            margin: const EdgeInsets.only(right: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: posTagBg,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              posText,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: posTagText,
+                height: 1.1,
+              ),
+            ),
+          ),
+        ));
+        lastEnd = match.end;
+      }
+
+      if (lastEnd < meaningStr.length) {
+        spans.add(TextSpan(
+          text: meaningStr.substring(lastEnd),
+          style: TextStyle(
+            color: textMeaning,
+            fontSize: 13,
+            height: 1.45,
+          ),
+        ));
+      }
+
+      content = RichText(
+        text: TextSpan(children: spans),
+        textScaler: const TextScaler.linear(1.0),
+      );
+    }
 
     return Padding(
       padding: EdgeInsets.only(top: topPadding),
       child: Container(
         constraints: const BoxConstraints(minHeight: 24),
-        child: Text(
-          meaning.isNotEmpty ? meaning : "（暂无释义）",
-          textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w400,
-            color: textMeaning,
-            height: 1.45,
-            letterSpacing: 0.15,
-          ),
-        ),
+        child: content,
       ),
     );
   }

@@ -63,7 +63,7 @@ class HideModeItem extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 6, 0, 6),
           child: isHideEnglish
-              ? ModeComponents.buildWordMeaning(word, isDarkMode, topPadding: 0)
+              ? ModeComponents.buildWordMeaning(word, isDarkMode, topPadding: 0, themeConfig: themeConfig)
               : ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode, themeConfig: themeConfig),
         ),
       ),
@@ -82,7 +82,7 @@ class HideModeItem extends StatelessWidget {
   Widget _buildHiddenAnswerArea(bool isEnglish, AppThemeConfig themeConfig) {
     final Widget answerContent = isEnglish
         ? ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode, themeConfig: themeConfig)
-        : ModeComponents.buildWordMeaning(word, isDarkMode, topPadding: 0);
+        : ModeComponents.buildWordMeaning(word, isDarkMode, topPadding: 0, themeConfig: themeConfig);
 
     if (word.isAnswerRevealed) {
       return answerContent;
@@ -91,13 +91,13 @@ class HideModeItem extends StatelessWidget {
     final accentColor = themeConfig.primaryColor;
     final btnBg = isDarkMode
         ? (isBookmarked ? accentColor.withValues(alpha: 0.16) : Colors.white.withValues(alpha: 0.05))
-        : (isBookmarked ? accentColor.withValues(alpha: 0.08) : const Color(0xFFF1F5F9));
+        : (isBookmarked ? accentColor.withValues(alpha: 0.08) : themeConfig.subtleBg);
     final btnBorder = isDarkMode
         ? (isBookmarked ? accentColor.withValues(alpha: 0.35) : Colors.white12)
-        : (isBookmarked ? accentColor.withValues(alpha: 0.25) : const Color(0xFFE2E8F0));
+        : (isBookmarked ? accentColor.withValues(alpha: 0.25) : themeConfig.cardBorder);
     final btnTextColor = isBookmarked
         ? accentColor
-        : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
+        : themeConfig.textSecondary;
 
     return Stack(
       alignment: Alignment.centerLeft,
@@ -107,10 +107,10 @@ class HideModeItem extends StatelessWidget {
           child: answerContent,
         ),
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+          padding: const EdgeInsets.symmetric(vertical: 5.5, horizontal: 11),
           decoration: BoxDecoration(
             color: btnBg,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: btnBorder,
               width: 1,

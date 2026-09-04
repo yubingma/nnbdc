@@ -195,11 +195,6 @@ class WordListItemLayout extends StatelessWidget {
 
   Widget _buildLeftColumn(AppThemeConfig themeConfig) {
     final accentColor = themeConfig.primaryColor;
-    final sidebarBg = isDarkMode
-        ? Colors.white.withValues(alpha: 0.04)
-        : const Color(0xFFFAFAFA);
-
-    final dividerColor = themeConfig.cardBorder;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -207,12 +202,7 @@ class WordListItemLayout extends StatelessWidget {
       onLongPress: () => actions.onWordLongPress(word, index),
       child: Container(
         width: 44,
-        decoration: BoxDecoration(
-          color: sidebarBg,
-          border: Border(
-            right: BorderSide(color: dividerColor, width: 1),
-          ),
-        ),
+        color: Colors.transparent,
         child: Stack(
           alignment: Alignment.center,
           children: [

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
 
+import 'package:provider/provider.dart';
+import '../../../../state.dart';
+import '../../../../theme/app_theme.dart';
 import '../word_list_actions.dart';
 import 'mode_components.dart';
 import 'word_list_item_layout.dart';
@@ -35,6 +38,9 @@ class ListModeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+
     return WordListItemLayout(
       word: word,
       index: index,
@@ -53,7 +59,7 @@ class ListModeItem extends StatelessWidget {
         onLongPress: () => actions.onWordLongPress(word, index),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 6, 0, 6),
-          child: ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode),
+          child: ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode, themeConfig: themeConfig),
         ),
       ),
       rightContent: GestureDetector(
@@ -62,7 +68,7 @@ class ListModeItem extends StatelessWidget {
         onLongPress: () => actions.onWordLongPress(word, index),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
-          child: ModeComponents.buildWordMeaning(word, isDarkMode, topPadding: 0),
+          child: ModeComponents.buildWordMeaning(word, isDarkMode, topPadding: 0, themeConfig: themeConfig),
         ),
       ),
     );
