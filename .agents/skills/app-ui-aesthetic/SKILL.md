@@ -170,21 +170,27 @@ Column(
 
 ---
 
-## 七、主线词书进度与成就感设计
+## 七、书桌词书统一样式与进度设计
 
-- ❌ **避免**：仅显示冷冰冰的数字（如 `4428 词`），用户缺乏直观的学习进度与成就感。
-- ✅ **推荐**：在主词书名称与副标题下方，嵌入一条**极简微细胶囊进度条**（高度 3px），并在副标题提示当前掌握度：
+- ❌ **避免**：
+  - 仅显示冷冰冰的数字（如 `4428 词`），用户缺乏直观的学习进度与成就感；
+  - 单独给第一本词书套一层绿色发光边框或特殊背景（导致视觉风格分裂、不协调）。
+- ✅ **推荐**：
+  - **书桌上所有词书卡片完全同构统一**，无高光或特殊边框差异；
+  - **全量展示进度信息**：副标题统一为 `已掌握 $mastered / $total 词 · $percent%`，并嵌入统一的**极简微细胶囊进度条**（高度 3px）：
   ```dart
-  // Subtitle
+  // 统一副标题
   '已掌握 $mastered / $total 词 · $percent%'
 
-  // 极细进度条
+  // 统一微细进度条
   ClipRRect(
     borderRadius: BorderRadius.circular(2),
     child: LinearProgressIndicator(
       value: progress,
       minHeight: 3,
-      backgroundColor: accentColor.withValues(alpha: 0.12),
+      backgroundColor: isDarkMode
+          ? Colors.white.withValues(alpha: 0.08)
+          : accentColor.withValues(alpha: 0.12),
       valueColor: AlwaysStoppedAnimation<Color>(accentColor),
     ),
   )

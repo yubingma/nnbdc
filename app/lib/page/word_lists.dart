@@ -339,15 +339,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                   final percent = (progress * 100).toInt();
                   return _buildHorizontalWordListCard(
                     isDarkMode: isDarkMode,
-                    isHighlighted: i == 0,
                     icon: Icons.auto_stories_rounded,
                     iconColor: accentColor,
                     title: _cleanDictName(dict.name),
-                    subtitle: i == 0
-                        ? '已掌握 $mastered / $total 词 · $percent%'
-                        : '书桌备选词书',
+                    subtitle: '已掌握 $mastered / $total 词 · $percent%',
                     countText: '$total 词',
-                    progress: i == 0 ? progress : null,
+                    progress: progress,
                     onTap: () async {
                       await toDictWordsListPage(dict.id, true);
                       loadData();
@@ -500,7 +497,9 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final textColor = themeConfig.textPrimary;
     final cardBg = isDarkMode ? themeConfig.cardBg : Colors.white;
     final cardBorder = themeConfig.cardBorder;
-    final dividerColor = cardBorder.withValues(alpha: isDarkMode ? 0.35 : 0.55);
+    final dividerColor = isDarkMode
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.055);
 
     final learningList = _findListByName('学习中');
     final masteredList = _findListByName('已掌握');
@@ -532,8 +531,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 isFirst: true,
               ),
               Padding(
-                padding: const EdgeInsets.only(left: 48),
-                child: Divider(height: 1, thickness: 0.6, color: dividerColor),
+                padding: const EdgeInsets.only(left: 48, right: 14),
+                child: Divider(height: 1, thickness: 0.5, color: dividerColor),
               ),
               _buildGroupedItemRow(
                 icon: Icons.check_circle_rounded,
@@ -546,8 +545,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 },
               ),
               Padding(
-                padding: const EdgeInsets.only(left: 48),
-                child: Divider(height: 1, thickness: 0.6, color: dividerColor),
+                padding: const EdgeInsets.only(left: 48, right: 14),
+                child: Divider(height: 1, thickness: 0.5, color: dividerColor),
               ),
               _buildGroupedItemRow(
                 icon: Icons.bookmark_rounded,
