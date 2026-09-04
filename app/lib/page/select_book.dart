@@ -28,6 +28,7 @@ import 'word_list/dict_words.dart';
 import '../api/bo/word_bo.dart';
 import '../global.dart';
 import '../state.dart';
+import 'package:nnbdc/event/events.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_theme_background.dart';
 
@@ -1195,6 +1196,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
       // 第四步：跳转回原始页面
       if (mounted) {
+        // 通知其他页面书桌发生了变化（新增词书），双向同步
+        EventBus.publishLearningDictChanged(const LearningDictChangedEvent());
         Navigator.of(context).pop();
       }
     } catch (e, stackTrace) {

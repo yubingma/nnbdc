@@ -85,6 +85,7 @@ class _MePageState extends State<MePage> {
   late Function(String event, List args) _socketEventListener;
   StreamSubscription<List<PurchaseDetails>>? _subscriptionStreamSubscription;
   StreamSubscription<DictDownloadCompletedEvent>? _dictDownloadCompletedSub;
+  StreamSubscription<LearningDictChangedEvent>? _learningDictChangedSub;
 
   /// 最近一次同步是否失败
   bool _isLastSyncFailed = false;
@@ -325,6 +326,14 @@ class _MePageState extends State<MePage> {
       }
     });
 
+    // 监听书桌词书变化事件（word_lists 选书/停学后通知"我"页面刷新）
+    _learningDictChangedSub = EventBus.onLearningDictChanged().listen((_) {
+      if (mounted) {
+        Global.logger.i("📚 MePage 收到书桌词书变化事件，刷新数据");
+        loadData();
+      }
+    });
+
     // 异步执行loadData，避免阻塞UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
       loadData();
@@ -344,6 +353,9 @@ class _MePageState extends State<MePage> {
 
     // 取消词书下载完成事件监听
     _dictDownloadCompletedSub?.cancel();
+
+    // 取消书桌词书变化事件监听
+    _learningDictChangedSub?.cancel();
 
     super.dispose();
   }
