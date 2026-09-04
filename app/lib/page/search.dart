@@ -243,9 +243,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   Widget _buildMeaningWithTags(String meaningStr, AppThemeConfig themeConfig) {
-    final textSecondary = themeConfig.textSecondary;
-    final posTagBg = themeConfig.subtleBg;
-    final posTagText = themeConfig.primaryColor;
+    final textPrimary = themeConfig.textPrimary;
+    final posColor = themeConfig.textMuted.withValues(alpha: 0.85);
 
     // 解析词性标签如 "n. ", "v. ", "adj. ", "adv. ", "vt. ", "vi. "
     final posRegex = RegExp(r'(n\.|v\.|adj\.|adv\.|vt\.|vi\.|prep\.|conj\.|pron\.|art\.|num\.|int\.)\s*');
@@ -255,7 +254,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       return Text(
         meaningStr.isNotEmpty ? meaningStr : "（暂无释义）",
         style: TextStyle(
-          color: textSecondary,
+          color: textPrimary,
           fontSize: 13.5,
           height: 1.45,
         ),
@@ -272,28 +271,18 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       if (match.start > lastEnd) {
         spans.add(TextSpan(
           text: meaningStr.substring(lastEnd, match.start),
-          style: TextStyle(color: textSecondary, fontSize: 13.5, height: 1.45),
+          style: TextStyle(color: textPrimary, fontSize: 13.5, height: 1.45),
         ));
       }
       final posText = match.group(1)!;
-      spans.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: Container(
-          margin: const EdgeInsets.only(right: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-          decoration: BoxDecoration(
-            color: posTagBg,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            posText,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: posTagText,
-              height: 1.1,
-            ),
-          ),
+      spans.add(TextSpan(
+        text: '$posText ',
+        style: TextStyle(
+          fontSize: 12,
+          fontFamily: 'NotoSans',
+          fontWeight: FontWeight.w500,
+          color: posColor,
+          letterSpacing: 0.1,
         ),
       ));
       lastEnd = match.end;
@@ -302,7 +291,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     if (lastEnd < meaningStr.length) {
       spans.add(TextSpan(
         text: meaningStr.substring(lastEnd),
-        style: TextStyle(color: textSecondary, fontSize: 13.5, height: 1.45),
+        style: TextStyle(color: textPrimary, fontSize: 13.5, height: 1.45),
       ));
     }
 

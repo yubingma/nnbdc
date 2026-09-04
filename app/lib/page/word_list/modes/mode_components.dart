@@ -60,14 +60,10 @@ class ModeComponents {
     AppThemeConfig? themeConfig,
   }) {
     final meaningStr = word.word.getMeaningStr();
-    final textMeaning = themeConfig?.textSecondary ??
-        (isDarkMode ? const Color(0xFFC8DCD8) : const Color(0xFF334B46));
-    final posTagBg = themeConfig?.subtleBg ??
-        (isDarkMode
-            ? Colors.white.withValues(alpha: 0.08)
-            : const Color(0xFFE8F5E9));
-    final posTagText = themeConfig?.primaryColor ??
-        (isDarkMode ? const Color(0xFF66BB6A) : const Color(0xFF2E7D32));
+    final textMeaning = themeConfig?.textPrimary ??
+        (isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B));
+    final posColor = themeConfig?.textMuted.withValues(alpha: 0.85) ??
+        (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
 
     final posRegex = RegExp(
         r'(n\.|v\.|adj\.|adv\.|vt\.|vi\.|prep\.|conj\.|pron\.|art\.|num\.|int\.)\s*');
@@ -102,24 +98,14 @@ class ModeComponents {
           ));
         }
         final posText = match.group(1)!;
-        spans.add(WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Container(
-            margin: const EdgeInsets.only(right: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(
-              color: posTagBg,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              posText,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: posTagText,
-                height: 1.1,
-              ),
-            ),
+        spans.add(TextSpan(
+          text: '$posText ',
+          style: TextStyle(
+            fontSize: 12,
+            fontFamily: 'NotoSans',
+            fontWeight: FontWeight.w500,
+            color: posColor,
+            letterSpacing: 0.1,
           ),
         ));
         lastEnd = match.end;
