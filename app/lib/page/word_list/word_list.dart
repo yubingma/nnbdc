@@ -346,6 +346,8 @@ class WordListPageState extends State<WordListPage>
 
   /// 菜单是否打开（用于控制iPad上的弹出菜单稳定性）
   bool isMenuOpen = false;
+  double _menuCalculatedTop = 0;
+  double _menuCalculatedRight = 12;
 
   // 映射属性到控制器以保持原逻辑引用正常
   bool get dataLoaded => _controllerInitialized ? controller.dataLoaded : false;
@@ -2688,19 +2690,39 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
-  void _showFrostedMenu(AppThemeConfig themeConfig, bool isDarkMode) {
-    final RenderBox? rb = _menuKey.currentContext?.findRenderObject() as RenderBox?;
-    if (rb == null) return;
-    final Offset topLeft = rb.localToGlobal(Offset.zero);
-    final double menuTop = topLeft.dy + rb.size.height + 4;
-    final double menuRight = MediaQuery.sizeOf(context).width - (topLeft.dx + rb.size.width);
+  void _toggleFrostedMenu() {
+    if (isMenuOpen) {
+      setState(() {
+        isMenuOpen = false;
+        if (!_asrModelLoadingController.isAnimating) {
+          _asrModelLoadingController.repeat(reverse: true);
+        }
+      });
+      return;
+    }
 
-    isMenuOpen = true;
+    final RenderBox? rb = _menuKey.currentContext?.findRenderObject() as RenderBox?;
+    double top = MediaQuery.paddingOf(context).top + kToolbarHeight - 4;
+    double right = 12;
+    if (rb != null) {
+      final Offset topLeft = rb.localToGlobal(Offset.zero);
+      top = topLeft.dy + rb.size.height + 4;
+      right = (MediaQuery.sizeOf(context).width - (topLeft.dx + rb.size.width)).clamp(8.0, 30.0);
+    }
+
     FocusScope.of(context).unfocus();
     if (_asrModelLoadingController.isAnimating) {
       _asrModelLoadingController.stop();
     }
 
+    setState(() {
+      _menuCalculatedTop = top;
+      _menuCalculatedRight = right;
+      isMenuOpen = true;
+    });
+  }
+
+  Widget _buildFrostedMenuCard(AppThemeConfig themeConfig, bool isDarkMode) {
     final List<String> menuItems = [
       if (args.wordsProvider.canCustomizeSort)
         menuSortSettings,
@@ -2735,224 +2757,190 @@ class WordListPageState extends State<WordListPage>
     menuItems.add(menuTheme);
     menuItems.add(menuExportPdf);
 
-    showGeneralDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'dismiss_menu',
-      barrierColor: Colors.transparent,
-      transitionDuration: const Duration(milliseconds: 180),
-      pageBuilder: (dialogCtx, anim1, anim2) {
-        return Stack(
-          children: [
-            // 全屏毛玻璃背景柔焦（将背后的整个单词列表文字彻底虚化为黑色模糊色块与柔焦光斑）
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.pop(dialogCtx),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                  child: Container(
-                    color: isDarkMode
-                        ? Colors.black.withValues(alpha: 0.3)
-                        : Colors.black.withValues(alpha: 0.08),
-                  ),
-                ),
-              ),
-            ),
-            // 菜单卡片主体：精准定位于 … 按钮正下方
-            Positioned(
-              top: menuTop,
-              right: menuRight.clamp(8.0, 30.0),
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  width: 172,
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? const Color(0xE61E232A)
-                        : Colors.white.withValues(alpha: 0.88),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : Colors.white.withValues(alpha: 0.9),
-                      width: 1.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.12),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.sizeOf(dialogCtx).height - menuTop - 24,
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: menuItems.map((String choice) {
-                          IconData icon;
-                          switch (choice) {
-                            case menuWordList:
-                              icon = Icons.list_alt_rounded;
-                              break;
-                            case menuWalkman:
-                              icon = Icons.headphones_rounded;
-                              break;
-                            case menuImportFromBook:
-                              icon = Icons.import_contacts_rounded;
-                              break;
-                            case menuImportFromScan:
-                              icon = Icons.camera_alt_rounded;
-                              break;
-                            case menuSpeakChinese:
-                              icon = Icons.record_voice_over_rounded;
-                              break;
-                            case menuSpeakEnglish:
-                              icon = Icons.mic_none_rounded;
-                              break;
-                            case menuTranslateSentence:
-                              icon = Icons.hearing_rounded;
-                              break;
-                            case menuWriteSpellTyping:
-                              icon = Icons.keyboard_rounded;
-                              break;
-                            case menuWriteSpellHandwriting:
-                              icon = Icons.gesture_rounded;
-                              break;
-                            case menuHideChinese:
-                            case menuHideEnglish:
-                              icon = Icons.visibility_off_rounded;
-                              break;
-                            case menuExportPdf:
-                              icon = Icons.picture_as_pdf_rounded;
-                              break;
-                            case menuAiStory:
-                              icon = Icons.auto_awesome_rounded;
-                              break;
-                            case menuSettings:
-                              icon = Icons.settings_rounded;
-                              break;
-                            case menuSortSettings:
-                              icon = Icons.sort_rounded;
-                              break;
-                            case menuTheme:
-                              icon = Icons.palette_outlined;
-                              break;
-                            default:
-                              icon = Icons.help_outline_rounded;
-                          }
-
-                          bool isSelected = false;
-                          switch (choice) {
-                            case menuWordList:
-                              isSelected = studyMode == WordListStudyMode.list;
-                              break;
-                            case menuHideChinese:
-                              isSelected = studyMode == WordListStudyMode.hideChinese;
-                              break;
-                            case menuHideEnglish:
-                              isSelected = studyMode == WordListStudyMode.hideEnglish;
-                              break;
-                            case menuSpeakChinese:
-                              isSelected = studyMode == WordListStudyMode.speakChinese;
-                              break;
-                            case menuSpeakEnglish:
-                              isSelected = studyMode == WordListStudyMode.speakEnglish;
-                              break;
-                            case menuTranslateSentence:
-                              isSelected = studyMode == WordListStudyMode.translateSentence;
-                              break;
-                            case menuWriteSpellTyping:
-                              isSelected = studyMode == WordListStudyMode.dictation;
-                              break;
-                            case menuWriteSpellHandwriting:
-                              isSelected = studyMode == WordListStudyMode.dictationHandwriting;
-                              break;
-                          }
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 1.5),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(10),
-                                onTap: () => Navigator.pop(dialogCtx, choice),
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? themeConfig.subtleBg : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: isSelected
-                                        ? Border.all(color: themeConfig.cardBorder, width: 1)
-                                        : null,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        icon,
-                                        size: 18,
-                                        color: isSelected
-                                            ? themeConfig.primaryColor
-                                            : themeConfig.textSecondary,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          choice == menuSortSettings
-                                              ? '排序: ${_currentSortAlg.label}'
-                                              : choice,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: isSelected
-                                                ? themeConfig.primaryColor
-                                                : themeConfig.textPrimary,
-                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: 172,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
             ),
           ],
-        );
-      },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return FadeTransition(
-          opacity: CurvedAnimation(parent: anim1, curve: Curves.easeOut),
-          child: ScaleTransition(
-            alignment: Alignment.topRight,
-            scale: Tween<double>(begin: 0.90, end: 1.0).animate(
-              CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? const Color(0xB81C2127)
+                    : Colors.white.withValues(alpha: 0.70),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : Colors.white.withValues(alpha: 0.9),
+                  width: 1.0,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height - _menuCalculatedTop - 24,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: menuItems.map((String choice) {
+                      IconData icon;
+                      switch (choice) {
+                        case menuWordList:
+                          icon = Icons.list_alt_rounded;
+                          break;
+                        case menuWalkman:
+                          icon = Icons.headphones_rounded;
+                          break;
+                        case menuImportFromBook:
+                          icon = Icons.import_contacts_rounded;
+                          break;
+                        case menuImportFromScan:
+                          icon = Icons.camera_alt_rounded;
+                          break;
+                        case menuSpeakChinese:
+                          icon = Icons.record_voice_over_rounded;
+                          break;
+                        case menuSpeakEnglish:
+                          icon = Icons.mic_none_rounded;
+                          break;
+                        case menuTranslateSentence:
+                          icon = Icons.hearing_rounded;
+                          break;
+                        case menuWriteSpellTyping:
+                          icon = Icons.keyboard_rounded;
+                          break;
+                        case menuWriteSpellHandwriting:
+                          icon = Icons.gesture_rounded;
+                          break;
+                        case menuHideChinese:
+                        case menuHideEnglish:
+                          icon = Icons.visibility_off_rounded;
+                          break;
+                        case menuExportPdf:
+                          icon = Icons.picture_as_pdf_rounded;
+                          break;
+                        case menuAiStory:
+                          icon = Icons.auto_awesome_rounded;
+                          break;
+                        case menuSettings:
+                          icon = Icons.settings_rounded;
+                          break;
+                        case menuSortSettings:
+                          icon = Icons.sort_rounded;
+                          break;
+                        case menuTheme:
+                          icon = Icons.palette_outlined;
+                          break;
+                        default:
+                          icon = Icons.help_outline_rounded;
+                      }
+
+                      bool isSelected = false;
+                      switch (choice) {
+                        case menuWordList:
+                          isSelected = studyMode == WordListStudyMode.list;
+                          break;
+                        case menuHideChinese:
+                          isSelected = studyMode == WordListStudyMode.hideChinese;
+                          break;
+                        case menuHideEnglish:
+                          isSelected = studyMode == WordListStudyMode.hideEnglish;
+                          break;
+                        case menuSpeakChinese:
+                          isSelected = studyMode == WordListStudyMode.speakChinese;
+                          break;
+                        case menuSpeakEnglish:
+                          isSelected = studyMode == WordListStudyMode.speakEnglish;
+                          break;
+                        case menuTranslateSentence:
+                          isSelected = studyMode == WordListStudyMode.translateSentence;
+                          break;
+                        case menuWriteSpellTyping:
+                          isSelected = studyMode == WordListStudyMode.dictation;
+                          break;
+                        case menuWriteSpellHandwriting:
+                          isSelected = studyMode == WordListStudyMode.dictationHandwriting;
+                          break;
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 1.5),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () {
+                              setState(() {
+                                isMenuOpen = false;
+                                if (!_asrModelLoadingController.isAnimating) {
+                                  _asrModelLoadingController.repeat(reverse: true);
+                                }
+                              });
+                              _handleMenuSelected(choice);
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: isSelected ? themeConfig.subtleBg : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                border: isSelected
+                                    ? Border.all(color: themeConfig.cardBorder, width: 1)
+                                    : null,
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    icon,
+                                    size: 18,
+                                    color: isSelected
+                                        ? themeConfig.primaryColor
+                                        : themeConfig.textSecondary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      choice == menuSortSettings
+                                          ? '排序: ${_currentSortAlg.label}'
+                                          : choice,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: isSelected
+                                            ? themeConfig.primaryColor
+                                            : themeConfig.textPrimary,
+                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
             ),
-            child: child,
           ),
-        );
-      },
-    ).then((selectedValue) {
-      isMenuOpen = false;
-      if (mounted) {
-        _asrModelLoadingController.repeat(reverse: true);
-      }
-      if (selectedValue != null) {
-        _handleMenuSelected(selectedValue);
-      }
-    });
+        ),
+      ),
+    );
   }
 
   @override
@@ -2975,9 +2963,18 @@ class WordListPageState extends State<WordListPage>
     // 这里保留 build 方法的简洁性。
 
     final popScopeWidget = PopScope(
-      canPop: studyMode != WordListStudyMode.dictationHandwriting,
+      canPop: !isMenuOpen && studyMode != WordListStudyMode.dictationHandwriting,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        if (isMenuOpen) {
+          setState(() {
+            isMenuOpen = false;
+            if (!_asrModelLoadingController.isAnimating) {
+              _asrModelLoadingController.repeat(reverse: true);
+            }
+          });
+          return;
+        }
       },
       child: Stack(
       children: [
@@ -3204,7 +3201,7 @@ class WordListPageState extends State<WordListPage>
                         color: themeConfig.textPrimary,
                       ),
                       tooltip: '更多',
-                      onPressed: () => _showFrostedMenu(themeConfig, isDarkMode),
+                      onPressed: _toggleFrostedMenu,
                     ),
                   ],
                 ),
@@ -3281,6 +3278,28 @@ class WordListPageState extends State<WordListPage>
               jumpToPreviousWord(idx, false);
             },
           ),
+        if (isMenuOpen) ...[
+          // 全局透明点击遮罩（点击空白处关闭菜单，保持背景清晰自然不遮挡）
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                setState(() {
+                  isMenuOpen = false;
+                  if (!_asrModelLoadingController.isAnimating) {
+                    _asrModelLoadingController.repeat(reverse: true);
+                  }
+                });
+              },
+            ),
+          ),
+          // 局部毛玻璃菜单卡片（仅卡片覆盖的区域产生模糊，底下文字变成朦胧暗色色块）
+          Positioned(
+            top: _menuCalculatedTop,
+            right: _menuCalculatedRight,
+            child: _buildFrostedMenuCard(themeConfig, isDarkMode),
+          ),
+        ],
       ],
       ),
     );
