@@ -892,174 +892,217 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? const Color(0xFF11141D) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.15),
+      isScrollControlled: true,
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 顶部居中精致拖拽把手
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDarkMode
+                      ? [
+                          const Color(0xB8161B26),
+                          const Color(0x9910141D),
+                        ]
+                      : [
+                          const Color(0x66FFFFFF),
+                          const Color(0x4DFFFFFF),
+                        ],
+                ),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDarkMode
+                        ? const Color(0x33FFFFFF)
+                        : const Color(0x80FFFFFF),
+                    width: 1.2,
                   ),
                 ),
-                const SizedBox(height: 14),
-
-                // 标题栏（主副标题 + 轻圆关闭按钮）
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '选择每日学习词数',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                            letterSpacing: -0.2,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, -6),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 顶部居中精致拖拽把手
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(2),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '根据每天的时间节奏定制专注目标',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                          ),
-                        ),
-                      ],
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(ctx),
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 16,
-                          color: isDarkMode ? Colors.white60 : Colors.black54,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
-                // 4 列规整网格
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: wordOptions.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 9,
-                    crossAxisSpacing: 9,
-                    childAspectRatio: 1.9,
-                  ),
-                  itemBuilder: (context, index) {
-                    final v = wordOptions[index];
-                    final isSelected = v == currentValue;
-                    final isPremium = SubscriptionUtil.isPremium();
-                    final isRestricted = !isPremium && v > 20;
-
-                    return GestureDetector(
-                      onTap: () async {
-                        if (isRestricted) {
-                          ToastUtil.info('开通会员可选择更多单词数量');
-                          return;
-                        }
-                        Navigator.pop(ctx);
-                        setState(() {
-                          user!.wordsPerDay = v;
-                          dataLoaded = false;
-                        });
-                        await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, v);
-                        await Global.loadUserFromDb();
-                        ThrottledDbSyncService().requestSync();
-                        loadData(forceSupplement: false);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? primaryColor
-                              : (isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF8FAFC)),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected
-                                ? Colors.transparent
-                                : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
-                            width: 1,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: primaryColor.withValues(alpha: 0.32),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '$v',
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
-                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                                fontSize: 15,
-                                fontFamily: 'Roboto',
+                      // 标题栏（主副标题 + 轻圆关闭按钮）
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '选择每日学习词数',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '词',
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white.withValues(alpha: 0.88)
-                                    : (isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 11,
-                              ),
-                            ),
-                            if (isRestricted) ...[
-                              const SizedBox(width: 3),
-                              Icon(
-                                Icons.workspace_premium_rounded,
-                                color: isSelected ? Colors.white : Colors.amber,
-                                size: 12,
+                              const SizedBox(height: 2),
+                              Text(
+                                '根据每天的时间节奏定制专注目标',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                ),
                               ),
                             ],
-                          ],
-                        ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: isDarkMode ? Colors.white60 : Colors.black54,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  },
+                      const SizedBox(height: 16),
+
+                      // 4 列规整网格
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: wordOptions.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 9,
+                          crossAxisSpacing: 9,
+                          childAspectRatio: 1.9,
+                        ),
+                        itemBuilder: (context, index) {
+                          final v = wordOptions[index];
+                          final isSelected = v == currentValue;
+                          final isPremium = SubscriptionUtil.isPremium();
+                          final isRestricted = !isPremium && v > 20;
+
+                          return GestureDetector(
+                            onTap: () async {
+                              if (isRestricted) {
+                                ToastUtil.info('开通会员可选择更多单词数量');
+                                return;
+                              }
+                              Navigator.pop(ctx);
+                              setState(() {
+                                user!.wordsPerDay = v;
+                                dataLoaded = false;
+                              });
+                              await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, v);
+                              await Global.loadUserFromDb();
+                              ThrottledDbSyncService().requestSync();
+                              loadData(forceSupplement: false);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? primaryColor
+                                    : (isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.05)
+                                        : Colors.white.withValues(alpha: 0.35)),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.transparent
+                                      : (isDarkMode
+                                          ? const Color(0x20FFFFFF)
+                                          : const Color(0x80FFFFFF)),
+                                  width: 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: primaryColor.withValues(alpha: 0.32),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '$v',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
+                                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                      fontSize: 15,
+                                      fontFamily: 'Roboto',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '词',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white.withValues(alpha: 0.88)
+                                          : (isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  if (isRestricted) ...[
+                                    const SizedBox(width: 3),
+                                    Icon(
+                                      Icons.workspace_premium_rounded,
+                                      color: isSelected ? Colors.white : Colors.amber,
+                                      size: 12,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 6),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 6),
-              ],
+              ),
             ),
           ),
         );
