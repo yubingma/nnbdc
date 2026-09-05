@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
+import 'package:nnbdc/widget/dict_book_icon.dart';
 
 void main() {
   group('表名转换测试', () {
@@ -159,24 +160,28 @@ environment:
     test('官方系统词书（不可编辑）返回书籍图标与系统属性', () {
       expect(Util.isEditableDict(editable: false, ownerId: '15118', name: '四级词汇(2026版)'), isFalse);
       expect(Util.getDictIcon(editable: false, ownerId: '15118', name: '四级词汇(2026版)'), equals(Icons.auto_stories_rounded));
+      expect(DictBookIcon.resolveType(editable: false, ownerId: '15118', name: '四级词汇(2026版)'), equals(DictBookType.systemReadOnly));
       expect(Util.getDictIconColor(ownerId: '15118', name: '四级词汇(2026版)', defaultColor: Colors.blue), equals(Colors.blue));
     });
 
-    test('生词本（内置可编辑）返回书签图标与专属暖金色', () {
+    test('生词本（内置可编辑）返回统一书本与专属暖金色及生词本类型', () {
       expect(Util.isEditableDict(ownerId: 'test_user', name: '生词本'), isTrue);
-      expect(Util.getDictIcon(ownerId: 'test_user', name: '生词本'), equals(Icons.bookmark_rounded));
+      expect(Util.getDictIcon(ownerId: 'test_user', name: '生词本'), equals(Icons.auto_stories_rounded));
+      expect(DictBookIcon.resolveType(ownerId: 'test_user', name: '生词本'), equals(DictBookType.rawBook));
       expect(Util.getDictIconColor(ownerId: 'test_user', name: '生词本', defaultColor: Colors.blue), equals(const Color(0xFFF59E0B)));
     });
 
-    test('用户自定义词书（可编辑）返回手写笔记图标', () {
+    test('用户自定义词书（可编辑）返回统一书本与自建词书类型', () {
       expect(Util.isEditableDict(editable: true, ownerId: 'test_user', name: 'test'), isTrue);
-      expect(Util.getDictIcon(editable: true, ownerId: 'test_user', name: 'test'), equals(Icons.edit_note_rounded));
+      expect(Util.getDictIcon(editable: true, ownerId: 'test_user', name: 'test'), equals(Icons.auto_stories_rounded));
+      expect(DictBookIcon.resolveType(editable: true, ownerId: 'test_user', name: 'test'), equals(DictBookType.customEditable));
       expect(Util.getDictIconColor(ownerId: 'test_user', name: 'test', defaultColor: Colors.teal), equals(Colors.teal));
     });
 
-    test('已掌握（内置可编辑）返回通关徽标图标与翡翠绿', () {
+    test('已掌握（内置可编辑）返回统一书本与已掌握类型及翡翠绿', () {
       expect(Util.isEditableDict(editable: false, ownerId: 'test_user', name: '已掌握'), isTrue);
-      expect(Util.getDictIcon(editable: false, ownerId: 'test_user', name: '已掌握'), equals(Icons.check_circle_rounded));
+      expect(Util.getDictIcon(editable: false, ownerId: 'test_user', name: '已掌握'), equals(Icons.auto_stories_rounded));
+      expect(DictBookIcon.resolveType(editable: false, ownerId: 'test_user', name: '已掌握'), equals(DictBookType.masteredBook));
       expect(Util.getDictIconColor(ownerId: 'test_user', name: '已掌握', defaultColor: Colors.blue), equals(const Color(0xFF10B981)));
     });
   });

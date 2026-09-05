@@ -92,22 +92,9 @@ class Util {
     return ownerId != null && ownerId != Global.sysUserId;
   }
 
-  /// 获取词书对应的专属语义图标
-  /// - 不可编辑词书 (官方只读教材): Icons.auto_stories_rounded (展开书卷)
-  /// - 可编辑词书:
-  ///   - 生词本: Icons.bookmark_rounded (专属书签)
-  ///   - 已掌握: Icons.check_circle_rounded (已掌握通关徽标)
-  ///   - 自定义可编辑词书: Icons.edit_note_rounded (手写便签笔记本)
+  /// 获取词书对应的基础书本图标 (统一为展开书卷 Icons.auto_stories_rounded)
+  /// 如需带有手写笔徽标、书签等精细语义区分，请使用组件 DictBookIcon
   static IconData getDictIcon({bool? editable, required String? ownerId, required String name}) {
-    if (name == '生词本') {
-      return Icons.bookmark_rounded;
-    }
-    if (name == '已掌握') {
-      return Icons.check_circle_rounded;
-    }
-    if (isEditableDict(editable: editable, ownerId: ownerId, name: name)) {
-      return Icons.edit_note_rounded;
-    }
     return Icons.auto_stories_rounded;
   }
 

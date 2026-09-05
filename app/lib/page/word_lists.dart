@@ -12,6 +12,7 @@ import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/widget/dict_book_icon.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
@@ -369,19 +370,18 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                     final masteryProgress = total > 0 ? (mastered / total).clamp(0.0, 1.0) : 0.0;
                     final fetchProgress = total > 0 ? (fetched / total).clamp(0.0, 1.0) : 0.0;
                     final percent = (masteryProgress * 100).toInt();
-                    final icon = Util.getDictIcon(
-                      editable: dict.editable,
-                      ownerId: dict.ownerId,
-                      name: dict.name,
-                    );
                     final iconColor = Util.getDictIconColor(
                       ownerId: dict.ownerId,
                       name: dict.name,
                       defaultColor: accentColor,
                     );
                     return _buildGroupedItemRow(
-                      icon: icon,
-                      iconColor: iconColor,
+                      leading: DictBookIcon.fromDict(
+                        editable: dict.editable,
+                        ownerId: dict.ownerId,
+                        name: dict.name,
+                        color: iconColor,
+                      ),
                       title: _cleanDictName(dict.name),
                       subtitle: '已掌握 $mastered · 已取 $fetched · $percent%',
                       countText: '$total 词',
@@ -579,8 +579,10 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 child: Divider(height: 1, thickness: 0.5, color: dividerColor),
               ),
               _buildGroupedItemRow(
-                icon: Icons.check_circle_rounded,
-                iconColor: const Color(0xFF10B981), // 通关翡翠绿：牢固掌握达标
+                leading: const DictBookIcon(
+                  type: DictBookType.masteredBook,
+                  size: 22,
+                ),
                 title: '已掌握',
                 subtitle: '已完全牢固掌握的高频词',
                 countText: '${masteredList?.wordCount ?? 0} 词',
@@ -593,8 +595,10 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 child: Divider(height: 1, thickness: 0.5, color: dividerColor),
               ),
               _buildGroupedItemRow(
-                icon: Icons.bookmark_rounded,
-                iconColor: const Color(0xFFF59E0B),
+                leading: const DictBookIcon(
+                  type: DictBookType.rawBook,
+                  size: 22,
+                ),
                 title: '生词本',
                 subtitle: '阅读与查词中标记的高难词',
                 countText: '${rawDictList?.wordCount ?? 0} 词',
@@ -805,8 +809,9 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
   /// 聚合大卡片内部行项
   Widget _buildGroupedItemRow({
-    required IconData icon,
-    required Color iconColor,
+    Widget? leading,
+    IconData? icon,
+    Color? iconColor,
     required String title,
     required String subtitle,
     required String countText,
@@ -835,7 +840,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           child: Row(
             children: [
-              Icon(icon, size: 22, color: iconColor),
+              leading ??
+                  Icon(
+                    icon ?? Icons.auto_stories_rounded,
+                    size: 22,
+                    color: iconColor ?? accentColor,
+                  ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
