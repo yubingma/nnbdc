@@ -1079,7 +1079,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       );
     }
 
-    // 答题后：第一行固定为英文，第二行固定为释义
+    // 答题后：第一行固定为英文，第二行固定为释义（紧凑排布在预留高度内，彻底防止高度跳变）
     if (isAnswered) {
       final pronounce = Util.getWordDefaultPronounce(word);
       return Column(
@@ -1095,9 +1095,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                   text: word.spell,
                   style: TextStyle(
                     fontFamily: 'Roboto',
-                    fontSize: 16.5,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: context.textPrimary,
+                    height: 1.2,
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -1107,9 +1108,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                     text: '[$pronounce]',
                     style: TextStyle(
                       fontFamily: 'NotoSans',
-                      fontSize: 13,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w500,
                       color: context.textSecondary,
+                      height: 1.2,
                     ),
                   ),
                 ],
@@ -1118,9 +1120,9 @@ extension BdcPageStateUIComponents on BdcPageState {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           // 第二行：中文释义
-          _buildMeaningInline(word.getMeaningStr(), 13.5, context.textSecondary),
+          _buildMeaningInline(word.getMeaningStr(), 13.0, context.textSecondary),
         ],
       );
     }
@@ -1354,7 +1356,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                           alignment: Alignment.centerLeft,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
-                            vertical: 12,
+                            vertical: 10,
                           ),
                           child: _buildChoiceItemContent(word, isAnswered, isCh2En),
                         ),
