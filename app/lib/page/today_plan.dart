@@ -1169,35 +1169,52 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
-    return Container(
-      width: double.infinity,
-      height: 48,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            themeConfig.primaryColor,
-            Color.lerp(themeConfig.primaryColor, Colors.white, isDarkMode ? 0.20 : 0.10) ?? themeConfig.primaryColor,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.28 : 0.18),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+    final buttonFgColor = isDarkMode ? Colors.white : themeConfig.primaryColor;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(25),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: double.infinity,
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(25),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDarkMode
+                  ? [
+                      themeConfig.primaryColor.withValues(alpha: 0.38),
+                      themeConfig.primaryColor.withValues(alpha: 0.22),
+                    ]
+                  : [
+                      themeConfig.primaryColor.withValues(alpha: 0.16),
+                      themeConfig.primaryColor.withValues(alpha: 0.08),
+                    ],
+            ),
+            border: Border.all(
+              color: isDarkMode
+                  ? themeConfig.primaryColor.withValues(alpha: 0.50)
+                  : themeConfig.primaryColor.withValues(alpha: 0.32),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.25 : 0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        ),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              foregroundColor: buttonFgColor,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+            ),
         onPressed: () async {
           if (_newCheckStep == null) {
             ToastUtil.error('请选择测评环节');
@@ -1464,19 +1481,21 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
-                color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                color: buttonFgColor,
               ),
             ),
             const SizedBox(width: 6),
             Icon(
               Icons.arrow_forward_rounded,
               size: 18,
-              color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+              color: buttonFgColor,
             ),
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget renderErrorActions() {
