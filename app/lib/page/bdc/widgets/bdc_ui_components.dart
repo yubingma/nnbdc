@@ -1005,26 +1005,99 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildAnswerContent(String text) {
-    if (text.isEmpty) return const SizedBox();
+  Widget _buildChoiceItemContent(WordVo? word, bool isAnswered, bool isCh2En) {
+    if (word == null) return const SizedBox.shrink();
+    final isNoneOfAbove = word.spell == "[ 都不对 ]";
 
+    if (isNoneOfAbove) {
+      return Text(
+        "[ 都不对 ]",
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: context.textPrimary,
+        ),
+      );
+    }
+
+    // 答题后：第一行固定为英文，第二行固定为释义
+    if (isAnswered) {
+      final pronounce = Util.getWordDefaultPronounce(word);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 第一行：英文单词拼写 + 音标
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                word.spell,
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w700,
+                  color: context.textPrimary,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              if (pronounce.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '[$pronounce]',
+                  style: TextStyle(
+                    fontFamily: 'NotoSans',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: context.textSecondary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          // 第二行：中文释义
+          _buildMeaningInline(word.getMeaningStr(), 13.5, context.textSecondary),
+        ],
+      );
+    }
+
+    // 答题前：垂直居中展示单行选项待辨识内容
+    if (isCh2En) {
+      // 中选英：选项是英文单词
+      return Text(
+        word.spell,
+        style: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: context.textPrimary,
+          letterSpacing: 0.2,
+        ),
+      );
+    } else {
+      // 英选中：选项是中文释义
+      return _buildMeaningInline(word.getMeaningStr(), 15.5, context.textPrimary);
+    }
+  }
+
+  Widget _buildMeaningInline(String text, double fontSize, Color defaultColor) {
+    if (text.isEmpty) return const SizedBox.shrink();
     final lines = text.split('\n');
     List<Widget> widgets = [];
 
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       if (line.isEmpty) continue;
-
-      // 使用正则表达式匹配词性（如n.、v.、adj.等）
       final ciXingRegex = RegExp(r'^([a-z]+\.)');
       final match = ciXingRegex.firstMatch(line);
 
       if (match != null) {
-        // 获取词性部分
         String ciXing = match.group(1)!;
-        // 获取释义部分
         String meaning = line.substring(match.end);
-
         widgets.add(
           Text.rich(
             TextSpan(
@@ -1032,18 +1105,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                 TextSpan(
                   text: '$ciXing ',
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: context.textSecondary,
+                    fontSize: fontSize - 1,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Roboto',
+                    color: context.primaryColor,
                   ),
                 ),
                 TextSpan(
                   text: notifier.hideAnswerLeakContent(meaning),
                   style: TextStyle(
                     fontFamily: "NotoSansSC",
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: context.textPrimary,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w500,
+                    color: defaultColor,
                   ),
                 ),
               ],
@@ -1056,15 +1130,13 @@ extension BdcPageStateUIComponents on BdcPageState {
             line,
             style: TextStyle(
               fontFamily: "NotoSansSC",
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: context.textPrimary,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w500,
+              color: defaultColor,
             ),
           ),
         );
       }
-
-      // 添加行间距（除了最后一行）
       if (i < lines.length - 1) {
         widgets.add(const SizedBox(width: 8));
       }
@@ -1080,104 +1152,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
-  Widget _buildSecondaryAnswerContent(WordVo? word, bool isCh2En) {
-    if (word == null || word.spell == "[ 都不对 ]") return const SizedBox.shrink();
-
-    if (isCh2En) {
-      final text = word.getMeaningStr();
-      if (text.isEmpty) return const SizedBox.shrink();
-      final lines = text.split("\n");
-      List<Widget> widgets = [];
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i];
-        if (line.isEmpty) continue;
-        final ciXingRegex = RegExp(r"^([a-z]+\.)");
-        final match = ciXingRegex.firstMatch(line);
-        if (match != null) {
-          String ciXing = match.group(1)!;
-          String meaning = line.substring(match.end);
-          widgets.add(
-            Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: "$ciXing ",
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: context.textSecondary,
-                    ),
-                  ),
-                  TextSpan(
-                    text: meaning,
-                    style: TextStyle(
-                      fontFamily: "NotoSansSC",
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      color: context.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        } else {
-          widgets.add(
-            Text(
-              line,
-              style: TextStyle(
-                fontFamily: "NotoSansSC",
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-                color: context.textSecondary,
-              ),
-            ),
-          );
-        }
-        if (i < lines.length - 1) {
-          widgets.add(const SizedBox(width: 8));
-        }
-      }
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: widgets,
-        ),
-      );
-    } else {
-      final spell = word.spell;
-      if (spell.isEmpty) return const SizedBox.shrink();
-      final pronounce = Util.getWordDefaultPronounce(word);
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            spell,
-            style: TextStyle(
-              fontFamily: "NotoSansSC",
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: context.textSecondary,
-            ),
-          ),
-          if (pronounce.isNotEmpty) ...[
-            const SizedBox(width: 6),
-            Text(
-              '/$pronounce/',
-              style: TextStyle(
-                fontSize: 12,
-                color: context.textSecondary.withValues(alpha: 0.7),
-              ),
-            ),
-          ],
-        ],
-      );
-    }
-  }
 
   Widget _buildChoiceList() {
     if (!(state.studyStep == StudyStep.en2Ch.json ||
@@ -1276,43 +1250,31 @@ extension BdcPageStateUIComponents on BdcPageState {
                         borderRadius: BorderRadius.circular(18),
                         onTap: () => notifier.onAnswerClicked(index + 1, context),
                         child: Stack(
+                          alignment: Alignment.centerLeft,
                           children: [
                             Container(
                               width: double.infinity,
-                              padding: EdgeInsets.symmetric(
+                              constraints: const BoxConstraints(minHeight: 68),
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.symmetric(
                                 horizontal: 18,
-                                vertical: isAnswered && !isNoneOfAbove ? 11 : 15,
+                                vertical: 10,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildAnswerContent(
-                                    isCh2En
-                                        ? (word?.spell.isNotEmpty == true ? word!.spell : "无对应英文")
-                                        : (word?.getMeaningStr().isNotEmpty == true ? word!.getMeaningStr() : "无对应释义"),
-                                  ),
-                                  if (isAnswered && !isNoneOfAbove) ...[
-                                    const SizedBox(height: 4),
-                                    _buildSecondaryAnswerContent(word, isCh2En),
-                                  ],
-                                ],
-                              ),
+                              child: _buildChoiceItemContent(word, isAnswered, isCh2En),
                             ),
                             if (isAnswered && !isNoneOfAbove)
                               Positioned(
-                                top: 10,
-                                right: 10,
+                                right: 14,
                                 child: Container(
-                                  width: 22,
-                                  height: 22,
+                                  width: 26,
+                                  height: 26,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: context.subtleBg,
                                   ),
                                   child: Icon(
                                     Icons.volume_up_rounded,
-                                    size: 13,
+                                    size: 15,
                                     color: context.primaryColor,
                                   ),
                                 ),
