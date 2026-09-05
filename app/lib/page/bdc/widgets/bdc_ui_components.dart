@@ -1435,34 +1435,43 @@ extension BdcPageStateUIComponents on BdcPageState {
                     : Colors.black.withValues(alpha: 0.05),
               ),
 
-              // 2. 滚动区域：中文释义 / 拼写提示
+              // 2. 滚动区域：中文释义 / 拼写提示与手写结果
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: SingleChildScrollView(
-                    controller: _speakPanelScrollController,
-                    physics: state.showHandwritingBoard
-                        ? const NeverScrollableScrollPhysics()
-                        : null,
-                    padding: EdgeInsets.zero,
-                    child: () {
-                      final step = state.studyStep;
-                      if (step == StudyStep.enSentence2Ch.json) {
-                        return _buildSentenceAnswerArea();
-                      } else if (step == StudyStep.chSentence2En.json) {
-                        return _buildSentenceAnswerArea();
-                      } else if (step == StudyStep.en2Ch.json) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...renderAsrMeaningItems(state.wordWrapper!,
-                                isDarkMode: context.read<DarkMode>().isDarkMode),
-                          ],
-                        );
-                      } else {
-                        return const SizedBox.shrink();
-                      }
-                    }(),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        controller: _speakPanelScrollController,
+                        physics: state.showHandwritingBoard
+                            ? const NeverScrollableScrollPhysics()
+                            : null,
+                        padding: EdgeInsets.zero,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: () {
+                            final step = state.studyStep;
+                            if (step == StudyStep.enSentence2Ch.json) {
+                              return _buildSentenceAnswerArea();
+                            } else if (step == StudyStep.chSentence2En.json) {
+                              return _buildSentenceAnswerArea();
+                            } else if (step == StudyStep.en2Ch.json) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ...renderAsrMeaningItems(state.wordWrapper!,
+                                      isDarkMode: context.read<DarkMode>().isDarkMode),
+                                ],
+                              );
+                            } else {
+                              return Center(
+                                child: _buildCenteredSpellingHint(isDarkMode),
+                              );
+                            }
+                          }(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -1480,6 +1489,78 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
+
+  Widget _buildCenteredSpellingHint(bool isDarkMode) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: notifier.meaningController,
+      builder: (context, value, child) {
+        final text = value.text;
+        if (text.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final targetSpell = state.word?.spell ?? '';
+        final isMatched =
+            text.trim().toLowerCase() == targetSpell.trim().toLowerCase();
+        final textPrimaryColor =
+            isDarkMode ? Colors.white : const Color(0xFF1D1D1F);
+        final textColor = isMatched ? textPrimaryColor : context.primaryColor;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                children: [
+                  SpellingTextEditingController.buildSpellingTextSpan(
+                    text,
+                    targetSpell,
+                    text.trim().toLowerCase() != targetSpell.trim().toLowerCase() &&
+                            !targetSpell.toLowerCase().startsWith(text.trim().toLowerCase())
+                        ? const Color(0xFFFA6E59)
+                        : textColor,
+                    TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 3.5,
+                      color: textColor,
+                    ),
+                  ),
+                  if (text.length < targetSpell.length)
+                    TextSpan(
+                      text: _buildUnderlines(targetSpell, text.length),
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 3.5,
+                        color: isDarkMode
+                            ? Colors.white.withValues(alpha: 0.28)
+                            : Colors.black.withValues(alpha: 0.22),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _buildUnderlines(String targetWord, int inputLength) {
+    final buffer = StringBuffer();
+    for (int i = inputLength; i < targetWord.length; i++) {
+      final char = targetWord[i];
+      if (RegExp(r'[a-zA-Z]').hasMatch(char)) {
+        buffer.write('_');
+      } else {
+        buffer.write(char);
+      }
+    }
+    return buffer.toString();
+  }
 
   Widget _buildAiJudgingBadge(bool isDarkMode) {
     return Container(
