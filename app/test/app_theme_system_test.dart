@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
+import 'package:nnbdc/widget/theme_select_dialog.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   group('AppThemeStyle & AppThemeConfig 全局质感与扇贝设计系统测试', () {
@@ -102,6 +105,58 @@ void main() {
 
         expect(themeData.chipTheme.checkmarkColor, Colors.white, reason: '${style.name} 对勾应为纯白');
       }
+    });
+
+    testWidgets('ThemeSelectDialog 毛玻璃弹窗能正常弹出、展示 9 种主题、点击切换并关闭', (tester) async {
+      final darkMode = DarkMode();
+      darkMode.setThemeStyle(AppThemeStyle.emerald);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<DarkMode>.value(
+          value: darkMode,
+          child: MaterialApp(
+            theme: AppTheme.getThemeData(AppThemeStyle.emerald),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    key: const Key('open_dialog_btn'),
+                    onPressed: () {
+                      ThemeSelectDialog.show(context);
+                    },
+                    child: const Text('Open'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // 点击打开弹窗
+      await tester.tap(find.byKey(const Key('open_dialog_btn')));
+      await tester.pumpAndSettle();
+
+      // 验证弹窗标题与毛玻璃容器
+      expect(find.text('外观主题'), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsOneWidget);
+
+      // 验证 9 款主题均正常展示
+      for (final style in AppThemeStyle.values) {
+        expect(find.text(style.label), findsOneWidget);
+      }
+
+      // 点击选择 "京都朱砂" 主题
+      await tester.tap(find.text('京都朱砂'));
+      await tester.pumpAndSettle();
+      expect(darkMode.themeStyle, AppThemeStyle.crimson);
+
+      // 点击底部完成按钮关闭弹窗
+      await tester.tap(find.text('完成'));
+      await tester.pumpAndSettle();
+
+      // 弹窗已关闭
+      expect(find.text('外观主题'), findsNothing);
     });
   });
 }
