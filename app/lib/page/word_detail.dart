@@ -2266,7 +2266,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         Expanded(
           child: ListView.builder(
             controller: _chatScrollController,
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             itemCount: _chatMessages.length,
             itemBuilder: (context, index) {
               final msg = _chatMessages[index];
@@ -2275,12 +2275,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           ),
         ),
 
-        // 快捷探索提示词（仅当消息少时展示）
+        // 快捷探索提示词（仅当消息较少时展示）
         if (_chatMessages.length <= 1)
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: const EdgeInsets.only(bottom: 8),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
                   _buildQuickPromptChip('🎯 常用高频搭配与例句', isDarkMode),
@@ -2296,8 +2298,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         // 错误提示
         if (_aiError != null)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.red[400]?.withValues(alpha: 0.1),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.red[400]?.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Row(
               children: [
                 Icon(Icons.error_outline_rounded, size: 16, color: Colors.red[400]),
@@ -2316,92 +2322,96 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             ),
           ),
 
-        // 底部输入栏（极简单层胶囊设计）
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            16, 6, 16,
-            (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 8),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Focus(
-                  onFocusChange: (hasFocus) {
-                    if (mounted) setState(() {});
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(22),
-                      border: _chatInputFocusNode.hasFocus
-                          ? Border.all(color: context.primaryColor, width: 1.2)
-                          : null,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: TextField(
-                      focusNode: _chatInputFocusNode,
-                      controller: _chatInputController,
-                      maxLines: 4,
-                      minLines: 1,
-                      decoration: InputDecoration(
-                        hintText: '向 AI 助教提问关于该词的疑问...',
-                        hintStyle: TextStyle(
-                          fontSize: 13.5,
-                          color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+        // 底部输入栏（全面屏安全避让 + 极简胶囊）
+        SafeArea(
+          top: false,
+          maintainBottomViewPadding: true,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Focus(
+                    onFocusChange: (hasFocus) {
+                      if (mounted) setState(() {});
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: _chatInputFocusNode.hasFocus
+                              ? context.primaryColor
+                              : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
+                          width: _chatInputFocusNode.hasFocus ? 1.2 : 0.6,
                         ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        isDense: true,
-                        filled: false,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: TextField(
+                        focusNode: _chatInputFocusNode,
+                        controller: _chatInputController,
+                        maxLines: 4,
+                        minLines: 1,
+                        decoration: InputDecoration(
+                          hintText: '向 AI 助教提问关于该词的疑问...',
+                          hintStyle: TextStyle(
+                            fontSize: 13.5,
+                            color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                          isDense: true,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _aiLoading
-                    ? null
-                    : () {
-                        if (_chatInputController.text.trim().isNotEmpty) {
-                          _sendChatMessage(_chatInputController.text.trim());
-                        }
-                      },
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  margin: const EdgeInsets.only(bottom: 1),
-                  decoration: BoxDecoration(
-                    color: _aiLoading
-                        ? (isDarkMode ? Colors.white10 : const Color(0xFFE2E8F0))
-                        : context.primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: _aiLoading
-                      ? Center(
-                          child: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _aiLoading
+                      ? null
+                      : () {
+                          if (_chatInputController.text.trim().isNotEmpty) {
+                            _sendChatMessage(_chatInputController.text.trim());
+                          }
+                        },
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    margin: const EdgeInsets.only(bottom: 1),
+                    decoration: BoxDecoration(
+                      color: _aiLoading
+                          ? (isDarkMode ? Colors.white10 : const Color(0xFFE2E8F0))
+                          : context.primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: _aiLoading
+                        ? Center(
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
+                              ),
                             ),
-                          ),
-                        )
-                      : const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 19),
+                          )
+                        : const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -2409,23 +2419,30 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Widget _buildQuickPromptChip(String label, bool isDarkMode) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        _sendChatMessage(label.replaceAll(RegExp(r'^[^\w\s\u4e00-\u9fa5]+'), '').trim());
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.5,
-            color: isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
-            fontWeight: FontWeight.w500,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          _sendChatMessage(label.replaceAll(RegExp(r'^[^\w\s\u4e00-\u9fa5]+'), '').trim());
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6.5),
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+              width: 0.6,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),
@@ -2434,8 +2451,23 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
   Widget _buildChatMessageWidget(ChatMessage msg, bool isDarkMode) {
     final isAssistant = msg.role == MessageRole.assistant;
+
+    // 解析建议追问链接 [xxx](suggest:xxx)
+    final suggestRegex = RegExp(r'\[(.*?)\]\(suggest:.*?\)', dotAll: true);
+    String mainContent = msg.content;
+    final List<String> suggestions = [];
+    if (isAssistant && suggestRegex.hasMatch(msg.content)) {
+      for (final match in suggestRegex.allMatches(msg.content)) {
+        final text = match.group(1)?.trim();
+        if (text != null && text.isNotEmpty) {
+          suggestions.add(text);
+        }
+      }
+      mainContent = msg.content.replaceAll(suggestRegex, '').trim();
+    }
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: isAssistant ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
@@ -2445,35 +2477,64 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
           // 消息正文
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
+            width: isAssistant ? double.infinity : null,
+            constraints: isAssistant
+                ? null
+                : BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isAssistant
                   ? (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC))
                   : context.primaryColor,
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(14),
-                topRight: const Radius.circular(14),
-                bottomLeft: Radius.circular(isAssistant ? 3 : 14),
-                bottomRight: Radius.circular(isAssistant ? 14 : 3),
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: Radius.circular(isAssistant ? 4 : 16),
+                bottomRight: Radius.circular(isAssistant ? 16 : 4),
               ),
               border: isAssistant
                   ? Border.all(
                       color: isDarkMode
                           ? Colors.white.withValues(alpha: 0.08)
-                          : Colors.black.withValues(alpha: 0.06),
-                      width: 0.5,
+                          : const Color(0xFFE2E8F0),
+                      width: 0.6,
                     )
                   : null,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 助教轻量标识微标
+                if (isAssistant)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          size: 13,
+                          color: context.primaryColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'AI 助教解析',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: context.primaryColor,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 if (msg.content.isEmpty && isAssistant && _aiLoading && _chatMessages.lastIndexOf(msg) == _chatMessages.length - 1)
-                  const Text('...', style: TextStyle(fontStyle: FontStyle.italic))
-                else if (isAssistant)
+                  const Text('正在思考与生成...', style: TextStyle(fontSize: 13.5, fontStyle: FontStyle.italic, color: Colors.grey))
+                else if (isAssistant) ...[
                   MarkdownBody(
-                    data: msg.content,
+                    data: mainContent,
                     selectable: true,
                     onTapLink: (text, href, title) {
                       if (href != null && href.startsWith('suggest:')) {
@@ -2484,7 +2545,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       p: TextStyle(
                         fontSize: 14,
                         color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
-                        height: 1.55,
+                        height: 1.6,
                       ),
                       h1: TextStyle(
                         fontSize: 16,
@@ -2533,8 +2594,64 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
                       ),
                     ),
-                  )
-                else
+                  ),
+
+                  // 交互式建议追问药丸
+                  if (suggestions.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: suggestions.map((suggest) {
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _sendChatMessage(suggest),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: context.primaryColor.withValues(alpha: isDarkMode ? 0.3 : 0.2),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.chat_bubble_outline_rounded,
+                                    size: 13,
+                                    color: context.primaryColor,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      suggest,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: context.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.arrow_outward_rounded,
+                                    size: 13,
+                                    color: context.primaryColor,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ] else
                   SelectableText(
                     msg.content,
                     style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
