@@ -1123,9 +1123,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: cardShadow,
-            border: Border.all(color: borderColor, width: 1.2),
+            border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 0.8),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1210,8 +1210,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                 style: TextStyle(
                                   color: textColor,
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: 'NotoSansSC',
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1231,8 +1231,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.15) : subtleBgColor,
-                                  borderRadius: BorderRadius.circular(10),
+                                  color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.15 : 0.08),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -1249,16 +1249,18 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                       style: TextStyle(
                                         color: accentColor,
                                         fontSize: 11,
-                                        fontWeight: FontWeight.w800,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
+                                    const SizedBox(width: 2),
+                                    Icon(Icons.arrow_forward_ios_rounded, size: 9, color: accentColor.withValues(alpha: 0.6)),
                                   ],
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         // 名言
                         Text(
                           '“${LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1)}”',
@@ -1266,8 +1268,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: subtitleColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.2,
                           ),
                         ),
                       ],
@@ -1277,7 +1280,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
               ),
               const SizedBox(height: 14),
 
-              // 1.2 左右双列横向高光展台 (1:1 严格对齐原型：荣耀勋章墙 + 复习分布图)
+              // 1.2 左右双列横向高光展台 (荣耀勋章墙 + 复习分布图)
               Row(
                 children: [
                   // 左：荣耀勋章墙
@@ -1285,26 +1288,18 @@ class MePageState extends State<MePage> implements RefreshableTab {
                     child: GestureDetector(
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const BadgeWallPage())),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                           color: subtleBgColor,
                           border: Border.all(
-                            color: borderColor,
-                            width: 1.0,
+                            color: borderColor.withValues(alpha: 0.6),
+                            width: 0.8,
                           ),
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(Icons.emoji_events_rounded, color: accentColor, size: 20),
-                            ),
+                            Icon(Icons.emoji_events_rounded, color: accentColor, size: 22),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
@@ -1319,12 +1314,11 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                       style: TextStyle(
                                         color: textColor,
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w800,
-                                        fontFamily: 'NotoSansSC',
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 1),
+                                  const SizedBox(height: 1.5),
                                   FittedBox(
                                     fit: BoxFit.scaleDown,
                                     alignment: Alignment.centerLeft,
@@ -1332,15 +1326,15 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                       '点亮成就图鉴',
                                       style: TextStyle(
                                         color: subtitleColor,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                        fontFamily: 'NotoSansSC',
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w400,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                            Icon(Icons.arrow_forward_ios_rounded, size: 10, color: subtitleColor.withValues(alpha: 0.35)),
                           ],
                         ),
                       ),
@@ -1352,26 +1346,18 @@ class MePageState extends State<MePage> implements RefreshableTab {
                     child: GestureDetector(
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ReviewDistributionPage())),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                           color: subtleBgColor,
                           border: Border.all(
-                            color: borderColor,
-                            width: 1.0,
+                            color: borderColor.withValues(alpha: 0.6),
+                            width: 0.8,
                           ),
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(Icons.bar_chart_rounded, color: accentColor, size: 20),
-                            ),
+                            Icon(Icons.bar_chart_rounded, color: accentColor, size: 22),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
@@ -1386,12 +1372,11 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                       style: TextStyle(
                                         color: textColor,
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w800,
-                                        fontFamily: 'NotoSansSC',
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 1),
+                                  const SizedBox(height: 1.5),
                                   FittedBox(
                                     fit: BoxFit.scaleDown,
                                     alignment: Alignment.centerLeft,
@@ -1399,15 +1384,15 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                       '艾宾浩斯记忆云图',
                                       style: TextStyle(
                                         color: subtitleColor,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                        fontFamily: 'NotoSansSC',
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w400,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                            Icon(Icons.arrow_forward_ios_rounded, size: 10, color: subtitleColor.withValues(alpha: 0.35)),
                           ],
                         ),
                       ),
@@ -1435,30 +1420,30 @@ class MePageState extends State<MePage> implements RefreshableTab {
                     _showPrivilegesDialog(context, accountInfo);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7.5),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.1) : subtleBgColor,
+                      borderRadius: BorderRadius.circular(10),
+                      color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.12 : 0.06),
                       border: Border.all(
-                        color: accentColor.withValues(alpha: 0.25),
-                        width: 1.0,
+                        color: accentColor.withValues(alpha: 0.18),
+                        width: 0.8,
                       ),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
                           decoration: BoxDecoration(
                             color: accentColor,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             accountTag,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: 'NotoSansSC',
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Roboto',
                             ),
                           ),
                         ),
@@ -1468,9 +1453,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             displayText,
                             style: TextStyle(
                               color: textColor,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'NotoSansSC',
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1483,13 +1467,12 @@ class MePageState extends State<MePage> implements RefreshableTab {
                               isPremium ? '特权' : (PlatformUtils.isIOS ? '升级特权' : '详情'),
                               style: TextStyle(
                                 color: accentColor,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                fontFamily: 'NotoSansSC',
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(width: 2),
-                            Icon(Icons.chevron_right_rounded, size: 14, color: accentColor),
+                            Icon(Icons.arrow_forward_ios_rounded, size: 10, color: accentColor.withValues(alpha: 0.8)),
                           ],
                         ),
                       ],
@@ -1530,26 +1513,26 @@ class MePageState extends State<MePage> implements RefreshableTab {
           ),
         ),
 
-        // 2. 我的书桌 (My Desk) - 严格对齐原型图布局
+        // 2. 我的书桌 (My Desk)
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 0.8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 2.1 标题行：左边「我的书桌」 + 右边「+ 选择词书」胶囊
+              // 2.1 标题行：左边「我的书桌」 + 右边轻灵「选词书 ›」
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1557,9 +1540,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
                     '我的书桌',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w600,
                       color: textColor,
-                      fontFamily: 'NotoSansSC',
                     ),
                   ),
                   GestureDetector(
@@ -1569,24 +1551,21 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         loadData();
                       });
                     },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.15) : subtleBgColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            '+ 选择词书',
+                            '选词书',
                             style: TextStyle(
                               color: accentColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              fontFamily: 'NotoSansSC',
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
+                          const SizedBox(width: 2),
+                          Icon(Icons.arrow_forward_ios_rounded, size: 10, color: accentColor.withValues(alpha: 0.8)),
                         ],
                       ),
                     ),
@@ -1612,10 +1591,14 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 final fetchColor = accentColor.withValues(alpha: 0.6);
 
                 return Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: subtleBgColor,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: borderColor.withValues(alpha: 0.5),
+                      width: 0.6,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1627,9 +1610,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             "词书总进度",
                             style: TextStyle(
                               color: subtitleColor,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'NotoSansSC',
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           Text.rich(
@@ -1640,16 +1622,15 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                   style: TextStyle(
                                     color: subtitleColor,
                                     fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'NotoSansSC',
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                                 TextSpan(
                                   text: '$masteryPercentText%',
                                   style: TextStyle(
                                     color: textColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w900,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
                                     fontFamily: 'Roboto',
                                   ),
                                 ),
@@ -1658,16 +1639,15 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                   style: TextStyle(
                                     color: subtitleColor,
                                     fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'NotoSansSC',
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                                 TextSpan(
                                   text: '$fetchPercentText%',
                                   style: TextStyle(
                                     color: textColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w900,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
                                     fontFamily: 'Roboto',
                                   ),
                                 ),
@@ -1678,11 +1658,11 @@ class MePageState extends State<MePage> implements RefreshableTab {
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        height: 6,
+                        height: 4,
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                         child: LayoutBuilder(
                           builder: (context, constraints) {
@@ -1695,7 +1675,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                     width: constraints.maxWidth * clampedFetchProgress,
                                     decoration: BoxDecoration(
                                       color: fetchColor,
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
                                 if (clampedMasteryProgress > 0)
@@ -1703,7 +1683,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                     width: constraints.maxWidth * clampedMasteryProgress,
                                     decoration: BoxDecoration(
                                       color: masteredColor,
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(2),
                                     ),
                                   ),
                               ],
@@ -1753,19 +1733,19 @@ class MePageState extends State<MePage> implements RefreshableTab {
           ),
         ),
 
-        // 3. 学习成就统计卡片 (1:1 对齐原型图：3个微卡片 + 嵌套最近30天打卡记录)
+        // 3. 学习成就统计卡片
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 0.8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -1776,14 +1756,13 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 '学习成就统计',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w600,
                   color: textColor,
-                  fontFamily: 'NotoSansSC',
                 ),
               ),
               const SizedBox(height: 14),
 
-              // 3.1 三个统计微卡片 (纯净数值 + 标签，1:1 对齐原型)
+              // 3.1 三个统计微卡片
               Row(
                 children: [
                   _buildStatBox(
@@ -1812,7 +1791,11 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: subtleBgColor,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: borderColor.withValues(alpha: 0.5),
+                    width: 0.6,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1823,21 +1806,27 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         Text(
                           '最近 30 天打卡记录',
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
                             color: textColor,
-                            fontFamily: 'NotoSansSC',
                           ),
                         ),
                         GestureDetector(
                           onTap: () => context.push('/study_stats'),
-                          child: Text(
-                            '更多 >',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: subtitleColor,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '更多',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: subtitleColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(Icons.arrow_forward_ios_rounded, size: 9, color: subtitleColor.withValues(alpha: 0.7)),
+                            ],
                           ),
                         ),
                       ],
@@ -1884,18 +1873,18 @@ class MePageState extends State<MePage> implements RefreshableTab {
           ),
         ),
 
-        // 4. 设置与工具卡片 (1:1 严格对齐原型结构与文案)
+        // 4. 设置与工具卡片
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 0.8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
-                blurRadius: 12,
+                blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -1907,9 +1896,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 '设置与工具',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w600,
                   color: textColor,
-                  fontFamily: 'NotoSansSC',
                 ),
               ),
               const SizedBox(height: 12),
@@ -2797,16 +2785,20 @@ class MePageState extends State<MePage> implements RefreshableTab {
     }
   }
 
-  // 统计项小卡片 (1:1 严格对齐原型：大字数值 + 小字标签，无多余图标)
+  // 统计项小卡片
   Widget _buildStatBox(bool isDarkMode, String label, String value) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
           color: themeConfig.subtleBg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: themeConfig.cardBorder.withValues(alpha: 0.5),
+            width: 0.6,
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2815,9 +2807,10 @@ class MePageState extends State<MePage> implements RefreshableTab {
               value,
               style: TextStyle(
                 color: themeConfig.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
                 fontFamily: 'Roboto',
+                letterSpacing: -0.3,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2827,9 +2820,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
               label,
               style: TextStyle(
                 color: themeConfig.textSecondary,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'NotoSansSC',
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -3144,230 +3136,220 @@ class _DictCardState extends State<DictCard> {
     final cardBg = themeConfig.subtleBg;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor, width: 1.0),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor.withValues(alpha: 0.5), width: 0.8),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. 上半部分：左侧环形进度 + 右侧（词书全名 + 掌握/取词统计）
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeOutCubic,
-                builder: (context, animValue, child) {
-                  return SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: CustomPaint(
-                      painter: ThreeSegmentProgressPainter(
-                        masteryProgress: masteryProgress * animValue,
-                        fetchProgress: fetchProgress * animValue,
-                        masteredColor: masteredColor,
-                        fetchColor: fetchColor,
-                        backgroundColor: isDarkMode ? Colors.white10 : masteredColor.withValues(alpha: 0.12),
-                        dividerColor: cardBg,
-                        strokeWidth: 4.0,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$progressPercent%',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: masteredColor,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'Roboto',
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(width: 12),
-              // 词书信息区：词书名独占第一行，统计文字独占第二行，绝无挤压！
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () async {
+            try {
+              await toDictWordsListPage(currentLearningDict.dictId, false);
+              widget.onDictChanged();
+            } catch (e) {
+              ToastUtil.error("无法打开词书");
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. 上半部分：左侧环形进度 + 右侧（词书名称与优先标 + 掌握/取词统计 + 细箭头）
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      widget.dictInfo.name.replaceAll('.dict', ''),
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: 'NotoSansSC',
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, animValue, child) {
+                        return SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CustomPaint(
+                            painter: ThreeSegmentProgressPainter(
+                              masteryProgress: masteryProgress * animValue,
+                              fetchProgress: fetchProgress * animValue,
+                              masteredColor: masteredColor,
+                              fetchColor: fetchColor,
+                              backgroundColor: isDarkMode ? Colors.white10 : masteredColor.withValues(alpha: 0.1),
+                              dividerColor: cardBg,
+                              strokeWidth: 3.2,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$progressPercent%',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: masteredColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Roboto',
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '已掌握 $masteredWords · 已取词 $fetchWords / $totalWords 词',
-                      style: TextStyle(
-                        color: subtitleColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'NotoSansSC',
+                    const SizedBox(width: 12),
+                    // 词书信息区
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  widget.dictInfo.name.replaceAll('.dict', ''),
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (currentLearningDict.isPrivileged) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: masteredColor.withValues(alpha: isDarkMode ? 0.2 : 0.12),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    '优先',
+                                    style: TextStyle(
+                                      color: masteredColor,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '已掌握 $masteredWords · 已取词 $fetchWords / $totalWords 词',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 11,
+                      color: subtitleColor.withValues(alpha: 0.35),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 2. 下半部分：三个按钮整齐排在同一行
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // 按钮 1：优先取词微胶囊
-              GestureDetector(
-                onTap: () async {
-                  try {
-                    final newPrivilegedStatus = await MyDatabase.instance.learningDictsDao
-                        .togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
+                const SizedBox(height: 10),
+                // 2. 下半部分：轻量级微操作栏
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // 左侧：优先取词微开关
+                    GestureDetector(
+                      onTap: () async {
+                        try {
+                          final newPrivilegedStatus = await MyDatabase.instance.learningDictsDao
+                              .togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
 
-                    if (mounted) {
-                      setState(() {
-                        currentLearningDict = LearningDict(
-                          userId: currentLearningDict.userId,
-                          dictId: currentLearningDict.dictId,
-                          isPrivileged: newPrivilegedStatus,
-                          fetchMastered: currentLearningDict.fetchMastered,
-                          sortAlg: currentLearningDict.sortAlg,
-                          createTime: currentLearningDict.createTime,
-                          updateTime: currentLearningDict.updateTime,
-                        );
-                      });
-                    }
+                          if (mounted) {
+                            setState(() {
+                              currentLearningDict = LearningDict(
+                                userId: currentLearningDict.userId,
+                                dictId: currentLearningDict.dictId,
+                                isPrivileged: newPrivilegedStatus,
+                                fetchMastered: currentLearningDict.fetchMastered,
+                                sortAlg: currentLearningDict.sortAlg,
+                                createTime: currentLearningDict.createTime,
+                                updateTime: currentLearningDict.updateTime,
+                              );
+                            });
+                          }
 
-                    ThrottledDbSyncService().requestSync();
-                  } catch (error) {
-                    Global.logger.d('切换优先取词状态失败: $error');
-                    ToastUtil.error('操作失败，请重试');
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: currentLearningDict.isPrivileged
-                        ? (isDarkMode ? masteredColor.withValues(alpha: 0.2) : masteredColor.withValues(alpha: 0.12))
-                        : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : themeConfig.cardBg),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: currentLearningDict.isPrivileged
-                          ? masteredColor.withValues(alpha: 0.5)
-                          : themeConfig.cardBorder,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        currentLearningDict.isPrivileged ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                        size: 12,
-                        color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '优先取词',
-                        style: TextStyle(
-                          color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor,
-                          fontSize: 11,
-                          fontWeight: currentLearningDict.isPrivileged ? FontWeight.w800 : FontWeight.w500,
-                          fontFamily: 'NotoSansSC',
+                          ThrottledDbSyncService().requestSync();
+                        } catch (error) {
+                          Global.logger.d('切换优先取词状态失败: $error');
+                          ToastUtil.error('操作失败，请重试');
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: currentLearningDict.isPrivileged
+                              ? (isDarkMode ? masteredColor.withValues(alpha: 0.2) : masteredColor.withValues(alpha: 0.12))
+                              : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              currentLearningDict.isPrivileged ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                              size: 11,
+                              color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor.withValues(alpha: 0.7),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              currentLearningDict.isPrivileged ? '优先取词中' : '设为优先',
+                              style: TextStyle(
+                                color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor,
+                                fontSize: 10.5,
+                                fontWeight: currentLearningDict.isPrivileged ? FontWeight.w600 : FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // 按钮 2：查看词表
-              GestureDetector(
-                onTap: () async {
-                  try {
-                    await toDictWordsListPage(currentLearningDict.dictId, false);
-                    widget.onDictChanged();
-                  } catch (e) {
-                    ToastUtil.error("无法打开词书");
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : themeConfig.cardBg,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: themeConfig.cardBorder,
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.format_list_bulleted_rounded, size: 12, color: subtitleColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        '查看',
-                        style: TextStyle(
-                          color: subtitleColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'NotoSansSC',
+                    // 右侧：移出书桌（停学）
+                    GestureDetector(
+                      onTap: () => _handleDictDataAction(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.remove_circle_outline_rounded,
+                              size: 11,
+                              color: subtitleColor.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              '停学',
+                              style: TextStyle(
+                                color: subtitleColor.withValues(alpha: 0.7),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // 按钮 3：移出书桌
-              GestureDetector(
-                onTap: () => _handleDictDataAction(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : themeConfig.cardBg,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: themeConfig.cardBorder,
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.remove_circle_outline_rounded,
-                        size: 13,
-                        color: subtitleColor,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '停学',
-                        style: TextStyle(
-                          color: subtitleColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'NotoSansSC',
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

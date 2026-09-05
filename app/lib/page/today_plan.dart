@@ -669,7 +669,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'WORDS',
+                          '词',
                           style: TextStyle(
                             color: textSecondary,
                             fontSize: 11,
@@ -770,41 +770,67 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               !_hasTriedSupplement)
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF2E1A05) : const Color(0xFFFFFBEB),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => loadData(forceSupplement: true),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDarkMode ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '任务量不足，建议补充单词',
-                        style: TextStyle(
-                          color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? const Color(0xFF2E1A05) : const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDarkMode ? const Color(0x6678350F) : const Color(0x80FDE68A),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 15),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '任务量未满，可补充',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD97706).withValues(alpha: isDarkMode ? 0.25 : 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '补充',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 9,
+                                color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
-                        foregroundColor: isDarkMode ? Colors.white : Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: () => loadData(forceSupplement: true),
-                      child: const Text('补充', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
