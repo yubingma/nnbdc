@@ -2225,19 +2225,177 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         : (isNew ? _newWrongSteps : _reviewWrongSteps);
     final available = allStepNames.where((s) => !current.contains(s)).toList();
     if (available.isEmpty) return;
+
+    final darkMode = context.read<DarkMode>();
+    final isDarkMode = darkMode.isDarkMode;
+    final titleColor = isCorrect
+        ? (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669))
+        : (isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706));
+    final titleText = isCorrect ? '添加答对后环节' : '添加答错后环节';
+    final subText = isCorrect ? '单词测评正确后追加的学习环节' : '单词测评错误后追加的强化环节';
+
     final picked = await showDialog<String>(
       context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(isCorrect ? '添加"答对后"环节' : '添加"答错后"环节'),
-        children: [
-          for (final s in available)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(ctx, s),
-              child: Text(StudyStepExt.fromString(s).description),
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.25),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDarkMode
+                      ? [
+                          const Color(0xFF1C2230).withValues(alpha: 0.96),
+                          const Color(0xFF121722).withValues(alpha: 0.92),
+                        ]
+                      : [
+                          Colors.white.withValues(alpha: 0.97),
+                          Colors.white.withValues(alpha: 0.93),
+                        ],
+                ),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.white.withValues(alpha: 0.85),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.12),
+                    blurRadius: 28,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 顶部标题行
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: titleColor.withValues(alpha: isDarkMode ? 0.20 : 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                              size: 18,
+                              color: titleColor,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                titleText,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                subText,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Navigator.pop(ctx),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: isDarkMode ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 可选环节卡片列表
+                  for (int i = 0; i < available.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => Navigator.pop(ctx, available[i]),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              StudyStepExt.fromString(available[i]).description,
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: titleColor.withValues(alpha: isDarkMode ? 0.16 : 0.10),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(
+                                Icons.add_rounded,
+                                size: 14,
+                                color: titleColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-        ],
+          ),
+        ),
       ),
     );
+
     if (picked != null && mounted) {
       setState(() {
         if (isCorrect) {
