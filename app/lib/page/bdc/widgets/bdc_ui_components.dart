@@ -2245,53 +2245,36 @@ extension BdcPageStateUIComponents on BdcPageState {
     VoidCallback? onLongPress,
   }) {
     final isDarkMode = _cachedIsDarkMode;
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.75),
-        border: Border.all(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.14)
-              : Colors.white.withValues(alpha: 0.90),
-          width: 0.9,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.20 : 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1.5),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  color: isDarkMode ? const Color(0xFFCBD5E1) : context.primaryColor,
-                  size: 13,
+    final Color actionColor =
+        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3.5),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: actionColor,
+                size: 13.5,
+              ),
+              const SizedBox(width: 3.5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: actionColor,
+                  letterSpacing: -0.1,
                 ),
-                const SizedBox(width: 3.5),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: isDarkMode ? Colors.white70 : context.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
