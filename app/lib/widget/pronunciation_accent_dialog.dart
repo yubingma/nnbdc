@@ -1,27 +1,39 @@
-import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
 import '../util/prefs.dart';
 
 /// 发音口音选择弹框：提供美音与英音切换，展示专属国旗图标与描述。
+/// 遵循全局现代极简美学与高斯模糊毛玻璃规范（flutter-frosted-glass）。
 class PronunciationAccentDialog extends StatefulWidget {
   const PronunciationAccentDialog({super.key});
 
   /// 弹出对话框，返回选中的口音代号 ('us' 或 'uk')，若未切换或取消则返回 null
   static Future<String?> show(BuildContext context) {
-    return showDialog<String>(
+    final isDark = context.read<DarkMode>().isDarkMode;
+    return showGeneralDialog<String>(
       context: context,
-      builder: (_) => const PronunciationAccentDialog(),
+      barrierDismissible: true,
+      barrierLabel: 'dismiss_pronunciation_accent',
+      barrierColor: Colors.black.withValues(alpha: isDark ? 0.40 : 0.18),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (dialogCtx, anim1, anim2) {
+        return const PronunciationAccentDialog();
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
     );
   }
 
   @override
-  State<PronunciationAccentDialog> createState() =>
-      _PronunciationAccentDialogState();
+  State<PronunciationAccentDialog> createState() => _PronunciationAccentDialogState();
 }
 
 class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
@@ -49,61 +61,201 @@ class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<DarkMode>().isDarkMode;
-    final primaryColor = Global.highlight;
-    final textColor = context.textPrimary;
+    final darkMode = context.watch<DarkMode>();
+    final selectedStyle = darkMode.themeStyle;
+    final themeConfig = AppThemeConfig.of(selectedStyle);
+    final isDark = selectedStyle.isDark || darkMode.isDarkMode;
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titlePadding: EdgeInsets.zero,
-      contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-      title: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        decoration: BoxDecoration(
-          color: primaryColor.withValues(alpha: isDark ? 0.18 : 0.1),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.graphic_eq_rounded, color: primaryColor, size: 22),
-            const SizedBox(width: 10),
-            Text(
-              '发音口音',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: textColor,
-                fontFamily: 'NotoSansSC',
+    final primaryColor = themeConfig.primaryColor;
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [
+                          const Color(0xB8161B26),
+                          const Color(0x9910141D),
+                        ]
+                      : [
+                          const Color(0x66FFFFFF),
+                          const Color(0x4DFFFFFF),
+                        ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                    blurRadius: 28,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. 顶部标题与轻量关闭按钮
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: isDark ? 0.22 : 0.12),
+                          borderRadius: BorderRadius.circular(11),
+                          border: Border.all(
+                            color: primaryColor.withValues(alpha: isDark ? 0.35 : 0.20),
+                            width: 0.8,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.graphic_eq_rounded,
+                          color: primaryColor,
+                          size: 19,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '发音口音',
+                              style: TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
+                                color: textColor,
+                                fontFamily: 'NotoSansSC',
+                                fontFamilyFallback: AppTheme.sansSerifFallback,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '选择单词播放时的标准发音风格',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: subtitleColor.withValues(alpha: 0.75),
+                                fontFamily: 'NotoSansSC',
+                                fontFamilyFallback: AppTheme.sansSerifFallback,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.white.withValues(alpha: 0.45),
+                            border: Border.all(
+                              color: isDark ? Colors.white12 : const Color(0x66FFFFFF),
+                              width: 0.8,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: subtitleColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  // 2. 美音与英音选项卡片
+                  _buildOptionCard(
+                    context: context,
+                    accentKey: 'us',
+                    title: '美音',
+                    subtitle: 'American English (标准美式发音)',
+                    isUk: false,
+                    isSelected: _currentAccent == 'us',
+                    primaryColor: primaryColor,
+                    textColor: textColor,
+                    subtitleColor: subtitleColor,
+                    isDark: isDark,
+                    onTap: () => _selectAccent('us'),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildOptionCard(
+                    context: context,
+                    accentKey: 'uk',
+                    title: '英音',
+                    subtitle: 'British English (标准英式发音)',
+                    isUk: true,
+                    isSelected: _currentAccent == 'uk',
+                    primaryColor: primaryColor,
+                    textColor: textColor,
+                    subtitleColor: subtitleColor,
+                    isDark: isDark,
+                    onTap: () => _selectAccent('uk'),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // 3. 底部操作按钮
+                  SizedBox(
+                    width: double.infinity,
+                    height: 42,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor.withValues(alpha: isDark ? 0.25 : 0.15),
+                        foregroundColor: primaryColor,
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        side: BorderSide(
+                          color: primaryColor.withValues(alpha: isDark ? 0.40 : 0.25),
+                          width: 1.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(21),
+                        ),
+                      ),
+                      child: Text(
+                        '完成',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: primaryColor,
+                          letterSpacing: 0.3,
+                          fontFamily: 'NotoSansSC',
+                          fontFamilyFallback: AppTheme.sansSerifFallback,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-      content: SizedBox(
-        width: min(MediaQuery.of(context).size.width * 0.9, 380),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildOptionCard(
-              context: context,
-              accentKey: 'us',
-              title: '美音',
-              subtitle: 'American English',
-              isUk: false,
-              isSelected: _currentAccent == 'us',
-              onTap: () => _selectAccent('us'),
-            ),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              context: context,
-              accentKey: 'uk',
-              title: '英音',
-              subtitle: 'British English',
-              isUk: true,
-              isSelected: _currentAccent == 'uk',
-              onTap: () => _selectAccent('uk'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -116,36 +268,38 @@ class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
     required String subtitle,
     required bool isUk,
     required bool isSelected,
+    required Color primaryColor,
+    required Color textColor,
+    required Color subtitleColor,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
-    final isDark = context.watch<DarkMode>().isDarkMode;
-    final primaryColor = Global.highlight;
-
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? primaryColor.withValues(alpha: isDark ? 0.2 : 0.08)
+              ? primaryColor.withValues(alpha: isDark ? 0.24 : 0.14)
               : (isDark
-                  ? Colors.white.withValues(alpha: 0.04)
-                  : const Color(0xFFF8FAF9)),
-          borderRadius: BorderRadius.circular(14),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.white.withValues(alpha: 0.30)),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? primaryColor
-                : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
-            width: isSelected ? 1.8 : 1.0,
+                : (isDark ? Colors.white.withValues(alpha: 0.10) : const Color(0x80FFFFFF)),
+            width: isSelected ? 1.5 : 0.8,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: primaryColor.withValues(alpha: isDark ? 0.25 : 0.12),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: primaryColor.withValues(alpha: 0.20),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ]
               : null,
@@ -167,26 +321,28 @@ class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
                         title,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: context.textPrimary,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected ? primaryColor : textColor,
                           fontFamily: 'NotoSansSC',
+                          fontFamilyFallback: AppTheme.sansSerifFallback,
                         ),
                       ),
                       if (accentKey == 'us') ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                           decoration: BoxDecoration(
                             color: primaryColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(5),
                           ),
                           child: Text(
                             '默认',
                             style: TextStyle(
                               fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w700,
                               color: primaryColor,
+                              fontFamily: 'NotoSansSC',
+                              fontFamilyFallback: AppTheme.sansSerifFallback,
                             ),
                           ),
                         ),
@@ -197,16 +353,18 @@ class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: context.textSecondary,
+                      fontSize: 11.5,
+                      color: subtitleColor.withValues(alpha: 0.75),
                       fontFamily: 'NotoSansSC',
+                      fontFamilyFallback: AppTheme.sansSerifFallback,
                     ),
                   ),
                 ],
               ),
             ),
             // 选中对勾状态
-            Container(
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
               width: 22,
               height: 22,
               decoration: BoxDecoration(
@@ -234,7 +392,7 @@ class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
   }
 }
 
-/// 自绘精美微型国旗徽标（直径 34）
+/// 自绘精美微型国旗徽标（直径 36）
 class _AccentFlagBadge extends StatelessWidget {
   final bool isUk;
 
@@ -255,7 +413,7 @@ class _AccentFlagBadge extends StatelessWidget {
           ),
         ],
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
+          color: Colors.white.withValues(alpha: 0.4),
           width: 1,
         ),
       ),

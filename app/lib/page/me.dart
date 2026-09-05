@@ -1921,28 +1921,133 @@ class MePageState extends State<MePage> implements RefreshableTab {
                     : null,
                 onTap: () async {
                   if (Global.isGuest || loggedInUser == null) {
-                    final shouldLogin = await showDialog<bool>(
+                    final shouldLogin = await showGeneralDialog<bool>(
                       context: context,
-                      builder: (ctx) => AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        title: const Text('温馨提示', style: TextStyle(fontWeight: FontWeight.bold)),
-                        content: const Text(
-                          '当前处于游客模式，登录后方可提交意见并接收客服回复与活动兑换。\n\n是否前往登录？',
-                          style: TextStyle(height: 1.4),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text('取消', style: TextStyle(color: Colors.grey)),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      barrierDismissible: true,
+                      barrierLabel: 'dismiss_guest_login',
+                      barrierColor: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.40 : 0.18),
+                      transitionDuration: const Duration(milliseconds: 220),
+                      transitionBuilder: (context, anim1, anim2, child) {
+                        return ScaleTransition(
+                          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+                          child: child,
+                        );
+                      },
+                      pageBuilder: (ctx, anim1, anim2) => Dialog(
+                        backgroundColor: Colors.transparent,
+                        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 340),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: BackdropFilter(
+                              filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                              child: Container(
+                                padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: isDarkModeEnabled
+                                        ? [
+                                            const Color(0xB8161B26),
+                                            const Color(0x9910141D),
+                                          ]
+                                        : [
+                                            const Color(0x66FFFFFF),
+                                            const Color(0x4DFFFFFF),
+                                          ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: isDarkModeEnabled ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.08),
+                                      blurRadius: 28,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 36,
+                                          height: 36,
+                                          decoration: BoxDecoration(
+                                            color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.22 : 0.12),
+                                            borderRadius: BorderRadius.circular(11),
+                                            border: Border.all(
+                                              color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.20),
+                                              width: 0.8,
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Icon(
+                                            Icons.tips_and_updates_outlined,
+                                            color: accentColor,
+                                            size: 19,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          '温馨提示',
+                                          style: TextStyle(
+                                            fontSize: 16.5,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: -0.3,
+                                            color: textColor,
+                                            fontFamily: 'NotoSansSC',
+                                            fontFamilyFallback: AppTheme.sansSerifFallback,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 14),
+                                    Text(
+                                      '当前处于游客模式，登录后方可提交意见并接收客服回复与活动兑换。\n\n是否前往登录？',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: subtitleColor,
+                                        height: 1.5,
+                                        fontFamily: 'NotoSansSC',
+                                        fontFamilyFallback: AppTheme.sansSerifFallback,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildDialogButton(
+                                            text: '取消',
+                                            onPressed: () => Navigator.of(ctx).pop(false),
+                                            isPrimary: false,
+                                            isDarkMode: isDarkModeEnabled,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: _buildDialogButton(
+                                            text: '前往登录',
+                                            onPressed: () => Navigator.of(ctx).pop(true),
+                                            isPrimary: true,
+                                            isDarkMode: isDarkModeEnabled,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                            child: const Text('前往登录'),
                           ),
-                        ],
+                        ),
                       ),
                     );
                     if (shouldLogin == true && mounted) {
@@ -2080,10 +2185,14 @@ class MePageState extends State<MePage> implements RefreshableTab {
   }
 
   Future<void> showUpdateUserInfoDlg() async {
-    final isDarkModeEnabled = Provider.of<DarkMode>(context, listen: false).isDarkMode;
-    final backgroundColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
-    final textColor = isDarkModeEnabled ? Colors.white : Colors.black;
-    final cardColor = isDarkModeEnabled ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
+    final darkMode = Provider.of<DarkMode>(context, listen: false);
+    final themeStyle = darkMode.themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkModeEnabled = themeStyle.isDark || darkMode.isDarkMode;
+
+    final primaryColor = themeConfig.primaryColor;
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
 
     final String oldEmail = loggedInUser?.email ?? '';
     final codeController = TextEditingController();
@@ -2091,259 +2200,340 @@ class MePageState extends State<MePage> implements RefreshableTab {
     Timer? timer;
     bool isSendingCode = false;
 
-    bool? choice = await showDialog<bool>(
-        barrierDismissible: false,
-        context: context,
-        builder: (BuildContext context) {
-          return StatefulBuilder(builder: (context, setDialogState) {
-            final emailChanged = email.text.isNotEmpty && email.text != oldEmail;
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.95,
-                margin: const EdgeInsets.symmetric(horizontal: 0),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 标题栏
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: context.primaryColor,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
+    bool? choice = await showGeneralDialog<bool>(
+      barrierDismissible: false,
+      barrierLabel: 'dismiss_update_user_info',
+      barrierColor: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.40 : 0.18),
+      transitionDuration: const Duration(milliseconds: 220),
+      context: context,
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      pageBuilder: (BuildContext dialogCtx, anim1, anim2) {
+        return StatefulBuilder(builder: (context, setDialogState) {
+          final emailChanged = email.text.isNotEmpty && email.text != oldEmail;
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDarkModeEnabled
+                            ? [
+                                const Color(0xB8161B26),
+                                const Color(0x9910141D),
+                              ]
+                            : [
+                                const Color(0x66FFFFFF),
+                                const Color(0x4DFFFFFF),
+                              ],
                       ),
-                      child: Row(
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDarkModeEnabled ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                        width: 1.2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.08),
+                          blurRadius: 28,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.person_outline,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                          // 1. 标题栏
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withValues(alpha: isDarkModeEnabled ? 0.22 : 0.12),
+                                  borderRadius: BorderRadius.circular(11),
+                                  border: Border.all(
+                                    color: primaryColor.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.20),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.person_outline_rounded,
+                                  color: primaryColor,
+                                  size: 19,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '个人信息',
+                                      style: TextStyle(
+                                        fontSize: 16.5,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: -0.3,
+                                        color: textColor,
+                                        fontFamily: 'NotoSansSC',
+                                        fontFamilyFallback: AppTheme.sansSerifFallback,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '修改账号邮箱与展示昵称',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        color: subtitleColor.withValues(alpha: 0.75),
+                                        fontFamily: 'NotoSansSC',
+                                        fontFamilyFallback: AppTheme.sansSerifFallback,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  timer?.cancel();
+                                  Navigator.pop(context, false);
+                                },
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: isDarkModeEnabled
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : Colors.white.withValues(alpha: 0.45),
+                                    border: Border.all(
+                                      color: isDarkModeEnabled ? Colors.white12 : const Color(0x66FFFFFF),
+                                      width: 0.8,
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 16,
+                                    color: subtitleColor,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '修改个人信息',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.5,
+                          const SizedBox(height: 18),
+
+                          // 2. 表单内容
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: _buildInputField(
+                                  controller: email,
+                                  label: '邮箱地址',
+                                  icon: Icons.email_outlined,
+                                  validator: (value) => EmailValidator.validate(value ?? '') ? null : "请输入有效的邮箱地址",
+                                  isDarkMode: isDarkModeEnabled,
+                                  textColor: textColor,
+                                  onChanged: (value) {
+                                    setDialogState(() {});
+                                  },
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.deny(RegExp(r'[\s\u2006\u200B]')),
+                                  ],
+                                  keyboardType: TextInputType.visiblePassword,
+                                ),
+                              ),
+                              if (emailChanged) ...[
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  height: 48,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColor.withValues(alpha: isDarkModeEnabled ? 0.22 : 0.14),
+                                      foregroundColor: primaryColor,
+                                      elevation: 0,
+                                      shadowColor: Colors.transparent,
+                                      side: BorderSide(color: primaryColor.withValues(alpha: 0.3), width: 0.8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    ),
+                                    onPressed: (cooldown > 0 || isSendingCode)
+                                        ? null
+                                        : () async {
+                                            final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
+                                            final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                                            if (!emailRegex.hasMatch(cleanedEmail)) {
+                                              ToastUtil.error('邮箱格式不正确，请检查');
+                                              return;
+                                            }
+                                            if (!EmailValidator.validate(cleanedEmail)) {
+                                              ToastUtil.error('请输入有效的邮箱地址');
+                                              return;
+                                            }
+                                            setDialogState(() {
+                                              isSendingCode = true;
+                                            });
+                                            try {
+                                              var result = await Api.client.sendEmailCode(cleanedEmail, "BIND_EMAIL");
+                                              if (result.success) {
+                                                ToastUtil.info("验证码已发送");
+                                                setDialogState(() {
+                                                  cooldown = 60;
+                                                  isSendingCode = false;
+                                                });
+                                                timer = Timer.periodic(const Duration(seconds: 1), (t) {
+                                                  setDialogState(() {
+                                                    if (cooldown > 0) {
+                                                      cooldown--;
+                                                    } else {
+                                                      timer?.cancel();
+                                                      timer = null;
+                                                    }
+                                                  });
+                                                });
+                                              } else {
+                                                ToastUtil.error(result.msg!);
+                                                setDialogState(() {
+                                                  isSendingCode = false;
+                                                });
+                                              }
+                                            } catch (e, stackTrace) {
+                                              ErrorHandler.handleNetworkError(e, stackTrace, api: 'sendEmailCode', showToast: true);
+                                              setDialogState(() {
+                                                isSendingCode = false;
+                                              });
+                                            }
+                                          },
+                                    child: isSendingCode
+                                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                        : Text(
+                                            cooldown > 0 ? '${cooldown}s' : '获取验证码',
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: primaryColor,
+                                              fontFamily: 'NotoSansSC',
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          if (emailChanged) ...[
+                            _buildInputField(
+                              controller: codeController,
+                              label: '验证码',
+                              icon: Icons.security_rounded,
+                              isDarkMode: isDarkModeEnabled,
+                              textColor: textColor,
                             ),
+                            const SizedBox(height: 12),
+                          ],
+
+                          // 昵称输入框
+                          _buildInputField(
+                            controller: nickname,
+                            label: '昵称',
+                            icon: Icons.badge_outlined,
+                            isDarkMode: isDarkModeEnabled,
+                            textColor: textColor,
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // 3. 底部操作按钮
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildDialogButton(
+                                  text: '取消',
+                                  onPressed: () {
+                                    timer?.cancel();
+                                    Navigator.pop(context, false);
+                                  },
+                                  isPrimary: false,
+                                  isDarkMode: isDarkModeEnabled,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildDialogButton(
+                                  text: '保存',
+                                  primaryColor: primaryColor,
+                                  onPressed: () async {
+                                    if (emailChanged && codeController.text.isEmpty) {
+                                      ToastUtil.error("需要输入验证码验证新邮箱");
+                                      return;
+                                    }
+
+                                    if (emailChanged) {
+                                      Api.setLoadingDisabled(false);
+                                      final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
+                                      var result = await Api.client.verifyEmailCode(cleanedEmail, codeController.text, "BIND_EMAIL");
+                                      Api.setLoadingDisabled(true);
+
+                                      if (!context.mounted) return;
+                                      if (!result.success) {
+                                        ToastUtil.error(result.msg ?? "验证码错误");
+                                        return;
+                                      }
+                                    }
+
+                                    timer?.cancel();
+                                    Navigator.pop(context, true);
+                                  },
+                                  isPrimary: true,
+                                  isDarkMode: isDarkModeEnabled,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-
-                    // 表单内容 - 添加可滚动支持
-                    Flexible(
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Email 输入框与获取验证码按钮同行
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: _buildInputField(
-                                      controller: email,
-                                      label: '邮箱地址',
-                                      icon: Icons.email_outlined,
-                                      validator: (value) => EmailValidator.validate(value ?? '') ? null : "请输入有效的邮箱地址",
-                                      isDarkMode: isDarkModeEnabled,
-                                      cardColor: cardColor,
-                                      textColor: textColor,
-                                      onChanged: (value) {
-                                        setDialogState(() {});
-                                      },
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.deny(RegExp(r'[\s\u2006\u200B]')),
-                                      ],
-                                      keyboardType: TextInputType.visiblePassword,
-                                    ),
-                                  ),
-                                  if (emailChanged) ...[
-                                    const SizedBox(width: 8),
-                                    SizedBox(
-                                      height: 50,
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                                        ),
-                                        onPressed: (cooldown > 0 || isSendingCode)
-                                            ? null
-                                            : () async {
-                                                final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
-                                                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                                                if (!emailRegex.hasMatch(cleanedEmail)) {
-                                                  ToastUtil.error('邮箱格式不正确，请检查');
-                                                  return;
-                                                }
-                                                if (!EmailValidator.validate(cleanedEmail)) {
-                                                  ToastUtil.error('请输入有效的邮箱地址');
-                                                  return;
-                                                }
-                                                setDialogState(() {
-                                                  isSendingCode = true;
-                                                });
-                                                try {
-                                                  var result = await Api.client.sendEmailCode(cleanedEmail, "BIND_EMAIL");
-                                                  if (result.success) {
-                                                    ToastUtil.info("验证码已发送");
-                                                    setDialogState(() {
-                                                      cooldown = 60;
-                                                      isSendingCode = false;
-                                                    });
-                                                    timer = Timer.periodic(const Duration(seconds: 1), (t) {
-                                                      setDialogState(() {
-                                                        if (cooldown > 0) {
-                                                          cooldown--;
-                                                        } else {
-                                                          timer?.cancel();
-                                                          timer = null;
-                                                        }
-                                                      });
-                                                    });
-                                                  } else {
-                                                    ToastUtil.error(result.msg!);
-                                                    setDialogState(() {
-                                                      isSendingCode = false;
-                                                    });
-                                                  }
-                                                } catch (e, stackTrace) {
-                                                  ErrorHandler.handleNetworkError(e, stackTrace, api: 'sendEmailCode', showToast: true);
-                                                  setDialogState(() {
-                                                    isSendingCode = false;
-                                                  });
-                                                }
-                                              },
-                                        child: isSendingCode
-                                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                            : Text(cooldown > 0 ? '${cooldown}s' : '获取验证码'),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-
-                              // 如果修改了邮箱，必须验证新邮箱。仅在用户点击过后（或者计时器启动后）才显示输入框更符合语境，
-                              // 但如果希望在「发验证码按钮」存在时就允许输入，那么只要修改了邮箱就显示
-                              if (emailChanged) ...[
-                                _buildInputField(
-                                  controller: codeController,
-                                  label: '验证码',
-                                  icon: Icons.security,
-                                  isDarkMode: isDarkModeEnabled,
-                                  cardColor: cardColor,
-                                  textColor: textColor,
-                                ),
-                                const SizedBox(height: 12),
-                              ],
-
-                              // 昵称输入框
-                              _buildInputField(
-                                controller: nickname,
-                                label: '昵称',
-                                icon: Icons.person_outline,
-                                isDarkMode: isDarkModeEnabled,
-                                cardColor: cardColor,
-                                textColor: textColor,
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              // 按钮区域
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildDialogButton(
-                                      text: '取消',
-                                      onPressed: () {
-                                        timer?.cancel();
-                                        Navigator.pop(context, false);
-                                      },
-                                      isPrimary: false,
-                                      isDarkMode: isDarkModeEnabled,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildDialogButton(
-                                      text: '保存',
-                                      onPressed: () async {
-                                        if (emailChanged && codeController.text.isEmpty) {
-                                          ToastUtil.error("需要输入验证码验证新邮箱");
-                                          return;
-                                        }
-
-                                        if (emailChanged) {
-                                          Api.setLoadingDisabled(false);
-                                          final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
-                                          var result = await Api.client.verifyEmailCode(cleanedEmail, codeController.text, "BIND_EMAIL");
-                                          Api.setLoadingDisabled(true);
-
-                                          if (!context.mounted) return;
-                                          if (!result.success) {
-                                            ToastUtil.error(result.msg ?? "验证码错误");
-                                            return;
-                                          }
-                                        }
-
-                                        timer?.cancel();
-                                        Navigator.pop(context, true);
-                                      },
-                                      isPrimary: true,
-                                      isDarkMode: isDarkModeEnabled,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            );
-          });
+            ),
+          );
         });
+      },
+    );
 
     if (choice ?? false) {
       final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
-      // 密码被取消后，传入原来的密码 (这里用空字符串，后端/UserBo里处理空字符串就不修改密码)
       UserBo().updateUserInfo(cleanedEmail, nickname.text, '', '', Global.getLoggedInUser()!.id).then((value) async {
         if (value.success) {
           ToastUtil.info("修改成功");
-          // 重新加载用户信息并刷新界面
           var result = await UserBo().getLoggedInUser();
           if (result.success && mounted) {
             setState(() {
               loggedInUser = result.data;
-              // 界面会自动刷新，显示更新后的昵称
             });
           }
-          // 因为修改了敏感字段，此处触发挥发型防抖同步
           ThrottledDbSyncService().requestSync(immediate: true);
         } else {
           ToastUtil.error(value.msg!);
@@ -2352,7 +2542,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
     }
   }
 
-  // 输入框组件
+  // 现代透光输入框组件
   Widget _buildInputField({
     required TextEditingController controller,
     required String label,
@@ -2360,7 +2550,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
     bool obscureText = false,
     String? Function(String?)? validator,
     required bool isDarkMode,
-    required Color cardColor,
     required Color textColor,
     void Function(String)? onChanged,
     List<TextInputFormatter>? inputFormatters,
@@ -2368,11 +2557,13 @@ class MePageState extends State<MePage> implements RefreshableTab {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        color: isDarkMode
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.white.withValues(alpha: 0.40),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDarkMode ? Colors.grey.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
+          color: isDarkMode ? Colors.white12 : const Color(0x80FFFFFF),
+          width: 0.8,
         ),
       ),
       child: TextFormField(
@@ -2384,62 +2575,75 @@ class MePageState extends State<MePage> implements RefreshableTab {
         inputFormatters: inputFormatters,
         style: TextStyle(
           color: textColor,
-          fontSize: 15,
-          height: 1.2,
+          fontSize: 14.5,
           fontFamily: 'NotoSansSC',
+          fontFamilyFallback: AppTheme.sansSerifFallback,
         ),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
-            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-            fontSize: 13,
+            color: isDarkMode ? Colors.white54 : Colors.black45,
+            fontSize: 12.5,
             fontWeight: FontWeight.w400,
             fontFamily: 'NotoSansSC',
+            fontFamilyFallback: AppTheme.sansSerifFallback,
           ),
           prefixIcon: Icon(
             icon,
-            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            color: isDarkMode ? Colors.white38 : Colors.black38,
             size: 18,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           filled: false,
         ),
       ),
     );
   }
 
-  // 对话框按钮组件
+  // 现代温润对话框胶囊按钮组件
   Widget _buildDialogButton({
     required String text,
     required VoidCallback onPressed,
     required bool isPrimary,
     required bool isDarkMode,
+    Color? primaryColor,
   }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isPrimary ? const Color(0xFF4A90E2) : (isDarkMode ? const Color(0xFF3D3D3D) : const Color(0xFFF0F0F0)),
-        foregroundColor: isPrimary ? Colors.white : (isDarkMode ? Colors.white : Colors.black),
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: isPrimary
-              ? BorderSide.none
-              : BorderSide(
-                  color: isDarkMode ? Colors.grey.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2),
-                  width: 1,
-                ),
+    final effectivePrimary = primaryColor ?? context.primaryColor;
+    return SizedBox(
+      height: 42,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isPrimary
+              ? effectivePrimary.withValues(alpha: isDarkMode ? 0.28 : 0.16)
+              : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.45)),
+          foregroundColor: isPrimary
+              ? effectivePrimary
+              : (isDarkMode ? Colors.white70 : Colors.black87),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          side: BorderSide(
+            color: isPrimary
+                ? effectivePrimary.withValues(alpha: isDarkMode ? 0.45 : 0.30)
+                : (isDarkMode ? Colors.white12 : const Color(0x80FFFFFF)),
+            width: 0.8,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(21),
+          ),
         ),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: isPrimary ? FontWeight.w500 : FontWeight.w500,
-          letterSpacing: 0.5,
-          fontFamily: 'NotoSansSC',
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 14.5,
+            fontWeight: isPrimary ? FontWeight.w700 : FontWeight.w500,
+            color: isPrimary ? effectivePrimary : (isDarkMode ? Colors.white70 : Colors.black87),
+            letterSpacing: 0.2,
+            fontFamily: 'NotoSansSC',
+            fontFamilyFallback: AppTheme.sansSerifFallback,
+          ),
         ),
       ),
     );
@@ -2447,149 +2651,224 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
   Future<void> showUnRegisterDlg() async {
     final isDarkModeEnabled = Provider.of<DarkMode>(context, listen: false).isDarkMode;
-    final backgroundColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
-    final textColor = isDarkModeEnabled ? Colors.white : Colors.black;
+    final textColor = isDarkModeEnabled ? Colors.white : Colors.black87;
+    final subtitleColor = isDarkModeEnabled ? Colors.white60 : Colors.black54;
+    const dangerColor = Color(0xFFFA5252);
 
     final TextEditingController confirmController = TextEditingController();
 
-    bool? choice = await showDialog<bool>(
-        barrierDismissible: false,
-        context: context,
-        builder: (BuildContext context) {
-          return StatefulBuilder(
-            builder: (context, setState) {
-              return Dialog(
-                backgroundColor: Colors.transparent,
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.95,
-                  margin: const EdgeInsets.symmetric(horizontal: 0),
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 标题栏
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE74C3C),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                          ),
+    bool? choice = await showGeneralDialog<bool>(
+      barrierDismissible: false,
+      barrierLabel: 'dismiss_unregister',
+      barrierColor: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.45 : 0.22),
+      transitionDuration: const Duration(milliseconds: 220),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      context: context,
+      pageBuilder: (BuildContext dialogCtx, anim1, anim2) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: isDarkModeEnabled
+                              ? [
+                                  const Color(0xB8161B26),
+                                  const Color(0x9910141D),
+                                ]
+                              : [
+                                  const Color(0x66FFFFFF),
+                                  const Color(0x4DFFFFFF),
+                                ],
                         ),
-                        child: Row(
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: isDarkModeEnabled ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.08),
+                            blurRadius: 28,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            // 标题栏
+                            Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: dangerColor.withValues(alpha: isDarkModeEnabled ? 0.22 : 0.12),
+                                    borderRadius: BorderRadius.circular(11),
+                                    border: Border.all(
+                                      color: dangerColor.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.20),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: dangerColor,
+                                    size: 19,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '注销账号',
+                                        style: TextStyle(
+                                          fontSize: 16.5,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: -0.3,
+                                          color: textColor,
+                                          fontFamily: 'NotoSansSC',
+                                          fontFamilyFallback: AppTheme.sansSerifFallback,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '账号注销后所有数据无法恢复',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: subtitleColor.withValues(alpha: 0.75),
+                                          fontFamily: 'NotoSansSC',
+                                          fontFamilyFallback: AppTheme.sansSerifFallback,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => Navigator.pop(context, false),
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: isDarkModeEnabled
+                                          ? Colors.white.withValues(alpha: 0.08)
+                                          : Colors.white.withValues(alpha: 0.45),
+                                      border: Border.all(
+                                        color: isDarkModeEnabled ? Colors.white12 : const Color(0x66FFFFFF),
+                                        width: 0.8,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 16,
+                                      color: subtitleColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+
+                            // 警告提示轻量卡片
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
+                                color: dangerColor.withValues(alpha: isDarkModeEnabled ? 0.12 : 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: dangerColor.withValues(alpha: isDarkModeEnabled ? 0.25 : 0.18),
+                                  width: 0.8,
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.warning_amber_outlined,
-                                color: Colors.white,
-                                size: 24,
+                              child: Text(
+                                '注销将永久清除云端与本地的所有学习进度、词书、打卡记录，操作不可逆。',
+                                style: TextStyle(
+                                  color: isDarkModeEnabled ? const Color(0xFFFF8B8B) : const Color(0xFFD32F2F),
+                                  fontSize: 12.5,
+                                  height: 1.45,
+                                  fontFamily: 'NotoSansSC',
+                                  fontFamilyFallback: AppTheme.sansSerifFallback,
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '注销账号',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.5,
-                              ),
+                            const SizedBox(height: 16),
+
+                            // 确认输入框
+                            _buildInputField(
+                              controller: confirmController,
+                              label: "输入 okay 确认注销",
+                              icon: Icons.lock_outline_rounded,
+                              isDarkMode: isDarkModeEnabled,
+                              textColor: textColor,
+                            ),
+                            const SizedBox(height: 20),
+
+                            // 底部按钮组
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDialogButton(
+                                    text: '取消',
+                                    onPressed: () => Navigator.pop(context, false),
+                                    isPrimary: false,
+                                    isDarkMode: isDarkModeEnabled,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildDialogButton(
+                                    text: '确认注销',
+                                    primaryColor: dangerColor,
+                                    onPressed: () {
+                                      if (confirmController.text.trim().toLowerCase() != 'okay') {
+                                        ToastUtil.error("请输入 'okay' 以确认注销");
+                                        return;
+                                      }
+                                      Navigator.pop(context, true);
+                                    },
+                                    isPrimary: true,
+                                    isDarkMode: isDarkModeEnabled,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-
-                      // 内容区域
-                      Flexible(
-                        child: SingleChildScrollView(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              children: [
-                                // 警告文本
-                                Text(
-                                  '账号注销后，无法恢复!',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.4,
-                                    fontFamily: 'NotoSansSC',
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-
-                                const SizedBox(height: 16),
-                                TextField(
-                                  controller: confirmController,
-                                  style: TextStyle(color: textColor, fontSize: 16),
-                                  decoration: InputDecoration(
-                                    hintText: "输入 okay 确认注销",
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-
-                                // 按钮区域
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildDialogButton(
-                                        text: '取消',
-                                        onPressed: () => Navigator.pop(context, false),
-                                        isPrimary: false,
-                                        isDarkMode: isDarkModeEnabled,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          if (confirmController.text.trim().toLowerCase() != 'okay') {
-                                            ToastUtil.error("请输入 'okay' 以确认注销");
-                                            return;
-                                          }
-                                          Navigator.pop(context, true);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFFE74C3C),
-                                          foregroundColor: Colors.white,
-                                          elevation: 0,
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          '注销',
-                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              );
-            },
-          );
-        });
+              ),
+            );
+          },
+        );
+      },
+    );
 
     // 延迟释放 controller，确保对话框动画完成
     Future.delayed(const Duration(milliseconds: 300), () {
@@ -2939,18 +3218,196 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
   Future<void> _showWipeLocalDataDialog() async {
     final isDarkModeEnabled = context.read<DarkMode>().isDarkMode;
-    bool? choice = await showDialog<bool>(
+    final textColor = isDarkModeEnabled ? Colors.white : Colors.black87;
+    final subtitleColor = isDarkModeEnabled ? Colors.white60 : Colors.black54;
+    const warningAmber = Color(0xFFF59E0B);
+
+    bool? choice = await showGeneralDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
-          title: const Text('确认重建数据库'),
-          content: const Text('清除所有本地数据(服务端数据不受影响)吗？\n系统将在清除前自动备份数据，并展示进度。'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('继续')),
-          ],
+      barrierLabel: 'dismiss_wipe_data',
+      barrierColor: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.45 : 0.22),
+      transitionDuration: const Duration(milliseconds: 220),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      pageBuilder: (dialogCtx, anim1, anim2) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isDarkModeEnabled
+                          ? [
+                              const Color(0xB8161B26),
+                              const Color(0x9910141D),
+                            ]
+                          : [
+                              const Color(0x66FFFFFF),
+                              const Color(0x4DFFFFFF),
+                            ],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDarkModeEnabled ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.08),
+                        blurRadius: 28,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 标题栏
+                      Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: warningAmber.withValues(alpha: isDarkModeEnabled ? 0.22 : 0.12),
+                              borderRadius: BorderRadius.circular(11),
+                              border: Border.all(
+                                color: warningAmber.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.20),
+                                width: 0.8,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.cleaning_services_outlined,
+                              color: warningAmber,
+                              size: 19,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '确认重建数据库',
+                                  style: TextStyle(
+                                    fontSize: 16.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.3,
+                                    color: textColor,
+                                    fontFamily: 'NotoSansSC',
+                                    fontFamilyFallback: AppTheme.sansSerifFallback,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '备份云端并重构本地缓存',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: subtitleColor.withValues(alpha: 0.75),
+                                    fontFamily: 'NotoSansSC',
+                                    fontFamilyFallback: AppTheme.sansSerifFallback,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => Navigator.pop(dialogCtx, false),
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: isDarkModeEnabled
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : Colors.white.withValues(alpha: 0.45),
+                                border: Border.all(
+                                  color: isDarkModeEnabled ? Colors.white12 : const Color(0x66FFFFFF),
+                                  width: 0.8,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: subtitleColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 提示文案轻量卡片
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: warningAmber.withValues(alpha: isDarkModeEnabled ? 0.12 : 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: warningAmber.withValues(alpha: isDarkModeEnabled ? 0.25 : 0.18),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          '此操作将清除所有本地数据（服务端数据不受影响）。系统将在清除前自动备份数据到云端，并实时展示进度。',
+                          style: TextStyle(
+                            color: isDarkModeEnabled ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
+                            fontSize: 12.5,
+                            height: 1.45,
+                            fontFamily: 'NotoSansSC',
+                            fontFamilyFallback: AppTheme.sansSerifFallback,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // 底部按钮
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDialogButton(
+                              text: '取消',
+                              onPressed: () => Navigator.pop(dialogCtx, false),
+                              isPrimary: false,
+                              isDarkMode: isDarkModeEnabled,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildDialogButton(
+                              text: '继续重建',
+                              primaryColor: warningAmber,
+                              onPressed: () => Navigator.pop(dialogCtx, true),
+                              isPrimary: true,
+                              isDarkMode: isDarkModeEnabled,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
@@ -3779,119 +4236,249 @@ class _RebuildDatabaseProgressDialogState extends State<_RebuildDatabaseProgress
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final subtitleColor = isDarkMode ? Colors.white60 : Colors.black54;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 30,
-              offset: const Offset(0, 15),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              '正在重建数据库',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'NotoSansSC',
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            _buildStepRow('1. 备份数据到云端', _syncStatus, isDarkMode, subtitleColor, textColor),
-            const SizedBox(height: 16),
-            _buildStepRow('2. 清空本地数据', _wipeStatus, isDarkMode, subtitleColor, textColor),
-            if (_error != null) ...[
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDarkMode
+                      ? [
+                          const Color(0xB8161B26),
+                          const Color(0x9910141D),
+                        ]
+                      : [
+                          const Color(0x66FFFFFF),
+                          const Color(0x4DFFFFFF),
+                        ],
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontFamily: 'Roboto'),
-                      ),
-                    ),
-                  ],
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                  width: 1.2,
                 ),
-              ),
-            ],
-            const SizedBox(height: 32),
-            if (_syncStatus == _StepStatus.error) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        side: BorderSide(color: subtitleColor.withValues(alpha: 0.3)),
-                      ),
-                      child: const Text('取消'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _syncStatus = _StepStatus.completed; 
-                          _wipeStatus = _StepStatus.processing;
-                          _error = null;
-                        });
-                        _executeWipeOnly();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: const Text('忽略并清空'),
-                    ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                    blurRadius: 28,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
-            ] else if (_wipeStatus == _StepStatus.completed || _wipeStatus == _StepStatus.error)
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, _wipeStatus == _StepStatus.completed),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text(
-                  '完成',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, fontFamily: 'NotoSansSC'),
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 标题区域
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: isDarkMode ? 0.22 : 0.12),
+                          borderRadius: BorderRadius.circular(11),
+                          border: Border.all(
+                            color: const Color(0xFFF59E0B).withValues(alpha: isDarkMode ? 0.35 : 0.20),
+                            width: 0.8,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.sync_rounded,
+                          color: Color(0xFFF59E0B),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '正在重建数据库',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
+                                fontFamily: 'NotoSansSC',
+                                fontFamilyFallback: AppTheme.sansSerifFallback,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '同步云端并重置本地数据',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: subtitleColor.withValues(alpha: 0.75),
+                                fontFamily: 'NotoSansSC',
+                                fontFamilyFallback: AppTheme.sansSerifFallback,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+
+                  // 步骤展示卡片
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.40),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDarkMode ? Colors.white12 : const Color(0x66FFFFFF),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildStepRow('1. 备份数据到云端', _syncStatus, isDarkMode, subtitleColor, textColor),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Divider(
+                            height: 1,
+                            thickness: 0.5,
+                            color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                          ),
+                        ),
+                        _buildStepRow('2. 清空本地数据', _wipeStatus, isDarkMode, subtitleColor, textColor),
+                      ],
+                    ),
+                  ),
+
+                  if (_error != null) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: isDarkMode ? 0.12 : 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.25), width: 0.8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 12,
+                                height: 1.4,
+                                fontFamily: 'Roboto',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 22),
+
+                  if (_syncStatus == _StepStatus.error) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.45),
+                                foregroundColor: isDarkMode ? Colors.white70 : Colors.black87,
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                side: BorderSide(
+                                  color: isDarkMode ? Colors.white12 : const Color(0x80FFFFFF),
+                                  width: 0.8,
+                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                              ),
+                              child: const Text(
+                                '取消',
+                                style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC'),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _syncStatus = _StepStatus.completed;
+                                  _wipeStatus = _StepStatus.processing;
+                                  _error = null;
+                                });
+                                _executeWipeOnly();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.28 : 0.16),
+                                foregroundColor: const Color(0xFFEF4444),
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                side: BorderSide(
+                                  color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.45 : 0.30),
+                                  width: 0.8,
+                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                              ),
+                              child: const Text(
+                                '忽略并清空',
+                                style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC'),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else if (_wipeStatus == _StepStatus.completed || _wipeStatus == _StepStatus.error) ...[
+                    SizedBox(
+                      height: 42,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, _wipeStatus == _StepStatus.completed),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981).withValues(alpha: isDarkMode ? 0.28 : 0.16),
+                          foregroundColor: const Color(0xFF10B981),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          side: BorderSide(
+                            color: const Color(0xFF10B981).withValues(alpha: isDarkMode ? 0.45 : 0.30),
+                            width: 0.8,
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                        ),
+                        child: const Text(
+                          '完成',
+                          style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-          ],
+            ),
+          ),
         ),
       ),
     );
