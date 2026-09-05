@@ -2760,7 +2760,6 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildMeaningStepCard(BdcState state) {
-    final isDarkMode = _cachedIsDarkMode;
     final allItems = state.currentGetWordResult!.learningWord!.word.getMergedMeaningItems();
     final hasCixingItems = allItems.any((item) => (item.ciXing ?? '').trim().isNotEmpty);
     final displayItems = hasCixingItems
@@ -2769,26 +2768,32 @@ extension BdcPageStateUIComponents on BdcPageState {
 
     // 自适应字阶与排版参数
     final count = displayItems.length;
+    int maxCixingLen = 0;
+    for (final item in displayItems) {
+      final len = (item.ciXing ?? '').trim().length;
+      if (len > maxCixingLen) maxCixingLen = len;
+    }
+
     final double meaningFontSize;
     final double cixingFontSize;
     final double itemVerticalGap;
-    final double cixingPadH;
+    final double cixingColumnWidth;
 
     if (count <= 1) {
       meaningFontSize = 26.0;
-      cixingFontSize = 13.0;
+      cixingFontSize = 17.0;
       itemVerticalGap = 6.0;
-      cixingPadH = 8.0;
+      cixingColumnWidth = 0.0;
     } else if (count == 2) {
       meaningFontSize = 20.0;
-      cixingFontSize = 12.0;
-      itemVerticalGap = 5.0;
-      cixingPadH = 7.0;
+      cixingFontSize = 14.5;
+      itemVerticalGap = 6.0;
+      cixingColumnWidth = maxCixingLen <= 2 ? 17.0 : (maxCixingLen == 3 ? 23.0 : 29.0);
     } else {
       meaningFontSize = 17.0;
-      cixingFontSize = 11.0;
-      itemVerticalGap = 4.0;
-      cixingPadH = 6.0;
+      cixingFontSize = 13.0;
+      itemVerticalGap = 5.0;
+      cixingColumnWidth = maxCixingLen <= 2 ? 15.0 : (maxCixingLen == 3 ? 20.5 : 26.0);
     }
 
     return Padding(
@@ -2804,30 +2809,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
                     if ((item.ciXing ?? '').isNotEmpty) ...[
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: cixingPadH, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: context.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: context.primaryColor.withValues(alpha: isDarkMode ? 0.38 : 0.25),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Text(
-                          item.ciXing!,
-                          style: TextStyle(
-                            color: context.primaryColor,
-                            fontSize: cixingFontSize,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Roboto',
-                          ),
+                      Text(
+                        item.ciXing!,
+                        style: TextStyle(
+                          color: context.primaryColor,
+                          fontSize: cixingFontSize,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Roboto',
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 6),
                     ],
                     Flexible(
                       child: Text(
@@ -2857,20 +2852,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
                         children: [
                           if ((item.ciXing ?? '').isNotEmpty) ...[
-                            Container(
-                              margin: const EdgeInsets.only(top: 2),
-                              padding: EdgeInsets.symmetric(horizontal: cixingPadH, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: context.primaryColor.withValues(alpha: isDarkMode ? 0.38 : 0.25),
-                                  width: 0.8,
-                                ),
-                              ),
+                            SizedBox(
+                              width: cixingColumnWidth,
                               child: Text(
                                 item.ciXing!,
                                 style: TextStyle(
@@ -2881,7 +2868,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 5),
                           ],
                           Expanded(
                             child: Text(
@@ -2891,7 +2878,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 fontSize: meaningFontSize,
                                 fontWeight: FontWeight.w600,
                                 color: context.textPrimary,
-                                height: 1.35,
+                                height: 1.4,
                                 letterSpacing: -0.2,
                               ),
                             ),
