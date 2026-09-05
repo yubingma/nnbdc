@@ -753,74 +753,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     return result;
   }
 
-  Widget _buildSeeAnswerBottomButton() {
-    return AbsorbPointer(
-      absorbing: !state.buttonsEnabled,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          key: const Key('bdc_see_answer_btn'),
-          borderRadius: BorderRadius.circular(8),
-          onTap: () => notifier.showWordDetail(
-            state.word!,
-            true,
-            context,
-            fsrsRating: FsrsRating.again,
-            reason: "主动点击了看答案，评分: 忘记",
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '看答案',
-                  style: TextStyle(
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w600,
-                    color: context.textPrimary.withValues(alpha: 0.88),
-                    letterSpacing: 0.4,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Container(
-                  width: 16,
-                  height: 3.2,
-                  decoration: BoxDecoration(
-                    color: context.warmAccentColor,
-                    borderRadius: BorderRadius.circular(1.6),
-                    boxShadow: [
-                      BoxShadow(
-                        color: context.warmAccentColor
-                            .withValues(alpha: _cachedIsDarkMode ? 0.45 : 0.3),
-                        blurRadius: 5,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildRatingButtonsRow() {
-    // 检查是否处于选择题思考答题阶段（未作答且未离开）
-    final isChoiceStep = state.studyStep == StudyStep.en2Ch.json ||
-        state.studyStep == StudyStep.ch2En.json;
-    final isThinkingInChoice = isChoiceStep &&
-        state.selectedAnswerIndex == null &&
-        !state.hasFinishedAnswering &&
-        !state.canLeaveCurrWord;
-
-    if (isThinkingInChoice) {
-      return _buildSeeAnswerBottomButton();
-    }
-
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
