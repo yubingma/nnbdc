@@ -1842,7 +1842,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       decoration: BoxDecoration(
         color: themeConfig.cardBg,
         borderRadius: BorderRadius.circular(24),
@@ -1869,37 +1869,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           ),
           const SizedBox(height: 14),
           _buildReviewStepsInfoCard(scope: _studyStepsTab == 0 ? 'new' : 'review', isDarkMode: isDarkMode),
-          const SizedBox(height: 14),
-
-          // 次级收起按钮（轻量居中微胶囊，不与页面主按钮抢焦）
-          Center(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => _isEditingTracks = false),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.keyboard_arrow_up_rounded, size: 16, color: themeConfig.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(
-                      '收起配置',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: themeConfig.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
