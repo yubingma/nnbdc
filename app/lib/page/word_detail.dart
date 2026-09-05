@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -1602,68 +1603,97 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   void _showMoreOptions(BuildContext context) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     final accentColor = context.primaryColor;
-    final sheetBg = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: sheetBg,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.2),
       elevation: 0,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
       builder: (BuildContext bottomSheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 4, bottom: 14),
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.white24 : Colors.black12,
-                    borderRadius: BorderRadius.circular(2),
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? const Color(0xC81E293B) // 78% 细腻深邃暗夜磨砂
+                    : const Color(0xBFFFFFFF), // 75% 透光乳白高透磨砂
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.14)
+                        : Colors.white.withValues(alpha: 0.85),
+                    width: 1.0,
                   ),
                 ),
-                _buildActionTile(
-                  icon: Icons.copy_rounded,
-                  title: '复制单词及释义',
-                  subtitle: '${args.word.spell} · [${Util.getWordDefaultPronounce(args.word)}]',
-                  accentColor: accentColor,
-                  textColor: textColor,
-                  subColor: subColor,
-                  isDarkMode: isDarkMode,
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    final copyText = '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
-                    Clipboard.setData(ClipboardData(text: copyText));
-                    ToastUtil.success('已复制到剪贴板');
-                  },
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 4, bottom: 14),
+                        width: 36,
+                        height: 4.5,
+                        decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.25)
+                              : Colors.black.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(2.5),
+                        ),
+                      ),
+                      _buildActionTile(
+                        icon: Icons.copy_rounded,
+                        title: '复制单词及释义',
+                        subtitle: '${args.word.spell} · [${Util.getWordDefaultPronounce(args.word)}]',
+                        accentColor: accentColor,
+                        textColor: textColor,
+                        subColor: subColor,
+                        isDarkMode: isDarkMode,
+                        onTap: () {
+                          Navigator.pop(bottomSheetContext);
+                          final copyText = '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
+                          Clipboard.setData(ClipboardData(text: copyText));
+                          ToastUtil.success('已复制到剪贴板');
+                        },
+                      ),
+                      const SizedBox(height: 6),
+                      _buildActionTile(
+                        icon: Icons.add_photo_alternate_rounded,
+                        title: '添加或更换配图',
+                        subtitle: '为该单词挑选生动的助记图片',
+                        accentColor: accentColor,
+                        textColor: textColor,
+                        subColor: subColor,
+                        isDarkMode: isDarkMode,
+                        onTap: () {
+                          Navigator.pop(bottomSheetContext);
+                          context.push('/pic_search',
+                                  extra: PicSearchPageArgs(
+                                      args.word.id!,
+                                      args.word.spell))
+                              .then((value) => _reloadWordData());
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 6),
-                _buildActionTile(
-                  icon: Icons.add_photo_alternate_rounded,
-                  title: '添加或更换配图',
-                  subtitle: '为该单词挑选生动的助记图片',
-                  accentColor: accentColor,
-                  textColor: textColor,
-                  subColor: subColor,
-                  isDarkMode: isDarkMode,
-                  onTap: () {
-                    Navigator.pop(bottomSheetContext);
-                    context.push('/pic_search',
-                            extra: PicSearchPageArgs(
-                                args.word.id!,
-                                args.word.spell))
-                        .then((value) => _reloadWordData());
-                  },
-                ),
-                const SizedBox(height: 4),
-              ],
+              ),
             ),
           ),
         );
@@ -1694,8 +1724,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: isDarkMode ? 0.15 : 0.08),
-                  borderRadius: BorderRadius.circular(11),
+                  color: accentColor.withValues(alpha: isDarkMode ? 0.18 : 0.09),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: accentColor, size: 20),
               ),
@@ -1726,9 +1756,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 ),
               ),
               Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 13,
-                color: isDarkMode ? Colors.white24 : Colors.black26,
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: isDarkMode ? Colors.white30 : Colors.black26,
               ),
             ],
           ),
