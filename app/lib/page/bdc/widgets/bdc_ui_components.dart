@@ -267,97 +267,51 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildQuestionContent(BdcState state) {
-    final isDarkMode = _cachedIsDarkMode;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      width: double.infinity,
-      height: double.infinity,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDarkMode
-                    ? [
-                        const Color(0xB818202F),
-                        const Color(0x99121722),
-                      ]
-                    : [
-                        Colors.white.withValues(alpha: 0.65),
-                        Colors.white.withValues(alpha: 0.45),
-                      ],
-              ),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.14)
-                    : Colors.white.withValues(alpha: 0.85),
-                width: 1.1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          key: const ValueKey('bdc_question_content_scroll_view'),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: max(0.0, constraints.maxHeight - 16),
             ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  key: const ValueKey('bdc_question_content_scroll_view'),
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: max(0.0, constraints.maxHeight - 32),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 英→中模式 或 列表模式 整合卡片
-                          if ((state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.list.json) &&
-                              state.currentGetWordResult?.learningWord?.word != null)
-                            _buildWordStepCard(state),
-                          // 中→英模式整合卡片
-                          if (state.studyStep == StudyStep.ch2En.json &&
-                              state.currentGetWordResult?.learningWord?.word != null)
-                            _buildMeaningStepCard(state),
-                          // 例句英→中模式整合卡片
-                          if (state.studyStep == StudyStep.enSentence2Ch.json &&
-                              state.currentGetWordResult?.learningWord?.word != null)
-                            _buildEnSentenceStepCard(state),
-                          // 例句中→英模式整合卡片
-                          if (state.studyStep == StudyStep.chSentence2En.json &&
-                              state.currentGetWordResult?.learningWord?.word != null)
-                            _buildChSentenceStepCard(state),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 英→中模式 或 列表模式 整合卡片
+                  if ((state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.list.json) &&
+                      state.currentGetWordResult?.learningWord?.word != null)
+                    _buildWordStepCard(state),
+                  // 中→英模式整合卡片
+                  if (state.studyStep == StudyStep.ch2En.json &&
+                      state.currentGetWordResult?.learningWord?.word != null)
+                    _buildMeaningStepCard(state),
+                  // 例句英→中模式整合卡片
+                  if (state.studyStep == StudyStep.enSentence2Ch.json &&
+                      state.currentGetWordResult?.learningWord?.word != null)
+                    _buildEnSentenceStepCard(state),
+                  // 例句中→英模式整合卡片
+                  if (state.studyStep == StudyStep.chSentence2En.json &&
+                      state.currentGetWordResult?.learningWord?.word != null)
+                    _buildChSentenceStepCard(state),
 
-                          // 音标和例句辅助行，仅在单词/浏览模式下显示，例句模式本身不需要它们
-                          if (state.studyStep == StudyStep.en2Ch.json ||
-                              state.studyStep == StudyStep.ch2En.json ||
-                              state.studyStep == StudyStep.list.json) ...[
-                            _buildPhoneticRow(state),
-                            _buildFirstSentenceRow(state),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+                  // 音标和例句辅助行，仅在单词/浏览模式下显示，例句模式本身不需要它们
+                  if (state.studyStep == StudyStep.en2Ch.json ||
+                      state.studyStep == StudyStep.ch2En.json ||
+                      state.studyStep == StudyStep.list.json) ...[
+                    _buildPhoneticRow(state),
+                    _buildFirstSentenceRow(state),
+                  ],
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -615,64 +569,82 @@ extension BdcPageStateUIComponents on BdcPageState {
               
               return Container(
                 key: ValueKey('bdc_choice_area_${wordId}_$historyIndex'),
-                // 做题区背景色 - 浅绿色调
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: _showBorders
-                      ? Border.all(
-                          color: Colors.blue,
-                          width: 10,
-                        )
-                      : null,
-                ),
-                padding: const EdgeInsets.fromLTRB(BdcPageState.leftPadding, 0, BdcPageState.rightPadding, 0),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
                 child: (state.showAnswerButtons ||
                         state.studyStep == StudyStep.en2Ch.json ||
                         state.studyStep == StudyStep.ch2En.json ||
                         state.studyStep == StudyStep.enSentence2Ch.json ||
                         state.studyStep == StudyStep.chSentence2En.json ||
                         state.studyStep == StudyStep.list.json)
-                    ? Column(
-                        children: [
-                          if (state.studyStep == StudyStep.en2Ch.json ||
-                              state.studyStep == StudyStep.ch2En.json) ...[
-                            _buildTabBar(),
-                            const SizedBox(height: 8),
-                          ],
-                          Expanded(
-                            child: (state.studyStep == StudyStep.en2Ch.json ||
-                                    state.studyStep == StudyStep.ch2En.json)
-                                ? TabBarView(
-                                    key: ValueKey('bdc_tab_bar_view_${_tabController?.length}'),
-                                    controller: _tabController,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    children: [
-                                      // 始终保持 Tab 数量一致性，避免抖动
-                                      if (_tabController?.length == 2) _buildSpeakPanel(),
-                                      SingleChildScrollView(
-                                        key: const ValueKey('bdc_choice_list_scroll_view'),
-                                        physics: const BouncingScrollPhysics(),
-                                        child: _buildChoiceList(),
-                                      ),
-                                    ],
-                                  )
-                                : (state.studyStep == StudyStep.enSentence2Ch.json ||
-                                       state.studyStep == StudyStep.chSentence2En.json)
-                                    ? _buildSpeakPanel()
-                                    : Column(
-                                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                                        children: [
-                                          Flexible(
-                                            child: SingleChildScrollView(
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: BackdropFilter(
+                          filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: _cachedIsDarkMode
+                                  ? const Color(0xB8161E2A)
+                                  : Colors.white.withValues(alpha: 0.38),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(
+                                color: _cachedIsDarkMode
+                                    ? Colors.white.withValues(alpha: 0.12)
+                                    : Colors.white.withValues(alpha: 0.75),
+                                width: 1.0,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.28 : 0.035),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                            child: Column(
+                              children: [
+                                if (state.studyStep == StudyStep.en2Ch.json ||
+                                    state.studyStep == StudyStep.ch2En.json) ...[
+                                  _buildTabBar(),
+                                  const SizedBox(height: 8),
+                                ],
+                                Expanded(
+                                  child: (state.studyStep == StudyStep.en2Ch.json ||
+                                          state.studyStep == StudyStep.ch2En.json)
+                                      ? TabBarView(
+                                          key: ValueKey('bdc_tab_bar_view_${_tabController?.length}'),
+                                          controller: _tabController,
+                                          physics: const NeverScrollableScrollPhysics(),
+                                          children: [
+                                            // 始终保持 Tab 数量一致性，避免抖动
+                                            if (_tabController?.length == 2) _buildSpeakPanel(),
+                                            SingleChildScrollView(
+                                              key: const ValueKey('bdc_choice_list_scroll_view'),
                                               physics: const BouncingScrollPhysics(),
                                               child: _buildChoiceList(),
                                             ),
-                                          ),
-                                          Expanded(child: _buildSpeakPanel()),
-                                        ],
-                                      ),
+                                          ],
+                                        )
+                                      : (state.studyStep == StudyStep.enSentence2Ch.json ||
+                                             state.studyStep == StudyStep.chSentence2En.json)
+                                          ? _buildSpeakPanel()
+                                          : Column(
+                                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                                              children: [
+                                                Flexible(
+                                                  child: SingleChildScrollView(
+                                                    physics: const BouncingScrollPhysics(),
+                                                    child: _buildChoiceList(),
+                                                  ),
+                                                ),
+                                                Expanded(child: _buildSpeakPanel()),
+                                              ],
+                                            ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
+                        ),
                       )
                     : InkWell(
                         key: const Key('bdc_do_question_btn'),
@@ -688,10 +660,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                             ),
                           ],
                         ),
-                      onTap: () {
-                        updateUI(() {
-                          notifier.updateShowAnswerButtons(true);
-                        }, tag: 'show-answer');
+                        onTap: () {
+                          updateUI(() {
+                            notifier.updateShowAnswerButtons(true);
+                          }, tag: 'show-answer');
                         },
                       ),
               );
@@ -1372,43 +1344,9 @@ extension BdcPageStateUIComponents on BdcPageState {
     final bool isSentence = step == StudyStep.enSentence2Ch.json ||
         step == StudyStep.chSentence2En.json;
 
-    final cardWidget = ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDarkMode
-                  ? [
-                      const Color(0xB818202F),
-                      const Color(0x99121722),
-                    ]
-                  : [
-                      Colors.white.withValues(alpha: 0.65),
-                      Colors.white.withValues(alpha: 0.45),
-                    ],
-            ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.85),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    final cardWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
               // 1. 顶栏：音频波纹 + 提示/清除按钮 (固定浮动在上方)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
@@ -1579,10 +1517,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2872,26 +2807,27 @@ extension BdcPageStateUIComponents on BdcPageState {
         : allItems;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           for (final item in displayItems)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              padding: const EdgeInsets.symmetric(vertical: 6.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   if ((item.ciXing ?? '').isNotEmpty) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: context.primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
-                        borderRadius: BorderRadius.circular(7),
+                        color: context.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: context.primaryColor.withValues(alpha: isDarkMode ? 0.35 : 0.22),
+                          color: context.primaryColor.withValues(alpha: isDarkMode ? 0.38 : 0.25),
                           width: 0.8,
                         ),
                       ),
@@ -2899,7 +2835,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         item.ciXing!,
                         style: TextStyle(
                           color: context.primaryColor,
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                           fontFamily: 'Roboto',
                         ),
@@ -2907,16 +2843,16 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ),
                     const SizedBox(width: 10),
                   ],
-                  Expanded(
+                  Flexible(
                     child: Text(
                       notifier.hideParenthesesContent(item.meaning ?? ''),
-                      textAlign: TextAlign.start,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 27,
+                        fontWeight: FontWeight.w600,
                         color: context.textPrimary,
-                        height: 1.4,
-                        letterSpacing: -0.2,
+                        height: 1.35,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ),
