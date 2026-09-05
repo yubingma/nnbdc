@@ -784,7 +784,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     label,
                     style: TextStyle(
                       fontSize: fontSize,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: textColor,
                       letterSpacing: 0.3,
                     ),
@@ -823,10 +823,18 @@ extension BdcPageStateUIComponents on BdcPageState {
         state.studyStep == StudyStep.chSentence2En.json ||
         state.studyStep == StudyStep.list.json;
 
-    final againColor = _cachedIsDarkMode
-        ? const Color(0xFFFF7E6C)
-        : const Color(0xFFD32F2F);
-    final goodColor = context.primaryColor;
+    final isDark = _cachedIsDarkMode;
+    // 严格与 FSRS 评分保持 100% 颜色呼应：
+    // 「不认识」对应 FsrsRating.again(忘记) -> 标准鲜红
+    // 「再学学」对应 FsrsRating.good(良好)  -> 主题主色生机绿
+    final againIndicator =
+        isDark ? const Color(0xFFFF7E6C) : const Color(0xFFD32F2F);
+    final studyAgainIndicator = context.primaryColor;
+    // 「下一词」为通用流转导航动作，非 FSRS 评分，使用沉稳克制的高级中性石板灰，避免与「再学学」的绿色撞色
+    final nextWordIndicator =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    final normalTextColor = context.textPrimary;
 
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -837,8 +845,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             _buildMinimalPillButton(
               key: const Key('bdc_not_know_btn'),
               label: '不认识',
-              textColor: againColor,
-              indicatorColor: againColor,
+              textColor: normalTextColor,
+              indicatorColor: againIndicator,
               isEnabled: state.buttonsEnabled,
               indicatorWidth: 16.0,
               onTap: () => notifier.showWordDetail(
@@ -853,8 +861,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             _buildMinimalPillButton(
               key: const Key('bdc_study_again'),
               label: '再学学',
-              textColor: goodColor,
-              indicatorColor: goodColor,
+              textColor: normalTextColor,
+              indicatorColor: studyAgainIndicator,
               isEnabled: state.buttonsEnabled,
               indicatorWidth: 16.0,
               onTap: () => notifier.showWordDetail(
@@ -871,8 +879,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             _buildMinimalPillButton(
               key: const Key('bdc_next_word_btn'),
               label: '下一词',
-              textColor: goodColor,
-              indicatorColor: goodColor,
+              textColor: normalTextColor,
+              indicatorColor: nextWordIndicator,
               isEnabled: !state.isGettingNextWord,
               indicatorWidth: 20.0,
               fontSize: 16.0,
