@@ -1945,6 +1945,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
 class SpiralGalaxyBackground extends PositionComponent {
   double t = 0;
+  double _twinkleT = 0;
   ui.Picture? _bakedArm1;
   ui.Picture? _bakedArm2;
   Shader? _cachedSpaceShader;
@@ -1957,7 +1958,9 @@ class SpiralGalaxyBackground extends PositionComponent {
   @override
   void update(double dt) {
     super.update(dt);
-    t += dt * 0.05;
+    // 银河系自转转速降低到原来的 1/10；核心光晕闪烁单独计时，避免连眨眼也一并变慢
+    t += dt * 0.001;
+    _twinkleT += dt * 0.05;
   }
 
   @override
@@ -2042,7 +2045,7 @@ class SpiralGalaxyBackground extends PositionComponent {
     canvas.drawRect(rect, bgPaint);
 
     final center = Offset(rect.center.dx, rect.center.dy * 0.9);
-    final twinkle = (0.9 + 0.1 * sin(t * 1.3)).clamp(0.0, 1.0);
+    final twinkle = (0.9 + 0.1 * sin(_twinkleT * 1.3)).clamp(0.0, 1.0);
 
     // 绘制预烘焙的星系臂
     if (_bakedArm1 != null) {
