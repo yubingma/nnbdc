@@ -1849,9 +1849,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   color: isDarkMode
                       ? Colors.white.withValues(alpha: 0.22)
                       : themeConfig.primaryColor.withValues(alpha: 0.35),
-                  dotColor: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.45)
-                      : themeConfig.primaryColor.withValues(alpha: 0.65),
                 ),
               ),
             ),
@@ -3252,11 +3249,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 }
 
-/// 绘制极简 Bezier 分叉导线
+/// 绘制极简纯粹 Bezier 分叉导线（去除冗余端点，保持平滑流动感）
 class ForkBezierPainter extends CustomPainter {
   final Color color;
-  final Color dotColor;
-  const ForkBezierPainter({required this.color, required this.dotColor});
+  const ForkBezierPainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -3265,10 +3261,6 @@ class ForkBezierPainter extends CustomPainter {
       ..strokeWidth = 1.3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
-
-    final dotPaint = Paint()
-      ..color = dotColor
-      ..style = PaintingStyle.fill;
 
     final midY = size.height / 2;
     // 向上扬起连接正确分支
@@ -3282,15 +3274,9 @@ class ForkBezierPainter extends CustomPainter {
       ..moveTo(0, midY)
       ..cubicTo(size.width * 0.45, midY, size.width * 0.45, size.height - 12, size.width, size.height - 12);
     canvas.drawPath(pathDown, paint);
-
-    // 绘制微型连接点（Hub dots）
-    canvas.drawCircle(Offset(0, midY), 1.8, dotPaint);
-    canvas.drawCircle(Offset(size.width, 12), 1.6, dotPaint);
-    canvas.drawCircle(Offset(size.width, size.height - 12), 1.6, dotPaint);
   }
 
   @override
-  bool shouldRepaint(covariant ForkBezierPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.dotColor != dotColor;
+  bool shouldRepaint(covariant ForkBezierPainter oldDelegate) => oldDelegate.color != color;
 }
 
