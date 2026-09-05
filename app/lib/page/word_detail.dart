@@ -1582,7 +1582,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            '下一个单词',
+                            '下一词',
                             style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w700,
@@ -2506,12 +2506,21 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     );
   }
 
+  String _normalizeEnglishSpacing(String text) {
+    if (text.isEmpty) return text;
+    // 修复西文标点后紧贴英文字母缺失空格的问题（例如 "feelings.People" -> "feelings. People", "eating,sleeping" -> "eating, sleeping"）
+    return text.replaceAllMapped(
+      RegExp(r'([,;:?!]|(?<!\.)\.(?!\.))([a-zA-Z])'),
+      (match) => '${match[1]} ${match[2]}',
+    );
+  }
+
   ListView renderDetail() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2540,7 +2549,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     ),
                     const SizedBox(height: 8),
                     Util.makeEnglishSpanText(
-                      args.word.shortDesc!,
+                      _normalizeEnglishSpacing(args.word.shortDesc!),
                       args.word.spell,
                       true,
                       context,
@@ -2548,16 +2557,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       null,
                       false,
                       FontWeight.w400,
+                      fontSize: 14.5,
                     ),
                   ],
                 ),
               ),
               Divider(
-                height: 20,
+                height: 24,
                 thickness: 0.5,
                 color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.06),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08),
               ),
             ],
 
@@ -2567,7 +2577,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               children: [
                 Row(
                   children: [
-                    Icon(Icons.format_quote_rounded, size: 18, color: context.primaryColor),
+                    Icon(Icons.format_quote_rounded, size: 17, color: context.primaryColor),
                     const SizedBox(width: 6),
                     const Text(
                       '短语 & 例句',
@@ -2632,7 +2642,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       for (int i = 0; i < sentences.length; i++) ...[
                         if (i > 0)
                           Divider(
-                            height: 22,
+                            height: 20,
                             thickness: 0.5,
                             color: isDarkMode
                                 ? Colors.white.withValues(alpha: 0.08)
@@ -2678,52 +2688,79 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       borderRadius: BorderRadius.circular(10),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Util.makeEnglishSpanText(
-                        sent.english!,
-                        args.word.spell,
-                        true,
-                        context,
-                        false,
-                        null,
-                        false,
-                        FontWeight.w400,
-                      ),
-                      if (isEditMode)
-                        Text.rich(TextSpan(children: [
-                          for (var span in renderSentenceEditSpans(sent)) span,
-                        ])),
-                    ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Util.makeEnglishSpanText(
+                    _normalizeEnglishSpacing(sent.english!),
+                    args.word.spell,
+                    true,
+                    context,
+                    false,
+                    null,
+                    false,
+                    FontWeight.w400,
+                    fontSize: 14.5,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: AnimatedBuilder(
-                    animation: _getSentenceController(sent.id),
-                    builder: (context, child) {
-                      return ModernSoundWaveIcon(
-                        isPlaying: _playingStates[sent.id]?.value ?? false,
-                        animationController: _getSentenceController(sent.id),
-                        size: 15,
-                        color: subtitleColor,
-                        activeColor: context.primaryColor,
-                      );
-                    },
+                  const SizedBox(height: 5),
+                  Util.makeChineseSpanText(
+                    sent.chinese!,
+                    context,
+                    style: TextStyle(
+                      fontFamily: 'NotoSansSC',
+                      fontSize: 13.5,
+                      height: 1.45,
+                      color: subtitleColor,
+                    ),
                   ),
-                ),
-              ],
+                  if (isEditMode) ...[
+                    const SizedBox(height: 4),
+                    Text.rich(TextSpan(children: [
+                      for (var span in renderSentenceEditSpans(sent)) span,
+                    ])),
+                  ],
+                ],
+              ),
             ),
-            renderSentenceChinese(sent.chinese!, sent.id),
+            const SizedBox(width: 8),
+            InkResponse(
+              radius: 20,
+              onTap: () {
+                if (!(_playingStates[sent.id]?.value ?? false)) {
+                  _playWithAnimation(
+                    () => sessionController.playWordAndSentence(
+                      args.word,
+                      sentenceDigest: sent.englishDigest,
+                      playWord: false,
+                      playSentence: true,
+                      isSpeakMode: false,
+                    ),
+                    sent.id,
+                  );
+                }
+              },
+              child: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                child: AnimatedBuilder(
+                  animation: _getSentenceController(sent.id),
+                  builder: (context, child) {
+                    return ModernSoundWaveIcon(
+                      isPlaying: _playingStates[sent.id]?.value ?? false,
+                      animationController: _getSentenceController(sent.id),
+                      size: 15,
+                      color: subtitleColor,
+                      activeColor: context.primaryColor,
+                    );
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
