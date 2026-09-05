@@ -41,6 +41,7 @@ import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:nnbdc/widget/pronunciation_accent_dialog.dart';
 import 'package:nnbdc/widget/theme_select_dialog.dart';
+import 'package:nnbdc/widget/privileged_dict_explanation_dialog.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1142,57 +1143,22 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         context.go('/login');
                       }
                     },
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(2.0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: accentColor.withValues(alpha: 0.8), width: 2),
-                          ),
-                          child: CircleAvatar(
-                            radius: 26,
-                            backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF1F5F9),
-                            backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
-                                ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
-                                : null,
-                            child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
-                                ? Icon(Icons.person_rounded, color: subtitleColor, size: 26)
-                                : null,
-                          ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 18,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              color: accentColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDarkModeEnabled ? const Color(0xFF131E1C) : Colors.white,
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.15),
-                                  blurRadius: 3,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.edit_rounded,
-                                size: 10,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: Container(
+                      padding: const EdgeInsets.all(2.0),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: accentColor.withValues(alpha: 0.35), width: 1.2),
+                      ),
+                      child: CircleAvatar(
+                        radius: 27,
+                        backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF1F5F9),
+                        backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                            ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
+                            : null,
+                        child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
+                            ? Icon(Icons.person_rounded, color: subtitleColor, size: 28)
+                            : null,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -1293,8 +1259,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
                           borderRadius: BorderRadius.circular(12),
                           color: subtleBgColor,
                           border: Border.all(
-                            color: borderColor.withValues(alpha: 0.6),
-                            width: 0.8,
+                            color: borderColor.withValues(alpha: 0.3),
+                            width: 0.5,
                           ),
                         ),
                         child: Row(
@@ -1351,8 +1317,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
                           borderRadius: BorderRadius.circular(12),
                           color: subtleBgColor,
                           border: Border.all(
-                            color: borderColor.withValues(alpha: 0.6),
-                            width: 0.8,
+                            color: borderColor.withValues(alpha: 0.3),
+                            width: 0.5,
                           ),
                         ),
                         child: Row(
@@ -1590,109 +1556,104 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 final masteredColor = accentColor;
                 final fetchColor = accentColor.withValues(alpha: 0.6);
 
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: subtleBgColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: borderColor.withValues(alpha: 0.5),
-                      width: 0.6,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "词书总进度",
+                          style: TextStyle(
+                            color: subtitleColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '已掌握 ',
+                                style: TextStyle(
+                                  color: subtitleColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '$masteryPercentText%',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Roboto',
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' · 已取词 ',
+                                style: TextStyle(
+                                  color: subtitleColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '$fetchPercentText%',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Roboto',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "词书总进度",
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '已掌握 ',
-                                  style: TextStyle(
-                                    color: subtitleColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '$masteryPercentText%',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: 'Roboto',
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: ' · 已取词 ',
-                                  style: TextStyle(
-                                    color: subtitleColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '$fetchPercentText%',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: 'Roboto',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 3.5,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.055),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 4,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final clampedMasteryProgress = masteryProgress > 1.0 ? 1.0 : masteryProgress;
-                            final clampedFetchProgress = fetchProgress > 1.0 ? 1.0 : fetchProgress;
-                            return Stack(
-                              children: [
-                                if (clampedFetchProgress > 0)
-                                  Container(
-                                    width: constraints.maxWidth * clampedFetchProgress,
-                                    decoration: BoxDecoration(
-                                      color: fetchColor,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final clampedMasteryProgress = masteryProgress > 1.0 ? 1.0 : masteryProgress;
+                          final clampedFetchProgress = fetchProgress > 1.0 ? 1.0 : fetchProgress;
+                          return Stack(
+                            children: [
+                              if (clampedFetchProgress > 0)
+                                Container(
+                                  width: constraints.maxWidth * clampedFetchProgress,
+                                  decoration: BoxDecoration(
+                                    color: fetchColor,
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
-                                if (clampedMasteryProgress > 0)
-                                  Container(
-                                    width: constraints.maxWidth * clampedMasteryProgress,
-                                    decoration: BoxDecoration(
-                                      color: masteredColor,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
+                                ),
+                              if (clampedMasteryProgress > 0)
+                                Container(
+                                  width: constraints.maxWidth * clampedMasteryProgress,
+                                  decoration: BoxDecoration(
+                                    color: masteredColor,
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
-                              ],
-                            );
-                          },
-                        ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 14),
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                    ),
+                  ],
                 );
               }),
               const SizedBox(height: 12),
@@ -2763,6 +2724,17 @@ class MePageState extends State<MePage> implements RefreshableTab {
         }
         if (dictInfo == null) continue;
 
+        if (dicts.isNotEmpty) {
+          dicts.add(Padding(
+            padding: const EdgeInsets.only(left: 52, right: 4),
+            child: Divider(
+              height: 1,
+              thickness: 0.5,
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+            ),
+          ));
+        }
+
         dicts.add(DictCard(
           key: ValueKey('me_learning_dict_${learningDict.dictId}'),
           learningDict: learningDict,
@@ -3132,20 +3104,12 @@ class _DictCardState extends State<DictCard> {
     final subtitleColor = themeConfig.textSecondary;
     final masteredColor = themeConfig.primaryColor;
     final fetchColor = themeConfig.primaryColor.withValues(alpha: 0.65);
-    final borderColor = themeConfig.cardBorder;
-    final cardBg = themeConfig.subtleBg;
+    final cardBg = themeConfig.cardBg;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor.withValues(alpha: 0.5), width: 0.8),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
           onTap: () async {
             try {
               await toDictWordsListPage(currentLearningDict.dictId, false);
@@ -3218,18 +3182,26 @@ class _DictCardState extends State<DictCard> {
                               ),
                               if (currentLearningDict.isPrivileged) ...[
                                 const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: masteredColor.withValues(alpha: isDarkMode ? 0.2 : 0.12),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    '优先',
-                                    style: TextStyle(
-                                      color: masteredColor,
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w600,
+                                GestureDetector(
+                                  onTap: () => PrivilegedDictExplanationDialog.show(context),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: masteredColor.withValues(alpha: isDarkMode ? 0.2 : 0.12),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          '优先',
+                                          style: TextStyle(
+                                            color: masteredColor,
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -3262,8 +3234,11 @@ class _DictCardState extends State<DictCard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // 左侧：优先取词微开关
-                    GestureDetector(
+                    // 左侧：优先取词微开关 + 解释问号
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
                       onTap: () async {
                         try {
                           final newPrivilegedStatus = await MyDatabase.instance.learningDictsDao
@@ -3318,6 +3293,21 @@ class _DictCardState extends State<DictCard> {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 2),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => PrivilegedDictExplanationDialog.show(context),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                        child: Icon(
+                          Icons.help_outline_rounded,
+                          size: 13,
+                          color: subtitleColor.withValues(alpha: 0.55),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                     // 右侧：移出书桌（停学）
                     GestureDetector(
                       onTap: () => _handleDictDataAction(),
@@ -3350,7 +3340,6 @@ class _DictCardState extends State<DictCard> {
             ),
           ),
         ),
-      ),
     );
   }
 
