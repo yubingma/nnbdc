@@ -7,6 +7,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/app_scaffold.dart';
 
@@ -24,6 +25,34 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
   late TabController _tabController;
   int _currentTabIndex = 0;
 
+  String? _getVotedPrefsKey() {
+    final user = Global.getLoggedInUser();
+    if (user == null || user.id.isEmpty) return null;
+    return 'voted_feature_requests_${user.id}';
+  }
+
+  void _loadCachedVotedStatus() {
+    final key = _getVotedPrefsKey();
+    if (key == null) return;
+    final cached = Prefs.read<List<String>>(key);
+    if (cached != null && cached.isNotEmpty) {
+      for (final id in cached) {
+        _votedStatus[id] = true;
+      }
+    }
+  }
+
+  Future<void> _saveVotedStatus(String requestId) async {
+    _votedStatus[requestId] = true;
+    final key = _getVotedPrefsKey();
+    if (key == null) return;
+    final cached = Prefs.read<List<String>>(key) ?? <String>[];
+    if (!cached.contains(requestId)) {
+      final updated = List<String>.from(cached)..add(requestId);
+      await Prefs.write(key, updated);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +64,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         });
       }
     });
+    _loadCachedVotedStatus();
     _loadRequests();
   }
 
@@ -42,6 +72,40 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _syncVotedStatusFromRemote(List<FeatureRequestVo> requests) async {
+    final user = Global.getLoggedInUser();
+    if (user == null || user.id.isEmpty || requests.isEmpty) return;
+
+    final key = _getVotedPrefsKey();
+    final cached = Set<String>.from(Prefs.read<List<String>>(key ?? '') ?? <String>[]);
+    bool hasChanges = false;
+
+    // 批量并发查询用户是否对这些需求投过票
+    final futures = requests.map((req) async {
+      // 如果本地已经记录已投，无需重复查询网络
+      if (_votedStatus[req.id] == true) return;
+      try {
+        final res = await Api.client.hasUserVoted(req.id, user.id);
+        if (res.data == true) {
+          _votedStatus[req.id] = true;
+          cached.add(req.id);
+          hasChanges = true;
+        }
+      } catch (e) {
+        // 静默忽略单个投票状态查询失败
+      }
+    });
+
+    await Future.wait(futures);
+
+    if (mounted && hasChanges) {
+      if (key != null) {
+        await Prefs.write(key, cached.toList());
+      }
+      setState(() {});
+    }
   }
 
   Future<void> _loadRequests() async {
@@ -54,6 +118,9 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         _requests = requests;
         _isLoading = false;
       });
+
+      // 异步在后台与服务端核对已投票状态，无感知校准
+      _syncVotedStatusFromRemote(requests);
     } catch (e) {
       Global.logger.e('加载需求列表失败', error: e);
       setState(() {
@@ -63,22 +130,36 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
   }
 
   Future<void> _voteRequest(FeatureRequestVo request) async {
-    try {
-      final user = Global.getLoggedInUser();
-      if (user == null) {
-        ToastUtil.info('请先登录');
-        return;
-      }
+    final user = Global.getLoggedInUser();
+    if (user == null) {
+      ToastUtil.info('请先登录');
+      return;
+    }
 
+    // 若本地已知已投票，直接给轻量提示，不再发起网络请求，避免大红错误弹窗
+    if (_votedStatus[request.id] == true) {
+      ToastUtil.info('您已经为此需求投过票了');
+      return;
+    }
+
+    try {
       final result = await Api.client.voteFeatureRequest(request.id, user.id);
       if (result.success) {
         setState(() {
           request.voteCount = (request.voteCount ?? 0) + 1;
-          _votedStatus[request.id] = true;
         });
+        await _saveVotedStatus(request.id);
+        if (mounted) setState(() {});
         ToastUtil.success('投票成功');
       } else {
-        ToastUtil.error(result.msg ?? '投票失败');
+        final msg = result.msg ?? '';
+        if (msg.contains('已经') || msg.contains('投过票')) {
+          await _saveVotedStatus(request.id);
+          if (mounted) setState(() {});
+          ToastUtil.info('您已经为此需求投过票了');
+        } else {
+          ToastUtil.error(msg.isNotEmpty ? msg : '投票失败');
+        }
       }
     } catch (e) {
       ToastUtil.error('投票失败');
@@ -817,7 +898,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
             const SizedBox(height: 14),
             Row(
               children: [
-                // 投票支持胶囊按钮（自适应紧凑高级胶囊，自然呼吸感，杜绝生硬拉伸）
+                // 投票支持胶囊按钮（自适应紧凑高级胶囊，已投态高光微光反馈，清晰易辨）
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
@@ -826,18 +907,27 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       height: 34,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
                       decoration: BoxDecoration(
-                        color: theme.primaryColor.withValues(
-                          alpha: hasVoted ? (isDark ? 0.24 : 0.14) : (isDark ? 0.12 : 0.06),
-                        ),
+                        color: hasVoted
+                            ? theme.primaryColor.withValues(alpha: isDark ? 0.22 : 0.14)
+                            : theme.primaryColor.withValues(alpha: isDark ? 0.08 : 0.04),
                         borderRadius: BorderRadius.circular(100),
                         border: Border.all(
-                          color: theme.primaryColor.withValues(
-                            alpha: hasVoted ? 0.60 : (isDark ? 0.30 : 0.18),
-                          ),
-                          width: 0.8,
+                          color: hasVoted
+                              ? theme.primaryColor.withValues(alpha: isDark ? 0.70 : 0.55)
+                              : theme.primaryColor.withValues(alpha: isDark ? 0.24 : 0.14),
+                          width: hasVoted ? 1.0 : 0.8,
                         ),
+                        boxShadow: hasVoted
+                            ? [
+                                BoxShadow(
+                                  color: theme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.12),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 1.5),
+                                ),
+                              ]
+                            : null,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -852,7 +942,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                             hasVoted ? '已投' : '投票',
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: hasVoted ? FontWeight.w700 : FontWeight.w600,
                               color: theme.primaryColor,
                             ),
                           ),
