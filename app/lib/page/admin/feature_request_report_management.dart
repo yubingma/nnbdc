@@ -6,6 +6,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
@@ -286,10 +287,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
   }
 
   String _getUserInitial(UserVo? user) {
-    if (user == null) return '?';
-    final nickName = user.nickName;
-    if (nickName == null || nickName.isEmpty) return '?';
-    return nickName[0].toUpperCase();
+    return Util.getInitial(user?.nickName ?? user?.userName, fallback: '?');
   }
 
   Future<void> _deleteFeatureRequest(String requestId) async {

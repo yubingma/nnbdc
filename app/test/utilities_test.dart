@@ -1,4 +1,5 @@
 import 'dart:io' as io;
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -118,6 +119,23 @@ environment:
       expect(Util.getInitial('😊开心'), equals('😊'));
       expect(Util.getInitial('🌟星空'), equals('🌟'));
       expect(Util.getInitial('👨‍👩‍👧家庭'), equals('👨‍👩‍👧'));
+      expect(Util.getInitial('🌙'), equals('🌙'));
+      expect(Util.getInitial('🍊'), equals('🍊'));
+      expect(Util.getInitial('🎀'), equals('🎀'));
+      
+      // 验证原生 TextSpan 布局完全正常，无 UTF-16 代理项断裂异常
+      for (final emoji in ['🌙', '🍊', '🎀', '😊', '🌟']) {
+        final initial = Util.getInitial(emoji);
+        expect(initial, equals(emoji));
+        expect(initial.codeUnits.length, greaterThanOrEqualTo(2));
+        
+        final tp = TextPainter(
+          text: TextSpan(text: initial),
+          textDirection: TextDirection.ltr,
+        );
+        tp.layout();
+        expect(tp.width, greaterThan(0));
+      }
     });
 
     test('特殊符号与书名号正常跳过并获取首个有效文字', () {

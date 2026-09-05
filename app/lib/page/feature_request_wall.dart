@@ -9,6 +9,7 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/app_scaffold.dart';
 
 class FeatureRequestWallPage extends StatefulWidget {
@@ -134,227 +135,240 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
     final theme = context.themeConfig;
     final isDark = context.isDarkMode;
 
-    showDialog(
+    showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      builder: (dialogContext) => StatefulBuilder(
+      barrierLabel: 'dismiss_report_dialog',
+      barrierColor: Colors.black.withValues(alpha: isDark ? 0.40 : 0.16),
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      pageBuilder: (dialogContext, anim1, anim2) => StatefulBuilder(
         builder: (builderContext, setState) => Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
           insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 380),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
-                    blurRadius: 28,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: BackdropFilter(
-                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xD91E242C) // 85% 曜石深灰通透磨砂
-                          : const Color(0xE0FFFFFF), // 88% 凝润通透乳白磨砂
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isDark ? const Color(0x33FFFFFF) : const Color(0xD9FFFFFF),
-                        width: 1.0,
-                      ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xB3181E27) // 70% 曜石深灰通透磨砂
+                        : const Color(0x66FFFFFF), // 40% 凝润通透乳白磨砂，字块清晰可见
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDark ? const Color(0x33FFFFFF) : const Color(0xB3FFFFFF),
+                      width: 1.0,
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.16 : 0.10),
-                                borderRadius: BorderRadius.circular(11),
-                              ),
-                              child: const Icon(
-                                Icons.flag_rounded,
-                                color: Color(0xFFEF4444),
-                                size: 19,
-                              ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                        blurRadius: 28,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.20 : 0.12),
+                              borderRadius: BorderRadius.circular(11),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '举报需求',
-                                    style: TextStyle(
-                                      color: theme.textPrimary,
-                                      fontSize: 16.5,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '若内容涉嫌违规或广告，请向我们反馈',
-                                    style: TextStyle(
-                                      color: theme.textMuted,
-                                      fontSize: 11.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        // 需求摘要指示标签：轻透温润，告别厚重死蓝色块
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7.5),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0x1FFFFFFF) : const Color(0x40FFFFFF),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isDark ? const Color(0x14FFFFFF) : const Color(0x52FFFFFF),
-                              width: 0.6,
+                            child: const Icon(
+                              Icons.flag_rounded,
+                              color: Color(0xFFEF4444),
+                              size: 19,
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Text(
-                                '需求',
-                                style: TextStyle(
-                                  color: theme.textMuted,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  request.title ?? '',
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '举报需求',
                                   style: TextStyle(
                                     color: theme.textPrimary,
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.2,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // 举报原因输入框：通透半透明材质 + 细腻圆角微边框
-                        Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0x14FFFFFF) : const Color(0x4AFFFFFF),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDark ? const Color(0x1FFFFFFF) : const Color(0x66FFFFFF),
-                              width: 0.8,
+                                const SizedBox(height: 2),
+                                Text(
+                                  '若内容涉嫌违规或广告，请向我们反馈',
+                                  style: TextStyle(
+                                    color: theme.textMuted,
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: TextField(
-                            controller: contentController,
-                            style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
-                            maxLines: 4,
-                            decoration: InputDecoration(
-                              hintText: '请详细填写举报原因...',
-                              hintStyle: TextStyle(
-                                color: theme.textMuted.withValues(alpha: 0.8),
-                                fontSize: 13,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(13),
-                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      // 需求摘要指示标签：通透微光胶囊
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0x1AFFFFFF) : const Color(0x40FFFFFF),
+                          borderRadius: BorderRadius.circular(11),
+                          border: Border.all(
+                            color: isDark ? const Color(0x1FFFFFFF) : const Color(0x66FFFFFF),
+                            width: 0.6,
                           ),
                         ),
-                        const SizedBox(height: 18),
-                        Row(
+                        child: Row(
                           children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 38,
-                                child: TextButton(
-                                  onPressed: () => Navigator.pop(dialogContext),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: theme.textSecondary,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(100),
-                                      side: BorderSide(
-                                        color: isDark ? const Color(0x2BFFFFFF) : const Color(0x40000000),
-                                        width: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                                  child: const Text('取消', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                                ),
+                            Text(
+                              '需求',
+                              style: TextStyle(
+                                color: theme.textMuted,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             Expanded(
-                              child: SizedBox(
-                                height: 38,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    final content = contentController.text.trim();
-                                    if (content.isEmpty) {
-                                      ToastUtil.info('请填写举报原因');
-                                      return;
-                                    }
-
-                                    final user = Global.getLoggedInUser();
-                                    if (user == null) {
-                                      ToastUtil.info('请先登录');
-                                      return;
-                                    }
-
-                                    try {
-                                      final result = await Api.client.saveFeatureRequestReport(request.id, content, user.id);
-                                      if (!context.mounted) return;
-                                      if (result.success) {
-                                        ToastUtil.success('举报成功');
-                                        Navigator.pop(dialogContext);
-                                      } else {
-                                        ToastUtil.error(result.msg ?? '举报失败');
-                                      }
-                                    } catch (e) {
-                                      if (!context.mounted) return;
-                                      ToastUtil.error('举报失败');
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.20 : 0.12),
-                                    foregroundColor: const Color(0xFFEF4444),
-                                    elevation: 0,
-                                    shadowColor: Colors.transparent,
-                                    side: BorderSide(
-                                      color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.35 : 0.22),
-                                      width: 0.8,
-                                    ),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                                  ),
-                                  child: const Text('确认举报', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              child: Text(
+                                request.title ?? '',
+                                style: TextStyle(
+                                  color: theme.textPrimary,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 12),
+                      // 举报原因输入框：通透半透明材质 + 细腻圆角微边框
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0x14FFFFFF) : const Color(0x38FFFFFF),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark ? const Color(0x1AFFFFFF) : const Color(0x66FFFFFF),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: contentController,
+                          style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            hintText: '请详细填写举报原因...',
+                            hintStyle: TextStyle(
+                              color: theme.textMuted.withValues(alpha: 0.8),
+                              fontSize: 13,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      // 底部按钮栏：充足高度(42px)、字重与水平内边距，杜绝文字溢出与截断
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 42,
+                              child: TextButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  foregroundColor: theme.textSecondary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(100),
+                                    side: BorderSide(
+                                      color: isDark ? const Color(0x2BFFFFFF) : const Color(0x33000000),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                ),
+                                child: const Text(
+                                  '取消',
+                                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SizedBox(
+                              height: 42,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final content = contentController.text.trim();
+                                  if (content.isEmpty) {
+                                    ToastUtil.info('请填写举报原因');
+                                    return;
+                                  }
+
+                                  final user = Global.getLoggedInUser();
+                                  if (user == null) {
+                                    ToastUtil.info('请先登录');
+                                    return;
+                                  }
+
+                                  try {
+                                    final result = await Api.client.saveFeatureRequestReport(request.id, content, user.id);
+                                    if (!context.mounted) return;
+                                    if (result.success) {
+                                      ToastUtil.success('举报成功');
+                                      Navigator.pop(dialogContext);
+                                    } else {
+                                      ToastUtil.error(result.msg ?? '举报失败');
+                                    }
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ToastUtil.error('举报失败');
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.24 : 0.14),
+                                  foregroundColor: const Color(0xFFEF4444),
+                                  elevation: 0,
+                                  shadowColor: Colors.transparent,
+                                  side: BorderSide(
+                                    color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.45 : 0.28),
+                                    width: 0.8,
+                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                                ),
+                                child: const Text(
+                                  '确认举报',
+                                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -371,216 +385,223 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
     final theme = context.themeConfig;
     final isDark = context.isDarkMode;
 
-    showDialog(
+    showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      builder: (dialogContext) => StatefulBuilder(
+      barrierLabel: 'dismiss_create_dialog',
+      barrierColor: Colors.black.withValues(alpha: isDark ? 0.40 : 0.16),
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      pageBuilder: (dialogContext, anim1, anim2) => StatefulBuilder(
         builder: (builderContext, setState) => Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
           insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 390),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
-                    blurRadius: 28,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: BackdropFilter(
-                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xD91E242C) // 85% 曜石深灰通透磨砂
-                          : const Color(0xE0FFFFFF), // 88% 凝润通透乳白磨砂
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isDark ? const Color(0x33FFFFFF) : const Color(0xD9FFFFFF),
-                        width: 1.0,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xB3181E27) // 70% 曜石深灰通透磨砂
+                        : const Color(0x66FFFFFF), // 40% 凝润通透乳白磨砂
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDark ? const Color(0x33FFFFFF) : const Color(0xB3FFFFFF),
+                      width: 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                        blurRadius: 28,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: theme.primaryColor.withValues(alpha: isDark ? 0.18 : 0.10),
-                                borderRadius: BorderRadius.circular(11),
-                              ),
-                              child: Icon(
-                                Icons.edit_note_rounded,
-                                color: theme.primaryColor,
-                                size: 21,
-                              ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: theme.primaryColor.withValues(alpha: isDark ? 0.20 : 0.12),
+                              borderRadius: BorderRadius.circular(11),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '提交新需求',
-                                    style: TextStyle(
-                                      color: theme.textPrimary,
-                                      fontSize: 16.5,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: -0.2,
-                                    ),
+                            child: Icon(
+                              Icons.edit_note_rounded,
+                              color: theme.primaryColor,
+                              size: 21,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '提交新需求',
+                                  style: TextStyle(
+                                    color: theme.textPrimary,
+                                    fontSize: 16.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.2,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '分享你的构想，获高赞需求将优先开发',
-                                    style: TextStyle(
-                                      color: theme.textMuted,
-                                      fontSize: 11.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // 需求标题输入框
-                        Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0x14FFFFFF) : const Color(0x4AFFFFFF),
-                            borderRadius: BorderRadius.circular(13),
-                            border: Border.all(
-                              color: isDark ? const Color(0x1FFFFFFF) : const Color(0x66FFFFFF),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: titleController,
-                            style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
-                            decoration: InputDecoration(
-                              hintText: '需求标题，如：单词列表支持乱序播放',
-                              hintStyle: TextStyle(
-                                color: theme.textMuted.withValues(alpha: 0.8),
-                                fontSize: 13,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // 需求详情描述框
-                        Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0x14FFFFFF) : const Color(0x4AFFFFFF),
-                            borderRadius: BorderRadius.circular(13),
-                            border: Border.all(
-                              color: isDark ? const Color(0x1FFFFFFF) : const Color(0x66FFFFFF),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: contentController,
-                            style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
-                            maxLines: 5,
-                            decoration: InputDecoration(
-                              hintText: '详细描述这个功能的使用场景和你的具体构想...',
-                              hintStyle: TextStyle(
-                                color: theme.textMuted.withValues(alpha: 0.8),
-                                fontSize: 13,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.all(13),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 38,
-                                child: TextButton(
-                                  onPressed: () => Navigator.pop(dialogContext),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: theme.textSecondary,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(100),
-                                      side: BorderSide(
-                                        color: isDark ? const Color(0x2BFFFFFF) : const Color(0x40000000),
-                                        width: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                                  child: const Text('取消', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: SizedBox(
-                                height: 38,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    final title = titleController.text.trim();
-                                    final content = contentController.text.trim();
-
-                                    if (title.isEmpty) {
-                                      ToastUtil.info('请填写需求标题');
-                                      return;
-                                    }
-                                    if (content.isEmpty) {
-                                      ToastUtil.info('请填写需求描述');
-                                      return;
-                                    }
-
-                                    final user = Global.getLoggedInUser();
-                                    if (user == null) {
-                                      ToastUtil.info('请先登录');
-                                      return;
-                                    }
-
-                                    try {
-                                      final result = await Api.client.createFeatureRequest(title, content, user.id);
-                                      if (!context.mounted) return;
-                                      if (result.success) {
-                                        ToastUtil.success('提交成功，感谢你的建议！');
-                                        Navigator.pop(dialogContext);
-                                        _loadRequests();
-                                      } else {
-                                        ToastUtil.error(result.msg ?? '提交失败');
-                                      }
-                                    } catch (e) {
-                                      if (!context.mounted) return;
-                                      ToastUtil.error('提交失败');
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: theme.primaryColor,
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '分享你的构想，获高赞需求将优先开发',
+                                  style: TextStyle(
+                                    color: theme.textMuted,
+                                    fontSize: 11.5,
                                   ),
-                                  child: const Text('立即提交', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // 需求标题输入框
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0x14FFFFFF) : const Color(0x38FFFFFF),
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(
+                            color: isDark ? const Color(0x1AFFFFFF) : const Color(0x66FFFFFF),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: titleController,
+                          style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
+                          decoration: InputDecoration(
+                            hintText: '需求标题，如：单词列表支持乱序播放',
+                            hintStyle: TextStyle(
+                              color: theme.textMuted.withValues(alpha: 0.8),
+                              fontSize: 13,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // 需求详情描述框
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0x14FFFFFF) : const Color(0x38FFFFFF),
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(
+                            color: isDark ? const Color(0x1AFFFFFF) : const Color(0x66FFFFFF),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: contentController,
+                          style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
+                          maxLines: 5,
+                          decoration: InputDecoration(
+                            hintText: '详细描述这个功能的使用场景和你的具体构想...',
+                            hintStyle: TextStyle(
+                              color: theme.textMuted.withValues(alpha: 0.8),
+                              fontSize: 13,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      // 底部按钮栏：42px 充足高度 + 舒展内边距
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 42,
+                              child: TextButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  foregroundColor: theme.textSecondary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(100),
+                                    side: BorderSide(
+                                      color: isDark ? const Color(0x2BFFFFFF) : const Color(0x33000000),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                ),
+                                child: const Text('取消', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500)),
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SizedBox(
+                              height: 42,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final title = titleController.text.trim();
+                                  final content = contentController.text.trim();
+
+                                  if (title.isEmpty) {
+                                    ToastUtil.info('请填写需求标题');
+                                    return;
+                                  }
+                                  if (content.isEmpty) {
+                                    ToastUtil.info('请填写需求描述');
+                                    return;
+                                  }
+
+                                  final user = Global.getLoggedInUser();
+                                  if (user == null) {
+                                    ToastUtil.info('请先登录');
+                                    return;
+                                  }
+
+                                  try {
+                                    final result = await Api.client.createFeatureRequest(title, content, user.id);
+                                    if (!context.mounted) return;
+                                    if (result.success) {
+                                      ToastUtil.success('提交成功，感谢你的建议！');
+                                      Navigator.pop(dialogContext);
+                                      _loadRequests();
+                                    } else {
+                                      ToastUtil.error(result.msg ?? '提交失败');
+                                    }
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ToastUtil.error('提交失败');
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  backgroundColor: theme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                                ),
+                                child: const Text('立即提交', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1050,9 +1071,6 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
   }
 
   String _getUserInitial(UserVo? user) {
-    if (user == null) return '?';
-    final nickName = user.nickName;
-    if (nickName == null || nickName.isEmpty) return '?';
-    return nickName[0].toUpperCase();
+    return Util.getInitial(user?.nickName ?? user?.userName, fallback: '?');
   }
 }
