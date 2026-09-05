@@ -635,6 +635,297 @@ class Util {
     );
   }
 
+  /// 显示例句中点击单词后的底部磨砂毛玻璃查词弹窗
+  static Future<void> _showWordSearchBottomSheet(
+    BuildContext context,
+    SearchWordResult searchResult,
+  ) async {
+    final word = searchResult.word;
+    if (word == null) return;
+
+    final isPlayingNotifier = ValueNotifier<bool>(false);
+
+    Future<void> playWordAudio() async {
+      if (isPlayingNotifier.value) return;
+      isPlayingNotifier.value = true;
+      try {
+        await StudyAudioSessionController().playWordSound(word);
+      } catch (e) {
+        Global.logger.e('播放单词发音失败: $e');
+      } finally {
+        isPlayingNotifier.value = false;
+      }
+    }
+
+    // 打开弹窗时自动触发发音与动效
+    unawaited(playWordAudio());
+
+    try {
+      await showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'word_search_bottom_sheet',
+        barrierColor: Colors.black.withValues(alpha: 0.2),
+        transitionDuration: const Duration(milliseconds: 200),
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+          return FractionalTranslation(
+            translation: Offset(0, 1 - curved.value),
+            child: child,
+          );
+        },
+        pageBuilder: (dialogContext, animation, secondaryAnimation) {
+          final isDark = dialogContext.read<DarkMode>().isDarkMode;
+          bool isInRawWord = searchResult.isInRawWordDict ?? false;
+
+          return Align(
+            alignment: Alignment.bottomCenter,
+            child: Material(
+              color: Colors.transparent,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(
+                      maxHeight: 320,
+                      minHeight: 140,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xEB1E232A) // 92% 深灰黑夜磨砂
+                          : const Color(0xEBFFFFFF), // 92% 通透乳白磨砂
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                      border: Border(
+                        top: BorderSide(
+                          color: isDark
+                              ? const Color(0x33FFFFFF)
+                              : const Color(0x80FFFFFF),
+                          width: 0.8,
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                          blurRadius: 20,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+                    child: StatefulBuilder(
+                      builder: (context, setDialogState) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 顶部拖拽把手
+                            Center(
+                              child: Container(
+                                width: 36,
+                                height: 4,
+                                margin: const EdgeInsets.only(bottom: 10),
+                                decoration: BoxDecoration(
+                                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                            // 单词与音标发音区域
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    word.spell,
+                                    style: const TextStyle(
+                                      color: Global.highlight,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 22,
+                                      letterSpacing: -0.2,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ValueListenableBuilder<bool>(
+                                  valueListenable: isPlayingNotifier,
+                                  builder: (context, isPlaying, _) {
+                                    return GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: playWordAudio,
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isPlaying
+                                              ? Global.highlight.withValues(alpha: isDark ? 0.22 : 0.12)
+                                              : (isDark ? const Color(0x2BFFFFFF) : const Color(0x12000000)),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: isPlaying
+                                                ? Global.highlight.withValues(alpha: 0.35)
+                                                : Colors.transparent,
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              '[${Util.getWordDefaultPronounce(word)}]',
+                                              style: TextStyle(
+                                                color: isPlaying
+                                                    ? Global.highlight
+                                                    : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                                                fontFamily: 'NotoSans',
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(width: 5),
+                                            ModernSoundWaveIcon(
+                                              isPlaying: isPlaying,
+                                              size: 16,
+                                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                              activeColor: Global.highlight,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Divider(
+                              height: 1,
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.06),
+                              thickness: 0.5,
+                            ),
+                            const SizedBox(height: 6),
+                            // 释义列表
+                            if (word.meaningItems != null && word.meaningItems!.isNotEmpty)
+                              Flexible(
+                                child: ListView(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        for (var meaningItem in Util.mergeMeaningItems(word.meaningItems!))
+                                          Padding(
+                                            padding: const EdgeInsets.only(bottom: 4),
+                                            child: Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                                  margin: const EdgeInsets.only(right: 6, top: 1),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF4A90E2).withValues(alpha: 0.12),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text(
+                                                    meaningItem.ciXing ?? '',
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF3880E0),
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Text(
+                                                    meaningItem.meaning ?? '',
+                                                    style: TextStyle(
+                                                      fontSize: 13.5,
+                                                      height: 1.35,
+                                                      color: isDark ? Colors.grey[200] : const Color(0xFF262626),
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                    maxLines: 2,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 8),
+                            // 底部操作区
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    elevation: 0,
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: isInRawWord ? Colors.orange.shade700 : Global.highlight,
+                                    minimumSize: const Size(96, 34),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                    textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                                    shape: const StadiumBorder(),
+                                  ),
+                                  onPressed: () async {
+                                    if (isInRawWord) {
+                                      var res = await WordBo().deleteRawWord(word.id!);
+                                      if (!dialogContext.mounted) return;
+                                      if (res.success) {
+                                        setDialogState(() {
+                                          isInRawWord = false;
+                                          searchResult.isInRawWordDict = false;
+                                        });
+                                        ToastUtil.info("已移出生词本");
+                                      } else {
+                                        ToastUtil.error(res.msg ?? '操作失败');
+                                      }
+                                    } else {
+                                      var res = await WordBo().addRawWord(word.spell, '手工添加');
+                                      if (!dialogContext.mounted) return;
+                                      if (res.success) {
+                                        setDialogState(() {
+                                          isInRawWord = true;
+                                          searchResult.isInRawWordDict = true;
+                                        });
+                                        StudyAudioSessionController().playAddSuccessSound();
+                                      } else {
+                                        ToastUtil.error(res.msg ?? '操作失败');
+                                      }
+                                    }
+                                  },
+                                  child: Text(isInRawWord ? '移出生词本' : '加入生词本'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    } finally {
+      isPlayingNotifier.dispose();
+    }
+  }
+
   static String getWordDefaultPronounce(WordVo word) {
     return getWordPronounceWithAccent(word).$1;
   }
