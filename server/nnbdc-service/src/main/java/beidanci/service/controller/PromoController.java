@@ -125,7 +125,8 @@ public class PromoController {
             @RequestParam(required = false) Long endTime,
             @RequestParam(required = false) Integer maxRedemptions,
             @RequestParam(required = false, defaultValue = "false") Boolean showCodeToUser,
-            @RequestParam(required = false, defaultValue = "false") Boolean showRedeemUi) {
+            @RequestParam(required = false, defaultValue = "false") Boolean showRedeemUi,
+            @RequestParam(required = false) String replyMessage) {
         try {
             User admin = userBo.findById(userId);
             if (admin == null || !admin.getIsAdmin()) {
@@ -165,6 +166,7 @@ public class PromoController {
             activity.setRedemptionCount(0);
             activity.setShowCodeToUser(showCodeToUser != null ? showCodeToUser : false);
             activity.setShowRedeemUi(showRedeemUi != null ? showRedeemUi : false);
+            activity.setReplyMessage(replyMessage);
             activity.setIsActive(true);
             activity.setCreateTime(new Date());
             activity.setUpdateTime(new Date());
@@ -235,6 +237,7 @@ public class PromoController {
             @RequestParam(required = false) Integer maxRedemptions,
             @RequestParam(required = false, defaultValue = "false") Boolean showCodeToUser,
             @RequestParam(required = false, defaultValue = "false") Boolean showRedeemUi,
+            @RequestParam(required = false) String replyMessage,
             @RequestParam(required = false) Boolean isActive) {
         try {
             User admin = userBo.findById(userId);
@@ -284,6 +287,9 @@ public class PromoController {
             }
             if (showRedeemUi != null) {
                 activity.setShowRedeemUi(showRedeemUi);
+            }
+            if (replyMessage != null) {
+                activity.setReplyMessage(replyMessage);
             }
             if (isActive != null) {
                 activity.setIsActive(isActive);

@@ -5,8 +5,6 @@ import beidanci.service.po.SysParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 public class SysParamUtil {
@@ -73,41 +71,6 @@ public class SysParamUtil {
 
     public String getExportFileUrl() {
         return sysParamBO.findById("exportFileUrl", false).getParamValue();
-    }
-
-    /**
-     * 获取"下月即将上线功能"的中文展示文本。
-     * 参数 UpcomingFeatures 形如 {@code <功能A><功能B>}，解析为 "功能A 和 功能B"；
-     * 超过两个则用顿号分隔、最后两个用"和"（如 "功能A、功能B 和 功能C"）。
-     * 该值由管理员在系统参数中维护，无需改代码。
-     */
-    public String getUpcomingFeaturesText() {
-        SysParam param = sysParamBO.findById("UpcomingFeatures", false);
-        if (param == null || param.getParamValue() == null || param.getParamValue().trim().isEmpty()) {
-            return "神秘新功能";
-        }
-        Matcher m = Pattern.compile("<([^>]*)>").matcher(param.getParamValue().trim());
-        List<String> items = new ArrayList<>();
-        while (m.find()) {
-            String s = m.group(1).trim();
-            if (!s.isEmpty()) {
-                items.add(s);
-            }
-        }
-        if (items.isEmpty()) {
-            return "神秘新功能";
-        }
-        if (items.size() == 1) {
-            return items.get(0);
-        }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < items.size(); i++) {
-            if (i > 0) {
-                sb.append(i == items.size() - 1 ? " 和 " : "、");
-            }
-            sb.append(items.get(i));
-        }
-        return sb.toString();
     }
 
     public int getAiStoryConcurrencyLimit() {
@@ -185,7 +148,6 @@ public class SysParamUtil {
         list.add(new SysParam("CowDungPerGame", "1", "每局游戏牛粪消耗"));
         list.add(new SysParam("AiStoryEnTtsEnabled", "false", "AI短文英文朗读是否启用 (true/false)"));
         list.add(new SysParam("AiStoryCnTtsEnabled", "false", "AI短文中文朗读是否启用 (true/false)"));
-        list.add(new SysParam("UpcomingFeatures", "", "下月即将上线的功能列表，多个功能用尖括号包裹，如 <功能A><功能B>；未配置时文案显示“神秘新功能”"));
         return list;
     }
 

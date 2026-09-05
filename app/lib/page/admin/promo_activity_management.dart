@@ -49,7 +49,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     }
   }
 
-  Future<void> _createActivity(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi) async {
+  Future<void> _createActivity(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi, String? replyMessage) async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
@@ -63,6 +63,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
         maxRedemptions,
         showCodeToUser,
         showRedeemUi,
+        replyMessage,
       );
       if (result.success) {
         ToastUtil.success('创建活动成功');
@@ -75,7 +76,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     }
   }
 
-  Future<void> _updateActivity(String activityId, String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi) async {
+  Future<void> _updateActivity(String activityId, String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi, String? replyMessage) async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
@@ -90,6 +91,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
         maxRedemptions,
         showCodeToUser,
         showRedeemUi,
+        replyMessage,
         true,
       );
       if (result.success) {
@@ -126,8 +128,8 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (context) => _CreateOrEditPromoActivityPage(
-          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi) {
-            _createActivity(name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi);
+          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi, replyMessage) {
+            _createActivity(name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi, replyMessage);
           },
         ),
       ),
@@ -141,9 +143,9 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
         fullscreenDialog: true,
         builder: (context) => _CreateOrEditPromoActivityPage(
           initialActivity: activity,
-          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi) {
+          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi, replyMessage) {
             if (activity.id != null) {
-              _updateActivity(activity.id!, name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi);
+              _updateActivity(activity.id!, name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi, replyMessage);
             }
           },
         ),
@@ -445,7 +447,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
 
 class _CreateOrEditPromoActivityPage extends StatefulWidget {
   final PromoActivityVo? initialActivity;
-  final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi) onSave;
+  final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi, String? replyMessage) onSave;
 
   const _CreateOrEditPromoActivityPage({
     this.initialActivity,
@@ -462,6 +464,7 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
   final TextEditingController _daysController = TextEditingController(text: '30');
   final TextEditingController _maxRedemptionsController = TextEditingController();
   final TextEditingController _deadlineController = TextEditingController();
+  final TextEditingController _replyMessageController = TextEditingController();
   bool _isPermanent = false;
   bool _hasDeadline = true;
   bool _showCodeToUser = false;
@@ -494,6 +497,7 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
       }
       _showCodeToUser = init.showCodeToUser == true;
       _showRedeemUi = init.showRedeemUi == true;
+      _replyMessageController.text = init.replyMessage ?? '';
     }
     _updateDeadlineText();
   }
@@ -513,6 +517,7 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
     _daysController.dispose();
     _maxRedemptionsController.dispose();
     _deadlineController.dispose();
+    _replyMessageController.dispose();
     super.dispose();
   }
 
@@ -542,7 +547,8 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
     final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
 
     Navigator.pop(context);
-    widget.onSave(name, code, duration, endTime, maxRedemptions, _showCodeToUser, _showRedeemUi);
+    final replyMessage = _replyMessageController.text.trim().isEmpty ? null : _replyMessageController.text.trim();
+    widget.onSave(name, code, duration, endTime, maxRedemptions, _showCodeToUser, _showRedeemUi, replyMessage);
   }
 
   @override
@@ -656,6 +662,34 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
                             _showCodeToUser = val;
                           });
                         },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: isDarkMode ? 0 : 1,
+                color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('应答消息（可选）', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87)),
+                      const SizedBox(height: 8),
+                      Text('兑换成功后的回复文案。可用占位符：{name} 活动名、{duration} 时长。留空则用默认文案。', style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white60 : Colors.black54)),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _replyMessageController,
+                        maxLines: 5,
+                        style: const TextStyle(fontSize: 13),
+                        decoration: const InputDecoration(
+                          hintText: '例如：\n【{name}】的授权码激活成功！送你的【{duration}】会员已到账啦 (≧▽≦)\n下个月我们计划上线全新功能…',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
                       ),
                     ],
                   ),

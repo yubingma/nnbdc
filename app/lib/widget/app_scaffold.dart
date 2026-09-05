@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
@@ -8,7 +9,21 @@ import '../theme/app_theme_background.dart';
 /// BuildContext 主题便捷扩展
 /// 让任意 Widget 都可以直接通过 `context.primaryColor` 或 `context.themeConfig` 访问当前动态主题
 extension AppThemeContextExtension on BuildContext {
-  AppThemeStyle get themeStyle => watch<DarkMode>().themeStyle;
+  AppThemeStyle get themeStyle {
+    // 若在非构建周期（如事件回调、异步方法、dialog 触发时），Provider 禁止 listen: true，自动退化为安全读取
+    if (kDebugMode && this is Element) {
+      final isBuilding = (this as Element).owner?.debugBuilding ?? false;
+      if (!isBuilding) {
+        return read<DarkMode>().themeStyle;
+      }
+    }
+    try {
+      return watch<DarkMode>().themeStyle;
+    } on Object catch (_) {
+      return read<DarkMode>().themeStyle;
+    }
+  }
+
   AppThemeConfig get themeConfig => AppThemeConfig.of(themeStyle);
 
   Color get primaryColor => themeConfig.primaryColor;

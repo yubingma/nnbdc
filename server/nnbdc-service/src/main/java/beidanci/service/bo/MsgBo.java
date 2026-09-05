@@ -27,7 +27,6 @@ import beidanci.service.po.Msg;
 import beidanci.service.po.PromoActivity;
 import beidanci.service.po.User;
 import beidanci.service.socket.SocketService;
-import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.Util;
 import beidanci.util.Constants;
 
@@ -47,9 +46,6 @@ public class MsgBo extends BaseBo<Msg> {
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
-    @Autowired
-    private SysParamUtil sysParamUtil;
 
     @PostConstruct
     public void init() {
@@ -283,13 +279,20 @@ public class MsgBo extends BaseBo<Msg> {
                     String durationStr = (activity.getDuration() != null && !activity.getDuration().trim().isEmpty())
                             ? activity.getDuration().trim()
                             : "永久";
-                    replyMsg = String.format(
-                            "【%s】的授权码激活成功！送你的【%s】会员已到账啦 (≧▽≦)\n\n"
-                                    + "我们是一个刚刚起步的小团队，这个 App 就像我们的孩子一样。实不相瞒，"
-                                    + "我们特别害怕做得不够好让你失望。下个月我们计划上线 %s，"
-                                    + "一定会把它变得越来越好用！如果觉得好用，求求点个赞支持一下 (๑•́ω•̀๑)；"
-                                    + "要是遇到不好用的地方，随时在这里吐槽，千万别悄悄删掉我们，给我们一个修正的机会好不好？",
-                            activity.getName(), durationStr, sysParamUtil.getUpcomingFeaturesText());
+                    String replyTemplate = activity.getReplyMessage();
+                    if (replyTemplate != null && !replyTemplate.trim().isEmpty()) {
+                        replyMsg = replyTemplate
+                                .replace("{name}", activity.getName() == null ? "" : activity.getName())
+                                .replace("{duration}", durationStr == null ? "" : durationStr);
+                    } else {
+                        replyMsg = String.format(
+                                "【%s】的授权码激活成功！送你的【%s】会员已到账啦 (≧▽≦)\n\n"
+                                        + "我们是一个刚刚起步的小团队，这个 App 就像我们的孩子一样。实不相瞒，"
+                                        + "我们特别害怕做得不够好让你失望。下个月我们计划上线全新功能，"
+                                        + "一定会把它变得越来越好用！如果觉得好用，求求点个赞支持一下 (๑•́ω•̀๑)；"
+                                        + "要是遇到不好用的地方，随时在这里吐槽，千万别悄悄删掉我们，给我们一个修正的机会好不好？",
+                                activity.getName(), durationStr);
+                    }
                 } catch (Exception e) {
                     logger.error("意见建议兑换会员失败: userId={}, activityCode={}", fromUser.getId(), activity.getActivityCode(), e);
                     replyMsg = "兑换失败，请稍后重试。";

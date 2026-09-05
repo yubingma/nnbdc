@@ -39,6 +39,9 @@ public class PromoActivity extends UuidPo {
     @Column(name = "show_redeem_ui", nullable = false)
     private Boolean showRedeemUi = false;
 
+    @Column(name = "reply_message", length = 4000)
+    private String replyMessage;
+
     public PromoActivity() {
     }
 
@@ -134,5 +137,13 @@ public class PromoActivity extends UuidPo {
 
     public void setShowRedeemUi(Boolean showRedeemUi) {
         this.showRedeemUi = showRedeemUi;
+    }
+
+    public String getReplyMessage() {
+        return replyMessage;
+    }
+
+    public void setReplyMessage(String replyMessage) {
+        this.replyMessage = replyMessage;
     }
 }

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/data_integrity_checker.dart';
 import 'package:nnbdc/util/error_handler.dart';
-import 'package:provider/provider.dart';
 
 /// 健康检查页面
 class HealthCheckPage extends StatefulWidget {
@@ -75,96 +73,190 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final theme = context.themeConfig;
+    final isDark = context.isDarkMode;
 
     return AppScaffold(
-      appBar: AppAppBar(
-        title: '健康检查',
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          '健康检查',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: theme.textPrimary,
+            letterSpacing: -0.2,
+          ),
+        ),
         leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: theme.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          tooltip: '返回',
+          splashRadius: 22,
         ),
         actions: [
           if (_checkResult != null && _checkResult!.hasIssues)
             IconButton(
               onPressed: _isRunning ? null : _runAutoFix,
-              icon: const Icon(Icons.build, color: Colors.white),
-              tooltip: '自动修复',
+              icon: Icon(Icons.auto_fix_high_rounded, color: theme.primaryColor, size: 22),
+              tooltip: '一键自动修复',
+              splashRadius: 22,
             ),
+          const SizedBox(width: 4),
         ],
       ),
-      body: _buildContent(isDarkMode),
+      body: _buildContent(theme, isDark),
     );
   }
 
-  Widget _buildContent(bool isDarkMode) {
-    return _buildMainState(isDarkMode);
-  }
-
-  Widget _buildMainState(bool isDarkMode) {
+  Widget _buildContent(AppThemeConfig theme, bool isDark) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, color: AppTheme.primaryColor),
-                      const SizedBox(width: 8),
-                      Text(
-                        '健康检查',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w400,
-                          color: isDarkMode ? Colors.white : Colors.black87,
-                        ),
+          // 核心检查项聚合卡片
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.cardBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: theme.cardBorder, width: 0.8),
+              boxShadow: theme.cardShadows,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 卡片头部
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: theme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '检查您的系统和数据健康状态：',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                      child: Icon(
+                        Icons.health_and_safety_rounded,
+                        size: 22,
+                        color: theme.primaryColor,
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '系统与数据健康诊断',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: theme.textPrimary,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '实时诊断 12 项本地数据库、学习进度与网络状态',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
                   ),
-                  const SizedBox(height: 8),
-                  // 显示每个检查项的状态
-                  ..._checkItems.map((item) => _buildCheckItemWithStatus(
-                        item['title'] as String,
-                        _checkStates[item['id'] as int],
-                        isDarkMode,
-                        item['category'] as String,
-                      )),
-                ],
-              ),
+                ),
+                // 检查项列表
+                ..._checkItems.map((item) => _buildCheckItemWithStatus(
+                      item['title'] as String,
+                      _checkStates[item['id'] as int],
+                      theme,
+                      isDark,
+                      item['category'] as String,
+                    )),
+              ],
             ),
           ),
-          // 显示检查结果提示
+          // 检查结果提示卡片
           if (_checkResult != null) ...[
-            const SizedBox(height: 16),
-            _buildResultSummary(isDarkMode),
+            const SizedBox(height: 14),
+            _buildResultSummary(theme, isDark),
           ],
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isRunning ? null : _runDiagnostic,
-              icon: Icon(_isRunning ? Icons.hourglass_empty : Icons.search),
-              label: Text(_isRunning
-                  ? '检查中...'
-                  : (_checkResult == null ? '开始检查' : '重新检查')),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+          const SizedBox(height: 18),
+          // 底部开始/重新检查主按钮（最新美学：薄雾微光底 + 精细描边 + 主题色文字与图标）
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _isRunning ? null : _runDiagnostic,
+              borderRadius: BorderRadius.circular(100),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 44,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor.withValues(alpha: isDark ? 0.18 : 0.08),
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                    color: theme.primaryColor.withValues(alpha: isDark ? 0.35 : 0.22),
+                    width: 0.8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.primaryColor.withValues(alpha: isDark ? 0.15 : 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_isRunning) ...[
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ] else ...[
+                      Icon(
+                        _checkResult == null ? Icons.search_rounded : Icons.refresh_rounded,
+                        size: 18,
+                        color: theme.primaryColor,
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Text(
+                      _isRunning
+                          ? '正在全面自检中...'
+                          : (_checkResult == null ? '开始检查' : '重新检查'),
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: theme.primaryColor,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -173,105 +265,140 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     );
   }
 
-  Widget _buildResultSummary(bool isDarkMode) {
-    // 获取所有检查项的 category
+  Widget _buildResultSummary(AppThemeConfig theme, bool isDark) {
     final checkItemCategories =
         _checkItems.map((item) => item['category'] as String).toSet();
 
-    // 只统计已分类的问题（匹配检查项 category 的问题）
     final categorizedIssues = _checkResult!.issues.where((issue) {
       return checkItemCategories.contains(issue.category);
     }).toList();
 
-    // 检查是否有检查项失败
     final hasFailedCheckItem =
         _checkStates.values.any((state) => state == 'failed');
 
-    // 统计已分类的问题数量
     final categorizedIssueCount = categorizedIssues.length;
-    // errors 也应该被统计
     final errorCount = _checkResult!.errors.length;
     final totalIssues = categorizedIssueCount + errorCount;
-
-    // 判断是否健康：所有检查项都通过，且没有已分类的问题和错误
     final isHealthy = !hasFailedCheckItem && totalIssues == 0;
 
-    return Card(
-      color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(
-              isHealthy ? Icons.check_circle : Icons.warning,
-              color: isHealthy ? Colors.green : Colors.orange,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isHealthy ? '检查完成，所有项目正常' : '发现 $totalIssues 个问题',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                    ),
+    final accentStatusColor =
+        isHealthy ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: accentStatusColor.withValues(alpha: isDark ? 0.14 : 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: accentStatusColor.withValues(alpha: isDark ? 0.35 : 0.22),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isHealthy ? Icons.verified_rounded : Icons.warning_amber_rounded,
+            color: accentStatusColor,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isHealthy ? '检查完成，所有项目状态良好' : '发现 $totalIssues 处状态异常',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: theme.textPrimary,
                   ),
-                  if (!isHealthy) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '请查看上述检查项了解详情',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                      ),
-                    ),
-                  ],
-                ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isHealthy ? '本地数据库结构完好，数据与网络状态健康' : '可点击各项右侧详情或上方一键修复',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!isHealthy)
+            TextButton(
+              onPressed: _isRunning ? null : _runAutoFix,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                backgroundColor: accentStatusColor.withValues(alpha: 0.12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+              ),
+              child: Text(
+                '一键修复',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: accentStatusColor,
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildCheckItemWithStatus(
-      String text, dynamic status, bool isDarkMode, String category) {
-    IconData icon;
-    Color iconColor;
+      String text, dynamic status, AppThemeConfig theme, bool isDark, String category) {
+    Widget iconWidget;
+    Color textColor = theme.textSecondary;
     bool isFailed = false;
 
     if (status == null) {
-      // 尚未检查，显示灰色时钟
-      icon = Icons.access_time;
-      iconColor = Colors.grey;
+      // 尚未检查：轻淡细圆圈
+      iconWidget = Icon(
+        Icons.radio_button_unchecked_rounded,
+        size: 15,
+        color: theme.textMuted.withValues(alpha: 0.35),
+      );
     } else if (status == false) {
-      // 正在进行中，显示蓝色时钟
-      icon = Icons.access_time;
-      iconColor = AppTheme.primaryColor;
+      // 正在进行中：微型转圈动画
+      iconWidget = SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          strokeWidth: 1.8,
+          valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+        ),
+      );
+      textColor = theme.primaryColor;
     } else if (status == true) {
-      // 通过，显示绿色对钩
-      icon = Icons.check_circle;
-      iconColor = Colors.green;
+      // 通过：翡翠绿微对勾
+      iconWidget = const Icon(
+        Icons.check_circle_rounded,
+        size: 16,
+        color: Color(0xFF10B981),
+      );
     } else {
-      // 失败，显示红色叉
-      icon = Icons.cancel;
-      iconColor = Colors.red;
+      // 失败：珊瑚红错误图标
+      iconWidget = const Icon(
+        Icons.error_rounded,
+        size: 16,
+        color: Color(0xFFEF4444),
+      );
+      textColor = const Color(0xFFEF4444);
       isFailed = true;
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6.5),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: iconColor,
+          Container(
+            width: 20,
+            alignment: Alignment.centerLeft,
+            child: iconWidget,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -279,158 +406,236 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
               text,
               style: TextStyle(
                 fontSize: 13,
-                color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                fontWeight: isFailed ? FontWeight.w600 : FontWeight.w400,
+                color: textColor,
               ),
             ),
           ),
-          // 失败时显示详情按钮
-          if (isFailed && _checkResult != null) ...[
-            const SizedBox(width: 8),
-            TextButton(
-              onPressed: () => _showIssueDetails(category, text),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          if (isFailed && _checkResult != null)
+            GestureDetector(
+              onTap: () => _showIssueDetails(category, text),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      '详情',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFEF4444),
+                      ),
+                    ),
+                    SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 14,
+                      color: Color(0xFFEF4444),
+                    ),
+                  ],
+                ),
               ),
-              child: const Text(
-                '详情',
-                style: TextStyle(fontSize: 12),
+            )
+          else if (status == true)
+            Text(
+              '正常',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF10B981).withValues(alpha: 0.8),
               ),
             ),
-          ],
         ],
       ),
     );
   }
 
-  // 显示问题详情对话框
+  // 显示问题详情抽屉
   void _showIssueDetails(String category, String title) {
     if (_checkResult == null) return;
+    final theme = context.themeConfig;
+    final isDark = context.isDarkMode;
 
-    // 根据 category 过滤出相关的问题
     final relatedIssues = _checkResult!.issues
         .where((issue) => issue.category == category)
         .toList();
 
-    if (relatedIssues.isEmpty) {
-      return;
-    }
+    if (relatedIssues.isEmpty) return;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: relatedIssues.map((issue) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.78,
+        ),
+        decoration: BoxDecoration(
+          color: theme.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 顶部手柄
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 10, bottom: 8),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.textMuted.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // 抽屉头部
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.error_outline_rounded,
+                      size: 20,
+                      color: Color(0xFFEF4444),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: theme.textPrimary,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        Text(
+                          '发现 ${relatedIssues.length} 项具体异常',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: theme.textMuted, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                    splashRadius: 18,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, thickness: 0.5),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 问题类型
-                    Text(
-                      issue.type,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 14,
+                  children: relatedIssues.map((issue) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: theme.subtleBg.withValues(alpha: isDark ? 0.3 : 0.4),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: theme.cardBorder, width: 0.8),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    // 问题描述
-                    Text(
-                      issue.description,
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                    // 如果有日志信息，显示日志
-                    if (issue.logMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              '日志信息:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w400,
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            issue.type,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: theme.textPrimary,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              issue.logMessage!,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontFamily: 'monospace',
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            issue.description,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: theme.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                          if (issue.logMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.04),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: SelectableText(
+                                issue.logMessage!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontFamily: 'monospace',
+                                  color: theme.textMuted,
+                                ),
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                    ],
-                    // 如果有堆栈跟踪，显示堆栈
-                    if (issue.stackTrace != null) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              '异常堆栈:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w400,
-                                fontSize: 12,
-                                color: Colors.red,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              issue.stackTrace!,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontFamily: 'monospace',
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
+                    );
+                  }).toList(),
                 ),
-              );
-            }).toList(),
-          ),
-        ),
-        actions: [
-          // 修复按钮
-          if (relatedIssues.isNotEmpty)
-            TextButton(
-              onPressed: () => _fixIssues(context, relatedIssues),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.green,
               ),
-              child: const Text('修复'),
             ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-        ],
+            // 底部操作栏
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 42,
+                child: ElevatedButton(
+                  onPressed: () => _fixIssues(context, relatedIssues),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.primaryColor.withValues(alpha: isDark ? 0.22 : 0.12),
+                    foregroundColor: theme.primaryColor,
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    side: BorderSide(
+                      color: theme.primaryColor.withValues(alpha: isDark ? 0.4 : 0.25),
+                      width: 0.8,
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                  ),
+                  child: const Text(
+                    '立即修复此项异常',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

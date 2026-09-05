@@ -1725,6 +1725,7 @@ class PromoActivityVo {
   bool? isActive;
   bool? showCodeToUser;
   bool? showRedeemUi;
+  String? replyMessage;
   DateTime? createTime;
   DateTime? updateTime;
 
@@ -1740,6 +1741,7 @@ class PromoActivityVo {
     this.isActive,
     this.showCodeToUser,
     this.showRedeemUi,
+    this.replyMessage,
     this.createTime,
     this.updateTime,
   });

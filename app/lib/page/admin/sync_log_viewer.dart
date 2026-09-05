@@ -90,21 +90,205 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
   }
 
   Future<void> _deleteAllLogs() async {
+    final theme = context.themeConfig;
+    final isDark = context.isDarkMode;
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: const Text('确定要删除所有云同步日志吗？此操作不可恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+          decoration: BoxDecoration(
+            color: theme.cardBg,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: theme.cardBorder, width: 0.8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
+                blurRadius: 24,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除', style: TextStyle(color: Colors.red)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 头部图标与标题
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.delete_sweep_rounded,
+                      size: 22,
+                      color: Color(0xFFEF4444),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '清空同步历史日志',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: theme.textPrimary,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '仅清理本地诊断快照，不影响学习数据',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 好处与影响解释卡片
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.subtleBg.withValues(alpha: isDark ? 0.35 : 0.45),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.cardBorder, width: 0.6),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 好处说明
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Icon(Icons.check_circle_outline_rounded, size: 15, color: Color(0xFF10B981)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: TextStyle(fontSize: 12.5, height: 1.45, color: theme.textSecondary),
+                              children: [
+                                TextSpan(
+                                  text: '有哪些好处？\n',
+                                  style: TextStyle(fontWeight: FontWeight.w600, color: theme.textPrimary),
+                                ),
+                                const TextSpan(
+                                  text: '释放本地数据库存储，清空历史堆积的同步记录与报错缓存，让诊断列表保持整洁。',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                      ),
+                    ),
+                    // 影响说明（坏作用）
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Icon(Icons.info_outline_rounded, size: 15, color: theme.primaryColor),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: TextStyle(fontSize: 12.5, height: 1.45, color: theme.textSecondary),
+                              children: [
+                                TextSpan(
+                                  text: '是否有坏影响？\n',
+                                  style: TextStyle(fontWeight: FontWeight.w600, color: theme.textPrimary),
+                                ),
+                                TextSpan(
+                                  text: '绝不影响任何词汇、打卡与学习进度',
+                                  style: TextStyle(fontWeight: FontWeight.w600, color: theme.primaryColor),
+                                ),
+                                const TextSpan(
+                                  text: '，后续云同步依然正常进行。唯一影响是无法再回溯查看过去的单次耗时及历史报错详情。',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              // 底部按钮栏
+              Row(
+                children: [
+                  // 取消按钮
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.textSecondary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                            side: BorderSide(color: theme.cardBorder, width: 0.8),
+                          ),
+                        ),
+                        child: const Text('暂不清理', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 确认删除按钮（最新美学：薄雾微光底 + 柔和红边框）
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.22 : 0.12),
+                          foregroundColor: const Color(0xFFEF4444),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          side: BorderSide(
+                            color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.40 : 0.25),
+                            width: 0.8,
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                        ),
+                        child: const Text('确认清空', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
@@ -602,49 +786,64 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          // 立即同步主按钮
-                          SizedBox(
-                            width: double.infinity,
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: _isSyncing ? null : _manualSync,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.primaryColor,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                disabledBackgroundColor: theme.primaryColor.withValues(alpha: 0.6),
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
+                          const SizedBox(height: 14),
+                          // 立即同步按钮（最新美学：薄雾微光底 + 精细描边 + 主题色文字与图标）
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _isSyncing ? null : _manualSync,
+                              borderRadius: BorderRadius.circular(100),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                height: 40,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: theme.primaryColor.withValues(alpha: isDark ? 0.18 : 0.08),
                                   borderRadius: BorderRadius.circular(100),
+                                  border: Border.all(
+                                    color: theme.primaryColor.withValues(alpha: isDark ? 0.35 : 0.22),
+                                    width: 0.8,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: theme.primaryColor.withValues(alpha: isDark ? 0.15 : 0.06),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (_isSyncing) ...[
-                                    const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (_isSyncing) ...[
+                                      SizedBox(
+                                        width: 15,
+                                        height: 15,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.8,
+                                          valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ] else ...[
+                                      Icon(
+                                        Icons.sync_rounded,
+                                        size: 17,
+                                        color: theme.primaryColor,
+                                      ),
+                                      const SizedBox(width: 6),
+                                    ],
+                                    Text(
+                                      _isSyncing ? '正在同步中...' : '立即同步',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: theme.primaryColor,
+                                        letterSpacing: 0.2,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                  ] else ...[
-                                    const Icon(Icons.sync_rounded, size: 18),
-                                    const SizedBox(width: 6),
                                   ],
-                                  Text(
-                                    _isSyncing ? '正在同步中...' : '立即同步',
-                                    style: const TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           ),

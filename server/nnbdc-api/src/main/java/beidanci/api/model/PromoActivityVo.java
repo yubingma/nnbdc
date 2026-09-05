@@ -13,6 +13,7 @@ public class PromoActivityVo extends UuidVo {
     private Boolean isActive;
     private Boolean showCodeToUser;
     private Boolean showRedeemUi;
+    private String replyMessage;
 
     public PromoActivityVo() {
     }
@@ -95,5 +96,13 @@ public class PromoActivityVo extends UuidVo {
 
     public void setShowRedeemUi(Boolean showRedeemUi) {
         this.showRedeemUi = showRedeemUi;
+    }
+
+    public String getReplyMessage() {
+        return replyMessage;
+    }
+
+    public void setReplyMessage(String replyMessage) {
+        this.replyMessage = replyMessage;
     }
 }
