@@ -261,64 +261,67 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: widget.isSentenceStep
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  waveformWidget,
-                  const SizedBox(width: 12),
-                  if (widget.isAiEvaluating) ...[
-                    _buildAiJudgingBadge(context),
-                  ] else ...[
-                    Text(
-                      statusText,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isDarkMode ? Colors.white38 : Colors.black26,
-                        fontWeight: FontWeight.w500,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: widget.isSentenceStep
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    waveformWidget,
+                    const SizedBox(width: 12),
+                    if (widget.isAiEvaluating) ...[
+                      _buildAiJudgingBadge(context),
+                    ] else ...[
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDarkMode ? Colors.white38 : Colors.black26,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    if (scoreWidget != null) ...[
-                      const SizedBox(width: 6),
-                      scoreWidget,
+                      if (scoreWidget != null) ...[
+                        const SizedBox(width: 6),
+                        scoreWidget,
+                      ],
                     ],
                   ],
-                ],
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  waveformWidget,
-                  const SizedBox(height: 2),
-                  if (widget.isAiEvaluating)
-                    _buildAiJudgingBadge(context)
-                  else
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          statusText,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isDarkMode ? Colors.white54 : Colors.black45,
-                            fontWeight: FontWeight.w500,
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    waveformWidget,
+                    const SizedBox(height: 2),
+                    if (widget.isAiEvaluating)
+                      _buildAiJudgingBadge(context)
+                    else
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            statusText,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isDarkMode ? Colors.white54 : Colors.black45,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        if (scoreWidget != null) ...[
-                          const SizedBox(width: 4),
-                          scoreWidget,
+                          if (scoreWidget != null) ...[
+                            const SizedBox(width: 4),
+                            scoreWidget,
+                          ],
                         ],
-                      ],
-                    ),
-                ],
-              ),
+                      ),
+                  ],
+                ),
+        ),
       ),
     );
   }

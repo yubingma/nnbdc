@@ -599,38 +599,43 @@ extension BdcPageStateUIComponents on BdcPageState {
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
                                       if (state.tabIndex == 0)
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.record_voice_over_outlined,
-                                              size: 13.5,
-                                              color: _cachedIsDarkMode
-                                                  ? const Color(0xFF94A3B8)
-                                                  : const Color(0xFF5A716E),
-                                            ),
-                                            const SizedBox(width: 4.5),
-                                            Text(
-                                              state.studyStep == StudyStep.en2Ch.json
-                                                  ? '请说出中文释义：'
-                                                  : '请说出单词发音：',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
+                                        Flexible(
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.record_voice_over_outlined,
+                                                size: 13.5,
                                                 color: _cachedIsDarkMode
-                                                    ? const Color(0xFFCBD5E1)
-                                                    : const Color(0xFF475569),
-                                                letterSpacing: -0.1,
+                                                    ? const Color(0xFF94A3B8)
+                                                    : const Color(0xFF5A716E),
                                               ),
-                                            ),
-                                            if (state.isAiEvaluating) ...[
-                                              const SizedBox(width: 6),
-                                              _buildAiJudgingBadge(_cachedIsDarkMode),
+                                              const SizedBox(width: 4.5),
+                                              Flexible(
+                                                child: Text(
+                                                  state.studyStep == StudyStep.en2Ch.json
+                                                      ? '请说出中文释义：'
+                                                      : '请说出单词发音：',
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: _cachedIsDarkMode
+                                                        ? const Color(0xFFCBD5E1)
+                                                        : const Color(0xFF475569),
+                                                    letterSpacing: -0.1,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (state.isAiEvaluating) ...[
+                                                const SizedBox(width: 6),
+                                                _buildAiJudgingBadge(_cachedIsDarkMode),
+                                              ],
                                             ],
-                                          ],
+                                          ),
                                         )
                                       else
-                                        const SizedBox.shrink(),
+                                        const Spacer(),
                                       _buildModeSwitchButton(),
                                     ],
                                   ),
@@ -749,121 +754,124 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildRatingButtonsRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        if (state.showAnswerButtons ||
-            state.studyStep == StudyStep.en2Ch.json ||
-            state.studyStep == StudyStep.ch2En.json ||
-            state.studyStep == StudyStep.enSentence2Ch.json ||
-            state.studyStep == StudyStep.chSentence2En.json ||
-            state.studyStep == StudyStep.list.json)
-          AbsorbPointer(
-            absorbing: !state.buttonsEnabled,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ElevatedButton(
-                key: const Key('bdc_not_know_btn'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _cachedIsDarkMode
-                      ? context.warmAccentColor.withValues(alpha: 0.15)
-                      : Colors.white.withValues(alpha: 0.75),
-                  foregroundColor: context.warmAccentColor,
-                  side: BorderSide(
-                    color: context.warmAccentColor.withValues(alpha: _cachedIsDarkMode ? 0.35 : 0.26),
-                    width: 1.1,
-                  ),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          if (state.showAnswerButtons ||
+              state.studyStep == StudyStep.en2Ch.json ||
+              state.studyStep == StudyStep.ch2En.json ||
+              state.studyStep == StudyStep.enSentence2Ch.json ||
+              state.studyStep == StudyStep.chSentence2En.json ||
+              state.studyStep == StudyStep.list.json)
+            AbsorbPointer(
+              absorbing: !state.buttonsEnabled,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                onPressed: () => notifier.showWordDetail(state.word!, true, context,
-                    fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
-                child: const Text(
-                  '不认识',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
-                ),
-              ),
-            ),
-          ),
-        if (state.showAnswerButtons ||
-            state.studyStep == StudyStep.en2Ch.json ||
-            state.studyStep == StudyStep.ch2En.json ||
-            state.studyStep == StudyStep.enSentence2Ch.json ||
-            state.studyStep == StudyStep.chSentence2En.json ||
-            state.studyStep == StudyStep.list.json) ...[
-          const SizedBox(width: 12),
-          AbsorbPointer(
-            absorbing: !state.buttonsEnabled,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+                child: ElevatedButton(
+                  key: const Key('bdc_not_know_btn'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _cachedIsDarkMode
+                        ? context.warmAccentColor.withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.75),
+                    foregroundColor: context.warmAccentColor,
+                    side: BorderSide(
+                      color: context.warmAccentColor.withValues(alpha: _cachedIsDarkMode ? 0.35 : 0.26),
+                      width: 1.1,
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                   ),
-                ],
-              ),
-              child: ElevatedButton(
-                key: const Key('bdc_study_again'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _cachedIsDarkMode
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.white.withValues(alpha: 0.75),
-                  foregroundColor: context.textPrimary,
-                  side: BorderSide(
-                    color: _cachedIsDarkMode
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.90),
-                    width: 1.1,
+                  onPressed: () => notifier.showWordDetail(state.word!, true, context,
+                      fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
+                  child: const Text(
+                    '不认识',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
                   ),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                ),
-                onPressed: () => notifier.showWordDetail(state.word!, false, context,
-                    fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
-                child: const Text(
-                  '再学学',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
                 ),
               ),
             ),
-          ),
+          if (state.showAnswerButtons ||
+              state.studyStep == StudyStep.en2Ch.json ||
+              state.studyStep == StudyStep.ch2En.json ||
+              state.studyStep == StudyStep.enSentence2Ch.json ||
+              state.studyStep == StudyStep.chSentence2En.json ||
+              state.studyStep == StudyStep.list.json) ...[
+            const SizedBox(width: 12),
+            AbsorbPointer(
+              absorbing: !state.buttonsEnabled,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  key: const Key('bdc_study_again'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _cachedIsDarkMode
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.white.withValues(alpha: 0.75),
+                    foregroundColor: context.textPrimary,
+                    side: BorderSide(
+                      color: _cachedIsDarkMode
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.90),
+                      width: 1.1,
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                  ),
+                  onPressed: () => notifier.showWordDetail(state.word!, false, context,
+                      fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
+                  child: const Text(
+                    '再学学',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          if (state.canLeaveCurrWord) ...[
+            const SizedBox(width: 12),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.primaryColor.withValues(alpha: Constants.primaryButtonOpacity),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shadowColor: context.primaryColor.withValues(alpha: 0.35),
+              ),
+              onPressed: state.isGettingNextWord
+                  ? null
+                  : () =>
+                      notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
+              child: const Text(
+                '下一词',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              ),
+            ),
+          ],
         ],
-        if (state.canLeaveCurrWord) ...[
-          const SizedBox(width: 12),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.primaryColor.withValues(alpha: Constants.primaryButtonOpacity),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 11),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              shadowColor: context.primaryColor.withValues(alpha: 0.35),
-            ),
-            onPressed: state.isGettingNextWord
-                ? null
-                : () =>
-                    notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
-            child: const Text(
-              '下一词',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
-            ),
-          ),
-        ],
-      ],
+      ),
     );
   }
 
@@ -1060,34 +1068,35 @@ extension BdcPageStateUIComponents on BdcPageState {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 第一行：英文单词拼写 + 音标
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                word.spell,
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 16.5,
-                  fontWeight: FontWeight.w700,
-                  color: context.textPrimary,
-                  letterSpacing: 0.2,
-                ),
-              ),
-              if (pronounce.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Text(
-                  '[$pronounce]',
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: word.spell,
                   style: TextStyle(
-                    fontFamily: 'NotoSans',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: context.textSecondary,
+                    fontFamily: 'Roboto',
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                    color: context.textPrimary,
+                    letterSpacing: 0.2,
                   ),
                 ),
+                if (pronounce.isNotEmpty) ...[
+                  const TextSpan(text: '  '),
+                  TextSpan(
+                    text: '[$pronounce]',
+                    style: TextStyle(
+                      fontFamily: 'NotoSans',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           // 第二行：中文释义
@@ -1392,36 +1401,39 @@ extension BdcPageStateUIComponents on BdcPageState {
                         onTap: () => notifier.clearHint(),
                       )
                     else
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildPanelButton(
-                            icon: Icons.edit_note_rounded,
-                            label: '拼写',
-                            onTap: () {
-                              notifier.updateIsUpdatingByHint(true);
-                              notifier.meaningController.clear();
-                              notifier.updateIsUpdatingByHint(false);
-                              updateUI(() {
-                                notifier.updateShowHandwritingBoard(true);
-                              }, tag: 'hw-open');
-                              notifier.asr.stopMicrophone();
-                            },
-                          ),
-                          const SizedBox(width: 6),
-                          _buildPanelButton(
-                            icon: Icons.lightbulb_outline_rounded,
-                            label: '提示',
-                            onTap: () => notifier.giveALittleHint(),
-                            onLongPress: () => notifier.giveFullHint(),
-                          ),
-                          const SizedBox(width: 6),
-                          _buildPanelButton(
-                            icon: Icons.refresh_rounded,
-                            label: '清除',
-                            onTap: () => notifier.clearHint(),
-                          ),
-                        ],
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildPanelButton(
+                              icon: Icons.edit_note_rounded,
+                              label: '拼写',
+                              onTap: () {
+                                notifier.updateIsUpdatingByHint(true);
+                                notifier.meaningController.clear();
+                                notifier.updateIsUpdatingByHint(false);
+                                updateUI(() {
+                                  notifier.updateShowHandwritingBoard(true);
+                                }, tag: 'hw-open');
+                                notifier.asr.stopMicrophone();
+                              },
+                            ),
+                            const SizedBox(width: 6),
+                            _buildPanelButton(
+                              icon: Icons.lightbulb_outline_rounded,
+                              label: '提示',
+                              onTap: () => notifier.giveALittleHint(),
+                              onLongPress: () => notifier.giveFullHint(),
+                            ),
+                            const SizedBox(width: 6),
+                            _buildPanelButton(
+                              icon: Icons.refresh_rounded,
+                              label: '清除',
+                              onTap: () => notifier.clearHint(),
+                            ),
+                          ],
+                        ),
                       ),
                   ],
                 ),
