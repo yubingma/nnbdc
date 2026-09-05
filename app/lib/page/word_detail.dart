@@ -1606,96 +1606,127 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final textColor = isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
-    showModalBottomSheet(
+    showGeneralDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.2),
-      elevation: 0,
-      builder: (BuildContext bottomSheetContext) {
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? const Color(0xC81E293B) // 78% 细腻深邃暗夜磨砂
-                    : const Color(0xBFFFFFFF), // 75% 透光乳白高透磨砂
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                border: Border(
-                  top: BorderSide(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.14)
-                        : Colors.white.withValues(alpha: 0.85),
-                    width: 1.0,
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
+      barrierDismissible: true,
+      barrierLabel: 'dismiss_more_options',
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.15),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (dialogCtx, anim1, anim2) {
+        return Stack(
+          children: [
+            // 全屏点击退出透明遮罩
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.pop(dialogCtx),
               ),
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 4, bottom: 14),
-                        width: 36,
-                        height: 4.5,
-                        decoration: BoxDecoration(
+            ),
+            // 贴底毛玻璃抽屉
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Material(
+                color: Colors.transparent,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? const Color(0xC01C2127) // 75% 细腻深邃黑灰磨砂
+                            : const Color(0x73FFFFFF), // 45% 通透高质感乳白磨砂
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                        border: Border.all(
                           color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.25)
-                              : Colors.black.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(2.5),
+                              ? const Color(0x33FFFFFF)
+                              : const Color(0xB3FFFFFF),
+                          width: 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                            blurRadius: 28,
+                            offset: const Offset(0, -6),
+                          ),
+                        ],
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(top: 4, bottom: 14),
+                                width: 36,
+                                height: 4.5,
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.25)
+                                      : Colors.black.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(2.5),
+                                ),
+                              ),
+                              _buildActionTile(
+                                icon: Icons.copy_rounded,
+                                title: '复制单词及释义',
+                                subtitle: '${args.word.spell} · [${Util.getWordDefaultPronounce(args.word)}]',
+                                accentColor: accentColor,
+                                textColor: textColor,
+                                subColor: subColor,
+                                isDarkMode: isDarkMode,
+                                onTap: () {
+                                  Navigator.pop(dialogCtx);
+                                  final copyText = '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
+                                  Clipboard.setData(ClipboardData(text: copyText));
+                                  ToastUtil.success('已复制到剪贴板');
+                                },
+                              ),
+                              const SizedBox(height: 6),
+                              _buildActionTile(
+                                icon: Icons.add_photo_alternate_rounded,
+                                title: '添加或更换配图',
+                                subtitle: '为该单词挑选生动的助记图片',
+                                accentColor: accentColor,
+                                textColor: textColor,
+                                subColor: subColor,
+                                isDarkMode: isDarkMode,
+                                onTap: () {
+                                  Navigator.pop(dialogCtx);
+                                  context.push('/pic_search',
+                                          extra: PicSearchPageArgs(
+                                              args.word.id!,
+                                              args.word.spell))
+                                      .then((value) => _reloadWordData());
+                                },
+                              ),
+                              const SizedBox(height: 4),
+                            ],
+                          ),
                         ),
                       ),
-                      _buildActionTile(
-                        icon: Icons.copy_rounded,
-                        title: '复制单词及释义',
-                        subtitle: '${args.word.spell} · [${Util.getWordDefaultPronounce(args.word)}]',
-                        accentColor: accentColor,
-                        textColor: textColor,
-                        subColor: subColor,
-                        isDarkMode: isDarkMode,
-                        onTap: () {
-                          Navigator.pop(bottomSheetContext);
-                          final copyText = '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
-                          Clipboard.setData(ClipboardData(text: copyText));
-                          ToastUtil.success('已复制到剪贴板');
-                        },
-                      ),
-                      const SizedBox(height: 6),
-                      _buildActionTile(
-                        icon: Icons.add_photo_alternate_rounded,
-                        title: '添加或更换配图',
-                        subtitle: '为该单词挑选生动的助记图片',
-                        accentColor: accentColor,
-                        textColor: textColor,
-                        subColor: subColor,
-                        isDarkMode: isDarkMode,
-                        onTap: () {
-                          Navigator.pop(bottomSheetContext);
-                          context.push('/pic_search',
-                                  extra: PicSearchPageArgs(
-                                      args.word.id!,
-                                      args.word.spell))
-                              .then((value) => _reloadWordData());
-                        },
-                      ),
-                      const SizedBox(height: 4),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
+        );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: anim1,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          )),
+          child: child,
         );
       },
     );

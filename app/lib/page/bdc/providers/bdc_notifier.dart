@@ -1964,20 +1964,27 @@ class BdcNotifier extends _$BdcNotifier {
         }
 
         // 实时更新 currentScore，让 UI 实时显示得分！
-        state = state.copyWith(currentScore: maxScore, isScorePassed: passedThreshold);
-        Global.logger.d('[PTT] score更新: isPracticeMode=$_isPracticeMode maxScore=$maxScore, passedThreshold=$passedThreshold');
+        //
+        // 高置信快速通道：相似度足够高（≥90）时，内容已几乎逐字吻合，视为明显正确。
+        // 此时不再叠加"核心词命中"门槛拦截，也无需回落 AI 裁判，
+        // 避免"明明几乎全对（如评分 100）却仍被 AI 判定"的割裂体验。
+        const int highConfidenceScore = 90;
+        final bool highConfidence = maxScore >= highConfidenceScore;
+        final bool scorePassed = passedThreshold || highConfidence;
+        state = state.copyWith(currentScore: maxScore, isScorePassed: scorePassed);
+        Global.logger.d('[PTT] score更新: isPracticeMode=$_isPracticeMode maxScore=$maxScore, passedThreshold=$passedThreshold, highConfidence=$highConfidence');
 
         final bool isMatch;
         // 将英文例句通过的得分阈值放宽到 60 分，增加口音与吞音容错率
         // ⚡ 体验优化：为了防止最后一个单词没有显示完整就提前通关并掐断识别，
         // 对于语音识别（isVoice），必须等待最后一帧 isFinal 为 true 时才执行 Match 通过，以保证单词在 UI 上完整展现。
-        isMatch = passedThreshold && (!isVoice || isFinal);
-        Global.logger.d('[PTT] checkAsrResult isPttPressed=$_isPttPressed isFinal=$isFinal score=$maxScore passedThreshold=$passedThreshold isMatch=$isMatch inputs=$inputs');
+        isMatch = scorePassed && (!isVoice || isFinal);
+        Global.logger.d('[PTT] checkAsrResult isPttPressed=$_isPttPressed isFinal=$isFinal score=$maxScore passedThreshold=$passedThreshold scorePassed=$scorePassed isMatch=$isMatch inputs=$inputs');
 
         // PTT 按住期间:识别得分达标即记录等待松开标记(不要求 isFinal,
         // 因为按住期间实时事件 isFinal=false,但得分已达到通过阈值)。
         // 松开按钮(释放手指)是例句环节语音通过的必要条件之一。
-        if (_isPttPressed && passedThreshold) {
+        if (_isPttPressed && scorePassed) {
           _pendingPttPass = true;
           _isAnswerCorrectHandling = false; // 不锁死,按住期间持续更新得分
         }
@@ -1986,7 +1993,7 @@ class BdcNotifier extends _$BdcNotifier {
           // 已松开时正常通过;按住期间(isMatch 不可能成立,因 isFinal=false)
           // 若意外成立则等待松开
           if (_isPttPressed) {
-            state = state.copyWith(currentScore: maxScore, isScorePassed: passedThreshold);
+            state = state.copyWith(currentScore: maxScore, isScorePassed: scorePassed);
             Global.logger.d('[PTT] 识别已达标但按住中,等待松开判定. score=$maxScore');
             return;
           }
