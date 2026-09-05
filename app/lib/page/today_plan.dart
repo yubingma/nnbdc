@@ -552,7 +552,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ],
                           ],
                         ),
-                        // 右侧高级设置按钮（通透轻盈图标按钮，不抢主按钮视线）
+                        // 右侧高级设置按钮（微透晶莹小圆钮，呼应全页毛玻璃）
                         GestureDetector(
                           onTap: () => _showAdvancedSettingsDialog(),
                           child: Container(
@@ -561,12 +561,25 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             decoration: BoxDecoration(
                               color: isDarkMode
                                   ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.black.withValues(alpha: 0.04),
+                                  : Colors.white.withValues(alpha: 0.65),
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.15)
+                                    : Colors.white.withValues(alpha: 0.85),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: Icon(
                               Icons.tune_rounded,
-                              size: 18,
+                              size: 17,
                               color: themeConfig.textSecondary,
                             ),
                           ),
@@ -680,11 +693,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         ),
                       ),
                       const SizedBox(width: 8),
+                      // 纯粹字阶自然贴靠（轻透微亚克力胶囊，告别厚重生硬底色）
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                         decoration: BoxDecoration(
-                          color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.18 : 0.08),
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.white.withValues(alpha: 0.70),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.14)
+                                : Colors.white.withValues(alpha: 0.90),
+                            width: 0.9,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: isDarkMode ? 0.15 : 0.03),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1.5),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -692,7 +721,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             Text(
                               '词',
                               style: TextStyle(
-                                color: themeConfig.primaryColor,
+                                color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -702,7 +731,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               Icon(
                                 Icons.keyboard_arrow_down_rounded,
                                 size: 14,
-                                color: themeConfig.primaryColor,
+                                color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
                               ),
                             ] else ...[
                               const SizedBox(width: 3),
@@ -897,6 +926,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
+                ),
+                const SizedBox(width: 1.5),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 13,
+                  color: textMuted.withValues(alpha: 0.45),
                 ),
               ],
             ),
@@ -1758,16 +1793,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 左侧：测评核心芯片节点
+            // 左侧：测评核心芯片节点（微透亚克力高光白边 + 极简科技感）
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6.5),
               decoration: BoxDecoration(
-                color: themeAccent.withValues(alpha: isDarkMode ? 0.16 : 0.08),
-                borderRadius: BorderRadius.circular(10),
+                color: isDarkMode
+                    ? themeAccent.withValues(alpha: 0.18)
+                    : Colors.white.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(11),
                 border: Border.all(
-                  color: themeAccent.withValues(alpha: isDarkMode ? 0.28 : 0.18),
-                  width: 0.8,
+                  color: isDarkMode
+                      ? themeAccent.withValues(alpha: 0.35)
+                      : Colors.white.withValues(alpha: 0.95),
+                  width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isDarkMode ? themeAccent : Colors.black).withValues(alpha: isDarkMode ? 0.2 : 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1775,13 +1821,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   Text(
                     '测评',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w800,
                       color: themeAccent,
-                      letterSpacing: 0.8,
+                      letterSpacing: 0.6,
                     ),
                   ),
-                  const SizedBox(height: 1.5),
+                  const SizedBox(height: 2),
                   Text(
                     checkDesc,
                     style: TextStyle(
