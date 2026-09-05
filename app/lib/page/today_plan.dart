@@ -794,13 +794,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
               const SizedBox(height: 18),
 
-              // 双列对称纯粹排版数据（新词 | 复习，彻底去除突兀硬线分割，靠留白呼吸）
+              // 双列对称纯粹排版数据（新词 | 旧词，彻底去除突兀硬线分割，靠留白呼吸）
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
                     _buildStatItem('新词', newWordCount ?? 0, const Color(0xFF0EA5E9)),
-                    _buildStatItem('复习', oldWordCount ?? 0, const Color(0xFF10B981)),
+                    _buildStatItem('旧词', oldWordCount ?? 0, const Color(0xFF10B981)),
                   ],
                 ),
               ),
@@ -887,7 +887,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             toTodayWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
           } else if (label == '新词') {
             toTodayNewWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-          } else if (label == '复习') {
+          } else if (label == '旧词') {
             toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
           }
         },
@@ -2033,7 +2033,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 紧凑分段标签（新词轨道 / 复习轨道）
+              // 紧凑分段标签（新词轨道 / 旧词轨道）
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
@@ -2044,7 +2044,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildSubtleTabBtn('新词轨道', 0, isDarkMode),
-                    _buildSubtleTabBtn('复习轨道', 1, isDarkMode),
+                    _buildSubtleTabBtn('旧词轨道', 1, isDarkMode),
                   ],
                 ),
               ),

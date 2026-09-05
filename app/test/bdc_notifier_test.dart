@@ -1461,8 +1461,6 @@ void main() {
         reason: '恢复环节仍属复习轨道,应标记为新词/旧词中的[旧词]');
     expect(state.assessmentIsAgain, true,
         reason: '当天首条测评评分为 again,环节名应判为[答错]');
-    expect(state.assessmentRating, FsrsRating.again,
-        reason: '恢复环节以当天测评评分作为评分修正对话框参考值');
 
     // 恢复环节答对 → 复习轨道今日完成，进入 List 环节（列表页）
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);

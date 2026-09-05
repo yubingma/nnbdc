@@ -1813,13 +1813,9 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    // 测评后的加测/巩固环节，用轨道名描述，避免"重测/巩固"这类内部术语带来的心智负担。
-    // 由 handleWord 写入的 isReviewWord + assessmentIsAgain 决定具体措辞。
-    final gwr = state.currentGetWordResult;
-    final String stagePrefix = (gwr == null || gwr.stepIndex == 0)
-        ? ''
-        : '${state.isReviewWord ? '旧词' : '新词'}'
-            '${state.assessmentIsAgain ? '答错' : '答对'} · ';
+    // 以"新词/旧词"这套对称词型描述今日测评；词型由 handleWord 写入的 isReviewWord 决定。
+    // 具体措辞直接落到"新词测评/旧词测评"，不再叠加抽象的内部环节名（重测/巩固/答对/答错）。
+    final String wordType = state.isReviewWord ? '旧词' : '新词';
 
     if (!state.hasFinishedAnswering || state.fsrsItem == null) {
       if (state.currentGetWordResult != null &&
@@ -1845,7 +1841,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            '$stagePrefix今日测评: $assLabel',
+                            '$wordType测评: $assLabel',
                             style: TextStyle(fontSize: 11, color: assColor),
                           ),
                           Padding(
@@ -1886,7 +1882,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 4, vertical: 2),
                                   child: Text(
-                                    '$stagePrefix今日测评: $fallbackLabel',
+                                    '$wordType测评: $fallbackLabel',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: hasRating
@@ -1897,7 +1893,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 ),
                               )
                             : Text(
-                                '$stagePrefix今日测评: 测评中',
+                                '$wordType测评中',
                                 style: TextStyle(fontSize: 11, color: textColor),
                               ),
                         Padding(
@@ -1941,7 +1937,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         child: Row(
                           children: [
                             Text(
-                              '$stagePrefix今日测评: $ratingLabel',
+                              '$wordType测评: $ratingLabel',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: ratingColor,
@@ -2034,7 +2030,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         padding:
                             const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         child: Text(
-                          '$stagePrefix今日测评: $fallbackLabel',
+                          '$wordType测评: $fallbackLabel',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
@@ -2046,7 +2042,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       )
                     )
                   : Text(
-                      '$stagePrefix今日测评: 测评中',
+                      '$wordType测评中',
                       style: TextStyle(fontSize: 11.5, color: textColor),
                     ),
               Padding(
@@ -2086,7 +2082,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Text(
-                  '$stagePrefix今日测评: $ratingLabel',
+                  '$wordType测评: $ratingLabel',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
