@@ -1360,6 +1360,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _buildPanelButton(
+                            icon: Icons.edit_note_rounded,
+                            label: '拼写',
+                            onTap: () {
+                              notifier.updateIsUpdatingByHint(true);
+                              notifier.meaningController.clear();
+                              notifier.updateIsUpdatingByHint(false);
+                              updateUI(() {
+                                notifier.updateShowHandwritingBoard(true);
+                              }, tag: 'hw-open');
+                              notifier.asr.stopMicrophone();
+                            },
+                          ),
+                          const SizedBox(width: 6),
+                          _buildPanelButton(
                             icon: Icons.lightbulb_outline_rounded,
                             label: '提示',
                             onTap: () => notifier.giveALittleHint(),
@@ -1432,8 +1446,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                             const SizedBox(height: 10),
                             ...renderAsrMeaningItems(state.wordWrapper!,
                                 isDarkMode: context.read<DarkMode>().isDarkMode),
-                            const SizedBox(height: 16),
-                            _buildSpellingExerciseButton(isDarkMode),
                           ],
                         );
                       } else {
@@ -1449,7 +1461,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '请说出单词发音 或 直接拼写：',
+                                  '请说出单词发音：',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
@@ -1460,8 +1472,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            _buildSpellingExerciseButton(isDarkMode),
                           ],
                         );
                       }
@@ -1483,19 +1493,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
-  String _buildUnderlines(String targetWord, int inputLength) {
-    final buffer = StringBuffer();
-    for (int i = inputLength; i < targetWord.length; i++) {
-      final char = targetWord[i];
-      if (RegExp(r'[a-zA-Z]').hasMatch(char)) {
-        buffer.write('_');
-      } else {
-        buffer.write(char);
-      }
-    }
-    return buffer.toString();
-  }
 
   Widget _buildAiJudgingBadge(bool isDarkMode) {
     return Container(
@@ -1532,106 +1529,6 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSpellingExerciseButton(bool isDarkMode) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        InkWell(
-          onTap: () {
-            notifier.updateIsUpdatingByHint(true);
-            notifier.meaningController.clear();
-            notifier.updateIsUpdatingByHint(false);
-            updateUI(() {
-              notifier.updateShowHandwritingBoard(true);
-            }, tag: 'hw-open');
-            notifier.asr.stopMicrophone();
-          },
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-            decoration: BoxDecoration(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.white.withValues(alpha: 0.65),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : Colors.white.withValues(alpha: 0.90),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.15 : 0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.edit_rounded,
-                  size: 16,
-                  color: isDarkMode ? Colors.white60 : context.primaryColor,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: notifier.meaningController,
-                    builder: (context, value, child) {
-                      final text = value.text;
-                      return text.isEmpty
-                          ? Text(
-                              '点击在此手写或拼写练习',
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                color: context.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            )
-                          : RichText(
-                              text: TextSpan(
-                                children: [
-                                  SpellingTextEditingController
-                                      .buildSpellingTextSpan(
-                                    text,
-                                    state.word?.spell ?? "",
-                                    text.trim().toLowerCase() !=
-                                            (state.word?.spell.toLowerCase() ?? "")
-                                        ? const Color(0xFFFA6E59)
-                                        : context.textPrimary,
-                                    const TextStyle(
-                                        fontSize: 17, fontWeight: FontWeight.bold),
-                                  ),
-                                  if (text.length < (state.word?.spell.length ?? 0))
-                                    TextSpan(
-                                      text:
-                                          ' ${_buildUnderlines(state.word?.spell ?? "", text.length)}',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.bold,
-                                        color: isDarkMode
-                                            ? Colors.white30
-                                            : Colors.black26,
-                                        letterSpacing: 2.0,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-      ],
     );
   }
 
