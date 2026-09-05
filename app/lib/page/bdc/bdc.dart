@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'dart:ui' show ImageFilter;
 
 import 'package:dio/dio.dart';

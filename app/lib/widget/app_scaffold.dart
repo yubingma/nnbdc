@@ -27,7 +27,7 @@ extension AppThemeContextExtension on BuildContext {
   AppThemeConfig get themeConfig => AppThemeConfig.of(themeStyle);
 
   Color get primaryColor => themeConfig.primaryColor;
-  Color get subtleBg => themeConfig.subtleBg.withValues(alpha: Constants.subtleOpacity);
+  Color get subtleBg => themeConfig.subtleBg;
   Color get cardBg => themeConfig.cardBg.withValues(alpha: Constants.cardOpacity);
   Color get buttonBg => themeConfig.cardBg.withValues(alpha: Constants.buttonOpacity);
   Color get cardBorder => themeConfig.cardBorder;

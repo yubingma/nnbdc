@@ -326,11 +326,15 @@ extension BdcPageStateUIComponents on BdcPageState {
         height: 38,
         padding: const EdgeInsets.all(3.5),
         decoration: BoxDecoration(
-          color: context.subtleBg,
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(19),
           border: Border.all(
-            color: context.cardBorder,
-            width: 1,
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.white.withValues(alpha: 0.70),
+            width: 0.9,
           ),
         ),
         child: TabBar(
@@ -338,12 +342,14 @@ extension BdcPageStateUIComponents on BdcPageState {
           indicatorSize: TabBarIndicatorSize.tab,
           indicator: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: context.cardBg,
+            color: isDarkMode
+                ? context.primaryColor.withValues(alpha: 0.32)
+                : Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.06),
-                blurRadius: 6,
-                offset: const Offset(0, 1.5),
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.07),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -351,7 +357,7 @@ extension BdcPageStateUIComponents on BdcPageState {
           dividerHeight: 0,
           overlayColor: WidgetStateProperty.all(Colors.transparent),
           splashFactory: NoSplash.splashFactory,
-          labelColor: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+          labelColor: isDarkMode ? Colors.white : context.primaryColor,
           unselectedLabelColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
           labelStyle: const TextStyle(
             fontSize: 12.5,
@@ -808,24 +814,38 @@ extension BdcPageStateUIComponents on BdcPageState {
             state.studyStep == StudyStep.list.json)
           AbsorbPointer(
             absorbing: !state.buttonsEnabled,
-            child: ElevatedButton(
-              key: const Key('bdc_not_know_btn'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.buttonBg,
-                foregroundColor: context.warmAccentColor,
-                side: BorderSide(
-                  color: context.warmAccentColor.withValues(alpha: 0.28),
-                  width: 1,
-                ),
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              onPressed: () => notifier.showWordDetail(state.word!, true, context,
-                  fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
-              child: const Text(
-                '不认识',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              child: ElevatedButton(
+                key: const Key('bdc_not_know_btn'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _cachedIsDarkMode
+                      ? context.warmAccentColor.withValues(alpha: 0.15)
+                      : Colors.white.withValues(alpha: 0.75),
+                  foregroundColor: context.warmAccentColor,
+                  side: BorderSide(
+                    color: context.warmAccentColor.withValues(alpha: _cachedIsDarkMode ? 0.35 : 0.26),
+                    width: 1.1,
+                  ),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                ),
+                onPressed: () => notifier.showWordDetail(state.word!, true, context,
+                    fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
+                child: const Text(
+                  '不认识',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                ),
               ),
             ),
           ),
@@ -838,24 +858,40 @@ extension BdcPageStateUIComponents on BdcPageState {
           const SizedBox(width: 12),
           AbsorbPointer(
             absorbing: !state.buttonsEnabled,
-            child: ElevatedButton(
-              key: const Key('bdc_study_again'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.buttonBg,
-                foregroundColor: context.textPrimary,
-                side: BorderSide(
-                  color: context.cardBorder,
-                  width: 1,
-                ),
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              onPressed: () => notifier.showWordDetail(state.word!, false, context,
-                  fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
-              child: const Text(
-                '再学学',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              child: ElevatedButton(
+                key: const Key('bdc_study_again'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _cachedIsDarkMode
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.white.withValues(alpha: 0.75),
+                  foregroundColor: context.textPrimary,
+                  side: BorderSide(
+                    color: _cachedIsDarkMode
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.90),
+                    width: 1.1,
+                  ),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                ),
+                onPressed: () => notifier.showWordDetail(state.word!, false, context,
+                    fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
+                child: const Text(
+                  '再学学',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                ),
               ),
             ),
           ),
@@ -900,17 +936,17 @@ extension BdcPageStateUIComponents on BdcPageState {
         vertical: 0,
       ),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.85),
+        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white12 : const Color(0x14000000),
-          width: 0.8,
+          color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.85),
+          width: 0.9,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 1.5),
           ),
         ],
       ),
@@ -925,7 +961,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             children: [
               Icon(
                 icon,
-                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
+                color: isDark ? const Color(0xFFCBD5E1) : context.textSecondary,
                 size: 14.5,
               ),
               if (label != null) ...[
@@ -936,7 +972,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                    color: isDark ? const Color(0xFFE2E8F0) : context.textPrimary,
                   ),
                 ),
               ],
@@ -953,7 +989,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 圆形返回按钮
+          // 圆形返回按钮（微透亚克力晶莹小圆钮）
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -971,16 +1007,16 @@ extension BdcPageStateUIComponents on BdcPageState {
                 height: 32,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _cachedIsDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.85),
+                  color: _cachedIsDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.65),
                   border: Border.all(
-                    color: _cachedIsDarkMode ? Colors.white12 : const Color(0x14000000),
-                    width: 0.8,
+                    color: _cachedIsDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.85),
+                    width: 0.9,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.02),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1.5),
                     ),
                   ],
                 ),
@@ -1393,195 +1429,222 @@ extension BdcPageStateUIComponents on BdcPageState {
     final bool isSentence = step == StudyStep.enSentence2Ch.json ||
         step == StudyStep.chSentence2En.json;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // 1. 顶栏：音频波纹 + 提示/清除按钮 (固定浮动在上方)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+    final cardWidget = ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
           decoration: BoxDecoration(
-            color: context.cardBg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-            border: Border.all(
-              color: context.cardBorder,
-              width: 1,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDarkMode
+                  ? [
+                      const Color(0xB818202F),
+                      const Color(0x99121722),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.65),
+                      Colors.white.withValues(alpha: 0.45),
+                    ],
             ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.14)
+                  : Colors.white.withValues(alpha: 0.85),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 语音波形反馈
-              Expanded(
-                child: Consumer(
-                  builder: (context, ref, child) {
-                    final currentAsrState = ref.watch(bdcNotifierProvider.select((s) => s.asrState));
-                    final currentScore = ref.watch(bdcNotifierProvider.select((s) => s.currentScore));
-                    final isScorePassed = ref.watch(bdcNotifierProvider.select((s) => s.isScorePassed || s.hasFinishedAnswering));
-                    final isAiEvaluating = ref.watch(bdcNotifierProvider.select((s) => s.isAiEvaluating));
-                    
-                    final bool isChineseInput = state.studyStep == StudyStep.en2Ch.json ||
-                                                state.studyStep == StudyStep.enSentence2Ch.json;
-                    final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
-                                            state.studyStep == StudyStep.chSentence2En.json;
-                    return isChineseInput
-                        ? ChineseAsrInputWidget(
-                            controller: notifier.meaningController,
-                            asrState: currentAsrState,
-                            onStartAsr: (language) =>
-                                notifier.asr.startAsr(language),
-                            isKeyboardVisible: state.isKeyboardVisible,
-                            focusNode: _meaningFocusNode,
-                            score: currentScore,
-                            isScorePassed: isScorePassed,
-                            isSentenceStep: isSentence,
-                            isAiEvaluating: isAiEvaluating,
-                          )
-                        : EnglishAsrInputWidget(
-                            controller: notifier.meaningController,
-                            asrState: currentAsrState,
-                            onStartAsr: (language) =>
-                                notifier.asr.startAsr(language),
-                            isKeyboardVisible: state.isKeyboardVisible,
-                            focusNode: _meaningFocusNode,
-                            score: currentScore,
-                            isScorePassed: isScorePassed,
-                            isSentenceStep: isSentence,
-                            isAiEvaluating: isAiEvaluating,
-                          );
-                  },
+              // 1. 顶栏：音频波纹 + 提示/清除按钮 (固定浮动在上方)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 语音波形反馈
+                    Expanded(
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final currentAsrState = ref.watch(bdcNotifierProvider.select((s) => s.asrState));
+                          final currentScore = ref.watch(bdcNotifierProvider.select((s) => s.currentScore));
+                          final isScorePassed = ref.watch(bdcNotifierProvider.select((s) => s.isScorePassed || s.hasFinishedAnswering));
+                          final isAiEvaluating = ref.watch(bdcNotifierProvider.select((s) => s.isAiEvaluating));
+                          
+                          final bool isChineseInput = state.studyStep == StudyStep.en2Ch.json ||
+                                                      state.studyStep == StudyStep.enSentence2Ch.json;
+                          final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
+                                                  state.studyStep == StudyStep.chSentence2En.json;
+                          return isChineseInput
+                              ? ChineseAsrInputWidget(
+                                  controller: notifier.meaningController,
+                                  asrState: currentAsrState,
+                                  onStartAsr: (language) =>
+                                      notifier.asr.startAsr(language),
+                                  isKeyboardVisible: state.isKeyboardVisible,
+                                  focusNode: _meaningFocusNode,
+                                  score: currentScore,
+                                  isScorePassed: isScorePassed,
+                                  isSentenceStep: isSentence,
+                                  isAiEvaluating: isAiEvaluating,
+                                )
+                              : EnglishAsrInputWidget(
+                                  controller: notifier.meaningController,
+                                  asrState: currentAsrState,
+                                  onStartAsr: (language) =>
+                                      notifier.asr.startAsr(language),
+                                  isKeyboardVisible: state.isKeyboardVisible,
+                                  focusNode: _meaningFocusNode,
+                                  score: currentScore,
+                                  isScorePassed: isScorePassed,
+                                  isSentenceStep: isSentence,
+                                  isAiEvaluating: isAiEvaluating,
+                                );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+                    if (isSentence)
+                      _buildPanelButton(
+                        icon: Icons.refresh_rounded,
+                        label: '清空',
+                        onTap: () => notifier.clearHint(),
+                      )
+                    else
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildPanelButton(
+                            icon: Icons.lightbulb_outline_rounded,
+                            label: '提示',
+                            onTap: () => notifier.giveALittleHint(),
+                            onLongPress: () => notifier.giveFullHint(),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildPanelButton(
+                            icon: Icons.refresh_rounded,
+                            label: '清除',
+                            onTap: () => notifier.clearHint(),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
 
-              const SizedBox(width: 8),
-              if (isSentence)
-                _buildPanelButton(
-                  icon: Icons.refresh_rounded,
-                  label: '清空',
-                  onTap: () => notifier.clearHint(),
-                )
-              else
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildPanelButton(
-                      icon: Icons.lightbulb_outline_rounded,
-                      label: '提示',
-                      onTap: () => notifier.giveALittleHint(),
-                      onLongPress: () => notifier.giveFullHint(),
-                    ),
-                    const SizedBox(width: 6),
-                    _buildPanelButton(
-                      icon: Icons.refresh_rounded,
-                      label: '清除',
-                      onTap: () => notifier.clearHint(),
-                    ),
-                  ],
+              // 微柔光分割线
+              Container(
+                height: 0.6,
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05),
+              ),
+
+              // 2. 滚动区域：中文释义 / 拼写提示
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: SingleChildScrollView(
+                    controller: _speakPanelScrollController,
+                    physics: state.showHandwritingBoard
+                        ? const NeverScrollableScrollPhysics()
+                        : null,
+                    padding: EdgeInsets.zero,
+                    child: () {
+                      final step = state.studyStep;
+                      if (step == StudyStep.enSentence2Ch.json) {
+                        return _buildSentenceAnswerArea();
+                      } else if (step == StudyStep.chSentence2En.json) {
+                        return _buildSentenceAnswerArea();
+                      } else if (step == StudyStep.en2Ch.json) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.record_voice_over_outlined,
+                                  size: 15,
+                                  color: _cachedIsDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '请说出中文释义：',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: _cachedIsDarkMode
+                                        ? const Color(0xFFD1D5DB)
+                                        : const Color(0xFF4B5563),
+                                  ),
+                                ),
+                                if (state.isAiEvaluating) ...[
+                                  const SizedBox(width: 8),
+                                  _buildAiJudgingBadge(_cachedIsDarkMode),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            ...renderAsrMeaningItems(state.wordWrapper!,
+                                isDarkMode: context.read<DarkMode>().isDarkMode),
+                            const SizedBox(height: 16),
+                            _buildSpellingExerciseButton(isDarkMode),
+                          ],
+                        );
+                      } else {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.record_voice_over_outlined,
+                                  size: 15,
+                                  color: _cachedIsDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '请说出单词发音 或 直接拼写：',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: _cachedIsDarkMode
+                                        ? const Color(0xFFD1D5DB)
+                                        : const Color(0xFF4B5563),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _buildSpellingExerciseButton(isDarkMode),
+                          ],
+                        );
+                      }
+                    }(),
+                  ),
                 ),
+              ),
             ],
           ),
         ),
+      ),
+    );
 
-        // 2. 滚动区域：中文释义 / 拼写提示
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: context.cardBg,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
-              border: Border(
-                left: BorderSide(color: context.cardBorder),
-                right: BorderSide(color: context.cardBorder),
-                bottom: BorderSide(color: context.cardBorder),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: SingleChildScrollView(
-              controller: _speakPanelScrollController,
-              physics: state.showHandwritingBoard
-                  ? const NeverScrollableScrollPhysics()
-                  : null,
-              padding: EdgeInsets.zero,
-              child: () {
-                final step = state.studyStep;
-                if (step == StudyStep.enSentence2Ch.json) {
-                  return _buildSentenceAnswerArea();
-                } else if (step == StudyStep.chSentence2En.json) {
-                  return _buildSentenceAnswerArea();
-                } else if (step == StudyStep.en2Ch.json) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.record_voice_over_outlined,
-                            size: 15,
-                            color: _cachedIsDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '请说出中文释义：',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: _cachedIsDarkMode
-                                  ? const Color(0xFFD1D5DB)
-                                  : const Color(0xFF4B5563),
-                            ),
-                          ),
-                          if (state.isAiEvaluating) ...[
-                            const SizedBox(width: 8),
-                            _buildAiJudgingBadge(_cachedIsDarkMode),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ...renderAsrMeaningItems(state.wordWrapper!,
-                          isDarkMode: context.read<DarkMode>().isDarkMode),
-                      const SizedBox(height: 16),
-                      _buildSpellingExerciseButton(isDarkMode),
-                    ],
-                  );
-                } else {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.record_voice_over_outlined,
-                            size: 15,
-                            color: _cachedIsDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '请说出单词发音 或 直接拼写：',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: _cachedIsDarkMode
-                                  ? const Color(0xFFD1D5DB)
-                                  : const Color(0xFF4B5563),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      _buildSpellingExerciseButton(isDarkMode),
-                    ],
-                  );
-                }
-              }(),
-            ),
-          ),
-        ),
-
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: cardWidget),
         // 3. 例句环节底部固定"按住说话"按钮：独立于滚动区，位置不随识别文本/反馈变化
         if (isSentence && !state.hasFinishedAnswering)
           _buildPttSpeakButton(),
@@ -1657,21 +1720,32 @@ extension BdcPageStateUIComponents on BdcPageState {
           },
           borderRadius: BorderRadius.circular(14),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
             decoration: BoxDecoration(
-              color: context.subtleBg,
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.white.withValues(alpha: 0.65),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: context.cardBorder,
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.90),
                 width: 1,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.15 : 0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.edit_rounded,
-                  size: 17,
-                  color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  size: 16,
+                  color: isDarkMode ? Colors.white60 : context.primaryColor,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -2339,19 +2413,31 @@ extension BdcPageStateUIComponents on BdcPageState {
     required VoidCallback onTap,
     VoidCallback? onLongPress,
   }) {
+    final isDarkMode = _cachedIsDarkMode;
     return Container(
       decoration: BoxDecoration(
-        color: context.subtleBg,
+        color: isDarkMode
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.75),
         border: Border.all(
-          color: context.cardBorder,
-          width: 1,
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.14)
+              : Colors.white.withValues(alpha: 0.90),
+          width: 0.9,
         ),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.20 : 0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 1.5),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           onLongPress: onLongPress,
           child: Padding(
@@ -2361,8 +2447,8 @@ extension BdcPageStateUIComponents on BdcPageState {
               children: [
                 Icon(
                   icon,
-                  color: _cachedIsDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
-                  size: 13.5,
+                  color: isDarkMode ? const Color(0xFFCBD5E1) : context.primaryColor,
+                  size: 13,
                 ),
                 const SizedBox(width: 3.5),
                 Text(
@@ -2370,7 +2456,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: context.textPrimary,
+                    color: isDarkMode ? Colors.white70 : context.textSecondary,
                   ),
                 ),
               ],
@@ -2854,81 +2940,94 @@ extension BdcPageStateUIComponents on BdcPageState {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // 释义温润微卡片
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            decoration: BoxDecoration(
-              color: context.cardBg,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: context.cardBorder,
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final item in displayItems)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if ((item.ciXing ?? '').isNotEmpty) ...[
-                          Container(
-                            margin: const EdgeInsets.only(top: 2),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? const Color(0xFF192C27)
-                                  : const Color(0xFFEDF5F2),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? Colors.white12
-                                    : const Color(0xFFD1EADE),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              item.ciXing!,
-                              style: TextStyle(
-                                color: isDarkMode
-                                    ? const Color(0xFF2CD88F)
-                                    : const Color(0xFF18BA7C),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        Expanded(
-                          child: Text(
-                            notifier.hideParenthesesContent(item.meaning ?? ''),
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w600,
-                              color: isDarkMode
-                                  ? const Color(0xFFEAF7F4)
-                                  : const Color(0xFF152724),
-                              height: 1.45,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+          // 释义极简微毛玻璃卡片（挺拔字阶 + 纯净留白）
+          ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDarkMode
+                        ? [
+                            const Color(0xB818202F),
+                            const Color(0x99121722),
+                          ]
+                        : [
+                            Colors.white.withValues(alpha: 0.65),
+                            Colors.white.withValues(alpha: 0.45),
+                          ],
                   ),
-              ],
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.14)
+                        : Colors.white.withValues(alpha: 0.85),
+                    width: 1.2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final item in displayItems)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            if ((item.ciXing ?? '').isNotEmpty) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                decoration: BoxDecoration(
+                                  color: context.primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
+                                  borderRadius: BorderRadius.circular(7),
+                                  border: Border.all(
+                                    color: context.primaryColor.withValues(alpha: isDarkMode ? 0.35 : 0.22),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Text(
+                                  item.ciXing!,
+                                  style: TextStyle(
+                                    color: context.primaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'Roboto',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                            ],
+                            Expanded(
+                              child: Text(
+                                notifier.hideParenthesesContent(item.meaning ?? ''),
+                                textAlign: TextAlign.start,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.textPrimary,
+                                  height: 1.35,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
 
