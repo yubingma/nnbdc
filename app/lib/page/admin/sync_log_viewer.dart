@@ -3,8 +3,6 @@ import 'package:nnbdc/models/sync_log.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/theme/app_theme.dart';
-import 'package:provider/provider.dart';
-import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/global.dart';
 
@@ -595,16 +593,332 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                           : '保持手机与平板等多设备学习数据一致',
                                       style: TextStyle(
                                         fontSize: 12,
+                                        color: theme.textMuted,
+                                        fontFamily: 'Roboto',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          // 立即同步主按钮
+                          SizedBox(
+                            width: double.infinity,
+                            height: 44,
+                            child: ElevatedButton(
+                              onPressed: _isSyncing ? null : _manualSync,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.primaryColor,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                disabledBackgroundColor: theme.primaryColor.withValues(alpha: 0.6),
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (_isSyncing) ...[
+                                    const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ] else ...[
+                                    const Icon(Icons.sync_rounded, size: 18),
+                                    const SizedBox(width: 6),
+                                  ],
+                                  Text(
+                                    _isSyncing ? '正在同步中...' : '立即同步',
+                                    style: const TextStyle(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              isThreeLine: true,
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
+                // 分节标题：同步记录统计
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '同步记录',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: theme.textSecondary,
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                        Text(
+                          '共 $_totalCount 条',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: theme.textMuted,
+                            fontFamily: 'Roboto',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // 列表或空状态
+                if (_logs.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: theme.subtleBg.withValues(alpha: isDark ? 0.3 : 0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.cloud_sync_outlined,
+                              size: 32,
+                              color: theme.textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            '暂无云同步日志',
+                            style: TextStyle(
+                              color: theme.textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '点击上方“立即同步”发起初次同步',
+                            style: TextStyle(
+                              color: theme.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final log = _logs[index];
+                          return _buildLogCard(log, theme, isDark);
+                        },
+                        childCount: _logs.length,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildLogCard(SyncLog log, AppThemeConfig theme, bool isDark) {
+    final statusColor = log.success
+        ? const Color(0xFF10B981)
+        : (log.isWarning ? const Color(0xFFF59E0B) : const Color(0xFFEF4444));
+
+    final statusIcon = log.success
+        ? Icons.cloud_done_rounded
+        : (log.isWarning ? Icons.warning_amber_rounded : Icons.cloud_off_rounded);
+
+    final statusText = log.success ? '同步成功' : (log.isWarning ? '同步异常' : '同步失败');
+
+    return Dismissible(
+      key: Key(log.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF4444).withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 4),
+            Text(
+              '删除',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+      onDismissed: (_) => _deleteLog(log.id),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: theme.cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: log.success
+                ? theme.cardBorder
+                : statusColor.withValues(alpha: 0.35),
+            width: log.success ? 0.8 : 1.0,
+          ),
+          boxShadow: theme.cardShadows,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _showLogDetail(log),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  // 左侧状态微底座
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(
+                      statusIcon,
+                      color: statusColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 主体内容
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 第一行：状态标题 + 耗时 + 上下行
+                        Row(
+                          children: [
+                            Text(
+                              statusText,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (log.durationMs != null) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatDuration(log.durationMs),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Roboto',
+                                  color: theme.textMuted,
+                                ),
+                              ),
+                            ],
+                            const Spacer(),
+                            // 上下行轻量指示
+                            if (log.success &&
+                                (log.uploadCount != null || log.downloadCount != null))
+                              Text(
+                                '↑${log.uploadCount ?? 0}  ↓${log.downloadCount ?? 0}',
+                                style: TextStyle(
+                                  fontFamily: 'Roboto',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.textMuted,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        // 第二行：时间戳与版本号
+                        Row(
+                          children: [
+                            Text(
+                              _formatDateTime(log.startTime),
+                              style: TextStyle(
+                                color: theme.textMuted,
+                                fontSize: 12,
+                                fontFamily: 'Roboto',
+                              ),
+                            ),
+                            if (log.dbVersion != null || log.sysDbVersion != null) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                'v${log.dbVersion ?? 0}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontFamily: 'Roboto',
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.textMuted.withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        // 错误信息提示（若失败）
+                        if (!log.success && log.errorMessage != null) ...[
+                          const SizedBox(height: 5),
+                          Text(
+                            log.errorMessage!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 11.5,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  // 右侧导向微箭头
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: theme.textMuted.withValues(alpha: 0.5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
