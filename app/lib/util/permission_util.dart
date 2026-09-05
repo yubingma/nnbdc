@@ -20,6 +20,13 @@ class PermissionUtil {
     required VoidCallback onGranted,
     VoidCallback? onDenied,
   }) async {
+    // 桌面端（macOS / Windows / Linux 等）文件/硬件选择由系统窗口或原生沙箱直接托管，
+    // permission_handler 在桌面端未实现此类权限通道，直接放行
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      onGranted();
+      return;
+    }
+
     final bool isGranted = await _checkPermissionGranted(permission);
     
     if (isGranted) {
@@ -135,6 +142,9 @@ class PermissionUtil {
 
   /// 检查权限是否已授予（兼容 Android 各版本相册/存储权限差异）
   static Future<bool> _checkPermissionGranted(Permission permission) async {
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      return true;
+    }
     if (Platform.isAndroid && permission == Permission.photos) {
       // Android 13+ 使用 READ_MEDIA_IMAGES (Permission.photos)
       if (await Permission.photos.isGranted) return true;
@@ -147,6 +157,9 @@ class PermissionUtil {
 
   /// 请求权限（兼容 Android 跨版本相册/存储权限申请）
   static Future<PermissionStatus> _requestPermission(Permission permission) async {
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      return PermissionStatus.granted;
+    }
     if (Platform.isAndroid && permission == Permission.photos) {
       // 1. 先尝试 Android 13+ 的相册权限
       final photoStatus = await Permission.photos.request();
