@@ -1126,7 +1126,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
             color: cardColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: cardShadow,
-            border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 0.8),
+            border: borderColor == Colors.transparent
+                ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.08), width: 0.8) : null)
+                : Border.all(color: borderColor, width: 0.8),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1258,10 +1260,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           color: subtleBgColor,
-                          border: Border.all(
-                            color: borderColor.withValues(alpha: 0.3),
-                            width: 0.5,
-                          ),
+                          border: borderColor == Colors.transparent
+                              ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.06), width: 0.5) : null)
+                              : Border.all(color: borderColor, width: 0.5),
                         ),
                         child: Row(
                           children: [
@@ -1316,10 +1317,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           color: subtleBgColor,
-                          border: Border.all(
-                            color: borderColor.withValues(alpha: 0.3),
-                            width: 0.5,
-                          ),
+                          border: borderColor == Colors.transparent
+                              ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.06), width: 0.5) : null)
+                              : Border.all(color: borderColor, width: 0.5),
                         ),
                         child: Row(
                           children: [
@@ -1390,10 +1390,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.12 : 0.06),
-                      border: Border.all(
-                        color: accentColor.withValues(alpha: 0.18),
-                        width: 0.8,
-                      ),
+                      border: isDarkModeEnabled
+                          ? Border.all(color: accentColor.withValues(alpha: 0.20), width: 0.8)
+                          : null,
                     ),
                     child: Row(
                       children: [
@@ -1486,7 +1485,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 0.8),
+            border: borderColor == Colors.transparent
+                ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.08), width: 0.8) : null)
+                : Border.all(color: borderColor, width: 0.8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
@@ -1502,13 +1503,31 @@ class MePageState extends State<MePage> implements RefreshableTab {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '我的书桌',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '我的书桌',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => PrivilegedDictExplanationDialog.show(context),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.help_outline_rounded,
+                            size: 14,
+                            color: subtitleColor.withValues(alpha: 0.45),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   GestureDetector(
                     key: const Key('me_choose_book_btn'),
@@ -1701,7 +1720,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 0.8),
+            border: borderColor == Colors.transparent
+                ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.08), width: 0.8) : null)
+                : Border.all(color: borderColor, width: 0.8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
@@ -1753,10 +1774,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 decoration: BoxDecoration(
                   color: subtleBgColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: borderColor.withValues(alpha: 0.5),
-                    width: 0.6,
-                  ),
+                  border: borderColor == Colors.transparent
+                      ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.06), width: 0.6) : null)
+                      : Border.all(color: borderColor, width: 0.6),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1841,7 +1861,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor.withValues(alpha: 0.6), width: 0.8),
+            border: borderColor == Colors.transparent
+                ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.08), width: 0.8) : null)
+                : Border.all(color: borderColor, width: 0.8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
@@ -3230,15 +3252,13 @@ class _DictCardState extends State<DictCard> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                // 2. 下半部分：轻量级微操作栏
+                // 2. 下半部分：轻量级微操作栏（对称排版，去框化，零问号噪音）
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // 左侧：优先取词微开关 + 解释问号
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        GestureDetector(
+                    // 左侧：优先取词微操作
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () async {
                         try {
                           final newPrivilegedStatus = await MyDatabase.instance.learningDictsDao
@@ -3264,28 +3284,22 @@ class _DictCardState extends State<DictCard> {
                           ToastUtil.error('操作失败，请重试');
                         }
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: currentLearningDict.isPrivileged
-                              ? (isDarkMode ? masteredColor.withValues(alpha: 0.2) : masteredColor.withValues(alpha: 0.12))
-                              : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04)),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               currentLearningDict.isPrivileged ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                              size: 11,
-                              color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor.withValues(alpha: 0.7),
+                              size: 12,
+                              color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor.withValues(alpha: 0.5),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               currentLearningDict.isPrivileged ? '优先取词中' : '设为优先',
                               style: TextStyle(
-                                color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor,
-                                fontSize: 10.5,
+                                color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor.withValues(alpha: 0.75),
+                                fontSize: 11,
                                 fontWeight: currentLearningDict.isPrivileged ? FontWeight.w600 : FontWeight.w400,
                               ),
                             ),
@@ -3293,40 +3307,27 @@ class _DictCardState extends State<DictCard> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 2),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => PrivilegedDictExplanationDialog.show(context),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                        child: Icon(
-                          Icons.help_outline_rounded,
-                          size: 13,
-                          color: subtitleColor.withValues(alpha: 0.55),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+
                     // 右侧：移出书桌（停学）
                     GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => _handleDictDataAction(),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 2),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.remove_circle_outline_rounded,
-                              size: 11,
-                              color: subtitleColor.withValues(alpha: 0.6),
+                              size: 12,
+                              color: subtitleColor.withValues(alpha: 0.5),
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: 3.5),
                             Text(
                               '停学',
                               style: TextStyle(
                                 color: subtitleColor.withValues(alpha: 0.7),
-                                fontSize: 10.5,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
