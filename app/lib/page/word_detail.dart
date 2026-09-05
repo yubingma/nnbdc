@@ -1744,15 +1744,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(label),
-          const SizedBox(width: 2),
-          Text(
-            '($count)',
-            style: const TextStyle(
-              fontFamily: 'Roboto',
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
+          if (count > 0) ...[
+            const SizedBox(width: 4),
+            Text(
+              '$count',
+              style: const TextStyle(
+                fontFamily: 'Roboto',
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -1825,45 +1827,50 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (links != null && links.isNotEmpty) {
       final showTip = _showCigenTip;
       return ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         itemCount: showTip ? links.length + 1 : links.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        separatorBuilder: (context, index) {
+          if (showTip && index == 0) return const SizedBox(height: 6);
+          return Divider(
+            height: 24,
+            thickness: 0.5,
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+          );
+        },
         itemBuilder: (context, index) {
           if (showTip && index == 0) {
             return Container(
-              padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDarkMode ? Colors.white10 : context.subtleBg.withValues(alpha: 0.5),
-                  width: 1,
-                ),
+                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.09 : 0.06),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.account_tree_outlined,
-                    size: 15,
+                    size: 14,
                     color: context.primaryColor,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：浅色斜体单词不在当前选择的词书内，请酌情学习。',
+                      '注：浅灰色单词不在当前词书内，请酌情学习。',
                       style: TextStyle(
-                        fontSize: 11.5,
-                        color: isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67),
+                        fontSize: 12,
+                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                         height: 1.35,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 16),
+                    icon: const Icon(Icons.close_rounded, size: 15),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                    color: isDarkMode ? Colors.white38 : Colors.black38,
                     onPressed: () async {
                       setState(() {
                         _showCigenTip = false;
@@ -1895,43 +1902,32 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             tagTextColor = isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
             categoryName = '词根 ROOT';
           } else {
-            tagBgColor = context.subtleBg;
+            tagBgColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9);
             tagTextColor = context.primaryColor;
             categoryName = '词缀 AFFIX';
           }
 
-          return Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFFFFFFF),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: tagBgColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    categoryName,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: tagTextColor,
-                    ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: tagBgColor,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Text(
+                  categoryName,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: tagTextColor,
                   ),
                 ),
-                const SizedBox(height: 8),
-                _buildCigenExpandedWords(cigen.id, isDarkMode, tagTextColor),
-              ],
-            ),
+              ),
+              const SizedBox(height: 6),
+              _buildCigenExpandedWords(cigen.id, isDarkMode, tagTextColor),
+            ],
           );
         },
       );
@@ -1972,7 +1968,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           '暂无其他相同词根/词缀的单词',
           style: TextStyle(
             fontSize: 12.5,
-            color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+            color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
           ),
         ),
       );
@@ -2000,12 +1996,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     : '';
 
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 6),
+                  padding: const EdgeInsets.only(top: 6, bottom: 4),
                   child: Row(
                     children: [
                       Container(
                         width: 3,
-                        height: 13,
+                        height: 12,
                         decoration: BoxDecoration(
                           color: tagTextColor,
                           borderRadius: BorderRadius.circular(1.5),
@@ -2032,11 +2028,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               final lowerSpell = spell.toLowerCase().trim();
 
               final Color spellColor = item.inDict
-                  ? (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724))
-                  : (isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFFA5BCB7));
+                  ? (isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A))
+                  : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
               final Color descColor = item.inDict
-                  ? (isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67))
-                  : (isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFFA5BCB7));
+                  ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
+                  : (isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8));
 
               Widget contentWidget;
               if (desc.isNotEmpty && lowerDesc.startsWith(lowerSpell)) {
@@ -2059,17 +2055,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       TextSpan(
                         text: matchedSpell,
                         style: TextStyle(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           fontSize: 14,
                           color: spellColor,
-                          fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
                         ),
                       ),
                       TextSpan(
                         text: remaining,
-                        style: TextStyle(
-                          fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
-                        ),
                       ),
                     ],
                   ),
@@ -2086,55 +2078,44 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       TextSpan(
                         text: '$spell ',
                         style: TextStyle(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           fontSize: 14,
                           color: spellColor,
-                          fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
                         ),
                       ),
                       TextSpan(
                         text: desc,
-                        style: TextStyle(
-                          fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
-                        ),
                       ),
                     ],
                   ),
                 );
               }
 
-              return Container(
-                margin: const EdgeInsets.symmetric(vertical: 3),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF203832) : context.subtleBg,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isDarkMode ? Colors.white10 : context.subtleBg.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () {
-                    context.push('/word_detail',
-                      extra: WordDetailPageArgs(
-                        item.word, true, null, false,
-                        priorityDictIds: args.priorityDictIds,
-                      ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                    child: Row(
-                      children: [
-                        Expanded(child: contentWidget),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 18,
-                          color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
-                        ),
-                      ],
+              return InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () {
+                  context.push(
+                    '/word_detail',
+                    extra: WordDetailPageArgs(
+                      item.word,
+                      true,
+                      null,
+                      false,
+                      priorityDictIds: args.priorityDictIds,
                     ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+                  child: Row(
+                    children: [
+                      Expanded(child: contentWidget),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 12,
+                        color: isDarkMode ? Colors.white24 : Colors.black26,
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -2218,14 +2199,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF192C27) : context.subtleBg,
+                      color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: _chatInputFocusNode.hasFocus
-                            ? context.primaryColor
-                            : (isDarkMode ? Colors.white12 : context.subtleBg.withValues(alpha: 0.5)),
-                        width: _chatInputFocusNode.hasFocus ? 1.5 : 1,
-                      ),
+                      border: _chatInputFocusNode.hasFocus
+                          ? Border.all(color: context.primaryColor, width: 1.2)
+                          : null,
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: TextField(
@@ -2237,7 +2215,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         hintText: '向 AI 助教提问关于该词的疑问...',
                         hintStyle: TextStyle(
                           fontSize: 13.5,
-                          color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                          color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                         ),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
@@ -2247,11 +2225,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         focusedErrorBorder: InputBorder.none,
                         isDense: true,
                         filled: false,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                       ),
                     ),
                   ),
@@ -2272,7 +2250,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   margin: const EdgeInsets.only(bottom: 1),
                   decoration: BoxDecoration(
                     color: _aiLoading
-                        ? (isDarkMode ? Colors.white10 : context.subtleBg)
+                        ? (isDarkMode ? Colors.white10 : const Color(0xFFE2E8F0))
                         : context.primaryColor,
                     shape: BoxShape.circle,
                   ),
@@ -2304,21 +2282,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         _sendChatMessage(label.replaceAll(RegExp(r'^[^\w\s\u4e00-\u9fa5]+'), '').trim());
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF192C27) : context.subtleBg,
+          color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDarkMode ? Colors.white10 : context.subtleBg.withValues(alpha: 0.5),
-            width: 1,
-          ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 12,
-            color: isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67),
-            fontWeight: FontWeight.w600,
+            fontSize: 12.5,
+            color: isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -2339,21 +2313,23 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           // 消息正文
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.82),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
             decoration: BoxDecoration(
               color: isAssistant
-                  ? (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFFFFFFF))
+                  ? (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC))
                   : context.primaryColor,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(14),
                 topRight: const Radius.circular(14),
-                bottomLeft: Radius.circular(isAssistant ? 2 : 14),
-                bottomRight: Radius.circular(isAssistant ? 14 : 2),
+                bottomLeft: Radius.circular(isAssistant ? 3 : 14),
+                bottomRight: Radius.circular(isAssistant ? 14 : 3),
               ),
               border: isAssistant
                   ? Border.all(
-                      color: isDarkMode ? Colors.white10 : context.subtleBg.withValues(alpha: 0.5),
-                      width: 1,
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.06),
+                      width: 0.5,
                     )
                   : null,
             ),
@@ -2373,50 +2349,54 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     },
                     styleSheet: MarkdownStyleSheet(
                       p: TextStyle(
-                        fontSize: 13.5,
-                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
-                        height: 1.5,
+                        fontSize: 14,
+                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        height: 1.55,
                       ),
                       h1: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                       ),
                       h2: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                       ),
                       h3: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                       ),
                       strong: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: context.primaryColor,
                       ),
+                      a: TextStyle(
+                        color: context.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                       listBullet: TextStyle(
-                        fontSize: 13.5,
-                        color: isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67),
+                        fontSize: 14,
+                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                       tableBody: TextStyle(
-                        fontSize: 12.5,
-                        color: isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67),
+                        fontSize: 13,
+                        color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
                       ),
                       tableHead: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                       ),
                       tableBorder: TableBorder.all(
-                        color: isDarkMode ? Colors.white10 : context.subtleBg.withValues(alpha: 0.5),
+                        color: isDarkMode ? Colors.white12 : Colors.black12,
                         width: 0.5,
                       ),
                       tableCellsPadding: const EdgeInsets.all(6),
                       code: TextStyle(
-                        fontSize: 12,
-                        backgroundColor: isDarkMode ? Colors.black26 : context.subtleBg,
+                        fontSize: 12.5,
+                        backgroundColor: isDarkMode ? Colors.black26 : const Color(0xFFF1F5F9),
                         color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
                       ),
                     ),
@@ -2445,12 +2425,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF192C27) : context.subtleBg,
+        color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isDarkMode ? Colors.white10 : context.subtleBg.withValues(alpha: 0.5),
-          width: 1,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2481,7 +2457,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     Icon(
                       Icons.lightbulb_outline_rounded,
                       size: 13,
-                      color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -2489,7 +2465,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       isThinking ? 'AI 正在深度思考...' : 'AI 的思考过程',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67),
+                        color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -2498,7 +2474,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     Icon(
                       isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                       size: 15,
-                      color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     ),
                 ],
               ),
@@ -2512,8 +2488,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 style: TextStyle(
                   fontSize: 11.5,
                   height: 1.45,
-                  color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
-                  fontStyle: FontStyle.italic,
+                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 ),
               ),
             ),
@@ -2792,45 +2767,50 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (similarWords != null && similarWords.isNotEmpty) {
       final showTip = _showSimilarTip;
       return ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         itemCount: showTip ? similarWords.length + 1 : similarWords.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 8),
+        separatorBuilder: (context, index) {
+          if (showTip && index == 0) return const SizedBox(height: 6);
+          return Divider(
+            height: 1,
+            thickness: 0.5,
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+          );
+        },
         itemBuilder: (context, index) {
           if (showTip && index == 0) {
             return Container(
-              padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: context.subtleBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: context.cardBorder,
-                  width: 1,
-                ),
+                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.09 : 0.06),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.info_outline_rounded,
-                    size: 15,
+                    size: 14,
                     color: context.primaryColor,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：推荐了拼写相近的单词。浅色斜体单词不在当前选择的词书内。',
+                      '注：推荐了拼写相近的单词。浅灰色单词不在当前词书内。',
                       style: TextStyle(
-                        fontSize: 11.5,
-                        color: context.textSecondary,
+                        fontSize: 12,
+                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                         height: 1.35,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 16),
+                    icon: const Icon(Icons.close_rounded, size: 15),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    color: context.textMuted,
+                    color: isDarkMode ? Colors.white38 : Colors.black38,
                     onPressed: () async {
                       setState(() {
                         _showSimilarTip = false;
@@ -2846,82 +2826,96 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           final word = showTip ? similarWords[index - 1] : similarWords[index];
           final inDict = _wordInDictStatus[word.id!] ?? true;
 
-          final Color spellColor = inDict ? context.textPrimary : context.textMuted;
-          final Color descColor = inDict ? context.textSecondary : context.textMuted;
+          final Color spellColor = inDict
+              ? (isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A))
+              : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
+          final Color descColor = inDict
+              ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
+              : (isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8));
 
-          return Container(
-            decoration: BoxDecoration(
-              color: context.cardBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: context.cardBorder,
-                width: 1,
-              ),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                context.push('/word_detail',
-                  extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
+          return InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              context.push(
+                '/word_detail',
+                extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                word.spell,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15.5,
+                                  color: spellColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (Util.getWordDefaultPronounce(word).isNotEmpty) ...[
+                              const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
-                                  word.spell,
+                                  '[${Util.getWordDefaultPronounce(word)}]',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                    color: spellColor,
-                                    fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+                                    fontSize: 12.5,
+                                    fontFamily: 'Roboto',
+                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (Util.getWordDefaultPronounce(word).isNotEmpty) ...[
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    '[${Util.getWordDefaultPronounce(word)}]',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: context.textSecondary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                            ],
+                            if (!inDict) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : Colors.black.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '未选',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ],
+                              ),
                             ],
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          word.getMeaningStr(),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: descColor,
+                            height: 1.35,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            word.getMeaningStr(),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: descColor,
-                              height: 1.35,
-                              fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: context.textMuted,
-                    ),
-                  ],
-                ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 13,
+                    color: isDarkMode ? Colors.white24 : Colors.black26,
+                  ),
+                ],
               ),
             ),
           );
@@ -2954,45 +2948,50 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (_semanticSimilarWords.isNotEmpty) {
       final showTip = _showSemanticTip;
       return ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         itemCount: showTip ? _semanticSimilarWords.length + 1 : _semanticSimilarWords.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 8),
+        separatorBuilder: (context, index) {
+          if (showTip && index == 0) return const SizedBox(height: 6);
+          return Divider(
+            height: 1,
+            thickness: 0.5,
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+          );
+        },
         itemBuilder: (context, index) {
           if (showTip && index == 0) {
             return Container(
-              padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: context.subtleBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: context.cardBorder,
-                  width: 1,
-                ),
+                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.09 : 0.06),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.explore_outlined,
-                    size: 15,
+                    size: 14,
                     color: context.primaryColor,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：系统推荐了若干在相似语境中常出现的单词。浅色斜体为未选词书词汇。',
+                      '注：系统推荐了在相似语境中常出现的单词。浅灰色单词不在当前词书内。',
                       style: TextStyle(
-                        fontSize: 11.5,
-                        color: context.textSecondary,
+                        fontSize: 12,
+                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                         height: 1.35,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 16),
+                    icon: const Icon(Icons.close_rounded, size: 15),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    color: context.textMuted,
+                    color: isDarkMode ? Colors.white38 : Colors.black38,
                     onPressed: () async {
                       setState(() {
                         _showSemanticTip = false;
@@ -3008,82 +3007,96 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           final word = showTip ? _semanticSimilarWords[index - 1] : _semanticSimilarWords[index];
           final inDict = _wordInDictStatus[word.id!] ?? true;
 
-          final Color spellColor = inDict ? context.textPrimary : context.textMuted;
-          final Color descColor = inDict ? context.textSecondary : context.textMuted;
+          final Color spellColor = inDict
+              ? (isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A))
+              : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
+          final Color descColor = inDict
+              ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
+              : (isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8));
 
-          return Container(
-            decoration: BoxDecoration(
-              color: context.cardBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: context.cardBorder,
-                width: 1,
-              ),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                context.push('/word_detail',
-                  extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
+          return InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              context.push(
+                '/word_detail',
+                extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                word.spell,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15.5,
+                                  color: spellColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (Util.getWordDefaultPronounce(word).isNotEmpty) ...[
+                              const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
-                                  word.spell,
+                                  '[${Util.getWordDefaultPronounce(word)}]',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                    color: spellColor,
-                                    fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+                                    fontSize: 12.5,
+                                    fontFamily: 'Roboto',
+                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (Util.getWordDefaultPronounce(word).isNotEmpty) ...[
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    '[${Util.getWordDefaultPronounce(word)}]',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: context.textSecondary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                            ],
+                            if (!inDict) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : Colors.black.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '未选',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ],
+                              ),
                             ],
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          word.getMeaningStr(),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: descColor,
+                            height: 1.35,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            word.getMeaningStr(),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: descColor,
-                              height: 1.35,
-                              fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: context.textMuted,
-                    ),
-                  ],
-                ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 13,
+                    color: isDarkMode ? Colors.white24 : Colors.black26,
+                  ),
+                ],
               ),
             ),
           );
@@ -3108,87 +3121,91 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     ];
 
     if (itemsWithSynonyms.isNotEmpty) {
-      return ListView(
+      return ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-        children: [
-          for (var meaningItem in itemsWithSynonyms)
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFFFFFFF),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if ((meaningItem.meaning ?? '').isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: context.subtleBg,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '释义：${meaningItem.meaning!}',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
+        itemCount: itemsWithSynonyms.length,
+        separatorBuilder: (context, index) => Divider(
+          height: 24,
+          thickness: 0.5,
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.06),
+        ),
+        itemBuilder: (context, index) {
+          final meaningItem = itemsWithSynonyms[index];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if ((meaningItem.meaning ?? '').isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 3.5,
+                        height: 13,
+                        decoration: BoxDecoration(
                           color: context.primaryColor,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          meaningItem.meaning!,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (var synonym in meaningItem.synonyms!)
+                    InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        StudyAudioSessionController().playWordSoundBySpell(synonym.spell);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              synonym.spell,
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            ModernSoundWaveIcon(
+                              size: 13,
+                              color: context.primaryColor,
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (var synonym in meaningItem.synonyms!)
-                        InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () {
-                            StudyAudioSessionController().playWordSoundBySpell(synonym.spell);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: context.subtleBg,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: context.cardBorder,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  synonym.spell,
-                                  style: TextStyle(
-                                    fontSize: 13.5,
-                                    color: context.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                ModernSoundWaveIcon(
-                                  size: 14,
-                                  color: context.primaryColor,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
                 ],
               ),
-            ),
-        ],
+            ],
+          );
+        },
       );
     } else {
       return _buildTabEmptyState(
