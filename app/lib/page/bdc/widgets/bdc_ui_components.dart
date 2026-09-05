@@ -618,11 +618,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                           children: [
                                             // 始终保持 Tab 数量一致性，避免抖动
                                             if (_tabController?.length == 2) _buildSpeakPanel(),
-                                            SingleChildScrollView(
-                                              key: const ValueKey('bdc_choice_list_scroll_view'),
-                                              physics: const BouncingScrollPhysics(),
-                                              child: _buildChoiceList(),
-                                            ),
+                                            _buildChoiceListScrollView(),
                                           ],
                                         )
                                       : (state.studyStep == StudyStep.enSentence2Ch.json ||
@@ -632,10 +628,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               crossAxisAlignment: CrossAxisAlignment.stretch,
                                               children: [
                                                 Flexible(
-                                                  child: SingleChildScrollView(
-                                                    physics: const BouncingScrollPhysics(),
-                                                    child: _buildChoiceList(),
-                                                  ),
+                                                  child: _buildChoiceListScrollView(),
                                                 ),
                                                 Expanded(child: _buildSpeakPanel()),
                                               ],
@@ -1162,6 +1155,25 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
+
+  Widget _buildChoiceListScrollView() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          key: const ValueKey('bdc_choice_list_scroll_view'),
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: Center(
+              child: _buildChoiceList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildChoiceList() {
     if (!(state.studyStep == StudyStep.en2Ch.json ||
