@@ -316,63 +316,58 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildTabBar() {
+  Widget _buildModeSwitchButton() {
     if (_tabController == null || _tabController!.length <= 1) {
       return const SizedBox.shrink();
     }
     final isDarkMode = _cachedIsDarkMode;
+    // 双 Tab 模式下：index 0 是说发音/说释义，index 1 是选择题
+    final bool isSpeakMode = state.tabIndex == 0;
+    final bool isEn2Ch = state.studyStep == StudyStep.en2Ch.json ||
+        state.studyStep == StudyStep.enSentence2Ch.json;
+    final String targetLabel = isSpeakMode ? '选择题' : (isEn2Ch ? '说释义' : '说发音');
+    final IconData targetIcon =
+        isSpeakMode ? Icons.fact_check_outlined : Icons.mic_none_rounded;
 
-    return Center(
+    return GestureDetector(
+      key: const Key('bdc_mode_switch_btn'),
+      onTap: () {
+        final targetIndex = isSpeakMode ? 1 : 0;
+        ref.read(bdcNotifierProvider.notifier).updateTabIndex(targetIndex);
+      },
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        height: 38,
-        padding: const EdgeInsets.all(3.5),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
         decoration: BoxDecoration(
           color: isDarkMode
               ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(19),
+              : Colors.black.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isDarkMode
                 ? Colors.white.withValues(alpha: 0.12)
-                : Colors.white.withValues(alpha: 0.70),
-            width: 0.9,
+                : Colors.white.withValues(alpha: 0.65),
+            width: 0.8,
           ),
         ),
-        child: TabBar(
-          controller: _tabController,
-          indicatorSize: TabBarIndicatorSize.tab,
-          indicator: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: isDarkMode
-                ? context.primaryColor.withValues(alpha: 0.32)
-                : Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.07),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              targetIcon,
+              size: 13,
+              color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              targetLabel,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
               ),
-            ],
-          ),
-          dividerColor: Colors.transparent,
-          dividerHeight: 0,
-          overlayColor: WidgetStateProperty.all(Colors.transparent),
-          splashFactory: NoSplash.splashFactory,
-          labelColor: isDarkMode ? Colors.white : context.primaryColor,
-          unselectedLabelColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-          labelStyle: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-          ),
-          tabs: notifier.dynamicTabs,
-          onTap: (index) {
-            ref.read(bdcNotifierProvider.notifier).updateTabIndex(index);
-          },
+            ),
+          ],
         ),
       ),
     );
@@ -603,10 +598,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                             padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
                             child: Column(
                               children: [
-                                if (state.studyStep == StudyStep.en2Ch.json ||
-                                    state.studyStep == StudyStep.ch2En.json) ...[
-                                  _buildTabBar(),
-                                  const SizedBox(height: 8),
+                                if ((state.studyStep == StudyStep.en2Ch.json ||
+                                        state.studyStep == StudyStep.ch2En.json) &&
+                                    _tabController != null &&
+                                    _tabController!.length > 1) ...[
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: _buildModeSwitchButton(),
+                                  ),
+                                  const SizedBox(height: 4),
                                 ],
                                 Expanded(
                                   child: (state.studyStep == StudyStep.en2Ch.json ||

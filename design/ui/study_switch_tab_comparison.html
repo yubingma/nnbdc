@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>做题切换组件三方案对比原型 - NBDC 极简美学</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.12);
+      --bg-gradient-start: #E8F5EE;
+      --bg-gradient-mid: #D1EBE1;
+      --bg-gradient-end: #C5E6DA;
+      
+      --card-glass-bg: rgba(255, 255, 255, 0.46);
+      --card-glass-border: rgba(255, 255, 255, 0.78);
+      --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+      
+      --option-bg: rgba(255, 255, 255, 0.72);
+      --option-border: rgba(255, 255, 255, 0.9);
+      --option-text: #1E293B;
+      
+      --text-main: #0F172A;
+      --text-sub: #64748B;
+      --text-faint: #94A3B8;
+    }
+
+    body.dark-mode {
+      --primary: #34D399;
+      --primary-dark: #10B981;
+      --primary-soft: rgba(52, 211, 153, 0.18);
+      --bg-gradient-start: #0F1715;
+      --bg-gradient-mid: #13221E;
+      --bg-gradient-end: #0B1412;
+      
+      --card-glass-bg: rgba(22, 30, 42, 0.72);
+      --card-glass-border: rgba(255, 255, 255, 0.12);
+      --card-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+      
+      --option-bg: rgba(255, 255, 255, 0.07);
+      --option-border: rgba(255, 255, 255, 0.09);
+      --option-text: #F1F5F9;
+      
+      --text-main: #F8FAFC;
+      --text-sub: #94A3B8;
+      --text-faint: #64748B;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #0D1117;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: #E2E8F0;
+      padding: 30px 20px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: auto;
+    }
+
+    /* 顶部控制栏 */
+    .header-bar {
+      max-width: 1260px;
+      width: 100%;
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .header-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .title-group h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-group p {
+      font-size: 13px;
+      color: #94A3B8;
+      margin-top: 4px;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-toggle {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #F1F5F9;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-toggle:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-toggle.active {
+      background: #10B981;
+      border-color: #10B981;
+      color: #FFFFFF;
+    }
+
+    /* 三列机模布局容器 */
+    .showcase-container {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      max-width: 1360px;
+      width: 100%;
+    }
+
+    .scheme-card {
+      background: #161B22;
+      border: 1px solid #30363D;
+      border-radius: 28px;
+      padding: 20px 18px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    .scheme-header {
+      width: 100%;
+      max-width: 375px;
+      margin-bottom: 16px;
+    }
+
+    .scheme-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .badge-1 { background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(52, 211, 153, 0.3); }
+    .badge-2 { background: rgba(59, 130, 246, 0.2); color: #60A5FA; border: 1px solid rgba(96, 165, 250, 0.3); }
+    .badge-3 { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(251, 191, 36, 0.3); }
+
+    .scheme-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #F8FAFC;
+    }
+
+    .scheme-desc {
+      font-size: 12.5px;
+      color: #94A3B8;
+      line-height: 1.45;
+      margin-top: 4px;
+    }
+
+    /* 真机模型外壳 (旗舰机尺寸 375x760) */
+    .phone-chassis {
+      width: 375px;
+      height: 740px;
+      border-radius: 46px;
+      background: #111;
+      padding: 10px;
+      box-shadow: 0 0 0 3px #2A3036, 0 24px 50px rgba(0, 0, 0, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      background: radial-gradient(circle at 10% 10%, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 50%, var(--bg-gradient-end) 100%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s ease;
+    }
+
+    /* 灵动岛 & 状态栏 */
+    .status-bar {
+      height: 44px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      z-index: 20;
+    }
+
+    .dynamic-island {
+      width: 105px;
+      height: 26px;
+      background: #000000;
+      border-radius: 18px;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+    }
+
+    /* 顶部导航行 */
+    .nav-bar {
+      height: 38px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-main);
+      z-index: 10;
+    }
+
+    .nav-action {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .nav-progress {
+      font-size: 13px;
+      font-weight: 700;
+      font-family: Roboto, -apple-system, sans-serif;
+      color: var(--text-main);
+    }
+
+    /* 题目核心区 */
+    .question-section {
+      padding: 24px 22px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .cixing-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .cixing-row {
+      display: flex;
+      align-items: baseline;
+      font-size: 16.5px;
+      line-height: 1.35;
+    }
+
+    .cixing-tag {
+      width: 20.5px;
+      font-weight: 700;
+      font-family: Roboto, -apple-system, sans-serif;
+      color: var(--primary);
+      text-align: left;
+      flex-shrink: 0;
+      font-size: 16px;
+      margin-right: 5px;
+    }
+
+    .cixing-meaning {
+      font-weight: 500;
+      color: var(--text-main);
+      letter-spacing: -0.1px;
+    }
+
+    /* 做题操作磨砂卡片 */
+    .action-panel {
+      flex: 1;
+      margin: 4px 14px 14px;
+      border-radius: 24px;
+      background: var(--card-glass-bg);
+      border: 1px solid var(--card-glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: var(--card-shadow);
+      padding: 12px 12px 8px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* 做题选项垂直弹性居中容器 */
+    .choices-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8.5px;
+      padding: 4px 0;
+    }
+
+    .choice-item {
+      background: var(--option-bg);
+      border: 1px solid var(--option-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14.5px;
+      font-weight: 500;
+      color: var(--option-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .choice-item:hover {
+      transform: scale(0.995);
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    body.dark-mode .choice-item:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* 选项前置字母 */
+    .choice-prefix {
+      font-weight: 600;
+      font-family: Roboto, -apple-system, sans-serif;
+      margin-right: 8px;
+      color: var(--text-sub);
+    }
+
+    /* 卡片底栏 (8px对称自闭合) */
+    .fsrs-footer {
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 11.5px;
+      color: var(--text-sub);
+      border-top: 1px solid rgba(0, 0, 0, 0.04);
+      margin-top: 6px;
+    }
+
+    body.dark-mode .fsrs-footer {
+      border-top-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .fsrs-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* -------------------------------------------------------------
+       方案 1：纯排版单层切换 (Zero Container, Typography Tab)
+       ------------------------------------------------------------- */
+    .tab-scheme-1 {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 28px;
+      height: 34px;
+      margin-bottom: 6px;
+      position: relative;
+    }
+
+    .tab-item-1 {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13.5px;
+      color: var(--text-sub);
+      cursor: pointer;
+      position: relative;
+      padding: 4px 2px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .tab-item-1.active {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .tab-item-1.active::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 15%;
+      right: 15%;
+      height: 2.5px;
+      border-radius: 2px;
+      background: var(--primary);
+      box-shadow: 0 1px 4px var(--primary-soft);
+    }
+
+    .tab-item-1 svg {
+      width: 15px;
+      height: 15px;
+      stroke-width: 2.2;
+    }
+
+    /* -------------------------------------------------------------
+       方案 2：右上角轻量模式切换 (Mode Switch Button)
+       ------------------------------------------------------------- */
+    .mode-switch-wrapper {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      z-index: 15;
+    }
+
+    .mode-switch-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      padding: 5px 10px;
+      border-radius: 14px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    body.dark-mode .mode-switch-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #CBD5E1;
+    }
+
+    .mode-switch-btn:hover {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .mode-switch-btn svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    /* -------------------------------------------------------------
+       方案 3：单层悬浮微胶囊 (Single Floating Pill)
+       ------------------------------------------------------------- */
+    .tab-scheme-3 {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      height: 36px;
+      margin-bottom: 6px;
+    }
+
+    .tab-item-3 {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12.5px;
+      color: var(--text-sub);
+      padding: 6px 14px;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .tab-item-3.active {
+      background: #FFFFFF;
+      color: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    body.dark-mode .tab-item-3.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #FFFFFF;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .tab-item-3 svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.2;
+    }
+
+    /* 原始老方案示意（用于对比痛点） */
+    .original-old-track {
+      height: 36px;
+      background: rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 18px;
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .original-pill {
+      flex: 1;
+      height: 100%;
+      background: #fff;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #10B981;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .original-unselected {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    /* Home Bar */
+    .home-bar {
+      width: 134px;
+      height: 4px;
+      background: var(--text-main);
+      opacity: 0.25;
+      border-radius: 2px;
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* 响应式适配 */
+    @media (max-width: 1200px) {
+      .showcase-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .scheme-card {
+        width: 100%;
+        max-width: 440px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部控制台 -->
+  <div class="header-bar">
+    <div class="header-title-row">
+      <div class="title-group">
+        <h1>做题切换组件 · 极简美学三方案对比</h1>
+        <p>告别“外层卡片 ➔ 凹槽跑道 ➔ 浮凸白药丸”的三层嵌套，彻底降维到只有单层的高级质感</p>
+      </div>
+      <div class="controls-group">
+        <button class="btn-toggle active" id="toggleThemeBtn" onclick="toggleTheme()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <span id="themeLabel">切换为深色模式</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 三方案并排对比 -->
+  <div class="showcase-container">
+
+    <!-- ================= 方案 1 ================= -->
+    <div class="scheme-card">
+      <div class="scheme-header">
+        <span class="scheme-badge badge-1">方案一 · 推荐</span>
+        <h2 class="scheme-title">单层纯排版切换 (Typography Tab)</h2>
+        <p class="scheme-desc">彻底剥离灰色凹槽外框。只有两个通透悬浮的文字+图标，选中项以主色高亮并配以 2.5px 极细微胶囊指示条。只有单层，呼吸感最强。</p>
+      </div>
+
+      <div class="phone-chassis">
+        <div class="dynamic-island"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div style="display:flex;gap:4px;font-size:11px;">5G 100%</div>
+          </div>
+
+          <div class="nav-bar">
+            <div class="nav-action">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              <span>退出</span>
+            </div>
+            <div class="nav-progress">12 / 30</div>
+            <div class="nav-action">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+          </div>
+
+          <!-- 词性与释义区 -->
+          <div class="question-section">
+            <div class="cixing-list">
+              <div class="cixing-row">
+                <span class="cixing-tag">n.</span>
+                <span class="cixing-meaning">愉快；娱乐；荣幸；快乐；</span>
+              </div>
+              <div class="cixing-row">
+                <span class="cixing-tag">vt.</span>
+                <span class="cixing-meaning">使高兴；使满意；</span>
+              </div>
+              <div class="cixing-row">
+                <span class="cixing-tag">vi.</span>
+                <span class="cixing-meaning">寻欢作乐；感到高兴；</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 磨砂操作台 -->
+          <div class="action-panel">
+            <!-- 方案 1 切换器 -->
+            <div class="tab-scheme-1">
+              <div class="tab-item-1" onclick="selectTab(1, 0, this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                <span>说发音</span>
+              </div>
+              <div class="tab-item-1 active" onclick="selectTab(1, 1, this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <span>选择题</span>
+              </div>
+            </div>
+
+            <!-- 自适应垂直居中的选项 -->
+            <div class="choices-container">
+              <div class="choice-item"><span><span class="choice-prefix">A.</span>愉快的，令人高兴的</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">B.</span>愉快；娱乐；荣幸；快乐</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">C.</span>压力；压迫；紧迫感</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">D.</span>允许；许可；同意</span></div>
+            </div>
+
+            <!-- 嵌入底栏 -->
+            <div class="fsrs-footer">
+              <span>今日测评: <span class="fsrs-badge">良好 (8天)</span></span>
+              <span>•</span>
+              <span>复习周期: 5天</span>
+            </div>
+          </div>
+
+          <div class="home-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 方案 2 ================= -->
+    <div class="scheme-card">
+      <div class="scheme-header">
+        <span class="scheme-badge badge-2">方案二 · 换思路</span>
+        <h2 class="scheme-title">右上角模式切换 (Mode Switch)</h2>
+        <p class="scheme-desc">做题卡片正上方完全不放任何 Tab，将模式切换收纳至卡片右上角的小微胶囊。空间 100% 留给做题区，选项居中更从容、零干扰。</p>
+      </div>
+
+      <div class="phone-chassis">
+        <div class="dynamic-island"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div style="display:flex;gap:4px;font-size:11px;">5G 100%</div>
+          </div>
+
+          <div class="nav-bar">
+            <div class="nav-action">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              <span>退出</span>
+            </div>
+            <div class="nav-progress">12 / 30</div>
+            <div class="nav-action">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+          </div>
+
+          <!-- 词性与释义区 -->
+          <div class="question-section">
+            <div class="cixing-list">
+              <div class="cixing-row">
+                <span class="cixing-tag">n.</span>
+                <span class="cixing-meaning">愉快；娱乐；荣幸；快乐；</span>
+              </div>
+              <div class="cixing-row">
+                <span class="cixing-tag">vt.</span>
+                <span class="cixing-meaning">使高兴；使满意；</span>
+              </div>
+              <div class="cixing-row">
+                <span class="cixing-tag">vi.</span>
+                <span class="cixing-meaning">寻欢作乐；感到高兴；</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 磨砂操作台 -->
+          <div class="action-panel">
+            <!-- 方案 2 右上角轻微胶囊按钮 -->
+            <div class="mode-switch-wrapper">
+              <div class="mode-switch-btn" title="点击切换答题模式">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                <span>说发音</span>
+              </div>
+            </div>
+
+            <!-- 自适应垂直居中的选项 (顶部完全空出，空间更充裕) -->
+            <div class="choices-container" style="padding-top: 14px;">
+              <div class="choice-item"><span><span class="choice-prefix">A.</span>愉快的，令人高兴的</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">B.</span>愉快；娱乐；荣幸；快乐</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">C.</span>压力；压迫；紧迫感</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">D.</span>允许；许可；同意</span></div>
+            </div>
+
+            <!-- 嵌入底栏 -->
+            <div class="fsrs-footer">
+              <span>今日测评: <span class="fsrs-badge">良好 (8天)</span></span>
+              <span>•</span>
+              <span>复习周期: 5天</span>
+            </div>
+          </div>
+
+          <div class="home-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 方案 3 ================= -->
+    <div class="scheme-card">
+      <div class="scheme-header">
+        <span class="scheme-badge badge-3">方案三 · 极简胶囊</span>
+        <h2 class="scheme-title">单层悬浮微胶囊 (Single Pill)</h2>
+        <p class="scheme-desc">保留居中位置，但剥离深色凹槽跑道与边框。只有选中项自带一层轻薄温润的圆角白底（或夜间弱光），未选中项透明悬浮，视觉只有单层。</p>
+      </div>
+
+      <div class="phone-chassis">
+        <div class="dynamic-island"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div style="display:flex;gap:4px;font-size:11px;">5G 100%</div>
+          </div>
+
+          <div class="nav-bar">
+            <div class="nav-action">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              <span>退出</span>
+            </div>
+            <div class="nav-progress">12 / 30</div>
+            <div class="nav-action">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+          </div>
+
+          <!-- 词性与释义区 -->
+          <div class="question-section">
+            <div class="cixing-list">
+              <div class="cixing-row">
+                <span class="cixing-tag">n.</span>
+                <span class="cixing-meaning">愉快；娱乐；荣幸；快乐；</span>
+              </div>
+              <div class="cixing-row">
+                <span class="cixing-tag">vt.</span>
+                <span class="cixing-meaning">使高兴；使满意；</span>
+              </div>
+              <div class="cixing-row">
+                <span class="cixing-tag">vi.</span>
+                <span class="cixing-meaning">寻欢作乐；感到高兴；</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 磨砂操作台 -->
+          <div class="action-panel">
+            <!-- 方案 3 切换器 -->
+            <div class="tab-scheme-3">
+              <div class="tab-item-3" onclick="selectTab(3, 0, this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                <span>说发音</span>
+              </div>
+              <div class="tab-item-3 active" onclick="selectTab(3, 1, this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <span>选择题</span>
+              </div>
+            </div>
+
+            <!-- 自适应垂直居中的选项 -->
+            <div class="choices-container">
+              <div class="choice-item"><span><span class="choice-prefix">A.</span>愉快的，令人高兴的</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">B.</span>愉快；娱乐；荣幸；快乐</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">C.</span>压力；压迫；紧迫感</span></div>
+              <div class="choice-item"><span><span class="choice-prefix">D.</span>允许；许可；同意</span></div>
+            </div>
+
+            <!-- 嵌入底栏 -->
+            <div class="fsrs-footer">
+              <span>今日测评: <span class="fsrs-badge">良好 (8天)</span></span>
+              <span>•</span>
+              <span>复习周期: 5天</span>
+            </div>
+          </div>
+
+          <div class="home-bar"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      document.getElementById('themeLabel').innerText = isDark ? '切换为浅色模式' : '切换为深色模式';
+    }
+
+    function selectTab(scheme, index, elem) {
+      const parent = elem.parentElement;
+      const items = parent.querySelectorAll(scheme === 1 ? '.tab-item-1' : '.tab-item-3');
+      items.forEach(it => it.classList.remove('active'));
+      elem.classList.add('active');
+    }
+  </script>
+</body>
+</html>
