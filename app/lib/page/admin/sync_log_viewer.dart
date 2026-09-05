@@ -117,126 +117,287 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
         ToastUtil.success('已删除所有同步日志');
         _loadLogs();
       } catch (e) {
-        // 不弹出错误提示，只记录日志
         Global.logger.e('删除失败: $e');
       }
     }
   }
 
   void _showLogDetail(SyncLog log) {
-    showDialog(
+    final theme = context.themeConfig;
+    final isDark = context.isDarkMode;
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          height: MediaQuery.of(context).size.height * 0.8,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.82,
+        ),
+        decoration: BoxDecoration(
+          color: theme.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 10, bottom: 8),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.textMuted.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
                 children: [
-                  const Text(
-                    '同步日志详情',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: log.success
+                          ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                          : (log.isWarning
+                              ? const Color(0xFFF59E0B).withValues(alpha: 0.12)
+                              : const Color(0xFFEF4444).withValues(alpha: 0.12)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      log.success
+                          ? Icons.cloud_done_rounded
+                          : (log.isWarning ? Icons.warning_amber_rounded : Icons.cloud_off_rounded),
+                      size: 20,
+                      color: log.success
+                          ? const Color(0xFF10B981)
+                          : (log.isWarning ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const Divider(),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildDetailItem('ID', log.id),
-                      _buildDetailItem('状态', log.success ? '成功' : '失败'),
-                      if (log.dbVersion != null || log.sysDbVersion != null)
-                        _buildDetailItem('数据版本', '${log.dbVersion ?? 0} | ${log.sysDbVersion ?? 0}'),
-                      if (log.appVersion != null)
-                        _buildDetailItem('App版本', log.appVersion!),
-                      _buildDetailItem('开始时间', _formatDateTime(log.startTime)),
-                      if (log.endTime != null)
-                        _buildDetailItem('结束时间', _formatDateTime(log.endTime!)),
-                      if (log.durationMs != null)
-                        _buildDetailItem('耗时', '${log.durationMs}ms'),
-                      if (log.uploadCount != null)
-                        _buildDetailItem('上行记录数', '${log.uploadCount}'),
-                      if (log.uploadDetails != null && log.uploadDetails!.isNotEmpty)
-                        _buildDetailsMap(log.uploadDetails!),
-                      if (log.downloadCount != null)
-                        _buildDetailItem('下行记录数', '${log.downloadCount}'),
-                      if (log.downloadDetails != null && log.downloadDetails!.isNotEmpty)
-                        _buildDetailsMap(log.downloadDetails!),
-                      if (log.userId != null)
-                        _buildDetailItem('用户ID', log.userId!),
-                      if (log.errorMessage != null) ...[
-                        const SizedBox(height: 16),
-                        const Text(
-                          '错误信息',
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          log.success ? '同步详情' : (log.isWarning ? '同步异常' : '同步失败'),
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            fontWeight: FontWeight.w700,
+                            color: theme.textPrimary,
+                            letterSpacing: -0.2,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red[200]!),
-                          ),
-                          child: SelectableText(
-                            log.errorMessage!,
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              color: Colors.red,
-                            ),
+                        Text(
+                          _formatDateTime(log.startTime),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textMuted,
+                            fontFamily: 'Roboto',
                           ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: theme.textMuted, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                    splashRadius: 18,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, thickness: 0.5),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: theme.subtleBg.withValues(alpha: isDark ? 0.35 : 0.5),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: theme.cardBorder, width: 0.8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildMiniStat('耗时', _formatDuration(log.durationMs), theme),
+                          _buildMiniDivider(theme),
+                          _buildMiniStat('上行记录', '${log.uploadCount ?? 0}', theme),
+                          _buildMiniDivider(theme),
+                          _buildMiniStat('下行记录', '${log.downloadCount ?? 0}', theme),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDetailRow('记录 ID', log.id, theme),
+                    if (log.dbVersion != null || log.sysDbVersion != null)
+                      _buildDetailRow('数据版本', '${log.dbVersion ?? 0} | ${log.sysDbVersion ?? 0}', theme),
+                    if (log.appVersion != null)
+                      _buildDetailRow('App 版本', log.appVersion!, theme),
+                    if (log.userId != null)
+                      _buildDetailRow('用户 ID', log.userId!, theme),
+                    if (log.endTime != null)
+                      _buildDetailRow('结束时间', _formatDateTime(log.endTime!), theme),
+                    if (log.uploadDetails != null && log.uploadDetails!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        '上行详情',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      _buildDetailsMapCard(log.uploadDetails!, theme, isDark),
+                    ],
+                    if (log.downloadDetails != null && log.downloadDetails!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        '下行详情',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      _buildDetailsMapCard(log.downloadDetails!, theme, isDark),
+                    ],
+                    if (log.errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        '错误信息',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.15 : 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: SelectableText(
+                          log.errorMessage!,
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C),
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _deleteLog(log.id);
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                        label: const Text(
+                          '删除此条记录',
+                          style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailItem(String label, String value) {
+  Widget _buildMiniStat(String label, String value, AppThemeConfig theme) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Roboto',
+            color: theme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: theme.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniDivider(AppThemeConfig theme) {
+    return Container(
+      width: 1,
+      height: 22,
+      color: theme.cardBorder,
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, AppThemeConfig theme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 80,
             child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: theme.textMuted,
               ),
             ),
           ),
           Expanded(
             child: SelectableText(
               value,
-              style: const TextStyle(fontFamily: 'monospace'),
+              style: TextStyle(
+                fontSize: 13,
+                fontFamily: 'Roboto',
+                color: theme.textPrimary,
+              ),
             ),
           ),
         ],
@@ -244,19 +405,47 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
     );
   }
 
-  Widget _buildDetailsMap(Map<String, dynamic> details) {
-    if (details.isEmpty) return const SizedBox.shrink();
-    
-    return Padding(
-      padding: const EdgeInsets.only(left: 100, bottom: 8),
+  Widget _buildDetailsMapCard(Map<String, dynamic> details, AppThemeConfig theme, bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.subtleBg.withValues(alpha: isDark ? 0.3 : 0.4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.cardBorder, width: 0.6),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: details.entries.map((e) {
           final tableMap = e.value as Map<String, dynamic>;
           final ops = tableMap.entries.map((op) => '${op.key}: ${op.value}').join(', ');
-          return Text(
-            '- ${e.key} ($ops)',
-            style: const TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'monospace'),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              children: [
+                Text(
+                  '• ${e.key}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Roboto',
+                    color: theme.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '($ops)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'Roboto',
+                      color: theme.textMuted,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           );
         }).toList(),
       ),
@@ -268,6 +457,10 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
         '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
   }
 
+  String _formatShortTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
+  }
+
   String _formatDuration(int? ms) {
     if (ms == null) return '-';
     if (ms < 1000) return '${ms}ms';
@@ -276,253 +469,132 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final theme = context.themeConfig;
+    final isDark = context.isDarkMode;
+    final lastLog = _logs.isNotEmpty ? _logs.first : null;
 
     return AppScaffold(
-      appBar: AppAppBar(
-        title: '云同步',
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          '云同步',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: theme.textPrimary,
+            letterSpacing: -0.2,
+          ),
+        ),
         leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: theme.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          tooltip: '返回',
+          splashRadius: 22,
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadLogs,
-            tooltip: '刷新',
+            icon: Icon(Icons.refresh_rounded, color: theme.textPrimary, size: 22),
+            onPressed: (_isLoading || _isSyncing) ? null : _loadLogs,
+            tooltip: '刷新记录',
+            splashRadius: 22,
           ),
           if (_logs.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.delete_sweep, color: Colors.white),
+              icon: Icon(Icons.delete_sweep_outlined, color: theme.textSecondary, size: 22),
               onPressed: _deleteAllLogs,
-              tooltip: '清空所有',
+              tooltip: '清空所有记录',
+              splashRadius: 22,
             ),
+          const SizedBox(width: 4),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _logs.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.cloud_sync,
-                        size: 64,
-                        color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+          ? Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: theme.primaryColor,
+              ),
+            )
+          : CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: theme.cardBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: theme.cardBorder, width: 1.0),
+                        boxShadow: theme.cardShadows,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '暂无同步日志',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : Column(
-                  children: [
-                    // 手动同步按钮
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      color: cardColor,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _isSyncing ? null : _manualSync,
-                          icon: _isSyncing
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      isDarkMode ? Colors.white : Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(Icons.sync),
-                          label: Text(_isSyncing ? '同步中...' : '立即同步'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    // 统计信息
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      color: cardColor,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              '共 $_totalCount 条同步记录',
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                          Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: _isSyncing
+                                      ? theme.primaryColor.withValues(alpha: 0.12)
+                                      : (lastLog?.success == true
+                                          ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                                          : (lastLog == null
+                                              ? theme.primaryColor.withValues(alpha: 0.12)
+                                              : const Color(0xFFEF4444).withValues(alpha: 0.12))),
+                                  borderRadius: BorderRadius.circular(13),
+                                ),
+                                child: Center(
+                                  child: _isSyncing
+                                      ? SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+                                          ),
+                                        )
+                                      : Icon(
+                                          lastLog?.success == true
+                                              ? Icons.cloud_done_rounded
+                                              : (lastLog == null ? Icons.cloud_sync_rounded : Icons.cloud_off_rounded),
+                                          size: 24,
+                                          color: lastLog?.success == true
+                                              ? const Color(0xFF10B981)
+                                              : (lastLog == null ? theme.primaryColor : const Color(0xFFEF4444)),
+                                        ),
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '显示最近${_logs.length}条',
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // 日志列表
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _logs.length,
-                        itemBuilder: (context, index) {
-                          final log = _logs[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            color: cardColor,
-                            elevation: isDarkMode ? 0 : 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(
-                                color: log.success
-                                    ? (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!)
-                                    : (log.isWarning ? Colors.orange[300]! : Colors.red[300]!),
-                                width: log.success ? 1 : 2,
-                              ),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              leading: Icon(
-                                log.success ? Icons.cloud_done : (log.isWarning ? Icons.warning_amber_rounded : Icons.cloud_off),
-                                color: log.success ? Colors.green : (log.isWarning ? Colors.orange : Colors.red),
-                                size: 32,
-                              ),
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      log.success ? '同步成功' : (log.isWarning ? '同步异常' : '同步失败'),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _isSyncing
+                                          ? '正在同步数据...'
+                                          : (lastLog?.success == true
+                                              ? '数据已是最新'
+                                              : (lastLog == null ? '尚未同步' : '上次同步异常')),
                                       style: TextStyle(
-                                        color: log.success ? Colors.green : (log.isWarning ? Colors.orange : Colors.red),
                                         fontSize: 16,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w700,
+                                        color: theme.textPrimary,
+                                        letterSpacing: -0.2,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isDarkMode
-                                          ? Colors.grey[800]
-                                          : Colors.grey[200],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      _formatDuration(log.durationMs),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      lastLog != null
+                                          ? '上次同步 ${_formatShortTime(lastLog.startTime)} · 耗时 ${_formatDuration(lastLog.durationMs)}'
+                                          : '保持手机与平板等多设备学习数据一致',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Wrap(
-                                    crossAxisAlignment: WrapCrossAlignment.center,
-                                    spacing: 8,
-                                    runSpacing: 4,
-                                    children: [
-                                      Text(
-                                        _formatDateTime(log.startTime),
-                                        style: TextStyle(
-                                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      if (log.dbVersion != null || log.sysDbVersion != null)
-                                        Text(
-                                          '${log.dbVersion ?? 0} | ${log.sysDbVersion ?? 0}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.primaryColor.withValues(alpha: 0.7),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  if (log.success &&
-                                      log.uploadCount != null &&
-                                      log.downloadCount != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '↑ ${log.uploadCount}  ↓ ${log.downloadCount}',
-                                      style: TextStyle(
-                                        color: isDarkMode ? Colors.grey[500] : Colors.grey[500],
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                  if (!log.success && log.errorMessage != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      log.errorMessage!.length > 50
-                                          ? '${log.errorMessage!.substring(0, 50)}...'
-                                          : log.errorMessage!,
-                                      style: TextStyle(
-                                        color: log.isWarning ? Colors.orange[400] : Colors.red[400],
-                                        fontSize: 11,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.visibility),
-                                    color: AppTheme.primaryColor,
-                                    onPressed: () => _showLogDetail(log),
-                                    tooltip: '查看详情',
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    color: Colors.red,
-                                    onPressed: () => _deleteLog(log.id),
-                                    tooltip: '删除',
-                                  ),
                                 ],
                               ),
                               isThreeLine: true,
