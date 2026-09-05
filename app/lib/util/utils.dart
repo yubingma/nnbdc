@@ -83,6 +83,49 @@ class Util {
     return trimmed.characters.isNotEmpty ? trimmed.characters.first.toUpperCase() : fallback;
   }
 
+  /// 判断是否为可编辑词书
+  /// - 官方系统词书 (ownerId 为系统用户且非生词本/已掌握) 为不可编辑
+  /// - 用户所有自建词书、生词本、已掌握均属于可编辑词书（支持单词与释义增删改）
+  static bool isEditableDict({bool? editable, required String? ownerId, required String name}) {
+    if (name == '生词本' || name == '已掌握') return true;
+    if (editable != null && editable) return true;
+    return ownerId != null && ownerId != Global.sysUserId;
+  }
+
+  /// 获取词书对应的专属语义图标
+  /// - 不可编辑词书 (官方只读教材): Icons.auto_stories_rounded (展开书卷)
+  /// - 可编辑词书:
+  ///   - 生词本: Icons.bookmark_rounded (专属书签)
+  ///   - 已掌握: Icons.check_circle_rounded (已掌握通关徽标)
+  ///   - 自定义可编辑词书: Icons.edit_note_rounded (手写便签笔记本)
+  static IconData getDictIcon({bool? editable, required String? ownerId, required String name}) {
+    if (name == '生词本') {
+      return Icons.bookmark_rounded;
+    }
+    if (name == '已掌握') {
+      return Icons.check_circle_rounded;
+    }
+    if (isEditableDict(editable: editable, ownerId: ownerId, name: name)) {
+      return Icons.edit_note_rounded;
+    }
+    return Icons.auto_stories_rounded;
+  }
+
+  /// 获取词书图标对应的语义颜色（生词本专属暖金，已掌握专属翡翠绿，其余跟随传入的主题色）
+  static Color getDictIconColor({
+    required String? ownerId,
+    required String name,
+    required Color defaultColor,
+  }) {
+    if (name == '生词本') {
+      return const Color(0xFFF59E0B);
+    }
+    if (name == '已掌握') {
+      return const Color(0xFF10B981);
+    }
+    return defaultColor;
+  }
+
   static String getShortName(String name) {
     if (name.endsWith(".dict")) {
       return name.substring(0, name.lastIndexOf("."));

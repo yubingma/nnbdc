@@ -18,6 +18,7 @@ import '../api/vo.dart';
 import '../state.dart';
 import 'package:nnbdc/event/events.dart';
 import '../global.dart';
+import '../util/utils.dart';
 
 class WordListsPage extends StatefulWidget {
   const WordListsPage({super.key});
@@ -368,9 +369,19 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                     final masteryProgress = total > 0 ? (mastered / total).clamp(0.0, 1.0) : 0.0;
                     final fetchProgress = total > 0 ? (fetched / total).clamp(0.0, 1.0) : 0.0;
                     final percent = (masteryProgress * 100).toInt();
+                    final icon = Util.getDictIcon(
+                      editable: dict.editable,
+                      ownerId: dict.ownerId,
+                      name: dict.name,
+                    );
+                    final iconColor = Util.getDictIconColor(
+                      ownerId: dict.ownerId,
+                      name: dict.name,
+                      defaultColor: accentColor,
+                    );
                     return _buildGroupedItemRow(
-                      icon: Icons.auto_stories_rounded,
-                      iconColor: accentColor,
+                      icon: icon,
+                      iconColor: iconColor,
                       title: _cleanDictName(dict.name),
                       subtitle: '已掌握 $mastered · 已取 $fetched · $percent%',
                       countText: '$total 词',

@@ -5,6 +5,7 @@ import '../../api/vo.dart';
 import '../../db/db.dart';
 import '../../global.dart';
 import '../../util/toast_util.dart';
+import '../../util/utils.dart';
 import '../../widget/app_scaffold.dart';
 import '../select_book.dart';
 import 'word_list.dart';
@@ -262,7 +263,17 @@ class ImportFromBookPageState extends State<ImportFromBookPage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.menu_book, size: 20, color: Colors.grey),
+                    Icon(
+                      _selectedDict != null
+                          ? Util.getDictIcon(
+                              editable: _selectedDict!.editable,
+                              ownerId: _selectedDict!.ownerId,
+                              name: _selectedDict!.name,
+                            )
+                          : Icons.auto_stories_rounded,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -488,7 +499,11 @@ class _DictSearchSheetState extends State<_DictSearchSheet> {
                     itemBuilder: (context, index) {
                       final dict = _filteredDicts[index];
                       return ListTile(
-                        leading: const Icon(Icons.menu_book),
+                        leading: Icon(Util.getDictIcon(
+                          editable: dict.editable,
+                          ownerId: dict.ownerId,
+                          name: dict.name,
+                        )),
                         title: Text(dict.name),
                         subtitle: Text('${dict.wordCount} 词'),
                         onTap: () => widget.onSelected(dict),

@@ -154,4 +154,30 @@ environment:
       expect(Util.getInitial('   ', fallback: '?'), equals('?'));
     });
   });
+
+  group('词书可编辑判断与专属语义图标测试', () {
+    test('官方系统词书（不可编辑）返回书籍图标与系统属性', () {
+      expect(Util.isEditableDict(editable: false, ownerId: '15118', name: '四级词汇(2026版)'), isFalse);
+      expect(Util.getDictIcon(editable: false, ownerId: '15118', name: '四级词汇(2026版)'), equals(Icons.auto_stories_rounded));
+      expect(Util.getDictIconColor(ownerId: '15118', name: '四级词汇(2026版)', defaultColor: Colors.blue), equals(Colors.blue));
+    });
+
+    test('生词本（内置可编辑）返回书签图标与专属暖金色', () {
+      expect(Util.isEditableDict(ownerId: 'test_user', name: '生词本'), isTrue);
+      expect(Util.getDictIcon(ownerId: 'test_user', name: '生词本'), equals(Icons.bookmark_rounded));
+      expect(Util.getDictIconColor(ownerId: 'test_user', name: '生词本', defaultColor: Colors.blue), equals(const Color(0xFFF59E0B)));
+    });
+
+    test('用户自定义词书（可编辑）返回手写笔记图标', () {
+      expect(Util.isEditableDict(editable: true, ownerId: 'test_user', name: 'test'), isTrue);
+      expect(Util.getDictIcon(editable: true, ownerId: 'test_user', name: 'test'), equals(Icons.edit_note_rounded));
+      expect(Util.getDictIconColor(ownerId: 'test_user', name: 'test', defaultColor: Colors.teal), equals(Colors.teal));
+    });
+
+    test('已掌握（内置可编辑）返回通关徽标图标与翡翠绿', () {
+      expect(Util.isEditableDict(editable: false, ownerId: 'test_user', name: '已掌握'), isTrue);
+      expect(Util.getDictIcon(editable: false, ownerId: 'test_user', name: '已掌握'), equals(Icons.check_circle_rounded));
+      expect(Util.getDictIconColor(ownerId: 'test_user', name: '已掌握', defaultColor: Colors.blue), equals(const Color(0xFF10B981)));
+    });
+  });
 } 
