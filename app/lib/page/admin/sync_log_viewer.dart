@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/models/sync_log.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
@@ -93,203 +94,241 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
     final theme = context.themeConfig;
     final isDark = context.isDarkMode;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showGeneralDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-          decoration: BoxDecoration(
-            color: theme.cardBg,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.cardBorder, width: 0.8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 头部图标与标题
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
+      barrierDismissible: true,
+      barrierLabel: 'dismiss_delete_logs_dialog',
+      barrierColor: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (dialogCtx, anim1, anim2) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                // 黄金参数 sigma=8，既抹散底层字符形态，又完美保留朦胧温润的墨水色块晕开质感
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xB81C2127) // 72% 曜石深灰磨砂
+                        : const Color(0x73FFFFFF), // 45% 凝润乳白通透磨砂，底层内容自然晕开，杜绝实心死白
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0x33FFFFFF)
+                          : const Color(0x99FFFFFF), // 精致微光切边，烘托毛玻璃高光
+                      width: 1.2,
                     ),
-                    child: const Icon(
-                      Icons.delete_sweep_rounded,
-                      size: 22,
-                      color: Color(0xFFEF4444),
-                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.40 : 0.08),
+                        blurRadius: 30,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '清空同步历史日志',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: theme.textPrimary,
-                            letterSpacing: -0.2,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 头部图标与标题
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.delete_sweep_rounded,
+                              size: 22,
+                              color: Color(0xFFEF4444),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '仅清理本地诊断快照，不影响学习数据',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // 好处与影响解释卡片
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: theme.subtleBg.withValues(alpha: isDark ? 0.35 : 0.45),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: theme.cardBorder, width: 0.6),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 好处说明
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2),
-                          child: Icon(Icons.check_circle_outline_rounded, size: 15, color: Color(0xFF10B981)),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: TextStyle(fontSize: 12.5, height: 1.45, color: theme.textSecondary),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                TextSpan(
-                                  text: '有哪些好处？\n',
-                                  style: TextStyle(fontWeight: FontWeight.w600, color: theme.textPrimary),
+                                Text(
+                                  '清空同步历史日志',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                    color: theme.textPrimary,
+                                    letterSpacing: -0.2,
+                                  ),
                                 ),
-                                const TextSpan(
-                                  text: '释放本地数据库存储，清空历史堆积的同步记录与报错缓存，让诊断列表保持整洁。',
+                                const SizedBox(height: 2),
+                                Text(
+                                  '仅清理本地诊断快照，不影响学习数据',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.textMuted,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Divider(
-                        height: 1,
-                        thickness: 0.5,
-                        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                        ],
                       ),
-                    ),
-                    // 影响说明（坏作用）
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Icon(Icons.info_outline_rounded, size: 15, color: theme.primaryColor),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: TextStyle(fontSize: 12.5, height: 1.45, color: theme.textSecondary),
-                              children: [
-                                TextSpan(
-                                  text: '是否有坏影响？\n',
-                                  style: TextStyle(fontWeight: FontWeight.w600, color: theme.textPrimary),
-                                ),
-                                TextSpan(
-                                  text: '绝不影响任何词汇、打卡与学习进度',
-                                  style: TextStyle(fontWeight: FontWeight.w600, color: theme.primaryColor),
-                                ),
-                                const TextSpan(
-                                  text: '，后续云同步依然正常进行。唯一影响是无法再回溯查看过去的单次耗时及历史报错详情。',
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              // 底部按钮栏
-              Row(
-                children: [
-                  // 取消按钮
-                  Expanded(
-                    child: SizedBox(
-                      height: 40,
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.textSecondary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
-                            side: BorderSide(color: theme.cardBorder, width: 0.8),
-                          ),
-                        ),
-                        child: const Text('暂不清理', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // 确认删除按钮（最新美学：薄雾微光底 + 柔和红边框）
-                  Expanded(
-                    child: SizedBox(
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.22 : 0.12),
-                          foregroundColor: const Color(0xFFEF4444),
-                          elevation: 0,
-                          shadowColor: Colors.transparent,
-                          side: BorderSide(
-                            color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.40 : 0.25),
+                      const SizedBox(height: 16),
+                      // 好处与影响解释卡片（内嵌轻雾半透层）
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.white.withValues(alpha: 0.40),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.white.withValues(alpha: 0.70),
                             width: 0.8,
                           ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
                         ),
-                        child: const Text('确认清空', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 好处说明
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 2),
+                                  child: Icon(Icons.check_circle_outline_rounded, size: 15, color: Color(0xFF10B981)),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: TextStyle(fontSize: 12.5, height: 1.45, color: theme.textSecondary),
+                                      children: [
+                                        TextSpan(
+                                          text: '有哪些好处？\n',
+                                          style: TextStyle(fontWeight: FontWeight.w600, color: theme.textPrimary),
+                                        ),
+                                        const TextSpan(
+                                          text: '释放本地数据库存储，清空历史堆积的同步记录与报错缓存，让诊断列表保持整洁。',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Divider(
+                                height: 1,
+                                thickness: 0.5,
+                                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                              ),
+                            ),
+                            // 影响说明（坏作用）
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Icon(Icons.info_outline_rounded, size: 15, color: theme.primaryColor),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: TextStyle(fontSize: 12.5, height: 1.45, color: theme.textSecondary),
+                                      children: [
+                                        TextSpan(
+                                          text: '是否有坏影响？\n',
+                                          style: TextStyle(fontWeight: FontWeight.w600, color: theme.textPrimary),
+                                        ),
+                                        TextSpan(
+                                          text: '绝不影响任何词汇、打卡与学习进度',
+                                          style: TextStyle(fontWeight: FontWeight.w600, color: theme.primaryColor),
+                                        ),
+                                        const TextSpan(
+                                          text: '，后续云同步依然正常进行。唯一影响是无法再回溯查看过去的单次耗时及历史报错详情。',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 18),
+                      // 底部按钮栏
+                      Row(
+                        children: [
+                          // 取消按钮
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: TextButton(
+                                onPressed: () => Navigator.pop(dialogCtx, false),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: theme.textSecondary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(100),
+                                    side: BorderSide(color: theme.cardBorder, width: 0.8),
+                                  ),
+                                ),
+                                child: const Text('暂不清理', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // 确认删除按钮（最新美学：薄雾微光底 + 柔和红边框）
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                onPressed: () => Navigator.pop(dialogCtx, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.22 : 0.12),
+                                  foregroundColor: const Color(0xFFEF4444),
+                                  elevation: 0,
+                                  shadowColor: Colors.transparent,
+                                  side: BorderSide(
+                                    color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.40 : 0.25),
+                                    width: 0.8,
+                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                                ),
+                                child: const Text('确认清空', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
     );
 
     if (confirmed == true) {
