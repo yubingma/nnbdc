@@ -163,7 +163,15 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
           break;
         case AsrState.initialized:
         case AsrState.stopped:
-          statusText = widget.isSentenceStep ? "请说例句中文" : "请说中文释义";
+          if ((widget.score ?? 0) >= 85) {
+            statusText = "释义精准";
+          } else if ((widget.score ?? 0) >= 60) {
+            statusText = "释义达标";
+          } else if ((widget.score ?? 0) > 0) {
+            statusText = "释义可提升";
+          } else {
+            statusText = widget.isSentenceStep ? "请说例句中文" : "请说中文释义";
+          }
           break;
       }
     }

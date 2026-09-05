@@ -160,7 +160,15 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
         break;
       case AsrState.initialized:
       case AsrState.stopped:
-        statusText = widget.isSentenceStep ? "请说例句英文" : "请说单词发音";
+        if ((widget.score ?? 0) >= 85) {
+          statusText = "发音优异";
+        } else if ((widget.score ?? 0) >= 60) {
+          statusText = "发音达标";
+        } else if ((widget.score ?? 0) > 0) {
+          statusText = "发音可提升";
+        } else {
+          statusText = widget.isSentenceStep ? "请说例句英文" : "请说单词发音";
+        }
         break;
     }
 

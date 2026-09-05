@@ -769,7 +769,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               absorbing: !state.buttonsEnabled,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
@@ -791,13 +791,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   onPressed: () => notifier.showWordDetail(state.word!, true, context,
                       fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
                   child: const Text(
                     '不认识',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
                 ),
               ),
@@ -813,7 +813,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               absorbing: !state.buttonsEnabled,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
@@ -831,19 +831,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                     foregroundColor: context.textPrimary,
                     side: BorderSide(
                       color: _cachedIsDarkMode
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : Colors.white.withValues(alpha: 0.90),
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.90),
                       width: 1.1,
                     ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   onPressed: () => notifier.showWordDetail(state.word!, false, context,
                       fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
                   child: const Text(
                     '再学学',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
                 ),
               ),
@@ -851,22 +851,33 @@ extension BdcPageStateUIComponents on BdcPageState {
           ],
           if (state.canLeaveCurrWord) ...[
             const SizedBox(width: 12),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.primaryColor.withValues(alpha: Constants.primaryButtonOpacity),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 11),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                shadowColor: context.primaryColor.withValues(alpha: 0.35),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: context.primaryColor.withValues(alpha: _cachedIsDarkMode ? 0.25 : 0.15),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              onPressed: state.isGettingNextWord
-                  ? null
-                  : () =>
-                      notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
-              child: const Text(
-                '下一词',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.primaryColor.withValues(alpha: Constants.primaryButtonOpacity),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                onPressed: state.isGettingNextWord
+                    ? null
+                    : () =>
+                        notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
+                child: const Text(
+                  '下一词',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                ),
               ),
             ),
           ],
@@ -1534,9 +1545,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                         ? const Color(0xFFFA6E59)
                         : textColor,
                     TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 3.5,
+                      fontFamily: 'Roboto',
+                      fontSize: 27,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: isMatched ? 1.2 : 3.5,
                       color: textColor,
                     ),
                   ),
@@ -1544,8 +1556,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                     TextSpan(
                       text: _buildUnderlines(targetSpell, text.length),
                       style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Roboto',
+                        fontSize: 27,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 3.5,
                         color: isDarkMode
                             ? Colors.white.withValues(alpha: 0.28)
@@ -1775,9 +1788,9 @@ extension BdcPageStateUIComponents on BdcPageState {
 
     // 当前环节阶段名：测评（stepIndex 0）/ 重测（复习轨道测评答错后的加测环节，由 handleWord 计算）/ 巩固（其余后续环节）
     final gwr = state.currentGetWordResult;
-    final String stageText = gwr == null || gwr.stepIndex == 0
-        ? '[测评] '
-        : (state.isRestoreStep ? '[重测] ' : '[巩固] ');
+    final String stagePrefix = (gwr == null || gwr.stepIndex == 0)
+        ? ''
+        : (state.isRestoreStep ? '重测 · ' : '巩固 · ');
 
     if (!state.hasFinishedAnswering || state.fsrsItem == null) {
       if (state.currentGetWordResult != null &&
@@ -1817,7 +1830,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            '$stageText今日测评: $assLabel',
+                            '$stagePrefix今日测评: $assLabel',
                             style: TextStyle(fontSize: 11, color: assColor),
                           ),
                           Padding(
@@ -1858,7 +1871,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 4, vertical: 2),
                                   child: Text(
-                                    '$stageText今日测评: $fallbackLabel',
+                                    '$stagePrefix今日测评: $fallbackLabel',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: hasRating
@@ -1869,7 +1882,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 ),
                               )
                             : Text(
-                                '$stageText今日测评: 测评中',
+                                '$stagePrefix今日测评: 测评中',
                                 style: TextStyle(fontSize: 11, color: textColor),
                               ),
                         Padding(
@@ -1930,7 +1943,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         child: Row(
                           children: [
                             Text(
-                              '$stageText今日测评: $ratingLabel',
+                              '$stagePrefix今日测评: $ratingLabel',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: ratingColor,
@@ -1996,10 +2009,15 @@ extension BdcPageStateUIComponents on BdcPageState {
           },
         );
       }
+      // 非巩固环节（测评环节）未做题：直接返回占位
+      return const SizedBox(height: 24);
+    }
 
-      // 兜底:测评环节(stepIndex 0)或未答完时。
-      // 若已有评分(如点击"看答案"后 lastFsrsRating=again)则显示评分,
-      // 否则显示"测评中"。
+    // 测评环节且已完成做题：展示测评结果
+    // 巩固阶段直接进入或复习无测评记录兜底
+    if (state.fsrsItem == null &&
+        (state.assessmentScheduledDays == null ||
+            state.assessmentScheduledDays! <= 0)) {
       final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
       final bool hasRating = state.lastFsrsRating != null;
       return Container(
@@ -2010,29 +2028,6 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (stageText.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: context.primaryColor.withValues(alpha: isDarkMode ? 0.18 : 0.08),
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(
-                      color: context.primaryColor.withValues(alpha: isDarkMode ? 0.35 : 0.22),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Text(
-                    stageText.replaceAll('[', '').replaceAll(']', ''),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: context.primaryColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-              ],
-              // 有评分时才可点击弹"修改今日评分"对话框;测评中不可点击
               hasRating
                   ? InkWell(
                       onTap: _showRatingModifyDialog,
@@ -2041,7 +2036,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         padding:
                             const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         child: Text(
-                          '今日测评: $fallbackLabel',
+                          '$stagePrefix今日测评: $fallbackLabel',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
@@ -2053,7 +2048,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       )
                     )
                   : Text(
-                      '今日测评: 测评中',
+                      '$stagePrefix今日测评: 测评中',
                       style: TextStyle(fontSize: 11.5, color: textColor),
                     ),
               Padding(
@@ -2105,35 +2100,13 @@ extension BdcPageStateUIComponents on BdcPageState {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (stageText.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
-                decoration: BoxDecoration(
-                  color: context.primaryColor.withValues(alpha: isDarkMode ? 0.18 : 0.08),
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: context.primaryColor.withValues(alpha: isDarkMode ? 0.35 : 0.22),
-                    width: 0.8,
-                  ),
-                ),
-                child: Text(
-                  stageText.replaceAll('[', '').replaceAll(']', ''),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: context.primaryColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-            ],
             InkWell(
               onTap: _showRatingModifyDialog,
               borderRadius: BorderRadius.circular(4),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Text(
-                  '今日测评: $ratingLabel',
+                  '$stagePrefix今日测评: $ratingLabel',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
@@ -2720,32 +2693,32 @@ extension BdcPageStateUIComponents on BdcPageState {
 
     // 自适应字阶与排版参数
     final count = displayItems.length;
-    int maxCixingLen = 0;
-    for (final item in displayItems) {
-      final len = (item.ciXing ?? '').trim().length;
-      if (len > maxCixingLen) maxCixingLen = len;
-    }
 
     final double meaningFontSize;
     final double cixingFontSize;
     final double itemVerticalGap;
-    final double cixingColumnWidth;
 
     if (count <= 1) {
       meaningFontSize = 26.0;
       cixingFontSize = 17.0;
       itemVerticalGap = 6.0;
-      cixingColumnWidth = 0.0;
     } else if (count == 2) {
       meaningFontSize = 20.0;
       cixingFontSize = 14.5;
       itemVerticalGap = 6.0;
-      cixingColumnWidth = maxCixingLen <= 2 ? 17.0 : (maxCixingLen == 3 ? 23.0 : 29.0);
     } else {
       meaningFontSize = 17.0;
       cixingFontSize = 13.0;
       itemVerticalGap = 5.0;
-      cixingColumnWidth = maxCixingLen <= 2 ? 15.0 : (maxCixingLen == 3 ? 20.5 : 26.0);
+    }
+
+    String cleanMeaning(String? raw) {
+      if (raw == null) return '';
+      var text = notifier.hideParenthesesContent(raw).trim();
+      while (text.endsWith(';') || text.endsWith('；') || text.endsWith(',') || text.endsWith('，') || text.endsWith('。')) {
+        text = text.substring(0, text.length - 1).trim();
+      }
+      return text;
     }
 
     return Padding(
@@ -2764,21 +2737,24 @@ extension BdcPageStateUIComponents on BdcPageState {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    if ((item.ciXing ?? '').isNotEmpty) ...[
+                    if ((item.ciXing ?? '').trim().isNotEmpty) ...[
                       Text(
-                        item.ciXing!,
+                        (item.ciXing ?? '').trim(),
+                        maxLines: 1,
+                        softWrap: false,
                         style: TextStyle(
                           color: context.primaryColor,
                           fontSize: cixingFontSize,
                           fontWeight: FontWeight.w700,
                           fontFamily: 'Roboto',
+                          letterSpacing: 0.2,
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                     ],
                     Flexible(
                       child: Text(
-                        notifier.hideParenthesesContent(item.meaning ?? ''),
+                        cleanMeaning(item.meaning),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: meaningFontSize,
@@ -2793,50 +2769,54 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
               )
           else
-            // 多项时：整组居中，组内词性垂直对齐成列，消除横向犬牙交错
+            // 多项时：整组居中，使用 Table 原生弹性列自动匹配最宽词性，天然垂直对齐成列，彻底根除换行与魔数宽度
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+              child: Table(
+                defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                columnWidths: const {
+                  0: IntrinsicColumnWidth(),
+                  1: FlexColumnWidth(),
+                },
                 children: [
                   for (final item in displayItems)
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          if ((item.ciXing ?? '').isNotEmpty) ...[
-                            SizedBox(
-                              width: cixingColumnWidth,
-                              child: Text(
-                                item.ciXing!,
-                                style: TextStyle(
-                                  color: context.primaryColor,
-                                  fontSize: cixingFontSize,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'Roboto',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                          ],
-                          Expanded(
-                            child: Text(
-                              notifier.hideParenthesesContent(item.meaning ?? ''),
-                              textAlign: TextAlign.start,
-                              style: TextStyle(
-                                fontSize: meaningFontSize,
-                                fontWeight: FontWeight.w600,
-                                color: context.textPrimary,
-                                height: 1.4,
-                                letterSpacing: -0.2,
-                              ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(
+                            right: 8,
+                            top: itemVerticalGap,
+                            bottom: itemVerticalGap,
+                          ),
+                          child: Text(
+                            (item.ciXing ?? '').trim(),
+                            maxLines: 1,
+                            softWrap: false,
+                            style: TextStyle(
+                              color: context.primaryColor,
+                              fontSize: cixingFontSize,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Roboto',
+                              letterSpacing: 0.2,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
+                          child: Text(
+                            cleanMeaning(item.meaning),
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                              fontSize: meaningFontSize,
+                              fontWeight: FontWeight.w600,
+                              color: context.textPrimary,
+                              height: 1.4,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                 ],
               ),
