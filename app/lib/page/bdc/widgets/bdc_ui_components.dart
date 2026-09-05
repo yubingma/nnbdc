@@ -2329,35 +2329,39 @@ extension BdcPageStateUIComponents on BdcPageState {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _cachedIsDarkMode
-            ? Colors.white.withValues(alpha: 0.03)
-            : const Color(0xFFF8FAFF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 左侧极简播放前缀按钮
-          buildSentenceSoundButton(state),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 3), // 微调使文本与左侧图标对齐
-              child: Util.makeEnglishSpanText(
-                  state.word!.sentences![0].english!,
-                  state.word!.spell,
-                  true,
-                  context,
-                  false,
-                  null,
-                  true,
-                  FontWeight.w300),
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () {
+        if (state.englishDigestOfFirstSentence != null) {
+          notifier.playWithAnimation(
+              () => StudyAudioSessionController.instance.playSentenceSound(
+                  state.englishDigestOfFirstSentence!),
+              'sentence');
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Util.makeEnglishSpanText(
+                    state.word!.sentences![0].english!,
+                    state.word!.spell,
+                    true,
+                    context,
+                    false,
+                    null,
+                    true,
+                    FontWeight.w400),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            buildSentenceSoundButton(state),
+          ],
+        ),
       ),
     );
   }
@@ -2628,42 +2632,29 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
           if (state.word?.sentences != null &&
               state.word!.sentences!.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _cachedIsDarkMode
-                      ? Colors.white.withValues(alpha: 0.04)
-                      : Colors.white.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _cachedIsDarkMode
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.white.withValues(alpha: 0.85),
-                    width: 0.8,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.15 : 0.025),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
+            const SizedBox(height: 12),
+            InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                if (state.englishDigestOfFirstSentence != null) {
+                  notifier.playWithAnimation(
+                      () => StudyAudioSessionController.instance.playSentenceSound(
+                          state.englishDigestOfFirstSentence!),
+                      'sentence');
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 左侧极简播放前缀按钮
-                    buildSentenceSoundButton(state),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 英文例句（顶格起排，重点单词高亮）
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 1),
                             child: Util.makeEnglishSpanText(
                                 state.word!.sentences![0].english!,
                                 state.word!.spell,
@@ -2674,55 +2665,58 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 true,
                                 FontWeight.w400),
                           ),
-                          if (!state.showSentenceTranslation)
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: InkWell(
-                                onTap: () {
-                                  updateUI(() {
-                                    notifier.updateShowSentenceTranslation(true);
-                                  }, tag: 'sentence-trans');
-                                },
-                                borderRadius: BorderRadius.circular(4),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 6, left: 6, bottom: 2),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        '显示翻译',
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        size: 13.5,
-                                        color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                      ),
-                                    ],
+                        ),
+                        const SizedBox(width: 8),
+                        // 极简现代声波发音图标（置于右侧，极大方便右手单手大拇指触达）
+                        buildSentenceSoundButton(state),
+                      ],
+                    ),
+                    if (!state.showSentenceTranslation)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: InkWell(
+                          onTap: () {
+                            updateUI(() {
+                              notifier.updateShowSentenceTranslation(true);
+                            }, tag: 'sentence-trans');
+                          },
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 6, left: 6, bottom: 2),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '显示翻译',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ),
-                            )
-                          else
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6.0),
-                              child: Util.makeChineseSpanText(
-                                state.word!.sentences![0].chinese ?? '',
-                                context,
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  color: secondaryTextColor,
+                                const SizedBox(width: 2),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 13.5,
+                                  color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                 ),
-                              ),
+                              ],
                             ),
-                        ],
+                          ),
+                        ),
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6.0),
+                        child: Util.makeChineseSpanText(
+                          state.word!.sentences![0].chinese ?? '',
+                          context,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: secondaryTextColor,
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -3008,7 +3002,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         Material(
           color: Colors.transparent,
           child: InkResponse(
-            radius: 16,
+            radius: 18,
             highlightShape: BoxShape.circle,
             onTap: () {
               if (!wordPlaying) {
@@ -3018,18 +3012,11 @@ extension BdcPageStateUIComponents on BdcPageState {
               }
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: AnimatedBuilder(
-                animation: _wordSoundController,
-                builder: (context, child) {
-                  return Icon(
-                    wordPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-                    size: 17,
-                    color: wordPlaying
-                        ? context.primaryColor
-                        : context.textSecondary.withValues(alpha: 0.65),
-                  );
-                },
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+              child: _buildModernSoundWaveIcon(
+                isPlaying: wordPlaying,
+                animationController: _wordSoundController,
+                size: 18.5,
               ),
             ),
           ),
@@ -3065,7 +3052,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     return Material(
       color: Colors.transparent,
       child: InkResponse(
-        radius: 16,
+        radius: 18,
         highlightShape: BoxShape.circle,
         onTap: () {
           if (!sentencePlaying &&
@@ -3077,21 +3064,155 @@ extension BdcPageStateUIComponents on BdcPageState {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.only(top: 2, right: 2),
-          child: AnimatedBuilder(
-            animation: _sentenceSoundController,
-            builder: (context, child) {
-              return Icon(
-                sentencePlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-                size: 17.5,
-                color: sentencePlaying
-                    ? context.primaryColor
-                    : context.textSecondary.withValues(alpha: 0.65),
-              );
-            },
+          padding: const EdgeInsets.all(4.0),
+          child: _buildModernSoundWaveIcon(
+            isPlaying: sentencePlaying,
+            animationController: _sentenceSoundController,
+            size: 19.0,
           ),
         ),
       ),
     );
+  }
+
+  /// 绘制现代极简声波喇叭图标（支持发音动态波纹呼吸与精致圆润造型）
+  Widget _buildModernSoundWaveIcon({
+    required bool isPlaying,
+    required AnimationController animationController,
+    double size = 18.0,
+  }) {
+    final normalColor = _cachedIsDarkMode
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+    final activeColor = context.primaryColor;
+
+    return AnimatedBuilder(
+      animation: animationController,
+      builder: (context, child) {
+        return CustomPaint(
+          size: Size(size, size),
+          painter: ModernSoundWavePainter(
+            color: isPlaying ? activeColor : normalColor,
+            isPlaying: isPlaying,
+            animationValue: animationController.value,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 现代声波发音图标绘制器：
+/// 造型采用 Apple SF Symbols / 高端词典风格的微圆角 Solid Cone 喇叭，并带双重同心弧形声波
+class ModernSoundWavePainter extends CustomPainter {
+  final Color color;
+  final bool isPlaying;
+  final double animationValue;
+
+  ModernSoundWavePainter({
+    required this.color,
+    required this.isPlaying,
+    required this.animationValue,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // 1. 绘制喇叭主体（Solid Cone with Smooth Rounded Corners）
+    final paintFill = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final conePath = Path();
+    final baseLeft = w * 0.08;
+    final baseRight = w * 0.26;
+    final baseTop = h * 0.35;
+    final baseBottom = h * 0.65;
+
+    final coneRight = w * 0.46;
+    final coneTop = h * 0.18;
+    final coneBottom = h * 0.82;
+
+    conePath.moveTo(baseLeft + 1.2, baseTop);
+    conePath.lineTo(baseRight, baseTop);
+    conePath.lineTo(coneRight - 1.2, coneTop);
+    conePath.arcToPoint(
+      Offset(coneRight, coneTop + 1.6),
+      radius: const Radius.circular(1.6),
+    );
+    conePath.lineTo(coneRight, coneBottom - 1.6);
+    conePath.arcToPoint(
+      Offset(coneRight - 1.2, coneBottom),
+      radius: const Radius.circular(1.6),
+    );
+    conePath.lineTo(baseRight, baseBottom);
+    conePath.lineTo(baseLeft + 1.2, baseBottom);
+    conePath.arcToPoint(
+      Offset(baseLeft, baseBottom - 1.2),
+      radius: const Radius.circular(1.2),
+    );
+    conePath.lineTo(baseLeft, baseTop + 1.2);
+    conePath.arcToPoint(
+      Offset(baseLeft + 1.2, baseTop),
+      radius: const Radius.circular(1.2),
+    );
+    conePath.close();
+
+    canvas.drawPath(conePath, paintFill);
+
+    // 2. 绘制右侧两条精巧的弧形声波（Sound Waves）
+    final waveCenter = Offset(w * 0.35, h * 0.50);
+    const sweepAngle = 76 * (pi / 180);
+    const startAngle = -38 * (pi / 180);
+
+    double wave1Opacity = 0.90;
+    double wave2Opacity = 0.50;
+
+    if (isPlaying) {
+      final t = animationValue;
+      wave1Opacity = (0.30 + 0.70 * (0.5 + 0.5 * sin(t * pi * 2))).clamp(0.0, 1.0);
+      wave2Opacity = (0.20 + 0.80 * (0.5 + 0.5 * sin((t - 0.25) * pi * 2))).clamp(0.0, 1.0);
+    }
+
+    final strokeW = (w * 0.095).clamp(1.4, 2.2);
+
+    final wavePaint1 = Paint()
+      ..color = color.withValues(alpha: wave1Opacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeW
+      ..strokeCap = StrokeCap.round;
+
+    final wave1Radius = w * 0.29;
+    canvas.drawArc(
+      Rect.fromCircle(center: waveCenter, radius: wave1Radius),
+      startAngle,
+      sweepAngle,
+      false,
+      wavePaint1,
+    );
+
+    final wavePaint2 = Paint()
+      ..color = color.withValues(alpha: wave2Opacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeW
+      ..strokeCap = StrokeCap.round;
+
+    final wave2Radius = w * 0.49;
+    canvas.drawArc(
+      Rect.fromCircle(center: waveCenter, radius: wave2Radius),
+      startAngle,
+      sweepAngle,
+      false,
+      wavePaint2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant ModernSoundWavePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.isPlaying != isPlaying ||
+        oldDelegate.animationValue != animationValue;
   }
 }
