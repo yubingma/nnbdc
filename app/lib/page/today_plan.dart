@@ -616,53 +616,50 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final isStarted = user?.todayStudyStarted == true;
 
     final textPrimary = themeConfig.textPrimary;
-    final textSecondary = themeConfig.textSecondary;
     final textMuted = themeConfig.textMuted;
     final cardBg = themeConfig.cardBg;
     final cardBorder = themeConfig.cardBorder;
     final cardShadows = themeConfig.cardShadows;
-    final dividerColor = themeStyle.isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.055);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+      padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(28),
-        border: cardBorder == Colors.transparent ? null : Border.all(color: cardBorder, width: 1),
+        border: cardBorder == Colors.transparent ? null : Border.all(color: cardBorder, width: 0.8),
         boxShadow: cardShadows,
       ),
       child: Column(
         children: [
-          // 今日目标超大数字（点击整个数字或胶囊均可修改词数）
+          // 今日目标超大数字（Roboto 齐线挺拔数字 + 自然基线伴随轻量单位，告别发闷灰药丸）
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: isStarted
                 ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
                 : () => _showWordsSelectionBottomSheet(),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     '${user?.effectiveWordsPerDay ?? 0}',
                     style: TextStyle(
                       color: textPrimary,
                       fontSize: 54,
-                      fontWeight: FontWeight.w900,
-                      fontFamilyFallback: const ['.SF Pro Display', 'SF Pro Display', 'Helvetica Neue', 'Roboto', 'PingFang SC', 'sans-serif'],
-                      letterSpacing: -1.5,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Roboto',
+                      letterSpacing: -2.0,
                       height: 1.0,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.035),
+                      color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.16 : 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -671,24 +668,23 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         Text(
                           '词',
                           style: TextStyle(
-                            color: textSecondary,
-                            fontSize: 11,
+                            color: themeConfig.primaryColor,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
                           ),
                         ),
                         if (!isStarted) ...[
-                          const SizedBox(width: 1),
+                          const SizedBox(width: 2),
                           Icon(
-                            Icons.arrow_drop_down_rounded,
-                            size: 14,
-                            color: textSecondary.withValues(alpha: 0.7),
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 15,
+                            color: themeConfig.primaryColor.withValues(alpha: 0.8),
                           ),
                         ] else ...[
                           const SizedBox(width: 3),
                           Icon(
                             Icons.lock_outline_rounded,
-                            size: 10,
+                            size: 11,
                             color: textMuted,
                           ),
                         ],
@@ -700,23 +696,23 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // 极细进度条（260px 宽度，4px 高度）
+          // 优雅极细胶囊进度条（240px 宽度，3.5px 高度）
           SizedBox(
-            width: 260,
+            width: 240,
             child: Column(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(100),
                   child: LinearProgressIndicator(
                     value: progress.clamp(0.0, 1.0),
-                    minHeight: 4,
-                    backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.055),
+                    minHeight: 3.5,
+                    backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
                     valueColor: AlwaysStoppedAnimation<Color>(themeConfig.primaryColor),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 7),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -724,15 +720,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       '今日进度 $_completedStepCount / $_totalStepCount 步',
                       style: TextStyle(
                         color: textMuted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     Text(
                       '${(progress * 100).toInt()}%',
                       style: TextStyle(
                         color: textMuted,
-                        fontSize: 11,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'Roboto',
                       ),
@@ -743,27 +739,25 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // 双列对称纯色数据（新词 | 复习，带微色谱提示点）
+          // 双列对称纯粹排版数据（新词 | 复习，呼吸感留白，告别多余线条切割）
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: dividerColor),
-                bottom: BorderSide(color: dividerColor),
-              ),
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
               children: [
-                _buildStatItem('新词', newWordCount ?? 0, const Color(0xFF0EA5E9)),
-                Container(width: 0.5, height: 20, color: dividerColor),
-                _buildStatItem('复习', oldWordCount ?? 0, const Color(0xFF0D9488)),
+                _buildStatItem('新词', newWordCount ?? 0, const Color(0xFF0284C7)),
+                Container(
+                  width: 0.8,
+                  height: 24,
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                ),
+                _buildStatItem('复习', oldWordCount ?? 0, const Color(0xFF10B981)),
               ],
             ),
           ),
 
-          // 任务量不足提示
+          // 任务量未满提示条：温润微光条（告别刺眼屎黄/暗褐警告框，契合主视觉温和提醒）
           if (prepareResult != null &&
               prepareResult!.success &&
               (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
@@ -776,57 +770,54 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   onTap: () => loadData(forceSupplement: true),
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
                     decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF2E1A05) : const Color(0xFFFFFBEB),
+                      color: themeConfig.warmAccentColor.withValues(alpha: isDarkMode ? 0.16 : 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isDarkMode ? const Color(0x6678350F) : const Color(0x80FDE68A),
-                        width: 0.8,
+                        color: themeConfig.warmAccentColor.withValues(alpha: isDarkMode ? 0.28 : 0.18),
+                        width: 0.6,
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 15),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: themeConfig.warmAccentColor,
+                          size: 15,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '任务量未满，可补充',
+                            '词库可用词量未满，可点击补充',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
+                              color: isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor,
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD97706).withValues(alpha: isDarkMode ? 0.25 : 0.12),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '补充',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
-                                ),
+                        const SizedBox(width: 6),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '补充',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: themeConfig.warmAccentColor,
                               ),
-                              const SizedBox(width: 2),
-                              Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 9,
-                                color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
-                              ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 9.5,
+                              color: themeConfig.warmAccentColor,
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -835,9 +826,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               ),
             ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
-          // 主操作按钮（50px 高度扇贝绿大胶囊）
+          // 主操作按钮（52px 高度饱满水润主按钮）
           (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
               ? renderErrorActions()
               : renderStartButton(),
@@ -870,27 +861,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               '$count',
               style: TextStyle(
                 color: textPrimary,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
                 fontFamily: 'Roboto',
                 letterSpacing: -0.5,
-                height: 1.1,
+                height: 1.15,
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (dotColor != null) ...[
                   Container(
-                    width: 5,
-                    height: 5,
+                    width: 5.5,
+                    height: 5.5,
                     decoration: BoxDecoration(
-                      color: dotColor,
+                      color: dotColor.withValues(alpha: 0.85),
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 5),
                 ],
                 Text(
                   label,
@@ -1453,14 +1444,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           children: [
             Text(
               user?.todayStudyStarted == true ? '继续学习' : '开始学习',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
+                color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
               ),
             ),
             const SizedBox(width: 6),
-            const Text('➔', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Icon(
+              Icons.arrow_forward_rounded,
+              size: 18,
+              color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+            ),
           ],
         ),
       ),
