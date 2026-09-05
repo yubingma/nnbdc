@@ -594,9 +594,45 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         state.studyStep == StudyStep.ch2En.json) &&
                                     _tabController != null &&
                                     _tabController!.length > 1) ...[
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: _buildModeSwitchButton(),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      if (state.tabIndex == 0)
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.record_voice_over_outlined,
+                                              size: 13.5,
+                                              color: _cachedIsDarkMode
+                                                  ? const Color(0xFF94A3B8)
+                                                  : const Color(0xFF5A716E),
+                                            ),
+                                            const SizedBox(width: 4.5),
+                                            Text(
+                                              state.studyStep == StudyStep.en2Ch.json
+                                                  ? '请说出中文释义：'
+                                                  : '请说出单词发音：',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: _cachedIsDarkMode
+                                                    ? const Color(0xFFCBD5E1)
+                                                    : const Color(0xFF475569),
+                                                letterSpacing: -0.1,
+                                              ),
+                                            ),
+                                            if (state.isAiEvaluating) ...[
+                                              const SizedBox(width: 6),
+                                              _buildAiJudgingBadge(_cachedIsDarkMode),
+                                            ],
+                                          ],
+                                        )
+                                      else
+                                        const SizedBox.shrink(),
+                                      _buildModeSwitchButton(),
+                                    ],
                                   ),
                                   const SizedBox(height: 4),
                                 ],
@@ -1419,61 +1455,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.record_voice_over_outlined,
-                                  size: 15,
-                                  color: _cachedIsDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '请说出中文释义：',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: _cachedIsDarkMode
-                                        ? const Color(0xFFD1D5DB)
-                                        : const Color(0xFF4B5563),
-                                  ),
-                                ),
-                                if (state.isAiEvaluating) ...[
-                                  const SizedBox(width: 8),
-                                  _buildAiJudgingBadge(_cachedIsDarkMode),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 10),
                             ...renderAsrMeaningItems(state.wordWrapper!,
                                 isDarkMode: context.read<DarkMode>().isDarkMode),
                           ],
                         );
                       } else {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.record_voice_over_outlined,
-                                  size: 15,
-                                  color: _cachedIsDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '请说出单词发音：',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: _cachedIsDarkMode
-                                        ? const Color(0xFFD1D5DB)
-                                        : const Color(0xFF4B5563),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
+                        return const SizedBox.shrink();
                       }
                     }(),
                   ),
