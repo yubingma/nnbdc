@@ -1190,25 +1190,22 @@ class MePageState extends State<MePage> implements RefreshableTab {
                               const Icon(Icons.verified, color: Color(0xFF2196F3), size: 16),
                             ],
                             const Spacer(),
-                            // 右上角浮动等级胶囊
+                            // 右上角等级标签（纯净轻量行内展示）
                             GestureDetector(
+                              behavior: HitTestBehavior.opaque,
                               onTap: () {
                                 Navigator.of(context).push(MaterialPageRoute(
                                     builder: (context) => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1)));
                               },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.15 : 0.08),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     if (studyProgress!.level.figure != null && studyProgress!.level.figure!.isNotEmpty) ...[
                                       Text(
                                         studyProgress!.level.figure!,
-                                        style: const TextStyle(fontSize: 12),
+                                        style: const TextStyle(fontSize: 13),
                                       ),
                                       const SizedBox(width: 3),
                                     ],
@@ -1216,12 +1213,12 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                       studyProgress!.level.name ?? 'Lv.1',
                                       style: TextStyle(
                                         color: accentColor,
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     const SizedBox(width: 2),
-                                    Icon(Icons.arrow_forward_ios_rounded, size: 9, color: accentColor.withValues(alpha: 0.6)),
+                                    Icon(Icons.arrow_forward_ios_rounded, size: 9.5, color: accentColor.withValues(alpha: 0.7)),
                                   ],
                                 ),
                               ),
@@ -1246,57 +1243,47 @@ class MePageState extends State<MePage> implements RefreshableTab {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
-              // 1.2 左右双列横向高光展台 (荣耀勋章墙 + 复习分布图)
+              // 1.2 左右双列横向高光展台 (纯净底色 + 发丝分隔，彻底去色块)
               Row(
                 children: [
                   // 左：荣耀勋章墙
                   Expanded(
                     child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const BadgeWallPage())),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: subtleBgColor,
-                          border: borderColor == Colors.transparent
-                              ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.06), width: 0.5) : null)
-                              : Border.all(color: borderColor, width: 0.5),
-                        ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                         child: Row(
                           children: [
-                            Icon(Icons.emoji_events_rounded, color: accentColor, size: 22),
-                            const SizedBox(width: 8),
+                            Icon(Icons.emoji_events_rounded, color: accentColor, size: 24),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      '荣耀勋章墙',
-                                      style: TextStyle(
-                                        color: textColor,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  Text(
+                                    '荣耀勋章墙',
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w600,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 1.5),
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      '点亮成就图鉴',
-                                      style: TextStyle(
-                                        color: subtitleColor,
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w400,
-                                      ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '点亮成就图鉴',
+                                    style: TextStyle(
+                                      color: subtitleColor,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w400,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
@@ -1307,53 +1294,48 @@ class MePageState extends State<MePage> implements RefreshableTab {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  Container(
+                    height: 26,
+                    width: 0.6,
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                  ),
                   // 右：复习分布图
                   Expanded(
                     child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ReviewDistributionPage())),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: subtleBgColor,
-                          border: borderColor == Colors.transparent
-                              ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.06), width: 0.5) : null)
-                              : Border.all(color: borderColor, width: 0.5),
-                        ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                         child: Row(
                           children: [
-                            Icon(Icons.bar_chart_rounded, color: accentColor, size: 22),
-                            const SizedBox(width: 8),
+                            Icon(Icons.bar_chart_rounded, color: accentColor, size: 24),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      '复习分布图',
-                                      style: TextStyle(
-                                        color: textColor,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  Text(
+                                    '复习分布图',
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w600,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 1.5),
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      '艾宾浩斯记忆云图',
-                                      style: TextStyle(
-                                        color: subtitleColor,
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w400,
-                                      ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '艾宾浩斯记忆云图',
+                                    style: TextStyle(
+                                      color: subtitleColor,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w400,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
@@ -1368,8 +1350,14 @@ class MePageState extends State<MePage> implements RefreshableTab {
               ),
 
               const SizedBox(height: 12),
+              Divider(
+                height: 1,
+                thickness: 0.5,
+                color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+              ),
+              const SizedBox(height: 10),
 
-              // 1.3 VIP / 账户类型状态条 (根据真实账户信息动态展示)
+              // 1.3 VIP / 账户类型状态条 (纯净底色平铺)
               Builder(builder: (context) {
                 final accountInfo = _getUserAccountTypeInfo();
                 final isPremium = accountInfo['isPremium'] as bool;
@@ -1382,18 +1370,12 @@ class MePageState extends State<MePage> implements RefreshableTab {
                     : '账户类型：$accountType';
 
                 return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     _showPrivilegesDialog(context, accountInfo);
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7.5),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.12 : 0.06),
-                      border: isDarkModeEnabled
-                          ? Border.all(color: accentColor.withValues(alpha: 0.20), width: 0.8)
-                          : null,
-                    ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
                     child: Row(
                       children: [
                         Container(
@@ -1417,9 +1399,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
                           child: Text(
                             displayText,
                             style: TextStyle(
-                              color: textColor,
+                              color: textColor.withValues(alpha: 0.85),
                               fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w400,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
