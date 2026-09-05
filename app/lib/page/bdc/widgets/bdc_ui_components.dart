@@ -1182,9 +1182,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                 style: TextStyle(
                   fontFamily: 'Roboto',
                   fontSize: (fontSize - 2.5).clamp(11.0, 13.0),
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                   color: _cachedIsDarkMode
-                      ? Colors.white54
+                      ? const Color(0xFF94A3B8)
                       : const Color(0xFF64748B),
                   letterSpacing: 0.2,
                 ),

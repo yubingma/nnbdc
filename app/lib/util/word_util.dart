@@ -335,11 +335,13 @@ List<Widget> renderAsrMeaningItems(WordWrapper word,
             child: Text(
               meaningItem.ciXing!,
               style: TextStyle(
-                fontSize: 14,
+                fontFamily: 'Roboto',
+                fontSize: 13,
                 color: isDarkMode
-                    ? const Color(0xFFD1D5DB)
-                    : const Color(0xFF374151), // 与标准释义颜色一致
-                fontWeight: FontWeight.w400, // 从 w600 改为 w400
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.2,
               ),
             ),
           ),
