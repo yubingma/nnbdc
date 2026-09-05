@@ -2897,103 +2897,137 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 顶部标题行（含右上角关闭按钮）
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: Icon(Icons.help_outline_rounded, size: 17, color: primaryColor),
+                      Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.help_outline_rounded, size: 18, color: primaryColor),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '今日最少新词规则说明',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '今日最少新词规则说明',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Navigator.pop(ctx),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: isDarkMode ? Colors.white60 : Colors.black54,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-
-                  // 作用说明卡片
-                  Container(
-                    padding: const EdgeInsets.all(11),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF059669).withValues(alpha: isDarkMode ? 0.12 : 0.07),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF059669).withValues(alpha: isDarkMode ? 0.25 : 0.18),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.check_circle_outline_rounded, size: 14, color: Color(0xFF059669)),
-                            SizedBox(width: 4),
-                            Text(
-                              '设置作用',
-                              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '系统默认根据记忆遗忘曲线优先安排复习。当待复习词较多时，今日配额可能全部被复习词占满。设置此项后，系统每天会强制保留至少指定数量的新词，保障背词进度稳步向前。',
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1.45,
-                            color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // 负面效果说明卡片
-                  Container(
-                    padding: const EdgeInsets.all(11),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.12 : 0.07),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.25 : 0.18),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFDC2626)),
-                            SizedBox(width: 4),
-                            Text(
-                              '潜在负面效果',
-                              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '每日总词量是固定的，强行增加新词会挤占当天本该复习的单词名额。被挤占的复习词会被延期推迟，若长期新词比例过高，会导致前置单词复习不及时、遗忘率上升，并造成复习负荷滚雪球式积压。',
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1.45,
-                            color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 16),
+
+                  // 设置作用区块（轻量通透排版，无多余边框容器）
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF059669).withValues(alpha: isDarkMode ? 0.18 : 0.10),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF059669)),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  '设置作用',
+                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '系统默认根据记忆遗忘曲线优先安排复习。当待复习词较多时，今日配额可能全部被复习词占满。设置此项后，系统每天会强制保留至少指定数量的新词，保障背词进度稳步向前。',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.5,
+                          color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Container(
+                      height: 0.5,
+                      color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                    ),
+                  ),
+
+                  // 潜在负面效果区块
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.18 : 0.10),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.warning_rounded, size: 12, color: Color(0xFFDC2626)),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  '潜在负面效果',
+                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '每日总词量是固定的，强行增加新词会挤占当天本该复习的单词名额。被挤占的复习词会被延期推迟，若长期新词比例过高，会导致前置单词复习不及时、遗忘率上升，并造成复习负荷滚雪球式积压。',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.5,
+                          color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
 
                   // 确认按钮
                   SizedBox(
@@ -3015,6 +3049,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
+                            height: 1.1,
                             color: Colors.white,
                           ),
                         ),
