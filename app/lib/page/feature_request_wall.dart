@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
@@ -517,25 +518,28 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
           const SizedBox(width: 4),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
+          preferredSize: const Size.fromHeight(50),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Container(
-              height: 38,
-              padding: const EdgeInsets.all(3),
+              height: 40,
+              padding: const EdgeInsets.all(3.5),
               decoration: BoxDecoration(
-                color: theme.subtleBg.withValues(alpha: isDark ? 0.45 : 0.65),
+                color: isDark ? const Color(0x401C222A) : const Color(0x8CFFFFFF), // 温润晨雾白微底，杜绝深蓝大底座
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: theme.cardBorder, width: 0.8),
+                border: Border.all(
+                  color: isDark ? const Color(0x2BFFFFFF) : const Color(0xB3FFFFFF),
+                  width: 0.8,
+                ),
               ),
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                  color: isDark ? const Color(0xFF2E3440) : Colors.white,
+                  color: isDark ? const Color(0xFF2C323C) : Colors.white,
                   borderRadius: BorderRadius.circular(100),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
                       blurRadius: 6,
                       offset: const Offset(0, 1.5),
                     ),
@@ -545,7 +549,8 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                 dividerColor: Colors.transparent,
                 labelColor: theme.primaryColor,
                 labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                unselectedLabelColor: theme.textMuted,
+                // 高对比度未选中字色，彻底解决字迹发暗看不清问题
+                unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                 unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                 tabs: const [
                   Tab(text: '投票中'),
@@ -558,34 +563,68 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
           ),
         ),
       ),
+      // 现代化纯正毛玻璃（Frosted Glass）微光悬浮胶囊：通透磨砂 + 朦胧墨水色块晕染
       floatingActionButton: Container(
         height: 44,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
           boxShadow: [
             BoxShadow(
-              color: theme.primaryColor.withValues(alpha: isDark ? 0.40 : 0.28),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+              blurRadius: 22,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: theme.primaryColor.withValues(alpha: isDark ? 0.22 : 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: FloatingActionButton.extended(
-          onPressed: _showCreateDialog,
-          backgroundColor: theme.primaryColor,
-          elevation: 0,
-          focusElevation: 0,
-          hoverElevation: 0,
-          highlightElevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-          label: const Text(
-            '提需求',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(100),
+          child: BackdropFilter(
+            // 黄金参数 sigma=7，精准抹去底层锐利轮廓，形成高级温润的朦胧磨砂晕染
+            filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _showCreateDialog,
+                borderRadius: BorderRadius.circular(100),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  decoration: BoxDecoration(
+                    // 严格遵循规范：浅色使用 45% 凝润通透乳白磨砂，杜绝 90%+ 实心白
+                    color: isDark
+                        ? const Color(0xB81C2127) // 72% 曜石深灰磨砂
+                        : const Color(0x73FFFFFF), // 45% 凝润乳白通透磨砂
+                    borderRadius: BorderRadius.circular(100),
+                    // 晶莹高光切边与微主题色光相辉映
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0x33FFFFFF)
+                          : const Color(0xB3FFFFFF),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add_rounded, color: theme.primaryColor, size: 19),
+                      const SizedBox(width: 5),
+                      Text(
+                        '提需求',
+                        style: TextStyle(
+                          color: theme.primaryColor,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -702,24 +741,24 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                 ),
                 const SizedBox(width: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: isDark ? 0.16 : 0.08),
+                    color: statusColor.withValues(alpha: isDark ? 0.14 : 0.07),
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(
-                      color: statusColor.withValues(alpha: isDark ? 0.35 : 0.22),
+                      color: statusColor.withValues(alpha: isDark ? 0.28 : 0.16),
                       width: 0.6,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(statusIcon, size: 12.5, color: statusColor),
-                      const SizedBox(width: 4),
+                      Icon(statusIcon, size: 11.5, color: statusColor),
+                      const SizedBox(width: 3.5),
                       Text(
                         status.description,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10.5,
                           color: statusColor,
                           fontWeight: FontWeight.w600,
                         ),
@@ -778,62 +817,87 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
             const SizedBox(height: 14),
             Row(
               children: [
-                // 投票支持胶囊按钮（最新美学：薄雾微光底 + 精细描边）
-                Expanded(
-                  child: SizedBox(
-                    height: 36,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _voteRequest(request),
-                      icon: Icon(
-                        hasVoted ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
-                        size: 15,
-                      ),
-                      label: Text(
-                        '${request.voteCount ?? 0}',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.primaryColor.withValues(
-                          alpha: hasVoted ? (isDark ? 0.25 : 0.16) : (isDark ? 0.14 : 0.07),
+                // 投票支持胶囊按钮（自适应紧凑高级胶囊，自然呼吸感，杜绝生硬拉伸）
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _voteRequest(request),
+                    borderRadius: BorderRadius.circular(100),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      height: 34,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: theme.primaryColor.withValues(
+                          alpha: hasVoted ? (isDark ? 0.24 : 0.14) : (isDark ? 0.12 : 0.06),
                         ),
-                        foregroundColor: theme.primaryColor,
-                        elevation: 0,
-                        shadowColor: Colors.transparent,
-                        side: BorderSide(
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
                           color: theme.primaryColor.withValues(
-                            alpha: hasVoted ? 0.6 : (isDark ? 0.32 : 0.20),
+                            alpha: hasVoted ? 0.60 : (isDark ? 0.30 : 0.18),
                           ),
                           width: 0.8,
                         ),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            hasVoted ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
+                            size: 14,
+                            color: theme.primaryColor,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            hasVoted ? '已投' : '投票',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: theme.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${request.voteCount ?? 0}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Roboto',
+                              color: theme.primaryColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                // 举报幽灵微按钮
-                SizedBox(
-                  height: 36,
-                  child: TextButton.icon(
-                    onPressed: () => _showReportDialog(request),
-                    icon: const Icon(Icons.flag_outlined, size: 14, color: Color(0xFFEF4444)),
-                    label: const Text(
-                      '举报',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFFEF4444),
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.10 : 0.05),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
-                        side: BorderSide(
-                          color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.25 : 0.15),
-                          width: 0.8,
-                        ),
+                const Spacer(),
+                // 举报辅助操作：克制低调的浅灰幽灵微按钮，彻底消除满屏刺眼粉红大色块
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _showReportDialog(request),
+                    borderRadius: BorderRadius.circular(100),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.flag_outlined,
+                            size: 13.5,
+                            color: theme.textMuted.withValues(alpha: isDark ? 0.6 : 0.65),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            '举报',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w400,
+                              color: theme.textMuted.withValues(alpha: isDark ? 0.6 : 0.65),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
