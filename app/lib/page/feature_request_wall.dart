@@ -74,40 +74,6 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
     super.dispose();
   }
 
-  Future<void> _syncVotedStatusFromRemote(List<FeatureRequestVo> requests) async {
-    final user = Global.getLoggedInUser();
-    if (user == null || user.id.isEmpty || requests.isEmpty) return;
-
-    final key = _getVotedPrefsKey();
-    final cached = Set<String>.from(Prefs.read<List<String>>(key ?? '') ?? <String>[]);
-    bool hasChanges = false;
-
-    // 批量并发查询用户是否对这些需求投过票
-    final futures = requests.map((req) async {
-      // 如果本地已经记录已投，无需重复查询网络
-      if (_votedStatus[req.id] == true) return;
-      try {
-        final res = await Api.client.hasUserVoted(req.id, user.id);
-        if (res.data == true) {
-          _votedStatus[req.id] = true;
-          cached.add(req.id);
-          hasChanges = true;
-        }
-      } catch (e) {
-        // 静默忽略单个投票状态查询失败
-      }
-    });
-
-    await Future.wait(futures);
-
-    if (mounted && hasChanges) {
-      if (key != null) {
-        await Prefs.write(key, cached.toList());
-      }
-      setState(() {});
-    }
-  }
-
   Future<void> _loadRequests() async {
     try {
       final requests = await LoadingUtils.withoutApiLoading(() async {
@@ -118,9 +84,6 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         _requests = requests;
         _isLoading = false;
       });
-
-      // 异步在后台与服务端核对已投票状态，无感知校准
-      _syncVotedStatusFromRemote(requests);
     } catch (e) {
       Global.logger.e('加载需求列表失败', error: e);
       setState(() {
