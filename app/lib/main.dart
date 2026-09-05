@@ -38,6 +38,26 @@ import 'local_word_cache.dart';
 import 'util/prefs.dart';
 import 'router.dart';
 
+/// Toast 出入场动画：使用 Slide + Scale 纯变换图层，
+/// 不采用 FadeTransition/Opacity —— 否则会推入离屏 OpacityLayer，
+/// 阻断 BackdropFilter 采样，导致 toast 的毛玻璃(applyBlurEffect)失效成死白。
+Widget _toastTransition(
+  BuildContext context,
+  Animation<double> animation,
+  Alignment alignment,
+  Widget child,
+) {
+  final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+  final slideY = alignment.y < 0 ? -0.12 : 0.12;
+  return SlideTransition(
+    position: Tween<Offset>(begin: Offset(0, slideY), end: Offset.zero).animate(curved),
+    child: ScaleTransition(
+      scale: Tween<double>(begin: 0.97, end: 1.0).animate(curved),
+      child: child,
+    ),
+  );
+}
+
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -170,7 +190,10 @@ void main() async {
             providers: [
               provider.ChangeNotifierProvider(create: (context) => DarkMode()),
             ],
-            child: ToastificationWrapper(child: const MyApp()),
+            child: ToastificationWrapper(
+              config: ToastificationConfig(animationBuilder: _toastTransition),
+              child: const MyApp(),
+            ),
           ),
         ),
       );

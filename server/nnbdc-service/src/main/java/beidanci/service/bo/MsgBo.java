@@ -279,8 +279,13 @@ public class MsgBo extends BaseBo<Msg> {
                     String durationStr = (activity.getDuration() != null && !activity.getDuration().trim().isEmpty())
                             ? activity.getDuration().trim()
                             : "永久";
-                    replyMsg = String.format("恭喜您！已成功兑换【%s】，获得会员时长：%s。感谢您的支持！\n\n提示：若返回“我”页面未立即显示会员，重新进入应用即可看到；如仍未刷新，可前往“我”页面点击“清空本地数据”。",
-                            activity.getName(), durationStr);
+                    replyMsg = String.format(
+                            "授权码激活成功！送你的【%s】会员已到账啦 🎉\n\n"
+                                    + "我们是一个刚刚起步的小团队，这个 App 就像我们的孩子一样。实不相瞒，"
+                                    + "我们特别害怕做得不够好让你失望。下个月我们计划上线【功能 A】和【功能 B】，"
+                                    + "一定会把它变得越来越好用！如果觉得好用，求求点个小红书赞支持一下 🥺；"
+                                    + "要是遇到不好用的地方，随时在后台吐槽，千万别悄悄删掉我们，给我们一个修正的机会好不好？",
+                            durationStr);
                 } catch (Exception e) {
                     logger.error("意见建议兑换会员失败: userId={}, activityCode={}", fromUser.getId(), activity.getActivityCode(), e);
                     replyMsg = "兑换失败，请稍后重试。";

@@ -1,5 +1,8 @@
+import 'dart:ui' as ui;
+
 import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
@@ -307,51 +310,76 @@ class MsgPageState extends State<MsgPage> {
     final hintColor = context.textMuted;
     final fieldBg = isDarkMode ? const Color(0xFF232C37) : const Color(0xFFF0F3F7);
     final fieldBorder = isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04);
+    const inputRadius = BorderRadius.vertical(top: Radius.circular(20));
 
+    // 局部毛玻璃输入区：仅模糊输入条自身的圆角几何区域，屏幕其余部分保持清晰；
+    // sigma=6 既能晕开底下消息文字的轮廓，又保留温柔的水墨暗斑质感。
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: context.cardBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: inputRadius,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, -2),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: fieldBg,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: fieldBorder, width: 1),
-                ),
-                child: TextField(
-                  controller: _messageController,
-                  focusNode: _focusNode,
-                  maxLines: 4,
-                  minLines: 1,
-                  style: TextStyle(color: textColor, fontSize: 15, fontFamily: 'NotoSansSC'),
-                  decoration: InputDecoration(
-                    hintText: '输入您的意见建议...',
-                    hintStyle: TextStyle(color: hintColor, fontSize: 15, fontFamily: 'NotoSansSC'),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (_) => _sendMessage(),
+      child: ClipRRect(
+        borderRadius: inputRadius,
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDarkMode
+                    ? const [Color(0xB8161B26), Color(0x9910141D)]
+                    : const [Color(0x66FFFFFF), Color(0x4DFFFFFF)],
+              ),
+              border: Border.all(
+                color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                width: 1.0,
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: fieldBg,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(color: fieldBorder, width: 1),
+                        ),
+                        child: TextField(
+                          controller: _messageController,
+                          focusNode: _focusNode,
+                          maxLines: 4,
+                          minLines: 1,
+                          style: TextStyle(color: textColor, fontSize: 15, fontFamily: 'NotoSansSC'),
+                          decoration: InputDecoration(
+                            hintText: '输入您的意见建议...',
+                            hintStyle: TextStyle(color: hintColor, fontSize: 15, fontFamily: 'NotoSansSC'),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                            border: InputBorder.none,
+                          ),
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    _buildSendButton(),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            _buildSendButton(),
-          ],
+          ),
         ),
       ),
     );
@@ -411,14 +439,27 @@ class MsgPageState extends State<MsgPage> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: AppTheme.createGradientAppBar(
-        title: '意见建议',
-        context: context,
-        centerTitle: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        // 顶栏透明化：让顶部与主题晨雾流光背景无缝融合，状态栏图标颜色随主题切换
+        systemOverlayStyle: context.isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textSecondary, size: 19),
         ),
+        title: Text(
+          '意见建议',
+          style: TextStyle(
+            color: context.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
+        centerTitle: true,
       ),
       body: Column(
         children: [
