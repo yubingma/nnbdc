@@ -753,132 +753,130 @@ extension BdcPageStateUIComponents on BdcPageState {
     return result;
   }
 
+  Widget _buildMinimalPillButton({
+    required Key key,
+    required String label,
+    required Color textColor,
+    required Color indicatorColor,
+    required VoidCallback? onTap,
+    bool isEnabled = true,
+    double indicatorWidth = 16.0,
+    double fontSize = 15.5,
+  }) {
+    final isDark = _cachedIsDarkMode;
+    return AbsorbPointer(
+      absorbing: !isEnabled,
+      child: Opacity(
+        opacity: isEnabled ? 1.0 : 0.4,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: key,
+            borderRadius: BorderRadius.circular(8),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Container(
+                    width: indicatorWidth,
+                    height: 3.2,
+                    decoration: BoxDecoration(
+                      color: indicatorColor,
+                      borderRadius: BorderRadius.circular(1.6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: indicatorColor
+                              .withValues(alpha: isDark ? 0.45 : 0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildRatingButtonsRow() {
+    final showStudyActions = state.showAnswerButtons ||
+        state.studyStep == StudyStep.en2Ch.json ||
+        state.studyStep == StudyStep.ch2En.json ||
+        state.studyStep == StudyStep.enSentence2Ch.json ||
+        state.studyStep == StudyStep.chSentence2En.json ||
+        state.studyStep == StudyStep.list.json;
+
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (state.showAnswerButtons ||
-              state.studyStep == StudyStep.en2Ch.json ||
-              state.studyStep == StudyStep.ch2En.json ||
-              state.studyStep == StudyStep.enSentence2Ch.json ||
-              state.studyStep == StudyStep.chSentence2En.json ||
-              state.studyStep == StudyStep.list.json)
-            AbsorbPointer(
-              absorbing: !state.buttonsEnabled,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.18 : 0.025),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  key: const Key('bdc_not_know_btn'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _cachedIsDarkMode
-                        ? context.warmAccentColor.withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.8),
-                    foregroundColor: context.warmAccentColor,
-                    side: BorderSide(
-                      color: context.warmAccentColor.withValues(alpha: _cachedIsDarkMode ? 0.35 : 0.26),
-                      width: 1.1,
-                    ),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  onPressed: () => notifier.showWordDetail(state.word!, true, context,
-                      fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
-                  child: const Text(
-                    '不认识',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                  ),
-                ),
+          if (showStudyActions) ...[
+            _buildMinimalPillButton(
+              key: const Key('bdc_not_know_btn'),
+              label: '不认识',
+              textColor: context.warmAccentColor,
+              indicatorColor: context.warmAccentColor,
+              isEnabled: state.buttonsEnabled,
+              indicatorWidth: 16.0,
+              onTap: () => notifier.showWordDetail(
+                state.word!,
+                true,
+                context,
+                fsrsRating: FsrsRating.again,
+                reason: "主动点击了不再认识，评分: 忘记",
               ),
             ),
-          if (state.showAnswerButtons ||
-              state.studyStep == StudyStep.en2Ch.json ||
-              state.studyStep == StudyStep.ch2En.json ||
-              state.studyStep == StudyStep.enSentence2Ch.json ||
-              state.studyStep == StudyStep.chSentence2En.json ||
-              state.studyStep == StudyStep.list.json) ...[
-            const SizedBox(width: 12),
-            AbsorbPointer(
-              absorbing: !state.buttonsEnabled,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.18 : 0.025),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  key: const Key('bdc_study_again'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _cachedIsDarkMode
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.white.withValues(alpha: 0.8),
-                    foregroundColor: context.textPrimary,
-                    side: BorderSide(
-                      color: _cachedIsDarkMode
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.90),
-                      width: 1.1,
-                    ),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  onPressed: () => notifier.showWordDetail(state.word!, false, context,
-                      fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
-                  child: const Text(
-                    '再学学',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                  ),
-                ),
+            const SizedBox(width: 20),
+            _buildMinimalPillButton(
+              key: const Key('bdc_study_again'),
+              label: '再学学',
+              textColor: context.textPrimary,
+              indicatorColor: _cachedIsDarkMode
+                  ? Colors.white38
+                  : const Color(0xFF94A3B8),
+              isEnabled: state.buttonsEnabled,
+              indicatorWidth: 16.0,
+              onTap: () => notifier.showWordDetail(
+                state.word!,
+                false,
+                context,
+                fsrsRating: FsrsRating.good,
+                reason: "主动点击了再学学，评分: 良好",
               ),
             ),
           ],
           if (state.canLeaveCurrWord) ...[
-            const SizedBox(width: 12),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: context.primaryColor.withValues(alpha: _cachedIsDarkMode ? 0.25 : 0.15),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.primaryColor.withValues(alpha: Constants.primaryButtonOpacity),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                onPressed: state.isGettingNextWord
-                    ? null
-                    : () =>
-                        notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
-                child: const Text(
-                  '下一词',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                ),
-              ),
+            if (showStudyActions) const SizedBox(width: 20),
+            _buildMinimalPillButton(
+              key: const Key('bdc_next_word_btn'),
+              label: '下一词',
+              textColor: context.primaryColor,
+              indicatorColor: context.primaryColor,
+              isEnabled: !state.isGettingNextWord,
+              indicatorWidth: 20.0,
+              fontSize: 16.0,
+              onTap: state.isGettingNextWord
+                  ? null
+                  : () => notifier.getNextWord(true,
+                      fsrsRating: state.lastFsrsRating),
             ),
           ],
         ],
