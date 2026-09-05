@@ -2632,18 +2632,25 @@ extension BdcPageStateUIComponents on BdcPageState {
             SizedBox(
               width: double.infinity,
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: _cachedIsDarkMode
                       ? Colors.white.withValues(alpha: 0.04)
-                      : Colors.black.withValues(alpha: 0.03),
+                      : Colors.white.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: _cachedIsDarkMode
                         ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.black.withValues(alpha: 0.05),
+                        : Colors.white.withValues(alpha: 0.85),
                     width: 0.8,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.15 : 0.025),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2678,14 +2685,25 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 },
                                 borderRadius: BorderRadius.circular(4),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                  child: Text(
-                                    '显示翻译',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  padding: const EdgeInsets.only(top: 6, left: 6, bottom: 2),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '显示翻译',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        size: 13.5,
+                                        color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -2989,8 +3007,9 @@ extension BdcPageStateUIComponents on BdcPageState {
       children: [
         Material(
           color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+          child: InkResponse(
+            radius: 16,
+            highlightShape: BoxShape.circle,
             onTap: () {
               if (!wordPlaying) {
                 notifier.playWithAnimation(
@@ -2998,34 +3017,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                     'word');
               }
             },
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: wordPlaying
-                    ? context.subtleBg
-                    : context.cardBg,
-                border: Border.all(
-                  color: wordPlaying
-                      ? context.primaryColor
-                      : context.cardBorder,
-                  width: 1,
-                ),
-              ),
-              child: Center(
-                child: AnimatedBuilder(
-                  animation: _wordSoundController,
-                  builder: (context, child) {
-                    return Icon(
-                      wordPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-                      size: 13,
-                      color: wordPlaying
-                          ? context.primaryColor
-                          : context.textSecondary,
-                    );
-                  },
-                ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: AnimatedBuilder(
+                animation: _wordSoundController,
+                builder: (context, child) {
+                  return Icon(
+                    wordPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                    size: 17,
+                    color: wordPlaying
+                        ? context.primaryColor
+                        : context.textSecondary.withValues(alpha: 0.65),
+                  );
+                },
               ),
             ),
           ),
@@ -3060,8 +3064,9 @@ extension BdcPageStateUIComponents on BdcPageState {
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+      child: InkResponse(
+        radius: 16,
+        highlightShape: BoxShape.circle,
         onTap: () {
           if (!sentencePlaying &&
               state.englishDigestOfFirstSentence != null) {
@@ -3071,34 +3076,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                 'sentence');
           }
         },
-        child: Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: sentencePlaying
-                ? context.subtleBg
-                : context.cardBg,
-            border: Border.all(
-              color: sentencePlaying
-                  ? context.primaryColor
-                  : context.cardBorder,
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: AnimatedBuilder(
-              animation: _sentenceSoundController,
-              builder: (context, child) {
-                return Icon(
-                  sentencePlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-                  size: 13.5,
-                  color: sentencePlaying
-                      ? context.primaryColor
-                      : context.textSecondary,
-                );
-              },
-            ),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 2, right: 2),
+          child: AnimatedBuilder(
+            animation: _sentenceSoundController,
+            builder: (context, child) {
+              return Icon(
+                sentencePlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                size: 17.5,
+                color: sentencePlaying
+                    ? context.primaryColor
+                    : context.textSecondary.withValues(alpha: 0.65),
+              );
+            },
           ),
         ),
       ),

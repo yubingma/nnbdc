@@ -56,8 +56,8 @@ class _PronunciationAccentBadgeState extends State<PronunciationAccentBadge> {
     }
 
     final bgColor = widget.isFallback
-        ? Colors.orange.withValues(alpha: isDark ? 0.25 : 0.15)
-        : themeColor.withValues(alpha: isDark ? 0.22 : 0.12);
+        ? Colors.orange.withValues(alpha: isDark ? 0.20 : 0.10)
+        : themeColor.withValues(alpha: isDark ? 0.15 : 0.08);
 
     final textColor = widget.isFallback
         ? (isDark ? Colors.orange[300]! : Colors.orange[800]!)
@@ -80,15 +80,15 @@ class _PronunciationAccentBadgeState extends State<PronunciationAccentBadge> {
           scale: _isPressed ? 0.90 : 1.0,
           duration: const Duration(milliseconds: 100),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+            padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(4.5),
               border: Border.all(
                 color: widget.isFallback
-                    ? Colors.orange.withValues(alpha: isDark ? 0.4 : 0.25)
-                    : themeColor.withValues(alpha: isDark ? 0.35 : 0.2),
-                width: 0.6,
+                    ? Colors.orange.withValues(alpha: isDark ? 0.35 : 0.20)
+                    : themeColor.withValues(alpha: isDark ? 0.25 : 0.15),
+                width: 0.5,
               ),
             ),
             child: Text(
@@ -96,8 +96,9 @@ class _PronunciationAccentBadgeState extends State<PronunciationAccentBadge> {
               style: TextStyle(
                 color: textColor,
                 fontSize: widget.fontSize,
-                fontWeight: FontWeight.bold,
-                height: 1.1,
+                fontWeight: FontWeight.w600,
+                height: 1.15,
+                letterSpacing: 0.1,
               ),
             ),
           ),
