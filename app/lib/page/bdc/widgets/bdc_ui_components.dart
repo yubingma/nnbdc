@@ -823,6 +823,11 @@ extension BdcPageStateUIComponents on BdcPageState {
         state.studyStep == StudyStep.chSentence2En.json ||
         state.studyStep == StudyStep.list.json;
 
+    final againColor = _cachedIsDarkMode
+        ? const Color(0xFFFF7E6C)
+        : const Color(0xFFD32F2F);
+    final goodColor = context.primaryColor;
+
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
@@ -832,8 +837,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             _buildMinimalPillButton(
               key: const Key('bdc_not_know_btn'),
               label: '不认识',
-              textColor: context.warmAccentColor,
-              indicatorColor: context.warmAccentColor,
+              textColor: againColor,
+              indicatorColor: againColor,
               isEnabled: state.buttonsEnabled,
               indicatorWidth: 16.0,
               onTap: () => notifier.showWordDetail(
@@ -848,8 +853,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             _buildMinimalPillButton(
               key: const Key('bdc_study_again'),
               label: '再学学',
-              textColor: context.primaryColor,
-              indicatorColor: context.primaryColor,
+              textColor: goodColor,
+              indicatorColor: goodColor,
               isEnabled: state.buttonsEnabled,
               indicatorWidth: 16.0,
               onTap: () => notifier.showWordDetail(
@@ -866,8 +871,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             _buildMinimalPillButton(
               key: const Key('bdc_next_word_btn'),
               label: '下一词',
-              textColor: context.primaryColor,
-              indicatorColor: context.primaryColor,
+              textColor: goodColor,
+              indicatorColor: goodColor,
               isEnabled: !state.isGettingNextWord,
               indicatorWidth: 20.0,
               fontSize: 16.0,
@@ -2077,7 +2082,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     switch (state.lastFsrsRating) {
       case FsrsRating.again:
         ratingColor =
-            isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFFA6E59); // 珊瑚红
+            isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFD32F2F); // 标准鲜红
         break;
       case FsrsRating.hard:
         ratingColor =
