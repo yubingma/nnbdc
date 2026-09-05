@@ -2623,7 +2623,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
               : (isDarkMode ? Colors.white70 : Colors.black87),
           elevation: 0,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: EdgeInsets.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          alignment: Alignment.center,
           side: BorderSide(
             color: isPrimary
                 ? effectivePrimary.withValues(alpha: isDarkMode ? 0.45 : 0.30)
@@ -2641,6 +2643,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
             fontWeight: isPrimary ? FontWeight.w700 : FontWeight.w500,
             color: isPrimary ? effectivePrimary : (isDarkMode ? Colors.white70 : Colors.black87),
             letterSpacing: 0.2,
+            height: 1.2,
+            leadingDistribution: TextLeadingDistribution.even,
             fontFamily: 'NotoSansSC',
             fontFamilyFallback: AppTheme.sansSerifFallback,
           ),

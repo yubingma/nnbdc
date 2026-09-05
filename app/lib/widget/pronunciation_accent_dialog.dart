@@ -231,6 +231,9 @@ class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
                         foregroundColor: primaryColor,
                         elevation: 0,
                         shadowColor: Colors.transparent,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        alignment: Alignment.center,
                         side: BorderSide(
                           color: primaryColor.withValues(alpha: isDark ? 0.40 : 0.25),
                           width: 1.0,
@@ -246,6 +249,8 @@ class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
                           fontWeight: FontWeight.w700,
                           color: primaryColor,
                           letterSpacing: 0.3,
+                          height: 1.2,
+                          leadingDistribution: TextLeadingDistribution.even,
                           fontFamily: 'NotoSansSC',
                           fontFamilyFallback: AppTheme.sansSerifFallback,
                         ),

@@ -264,6 +264,9 @@ class ThemeSelectDialog extends StatelessWidget {
                           foregroundColor: accentColor,
                           elevation: 0,
                           shadowColor: Colors.transparent,
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          alignment: Alignment.center,
                           side: BorderSide(
                             color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.40 : 0.25),
                             width: 1.0,
@@ -279,6 +282,8 @@ class ThemeSelectDialog extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: accentColor,
                             letterSpacing: 0.3,
+                            height: 1.2,
+                            leadingDistribution: TextLeadingDistribution.even,
                             fontFamily: 'NotoSansSC',
                             fontFamilyFallback: AppTheme.sansSerifFallback,
                           ),
