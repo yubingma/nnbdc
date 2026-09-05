@@ -14,9 +14,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDarkMode 
-            ? [const Color(0xFF121212), const Color(0xFF1E1E1E)]
-            : [Colors.white, const Color(0xFFF8F9FA)],
+          colors: isDarkMode
+              ? [const Color(0xFF121212), const Color(0xFF1E1E1E)]
+              : [Colors.white, const Color(0xFFF8F9FA)],
         ),
       ),
       child: Center(
@@ -33,7 +33,8 @@ extension BdcPageStateUIComponents on BdcPageState {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.3),
+                color: (isDarkMode ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.3),
                 letterSpacing: 1.2,
               ),
             ),
@@ -89,14 +90,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                       }
 
                       notifier.meaningController.text = text;
-                      await notifier.checkAsrResult(asrInput: text, isVoice: false);
+                      await notifier.checkAsrResult(
+                          asrInput: text, isVoice: false);
                     },
-                      onCancel: () {
-                        _meaningFocusNode.unfocus();
-                        updateUI(() {
-                          notifier.updateShowHandwritingBoard(false);
-                        }, tag: 'hw-cancel');
-                        notifier.handleTabChangeForAsr();
+                    onCancel: () {
+                      _meaningFocusNode.unfocus();
+                      updateUI(() {
+                        notifier.updateShowHandwritingBoard(false);
+                      }, tag: 'hw-cancel');
+                      notifier.handleTabChangeForAsr();
                     },
                   ),
                 ),
@@ -136,7 +138,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   '请拼写单词：',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDarkMode ? Colors.white38 : Colors.black38,
+                                    color: isDarkMode
+                                        ? Colors.white38
+                                        : Colors.black38,
                                   ),
                                 ),
                                 Text(
@@ -144,7 +148,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: isDarkMode ? Colors.white : Colors.black,
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -179,7 +185,8 @@ extension BdcPageStateUIComponents on BdcPageState {
 
           // 2. 底部输入与提示区
           Container(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
+            padding: EdgeInsets.fromLTRB(
+                16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
             decoration: BoxDecoration(
               color: context.cardBg,
               border: Border(
@@ -198,7 +205,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       child: TextField(
                         controller: notifier.meaningController,
                         focusNode: _meaningFocusNode,
-                        autofocus: StudyConfig.fromCurrentUser().preferKeyboardInSpelling,
+                        autofocus: StudyConfig.fromCurrentUser()
+                            .preferKeyboardInSpelling,
                         keyboardType: TextInputType.visiblePassword,
                         autocorrect: false,
                         enableSuggestions: false,
@@ -221,10 +229,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                         onChanged: (value) {
                           notifier.updateIsUpdatingByHint(false);
                           if (value.isNotEmpty && state.word?.spell != null) {
-                            if (Util.equalsIgnoreCase(value, state.word!.spell)) {
+                            if (Util.equalsIgnoreCase(
+                                value, state.word!.spell)) {
                               // 提示已经显示了全部字母时不应自动提交，用户应继续手动答题
                               final allRevealedByHint =
-                                  (state.wordWrapper?.hintLetterCount ?? 0) >= state.word!.spell.length;
+                                  (state.wordWrapper?.hintLetterCount ?? 0) >=
+                                      state.word!.spell.length;
                               if (!allRevealedByHint) {
                                 notifier.checkAsrResult();
                               }
@@ -237,7 +247,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.lightbulb_outline, color: context.primaryColor),
+                      icon: Icon(Icons.lightbulb_outline,
+                          color: context.primaryColor),
                       onPressed: () {
                         notifier.giveFullHint();
                         // 不自动提交，用户应继续手动拼写答题
@@ -253,7 +264,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 Text(
                   '支持键盘输入与手写混合使用',
                   style: TextStyle(
-                    color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.24),
+                    color: (isDarkMode ? Colors.white : Colors.black)
+                        .withValues(alpha: 0.24),
                     fontSize: 10,
                   ),
                 ),
@@ -264,7 +276,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       ),
     );
   }
-
 
   Widget _buildQuestionContent(BdcState state) {
     return LayoutBuilder(
@@ -283,7 +294,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // 英→中模式 或 列表模式 整合卡片
-                  if ((state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.list.json) &&
+                  if ((state.studyStep == StudyStep.en2Ch.json ||
+                          state.studyStep == StudyStep.list.json) &&
                       state.currentGetWordResult?.learningWord?.word != null)
                     _buildWordStepCard(state),
                   // 中→英模式整合卡片
@@ -314,7 +326,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       },
     );
   }
-
 
   Widget _buildModeSwitchButton() {
     if (_tabController == null || _tabController!.length <= 1) {
@@ -365,7 +376,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildMainContent() {
     final sw = Stopwatch()..start();
 
@@ -387,7 +397,8 @@ extension BdcPageStateUIComponents on BdcPageState {
               _showDebugOverlay();
             } else {
               notifier.updateProgressBarTapCount(currentCount);
-              notifierInstance.progressBarTapTimer = Timer(const Duration(milliseconds: 300), () {
+              notifierInstance.progressBarTapTimer =
+                  Timer(const Duration(milliseconds: 300), () {
                 if (!mounted) return;
                 if (ref.read(bdcNotifierProvider).progressBarTapCount == 2) {
                   PerformanceWatchdog.toggleFpsOverlay();
@@ -412,7 +423,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                         if (maxValue <= 0) return const SizedBox.shrink();
                         final currentProgress =
                             state.currentGetWordResult!.progress![0].toDouble();
-                        final progressRatio = (currentProgress / maxValue).clamp(0.0, 1.0);
+                        final progressRatio =
+                            (currentProgress / maxValue).clamp(0.0, 1.0);
 
                         return ClipRRect(
                           borderRadius: BorderRadius.circular(1.5),
@@ -457,13 +469,19 @@ extension BdcPageStateUIComponents on BdcPageState {
               valueListenable: PerformanceWatchdog.currentFps,
               builder: (context, fps, child) {
                 final isLowFps = fps < 45.0;
-                final themeColor = isLowFps 
-                    ? Colors.red.withValues(alpha: 0.85) 
-                    : (_cachedIsDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.08));
-                final textColor = isLowFps ? Colors.white : (_cachedIsDarkMode ? Colors.white60 : Colors.black54);
+                final themeColor = isLowFps
+                    ? Colors.red.withValues(alpha: 0.85)
+                    : (_cachedIsDarkMode
+                        ? Colors.white12
+                        : Colors.black.withValues(alpha: 0.08));
+                final textColor = isLowFps
+                    ? Colors.white
+                    : (_cachedIsDarkMode ? Colors.white60 : Colors.black54);
                 return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: themeColor,
                     borderRadius: BorderRadius.circular(4),
@@ -493,28 +511,37 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: Consumer(
             builder: (context, ref, child) {
               // 物理隔离：只监听会影响卡片渲染的核心状态
-              final wordId = ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
-              final historyIndex = ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
-              final showSentenceTranslation = ref.watch(bdcNotifierProvider.select((s) => s.showSentenceTranslation));
-              final isEditMode = ref.watch(bdcNotifierProvider.select((s) => s.isEditMode));
-              final wordPlaying = ref.watch(bdcNotifierProvider.select((s) => s.playingStates['word'] ?? false));
-              final sentencePlaying = ref.watch(bdcNotifierProvider.select((s) => s.playingStates['sentence'] ?? false));
-              final imagesLength = ref.watch(bdcNotifierProvider.select((s) => s.currentGetWordResult?.images?.length ?? 0));
-              final highlightedWordImg = ref.watch(bdcNotifierProvider.select((s) => s.highlightedWordImg));
+              final wordId =
+                  ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
+              final historyIndex =
+                  ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
+              final showSentenceTranslation = ref.watch(
+                  bdcNotifierProvider.select((s) => s.showSentenceTranslation));
+              final isEditMode =
+                  ref.watch(bdcNotifierProvider.select((s) => s.isEditMode));
+              final wordPlaying = ref.watch(bdcNotifierProvider
+                  .select((s) => s.playingStates['word'] ?? false));
+              final sentencePlaying = ref.watch(bdcNotifierProvider
+                  .select((s) => s.playingStates['sentence'] ?? false));
+              final imagesLength = ref.watch(bdcNotifierProvider
+                  .select((s) => s.currentGetWordResult?.images?.length ?? 0));
+              final highlightedWordImg = ref.watch(
+                  bdcNotifierProvider.select((s) => s.highlightedWordImg));
 
               // 获取当前最新脱敏 state 传给卡片渲染，以确保 state 中的其他字段也是最新的，但不会被其改变触发不必要的 rebuild
               final currentState = ref.read(bdcNotifierProvider);
-              
+
               // 确保 imagesLength 被显式使用以消除编译器警告并保持监听状态
               if (imagesLength < 0) {
                 Global.logger.d('imagesLength: $imagesLength');
               }
-              
+
               return AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
                 switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeInCubic,
-                layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+                layoutBuilder:
+                    (Widget? currentChild, List<Widget> previousChildren) {
                   return Stack(
                     fit: StackFit.expand,
                     children: <Widget>[
@@ -536,7 +563,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                   child: _buildQuestionContent(currentState.copyWith(
                     showSentenceTranslation: showSentenceTranslation,
                     isEditMode: isEditMode,
-                    playingStates: {'word': wordPlaying, 'sentence': sentencePlaying},
+                    playingStates: {
+                      'word': wordPlaying,
+                      'sentence': sentencePlaying
+                    },
                     highlightedWordImg: highlightedWordImg,
                   )),
                 ),
@@ -551,9 +581,11 @@ extension BdcPageStateUIComponents on BdcPageState {
           flex: 5,
           child: Consumer(
             builder: (context, ref, child) {
-              final wordId = ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
-              final historyIndex = ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
-              
+              final wordId =
+                  ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
+              final historyIndex =
+                  ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
+
               return Container(
                 key: ValueKey('bdc_choice_area_${wordId}_$historyIndex'),
                 margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -581,7 +613,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.28 : 0.035),
+                                  color: Colors.black.withValues(
+                                      alpha: _cachedIsDarkMode ? 0.28 : 0.035),
                                   blurRadius: 18,
                                   offset: const Offset(0, 5),
                                 ),
@@ -591,12 +624,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                             child: Column(
                               children: [
                                 if ((state.studyStep == StudyStep.en2Ch.json ||
-                                        state.studyStep == StudyStep.ch2En.json) &&
+                                        state.studyStep ==
+                                            StudyStep.ch2En.json) &&
                                     _tabController != null &&
                                     _tabController!.length > 1) ...[
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       if (state.tabIndex == 0)
                                         Flexible(
@@ -604,7 +640,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                Icons.record_voice_over_outlined,
+                                                Icons
+                                                    .record_voice_over_outlined,
                                                 size: 13.5,
                                                 color: _cachedIsDarkMode
                                                     ? const Color(0xFF94A3B8)
@@ -613,23 +650,28 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               const SizedBox(width: 4.5),
                                               Flexible(
                                                 child: Text(
-                                                  state.studyStep == StudyStep.en2Ch.json
+                                                  state.studyStep ==
+                                                          StudyStep.en2Ch.json
                                                       ? '请说出中文释义：'
                                                       : '请说出单词发音：',
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w500,
                                                     color: _cachedIsDarkMode
-                                                        ? const Color(0xFFCBD5E1)
-                                                        : const Color(0xFF475569),
+                                                        ? const Color(
+                                                            0xFFCBD5E1)
+                                                        : const Color(
+                                                            0xFF475569),
                                                     letterSpacing: -0.1,
                                                   ),
                                                 ),
                                               ),
                                               if (state.isAiEvaluating) ...[
                                                 const SizedBox(width: 6),
-                                                _buildAiJudgingBadge(_cachedIsDarkMode),
+                                                _buildAiJudgingBadge(
+                                                    _cachedIsDarkMode),
                                               ],
                                             ],
                                           ),
@@ -642,28 +684,39 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   const SizedBox(height: 4),
                                 ],
                                 Expanded(
-                                  child: (state.studyStep == StudyStep.en2Ch.json ||
-                                          state.studyStep == StudyStep.ch2En.json)
+                                  child: (state.studyStep ==
+                                              StudyStep.en2Ch.json ||
+                                          state.studyStep ==
+                                              StudyStep.ch2En.json)
                                       ? TabBarView(
-                                          key: ValueKey('bdc_tab_bar_view_${_tabController?.length}'),
+                                          key: ValueKey(
+                                              'bdc_tab_bar_view_${_tabController?.length}'),
                                           controller: _tabController,
-                                          physics: const NeverScrollableScrollPhysics(),
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
                                           children: [
                                             // 始终保持 Tab 数量一致性，避免抖动
-                                            if (_tabController?.length == 2) _buildSpeakPanel(),
+                                            if (_tabController?.length == 2)
+                                              _buildSpeakPanel(),
                                             _buildChoiceListScrollView(),
                                           ],
                                         )
-                                      : (state.studyStep == StudyStep.enSentence2Ch.json ||
-                                             state.studyStep == StudyStep.chSentence2En.json)
+                                      : (state.studyStep ==
+                                                  StudyStep
+                                                      .enSentence2Ch.json ||
+                                              state.studyStep ==
+                                                  StudyStep.chSentence2En.json)
                                           ? _buildSpeakPanel()
                                           : Column(
-                                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
                                               children: [
                                                 Flexible(
-                                                  child: _buildChoiceListScrollView(),
+                                                  child:
+                                                      _buildChoiceListScrollView(),
                                                 ),
-                                                Expanded(child: _buildSpeakPanel()),
+                                                Expanded(
+                                                    child: _buildSpeakPanel()),
                                               ],
                                             ),
                                 ),
@@ -703,7 +756,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     debugPrint('⚡ [PERF] _buildMainContent cost: ${sw.elapsedMilliseconds}ms');
     return result;
   }
-
 
   Widget _buildBottomButtons() {
     final sw = Stopwatch()..start();
@@ -749,7 +801,8 @@ extension BdcPageStateUIComponents on BdcPageState {
         ],
       ),
     );
-    debugPrint('⚡ [PERF] _buildBottomButtons cost: ${sw.elapsedMilliseconds}ms');
+    debugPrint(
+        '⚡ [PERF] _buildBottomButtons cost: ${sw.elapsedMilliseconds}ms');
     return result;
   }
 
@@ -798,8 +851,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       borderRadius: BorderRadius.circular(1.6),
                       boxShadow: [
                         BoxShadow(
-                          color: indicatorColor
-                              .withValues(alpha: isDark ? 0.45 : 0.3),
+                          color: indicatorColor.withValues(
+                              alpha: isDark ? 0.45 : 0.3),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -890,48 +943,32 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildTopActionButton({
     required IconData icon,
     String? label,
     required VoidCallback onTap,
   }) {
     final isDark = _cachedIsDarkMode;
-    return Container(
-      height: 32,
-      width: label != null ? null : 32,
-      padding: EdgeInsets.symmetric(
-        horizontal: label != null ? 9 : 0,
-        vertical: 0,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.85),
-          width: 0.9,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 1.5),
+    // 极简排布：裸图标 + 轻文字，不包裹药丸/描边/阴影容器，靠字阶与色彩建立层级。
+    final Color fg = isDark ? const Color(0xFFCBD5E1) : context.textSecondary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: label != null ? 8 : 9,
+            vertical: 7,
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                color: isDark ? const Color(0xFFCBD5E1) : context.textSecondary,
-                size: 14.5,
+                color: fg,
+                size: 17,
               ),
               if (label != null) ...[
                 const SizedBox(width: 3.5),
@@ -939,9 +976,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                   label,
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFFE2E8F0) : context.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color:
+                        isDark ? const Color(0xFFE2E8F0) : context.textPrimary,
                   ),
                 ),
               ],
@@ -964,37 +1002,22 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
-                if (state.currentGetWordResult != null && state.currentGetWordResult!.progress != null && state.currentGetWordResult!.progress!.length >= 2) {
+                if (state.currentGetWordResult != null &&
+                    state.currentGetWordResult!.progress != null &&
+                    state.currentGetWordResult!.progress!.length >= 2) {
                   final completed = state.currentGetWordResult!.progress![0];
                   final total = state.currentGetWordResult!.progress![1];
-                  AnalyticsUtil.trackStudyQuitEarly(completed, total - completed);
+                  AnalyticsUtil.trackStudyQuitEarly(
+                      completed, total - completed);
                 }
                 Navigator.pop(context);
               },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _cachedIsDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.65),
-                  border: Border.all(
-                    color: _cachedIsDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.85),
-                    width: 0.9,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
-                      blurRadius: 6,
-                      offset: const Offset(0, 1.5),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: context.textPrimary,
-                    size: 14,
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: context.textPrimary,
+                  size: 17,
                 ),
               ),
             ),
@@ -1009,13 +1032,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                 // 上一个按钮
                 if (state.historyIndex != -1)
                   _buildTopActionButton(
-                    icon: Icons.keyboard_return_rounded,
+                    icon: Icons.redo_rounded,
                     label: '返回',
                     onTap: () => notifier.exitReviewMode(),
                   )
                 else if (state.history.isNotEmpty)
                   _buildTopActionButton(
-                    icon: Icons.skip_previous_rounded,
+                    icon: Icons.undo_rounded,
                     label: '回看',
                     onTap: () => notifier.goToPreviousWord(),
                   ),
@@ -1057,7 +1080,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       ),
     );
   }
-
 
   Widget _buildChoiceItemContent(WordVo? word, bool isAnswered, bool isCh2En) {
     if (word == null) return const SizedBox.shrink();
@@ -1117,7 +1139,8 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
           const SizedBox(height: 3),
           // 第二行：中文释义
-          _buildMeaningInline(word.getMeaningStr(), 13.0, context.textSecondary),
+          _buildMeaningInline(
+              word.getMeaningStr(), 13.0, context.textSecondary),
         ],
       );
     }
@@ -1137,16 +1160,16 @@ extension BdcPageStateUIComponents on BdcPageState {
       );
     } else {
       // 英选中：选项是中文释义
-      return _buildMeaningInline(word.getMeaningStr(), 15.5, context.textPrimary);
+      return _buildMeaningInline(
+          word.getMeaningStr(), 15.5, context.textPrimary);
     }
   }
 
   Widget _buildMeaningInline(String text, double fontSize, Color defaultColor) {
     if (text.isEmpty) return const SizedBox.shrink();
     final isDark = _cachedIsDarkMode;
-    final cixingColor = isDark
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
+    final cixingColor =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     final lines = text.split('\n');
     List<Widget> widgets = [];
@@ -1230,7 +1253,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildChoiceListScrollView() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1256,7 +1278,8 @@ extension BdcPageStateUIComponents on BdcPageState {
       return const SizedBox.shrink();
     }
 
-    final isAnswered = state.selectedAnswerIndex != null || state.hasFinishedAnswering;
+    final isAnswered =
+        state.selectedAnswerIndex != null || state.hasFinishedAnswering;
     final isCh2En = state.studyStep == StudyStep.ch2En.json;
 
     return Column(
@@ -1276,8 +1299,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                   borderColor = context.primaryColor;
                   borderWidth = 1.5;
                 } else if ((index + 1) == state.selectedAnswerIndex) {
-                  bgColor = isDarkMode ? const Color(0xFF2A1614) : const Color(0xFFFEF2F0);
-                  borderColor = isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFFA6E59);
+                  bgColor = isDarkMode
+                      ? const Color(0xFF2A1614)
+                      : const Color(0xFFFEF2F0);
+                  borderColor = isDarkMode
+                      ? const Color(0xFFFF7E6C)
+                      : const Color(0xFFFA6E59);
                   borderWidth = 1.5;
                 } else {
                   bgColor = context.cardBg;
@@ -1289,18 +1316,22 @@ extension BdcPageStateUIComponents on BdcPageState {
               }
 
               List<BoxShadow> choiceShadows;
-              if (state.selectedAnswerIndex != null && (index + 1) == state.correctAnswerIndex) {
+              if (state.selectedAnswerIndex != null &&
+                  (index + 1) == state.correctAnswerIndex) {
                 choiceShadows = [
                   BoxShadow(
-                    color: context.primaryColor.withValues(alpha: isDarkMode ? 0.28 : 0.2),
+                    color: context.primaryColor
+                        .withValues(alpha: isDarkMode ? 0.28 : 0.2),
                     blurRadius: 18,
                     offset: const Offset(0, 4),
                   ),
                 ];
-              } else if (state.selectedAnswerIndex != null && (index + 1) == state.selectedAnswerIndex) {
+              } else if (state.selectedAnswerIndex != null &&
+                  (index + 1) == state.selectedAnswerIndex) {
                 choiceShadows = [
                   BoxShadow(
-                    color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.28 : 0.2),
+                    color: const Color(0xFFEF4444)
+                        .withValues(alpha: isDarkMode ? 0.28 : 0.2),
                     blurRadius: 18,
                     offset: const Offset(0, 4),
                   ),
@@ -1316,7 +1347,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       ]
                     : [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.035),
+                          color:
+                              const Color(0xFF0F172A).withValues(alpha: 0.035),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -1344,7 +1376,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(10),
-                        onTap: () => notifier.onAnswerClicked(index + 1, context),
+                        onTap: () =>
+                            notifier.onAnswerClicked(index + 1, context),
                         child: Container(
                           width: double.infinity,
                           constraints: const BoxConstraints(minHeight: 64),
@@ -1353,7 +1386,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                             horizontal: 16,
                             vertical: 10,
                           ),
-                          child: _buildChoiceItemContent(word, isAnswered, isCh2En),
+                          child: _buildChoiceItemContent(
+                              word, isAnswered, isCh2En),
                         ),
                       ),
                     ),
@@ -1365,7 +1399,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       ],
     );
   }
-
 
   Widget _buildSpeakPanel() {
     final String? step = state.studyStep;
@@ -1383,162 +1416,168 @@ extension BdcPageStateUIComponents on BdcPageState {
     final cardWidget = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-              // 1. 顶栏：音频波纹 + 提示/清除按钮 (固定浮动在上方)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // 语音波形反馈
-                    Expanded(
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          final currentAsrState = ref.watch(bdcNotifierProvider.select((s) => s.asrState));
-                          final currentScore = ref.watch(bdcNotifierProvider.select((s) => s.currentScore));
-                          final isScorePassed = ref.watch(bdcNotifierProvider.select((s) => s.isScorePassed || s.hasFinishedAnswering));
-                          final isAiEvaluating = ref.watch(bdcNotifierProvider.select((s) => s.isAiEvaluating));
-                          
-                          final bool isChineseInput = state.studyStep == StudyStep.en2Ch.json ||
-                                                      state.studyStep == StudyStep.enSentence2Ch.json;
-                          final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
-                                                  state.studyStep == StudyStep.chSentence2En.json;
-                          return isChineseInput
-                              ? ChineseAsrInputWidget(
-                                  controller: notifier.meaningController,
-                                  asrState: currentAsrState,
-                                  onStartAsr: (language) =>
-                                      notifier.asr.startAsr(language),
-                                  isKeyboardVisible: state.isKeyboardVisible,
-                                  focusNode: _meaningFocusNode,
-                                  score: currentScore,
-                                  isScorePassed: isScorePassed,
-                                  isSentenceStep: isSentence,
-                                  isAiEvaluating: isAiEvaluating,
-                                )
-                              : EnglishAsrInputWidget(
-                                  controller: notifier.meaningController,
-                                  asrState: currentAsrState,
-                                  onStartAsr: (language) =>
-                                      notifier.asr.startAsr(language),
-                                  isKeyboardVisible: state.isKeyboardVisible,
-                                  focusNode: _meaningFocusNode,
-                                  score: currentScore,
-                                  isScorePassed: isScorePassed,
-                                  isSentenceStep: isSentence,
-                                  isAiEvaluating: isAiEvaluating,
-                                );
+        // 1. 顶栏：音频波纹 + 提示/清除按钮 (固定浮动在上方)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 语音波形反馈
+              Expanded(
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final currentAsrState = ref
+                        .watch(bdcNotifierProvider.select((s) => s.asrState));
+                    final currentScore = ref.watch(
+                        bdcNotifierProvider.select((s) => s.currentScore));
+                    final isScorePassed = ref.watch(bdcNotifierProvider.select(
+                        (s) => s.isScorePassed || s.hasFinishedAnswering));
+                    final isAiEvaluating = ref.watch(
+                        bdcNotifierProvider.select((s) => s.isAiEvaluating));
+
+                    final bool isChineseInput =
+                        state.studyStep == StudyStep.en2Ch.json ||
+                            state.studyStep == StudyStep.enSentence2Ch.json;
+                    final bool isSentence =
+                        state.studyStep == StudyStep.enSentence2Ch.json ||
+                            state.studyStep == StudyStep.chSentence2En.json;
+                    return isChineseInput
+                        ? ChineseAsrInputWidget(
+                            controller: notifier.meaningController,
+                            asrState: currentAsrState,
+                            onStartAsr: (language) =>
+                                notifier.asr.startAsr(language),
+                            isKeyboardVisible: state.isKeyboardVisible,
+                            focusNode: _meaningFocusNode,
+                            score: currentScore,
+                            isScorePassed: isScorePassed,
+                            isSentenceStep: isSentence,
+                            isAiEvaluating: isAiEvaluating,
+                          )
+                        : EnglishAsrInputWidget(
+                            controller: notifier.meaningController,
+                            asrState: currentAsrState,
+                            onStartAsr: (language) =>
+                                notifier.asr.startAsr(language),
+                            isKeyboardVisible: state.isKeyboardVisible,
+                            focusNode: _meaningFocusNode,
+                            score: currentScore,
+                            isScorePassed: isScorePassed,
+                            isSentenceStep: isSentence,
+                            isAiEvaluating: isAiEvaluating,
+                          );
+                  },
+                ),
+              ),
+
+              const SizedBox(width: 8),
+              if (isSentence)
+                _buildPanelButton(
+                  icon: Icons.refresh_rounded,
+                  label: '清空',
+                  onTap: () => notifier.clearHint(),
+                )
+              else
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildPanelButton(
+                        icon: Icons.edit_note_rounded,
+                        label: '拼写',
+                        onTap: () {
+                          notifier.updateIsUpdatingByHint(true);
+                          notifier.meaningController.clear();
+                          notifier.updateIsUpdatingByHint(false);
+                          updateUI(() {
+                            notifier.updateShowHandwritingBoard(true);
+                          }, tag: 'hw-open');
+                          notifier.asr.stopMicrophone();
                         },
                       ),
-                    ),
-
-                    const SizedBox(width: 8),
-                    if (isSentence)
+                      const SizedBox(width: 6),
+                      _buildPanelButton(
+                        icon: Icons.lightbulb_outline_rounded,
+                        label: '提示',
+                        onTap: () => notifier.giveALittleHint(),
+                        onLongPress: () => notifier.giveFullHint(),
+                      ),
+                      const SizedBox(width: 6),
                       _buildPanelButton(
                         icon: Icons.refresh_rounded,
-                        label: '清空',
+                        label: '清除',
                         onTap: () => notifier.clearHint(),
-                      )
-                    else
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildPanelButton(
-                              icon: Icons.edit_note_rounded,
-                              label: '拼写',
-                              onTap: () {
-                                notifier.updateIsUpdatingByHint(true);
-                                notifier.meaningController.clear();
-                                notifier.updateIsUpdatingByHint(false);
-                                updateUI(() {
-                                  notifier.updateShowHandwritingBoard(true);
-                                }, tag: 'hw-open');
-                                notifier.asr.stopMicrophone();
-                              },
-                            ),
-                            const SizedBox(width: 6),
-                            _buildPanelButton(
-                              icon: Icons.lightbulb_outline_rounded,
-                              label: '提示',
-                              onTap: () => notifier.giveALittleHint(),
-                              onLongPress: () => notifier.giveFullHint(),
-                            ),
-                            const SizedBox(width: 6),
-                            _buildPanelButton(
-                              icon: Icons.refresh_rounded,
-                              label: '清除',
-                              onTap: () => notifier.clearHint(),
-                            ),
-                          ],
-                        ),
                       ),
-                  ],
-                ),
-              ),
-
-              // 微柔光分割线
-              Container(
-                height: 0.6,
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05),
-              ),
-
-              // 2. 滚动区域：中文释义 / 拼写提示与手写结果
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return SingleChildScrollView(
-                        controller: _speakPanelScrollController,
-                        physics: state.showHandwritingBoard
-                            ? const NeverScrollableScrollPhysics()
-                            : null,
-                        padding: EdgeInsets.zero,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                          child: () {
-                            final step = state.studyStep;
-                            if (step == StudyStep.enSentence2Ch.json) {
-                              return _buildSentenceAnswerArea();
-                            } else if (step == StudyStep.chSentence2En.json) {
-                              return _buildSentenceAnswerArea();
-                            } else if (step == StudyStep.en2Ch.json) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ...renderAsrMeaningItems(state.wordWrapper!,
-                                      isDarkMode: context.read<DarkMode>().isDarkMode),
-                                ],
-                              );
-                            } else {
-                              return Center(
-                                child: _buildCenteredSpellingHint(isDarkMode),
-                              );
-                            }
-                          }(),
-                        ),
-                      );
-                    },
+                    ],
                   ),
                 ),
-              ),
             ],
-          );
+          ),
+        ),
+
+        // 微柔光分割线
+        Container(
+          height: 0.6,
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
+        ),
+
+        // 2. 滚动区域：中文释义 / 拼写提示与手写结果
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  controller: _speakPanelScrollController,
+                  physics: state.showHandwritingBoard
+                      ? const NeverScrollableScrollPhysics()
+                      : null,
+                  padding: EdgeInsets.zero,
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: () {
+                      final step = state.studyStep;
+                      if (step == StudyStep.enSentence2Ch.json) {
+                        return _buildSentenceAnswerArea();
+                      } else if (step == StudyStep.chSentence2En.json) {
+                        return _buildSentenceAnswerArea();
+                      } else if (step == StudyStep.en2Ch.json) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ...renderAsrMeaningItems(state.wordWrapper!,
+                                isDarkMode:
+                                    context.read<DarkMode>().isDarkMode),
+                          ],
+                        );
+                      } else {
+                        return Center(
+                          child: _buildCenteredSpellingHint(isDarkMode),
+                        );
+                      }
+                    }(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(child: cardWidget),
         // 3. 例句环节底部固定"按住说话"按钮：独立于滚动区，位置不随识别文本/反馈变化
-        if (isSentence && !state.hasFinishedAnswering)
-          _buildPttSpeakButton(),
+        if (isSentence && !state.hasFinishedAnswering) _buildPttSpeakButton(),
       ],
     );
   }
-
 
   Widget _buildCenteredSpellingHint(bool isDarkMode) {
     return ValueListenableBuilder<TextEditingValue>(
@@ -1567,8 +1606,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                   SpellingTextEditingController.buildSpellingTextSpan(
                     text,
                     targetSpell,
-                    text.trim().toLowerCase() != targetSpell.trim().toLowerCase() &&
-                            !targetSpell.toLowerCase().startsWith(text.trim().toLowerCase())
+                    text.trim().toLowerCase() !=
+                                targetSpell.trim().toLowerCase() &&
+                            !targetSpell
+                                .toLowerCase()
+                                .startsWith(text.trim().toLowerCase())
                         ? const Color(0xFFFA6E59)
                         : textColor,
                     TextStyle(
@@ -1691,7 +1733,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             isDense: true,
             filled: false,
             fillColor: Colors.transparent,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
@@ -1750,9 +1793,12 @@ extension BdcPageStateUIComponents on BdcPageState {
     // 用 Consumer 细粒度监听 isPttPressed，避免依赖顶层 _activeState 缓存（顶层按 BdcStateUiSignature 重建，不含该字段）
     return Consumer(
       builder: (context, ref, _) {
-        final isPressed = ref.watch(bdcNotifierProvider.select((s) => s.isPttPressed));
+        final isPressed =
+            ref.watch(bdcNotifierProvider.select((s) => s.isPttPressed));
         final bgColor = isPressed
-            ? (isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.08))
+            ? (isDarkMode
+                ? Colors.white24
+                : Colors.black.withValues(alpha: 0.08))
             : context.primaryColor;
         final fgColor = isPressed
             ? (isDarkMode ? Colors.white : Colors.black87)
@@ -1808,7 +1854,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildFsrsResultPanel() {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
@@ -1824,47 +1869,14 @@ extension BdcPageStateUIComponents on BdcPageState {
         return FutureBuilder<List<LearningLog>>(
           future: notifier.learningHistoryFuture,
           builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting ||
-                  !snapshot.hasData ||
-                  snapshot.data!.isEmpty) {
-                // 巩固阶段：如果当前词已有本场测评结果，直接展示测评数据
-                if (state.assessmentRating != null) {
-                  final assRating = state.assessmentRating!;
-                  String assLabel = assRating.label;
-                  Color assColor = assRating.colorWithDark(isDarkMode);
-                  return Container(
-                    alignment: Alignment.center,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$wordType测评: $assLabel',
-                            style: TextStyle(fontSize: 11, color: assColor),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Text('|',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: textColor.withValues(alpha: 0.3))),
-                          ),
-                          Text(
-                            '下次复习: ${state.assessmentScheduledDays ?? "--"}天后',
-                            style: TextStyle(fontSize: 11, color: textColor),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                // 巩固阶段兜底:LearningLog 无测评记录且 assessmentRating 未恢复。
-                // 若已作答(如点击"看答案"后 lastFsrsRating=again)则显示评分,
-                // 否则显示"测评中"。
-                final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
-                final bool hasRating = state.lastFsrsRating != null;
+            if (snapshot.connectionState == ConnectionState.waiting ||
+                !snapshot.hasData ||
+                snapshot.data!.isEmpty) {
+              // 巩固阶段：如果当前词已有本场测评结果，直接展示测评数据
+              if (state.assessmentRating != null) {
+                final assRating = state.assessmentRating!;
+                String assLabel = assRating.label;
+                Color assColor = assRating.colorWithDark(isDarkMode);
                 return Container(
                   alignment: Alignment.center,
                   child: FittedBox(
@@ -1873,29 +1885,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // 有评分时才可点击弹"修改今日评分"对话框;测评中不可点击
-                        hasRating
-                            ? InkWell(
-                                onTap: _showRatingModifyDialog,
-                                borderRadius: BorderRadius.circular(4),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4, vertical: 2),
-                                  child: Text(
-                                    '$wordType测评: $fallbackLabel',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: hasRating
-                                          ? (state.lastFsrsRating?.colorWithDark(isDarkMode) ?? textColor)
-                                          : textColor,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                '$wordType测评中',
-                                style: TextStyle(fontSize: 11, color: textColor),
-                              ),
+                        Text(
+                          '$wordType测评: $assLabel',
+                          style: TextStyle(fontSize: 11, color: assColor),
+                        ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text('|',
@@ -1904,7 +1897,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   color: textColor.withValues(alpha: 0.3))),
                         ),
                         Text(
-                          '下次复习: --天后',
+                          '下次复习: ${state.assessmentScheduledDays ?? "--"}天后',
                           style: TextStyle(fontSize: 11, color: textColor),
                         ),
                       ],
@@ -1912,6 +1905,60 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
                 );
               }
+              // 巩固阶段兜底:LearningLog 无测评记录且 assessmentRating 未恢复。
+              // 若已作答(如点击"看答案"后 lastFsrsRating=again)则显示评分,
+              // 否则显示"测评中"。
+              final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
+              final bool hasRating = state.lastFsrsRating != null;
+              return Container(
+                alignment: Alignment.center,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 有评分时才可点击弹"修改今日评分"对话框;测评中不可点击
+                      hasRating
+                          ? InkWell(
+                              onTap: _showRatingModifyDialog,
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
+                                child: Text(
+                                  '$wordType测评: $fallbackLabel',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: hasRating
+                                        ? (state.lastFsrsRating
+                                                ?.colorWithDark(isDarkMode) ??
+                                            textColor)
+                                        : textColor,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Text(
+                              '$wordType测评中',
+                              style: TextStyle(fontSize: 11, color: textColor),
+                            ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('|',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: textColor.withValues(alpha: 0.3))),
+                      ),
+                      Text(
+                        '下次复习: --天后',
+                        style: TextStyle(fontSize: 11, color: textColor),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
 
             final latestLog = snapshot.data!.first;
             final rating = FsrsRatingExt.fromInt(latestLog.rating);
@@ -1932,8 +1979,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       onTap: _showRatingModifyDialog,
                       borderRadius: BorderRadius.circular(4),
                       child: Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
                         child: Row(
                           children: [
                             Text(
@@ -1966,7 +2013,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                             text: '$scheduledDays',
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDarkMode ? Colors.white70 : Colors.black54,
+                              color:
+                                  isDarkMode ? Colors.white70 : Colors.black54,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -2027,20 +2075,21 @@ extension BdcPageStateUIComponents on BdcPageState {
                       onTap: _showRatingModifyDialog,
                       borderRadius: BorderRadius.circular(4),
                       child: Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
                         child: Text(
                           '$wordType测评: $fallbackLabel',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
                             color: hasRating
-                                ? (state.lastFsrsRating?.colorWithDark(isDarkMode) ?? textColor)
+                                ? (state.lastFsrsRating
+                                        ?.colorWithDark(isDarkMode) ??
+                                    textColor)
                                 : textColor,
                           ),
                         ),
-                      )
-                    )
+                      ))
                   : Text(
                       '$wordType测评中',
                       style: TextStyle(fontSize: 11.5, color: textColor),
@@ -2109,7 +2158,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                     text: '${state.fsrsItem!.scheduledDays}',
                     style: TextStyle(
                       fontSize: 11.5,
-                      color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                      color: isDarkMode
+                          ? const Color(0xFFEAF7F4)
+                          : const Color(0xFF152724),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -2163,7 +2214,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildPanelButton({
     required IconData icon,
     required String label,
@@ -2207,7 +2257,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildPhoneticRow(BdcState state) {
     if (state.currentGetWordResult?.learningWord?.word == null ||
         state.studyStep == StudyStep.en2Ch.json ||
@@ -2237,7 +2286,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                   fontSize: 10.5,
                   margin: const EdgeInsets.only(right: 6),
                   onSwitched: (newAccent) async {
-                    StudyAudioSessionController.instance.playWordSound(currentWord);
+                    StudyAudioSessionController.instance
+                        .playWordSound(currentWord);
                   },
                 ),
               ],
@@ -2264,7 +2314,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildFirstSentenceRow(BdcState state) {
     if (!(state.word?.sentences != null &&
         state.word!.sentences!.isNotEmpty &&
@@ -2279,8 +2328,8 @@ extension BdcPageStateUIComponents on BdcPageState {
         final sentencePlaying = state.playingStates['sentence'] ?? false;
         if (!sentencePlaying && state.englishDigestOfFirstSentence != null) {
           notifier.playWithAnimation(
-              () => StudyAudioSessionController.instance.playSentenceSound(
-                  state.englishDigestOfFirstSentence!),
+              () => StudyAudioSessionController.instance
+                  .playSentenceSound(state.englishDigestOfFirstSentence!),
               'sentence');
         }
       },
@@ -2311,12 +2360,12 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildEnSentenceStepCard(BdcState state) {
     final isDarkMode = _cachedIsDarkMode;
-    final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
-        ? state.word!.sentences!.first
-        : null;
+    final sentence =
+        (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+            ? state.word!.sentences!.first
+            : null;
     final sentenceText = sentence?.english ?? "No sentence available";
 
     return Container(
@@ -2352,9 +2401,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                   radius: 22,
                   highlightShape: BoxShape.circle,
                   onTap: () {
-                    final sentencePlaying = state.playingStates['sentence'] ?? false;
+                    final sentencePlaying =
+                        state.playingStates['sentence'] ?? false;
                     if (!sentencePlaying) {
-                      notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
+                      notifier.playWordAndFirstSentence(false, false,
+                          forcePlaySentence: true);
                     }
                   },
                   child: Padding(
@@ -2371,7 +2422,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 TextButton.icon(
                   icon: const Icon(Icons.visibility_outlined, size: 16),
                   label: const Text("看答案",
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
                     foregroundColor: context.textSecondary,
                   ),
@@ -2384,7 +2436,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                   onPressed: () => notifier.hideAnswer(),
                   icon: const Icon(Icons.visibility_off_outlined, size: 16),
                   label: const Text('隐藏答案继续练习',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
                     foregroundColor: context.textSecondary,
                   ),
@@ -2410,9 +2463,10 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildChSentenceStepCard(BdcState state) {
-    final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
-        ? state.word!.sentences!.first
-        : null;
+    final sentence =
+        (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+            ? state.word!.sentences!.first
+            : null;
     final translationText = sentence?.chinese ?? "暂无例句翻译";
 
     return Container(
@@ -2445,9 +2499,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                   radius: 22,
                   highlightShape: BoxShape.circle,
                   onTap: () {
-                    final sentencePlaying = state.playingStates['sentence'] ?? false;
+                    final sentencePlaying =
+                        state.playingStates['sentence'] ?? false;
                     if (!sentencePlaying) {
-                      notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
+                      notifier.playWordAndFirstSentence(false, false,
+                          forcePlaySentence: true);
                     }
                   },
                   child: Padding(
@@ -2464,7 +2520,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 TextButton.icon(
                   icon: const Icon(Icons.visibility_outlined, size: 16),
                   label: const Text("看答案",
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
                     foregroundColor: context.textSecondary,
                   ),
@@ -2477,7 +2534,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                   onPressed: () => notifier.hideAnswer(),
                   icon: const Icon(Icons.visibility_off_outlined, size: 16),
                   label: const Text('隐藏答案继续练习',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
                     foregroundColor: context.textSecondary,
                   ),
@@ -2504,7 +2562,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       ),
     );
   }
-
 
   Widget _buildWordStepCard(BdcState state) {
     final primaryTextColor = context.textPrimary;
@@ -2543,9 +2600,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ValueListenableBuilder<String>(
                   valueListenable: Prefs.pronunciationAccentNotifier,
                   builder: (context, _, __) {
-                    final currentWord = state.currentGetWordResult?.learningWord?.word;
+                    final currentWord =
+                        state.currentGetWordResult?.learningWord?.word;
                     if (currentWord == null) return const SizedBox.shrink();
-                    final pronInfo = Util.getWordPronounceWithAccent(currentWord);
+                    final pronInfo =
+                        Util.getWordPronounceWithAccent(currentWord);
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -2558,7 +2617,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                             fontSize: 11,
                             margin: const EdgeInsets.only(right: 5),
                             onSwitched: (newAccent) async {
-                              StudyAudioSessionController.instance.playWordSound(currentWord);
+                              StudyAudioSessionController.instance
+                                  .playWordSound(currentWord);
                             },
                           ),
                         ],
@@ -2603,11 +2663,14 @@ extension BdcPageStateUIComponents on BdcPageState {
             InkWell(
               borderRadius: BorderRadius.circular(10),
               onTap: () {
-                final sentencePlaying = state.playingStates['sentence'] ?? false;
-                if (!sentencePlaying && state.englishDigestOfFirstSentence != null) {
+                final sentencePlaying =
+                    state.playingStates['sentence'] ?? false;
+                if (!sentencePlaying &&
+                    state.englishDigestOfFirstSentence != null) {
                   notifier.playWithAnimation(
-                      () => StudyAudioSessionController.instance.playSentenceSound(
-                          state.englishDigestOfFirstSentence!),
+                      () => StudyAudioSessionController.instance
+                          .playSentenceSound(
+                              state.englishDigestOfFirstSentence!),
                       'sentence');
                 }
               },
@@ -2650,7 +2713,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                           },
                           borderRadius: BorderRadius.circular(4),
                           child: Padding(
-                            padding: const EdgeInsets.only(top: 6, left: 6, bottom: 2),
+                            padding: const EdgeInsets.only(
+                                top: 6, left: 6, bottom: 2),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -2658,7 +2722,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   '显示翻译',
                                   style: TextStyle(
                                     fontSize: 11.5,
-                                    color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    color: _cachedIsDarkMode
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -2666,7 +2732,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 Icon(
                                   Icons.keyboard_arrow_down_rounded,
                                   size: 13.5,
-                                  color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  color: _cachedIsDarkMode
+                                      ? const Color(0xFF94A3B8)
+                                      : const Color(0xFF64748B),
                                 ),
                               ],
                             ),
@@ -2695,12 +2763,15 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildMeaningStepCard(BdcState state) {
-    final allItems = state.currentGetWordResult!.learningWord!.word.getMergedMeaningItems();
-    final hasCixingItems = allItems.any((item) => (item.ciXing ?? '').trim().isNotEmpty);
+    final allItems =
+        state.currentGetWordResult!.learningWord!.word.getMergedMeaningItems();
+    final hasCixingItems =
+        allItems.any((item) => (item.ciXing ?? '').trim().isNotEmpty);
     final displayItems = hasCixingItems
-        ? allItems.where((item) => (item.ciXing ?? '').trim().isNotEmpty).toList()
+        ? allItems
+            .where((item) => (item.ciXing ?? '').trim().isNotEmpty)
+            .toList()
         : allItems;
 
     // 自适应字阶与排版参数
@@ -2727,16 +2798,19 @@ extension BdcPageStateUIComponents on BdcPageState {
     String cleanMeaning(String? raw) {
       if (raw == null) return '';
       var text = notifier.hideParenthesesContent(raw).trim();
-      while (text.endsWith(';') || text.endsWith('；') || text.endsWith(',') || text.endsWith('，') || text.endsWith('。')) {
+      while (text.endsWith(';') ||
+          text.endsWith('；') ||
+          text.endsWith(',') ||
+          text.endsWith('，') ||
+          text.endsWith('。')) {
         text = text.substring(0, text.length - 1).trim();
       }
       return text;
     }
 
     final isDark = _cachedIsDarkMode;
-    final cixingColor = isDark
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
+    final cixingColor =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -2820,7 +2894,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
+                          padding:
+                              EdgeInsets.symmetric(vertical: itemVerticalGap),
                           child: Text(
                             cleanMeaning(item.meaning),
                             textAlign: TextAlign.start,
@@ -2850,8 +2925,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 if (state.currentGetWordResult!.images!.isNotEmpty &&
                     state.studyStep != StudyStep.ch2En.json)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     margin: const EdgeInsets.only(bottom: 8),
                     child: Text(
                         '图片: ${state.currentGetWordResult!.images!.length}',
@@ -2864,8 +2939,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   highlightedWordImg: state.highlightedWordImg?.imageFile,
                   maxImages: 2,
                   onImageTap: (image) {
-                    showImagePreviewWithContext(context, image,
-                        onDeleted: () {
+                    showImagePreviewWithContext(context, image, onDeleted: () {
                       state.currentGetWordResult?.images
                           ?.removeWhere((e) => e.id == image.id);
                       updateUI(() {}, tag: 'img-delete');
@@ -2877,19 +2951,21 @@ extension BdcPageStateUIComponents on BdcPageState {
           ],
 
           // 配图按钮
-          if (StudyConfig.fromCurrentUser().enableWordImage && state.isEditMode && (state.currentGetWordResult?.learningWord?.word.images?.length ?? 0) < 2)
+          if (StudyConfig.fromCurrentUser().enableWordImage &&
+              state.isEditMode &&
+              (state.currentGetWordResult?.learningWord?.word.images?.length ??
+                      0) <
+                  2)
             InkWell(
               child: Container(
                 margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 24.0),
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: _cachedIsDarkMode
-                        ? Colors.black
-                        : Colors.white,
-                    backgroundColor: _cachedIsDarkMode
-                        ? Colors.white
-                        : context.primaryColor,
+                    foregroundColor:
+                        _cachedIsDarkMode ? Colors.black : Colors.white,
+                    backgroundColor:
+                        _cachedIsDarkMode ? Colors.white : context.primaryColor,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -2898,12 +2974,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                   onPressed: () {
                     if (state.currentGetWordResult?.learningWord?.word.id !=
                         null) {
-                      context.push('/pic_search',
+                      context
+                          .push('/pic_search',
                               extra: PicSearchPageArgs(
-                                  state.currentGetWordResult!
-                                      .learningWord!.word.id!,
-                                  state.currentGetWordResult!
-                                      .learningWord!.word.spell))
+                                  state.currentGetWordResult!.learningWord!.word
+                                      .id!,
+                                  state.currentGetWordResult!.learningWord!.word
+                                      .spell))
                           .then((value) => notifier.reloadWord());
                     }
                   },
@@ -2914,9 +2991,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       ),
     );
   }
-
-
-
 
   SizedBox spellExerciseTextField(String wordSpell) {
     TextStyle textStyle =
@@ -2959,8 +3033,8 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
-  Widget buildWordSoundButton(WordVo word, dynamic audioPlayer, BdcState state) {
+  Widget buildWordSoundButton(
+      WordVo word, dynamic audioPlayer, BdcState state) {
     final wordPlaying = state.playingStates['word'] ?? false;
 
     return Row(
@@ -2975,7 +3049,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             onTap: () {
               if (!wordPlaying) {
                 notifier.playWithAnimation(
-                    () => StudyAudioSessionController.instance.playWordSound(word),
+                    () => StudyAudioSessionController.instance
+                        .playWordSound(word),
                     'word');
               }
             },
@@ -2990,7 +3065,8 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
         ),
         ValueListenableBuilder<AudioPlaybackStatus>(
-          valueListenable: StudyAudioSessionController.instance.playbackStatusNotifier,
+          valueListenable:
+              StudyAudioSessionController.instance.playbackStatusNotifier,
           builder: (context, status, child) {
             if (status.hasFallback && status.spell == word.spell) {
               return Container(
@@ -2999,11 +3075,17 @@ extension BdcPageStateUIComponents on BdcPageState {
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.amber.withValues(alpha: 0.35), width: 0.5),
+                  border: Border.all(
+                      color: Colors.amber.withValues(alpha: 0.35), width: 0.5),
                 ),
                 child: Text(
-                  status.fallbackType == AudioFallbackType.ttsFallback ? '系统朗读' : '备用发音',
-                  style: const TextStyle(fontSize: 10, color: Colors.amber, fontWeight: FontWeight.bold),
+                  status.fallbackType == AudioFallbackType.ttsFallback
+                      ? '系统朗读'
+                      : '备用发音',
+                  style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.amber,
+                      fontWeight: FontWeight.bold),
                 ),
               );
             }
@@ -3023,11 +3105,10 @@ extension BdcPageStateUIComponents on BdcPageState {
         radius: 18,
         highlightShape: BoxShape.circle,
         onTap: () {
-          if (!sentencePlaying &&
-              state.englishDigestOfFirstSentence != null) {
+          if (!sentencePlaying && state.englishDigestOfFirstSentence != null) {
             notifier.playWithAnimation(
-                () => StudyAudioSessionController.instance.playSentenceSound(
-                    state.englishDigestOfFirstSentence!),
+                () => StudyAudioSessionController.instance
+                    .playSentenceSound(state.englishDigestOfFirstSentence!),
                 'sentence');
           }
         },

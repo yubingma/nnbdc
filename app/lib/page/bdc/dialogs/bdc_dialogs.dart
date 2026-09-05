@@ -7,12 +7,13 @@ Color _getRatingColor(FsrsRating rating, bool isDarkMode) {
 extension BdcPageStateDialogs on BdcPageState {
   BdcState get state => ref.watch(bdcNotifierProvider);
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
+
   /// 分组标题(无开关),用于设置分组层次(如"极速模式"分组)
   Widget _buildSectionHeader(String title, {String? subtitle}) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -21,8 +22,9 @@ extension BdcPageStateDialogs on BdcPageState {
               textScaler: const TextScaler.linear(1.0),
               style: const TextStyle(
                 fontFamily: "NotoSansSC",
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
               ),
             ),
             if (subtitle != null) ...[
@@ -84,7 +86,7 @@ extension BdcPageStateDialogs on BdcPageState {
             child: Switch.adaptive(
               value: value,
               onChanged: onChanged,
-              activeTrackColor: Global.highlight,
+              activeTrackColor: context.primaryColor,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
@@ -125,7 +127,7 @@ extension BdcPageStateDialogs on BdcPageState {
               ?.withValues(alpha: 0.6),
         ),
       ),
-      trailing: const Icon(Icons.chevron_right, color: Global.highlight),
+      trailing: Icon(Icons.chevron_right, color: dialogContext.primaryColor),
       onTap: () {
         Navigator.of(dialogContext).pop();
         ThemeSelectDialog.show(context);
@@ -134,7 +136,8 @@ extension BdcPageStateDialogs on BdcPageState {
   }
 
   /// 发音口音选择项：展示当前口音（美音/英音），点击后弹出美化选择弹框
-  Widget _buildPronunciationAccentEntry(BuildContext dialogContext, StateSetter setDialogState) {
+  Widget _buildPronunciationAccentEntry(
+      BuildContext dialogContext, StateSetter setDialogState) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
@@ -161,7 +164,7 @@ extension BdcPageStateDialogs on BdcPageState {
               ?.withValues(alpha: 0.6),
         ),
       ),
-      trailing: const Icon(Icons.chevron_right, color: Global.highlight),
+      trailing: Icon(Icons.chevron_right, color: dialogContext.primaryColor),
       onTap: () async {
         final newAccent = await PronunciationAccentDialog.show(context);
         if (newAccent != null) {
@@ -172,6 +175,62 @@ extension BdcPageStateDialogs on BdcPageState {
           }
         }
       },
+    );
+  }
+
+  /// 圆角下拉弹框：当前选中的选项用主题色加粗 + 对勾，未选中为次级灰，整体圆角+轻投影。
+  Widget _buildOptionPopupMenu<T>({
+    required Map<T, String> options,
+    required T currentValue,
+    required ValueChanged<T> onSelected,
+    required Widget child,
+  }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return PopupMenuButton<T>(
+      padding: EdgeInsets.zero,
+      position: PopupMenuPosition.over,
+      elevation: 6,
+      color: isDark ? const Color(0xFF1C2127) : const Color(0xFFF8FAFC),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onSelected: onSelected,
+      itemBuilder: (BuildContext ctx) {
+        return options.entries.map((e) {
+          final bool selected = e.key == currentValue;
+          return PopupMenuItem<T>(
+            value: e.key,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    e.value,
+                    style: TextStyle(
+                      fontFamily: "NotoSansSC",
+                      fontSize: 13.5,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                      color: selected
+                          ? ctx.primaryColor
+                          : (isDark
+                              ? const Color(0xFFE2E8F0)
+                              : const Color(0xFF334155)),
+                    ),
+                  ),
+                ),
+                if (selected)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.check_rounded,
+                      size: 15,
+                      color: ctx.primaryColor,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      child: child,
     );
   }
 
@@ -208,38 +267,23 @@ extension BdcPageStateDialogs on BdcPageState {
               ?.withValues(alpha: 0.6),
         ),
       ),
-      trailing: PopupMenuButton<String>(
-        padding: EdgeInsets.zero,
-        position: PopupMenuPosition.over,
+      trailing: _buildOptionPopupMenu<String>(
+        options: options,
+        currentValue: currentValue,
         onSelected: onChanged,
-        itemBuilder: (BuildContext context) {
-          return options.entries.map((entry) {
-            return PopupMenuItem<String>(
-              value: entry.key,
-              child: Text(
-                entry.value,
-                style: const TextStyle(
-                  fontFamily: "NotoSansSC",
-                  fontSize: 13,
-                ),
-              ),
-            );
-          }).toList();
-        },
         child: SizedBox(
           width: 48,
           child: Align(
             alignment: Alignment.centerRight,
             child: Icon(
               Icons.arrow_drop_down,
-              color: Global.highlight,
+              color: context.primaryColor,
             ),
           ),
         ),
       ),
     );
   }
-
 
   Widget _buildAsrPassRuleSelector(
       String currentValue, Function(String) onChanged) {
@@ -275,38 +319,23 @@ extension BdcPageStateDialogs on BdcPageState {
               ?.withValues(alpha: 0.6),
         ),
       ),
-      trailing: PopupMenuButton<String>(
-        padding: EdgeInsets.zero,
-        position: PopupMenuPosition.over,
+      trailing: _buildOptionPopupMenu<String>(
+        options: options,
+        currentValue: currentValue,
         onSelected: onChanged,
-        itemBuilder: (BuildContext context) {
-          return options.entries.map((entry) {
-            return PopupMenuItem<String>(
-              value: entry.key,
-              child: Text(
-                entry.value,
-                style: const TextStyle(
-                  fontFamily: "NotoSansSC",
-                  fontSize: 13,
-                ),
-              ),
-            );
-          }).toList();
-        },
         child: SizedBox(
           width: 48,
           child: Align(
             alignment: Alignment.centerRight,
             child: Icon(
               Icons.arrow_drop_down,
-              color: Global.highlight,
+              color: context.primaryColor,
             ),
           ),
         ),
       ),
     );
   }
-
 
   Future<void> showSettingDlg() async {
     // 在StatefulBuilder外部初始化本地状态
@@ -320,87 +349,105 @@ extension BdcPageStateDialogs on BdcPageState {
     var localAsrPassRule = studyConfig.asrPassRule;
     var localAutoJumpAfterCorrectCh2En = studyConfig.autoJumpAfterCorrectCh2En;
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
-    var localAutoJumpAfterCorrectChSentence2En = studyConfig.autoJumpAfterCorrectChSentence2En;
-    var localAutoJumpAfterCorrectEnSentence2Ch = studyConfig.autoJumpAfterCorrectEnSentence2Ch;
+    var localAutoJumpAfterCorrectChSentence2En =
+        studyConfig.autoJumpAfterCorrectChSentence2En;
+    var localAutoJumpAfterCorrectEnSentence2Ch =
+        studyConfig.autoJumpAfterCorrectEnSentence2Ch;
 
     var localDistractorStrategy = studyConfig.distractorStrategy;
     var localMixWithOthersForIos = studyConfig.mixWithOthersForIos;
-    var localShowWordDetailAfterCorrect = studyConfig.showWordDetailAfterCorrect;
+    var localShowWordDetailAfterCorrect =
+        studyConfig.showWordDetailAfterCorrect;
 
     if (!mounted) return;
 
-    bool? choice = await showDialog<bool>(
-        barrierDismissible: false,
-        context: context,
-        builder: (BuildContext context) {
-          return StatefulBuilder(builder: (context, setState) {
-            return AlertDialog(
-              insetPadding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              titlePadding: EdgeInsets.zero,
-              contentPadding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              title: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Global.highlight.withValues(alpha: 0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(18),
-                    topRight: Radius.circular(18),
+    final bool isDialogDark = Theme.of(context).brightness == Brightness.dark;
+    bool? choice = await showGeneralDialog<bool>(
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: isDialogDark ? 0.40 : 0.18),
+      context: context,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder:
+          (BuildContext dlgCtx, Animation<double> _, Animation<double> __) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: min(MediaQuery.of(context).size.width * 0.92, 540),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isDialogDark
+                          ? [const Color(0xB8161B26), const Color(0x9910141D)]
+                          : [const Color(0x66FFFFFF), const Color(0x4DFFFFFF)],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDialogDark
+                          ? const Color(0x33FFFFFF)
+                          : const Color(0x80FFFFFF),
+                      width: 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black
+                            .withValues(alpha: isDialogDark ? 0.35 : 0.08),
+                        blurRadius: 28,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.settings_outlined,
-                      color: Global.highlight,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '学习设置',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Global.highlight,
-                        fontFamily: "NotoSansSC",
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              content: SizedBox(
-                width: min(MediaQuery.of(context).size.width * 0.92, 540),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 2),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.5,
-                      ),
-                      child: SingleChildScrollView(
-                        child: Material(
-                          color: context.subtleBg,
-                          clipBehavior: Clip.antiAlias,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: context.cardBorder,
-                                width: 0.5),
+                  child: StatefulBuilder(builder: (context, setState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.settings_outlined,
+                                color: context.primaryColor,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 9),
+                              Text(
+                                '学习设置',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.color,
+                                  fontFamily: "NotoSansSC",
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 2, horizontal: 0),
+                        ),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.height * 0.5,
+                          ),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
                                 final List<Widget> items = [
                                   _buildThemeEntry(context),
-                                  _buildPronunciationAccentEntry(context, setState),
+                                  _buildPronunciationAccentEntry(
+                                      context, setState),
                                   _buildAsrPassRuleSelector(
                                     localAsrPassRule,
                                     (value) {
@@ -500,7 +547,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                     localAutoJumpAfterCorrectChSentence2En,
                                     (value) {
                                       setState(() {
-                                        localAutoJumpAfterCorrectChSentence2En = value;
+                                        localAutoJumpAfterCorrectChSentence2En =
+                                            value;
                                       });
                                     },
                                     indent: 36,
@@ -510,7 +558,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                     localAutoJumpAfterCorrectEnSentence2Ch,
                                     (value) {
                                       setState(() {
-                                        localAutoJumpAfterCorrectEnSentence2Ch = value;
+                                        localAutoJumpAfterCorrectEnSentence2Ch =
+                                            value;
                                       });
                                     },
                                     indent: 36,
@@ -551,108 +600,126 @@ extension BdcPageStateDialogs on BdcPageState {
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context, false);
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor:
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 10),
+                                  textStyle: const TextStyle(
+                                    fontSize: 13,
+                                    fontFamily: "NotoSansSC",
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                child: const Text('取消'),
+                              ),
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 88,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: context.primaryColor,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10),
+                                  ),
+                                  onPressed: () async {
+                                    // 保存所有设置
+                                    if (currentUser != null) {
+                                      var studyConfigToSave =
+                                          StudyConfig.fromCurrentUser();
+                                      studyConfigToSave.autoPlayWord =
+                                          localAutoPlayWord;
+                                      studyConfigToSave.autoPlaySentence =
+                                          localAutoPlaySentence;
+                                      studyConfigToSave.showAnswersDirectly =
+                                          localShowAnswersDirectly;
+                                      studyConfigToSave.enableAllWrong =
+                                          localEnableAllWrong;
+                                      studyConfigToSave
+                                              .autoJumpAfterCorrectCh2En =
+                                          localAutoJumpAfterCorrectCh2En;
+                                      studyConfigToSave
+                                              .autoJumpAfterCorrectEn2Ch =
+                                          localAutoJumpAfterCorrectEn2Ch;
+                                      studyConfigToSave
+                                              .autoJumpAfterCorrectChSentence2En =
+                                          localAutoJumpAfterCorrectChSentence2En;
+                                      studyConfigToSave
+                                              .autoJumpAfterCorrectEnSentence2Ch =
+                                          localAutoJumpAfterCorrectEnSentence2Ch;
+                                      studyConfigToSave.asrPassRule =
+                                          localAsrPassRule;
+                                      studyConfigToSave.enableWordImage =
+                                          localEnableWordImage;
+                                      studyConfigToSave.distractorStrategy =
+                                          localDistractorStrategy;
+                                      studyConfigToSave.mixWithOthersForIos =
+                                          localMixWithOthersForIos;
+                                      studyConfigToSave
+                                              .showWordDetailAfterCorrect =
+                                          localShowWordDetailAfterCorrect;
+                                      await studyConfigToSave
+                                          .saveToCurrentUser();
+                                    }
+
+                                    // 在异步操作后检查context是否仍然有效
+                                    if (context.mounted) {
+                                      notifier.updateAsrPassRuleCache(
+                                          localAsrPassRule);
+                                      notifier.updateAutoJumpCh2En(
+                                          localAutoJumpAfterCorrectCh2En);
+                                      notifier.updateAutoJumpEn2Ch(
+                                          localAutoJumpAfterCorrectEn2Ch);
+                                      notifier.updateShowWordDetailAfterCorrect(
+                                          localShowWordDetailAfterCorrect);
+                                      Navigator.pop(context, true);
+                                    }
+                                  },
+                                  child: const Text('确定',
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          fontFamily: "NotoSansSC",
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
                 ),
               ),
-              actions: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    SizedBox(
-                      width: 88,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor:
-                              Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.grey[300]
-                                  : Colors.grey[700],
-                          backgroundColor:
-                              Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.grey[800]
-                                  : Colors.grey[200],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context, false);
-                        },
-                        child: const Text('取消',
-                            style: TextStyle(
-                                fontSize: 13, fontFamily: "NotoSansSC")),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 88,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Global.highlight,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        onPressed: () async {
-                          // 保存所有设置
-                          if (currentUser != null) {
-                            var studyConfigToSave =
-                                StudyConfig.fromCurrentUser();
-                            studyConfigToSave.autoPlayWord = localAutoPlayWord;
-                            studyConfigToSave.autoPlaySentence =
-                                localAutoPlaySentence;
-                            studyConfigToSave.showAnswersDirectly =
-                                localShowAnswersDirectly;
-                            studyConfigToSave.enableAllWrong =
-                                localEnableAllWrong;
-                            studyConfigToSave.autoJumpAfterCorrectCh2En =
-                                localAutoJumpAfterCorrectCh2En;
-                            studyConfigToSave.autoJumpAfterCorrectEn2Ch =
-                                localAutoJumpAfterCorrectEn2Ch;
-                            studyConfigToSave.autoJumpAfterCorrectChSentence2En =
-                                localAutoJumpAfterCorrectChSentence2En;
-                            studyConfigToSave.autoJumpAfterCorrectEnSentence2Ch =
-                                localAutoJumpAfterCorrectEnSentence2Ch;
-                            studyConfigToSave.asrPassRule = localAsrPassRule;
-                            studyConfigToSave.enableWordImage = localEnableWordImage;
-                            studyConfigToSave.distractorStrategy = localDistractorStrategy;
-                            studyConfigToSave.mixWithOthersForIos = localMixWithOthersForIos;
-                            studyConfigToSave.showWordDetailAfterCorrect =
-                                localShowWordDetailAfterCorrect;
-                            await studyConfigToSave.saveToCurrentUser();
-                          }
-
-                          // 在异步操作后检查context是否仍然有效
-                          if (context.mounted) {
-                            notifier.updateAsrPassRuleCache(localAsrPassRule);
-                            notifier.updateAutoJumpCh2En(
-                                localAutoJumpAfterCorrectCh2En);
-                            notifier.updateAutoJumpEn2Ch(
-                                localAutoJumpAfterCorrectEn2Ch);
-                            notifier.updateShowWordDetailAfterCorrect(
-                                localShowWordDetailAfterCorrect);
-                            Navigator.pop(context, true);
-                          }
-                        },
-                        child: const Text('确定',
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontFamily: "NotoSansSC",
-                                fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          });
-        });
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (BuildContext context, Animation<double> anim,
+          Animation<double> _, Widget child) {
+        return ScaleTransition(
+          alignment: Alignment.center,
+          scale: CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+    );
 
     if (choice ?? false) {
       // 设置已在确定按钮中保存，这里调用专属的刷新方法以重建 ASR 识别并重绘界面
@@ -663,7 +730,6 @@ extension BdcPageStateDialogs on BdcPageState {
       }
     }
   }
-
 
   Future<void> showErrorReportDlg() async {
     errorReportController.text = '';
@@ -687,12 +753,11 @@ extension BdcPageStateDialogs on BdcPageState {
                 final picker = ImagePicker();
                 final source = await showModalBottomSheet<ImageSource>(
                   context: context,
-                  backgroundColor: isDark
-                      ? const Color(0xFF1E1E1E)
-                      : Colors.white,
+                  backgroundColor:
+                      isDark ? const Color(0xFF1E1E1E) : Colors.white,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
                   ),
                   builder: (context) => SafeArea(
                     child: Column(
@@ -700,25 +765,25 @@ extension BdcPageStateDialogs on BdcPageState {
                       children: [
                         const SizedBox(height: 8),
                         Material(
-                          type: MaterialType.transparency,
-                          child: ListTile(
-                          leading: Icon(Icons.camera_alt_rounded,
-                              color: Global.highlight),
-                          title: const Text('拍照',
-                              style: TextStyle(fontFamily: 'NotoSansSC')),
-                          onTap: () => Navigator.pop(
-                              context, ImageSource.camera),
-                        )),
+                            type: MaterialType.transparency,
+                            child: ListTile(
+                              leading: Icon(Icons.camera_alt_rounded,
+                                  color: Global.highlight),
+                              title: const Text('拍照',
+                                  style: TextStyle(fontFamily: 'NotoSansSC')),
+                              onTap: () =>
+                                  Navigator.pop(context, ImageSource.camera),
+                            )),
                         Material(
-                          type: MaterialType.transparency,
-                          child: ListTile(
-                          leading: Icon(Icons.photo_library_rounded,
-                              color: Global.highlight),
-                          title: const Text('从相册选择',
-                              style: TextStyle(fontFamily: 'NotoSansSC')),
-                          onTap: () => Navigator.pop(
-                              context, ImageSource.gallery),
-                        )),
+                            type: MaterialType.transparency,
+                            child: ListTile(
+                              leading: Icon(Icons.photo_library_rounded,
+                                  color: Global.highlight),
+                              title: const Text('从相册选择',
+                                  style: TextStyle(fontFamily: 'NotoSansSC')),
+                              onTap: () =>
+                                  Navigator.pop(context, ImageSource.gallery),
+                            )),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -799,7 +864,8 @@ extension BdcPageStateDialogs on BdcPageState {
                         filename: pickedImages[i].name),
                     'userId': Global.getLoggedInUser()?.id ?? '',
                   });
-                  final uploadResult = await Api.client.uploadImg(formData, 800, "error_report");
+                  final uploadResult =
+                      await Api.client.uploadImg(formData, 800, "error_report");
                   if (uploadResult.success && uploadResult.data != null) {
                     imageFileNames.add(uploadResult.data!);
                   } else {
@@ -914,7 +980,8 @@ extension BdcPageStateDialogs on BdcPageState {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: imagePreviewBytesList.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 8),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 8),
                             itemBuilder: (context, index) {
                               return Stack(
                                 children: [
@@ -1015,9 +1082,8 @@ extension BdcPageStateDialogs on BdcPageState {
               ),
               actions: [
                 TextButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () => Navigator.pop(context, false),
+                  onPressed:
+                      isSubmitting ? null : () => Navigator.pop(context, false),
                   child: const Text(
                     '取消',
                     textScaler: TextScaler.linear(1.0),
@@ -1050,7 +1116,6 @@ extension BdcPageStateDialogs on BdcPageState {
           });
         });
   }
-
 
   Future<void> showEditPicDlg(
       BuildContext context, WordImageVo wordImage) async {
@@ -1090,7 +1155,8 @@ extension BdcPageStateDialogs on BdcPageState {
                           Container(
                             margin: const EdgeInsets.fromLTRB(0, 8, 0, 0),
                             child: Image.network(
-                                Uri.encodeFull('${Config.imgBaseUrl}word/${wordImage.imageFile}'),
+                                Uri.encodeFull(
+                                    '${Config.imgBaseUrl}word/${wordImage.imageFile}'),
                                 width: PlatformUtils.isWeb ? 400 : 200,
                                 height: PlatformUtils.isWeb ? 300 : 150,
                                 fit: BoxFit.contain, loadingBuilder:
@@ -1163,7 +1229,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                         var result = await Api.client
                                             .handWordImage(wordImage.id);
                                         if (result.success) {
-                                           final now = AppClock.now();
+                                          final now = AppClock.now();
                                           MyDatabase.instance.votedWordImagesDao
                                               .createEntity(VotedWordImage(
                                                   userId:
@@ -1174,7 +1240,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   createTime: now,
                                                   updateTime: now));
                                           wordImage.hand += 1;
-                                          notifier.updateIsWordImageEdited(true);
+                                          notifier
+                                              .updateIsWordImageEdited(true);
                                           voteFuture = Future.value(true);
                                           if (mounted) {
                                             dialogSetState(() {});
@@ -1217,7 +1284,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                         var result = await Api.client
                                             .footWordImage(wordImage.id);
                                         if (result.success) {
-                                           final now = AppClock.now();
+                                          final now = AppClock.now();
                                           MyDatabase.instance.votedWordImagesDao
                                               .createEntity(VotedWordImage(
                                                   userId:
@@ -1228,7 +1295,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   createTime: now,
                                                   updateTime: now));
                                           wordImage.foot += 1;
-                                          notifier.updateIsWordImageEdited(true);
+                                          notifier
+                                              .updateIsWordImageEdited(true);
                                           voteFuture = Future.value(true);
                                           if (mounted) {
                                             dialogSetState(() {});
@@ -1307,7 +1375,6 @@ extension BdcPageStateDialogs on BdcPageState {
         });
   }
 
-
   void _showRatingModifyDialog() {
     showDialog(
       context: context,
@@ -1325,7 +1392,8 @@ extension BdcPageStateDialogs on BdcPageState {
             children: [
               const Expanded(
                 child: Text('修改今日评分',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               IconButton(
                 icon: const Icon(Icons.close, size: 20),
@@ -1346,10 +1414,14 @@ extension BdcPageStateDialogs on BdcPageState {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
+                        color: Theme.of(context)
+                            .dividerColor
+                            .withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                          color: Theme.of(context)
+                              .dividerColor
+                              .withValues(alpha: 0.1),
                         ),
                       ),
                       child: Text(
@@ -1419,12 +1491,6 @@ extension BdcPageStateDialogs on BdcPageState {
       },
     );
   }
-
-
-
-
-
-
 
   void _showLearningHistoryDialog() async {
     final wordId = state.wordWrapper?.word.id;
@@ -1556,7 +1622,6 @@ extension BdcPageStateDialogs on BdcPageState {
     );
   }
 
-
   void _showDebugOverlay() async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
@@ -1583,19 +1648,55 @@ extension BdcPageStateDialogs on BdcPageState {
       return '';
     }
 
-    final pipelineRows = <({String label, String stepName, String trackType, bool isCheck, bool isList})>[
+    final pipelineRows = <({
+      String label,
+      String stepName,
+      String trackType,
+      bool isCheck,
+      bool isList
+    })>[
       // 新词测评
-      (label: '新·测: ${newCfg.check}', stepName: newCfg.check, trackType: 'new', isCheck: true, isList: false),
+      (
+        label: '新·测: ${newCfg.check}',
+        stepName: newCfg.check,
+        trackType: 'new',
+        isCheck: true,
+        isList: false
+      ),
       // 新词中间环节
       for (final s in newMiddleSteps)
-        (label: '新·${getGroupTag(s, newCfg.correct, newCfg.wrong)}: $s', stepName: s, trackType: 'new', isCheck: false, isList: false),
+        (
+          label: '新·${getGroupTag(s, newCfg.correct, newCfg.wrong)}: $s',
+          stepName: s,
+          trackType: 'new',
+          isCheck: false,
+          isList: false
+        ),
       // 旧词测评
-      (label: '旧·测: ${reviewCfg.check}', stepName: reviewCfg.check, trackType: 'review', isCheck: true, isList: false),
+      (
+        label: '旧·测: ${reviewCfg.check}',
+        stepName: reviewCfg.check,
+        trackType: 'review',
+        isCheck: true,
+        isList: false
+      ),
       // 旧词中间环节
       for (final s in reviewMiddleSteps)
-        (label: '旧·${getGroupTag(s, reviewCfg.correct, reviewCfg.wrong)}: $s', stepName: s, trackType: 'review', isCheck: false, isList: false),
+        (
+          label: '旧·${getGroupTag(s, reviewCfg.correct, reviewCfg.wrong)}: $s',
+          stepName: s,
+          trackType: 'review',
+          isCheck: false,
+          isList: false
+        ),
       // List 公用环节
-      (label: 'List', stepName: 'List', trackType: 'shared', isCheck: false, isList: true),
+      (
+        label: 'List',
+        stepName: 'List',
+        trackType: 'shared',
+        isCheck: false,
+        isList: true
+      ),
     ];
 
     // 获取用户已掌握的单词 ID 集，用于准确反映调度状态
@@ -1605,11 +1706,12 @@ extension BdcPageStateDialogs on BdcPageState {
 
     // 今天评分日志：固化每词轨道（与 StudyBo 一致）
     final todayStart = AppClock.today();
-    final logRows = await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
-          ..where((l) =>
-              l.userId.equals(user.id) &
-              l.createTime.isBiggerOrEqualValue(todayStart)))
-        .get();
+    final logRows =
+        await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
+              ..where((l) =>
+                  l.userId.equals(user.id) &
+                  l.createTime.isBiggerOrEqualValue(todayStart)))
+            .get();
     final firstLogs = <String, ({int elapsedDays, int rating})>{};
     final earliestTime = <String, DateTime>{};
     // 当天评分日志条数：后续组环节"真走过"= 当天有 ≥2 条评分日志（测评 + 组内评分）
@@ -1693,17 +1795,24 @@ extension BdcPageStateDialogs on BdcPageState {
       bWords.sort((a, b) {
         final trackA = trackOf(a);
         final trackB = trackOf(b);
-        final bool isAFinished = isEffectivelyMastered(a) || (a.todayLearnedTimes as int) >= trackA.length;
-        final bool isBFinished = isEffectivelyMastered(b) || (b.todayLearnedTimes as int) >= trackB.length;
+        final bool isAFinished = isEffectivelyMastered(a) ||
+            (a.todayLearnedTimes as int) >= trackA.length;
+        final bool isBFinished = isEffectivelyMastered(b) ||
+            (b.todayLearnedTimes as int) >= trackB.length;
         if (isAFinished != isBFinished) return isAFinished ? 1 : -1;
-        if (isAFinished && isBFinished) return (a.learningOrder as int).compareTo(b.learningOrder as int);
+        if (isAFinished && isBFinished) {
+          return (a.learningOrder as int).compareTo(b.learningOrder as int);
+        }
 
-        final bool isAList = (a.todayLearnedTimes as int) < trackA.length && trackA[a.todayLearnedTimes] == 'List';
-        final bool isBList = (b.todayLearnedTimes as int) < trackB.length && trackB[b.todayLearnedTimes] == 'List';
+        final bool isAList = (a.todayLearnedTimes as int) < trackA.length &&
+            trackA[a.todayLearnedTimes] == 'List';
+        final bool isBList = (b.todayLearnedTimes as int) < trackB.length &&
+            trackB[b.todayLearnedTimes] == 'List';
         if (isAList != isBList) return isAList ? 1 : -1;
 
         if (a.todayLearnedTimes != b.todayLearnedTimes) {
-          return (a.todayLearnedTimes as int).compareTo(b.todayLearnedTimes as int);
+          return (a.todayLearnedTimes as int)
+              .compareTo(b.todayLearnedTimes as int);
         }
         return (a.learningOrder as int).compareTo(b.learningOrder as int);
       });
@@ -1979,12 +2088,12 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   width:
                                                       82), // Space for step names
                                               ...batchWords.map((w) {
-                                                final isCurrentWord =
-                                                    state.currentGetWordResult
-                                                            ?.learningWord
-                                                            ?.word
-                                                            .id ==
-                                                        w.wordId;
+                                                final isCurrentWord = state
+                                                        .currentGetWordResult
+                                                        ?.learningWord
+                                                        ?.word
+                                                        .id ==
+                                                    w.wordId;
                                                 // 新词（学习轨道）/旧词（复习轨道）用拼写颜色区分，当前词保持蓝色加粗优先
                                                 final isReviewWord =
                                                     StudyTrack.isReviewTrack(
@@ -1993,8 +2102,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   lastLearningDate:
                                                       w.lastLearningDate,
                                                   todayFirstLogElapsedDays:
-                                                      firstLogs[
-                                                          w.wordId]?.elapsedDays,
+                                                      firstLogs[w.wordId]
+                                                          ?.elapsedDays,
                                                   today: todayStart,
                                                 );
                                                 final Color spellColor =
@@ -2062,56 +2171,86 @@ extension BdcPageStateDialogs on BdcPageState {
                                                           row.label,
                                                           style: TextStyle(
                                                             fontSize: 10,
-                                                            fontWeight: FontWeight.w500,
-                                                            color: row.trackType == 'new'
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: row.trackType ==
+                                                                    'new'
                                                                 ? Colors.green
-                                                                : (row.trackType == 'review'
-                                                                    ? Colors.orange
+                                                                : (row.trackType ==
+                                                                        'review'
+                                                                    ? Colors
+                                                                        .orange
                                                                     : subTextColor),
                                                           ),
                                                           maxLines: 1,
-                                                          overflow:
-                                                              TextOverflow.ellipsis,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
                                                       ),
                                                     ),
                                                     ...batchWords.map((w) {
                                                       final isReviewWord =
-                                                          StudyTrack.isReviewTrack(
+                                                          StudyTrack
+                                                              .isReviewTrack(
                                                         stability: w.stability,
                                                         state: w.state,
                                                         lastLearningDate:
                                                             w.lastLearningDate,
                                                         todayFirstLogElapsedDays:
-                                                            firstLogs[
-                                                                w.wordId]?.elapsedDays,
+                                                            firstLogs[w.wordId]
+                                                                ?.elapsedDays,
                                                         today: todayStart,
                                                       );
-                                                      final wordTrack = trackOf(w);
+                                                      final wordTrack =
+                                                          trackOf(w);
 
                                                       // 计算该行在该词当前轨道中的索引
                                                       int? trackIndex;
                                                       if (row.isList) {
-                                                        trackIndex = wordTrack.length - 1;
-                                                      } else if (row.trackType == 'new') {
+                                                        trackIndex =
+                                                            wordTrack.length -
+                                                                1;
+                                                      } else if (row
+                                                              .trackType ==
+                                                          'new') {
                                                         if (!isReviewWord) {
                                                           if (row.isCheck) {
                                                             trackIndex = 0;
                                                           } else {
-                                                            final foundIdx = wordTrack.indexOf(row.stepName, 1);
-                                                            if (foundIdx != -1 && foundIdx < wordTrack.length - 1) {
-                                                              trackIndex = foundIdx;
+                                                            final foundIdx =
+                                                                wordTrack.indexOf(
+                                                                    row.stepName,
+                                                                    1);
+                                                            if (foundIdx !=
+                                                                    -1 &&
+                                                                foundIdx <
+                                                                    wordTrack
+                                                                            .length -
+                                                                        1) {
+                                                              trackIndex =
+                                                                  foundIdx;
                                                             }
                                                           }
                                                         }
-                                                      } else if (row.trackType == 'review') {
+                                                      } else if (row
+                                                              .trackType ==
+                                                          'review') {
                                                         if (isReviewWord) {
                                                           if (row.isCheck) {
                                                             trackIndex = 0;
                                                           } else {
-                                                            final foundIdx = wordTrack.indexOf(row.stepName, 1);
-                                                            if (foundIdx != -1 && foundIdx < wordTrack.length - 1) {
-                                                              trackIndex = foundIdx;
+                                                            final foundIdx =
+                                                                wordTrack.indexOf(
+                                                                    row.stepName,
+                                                                    1);
+                                                            if (foundIdx !=
+                                                                    -1 &&
+                                                                foundIdx <
+                                                                    wordTrack
+                                                                            .length -
+                                                                        1) {
+                                                              trackIndex =
+                                                                  foundIdx;
                                                             }
                                                           }
                                                         }
@@ -2121,15 +2260,24 @@ extension BdcPageStateDialogs on BdcPageState {
                                                       if (trackIndex == null) {
                                                         return Container(
                                                           width: 30,
-                                                          alignment: Alignment.center,
+                                                          alignment:
+                                                              Alignment.center,
                                                           child: Container(
                                                             width: 4,
                                                             height: 4,
-                                                            decoration: BoxDecoration(
+                                                            decoration:
+                                                                BoxDecoration(
                                                               color: isDark
-                                                                  ? Colors.white.withValues(alpha: 0.1)
-                                                                  : Colors.black.withValues(alpha: 0.08),
-                                                              shape: BoxShape.circle,
+                                                                  ? Colors.white
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.1)
+                                                                  : Colors.black
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.08),
+                                                              shape: BoxShape
+                                                                  .circle,
                                                             ),
                                                           ),
                                                         );
@@ -2175,18 +2323,17 @@ extension BdcPageStateDialogs on BdcPageState {
                                                                 : (isDark
                                                                     ? Colors
                                                                         .white24
-                                                                    : Colors.grey
+                                                                    : Colors
+                                                                        .grey
                                                                         .withValues(
                                                                             alpha:
                                                                                 0.3)),
-                                                            borderRadius:
-                                                                isWordFinished
-                                                                    ? BorderRadius
-                                                                        .circular(
-                                                                            3)
-                                                                    : BorderRadius
-                                                                        .circular(
-                                                                            7), // 矩形(圆角3)/圆形(圆角7)
+                                                            borderRadius: isWordFinished
+                                                                ? BorderRadius
+                                                                    .circular(3)
+                                                                : BorderRadius
+                                                                    .circular(
+                                                                        7), // 矩形(圆角3)/圆形(圆角7)
                                                             border: isCurrentStep
                                                                 ? Border.all(
                                                                     color: Colors
@@ -2196,7 +2343,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                                     ? Border.all(
                                                                         color: Colors
                                                                             .orange,
-                                                                        width: 2)
+                                                                        width:
+                                                                            2)
                                                                     : null),
                                                           ),
                                                         ),
@@ -2210,7 +2358,6 @@ extension BdcPageStateDialogs on BdcPageState {
                                               ),
                                             ],
                                           ],
-                                          
                                         ],
                                       ),
                                     ),
@@ -2269,9 +2416,7 @@ extension BdcPageStateDialogs on BdcPageState {
       String label = match.group(0)!;
       spans.add(TextSpan(
         text: label,
-        style: TextStyle(
-            color: labelColors[label],
-            fontFamily: "NotoSansSC"),
+        style: TextStyle(color: labelColors[label], fontFamily: "NotoSansSC"),
       ));
       lastIndex = match.end;
     }
