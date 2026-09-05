@@ -913,11 +913,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 启动当前动画前，先停止其他所有正在播放的动画
     _stopAllExcept(audioType);
 
+    // 先获取/初始化控制器与播放状态
+    final controller = audioType == 'word' ? _wordSoundController : _getSentenceController(audioType);
     _playingStates[audioType]!.value = true;
     if (!mounted) return;
-
-    // 只更新特定的控制器状态
-    final controller = audioType == 'word' ? _wordSoundController : _getSentenceController(audioType);
     controller.repeat();
 
     try {
@@ -2608,7 +2607,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 for (var sent in sentences)
                                   InkWell(
                                     onTap: () {
-                                      if (!(_playingStates[sent.id]!.value)) {
+                                      if (!(_playingStates[sent.id]?.value ?? false)) {
                                         _playWithAnimation(() => sessionController.playWordAndSentence(
                                           args.word,
                                           sentenceDigest: sent.englishDigest,
@@ -2661,10 +2660,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                                  ),
                                                  child: Center(
                                                    child: AnimatedBuilder(
-                                                     animation: _playingStates[sent.id]!,
+                                                     animation: _getSentenceController(sent.id),
                                                      builder: (context, child) {
                                                        return ModernSoundWaveIcon(
-                                                         isPlaying: _playingStates[sent.id]!.value,
+                                                         isPlaying: _playingStates[sent.id]?.value ?? false,
                                                          animationController: _getSentenceController(sent.id),
                                                          size: 13,
                                                          color: context.primaryColor,
