@@ -1146,8 +1146,13 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildMeaningInline(String text, double fontSize, Color defaultColor) {
     if (text.isEmpty) return const SizedBox.shrink();
+    final isDark = _cachedIsDarkMode;
+    final cixingColor = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+
     final lines = text.split('\n');
-    List<Widget> itemWidgets = [];
+    List<Widget> widgets = [];
 
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i].trim();
@@ -1171,49 +1176,60 @@ extension BdcPageStateUIComponents on BdcPageState {
         meaning = meaning.substring(0, meaning.length - 1).trim();
       }
 
-      itemWidgets.add(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (ciXing.isNotEmpty) ...[
-              Text(
-                ciXing,
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: (fontSize - 2.5).clamp(11.0, 13.0),
-                  fontWeight: FontWeight.w500,
-                  color: _cachedIsDarkMode
-                      ? const Color(0xFF94A3B8)
-                      : const Color(0xFF64748B),
-                  letterSpacing: 0.2,
+      if (ciXing.isNotEmpty) {
+        widgets.add(
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$ciXing ',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: fontSize - 1,
+                    fontWeight: FontWeight.w500,
+                    color: cixingColor,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-            ],
-            Text(
-              meaning,
-              style: TextStyle(
-                fontFamily: "NotoSansSC",
-                fontSize: fontSize,
-                fontWeight: FontWeight.w500,
-                color: defaultColor,
-                height: 1.35,
-              ),
+                TextSpan(
+                  text: meaning,
+                  style: TextStyle(
+                    fontFamily: "NotoSansSC",
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w500,
+                    color: defaultColor,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
+          ),
+        );
+      } else {
+        widgets.add(
+          Text(
+            meaning,
+            style: TextStyle(
+              fontFamily: "NotoSansSC",
+              fontSize: fontSize,
+              fontWeight: FontWeight.w500,
+              color: defaultColor,
+            ),
+          ),
+        );
+      }
 
       if (i < lines.length - 1) {
-        itemWidgets.add(const SizedBox(height: 6));
+        widgets.add(const SizedBox(width: 8));
       }
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: itemWidgets,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: widgets,
+      ),
     );
   }
 
