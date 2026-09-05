@@ -2029,8 +2029,10 @@ class BdcNotifier extends _$BdcNotifier {
             final ratingResult = _calculateRating(method);
             _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
           }
-        } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling && !_isPttPressed) {
-          // 本地未匹配通过且非按住中：触发例句 AI 裁判防抖判定
+        } else if (isFinal && !state.hasFinishedAnswering && !_isAnswerCorrectHandling && !_isPttPressed) {
+          // 本地未匹配通过且非按住中：仅在识别已出最终帧时才回落例句 AI 裁判。
+          // 避免在未定论的中间帧（isFinal=false，可能已包含全对内容）上把 AI 裁判提前调度起来，
+          // 造成"明明已经答对（含核心词、评分近满分）却仍被 AI 判定"的割裂。
           _scheduleSentenceAiRefereeCheck(inputs);
         }
       }
