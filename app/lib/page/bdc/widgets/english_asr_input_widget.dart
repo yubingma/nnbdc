@@ -166,45 +166,42 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
 
     final bool isPassed = widget.isScorePassed || (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
 
-    final scoreWidget = Visibility(
-      visible: widget.score != null && widget.score! > 0,
-      maintainSize: true,
-      maintainState: true,
-      maintainAnimation: true,
-      child: Tooltip(
-        message: '发音评分',
-        triggerMode: TooltipTriggerMode.tap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          decoration: BoxDecoration(
-            color: isPassed
-                ? Colors.green.withValues(alpha: 0.1)
-                : Colors.orange.withValues(alpha: 0.1),
-            border: Border.all(
-              color: isPassed
-                  ? Colors.green.withValues(alpha: 0.5)
-                  : Colors.orange.withValues(alpha: 0.5),
-              width: 1,
-            ),
-          ),
-          child: SizedBox(
-            width: 25,
-            child: Center(
-              child: Text(
-                '${widget.score ?? 0}',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+    final scoreWidget = (widget.score != null && widget.score! > 0)
+        ? Tooltip(
+            message: '发音评分',
+            triggerMode: TooltipTriggerMode.tap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: isPassed
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.orange.withValues(alpha: 0.1),
+                border: Border.all(
                   color: isPassed
-                      ? Colors.green
-                      : Colors.orange,
+                      ? Colors.green.withValues(alpha: 0.5)
+                      : Colors.orange.withValues(alpha: 0.5),
+                  width: 1,
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: SizedBox(
+                width: 25,
+                child: Center(
+                  child: Text(
+                    '${widget.score ?? 0}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isPassed
+                          ? Colors.green
+                          : Colors.orange,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
+          )
+        : null;
 
     final waveformWidget = SizedBox(
       height: 20,
@@ -279,14 +276,17 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    scoreWidget,
+                    if (scoreWidget != null) ...[
+                      const SizedBox(width: 6),
+                      scoreWidget,
+                    ],
                   ],
                 ],
               )
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   waveformWidget,
                   const SizedBox(height: 2),
@@ -295,21 +295,22 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                   else
                     Row(
                       mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            statusText,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isDarkMode ? Colors.white54 : Colors.black45,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        Text(
+                          statusText,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isDarkMode ? Colors.white54 : Colors.black45,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        scoreWidget,
+                        if (scoreWidget != null) ...[
+                          const SizedBox(width: 4),
+                          scoreWidget,
+                        ],
                       ],
                     ),
                 ],
