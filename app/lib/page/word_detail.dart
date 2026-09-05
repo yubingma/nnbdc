@@ -27,6 +27,7 @@ import '../util/study_config.dart';
 import '../util/subscription_util.dart';
 import '../util/utils.dart';
 import '../widget/pronunciation_accent_badge.dart';
+import '../widget/sound_wave_icon.dart';
 import 'bdc/widgets/word_images_widget.dart';
 import 'pic_search.dart';
 
@@ -1197,14 +1198,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                             const SizedBox(width: 6),
                                                 ],
                                             AnimatedBuilder(
-                                              animation: _wordSoundController,
+                                              animation: _playingStates['word']!,
                                               builder: (context, child) {
-                                                return Icon(
-                                                  _playingStates['word']!.value
-                                                      ? (_wordSoundController.value < 0.5 ? Icons.volume_up_rounded : Icons.volume_down_rounded)
-                                                      : Icons.volume_up_rounded,
-                                                  color: accentColor,
+                                                return ModernSoundWaveIcon(
+                                                  isPlaying: _playingStates['word']!.value,
+                                                  animationController: _wordSoundController,
                                                   size: 16,
+                                                  color: accentColor,
+                                                  activeColor: accentColor,
                                                 );
                                               },
                                             ),
@@ -2660,14 +2661,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                                  ),
                                                  child: Center(
                                                    child: AnimatedBuilder(
-                                                     animation: _getSentenceController(sent.id),
+                                                     animation: _playingStates[sent.id]!,
                                                      builder: (context, child) {
-                                                       return Icon(
-                                                         _playingStates[sent.id]!.value
-                                                             ? (_getSentenceController(sent.id).value < 0.5 ? Icons.volume_up_rounded : Icons.volume_down_rounded)
-                                                             : Icons.volume_up_rounded,
-                                                         color: context.primaryColor,
+                                                       return ModernSoundWaveIcon(
+                                                         isPlaying: _playingStates[sent.id]!.value,
+                                                         animationController: _getSentenceController(sent.id),
                                                          size: 13,
+                                                         color: context.primaryColor,
+                                                         activeColor: context.primaryColor,
                                                        );
                                                      },
                                                    ),
@@ -3094,8 +3095,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   ),
                                 ),
                                 const SizedBox(width: 4),
-                                Icon(
-                                  Icons.volume_up_rounded,
+                                ModernSoundWaveIcon(
                                   size: 14,
                                   color: context.primaryColor,
                                 ),

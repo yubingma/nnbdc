@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:nnbdc/theme/theme.dart';
+import 'package:nnbdc/theme/app_theme.dart';
 
 /// 现代极简声波发音图标组件（对标 Apple SF Symbols / 高端词典极简质感）
 /// - 支持外部传入 [animationController] 联动全局状态

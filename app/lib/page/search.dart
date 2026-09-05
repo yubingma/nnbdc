@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 
 import '../state.dart';
 import '../theme/app_theme.dart';
+import '../widget/sound_wave_icon.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -404,10 +405,11 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                                   color: cardSubtle,
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
-                                  Icons.volume_up_rounded,
-                                  size: 16,
-                                  color: accentColor,
+                                child: Center(
+                                  child: ModernSoundWaveIcon(
+                                    size: 16,
+                                    color: accentColor,
+                                  ),
                                 ),
                               ),
                             ),

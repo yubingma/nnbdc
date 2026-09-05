@@ -27,6 +27,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/handwriting_board.dart';
 import 'package:nnbdc/widget/theme_select_dialog.dart';
+import '../../widget/sound_wave_icon.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:share_plus/share_plus.dart';
@@ -3524,7 +3525,7 @@ class WordListPageState extends State<WordListPage>
                 IconButton(
                   icon: const Row(
                     children: [
-                      Icon(Icons.volume_up, size: 20, color: Colors.white),
+                      ModernSoundWaveIcon(size: 18, color: Colors.white),
                       Text(' En',
                           style: TextStyle(fontSize: 12, color: Colors.white)),
                     ],
@@ -3538,7 +3539,7 @@ class WordListPageState extends State<WordListPage>
                 IconButton(
                   icon: const Row(
                     children: [
-                      Icon(Icons.volume_up, size: 20, color: Colors.white),
+                      ModernSoundWaveIcon(size: 18, color: Colors.white),
                       Text(' 中',
                           style: TextStyle(fontSize: 12, color: Colors.white)),
                     ],

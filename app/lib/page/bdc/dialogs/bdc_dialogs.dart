@@ -1,16 +1,7 @@
 part of '../bdc.dart';
 
-Color _getRatingColor(FsrsRating rating, bool isDarkMode, [Color? primaryColor]) {
-  switch (rating) {
-    case FsrsRating.again:
-      return isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
-    case FsrsRating.hard:
-      return isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00);
-    case FsrsRating.easy:
-      return isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
-    case FsrsRating.good:
-      return primaryColor ?? AppTheme.primaryColor;
-  }
+Color _getRatingColor(FsrsRating rating, bool isDarkMode) {
+  return rating.colorWithDark(isDarkMode);
 }
 
 extension BdcPageStateDialogs on BdcPageState {
@@ -1396,22 +1387,8 @@ extension BdcPageStateDialogs on BdcPageState {
                 ),
               ),
               ...FsrsRating.values.map((rating) {
-                Color ratingColor;
                 final isDarkMode = context.read<DarkMode>().isDarkMode;
-                switch (rating) {
-                  case FsrsRating.again:
-                    ratingColor = isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
-                    break;
-                  case FsrsRating.hard:
-                    ratingColor = isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00);
-                    break;
-                  case FsrsRating.easy:
-                    ratingColor = isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
-                    break;
-                  case FsrsRating.good:
-                    ratingColor = context.primaryColor;
-                    break;
-                }
+                final ratingColor = rating.colorWithDark(isDarkMode);
 
                 return ListTile(
                   shape: RoundedRectangleBorder(
@@ -1480,21 +1457,7 @@ extension BdcPageStateDialogs on BdcPageState {
                       final timeStr =
                           '${log.createTime.year}-${log.createTime.month.toString().padLeft(2, '0')}-${log.createTime.day.toString().padLeft(2, '0')} ${log.createTime.hour.toString().padLeft(2, '0')}:${log.createTime.minute.toString().padLeft(2, '0')}';
 
-                      Color ratingColor;
-                      switch (rating) {
-                        case FsrsRating.again:
-                          ratingColor = Colors.redAccent;
-                          break;
-                        case FsrsRating.hard:
-                          ratingColor = Colors.orangeAccent;
-                          break;
-                        case FsrsRating.good:
-                          ratingColor = context.primaryColor;
-                          break;
-                        case FsrsRating.easy:
-                          ratingColor = Colors.greenAccent;
-                          break;
-                      }
+                      final ratingColor = rating.colorWithDark(isDarkMode);
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),

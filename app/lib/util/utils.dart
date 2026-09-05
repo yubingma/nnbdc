@@ -20,6 +20,7 @@ import '../api/vo.dart';
 import '../config.dart';
 import '../global.dart';
 import '../theme/app_theme.dart';
+import '../widget/sound_wave_icon.dart';
 import 'app_clock.dart';
 
 class Util {
@@ -661,9 +662,8 @@ class Util {
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(width: 4),
-                                                Icon(
-                                                  Icons.volume_down_rounded,
-                                                  size: 20,
+                                                ModernSoundWaveIcon(
+                                                  size: 16,
                                                   color: context.read<DarkMode>().isDarkMode ? Colors.grey[400] : Colors.grey[600],
                                                 ),
                                               ],

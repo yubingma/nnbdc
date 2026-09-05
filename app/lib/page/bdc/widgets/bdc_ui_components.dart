@@ -824,15 +824,10 @@ extension BdcPageStateUIComponents on BdcPageState {
         state.studyStep == StudyStep.list.json;
 
     final isDark = _cachedIsDarkMode;
-    // 严格与 FSRS 评分保持 100% 颜色呼应：
-    // 「不认识」对应 FsrsRating.again(忘记) -> 标准鲜红
-    // 「再学学」对应 FsrsRating.good(良好)  -> 主题主色生机绿
-    final againIndicator =
-        isDark ? const Color(0xFFFF7E6C) : const Color(0xFFD32F2F);
-    final studyAgainIndicator = context.primaryColor;
-    // 「下一词」为通用流转导航动作，非 FSRS 评分，使用沉稳克制的高级中性石板灰，避免与「再学学」的绿色撞色
-    final nextWordIndicator =
-        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    // FSRS 评分严格使用记忆科学与行业通行的语义色（红/绿），通用流转导航动作「下一词」使用应用当前主题色
+    final againIndicator = FsrsRating.again.colorWithDark(isDark);
+    final studyAgainIndicator = FsrsRating.good.colorWithDark(isDark);
+    final nextWordIndicator = context.primaryColor;
 
     final normalTextColor = context.textPrimary;
 
@@ -1838,21 +1833,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 if (state.assessmentRating != null) {
                   final assRating = state.assessmentRating!;
                   String assLabel = assRating.label;
-                  Color assColor;
-                  switch (assRating) {
-                    case FsrsRating.again:
-                      assColor = isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
-                      break;
-                    case FsrsRating.hard:
-                      assColor = isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00);
-                      break;
-                    case FsrsRating.easy:
-                      assColor = isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
-                      break;
-                    case FsrsRating.good:
-                      assColor = context.primaryColor;
-                      break;
-                  }
+                  Color assColor = assRating.colorWithDark(isDarkMode);
                   return Container(
                     alignment: Alignment.center,
                     child: FittedBox(
@@ -1907,7 +1888,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: hasRating
-                                          ? context.primaryColor
+                                          ? (state.lastFsrsRating?.colorWithDark(isDarkMode) ?? textColor)
                                           : textColor,
                                     ),
                                   ),
@@ -1939,24 +1920,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             final scheduledDays = latestLog.scheduledDays;
 
             String ratingLabel = rating.label;
-            Color ratingColor;
-            switch (rating) {
-              case FsrsRating.again:
-                ratingColor =
-                    isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
-                break;
-              case FsrsRating.hard:
-                ratingColor =
-                    isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00);
-                break;
-              case FsrsRating.easy:
-                ratingColor =
-                    isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
-                break;
-              case FsrsRating.good:
-                ratingColor = context.primaryColor;
-                break;
-            }
+            Color ratingColor = rating.colorWithDark(isDarkMode);
 
             return Container(
               alignment: Alignment.center,
@@ -2073,7 +2037,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
                             color: hasRating
-                                ? context.primaryColor
+                                ? (state.lastFsrsRating?.colorWithDark(isDarkMode) ?? textColor)
                                 : textColor,
                           ),
                         ),
@@ -2103,26 +2067,8 @@ extension BdcPageStateUIComponents on BdcPageState {
 
     // 获取本次操作的评估标签和颜色
     String ratingLabel = state.lastFsrsRating?.label ?? '未知';
-    Color ratingColor;
-
-    switch (state.lastFsrsRating) {
-      case FsrsRating.again:
-        ratingColor =
-            isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFD32F2F); // 标准鲜红
-        break;
-      case FsrsRating.hard:
-        ratingColor =
-            isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706); // 琥珀黄
-        break;
-      case FsrsRating.easy:
-        ratingColor =
-            isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C); // 翡翠绿
-        break;
-      case FsrsRating.good:
-      default:
-        ratingColor = context.primaryColor;
-        break;
-    }
+    Color ratingColor = state.lastFsrsRating?.colorWithDark(isDarkMode) ??
+        (isDarkMode ? Colors.white70 : Colors.black87);
 
     return Container(
       alignment: Alignment.center,
@@ -3097,7 +3043,5 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
       ),
     );
-  }
-
   }
 }

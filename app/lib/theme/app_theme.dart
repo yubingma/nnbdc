@@ -1,7 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../api/enum.dart';
 import '../state.dart';
 export '../widget/app_scaffold.dart';
+
+/// FSRS 评级标准语义色扩展（红、橙、绿、蓝，符合记忆算法与业界规范，不随应用品牌主题色变化）
+extension FsrsRatingColorExt on FsrsRating {
+  Color colorWithDark(bool isDark) {
+    switch (this) {
+      case FsrsRating.again:
+        return isDark ? const Color(0xFFFF7E6C) : const Color(0xFFD32F2F); // 忘记: 鲜红
+      case FsrsRating.hard:
+        return isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706); // 模糊: 琥珀橙
+      case FsrsRating.good:
+        return isDark ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C); // 良好: 生机翠绿
+      case FsrsRating.easy:
+        return isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7); // 轻松: 晴空科技蓝
+    }
+  }
+}
 
 /// 应用视觉主题风格枚举 (5 款风格截然不同、性格鲜明的专属美学)
 enum AppThemeStyle {

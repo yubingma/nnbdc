@@ -13,6 +13,7 @@ import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/local_word_cache.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
+import '../../widget/sound_wave_icon.dart';
 
 class WordManagementWidget extends StatefulWidget {
   const WordManagementWidget({super.key});
@@ -405,7 +406,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                                           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor),
                                         ),
                                         IconButton(
-                                          icon: Icon(Icons.volume_up, color: AppTheme.primaryColor, size: 22),
+                                          icon: ModernSoundWaveIcon(color: AppTheme.primaryColor, size: 20),
                                           onPressed: _playPronunciation,
                                           tooltip: '播放发音',
                                           constraints: const BoxConstraints(),
