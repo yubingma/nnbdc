@@ -580,6 +580,13 @@ class Util {
                 color: boldWordIndices.contains(i) ? context.primaryColor : null,
                 fontSize: fontSize,
                 fontWeight: boldWordIndices.contains(i) ? FontWeight.bold : fontWeight)));
+
+        // 在句末/逗号/分号/问叹/右括号等标点后追加标准空格（如果下一个token不是右闭合标点）
+        if (i < tokens.length - 1 &&
+            '.,!?;:)]}'.contains(token) &&
+            !('.,!?;:)]}\''.contains(tokens[i + 1]))) {
+          spans.add(const TextSpan(text: ' '));
+        }
       } else {
         // 单词
         spans.add(boldWordIndices.contains(i) && maskTextField != null

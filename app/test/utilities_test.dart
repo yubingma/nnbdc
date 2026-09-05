@@ -5,6 +5,8 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/widget/dict_book_icon.dart';
+import 'package:provider/provider.dart';
+import 'package:nnbdc/state.dart';
 
 void main() {
   group('表名转换测试', () {
@@ -183,6 +185,43 @@ environment:
       expect(Util.getDictIcon(editable: false, ownerId: 'test_user', name: '已掌握'), equals(Icons.auto_stories_rounded));
       expect(DictBookIcon.resolveType(editable: false, ownerId: 'test_user', name: '已掌握'), equals(DictBookType.masteredBook));
       expect(Util.getDictIconColor(ownerId: 'test_user', name: '已掌握', defaultColor: Colors.blue), equals(const Color(0xFF10B981)));
+    });
+  });
+
+  group('makeEnglishSpanText 英文标点排版与空格保留测试', () {
+    testWidgets('标点符号（逗号/句号/分号）后面正确保留空格，杜绝单词粘连', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => DarkMode(),
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) {
+                final textWidget = Util.makeEnglishSpanText(
+                  'feelings. People get pleasure from eating, sleeping, watching TV, or anything else.',
+                  'pleasure',
+                  false,
+                  context,
+                  false,
+                  null,
+                  false,
+                  FontWeight.w400,
+                );
+                return Scaffold(body: textWidget);
+              },
+            ),
+          ),
+        ),
+      );
+
+      final textFinder = find.byType(Text);
+      expect(textFinder, findsOneWidget);
+      final textWidget = tester.widget<Text>(textFinder);
+      final textSpan = textWidget.textSpan as TextSpan;
+      final fullText = textSpan.toPlainText();
+      
+      expect(fullText, contains('feelings. People'));
+      expect(fullText, contains('eating, sleeping'));
+      expect(fullText, contains('watching TV, or'));
     });
   });
 } 
