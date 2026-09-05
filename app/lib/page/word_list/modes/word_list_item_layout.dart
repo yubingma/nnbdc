@@ -176,7 +176,7 @@ class WordListItemLayout extends StatelessWidget {
             if (groupPosition == GroupCardPosition.top || groupPosition == GroupCardPosition.middle)
               Container(
                 height: 0.8,
-                margin: const EdgeInsets.only(left: 44),
+                margin: const EdgeInsets.only(left: 44, right: 14),
                 color: isDarkMode
                     ? Colors.white.withValues(alpha: 0.08)
                     : Colors.black.withValues(alpha: 0.06),

@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 
@@ -481,6 +482,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: themeData,
       routerConfig: goRouter,
+      // 全局中文本地化：让 Material 内置组件（时间/日期选择器、下拉刷新、Tooltip 等）使用中文文案
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('zh'), Locale('en')],
+      locale: const Locale('zh'),
       builder: (context, child) {
         return Stack(
           children: [
