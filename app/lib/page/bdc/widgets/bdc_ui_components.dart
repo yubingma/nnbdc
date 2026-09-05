@@ -1172,7 +1172,6 @@ extension BdcPageStateUIComponents on BdcPageState {
               double borderWidth = 1.0;
               final isDarkMode = _cachedIsDarkMode;
               final word = state.words?[index];
-              final isNoneOfAbove = word?.spell == "[ 都不对 ]";
 
               if (state.selectedAnswerIndex != null) {
                 if ((index + 1) == state.correctAnswerIndex) {
@@ -1249,37 +1248,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(18),
                         onTap: () => notifier.onAnswerClicked(index + 1, context),
-                        child: Stack(
+                        child: Container(
+                          width: double.infinity,
+                          constraints: const BoxConstraints(minHeight: 68),
                           alignment: Alignment.centerLeft,
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              constraints: const BoxConstraints(minHeight: 68),
-                              alignment: Alignment.centerLeft,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 10,
-                              ),
-                              child: _buildChoiceItemContent(word, isAnswered, isCh2En),
-                            ),
-                            if (isAnswered && !isNoneOfAbove)
-                              Positioned(
-                                right: 14,
-                                child: Container(
-                                  width: 26,
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: context.subtleBg,
-                                  ),
-                                  child: Icon(
-                                    Icons.volume_up_rounded,
-                                    size: 15,
-                                    color: context.primaryColor,
-                                  ),
-                                ),
-                              ),
-                          ],
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
+                          ),
+                          child: _buildChoiceItemContent(word, isAnswered, isCh2En),
                         ),
                       ),
                     ),
@@ -2768,56 +2745,138 @@ extension BdcPageStateUIComponents on BdcPageState {
         ? allItems.where((item) => (item.ciXing ?? '').trim().isNotEmpty).toList()
         : allItems;
 
+    // 自适应字阶与排版参数
+    final count = displayItems.length;
+    final double meaningFontSize;
+    final double cixingFontSize;
+    final double itemVerticalGap;
+    final double cixingPadH;
+
+    if (count <= 1) {
+      meaningFontSize = 26.0;
+      cixingFontSize = 13.0;
+      itemVerticalGap = 6.0;
+      cixingPadH = 8.0;
+    } else if (count == 2) {
+      meaningFontSize = 20.0;
+      cixingFontSize = 12.0;
+      itemVerticalGap = 5.0;
+      cixingPadH = 7.0;
+    } else {
+      meaningFontSize = 17.0;
+      cixingFontSize = 11.0;
+      itemVerticalGap = 4.0;
+      cixingPadH = 6.0;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          for (final item in displayItems)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if ((item.ciXing ?? '').isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: context.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: context.primaryColor.withValues(alpha: isDarkMode ? 0.38 : 0.25),
-                          width: 0.8,
+          if (count <= 1)
+            for (final item in displayItems)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if ((item.ciXing ?? '').isNotEmpty) ...[
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: cixingPadH, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: context.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: context.primaryColor.withValues(alpha: isDarkMode ? 0.38 : 0.25),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          item.ciXing!,
+                          style: TextStyle(
+                            color: context.primaryColor,
+                            fontSize: cixingFontSize,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Roboto',
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 10),
+                    ],
+                    Flexible(
                       child: Text(
-                        item.ciXing!,
+                        notifier.hideParenthesesContent(item.meaning ?? ''),
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: context.primaryColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Roboto',
+                          fontSize: meaningFontSize,
+                          fontWeight: FontWeight.w600,
+                          color: context.textPrimary,
+                          height: 1.35,
+                          letterSpacing: -0.3,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
                   ],
-                  Flexible(
-                    child: Text(
-                      notifier.hideParenthesesContent(item.meaning ?? ''),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 27,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
-                        height: 1.35,
-                        letterSpacing: -0.3,
+                ),
+              )
+          else
+            // 多项时：整组居中，组内词性垂直对齐成列，消除横向犬牙交错
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final item in displayItems)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if ((item.ciXing ?? '').isNotEmpty) ...[
+                            Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              padding: EdgeInsets.symmetric(horizontal: cixingPadH, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: context.primaryColor.withValues(alpha: isDarkMode ? 0.38 : 0.25),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                item.ciXing!,
+                                style: TextStyle(
+                                  color: context.primaryColor,
+                                  fontSize: cixingFontSize,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Roboto',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Expanded(
+                            child: Text(
+                              notifier.hideParenthesesContent(item.meaning ?? ''),
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: meaningFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: context.textPrimary,
+                                height: 1.35,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
