@@ -329,6 +329,9 @@ extension BdcPageStateUIComponents on BdcPageState {
     final IconData targetIcon =
         isSpeakMode ? Icons.fact_check_outlined : Icons.mic_none_rounded;
 
+    final Color actionColor =
+        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF5A716E);
+
     return GestureDetector(
       key: const Key('bdc_mode_switch_btn'),
       onTap: () {
@@ -336,35 +339,24 @@ extension BdcPageStateUIComponents on BdcPageState {
         ref.read(bdcNotifierProvider.notifier).updateTabIndex(targetIndex);
       },
       behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-        decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.12)
-                : Colors.white.withValues(alpha: 0.65),
-            width: 0.8,
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               targetIcon,
-              size: 13,
-              color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
+              size: 13.5,
+              color: actionColor,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 3.5),
             Text(
               targetLabel,
               style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: actionColor,
+                letterSpacing: -0.1,
               ),
             ),
           ],
