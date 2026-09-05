@@ -1111,7 +1111,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
     final accentColor = themeConfig.primaryColor;
     final cardColor = themeConfig.cardBg;
     final borderColor = themeConfig.cardBorder;
-    final subtleBgColor = themeConfig.subtleBg;
     final cardShadow = themeConfig.cardShadows;
 
     return Column(
@@ -1729,7 +1728,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
               ),
               const SizedBox(height: 14),
 
-              // 3.1 三个统计微卡片
+              // 3.1 三个统计指标（纯排版驱动，发丝线分隔）
               Row(
                 children: [
                   _buildStatBox(
@@ -1737,13 +1736,21 @@ class MePageState extends State<MePage> implements RefreshableTab {
                     "打卡天数",
                     studyProgress!.dakaDayCount.toString(),
                   ),
-                  const SizedBox(width: 8),
+                  Container(
+                    width: 0.6,
+                    height: 24,
+                    color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                  ),
                   _buildStatBox(
                     isDarkModeEnabled,
                     "已掌握词",
                     studyProgress!.masteredWordsCount.toString(),
                   ),
-                  const SizedBox(width: 8),
+                  Container(
+                    width: 0.6,
+                    height: 24,
+                    color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                  ),
                   _buildStatBox(
                     isDarkModeEnabled,
                     "超越学友",
@@ -1751,90 +1758,81 @@ class MePageState extends State<MePage> implements RefreshableTab {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-
-              // 3.2 嵌入式「最近 30 天打卡记录」微容器
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: subtleBgColor,
-                  borderRadius: BorderRadius.circular(14),
-                  border: borderColor == Colors.transparent
-                      ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.06), width: 0.6) : null)
-                      : Border.all(color: borderColor, width: 0.6),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '最近 30 天打卡记录',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => context.push('/study_stats'),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '更多',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color: subtitleColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              Icon(Icons.arrow_forward_ios_rounded, size: 9, color: subtitleColor.withValues(alpha: 0.7)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    renderLast30DaysDakaStatus(),
-                    const SizedBox(height: 10),
-                    // 图例
-                    Builder(builder: (context) {
-                      int dakaedCount = 0;
-                      int studiedCount = 0;
-                      int notLoginCount = 0;
-                      if (last30DaysDakaStatus != null) {
-                        for (var s in last30DaysDakaStatus!) {
-                          if (s == UserDayStatus.dakaed.json) {
-                            dakaedCount++;
-                          } else if (s == UserDayStatus.studied.json) {
-                            studiedCount++;
-                          } else {
-                            notLoginCount++;
-                          }
-                        }
-                      }
-                      return Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildLegendItem('已打卡 ($dakaedCount)', dakaStatus2Color(UserDayStatus.dakaed.json)),
-                              const SizedBox(width: 10),
-                              _buildLegendItem('未打卡 ($studiedCount)', dakaStatus2Color(UserDayStatus.studied.json)),
-                              const SizedBox(width: 10),
-                              _buildLegendItem('未学习 ($notLoginCount)', dakaStatus2Color(UserDayStatus.notLogin.json)),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Container(
+                  height: 0.6,
+                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
                 ),
               ),
+
+              // 3.2 「最近 30 天打卡记录」（平铺融入纯净卡片）
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '最近 30 天打卡记录',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => context.push('/study_stats'),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '更多',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: subtitleColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 9, color: subtitleColor.withValues(alpha: 0.7)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              renderLast30DaysDakaStatus(),
+              const SizedBox(height: 12),
+              // 图例
+              Builder(builder: (context) {
+                int dakaedCount = 0;
+                int studiedCount = 0;
+                int notLoginCount = 0;
+                if (last30DaysDakaStatus != null) {
+                  for (var s in last30DaysDakaStatus!) {
+                    if (s == UserDayStatus.dakaed.json) {
+                      dakaedCount++;
+                    } else if (s == UserDayStatus.studied.json) {
+                      studiedCount++;
+                    } else {
+                      notLoginCount++;
+                    }
+                  }
+                }
+                return Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildLegendItem('已打卡 ($dakaedCount)', dakaStatus2Color(UserDayStatus.dakaed.json)),
+                        const SizedBox(width: 12),
+                        _buildLegendItem('未打卡 ($studiedCount)', dakaStatus2Color(UserDayStatus.studied.json)),
+                        const SizedBox(width: 12),
+                        _buildLegendItem('未学习 ($notLoginCount)', dakaStatus2Color(UserDayStatus.notLogin.json)),
+                      ],
+                    ),
+                  ),
+                );
+              }),
             ],
           ),
         ),
@@ -2058,11 +2056,11 @@ class MePageState extends State<MePage> implements RefreshableTab {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(2.5),
           ),
         ),
         const SizedBox(width: 5),
@@ -2071,7 +2069,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
           style: TextStyle(
             fontSize: 11,
             color: context.textSecondary,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
             fontFamily: 'NotoSansSC',
           ),
         ),
@@ -2764,49 +2762,38 @@ class MePageState extends State<MePage> implements RefreshableTab {
     }
   }
 
-  // 统计项小卡片
+  // 统计指标项（纯排版驱动，零多余容器与边框）
   Widget _buildStatBox(bool isDarkMode, String label, String value) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-        decoration: BoxDecoration(
-          color: themeConfig.subtleBg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: themeConfig.cardBorder.withValues(alpha: 0.5),
-            width: 0.6,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: themeConfig.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Roboto',
+              letterSpacing: -0.4,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                color: themeConfig.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Roboto',
-                letterSpacing: -0.3,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: themeConfig.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                color: themeConfig.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w400,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
