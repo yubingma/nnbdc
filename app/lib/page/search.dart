@@ -183,9 +183,11 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         var fullResult = await WordBo().searchWordById(result.word!.id!, null);
         if (!mounted) return;
         if (fullResult.word != null) {
-          context.push('/word_detail', extra: WordDetailPageArgs(fullResult.word!, false, null, false));
+          context.push('/word_detail',
+              extra: WordDetailPageArgs(fullResult.word!, false, null, false));
         } else {
-          context.push('/word_detail', extra: WordDetailPageArgs(result.word!, false, null, false));
+          context.push('/word_detail',
+              extra: WordDetailPageArgs(result.word!, false, null, false));
         }
       }
     } catch (e, st) {
@@ -193,11 +195,13 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     }
   }
 
-  Widget _buildHighlightedSpell(String wordSpell, String query, AppThemeConfig themeConfig) {
+  Widget _buildHighlightedSpell(
+      String wordSpell, String query, AppThemeConfig themeConfig) {
     final accentColor = themeConfig.primaryColor;
     final textMain = themeConfig.textPrimary;
 
-    if (query.isNotEmpty && wordSpell.toLowerCase().startsWith(query.toLowerCase())) {
+    if (query.isNotEmpty &&
+        wordSpell.toLowerCase().startsWith(query.toLowerCase())) {
       final matchPart = wordSpell.substring(0, query.length);
       final restPart = wordSpell.substring(query.length);
       return RichText(
@@ -248,7 +252,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final posColor = themeConfig.textMuted.withValues(alpha: 0.85);
 
     // 解析词性标签如 "n. ", "v. ", "adj. ", "adv. ", "vt. ", "vi. "
-    final posRegex = RegExp(r'(n\.|v\.|adj\.|adv\.|vt\.|vi\.|prep\.|conj\.|pron\.|art\.|num\.|int\.)\s*');
+    final posRegex = RegExp(
+        r'(n\.|v\.|adj\.|adv\.|vt\.|vi\.|prep\.|conj\.|pron\.|art\.|num\.|int\.)\s*');
     final matches = posRegex.allMatches(meaningStr);
 
     if (matches.isEmpty) {
@@ -307,9 +312,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     var word = matchedWords[i];
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = themeConfig.cardBg;
-    final cardBorder = themeConfig.cardBorder;
-    final cardSubtle = themeConfig.subtleBg;
     final textSub = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
 
@@ -320,111 +322,88 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           offset: Offset(0, 16 * (1 - _fadeAnimation.value)),
           child: Opacity(
             opacity: _fadeAnimation.value,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4.5),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: themeConfig.cardShadows,
-                border: Border.all(
-                  color: cardBorder,
-                  width: 1.2,
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () async {
-                    try {
-                      var result = await WordBo().searchWordById(word.id!, null);
-                      if (!context.mounted) return;
-                      if (result.word != null) {
-                        context.push('/word_detail', extra: WordDetailPageArgs(result.word!, false, null, false));
-                      } else {
-                        context.push('/word_detail', extra: WordDetailPageArgs(word, true, null, false));
-                      }
-                    } catch (e, st) {
-                      ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
-                      if (!context.mounted) return;
-                      context.push('/word_detail', extra: WordDetailPageArgs(word, true, null, false));
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            child: InkWell(
+              onTap: () async {
+                try {
+                  var result = await WordBo().searchWordById(word.id!, null);
+                  if (!context.mounted) return;
+                  if (result.word != null) {
+                    context.push('/word_detail',
+                        extra: WordDetailPageArgs(
+                            result.word!, false, null, false));
+                  } else {
+                    context.push('/word_detail',
+                        extra: WordDetailPageArgs(word, true, null, false));
+                  }
+                } catch (e, st) {
+                  ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
+                  if (!context.mounted) return;
+                  context.push('/word_detail',
+                      extra: WordDetailPageArgs(word, true, null, false));
+                }
+              },
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                    child: _buildHighlightedSpell(word.spell, spell.text.trim(), themeConfig),
-                                  ),
-                                  if (word.mergedPronounce.isNotEmpty) ...[
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: cardSubtle,
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          '[${word.mergedPronounce}]',
-                                          style: TextStyle(
-                                            color: textSub,
-                                            fontSize: 12,
-                                            fontFamily: 'NotoSans',
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 1,
-                                          textScaler: const TextScaler.linear(1.0),
-                                        ),
-                                      ),
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: _buildHighlightedSpell(
+                                    word.spell, spell.text.trim(), themeConfig),
+                              ),
+                              if (word.mergedPronounce.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    '[${word.mergedPronounce}]',
+                                    style: TextStyle(
+                                      color: textSub,
+                                      fontSize: 12,
+                                      fontFamily: 'NotoSans',
+                                      fontWeight: FontWeight.w400,
                                     ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            // 发音小喇叭按钮
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                StudyAudioSessionController().playWordSound(word);
-                              },
-                              child: Container(
-                                width: 30,
-                                height: 30,
-                                margin: const EdgeInsets.only(right: 6),
-                                decoration: BoxDecoration(
-                                  color: cardSubtle,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: ModernSoundWaveIcon(
-                                    size: 16,
-                                    color: accentColor,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    textScaler: const TextScaler.linear(1.0),
                                   ),
                                 ),
-                              ),
-                            ),
-                            Icon(
-                              Icons.chevron_right_rounded,
-                              size: 18,
-                              color: themeStyle.isDark ? Colors.white24 : Colors.black26,
-                            ),
-                          ],
+                              ],
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 6),
-                        _buildMeaningWithTags(word.getMeaningStr(), themeConfig),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            StudyAudioSessionController().playWordSound(word);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 4),
+                            child: ModernSoundWaveIcon(
+                              size: 16,
+                              color: accentColor,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: themeStyle.isDark
+                              ? Colors.white24
+                              : Colors.black26,
+                        ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 6),
+                    _buildMeaningWithTags(word.getMeaningStr(), themeConfig),
+                  ],
                 ),
               ),
             ),
@@ -442,7 +421,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final isDarkMode = themeStyle.isDark;
 
     final searchBoxBg = themeConfig.cardBg;
-    final searchBoxBorder = _focusNode.hasFocus ? themeConfig.primaryColor : themeConfig.cardBorder;
+    final searchBoxBorder =
+        _focusNode.hasFocus ? themeConfig.primaryColor : themeConfig.cardBorder;
     final accentColor = themeConfig.primaryColor;
     final textMain = themeConfig.textPrimary;
 
@@ -521,7 +501,9 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                     height: 22,
                     margin: const EdgeInsets.only(right: 6),
                     decoration: BoxDecoration(
-                      color: isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.06),
+                      color: isDarkMode
+                          ? Colors.white12
+                          : Colors.black.withValues(alpha: 0.06),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -534,19 +516,16 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _performExactSearch,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  margin: const EdgeInsets.only(right: 4),
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: const Text(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  child: Text(
                     '查词',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
+                      color: accentColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: "NotoSansSC",
                     ),
                   ),
                 ),
@@ -558,15 +537,34 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       body: SafeArea(
         child: matchedWords.isEmpty
             ? _buildEmptyState(themeConfig)
-            : ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(top: 6, bottom: 20),
-                itemCount: matchedWords.length,
-                itemBuilder: (context, index) => renderWord(index),
-                // ignore: deprecated_member_use
-                cacheExtent: 1000.0,
-                addAutomaticKeepAlives: false,
-                addRepaintBoundaries: true,
+            : Padding(
+                padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
+                  child: Material(
+                    color: themeConfig.cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        for (int i = 0; i < matchedWords.length; i++) ...[
+                          if (i > 0)
+                            Divider(
+                              height: 1,
+                              thickness: 0.5,
+                              indent: 14,
+                              endIndent: 14,
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.055),
+                            ),
+                          renderWord(i),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
               ),
       ),
     );
@@ -583,18 +581,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: themeConfig.subtleBg,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.search_off_rounded,
-                size: 32,
-                color: textSub,
-              ),
+            Icon(
+              Icons.search_off_rounded,
+              size: 44,
+              color: textSub,
             ),
             const SizedBox(height: 16),
             Text(
@@ -634,30 +624,11 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // 顶部插画展台
-                    Container(
-                      width: 68,
-                      height: 68,
-                      decoration: BoxDecoration(
-                        color: themeConfig.subtleBg,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: themeConfig.cardBorder,
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accentColor.withValues(alpha: 0.15),
-                            blurRadius: 18,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.manage_search_rounded,
-                        size: 36,
-                        color: accentColor,
-                      ),
+                    // 顶部插画展台：裸图标，不套彩色圆角方块（遵循零多余容器规范）
+                    Icon(
+                      Icons.manage_search_rounded,
+                      size: 52,
+                      color: accentColor,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -665,8 +636,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                       style: TextStyle(
                         color: textMain,
                         fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -674,8 +645,9 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                       '支持输入英文拼写、中文释义或模糊前缀',
                       style: TextStyle(
                         color: textSub,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ],
