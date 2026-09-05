@@ -40,6 +40,13 @@ class PicSearchPageState extends State<PicSearchPage> {
   final GlobalKey webViewKey = GlobalKey();
   InAppWebViewController? webViewController;
   bool _isAddPicDialogShowing = false;
+
+  /// 单词配图数量上限（与服务端 WordImageBo.MAX_IMAGES_PER_WORD 保持一致）。
+  static const int _maxImagesPerWord = 2;
+
+  /// 该单词当前已有配图数；进入页面时就加载，用于提前提示用户剩余配额/是否已达上限。
+  int? _imageCount;
+  bool _imageCountLoaded = false;
   InAppWebViewSettings settings = InAppWebViewSettings(
     isInspectable: kDebugMode,
     disableContextMenu: true,
@@ -155,19 +162,46 @@ class PicSearchPageState extends State<PicSearchPage> {
     final extra = GoRouterState.of(context).extra;
     if (extra is PicSearchPageArgs) {
       args = extra;
+      // 进入页面时立即加载该单词已有配图数，用于提前提示配额，避免用户浪费时间选图后才被拦。
+      if (!_imageCountLoaded) {
+        _imageCountLoaded = true;
+        _loadImageCount();
+      }
+    }
+  }
+
+  /// 加载该单词当前已有配图数量，用于提前展示配额/上限提示。
+  Future<void> _loadImageCount() async {
+    try {
+      final images = await MyDatabase.instance.wordImagesDao
+          .getImagesByWordId(args.wordId);
+      if (!mounted) return;
+      setState(() => _imageCount = images.length);
+    } catch (e, s) {
+      Global.logger.e('加载单词配图数量失败', error: e, stackTrace: s);
     }
   }
 
   Future<void> showAddPicDlg(BuildContext context) async {
     if (_isAddPicDialogShowing) return;
-    _isAddPicDialogShowing = true;
 
     final imageExtra = hitTestResult?.extra ?? longPressImageUrl;
-    if (imageExtra == null || imageExtra.isEmpty) {
-      _isAddPicDialogShowing = false;
-      return;
+    if (imageExtra == null || imageExtra.isEmpty) return;
+
+    // 提前拦截：单词配图已达上限时直接提示，不再弹出"加为单词配图"，避免用户白耗时间。
+    try {
+      final images = await MyDatabase.instance.wordImagesDao
+          .getImagesByWordId(args.wordId);
+      if (!context.mounted) return;
+      if (images.length >= _maxImagesPerWord) {
+        ToastUtil.error('该单词已有 $_maxImagesPerWord 张配图，无法再添加；如需更换请先删除现有配图');
+        return;
+      }
+    } catch (e, s) {
+      Global.logger.e('检查单词配图上限失败', error: e, stackTrace: s);
     }
 
+    _isAddPicDialogShowing = true;
     try {
       await showGeneralDialog(
           context: context,
@@ -176,8 +210,7 @@ class PicSearchPageState extends State<PicSearchPage> {
           transitionDuration: const Duration(milliseconds: 100),
           transitionBuilder: (context, animation, secondaryAnimation, child) {
             return FractionalTranslation(
-                translation: Offset(0, 1 - animation.value), 
-                child: child);
+                translation: Offset(0, 1 - animation.value), child: child);
           },
           pageBuilder: (context, animation, secondaryAnimation) {
             return StatefulBuilder(builder: (context, setState) {
@@ -188,7 +221,9 @@ class PicSearchPageState extends State<PicSearchPage> {
                       height: 70,
                       margin: MediaQuery.of(context).viewInsets,
                       padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                      color: context.read<DarkMode>().isDarkMode ? const Color(0xff333333) : Colors.white,
+                      color: context.read<DarkMode>().isDarkMode
+                          ? const Color(0xff333333)
+                          : Colors.white,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -197,7 +232,8 @@ class PicSearchPageState extends State<PicSearchPage> {
                             children: [
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white, backgroundColor: Colors.green, 
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.green,
                                 ),
                                 child: const Text('取消'),
                                 onPressed: () {
@@ -206,7 +242,8 @@ class PicSearchPageState extends State<PicSearchPage> {
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white, backgroundColor: Colors.green, 
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.green,
                                 ),
                                 child: const Text('加为单词配图'),
                                 onPressed: () async {
@@ -214,39 +251,53 @@ class PicSearchPageState extends State<PicSearchPage> {
                                   final navigator = Navigator.of(context);
 
                                   try {
+                                    // 先校验配图上限（下载前），避免用户白白等待图片下载后才得知无法添加。
+                                    final localImages = await MyDatabase
+                                        .instance.wordImagesDao
+                                        .getImagesByWordId(args.wordId);
+                                    if (localImages.length >=
+                                        _maxImagesPerWord) {
+                                      ToastUtil.error(
+                                          '每个单词最多只能有 $_maxImagesPerWord 张配图');
+                                      return;
+                                    }
+
                                     String? imgBase64;
                                     if (imageExtra.startsWith('data:image')) {
                                       imgBase64 = imageExtra.split(',')[1];
                                     }
                                     if (imageExtra.startsWith('http')) {
-                                      imgBase64 = await Util.networkImageToBase64(imageExtra);
+                                      imgBase64 =
+                                          await Util.networkImageToBase64(
+                                              imageExtra);
                                     }
 
                                     if (imgBase64 != null) {
-                                      final localImages = await MyDatabase.instance.wordImagesDao.getImagesByWordId(args.wordId);
-                                      if (localImages.length >= 2) {
-                                        ToastUtil.error('每个单词最多只能有 2 张配图');
-                                        return;
-                                      }
-
-                                      final result = await Api.client.uploadWordImg(args.wordId, imgBase64, Global.getLoggedInUser()!.id);
+                                      final result = await Api.client
+                                          .uploadWordImg(args.wordId, imgBase64,
+                                              Global.getLoggedInUser()!.id);
                                       if (result.success) {
                                         ToastUtil.info('添加配图成功');
                                         try {
-                                          final wordImageDto = result.data as WordImageDto;
-                                          await MyDatabase.instance.wordImagesDao.insertEntity(WordImage(
+                                          final wordImageDto =
+                                              result.data as WordImageDto;
+                                          await MyDatabase
+                                              .instance.wordImagesDao
+                                              .insertEntity(WordImage(
                                             id: wordImageDto.id,
                                             imageFile: wordImageDto.imageFile,
                                             foot: wordImageDto.foot,
                                             hand: wordImageDto.hand,
-                                            authorId: wordImageDto.authorId ?? "",
+                                            authorId:
+                                                wordImageDto.authorId ?? "",
                                             ownerId: wordImageDto.ownerId ?? "",
                                             wordId: wordImageDto.wordId,
                                             createTime: wordImageDto.createTime,
                                             updateTime: wordImageDto.updateTime,
                                           ));
                                         } catch (e, s) {
-                                          Global.logger.e('写入本地WordImages失败', error: e, stackTrace: s);
+                                          Global.logger.e('写入本地WordImages失败',
+                                              error: e, stackTrace: s);
                                         }
                                         navigator.maybePop();
                                       } else {
@@ -256,7 +307,8 @@ class PicSearchPageState extends State<PicSearchPage> {
                                       ToastUtil.error('获取图片信息失败');
                                     }
                                   } catch (e, s) {
-                                    Global.logger.e('uploadWordImg2 调用异常', error: e, stackTrace: s);
+                                    Global.logger.e('uploadWordImg2 调用异常',
+                                        error: e, stackTrace: s);
                                     ToastUtil.error('添加配图失败，请稍后重试');
                                   }
                                 },
@@ -272,6 +324,39 @@ class PicSearchPageState extends State<PicSearchPage> {
     }
   }
 
+  /// 进入页面即展示的配图配额提示：已达上限时以醒目样式提醒用户不要再浪费时间选图。
+  Widget _buildCapacityHint() {
+    final count = _imageCount;
+    if (count == null) return const SizedBox.shrink();
+    final isDark = context.read<DarkMode>().isDarkMode;
+    final atLimit = count >= _maxImagesPerWord;
+    final bg = atLimit
+        ? (isDark ? const Color(0x33F59E0B) : const Color(0x12F59E0B))
+        : (isDark ? const Color(0x220F766E) : const Color(0x0D0F766E));
+    final fg = atLimit
+        ? (isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
+        : (isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0F766E));
+    final text = atLimit
+        ? '该单词已有 $count 张配图（上限 $_maxImagesPerWord 张），无法再添加；如需更换请先在单词页删除现有配图'
+        : '该单词已有 $count/$_maxImagesPerWord 张配图，长按搜索结果图即可添加';
+    return Container(
+      width: double.infinity,
+      color: bg,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(
+        children: [
+          Icon(atLimit ? Icons.info_rounded : Icons.image_outlined,
+              size: 15, color: fg),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(text,
+                style: TextStyle(fontSize: 12, color: fg, height: 1.35)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -279,11 +364,13 @@ class PicSearchPageState extends State<PicSearchPage> {
           title: '添加单词配图',
         ),
         body: Column(children: <Widget>[
+          _buildCapacityHint(),
           Expanded(
               child: InAppWebView(
             key: webViewKey,
             initialUrlRequest: URLRequest(
-                url: WebUri("https://cn.bing.com/images/search?q=${args.spell}&go=%E6%90%9C%E7%B4%A2&qs=ds&form=QBIR&first=2&tsc=ImageHoverTitle")),
+                url: WebUri(
+                    "https://cn.bing.com/images/search?q=${args.spell}&go=%E6%90%9C%E7%B4%A2&qs=ds&form=QBIR&first=2&tsc=ImageHoverTitle")),
             initialUserScripts: UnmodifiableListView([
               UserScript(
                 source: _longPressImageHandlerJs,
@@ -307,15 +394,18 @@ class PicSearchPageState extends State<PicSearchPage> {
             },
             onLoadStop: (controller, url) async {
               if (PlatformUtils.isIOS) {
-                await controller.evaluateJavascript(source: _disableSystemContextMenuJs);
+                await controller.evaluateJavascript(
+                    source: _disableSystemContextMenuJs);
               }
             },
             onLongPressHitTestResult: (controller, hitTestResult) {
               if (!mounted) return;
               this.hitTestResult = hitTestResult;
               Global.logger.d(hitTestResult.toString());
-              if (hitTestResult.type == InAppWebViewHitTestResultType.SRC_IMAGE_ANCHOR_TYPE ||
-                  hitTestResult.type == InAppWebViewHitTestResultType.IMAGE_TYPE) {
+              if (hitTestResult.type ==
+                      InAppWebViewHitTestResultType.SRC_IMAGE_ANCHOR_TYPE ||
+                  hitTestResult.type ==
+                      InAppWebViewHitTestResultType.IMAGE_TYPE) {
                 showAddPicDlg(context);
               }
             },

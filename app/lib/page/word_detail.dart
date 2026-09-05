@@ -1601,53 +1601,139 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
   void _showMoreOptions(BuildContext context) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final accentColor = context.primaryColor;
+    final sheetBg = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDarkMode ? const Color(0xFF13201D) : Colors.white,
+      backgroundColor: sheetBg,
+      elevation: 0,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (BuildContext bottomSheetContext) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 8),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white24 : Colors.black12,
-                  borderRadius: BorderRadius.circular(2),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 4, bottom: 14),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? Colors.white24 : Colors.black12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              ListTile(
-                leading: Icon(Icons.copy_rounded, color: context.primaryColor),
-                title: const Text('复制单词及释义', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  final copyText = '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
-                  Clipboard.setData(ClipboardData(text: copyText));
-                  ToastUtil.success('已复制到剪贴板');
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.image_search_rounded, color: context.primaryColor),
-                title: const Text('添加配图', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () {
-                  Navigator.pop(bottomSheetContext);
-                  context.push('/pic_search',
-                          extra: PicSearchPageArgs(
-                              args.word.id!,
-                              args.word.spell))
-                      .then((value) => _reloadWordData());
-                },
-              ),
-              const SizedBox(height: 10),
-            ],
+                _buildActionTile(
+                  icon: Icons.copy_rounded,
+                  title: '复制单词及释义',
+                  subtitle: '${args.word.spell} · [${Util.getWordDefaultPronounce(args.word)}]',
+                  accentColor: accentColor,
+                  textColor: textColor,
+                  subColor: subColor,
+                  isDarkMode: isDarkMode,
+                  onTap: () {
+                    Navigator.pop(bottomSheetContext);
+                    final copyText = '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
+                    Clipboard.setData(ClipboardData(text: copyText));
+                    ToastUtil.success('已复制到剪贴板');
+                  },
+                ),
+                const SizedBox(height: 6),
+                _buildActionTile(
+                  icon: Icons.add_photo_alternate_rounded,
+                  title: '添加或更换配图',
+                  subtitle: '为该单词挑选生动的助记图片',
+                  accentColor: accentColor,
+                  textColor: textColor,
+                  subColor: subColor,
+                  isDarkMode: isDarkMode,
+                  onTap: () {
+                    Navigator.pop(bottomSheetContext);
+                    context.push('/pic_search',
+                            extra: PicSearchPageArgs(
+                                args.word.id!,
+                                args.word.spell))
+                        .then((value) => _reloadWordData());
+                  },
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildActionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color accentColor,
+    required Color textColor,
+    required Color subColor,
+    required bool isDarkMode,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, color: accentColor, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: subColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: isDarkMode ? Colors.white24 : Colors.black26,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1713,7 +1799,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.45,
-                      color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                      color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
                     ),
                   ),
                 ),
@@ -1733,7 +1819,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         style: TextStyle(
           fontSize: 14,
           height: 1.45,
-          color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+          color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
         ),
       );
     }
@@ -1994,12 +2080,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               builder: (context) {
                 final firstItem = groupedWords[cat]!.first;
                 final cigenMeaning = firstItem.cigenMeaning;
-                final meaningText = (cigenMeaning != null && cigenMeaning.isNotEmpty)
-                    ? ' : $cigenMeaning'
-                    : '';
 
                 return Padding(
-                  padding: const EdgeInsets.only(top: 6, bottom: 4),
+                  padding: const EdgeInsets.only(top: 8, bottom: 6),
                   child: Row(
                     children: [
                       Container(
@@ -2012,13 +2095,34 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        '$cat$meaningText',
+                        cat,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: tagTextColor,
                         ),
                       ),
+                      if (cigenMeaning != null && cigenMeaning.isNotEmpty) ...[
+                        Text(
+                          ' : ',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: tagTextColor,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            cigenMeaning,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 );
@@ -2027,7 +2131,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             ...groupedWords[cat]!.take(20).map((item) {
               final spell = item.word.spell;
               final desc = item.word.shortDesc ?? '';
-              final lowerDesc = desc.toLowerCase().trim();
               final lowerSpell = spell.toLowerCase().trim();
 
               final Color spellColor = item.inDict
@@ -2037,62 +2140,89 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
                   : (isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8));
 
-              Widget contentWidget;
-              if (desc.isNotEmpty && lowerDesc.startsWith(lowerSpell)) {
-                int matchLength = spell.length;
-                while (matchLength < desc.length &&
-                    (desc[matchLength] == ' ' || desc[matchLength] == ':' || desc[matchLength] == '：')) {
-                  matchLength++;
-                }
-                final matchedSpell = desc.substring(0, matchLength);
-                final remaining = desc.substring(matchLength);
-
-                contentWidget = RichText(
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: descColor,
-                      height: 1.35,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: matchedSpell,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: spellColor,
-                        ),
-                      ),
-                      TextSpan(
-                        text: remaining,
-                      ),
-                    ],
-                  ),
-                );
-              } else {
-                contentWidget = RichText(
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: descColor,
-                      height: 1.35,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: '$spell ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: spellColor,
-                        ),
-                      ),
-                      TextSpan(
-                        text: desc,
-                      ),
-                    ],
-                  ),
-                );
+              // 解析释义部分与括号内的助记拆解公式
+              String meaningPart = desc;
+              String? formulaPart;
+              final parenMatch = RegExp(r'[（\(](.*?)[）\)]$').firstMatch(desc.trim());
+              if (parenMatch != null) {
+                formulaPart = parenMatch.group(1)?.trim();
+                meaningPart = desc.trim().substring(0, parenMatch.start).trim();
               }
+
+              final lowerMeaning = meaningPart.toLowerCase();
+              if (lowerMeaning.startsWith(lowerSpell)) {
+                int cutLen = spell.length;
+                while (cutLen < meaningPart.length && ' :：'.contains(meaningPart[cutLen])) {
+                  cutLen++;
+                }
+                meaningPart = meaningPart.substring(cutLen).trim();
+              }
+
+              final contentWidget = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          spell,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: spellColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (meaningPart.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            meaningPart,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: descColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                      if (!item.inDict) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '未选',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (formulaPart != null && formulaPart.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Text(
+                        formulaPart,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                ],
+              );
 
               return InkWell(
                 borderRadius: BorderRadius.circular(6),
