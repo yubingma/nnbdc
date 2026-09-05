@@ -321,11 +321,42 @@ class AppTheme {
   static const Color gradientStartColor = Color(0xFF18BA7C);
   static const Color gradientEndColor = Color(0xFF109E69);
 
+  /// 全局跨平台现代无衬线字体栈（对标 iOS 苹方 + Android 思源黑体，坚决杜绝回退到古典宋体/明体）
+  static const List<String> sansSerifFallback = [
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    'Roboto',
+    'Noto Sans SC',
+    'Noto Sans CJK SC',
+    'Source Han Sans SC',
+    'sans-serif',
+  ];
+
+  /// 现代修长挺拔西文/数字指标字体栈
+  static const List<String> numberFontFallback = [
+    'Roboto',
+    'SF Pro Display',
+    'SF Pro Text',
+    'Helvetica Neue',
+    'Arial',
+    'sans-serif',
+  ];
+
   /// 依据所选风格生成专属配套 ThemeData
   static ThemeData getThemeData(AppThemeStyle style) {
     final cfg = AppThemeConfig.of(style);
+    final baseTypography = cfg.isDark ? Typography.material2021().white : Typography.material2021().black;
+    final typographyWithFallbacks = baseTypography.apply(
+      fontFamily: 'NotoSansSC',
+      fontFamilyFallback: sansSerifFallback,
+    );
+
     return ThemeData(
       fontFamily: 'NotoSansSC',
+      fontFamilyFallback: sansSerifFallback,
+      textTheme: typographyWithFallbacks,
+      primaryTextTheme: typographyWithFallbacks,
       colorScheme: ColorScheme.fromSeed(
         seedColor: cfg.primaryColor,
         primary: cfg.primaryColor,

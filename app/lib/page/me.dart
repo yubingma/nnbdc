@@ -2777,6 +2777,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
               fontSize: 22,
               fontWeight: FontWeight.w700,
               fontFamily: 'Roboto',
+              fontFamilyFallback: AppTheme.numberFontFallback,
               letterSpacing: -0.4,
             ),
             maxLines: 1,
@@ -2788,7 +2789,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
             style: TextStyle(
               color: themeConfig.textSecondary,
               fontSize: 12,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'NotoSansSC',
+              fontFamilyFallback: AppTheme.sansSerifFallback,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
