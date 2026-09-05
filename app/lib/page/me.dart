@@ -1259,7 +1259,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                         child: Row(
                           children: [
-                            Icon(Icons.emoji_events_rounded, color: accentColor, size: 24),
+                            Icon(Icons.emoji_events_rounded, color: const Color(0xFFF59E0B), size: 22),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -1311,7 +1311,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                         child: Row(
                           children: [
-                            Icon(Icons.bar_chart_rounded, color: accentColor, size: 24),
+                            Icon(Icons.bar_chart_rounded, color: const Color(0xFF3B82F6), size: 22),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -2829,7 +2829,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
     );
   }
 
-  // 菜单项组件 (1:1 对齐原型极简温润风格)
+  // 菜单项组件 (对标「不背单词」极简排版风：零多余底盒，纯净裸露矢量图标)
   Widget _buildMenuTile({
     required IconData icon,
     required String title,
@@ -2847,14 +2847,14 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
-    final iconBgColor = isDarkModeEnabled
-        ? themeConfig.primaryColor.withValues(alpha: 0.18)
-        : themeConfig.subtleBg;
     final dividerColor = isDarkModeEnabled
         ? Colors.white.withValues(alpha: 0.06)
-        : themeConfig.primaryColor.withValues(alpha: 0.08);
+        : Colors.black.withValues(alpha: 0.04);
 
-    final effectiveIconColor = iconColor ?? (isDestructive ? Colors.redAccent : themeConfig.primaryColor);
+    final effectiveIconColor = iconColor ??
+        (isDestructive
+            ? const Color(0xFFEF4444)
+            : textColor.withValues(alpha: isDarkModeEnabled ? 0.70 : 0.55));
 
     Widget trailingWidget;
     if (trailing != null) {
@@ -2878,7 +2878,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
           ],
           Icon(
             Icons.chevron_right_rounded,
-            color: subtitleColor.withValues(alpha: 0.5),
+            color: subtitleColor.withValues(alpha: 0.4),
             size: 16,
           ),
         ],
@@ -2889,31 +2889,29 @@ class MePageState extends State<MePage> implements RefreshableTab {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 12),
         decoration: BoxDecoration(
-          border: showDivider ? Border(bottom: BorderSide(color: dividerColor, width: 0.8)) : null,
+          border: showDivider ? Border(bottom: BorderSide(color: dividerColor, width: 0.6)) : null,
         ),
         child: Row(
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: isDestructive ? Colors.redAccent.withValues(alpha: 0.1) : iconBgColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: effectiveIconColor,
-                size: 17,
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Center(
+                child: Icon(
+                  icon,
+                  color: effectiveIconColor,
+                  size: 19,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Text(
                 title,
                 style: TextStyle(
-                  color: isDestructive ? Colors.redAccent : textColor,
+                  color: isDestructive ? const Color(0xFFEF4444) : textColor,
                   fontWeight: FontWeight.w500,
                   fontSize: 14.5,
                   fontFamily: 'NotoSansSC',
