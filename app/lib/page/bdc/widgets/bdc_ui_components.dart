@@ -641,6 +641,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               ],
                                             ),
                                 ),
+                                const SizedBox(height: 6),
+                                _buildFsrsResultPanel(),
                               ],
                             ),
                           ),
@@ -679,17 +681,25 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildBottomButtons() {
     final sw = Stopwatch()..start();
+    final bool isCardShowing = (state.showAnswerButtons ||
+        state.studyStep == StudyStep.en2Ch.json ||
+        state.studyStep == StudyStep.ch2En.json ||
+        state.studyStep == StudyStep.enSentence2Ch.json ||
+        state.studyStep == StudyStep.chSentence2En.json ||
+        state.studyStep == StudyStep.list.json);
+
     final result = Container(
       key: _bottomButtonsKey,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 对测评结果进行展示（即便在极速模式下也展示一下，方便用户看下评分情况）
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: _buildFsrsResultPanel(),
-          ),
+          // 仅在磨砂卡片未显示时才在外部托底展示测评面板，避免重复
+          if (!isCardShowing)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: _buildFsrsResultPanel(),
+            ),
           Container(
             // 底部按钮区背景色 - 紫色调
             decoration: BoxDecoration(
