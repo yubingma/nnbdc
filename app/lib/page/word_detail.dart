@@ -991,106 +991,58 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              // 左侧圆形返回按钮
-                              Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () => Navigator.of(context).pop(),
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: cardBg,
-                                      border: Border.all(
-                                        color: cardBorder,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.arrow_back_ios_new_rounded,
-                                        size: 14,
-                                        color: textColor,
-                                      ),
-                                    ),
+                              // 左侧返回按钮（纯净无底圈）
+                              InkResponse(
+                                radius: 20,
+                                onTap: () => Navigator.of(context).pop(),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    size: 18,
+                                    color: textColor,
                                   ),
                                 ),
                               ),
                               Text(
                                 '单词详情',
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 15.5,
                                   fontWeight: FontWeight.w700,
                                   color: textColor,
                                   fontFamily: 'NotoSansSC',
                                 ),
                               ),
-                              // 右侧操作区（收藏生词本 + 更多）
+                              // 右侧操作区（收藏生词本 + 更多，纯净无底圈）
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  // 圆形收藏生词本按钮
-                                  Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(16),
-                                      onTap: _toggleRawWord,
-                                      child: Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: _isInRawWordDict
-                                              ? (isDarkMode
-                                                  ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
-                                                  : const Color(0xFFFFFBEB))
-                                              : cardBg,
-                                          border: Border.all(
-                                            color: _isInRawWordDict
-                                                ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
-                                                : cardBorder,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            _isInRawWordDict ? Icons.star_rounded : Icons.star_outline_rounded,
-                                            size: _isInRawWordDict ? 19 : 17,
-                                            color: _isInRawWordDict
-                                                ? const Color(0xFFF59E0B)
-                                                : textColor,
-                                          ),
-                                        ),
+                                  // 收藏生词本按钮
+                                  InkResponse(
+                                    radius: 20,
+                                    onTap: _toggleRawWord,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Icon(
+                                        _isInRawWordDict ? Icons.star_rounded : Icons.star_outline_rounded,
+                                        size: 23,
+                                        color: _isInRawWordDict
+                                            ? const Color(0xFFF59E0B)
+                                            : textColor,
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  // 圆形更多按钮
-                                  Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(16),
-                                      onTap: () => _showMoreOptions(context),
-                                      child: Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: cardBg,
-                                          border: Border.all(
-                                            color: cardBorder,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.more_horiz_rounded,
-                                            size: 18,
-                                            color: textColor,
-                                          ),
-                                        ),
+                                  // 更多按钮
+                                  InkResponse(
+                                    radius: 20,
+                                    onTap: () => _showMoreOptions(context),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Icon(
+                                        Icons.more_horiz_rounded,
+                                        size: 23,
+                                        color: textColor,
                                       ),
                                     ),
                                   ),
@@ -1560,63 +1512,77 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               child: args.bottomBtn!,
             ),
 
-          // 从背单词页面进入时，显示"下一个单词"按钮
+          // 从背单词页面进入时，显示"下一词"按钮（参考学习页面底部极简流转按钮风格）
           if (args.showNextWordButton && args.bottomBtn == null
               && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 24.0),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.primaryColor,
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  shadowColor: context.primaryColor.withValues(alpha: 0.35),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+              padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 20.0),
+              alignment: Alignment.center,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: _isLoadingNextWord
+                      ? null
+                      : () async {
+                          if (args.onNextWord != null) {
+                            setState(() => _isLoadingNextWord = true);
+                            try {
+                              await args.onNextWord!();
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isLoadingNextWord = false);
+                                context.pop(true);
+                              }
+                            }
+                          } else {
+                            context.pop(true);
+                          }
+                        },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                    child: _isLoadingNextWord
+                        ? SizedBox.square(
+                            dimension: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                            ),
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                '下一词',
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Container(
+                                width: 20.0,
+                                height: 3.2,
+                                decoration: BoxDecoration(
+                                  color: accentColor,
+                                  borderRadius: BorderRadius.circular(1.6),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
-                onPressed: _isLoadingNextWord
-                    ? null
-                    : () async {
-                        if (args.onNextWord != null) {
-                          setState(() => _isLoadingNextWord = true);
-                          try {
-                            await args.onNextWord!();
-                          } finally {
-                            if (mounted) {
-                              setState(() => _isLoadingNextWord = false);
-                              context.pop(true);
-                            }
-                          }
-                        } else {
-                          context.pop(true);
-                        }
-                      },
-                child: _isLoadingNextWord
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '下一词',
-                            style: TextStyle(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(Icons.chevron_right_rounded, size: 20),
-                        ],
-                      ),
               ),
             ),
         ],
