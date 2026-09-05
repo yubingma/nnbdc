@@ -753,7 +753,74 @@ extension BdcPageStateUIComponents on BdcPageState {
     return result;
   }
 
+  Widget _buildSeeAnswerBottomButton() {
+    return AbsorbPointer(
+      absorbing: !state.buttonsEnabled,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const Key('bdc_see_answer_btn'),
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => notifier.showWordDetail(
+            state.word!,
+            true,
+            context,
+            fsrsRating: FsrsRating.again,
+            reason: "主动点击了看答案，评分: 忘记",
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  '看答案',
+                  style: TextStyle(
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w600,
+                    color: context.textPrimary.withValues(alpha: 0.88),
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  width: 16,
+                  height: 3.2,
+                  decoration: BoxDecoration(
+                    color: context.warmAccentColor,
+                    borderRadius: BorderRadius.circular(1.6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: context.warmAccentColor
+                            .withValues(alpha: _cachedIsDarkMode ? 0.45 : 0.3),
+                        blurRadius: 5,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildRatingButtonsRow() {
+    // 检查是否处于选择题思考答题阶段（未作答且未离开）
+    final isChoiceStep = state.studyStep == StudyStep.en2Ch.json ||
+        state.studyStep == StudyStep.ch2En.json;
+    final isThinkingInChoice = isChoiceStep &&
+        state.selectedAnswerIndex == null &&
+        !state.hasFinishedAnswering &&
+        !state.canLeaveCurrWord;
+
+    if (isThinkingInChoice) {
+      return _buildSeeAnswerBottomButton();
+    }
+
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
@@ -769,10 +836,10 @@ extension BdcPageStateUIComponents on BdcPageState {
               absorbing: !state.buttonsEnabled,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
+                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.18 : 0.025),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -783,7 +850,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _cachedIsDarkMode
                         ? context.warmAccentColor.withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.75),
+                        : Colors.white.withValues(alpha: 0.8),
                     foregroundColor: context.warmAccentColor,
                     side: BorderSide(
                       color: context.warmAccentColor.withValues(alpha: _cachedIsDarkMode ? 0.35 : 0.26),
@@ -791,7 +858,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => notifier.showWordDetail(state.word!, true, context,
                       fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
@@ -813,10 +880,10 @@ extension BdcPageStateUIComponents on BdcPageState {
               absorbing: !state.buttonsEnabled,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.03),
+                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.18 : 0.025),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -827,7 +894,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _cachedIsDarkMode
                         ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.white.withValues(alpha: 0.75),
+                        : Colors.white.withValues(alpha: 0.8),
                     foregroundColor: context.textPrimary,
                     side: BorderSide(
                       color: _cachedIsDarkMode
@@ -837,7 +904,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () => notifier.showWordDetail(state.word!, false, context,
                       fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
@@ -853,7 +920,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             const SizedBox(width: 12),
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
                     color: context.primaryColor.withValues(alpha: _cachedIsDarkMode ? 0.25 : 0.15),
@@ -868,7 +935,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: state.isGettingNextWord
                     ? null
@@ -1138,68 +1205,73 @@ extension BdcPageStateUIComponents on BdcPageState {
   Widget _buildMeaningInline(String text, double fontSize, Color defaultColor) {
     if (text.isEmpty) return const SizedBox.shrink();
     final lines = text.split('\n');
-    List<Widget> widgets = [];
+    List<Widget> itemWidgets = [];
 
     for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
+      final line = lines[i].trim();
       if (line.isEmpty) continue;
-      final ciXingRegex = RegExp(r'^([a-z]+\.)');
+      final ciXingRegex = RegExp(r'^([a-z\.\s]+)\s*(.*)$');
       final match = ciXingRegex.firstMatch(line);
 
-      if (match != null) {
-        String ciXing = match.group(1)!;
-        String meaning = line.substring(match.end);
-        widgets.add(
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: '$ciXing ',
-                  style: TextStyle(
-                    fontSize: fontSize - 1,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Roboto',
-                    color: context.primaryColor,
-                  ),
-                ),
-                TextSpan(
-                  text: notifier.hideAnswerLeakContent(meaning),
-                  style: TextStyle(
-                    fontFamily: "NotoSansSC",
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
-                    color: defaultColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      } else {
-        widgets.add(
-          Text(
-            line,
-            style: TextStyle(
-              fontFamily: "NotoSansSC",
-              fontSize: fontSize,
-              fontWeight: FontWeight.w500,
-              color: defaultColor,
-            ),
-          ),
-        );
+      String ciXing = '';
+      String meaning = line;
+      if (match != null && match.group(1)!.contains('.')) {
+        ciXing = match.group(1)!.trim();
+        meaning = match.group(2)!.trim();
       }
+
+      meaning = notifier.hideAnswerLeakContent(meaning);
+      while (meaning.endsWith(';') ||
+          meaning.endsWith('；') ||
+          meaning.endsWith(',') ||
+          meaning.endsWith('，') ||
+          meaning.endsWith('。')) {
+        meaning = meaning.substring(0, meaning.length - 1).trim();
+      }
+
+      itemWidgets.add(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (ciXing.isNotEmpty) ...[
+              Text(
+                ciXing,
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: (fontSize - 2.5).clamp(11.0, 13.0),
+                  fontWeight: FontWeight.w600,
+                  color: _cachedIsDarkMode
+                      ? Colors.white54
+                      : const Color(0xFF64748B),
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 2),
+            ],
+            Text(
+              meaning,
+              style: TextStyle(
+                fontFamily: "NotoSansSC",
+                fontSize: fontSize,
+                fontWeight: FontWeight.w500,
+                color: defaultColor,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+      );
+
       if (i < lines.length - 1) {
-        widgets.add(const SizedBox(width: 8));
+        itemWidgets.add(const SizedBox(height: 6));
       }
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: widgets,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: itemWidgets,
     );
   }
 
@@ -1282,29 +1354,29 @@ extension BdcPageStateUIComponents on BdcPageState {
                 choiceShadows = isDarkMode
                     ? [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.22),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withValues(alpha: 0.16),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
                       ]
                     : [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.035),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
                       ];
               }
 
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.5),
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: SizedBox(
                   width: double.infinity,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     decoration: BoxDecoration(
                       color: bgColor,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(10),
                       border: borderColor == Colors.transparent
                           ? null
                           : Border.all(
@@ -1316,15 +1388,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(10),
                         onTap: () => notifier.onAnswerClicked(index + 1, context),
                         child: Container(
                           width: double.infinity,
-                          constraints: const BoxConstraints(minHeight: 68),
+                          constraints: const BoxConstraints(minHeight: 64),
                           alignment: Alignment.centerLeft,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 10,
+                            horizontal: 16,
+                            vertical: 12,
                           ),
                           child: _buildChoiceItemContent(word, isAnswered, isCh2En),
                         ),
