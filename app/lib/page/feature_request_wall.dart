@@ -143,172 +143,220 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
           elevation: 0,
           insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+            constraints: const BoxConstraints(maxWidth: 380),
             child: Container(
-              padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
               decoration: BoxDecoration(
-                color: theme.cardBg,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: theme.cardBorder, width: 0.8),
-                boxShadow: theme.cardShadows,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
+                    blurRadius: 28,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: const Icon(
-                          Icons.flag_rounded,
-                          color: Color(0xFFEF4444),
-                          size: 20,
-                        ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xD91E242C) // 85% 曜石深灰通透磨砂
+                          : const Color(0xE0FFFFFF), // 88% 凝润通透乳白磨砂
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDark ? const Color(0x33FFFFFF) : const Color(0xD9FFFFFF),
+                        width: 1.0,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              '举报需求',
-                              style: TextStyle(
-                                color: theme.textPrimary,
-                                fontSize: 16.5,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.2,
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.16 : 0.10),
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              child: const Icon(
+                                Icons.flag_rounded,
+                                color: Color(0xFFEF4444),
+                                size: 19,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '若内容涉嫌违规或广告，请向我们反馈',
-                              style: TextStyle(
-                                color: theme.textMuted,
-                                fontSize: 11.5,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '举报需求',
+                                    style: TextStyle(
+                                      color: theme.textPrimary,
+                                      fontSize: 16.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '若内容涉嫌违规或广告，请向我们反馈',
+                                    style: TextStyle(
+                                      color: theme.textMuted,
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: theme.subtleBg.withValues(alpha: isDark ? 0.3 : 0.5),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: theme.cardBorder, width: 0.6),
-                    ),
-                    child: Text(
-                      '需求：${request.title ?? ''}',
-                      style: TextStyle(
-                        color: theme.textSecondary,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.subtleBg.withValues(alpha: isDark ? 0.35 : 0.4),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: theme.cardBorder, width: 0.8),
-                    ),
-                    child: TextField(
-                      controller: contentController,
-                      style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: '请详细填写举报原因...',
-                        hintStyle: TextStyle(
-                          color: theme.textMuted,
-                          fontSize: 13,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 38,
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(dialogContext),
-                            style: TextButton.styleFrom(
-                              foregroundColor: theme.textSecondary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(100),
-                                side: BorderSide(color: theme.cardBorder, width: 0.8),
-                              ),
+                        const SizedBox(height: 14),
+                        // 需求摘要指示标签：轻透温润，告别厚重死蓝色块
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7.5),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0x1FFFFFFF) : const Color(0x40FFFFFF),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isDark ? const Color(0x14FFFFFF) : const Color(0x52FFFFFF),
+                              width: 0.6,
                             ),
-                            child: const Text('取消', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                '需求',
+                                style: TextStyle(
+                                  color: theme.textMuted,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  request.title ?? '',
+                                  style: TextStyle(
+                                    color: theme.textPrimary,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 38,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              final content = contentController.text.trim();
-                              if (content.isEmpty) {
-                                ToastUtil.info('请填写举报原因');
-                                return;
-                              }
-
-                              final user = Global.getLoggedInUser();
-                              if (user == null) {
-                                ToastUtil.info('请先登录');
-                                return;
-                              }
-
-                              try {
-                                final result = await Api.client.saveFeatureRequestReport(request.id, content, user.id);
-                                if (!context.mounted) return;
-                                if (result.success) {
-                                  ToastUtil.success('举报成功');
-                                  Navigator.pop(dialogContext);
-                                } else {
-                                  ToastUtil.error(result.msg ?? '举报失败');
-                                }
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                ToastUtil.error('举报失败');
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.22 : 0.12),
-                              foregroundColor: const Color(0xFFEF4444),
-                              elevation: 0,
-                              shadowColor: Colors.transparent,
-                              side: BorderSide(
-                                color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.40 : 0.25),
-                                width: 0.8,
-                              ),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                        const SizedBox(height: 12),
+                        // 举报原因输入框：通透半透明材质 + 细腻圆角微边框
+                        Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0x14FFFFFF) : const Color(0x4AFFFFFF),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isDark ? const Color(0x1FFFFFFF) : const Color(0x66FFFFFF),
+                              width: 0.8,
                             ),
-                            child: const Text('确认举报', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          ),
+                          child: TextField(
+                            controller: contentController,
+                            style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
+                            maxLines: 4,
+                            decoration: InputDecoration(
+                              hintText: '请详细填写举报原因...',
+                              hintStyle: TextStyle(
+                                color: theme.textMuted.withValues(alpha: 0.8),
+                                fontSize: 13,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.all(13),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 38,
+                                child: TextButton(
+                                  onPressed: () => Navigator.pop(dialogContext),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: theme.textSecondary,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(100),
+                                      side: BorderSide(
+                                        color: isDark ? const Color(0x2BFFFFFF) : const Color(0x40000000),
+                                        width: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                  child: const Text('取消', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: SizedBox(
+                                height: 38,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final content = contentController.text.trim();
+                                    if (content.isEmpty) {
+                                      ToastUtil.info('请填写举报原因');
+                                      return;
+                                    }
+
+                                    final user = Global.getLoggedInUser();
+                                    if (user == null) {
+                                      ToastUtil.info('请先登录');
+                                      return;
+                                    }
+
+                                    try {
+                                      final result = await Api.client.saveFeatureRequestReport(request.id, content, user.id);
+                                      if (!context.mounted) return;
+                                      if (result.success) {
+                                        ToastUtil.success('举报成功');
+                                        Navigator.pop(dialogContext);
+                                      } else {
+                                        ToastUtil.error(result.msg ?? '举报失败');
+                                      }
+                                    } catch (e) {
+                                      if (!context.mounted) return;
+                                      ToastUtil.error('举报失败');
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.20 : 0.12),
+                                    foregroundColor: const Color(0xFFEF4444),
+                                    elevation: 0,
+                                    shadowColor: Colors.transparent,
+                                    side: BorderSide(
+                                      color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.35 : 0.22),
+                                      width: 0.8,
+                                    ),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                                  ),
+                                  child: const Text('确认举报', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -332,171 +380,209 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
           elevation: 0,
           insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+            constraints: const BoxConstraints(maxWidth: 390),
             child: Container(
-              padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
               decoration: BoxDecoration(
-                color: theme.cardBg,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: theme.cardBorder, width: 0.8),
-                boxShadow: theme.cardShadows,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
+                    blurRadius: 28,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: theme.primaryColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: Icon(
-                          Icons.edit_note_rounded,
-                          color: theme.primaryColor,
-                          size: 22,
-                        ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xD91E242C) // 85% 曜石深灰通透磨砂
+                          : const Color(0xE0FFFFFF), // 88% 凝润通透乳白磨砂
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDark ? const Color(0x33FFFFFF) : const Color(0xD9FFFFFF),
+                        width: 1.0,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              '提交新需求',
-                              style: TextStyle(
-                                color: theme.textPrimary,
-                                fontSize: 16.5,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.2,
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: theme.primaryColor.withValues(alpha: isDark ? 0.18 : 0.10),
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              child: Icon(
+                                Icons.edit_note_rounded,
+                                color: theme.primaryColor,
+                                size: 21,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '分享你的构想，获高赞需求将优先开发',
-                              style: TextStyle(
-                                color: theme.textMuted,
-                                fontSize: 11.5,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '提交新需求',
+                                    style: TextStyle(
+                                      color: theme.textPrimary,
+                                      fontSize: 16.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '分享你的构想，获高赞需求将优先开发',
+                                    style: TextStyle(
+                                      color: theme.textMuted,
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.subtleBg.withValues(alpha: isDark ? 0.35 : 0.4),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: theme.cardBorder, width: 0.8),
-                    ),
-                    child: TextField(
-                      controller: titleController,
-                      style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
-                      decoration: InputDecoration(
-                        hintText: '需求标题，如：单词列表支持乱序播放',
-                        hintStyle: TextStyle(
-                          color: theme.textMuted,
-                          fontSize: 13,
+                        const SizedBox(height: 16),
+                        // 需求标题输入框
+                        Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0x14FFFFFF) : const Color(0x4AFFFFFF),
+                            borderRadius: BorderRadius.circular(13),
+                            border: Border.all(
+                              color: isDark ? const Color(0x1FFFFFFF) : const Color(0x66FFFFFF),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: TextField(
+                            controller: titleController,
+                            style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
+                            decoration: InputDecoration(
+                              hintText: '需求标题，如：单词列表支持乱序播放',
+                              hintStyle: TextStyle(
+                                color: theme.textMuted.withValues(alpha: 0.8),
+                                fontSize: 13,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                            ),
+                          ),
                         ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.subtleBg.withValues(alpha: isDark ? 0.35 : 0.4),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: theme.cardBorder, width: 0.8),
-                    ),
-                    child: TextField(
-                      controller: contentController,
-                      style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: '详细描述这个功能的使用场景和你的具体构想...',
-                        hintStyle: TextStyle(
-                          color: theme.textMuted,
-                          fontSize: 13,
+                        const SizedBox(height: 12),
+                        // 需求详情描述框
+                        Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0x14FFFFFF) : const Color(0x4AFFFFFF),
+                            borderRadius: BorderRadius.circular(13),
+                            border: Border.all(
+                              color: isDark ? const Color(0x1FFFFFFF) : const Color(0x66FFFFFF),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: TextField(
+                            controller: contentController,
+                            style: TextStyle(color: theme.textPrimary, fontSize: 13.5),
+                            maxLines: 5,
+                            decoration: InputDecoration(
+                              hintText: '详细描述这个功能的使用场景和你的具体构想...',
+                              hintStyle: TextStyle(
+                                color: theme.textMuted.withValues(alpha: 0.8),
+                                fontSize: 13,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.all(13),
+                            ),
+                          ),
                         ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 38,
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(dialogContext),
-                            style: TextButton.styleFrom(
-                              foregroundColor: theme.textSecondary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(100),
-                                side: BorderSide(color: theme.cardBorder, width: 0.8),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 38,
+                                child: TextButton(
+                                  onPressed: () => Navigator.pop(dialogContext),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: theme.textSecondary,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(100),
+                                      side: BorderSide(
+                                        color: isDark ? const Color(0x2BFFFFFF) : const Color(0x40000000),
+                                        width: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                  child: const Text('取消', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                                ),
                               ),
                             ),
-                            child: const Text('取消', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 38,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              final title = titleController.text.trim();
-                              final content = contentController.text.trim();
-                              if (title.isEmpty || content.isEmpty) {
-                                ToastUtil.info('请填写完整信息');
-                                return;
-                              }
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: SizedBox(
+                                height: 38,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final title = titleController.text.trim();
+                                    final content = contentController.text.trim();
 
-                              final user = Global.getLoggedInUser();
-                              if (user == null) {
-                                ToastUtil.info('请先登录');
-                                return;
-                              }
+                                    if (title.isEmpty) {
+                                      ToastUtil.info('请填写需求标题');
+                                      return;
+                                    }
+                                    if (content.isEmpty) {
+                                      ToastUtil.info('请填写需求描述');
+                                      return;
+                                    }
 
-                              try {
-                                final result = await Api.client.createFeatureRequest(title, content, user.id);
-                                if (!context.mounted) return;
-                                if (result.success && result.data != null) {
-                                  ToastUtil.success('提交成功');
-                                  Navigator.pop(dialogContext);
-                                  _loadRequests();
-                                } else {
-                                  ToastUtil.error(result.msg ?? '提交失败');
-                                }
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                ToastUtil.error('提交失败');
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.primaryColor,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                                    final user = Global.getLoggedInUser();
+                                    if (user == null) {
+                                      ToastUtil.info('请先登录');
+                                      return;
+                                    }
+
+                                    try {
+                                      final result = await Api.client.createFeatureRequest(title, content, user.id);
+                                      if (!context.mounted) return;
+                                      if (result.success) {
+                                        ToastUtil.success('提交成功，感谢你的建议！');
+                                        Navigator.pop(dialogContext);
+                                        _loadRequests();
+                                      } else {
+                                        ToastUtil.error(result.msg ?? '提交失败');
+                                      }
+                                    } catch (e) {
+                                      if (!context.mounted) return;
+                                      ToastUtil.error('提交失败');
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: theme.primaryColor,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shadowColor: Colors.transparent,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                                  ),
+                                  child: const Text('立即提交', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                ),
+                              ),
                             ),
-                            child: const Text('提交需求', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                          ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
