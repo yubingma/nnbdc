@@ -1198,14 +1198,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               builder: (BuildContext context) {
                                 final screenWidth = MediaQuery.of(context).size.width;
                                 final availableWidth = screenWidth - leftPadding - rightPadding;
-                                final imageWidth = ((availableWidth - 10) / 2.0).clamp(110.0, 160.0);
-                                final imageHeight = imageWidth * 0.66;
+                                final imageWidth = (availableWidth - 10) / 2.0;
+                                final imageHeight = (imageWidth * 0.58).clamp(88.0, 110.0);
                                 final imageBorderColor = isDarkMode
                                     ? Colors.white.withValues(alpha: 0.12)
                                     : Colors.black.withValues(alpha: 0.08);
 
                                 return Padding(
-                                  padding: const EdgeInsets.fromLTRB(leftPadding, 12, rightPadding, 8),
+                                  padding: const EdgeInsets.fromLTRB(leftPadding, 12, rightPadding, 4),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -1336,7 +1336,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Center(
                           child: Container(
                             width: 36,
@@ -1506,81 +1506,87 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
           // 底部下一词按钮 (在 AI 抽屉激活时隐藏，以免挤占空间)
           if (args.bottomBtn != null && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 24.0),
-              child: args.bottomBtn!,
+            SafeArea(
+              top: false,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16.0, 6.0, 16.0, 10.0),
+                child: args.bottomBtn!,
+              ),
             ),
 
           // 从背单词页面进入时，显示"下一词"按钮（参考学习页面底部极简流转按钮风格）
           if (args.showNextWordButton && args.bottomBtn == null
               && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 20.0),
-              alignment: Alignment.center,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: _isLoadingNextWord
-                      ? null
-                      : () async {
-                          if (args.onNextWord != null) {
-                            setState(() => _isLoadingNextWord = true);
-                            try {
-                              await args.onNextWord!();
-                            } finally {
-                              if (mounted) {
-                                setState(() => _isLoadingNextWord = false);
-                                context.pop(true);
+            SafeArea(
+              top: false,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 8.0),
+                alignment: Alignment.center,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _isLoadingNextWord
+                        ? null
+                        : () async {
+                            if (args.onNextWord != null) {
+                              setState(() => _isLoadingNextWord = true);
+                              try {
+                                await args.onNextWord!();
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isLoadingNextWord = false);
+                                  context.pop(true);
+                                }
                               }
+                            } else {
+                              context.pop(true);
                             }
-                          } else {
-                            context.pop(true);
-                          }
-                        },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-                    child: _isLoadingNextWord
-                        ? SizedBox.square(
-                            dimension: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                      child: _isLoadingNextWord
+                          ? SizedBox.square(
+                              dimension: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                              ),
+                            )
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '下一词',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Container(
+                                  width: 20.0,
+                                  height: 3.2,
+                                  decoration: BoxDecoration(
+                                    color: accentColor,
+                                    borderRadius: BorderRadius.circular(1.6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.3),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          )
-                        : Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                '下一词',
-                                style: TextStyle(
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Container(
-                                width: 20.0,
-                                height: 3.2,
-                                decoration: BoxDecoration(
-                                  color: accentColor,
-                                  borderRadius: BorderRadius.circular(1.6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.3),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                    ),
                   ),
                 ),
               ),
@@ -2568,6 +2574,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       false,
                       FontWeight.w400,
                       fontSize: 14.5,
+                      color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                      height: 1.55,
                     ),
                   ],
                 ),

@@ -542,6 +542,7 @@ class Util {
     double fontSize = 14,
     TextAlign textAlign = TextAlign.left,
     Color? color,
+    double? height,
   }) {
     words = words.trim();
 
@@ -637,6 +638,7 @@ class Util {
         color: color,
         fontSize: fontSize,
         fontWeight: fontWeight,
+        height: height,
       ),
     );
   }
