@@ -267,48 +267,95 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildQuestionContent(BdcState state) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
-      child: SingleChildScrollView(
-        key: const ValueKey('bdc_question_content_scroll_view'),
-        physics: const BouncingScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(
-            BdcPageState.leftPadding,
-            0,
-            BdcPageState.rightPadding,
-            max(
-                kTextTabBarHeight + 6.0,
-                MediaQuery.of(context).viewPadding.bottom +
-                    kTextTabBarHeight)), // 预留底部TabBar空间，避免遮挡
-        child: Column(
-          children: [
-            // 英→中模式 或 列表模式 整合卡片
-            if ((state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.list.json) &&
-                state.currentGetWordResult?.learningWord?.word != null)
-              _buildWordStepCard(state),
-            // 中→英模式整合卡片
-            if (state.studyStep == StudyStep.ch2En.json &&
-                state.currentGetWordResult?.learningWord?.word != null)
-              _buildMeaningStepCard(state),
-            // 例句英→中模式整合卡片
-            if (state.studyStep == StudyStep.enSentence2Ch.json &&
-                state.currentGetWordResult?.learningWord?.word != null)
-              _buildEnSentenceStepCard(state),
-            // 例句中→英模式整合卡片
-            if (state.studyStep == StudyStep.chSentence2En.json &&
-                state.currentGetWordResult?.learningWord?.word != null)
-              _buildChSentenceStepCard(state),
+    final isDarkMode = _cachedIsDarkMode;
 
-            // 音标和例句辅助行，仅在单词/浏览模式下显示，例句模式本身不需要它们
-            if (state.studyStep == StudyStep.en2Ch.json ||
-                state.studyStep == StudyStep.ch2En.json ||
-                state.studyStep == StudyStep.list.json) ...[
-              _buildPhoneticRow(state),
-              _buildFirstSentenceRow(state),
-            ],
-          ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      width: double.infinity,
+      height: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDarkMode
+                    ? [
+                        const Color(0xB818202F),
+                        const Color(0x99121722),
+                      ]
+                    : [
+                        Colors.white.withValues(alpha: 0.65),
+                        Colors.white.withValues(alpha: 0.45),
+                      ],
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.14)
+                    : Colors.white.withValues(alpha: 0.85),
+                width: 1.1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  key: const ValueKey('bdc_question_content_scroll_view'),
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: max(0.0, constraints.maxHeight - 32),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 英→中模式 或 列表模式 整合卡片
+                          if ((state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.list.json) &&
+                              state.currentGetWordResult?.learningWord?.word != null)
+                            _buildWordStepCard(state),
+                          // 中→英模式整合卡片
+                          if (state.studyStep == StudyStep.ch2En.json &&
+                              state.currentGetWordResult?.learningWord?.word != null)
+                            _buildMeaningStepCard(state),
+                          // 例句英→中模式整合卡片
+                          if (state.studyStep == StudyStep.enSentence2Ch.json &&
+                              state.currentGetWordResult?.learningWord?.word != null)
+                            _buildEnSentenceStepCard(state),
+                          // 例句中→英模式整合卡片
+                          if (state.studyStep == StudyStep.chSentence2En.json &&
+                              state.currentGetWordResult?.learningWord?.word != null)
+                            _buildChSentenceStepCard(state),
+
+                          // 音标和例句辅助行，仅在单词/浏览模式下显示，例句模式本身不需要它们
+                          if (state.studyStep == StudyStep.en2Ch.json ||
+                              state.studyStep == StudyStep.ch2En.json ||
+                              state.studyStep == StudyStep.list.json) ...[
+                            _buildPhoneticRow(state),
+                            _buildFirstSentenceRow(state),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -384,189 +431,74 @@ extension BdcPageStateUIComponents on BdcPageState {
     final result = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 顶部学习进度条
+        // 顶部极细无缝流光进度条（现代极简，告别切块虚线）
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
             final notifierInstance = ref.read(bdcNotifierProvider.notifier);
             final currentCount = state.progressBarTapCount + 1;
 
-            // 每次点击都给予轻微反馈
             HapticFeedback.lightImpact();
-
-            // 取消之前的计时器
             notifierInstance.progressBarTapTimer?.cancel();
 
             if (currentCount >= 5) {
-              // 达到 5 次，立即触发五击事件，不需要等待
               notifier.updateProgressBarTapCount(0);
               _showDebugOverlay();
             } else {
               notifier.updateProgressBarTapCount(currentCount);
-              // 开启一个短的计时器（300ms），在没有新点击时触发
               notifierInstance.progressBarTapTimer = Timer(const Duration(milliseconds: 300), () {
                 if (!mounted) return;
-
-                // 300ms 后如果点击次数刚好为 2，说明是双击，触发双击逻辑
                 if (ref.read(bdcNotifierProvider).progressBarTapCount == 2) {
                   PerformanceWatchdog.toggleFpsOverlay();
                   HapticFeedback.mediumImpact();
                 }
-
-                // 触发完成后清零计数器
                 notifier.updateProgressBarTapCount(0);
               });
             }
           },
           child: Container(
             margin: EdgeInsets.fromLTRB(
-                0, MediaQuery.of(context).padding.top + 8, 0, 0),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 4), // 进一步减小垂直间距以整体上移下方元素
-            child: Container(
-              height: 3, // 从 6 改为 3
+                0, MediaQuery.of(context).padding.top + 4, 0, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+            child: SizedBox(
+              height: 2.2,
               width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(1.5), // 从 3 改为 1.5
-                color: _cachedIsDarkMode
-                    ? const Color(0xFF2C2C2C)
-                    : const Color(0xFFF0F2F5),
-              ),
               child: state.currentGetWordResult?.progress != null
                   ? LayoutBuilder(
                       builder: (context, constraints) {
                         final maxValue =
                             state.currentGetWordResult!.progress![1].toDouble();
-                        final width = constraints.maxWidth;
-
-                        // 计算批次颜色：从红色(0) -> 蓝色(0.5) -> 绿色(1.0) 渐变
-                        // 根据白天/黑夜模式调整基础透明度
-                        final bool isDarkMode =
-                            _cachedIsDarkMode;
-                        final double baseAlpha =
-                            isDarkMode ? 0.25 : 0.15; // 黑夜模式稍明显一点，白天模式更淡
-
-                        // 获取批次的基础颜色（不透明度）
-                        // 修改：所有批次都使用最后一个批次的颜色（绿色）
-                        Color getBatchBaseColor(
-                            int batchIndex, int totalBatches) {
-                          return isDarkMode
-                              ? Colors.white
-                              : const Color(0xFF1A1A1A);
-                        }
-
-                        Color getBatchColor(int batchIndex, int totalBatches) {
-                          // 所有批次都使用统一的半透明绿色作为背景色
-                          return getBatchBaseColor(batchIndex, totalBatches)
-                              .withValues(alpha: baseAlpha);
-                        }
-
-                        // 计算批次数量（基于单词数量，每批次10个单词）。
-                        // 三组结构下学习轨道默认 5 个环节（测评+3巩固+List），用于近似单词数换算。
-                        const int modeCount = 5;
-
-                        // 【根本原因修复】检查 modeCount 和 maxValue 是否有效
-                        // 如果学习步骤未配置或进度数据无效，不渲染进度条
-                        if (modeCount <= 0 || maxValue <= 0 || width <= 0) {
-                          return const SizedBox.shrink();
-                        }
-
-                        final wordCount = (maxValue / modeCount).ceil();
-                        final batchWordCount = 10;
-                        final totalBatches =
-                            max(1, (wordCount / batchWordCount).ceil());
-
-                        // 计算当前进度所在的批次索引
+                        if (maxValue <= 0) return const SizedBox.shrink();
                         final currentProgress =
                             state.currentGetWordResult!.progress![0].toDouble();
-                        // 当前步进对应的单词索引
-                        final currentWordIndex = min(
-                            (currentProgress / modeCount).floor(),
-                            wordCount - 1);
-                        final currentBatchIndex = min(
-                            (currentWordIndex / batchWordCount).floor(),
-                            totalBatches - 1);
-                        // 获取当前批次的鲜艳颜色作为进度条前景色
-                        final progressColor =
-                            getBatchBaseColor(currentBatchIndex, totalBatches);
+                        final progressRatio = (currentProgress / maxValue).clamp(0.0, 1.0);
 
-                        return Stack(
-                          children: [
-                            // 批次背景色层（基于单词批次）
-                            Row(
-                              children: List.generate(totalBatches, (index) {
-                                final isLastBatch = index == totalBatches - 1;
-                                final startWordIndex = index * batchWordCount;
-                                final endWordIndex = min(
-                                    (index + 1) * batchWordCount, wordCount);
-                                final batchWords =
-                                    max(1, endWordIndex - startWordIndex);
-                                return Expanded(
-                                  flex: batchWords,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: getBatchColor(index, totalBatches),
-                                      borderRadius: BorderRadius.horizontal(
-                                        left: index == 0
-                                            ? const Radius.circular(1.5)
-                                            : Radius.zero,
-                                        right: isLastBatch
-                                            ? const Radius.circular(1.5)
-                                            : Radius.zero,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                            ClipRRect(
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(1.5)),
-                              child: ValueListenableBuilder<double>(
-                                valueListenable: PerformanceWatchdog.jankHeat,
-                                builder: (context, heat, child) {
-                                  final actualColor = Color.lerp(progressColor, Colors.red, heat)!;
-                                  return FAProgressBar(
-                                    borderRadius:
-                                        const BorderRadius.all(Radius.circular(1.5)),
-                                    currentValue: currentProgress,
-                                    maxValue: maxValue,
-                                    displayText: '',
-                                    direction: Axis.horizontal,
-                                    displayTextStyle: const TextStyle(
-                                        color: Color(0x00000000), fontSize: 0),
-                                    backgroundColor: Colors.transparent,
-                                    progressColor: actualColor,
-                                    animatedDuration:
-                                        const Duration(milliseconds: 300),
-                                  );
-                                },
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(1.5),
+                          child: Stack(
+                            children: [
+                              // 极淡一体化柔光微底轨
+                              Container(
+                                width: double.infinity,
+                                height: 2.2,
+                                color: _cachedIsDarkMode
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : Colors.black.withValues(alpha: 0.04),
                               ),
-                            ),
-                            // 批次分隔线（只在批次边界处显示）
-                            if (totalBatches > 1)
-                              ...List.generate(totalBatches - 1, (index) {
-                                // 计算批次边界对应的进度位置
-                                final boundaryWordIndex =
-                                    (index + 1) * batchWordCount;
-                                final boundaryStep =
-                                    boundaryWordIndex * modeCount;
-                                final left = (boundaryStep / maxValue) * width;
-                                // 只有当计算出的位置在进度条范围内时才显示
-                                if (left <= 0 || left >= width) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Positioned(
-                                  left: left,
-                                  top: 0,
-                                  bottom: 0,
-                                  child: Container(
-                                    width: 1.5,
-                                    color: Colors.white.withValues(alpha: 0.7),
+                              // 连续平滑无缝流光光带
+                              FractionallySizedBox(
+                                widthFactor: progressRatio,
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  height: 2.2,
+                                  decoration: BoxDecoration(
+                                    color: context.primaryColor,
+                                    borderRadius: BorderRadius.circular(1.5),
                                   ),
-                                );
-                              }),
-                          ],
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     )
@@ -641,14 +573,25 @@ extension BdcPageStateUIComponents on BdcPageState {
                 duration: const Duration(milliseconds: 400),
                 switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeInCubic,
+                layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      ...previousChildren,
+                      if (currentChild != null) currentChild,
+                    ],
+                  );
+                },
                 transitionBuilder: (Widget child, Animation<double> animation) {
                   return FadeTransition(
                     opacity: animation,
                     child: child,
                   );
                 },
-                child: Container(
+                child: SizedBox(
                   key: ValueKey('word_card_${wordId}_$historyIndex'),
+                  width: double.infinity,
+                  height: double.infinity,
                   child: _buildQuestionContent(currentState.copyWith(
                     showSentenceTranslation: showSentenceTranslation,
                     isEditMode: isEditMode,
@@ -2838,19 +2781,16 @@ extension BdcPageStateUIComponents on BdcPageState {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: context.cardBg,
+                  color: _cachedIsDarkMode
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: context.cardBorder,
-                    width: 1,
+                    color: _cachedIsDarkMode
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.05),
+                    width: 0.8,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.02),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2931,105 +2871,58 @@ extension BdcPageStateUIComponents on BdcPageState {
         ? allItems.where((item) => (item.ciXing ?? '').trim().isNotEmpty).toList()
         : allItems;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 释义极简微毛玻璃卡片（挺拔字阶 + 纯净留白）
-          ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDarkMode
-                        ? [
-                            const Color(0xB818202F),
-                            const Color(0x99121722),
-                          ]
-                        : [
-                            Colors.white.withValues(alpha: 0.65),
-                            Colors.white.withValues(alpha: 0.45),
-                          ],
-                  ),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.14)
-                        : Colors.white.withValues(alpha: 0.85),
-                    width: 1.2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final item in displayItems)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            if ((item.ciXing ?? '').isNotEmpty) ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                                decoration: BoxDecoration(
-                                  color: context.primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
-                                  borderRadius: BorderRadius.circular(7),
-                                  border: Border.all(
-                                    color: context.primaryColor.withValues(alpha: isDarkMode ? 0.35 : 0.22),
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: Text(
-                                  item.ciXing!,
-                                  style: TextStyle(
-                                    color: context.primaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: 'Roboto',
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                            ],
-                            Expanded(
-                              child: Text(
-                                notifier.hideParenthesesContent(item.meaning ?? ''),
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: context.textPrimary,
-                                  height: 1.35,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                            ),
-                          ],
+          for (final item in displayItems)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if ((item.ciXing ?? '').isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: context.primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border.all(
+                          color: context.primaryColor.withValues(alpha: isDarkMode ? 0.35 : 0.22),
+                          width: 0.8,
                         ),
                       ),
+                      child: Text(
+                        item.ciXing!,
+                        style: TextStyle(
+                          color: context.primaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Roboto',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                   ],
-                ),
+                  Expanded(
+                    child: Text(
+                      notifier.hideParenthesesContent(item.meaning ?? ''),
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w700,
+                        color: context.textPrimary,
+                        height: 1.4,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
 
           // 图片 (仅对管理员开放)
           if (StudyConfig.fromCurrentUser().enableWordImage &&
