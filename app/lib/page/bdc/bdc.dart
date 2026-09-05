@@ -190,6 +190,35 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       vsync: this,
     );
 
+    // 监听发音状态，驱动喇叭声波扩散呼吸律动动画
+    ref.listenManual(
+      bdcNotifierProvider.select((s) => s.playingStates['word'] ?? false),
+      (prev, next) {
+        if (!mounted) return;
+        if (next == true) {
+          _wordSoundController.repeat();
+        } else {
+          _wordSoundController.stop();
+          _wordSoundController.reset();
+        }
+      },
+      fireImmediately: true,
+    );
+
+    ref.listenManual(
+      bdcNotifierProvider.select((s) => s.playingStates['sentence'] ?? false),
+      (prev, next) {
+        if (!mounted) return;
+        if (next == true) {
+          _sentenceSoundController.repeat();
+        } else {
+          _sentenceSoundController.stop();
+          _sentenceSoundController.reset();
+        }
+      },
+      fireImmediately: true,
+    );
+
     // Meaning focus listener
     _meaningFocusNode.addListener(() {
       if (!mounted) return;

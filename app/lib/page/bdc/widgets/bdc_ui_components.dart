@@ -2332,7 +2332,8 @@ extension BdcPageStateUIComponents on BdcPageState {
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: () {
-        if (state.englishDigestOfFirstSentence != null) {
+        final sentencePlaying = state.playingStates['sentence'] ?? false;
+        if (!sentencePlaying && state.englishDigestOfFirstSentence != null) {
           notifier.playWithAnimation(
               () => StudyAudioSessionController.instance.playSentenceSound(
                   state.englishDigestOfFirstSentence!),
@@ -2636,7 +2637,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             InkWell(
               borderRadius: BorderRadius.circular(10),
               onTap: () {
-                if (state.englishDigestOfFirstSentence != null) {
+                final sentencePlaying = state.playingStates['sentence'] ?? false;
+                if (!sentencePlaying && state.englishDigestOfFirstSentence != null) {
                   notifier.playWithAnimation(
                       () => StudyAudioSessionController.instance.playSentenceSound(
                           state.englishDigestOfFirstSentence!),
@@ -3089,11 +3091,12 @@ extension BdcPageStateUIComponents on BdcPageState {
     return AnimatedBuilder(
       animation: animationController,
       builder: (context, child) {
+        final active = isPlaying || animationController.isAnimating;
         return CustomPaint(
           size: Size(size, size),
           painter: ModernSoundWavePainter(
-            color: isPlaying ? activeColor : normalColor,
-            isPlaying: isPlaying,
+            color: active ? activeColor : normalColor,
+            isPlaying: active,
             animationValue: animationController.value,
           ),
         );
@@ -3169,10 +3172,17 @@ class ModernSoundWavePainter extends CustomPainter {
 
     double wave1Opacity = 0.90;
     double wave2Opacity = 0.50;
+    double wave1Scale = 1.0;
+    double wave2Scale = 1.0;
 
     if (isPlaying) {
       final t = animationValue;
-      wave1Opacity = (0.30 + 0.70 * (0.5 + 0.5 * sin(t * pi * 2))).clamp(0.0, 1.0);
+      // 声波 1：第一道声波，随周期呈现明暗呼吸与微幅涟漪律动
+      wave1Scale = 0.95 + 0.12 * sin(t * pi * 2);
+      wave1Opacity = (0.35 + 0.65 * (0.5 + 0.5 * sin(t * pi * 2))).clamp(0.0, 1.0);
+
+      // 声波 2：第二道声波，相位差 90 度，自内向外推涌声浪
+      wave2Scale = 0.94 + 0.14 * sin((t - 0.25) * pi * 2);
       wave2Opacity = (0.20 + 0.80 * (0.5 + 0.5 * sin((t - 0.25) * pi * 2))).clamp(0.0, 1.0);
     }
 
@@ -3184,7 +3194,7 @@ class ModernSoundWavePainter extends CustomPainter {
       ..strokeWidth = strokeW
       ..strokeCap = StrokeCap.round;
 
-    final wave1Radius = w * 0.29;
+    final wave1Radius = w * 0.29 * wave1Scale;
     canvas.drawArc(
       Rect.fromCircle(center: waveCenter, radius: wave1Radius),
       startAngle,
@@ -3199,7 +3209,7 @@ class ModernSoundWavePainter extends CustomPainter {
       ..strokeWidth = strokeW
       ..strokeCap = StrokeCap.round;
 
-    final wave2Radius = w * 0.49;
+    final wave2Radius = w * 0.49 * wave2Scale;
     canvas.drawArc(
       Rect.fromCircle(center: waveCenter, radius: wave2Radius),
       startAngle,

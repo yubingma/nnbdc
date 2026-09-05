@@ -810,12 +810,17 @@ class StudyAudioSessionController {
       final bool isSameLoadedUrl = _playerLoadedUrl[player] == soundUrl;
       if (isSameLoadedUrl && (player.processingState == ja.ProcessingState.ready || player.processingState == ja.ProcessingState.completed)) {
         try {
+          _logicallyFinishedPlayers.remove(player);
           await player.seek(Duration.zero);
           await player.setSpeed(speed);
           await player.setVolume(1.0);
+          final playSw = Stopwatch()..start();
           unawaited(player.play().catchError((_) {}));
-          _logicallyFinishedPlayers.add(player);
           debugPrint('⚡ [Latency-Sound] 同一音频瞬时重播命中，开播耗时: ${totalSw.elapsedMilliseconds}ms');
+          await _waitForPlayCompletion(player, playTimeoutMs);
+          _logicallyFinishedPlayers.add(player);
+          debugPrint('⏱️ [Latency-Sound] 瞬时重播播放完成，耗时: ${playSw.elapsedMilliseconds}ms');
+          Global.logger.d('🔊 [SessionController] playSoundByUrl 瞬时重播结束，总逻辑耗时: ${totalSw.elapsedMilliseconds}ms');
           return;
         } catch (e) {
           debugPrint('⚠️ [Latency-Sound] 瞬时重播异常，回退常规加载: $e');
@@ -975,27 +980,10 @@ class StudyAudioSessionController {
       _activeVolumeToken[player] = volumeToken;
       await player.setVolume(1.0);
 
-      bool hasStartedPlaying = false;
-      final playCompletedFuture = player.playerStateStream
-          .firstWhere((state) {
-            if (state.playing) {
-              hasStartedPlaying = true;
-            }
-            return state.processingState == ja.ProcessingState.completed ||
-                   state.processingState == ja.ProcessingState.idle ||
-                   (hasStartedPlaying && !state.playing);
-          })
-          .timeout(Duration(milliseconds: playTimeoutMs));
-
-      playCompletedFuture.catchError((_) => player.playerState);
-
       final playSw = Stopwatch()..start();
       unawaited(player.play().catchError((_) {}));
 
-      if (player.processingState != ja.ProcessingState.completed &&
-          player.processingState != ja.ProcessingState.idle) {
-        await playCompletedFuture;
-      }
+      await _waitForPlayCompletion(player, playTimeoutMs);
 
       _logicallyFinishedPlayers.add(player);
       debugPrint('⏱️ [Latency-Sound] 播放完成，耗时: ${playSw.elapsedMilliseconds}ms');
@@ -1028,6 +1016,25 @@ class StudyAudioSessionController {
         });
       }
     }
+  }
+
+  /// 统一等待音频播放器播放完成或异常终止
+  Future<void> _waitForPlayCompletion(ja.AudioPlayer player, int playTimeoutMs) async {
+    bool hasStartedPlaying = false;
+    final playCompletedFuture = player.playerStateStream
+        .firstWhere((state) {
+          if (state.playing) {
+            hasStartedPlaying = true;
+          }
+          return (hasStartedPlaying &&
+                  (state.processingState == ja.ProcessingState.completed || !state.playing)) ||
+                 state.processingState == ja.ProcessingState.idle;
+        })
+        .timeout(Duration(milliseconds: playTimeoutMs));
+
+    playCompletedFuture.catchError((_) => player.playerState);
+
+    await playCompletedFuture;
   }
 
   // ============================================================
