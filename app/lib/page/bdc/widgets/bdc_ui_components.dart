@@ -848,10 +848,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             _buildMinimalPillButton(
               key: const Key('bdc_study_again'),
               label: '再学学',
-              textColor: context.textPrimary,
-              indicatorColor: _cachedIsDarkMode
-                  ? Colors.white38
-                  : const Color(0xFF94A3B8),
+              textColor: context.primaryColor,
+              indicatorColor: context.primaryColor,
               isEnabled: state.buttonsEnabled,
               indicatorWidth: 16.0,
               onTap: () => notifier.showWordDetail(
