@@ -600,7 +600,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 ),
                               ],
                             ),
-                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
                             child: Column(
                               children: [
                                 if (state.studyStep == StudyStep.en2Ch.json ||
@@ -641,7 +641,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               ],
                                             ),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 8),
                                 _buildFsrsResultPanel(),
                               ],
                             ),
@@ -1828,7 +1828,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       break;
                   }
                   return Container(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    alignment: Alignment.center,
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.center,
@@ -1861,7 +1861,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
                 final bool hasRating = state.lastFsrsRating != null;
                 return Container(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  alignment: Alignment.center,
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.center,
@@ -1933,7 +1933,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             }
 
             return Container(
-              padding: const EdgeInsets.only(bottom: 8),
+              alignment: Alignment.center,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.center,
@@ -2022,7 +2022,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
       final bool hasRating = state.lastFsrsRating != null;
       return Container(
-        padding: const EdgeInsets.only(bottom: 6),
+        alignment: Alignment.center,
         child: FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.center,
@@ -2117,7 +2117,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     }
 
     return Container(
-      padding: const EdgeInsets.only(bottom: 6),
+      alignment: Alignment.center,
       child: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.center,
