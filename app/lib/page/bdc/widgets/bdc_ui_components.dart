@@ -2735,6 +2735,11 @@ extension BdcPageStateUIComponents on BdcPageState {
       return text;
     }
 
+    final isDark = _cachedIsDarkMode;
+    final cixingColor = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -2757,9 +2762,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                         maxLines: 1,
                         softWrap: false,
                         style: TextStyle(
-                          color: context.primaryColor,
+                          color: cixingColor,
                           fontSize: cixingFontSize,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w500,
                           fontFamily: 'Roboto',
                           letterSpacing: 0.2,
                         ),
@@ -2808,9 +2813,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                             maxLines: 1,
                             softWrap: false,
                             style: TextStyle(
-                              color: context.primaryColor,
+                              color: cixingColor,
                               fontSize: cixingFontSize,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               fontFamily: 'Roboto',
                               letterSpacing: 0.2,
                             ),
