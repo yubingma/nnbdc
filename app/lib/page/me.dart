@@ -1195,7 +1195,10 @@ class MePageState extends State<MePage> implements RefreshableTab {
                               behavior: HitTestBehavior.opaque,
                               onTap: () {
                                 Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (context) => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1)));
+                                    builder: (context) => LevelPathPage(
+                                      currentLevel: studyProgress!.level.level ?? 1,
+                                      masteredWords: studyProgress!.masteredWordsCount,
+                                    )));
                               },
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 4),
