@@ -1043,11 +1043,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           color: _isInRawWordDict
-                                              ? (isDarkMode ? const Color(0x33F59E0B) : const Color(0xFFFEF3C7))
+                                              ? (isDarkMode
+                                                  ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                                                  : const Color(0xFFFFFBEB))
                                               : cardBg,
                                           border: Border.all(
                                             color: _isInRawWordDict
-                                                ? const Color(0xFFF59E0B)
+                                                ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
                                                 : cardBorder,
                                             width: 1,
                                           ),
@@ -1055,7 +1057,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                         child: Center(
                                           child: Icon(
                                             _isInRawWordDict ? Icons.star_rounded : Icons.star_outline_rounded,
-                                            size: _isInRawWordDict ? 20 : 17,
+                                            size: _isInRawWordDict ? 19 : 17,
                                             color: _isInRawWordDict
                                                 ? const Color(0xFFF59E0B)
                                                 : textColor,
@@ -1243,119 +1245,130 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             Builder(
                               builder: (BuildContext context) {
                                 final screenWidth = MediaQuery.of(context).size.width;
-                                double imageWidth = (screenWidth - leftPadding - rightPadding - 8) / 2.0;
-                                if (imageWidth > 120.0) {
-                                  imageWidth = 120.0;
-                                }
+                                final availableWidth = screenWidth - leftPadding - rightPadding;
+                                final imageWidth = ((availableWidth - 10) / 2.0).clamp(110.0, 160.0);
+                                final imageHeight = imageWidth * 0.66;
+                                final imageBorderColor = isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.12)
+                                    : Colors.black.withValues(alpha: 0.08);
+
                                 return Padding(
-                                  padding: const EdgeInsets.fromLTRB(leftPadding, 12, rightPadding, 4),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                  padding: const EdgeInsets.fromLTRB(leftPadding, 12, rightPadding, 8),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Wrap(
-                                        spacing: 8, 
-                                        runSpacing: 8,
-                                        children: [
-                                          ...args.word.images!.take(2).map((image) => InkWell(
-                                            borderRadius: BorderRadius.circular(8),
-                                            onTap: () {
-                                              showImagePreviewWithContext(
-                                                context,
-                                                image,
-                                                onDeleted: () => _reloadWordData(),
-                                              );
-                                            },
-                                            child: Stack(
-                                              children: [
-                                                Container(
-                                                  decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                                                  ),
-                                                  child: Builder(
+                                      for (final image in args.word.images!.take(2)) ...[
+                                        InkWell(
+                                          borderRadius: BorderRadius.circular(12),
+                                          onTap: () {
+                                            showImagePreviewWithContext(
+                                              context,
+                                              image,
+                                              onDeleted: () => _reloadWordData(),
+                                            );
+                                          },
+                                          child: Container(
+                                            width: imageWidth,
+                                            height: imageHeight,
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(color: imageBorderColor, width: 0.5),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(11.5),
+                                              child: Stack(
+                                                fit: StackFit.expand,
+                                                children: [
+                                                  Builder(
                                                     builder: (context) {
                                                       final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${image.imageFile}');
                                                       Global.logger.d('加载单词图片 [详情页]: $imageUrl');
                                                       return Image.network(
                                                         imageUrl,
                                                         width: imageWidth,
-                                                        height: imageWidth * 0.75,
+                                                        height: imageHeight,
                                                         fit: BoxFit.cover,
                                                         errorBuilder: (context, error, stackTrace) {
                                                           Global.logger.e('图片加载失败 [详情页]: $imageUrl', error: error);
                                                           return Container(
-                                                            width: imageWidth,
-                                                            height: imageWidth * 0.75,
-                                                            color: Colors.grey[200],
-                                                            child: const Icon(Icons.broken_image, color: Colors.red),
+                                                            color: isDarkMode ? const Color(0xFF1E293B) : Colors.grey[100],
+                                                            child: Icon(Icons.broken_image_rounded, color: subtitleColor, size: 24),
                                                           );
                                                         },
                                                       );
-                                                    }
+                                                    },
                                                   ),
-                                                ),
-                                                if (image.status == 'PENDING')
-                                                  Positioned.fill(
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black.withValues(alpha: 0.5),
-                                                        borderRadius: BorderRadius.circular(8),
-                                                      ),
-                                                      child: const Center(
-                                                        child: Column(
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          children: [
-                                                            SizedBox(
-                                                              width: 16,
-                                                              height: 16,
-                                                              child: CircularProgressIndicator(
-                                                                strokeWidth: 2,
-                                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                  if (image.status == 'PENDING')
+                                                    Positioned.fill(
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.black.withValues(alpha: 0.55),
+                                                        ),
+                                                        child: const Center(
+                                                          child: Column(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: [
+                                                              SizedBox(
+                                                                width: 16,
+                                                                height: 16,
+                                                                child: CircularProgressIndicator(
+                                                                  strokeWidth: 2,
+                                                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                                ),
                                                               ),
-                                                            ),
-                                                            SizedBox(height: 4),
-                                                            Text('AI审核中', style: TextStyle(color: Colors.white, fontSize: 10)),
-                                                          ],
+                                                              SizedBox(height: 4),
+                                                              Text('AI审核中', style: TextStyle(color: Colors.white, fontSize: 10)),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ),
                                                     ),
-                                                  ),
-                                              ],
-                                            ),
-                                          )),
-                                          if (args.word.images!.length < 2)
-                                            InkWell(
-                                              onTap: () {
-                                                context.push('/pic_search',
-                                                        extra: PicSearchPageArgs(
-                                                            args.word.id!,
-                                                            args.word.spell))
-                                                    .then((value) => _reloadWordData());
-                                              },
-                                              child: Container(
-                                                width: imageWidth,
-                                                height: imageWidth * 0.75,
-                                                decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                                                  color: Colors.grey.withValues(alpha: 0.05),
-                                                ),
-                                                child: const Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(Icons.add_photo_alternate_outlined, size: 24, color: Colors.grey),
-                                                    SizedBox(height: 4),
-                                                    Text('添加配图', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                                                  ],
-                                                ),
+                                                ],
                                               ),
                                             ),
-                                        ],
-                                      ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                      ],
+                                      if (args.word.images!.length < 2)
+                                        InkWell(
+                                          borderRadius: BorderRadius.circular(12),
+                                          onTap: () {
+                                            context.push('/pic_search',
+                                                    extra: PicSearchPageArgs(
+                                                        args.word.id!,
+                                                        args.word.spell))
+                                                .then((value) => _reloadWordData());
+                                          },
+                                          child: Container(
+                                            width: imageWidth,
+                                            height: imageHeight,
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(color: imageBorderColor, width: 0.5),
+                                              color: isDarkMode ? const Color(0xFF1E293B).withValues(alpha: 0.5) : Colors.grey[50],
+                                            ),
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(Icons.add_photo_alternate_outlined, size: 22, color: subtitleColor),
+                                                const SizedBox(height: 4),
+                                                Text('添加配图', style: TextStyle(fontSize: 10.5, color: subtitleColor)),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 );
-                              }
+                              },
                             ),
                         ],
                       ) : const SizedBox(width: double.infinity),
@@ -1421,7 +1434,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         isScrollable: true,
                         tabAlignment: TabAlignment.center,
                         controller: _tabController,
-                        labelPadding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 14.0),
                         labelStyle: const TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
@@ -1433,14 +1446,25 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         ),
                         labelColor: accentColor,
                         unselectedLabelColor: subtitleColor,
-                        indicatorColor: accentColor,
-                        indicatorWeight: 2.5,
+                        indicatorSize: TabBarIndicatorSize.label,
+                        indicator: UnderlineTabIndicator(
+                          borderRadius: BorderRadius.circular(2),
+                          borderSide: BorderSide(
+                            color: accentColor,
+                            width: 2.8,
+                          ),
+                        ),
+                        dividerColor: Colors.transparent,
                         tabs: [
                           const Tab(text: '详情'),
-                          if (hasSimilarWords()) Tab(text: '形近(${args.word.similarWords!.length})'),
-                          if (hasSynonyms()) Tab(text: "近义(${calcSynonymCount()})"),
-                          if (hasCigen()) Tab(text: '同根($_totalCigenWordsCount)'),
-                          if (hasSemanticSimilarWords()) Tab(text: _isLoadingSemanticSimilar ? '拓展(9)' : '拓展(${_semanticSimilarWordIds.length})'),
+                          if (hasSimilarWords())
+                            _buildTabItem('形近', args.word.similarWords!.length),
+                          if (hasSynonyms())
+                            _buildTabItem('近义', calcSynonymCount()),
+                          if (hasCigen())
+                            _buildTabItem('同根', _totalCigenWordsCount),
+                          if (hasSemanticSimilarWords())
+                            _buildTabItem('拓展', _isLoadingSemanticSimilar ? 9 : _semanticSimilarWordIds.length),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
@@ -1740,6 +1764,26 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
 
     return const SizedBox.shrink();
+  }
+
+  Widget _buildTabItem(String label, int count) {
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          const SizedBox(width: 2),
+          Text(
+            '($count)',
+            style: const TextStyle(
+              fontFamily: 'Roboto',
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   int calcTabsCount() {
@@ -2528,7 +2572,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             // 单词深度讲解（如有）
             if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty) ...[
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2563,7 +2607,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 ),
               ),
               Divider(
-                height: 24,
+                height: 28,
                 thickness: 0.5,
                 color: isDarkMode
                     ? Colors.white.withValues(alpha: 0.1)
