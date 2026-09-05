@@ -1079,13 +1079,20 @@ class _WordSearchBottomSheetContentState extends State<_WordSearchBottomSheetCon
     _soundWaveController.repeat();
     if (mounted) setState(() => _isPlaying = true);
 
+    // 视觉保底时长（750ms，约等于一个单词的完整发音周期），确保每一次点击肉眼均清晰可见动效
+    final minVisualDuration = Future.delayed(const Duration(milliseconds: 750));
+
     try {
-      // preempt: true 立即抢占中断旧发音，timeout 兜底防止后台挂起
-      await StudyAudioSessionController.instance
-          .playWordSound(widget.word, preempt: true)
-          .timeout(const Duration(milliseconds: 2000), onTimeout: () {});
+      await Future.wait([
+        StudyAudioSessionController.instance
+            .playWordSound(widget.word, preempt: true)
+            .catchError((e) {
+          Global.logger.w('播放单词发音异常: $e');
+        }),
+        minVisualDuration,
+      ]).timeout(const Duration(milliseconds: 2500), onTimeout: () => []);
     } catch (e) {
-      Global.logger.w('播放单词发音异常: $e');
+      Global.logger.w('播放发音等待异常: $e');
     } finally {
       if (mounted) {
         _soundWaveController.stop();
@@ -1138,7 +1145,7 @@ class _WordSearchBottomSheetContentState extends State<_WordSearchBottomSheetCon
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Container(
               width: double.infinity,
               constraints: const BoxConstraints(
@@ -1147,8 +1154,8 @@ class _WordSearchBottomSheetContentState extends State<_WordSearchBottomSheetCon
               ),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xB81C2127) // 72% 细腻黑灰
-                    : const Color(0x66FFFFFF), // 40% 通透乳白磨砂，底层文字暗斑清晰晕开
+                    ? const Color(0xD11E242B) // 82% 细腻黑灰磨砂
+                    : const Color(0xBFFFFFFF), // 75% 纯净乳白磨砂，既透光又不干扰文字阅读
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 border: Border(
                   top: BorderSide(
@@ -1226,30 +1233,33 @@ class _WordSearchBottomSheetContentState extends State<_WordSearchBottomSheetCon
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: _playAudio,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (pronounce.isNotEmpty) ...[
-                              Text(
-                                '[$pronounce]',
-                                style: TextStyle(
-                                  color: context.textSecondary,
-                                  fontFamily: 'NotoSans',
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w500,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (pronounce.isNotEmpty) ...[
+                                Text(
+                                  '[$pronounce]',
+                                  style: TextStyle(
+                                    color: context.textSecondary,
+                                    fontFamily: 'NotoSans',
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
+                                const SizedBox(width: 5),
+                              ],
+                              ModernSoundWaveIcon(
+                                animationController: _soundWaveController,
+                                isPlaying: _isPlaying,
+                                size: 17,
+                                color: context.textSecondary,
+                                activeColor: Global.highlight,
                               ),
-                              const SizedBox(width: 5),
                             ],
-                            ModernSoundWaveIcon(
-                              animationController: _soundWaveController,
-                              isPlaying: _isPlaying,
-                              size: 17,
-                              color: context.textSecondary,
-                              activeColor: Global.highlight,
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
