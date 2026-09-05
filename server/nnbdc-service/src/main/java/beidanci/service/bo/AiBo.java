@@ -302,7 +302,7 @@ public class AiBo {
 
             Map<String, Object> responseBody = response.getBody();
             if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
-                logger.error("阿里云 AI 调用失败: HTTP {} - {}", response.getStatusCode(), responseBody);
+                logger.error("AI 文本生成失败 [model={}]: HTTP {} - {}", aiProperties.getTextModel(), response.getStatusCode(), responseBody);
                 throw new RuntimeException("AI 系统响应异常");
             }
 
@@ -315,13 +315,13 @@ public class AiBo {
             Map<?, ?> message = (Map<?, ?>) choice.get("message");
             return (String) message.get("content");
         } catch (Exception e) {
-            logger.error("阿里云 AI 调用发生未知异常", e);
+            logger.error("AI 文本生成发生未知异常 [model=" + aiProperties.getTextModel() + "]", e);
             throw new RuntimeException("AI 系统异常", e);
         }
     }
 
     /**
-     * 调用通义千问进行多轮对话
+     * 调用大模型进行多轮对话
      *
      * @param messages 用户和系统消息列表
      * @return AI 生成的文本
@@ -380,7 +380,7 @@ public class AiBo {
 
             Map<String, Object> responseBody = response.getBody();
             if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
-                logger.error("阿里云 AI 聊天失败: HTTP {} - {}", response.getStatusCode(), responseBody);
+                logger.error("AI 对话调用失败 [model={}]: HTTP {} - {}", aiProperties.getTextModel(), response.getStatusCode(), responseBody);
                 throw new RuntimeException("AI 系统响应异常");
             }
 
@@ -393,7 +393,7 @@ public class AiBo {
             Map<?, ?> message = (Map<?, ?>) choice.get("message");
             return (String) message.get("content");
         } catch (Exception e) {
-            logger.error("阿里云 AI 调用发生未知异常", e);
+            logger.error("AI 对话调用发生未知异常 [model=" + aiProperties.getTextModel() + "]", e);
             throw new RuntimeException("AI 系统异常", e);
         }
     }
@@ -526,7 +526,7 @@ public class AiBo {
             call.enqueue(new okhttp3.Callback() {
                 @Override
                 public void onFailure(okhttp3.Call call, java.io.IOException e) {
-                    logger.error("阿里云 AI 流式调用网络异常", e);
+                    logger.error("AI 流式对话网络异常 [model=" + aiProperties.getTextModel() + "]", e);
                     if (!emitter.isCancelled()) emitter.onError(e);
                 }
 
@@ -648,7 +648,7 @@ public class AiBo {
         
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
-            logger.error("{}阿里云 AI 调用失败: API Key 未设置或未正确解析", userPrefix);
+            logger.error("{}CosyVoice 语音合成调用失败: DashScope API Key 未设置或未正确解析", userPrefix);
             throw new RuntimeException("AI 调用失败: 请设置 dashscope_api_key");
         }
 
