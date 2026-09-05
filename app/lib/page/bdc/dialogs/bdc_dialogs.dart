@@ -1312,6 +1312,10 @@ extension BdcPageStateDialogs on BdcPageState {
     showDialog(
       context: context,
       builder: (context) {
+        // 评分修正对话框的"当前评分"：优先本次作答的 lastFsrsRating；
+        // 未作答的加测/巩固环节回退到测评参考评分（assessmentRating），避免默认无选中项。
+        final FsrsRating? currentRating =
+            state.lastFsrsRating ?? state.assessmentRating;
         String finalReason = state.lastFsrsRatingReason ?? '';
         return AlertDialog(
           shape:
@@ -1400,7 +1404,7 @@ extension BdcPageStateDialogs on BdcPageState {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  trailing: state.lastFsrsRating == rating
+                  trailing: currentRating == rating
                       ? Icon(Icons.check, color: ratingColor)
                       : null,
                   onTap: () {

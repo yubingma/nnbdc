@@ -649,12 +649,26 @@ class BdcNotifier extends _$BdcNotifier {
     sentenceAnswerController.text = ""; // 新单词重置例句答案区
     _isPracticeMode = false; // 新单词/新环节重置练习模式
 
+    // 测评后的加测/巩固环节，以"当天测评首条评分"作为评分修正对话框的参考值；
+    // 首环节（stepIndex 0）本次作答即测评，参考值暂空。
+    final bool isFollowUpStep =
+        getWordResult.stepIndex > 0 && trackResult.todayFirstLogRating != null;
+    final FsrsRating? followUpAssessment = isFollowUpStep
+        ? FsrsRatingExt.fromInt(trackResult.todayFirstLogRating!)
+        : null;
+    final int? followUpAssessmentDays =
+        isFollowUpStep ? trackResult.todayFirstLogScheduledDays : null;
+
     state = state.copyWith(
       currentGetWordResult: getWordResult,
       word: word,
       wordWrapper: wordWrapper,
       studyStep: newStudyStep,
-      isRestoreStep: trackResult.isReview && getWordResult.stepIndex == 1,
+      isReviewWord: trackResult.isReview,
+      assessmentIsAgain:
+          trackResult.todayFirstLogRating == FsrsRating.again.value,
+      assessmentRating: followUpAssessment,
+      assessmentScheduledDays: followUpAssessmentDays,
       canLeaveCurrWord: false,
       hasFinishedAnswering: false,
       selectedAnswerIndex: null,
@@ -667,6 +681,7 @@ class BdcNotifier extends _$BdcNotifier {
       wordStartTime: AppClock.now(),
       fsrsItem: null,
       lastFsrsRating: null,
+      lastFsrsRatingReason: null,
       currentAsrCandidates: [],
       loadError: null, // Successfully loaded a word, clear error
       tabIndex: newTabIndex,
@@ -802,13 +817,16 @@ class BdcNotifier extends _$BdcNotifier {
 
   /// 当前取词结果所属单词的环节轨道（学习轨道/复习轨道）与是否复习轨道，用于把 stepIndex 映射为具体环节名。
   /// 轨道由今天首条评分日志的间隔固化（与 StudyBo 一致），防止当天轨道漂移。
-  Future<({List<String> track, bool isReview})> _trackOfCurrentWord(GetWordResult getWordResult) async {
+  Future<({List<String> track, bool isReview, int? todayFirstLogRating, int? todayFirstLogScheduledDays})> _trackOfCurrentWord(GetWordResult getWordResult) async {
     final lw = getWordResult.learningWord;
-    if (lw == null) return (track: const <String>[], isReview: false);
+    if (lw == null) {
+      return (track: const <String>[], isReview: false, todayFirstLogRating: null, todayFirstLogScheduledDays: null);
+    }
     final userId = Global.getLoggedInUser()?.id;
     final wordId = lw.word.id;
     int? firstLogElapsedDays;
     int? firstLogRating;
+    int? firstLogScheduledDays;
     if (userId != null && wordId != null) {
       final row = await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
             ..where((l) =>
@@ -820,6 +838,7 @@ class BdcNotifier extends _$BdcNotifier {
           .getSingleOrNull();
       firstLogElapsedDays = row?.elapsedDays;
       firstLogRating = row?.rating;
+      firstLogScheduledDays = row?.scheduledDays;
     }
     final newCfg = await StudyStepsService().getThreeGroupConfig('new');
     final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
@@ -846,6 +865,8 @@ class BdcNotifier extends _$BdcNotifier {
         today: AppClock.today(),
       ),
       isReview: isReview,
+      todayFirstLogRating: firstLogRating,
+      todayFirstLogScheduledDays: firstLogScheduledDays,
     );
   }
 

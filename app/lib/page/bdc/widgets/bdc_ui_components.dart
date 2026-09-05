@@ -1813,11 +1813,13 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    // 当前环节阶段名：测评（stepIndex 0）/ 重测（复习轨道测评答错后的加测环节，由 handleWord 计算）/ 巩固（其余后续环节）
+    // 测评后的加测/巩固环节，用轨道名描述，避免"重测/巩固"这类内部术语带来的心智负担。
+    // 由 handleWord 写入的 isReviewWord + assessmentIsAgain 决定具体措辞。
     final gwr = state.currentGetWordResult;
     final String stagePrefix = (gwr == null || gwr.stepIndex == 0)
         ? ''
-        : (state.isRestoreStep ? '重测 · ' : '巩固 · ');
+        : '${state.isReviewWord ? '旧词' : '新词'}'
+            '${state.assessmentIsAgain ? '答错' : '答对'} · ';
 
     if (!state.hasFinishedAnswering || state.fsrsItem == null) {
       if (state.currentGetWordResult != null &&

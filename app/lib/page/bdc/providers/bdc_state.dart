@@ -62,8 +62,10 @@ class BdcState extends Equatable {
   final Map<String, bool> playingStates;
   final int hintTapCount;
   final bool isWordMastered;
-  /// 当前环节是否为复习轨道的重测环节（测评答错后的加测环节），由 handleWord 按轨道与 stepIndex 计算
-  final bool isRestoreStep;
+  /// 当前单词今天是否走复习轨道（旧词），由 handleWord 按轨道推导，用于把环节名映射为「新词/旧词」。
+  final bool isReviewWord;
+  /// 今天测评首条评分是否被判为 again（答错），决定环节名与评分修正的「答对/答错」措辞。
+  final bool assessmentIsAgain;
   
   final DateTime? wordStartTime;
   final DateTime? firstMatchTime;
@@ -132,7 +134,8 @@ class BdcState extends Equatable {
     this.playingStates = const {'word': false, 'sentence': false},
     this.hintTapCount = 0,
     this.isWordMastered = false,
-    this.isRestoreStep = false,
+    this.isReviewWord = false,
+    this.assessmentIsAgain = false,
     this.wordStartTime,
     this.firstMatchTime,
     this.isUpdatingByHint = false,
@@ -207,7 +210,8 @@ class BdcState extends Equatable {
     Map<String, bool>? playingStates,
     int? hintTapCount,
     bool? isWordMastered,
-    bool? isRestoreStep,
+    bool? isReviewWord,
+    bool? assessmentIsAgain,
     Object? wordStartTime = _sentinel,
     Object? firstMatchTime = _sentinel,
     bool? isUpdatingByHint,
@@ -268,7 +272,8 @@ class BdcState extends Equatable {
       playingStates: playingStates ?? this.playingStates,
       hintTapCount: hintTapCount ?? this.hintTapCount,
       isWordMastered: isWordMastered ?? this.isWordMastered,
-      isRestoreStep: isRestoreStep ?? this.isRestoreStep,
+      isReviewWord: isReviewWord ?? this.isReviewWord,
+      assessmentIsAgain: assessmentIsAgain ?? this.assessmentIsAgain,
       wordStartTime: wordStartTime == _sentinel ? this.wordStartTime : (wordStartTime as DateTime?),
       firstMatchTime: firstMatchTime == _sentinel ? this.firstMatchTime : (firstMatchTime as DateTime?),
       isUpdatingByHint: isUpdatingByHint ?? this.isUpdatingByHint,
@@ -332,7 +337,8 @@ class BdcState extends Equatable {
     playingStates,
     hintTapCount,
     isWordMastered,
-    isRestoreStep,
+    isReviewWord,
+    assessmentIsAgain,
     wordStartTime,
     firstMatchTime,
     isUpdatingByHint,
