@@ -955,7 +955,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final accentColor = themeConfig.primaryColor;
     final cardBg = themeConfig.cardBg;
     final cardBorder = themeConfig.cardBorder;
-    final subtleBg = themeConfig.subtleBg;
 
     return Container(
       color: Colors.transparent,
@@ -1113,13 +1112,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       ? Colors.redAccent
                                       : textColor,
                                   fontSize: _isTopDrawerExpanded ? 28 : 22,
-                                  fontWeight: FontWeight.w800,
-                                  fontFamily: 'NotoSansSC',
+                                  fontWeight: FontWeight.w700,
                                   letterSpacing: -0.3,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              // 音标发音胶囊（左对齐，支持点击小按钮快速切换英美音）
+                              // 音标发音行（轻灵极简无多余胶囊，支持口音切换与声浪动效）
                               ValueListenableBuilder<String>(
                                 valueListenable: Prefs.pronunciationAccentNotifier,
                                 builder: (context, _, __) {
@@ -1128,8 +1126,45 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   return Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      if (pronInfo.$2.isNotEmpty) ...[
+                                        PronunciationAccentBadge(
+                                          label: pronInfo.$2,
+                                          isFallback: pronInfo.$3,
+                                          color: accentColor,
+                                          onSwitched: (newAccent) async {
+                                            if (!_sessionDisposed) {
+                                              _playWithAnimation(() async {
+                                                try {
+                                                  await sessionController.playWordAndSentence(
+                                                    args.word,
+                                                    sentenceDigest: null,
+                                                    playWord: true,
+                                                    playSentence: false,
+                                                    isSpeakMode: false,
+                                                  );
+                                                } catch (e) {
+                                                  Global.logger.d("播放发音失败: $e");
+                                                }
+                                              }, 'word');
+                                            }
+                                          },
+                                        ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                      if (pronInfo.$1.isNotEmpty) ...[
+                                        Text(
+                                          '[${pronInfo.$1}]',
+                                          style: TextStyle(
+                                            color: subtitleColor,
+                                            fontSize: 14,
+                                            fontFamily: 'NotoSans',
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                      ],
                                       InkWell(
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(12),
                                         onTap: () {
                                           if (!_playingStates['word']!.value && !_sessionDisposed) {
                                             _playWithAnimation(() async {
@@ -1147,96 +1182,47 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                             }, 'word');
                                           }
                                         },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: subtleBg,
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(
-                                              color: cardBorder,
-                                              width: 1,
-                                            ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                          child: AnimatedBuilder(
+                                            animation: _playingStates['word']!,
+                                            builder: (context, child) {
+                                              return ModernSoundWaveIcon(
+                                                isPlaying: _playingStates['word']!.value,
+                                                animationController: _wordSoundController,
+                                                size: 16,
+                                                color: subtitleColor,
+                                                activeColor: accentColor,
+                                              );
+                                            },
                                           ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (pronInfo.$2.isNotEmpty) ...[
-                                                PronunciationAccentBadge(
-                                                  label: pronInfo.$2,
-                                                  isFallback: pronInfo.$3,
-                                                  color: accentColor,
-                                                  onSwitched: (newAccent) async {
-                                                    if (!_sessionDisposed) {
-                                                      _playWithAnimation(() async {
-                                                        try {
-                                                          await sessionController.playWordAndSentence(
-                                                            args.word,
-                                                            sentenceDigest: null,
-                                                            playWord: true,
-                                                            playSentence: false,
-                                                            isSpeakMode: false,
-                                                          );
-                                                        } catch (e) {
-                                                          Global.logger.d("播放发音失败: $e");
-                                                        }
-                                                      }, 'word');
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                                if (pronInfo.$1.isNotEmpty) ...[
-                                              Text(
-                                                '[${pronInfo.$1}]',
-                                                style: TextStyle(
-                                                  color: subtitleColor,
-                                                  fontSize: 13.5,
-                                                fontFamily: 'NotoSans',
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                                ],
-                                            AnimatedBuilder(
-                                              animation: _playingStates['word']!,
-                                              builder: (context, child) {
-                                                return ModernSoundWaveIcon(
-                                                  isPlaying: _playingStates['word']!.value,
-                                                  animationController: _wordSoundController,
-                                                  size: 16,
-                                                  color: accentColor,
-                                                  activeColor: accentColor,
-                                                );
-                                              },
-                                            ),
-                                            ValueListenableBuilder<AudioPlaybackStatus>(
-                                              valueListenable: StudyAudioSessionController.instance.playbackStatusNotifier,
-                                              builder: (context, status, child) {
-                                                if (status.hasFallback && status.spell == args.word.spell) {
-                                                  return Container(
-                                                    margin: const EdgeInsets.only(left: 6),
-                                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.amber.withValues(alpha: 0.15),
-                                                      borderRadius: BorderRadius.circular(4),
-                                                      border: Border.all(color: Colors.amber.withValues(alpha: 0.35), width: 0.5),
-                                                    ),
-                                                    child: Text(
-                                                      status.fallbackType == AudioFallbackType.ttsFallback ? '系统朗读' : '备用发音',
-                                                      style: const TextStyle(fontSize: 10, color: Colors.amber, fontWeight: FontWeight.bold),
-                                                    ),
-                                                  );
-                                                }
-                                                return const SizedBox.shrink();
-                                              },
-                                            ),
-                                          ],
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
+                                      ValueListenableBuilder<AudioPlaybackStatus>(
+                                        valueListenable: StudyAudioSessionController.instance.playbackStatusNotifier,
+                                        builder: (context, status, child) {
+                                          if (status.hasFallback && status.spell == args.word.spell) {
+                                            return Container(
+                                              margin: const EdgeInsets.only(left: 6),
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: Colors.amber.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(4),
+                                                border: Border.all(color: Colors.amber.withValues(alpha: 0.35), width: 0.5),
+                                              ),
+                                              child: Text(
+                                                status.fallbackType == AudioFallbackType.ttsFallback ? '系统朗读' : '备用发音',
+                                                style: const TextStyle(fontSize: 10, color: Colors.amber, fontWeight: FontWeight.bold),
+                                              ),
+                                            );
+                                          }
+                                          return const SizedBox.shrink();
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
                               const SizedBox(height: 10),
                               // 释义区域（左对齐常驻清晰展示）
                               _buildMeaningSection(isDarkMode),
@@ -1687,46 +1673,52 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   Widget _buildMeaningSection(bool isDarkMode) {
     final mergedItems = args.word.getMergedMeaningItems();
     if (mergedItems.isNotEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      final cixingColor = isDarkMode
+          ? const Color(0xFF94A3B8)
+          : const Color(0xFF64748B);
+
+      return Table(
+        defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        columnWidths: const {
+          0: IntrinsicColumnWidth(),
+          1: FlexColumnWidth(),
+        },
         children: [
           for (var meaningItem in mergedItems)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if ((meaningItem.ciXing ?? '').isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                      margin: const EdgeInsets.only(right: 8, top: 1),
-                      decoration: BoxDecoration(
-                        color: context.subtleBg,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        meaningItem.ciXing!,
-                        style: TextStyle(
-                          color: context.primaryColor,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+            TableRow(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 10, bottom: 6),
+                  child: (meaningItem.ciXing ?? '').trim().isNotEmpty
+                      ? Text(
+                          (meaningItem.ciXing ?? '').trim(),
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            color: cixingColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'Roboto',
+                            letterSpacing: 0.2,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text.rich(
+                    TextSpan(
+                      children: _buildTextSpans(meaningItem.meaning ?? ''),
                     ),
-                  Flexible(
-                    child: Text.rich(
-                      TextSpan(
-                        children: _buildTextSpans(meaningItem.meaning ?? ''),
-                      ),
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.45,
-                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
-                      ),
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.45,
+                      color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
         ],
       );
@@ -2516,191 +2508,225 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
   ListView renderDetail() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       children: [
         Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                // 单词讲解
-                if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF192C27) : context.subtleBg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isDarkMode ? Colors.white10 : context.subtleBg.withValues(alpha: 0.5),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            // 单词深度讲解（如有）
+            if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.lightbulb_outline_rounded, size: 17, color: context.primaryColor),
-                            const SizedBox(width: 6),
-                            const Text('深度讲解',
-                                style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, letterSpacing: 0.2, fontFamily: 'NotoSansSC')),
-                          ],
+                        Icon(Icons.lightbulb_outline_rounded, size: 16, color: context.primaryColor),
+                        const SizedBox(width: 6),
+                        const Text(
+                          '深度讲解',
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                            fontFamily: 'NotoSansSC',
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Util.makeEnglishSpanText(args.word.shortDesc!, args.word.spell, true, context, false, null, false, FontWeight.w400)
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Util.makeEnglishSpanText(
+                      args.word.shortDesc!,
+                      args.word.spell,
+                      true,
+                      context,
+                      false,
+                      null,
+                      false,
+                      FontWeight.w400,
+                    ),
+                  ],
+                ),
+              ),
+              Divider(
+                height: 20,
+                thickness: 0.5,
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.06),
+              ),
+            ],
 
-                // 例句
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 14, 0, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.format_quote_rounded, size: 18, color: context.primaryColor),
-                              const SizedBox(width: 6),
-                              const Text('短语 & 例句',
-                                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, letterSpacing: 0.2, fontFamily: 'NotoSansSC')),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text('编辑', style: TextStyle(fontSize: 12.5, color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691))),
-                              Transform.scale(
-                                scale: 0.75,
-                                child: Switch(
-                                  value: isEditMode,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isEditMode = value;
-                                    });
-                                  },
-                                  activeThumbColor: context.primaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+            // 例句标题栏
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.format_quote_rounded, size: 18, color: context.primaryColor),
+                    const SizedBox(width: 6),
+                    const Text(
+                      '短语 & 例句',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                        fontFamily: 'NotoSansSC',
                       ),
-                      const SizedBox(height: 10),
-
-                      // 例句内容或空状态
-                        FutureBuilder<List<SentenceVo>>(
-                        future: _sentencesFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          final sentences = snapshot.data ?? [];
-                          if (sentences.isNotEmpty) {
-                            return Column(
-                              children: [
-                                // 有例句时显示例句列表
-                                for (var sent in sentences)
-                                  InkWell(
-                                    onTap: () {
-                                      if (!(_playingStates[sent.id]?.value ?? false)) {
-                                        _playWithAnimation(() => sessionController.playWordAndSentence(
-                                          args.word,
-                                          sentenceDigest: sent.englishDigest,
-                                          playWord: false,
-                                          playSentence: true,
-                                          isSpeakMode: false,
-                                        ), sent.id);
-                                      }
-                                    },
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: Container(
-                                      margin: const EdgeInsets.only(bottom: 10),
-                                      padding: const EdgeInsets.all(14),
-                                      decoration: BoxDecoration(
-                                        color: isDarkMode
-                                            ? const Color(0xFF192C27)
-                                            : context.subtleBg,
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(
-                                          color: isDarkMode ? Colors.white10 : context.subtleBg.withValues(alpha: 0.5),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Util.makeEnglishSpanText(
-                                                        sent.english!, args.word.spell, true, context, false, null, false, FontWeight.w400),
-                                                    if (isEditMode)
-                                                      Text.rich(TextSpan(children: [
-                                                        for (var span in renderSentenceEditSpans(sent)) span,
-                                                      ])),
-                                                  ],
-                                                ),
-                                              ),
-                                               const SizedBox(width: 8),
-                                               Container(
-                                                 width: 24,
-                                                 height: 24,
-                                                 decoration: BoxDecoration(
-                                                   shape: BoxShape.circle,
-                                                   color: context.subtleBg,
-                                                 ),
-                                                 child: Center(
-                                                   child: AnimatedBuilder(
-                                                     animation: _getSentenceController(sent.id),
-                                                     builder: (context, child) {
-                                                       return ModernSoundWaveIcon(
-                                                         isPlaying: _playingStates[sent.id]?.value ?? false,
-                                                         animationController: _getSentenceController(sent.id),
-                                                         size: 13,
-                                                         color: context.primaryColor,
-                                                         activeColor: context.primaryColor,
-                                                       );
-                                                     },
-                                                   ),
-                                                 ),
-                                               ),
-                                            ],
-                                          ),
-                                          renderSentenceChinese(sent.chinese!, sent.id)
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            );
-                          } else {
-                            // 没有例句时显示空状态提示
-                            return _buildTabEmptyState(
-                              isDarkMode: isDarkMode,
-                              icon: Icons.library_books_rounded,
-                              title: '暂无例句',
-                              subtitle: '该单词目前没有收录例句内容',
-                            );
-                          }
-                        },
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      isEditMode = !isEditMode;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isEditMode ? Icons.check_circle_outline_rounded : Icons.edit_note_rounded,
+                          size: 16,
+                          color: isEditMode ? context.primaryColor : subtitleColor,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          isEditMode ? '完成' : '编辑',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: isEditMode ? FontWeight.w600 : FontWeight.w500,
+                            color: isEditMode ? context.primaryColor : subtitleColor,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+
+            // 例句内容或空状态
+            FutureBuilder<List<SentenceVo>>(
+              future: _sentencesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                final sentences = snapshot.data ?? [];
+                if (sentences.isNotEmpty) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int i = 0; i < sentences.length; i++) ...[
+                        if (i > 0)
+                          Divider(
+                            height: 22,
+                            thickness: 0.5,
+                            color: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.06),
+                          ),
+                        _buildSentenceItem(sentences[i], isDarkMode, subtitleColor),
+                      ],
+                    ],
+                  );
+                } else {
+                  // 没有例句时显示空状态提示
+                  return _buildTabEmptyState(
+                    isDarkMode: isDarkMode,
+                    icon: Icons.library_books_rounded,
+                    title: '暂无例句',
+                    subtitle: '该单词目前没有收录例句内容',
+                  );
+                }
+              },
+            ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildSentenceItem(SentenceVo sent, bool isDarkMode, Color subtitleColor) {
+    return InkWell(
+      onTap: () {
+        if (!(_playingStates[sent.id]?.value ?? false)) {
+          _playWithAnimation(
+            () => sessionController.playWordAndSentence(
+              args.word,
+              sentenceDigest: sent.englishDigest,
+              playWord: false,
+              playSentence: true,
+              isSpeakMode: false,
+            ),
+            sent.id,
+          );
+        }
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Util.makeEnglishSpanText(
+                        sent.english!,
+                        args.word.spell,
+                        true,
+                        context,
+                        false,
+                        null,
+                        false,
+                        FontWeight.w400,
+                      ),
+                      if (isEditMode)
+                        Text.rich(TextSpan(children: [
+                          for (var span in renderSentenceEditSpans(sent)) span,
+                        ])),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: AnimatedBuilder(
+                    animation: _getSentenceController(sent.id),
+                    builder: (context, child) {
+                      return ModernSoundWaveIcon(
+                        isPlaying: _playingStates[sent.id]?.value ?? false,
+                        animationController: _getSentenceController(sent.id),
+                        size: 15,
+                        color: subtitleColor,
+                        activeColor: context.primaryColor,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            renderSentenceChinese(sent.chinese!, sent.id),
+          ],
+        ),
+      ),
     );
   }
 
