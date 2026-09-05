@@ -2402,15 +2402,26 @@ extension BdcPageStateUIComponents on BdcPageState {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                icon: Icon(
-                  Icons.volume_up_rounded,
-                  color: context.primaryColor,
-                  size: 28,
+              Material(
+                color: Colors.transparent,
+                child: InkResponse(
+                  radius: 22,
+                  highlightShape: BoxShape.circle,
+                  onTap: () {
+                    final sentencePlaying = state.playingStates['sentence'] ?? false;
+                    if (!sentencePlaying) {
+                      notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ModernSoundWaveIcon(
+                      isPlaying: state.playingStates['sentence'] ?? false,
+                      animationController: _sentenceSoundController,
+                      size: 22.0,
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
-                },
               ),
               if (!state.hasFinishedAnswering)
                 TextButton.icon(
@@ -2484,15 +2495,26 @@ extension BdcPageStateUIComponents on BdcPageState {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                icon: Icon(
-                  Icons.volume_up_rounded,
-                  color: context.primaryColor,
-                  size: 28,
+              Material(
+                color: Colors.transparent,
+                child: InkResponse(
+                  radius: 22,
+                  highlightShape: BoxShape.circle,
+                  onTap: () {
+                    final sentencePlaying = state.playingStates['sentence'] ?? false;
+                    if (!sentencePlaying) {
+                      notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ModernSoundWaveIcon(
+                      isPlaying: state.playingStates['sentence'] ?? false,
+                      animationController: _sentenceSoundController,
+                      size: 22.0,
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
-                },
               ),
               if (!state.hasFinishedAnswering)
                 TextButton.icon(
@@ -3015,7 +3037,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-              child: _buildModernSoundWaveIcon(
+              child: ModernSoundWaveIcon(
                 isPlaying: wordPlaying,
                 animationController: _wordSoundController,
                 size: 18.5,
@@ -3067,7 +3089,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         },
         child: Padding(
           padding: const EdgeInsets.all(4.0),
-          child: _buildModernSoundWaveIcon(
+          child: ModernSoundWaveIcon(
             isPlaying: sentencePlaying,
             animationController: _sentenceSoundController,
             size: 19.0,
@@ -3077,152 +3099,5 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-  /// 绘制现代极简声波喇叭图标（支持发音动态波纹呼吸与精致圆润造型）
-  Widget _buildModernSoundWaveIcon({
-    required bool isPlaying,
-    required AnimationController animationController,
-    double size = 18.0,
-  }) {
-    final normalColor = _cachedIsDarkMode
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
-    final activeColor = context.primaryColor;
-
-    return AnimatedBuilder(
-      animation: animationController,
-      builder: (context, child) {
-        final active = isPlaying || animationController.isAnimating;
-        return CustomPaint(
-          size: Size(size, size),
-          painter: ModernSoundWavePainter(
-            color: active ? activeColor : normalColor,
-            isPlaying: active,
-            animationValue: animationController.value,
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// 现代声波发音图标绘制器：
-/// 造型采用 Apple SF Symbols / 高端词典风格的微圆角 Solid Cone 喇叭，并带双重同心弧形声波
-class ModernSoundWavePainter extends CustomPainter {
-  final Color color;
-  final bool isPlaying;
-  final double animationValue;
-
-  ModernSoundWavePainter({
-    required this.color,
-    required this.isPlaying,
-    required this.animationValue,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // 1. 绘制喇叭主体（Solid Cone with Smooth Rounded Corners）
-    final paintFill = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final conePath = Path();
-    final baseLeft = w * 0.08;
-    final baseRight = w * 0.26;
-    final baseTop = h * 0.35;
-    final baseBottom = h * 0.65;
-
-    final coneRight = w * 0.46;
-    final coneTop = h * 0.18;
-    final coneBottom = h * 0.82;
-
-    conePath.moveTo(baseLeft + 1.2, baseTop);
-    conePath.lineTo(baseRight, baseTop);
-    conePath.lineTo(coneRight - 1.2, coneTop);
-    conePath.arcToPoint(
-      Offset(coneRight, coneTop + 1.6),
-      radius: const Radius.circular(1.6),
-    );
-    conePath.lineTo(coneRight, coneBottom - 1.6);
-    conePath.arcToPoint(
-      Offset(coneRight - 1.2, coneBottom),
-      radius: const Radius.circular(1.6),
-    );
-    conePath.lineTo(baseRight, baseBottom);
-    conePath.lineTo(baseLeft + 1.2, baseBottom);
-    conePath.arcToPoint(
-      Offset(baseLeft, baseBottom - 1.2),
-      radius: const Radius.circular(1.2),
-    );
-    conePath.lineTo(baseLeft, baseTop + 1.2);
-    conePath.arcToPoint(
-      Offset(baseLeft + 1.2, baseTop),
-      radius: const Radius.circular(1.2),
-    );
-    conePath.close();
-
-    canvas.drawPath(conePath, paintFill);
-
-    // 2. 绘制右侧两条精巧的弧形声波（Sound Waves）
-    final waveCenter = Offset(w * 0.35, h * 0.50);
-    const sweepAngle = 76 * (pi / 180);
-    const startAngle = -38 * (pi / 180);
-
-    double wave1Opacity = 0.90;
-    double wave2Opacity = 0.50;
-    double wave1Scale = 1.0;
-    double wave2Scale = 1.0;
-
-    if (isPlaying) {
-      final t = animationValue;
-      // 声波 1：第一道声波，随周期呈现明暗呼吸与微幅涟漪律动
-      wave1Scale = 0.95 + 0.12 * sin(t * pi * 2);
-      wave1Opacity = (0.35 + 0.65 * (0.5 + 0.5 * sin(t * pi * 2))).clamp(0.0, 1.0);
-
-      // 声波 2：第二道声波，相位差 90 度，自内向外推涌声浪
-      wave2Scale = 0.94 + 0.14 * sin((t - 0.25) * pi * 2);
-      wave2Opacity = (0.20 + 0.80 * (0.5 + 0.5 * sin((t - 0.25) * pi * 2))).clamp(0.0, 1.0);
-    }
-
-    final strokeW = (w * 0.095).clamp(1.4, 2.2);
-
-    final wavePaint1 = Paint()
-      ..color = color.withValues(alpha: wave1Opacity)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeW
-      ..strokeCap = StrokeCap.round;
-
-    final wave1Radius = w * 0.29 * wave1Scale;
-    canvas.drawArc(
-      Rect.fromCircle(center: waveCenter, radius: wave1Radius),
-      startAngle,
-      sweepAngle,
-      false,
-      wavePaint1,
-    );
-
-    final wavePaint2 = Paint()
-      ..color = color.withValues(alpha: wave2Opacity)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeW
-      ..strokeCap = StrokeCap.round;
-
-    final wave2Radius = w * 0.49 * wave2Scale;
-    canvas.drawArc(
-      Rect.fromCircle(center: waveCenter, radius: wave2Radius),
-      startAngle,
-      sweepAngle,
-      false,
-      wavePaint2,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant ModernSoundWavePainter oldDelegate) {
-    return oldDelegate.color != color ||
-        oldDelegate.isPlaying != isPlaying ||
-        oldDelegate.animationValue != animationValue;
   }
 }
