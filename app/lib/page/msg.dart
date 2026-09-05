@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,7 +29,11 @@ class MsgPageState extends State<MsgPage> {
   late List<MsgVo> msgs;
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
   bool _isSending = false;
+
+  /// 泡泡单词品牌 logo，作为系统自动回复的客服头像
+  static const String _bubbleLogoAsset = 'assets/images/logo.png';
 
   @override
   void initState() {
@@ -50,6 +55,8 @@ class MsgPageState extends State<MsgPage> {
 
     try {
       msgs = await Api.client.getLastestMsgsBetweenUserAndSys(user.id, 9999);
+      // 尊重传统聊天气泡习惯：老消息在上、新消息在下（List 内按时间升序保存）
+      msgs.sort((a, b) => a.createTime.compareTo(b.createTime));
     } catch (e) {
       msgs = [];
     }
@@ -58,7 +65,23 @@ class MsgPageState extends State<MsgPage> {
       setState(() {
         dataLoaded = true;
       });
+      _scrollToBottom();
     }
+  }
+
+  /// 普通滚动视图下，把最新消息滚到底部；消息不足一屏时自然停留在顶部（先从上方开始排布）
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if ((_scrollController.position.pixels - target).abs() > 1) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
   }
 
   Future<void> _sendMessage() async {
@@ -142,10 +165,11 @@ class MsgPageState extends State<MsgPage> {
     }
 
     return ListView(
-      reverse: true, // 自动滚动到最后
+      controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
       children: [
-        for (var msg in msgs)
+        // 升序遍历：老消息在上、新消息在下；加载后自动滚到底部看到最新一条
+        for (final msg in msgs)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Column(
@@ -182,7 +206,7 @@ class MsgPageState extends State<MsgPage> {
         fontFamily: 'NotoSansSC',
       );
 
-  // 系统/客服回复：左侧奶牛头像 + 中性色气泡
+  // 系统/客服回复：左侧头像（管理员头像 / 泡泡 logo）+ 中性色气泡
   Widget _buildAdminRow(MsgVo msg) {
     final isDarkMode = context.isDarkMode;
     final bubbleColor = isDarkMode ? const Color(0xFF27313B) : Colors.white;
@@ -207,16 +231,24 @@ class MsgPageState extends State<MsgPage> {
   }
 
   Widget _buildAdminAvatar(MsgVo msg) {
+    // 自动回复来自系统账号（userName=sys），使用泡泡 logo；人工管理员回复使用其头像
+    final isAutoReply = _isAutoReply(msg);
+    final adminAvatar = msg.fromUser.wechatAvatar ?? '';
+    final avatar = isAutoReply
+        ? _buildAvatar(assetName: _bubbleLogoAsset, radius: 20)
+        : _buildAvatar(
+            url: adminAvatar.isEmpty ? null : adminAvatar,
+            assetName: adminAvatar.isEmpty ? _bubbleLogoAsset : null,
+            radius: 20,
+          );
+
     return SizedBox(
+      width: 40,
       height: 40,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Image(
-            image: AssetImage("assets/images/cow.png"),
-            height: 40,
-            gaplessPlayback: true,
-          ),
+          avatar,
           // 未读的新回复：头像右上角轻量主题色小圆点
           if (!msg.viewed)
             Positioned(
@@ -237,11 +269,11 @@ class MsgPageState extends State<MsgPage> {
     );
   }
 
-  // 用户发出的消息：右侧主题色气泡 + 我
+  // 用户发出的消息：右侧主题色气泡 + 用户头像（顶部对齐，与左侧管理员头像对称）
   Widget _buildSenderRow(MsgVo msg) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Flexible(
           child: BubbleSpecialOne(
@@ -259,15 +291,52 @@ class MsgPageState extends State<MsgPage> {
         ),
         const SizedBox(width: 6),
         Padding(
-          padding: const EdgeInsets.only(bottom: 3),
-          child: Text(
-            '我',
-            style: TextStyle(fontSize: 12, color: context.textSecondary, fontFamily: 'NotoSansSC'),
-          ),
+          padding: const EdgeInsets.only(top: 2),
+          child: _buildUserAvatar(),
         ),
       ],
     );
   }
+
+  // 当前登录用户头像（无头像时取昵称首字占位）
+  Widget _buildUserAvatar() {
+    final user = Global.getLoggedInUser();
+    final avatar = user?.wechatAvatar ?? '';
+    final name = user?.nickName ?? '我';
+    return _buildAvatar(
+      url: avatar.isEmpty ? null : avatar,
+      initial: name,
+      radius: 17,
+    );
+  }
+
+  Widget _buildAvatar({String? url, String? assetName, String? initial, required double radius}) {
+    if (url != null && url.isNotEmpty) {
+      return CircleAvatar(radius: radius, backgroundImage: CachedNetworkImageProvider(url));
+    }
+    if (assetName != null) {
+      return CircleAvatar(radius: radius, backgroundImage: AssetImage(assetName));
+    }
+    final name = initial ?? '我';
+    final first = name.runes.isEmpty ? '我' : String.fromCharCode(name.runes.first);
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: context.primaryColor.withValues(alpha: 0.16),
+      child: Text(
+        first,
+        style: TextStyle(
+          fontSize: radius * 0.78,
+          fontWeight: FontWeight.w700,
+          color: context.primaryColor,
+          fontFamily: 'NotoSansSC',
+        ),
+      ),
+    );
+  }
+
+  // 系统自动回复账号：服务端 Constants.SYS_USER_SYS = "sys" / SYS_USER_SYS_ID = "15118"
+  bool _isAutoReply(MsgVo msg) =>
+      msg.fromUser.userName == 'sys' || msg.fromUser.id == '15118';
 
   Widget _buildEmptyState() {
     final accent = context.primaryColor;
@@ -433,6 +502,7 @@ class MsgPageState extends State<MsgPage> {
     Api.client.setMsgsAsViewed(msgIds, Global.getLoggedInUser()!.id);
     _messageController.dispose();
     _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 

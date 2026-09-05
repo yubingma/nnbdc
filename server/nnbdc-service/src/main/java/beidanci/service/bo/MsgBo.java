@@ -27,6 +27,7 @@ import beidanci.service.po.Msg;
 import beidanci.service.po.PromoActivity;
 import beidanci.service.po.User;
 import beidanci.service.socket.SocketService;
+import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.Util;
 import beidanci.util.Constants;
 
@@ -46,6 +47,9 @@ public class MsgBo extends BaseBo<Msg> {
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
+    private SysParamUtil sysParamUtil;
 
     @PostConstruct
     public void init() {
@@ -282,10 +286,10 @@ public class MsgBo extends BaseBo<Msg> {
                     replyMsg = String.format(
                             "授权码激活成功！送你的【%s】会员已到账啦 🎉\n\n"
                                     + "我们是一个刚刚起步的小团队，这个 App 就像我们的孩子一样。实不相瞒，"
-                                    + "我们特别害怕做得不够好让你失望。下个月我们计划上线【功能 A】和【功能 B】，"
-                                    + "一定会把它变得越来越好用！如果觉得好用，求求点个小红书赞支持一下 🥺；"
+                                    + "我们特别害怕做得不够好让你失望。下个月我们计划上线 %s，"
+                                    + "一定会把它变得越来越好用！如果觉得好用，求求点个赞支持一下 🥹；"
                                     + "要是遇到不好用的地方，随时在后台吐槽，千万别悄悄删掉我们，给我们一个修正的机会好不好？",
-                            durationStr);
+                            durationStr, sysParamUtil.getUpcomingFeaturesText());
                 } catch (Exception e) {
                     logger.error("意见建议兑换会员失败: userId={}, activityCode={}", fromUser.getId(), activity.getActivityCode(), e);
                     replyMsg = "兑换失败，请稍后重试。";
