@@ -347,265 +347,445 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
     final theme = context.themeConfig;
     final isDark = context.isDarkMode;
 
+    final Color statusColor = log.success
+        ? const Color(0xFF10B981)
+        : (log.isWarning ? const Color(0xFFF59E0B) : const Color(0xFFEF4444));
+
+    final IconData statusIcon = log.success
+        ? Icons.cloud_done_rounded
+        : (log.isWarning ? Icons.warning_amber_rounded : Icons.cloud_off_rounded);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (bottomSheetContext) => Container(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.82,
+          maxHeight: MediaQuery.of(bottomSheetContext).size.height * 0.82,
         ),
         decoration: BoxDecoration(
-          color: theme.cardBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
+              color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.10),
+              blurRadius: 28,
+              offset: const Offset(0, -6),
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 8),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.textMuted.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(2),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xE61A202C) // 90% 深空曜石质感磨砂
+                    : const Color(0xF2FFFFFF), // 95% 凝润乳白通透磨砂
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark ? const Color(0x33FFFFFF) : const Color(0xD9FFFFFF),
+                    width: 1.0,
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: log.success
-                          ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                          : (log.isWarning
-                              ? const Color(0xFFF59E0B).withValues(alpha: 0.12)
-                              : const Color(0xFFEF4444).withValues(alpha: 0.12)),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      log.success
-                          ? Icons.cloud_done_rounded
-                          : (log.isWarning ? Icons.warning_amber_rounded : Icons.cloud_off_rounded),
-                      size: 20,
-                      color: log.success
-                          ? const Color(0xFF10B981)
-                          : (log.isWarning ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)),
+                  // 顶部抽屉把手
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 12, bottom: 6),
+                      width: 38,
+                      height: 4.5,
+                      decoration: BoxDecoration(
+                        color: theme.textMuted.withValues(alpha: isDark ? 0.35 : 0.22),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+
+                  // 顶部标题栏：纯粹排版 + 状态微徽章 + 轻灵关闭按钮
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 10, 16, 12),
+                    child: Row(
                       children: [
-                        Text(
-                          log.success ? '同步详情' : (log.isWarning ? '同步异常' : '同步失败'),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: theme.textPrimary,
-                            letterSpacing: -0.2,
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: isDark ? 0.16 : 0.10),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(statusIcon, size: 20, color: statusColor),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    log.success ? '同步详情' : (log.isWarning ? '同步异常' : '同步失败'),
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      color: theme.textPrimary,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: statusColor.withValues(alpha: isDark ? 0.14 : 0.08),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      log.success ? '正常完成' : (log.isWarning ? '部分告警' : '连接中断'),
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: statusColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _formatDateTime(log.startTime),
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: theme.textMuted,
+                                  fontFamily: 'Roboto',
+                                  letterSpacing: 0.1,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Text(
-                          _formatDateTime(log.startTime),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.textMuted,
-                            fontFamily: 'Roboto',
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.pop(bottomSheetContext),
+                            borderRadius: BorderRadius.circular(100),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: theme.textMuted.withValues(alpha: isDark ? 0.12 : 0.06),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.close_rounded, color: theme.textSecondary, size: 17),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, color: theme.textMuted, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                    splashRadius: 18,
+
+                  Divider(
+                    height: 1,
+                    thickness: 0.6,
+                    color: isDark ? const Color(0x1AFFFFFF) : const Color(0x14000000),
+                  ),
+
+                  // 内容滚动区
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 核心三大指标（Typography-driven，告别生硬粗暴大底块，通透呼吸感）
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0x2EFFFFFF) : const Color(0x52FFFFFF),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: isDark ? const Color(0x1FFFFFFF) : const Color(0x66FFFFFF),
+                                width: 0.8,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _buildMetricItem(
+                                    label: '耗时',
+                                    value: _formatDuration(log.durationMs),
+                                    unit: '',
+                                    theme: theme,
+                                    highlightColor: theme.primaryColor,
+                                  ),
+                                ),
+                                _buildMetricDivider(isDark),
+                                Expanded(
+                                  child: _buildMetricItem(
+                                    label: '上行记录',
+                                    value: '${log.uploadCount ?? 0}',
+                                    unit: '条',
+                                    theme: theme,
+                                  ),
+                                ),
+                                _buildMetricDivider(isDark),
+                                Expanded(
+                                  child: _buildMetricItem(
+                                    label: '下行记录',
+                                    value: '${log.downloadCount ?? 0}',
+                                    unit: '条',
+                                    theme: theme,
+                                    highlightColor: (log.downloadCount ?? 0) > 0 ? theme.primaryColor : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+
+                          // 基本参数列表：优雅对齐与细致灰阶
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0x1F242C35) : const Color(0x38FFFFFF),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark ? const Color(0x14FFFFFF) : const Color(0x33FFFFFF),
+                                width: 0.6,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                _buildDetailRow('记录 ID', log.id, theme),
+                                if (log.dbVersion != null || log.sysDbVersion != null)
+                                  _buildDetailRow('数据版本', '${log.dbVersion ?? 0}  /  ${log.sysDbVersion ?? 0}', theme),
+                                if (log.appVersion != null)
+                                  _buildDetailRow('App 版本', log.appVersion!, theme),
+                                if (log.userId != null)
+                                  _buildDetailRow('用户 ID', log.userId!, theme),
+                                if (log.endTime != null)
+                                  _buildDetailRow('结束时间', _formatDateTime(log.endTime!), theme, isLast: true),
+                              ],
+                            ),
+                          ),
+
+                          // 上行详情
+                          if (log.uploadDetails != null && log.uploadDetails!.isNotEmpty) ...[
+                            const SizedBox(height: 18),
+                            _buildSectionHeader('上行同步实体', log.uploadDetails!.length, theme),
+                            const SizedBox(height: 8),
+                            _buildDetailsMapCard(log.uploadDetails!, theme, isDark),
+                          ],
+
+                          // 下行详情
+                          if (log.downloadDetails != null && log.downloadDetails!.isNotEmpty) ...[
+                            const SizedBox(height: 18),
+                            _buildSectionHeader('下行同步实体', log.downloadDetails!.length, theme),
+                            const SizedBox(height: 8),
+                            _buildDetailsMapCard(log.downloadDetails!, theme, isDark),
+                          ],
+
+                          // 错误信息
+                          if (log.errorMessage != null) ...[
+                            const SizedBox(height: 18),
+                            Row(
+                              children: [
+                                const Icon(Icons.error_outline_rounded, size: 14, color: Color(0xFFEF4444)),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '异常中断信息',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.12 : 0.06),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.25 : 0.18),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: SelectableText(
+                                log.errorMessage!,
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C),
+                                  height: 1.45,
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 24),
+
+                          // 底部轻量幽灵删除按钮（极简克制，告别刺眼红色药丸）
+                          Center(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.pop(bottomSheetContext);
+                                  _deleteLog(log.id);
+                                },
+                                borderRadius: BorderRadius.circular(100),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.12 : 0.06),
+                                    borderRadius: BorderRadius.circular(100),
+                                    border: Border.all(
+                                      color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.22 : 0.14),
+                                      width: 0.6,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(Icons.delete_outline_rounded, size: 14.5, color: Color(0xFFEF4444)),
+                                      SizedBox(width: 5),
+                                      Text(
+                                        '删除此条记录',
+                                        style: TextStyle(
+                                          color: Color(0xFFEF4444),
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, thickness: 0.5),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: theme.subtleBg.withValues(alpha: isDark ? 0.35 : 0.5),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: theme.cardBorder, width: 0.8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildMiniStat('耗时', _formatDuration(log.durationMs), theme),
-                          _buildMiniDivider(theme),
-                          _buildMiniStat('上行记录', '${log.uploadCount ?? 0}', theme),
-                          _buildMiniDivider(theme),
-                          _buildMiniStat('下行记录', '${log.downloadCount ?? 0}', theme),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow('记录 ID', log.id, theme),
-                    if (log.dbVersion != null || log.sysDbVersion != null)
-                      _buildDetailRow('数据版本', '${log.dbVersion ?? 0} | ${log.sysDbVersion ?? 0}', theme),
-                    if (log.appVersion != null)
-                      _buildDetailRow('App 版本', log.appVersion!, theme),
-                    if (log.userId != null)
-                      _buildDetailRow('用户 ID', log.userId!, theme),
-                    if (log.endTime != null)
-                      _buildDetailRow('结束时间', _formatDateTime(log.endTime!), theme),
-                    if (log.uploadDetails != null && log.uploadDetails!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        '上行详情',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: theme.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      _buildDetailsMapCard(log.uploadDetails!, theme, isDark),
-                    ],
-                    if (log.downloadDetails != null && log.downloadDetails!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        '下行详情',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: theme.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      _buildDetailsMapCard(log.downloadDetails!, theme, isDark),
-                    ],
-                    if (log.errorMessage != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        '错误信息',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.15 : 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFFEF4444).withValues(alpha: 0.25),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: SelectableText(
-                          log.errorMessage!,
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C),
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    Center(
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _deleteLog(log.id);
-                        },
-                        icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
-                        label: const Text(
-                          '删除此条记录',
-                          style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.w500),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.08),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMiniStat(String label, String value, AppThemeConfig theme) {
+  Widget _buildMetricItem({
+    required String label,
+    required String value,
+    required String unit,
+    required AppThemeConfig theme,
+    Color? highlightColor,
+  }) {
     return Column(
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'Roboto',
-            color: theme.textPrimary,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Roboto',
+                letterSpacing: -0.3,
+                color: highlightColor ?? theme.textPrimary,
+              ),
+            ),
+            if (unit.isNotEmpty) ...[
+              const SizedBox(width: 2),
+              Text(
+                unit,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: theme.textMuted,
+                ),
+              ),
+            ],
+          ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 3),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w400,
-            color: theme.textMuted,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+            color: theme.textSecondary.withValues(alpha: 0.85),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMiniDivider(AppThemeConfig theme) {
+  Widget _buildMetricDivider(bool isDark) {
     return Container(
-      width: 1,
-      height: 22,
-      color: theme.cardBorder,
+      width: 0.8,
+      height: 24,
+      color: isDark ? const Color(0x1FFFFFFF) : const Color(0x14000000),
     );
   }
 
-  Widget _buildDetailRow(String label, String value, AppThemeConfig theme) {
+  Widget _buildSectionHeader(String title, int count, AppThemeConfig theme) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: theme.textSecondary,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$count 个表',
+          style: TextStyle(
+            fontSize: 11.5,
+            fontFamily: 'Roboto',
+            color: theme.textMuted,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, AppThemeConfig theme, {bool isLast = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.only(top: 5, bottom: isLast ? 2 : 7),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 80,
+            width: 72,
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w500,
                 color: theme.textMuted,
               ),
@@ -615,9 +795,11 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
             child: SelectableText(
               value,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontFamily: 'Roboto',
+                fontWeight: FontWeight.w500,
                 color: theme.textPrimary,
+                height: 1.35,
               ),
             ),
           ),
@@ -629,40 +811,57 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
   Widget _buildDetailsMapCard(Map<String, dynamic> details, AppThemeConfig theme, bool isDark) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.subtleBg.withValues(alpha: isDark ? 0.3 : 0.4),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.cardBorder, width: 0.6),
+        color: isDark ? const Color(0x1C242C35) : const Color(0x38FFFFFF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? const Color(0x14FFFFFF) : const Color(0x33FFFFFF),
+          width: 0.6,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: details.entries.map((e) {
           final tableMap = e.value as Map<String, dynamic>;
-          final ops = tableMap.entries.map((op) => '${op.key}: ${op.value}').join(', ');
+          final ops = tableMap.entries.map((op) => '${op.key.toUpperCase()}: ${op.value}').join(' · ');
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
-                Text(
-                  '• ${e.key}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Roboto',
-                    color: theme.textSecondary,
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.7),
+                    shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
+                Text(
+                  e.key,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Roboto',
+                    color: theme.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: isDark ? 0.12 : 0.06),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                   child: Text(
-                    '($ops)',
+                    ops,
                     style: TextStyle(
                       fontSize: 11,
+                      fontWeight: FontWeight.w600,
                       fontFamily: 'Roboto',
-                      color: theme.textMuted,
+                      color: theme.primaryColor,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
