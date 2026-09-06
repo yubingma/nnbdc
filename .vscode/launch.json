@@ -83,7 +83,7 @@
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "00008120-000A7C523EC2601E",
             "args": [],
-            "flutterMode": "profile"
+            "flutterMode": "debug"
         },
         {
             "name": "App-ipad-old",

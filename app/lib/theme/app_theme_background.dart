@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 
-/// 全局自适应主题背景层组件 (对标不背单词原版：整屏"浅→深"纵向渐变带)
+/// 全局自适应主题背景层组件
 ///
-/// 区别于旧版的"点状模糊光斑 + 平铺底色"(会中间重、边缘快速变淡)，
-/// 这里改为**贯穿整个屏幕高度**的纵向渐变：顶部一抹轻盈高光，往下缓慢、
-/// 均匀地沉到带主题色相的更深底色 —— 色调铺满全屏，无中心热点、无边缘骤退。
+/// 浅色模式：**以白色为主的高亮透光背景** + 几团柔和的主题色光晕（Radial 光斑）。
+/// 让页面整体明亮通透，避免"低饱和色调渐变"在大屏(如 iPad)上被放大成灰暗、不通透。
+/// 深色模式：保留贯满全屏的"浅→深"纵向渐变带（带主题色相，无中心热点、无边缘骤退）。
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
   final bool? isDarkMode;
@@ -23,12 +23,12 @@ class AppThemeBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = _resolveIsDark(context);
-    final (top, mid, bottom) = dark ? _darkGradient(themeStyle) : _lightGradient(themeStyle);
+    if (!_resolveIsDark(context)) return _buildLightGlow(themeStyle);
+    final (top, mid, bottom) = _darkGradient(themeStyle);
     return _buildVerticalGradient(top, mid, bottom);
   }
 
-  /// 统一垂直渐变构建器：三段色贯穿全屏，上半段保持轻盈、下半段更快沉深
+  /// 深色模式：统一垂直渐变构建器，三段色贯穿全屏，上半段保持轻盈、下半段更快沉深
   Widget _buildVerticalGradient(Color top, Color mid, Color bottom) {
     return Container(
       decoration: BoxDecoration(
@@ -42,55 +42,13 @@ class AppThemeBackground extends StatelessWidget {
     );
   }
 
-  (Color, Color, Color) _lightGradient(AppThemeStyle style) => switch (style) {
-        // 校准：轻盈通透的光感(顶部一段柔亮高光) + 低饱和的整屏纵向渐变。
-        // 注意不要压得偏灰偏暗 —— 高级感依赖"明亮透光"而非"压暗的中灰"。
-        AppThemeStyle.aurora => (
-            const Color(0xFFC5D5E1),
-            const Color(0xFFB9C9D4),
-            const Color(0xFFA1B2BC),
-          ),
-        AppThemeStyle.emerald => (
-            const Color(0xFFD3EBF2),
-            const Color(0xFFC3E2EB),
-            const Color(0xFF94C4D2),
-          ),
-        AppThemeStyle.sunset => (
-            const Color(0xFFE1D7D2),
-            const Color(0xFFD6CAC4),
-            const Color(0xFFC0B2A9),
-          ),
-        AppThemeStyle.minimal => (
-            const Color(0xFFD3D5D8),
-            const Color(0xFFC6C8CC),
-            const Color(0xFFAEB0B4),
-          ),
-        AppThemeStyle.midnight => (
-            const Color(0xFFC5D7D1),
-            const Color(0xFFB8CCC5),
-            const Color(0xFF9FB6AF),
-          ),
-        AppThemeStyle.crimson => (
-            const Color(0xFFE1D3D5),
-            const Color(0xFFD5C5C8),
-            const Color(0xFFBFAAAF),
-          ),
-        AppThemeStyle.indigo => (
-            const Color(0xFFD1D4E4),
-            const Color(0xFFC4C6D7),
-            const Color(0xFFABACBE),
-          ),
-        AppThemeStyle.sage => (
-            const Color(0xFFC6D5D3),
-            const Color(0xFFB9C8C6),
-            const Color(0xFFA0B0AE),
-          ),
-        AppThemeStyle.twilight => (
-            const Color(0xFFD9D2E2),
-            const Color(0xFFCDC5D6),
-            const Color(0xFFB6ADBE),
-          ),
-      };
+  /// 浅色模式：白色高亮底 + 柔和主题色光晕（用 CustomPainter 以归一化坐标绘制，任意尺寸自适应）
+  Widget _buildLightGlow(AppThemeStyle style) {
+    return CustomPaint(
+      painter: _LightGlowPainter(style),
+      size: Size.infinite,
+    );
+  }
 
   (Color, Color, Color) _darkGradient(AppThemeStyle style) => switch (style) {
         AppThemeStyle.aurora => (
@@ -139,4 +97,63 @@ class AppThemeBackground extends StatelessWidget {
             const Color(0xFF0E0516),
           ),
       };
+}
+
+/// 白色底 + 主题色光晕的绘制器
+///
+/// 光晕基色 = 主题主色向白色靠拢的"淡彩"，避免直接用深主色把白底染灰。
+/// 三团光晕用略微不同的白化比例制造微妙色温差，层次更自然。
+class _LightGlowPainter extends CustomPainter {
+  final AppThemeStyle style;
+  _LightGlowPainter(this.style);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cfg = AppThemeConfig.of(style);
+    final rect = Offset.zero & size;
+
+    // 1) 基础白底：纯白 → 极淡的冷白，保持整屏高亮通透
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFFFFF), Color(0xFFFAFBFD)],
+        ).createShader(rect),
+    );
+
+    // 2) 三团柔和光晕
+    _glow(canvas,
+        center: Offset(size.width * 0.12, size.height * 0.10),
+        radius: size.width * 0.58,
+        color: Color.lerp(cfg.primaryColor, Colors.white, 0.48)!,
+        alpha: 0.18);
+    _glow(canvas,
+        center: Offset(size.width * 0.94, size.height * 0.28),
+        radius: size.width * 0.62,
+        color: Color.lerp(cfg.primaryColor, Colors.white, 0.68)!,
+        alpha: 0.13);
+    _glow(canvas,
+        center: Offset(size.width * 0.42, size.height * 1.00),
+        radius: size.width * 0.80,
+        color: Color.lerp(cfg.primaryColor, Colors.white, 0.42)!,
+        alpha: 0.10);
+  }
+
+  void _glow(Canvas canvas,
+      {required Offset center,
+      required double radius,
+      required Color color,
+      required double alpha}) {
+    final paint = Paint()
+      ..shader = RadialGradient(
+        colors: [color.withValues(alpha: alpha), color.withValues(alpha: 0.0)],
+        stops: const [0.0, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawCircle(center, radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _LightGlowPainter old) => old.style != style;
 }
