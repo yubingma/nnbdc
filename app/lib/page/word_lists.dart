@@ -411,7 +411,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   Widget _buildEmptyDeskCard(bool isDarkMode) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = themeConfig.cardBg;
+    final cardBg = isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF);
     final cardBorder = themeConfig.cardBorder;
     final textSub = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
@@ -665,14 +665,14 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeConfig = AppThemeConfig.of(themeStyle);
     final accentColor = themeConfig.primaryColor;
 
-    // 选中/主线高亮时赋予 4.5% 极淡主题微光底色与精致边框，非高亮时保持透光磨砂与常规边框
+    // 选中/主线高亮时赋予极淡主题微光，非高亮时保持统一规格的透光磨砂卡面
     final cardBg = isDarkMode
         ? (isHighlighted
-            ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), themeConfig.cardBg)
-            : themeConfig.cardBg)
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), const Color(0xB818202F))
+            : const Color(0xB818202F))
         : (isHighlighted
-            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), themeConfig.cardBg)
-            : themeConfig.cardBg);
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), const Color(0x80FFFFFF))
+            : const Color(0x80FFFFFF));
 
     final cardBorder = isHighlighted
         ? accentColor.withValues(alpha: isDarkMode ? 0.55 : 0.45)

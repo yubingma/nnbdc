@@ -201,7 +201,7 @@ class ThemeSelectDialog extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? cfg.primaryColor.withValues(alpha: isDarkModeEnabled ? 0.24 : 0.14)
+                                  ? cfg.primaryColor.withValues(alpha: isDarkModeEnabled ? 0.24 : 0.07)
                                   : (isDarkModeEnabled
                                       ? Colors.white.withValues(alpha: 0.05)
                                       : Colors.white.withValues(alpha: 0.30)),
@@ -240,7 +240,7 @@ class ThemeSelectDialog extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                    color: isSelected ? cfg.primaryColor : textColor,
+                                    color: isSelected ? cfg.textPrimary : textColor,
                                     fontFamily: 'NotoSansSC',
                                     fontFamilyFallback: AppTheme.sansSerifFallback,
                                   ),

@@ -119,7 +119,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFF0C2136), // 现代高质感深冷灰黑
           textSecondary: const Color(0xFF335372), // 优雅次级灰
           textMuted: const Color(0xFF6B8BAA),
-          cardBg: const Color(0xB8FFFFFF), // 温润高透晨雾白磨砂
+          cardBg: const Color(0x80FFFFFF), // 统一规格透光磨砂白 (50%)
           cardBorder: Colors.transparent, // 彻底消除灰色硬边框
           subtleBg: const Color(0x140284C7), // 轻透冷蓝微底色
           warmAccentColor: const Color(0xFFF97316), // 晨曦暖阳橙
@@ -143,7 +143,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFF192520), // 护眼深炭墨黑
           textSecondary: const Color(0xFF4C5E57),
           textMuted: const Color(0xFF7E9790),
-          cardBg: const Color(0xB8FFFFFF), // 温润高透晨雾白磨砂
+          cardBg: const Color(0x80FFFFFF), // 统一规格透光磨砂白 (50%)
           cardBorder: Colors.transparent, // 彻底消除灰色硬边框
           subtleBg: const Color(0x1400BA76), // 生机青绿轻底
           warmAccentColor: const Color(0xFFFF7B40), // 温润珊瑚橙 (不认识/再学学专用)
@@ -167,7 +167,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFF2E1912), // 高阶深炭灰黑
           textSecondary: const Color(0xFF6B4E44),
           textMuted: const Color(0xFF9E7D73),
-          cardBg: const Color(0xB8FFFFFF),
+          cardBg: const Color(0x80FFFFFF),
           cardBorder: Colors.transparent,
           subtleBg: const Color(0x14F97316),
           warmAccentColor: const Color(0xFFEA580C), // 沉静暖砖橙
@@ -191,7 +191,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFF09090B), // 纯黑
           textSecondary: const Color(0xFF52525B),
           textMuted: const Color(0xFF8E8E93),
-          cardBg: const Color(0xC2FFFFFF),
+          cardBg: const Color(0x80FFFFFF),
           cardBorder: Colors.transparent,
           subtleBg: const Color(0x10000000),
           warmAccentColor: const Color(0xFF71717A), // 极客中性石板灰
@@ -215,7 +215,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFFF8FAFC), // 月光高亮白
           textSecondary: const Color(0xFF94A3B8),
           textMuted: const Color(0xFF64748B),
-          cardBg: const Color(0x14FFFFFF), // 高透黑曜石微光磨砂
+          cardBg: const Color(0xB818202F), // 统一规格深色抛光磨砂 (72%)
           cardBorder: Colors.transparent, // 消除生硬外边框
           subtleBg: const Color(0x1F2CD88F),
           warmAccentColor: const Color(0xFFF59E0B), // 暗夜琥珀金
@@ -239,7 +239,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFF301018), // 沉静暖和墨黑
           textSecondary: const Color(0xFF743442), // 暖石灰
           textMuted: const Color(0xFFAC707E),
-          cardBg: const Color(0xB8FFFFFF),
+          cardBg: const Color(0x80FFFFFF),
           cardBorder: Colors.transparent,
           subtleBg: const Color(0x14E11D48),
           warmAccentColor: const Color(0xFFD97706), // 和纸暖金琥珀
@@ -263,7 +263,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFF17183B), // 深空纯净黑
           textSecondary: const Color(0xFF474A82),
           textMuted: const Color(0xFF8286BC),
-          cardBg: const Color(0xB8FFFFFF),
+          cardBg: const Color(0x80FFFFFF),
           cardBorder: Colors.transparent,
           subtleBg: const Color(0x146366F1),
           warmAccentColor: const Color(0xFFFB923C), // 星云暖杏金
@@ -287,7 +287,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFF0E2624), // 深青木墨黑
           textSecondary: const Color(0xFF395E5A),
           textMuted: const Color(0xFF6B9792),
-          cardBg: const Color(0xB8FFFFFF),
+          cardBg: const Color(0x80FFFFFF),
           cardBorder: Colors.transparent,
           subtleBg: const Color(0x140D9488),
           warmAccentColor: const Color(0xFFF97316), // 秋叶温和暖橙
@@ -311,7 +311,7 @@ class AppThemeConfig {
           textPrimary: const Color(0xFFFAF5FF), // 月光亮白
           textSecondary: const Color(0xFFD8B4FE),
           textMuted: const Color(0xFFC084FC),
-          cardBg: const Color(0x14FFFFFF), // 高透黑曜石微光磨砂
+          cardBg: const Color(0xB818202F), // 统一规格深色抛光磨砂 (72%)
           cardBorder: Colors.transparent,
           subtleBg: const Color(0x1FA855F7),
           warmAccentColor: const Color(0xFFEC4899), // 暮光霓虹粉

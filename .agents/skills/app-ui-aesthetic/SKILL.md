@@ -141,11 +141,16 @@ Column(
 - ❌ **避免**：
   - 在卡片左侧贴一条粗黑或粗彩色垂直竖条（生硬、割裂）。
   - 填满高饱和度纯色实心背景（压抑、破坏透光）。
+  - **用主题色做文字/标签色放在主题色底/描边上**（同色相、低对比、看不清）。
 - ✅ **推荐**：
   - **主题色精细描边**：`Border.all(color: accentColor.withValues(alpha: 0.75), width: 1.2)`。
   - **背景柔和薄雾**：`accentColor.withValues(alpha: 0.05 ~ 0.08)`。
   - **外发光/漫反射微阴影**：`BoxShadow(color: accentColor.withValues(alpha: 0.12), blurRadius: 12, offset: Offset(0, 3))`。
-  - **主色文字与图标高亮**。
+  - **主题色用于"描边 + 图标"，用于传递"高亮/选中"的识别**。
+- **文字对比度铁律（按钮/选中态）**：当按钮或选中态用**主题色做底色或描边**时，**其上的文字/标签严禁复用同一主题色**（中间调主题色如绿在浅底上只有 ~2:1 对比，会看不清）。
+  - 浅色/透明底 → 文字用**可读的深色**（如 `textPrimary` / `primaryDarkColor`）。
+  - 实心主题色底 → 文字用**白色**。
+  - 主题色只用于描边、图标、浅色薄雾底；**文字永远可读**。
 
 ---
 
@@ -159,6 +164,7 @@ Column(
   - **阴影**：柔和，`BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 5))`（深色模式加深到 `alpha 0.35`）
   - **圆角**：16 ~ 24
   - 实现上优先复用 `app/lib/widget/frosted_glass_card.dart` 的 `FrostedGlassCard`，不要在别处手写近似的毛玻璃。
+  - **主题级对齐**：`AppThemeConfig.cardBg`（`app/theme/app_theme.dart`）已设为统一规格值（浅色 `Color(0x80FFFFFF)` / 深色 `Color(0xB818202F)`），因此凡使用 `themeConfig.cardBg` 作卡面的第一层卡片自动合规；任何手动改用 `FrostedGlassCard` 或 `cardBg` 都会保持一致。
   - **记录的例外**：背单词页的**答题/听写卡**（聚焦输入、需要更安静、更贴背景以突出内容）用 `Color(0x42FFFFFF)`（白色 26%，更淡）。除该例外外，其余第一层毛玻璃卡片统一用上面的 `0x80FFFFFF`（`FrostedGlassCard` 默认值）。
 - **第一层卡片边缘禁高光铁律**：**边缘绝对不要打"累赘感的高光描边"**。
   - ❌ **严禁**：给卡片套一圈半透亮白描边（如 `Color(0x80FFFFFF)` / `white alpha 0.5+`）当"玻璃边缘高光"——会显得刻意、不够简洁。

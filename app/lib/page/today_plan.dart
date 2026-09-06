@@ -566,8 +566,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.15)
-                                    : Colors.white.withValues(alpha: 0.85),
+                                    ? Colors.white.withValues(alpha: 0.10)
+                                    : Colors.white.withValues(alpha: 0.24),
                                 width: 1,
                               ),
                               boxShadow: [
@@ -605,8 +605,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       child: Text(
                         '学习未开始前可随时调整目标 · 开始后将自动锁定',
                         style: TextStyle(
-                          fontSize: 11,
-                          color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                          fontSize: 11.5,
+                          color: isDarkMode ? Colors.white60 : const Color(0xFF6B7280),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -1152,7 +1152,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
-    final buttonFgColor = isDarkMode ? Colors.white : themeConfig.primaryColor;
+    final buttonFgColor = isDarkMode ? Colors.white : themeConfig.textPrimary;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
@@ -1629,8 +1629,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const Color(0x99121722),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.70),
-                      Colors.white.withValues(alpha: 0.56),
+                      const Color(0x80FFFFFF),
+                      const Color(0x80FFFFFF),
                     ],
             ),
             borderRadius: BorderRadius.circular(24),
@@ -1959,8 +1959,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const Color(0x99121722),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.70),
-                      Colors.white.withValues(alpha: 0.56),
+                      const Color(0x80FFFFFF),
+                      const Color(0x80FFFFFF),
                     ],
             ),
             borderRadius: BorderRadius.circular(24),

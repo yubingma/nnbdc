@@ -62,8 +62,8 @@ class WordListItemLayout extends StatelessWidget {
             ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), themeConfig.cardBg)
             : themeConfig.cardBg)
         : (isBookmarked
-            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), Colors.white)
-            : Colors.white);
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), const Color(0x80FFFFFF))
+            : const Color(0x80FFFFFF));
 
     // 选中时使用精致半透的主题微边框 (1.2px)，未选中时为极淡边框
     final borderColor = isBookmarked
