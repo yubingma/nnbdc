@@ -323,6 +323,67 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
     }
   }
 
+  /// 手写画布底部的操作按钮（重写/回退/关闭/提示）
+  /// 采用主题感知的柔光薄雾胶囊，替代原先生硬的灰色药丸，保持与整体极简美学一致。
+  Widget _buildCanvasControlButton({
+    required double left,
+    required double top,
+    required double width,
+    required double height,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isDark,
+    required Color foreground,
+    required Color background,
+    required Color border,
+  }) {
+    return Positioned(
+      left: left,
+      top: top,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(height / 2),
+            border: Border.all(color: border, width: 0.8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.08),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: foreground, size: 20),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.2,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -333,6 +394,15 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         final bool isNarrow = width < 500;
         final bool hasHint = widget.onHint != null;
         final bool isDark = Theme.of(context).brightness == Brightness.dark;
+        // 主题感知配色：笔迹跟随主题主色，控钮使用次级灰阶 + 柔和薄雾胶囊
+        final Color penColor = context.primaryColor;
+        final Color controlFg = context.textSecondary;
+        final Color controlBg = isDark
+            ? Colors.white.withValues(alpha: 0.10)
+            : Colors.black.withValues(alpha: 0.045);
+        final Color controlBorder = isDark
+            ? Colors.white.withValues(alpha: 0.12)
+            : Colors.black.withValues(alpha: 0.06);
         final double zoneWidth = hasHint 
             ? (width * 0.21).clamp(60.0, 95.0) 
             : (width * 0.28).clamp(70.0, 120.0);
@@ -432,7 +502,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             children: [
               RepaintBoundary(
                 child: CustomPaint(
-                  painter: _HandwritingPainter(_controller),
+                  painter: _HandwritingPainter(_controller, penColor),
                   size: Size.infinite,
                 ),
               ),
@@ -473,124 +543,72 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     ),
                   ),
                 ),
-                Positioned(
+                _buildCanvasControlButton(
                   left: rewriteZone.left,
                   top: rewriteZone.top,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _autoRecognizeTimer?.cancel();
-                      _controller.clear();
-                      widget.onRewrite();
-                    },
-                    child: Container(
-                      width: zoneWidth,
-                      height: zoneHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.28)),
-                      ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.delete_sweep_outlined, color: Colors.grey, size: 22),
-                          Text('重写', style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.none)),
-                        ],
-                      ),
-                    ),
-                  ),
+                  width: zoneWidth,
+                  height: zoneHeight,
+                  icon: Icons.delete_sweep_outlined,
+                  label: '重写',
+                  onTap: () {
+                    _autoRecognizeTimer?.cancel();
+                    _controller.clear();
+                    widget.onRewrite();
+                  },
+                  isDark: isDark,
+                  foreground: controlFg,
+                  background: controlBg,
+                  border: controlBorder,
                 ),
                 if (hasHint)
-                Positioned(
-                  left: hintZone.left,
-                  top: hintZone.top,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      widget.onHint?.call();
-                    },
-                    child: Container(
-                      width: zoneWidth,
-                      height: zoneHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.28)),
-                      ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.lightbulb_outline, color: Colors.grey, size: 22),
-                          Text('提示', style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.none)),
-                        ],
-                      ),
-                    ),
+                  _buildCanvasControlButton(
+                    left: hintZone.left,
+                    top: hintZone.top,
+                    width: zoneWidth,
+                    height: zoneHeight,
+                    icon: Icons.lightbulb_outline,
+                    label: '提示',
+                    onTap: () => widget.onHint?.call(),
+                    isDark: isDark,
+                    foreground: controlFg,
+                    background: controlBg,
+                    border: controlBorder,
                   ),
-                ),
-                Positioned(
+                _buildCanvasControlButton(
                   left: closeZone.left,
                   top: closeZone.top,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      widget.onCancel?.call();
-                    },
-                    child: Container(
-                      width: zoneWidth,
-                      height: zoneHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.28)),
-                      ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.close, color: Colors.grey, size: 22),
-                          Text('关闭', style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.none)),
-                        ],
-                      ),
-                    ),
-                  ),
+                  width: zoneWidth,
+                  height: zoneHeight,
+                  icon: Icons.close,
+                  label: '关闭',
+                  onTap: () => widget.onCancel?.call(),
+                  isDark: isDark,
+                  foreground: controlFg,
+                  background: controlBg,
+                  border: controlBorder,
                 ),
-                Positioned(
+                _buildCanvasControlButton(
                   left: undoZone.left,
                   top: undoZone.top,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      _autoRecognizeTimer?.cancel();
-                      setState(() {
-                        _controller.removeLast();
-                      });
-                      widget.onUndo();
-                      widget.onRecognize();
-                      if (widget.lines.isEmpty) {
-                        widget.onRewrite();
-                      }
-                    },
-                    child: Container(
-                      width: zoneWidth,
-                      height: zoneHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.28)),
-                      ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.undo_outlined, color: Colors.grey, size: 22),
-                          Text('回退', style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.none)),
-                        ],
-                      ),
-                    ),
-                  ),
+                  width: zoneWidth,
+                  height: zoneHeight,
+                  icon: Icons.undo_outlined,
+                  label: '回退',
+                  onTap: () {
+                    _autoRecognizeTimer?.cancel();
+                    setState(() {
+                      _controller.removeLast();
+                    });
+                    widget.onUndo();
+                    widget.onRecognize();
+                    if (widget.lines.isEmpty) {
+                      widget.onRewrite();
+                    }
+                  },
+                  isDark: isDark,
+                  foreground: controlFg,
+                  background: controlBg,
+                  border: controlBorder,
                 ),
               ],
             ],
@@ -697,11 +715,12 @@ class _HandwritingController extends ChangeNotifier {
 
 class _HandwritingPainter extends CustomPainter {
   final _HandwritingController controller;
+  final Color color;
   late final Paint _linePaint;
 
-  _HandwritingPainter(this.controller) : super(repaint: controller) {
+  _HandwritingPainter(this.controller, this.color) : super(repaint: controller) {
     _linePaint = Paint()
-      ..color = AppTheme.primaryColor
+      ..color = color
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..strokeWidth = 4.8

@@ -94,7 +94,10 @@ class UpdateNotifier extends StateNotifier<UpdateState> {
     state = state.copyWith(isChecking: true);
     try {
       String updateUrl = Config.updateUrl;
-      final response = await http.get(Uri.parse('$updateUrl?t=${DateTime.now().millisecondsSinceEpoch}'));
+      // 启动时的更新检查不能无限期阻塞闪屏：给 http.get 加 8s 超时，
+      // 更新服务器响应慢/不可达时快速失败并继续自动登录流程（见 tryAutoLogin 抛出后由 catch 兜底）。
+      final response = await http.get(Uri.parse('$updateUrl?t=${DateTime.now().millisecondsSinceEpoch}'))
+          .timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final verCode = (data['verCode'] is String) ? int.tryParse(data['verCode']) : data['verCode'] as int?;

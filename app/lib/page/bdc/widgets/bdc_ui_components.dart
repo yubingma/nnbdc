@@ -138,19 +138,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   '请拼写单词：',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDarkMode
-                                        ? Colors.white38
-                                        : Colors.black38,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.3,
+                                    color: context.textSecondary
+                                        .withValues(alpha: 0.85),
                                   ),
                                 ),
+                                const SizedBox(height: 3),
                                 Text(
                                   combinedMeaning,
                                   style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDarkMode
-                                        ? Colors.white
-                                        : Colors.black,
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.3,
+                                    color: context.textPrimary,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -164,7 +165,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.close),
+                              icon: Icon(
+                                Icons.close,
+                                size: 22,
+                                color: context.textSecondary,
+                              ),
                               onPressed: () {
                                 _meaningFocusNode.unfocus();
                                 updateUI(() {
@@ -186,15 +191,16 @@ extension BdcPageStateUIComponents on BdcPageState {
           // 2. 底部输入与提示区
           Container(
             padding: EdgeInsets.fromLTRB(
-                16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
+                20, 10, 20, MediaQuery.of(context).padding.bottom + 18),
             decoration: BoxDecoration(
               color: context.cardBg,
-              border: Border(
-                top: BorderSide(
-                  color: context.cardBorder,
-                  width: 1,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.30 : 0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, -6),
                 ),
-              ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -210,17 +216,18 @@ extension BdcPageStateUIComponents on BdcPageState {
                         keyboardType: TextInputType.visiblePassword,
                         autocorrect: false,
                         enableSuggestions: false,
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.3,
+                          color: context.textPrimary,
                         ),
                         decoration: InputDecoration(
                           hintText: '在此键入单词...',
                           hintStyle: TextStyle(
-                            fontSize: 32,
-                            color: (isDarkMode ? Colors.white : Colors.black)
-                                .withValues(alpha: 0.2),
-                            fontWeight: FontWeight.normal,
+                            fontSize: 30,
+                            color: context.textMuted.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w400,
                           ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
@@ -247,7 +254,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.lightbulb_outline,
+                      icon: Icon(Icons.lightbulb_outline, size: 24,
                           color: context.primaryColor),
                       onPressed: () {
                         notifier.giveFullHint();
@@ -257,16 +264,17 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ],
                 ),
                 Container(
-                  height: 2,
-                  color: context.primaryColor.withValues(alpha: 0.3),
+                  height: 1.5,
+                  color: context.primaryColor.withValues(alpha: 0.35),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   '支持键盘输入与手写混合使用',
                   style: TextStyle(
-                    color: (isDarkMode ? Colors.white : Colors.black)
-                        .withValues(alpha: 0.24),
-                    fontSize: 10,
+                    color: context.textMuted.withValues(alpha: 0.8),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
