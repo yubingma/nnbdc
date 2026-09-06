@@ -423,6 +423,8 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   bool isPlaying = false;
   bool isShowingResult = false;
+  /// 道具说明弹窗期间冻结下落单词（不断整个引擎，避免渲染断层）
+  bool _wordFrozen = false;
   int countdownSeconds = 0;
   var gameState = '';
   var allButtons = <MyButton>[];
@@ -1436,8 +1438,8 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         ? '在对手底部叠加一行方块，使对手更快触顶落败。'
         : '消去自己底部一行方块，缓解堆积压力。';
 
-    // 练习模式：暂停游戏引擎，让用户安心阅读道具说明（关闭后恢复）
-    pauseEngine();
+    // 练习模式：冻结下落单词，让用户安心阅读道具说明（关闭后恢复）
+    _wordFrozen = true;
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
@@ -1489,6 +1491,15 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
                         fontWeight: FontWeight.w700,
                         color: Color(0xFFE7EDF7),
                       ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '连续答对 5 题，获得道具！',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFFBBF24)),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -1551,9 +1562,10 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         );
       },
     ).whenComplete(() {
-      // 关闭说明框后恢复游戏
+      // 关闭说明框后恢复下落，并强制重排按钮，避免残留错位
       if (pageState.mounted) {
-        resumeEngine();
+        _wordFrozen = false;
+        _needsButtonLayout = true;
       }
     });
   }
@@ -1945,12 +1957,16 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       final double btnGap = 14.0 * uiScale; // 按钮之间的间隔
       final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
 
-      // 预计算每个按钮的基础行高与内边距，并估算总高度
-      // 统一按钮文本高度，避免因内容不同（如括号、数字）导致按钮高度微小差异 
-      double unifiedTextHeight = 0;
-      for (var btn in visibleButtons) {
-        unifiedTextHeight = max(unifiedTextHeight, (btn.button! as MyButtonTextComponent).textHeight);
-      }
+      // 统一按钮文本高度：以「最终目标字号(最大号)」的排版高度为准。
+      // 若用当前字号测量，首帧按钮还是初始字号(15)，随即被本布局放大到 18.2*extra，
+      // 会导致 compSize 高度 < 按钮真实渲染高度，相邻按钮间距被吃掉而“挤在一起”。
+      final double unifiedTextHeight = TextPaint(
+        style: TextStyle(
+          fontSize: 18.2 * uiScale * answersExtraScale,
+          fontFamily: 'NotoSansSC',
+          fontWeight: FontWeight.w600,
+        ),
+      ).getLineMetrics('Hg').height;
 
       final List<double> baseLineHeights = [];
       final List<double> basePaddings = [];
@@ -2813,7 +2829,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
   @override
   void update(double dt) {
     super.update(dt);
-    if (!isDead) {
+    if (!isDead && !game._wordFrozen) {
       // 按屏幕缩放比例调整下落速度，保证不同屏幕用时一致
       // 提升基础下落速度（从 20 提升到 35），增加游戏紧凑感
       final double speed = 35.0 * game.uiScale;

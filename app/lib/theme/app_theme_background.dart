@@ -43,50 +43,52 @@ class AppThemeBackground extends StatelessWidget {
   }
 
   (Color, Color, Color) _lightGradient(AppThemeStyle style) => switch (style) {
+        // 校准：轻盈通透的光感(顶部一段柔亮高光) + 低饱和的整屏纵向渐变。
+        // 注意不要压得偏灰偏暗 —— 高级感依赖"明亮透光"而非"压暗的中灰"。
         AppThemeStyle.aurora => (
-            const Color(0xFFDBEBF6),
-            const Color(0xFFC2D9E7),
-            const Color(0xFF89AFC5),
+            const Color(0xFFC5D5E1),
+            const Color(0xFFB9C9D4),
+            const Color(0xFFA1B2BC),
           ),
         AppThemeStyle.emerald => (
-            const Color(0xFFE1EAE5),
-            const Color(0xFFC9DBD3),
-            const Color(0xFF90B9AA),
+            const Color(0xFFCAD5CF),
+            const Color(0xFFBBCAC4),
+            const Color(0xFF9FB4AF),
           ),
         AppThemeStyle.sunset => (
-            const Color(0xFFF6EDE8),
-            const Color(0xFFEADACF),
-            const Color(0xFFCFAD96),
+            const Color(0xFFE1D7D2),
+            const Color(0xFFD6CAC4),
+            const Color(0xFFC0B2A9),
           ),
         AppThemeStyle.minimal => (
-            const Color(0xFFE8EAEE),
-            const Color(0xFFD5D7DB),
-            const Color(0xFFA9ABAF),
+            const Color(0xFFD3D5D8),
+            const Color(0xFFC6C8CC),
+            const Color(0xFFAEB0B4),
           ),
         AppThemeStyle.midnight => (
-            const Color(0xFFDBEDE7),
-            const Color(0xFFC5E0D6),
-            const Color(0xFF92C1AE),
+            const Color(0xFFC5D7D1),
+            const Color(0xFFB8CCC5),
+            const Color(0xFF9FB6AF),
           ),
         AppThemeStyle.crimson => (
-            const Color(0xFFF6E8EB),
-            const Color(0xFFE9D0D5),
-            const Color(0xFFCA98A3),
+            const Color(0xFFE1D3D5),
+            const Color(0xFFD5C5C8),
+            const Color(0xFFBFAAAF),
           ),
         AppThemeStyle.indigo => (
-            const Color(0xFFE7E9F9),
-            const Color(0xFFD3D6EC),
-            const Color(0xFFA5A8CF),
+            const Color(0xFFD1D4E4),
+            const Color(0xFFC4C6D7),
+            const Color(0xFFABACBE),
           ),
         AppThemeStyle.sage => (
-            const Color(0xFFDCEAE8),
-            const Color(0xFFC4D9D7),
-            const Color(0xFF8CB2AE),
+            const Color(0xFFC6D5D3),
+            const Color(0xFFB9C8C6),
+            const Color(0xFFA0B0AE),
           ),
         AppThemeStyle.twilight => (
-            const Color(0xFFEEE8F7),
-            const Color(0xFFDED3EB),
-            const Color(0xFFB9A3CF),
+            const Color(0xFFD9D2E2),
+            const Color(0xFFCDC5D6),
+            const Color(0xFFB6ADBE),
           ),
       };
 
