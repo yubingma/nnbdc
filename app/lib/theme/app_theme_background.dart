@@ -124,22 +124,24 @@ class _LightGlowPainter extends CustomPainter {
     );
 
     // 2) 三团柔和光晕：统一用主题色的同色系深浅渐变(主题色 → 半浓 → 透明)，不掺白，色感更纯、更统一。
-    //    浓度收一点、半径略缩，让白色成分更多、整体更偏白明亮；中心下移避开顶部中央。
-    _glow(canvas,
-        center: Offset(size.width * 0.16, size.height * 0.26),
-        radius: size.width * 0.80,
-        color: cfg.primaryColor,
-        alpha: 0.28);
-    _glow(canvas,
-        center: Offset(size.width * 0.94, size.height * 0.30),
-        radius: size.width * 0.78,
-        color: cfg.primaryColor,
-        alpha: 0.24);
-    _glow(canvas,
-        center: Offset(size.width * 0.48, size.height * 1.00),
-        radius: size.width * 0.98,
-        color: cfg.primaryColor,
-        alpha: 0.27);
+    //    按屏幕宽高比分档适配：
+    //    - 窄高屏(手机, 宽高比<0.62)：光晕用长边为基准、纵向分布更均匀、浓度更低，避免"上下两坨、中间留白"；
+    //    - 方正屏(iPad/桌面, 宽高比>=0.62)：保持原参数(宽为基准)，维持已认可的均匀效果。
+    final aspect = size.width / size.height;
+    final isNarrow = aspect < 0.62;
+    final base = isNarrow ? size.longestSide : size.width;
+    final centers = isNarrow
+        ? const [Offset(0.16, 0.16), Offset(0.94, 0.20), Offset(0.50, 1.02)]
+        : const [Offset(0.16, 0.26), Offset(0.94, 0.30), Offset(0.48, 1.00)];
+    final radii = isNarrow ? const [0.58, 0.52, 0.56] : const [0.80, 0.78, 0.98];
+    final alphas = isNarrow ? const [0.24, 0.20, 0.19] : const [0.28, 0.24, 0.27];
+    for (int i = 0; i < centers.length; i++) {
+      _glow(canvas,
+          center: Offset(size.width * centers[i].dx, size.height * centers[i].dy),
+          radius: base * radii[i],
+          color: cfg.primaryColor,
+          alpha: alphas[i]);
+    }
   }
 
   void _glow(Canvas canvas,
