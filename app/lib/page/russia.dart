@@ -1929,7 +1929,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         visibleButtons.add(answer3Btn);
       }
 
-      if (isPlaying && isExercise) {
+      if (isPlaying && isExercise && playerA.otherWordMeanings.isNotEmpty) {
         visibleButtons.add(answer4Btn);
         visibleButtons.add(answer5Btn);
       }

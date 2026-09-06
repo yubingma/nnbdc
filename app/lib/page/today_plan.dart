@@ -648,8 +648,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const Color(0x99121722),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.55),
-                      Colors.white.withValues(alpha: 0.35),
+                      Colors.white.withValues(alpha: 0.84),
+                      Colors.white.withValues(alpha: 0.70),
                     ],
             ),
             borderRadius: BorderRadius.circular(28),
@@ -679,71 +679,45 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
                         '${user?.effectiveWordsPerDay ?? 0}',
                         style: TextStyle(
                           color: textPrimary,
-                          fontSize: 60,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 44,
+                          fontWeight: FontWeight.w700,
                           fontFamily: 'Roboto',
-                          letterSpacing: -2.5,
+                          letterSpacing: -1.8,
                           height: 1.0,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      // 纯粹字阶自然贴靠（轻透微亚克力胶囊，告别厚重生硬底色）
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.08)
-                              : Colors.white.withValues(alpha: 0.70),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.14)
-                                : Colors.white.withValues(alpha: 0.90),
-                            width: 0.9,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: isDarkMode ? 0.15 : 0.03),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1.5),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '词',
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            if (!isStarted) ...[
-                              const SizedBox(width: 2),
-                              Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 14,
-                                color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
-                              ),
-                            ] else ...[
-                              const SizedBox(width: 3),
-                              Icon(
-                                Icons.lock_outline_rounded,
-                                size: 11,
-                                color: textMuted,
-                              ),
-                            ],
-                          ],
+                      const SizedBox(width: 6),
+                      // 单位裸排（告别药丸容器，符合"零多余容器"；baseline 与大数自然贴靠）
+                      Text(
+                        '词',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                      if (!isStarted) ...[
+                        const SizedBox(width: 3),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 13,
+                          color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
+                        ),
+                      ] else ...[
+                        const SizedBox(width: 3),
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          size: 11,
+                          color: textMuted,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -763,7 +737,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           '今日进度 $_completedStepCount / $_totalStepCount 步',
                           style: TextStyle(
                             color: textMuted,
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -771,7 +745,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           '${(progress * 100).toInt()}%',
                           style: TextStyle(
                             color: textMuted,
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             fontFamily: 'Roboto',
                           ),
@@ -897,10 +871,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               '$count',
               style: TextStyle(
                 color: textPrimary,
-                fontSize: 28,
+                fontSize: 32,
                 fontWeight: FontWeight.w700,
                 fontFamily: 'Roboto',
-                letterSpacing: -0.6,
+                letterSpacing: -0.8,
                 height: 1.1,
               ),
             ),
@@ -1224,19 +1198,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       themeConfig.primaryColor.withValues(alpha: 0.22),
                     ]
                   : [
-                      themeConfig.primaryColor.withValues(alpha: 0.16),
-                      themeConfig.primaryColor.withValues(alpha: 0.08),
+                      themeConfig.primaryColor.withValues(alpha: 0.22),
+                      themeConfig.primaryColor.withValues(alpha: 0.12),
                     ],
             ),
             border: Border.all(
               color: isDarkMode
                   ? themeConfig.primaryColor.withValues(alpha: 0.50)
-                  : themeConfig.primaryColor.withValues(alpha: 0.32),
+                  : themeConfig.primaryColor.withValues(alpha: 0.42),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.25 : 0.08),
+                color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.25 : 0.10),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -1681,8 +1655,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const Color(0x99121722),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.55),
-                      Colors.white.withValues(alpha: 0.35),
+                      Colors.white.withValues(alpha: 0.84),
+                      Colors.white.withValues(alpha: 0.70),
                     ],
             ),
             borderRadius: BorderRadius.circular(24),
@@ -2011,8 +1985,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const Color(0x99121722),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.55),
-                      Colors.white.withValues(alpha: 0.35),
+                      Colors.white.withValues(alpha: 0.84),
+                      Colors.white.withValues(alpha: 0.70),
                     ],
             ),
             borderRadius: BorderRadius.circular(24),
