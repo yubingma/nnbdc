@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -331,6 +332,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         
         final bool isNarrow = width < 500;
         final bool hasHint = widget.onHint != null;
+        final bool isDark = Theme.of(context).brightness == Brightness.dark;
         final double zoneWidth = hasHint 
             ? (width * 0.21).clamp(60.0, 95.0) 
             : (width * 0.28).clamp(70.0, 120.0);
@@ -436,17 +438,38 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               ),
               
               if (widget.showButtons) ...[
+                // 底部操作栏：局部毛玻璃面板，把底下透出的列表文字晕成朦胧色块，避免与按钮纠缠
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
                   height: zoneHeight + bottomMargin + 10,
-                  child: Container(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
                       boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 10, offset: const Offset(0, -2)),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                          blurRadius: 20,
+                          offset: const Offset(0, -2),
+                        ),
                       ],
+                    ),
+                    child: ClipRect(
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xB81C2127) : const Color(0x4DFFFFFF),
+                            border: Border(
+                              top: BorderSide(
+                                color: isDark ? const Color(0x33FFFFFF) : const Color(0x1FFFFFFF),
+                                width: 1.0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -465,15 +488,15 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       width: zoneWidth,
                       height: zoneHeight,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.1),
+                        color: Colors.grey.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.28)),
                       ),
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.delete_sweep_outlined, color: Colors.grey, size: 22),
-                          Text('重写', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text('重写', style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.none)),
                         ],
                       ),
                     ),
@@ -493,15 +516,15 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       width: zoneWidth,
                       height: zoneHeight,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.1),
+                        color: Colors.grey.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.28)),
                       ),
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.lightbulb_outline, color: Colors.grey, size: 22),
-                          Text('提示', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text('提示', style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.none)),
                         ],
                       ),
                     ),
@@ -520,15 +543,15 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       width: zoneWidth,
                       height: zoneHeight,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.1),
+                        color: Colors.grey.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.28)),
                       ),
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.close, color: Colors.grey, size: 22),
-                          Text('关闭', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text('关闭', style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.none)),
                         ],
                       ),
                     ),
@@ -555,15 +578,15 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       width: zoneWidth,
                       height: zoneHeight,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.1),
+                        color: Colors.grey.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.28)),
                       ),
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.undo_outlined, color: Colors.grey, size: 22),
-                          Text('回退', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text('回退', style: TextStyle(color: Colors.grey, fontSize: 12, decoration: TextDecoration.none)),
                         ],
                       ),
                     ),

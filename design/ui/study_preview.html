@@ -611,39 +611,42 @@
     }
 
     /* ========================================================
-       形态 A：4个独立悬浮温润长条磨砂选项卡片 (对标图 1 range)
-       零硬边框，浑然天成
+       形态 A：极简发丝分隔线原生选项流 (与当前代码完全一致)
+       去除厚重独立卡片底色与阴影，极致通透呼吸感
        ======================================================== */
     .nb-options-stack {
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      margin-top: 24px;
+      gap: 0;
+      margin-top: 18px;
       margin-bottom: auto;
     }
     .nb-option-strip {
-      background: var(--nb-option-bg);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      box-shadow: var(--nb-option-shadow);
-      border-radius: 20px;
-      padding: 16px 20px;
+      background: transparent;
+      border-radius: 14px;
+      padding: 15px 12px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       gap: 5px;
-      border: none;
+      border: 1.2px solid transparent;
       text-align: left;
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
-      overflow: hidden;
+    }
+    .nb-option-divider {
+      height: 0.5px;
+      background: rgba(0, 0, 0, 0.055);
+      margin: 0 12px;
+    }
+    [data-theme="dark"] .nb-option-divider {
+      background: rgba(255, 255, 255, 0.08);
     }
     .nb-option-strip:hover {
-      background: var(--nb-option-hover);
-      transform: translateY(-1.5px);
+      background: rgba(255, 255, 255, 0.35);
     }
     .nb-option-strip:active {
-      transform: scale(0.985);
+      transform: scale(0.99);
     }
     .nb-opt-pos {
       font-size: 12px;
@@ -659,18 +662,20 @@
       letter-spacing: 0.01em;
     }
 
-    /* 答题交互反馈状态 */
+    /* 答题交互反馈状态：仅保留极简主题色/暖珊瑚边框，不填内部实色，无沉重阴影 */
     .nb-option-strip.correct {
-      background: rgba(16, 185, 129, 0.22) !important;
-      box-shadow: 0 4px 22px rgba(16, 185, 129, 0.28), inset 0 0 0 1.5px var(--nb-indicator-correct) !important;
+      background: transparent !important;
+      border-color: var(--primary) !important;
+      box-shadow: none !important;
     }
     .nb-option-strip.correct .nb-opt-def {
-      color: var(--nb-indicator-correct);
+      color: var(--primary);
       font-weight: 700;
     }
     .nb-option-strip.wrong {
-      background: rgba(244, 63, 94, 0.18) !important;
-      box-shadow: 0 4px 20px rgba(244, 63, 94, 0.24), inset 0 0 0 1.5px var(--nb-indicator-wrong) !important;
+      background: transparent !important;
+      border-color: var(--coral-text) !important;
+      box-shadow: none !important;
       animation: shake 0.35s ease-in-out;
     }
     @keyframes shake {
@@ -1063,16 +1068,19 @@
           <div class="nb-opt-pos">n.</div>
           <div class="nb-opt-def">暴怒，狂怒；流行一时的事物</div>
         </div>
+        <div class="nb-option-divider"></div>
 
         <div class="nb-option-strip" onclick="handleSelectOption(this, false)">
           <div class="nb-opt-pos">vt. vi.</div>
           <div class="nb-opt-def">安排，筹备</div>
         </div>
+        <div class="nb-option-divider"></div>
 
         <div class="nb-option-strip" id="nb-opt-correct" onclick="handleSelectOption(this, true)">
           <div class="nb-opt-pos">n.</div>
           <div class="nb-opt-def">一系列；范围；射程；山脉</div>
         </div>
+        <div class="nb-option-divider"></div>
 
         <div class="nb-option-strip" onclick="handleSelectOption(this, false)">
           <div class="nb-opt-pos">n.</div>

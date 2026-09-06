@@ -54,6 +54,17 @@ target 'Runner' do
     pod 'GoogleMLKit/DigitalInkRecognition'
   end
 
+  # 用重构后的 XCFramework 覆盖 GoogleMLKit 的单个 fat framework。
+  # 背景：Google 把 MLKit*.framework 做成 »arm64(真机)+x86_64(模拟器)« 的单个 fat 二进制，
+  # 无法同时容纳 arm64-真机 与 arm64-模拟器 两套片，导致 M 系列模拟器不原生支持。
+  # 这里用 build_mlkit_xcframework.sh 生成的 XCFramework(真机片+模拟器片分离)替换，
+  # 使得「真机归档」与「Apple Silicon 原生模拟器」都可用，且不再对二进制做破坏性原地修改。
+  # 用 :path 指向本地目录(内含 podspec + xcframework)，避免 CocoaPods 从 dl.google.com 下载。
+  # 声明在 GoogleMLKit 之后，CocoaPods 会以本地 pod 覆盖其同名传递依赖。
+  pod 'MLKitCommon', :path => File.join(__dir__, 'local_mlkit', 'MLKitCommon')
+  pod 'MLKitDigitalInkRecognition', :path => File.join(__dir__, 'local_mlkit', 'MLKitDigitalInkRecognition')
+  pod 'MLKitMDD', :path => File.join(__dir__, 'local_mlkit', 'MLKitMDD')
+
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
@@ -90,7 +101,4 @@ post_install do |installer|
       end
     end
   end
-
-  # 自动为 MLKit 启用 Apple Silicon 模拟器 (arm64-simulator) 支持
-  system("python3", File.join(__dir__, "patch_mlkit.py"))
 end

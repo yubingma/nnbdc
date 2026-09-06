@@ -230,6 +230,9 @@ DEPENDENCIES:
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - in_app_purchase_storekit (from `.symlinks/plugins/in_app_purchase_storekit/darwin`)
   - just_audio (from `.symlinks/plugins/just_audio/darwin`)
+  - MLKitCommon (from `/Volumes/ssd/ppdc/app/ios/local_mlkit/MLKitCommon`)
+  - MLKitDigitalInkRecognition (from `/Volumes/ssd/ppdc/app/ios/local_mlkit/MLKitDigitalInkRecognition`)
+  - MLKitMDD (from `/Volumes/ssd/ppdc/app/ios/local_mlkit/MLKitMDD`)
   - open_file_ios (from `.symlinks/plugins/open_file_ios/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
@@ -256,9 +259,6 @@ SPEC REPOS:
     - GoogleUtilities
     - GoogleUtilitiesComponents
     - GTMSessionFetcher
-    - MLKitCommon
-    - MLKitDigitalInkRecognition
-    - MLKitMDD
     - nanopb
     - OrderedSet
     - PromisesObjC
@@ -310,6 +310,12 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/in_app_purchase_storekit/darwin"
   just_audio:
     :path: ".symlinks/plugins/just_audio/darwin"
+  MLKitCommon:
+    :path: "/Volumes/ssd/ppdc/app/ios/local_mlkit/MLKitCommon"
+  MLKitDigitalInkRecognition:
+    :path: "/Volumes/ssd/ppdc/app/ios/local_mlkit/MLKitDigitalInkRecognition"
+  MLKitMDD:
+    :path: "/Volumes/ssd/ppdc/app/ios/local_mlkit/MLKitMDD"
   open_file_ios:
     :path: ".symlinks/plugins/open_file_ios/ios"
   package_info_plus:
@@ -369,9 +375,9 @@ SPEC CHECKSUMS:
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   in_app_purchase_storekit: 22cca7d08eebca9babdf4d07d0baccb73325d3c8
   just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
-  MLKitCommon: afcd11b6c0735066a0dde8b4bf2331f6197cbca2
-  MLKitDigitalInkRecognition: 51411badefc7f60c5fc2f8606a4a4d9819752ffc
-  MLKitMDD: ad94b775d9497b32af2dba0e104dc5695b310921
+  MLKitCommon: e04e263f9479b8968e1616876a7cca067581405d
+  MLKitDigitalInkRecognition: 2b0db8ad123d75d112f6e87d79f950252fa145e4
+  MLKitMDD: 1ae2be3d9dd4c5534b61282f2b0f4fc34e19c32d
   nanopb: 438bc412db1928dac798aa6fd75726007be04262
   open_file_ios: 46184d802ee7959203f6392abcfa0dd49fdb5be0
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
@@ -399,6 +405,6 @@ SPEC CHECKSUMS:
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
   WechatOpenSDK-XCFramework: ff342ae616bb86df3d236aca38059dfd4bc4a949
 
-PODFILE CHECKSUM: cb306dbbafe5fef30acfda9daadd230079178c07
+PODFILE CHECKSUM: a8478395ff14f80ed1c6d3269cb261a2775545ef
 
 COCOAPODS: 1.16.2

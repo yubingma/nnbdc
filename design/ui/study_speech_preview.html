@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>背单词 - 语音识别说释义真实原型</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #0B0E0D;
+    }
+
+    :root {
+      /* 真实截屏的高级冰川湖蓝青基调 (与用户真实截屏 100% 吻合) */
+      --bg-top: #D1E7F2;
+      --bg-mid: #DAECF4;
+      --bg-bot: #CEE4EE;
+      
+      --card-bg: rgba(255, 255, 255, 0.62);
+      --card-border: rgba(255, 255, 255, 0.85);
+      --card-shadow: 0 16px 36px -8px rgba(12, 54, 76, 0.08), 0 4px 14px rgba(0, 0, 0, 0.02);
+      
+      --text-primary: #14242C;
+      --text-secondary: #47626E;
+      --text-muted: #7E97A2;
+      --text-placeholder: rgba(20, 36, 44, 0.32);
+      
+      --primary: #0891B2;
+      --correct-green: #15803D;
+      --correct-bg: rgba(34, 197, 94, 0.14);
+      --correct-border: rgba(34, 197, 94, 0.38);
+      
+      --coral-accent: #EF4444;
+    }
+
+    .phone-container {
+      width: 393px;
+      height: 852px;
+      margin: 0 auto;
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 40%, var(--bg-bot) 100%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 顶部原生状态栏 */
+    .status-bar {
+      height: 44px;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    /* 状态栏下方的极细进度条 */
+    .top-progress-track {
+      width: 100%;
+      height: 2px;
+      background: rgba(8, 145, 178, 0.16);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .top-progress-bar {
+      width: 32%;
+      height: 100%;
+      background: #0284C7;
+      border-radius: 0 2px 2px 0;
+      box-shadow: 0 0 6px rgba(2, 132, 199, 0.45);
+    }
+
+    /* 顶部操作导航栏 */
+    .top-nav {
+      height: 44px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+    .nav-back-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+    .nav-back-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2.4;
+      stroke: currentColor;
+      fill: none;
+    }
+    .nav-tools-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-tool-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .nav-tool-pill svg {
+      width: 13.5px;
+      height: 13.5px;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+    }
+    .nav-icon-only {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .nav-icon-only svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* 单词主区域 */
+    .word-stage {
+      padding: 30px 24px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .word-spelling {
+      font-size: 46px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+    
+    /* 音标胶囊 */
+    .phonetic-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.48);
+      border: 0.8px solid rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 3.5px 12px;
+      border-radius: 20px;
+      margin-bottom: 22px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+    .phonetic-lang-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: rgba(0, 0, 0, 0.06);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .phonetic-text {
+      font-size: 14.5px;
+      font-weight: 500;
+      color: var(--text-primary);
+      font-family: "Lucida Sans Unicode", "DejaVu Sans", sans-serif;
+      letter-spacing: 0.2px;
+    }
+    .phonetic-speaker {
+      width: 13.5px;
+      height: 13.5px;
+      fill: var(--text-secondary);
+      opacity: 0.85;
+      cursor: pointer;
+    }
+
+    /* 真实例句展示 */
+    .example-block {
+      width: 100%;
+      max-width: 330px;
+      text-align: left;
+    }
+    .example-en-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .example-en {
+      font-size: 15.5px;
+      color: var(--text-primary);
+      line-height: 1.45;
+      font-weight: 500;
+    }
+    .example-en .highlight {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: underline;
+      text-decoration-color: rgba(8, 145, 178, 0.35);
+      text-underline-offset: 3px;
+    }
+    .example-speaker {
+      width: 14px;
+      height: 14px;
+      fill: var(--text-secondary);
+      opacity: 0.8;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .show-translation-btn {
+      margin-top: 6px;
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 3px;
+    }
+    .show-translation-btn svg {
+      width: 10px;
+      height: 10px;
+      stroke-width: 2.2;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* 核心磨砂面板 (请说出中文释义) */
+    .speech-panel-card {
+      margin: 12px 18px 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-radius: 26px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      padding: 16px 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    /* 卡片顶栏：左标题 + 右切换选择题 */
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-title-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .panel-title-group svg {
+      width: 15px;
+      height: 15px;
+      stroke: var(--text-secondary);
+      stroke-width: 2;
+      fill: none;
+    }
+    .switch-choice-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .switch-choice-btn svg {
+      width: 13.5px;
+      height: 13.5px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* 语音输入状态行 + 辅助工具 (完全复刻真实波点与辅助栏) */
+    .voice-action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0 10px;
+      border-bottom: 0.6px solid rgba(20, 36, 44, 0.08);
+    }
+    .voice-status-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .voice-wave-dots {
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: var(--primary);
+      font-weight: 800;
+      line-height: 1.0;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .voice-wave-dots span {
+      display: inline-block;
+      width: 3.5px;
+      height: 3.5px;
+      background: #0284C7;
+      border-radius: 50%;
+      opacity: 0.65;
+    }
+    .voice-hint-text {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* 辅助按钮组 */
+    .panel-quick-tools {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .quick-tool-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3.5px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .quick-tool-btn svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* 释义插槽展示区 (核心重点：精准表达用户说对了一个释义！) */
+    .meanings-slot-area {
+      padding: 12px 2px 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 词性与槽位行 (单行整齐排列，完全对标真实截屏) */
+    .cixing-meaning-row {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      font-size: 14px;
+      line-height: 1.5;
+      gap: 1px;
+    }
+    .cixing-tag {
+      font-family: Roboto, -apple-system, sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-right: 6px;
+    }
+
+    /* 用户刚刚说对的释义（纯正生机翡翠绿高亮，与真实代码 100% 一致） */
+    .meaning-item-correct {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      color: var(--correct-green);
+      font-weight: 700;
+      font-size: 14px;
+      background: var(--correct-bg);
+      border: 1px solid var(--correct-border);
+      padding: 1px 5px;
+      border-radius: 5px;
+    }
+    .meaning-item-correct svg {
+      width: 11px;
+      height: 11px;
+      stroke: var(--correct-green);
+      stroke-width: 3;
+      fill: none;
+    }
+
+    /* 分隔分号 */
+    .meaning-sep {
+      color: var(--text-secondary);
+      margin: 0 2px;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    /* 尚未答出的占位符 (优雅下划线槽，与真实效果图完全对应) */
+    .meaning-slot-blank {
+      color: var(--text-placeholder);
+      letter-spacing: 1px;
+      font-weight: 600;
+      font-size: 13.5px;
+      font-family: -apple-system, sans-serif;
+    }
+
+    /* 识别成功气泡反馈 */
+    .hit-speech-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 0.8px solid rgba(34, 197, 94, 0.4);
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--correct-green);
+      margin-top: 6px;
+      align-self: flex-start;
+    }
+
+    /* 底部操作栏 (不认识 / 再学学) */
+    .bottom-action-bar {
+      margin-top: auto;
+      height: 72px;
+      padding: 0 50px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+    .action-button-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+    .action-label {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.2px;
+    }
+    .action-indicator-bar {
+      width: 20px;
+      height: 3px;
+      border-radius: 2px;
+    }
+    .action-indicator-bar.red {
+      background: var(--coral-accent);
+    }
+    .action-indicator-bar.green {
+      background: #10B981;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-container">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>16:40</span>
+      <div style="display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 700;">
+        <span>5G</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <!-- 顶部极细进度条 -->
+    <div class="top-progress-track">
+      <div class="top-progress-bar"></div>
+    </div>
+
+    <!-- 顶部导航栏 -->
+    <div class="top-nav">
+      <div class="nav-back-btn">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+
+      <div class="nav-tools-right">
+        <div class="nav-tool-pill">
+          <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
+          <span>回看</span>
+        </div>
+        <div class="nav-tool-pill">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="16 10 11 15 8 12"/></svg>
+          <span>掌握</span>
+        </div>
+        <div class="nav-tool-pill">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>报错</span>
+        </div>
+        <div class="nav-icon-only">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div class="nav-icon-only">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 单词主舞台 -->
+    <div class="word-stage">
+      <h1 class="word-spelling">prefer</h1>
+
+      <div class="phonetic-capsule">
+        <span class="phonetic-lang-badge">英</span>
+        <span class="phonetic-text">[prɪ'fɜː]</span>
+        <svg class="phonetic-speaker" viewBox="0 0 24 24">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+        </svg>
+      </div>
+
+      <!-- 真题例句 -->
+      <div class="example-block">
+        <div class="example-en-row">
+          <div class="example-en">
+            I <span class="highlight">prefer</span> tea over coffee.
+          </div>
+          <svg class="example-speaker" viewBox="0 0 24 24">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+          </svg>
+        </div>
+        <div class="show-translation-btn">
+          <span>显示翻译</span>
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 语音释义交互磨砂面板 -->
+    <div class="speech-panel-card">
+      <!-- 头部：请说出中文释义 + 选择题切换 -->
+      <div class="panel-head">
+        <div class="panel-title-group">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <span>请说出中文释义：</span>
+        </div>
+        <div class="switch-choice-btn">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="16" rx="2"/>
+            <line x1="7" y1="8" x2="17" y2="8"/>
+            <line x1="7" y1="12" x2="17" y2="12"/>
+            <line x1="7" y1="16" x2="13" y2="16"/>
+          </svg>
+          <span>选择题</span>
+        </div>
+      </div>
+
+      <!-- 语音识别反馈 + 工具 (完全对应真机界面的点点与辅助操作) -->
+      <div class="voice-action-bar">
+        <div class="voice-status-group">
+          <div class="voice-wave-dots">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <span class="voice-hint-text">请说中文释义</span>
+        </div>
+
+        <div class="panel-quick-tools">
+          <div class="quick-tool-btn">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span>拼写</span>
+          </div>
+          <div class="quick-tool-btn">
+            <svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6v1h8v-1c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"/></svg>
+            <span>提示</span>
+          </div>
+          <div class="quick-tool-btn">
+            <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span>清除</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 释义插槽：精准表达用户说对了一个释义 (更喜欢 绿色高亮，其他下划线) -->
+      <div class="meanings-slot-area">
+        <div class="cixing-meaning-row">
+          <span class="cixing-tag">vt.</span>
+          
+          <!-- 用户说对并命中的释义：更喜欢 -->
+          <span class="meaning-item-correct">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            更喜欢
+          </span>
+          <span class="meaning-sep">；</span>
+
+          <!-- 尚未说出的释义：下划线占位符 (与真实效果严格一致) -->
+          <span class="meaning-slot-blank">＿＿</span>
+          <span class="meaning-sep">；</span>
+
+          <span class="meaning-slot-blank">＿＿＿</span>
+          <span class="meaning-sep">；</span>
+
+          <span class="meaning-slot-blank">＿＿</span>
+          <span class="meaning-sep">；</span>
+
+          <span class="meaning-slot-blank">＿＿</span>
+        </div>
+
+        <!-- 识别命中轻提示 -->
+        <div class="hit-speech-tag">
+          <span>✓ 已识别并命中释义: "更喜欢"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部操作按钮 -->
+    <div class="bottom-action-bar">
+      <div class="action-button-col">
+        <span class="action-label">不认识</span>
+        <div class="action-indicator-bar red"></div>
+      </div>
+      <div class="action-button-col">
+        <span class="action-label">再学学</span>
+        <div class="action-indicator-bar green"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
