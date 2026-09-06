@@ -112,14 +112,14 @@ class _LightGlowPainter extends CustomPainter {
     final cfg = AppThemeConfig.of(style);
     final rect = Offset.zero & size;
 
-    // 1) 基础白底：纯白 → 极淡的冷白，保持整屏高亮通透
+    // 1) 基础底色：纯白 → 明显浅冷色，让白色卡片真正"浮起来"(卡片更白、更亮)，边界清晰
     canvas.drawRect(
       rect,
       Paint()
         ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFFFF), Color(0xFFFAFBFD)],
+          colors: [Color(0xFFFFFFFF), Color(0xFFD3DEE9)],
         ).createShader(rect),
     );
 
@@ -134,7 +134,7 @@ class _LightGlowPainter extends CustomPainter {
         center: Offset(size.width * 0.95, size.height * 0.26),
         radius: size.width * 0.68,
         color: accentGlow,
-        alpha: 0.20);
+        alpha: 0.26);
     _glow(canvas,
         center: Offset(size.width * 0.42, size.height * 0.98),
         radius: size.width * 0.88,
@@ -152,8 +152,8 @@ class _LightGlowPainter extends CustomPainter {
     }
     final isWarm = hsv.hue < 70 || hsv.hue > 320;
     return isWarm
-        ? Color.lerp(const Color(0xFF79B8D8), Colors.white, 0.35)!
-        : Color.lerp(const Color(0xFFE8B87E), Colors.white, 0.35)!;
+        ? Color.lerp(const Color(0xFF79B8D8), Colors.white, 0.25)!
+        : Color.lerp(const Color(0xFFE8B87E), Colors.white, 0.25)!;
   }
 
   void _glow(Canvas canvas,

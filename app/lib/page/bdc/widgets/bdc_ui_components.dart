@@ -611,20 +611,21 @@ extension BdcPageStateUIComponents on BdcPageState {
                             decoration: BoxDecoration(
                               color: _cachedIsDarkMode
                                   ? const Color(0xB8161E2A)
-                                  : Colors.white.withValues(alpha: 0.26),
+                                  : Colors.white.withValues(alpha: 0.50),
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
+                                // 极淡中性描边，仅一丝定义；边界主要靠"卡更白 + 柔和阴影"，避免生硬灰线
                                 color: _cachedIsDarkMode
                                     ? Colors.white.withValues(alpha: 0.10)
-                                    : Colors.white.withValues(alpha: 0.14),
+                                    : Colors.black.withValues(alpha: 0.05),
                                 width: 1.0,
                               ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(
-                                      alpha: _cachedIsDarkMode ? 0.28 : 0.035),
+                                      alpha: _cachedIsDarkMode ? 0.28 : 0.12),
                                   blurRadius: 18,
-                                  offset: const Offset(0, 5),
+                                  offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
