@@ -1,8 +1,11 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 
-/// 全局自适应主题背景层组件 (对标不背单词原版：非对称自然双光源漫反射流光系统)
+/// 全局自适应主题背景层组件 (对标不背单词原版：整屏"浅→深"纵向渐变带)
+///
+/// 区别于旧版的"点状模糊光斑 + 平铺底色"(会中间重、边缘快速变淡)，
+/// 这里改为**贯穿整个屏幕高度**的纵向渐变：顶部一抹轻盈高光，往下缓慢、
+/// 均匀地沉到带主题色相的更深底色 —— 色调铺满全屏，无中心热点、无边缘骤退。
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
   final bool? isDarkMode;
@@ -21,375 +24,117 @@ class AppThemeBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = _resolveIsDark(context);
-
-    switch (themeStyle) {
-      case AppThemeStyle.aurora:
-        return _buildAuroraBackground(dark);
-      case AppThemeStyle.emerald:
-        return _buildEmeraldBackground(dark);
-      case AppThemeStyle.sunset:
-        return _buildSunsetBackground(dark);
-      case AppThemeStyle.minimal:
-        return _buildMinimalBackground(dark);
-      case AppThemeStyle.midnight:
-        return _buildMidnightBackground(dark);
-      case AppThemeStyle.crimson:
-        return _buildCrimsonBackground(dark);
-      case AppThemeStyle.indigo:
-        return _buildIndigoBackground(dark);
-      case AppThemeStyle.sage:
-        return _buildSageBackground(dark);
-      case AppThemeStyle.twilight:
-        return _buildTwilightBackground(dark);
-    }
+    final (top, mid, bottom) = dark ? _darkGradient(themeStyle) : _lightGradient(themeStyle);
+    return _buildVerticalGradient(top, mid, bottom);
   }
 
-  /// 统一的高阶非对称自然双光源漫反射构建器 (奥卡姆剃刀：消除重复样板代码)
-  Widget _buildAsymmetricGlow({
-    required Color baseColor,
-    required Color primaryGlowColor,
-    required Alignment primaryAlign,
-    required double primarySize,
-    required double primaryBlur,
-    required Color secondaryGlowColor,
-    required Alignment secondaryAlign,
-    required double secondarySize,
-    required double secondaryBlur,
-    Color? tertiaryGlowColor,
-    Alignment? tertiaryAlign,
-    double? tertiarySize,
-    double? tertiaryBlur,
-  }) {
+  /// 统一垂直渐变构建器：三段色贯穿全屏，上半段保持轻盈、下半段更快沉深
+  Widget _buildVerticalGradient(Color top, Color mid, Color bottom) {
     return Container(
-      color: baseColor,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 主光源漫反射 (如晨曦白光或深邃极光)
-          Align(
-            alignment: primaryAlign,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(
-                sigmaX: primaryBlur,
-                sigmaY: primaryBlur,
-              ),
-              child: Container(
-                width: primarySize,
-                height: primarySize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: primaryGlowColor,
-                ),
-              ),
-            ),
-          ),
-          // 辅光源漫反射 (如青绿薄雾或深邃暗潮)
-          Align(
-            alignment: secondaryAlign,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(
-                sigmaX: secondaryBlur,
-                sigmaY: secondaryBlur,
-              ),
-              child: Container(
-                width: secondarySize,
-                height: secondarySize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: secondaryGlowColor,
-                ),
-              ),
-            ),
-          ),
-          // 可选第三环境微光
-          if (tertiaryGlowColor != null && tertiaryAlign != null)
-            Align(
-              alignment: tertiaryAlign,
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(
-                  sigmaX: tertiaryBlur ?? 90,
-                  sigmaY: tertiaryBlur ?? 90,
-                ),
-                child: Container(
-                  width: tertiarySize ?? 280,
-                  height: tertiarySize ?? 280,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: tertiaryGlowColor,
-                  ),
-                ),
-              ),
-            ),
-        ],
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [top, mid, bottom],
+          stops: const [0.0, 0.55, 1.0],
+        ),
       ),
     );
   }
 
-  /// 1. 晨曦流光背景 (冰川冷蓝)
-  Widget _buildAuroraBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF040D17),
-        primaryGlowColor: const Color(0x660E4466),
-        primaryAlign: const Alignment(0.8, -0.7),
-        primarySize: 380,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x40061C2E),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 320,
-        secondaryBlur: 95,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFD6E8F5),
-      primaryGlowColor: const Color(0xCCFFFFFF),
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 110,
-      secondaryGlowColor: const Color(0x400284C7),
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-    );
-  }
+  (Color, Color, Color) _lightGradient(AppThemeStyle style) => switch (style) {
+        AppThemeStyle.aurora => (
+            const Color(0xFFDBEBF6),
+            const Color(0xFFC2D9E7),
+            const Color(0xFF89AFC5),
+          ),
+        AppThemeStyle.emerald => (
+            const Color(0xFFE1EAE5),
+            const Color(0xFFC9DBD3),
+            const Color(0xFF90B9AA),
+          ),
+        AppThemeStyle.sunset => (
+            const Color(0xFFF6EDE8),
+            const Color(0xFFEADACF),
+            const Color(0xFFCFAD96),
+          ),
+        AppThemeStyle.minimal => (
+            const Color(0xFFE8EAEE),
+            const Color(0xFFD5D7DB),
+            const Color(0xFFA9ABAF),
+          ),
+        AppThemeStyle.midnight => (
+            const Color(0xFFDBEDE7),
+            const Color(0xFFC5E0D6),
+            const Color(0xFF92C1AE),
+          ),
+        AppThemeStyle.crimson => (
+            const Color(0xFFF6E8EB),
+            const Color(0xFFE9D0D5),
+            const Color(0xFFCA98A3),
+          ),
+        AppThemeStyle.indigo => (
+            const Color(0xFFE7E9F9),
+            const Color(0xFFD3D6EC),
+            const Color(0xFFA5A8CF),
+          ),
+        AppThemeStyle.sage => (
+            const Color(0xFFDCEAE8),
+            const Color(0xFFC4D9D7),
+            const Color(0xFF8CB2AE),
+          ),
+        AppThemeStyle.twilight => (
+            const Color(0xFFEEE8F7),
+            const Color(0xFFDED3EB),
+            const Color(0xFFB9A3CF),
+          ),
+      };
 
-  /// 2. 经典翡翠背景 (不背单词原版截图同款：浅色高岭土珍珠晨雾 / 深色黑曜石幽微极光)
-  Widget _buildEmeraldBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF0A1411),
-        primaryGlowColor: const Color(0x66183C30),
-        primaryAlign: const Alignment(0.85, -0.75),
-        primarySize: 400,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x380E221B),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 340,
-        secondaryBlur: 100,
-        tertiaryGlowColor: const Color(0x2810B981),
-        tertiaryAlign: const Alignment(0.6, -0.4),
-        tertiarySize: 260,
-        tertiaryBlur: 80,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFDCE7E1),
-      primaryGlowColor: const Color(0xD9FFFFFF), // 晨曦纯净透白高光
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 105,
-      secondaryGlowColor: const Color(0x4D10B981), // 生机翡翠晨雾青绿
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-      tertiaryGlowColor: const Color(0x33BCE2CE),
-      tertiaryAlign: const Alignment(0.2, 0.4),
-      tertiarySize: 300,
-      tertiaryBlur: 90,
-    );
-  }
-
-  /// 3. 暮色落日背景 (温暖晚霞杏橙)
-  Widget _buildSunsetBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF140703),
-        primaryGlowColor: const Color(0x664E1C0C),
-        primaryAlign: const Alignment(0.8, -0.7),
-        primarySize: 380,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x38200C05),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 320,
-        secondaryBlur: 95,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFF5EAE4),
-      primaryGlowColor: const Color(0xCCFFFFFF),
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 110,
-      secondaryGlowColor: const Color(0x40F97316),
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-    );
-  }
-
-  /// 4. 极简白墨背景 (纯粹黑白珍珠灰)
-  Widget _buildMinimalBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF0C0D10),
-        primaryGlowColor: const Color(0x4D2D2D34),
-        primaryAlign: const Alignment(0.8, -0.7),
-        primarySize: 380,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x28141418),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 320,
-        secondaryBlur: 95,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFE5E7EB),
-      primaryGlowColor: const Color(0xF2FFFFFF),
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 105,
-      secondaryGlowColor: const Color(0x2B71717A),
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-    );
-  }
-
-  /// 5. 深邃曜黑背景 (极光墨玉)
-  Widget _buildMidnightBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF060E0B),
-        primaryGlowColor: const Color(0x66163A30),
-        primaryAlign: const Alignment(0.8, -0.7),
-        primarySize: 380,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x380A1814),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 320,
-        secondaryBlur: 95,
-        tertiaryGlowColor: const Color(0x332CD88F),
-        tertiaryAlign: const Alignment(0.4, -0.3),
-        tertiarySize: 260,
-        tertiaryBlur: 85,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFD6EAE3),
-      primaryGlowColor: const Color(0xCCFFFFFF),
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 110,
-      secondaryGlowColor: const Color(0x402CD88F),
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-    );
-  }
-
-  /// 6. 京都朱砂背景 (山茶绯红)
-  Widget _buildCrimsonBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF140408),
-        primaryGlowColor: const Color(0x664C1020),
-        primaryAlign: const Alignment(0.8, -0.7),
-        primarySize: 380,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x3820080E),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 320,
-        secondaryBlur: 95,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFF5E5E8),
-      primaryGlowColor: const Color(0xCCFFFFFF),
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 110,
-      secondaryGlowColor: const Color(0x40E11D48),
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-    );
-  }
-
-  /// 7. 星云深靛背景 (梦幻夜空紫)
-  Widget _buildIndigoBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF080917),
-        primaryGlowColor: const Color(0x6626285C),
-        primaryAlign: const Alignment(0.8, -0.7),
-        primarySize: 380,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x3810112A),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 320,
-        secondaryBlur: 95,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFE3E6F8),
-      primaryGlowColor: const Color(0xCCFFFFFF),
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 110,
-      secondaryGlowColor: const Color(0x406366F1),
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-    );
-  }
-
-  /// 8. 鼠尾草森背景 (静谧苔原青)
-  Widget _buildSageBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF05100F),
-        primaryGlowColor: const Color(0x66123E3A),
-        primaryAlign: const Alignment(0.8, -0.7),
-        primarySize: 380,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x38081A18),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 320,
-        secondaryBlur: 95,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFD7E7E5),
-      primaryGlowColor: const Color(0xCCFFFFFF),
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 110,
-      secondaryGlowColor: const Color(0x400D9488),
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-    );
-  }
-
-  /// 9. 暮光深空背景 (曜石深空星云霓虹紫)
-  Widget _buildTwilightBackground(bool dark) {
-    if (dark) {
-      return _buildAsymmetricGlow(
-        baseColor: const Color(0xFF0E0516),
-        primaryGlowColor: const Color(0x66381858),
-        primaryAlign: const Alignment(0.8, -0.7),
-        primarySize: 380,
-        primaryBlur: 110,
-        secondaryGlowColor: const Color(0x38180A26),
-        secondaryAlign: const Alignment(-0.8, 0.8),
-        secondarySize: 320,
-        secondaryBlur: 95,
-        tertiaryGlowColor: const Color(0x33A855F7),
-        tertiaryAlign: const Alignment(0.5, -0.4),
-        tertiarySize: 260,
-        tertiaryBlur: 85,
-      );
-    }
-    return _buildAsymmetricGlow(
-      baseColor: const Color(0xFFECE4F6),
-      primaryGlowColor: const Color(0xCCFFFFFF),
-      primaryAlign: const Alignment(-0.7, -0.85),
-      primarySize: 380,
-      primaryBlur: 110,
-      secondaryGlowColor: const Color(0x40A855F7),
-      secondaryAlign: const Alignment(0.9, -0.3),
-      secondarySize: 360,
-      secondaryBlur: 120,
-    );
-  }
+  (Color, Color, Color) _darkGradient(AppThemeStyle style) => switch (style) {
+        AppThemeStyle.aurora => (
+            const Color(0xFF072032),
+            const Color(0xFF061624),
+            const Color(0xFF040D17),
+          ),
+        AppThemeStyle.emerald => (
+            const Color(0xFF0F221C),
+            const Color(0xFF0C1A16),
+            const Color(0xFF0A1411),
+          ),
+        AppThemeStyle.sunset => (
+            const Color(0xFF280E06),
+            const Color(0xFF1D0A04),
+            const Color(0xFF140703),
+          ),
+        AppThemeStyle.minimal => (
+            const Color(0xFF17181C),
+            const Color(0xFF111216),
+            const Color(0xFF0C0D10),
+          ),
+        AppThemeStyle.midnight => (
+            const Color(0xFF0B1D18),
+            const Color(0xFF091511),
+            const Color(0xFF060E0B),
+          ),
+        AppThemeStyle.crimson => (
+            const Color(0xFF270810),
+            const Color(0xFF1D060C),
+            const Color(0xFF140408),
+          ),
+        AppThemeStyle.indigo => (
+            const Color(0xFF12142E),
+            const Color(0xFF0D0E22),
+            const Color(0xFF080917),
+          ),
+        AppThemeStyle.sage => (
+            const Color(0xFF09201E),
+            const Color(0xFF071716),
+            const Color(0xFF05100F),
+          ),
+        AppThemeStyle.twilight => (
+            const Color(0xFF1C0B2C),
+            const Color(0xFF150821),
+            const Color(0xFF0E0516),
+          ),
+      };
 }

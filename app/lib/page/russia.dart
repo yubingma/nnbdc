@@ -406,6 +406,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   late SpriteComponent minusBtn;
   late TextComponent plusPropsCount;
   late TextComponent minusPropsCount;
+  late TextComponent vsBadge;
   late MyButton startGameBtn;
   late MyButton changeRoomBtn;
   late MyButton exerciseBtn;
@@ -622,17 +623,31 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       ),
     ]));
     plusPropsCount = TextComponent(text: '0', textRenderer: textRender)
-      ..anchor = Anchor.topCenter
-      ..x = plusBtn.x
-      ..y = plusBtn.y + plusBtn.height - 10;
+      ..anchor = Anchor.topRight
+      ..x = plusBtn.x + plusBtn.width / 2
+      ..y = plusBtn.y - 6;
     add(plusPropsCount);
     minusPropsCount = TextComponent(text: '0', textRenderer: textRender)
-      ..anchor = Anchor.topCenter
-      ..x = minusBtn.x
-      ..y = minusBtn.y + minusBtn.height - 10;
+      ..anchor = Anchor.topRight
+      ..x = minusBtn.x + minusBtn.width / 2
+      ..y = minusBtn.y - 6;
     add(minusPropsCount);
 
-    startGameBtn = MyButton('开始比赛', this)
+    // 对战 VS 徽标（两面板之间中央，仅非比赛时显示）
+    vsBadge = TextComponent(
+        text: 'VS',
+        textRenderer: TextPaint(
+            style: TextStyle(color: const Color(0xFF6D8CFF), fontSize: 17 * uiScale, fontWeight: FontWeight.w800, fontFamily: 'NotoSansSC', letterSpacing: 1, shadows: const [
+          Shadow(color: Colors.black87, offset: Offset(1, 1), blurRadius: 4),
+          Shadow(color: Color(0xFF6D8CFF), offset: Offset(0, 0), blurRadius: 10),
+        ])))
+      ..anchor = Anchor.center
+      ..x = (playerA.playGround.x + playerA.playGround.width + playerB.playGround.x) / 2
+      ..y = playerA.playGround.y + playerA.playGround.height / 2
+      ..priority = 3;
+    add(vsBadge);
+
+    startGameBtn = MyButton('开始比赛', this, style: ButtonStyle.primary)
       ..width = screenWidth
       ..height = 50;
     allButtons.add(startGameBtn);
@@ -640,7 +655,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       startMatch();
     };
 
-    changeRoomBtn = MyButton(makeChangeRoomBtnText(), this)
+    changeRoomBtn = MyButton(makeChangeRoomBtnText(), this, style: ButtonStyle.secondary)
       ..width = screenWidth
       ..height = 50;
     allButtons.add(changeRoomBtn);
@@ -648,7 +663,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       changeRoom();
     };
 
-    exerciseBtn = MyButton('单人练习', this)
+    exerciseBtn = MyButton('单人练习', this, style: ButtonStyle.secondary)
       ..width = screenWidth
       ..height = 50;
     allButtons.add(exerciseBtn);
@@ -656,7 +671,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       exercise();
     };
 
-    exitBtn = MyButton('离开', this)
+    exitBtn = MyButton('离开', this, style: ButtonStyle.tertiary)
       ..width = screenWidth
       ..height = 50;
     allButtons.add(exitBtn);
@@ -808,7 +823,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   }
 
   String makeChangeRoomBtnText() {
-    return '换房间 (当前房号: $roomId)';
+    return '换房间 · 房号 $roomId';
   }
 
   TextRenderer textRenderOfGameResultHint(bool? won) {
@@ -1830,7 +1845,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         // 道具底部 + 间距
         propsBottom + 12.0 * uiScale,
       );
-      final double btnGap = 12.0 * uiScale; // 按钮之间的间隔
+      final double btnGap = 9.0 * uiScale; // 按钮之间的间隔
       final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
 
       // 预计算每个按钮的基础行高与内边距，并估算总高度
@@ -1847,7 +1862,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       for (var btn in visibleButtons) { 
         final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
         final double basePadding = (isAnswerBtn ? 1.35 : 1.0) * max(16.0, unifiedTextHeight * 1.1) * answersExtraScale;
-        final double visualHeight = unifiedTextHeight + basePadding + 16.0;
+        final double visualHeight = unifiedTextHeight + basePadding;
         baseLineHeights.add(unifiedTextHeight);
         basePaddings.add(basePadding);
         totalBaseHeight += visualHeight;
@@ -1899,7 +1914,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         final double lineHeight = unifiedTextHeight;
         final Size compSize = Size(btnWidth, lineHeight + newPadding);
         btn.size = Vector2(compSize.width, compSize.height);
-        nextBtnY += compSize.height + 16.0 + btnGap; // 16 为顶部偏移补偿
+        nextBtnY += compSize.height + btnGap;
       }
     }
 
@@ -1922,6 +1937,15 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       if (playerB.userInfoPanel.parent != null) {
         remove(playerB.userInfoPanel);
       }
+    }
+
+    // 对战 VS 徽标：随 A 方信息面板同显同隐
+    if (!isPlaying && playerA.userGameInfo != null) {
+      if (vsBadge.parent == null) {
+        add(vsBadge);
+      }
+    } else if (vsBadge.parent != null) {
+      vsBadge.removeFromParent();
     }
 
     // 显示/隐藏比赛结果提示
@@ -1991,7 +2015,7 @@ class SpiralGalaxyBackground extends PositionComponent {
         final fade = (1.0 - r / armLen).clamp(0.0, 1.0);
         
         final fog = RadialGradient(
-          colors: [baseHue.withValues(alpha: 0.18 * fade), baseHue.withValues(alpha: 0.0)],
+          colors: [baseHue.withValues(alpha: 0.10 * fade), baseHue.withValues(alpha: 0.0)],
         ).createShader(Rect.fromCircle(center: Offset(x, y), radius: 60 * fade + 20));
         _fogPaint.shader = fog;
         canvas.drawCircle(Offset(x, y), 60 * fade + 20, _fogPaint);
@@ -2007,12 +2031,12 @@ class SpiralGalaxyBackground extends PositionComponent {
           
           final haloRadius = 4 + size * 2;
           final haloShader = RadialGradient(
-            colors: [starColor.withValues(alpha: 0.12), starColor.withValues(alpha: 0.0)],
+            colors: [starColor.withValues(alpha: 0.07), starColor.withValues(alpha: 0.0)],
           ).createShader(Rect.fromCircle(center: Offset(sx, sy), radius: haloRadius));
           _haloPaint.shader = haloShader;
           canvas.drawCircle(Offset(sx, sy), haloRadius, _haloPaint);
           
-          _starPaint.color = starColor.withValues(alpha: 0.85);
+          _starPaint.color = starColor.withValues(alpha: 0.5);
           canvas.drawCircle(Offset(sx, sy), size, _starPaint);
           canvas.drawCircle(Offset(sx, sy), size * 0.35, Paint()..color = Colors.white.withValues(alpha: 0.8));
         }
@@ -2064,7 +2088,7 @@ class SpiralGalaxyBackground extends PositionComponent {
     }
 
     final core = RadialGradient(
-      colors: [const Color(0xFFFFF59D).withValues(alpha: 0.18 * twinkle), Colors.transparent],
+      colors: [const Color(0xFFFFF59D).withValues(alpha: 0.10 * twinkle), Colors.transparent],
     ).createShader(Rect.fromCircle(center: center, radius: 140));
     canvas.drawCircle(center, 140, Paint()..shader = core);
   }
@@ -2076,13 +2100,22 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
   late TextComponent nickName;
   late TextComponent score;
   late TextComponent cowDung;
-
   late TextComponent contest;
   late TextComponent winRatio;
 
+  // 计分板指标标签
+  late TextComponent scoreLabel;
+  late TextComponent cowDungLabel;
+  late TextComponent contestLabel;
+  late TextComponent winRatioLabel;
+
+  // 头像首字母与角色标签
+  late TextComponent avatarLetter;
+  late TextComponent roleTag;
+
   late TextComponent scoreAdjust;
   late TextComponent cowDungAdjust;
-  // 开始状态（底部居中）
+  // 开始状态（底部胶囊）
   late TextComponent startedStatus;
 
   // 等待提示组件
@@ -2095,6 +2128,12 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
 
   // 熟人约战提示组件
   late TextComponent friendlyMatchHint;
+
+  // 布局参数（onLoad 中计算，供 render 复用）
+  late double _padX;
+  late double _topPad;
+  late double _avatarSize;
+  late double _statusY;
 
   // 缓存属性
   String _lastNick = '';
@@ -2118,90 +2157,92 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
   @override
   Future<void> onLoad() async {
     final double s = game.uiScale;
+    final double padX = 12 * s;
+    final double topPad = 12 * s;
+    final double avatarSize = 28 * s;
+    final double colGap = 9 * s;
+    final double colW = (width - padX * 2 - colGap) / 2;
+    final double col2X = padX + colW + colGap;
+
+    final TextPaint labelPaint = TextPaint(
+        style: TextStyle(color: const Color(0xFF6E7E96), fontSize: 10 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC'));
+    final TextPaint scorePaint = TextPaint(
+        style: TextStyle(color: const Color(0xFF8FA6FF), fontSize: 17 * s, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC', letterSpacing: -0.4, shadows: const [
+      Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2),
+    ]));
+    final TextPaint cowDungPaint = TextPaint(
+        style: TextStyle(color: const Color(0xFFFBBF24), fontSize: 17 * s, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC', letterSpacing: -0.4, shadows: const [
+      Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2),
+    ]));
+    final TextPaint recordPaint = TextPaint(
+        style: TextStyle(color: const Color(0xFFB9C4D6), fontSize: 15 * s, fontWeight: FontWeight.w600, fontFamily: 'NotoSansSC', letterSpacing: -0.2, shadows: const [
+      Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2),
+    ]));
+    final TextPaint statusPaint = TextPaint(
+        style: TextStyle(color: const Color(0xFFAEBACD), fontSize: 11 * s, fontWeight: FontWeight.w600, fontFamily: 'NotoSansSC'));
+    final double labelH = labelPaint.getLineMetrics('游戏').height;
+    final double valueH = scorePaint.getLineMetrics('0').height;
+
+    // 头像首字母
+    avatarLetter = TextComponent(
+        text: '',
+        textRenderer: TextPaint(
+            style: TextStyle(color: const Color(0xFF0B1222), fontSize: 14 * s, fontWeight: FontWeight.w800, fontFamily: 'NotoSansSC')))
+      ..anchor = Anchor.center
+      ..x = padX + avatarSize / 2
+      ..y = topPad + avatarSize / 2;
+
+    // 角色标签（我 / 对手），右上角
+    roleTag = TextComponent(
+        text: '',
+        textRenderer: TextPaint(
+            style: TextStyle(color: const Color(0xFF9FB6E8), fontSize: 9.5 * s, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC')))
+      ..anchor = Anchor.topRight
+      ..x = width - padX
+      ..y = topPad + 1 * s;
+
+    // 昵称（头像右侧，超宽省略号）
     nickName = TextComponent(
         text: '',
         textRenderer: TextPaint(
-            style: TextStyle(color: Colors.white, fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
+            style: TextStyle(color: Colors.white, fontSize: 12.5 * s, fontWeight: FontWeight.w600, fontFamily: 'NotoSansSC', shadows: const [
+          Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2),
         ])))
-      ..x = 16
-      ..y = 16;
-    score = TextComponent(
+      ..x = padX + avatarSize + 8 * s
+      ..y = topPad + 3 * s;
+
+    // 2x2 指标网格
+    final double metricTop = topPad + avatarSize + 12 * s;
+    final double row1ValueY = metricTop + labelH + 3 * s;
+    final double row2LabelY = row1ValueY + valueH + 10 * s;
+    final double row2ValueY = row2LabelY + labelH + 3 * s;
+
+    scoreLabel = TextComponent(text: '游戏分', textRenderer: labelPaint)..x = padX..y = metricTop;
+    score = TextComponent(text: '', textRenderer: scorePaint)..x = padX..y = row1ValueY;
+    cowDungLabel = TextComponent(text: '魔法泡泡', textRenderer: labelPaint)..x = col2X..y = metricTop;
+    cowDung = TextComponent(text: '', textRenderer: cowDungPaint)..x = col2X..y = row1ValueY;
+    contestLabel = TextComponent(text: '胜负', textRenderer: labelPaint)..x = padX..y = row2LabelY;
+    contest = TextComponent(text: '', textRenderer: recordPaint)..x = padX..y = row2ValueY;
+    winRatioLabel = TextComponent(text: '胜率', textRenderer: labelPaint)..x = col2X..y = row2LabelY;
+    winRatio = TextComponent(text: '', textRenderer: recordPaint)..x = col2X..y = row2ValueY;
+
+    // 状态胶囊（左侧圆点 + 文本），置于指标下方
+    final double statusY = row2ValueY + valueH + 12 * s;
+    startedStatus = TextComponent(
         text: '',
-        textRenderer: TextPaint(
-            style: TextStyle(color: const Color(0xFF81C784), fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
-      ..x = 16
-      ..y = nickName.y + nickName.height + 4;
-    cowDung = TextComponent(
-        text: '',
-        textRenderer: TextPaint(
-            style: TextStyle(color: const Color(0xFFFFB74D), fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
-      ..x = 16
-      ..y = score.y + score.height + 4;
-    contest = TextComponent(
-        text: '',
-        textRenderer: TextPaint(
-            style: TextStyle(color: const Color(0xFF64B5F6), fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
-      ..x = 16
-      ..y = cowDung.y + cowDung.height + 4;
-    winRatio = TextComponent(
-        text: '',
-        textRenderer: TextPaint(
-            style: TextStyle(color: const Color(0xFFBA68C8), fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
-      ..x = 16
-      ..y = contest.y + contest.height + 4;
-    scoreAdjust = TextComponent(
-        text: '',
-        textRenderer: TextPaint(
-            style: TextStyle(color: Colors.white, fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
-      ..x = 16
-      ..y = winRatio.y + winRatio.height + 16;
-    cowDungAdjust = TextComponent(
-        text: '',
-        textRenderer: TextPaint(
-            style: TextStyle(color: Colors.white, fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
-      ..x = 16
-      ..y = scoreAdjust.y + scoreAdjust.height + 4;
+        textRenderer: statusPaint)
+      ..x = padX + 16 * s
+      ..y = statusY + 3 * s;
+    _statusY = statusY;
+
+    // 上局结果调整（仅在结算时显示）
+    final double adjustY = statusY + 24 * s;
+    scoreAdjust = TextComponent(text: '', textRenderer: statusPaint)..x = padX..y = adjustY;
+    cowDungAdjust = TextComponent(text: '', textRenderer: statusPaint)..x = padX..y = adjustY + 15 * s;
+
+    _padX = padX;
+    _topPad = topPad;
+    _avatarSize = avatarSize;
 
     // 初始化熟人约战提示组件
     friendlyMatchHint = TextComponent(
@@ -2243,7 +2284,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         )))
       ..anchor = Anchor.center
       ..x = width / 2
-      ..y = height / 2 - 18;
+      ..y = height / 2 - 30;
 
     // 初始化私房提示组件（金色加粗高亮）
     privateRoomHint = TextComponent(
@@ -2264,7 +2305,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         )))
       ..anchor = Anchor.center
       ..x = width / 2
-      ..y = height / 2 + 14;
+      ..y = height / 2 + 8;
 
     // 初始化告知好友提示组件
     privateRoomTellFriendHint = TextComponent(
@@ -2285,38 +2326,15 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         )))
       ..anchor = Anchor.center
       ..x = width / 2
-      ..y = height / 2 + 38;
-
-    // 初始化开始状态文本（底部居中）
-    startedStatus = TextComponent(
-        text: '',
-        textRenderer: TextPaint(
-            style: TextStyle(color: Colors.white, fontSize: 14 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
-      ..anchor = Anchor.bottomCenter
-      ..x = width / 2
-      ..y = height - 8;
+      ..y = height / 2 + 32;
 
     _successPaint = TextPaint(
-        style: TextStyle(color: const Color(0xFF4CAF50), fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-      Shadow(
-        color: Colors.black54,
-        offset: Offset(1, 1),
-        blurRadius: 2,
-      ),
+        style: TextStyle(color: const Color(0xFF4ADE80), fontSize: 11 * s, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC', shadows: const [
+      Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2),
     ]));
     _failPaint = TextPaint(
-        style: TextStyle(color: const Color(0xFFF44336), fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-      Shadow(
-        color: Colors.black54,
-        offset: Offset(1, 1),
-        blurRadius: 2,
-      ),
+        style: TextStyle(color: const Color(0xFFF87171), fontSize: 11 * s, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC', shadows: const [
+      Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2),
     ]));
   }
 
@@ -2369,14 +2387,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       }
 
       // 隐藏其他信息组件
-      nickName.removeFromParent();
-      score.removeFromParent();
-      cowDung.removeFromParent();
-      contest.removeFromParent();
-      winRatio.removeFromParent();
-      scoreAdjust.removeFromParent();
-      cowDungAdjust.removeFromParent();
-      startedStatus.removeFromParent();
+      _hideInfoComponents();
     } else if (!game.isPlaying && player.userGameInfo != null) {
       // 隐藏等待提示、熟人约战提示和私房提示
       waitingHint.removeFromParent();
@@ -2384,35 +2395,40 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       privateRoomHint.removeFromParent();
       privateRoomTellFriendHint.removeFromParent();
 
-      // 昵称单独一行，限制宽度不超过playground，超出使用省略号 
-      final String baseNick = '昵　称： ${player.userGameInfo!.nickName}';
+      // 昵称（无前缀），并为右上角角色标签预留空间，超宽省略号
+      final String baseNick = player.userGameInfo!.nickName;
+      roleTag.text = player.type == 'A' ? '我' : '对手';
       if (baseNick != _lastNick) {
         _lastNick = baseNick;
-        final double maxWidth = player.playGround.width - 32;
+        final double nickLeft = nickName.x;
+        final double roleLeft = roleTag.x - roleTag.width;
+        final double maxWidth = (roleLeft - nickLeft - 4 * game.uiScale).clamp(40.0, 200.0);
         nickName.text = _ellipsize(baseNick, (nickName.textRenderer as TextPaint), maxWidth);
+        avatarLetter.text = baseNick.isEmpty ? '?' : baseNick[0];
       }
 
+      // 2x2 指标值（无前缀）
       if (player.userGameInfo!.score != _lastScore) {
         _lastScore = player.userGameInfo!.score;
-        score.text = '游戏分： $_lastScore';
+        score.text = '$_lastScore';
       }
 
       if (player.userGameInfo!.cowDung != _lastCowDung) {
         _lastCowDung = player.userGameInfo!.cowDung;
-        cowDung.text = '魔法泡泡： $_lastCowDung';
+        cowDung.text = '$_lastCowDung';
       }
 
       final winLossStr = '${player.userGameInfo!.winCount} | ${player.userGameInfo!.lostCount}';
       if (winLossStr != _lastWinLoss) {
         _lastWinLoss = winLossStr;
-        contest.text = '胜　负： $_lastWinLoss';
+        contest.text = _lastWinLoss;
       }
 
       String ratioStr;
       if (player.userGameInfo!.winCount + player.userGameInfo!.lostCount == 0) {
-        ratioStr = '胜　率： -';
+        ratioStr = '-';
       } else {
-        ratioStr = '胜　率： ${player.userGameInfo!.winCount * 100 ~/ (player.userGameInfo!.winCount + player.userGameInfo!.lostCount)}%';
+        ratioStr = '${player.userGameInfo!.winCount * 100 ~/ (player.userGameInfo!.winCount + player.userGameInfo!.lostCount)}%';
       }
       if (ratioStr != _lastWinRatio) {
         _lastWinRatio = ratioStr;
@@ -2453,15 +2469,21 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         }
       }
 
-      // 添加基本信息组件
+      // 显示基本信息组件
       if (nickName.parent == null) {
         add(nickName);
         add(score);
         add(cowDung);
         add(contest);
         add(winRatio);
+        add(scoreLabel);
+        add(cowDungLabel);
+        add(contestLabel);
+        add(winRatioLabel);
+        add(avatarLetter);
+        add(roleTag);
       }
-      // 更新并显示开始状态（底部居中，不显示“状态”二字）
+      // 更新并显示开始状态（左侧胶囊，不显示“状态”二字）
       startedStatus.text = player.started ? '已开始' : '未开始...';
       if (startedStatus.parent == null) {
         add(startedStatus);
@@ -2469,15 +2491,26 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
     } else {
       // 隐藏所有组件
       waitingHint.removeFromParent();
-      nickName.removeFromParent();
-      score.removeFromParent();
-      cowDung.removeFromParent();
-      contest.removeFromParent();
-      winRatio.removeFromParent();
-      scoreAdjust.removeFromParent();
-      cowDungAdjust.removeFromParent();
-      startedStatus.removeFromParent();
+      _hideInfoComponents();
     }
+  }
+
+  /// 隐藏信息卡的全部指标与状态组件
+  void _hideInfoComponents() {
+    nickName.removeFromParent();
+    score.removeFromParent();
+    cowDung.removeFromParent();
+    contest.removeFromParent();
+    winRatio.removeFromParent();
+    scoreLabel.removeFromParent();
+    cowDungLabel.removeFromParent();
+    contestLabel.removeFromParent();
+    winRatioLabel.removeFromParent();
+    avatarLetter.removeFromParent();
+    roleTag.removeFromParent();
+    scoreAdjust.removeFromParent();
+    cowDungAdjust.removeFromParent();
+    startedStatus.removeFromParent();
   }
 
   String _ellipsize(String text, TextPaint renderer, double maxWidth) {
@@ -2500,13 +2533,15 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
   void render(Canvas canvas) {
     super.render(canvas);
     Rect rect = size.toRect();
+    final double s = game.uiScale;
+    final bool isMe = player.type == 'A';
 
-    // 渐变背景（上圆下直角，半透明 0.7）
+    // 渐变背景（上圆下直角，半透明蓝灰磨砂）
     _cachedBgShader ??= LinearGradient(
       colors: [
-        const Color(0xFF2D2D2D).withValues(alpha: 0.7),
-        const Color(0xFF1A1A1A).withValues(alpha: 0.7),
-        const Color(0xFF0D0D0D).withValues(alpha: 0.7),
+        const Color(0xFF2A3550).withValues(alpha: 0.72),
+        const Color(0xFF1E2740).withValues(alpha: 0.72),
+        const Color(0xFF141A2C).withValues(alpha: 0.72),
       ],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -2521,28 +2556,27 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
     );
     canvas.drawRRect(panelShape, bgPaint);
 
-    // 边框（上圆下直角，半透明 0.7）
+    // 边框（上圆下直角，半透明，主方色更亮以示区分）
     _cachedBorderShader ??= LinearGradient(
       colors: [
-        const Color(0xFF4A90E2).withValues(alpha: 0.7),
-        const Color(0xFF357ABD).withValues(alpha: 0.7),
-        const Color(0xFF4A90E2).withValues(alpha: 0.7),
+        (isMe ? const Color(0xFF6D8CFF) : const Color(0xFF8CA3C6)).withValues(alpha: isMe ? 0.65 : 0.40),
+        (isMe ? const Color(0xFF4F6BF0) : const Color(0xFF6E86AC)).withValues(alpha: isMe ? 0.65 : 0.40),
+        (isMe ? const Color(0xFF6D8CFF) : const Color(0xFF8CA3C6)).withValues(alpha: isMe ? 0.65 : 0.40),
       ],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ).createShader(rect);
-
     final borderPaint = Paint()
       ..shader = _cachedBorderShader
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = 1.6;
     canvas.drawRRect(panelShape, borderPaint);
 
     // 内部光泽（仅顶部区域）
     _cachedGlossShader ??= LinearGradient(
       colors: [
-        Colors.white.withValues(alpha: 0.1),
-        Colors.white.withValues(alpha: 0.05),
+        Colors.white.withValues(alpha: 0.08),
+        Colors.white.withValues(alpha: 0.04),
         Colors.transparent,
       ],
       begin: Alignment.topCenter,
@@ -2557,6 +2591,49 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       bottomRight: const Radius.circular(0),
     );
     canvas.drawRRect(glossRect, glossPaint);
+
+    // 头像圆形底（仅信息展示时绘制）
+    if (nickName.parent != null) {
+      final Rect avatarRect = Rect.fromLTWH(_padX, _topPad, _avatarSize, _avatarSize);
+      final Paint avatarPaint = Paint()
+        ..shader = LinearGradient(
+          colors: isMe
+              ? [const Color(0xFF8FA6FF), const Color(0xFF6D8CFF)]
+              : [const Color(0xFFB7C6DD), const Color(0xFF93A1B8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(avatarRect);
+      canvas.drawRRect(RRect.fromRectAndRadius(avatarRect, Radius.circular(_avatarSize / 2)), avatarPaint);
+
+      // 角色标签胶囊底
+      final double roleChipPadX = 7 * s;
+      final double roleChipPadY = 5 * s;
+      final Rect roleChipRect = Rect.fromLTWH(
+        roleTag.x - roleTag.width - roleChipPadX,
+        roleTag.y - roleChipPadY,
+        roleTag.width + roleChipPadX * 2,
+        roleTag.height + roleChipPadY * 2,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(roleChipRect, Radius.circular(9 * s)),
+        Paint()..color = (isMe ? const Color(0xFF6D8CFF) : const Color(0xFFFFFFFF)).withValues(alpha: isMe ? 0.18 : 0.08),
+      );
+
+      // 状态胶囊底 + 呼吸圆点
+      final double capH = startedStatus.height + 8 * s;
+      final Rect capRect = Rect.fromLTWH(
+          _padX, _statusY, (startedStatus.x - _padX) + startedStatus.width + 7 * s, capH);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(capRect, Radius.circular(9 * s)),
+        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.07),
+      );
+      final Color dotColor = player.started ? const Color(0xFF4ADE80) : const Color(0xFFFBBF24);
+      canvas.drawCircle(
+        Offset(_padX + 7 * s, _statusY + capH / 2),
+        2.5 * s,
+        Paint()..color = dotColor,
+      );
+    }
   }
 }
 
@@ -2738,9 +2815,18 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
   }
 }
 
+/// 按钮视觉层级（主 / 次 / 三级）
+enum ButtonStyle {
+  /// 主行动：强调填充（星际靛蓝）
+  primary,
+  /// 次级：玻璃描边
+  secondary,
+  /// 三级：幽灵弱化（离开等）
+  tertiary,
+}
+
 class MyButtonTextComponent extends TextComponent {
-  late Color borderColor;
-  late Color backColor;
+  final ButtonStyle style;
   late MyGame myGame;
   late bool isPressed;
   final double opacity; // 0.0 ~ 1.0 半透明系数
@@ -2760,8 +2846,8 @@ class MyButtonTextComponent extends TextComponent {
   Shader? _cachedShader;
   bool? _shaderWasPressed;
 
-  MyButtonTextComponent(String text, TextPaint originalRenderer, this.backColor, this.borderColor, this.myGame, double initialVerticalPadding,
-      {this.isPressed = false, this.opacity = 0.8})
+  MyButtonTextComponent(String text, TextPaint originalRenderer, this.style, this.myGame, double initialVerticalPadding,
+      {this.isPressed = false, this.opacity = 1.0})
       : _verticalPadding = initialVerticalPadding,
         super(text: text, position: Vector2.zero()) {
     // 预先缩放透明度
@@ -2827,6 +2913,32 @@ class MyButtonTextComponent extends TextComponent {
     }
   }
 
+  List<Color> _gradientColors(bool pressed) {
+    switch (style) {
+      case ButtonStyle.primary:
+        return pressed
+            ? [const Color(0xFF4F6BF0), const Color(0xFF6D8CFF)]
+            : [const Color(0xFF6D8CFF), const Color(0xFF4F6BF0)];
+      case ButtonStyle.secondary:
+        return pressed
+            ? [const Color(0xB32A3250), const Color(0xA6202838)]
+            : [const Color(0xD92A3550), const Color(0xC61F2A40)];
+      case ButtonStyle.tertiary:
+        return [const Color(0x00000000), const Color(0x00000000)];
+    }
+  }
+
+  Color _borderColorFor(bool pressed) {
+    switch (style) {
+      case ButtonStyle.primary:
+        return const Color(0xFF9BB0FF).withValues(alpha: pressed ? 0.55 : 0.85);
+      case ButtonStyle.secondary:
+        return const Color(0xFFFFFFFF).withValues(alpha: pressed ? 0.30 : 0.50);
+      case ButtonStyle.tertiary:
+        return const Color(0x00000000);
+    }
+  }
+
   @override
   void render(Canvas canvas) {
     // 使用预先计算好的 size 和布局信息 
@@ -2840,26 +2952,11 @@ class MyButtonTextComponent extends TextComponent {
     // 绘制渐变背景
     if (_cachedShader == null || _shaderWasPressed != isPressed) {
       _shaderWasPressed = isPressed;
-      if (isPressed) {
-        _cachedShader = LinearGradient(
-          colors: [
-            scaleAlpha(const Color(0xFF2E5F8A), opacity),
-            scaleAlpha(const Color(0xFF357ABD), opacity),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ).createShader(rect);
-      } else {
-        _cachedShader = LinearGradient(
-          colors: [
-            scaleAlpha(const Color(0xFF4A90E2), opacity),
-            scaleAlpha(const Color(0xFF357ABD), opacity),
-            scaleAlpha(const Color(0xFF2E5F8A), opacity),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ).createShader(rect);
-      }
+      _cachedShader = LinearGradient(
+        colors: _gradientColors(isPressed).map((c) => scaleAlpha(c, opacity)).toList(),
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(rect);
     }
 
     Paint backgroundPaint = Paint()..shader = _cachedShader;
@@ -2878,7 +2975,7 @@ class MyButtonTextComponent extends TextComponent {
 
     // 绘制边框
     Paint borderPaint = Paint()
-      ..color = (isPressed ? const Color(0xFF4A90E2) : const Color(0xFF5BA3F5)).withValues(alpha: opacity)
+      ..color = _borderColorFor(isPressed).withValues(alpha: opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawRRect(roundedRect, borderPaint);
@@ -2906,51 +3003,44 @@ class MyButtonTextComponent extends TextComponent {
   }
 }
 
+/// 依据按钮层级返回按钮文字样式
+TextPaint _buttonTextPaint(ButtonStyle style, double scale) {
+  final Color color = switch (style) {
+    ButtonStyle.primary => const Color(0xFF0B1222),
+    ButtonStyle.secondary => const Color(0xFFE7EDF7),
+    ButtonStyle.tertiary => const Color(0xFF8A97AE),
+  };
+  final List<Shadow> shadows = style == ButtonStyle.primary
+      ? const []
+      : const [Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2)];
+  return TextPaint(
+      style: TextStyle(
+          color: color,
+          fontFamily: "NotoSansSC",
+          fontSize: 15 * scale,
+          fontWeight: FontWeight.w600,
+          shadows: shadows));
+}
+
 class MyButton extends HudButtonComponent {
-  MyButton(String text, MyGame myGame)
+  MyButton(String text, MyGame myGame, {ButtonStyle style = ButtonStyle.secondary})
       : super(
             button: MyButtonTextComponent(
                 text,
-                TextPaint(
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: "NotoSansSC",
-                        fontSize: 15 * myGame.uiScale,
-                        fontWeight: FontWeight.w400,
-                        shadows: const [
-                      Shadow(
-                        color: Colors.black54,
-                        offset: Offset(1, 1),
-                        blurRadius: 2,
-                      ),
-                    ])),
-                const Color(0xFF4A90E2),
-                const Color(0xFF5BA3F5),
+                _buttonTextPaint(style, myGame.uiScale),
+                style,
                 myGame,
                 44.0, // 普通态按钮的垂直内边距（默认更高）
                 isPressed: false,
-                opacity: 0.8),
+                opacity: 1.0),
             buttonDown: MyButtonTextComponent(
                 text,
-                TextPaint(
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: "NotoSansSC",
-                        fontSize: 15 * myGame.uiScale,
-                        fontWeight: FontWeight.w400,
-                        shadows: const [
-                      Shadow(
-                        color: Colors.black54,
-                        offset: Offset(1, 1),
-                        blurRadius: 2,
-                      ),
-                    ])),
-                const Color(0xFF2E5F8A),
-                const Color(0xFF4A90E2),
+                _buttonTextPaint(style, myGame.uiScale),
+                style,
                 myGame,
                 44.0,
                 isPressed: true,
-                opacity: 0.8),
+                opacity: 1.0),
             position: Vector2(8, 0));
 
   set text(String text) {

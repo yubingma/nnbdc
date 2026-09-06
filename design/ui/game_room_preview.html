@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>单词对战房间 - 精致暗色对战页原型</title>
+  <style>
+    :root {
+      /* 深邃宇宙底 */
+      --app-bg: radial-gradient(160% 120% at 30% 12%, #1B2743 0%, #121A30 34%, #0B1222 68%, #060A16 100%);
+      --nebula-glow: radial-gradient(60% 50% at 76% 30%, rgba(120, 132, 220, 0.20) 0%, transparent 60%);
+
+      /* 文本层级 */
+      --text-main: #E7EDF7;
+      --text-sub: #93A1B8;
+      --text-muted: #5E6D85;
+      --text-faint: #3E4B61;
+
+      /* 卡片 */
+      --card-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.085) 0%, rgba(255, 255, 255, 0.045) 100%);
+      --card-border: rgba(255, 255, 255, 0.10);
+      --card-shadow: 0 10px 30px rgba(4, 8, 18, 0.45);
+
+      /* 主行动 - 星际靛蓝 */
+      --accent: #6D8CFF;
+      --accent-deep: #4F6BF0;
+      --accent-glow: rgba(109, 140, 255, 0.42);
+
+      /* 语义微色 */
+      --win: #4ADE80;
+      --lose: #F87171;
+      --gold: #FBBF24;
+
+      --chip-bg: rgba(255, 255, 255, 0.07);
+      --chip-border: rgba(255, 255, 255, 0.11);
+      --divider: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #060A16;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 18px 12px;
+      color: var(--text-main);
+      user-select: none;
+    }
+
+    .phone-container {
+      width: 393px;
+      height: 852px;
+      border-radius: 50px;
+      background: var(--app-bg);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 状态栏（渲染脚本会自动注入灵动岛与 Home Bar） */
+    .status-bar {
+      height: 54px;
+      padding: 16px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text-main);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 5;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 星空背景（微弱、不抢信息） */
+    .starfield {
+      position: absolute;
+      inset: 0;
+      background: var(--nebula-glow);
+      opacity: 0.9;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .starfield .star {
+      position: absolute;
+      width: 1.5px;
+      height: 1.5px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+    }
+
+    /* 内容滚动区 */
+    .room-content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 4px 18px 30px;
+    }
+
+    /* 顶部：房间号上下文（轻量行内，非大色块） */
+    .room-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 2px 18px;
+    }
+    .room-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      color: var(--text-sub);
+    }
+    .room-eyebrow .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+    .room-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      border-radius: 12px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.2px;
+    }
+
+    /* 对战台：左右对阵卡 + VS */
+    .arena {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .vs-badge {
+      align-self: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      box-shadow: 0 0 16px var(--accent-glow);
+      flex-shrink: 0;
+    }
+
+    /* 玩家信息计分板卡片 */
+    .pcard {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 12px 13px 13px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      width: 100%;
+      min-width: 0;
+    }
+    .pcard.me { border-color: rgba(109, 140, 255, 0.35); }
+
+    .pcard-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #0B1222;
+      flex-shrink: 0;
+    }
+    .avatar.me { background: linear-gradient(135deg, #8FA6FF, #6D8CFF); }
+    .avatar.opp { background: linear-gradient(135deg, #B7C6DD, #93A1B8); }
+    .pname-wrap { min-width: 0; flex: 1; }
+    .pname {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pname-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+    .role-tag {
+      flex-shrink: 0;
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      padding: 2px 7px;
+      border-radius: 8px;
+    }
+    .role-tag.me { background: rgba(109, 140, 255, 0.16); color: var(--accent); }
+    .role-tag.opp { background: rgba(255, 255, 255, 0.08); color: var(--text-muted); }
+
+    /* 2x2 指标网格：label(小灰) + value(大号现代数字) */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 8px;
+    }
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .metric .label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.1px;
+    }
+    .metric .value {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-main);
+      line-height: 1.1;
+    }
+    .metric.gold .value { color: var(--gold); }
+    .metric.score .value { color: var(--accent); }
+    .metric.record .value { font-size: 14.5px; letter-spacing: -0.2px; font-weight: 600; color: var(--text-sub); }
+
+    /* 状态胶囊 */
+    .pcard-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      align-self: flex-start;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-sub);
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      border-radius: 9px;
+      padding: 3px 9px;
+    }
+    .pcard-status .pulse {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 6px rgba(251, 191, 36, 0.7);
+    }
+    .pcard-status.ready { color: var(--win); }
+    .pcard-status.ready .pulse { background: var(--win); box-shadow: 0 0 6px rgba(74, 222, 128, 0.7); }
+
+    /* 道具按钮区 */
+    .props {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 20px 0 6px;
+    }
+    .prop-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: var(--text-main);
+      backdrop-filter: blur(10px);
+    }
+    .prop-btn .glyph { font-size: 24px; font-weight: 500; }
+    .prop-count {
+      position: absolute;
+      right: -5px;
+      top: -5px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #8FA6FF, #6D8CFF);
+      color: #0B1222;
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(109, 140, 255, 0.45);
+    }
+
+    /* 行动区按钮：有主次的层级 */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: auto;
+      padding-top: 22px;
+    }
+    .btn {
+      width: 100%;
+      height: 52px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: transform 0.12s;
+    }
+    .btn:active { transform: scale(0.985); }
+
+    /* 主行动 - 星际靛蓝填充 */
+    .btn.primary {
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-deep) 100%);
+      color: #0B1222;
+      box-shadow: 0 8px 22px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+    .btn.primary .glyph { font-size: 16px; }
+
+    /* 次级 - 玻璃描边 + 图标 */
+    .btn.secondary {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      backdrop-filter: blur(10px);
+    }
+    .btn.secondary .glyph { font-size: 15px; color: var(--text-sub); }
+
+    /* 三级 - 危险幽灵（弱化） */
+    .btn.tertiary {
+      background: transparent;
+      color: var(--text-muted);
+      height: 44px;
+      font-weight: 600;
+      font-size: 13.5px;
+    }
+
+    /* 换房间按钮右侧的房号小胶囊 */
+    .btn .sub-chip {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.09);
+      border-radius: 8px;
+      padding: 1px 7px;
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      color: var(--text-main);
+      margin-left: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 设计器切换栏（渲染脚本会隐藏） -->
+  <div class="designer-toolbar" style="width:100%;max-width:393px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;padding:4px 6px;">
+    <span style="font-size:13px;font-weight:700;color:#AAB7CE;">🎮 单词对战房间 - 精致暗色对战页</span>
+  </div>
+
+  <!-- 手机外壳 -->
+  <div class="phone-container">
+
+    <!-- 星空背景 -->
+    <div class="starfield">
+      <div class="star" style="left:12%;top:16%;"></div>
+      <div class="star" style="left:78%;top:9%;"></div>
+      <div class="star" style="left:30%;top:30%;"></div>
+      <div class="star" style="left:88%;top:44%;"></div>
+      <div class="star" style="left:8%;top:52%;"></div>
+      <div class="star" style="left:60%;top:22%;"></div>
+      <div class="star" style="left:46%;top:62%;"></div>
+      <div class="star" style="left:22%;top:72%;"></div>
+      <div class="star" style="left:72%;top:78%;"></div>
+      <div class="star" style="left:40%;top:84%;"></div>
+    </div>
+
+    <!-- 顶部状态栏 -->
+    <div class="status-bar">
+      <span>08:52</span>
+      <div class="status-icons">
+        <svg width="15" height="11" viewBox="0 0 17 12" fill="currentColor">
+          <rect x="0" y="8" width="2.5" height="4" rx="0.8"/>
+          <rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/>
+          <rect x="9" y="3" width="2.5" height="9" rx="0.8"/>
+          <rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/>
+        </svg>
+        <span style="font-size:11px;font-weight:800;letter-spacing:-0.3px;">5G</span>
+        <svg width="22" height="11" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/>
+          <rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/>
+          <path d="M22 4.5v3" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 对战房间内容 -->
+    <div class="room-content">
+
+      <!-- 顶部：房间号上下文 -->
+      <div class="room-header">
+        <div class="room-eyebrow"><span class="dot"></span>对战房间 · 词汇竞速</div>
+        <div class="room-chip">🔑 房号 7</div>
+      </div>
+
+      <!-- 左右对阵卡 -->
+      <div class="arena">
+        <!-- 左侧：我 -->
+        <div class="pcard me">
+          <div class="pcard-head">
+            <div class="avatar me">A</div>
+            <div class="pname-wrap">
+              <div class="pname">apple…</div>
+              <div class="pname-sub">游戏分 0</div>
+            </div>
+            <div class="role-tag me">我</div>
+          </div>
+          <div class="metric-grid">
+            <div class="metric score">
+              <span class="label">游戏分</span>
+              <span class="value">0</span>
+            </div>
+            <div class="metric gold">
+              <span class="label">魔法泡泡</span>
+              <span class="value">35</span>
+            </div>
+            <div class="metric record">
+              <span class="label">胜负</span>
+              <span class="value">0｜0</span>
+            </div>
+            <div class="metric record">
+              <span class="label">胜率</span>
+              <span class="value">—</span>
+            </div>
+          </div>
+          <div class="pcard-status"><span class="pulse"></span>未开始…</div>
+        </div>
+
+        <div class="vs-badge">VS</div>
+
+        <!-- 右侧：对手 -->
+        <div class="pcard opp">
+          <div class="pcard-head">
+            <div class="avatar opp">V</div>
+            <div class="pname-wrap">
+              <div class="pname">violet…</div>
+              <div class="pname-sub">游戏分 0</div>
+            </div>
+            <div class="role-tag opp">对手</div>
+          </div>
+          <div class="metric-grid">
+            <div class="metric score">
+              <span class="label">游戏分</span>
+              <span class="value">0</span>
+            </div>
+            <div class="metric gold">
+              <span class="label">魔法泡泡</span>
+              <span class="value">52</span>
+            </div>
+            <div class="metric record">
+              <span class="label">胜负</span>
+              <span class="value">1｜26</span>
+            </div>
+            <div class="metric record">
+              <span class="label">胜率</span>
+              <span class="value">3%</span>
+            </div>
+          </div>
+          <div class="pcard-status"><span class="pulse"></span>未开始…</div>
+        </div>
+      </div>
+
+      <!-- 道具按钮 -->
+      <div class="props">
+        <button class="prop-btn"><span class="glyph">−</span><span class="prop-count">3</span></button>
+        <button class="prop-btn"><span class="glyph">＋</span><span class="prop-count">2</span></button>
+      </div>
+
+      <!-- 行动按钮：层级分明 -->
+      <div class="actions">
+        <button class="btn primary"><span class="glyph">▶</span>开始比赛</button>
+        <button class="btn secondary"><span class="glyph">⇄</span>换房间<span class="sub-chip">7</span></button>
+        <button class="btn secondary"><span class="glyph">✦</span>单人练习</button>
+        <button class="btn tertiary">离开</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
