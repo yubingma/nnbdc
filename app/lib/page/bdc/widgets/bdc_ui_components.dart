@@ -1281,23 +1281,35 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isAnswered =
         state.selectedAnswerIndex != null || state.hasFinishedAnswering;
     final isCh2En = state.studyStep == StudyStep.ch2En.json;
+    final isDarkMode = _cachedIsDarkMode;
 
     return Column(
       children: [
-        for (var index = 0; index < (state.words?.length ?? 0); index++)
+        for (var index = 0; index < (state.words?.length ?? 0); index++) ...[
+          // 极简分组：仅用发丝分隔线区隔选项，不再为每个选项塞独立卡片
+          if (index > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16),
+              child: Divider(
+                height: 1,
+                thickness: 0.5,
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.055),
+              ),
+            ),
           Builder(
             builder: (context) {
               Color bgColor;
               Color borderColor;
               double borderWidth = 1.0;
-              final isDarkMode = _cachedIsDarkMode;
               final word = state.words?[index];
 
               if (state.selectedAnswerIndex != null) {
                 if ((index + 1) == state.correctAnswerIndex) {
                   bgColor = context.subtleBg;
                   borderColor = context.primaryColor;
-                  borderWidth = 1.5;
+                  borderWidth = 1.2;
                 } else if ((index + 1) == state.selectedAnswerIndex) {
                   bgColor = isDarkMode
                       ? const Color(0xFF2A1614)
@@ -1305,14 +1317,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                   borderColor = isDarkMode
                       ? const Color(0xFFFF7E6C)
                       : const Color(0xFFFA6E59);
-                  borderWidth = 1.5;
+                  borderWidth = 1.2;
                 } else {
-                  bgColor = context.cardBg;
-                  borderColor = context.cardBorder;
+                  // 未作答 / 未命中的选项：融入面板，不铺底色
+                  bgColor = Colors.transparent;
+                  borderColor = Colors.transparent;
                 }
               } else {
-                bgColor = context.cardBg;
-                borderColor = context.cardBorder;
+                bgColor = Colors.transparent;
+                borderColor = Colors.transparent;
               }
 
               List<BoxShadow> choiceShadows;
@@ -1321,9 +1334,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                 choiceShadows = [
                   BoxShadow(
                     color: context.primaryColor
-                        .withValues(alpha: isDarkMode ? 0.28 : 0.2),
-                    blurRadius: 18,
-                    offset: const Offset(0, 4),
+                        .withValues(alpha: isDarkMode ? 0.22 : 0.16),
+                    blurRadius: 14,
+                    offset: const Offset(0, 3),
                   ),
                 ];
               } else if (state.selectedAnswerIndex != null &&
@@ -1331,28 +1344,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                 choiceShadows = [
                   BoxShadow(
                     color: const Color(0xFFEF4444)
-                        .withValues(alpha: isDarkMode ? 0.28 : 0.2),
-                    blurRadius: 18,
-                    offset: const Offset(0, 4),
+                        .withValues(alpha: isDarkMode ? 0.22 : 0.16),
+                    blurRadius: 14,
+                    offset: const Offset(0, 3),
                   ),
                 ];
               } else {
-                choiceShadows = isDarkMode
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.16),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color:
-                              const Color(0xFF0F172A).withValues(alpha: 0.035),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ];
+                choiceShadows = const [];
               }
 
               return Padding(
@@ -1396,6 +1394,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               );
             },
           ),
+        ],
       ],
     );
   }
