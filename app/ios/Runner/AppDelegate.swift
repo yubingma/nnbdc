@@ -59,9 +59,13 @@ import StoreKit
         // DO NOT ACCESS window?.rootViewController BEFORE super.application()
         // OR WITHOUT CREATING IT, especially if SceneDelegate is not yet taking over correctly.
         // It's safer to let the engine initialize first.
+        let nativeStart = Date()
+        print("IOS启动: didFinishLaunching 开始")
         let result = super.application(application, didFinishLaunchingWithOptions: launchOptions)
+        print(String(format: "IOS启动: super.application(engine init) 完成 +%.2fs", Date().timeIntervalSince(nativeStart)))
         
         GeneratedPluginRegistrant.register(with: self)
+        print(String(format: "IOS启动: plugin 注册 完成 +%.2fs", Date().timeIntervalSince(nativeStart)))
 
         // Ensure window exists or create it
         if window == nil {
@@ -168,6 +172,7 @@ import StoreKit
             object: audioEngine
         )
         
+        print(String(format: "IOS启动: didFinishLaunchingWithOptions 完成 +%.2fs", Date().timeIntervalSince(nativeStart)))
         return result
     }
 

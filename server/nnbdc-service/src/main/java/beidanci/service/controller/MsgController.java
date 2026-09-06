@@ -87,7 +87,7 @@ public class MsgController {
      * @throws IOException
      */
     @PutMapping("/setMsgsAsViewed.do")
-    public Result<Void> setMsgsAsViewed(@RequestParam(name = "msgIds") List<String> msgIds,
+    public Result<Void> setMsgsAsViewed(@RequestParam(name = "msgIds", required = false) List<String> msgIds,
                                         @RequestParam(name = "userId") String userId) {
         msgBo.setMsgsAsViewed(msgIds, userId, userBo);
         return Result.success(null);

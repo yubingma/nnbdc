@@ -1174,7 +1174,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           width: double.infinity,
-          height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(25),
             gradient: LinearGradient(
@@ -1210,6 +1209,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               shadowColor: Colors.transparent,
               foregroundColor: buttonFgColor,
               elevation: 0,
+              // 按钮高度由"内容 + 固定 padding"自适应决定，而不是写死 height：
+              // iPad 等大屏字体度量偏大时文字行高随之变高，按钮自动变高，文字不会被 ClipRRect 裁掉
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              minimumSize: const Size(0, 0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
             ),
         onPressed: () async {

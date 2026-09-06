@@ -70,14 +70,21 @@ void main() async {
   // 使用Zone捕获所有未处理的异步异常
   runZonedGuarded(
     () async {
+      final DateTime t0 = DateTime.now();
+      void logMark(String label) =>
+          debugPrint('[启动耗时] $label: ${DateTime.now().difference(t0).inMilliseconds}ms');
+
       // 确保Flutter绑定已初始化（在同一个zone中）
       WidgetsFlutterBinding.ensureInitialized();
-      
+      logMark('ensureInitialized');
+
       // 初始化开发期性能哨兵
       PerformanceWatchdog.init();
+      logMark('PerformanceWatchdog.init');
       
       // 初始化存储（必须在检查隐私版本前）
       await Prefs.init();
+      logMark('Prefs.init');
 
       // 隐私政策版本检查
       const int currentPrivacyVersion = 20260310;
@@ -183,6 +190,7 @@ void main() async {
       // 尝试部署预置数据库（黄金母版）
       // 注意：必须在 runApp 之前调用，确保在应用 UI 初始化（可能会触发数据库访问）之前完成数据库文件的部署
       await MyDatabase.initPrepopulatedDb();
+      logMark('initPrepopulatedDb');
 
       runApp(
         ProviderScope(
@@ -198,9 +206,12 @@ void main() async {
         ),
       );
 
+      logMark('runApp 调用完成');
+
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
           // 这里不再需要再次 init() 了，main() 顶部已经做过了
+          logMark('首帧回调(第一帧已渲染)');
 
           if (PlatformUtils.isAndroid) {
             await FlutterDownloader.initialize(debug: true);
@@ -212,6 +223,7 @@ void main() async {
           // 初始化数据库并确保数据库完整性
           MyDatabase.instance;
           await MyDatabase.ensureDatabaseIntegrity();
+          logMark('ensureDatabaseIntegrity');
 
           // 静默后台初始化本地高维向量缓存
           unawaited(LocalEmbeddingCache.instance.initialize(MyDatabase.instance).catchError((e) {
@@ -230,9 +242,11 @@ void main() async {
               await Global.logout();
             }
           }
+          logMark('loadUserFromDb + handleAutoLogin');
 
           // 检查并强制执行会员限制（非会员每日单词限额 20）
           await SubscriptionUtil.checkAndEnforceMemberLimits();
+          logMark('checkAndEnforceMemberLimits');
 
           // 初始化通知服务并安排每日提醒
           try {
@@ -241,6 +255,7 @@ void main() async {
           } catch (e) {
             Global.logger.e('初始化通知失败: $e');
           }
+          logMark('NotificationUtil.init + scheduleDailyReminder');
 
           // 初始化 AI 运行时（Apple 平台，如果已下载模型且用户是管理员）
           if ((PlatformUtils.isMacOS || PlatformUtils.isIOS) && Global.getLoggedInUser()?.isAdmin == true) {
@@ -253,6 +268,7 @@ void main() async {
               Global.logger.w('后台准备手写识别模型失败: $e');
             }));
           }
+          logMark('首帧回调完毕');
         } catch (e, stackTrace) {
           // 初始化过程中的错误
           // 同时将错误写入全局状态，供启动页展示（不是toast）

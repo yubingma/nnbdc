@@ -495,11 +495,12 @@ class MsgPageState extends State<MsgPage> {
 
   @override
   void dispose() {
-    List<String> msgIds = [];
-    for (var msg in msgs) {
-      msgIds.add(msg.id);
+    final List<String> msgIds = msgs.map((m) => m.id).toList();
+    final user = Global.getLoggedInUser();
+    // 没有消息（或未登录）时无需请求后端，避免空列表导致服务端 400
+    if (msgIds.isNotEmpty && user != null) {
+      Api.client.setMsgsAsViewed(msgIds, user.id);
     }
-    Api.client.setMsgsAsViewed(msgIds, Global.getLoggedInUser()!.id);
     _messageController.dispose();
     _focusNode.dispose();
     _scrollController.dispose();

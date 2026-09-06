@@ -123,22 +123,37 @@ class _LightGlowPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    // 2) 三团柔和光晕
+    // 2) 三团柔和光晕：主光晕为主题色；右上用"冷暖对照色"点缀，形成冷暖交织的氛围
+    final accentGlow = _accentGlowColor(cfg);
     _glow(canvas,
-        center: Offset(size.width * 0.12, size.height * 0.10),
-        radius: size.width * 0.58,
-        color: Color.lerp(cfg.primaryColor, Colors.white, 0.48)!,
-        alpha: 0.18);
+        center: Offset(size.width * 0.10, size.height * 0.08),
+        radius: size.width * 0.64,
+        color: Color.lerp(cfg.primaryColor, Colors.white, 0.22)!,
+        alpha: 0.30);
     _glow(canvas,
-        center: Offset(size.width * 0.94, size.height * 0.28),
-        radius: size.width * 0.62,
-        color: Color.lerp(cfg.primaryColor, Colors.white, 0.68)!,
-        alpha: 0.13);
+        center: Offset(size.width * 0.95, size.height * 0.26),
+        radius: size.width * 0.68,
+        color: accentGlow,
+        alpha: 0.20);
     _glow(canvas,
-        center: Offset(size.width * 0.42, size.height * 1.00),
-        radius: size.width * 0.80,
-        color: Color.lerp(cfg.primaryColor, Colors.white, 0.42)!,
-        alpha: 0.10);
+        center: Offset(size.width * 0.42, size.height * 0.98),
+        radius: size.width * 0.88,
+        color: Color.lerp(cfg.primaryColor, Colors.white, 0.16)!,
+        alpha: 0.26);
+  }
+
+  /// 冷暖对照点缀色：
+  /// 冷色主题(蓝/青/靛/青绿)配柔和的暖沙金，暖色主题(橘/红/黄)配柔和的冷青，
+  /// 让光晕在主题色之外多一层冷暖交互的氛围；低饱和主题(如极简白墨)不做冷暖点缀，退回中性灰。
+  Color _accentGlowColor(AppThemeConfig cfg) {
+    final hsv = HSVColor.fromColor(cfg.primaryColor);
+    if (hsv.saturation < 0.15) {
+      return Color.lerp(cfg.primaryColor, Colors.white, 0.30)!;
+    }
+    final isWarm = hsv.hue < 70 || hsv.hue > 320;
+    return isWarm
+        ? Color.lerp(const Color(0xFF79B8D8), Colors.white, 0.35)!
+        : Color.lerp(const Color(0xFFE8B87E), Colors.white, 0.35)!;
   }
 
   void _glow(Canvas canvas,
@@ -148,8 +163,13 @@ class _LightGlowPainter extends CustomPainter {
       required double alpha}) {
     final paint = Paint()
       ..shader = RadialGradient(
-        colors: [color.withValues(alpha: alpha), color.withValues(alpha: 0.0)],
-        stops: const [0.0, 1.0],
+        // 用三段平缓衰减(中心→55%→边缘)，让光晕过渡柔和、明暗波动更小
+        colors: [
+          color.withValues(alpha: alpha),
+          color.withValues(alpha: alpha * 0.55),
+          color.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, paint);
   }

@@ -354,6 +354,11 @@ public class MsgBo extends BaseBo<Msg> {
      * @param msgIds
      */
     public void setMsgsAsViewed(List<String> msgIds, String userId, UserBo userBo) {
+        // 没有需要置为已读的消息时，视为空操作，避免 `IN ()` 非法 SQL 或空列表被拒
+        if (msgIds == null || msgIds.isEmpty()) {
+            return;
+        }
+
         String sql = "UPDATE msg SET viewed = true WHERE id IN (:ids) AND (to_user_id = :userId OR from_user_id = :userId)";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("ids", msgIds);

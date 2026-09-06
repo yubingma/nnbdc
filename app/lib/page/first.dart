@@ -35,6 +35,10 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
   // 轻微呼吸动画
   late AnimationController _splashController;
 
+  final DateTime _startT = DateTime.now();
+  void _mark(String label) =>
+      debugPrint('[启动-FirstPage] $label: ${DateTime.now().difference(_startT).inMilliseconds}ms');
+
   @override
   void initState() {
     super.initState();
@@ -56,13 +60,18 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
   // --- 启动流程 ---
 
   void _checkPrivacyAndProceed() async {
+    _mark('_checkPrivacyAndProceed 开始');
     const int currentPrivacyVersion = 20260310;
     int acceptedVersion = Prefs.read<int>('accepted_privacy_version') ?? 0;
 
     if (acceptedVersion < currentPrivacyVersion) {
+      _mark('未同意最新隐私协议 → 弹隐私框');
       _showPrivacyDialog();
     } else {
-      _initVersion().then((_) => checkNewVersion());
+      _initVersion().then((_) {
+        _mark('_initVersion 完成');
+        checkNewVersion();
+      });
     }
   }
 
@@ -88,6 +97,7 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
       final currentBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
       
       final info = await updateNotifier.checkForUpdateOnStartup(currentBuild);
+      _mark('checkForUpdateOnStartup 完成');
 
       if (info != null) {
         String downloadUrl = Config.apkUrl;
@@ -132,17 +142,21 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
       if (user != null && user.id != Global.guestId) {
         // 自动登录逻辑...
         final result = await UserBo().getLoggedInUser();
+        _mark('getLoggedInUser 完成');
         if (result.success && result.data != null) {
           await Global.setLoggedInUser(result.data!);
           SubscriptionUtil.restorePurchases(showToast: false);
+          _mark('→ 跳转 /index');
           if (mounted) context.go("/index", extra: IndexPageArgs(0));
         } else {
+          _mark('→ 跳转 /login (用户未登录)');
           if (mounted) context.go("/login");
         }
       } else {
         if (user?.id == Global.guestId) {
           await Global.logout();
         }
+        _mark('→ 跳转 /login (无用户/游客)');
         if (mounted) context.go("/login");
       }
     } catch (e) {
