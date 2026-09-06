@@ -3,9 +3,10 @@ import 'app_theme.dart';
 
 /// 全局自适应主题背景层组件
 ///
-/// 浅色模式：**以白色为主的高亮透光背景** + 几团柔和的主题色光晕（Radial 光斑）。
-/// 让页面整体明亮通透，避免"低饱和色调渐变"在大屏(如 iPad)上被放大成灰暗、不通透。
-/// 深色模式：保留贯满全屏的"浅→深"纵向渐变带（带主题色相，无中心热点、无边缘骤退）。
+/// 浅色模式按屏幕分档：
+/// - **窄高屏(手机，宽高比<0.62)**：低饱和的莫兰迪单色渐变(同主题色相，顶部浅→底部深，无光晕)；
+/// - **方正屏(iPad/桌面，宽高比>=0.62)**：白底 + 主题色柔光晕(保持已认可的 iPad 质感)。
+/// 深色模式：保留贯满全屏的"浅→深"纵向渐变带(带主题色相，无中心热点、无边缘骤退)。
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
   final bool? isDarkMode;
@@ -23,12 +24,17 @@ class AppThemeBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!_resolveIsDark(context)) return _buildLightGlow(themeStyle);
-    final (top, mid, bottom) = _darkGradient(themeStyle);
-    return _buildVerticalGradient(top, mid, bottom);
+    if (_resolveIsDark(context)) {
+      final (top, mid, bottom) = _darkGradient(themeStyle);
+      return _buildVerticalGradient(top, mid, bottom);
+    }
+    // 窄高屏(手机)用莫兰迪单色渐变；方正屏(iPad/桌面)保留白底+光晕
+    final size = MediaQuery.of(context).size;
+    final isNarrow = size.width / size.height < 0.62;
+    return isNarrow ? _buildLightMutedGradient(themeStyle) : _buildLightGlow(themeStyle);
   }
 
-  /// 深色模式：统一垂直渐变构建器，三段色贯穿全屏，上半段保持轻盈、下半段更快沉深
+  /// 统一垂直渐变构建器：三段色贯穿全屏，上半段保持轻盈、下半段更快沉深
   Widget _buildVerticalGradient(Color top, Color mid, Color bottom) {
     return Container(
       decoration: BoxDecoration(
@@ -42,7 +48,20 @@ class AppThemeBackground extends StatelessWidget {
     );
   }
 
-  /// 浅色模式：白色高亮底 + 柔和主题色光晕（用 CustomPainter 以归一化坐标绘制，任意尺寸自适应）
+  /// 浅色·手机：低饱和单色渐变 —— 以主题色为基，降饱和度、调整明度，
+  /// 生成"顶部浅 → 底部深"的同色相莫兰迪渐变(无光晕、安静统一)。
+  Widget _buildLightMutedGradient(AppThemeStyle style) {
+    final hsl = HSLColor.fromColor(AppThemeConfig.of(style).primaryColor);
+    Color shade(double sat, double light) =>
+        hsl.withSaturation(sat).withLightness(light).toColor();
+    return _buildVerticalGradient(
+      shade(0.14, 0.79),
+      shade(0.14, 0.68),
+      shade(0.14, 0.56),
+    );
+  }
+
+  /// 浅色·iPad/桌面：白色高亮底 + 柔和主题色光晕
   Widget _buildLightGlow(AppThemeStyle style) {
     return CustomPaint(
       painter: _LightGlowPainter(style),
@@ -99,10 +118,9 @@ class AppThemeBackground extends StatelessWidget {
       };
 }
 
-/// 白色底 + 主题色光晕的绘制器
+/// 白底 + 主题色光晕绘制器(用于 iPad/桌面方正屏)
 ///
-/// 光晕采用**主题色的同色系深浅渐变**(主题色 → 半浓 → 透明)，不掺白，
-/// 色感更纯、更统一，不发灰；三团光晕用略不同的浓度制造层次。
+/// 基础：纯白 → 极浅冷白的纵向渐变；再叠加三团主题色同色系柔光晕。
 class _LightGlowPainter extends CustomPainter {
   final AppThemeStyle style;
   _LightGlowPainter(this.style);
@@ -112,7 +130,7 @@ class _LightGlowPainter extends CustomPainter {
     final cfg = AppThemeConfig.of(style);
     final rect = Offset.zero & size;
 
-    // 1) 基础底色：纯白 → 极浅冷白，整体偏白、更明亮，同时保留让卡片浮起的明度差
+    // 1) 基础底色：纯白 → 极浅冷白，保持明亮、给卡片留明度差
     canvas.drawRect(
       rect,
       Paint()
@@ -123,27 +141,22 @@ class _LightGlowPainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    // 2) 三团柔和光晕：统一用主题色的同色系深浅渐变(主题色 → 半浓 → 透明)，不掺白，色感更纯、更统一。
-    //    按屏幕宽高比分档适配：
-    //    - 窄高屏(手机, 宽高比<0.62)：光晕用长边为基准、纵向分布更均匀、浓度更低、饱和度也略降，避免小屏上偏浓；
-    //    - 方正屏(iPad/桌面, 宽高比>=0.62)：保持原参数(宽为基准、原始主题色)，维持已认可的均匀效果。
-    final aspect = size.width / size.height;
-    final isNarrow = aspect < 0.62;
-    final base = isNarrow ? size.longestSide : size.width;
-    final color =
-        isNarrow ? Color.lerp(cfg.primaryColor, cfg.primaryDarkColor, 0.5)! : cfg.primaryColor;
-    final centers = isNarrow
-        ? const [Offset(0.16, 0.16), Offset(0.94, 0.20), Offset(0.50, 1.02)]
-        : const [Offset(0.16, 0.26), Offset(0.94, 0.30), Offset(0.48, 1.00)];
-    final radii = isNarrow ? const [0.58, 0.52, 0.56] : const [0.80, 0.78, 0.98];
-    final alphas = isNarrow ? const [0.24, 0.20, 0.19] : const [0.28, 0.24, 0.27];
-    for (int i = 0; i < centers.length; i++) {
-      _glow(canvas,
-          center: Offset(size.width * centers[i].dx, size.height * centers[i].dy),
-          radius: base * radii[i],
-          color: color,
-          alpha: alphas[i]);
-    }
+    // 2) 三团主题色柔光晕(同色系) —— iPad 认可的宽屏参数
+    _glow(canvas,
+        center: Offset(size.width * 0.16, size.height * 0.26),
+        radius: size.width * 0.80,
+        color: cfg.primaryColor,
+        alpha: 0.28);
+    _glow(canvas,
+        center: Offset(size.width * 0.94, size.height * 0.30),
+        radius: size.width * 0.78,
+        color: cfg.primaryColor,
+        alpha: 0.24);
+    _glow(canvas,
+        center: Offset(size.width * 0.48, size.height * 1.00),
+        radius: size.width * 0.98,
+        color: cfg.primaryColor,
+        alpha: 0.27);
   }
 
   void _glow(Canvas canvas,
@@ -153,7 +166,6 @@ class _LightGlowPainter extends CustomPainter {
       required double alpha}) {
     final paint = Paint()
       ..shader = RadialGradient(
-        // 用三段平缓衰减(中心→55%→边缘)，让光晕过渡柔和、明暗波动更小
         colors: [
           color.withValues(alpha: alpha),
           color.withValues(alpha: alpha * 0.55),
