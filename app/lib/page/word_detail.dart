@@ -2008,7 +2008,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：浅灰色单词不在当前词书内，请酌情学习。',
+                      '注：浅灰色单词不在你的学习范围内，请酌情学习。',
                       style: TextStyle(
                         fontSize: 12,
                         color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -2195,7 +2195,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               final lowerSpell = spell.toLowerCase().trim();
 
               final Color spellColor = item.inDict
-                  ? (isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A))
+                  ? context.primaryColor
                   : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
               final Color descColor = item.inDict
                   ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
@@ -3109,7 +3109,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：推荐了拼写相近的单词。浅灰色单词不在当前词书内。',
+                      '注：推荐了拼写相近的单词。浅灰色单词不在你的学习范围内。',
                       style: TextStyle(
                         fontSize: 12,
                         color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -3138,7 +3138,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           final inDict = _wordInDictStatus[word.id!] ?? true;
 
           final Color spellColor = inDict
-              ? (isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A))
+              ? context.primaryColor
               : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
           final Color descColor = inDict
               ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
@@ -3290,7 +3290,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：系统推荐了在相似语境中常出现的单词。浅灰色单词不在当前词书内。',
+                      '注：系统推荐了在相似语境中常出现的单词。浅灰色单词不在你的学习范围内。',
                       style: TextStyle(
                         fontSize: 12,
                         color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -3319,7 +3319,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           final inDict = _wordInDictStatus[word.id!] ?? true;
 
           final Color spellColor = inDict
-              ? (isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A))
+              ? context.primaryColor
               : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
           final Color descColor = inDict
               ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))

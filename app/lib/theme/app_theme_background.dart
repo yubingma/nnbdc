@@ -51,9 +51,9 @@ class AppThemeBackground extends StatelessWidget {
             const Color(0xFFA1B2BC),
           ),
         AppThemeStyle.emerald => (
-            const Color(0xFFCAD5CF),
-            const Color(0xFFBBCAC4),
-            const Color(0xFF9FB4AF),
+            const Color(0xFFD4DCB2),
+            const Color(0xFFC8D2A5),
+            const Color(0xFFA8B678),
           ),
         AppThemeStyle.sunset => (
             const Color(0xFFE1D7D2),
@@ -99,9 +99,9 @@ class AppThemeBackground extends StatelessWidget {
             const Color(0xFF040D17),
           ),
         AppThemeStyle.emerald => (
-            const Color(0xFF0F221C),
-            const Color(0xFF0C1A16),
-            const Color(0xFF0A1411),
+            const Color(0xFF1E2A14),
+            const Color(0xFF182412),
+            const Color(0xFF121E0E),
           ),
         AppThemeStyle.sunset => (
             const Color(0xFF280E06),

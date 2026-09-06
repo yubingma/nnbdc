@@ -34,17 +34,17 @@ void main() {
       }
     });
 
-    test('经典翡翠 (emerald) 精准契合扇贝生机绿与温润珊瑚橙双态美学', () {
+    test('清新草绿 (emerald) 精准契合自然草绿与温润珊瑚橙双态美学', () {
       final emerald = AppThemeConfig.of(AppThemeStyle.emerald);
 
-      // 扇贝经典生机绿 #00BA76
-      expect(emerald.primaryColor, const Color(0xFF00BA76));
+      // 自然清新草绿 #7CB342
+      expect(emerald.primaryColor, const Color(0xFF7CB342));
 
       // 扇贝温润珊瑚橙 #FF7B40 (温和包容、不认识专用)
       expect(emerald.warmAccentColor, const Color(0xFFFF7B40));
 
-      // 护眼深炭墨字色
-      expect(emerald.textPrimary, const Color(0xFF192520));
+      // 深墨橄榄字色
+      expect(emerald.textPrimary, const Color(0xFF27301C));
     });
 
     test('AppThemeBackground 能针对各主题正常构建 Widget 不报错', () {
