@@ -60,9 +60,9 @@ class AppThemeBackground extends StatelessWidget {
             end: Alignment.bottomCenter,
             colors: const [
               Color(0xFFB8C4C0), // 顶部
-              Color(0xFF99A9A8), // 62%
-              Color(0xFF879A99), // 90%
-              Color(0xFF7F9190), // 底部
+              Color(0xFF9BAEAD), // 62%
+              Color(0xFF91A3A2), // 90%
+              Color(0xFF8B9E9D), // 底部(比原版更浅)
             ],
             stops: const [0.0, 0.62, 0.90, 1.0],
           ),
