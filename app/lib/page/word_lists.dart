@@ -13,6 +13,7 @@ import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/widget/dict_book_icon.dart';
+import 'package:nnbdc/widget/frosted_glass_card.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
@@ -340,13 +341,16 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
         if (deskDicts.isEmpty)
           _buildEmptyDeskCard(isDarkMode)
         else
-          Container(
-            decoration: BoxDecoration(
-              color: themeConfig.cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: themeConfig.cardBorder, width: 1.0),
-              boxShadow: themeConfig.cardShadows,
+          FrostedGlassCard(
+            borderRadius: 16,
+            bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
+            borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+            shadow: BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
             ),
+            sigma: 7,
             child: Column(
               children: [
                 for (int i = 0; i < deskDicts.length; i++) ...[
@@ -539,8 +543,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
-    final cardBg = themeConfig.cardBg;
-    final cardBorder = themeConfig.cardBorder;
     final dividerColor = isDarkMode
         ? Colors.white.withValues(alpha: 0.08)
         : Colors.black.withValues(alpha: 0.055);
@@ -554,13 +556,16 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
       children: [
         _buildSectionHeader('核心词库', textColor),
 
-        Container(
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cardBorder, width: 1.0),
-            boxShadow: themeConfig.cardShadows,
+        FrostedGlassCard(
+          borderRadius: 16,
+          bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
+          borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+          shadow: BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
+          sigma: 7,
           child: Column(
             children: [
               _buildGroupedItemRow(
@@ -951,18 +956,19 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = themeConfig.cardBg;
-    final cardBorder = themeConfig.cardBorder;
     final textMain = themeConfig.textPrimary;
     final alertColor = isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cardBorder, width: 1),
-        boxShadow: themeConfig.cardShadows,
+    return FrostedGlassCard(
+      borderRadius: 16,
+      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
+      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+      shadow: BoxShadow(
+        color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+        blurRadius: 20,
+        offset: const Offset(0, 6),
       ),
+      sigma: 7,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

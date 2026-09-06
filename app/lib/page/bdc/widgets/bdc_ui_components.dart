@@ -603,12 +603,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                             decoration: BoxDecoration(
                               color: _cachedIsDarkMode
                                   ? const Color(0xB8161E2A)
-                                  : Colors.white.withValues(alpha: 0.38),
+                                  : Colors.white.withValues(alpha: 0.26),
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
                                 color: _cachedIsDarkMode
-                                    ? Colors.white.withValues(alpha: 0.12)
-                                    : Colors.white.withValues(alpha: 0.75),
+                                    ? Colors.white.withValues(alpha: 0.10)
+                                    : Colors.white.withValues(alpha: 0.14),
                                 width: 1.0,
                               ),
                               boxShadow: [
@@ -968,7 +968,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               Icon(
                 icon,
                 color: fg,
-                size: 17,
+                size: 15,
               ),
               if (label != null) ...[
                 const SizedBox(width: 3.5),
@@ -976,7 +976,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   label,
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                     color:
                         isDark ? const Color(0xFFE2E8F0) : context.textPrimary,
@@ -2283,6 +2283,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 PronunciationAccentBadge(
                   label: pronInfo.$2,
                   isFallback: pronInfo.$3,
+                  color: context.textSecondary,
                   fontSize: 10.5,
                   margin: const EdgeInsets.only(right: 6),
                   onSwitched: (newAccent) async {
@@ -2481,7 +2482,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               translationText,
               context,
               style: TextStyle(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 fontSize: 20,
                 color: context.textPrimary,
                 height: 1.4,
@@ -2587,15 +2588,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                     key: const Key('currentstate.word_spell'),
                     state.currentGetWordResult!.learningWord!.word.spell,
                     style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 38,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 44,
                       color: primaryTextColor,
                       fontFamily: 'Roboto',
-                      letterSpacing: 0.5,
+                      letterSpacing: -0.6,
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 12),
                 // 音标与播音小胶囊（支持点击小按钮快速切换英美音）
                 ValueListenableBuilder<String>(
                   valueListenable: Prefs.pronunciationAccentNotifier,
@@ -2613,7 +2614,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                           PronunciationAccentBadge(
                             label: pronInfo.$2,
                             isFallback: pronInfo.$3,
-                            color: context.primaryColor,
+                            color: context.textSecondary,
                             fontSize: 11,
                             margin: const EdgeInsets.only(right: 5),
                             onSwitched: (newAccent) async {
@@ -2629,8 +2630,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                               style: TextStyle(
                                 color: secondaryTextColor,
                                 fontFamily: "NotoSans",
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
                               softWrap: true,
                               textAlign: TextAlign.center,
@@ -2659,7 +2660,7 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
           if (state.word?.sentences != null &&
               state.word!.sentences!.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             InkWell(
               borderRadius: BorderRadius.circular(10),
               onTap: () {

@@ -9,6 +9,7 @@ import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
+import 'package:nnbdc/widget/frosted_glass_card.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -631,218 +632,191 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final textPrimary = themeConfig.textPrimary;
     final textMuted = themeConfig.textMuted;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(22, 28, 22, 22),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDarkMode
-                  ? [
-                      const Color(0xB818202F),
-                      const Color(0x99121722),
-                    ]
-                  : [
-                      Colors.white.withValues(alpha: 0.70),
-                      Colors.white.withValues(alpha: 0.56),
-                    ],
-            ),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.85),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.05),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
+    return FrostedGlassCard(
+      borderRadius: 28,
+      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
+      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+      shadow: BoxShadow(
+        color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+        blurRadius: 20,
+        offset: const Offset(0, 6),
+      ),
+      sigma: 7,
+      padding: const EdgeInsets.fromLTRB(22, 28, 22, 22),
+      child: Column(
+        children: [
+          // 今日目标超大数字（Roboto 挺拔修长 + 自然伴随轻量单位，告别发闷灰药丸）
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: isStarted
+                ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
+                : () => _showWordsSelectionBottomSheet(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '${user?.effectiveWordsPerDay ?? 0}',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 44,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Roboto',
+                      letterSpacing: -1.8,
+                      height: 1.0,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  // 单位裸排（告别药丸容器，符合"零多余容器"；baseline 与大数自然贴靠）
+                  Text(
+                    '词',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (!isStarted) ...[
+                    const SizedBox(width: 3),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 13,
+                      color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
+                    ),
+                  ] else ...[
+                    const SizedBox(width: 3),
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      size: 11,
+                      color: textMuted,
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
           ),
-          child: Column(
-            children: [
-              // 今日目标超大数字（Roboto 挺拔修长 + 自然伴随轻量单位，告别发闷灰药丸）
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: isStarted
-                    ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
-                    : () => _showWordsSelectionBottomSheet(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        '${user?.effectiveWordsPerDay ?? 0}',
-                        style: TextStyle(
-                          color: textPrimary,
-                          fontSize: 44,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Roboto',
-                          letterSpacing: -1.8,
-                          height: 1.0,
-                        ),
+
+          const SizedBox(height: 16),
+
+          // 优雅极细胶囊进度条（先文案后胶囊，视觉平衡）
+          SizedBox(
+            width: 260,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '今日进度 $_completedStepCount / $_totalStepCount 步',
+                      style: TextStyle(
+                        color: textMuted,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w400,
                       ),
-                      const SizedBox(width: 6),
-                      // 单位裸排（告别药丸容器，符合"零多余容器"；baseline 与大数自然贴靠）
-                      Text(
-                        '词',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    Text(
+                      '${(progress * 100).toInt()}%',
+                      style: TextStyle(
+                        color: textMuted,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Roboto',
                       ),
-                      if (!isStarted) ...[
-                        const SizedBox(width: 3),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 13,
-                          color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
-                        ),
-                      ] else ...[
-                        const SizedBox(width: 3),
-                        Icon(
-                          Icons.lock_outline_rounded,
-                          size: 11,
-                          color: textMuted,
-                        ),
-                      ],
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(100),
+                  child: LinearProgressIndicator(
+                    value: progress.clamp(0.0, 1.0),
+                    minHeight: 3.5,
+                    backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                    valueColor: AlwaysStoppedAnimation<Color>(themeConfig.primaryColor),
                   ),
                 ),
-              ),
+              ],
+            ),
+          ),
 
-              const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
-              // 优雅极细胶囊进度条（先文案后胶囊，视觉平衡）
-              SizedBox(
-                width: 260,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '今日进度 $_completedStepCount / $_totalStepCount 步',
-                          style: TextStyle(
-                            color: textMuted,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Text(
-                          '${(progress * 100).toInt()}%',
-                          style: TextStyle(
-                            color: textMuted,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Roboto',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 7),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(100),
-                      child: LinearProgressIndicator(
-                        value: progress.clamp(0.0, 1.0),
-                        minHeight: 3.5,
-                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
-                        valueColor: AlwaysStoppedAnimation<Color>(themeConfig.primaryColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          // 双列对称纯粹排版数据（新词 | 旧词，彻底去除突兀硬线分割，靠留白呼吸）
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                _buildStatItem('新词', newWordCount ?? 0, const Color(0xFF0EA5E9)),
+                _buildStatItem('旧词', oldWordCount ?? 0, const Color(0xFF10B981)),
+              ],
+            ),
+          ),
 
-              const SizedBox(height: 18),
-
-              // 双列对称纯粹排版数据（新词 | 旧词，彻底去除突兀硬线分割，靠留白呼吸）
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    _buildStatItem('新词', newWordCount ?? 0, const Color(0xFF0EA5E9)),
-                    _buildStatItem('旧词', oldWordCount ?? 0, const Color(0xFF10B981)),
-                  ],
-                ),
-              ),
-
-              // 任务量未满提示条：居中温润微光胶囊（告别生硬全宽横幅）
-              if (prepareResult != null &&
-                  prepareResult!.success &&
-                  (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
-                  !_hasTriedSupplement)
-                Padding(
-                  padding: const EdgeInsets.only(top: 14),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => loadData(forceSupplement: true),
+          // 任务量未满提示条：居中温润微光胶囊（告别生硬全宽横幅）
+          if (prepareResult != null &&
+              prepareResult!.success &&
+              (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
+              !_hasTriedSupplement)
+            Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => loadData(forceSupplement: true),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
+                    decoration: BoxDecoration(
+                      color: themeConfig.warmAccentColor.withValues(alpha: isDarkMode ? 0.16 : 0.08),
                       borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
-                        decoration: BoxDecoration(
-                          color: themeConfig.warmAccentColor.withValues(alpha: isDarkMode ? 0.16 : 0.08),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: themeConfig.warmAccentColor.withValues(alpha: isDarkMode ? 0.28 : 0.18),
-                            width: 0.8,
+                      border: Border.all(
+                        color: themeConfig.warmAccentColor.withValues(alpha: isDarkMode ? 0.28 : 0.18),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: themeConfig.warmAccentColor,
+                          size: 13.5,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '单词量未满',
+                          style: TextStyle(
+                            color: isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color: themeConfig.warmAccentColor,
-                              size: 13.5,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '单词量未满',
-                              style: TextStyle(
-                                color: isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '点击补充 ›',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: themeConfig.warmAccentColor,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 6),
+                        Text(
+                          '点击补充 ›',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: themeConfig.warmAccentColor,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
+              ),
+            ),
 
-              const SizedBox(height: 20),
+          const SizedBox(height: 20),
 
-              // 主操作按钮
-              (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
-                  ? renderErrorActions()
-                  : renderStartButton(),
-            ],
-          ),
-        ),
+          // 主操作按钮
+          (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
+              ? renderErrorActions()
+              : renderStartButton(),
+        ],
       ),
     );
   }
