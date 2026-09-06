@@ -634,8 +634,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return FrostedGlassCard(
       borderRadius: 28,
-      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
-      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x75FFFFFF),
+      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
       shadow: BoxShadow(
         color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
         blurRadius: 20,
@@ -1636,8 +1636,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.85),
+                  ? Colors.white.withValues(alpha: 0.10)
+                  : Colors.white.withValues(alpha: 0.24),
               width: 1.2,
             ),
             boxShadow: [
@@ -1966,8 +1966,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.85),
+                  ? Colors.white.withValues(alpha: 0.10)
+                  : Colors.white.withValues(alpha: 0.24),
               width: 1.2,
             ),
             boxShadow: [

@@ -343,8 +343,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
         else
           FrostedGlassCard(
             borderRadius: 16,
-            bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
-            borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+            bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x75FFFFFF),
+            borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
             shadow: BoxShadow(
               color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
               blurRadius: 20,
@@ -558,8 +558,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
         FrostedGlassCard(
           borderRadius: 16,
-          bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
-          borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+          bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x75FFFFFF),
+          borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
           shadow: BoxShadow(
             color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
             blurRadius: 20,
@@ -961,8 +961,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
     return FrostedGlassCard(
       borderRadius: 16,
-      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
-      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x75FFFFFF),
+      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
       shadow: BoxShadow(
         color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
         blurRadius: 20,
