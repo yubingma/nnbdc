@@ -18,6 +18,7 @@ import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/prefs.dart';
 
 import '../api/vo.dart';
 import '../db/db.dart';
@@ -718,19 +719,14 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       onAnswerClicked(5);
     };
 
-    // 比赛结果提示文字 - 重新排版并美化
+    // 比赛结果提示文字 - 清晰化：加粗 + 单层锐利投影
     textRender = TextPaint(
         style:
-            TextStyle(color: const Color(0xFF4CAF50), fontSize: 16 * uiScale, fontWeight: FontWeight.w300, fontFamily: 'NotoSansSC', shadows: const [
+            TextStyle(color: const Color(0xFF4CAF50), fontSize: 16 * uiScale, fontWeight: FontWeight.w600, fontFamily: 'NotoSansSC', shadows: const [
       Shadow(
         color: Colors.black87,
-        offset: Offset(2, 2),
-        blurRadius: 4,
-      ),
-      Shadow(
-        color: Color(0xFF81C784),
-        offset: Offset(-1, -1),
-        blurRadius: 2,
+        offset: Offset(0, 2),
+        blurRadius: 0,
       ),
     ]));
     gameResultHint1 = TextComponent(text: 'hint1', textRenderer: textRender)
@@ -744,28 +740,18 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       ..y = playerA.playGround.y + playerA.playGround.height + 160;
     add(gameResultHint2);
 
-    // 倒计时文字 - 重新排版并美化
+    // 倒计时文字 - 清晰化：加粗 + 干净金色 + 单层锐利投影
     var countdownRender = TextPaint(
         style: TextStyle(
-            color: const Color(0xFFFFD700),
-            fontSize: 18 * uiScale,
-            fontWeight: FontWeight.normal,
+            color: const Color(0xFFFFD54F),
+            fontSize: 20 * uiScale,
+            fontWeight: FontWeight.w700,
             fontFamily: 'NotoSansSC',
             shadows: const [
           Shadow(
             color: Colors.black87,
-            offset: Offset(2, 2),
-            blurRadius: 4,
-          ),
-          Shadow(
-            color: Color(0xFFFFA726),
-            offset: Offset(-1, -1),
-            blurRadius: 2,
-          ),
-          Shadow(
-            color: Color(0xFFFFEB3B),
-            offset: Offset(0, 0),
-            blurRadius: 8,
+            offset: Offset(0, 2),
+            blurRadius: 0,
           ),
         ]));
     countdownText = TextComponent(text: '', textRenderer: countdownRender)
@@ -829,16 +815,11 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   TextRenderer textRenderOfGameResultHint(bool? won) {
     if (won == null) {
       return TextPaint(
-          style: TextStyle(color: Colors.white, fontSize: 16 * uiScale, fontWeight: FontWeight.w300, fontFamily: 'NotoSansSC', shadows: const [
+          style: TextStyle(color: Colors.white, fontSize: 16 * uiScale, fontWeight: FontWeight.w600, fontFamily: 'NotoSansSC', shadows: const [
         Shadow(
           color: Colors.black87,
-          offset: Offset(2, 2),
-          blurRadius: 4,
-        ),
-        Shadow(
-          color: Colors.white24,
-          offset: Offset(-1, -1),
-          blurRadius: 2,
+          offset: Offset(0, 2),
+          blurRadius: 0,
         ),
       ]));
     } else if (won) {
@@ -846,23 +827,13 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           style: TextStyle(
               color: const Color(0xFF4CAF50),
               fontSize: 18 * uiScale,
-              fontWeight: FontWeight.w300,
+              fontWeight: FontWeight.w700,
               fontFamily: 'NotoSansSC',
               shadows: const [
             Shadow(
               color: Colors.black87,
-              offset: Offset(2, 2),
-              blurRadius: 4,
-            ),
-            Shadow(
-              color: Color(0xFF81C784),
-              offset: Offset(-1, -1),
-              blurRadius: 2,
-            ),
-            Shadow(
-              color: Color(0xFF4CAF50),
-              offset: Offset(0, 0),
-              blurRadius: 6,
+              offset: Offset(0, 2),
+              blurRadius: 0,
             ),
           ]));
     } else {
@@ -870,23 +841,13 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           style: TextStyle(
               color: const Color(0xFFF44336),
               fontSize: 18 * uiScale,
-              fontWeight: FontWeight.w300,
+              fontWeight: FontWeight.w700,
               fontFamily: 'NotoSansSC',
               shadows: const [
             Shadow(
               color: Colors.black87,
-              offset: Offset(2, 2),
-              blurRadius: 4,
-            ),
-            Shadow(
-              color: Color(0xFFEF5350),
-              offset: Offset(-1, -1),
-              blurRadius: 2,
-            ),
-            Shadow(
-              color: Color(0xFFF44336),
-              offset: Offset(0, 0),
-              blurRadius: 6,
+              offset: Offset(0, 2),
+              blurRadius: 0,
             ),
           ]));
     }
@@ -1240,18 +1201,21 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
     socket.off('giveProps');
     socket.on('giveProps', (data) {
-      if (!isExercise) {
-        var propsType = data[0];
-        var propsCount = data[1];
-        playerA.props[propsType] = propsCount;
+      var propsType = data[0];
+      var propsCount = data[1];
+      playerA.props[propsType] = propsCount;
 
-        // 显示道具获得提示
-        String propsName = propsType == 0 ? "加一行" : "减一行";
-        appendMsg(0, "牛牛", "恭喜！连续答对5次，获得道具【$propsName】");
+      // 显示道具获得提示
+      String propsName = propsType == 0 ? "加一行" : "减一行";
+      appendMsg(0, "牛牛", "恭喜！连续答对5次，获得道具【$propsName】");
 
-        // 播放道具获得音效（A方音效音量）
-        StudyAudioSessionController.instance.playBlockingSound('magic.mp3', speed: 1.0, volume: 1.0, timeoutMs: 2000);
+      // 道具用途说明（练习模式的辅助熟悉；用户可在弹窗中关闭不再显示）
+      if (isExercise) {
+        _showPropHint(propsType);
       }
+
+      // 播放道具获得音效（A方音效音量）
+      StudyAudioSessionController.instance.playBlockingSound('magic.mp3', speed: 1.0, volume: 1.0, timeoutMs: 2000);
     });
 
     socket.off('roomId');
@@ -1459,6 +1423,139 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     } else {
       ToastUtil.success(message);
     }
+  }
+
+  /// 道具获得时的用途说明弹窗（可在弹窗中关闭，今后不再显示）
+  void _showPropHint(int propsType) {
+    final String key = 'russiaPropHintOff_${Global.currentUserId}';
+    if (Prefs.read<bool>(key) == true) return; // 用户已关闭
+    if (!pageState.mounted) return;
+
+    final String name = propsType == 0 ? '加一行' : '减一行';
+    final String desc = propsType == 0
+        ? '在对手底部叠加一行方块，使对手更快触顶落败。'
+        : '消去自己底部一行方块，缓解堆积压力。';
+
+    // 练习模式：暂停游戏引擎，让用户安心阅读道具说明（关闭后恢复）
+    pauseEngine();
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      builder: (ctx) {
+        bool notAgain = false;
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C2127),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: const Color(0xFF374151), width: 1),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Colors.black54, blurRadius: 24, offset: Offset(0, 10)),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 道具图标（与游戏中 +/− 道具按钮一致的图标，加深印象）
+                    Container(
+                      width: 64,
+                      height: 64,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2A3550),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFF3B4E76), width: 1),
+                      ),
+                      child: Image.asset(
+                        propsType == 0
+                            ? 'assets/images/plus.png'
+                            : 'assets/images/minus.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      '获得道具【$name】',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFE7EDF7),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      desc,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontSize: 13, height: 1.5, color: Color(0xFF9BB0C8)),
+                    ),
+                    const SizedBox(height: 18),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => setState(() => notAgain = !notAgain),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Checkbox(
+                            value: notAgain,
+                            onChanged: (v) => setState(() => notAgain = v ?? false),
+                            activeColor: const Color(0xFF6D8CFF),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          const Text(
+                            '不再显示道具用途说明',
+                            style: TextStyle(
+                                fontSize: 12, color: Color(0xFF9BB0C8)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 42,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6D8CFF),
+                          foregroundColor: const Color(0xFF0B1222),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(21)),
+                        ),
+                        onPressed: () async {
+                          if (notAgain) {
+                            await Prefs.write(key, true);
+                          }
+                          if (ctx.mounted) {
+                            Navigator.of(ctx).pop();
+                          }
+                        },
+                        child: const Text('知道了',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 13)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      // 关闭说明框后恢复游戏
+      if (pageState.mounted) {
+        resumeEngine();
+      }
+    });
   }
 
   void sendUserCmd(cmd, args) {
@@ -1845,7 +1942,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         // 道具底部 + 间距
         propsBottom + 12.0 * uiScale,
       );
-      final double btnGap = 9.0 * uiScale; // 按钮之间的间隔
+      final double btnGap = 14.0 * uiScale; // 按钮之间的间隔
       final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
 
       // 预计算每个按钮的基础行高与内边距，并估算总高度
@@ -1861,7 +1958,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       double totalBaseHeight = 0.0;
       for (var btn in visibleButtons) { 
         final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
-        final double basePadding = (isAnswerBtn ? 1.35 : 1.0) * max(16.0, unifiedTextHeight * 1.1) * answersExtraScale;
+        final double basePadding = (isAnswerBtn ? 1.15 : 1.0) * max(16.0, unifiedTextHeight * 1.1) * answersExtraScale;
         final double visualHeight = unifiedTextHeight + basePadding;
         baseLineHeights.add(unifiedTextHeight);
         basePaddings.add(basePadding);
