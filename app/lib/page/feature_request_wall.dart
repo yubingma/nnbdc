@@ -1013,7 +1013,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: hasVoted ? FontWeight.w700 : FontWeight.w600,
-                              color: theme.primaryColor,
+                              color: context.isDarkMode ? theme.primaryColor : context.textPrimary,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -1023,7 +1023,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               fontFamily: 'Roboto',
-                              color: theme.primaryColor,
+                              color: context.isDarkMode ? theme.primaryColor : context.textPrimary,
                             ),
                           ),
                         ],

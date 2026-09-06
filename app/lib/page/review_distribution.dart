@@ -609,7 +609,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
     Color labelColor;
     if (data.isToday) {
-      labelColor = accentColor;
+      labelColor = isDarkMode ? accentColor : textColor;
     } else if (data.isOverdue) {
       labelColor = overdueColor;
     } else {

@@ -431,7 +431,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
             '对准书本拍照，自动提取英文单词',
             style: TextStyle(
               fontSize: 14,
-              color: isDarkMode ? Colors.white38 : Colors.black38,
+              color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
             ),
           ),
           const Spacer(flex: 1),
@@ -909,7 +909,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
     } else {
       bgColor = AppTheme.primaryColor.withValues(alpha: 0.08);
       borderColor = AppTheme.primaryColor.withValues(alpha: 0.25);
-      textColor = isDarkMode ? Colors.white : AppTheme.primaryColor;
+      textColor = isDarkMode ? Colors.white : const Color(0xFF475569);
     }
 
     return GestureDetector(

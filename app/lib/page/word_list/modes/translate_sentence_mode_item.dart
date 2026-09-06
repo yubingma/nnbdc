@@ -132,7 +132,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 12,
-                color: isDarkMode ? Colors.white38 : Colors.black38,
+                color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -211,7 +211,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 12,
-            color: isDarkMode ? Colors.white38 : Colors.black38,
+            color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
           ),
         ),
       ],
@@ -258,7 +258,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
                 fontSize: 13.5,
                 color: hasLiveAsr
                     ? (isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7))
-                    : (isDarkMode ? Colors.white38 : Colors.black38),
+                    : (isDarkMode ? Colors.white38 : const Color(0xFF475569)),
                 height: 1.35,
                 letterSpacing: 0.3,
                 fontStyle: hasLiveAsr ? FontStyle.normal : FontStyle.italic,

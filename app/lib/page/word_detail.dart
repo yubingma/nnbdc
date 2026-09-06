@@ -2694,7 +2694,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: context.primaryColor,
+                                        color: context.isDarkMode ? context.primaryColor : context.textPrimary,
                                       ),
                                     ),
                                   ),

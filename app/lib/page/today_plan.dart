@@ -496,7 +496,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Text(
                         _isSyncingFromCloud ? 'SYNCING FROM CLOUD...' : 'LOADING PLAN',
                         style: TextStyle(
-                          color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                          color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 2.0,
@@ -982,7 +982,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 '根据每天的时间节奏定制专注目标',
                                 style: TextStyle(
                                   fontSize: 11.5,
-                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
                                 ),
                               ),
                             ],
@@ -1142,7 +1142,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             Text(
               '今日目标已达成',
               style: TextStyle(
-                color: themeConfig.primaryColor,
+                color: isDarkMode ? themeConfig.primaryColor : themeConfig.textPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
               ),
@@ -2273,7 +2273,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
-                    color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                    color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
                   ),
                 ),
               ],
@@ -2447,7 +2447,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 subText,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
                                 ),
                               ),
                             ],
@@ -2713,7 +2713,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 isStarted ? '今日学习已开始，设置暂时锁定' : '优先保证每天的新词输入量',
                                 style: TextStyle(
                                   fontSize: 11.5,
-                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
                                 ),
                               ),
                             ],

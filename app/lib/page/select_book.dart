@@ -671,7 +671,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                                   child: Text(
                                     '${_formatNumber(dict.wordCount ?? 0)} 词',
                                     style: TextStyle(
-                                      color: primaryColor,
+                                      color: context.isDarkMode ? primaryColor : context.textPrimary,
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -777,7 +777,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                           fontWeight: FontWeight.w700,
                           color: restricted
                               ? Colors.grey
-                              : primaryColor,
+                              : (isDarkMode ? primaryColor : context.textPrimary),
                         ),
                       ),
                     ],
@@ -896,7 +896,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                                     child: Text(
                                       '${_formatNumber(dict.wordCount ?? 0)} 词',
                                       style: TextStyle(
-                                        color: primaryColor,
+                                        color: context.isDarkMode ? primaryColor : context.textPrimary,
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
                                       ),

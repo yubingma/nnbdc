@@ -128,7 +128,7 @@ class LoginPageState extends State<LoginPage>
 
     final textMainColor = themeConfig.textPrimary;
     final textSubColor = themeConfig.textSecondary;
-    final textMutedColor = isDarkMode ? Colors.white38 : const Color(0xFF94A3B8);
+    final textMutedColor = isDarkMode ? Colors.white38 : const Color(0xFF475569);
     final accentColor = themeConfig.primaryColor;
     final appleBgColor = isDarkMode ? const Color(0xFF192A26) : const Color(0xFF111827);
     final dividerColor = themeConfig.cardBorder;

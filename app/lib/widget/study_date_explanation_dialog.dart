@@ -184,7 +184,7 @@ class StudyDateExplanationDialog extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                              color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
                             ),
                           ),
                         ],
