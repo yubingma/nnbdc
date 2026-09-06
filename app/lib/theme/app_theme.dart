@@ -46,6 +46,9 @@ enum AppThemeStyle {
   /// 鼠尾草森 (Gentler Streak / Apple，低饱和海盐青绿 + 视觉疗愈)
   sage('sage', '鼠尾草森', '海盐青木温润舒缓', Icons.grass_rounded),
 
+  /// 鼠尾草玻璃 (低饱和灰绿单色渐变质感，复现学习页"安静高级"的氛围)
+  sageglass('sageglass', '鼠尾草玻璃', '低饱和灰绿渐变质感', Icons.spa_rounded),
+
   /// 暮光深空 (Arc & Linear Dark，曜石深空黑 + 霓虹紫罗兰光晕)
   twilight('twilight', '暮光深空', '曜石深空霓虹紫', Icons.nights_stay_rounded);
 
@@ -295,6 +298,30 @@ class AppThemeConfig {
             BoxShadow(
               color: const Color(0xFF0E2624).withValues(alpha: 0.16),
               blurRadius: 18,
+              offset: const Offset(0, 7),
+            ),
+          ],
+          isDark: false,
+        );
+
+      // 鼠尾草玻璃: 低饱和灰绿单色渐变，复现学习页"安静高级"的氛围
+      case AppThemeStyle.sageglass:
+        return AppThemeConfig(
+          style: style,
+          primaryColor: const Color(0xFF0D9488), // 舒缓青木绿(强调色)
+          primaryLightColor: const Color(0xFF6FB3A0),
+          primaryDarkColor: const Color(0xFF0E6B5E),
+          textPrimary: const Color(0xFF22302B), // 深墨绿(截图文案色)
+          textSecondary: const Color(0xFF4E5F58),
+          textMuted: const Color(0xFF71837B),
+          cardBg: const Color(0x80FFFFFF),
+          cardBorder: const Color(0x14000000), // 极淡中性描边(白卡在灰绿底上)
+          subtleBg: const Color(0x140D9488),
+          warmAccentColor: const Color(0xFFF97316),
+          cardShadows: [
+            BoxShadow(
+              color: const Color(0xFF22302B).withValues(alpha: 0.16),
+              blurRadius: 20,
               offset: const Offset(0, 7),
             ),
           ],

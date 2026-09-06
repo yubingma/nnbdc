@@ -51,6 +51,24 @@ class AppThemeBackground extends StatelessWidget {
   /// 浅色·手机：低饱和单色渐变 —— 以主题色为基，降饱和度、调整明度，
   /// 生成"顶部浅 → 底部深"的同色相莫兰迪渐变(无光晕、安静统一)。
   Widget _buildLightMutedGradient(AppThemeStyle style) {
+    // 鼠尾草玻璃主题：用参考图的精确取样曲线(多点渐变)复现"安静高级"的灰绿质感
+    if (style == AppThemeStyle.sageglass) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: const [
+              Color(0xFFB8C4C0), // 顶部
+              Color(0xFF99A9A8), // 62%
+              Color(0xFF879A99), // 90%
+              Color(0xFF7F9190), // 底部
+            ],
+            stops: const [0.0, 0.62, 0.90, 1.0],
+          ),
+        ),
+      );
+    }
     final hsl = HSLColor.fromColor(AppThemeConfig.of(style).primaryColor);
     Color shade(double sat, double light) =>
         hsl.withSaturation(sat).withLightness(light).toColor();
@@ -106,6 +124,11 @@ class AppThemeBackground extends StatelessWidget {
             const Color(0xFF080917),
           ),
         AppThemeStyle.sage => (
+            const Color(0xFF09201E),
+            const Color(0xFF071716),
+            const Color(0xFF05100F),
+          ),
+        AppThemeStyle.sageglass => (
             const Color(0xFF09201E),
             const Color(0xFF071716),
             const Color(0xFF05100F),
