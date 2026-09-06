@@ -648,8 +648,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const Color(0x99121722),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.84),
                       Colors.white.withValues(alpha: 0.70),
+                      Colors.white.withValues(alpha: 0.56),
                     ],
             ),
             borderRadius: BorderRadius.circular(28),
@@ -1655,8 +1655,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const Color(0x99121722),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.84),
                       Colors.white.withValues(alpha: 0.70),
+                      Colors.white.withValues(alpha: 0.56),
                     ],
             ),
             borderRadius: BorderRadius.circular(24),
@@ -1985,8 +1985,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       const Color(0x99121722),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.84),
                       Colors.white.withValues(alpha: 0.70),
+                      Colors.white.withValues(alpha: 0.56),
                     ],
             ),
             borderRadius: BorderRadius.circular(24),

@@ -342,7 +342,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
         else
           Container(
             decoration: BoxDecoration(
-              color: isDarkMode ? themeConfig.cardBg : Colors.white,
+              color: themeConfig.cardBg,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: themeConfig.cardBorder, width: 1.0),
               boxShadow: themeConfig.cardShadows,
@@ -539,7 +539,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
-    final cardBg = isDarkMode ? themeConfig.cardBg : Colors.white;
+    final cardBg = themeConfig.cardBg;
     final cardBorder = themeConfig.cardBorder;
     final dividerColor = isDarkMode
         ? Colors.white.withValues(alpha: 0.08)
@@ -660,14 +660,14 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeConfig = AppThemeConfig.of(themeStyle);
     final accentColor = themeConfig.primaryColor;
 
-    // 选中/主线高亮时赋予 4.5% 极淡主题微光底色与精致边框，非高亮时保持纯白与常规边框
+    // 选中/主线高亮时赋予 4.5% 极淡主题微光底色与精致边框，非高亮时保持透光磨砂与常规边框
     final cardBg = isDarkMode
         ? (isHighlighted
             ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), themeConfig.cardBg)
             : themeConfig.cardBg)
         : (isHighlighted
-            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), Colors.white)
-            : Colors.white);
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), themeConfig.cardBg)
+            : themeConfig.cardBg);
 
     final cardBorder = isHighlighted
         ? accentColor.withValues(alpha: isDarkMode ? 0.55 : 0.45)
@@ -951,7 +951,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = isDarkMode ? themeConfig.cardBg : Colors.white;
+    final cardBg = themeConfig.cardBg;
     final cardBorder = themeConfig.cardBorder;
     final textMain = themeConfig.textPrimary;
     final alertColor = isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B);

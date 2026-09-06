@@ -1440,6 +1440,8 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
     // 练习模式：冻结下落单词，让用户安心阅读道具说明（关闭后恢复）
     _wordFrozen = true;
+    // 弹窗出现即强制重排按钮，避免此前瞬时错位残留
+    _needsButtonLayout = true;
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
