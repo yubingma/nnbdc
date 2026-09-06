@@ -20,7 +20,7 @@ class FrostedGlassCard extends StatelessWidget {
     super.key,
     required this.child,
     this.borderRadius = 24,
-    this.bgColor = const Color(0x75FFFFFF),
+    this.bgColor = const Color(0x80FFFFFF),
     this.borderColor = const Color(0x24FFFFFF),
     this.shadow = const BoxShadow(
       color: Color(0x14000000),

@@ -634,7 +634,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return FrostedGlassCard(
       borderRadius: 28,
-      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x75FFFFFF),
+      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
       borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
       shadow: BoxShadow(
         color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
