@@ -25,8 +25,8 @@ enum AppThemeStyle {
   /// 晨曦流光 (DeepSeek 空灵科技，冰川极光冷蓝 + 高透毛玻璃)
   aurora('aurora', '晨曦流光', '空灵科技冰川蓝', Icons.auto_awesome_rounded),
 
-  /// 清新草绿 (自然清新，草绿主色 + 柔和草绿底色)
-  emerald('emerald', '清新草绿', '自然清新活力草绿', Icons.spa_rounded),
+  /// 黛蓝 (高级沉着，深灰蓝 + 中性深色文字)
+  emerald('emerald', '黛蓝', '高级沉着黛蓝', Icons.spa_rounded),
 
   /// 暮色落日 (温暖活力晚霞，落日暖橘 + 蜜桃暖色光晕)
   sunset('sunset', '暮色落日', '温暖活力晚霞橙', Icons.wb_twilight_rounded),
@@ -137,15 +137,15 @@ class AppThemeConfig {
       case AppThemeStyle.emerald:
         return AppThemeConfig(
           style: style,
-          primaryColor: const Color(0xFF7CB342), // 自然清新草绿
-          primaryLightColor: const Color(0xFF9CCC65),
-          primaryDarkColor: const Color(0xFF689F38),
-          textPrimary: const Color(0xFF27301C), // 深橄榄墨黑
-          textSecondary: const Color(0xFF465238),
-          textMuted: const Color(0xFF59654A),
+          primaryColor: const Color(0xFF4A5A8A), // 高级沉着黛蓝
+          primaryLightColor: const Color(0xFF7C8CB4),
+          primaryDarkColor: const Color(0xFF37456C),
+          textPrimary: const Color(0xFF1E242E), // 中性深墨（非蓝非绿，保证可读）
+          textSecondary: const Color(0xFF464B54),
+          textMuted: const Color(0xFF5C6068),
           cardBg: const Color(0x80FFFFFF), // 统一规格透光磨砂白 (50%)
           cardBorder: Colors.transparent, // 彻底消除灰色硬边框
-          subtleBg: const Color(0x147CB342), // 草绿轻底
+          subtleBg: const Color(0x144A5A8A), // 黛蓝轻底
           warmAccentColor: const Color(0xFFFF7B40), // 温润珊瑚橙 (不认识/再学学专用)
           cardShadows: [
             BoxShadow(
