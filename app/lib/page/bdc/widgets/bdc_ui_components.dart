@@ -1268,12 +1268,12 @@ extension BdcPageStateUIComponents on BdcPageState {
 
               if (state.selectedAnswerIndex != null) {
                 if ((index + 1) == state.correctAnswerIndex) {
-                  // 仅保留主题色描边 + 极淡外发光，不填充内部，保证文字清晰
+                  // 仅保留主题色描边，不填充内部、不带阴影光晕，保证文字清晰
                   bgColor = Colors.transparent;
                   borderColor = context.primaryColor;
                   borderWidth = 1.2;
                 } else if ((index + 1) == state.selectedAnswerIndex) {
-                  // 选错：仅保留暖珊瑚描边 + 极淡外发光，不填充内部
+                  // 选错：仅保留暖珊瑚描边，不填充内部、不带阴影光晕
                   bgColor = Colors.transparent;
                   borderColor = isDarkMode
                       ? const Color(0xFFFF7E6C)
@@ -1287,31 +1287,6 @@ extension BdcPageStateUIComponents on BdcPageState {
               } else {
                 bgColor = Colors.transparent;
                 borderColor = Colors.transparent;
-              }
-
-              List<BoxShadow> choiceShadows;
-              if (state.selectedAnswerIndex != null &&
-                  (index + 1) == state.correctAnswerIndex) {
-                choiceShadows = [
-                  BoxShadow(
-                    color: context.primaryColor
-                        .withValues(alpha: isDarkMode ? 0.22 : 0.16),
-                    blurRadius: 14,
-                    offset: const Offset(0, 3),
-                  ),
-                ];
-              } else if (state.selectedAnswerIndex != null &&
-                  (index + 1) == state.selectedAnswerIndex) {
-                choiceShadows = [
-                  BoxShadow(
-                    color: const Color(0xFFEF4444)
-                        .withValues(alpha: isDarkMode ? 0.22 : 0.16),
-                    blurRadius: 14,
-                    offset: const Offset(0, 3),
-                  ),
-                ];
-              } else {
-                choiceShadows = const [];
               }
 
               return Padding(
@@ -1329,7 +1304,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                               color: borderColor,
                               width: borderWidth,
                             ),
-                      boxShadow: choiceShadows,
                     ),
                     child: Material(
                       color: Colors.transparent,
