@@ -610,17 +610,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
                             const SizedBox(height: 20),
 
-                            // 底部辅助说明
-                            Center(
-                              child: Text(
-                                '学习未开始前可随时调整目标 · 开始后将自动锁定',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color: isDarkMode ? Colors.white60 : const Color(0xFF6B7280),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
                               ],
                             ),
                           ),
