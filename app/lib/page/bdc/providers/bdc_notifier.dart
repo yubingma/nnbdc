@@ -18,6 +18,7 @@ import 'package:nnbdc/page/word_list/batch_words.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/router.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/widget/minimal_flow_button.dart';
 import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
@@ -560,20 +561,14 @@ class BdcNotifier extends _$BdcNotifier {
       
       // Redirect to batch word list
       Future.delayed(Duration.zero, () {
-        final nextBtn = ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          onPressed: () async {
+        final nextBtn = MinimalFlowButton(
+          label: '下一组',
+          onTap: () async {
             StudyAudioSessionController.instance.keepMicrophoneWarm = true;
             await StudyBo().completeListStepForCurrentBatch();
             // 跳转回 BDC 页面，它会自动加载下一个非 List 环节的单词
             goRouter.pushReplacement('/bdc');
           },
-          child: const Text('下一组', style: TextStyle(fontWeight: FontWeight.bold)),
         );
         
         final batchId = getWordResult.learningWord?.batchId;

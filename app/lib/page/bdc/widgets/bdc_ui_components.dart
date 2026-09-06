@@ -816,55 +816,16 @@ extension BdcPageStateUIComponents on BdcPageState {
     double indicatorWidth = 16.0,
     double fontSize = 15.5,
   }) {
-    final isDark = _cachedIsDarkMode;
-    return AbsorbPointer(
-      absorbing: !isEnabled,
-      child: Opacity(
-        opacity: isEnabled ? 1.0 : 0.4,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: key,
-            borderRadius: BorderRadius.circular(8),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Container(
-                    width: indicatorWidth,
-                    height: 3.2,
-                    decoration: BoxDecoration(
-                      color: indicatorColor,
-                      borderRadius: BorderRadius.circular(1.6),
-                      boxShadow: [
-                        BoxShadow(
-                          color: indicatorColor.withValues(
-                              alpha: isDark ? 0.45 : 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+    // 复用共享极简流转按钮，保证「下一词 / 不认识 / 再学学」与阶段复习「下一组」视觉一致
+    return MinimalFlowButton(
+      tapKey: key,
+      label: label,
+      textColor: textColor,
+      indicatorColor: indicatorColor,
+      onTap: onTap,
+      isEnabled: isEnabled,
+      indicatorWidth: indicatorWidth,
+      fontSize: fontSize,
     );
   }
 
