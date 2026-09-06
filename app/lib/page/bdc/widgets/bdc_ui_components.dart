@@ -1268,13 +1268,13 @@ extension BdcPageStateUIComponents on BdcPageState {
 
               if (state.selectedAnswerIndex != null) {
                 if ((index + 1) == state.correctAnswerIndex) {
-                  bgColor = context.subtleBg;
+                  // 仅保留主题色描边 + 极淡外发光，不填充内部，保证文字清晰
+                  bgColor = Colors.transparent;
                   borderColor = context.primaryColor;
                   borderWidth = 1.2;
                 } else if ((index + 1) == state.selectedAnswerIndex) {
-                  bgColor = isDarkMode
-                      ? const Color(0xFF2A1614)
-                      : const Color(0xFFFEF2F0);
+                  // 选错：仅保留暖珊瑚描边 + 极淡外发光，不填充内部
+                  bgColor = Colors.transparent;
                   borderColor = isDarkMode
                       ? const Color(0xFFFF7E6C)
                       : const Color(0xFFFA6E59);

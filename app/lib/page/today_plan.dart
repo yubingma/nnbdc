@@ -1293,7 +1293,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
                         // 副标题
                         Text(
-                          '今日学习计划已就绪，准备好专注背单词了吗？',
+                          '准备好专注背单词了吗？',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13,

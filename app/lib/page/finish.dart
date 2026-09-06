@@ -8,13 +8,11 @@ import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/services/badge_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../api/result.dart';
 import '../config.dart';
 import '../global.dart';
-import '../state.dart';
 import '../theme/app_theme.dart';
 import '../util/analytics_util.dart';
 import '../util/notification_util.dart';
@@ -39,9 +37,6 @@ class FinishPageState extends State<FinishPage> {
   int todayDakaScore = 0; // 今日打卡积分
 
   String? marketAppUrl; // 应用市场的对应Url
-
-  static const double leftPadding = 16;
-  static const double rightPadding = 16;
 
   @override
   void initState() {
@@ -108,7 +103,7 @@ class FinishPageState extends State<FinishPage> {
         if (result.success) {
           cowDung = result.data!;
           // 不再播放特殊声音，因为不再有翻倍机制
-          
+
           // 漏斗：用户成功打卡完成
           AnalyticsUtil.trackFinishDaka(cowDung, user.data!.continuousDakaDayCount ?? 0);
 
@@ -151,585 +146,401 @@ class FinishPageState extends State<FinishPage> {
   }
 
   Widget renderPage() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
-    final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
-    final subtitleColor = isDarkMode ? (Colors.grey[400] ?? Colors.grey) : (Colors.grey[600] ?? Colors.grey);
+    final themeConfig = context.themeConfig;
 
-    return Container(
-      color: backgroundColor,
-      child: Column(
-        children: [
-          // 顶部装饰区域
-          _buildHeaderSection(isDarkMode),
-
-          // 主要内容区域
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-
-                  // 打卡结果卡片（包含积分和魔法泡泡信息）
-                  _buildDakaCard(
-                    isDarkMode: isDarkMode,
-                    cardColor: cardColor,
-                    textColor: textColor,
-                    subtitleColor: subtitleColor,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 操作按钮卡片
-                  _buildActionCards(
-                    isDarkMode: isDarkMode,
-                    cardColor: cardColor,
-                    textColor: textColor,
-                  ),
-
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 构建顶部装饰区域
-  Widget _buildHeaderSection(bool isDarkMode) {
-    return Container(
-      height: 140,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.gradientStartColor,
-            AppTheme.gradientEndColor,
-          ],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // 简洁的庆祝装饰
-          _buildSimpleCelebration(),
-
-          // 副标题文本
-          Positioned(
-            bottom: 24,
-            left: 20,
-            right: 20,
-            child: Center(
-              child: Text(
-                '继续坚持，每天进步一点点',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.95),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.3,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 构建简洁的庆祝装饰
-  Widget _buildSimpleCelebration() {
-    return Stack(
+    // 固定顶部的庆祝 Hero，始终在 AppBar 之下铺满渐变色块
+    return Column(
       children: [
-        // 顶部柔和的中心光晕
-        Positioned(
-          top: -30,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.15),
-                    Colors.white.withValues(alpha: 0.05),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+        _buildHero(themeConfig),
+        Expanded(child: _buildBody(themeConfig)),
       ],
     );
   }
 
-  // 构建打卡结果卡片
-  Widget _buildDakaCard({
-    required bool isDarkMode,
-    required Color cardColor,
-    required Color textColor,
-    required Color subtitleColor,
-  }) {
+  Widget _buildBody(AppThemeConfig themeConfig) {
+    if (!dataLoaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     if (!dakaResult.success) {
-      return Container(
+      return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.15),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.info_outline,
-              color: Colors.orange,
-              size: 22,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                dakaResult.msg ?? '打卡失败',
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  height: 1.4,
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: _buildFailureCard(themeConfig),
       );
     }
 
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 22, 16, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildMetricsCard(themeConfig),
+          const SizedBox(height: 14),
+          _buildActionGroup(themeConfig),
+        ],
+      ),
+    );
+  }
+
+  // 构建顶部庆祝 Hero：主题渐变色块 + 完成印章 + 主标题
+  Widget _buildHero(AppThemeConfig themeConfig) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      height: 250,
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.2),
-          width: 2,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [themeConfig.primaryColor, themeConfig.primaryDarkColor],
         ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: themeConfig.primaryColor.withValues(alpha: themeConfig.isDark ? 0.25 : 0.18),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
           ),
         ],
+      ),
+      child: Stack(
+        children: [
+          // 顶部柔和中心光晕
+          Positioned(
+            top: -50,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 190,
+                height: 190,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0.18),
+                      Colors.white.withValues(alpha: 0.04),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // 完成内容（避开 AppBar 区域，置于 Hero 下段）
+          Positioned(
+            left: 20,
+            right: 20,
+            top: 104,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 完成印章
+                Container(
+                  width: 62,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
+                  ),
+                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 34),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  '打卡成功',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '今日学习完成 · 继续坚持每天进步一点点',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 构建打卡成果指标卡（排版驱动：随标签 + 修长数字，微发丝分隔）
+  Widget _buildMetricsCard(AppThemeConfig themeConfig) {
+    final continuousDays = Global.getLoggedInUser()?.continuousDakaDayCount ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      decoration: BoxDecoration(
+        color: themeConfig.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: themeConfig.cardBorder, width: 1),
+        boxShadow: themeConfig.cardShadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.check_circle,
-                  color: AppTheme.primaryColor,
-                  size: 22,
+              Text(
+                '打卡成果',
+                style: TextStyle(
+                  color: themeConfig.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '打卡成功！',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '今日学习完成',
-                      style: TextStyle(
-                        color: subtitleColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
+              Icon(
+                Icons.auto_awesome_rounded,
+                size: 18,
+                color: themeConfig.primaryColor.withValues(alpha: 0.45),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryColor.withValues(alpha: 0.1),
-                  AppTheme.primaryLightColor.withValues(alpha: 0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // 获得魔法泡泡
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.auto_awesome,
-                            color: Colors.purple[300] ?? Colors.purple,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '魔法泡泡',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Text(
-                            cowDung.toString(),
-                            style: TextStyle(
-                              color: Colors.purple[300] ?? Colors.purple,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '个',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              _buildMetric(themeConfig, label: '魔法泡泡', value: '$cowDung'),
+              _buildMetricDivider(themeConfig),
+              _buildMetric(themeConfig, label: '今日积分', value: '+$todayDakaScore'),
+              _buildMetricDivider(themeConfig),
+              _buildMetric(themeConfig, label: '连续打卡', value: '$continuousDays', unit: '天'),
+            ],
           ),
-          // 管理员按钮 - 进入我的小天地
-          if (dakaResult.success && Global.getLoggedInUser()?.isAdmin == true) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(
-                  Icons.eco,
-                  size: 18.0,
-                ),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.green[600],
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 2,
-                ),
-                label: const Text(
-                  '进入我的小天地',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                onPressed: () {
-                  context.push('/farm');
-                },
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  // 构建操作按钮卡片
-  Widget _buildActionCards({
-    required bool isDarkMode,
-    required Color cardColor,
-    required Color textColor,
+  Widget _buildMetric(
+    AppThemeConfig themeConfig, {
+    required String label,
+    required String value,
+    String? unit,
   }) {
-    return Column(
-      children: [
-        // 前往词表卡片
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-              width: 1,
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: themeConfig.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
           ),
-          child: Row(
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '若要复习，可前往',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '查看今日学习的单词',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
+              Text(
+                value,
+                style: TextStyle(
+                  color: themeConfig.textPrimary,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Roboto',
+                  letterSpacing: -0.4,
+                  height: 1.0,
                 ),
               ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                icon: const Icon(
-                  Icons.wysiwyg,
-                  size: 18.0,
-                ),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: context.primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 2,
-                ),
-                key: const Key('finish_word_list_btn'),
-                label: const Text(
-                  '词表',
+              if (unit != null) ...[
+                const SizedBox(width: 3),
+                Text(
+                  unit,
                   style: TextStyle(
-                    fontSize: 14,
+                    color: themeConfig.textSecondary,
+                    fontSize: 12,
                     fontWeight: FontWeight.w400,
                   ),
-                ),
-                onPressed: () {
-                  context.go('/index', extra: IndexPageArgs(1));
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // 分享打卡海报卡片
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '坚持开口，值得记录',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '生成精美打卡海报',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                icon: const Icon(
-                  Icons.share_outlined,
-                  size: 18.0,
-                ),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: context.primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 2,
-                ),
-                label: const Text(
-                  '打卡海报',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                onPressed: _openSharePosterDialog,
-              ),
-            ],
-          ),
-        ),
-
-        // 给个好评卡片（如果存在）
-        if (marketAppUrl != null) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
                 ),
               ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '喜欢泡泡，那就',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '给个好评支持一下',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  icon: const Icon(
-                    Icons.favorite,
-                    size: 18.0,
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.red[400],
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 2,
-                  ),
-                  label: const Text(
-                    '给个好评吧',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  onPressed: () {
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricDivider(AppThemeConfig themeConfig) {
+    return Container(
+      width: 0.5,
+      height: 46,
+      color: themeConfig.textSecondary.withValues(alpha: 0.16),
+    );
+  }
+
+  // 构建操作入口分组内聚卡片（Grouped Inset Card：图标 + 标题/副说明 + 轻箭头）
+  Widget _buildActionGroup(AppThemeConfig themeConfig) {
+    final isAdmin = Global.getLoggedInUser()?.isAdmin == true;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: themeConfig.cardShadows,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: themeConfig.cardBg,
+          child: Column(
+            children: [
+              _buildActionItem(
+                themeConfig,
+                key: const Key('finish_word_list_btn'),
+                icon: Icons.wysiwyg_rounded,
+                iconColor: themeConfig.primaryColor,
+                title: '前往词表',
+                subtitle: '复习今日学习的单词',
+                onTap: () => context.go('/index', extra: IndexPageArgs(1)),
+              ),
+              _buildActionDivider(themeConfig),
+              _buildActionItem(
+                themeConfig,
+                icon: Icons.share_outlined,
+                iconColor: themeConfig.primaryColor,
+                title: '生成打卡海报',
+                subtitle: '坚持开口，值得记录',
+                onTap: _openSharePosterDialog,
+              ),
+              if (marketAppUrl != null) ...[
+                _buildActionDivider(themeConfig),
+                _buildActionItem(
+                  themeConfig,
+                  icon: Icons.favorite_outline_rounded,
+                  iconColor: themeConfig.warmAccentColor,
+                  title: '给个好评',
+                  subtitle: '喜欢，就支持一下',
+                  onTap: () {
                     launchUrl(Uri.parse(marketAppUrl!), mode: LaunchMode.externalApplication);
                   },
                 ),
               ],
+              if (isAdmin) ...[
+                _buildActionDivider(themeConfig),
+                _buildActionItem(
+                  themeConfig,
+                  icon: Icons.eco_rounded,
+                  iconColor: themeConfig.primaryColor,
+                  title: '进入我的小天地',
+                  subtitle: '打理你的专属学习田园',
+                  onTap: () => context.push('/farm'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionItem(
+    AppThemeConfig themeConfig, {
+    Key? key,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      key: key,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: iconColor),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: themeConfig.textPrimary,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: themeConfig.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 13,
+              color: themeConfig.textSecondary.withValues(alpha: 0.35),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionDivider(AppThemeConfig themeConfig) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 54, right: 18),
+      child: Divider(
+        height: 1,
+        thickness: 0.5,
+        color: themeConfig.isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.055),
+      ),
+    );
+  }
+
+  // 构建打卡失败提示卡
+  Widget _buildFailureCard(AppThemeConfig themeConfig) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: themeConfig.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: themeConfig.cardBorder, width: 1),
+        boxShadow: themeConfig.cardShadows,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: themeConfig.warmAccentColor, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              dakaResult.msg ?? '打卡失败',
+              style: TextStyle(
+                color: themeConfig.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
+              ),
             ),
           ),
         ],
-      ],
+      ),
     );
   }
 
@@ -762,79 +573,53 @@ class FinishPageState extends State<FinishPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () {
-              context.go('/index');
-            },
-          ),
+      appBar: _buildAppBar(context.themeConfig),
+      body: renderPage(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(AppThemeConfig themeConfig) {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
+      leading: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          shape: BoxShape.circle,
         ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.celebration,
-              color: Colors.amber[300],
-              size: 24,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '学习完成',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        // 添加一个与leading相同宽度的透明占位符，使标题完全居中
-        actions: [
-          Container(
-            margin: const EdgeInsets.all(8),
-            width: 48, // 与leading的IconButton宽度相同（56 - 8*2 margin）
-            height: 48,
+        child: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 20,
           ),
-        ],
+          onPressed: () {
+            context.go('/index');
+          },
+        ),
       ),
-      body: (!dataLoaded)
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : renderPage(),
+      title: Text(
+        '学习完成',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+        ),
+      ),
+      centerTitle: true,
+      // 添加一个与leading相同宽度的透明占位符，使标题完全居中
+      actions: [
+        Container(
+          margin: const EdgeInsets.all(8),
+          width: 48, // 与leading的IconButton宽度相同（56 - 8*2 margin）
+          height: 48,
+        ),
+      ],
     );
   }
 }
