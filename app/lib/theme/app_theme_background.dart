@@ -101,8 +101,8 @@ class AppThemeBackground extends StatelessWidget {
 
 /// 白色底 + 主题色光晕的绘制器
 ///
-/// 光晕基色 = 主题主色向白色靠拢的"淡彩"，避免直接用深主色把白底染灰。
-/// 三团光晕用略微不同的白化比例制造微妙色温差，层次更自然。
+/// 光晕采用**主题色的同色系深浅渐变**(主题色 → 半浓 → 透明)，不掺白，
+/// 色感更纯、更统一，不发灰；三团光晕用略不同的浓度制造层次。
 class _LightGlowPainter extends CustomPainter {
   final AppThemeStyle style;
   _LightGlowPainter(this.style);
@@ -112,48 +112,34 @@ class _LightGlowPainter extends CustomPainter {
     final cfg = AppThemeConfig.of(style);
     final rect = Offset.zero & size;
 
-    // 1) 基础底色：纯白 → 明显浅冷色，让白色卡片真正"浮起来"(卡片更白、更亮)，边界清晰
+    // 1) 基础底色：纯白 → 极浅冷白，整体偏白、更明亮，同时保留让卡片浮起的明度差
     canvas.drawRect(
       rect,
       Paint()
         ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFFFF), Color(0xFFD3DEE9)],
+          colors: [Color(0xFFFFFFFF), Color(0xFFE6ECF2)],
         ).createShader(rect),
     );
 
-    // 2) 三团柔和光晕：主光晕为主题色；右上用"冷暖对照色"点缀，形成冷暖交织的氛围
-    final accentGlow = _accentGlowColor(cfg);
+    // 2) 三团柔和光晕：统一用主题色的同色系深浅渐变(主题色 → 半浓 → 透明)，不掺白，色感更纯、更统一。
+    //    浓度收一点、半径略缩，让白色成分更多、整体更偏白明亮；中心下移避开顶部中央。
     _glow(canvas,
-        center: Offset(size.width * 0.10, size.height * 0.08),
-        radius: size.width * 0.64,
-        color: Color.lerp(cfg.primaryColor, Colors.white, 0.22)!,
-        alpha: 0.30);
+        center: Offset(size.width * 0.16, size.height * 0.26),
+        radius: size.width * 0.80,
+        color: cfg.primaryColor,
+        alpha: 0.28);
     _glow(canvas,
-        center: Offset(size.width * 0.95, size.height * 0.26),
-        radius: size.width * 0.68,
-        color: accentGlow,
-        alpha: 0.26);
+        center: Offset(size.width * 0.94, size.height * 0.30),
+        radius: size.width * 0.78,
+        color: cfg.primaryColor,
+        alpha: 0.24);
     _glow(canvas,
-        center: Offset(size.width * 0.42, size.height * 0.98),
-        radius: size.width * 0.88,
-        color: Color.lerp(cfg.primaryColor, Colors.white, 0.16)!,
-        alpha: 0.26);
-  }
-
-  /// 冷暖对照点缀色：
-  /// 冷色主题(蓝/青/靛/青绿)配柔和的暖沙金，暖色主题(橘/红/黄)配柔和的冷青，
-  /// 让光晕在主题色之外多一层冷暖交互的氛围；低饱和主题(如极简白墨)不做冷暖点缀，退回中性灰。
-  Color _accentGlowColor(AppThemeConfig cfg) {
-    final hsv = HSVColor.fromColor(cfg.primaryColor);
-    if (hsv.saturation < 0.15) {
-      return Color.lerp(cfg.primaryColor, Colors.white, 0.30)!;
-    }
-    final isWarm = hsv.hue < 70 || hsv.hue > 320;
-    return isWarm
-        ? Color.lerp(const Color(0xFF79B8D8), Colors.white, 0.25)!
-        : Color.lerp(const Color(0xFFE8B87E), Colors.white, 0.25)!;
+        center: Offset(size.width * 0.48, size.height * 1.00),
+        radius: size.width * 0.98,
+        color: cfg.primaryColor,
+        alpha: 0.27);
   }
 
   void _glow(Canvas canvas,
