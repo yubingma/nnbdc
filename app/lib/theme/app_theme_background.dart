@@ -125,11 +125,13 @@ class _LightGlowPainter extends CustomPainter {
 
     // 2) 三团柔和光晕：统一用主题色的同色系深浅渐变(主题色 → 半浓 → 透明)，不掺白，色感更纯、更统一。
     //    按屏幕宽高比分档适配：
-    //    - 窄高屏(手机, 宽高比<0.62)：光晕用长边为基准、纵向分布更均匀、浓度更低，避免"上下两坨、中间留白"；
-    //    - 方正屏(iPad/桌面, 宽高比>=0.62)：保持原参数(宽为基准)，维持已认可的均匀效果。
+    //    - 窄高屏(手机, 宽高比<0.62)：光晕用长边为基准、纵向分布更均匀、浓度更低、饱和度也略降，避免小屏上偏浓；
+    //    - 方正屏(iPad/桌面, 宽高比>=0.62)：保持原参数(宽为基准、原始主题色)，维持已认可的均匀效果。
     final aspect = size.width / size.height;
     final isNarrow = aspect < 0.62;
     final base = isNarrow ? size.longestSide : size.width;
+    final color =
+        isNarrow ? Color.lerp(cfg.primaryColor, cfg.primaryDarkColor, 0.5)! : cfg.primaryColor;
     final centers = isNarrow
         ? const [Offset(0.16, 0.16), Offset(0.94, 0.20), Offset(0.50, 1.02)]
         : const [Offset(0.16, 0.26), Offset(0.94, 0.30), Offset(0.48, 1.00)];
@@ -139,7 +141,7 @@ class _LightGlowPainter extends CustomPainter {
       _glow(canvas,
           center: Offset(size.width * centers[i].dx, size.height * centers[i].dy),
           radius: base * radii[i],
-          color: cfg.primaryColor,
+          color: color,
           alpha: alphas[i]);
     }
   }
