@@ -161,7 +161,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
 
-    final cardBg = themeConfig.cardBg;
+    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
     final subtleBg = themeConfig.subtleBg;
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
@@ -716,7 +716,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
 
-    final cardBg = themeConfig.cardBg;
+    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;

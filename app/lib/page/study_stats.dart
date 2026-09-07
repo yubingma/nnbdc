@@ -57,7 +57,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
-    final cardColor = themeConfig.cardBg;
+    final cardColor = PageVibrancyConfig.base.cardColor(themeConfig);
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;

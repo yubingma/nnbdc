@@ -281,7 +281,7 @@ class FinishPageState extends State<FinishPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
       decoration: BoxDecoration(
-        color: themeConfig.cardBg,
+        color: PageVibrancyConfig.base.cardColor(themeConfig),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: themeConfig.cardBorder, width: 1),
         boxShadow: themeConfig.cardShadows,
@@ -395,7 +395,7 @@ class FinishPageState extends State<FinishPage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Material(
-          color: themeConfig.cardBg,
+          color: PageVibrancyConfig.base.cardColor(themeConfig),
           child: Column(
             children: [
               _buildActionItem(
@@ -520,7 +520,7 @@ class FinishPageState extends State<FinishPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: themeConfig.cardBg,
+        color: PageVibrancyConfig.base.cardColor(themeConfig),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: themeConfig.cardBorder, width: 1),
         boxShadow: themeConfig.cardShadows,

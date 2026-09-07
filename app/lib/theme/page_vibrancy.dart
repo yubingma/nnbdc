@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'app_theme.dart';
+
 /// 页面级背景调参集中配置（全站唯一调整入口）
 ///
 /// 一个值对象统一描述某页背景与卡片的各项微调：
@@ -59,6 +62,13 @@ class PageVibrancyConfig {
         bottomShift: bottomShift * tabletGradientRatio,
         cardOpacity: cardOpacity * tabletOpacityRatio,
       );
+
+  /// 本页卡片底色（唯一入口）：浅色用白、深色用深蓝底，统一以 [cardOpacity] 控制不透明度。
+  /// 全站卡片应调用它而非直接写死透明白，从而一处改 [cardOpacity] 全局/按页生效。
+  Color cardColor(AppThemeConfig theme) {
+    final baseColor = theme.isDark ? const Color(0xFF18202F) : Colors.white;
+    return baseColor.withValues(alpha: cardOpacity.clamp(0.0, 1.0));
+  }
 }
 
 /// 各页面背景调参常量引用（均为手机/基准档；平板时由 AppScaffold 自动 × 系数）

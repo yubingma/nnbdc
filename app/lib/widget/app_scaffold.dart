@@ -29,7 +29,7 @@ extension AppThemeContextExtension on BuildContext {
 
   Color get primaryColor => themeConfig.primaryColor;
   Color get subtleBg => themeConfig.subtleBg;
-  Color get cardBg => themeConfig.cardBg.withValues(alpha: Constants.cardOpacity);
+  Color get cardBg => PageVibrancyConfig.base.cardColor(themeConfig);
   Color get buttonBg => themeConfig.cardBg.withValues(alpha: Constants.buttonOpacity);
   Color get cardBorder => themeConfig.cardBorder;
   Color get textPrimary => themeConfig.textPrimary;

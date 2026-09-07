@@ -955,7 +955,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
-    final cardBg = themeConfig.cardBg;
+    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
     final cardBorder = themeConfig.cardBorder;
 
     return Container(

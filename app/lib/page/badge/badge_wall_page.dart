@@ -202,7 +202,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     final themeStyle = Provider.of<DarkMode>(context, listen: false).themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
 
-    final cardBg = themeConfig.cardBg;
+    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
     final subtleBg = themeConfig.subtleBg;
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
@@ -498,7 +498,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     final isDarkMode = themeStyle.isDark;
     final filtered = _filteredBadges;
 
-    final cardBg = themeConfig.cardBg;
+    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
     final subtleBg = themeConfig.subtleBg;
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;

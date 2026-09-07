@@ -80,7 +80,7 @@ class _GamePageState extends State<GamePage> {
     final controller = TextEditingController();
     final themeStyle = context.read<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = themeConfig.cardBg;
+    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
     final cardBorder = themeConfig.cardBorder;
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
@@ -641,7 +641,7 @@ class _GamePageState extends State<GamePage> {
 
   /// 大厅分组折叠卡片
   Widget _buildGroupCard(HallGroupVo group, AppThemeConfig themeConfig) {
-    final cardBg = themeConfig.cardBg;
+    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
     final cardBorder = themeConfig.cardBorder;
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;

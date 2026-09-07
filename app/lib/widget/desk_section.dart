@@ -14,6 +14,7 @@ import 'package:nnbdc/page/word_list/dict_words.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/privileged_dict_explanation_dialog.dart';
@@ -142,7 +143,7 @@ class _MyDeskSectionState extends State<MyDeskSection> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: themeConfig.cardBg,
+        color: PageVibrancyConfig.base.cardColor(themeConfig),
         borderRadius: BorderRadius.circular(20),
         // 与外层卡片一致：摒弃硬描边，边缘靠卡面明度 + 柔和阴影定义
         boxShadow: [
@@ -493,7 +494,7 @@ class _DictCardState extends State<DictCard> {
     final subtitleColor = themeConfig.textSecondary;
     final masteredColor = themeConfig.primaryColor;
     final fetchColor = themeConfig.primaryColor.withValues(alpha: 0.65);
-    final cardBg = themeConfig.cardBg;
+    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
 
     return Material(
       color: Colors.transparent,

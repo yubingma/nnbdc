@@ -421,7 +421,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
 
-    final searchBoxBg = themeConfig.cardBg;
+    final searchBoxBg = PageVibrancy.search.cardColor(themeConfig);
     final searchBoxBorder =
         _focusNode.hasFocus ? themeConfig.primaryColor : themeConfig.cardBorder;
     final accentColor = themeConfig.primaryColor;
@@ -545,7 +545,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                   controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
                   child: Material(
-                    color: themeConfig.cardBg,
+                    color: PageVibrancy.search.cardColor(themeConfig),
                     borderRadius: BorderRadius.circular(16),
                     clipBehavior: Clip.antiAlias,
                     child: Column(

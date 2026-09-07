@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../api/enum.dart';
 import '../../../state.dart';
 import '../../../theme/app_theme.dart';
+import '../../../theme/page_vibrancy.dart';
 
 class WordListAppBarMenu extends StatelessWidget {
   final WordListStudyMode studyMode;
@@ -37,7 +38,7 @@ class WordListAppBarMenu extends StatelessWidget {
         Icons.more_vert_rounded,
         color: Colors.white,
       ),
-      color: themeConfig.cardBg,
+      color: PageVibrancyConfig.base.cardColor(themeConfig),
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.12),
       shape: RoundedRectangleBorder(

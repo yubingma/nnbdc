@@ -1104,7 +1104,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
-    final cardColor = themeConfig.cardBg;
+    final cardColor = PageVibrancy.me.cardColor(themeConfig);
     final borderColor = themeConfig.cardBorder;
     final cardShadow = themeConfig.cardShadows;
 
