@@ -5,6 +5,7 @@ import '../constants.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_theme_background.dart';
+import '../theme/page_vibrancy.dart';
 
 /// BuildContext 主题便捷扩展
 /// 让任意 Widget 都可以直接通过 `context.primaryColor` 或 `context.themeConfig` 访问当前动态主题
@@ -59,9 +60,10 @@ class AppScaffold extends StatelessWidget {
   final bool extendBodyBehindAppBar;
   final bool extendBody;
   final bool showBackground;
-  /// 背景"提气强度"(默认 0 即当前观感)，透传给 AppThemeBackground；页面可独立调节。
-  /// 值越大越亮，无上限，但饱和度和明度有 [0,1] 物理上限，到纯白即封顶。
-  final double vibrancy;
+  /// 背景"提气"调参（提气强度 + 渐变幅度），透传给 AppThemeBackground；页面可独立调节。
+  /// 默认 [PageVibrancyConfig.none] 即当前观感。值越大越亮，无上限，但饱和度和明度
+  /// 有 [0,1] 物理上限，到纯白即封顶。
+  final PageVibrancyConfig vibrancy;
   final Key? scaffoldKey;
 
   const AppScaffold({
@@ -78,7 +80,7 @@ class AppScaffold extends StatelessWidget {
     this.extendBodyBehindAppBar = false,
     this.extendBody = false,
     this.showBackground = true,
-    this.vibrancy = 0,
+    this.vibrancy = PageVibrancyConfig.none,
     this.scaffoldKey,
   });
 
@@ -111,7 +113,8 @@ class AppScaffold extends StatelessWidget {
         Positioned.fill(
           child: AppThemeBackground(
             themeStyle: style,
-            vibrancy: vibrancy,
+            vibrancy: vibrancy.vibrancy,
+            gradientSpan: vibrancy.gradientSpan,
           ),
         ),
         scaffold,

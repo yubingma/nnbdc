@@ -309,12 +309,16 @@ List<Widget> renderAsrMeaningItems(WordWrapper word,
                 color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
               ),
               const SizedBox(width: 4.5),
-              Text(
-                'AI 认可释义: "${word.aiApprovedAnswer}"',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+              Flexible(
+                child: Text(
+                  'AI 认可: "${word.aiApprovedAnswer}"',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+                  ),
                 ),
               ),
             ],

@@ -406,7 +406,8 @@ class _GamePageState extends State<GamePage> {
             Positioned.fill(
               child: AppThemeBackground(
                 themeStyle: themeStyle,
-                vibrancy: PageVibrancy.game,
+                vibrancy: PageVibrancy.game.vibrancy,
+                gradientSpan: PageVibrancy.game.gradientSpan,
               ),
             ),
             SafeArea(
@@ -479,7 +480,8 @@ class _GamePageState extends State<GamePage> {
           Positioned.fill(
             child: AppThemeBackground(
               themeStyle: themeStyle,
-              vibrancy: PageVibrancy.game,
+              vibrancy: PageVibrancy.game.vibrancy,
+              gradientSpan: PageVibrancy.game.gradientSpan,
             ),
           ),
           SafeArea(
