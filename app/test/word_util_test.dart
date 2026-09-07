@@ -75,4 +75,39 @@ void main() {
       expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 0)), true);
     });
   });
+
+  group('WordWrapper Equality and Deduplication', () {
+    test('wrappers with same word id are equal regardless of UI answering state', () {
+      final w1 = WordVo.c2('journal')..id = 'w_123';
+      final wrapper1 = WordWrapper(w1, null);
+      // wrapper1 用户已经答对并高亮了释义
+      wrapper1.asrMatchedMeaningItemParts.add(Pair(0, 0));
+      wrapper1.asrRevealedMeaningItemParts.add(Pair(0, 1));
+
+      // wrapper2 是从数据库新查出的相同单词对象，未答状态
+      final w2 = WordVo.c2('journal')..id = 'w_123';
+      final wrapper2 = WordWrapper(w2, null);
+
+      expect(wrapper1 == wrapper2, true);
+      expect(wrapper1.hashCode, wrapper2.hashCode);
+
+      final list = [wrapper1];
+      // 核心防重判定：list 必须能正确识别 wrapper2 已存在
+      expect(list.contains(wrapper2), true);
+    });
+
+    test('wrappers with different ids are not equal', () {
+      final w1 = WordVo.c2('journal')..id = 'w_1';
+      final w2 = WordVo.c2('mechanism')..id = 'w_2';
+      expect(WordWrapper(w1, null) == WordWrapper(w2, null), false);
+    });
+
+    test('fallback to spell comparison when id is null', () {
+      final w1 = WordVo.c2('apple');
+      final w2 = WordVo.c2('apple');
+      final w3 = WordVo.c2('banana');
+      expect(WordWrapper(w1, null) == WordWrapper(w2, null), true);
+      expect(WordWrapper(w1, null) == WordWrapper(w3, null), false);
+    });
+  });
 }

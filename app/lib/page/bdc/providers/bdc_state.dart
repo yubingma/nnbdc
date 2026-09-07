@@ -299,6 +299,15 @@ class BdcState extends Equatable {
     reviewReturnTarget,
     word,
     wordWrapper,
+    wordWrapper != null
+        ? Object.hash(
+            wordWrapper!.asrMatchedMeaningItemParts.length,
+            wordWrapper!.asrRevealedMeaningItemParts.length,
+            wordWrapper!.hintLetterCount,
+            wordWrapper!.isAiEvaluating,
+            wordWrapper!.answeredAllMeanings,
+          )
+        : null,
     studyStep,
     activeUserStudySteps,
     hasFinishedAnswering,

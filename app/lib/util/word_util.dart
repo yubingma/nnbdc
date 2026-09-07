@@ -189,16 +189,17 @@ class WordWrapper {
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is WordWrapper &&
-          runtimeType == other.runtimeType &&
-          word.id == other.word.id &&
-          asrMatchedMeaningItemParts.length == other.asrMatchedMeaningItemParts.length &&
-          asrRevealedMeaningItemParts.length == other.asrRevealedMeaningItemParts.length;
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! WordWrapper) return false;
+    if (word.id != null && other.word.id != null) {
+      return word.id == other.word.id;
+    }
+    return word.spell == other.word.spell;
+  }
 
   @override
-  int get hashCode => word.id.hashCode;
+  int get hashCode => word.id?.hashCode ?? word.spell.hashCode;
 }
 
 /// 把释义项拆分为子项, 并排除为空的情况

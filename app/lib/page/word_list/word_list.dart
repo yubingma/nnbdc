@@ -1033,12 +1033,16 @@ class WordListPageState extends State<WordListPage>
             if (notification.scrollDelta != null &&
                 notification.scrollDelta! > 0) {
               // 检查是否滚动到最下方单词
-              if (notification.metrics.extentAfter < 100) {
+              if (notification.metrics.extentAfter < 100 &&
+                  !controller.isQuerying &&
+                  (totalWordCount < 0 || (baseIndex != null && baseIndex! + words.length < totalWordCount))) {
                 Global.logger.d(
                     '向下滚动触发: extentAfter=${notification.metrics.extentAfter}, baseIndex=$baseIndex, words.length=${words.length}');
                 // 使用Future.microtask减少UI阻塞
                 Future.microtask(() {
-                  doQuery(false, baseIndex! + words.length, _pageSize, false);
+                  if (baseIndex != null) {
+                    doQuery(false, baseIndex! + words.length, _pageSize, false);
+                  }
                 });
               }
             }
@@ -1046,17 +1050,21 @@ class WordListPageState extends State<WordListPage>
             else if (notification.scrollDelta != null &&
                 notification.scrollDelta! < 0) {
               // 检查是否滚动到最上方单词，且还有更多内容可以加载
-              if (notification.metrics.extentBefore < 100 && baseIndex! > 0) {
+              if (notification.metrics.extentBefore < 100 &&
+                  (baseIndex ?? 0) > 0 &&
+                  !controller.isQuerying) {
                 Global.logger.d(
                     '向上滚动触发: extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex, words.length=${words.length}');
                 // 使用Future.microtask减少UI阻塞
                 Future.microtask(() {
-                  Global.logger.d(
-                      '开始向上查询: fromIndex=${baseIndex! - _pageSize}, pageSize=$_pageSize');
-                  doQuery(false, baseIndex! - _pageSize, _pageSize, false);
+                  if (baseIndex != null && baseIndex! > 0) {
+                    Global.logger.d(
+                        '开始向上查询: fromIndex=${baseIndex! - _pageSize}, pageSize=$_pageSize');
+                    doQuery(false, max(0, baseIndex! - _pageSize), _pageSize, false);
+                  }
                 });
               } else if (notification.metrics.extentBefore < 100 &&
-                  baseIndex! <= 0) {
+                  (baseIndex ?? 0) <= 0) {
                 Global.logger.d(
                     '向上滚动检测: 已到最顶部，无法继续向上加载 extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex');
               }

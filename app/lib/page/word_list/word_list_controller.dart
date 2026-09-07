@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -305,14 +306,15 @@ class WordListController extends ChangeNotifier {
   Future<void> doQuery(bool clearCurrent, int fromIndex, final int queryPageSize, bool jumpToTailWhenReady, {bool force = false}) async {
     fromIndex = fromIndex < 0 ? 0 : fromIndex;
 
+    final isGoingUp = !clearCurrent && baseIndex != null && fromIndex < baseIndex!;
+    final isGoingDown = !clearCurrent && baseIndex != null && fromIndex >= baseIndex!;
+
     if (isQuerying ||
         doNotQueryPlease ||
-        (totalWordCount >= 0 && fromIndex >= totalWordCount) ||
-        (!clearCurrent &&
-            totalWordCount >= 0 &&
-            words.length >= totalWordCount &&
-            words.isNotEmpty) ||
         fromIndex < 0 ||
+        (totalWordCount >= 0 && fromIndex >= totalWordCount) ||
+        (isGoingUp && baseIndex! <= 0) ||
+        (isGoingDown && totalWordCount >= 0 && baseIndex! + words.length >= totalWordCount && words.isNotEmpty) ||
         (!force && !clearCurrent && lastQueryTime != null &&
             AppClock.now().difference(lastQueryTime!).inMilliseconds <
                 minQueryInterval)) {
@@ -357,35 +359,45 @@ class WordListController extends ChangeNotifier {
       List<WordWrapper> newWords = List.from(words);
       int? newBaseIndex = baseIndex;
 
-      if (fromIndex < baseIndex!) {
-        Global.logger.d('向上加载数据: fromIndex=$fromIndex, baseIndex=$baseIndex, 当前words长度=${words.length}');
-        var beforeLen = newWords.length;
-        var newData = result.rows.where((element) => !words.contains(element)).toList();
-        for (var w in newData) {
-          w.currentProgress = args.wordProgressProvider.getWordProgress(w.tag);
-          w.maxProgress = args.wordProgressProvider.getWordProgressMax(w.tag);
-        }
-        newWords.insertAll(0, newData);
-        var lenDelta = newWords.length - beforeLen;
-        newBaseIndex = baseIndex! - lenDelta;
+      final existingKeys = words.map((w) => w.word.id ?? w.word.spell).toSet();
 
-        if (jumpToTailWhenReady == false) {
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (itemScrollController.isAttached) {
-              itemScrollController.scrollTo(
-                  index: lenDelta,
-                  duration: const Duration(milliseconds: 100),
-                  alignment: 0.5);
-            }
-          });
+      if (baseIndex != null && fromIndex < baseIndex!) {
+        Global.logger.d('向上加载数据: fromIndex=$fromIndex, baseIndex=$baseIndex, 当前words长度=${words.length}');
+        final newData = result.rows
+            .where((element) => !existingKeys.contains(element.word.id ?? element.word.spell))
+            .toList();
+
+        if (newData.isNotEmpty) {
+          for (var w in newData) {
+            w.currentProgress = args.wordProgressProvider.getWordProgress(w.tag);
+            w.maxProgress = args.wordProgressProvider.getWordProgressMax(w.tag);
+          }
+          newWords.insertAll(0, newData);
+          newBaseIndex = max(0, baseIndex! - newData.length);
+
+          if (jumpToTailWhenReady == false) {
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              if (itemScrollController.isAttached) {
+                itemScrollController.scrollTo(
+                    index: newData.length,
+                    duration: const Duration(milliseconds: 100),
+                    alignment: 0.5);
+              }
+            });
+          }
         }
       } else {
-        final loadedRows = result.rows.where((element) => !words.contains(element)).toList();
-        for (var w in loadedRows) {
-          w.currentProgress = args.wordProgressProvider.getWordProgress(w.tag);
-          w.maxProgress = args.wordProgressProvider.getWordProgressMax(w.tag);
+        final loadedRows = result.rows
+            .where((element) => !existingKeys.contains(element.word.id ?? element.word.spell))
+            .toList();
+
+        if (loadedRows.isNotEmpty) {
+          for (var w in loadedRows) {
+            w.currentProgress = args.wordProgressProvider.getWordProgress(w.tag);
+            w.maxProgress = args.wordProgressProvider.getWordProgressMax(w.tag);
+          }
+          newWords.addAll(loadedRows);
         }
-        newWords.addAll(loadedRows);
       }
 
       totalWordCount = newTotalWordCount;
