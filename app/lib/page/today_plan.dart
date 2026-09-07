@@ -522,12 +522,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             // 减去上下 padding(12+36)，让内容恰好铺满视口，iPad 等大屏不再底部留白
                             minHeight: constraints.maxHeight - 48,
                           ),
-                          child: IntrinsicHeight(
-                            child: Column(
-                              // 内容高度不足视口时，将各组均匀铺开占满整屏
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
+                          child: Column(
+                            // 内容高度不足视口时，将各组均匀铺开占满整屏
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            // 不用 IntrinsicHeight：ConstrainedBox(minHeight) 已让 Column 撑满
+                            // 视口并分发 spaceBetween；而内建高度量算会触发懒加载视口
+                            // (ReorderableListView/RenderShrinkWrappingViewport) 拒绝返回内建尺寸而崩溃。
+                            children: [
                             // 极简顶栏（与原型 1:1 对齐：TODAY'S PLAN + 今日学习计划 + 右侧高级设置图标）
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -618,8 +620,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               ],
                             ),
                           ),
-                        ),
-                      );
+                        );
                     },
                   ),
                 ),
@@ -1637,6 +1638,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         children: [
           // 新词轨道（点击精准定位至新词轨道配置 Tab）
           _buildTrackDisplayRow(
+            title: '新词',
             checkStep: _newCheckStep ?? 'En2Ch',
             correctSteps: _newCorrectSteps,
             wrongSteps: _newWrongSteps,
@@ -1647,6 +1649,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           Container(height: 0.6, color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.055)),
           // 旧词轨道（点击精准定位至旧词轨道配置 Tab）
           _buildTrackDisplayRow(
+            title: '旧词',
             checkStep: _reviewCheckStep ?? 'En2Ch',
             correctSteps: _reviewCorrectSteps,
             wrongSteps: _reviewWrongSteps,
@@ -1658,8 +1661,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 单个轨道的纯排版展示行：左侧裸排版「测评起点」，右侧「答对/答错 → 结果」语义色
+  /// 单个轨道的纯排版展示行：左侧裸排版「轨道名 + 测评起点」，右侧「答对/答错 → 结果」语义色
   Widget _buildTrackDisplayRow({
+    required String title,
     required String checkStep,
     required List<String> correctSteps,
     required List<String> wrongSteps,
@@ -1686,14 +1690,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 左侧：测评起点（裸排版，无容器）
+            // 左侧：裸排版「测评起点」（无容器）——测评前加轨道类型，明确是新词还是旧词
             SizedBox(
-              width: 92,
+              width: 96,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '测评',
+                    '$title测评',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,

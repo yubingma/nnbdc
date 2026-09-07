@@ -1,20 +1,23 @@
 /// 页面级背景调参集中配置（全站唯一调整入口）
 ///
-/// 每个页面一个 `PageVibrancyConfig` 值对象，统一描述该页背景的各项微调：
+/// 每个页面一个 `PageVibrancyConfig` 值对象，统一描述该页背景与卡片的各项微调：
 /// - [vibrancy]：提气强度。值越大越亮，无上限；但饱和度和明度被收紧到 [0,1]，
 ///   背景到纯白即封顶。`0` 即当前默认观感。
 /// - [midLight]：手机浅色背景的"中部基准明度"，顶部/底部以其为中心偏移。
 /// - [topShift] / [bottomShift]：顶部、底部相对中部基准的明度偏移量，可正可负，
 ///   甚至可反相（顶部比底部更重）。正值更亮，负值更深。
+/// - [cardOpacity]：浅色模式下卡面（毛玻璃卡片底色）的不透明度，0~1。值越大卡片越实
+///   (更不透明、更清晰明亮)，值越小越透。默认 0.50 即现状。
 ///
 /// 用法：页面在构造 `AppScaffold(vibrancy: ...)` 或 `AppThemeBackground(vibrancy: ...)`
-/// 时引用这里的常量。统一调整某个页面的提气档位或渐变，只需改本文件。
+/// 时引用这里的常量。统一调整某个页面的提气档位、渐变或卡片透明度，只需改本文件。
 class PageVibrancyConfig {
   const PageVibrancyConfig({
     this.vibrancy = 0,
     this.midLight = 0.675,
     this.topShift = 0.115,
     this.bottomShift = -0.115,
+    this.cardOpacity = 0.50,
   });
 
   /// 提气强度（0 即现状；越大越亮，到纯白封顶）
@@ -29,7 +32,10 @@ class PageVibrancyConfig {
   /// 底部相对中部的明度偏移量（默认 -0.115 即现状；正值则底部更亮）
   final double bottomShift;
 
-  /// 现状默认值（0 提气 + 现状渐变）
+  /// 浅色模式下卡面不透明度（默认 0.50 即现状；越大越实）
+  final double cardOpacity;
+
+  /// 现状默认值（0 提气 + 现状渐变 + 现状卡片透明度）
   static const PageVibrancyConfig none = PageVibrancyConfig();
 }
 
@@ -49,7 +55,7 @@ class PageVibrancy {
 
   /// 今日学习计划（首页「学习」Tab）：顶底差小、整体明亮、卡片清晰
   static const PageVibrancyConfig todayPlan =
-      PageVibrancyConfig(vibrancy: 1.2, topShift: 0.05, bottomShift: -0.05);
+      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05);
 
   /// 词表（首页「词表」Tab）
   static const PageVibrancyConfig wordLists = PageVibrancyConfig.none;
