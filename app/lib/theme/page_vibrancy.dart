@@ -41,23 +41,26 @@ class PageVibrancyConfig {
   // ---------- 默认基准档（= 手机调好的观感） ----------
   /// 在手机上各页面实际使用的基准：提气 1.6 + 轻微渐变 + 卡片全实。
   static const PageVibrancyConfig base =
-      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 0.9);
+      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 1.0);
 
   // ---------- 平板对手机的分字段系数（<1 更收敛、>1 更张扬） ----------
   /// 平板相对手机「提气强度」的系数
-  static const double tabletVibrancyRatio = 0.75;
+  static const double tabletVibrancyRatio = 1;
 
   /// 平板相对手机「渐变偏移」的系数（作用于顶部/底部偏移的绝对值）
-  static const double tabletGradientRatio = 0.8;
+  static const double tabletGradientRatio = 1.6;
 
   /// 平板相对手机「卡片透明度」的系数（1 对应手机的全实）
-  static const double tabletOpacityRatio = 0.85;
+  static const double tabletOpacityRatio = 1;
 
-  /// 平板档：把【本配置】的提气、渐变偏移、卡片透明度各乘相应系数，得到同页面在平板上的值。
-  /// 中部基准明度 [midLight] 保持不变。从而手机上的调整成果一键传导到平板，无需分别调。
+  /// 平板相对手机「中部基准明度」的系数（平板底色明度跟随收敛）
+  static const double tabletMidLightRatio = 1;
+
+  /// 平板档：把【本配置】的提气、渐变偏移、卡片透明度、中部明度各乘相应系数，
+  /// 得到同页面在平板上的值。从而手机上的调整成果一键传导到平板，无需分别调。
   PageVibrancyConfig forTablet() => PageVibrancyConfig(
         vibrancy: vibrancy * tabletVibrancyRatio,
-        midLight: midLight,
+        midLight: midLight * tabletMidLightRatio,
         topShift: topShift * tabletGradientRatio,
         bottomShift: bottomShift * tabletGradientRatio,
         cardOpacity: cardOpacity * tabletOpacityRatio,
