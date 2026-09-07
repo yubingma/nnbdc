@@ -134,6 +134,8 @@ class LoginPageState extends State<LoginPage>
     final dividerColor = themeConfig.cardBorder;
 
     return AppScaffold(
+      // 登录页在手机浅色模式下用莫兰迪灰调背景，偏暗；提气让整页透出主题色鲜活感
+      vibrancy: 2,
       body: Stack(
         children: [
           // 1. 顶部与底部柔和环境微光

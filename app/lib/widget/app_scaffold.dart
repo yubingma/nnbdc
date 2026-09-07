@@ -59,6 +59,8 @@ class AppScaffold extends StatelessWidget {
   final bool extendBodyBehindAppBar;
   final bool extendBody;
   final bool showBackground;
+  /// 背景"提气强度"(0~1)，透传给 AppThemeBackground；页面可独立调节，默认 0 即当前观感
+  final double vibrancy;
   final Key? scaffoldKey;
 
   const AppScaffold({
@@ -75,6 +77,7 @@ class AppScaffold extends StatelessWidget {
     this.extendBodyBehindAppBar = false,
     this.extendBody = false,
     this.showBackground = true,
+    this.vibrancy = 0,
     this.scaffoldKey,
   });
 
@@ -107,6 +110,7 @@ class AppScaffold extends StatelessWidget {
         Positioned.fill(
           child: AppThemeBackground(
             themeStyle: style,
+            vibrancy: vibrancy,
           ),
         ),
         scaffold,

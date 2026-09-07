@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/word_list/confusable_words.dart';
@@ -12,6 +11,7 @@ import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/widget/desk_section.dart';
 import 'package:nnbdc/widget/dict_book_icon.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +20,6 @@ import '../api/vo.dart';
 import '../state.dart';
 import 'package:nnbdc/event/events.dart';
 import '../global.dart';
-import '../util/utils.dart';
 
 class WordListsPage extends StatefulWidget {
   const WordListsPage({super.key});
@@ -33,9 +32,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   static WordListsPageState? instance;
   bool dataLoaded = false;
   List<WordList> wordLists = [];
-  List<Dict> deskDicts = [];
-  Map<String, int> deskDictMasteredCounts = {};
-  Map<String, int> deskDictLearningCounts = {};
+  List<LearningDict> deskLearningDicts = [];
   bool _isDirty = false;
   StreamSubscription? _subscription;
   StreamSubscription? _dictDownloadSub;
@@ -94,44 +91,18 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
       final listsResult = await WordBo().getWordLists();
       final lists = listsResult.data ?? [];
 
-      // 加载用户书桌上的词书与已掌握/已取词数
+      // 加载用户书桌上的词书列表（我的书桌完整版自行统计）
       final user = Global.getLoggedInUser();
-      final loadedDeskDicts = <Dict>[];
-      final loadedMasteredCounts = <String, int>{};
-      final loadedLearningCounts = <String, int>{};
+      final loadedDeskLearningDicts = <LearningDict>[];
       if (user != null) {
         final db = MyDatabase.instance;
-        final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user.id);
-        for (final ld in learningDicts) {
-          final d = await db.dictsDao.findById(ld.dictId);
-          if (d != null) {
-            loadedDeskDicts.add(d);
-            try {
-              final mCount = await db.masteredWordsDao.getMasteredWordsCountInDicts(user.id, [d.id]);
-              loadedMasteredCounts[d.id] = mCount;
-            } catch (e, st) {
-              Global.logger.w('获取词书 ${d.id} 已掌握词数失败: $e', stackTrace: st);
-              loadedMasteredCounts[d.id] = 0;
-            }
-            try {
-              final lCount = await db.learningWordsDao.getLearningWordsCountInDicts(user.id, [d.id]);
-              loadedLearningCounts[d.id] = lCount;
-            } catch (e, st) {
-              Global.logger.w('获取词书 ${d.id} 学习中词数失败: $e', stackTrace: st);
-              loadedLearningCounts[d.id] = 0;
-            }
-          }
-        }
-        // 最新选的词书排在首位（书桌主卡片高亮展示）
-        loadedDeskDicts.sort((a, b) => b.updateTime.compareTo(a.updateTime));
+        loadedDeskLearningDicts.addAll(await db.learningDictsDao.getLearningDictsOfUser(user.id));
       }
 
       if (mounted) {
         setState(() {
           wordLists = lists;
-          deskDicts = loadedDeskDicts;
-          deskDictMasteredCounts = loadedMasteredCounts;
-          deskDictLearningCounts = loadedLearningCounts;
+          deskLearningDicts = loadedDeskLearningDicts;
           dataLoaded = true;
         });
         Global.logger.d('[EventBus Debug] loadData() 已触发 UI 刷新 (setState)');
@@ -144,13 +115,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
         });
       }
     }
-  }
-
-  String _cleanDictName(String name) {
-    if (name.endsWith('.dict')) {
-      return name.substring(0, name.lastIndexOf('.'));
-    }
-    return name;
   }
 
   WordList? _findListByName(String name) {
@@ -246,8 +210,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 1. 我的书桌板块
-                          _buildDeskBooksSection(isDarkMode),
+                          // 1. 我的书桌板块（完整版）
+                          MyDeskSection(learningDicts: deskLearningDicts, onChanged: loadData),
                           const SizedBox(height: 20),
 
                           // 2. 今日学习板块 (2x2 网格)
@@ -288,160 +252,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           ),
           if (trailing != null) trailing,
         ],
-      ),
-    );
-  }
-
-  /// 1. 我的书桌板块 (用户正在背的词书)
-  Widget _buildDeskBooksSection(bool isDarkMode) {
-    final themeStyle = context.watch<DarkMode>().themeStyle;
-    final themeConfig = AppThemeConfig.of(themeStyle);
-
-    final textColor = themeConfig.textPrimary;
-    final accentColor = themeConfig.primaryColor;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题与选词书操作
-        _buildSectionHeader(
-          '我的书桌',
-          textColor,
-          trailing: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () {
-              context.push('/select_book').then((_) => loadData());
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '选词书',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w500,
-                      color: accentColor,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 10,
-                    color: accentColor.withValues(alpha: 0.8),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        // 词书列表（聚合一体化现代大卡片，收拢多本词书）
-        if (deskDicts.isEmpty)
-          _buildEmptyDeskCard(isDarkMode)
-        else
-          FrostedGlassCard(
-            borderRadius: 16,
-            bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
-            borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
-            shadow: BoxShadow(
-              color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-            sigma: 7,
-            child: Column(
-              children: [
-                for (int i = 0; i < deskDicts.length; i++) ...[
-                  if (i > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 48, right: 14),
-                      child: Divider(
-                        height: 1,
-                        thickness: 0.5,
-                        color: isDarkMode
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : Colors.black.withValues(alpha: 0.055),
-                      ),
-                    ),
-                  () {
-                    final dict = deskDicts[i];
-                    final total = dict.wordCount;
-                    final mastered = deskDictMasteredCounts[dict.id] ?? 0;
-                    final learning = deskDictLearningCounts[dict.id] ?? 0;
-                    final fetched = mastered + learning;
-                    final masteryProgress = total > 0 ? (mastered / total).clamp(0.0, 1.0) : 0.0;
-                    final fetchProgress = total > 0 ? (fetched / total).clamp(0.0, 1.0) : 0.0;
-                    final percent = (masteryProgress * 100).toInt();
-                    final iconColor = Util.getDictIconColor(
-                      ownerId: dict.ownerId,
-                      name: dict.name,
-                      defaultColor: accentColor,
-                    );
-                    return _buildGroupedItemRow(
-                      leading: DictBookIcon.fromDict(
-                        editable: dict.editable,
-                        ownerId: dict.ownerId,
-                        name: dict.name,
-                        color: iconColor,
-                      ),
-                      title: _cleanDictName(dict.name),
-                      subtitle: '已掌握 $mastered · 已取 $fetched · $percent%',
-                      countText: '$total 词',
-                      progress: masteryProgress,
-                      fetchProgress: fetchProgress,
-                      isFirst: i == 0,
-                      isLast: i == deskDicts.length - 1,
-                      onTap: () async {
-                        await toDictWordsListPage(dict.id, true);
-                        loadData();
-                      },
-                    );
-                  }(),
-                ],
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  /// 空书桌引导卡片
-  Widget _buildEmptyDeskCard(bool isDarkMode) {
-    final themeStyle = context.watch<DarkMode>().themeStyle;
-    final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF);
-    final cardBorder = themeConfig.cardBorder;
-    final textSub = themeConfig.textSecondary;
-    final accentColor = themeConfig.primaryColor;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        context.push('/select_book').then((_) => loadData());
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: cardBorder, width: 1),
-          boxShadow: themeConfig.cardShadows,
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.bookmark_add_outlined, size: 22, color: accentColor),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '书桌暂无词书，点击挑选一本加入学习',
-                style: TextStyle(fontSize: 13, color: textSub, fontWeight: FontWeight.w400),
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 12, color: textSub.withValues(alpha: 0.5)),
-          ],
-        ),
       ),
     );
   }

@@ -7,19 +7,34 @@ import 'app_theme.dart';
 /// - **窄高屏(手机，宽高比<0.62)**：低饱和的莫兰迪单色渐变(同主题色相，顶部浅→底部深，无光晕)；
 /// - **方正屏(iPad/桌面，宽高比>=0.62)**：白底 + 主题色柔光晕(保持已认可的 iPad 质感)。
 /// 深色模式：保留贯满全屏的"浅→深"纵向渐变带(带主题色相，无中心热点、无边缘骤退)。
+///
+/// [vibrancy]：各页可独立调节的"提气强度"(0~1，默认 0 即当前观感)。同一主题，
+/// 需要更通透、更亮的页面(如登录页)传入更高强度，其余页面保持 0 不变。
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
   final bool? isDarkMode;
+  final double vibrancy;
 
   const AppThemeBackground({
     super.key,
     required this.themeStyle,
     this.isDarkMode,
+    this.vibrancy = 0,
   });
 
   bool _resolveIsDark(BuildContext context) {
     if (isDarkMode != null) return isDarkMode!;
     return themeStyle.isDark;
+  }
+
+  /// 提气：在 HSL 空间内同时抬升饱和度和明度，范围收窄到 [0,1]
+  Color _lift(Color color) {
+    if (vibrancy <= 0) return color;
+    final hsl = HSLColor.fromColor(color);
+    return hsl
+        .withSaturation((hsl.saturation + 0.10 * vibrancy).clamp(0.0, 1.0))
+        .withLightness((hsl.lightness + 0.14 * vibrancy).clamp(0.0, 1.0))
+        .toColor();
   }
 
   @override
@@ -50,6 +65,7 @@ class AppThemeBackground extends StatelessWidget {
 
   /// 浅色·手机：低饱和单色渐变 —— 以主题色为基，降饱和度、调整明度，
   /// 生成"顶部浅 → 底部深"的同色相莫兰迪渐变(无光晕、安静统一)。
+  /// [vibrancy]>0 时逐段提气：抬升饱和度与明度，让基础色从"雾灰"透出主题色鲜活感。
   Widget _buildLightMutedGradient(AppThemeStyle style) {
     // 鼠尾草玻璃主题：用参考图的精确取样曲线(多点渐变)复现"安静高级"的灰绿质感
     if (style == AppThemeStyle.sageglass) {
@@ -58,11 +74,11 @@ class AppThemeBackground extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: const [
-              Color(0xFFB8C4C0), // 顶部
-              Color(0xFF9BAEAD), // 62%
-              Color(0xFF91A3A2), // 90%
-              Color(0xFF8B9E9D), // 底部(比原版更浅)
+            colors: [
+              _lift(const Color(0xFFB8C4C0)), // 顶部
+              _lift(const Color(0xFF9BAEAD)), // 62%
+              _lift(const Color(0xFF91A3A2)), // 90%
+              _lift(const Color(0xFF8B9E9D)), // 底部(比原版更浅)
             ],
             stops: const [0.0, 0.62, 0.90, 1.0],
           ),
@@ -73,9 +89,9 @@ class AppThemeBackground extends StatelessWidget {
     Color shade(double sat, double light) =>
         hsl.withSaturation(sat).withLightness(light).toColor();
     return _buildVerticalGradient(
-      shade(0.14, 0.79),
-      shade(0.14, 0.68),
-      shade(0.14, 0.56),
+      _lift(shade(0.14, 0.79)),
+      _lift(shade(0.14, 0.68)),
+      _lift(shade(0.14, 0.56)),
     );
   }
 
