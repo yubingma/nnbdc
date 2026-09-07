@@ -54,7 +54,7 @@ class _LevelPathPageState extends State<LevelPathPage> {
     final textColor = themeConfig.textPrimary;
     final subTextColor = themeConfig.textSecondary;
     final primaryColor = themeConfig.primaryColor;
-    final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
+    final cardBg = context.cardBg;
     final levels = LevelUtil.allLevels;
 
     final currentLevelObj = LevelUtil.getTitle(widget.currentLevel);

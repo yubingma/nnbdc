@@ -27,9 +27,19 @@ extension AppThemeContextExtension on BuildContext {
 
   AppThemeConfig get themeConfig => AppThemeConfig.of(themeStyle);
 
+  /// 是否窄高屏（手机）：宽高比 < 0.62。与 AppThemeBackground 的分屏口径一致。
+  bool get _isNarrow {
+    final size = MediaQuery.of(this).size;
+    return size.width / size.height < 0.62;
+  }
+
   Color get primaryColor => themeConfig.primaryColor;
   Color get subtleBg => themeConfig.subtleBg;
-  Color get cardBg => PageVibrancyConfig.base.cardColor(themeConfig);
+  /// 默认卡片底色（跟随 base，且按设备自动乘平板系数）
+  Color get cardBg => PageVibrancyConfig.base.cardColor(themeConfig, isNarrow: _isNarrow);
+  /// 指定页面配置的卡片底色（按设备自动乘平板系数）
+  Color pageCardBg(PageVibrancyConfig config) =>
+      config.cardColor(themeConfig, isNarrow: _isNarrow);
   Color get buttonBg => themeConfig.cardBg.withValues(alpha: Constants.buttonOpacity);
   Color get cardBorder => themeConfig.cardBorder;
   Color get textPrimary => themeConfig.textPrimary;

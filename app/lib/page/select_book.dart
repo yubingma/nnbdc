@@ -541,7 +541,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                     decoration: BoxDecoration(
                       color: isSelected
                           ? themeConfig.primaryColor
-                          : PageVibrancyConfig.base.cardColor(themeConfig),
+                          : context.cardBg,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
                         color: isSelected
@@ -619,7 +619,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           final themeConfig = AppThemeConfig.of(themeStyle);
           final primaryColor = themeConfig.primaryColor;
           final subtleBg = themeConfig.subtleBg;
-          final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
+          final cardBg = context.cardBg;
           final cardBorder = themeConfig.cardBorder;
 
           return AnimatedContainer(
@@ -832,7 +832,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                 final themeConfig = AppThemeConfig.of(themeStyle);
                 final primaryColor = themeConfig.primaryColor;
                 final subtleBg = themeConfig.subtleBg;
-                final cardBg = PageVibrancyConfig.base.cardColor(themeConfig);
+                final cardBg = context.cardBg;
                 final cardBorder = themeConfig.cardBorder;
 
                 return AnimatedContainer(
@@ -1790,7 +1790,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 6 : 12),
       ),
       decoration: BoxDecoration(
-        color: PageVibrancyConfig.base.cardColor(themeConfig),
+        color: context.cardBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
@@ -1886,7 +1886,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                 height: 32,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: PageVibrancyConfig.base.cardColor(themeConfig),
+                  color: context.cardBg,
                   border: Border.all(
                     color: themeConfig.cardBorder,
                     width: 1,
@@ -1971,7 +1971,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       height: 38,
       margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(
-        color: PageVibrancyConfig.base.cardColor(themeConfig),
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(19),
         border: Border.all(
           color: themeConfig.cardBorder,

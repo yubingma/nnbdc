@@ -370,7 +370,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
         FrostedGlassCard(
           borderRadius: 16,
-          bgColor: isDarkMode ? const Color(0xB818202F) : PageVibrancy.wordLists.cardColor(themeConfig),
+          bgColor: isDarkMode ? const Color(0xB818202F) : context.pageCardBg(PageVibrancy.wordLists),
           borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
           shadow: BoxShadow(
             color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
@@ -483,8 +483,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), const Color(0xB818202F))
             : const Color(0xB818202F))
         : (isHighlighted
-            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), PageVibrancy.wordLists.cardColor(themeConfig))
-            : PageVibrancy.wordLists.cardColor(themeConfig));
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), context.pageCardBg(PageVibrancy.wordLists))
+            : context.pageCardBg(PageVibrancy.wordLists));
 
     final cardBorder = isHighlighted
         ? accentColor.withValues(alpha: isDarkMode ? 0.55 : 0.45)
@@ -773,7 +773,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
     return FrostedGlassCard(
       borderRadius: 16,
-      bgColor: isDarkMode ? const Color(0xB818202F) : PageVibrancy.wordLists.cardColor(themeConfig),
+      bgColor: isDarkMode ? const Color(0xB818202F) : context.pageCardBg(PageVibrancy.wordLists),
       borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
       shadow: BoxShadow(
         color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),

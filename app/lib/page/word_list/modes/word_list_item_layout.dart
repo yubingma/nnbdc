@@ -5,7 +5,6 @@ import 'package:nnbdc/util/word_util.dart';
 import 'package:provider/provider.dart';
 import '../../../state.dart';
 import '../../../theme/app_theme.dart';
-import '../../../theme/page_vibrancy.dart';
 import '../word_list_actions.dart';
 
 /// 单词卡片在组内的位置（用于聚合岛设计：首项上圆角、中间直角、尾项下圆角，上下紧凑无缝）
@@ -60,11 +59,11 @@ class WordListItemLayout extends StatelessWidget {
     // 选中时赋予 4%~5% 的极淡通透主题微光底色，未选中时保持纯白/卡片底色
     final cardBg = isDarkMode
         ? (isBookmarked
-            ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), PageVibrancyConfig.base.cardColor(themeConfig))
-            : PageVibrancyConfig.base.cardColor(themeConfig))
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), context.cardBg)
+            : context.cardBg)
         : (isBookmarked
-            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), PageVibrancyConfig.base.cardColor(themeConfig))
-            : PageVibrancyConfig.base.cardColor(themeConfig));
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), context.cardBg)
+            : context.cardBg);
 
     // 选中时使用精致半透的主题微边框 (1.2px)，未选中时为极淡边框
     final borderColor = isBookmarked

@@ -64,10 +64,12 @@ class PageVibrancyConfig {
       );
 
   /// 本页卡片底色（唯一入口）：浅色用白、深色用深蓝底，统一以 [cardOpacity] 控制不透明度。
-  /// 全站卡片应调用它而非直接写死透明白，从而一处改 [cardOpacity] 全局/按页生效。
-  Color cardColor(AppThemeConfig theme) {
+  /// [isNarrow] 为屏幕是否窄高屏(手机)：false(平板/方正屏)时自动按 [forTablet] 乘平板系数，
+  /// 使手机的卡片透明度调整成果同样作用于平板。全站卡片应调用它而非直接写死透明白。
+  Color cardColor(AppThemeConfig theme, {bool isNarrow = true}) {
+    final cfg = isNarrow ? this : forTablet();
     final baseColor = theme.isDark ? const Color(0xFF18202F) : Colors.white;
-    return baseColor.withValues(alpha: cardOpacity.clamp(0.0, 1.0));
+    return baseColor.withValues(alpha: cfg.cardOpacity.clamp(0.0, 1.0));
   }
 }
 
