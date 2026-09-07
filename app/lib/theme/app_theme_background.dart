@@ -83,7 +83,7 @@ class AppThemeBackground extends StatelessWidget {
     final cfg = _resolveConfig(context);
     return isNarrow
         ? _buildLightMutedGradient(themeStyle, cfg)
-        : _buildLightGlow(themeStyle);
+        : _buildLightGlow(themeStyle, cfg);
   }
 
   /// 统一垂直渐变构建器：三段色贯穿全屏，上半段保持轻盈、下半段更快沉深
@@ -137,9 +137,10 @@ class AppThemeBackground extends StatelessWidget {
   }
 
   /// 浅色·iPad/桌面：白色高亮底 + 柔和主题色光晕
-  Widget _buildLightGlow(AppThemeStyle style) {
+  /// [cfg] 控制底色明度(midLight/提气)与光晕强度(vibrancy)，与手机渐变同源，从而打通手机/平板背景。
+  Widget _buildLightGlow(AppThemeStyle style, PageVibrancyConfig cfg) {
     return CustomPaint(
-      painter: _LightGlowPainter(style),
+      painter: _LightGlowPainter(style, cfg),
       size: Size.infinite,
     );
   }
@@ -200,43 +201,58 @@ class AppThemeBackground extends StatelessWidget {
 
 /// 白底 + 主题色光晕绘制器(用于 iPad/桌面方正屏)
 ///
-/// 基础：纯白 → 极浅冷白的纵向渐变；再叠加三团主题色同色系柔光晕。
+/// 基础：由 cfg 的明度(midLight/vibrancy)生成的浅色渐变；再叠加三团主题色同色系柔光晕，
+/// 光晕强度随 cfg.vibrancy 提气而增强。与手机莫兰迪渐变共用同一 PageVibrancyConfig。
 class _LightGlowPainter extends CustomPainter {
   final AppThemeStyle style;
-  _LightGlowPainter(this.style);
+  final PageVibrancyConfig cfg;
+  _LightGlowPainter(this.style, this.cfg);
+
+  // 与 AppThemeBackground._lift 相同口径的提气：抬升饱和度和明度
+  Color _lift(Color color) {
+    if (cfg.vibrancy <= 0) return color;
+    final hsl = HSLColor.fromColor(color);
+    return hsl
+        .withSaturation((hsl.saturation + 0.10 * cfg.vibrancy).clamp(0.0, 1.0))
+        .withLightness((hsl.lightness + 0.14 * cfg.vibrancy).clamp(0.0, 1.0))
+        .toColor();
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cfg = AppThemeConfig.of(style);
+    final themeCfg = AppThemeConfig.of(style);
     final rect = Offset.zero & size;
 
-    // 1) 基础底色：纯白 → 极浅冷白，保持明亮、给卡片留明度差
+    // 1) 基础底色：与手机渐变同源 —— 主题色取低饱和(0.14)莫兰迪，按 cfg.midLight 生成浅色渐变
+    final hsl = HSLColor.fromColor(themeCfg.primaryColor);
+    Color shade(double light) => hsl.withSaturation(0.14).withLightness(light).toColor();
+    final topColor = _lift(shade((cfg.midLight + 0.12).clamp(0.0, 1.0)));
+    final bottomColor = _lift(shade((cfg.midLight - 0.10).clamp(0.0, 1.0)));
     canvas.drawRect(
       rect,
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFFFFF), Color(0xFFE6ECF2)],
+          colors: [topColor, bottomColor],
         ).createShader(rect),
     );
 
-    // 2) 三团主题色柔光晕(同色系) —— iPad 认可的宽屏参数
+    // 2) 三团主题色柔光晕(同色系)：强度随提气增强；基准 alpha 为 iPad 认可参数
+    final boost = (1.0 + cfg.vibrancy * 0.15).clamp(0.6, 1.8);
+    final a1 = (0.28 * boost).clamp(0.0, 0.6);
+    final a2 = (0.24 * boost).clamp(0.0, 0.55);
+    final a3 = (0.27 * boost).clamp(0.0, 0.6);
+    final glowColor = _lift(themeCfg.primaryColor);
     _glow(canvas,
         center: Offset(size.width * 0.16, size.height * 0.26),
-        radius: size.width * 0.80,
-        color: cfg.primaryColor,
-        alpha: 0.28);
+        radius: size.width * 0.80, color: glowColor, alpha: a1);
     _glow(canvas,
         center: Offset(size.width * 0.94, size.height * 0.30),
-        radius: size.width * 0.78,
-        color: cfg.primaryColor,
-        alpha: 0.24);
+        radius: size.width * 0.78, color: glowColor, alpha: a2);
     _glow(canvas,
         center: Offset(size.width * 0.48, size.height * 1.00),
-        radius: size.width * 0.98,
-        color: cfg.primaryColor,
-        alpha: 0.27);
+        radius: size.width * 0.98, color: glowColor, alpha: a3);
   }
 
   void _glow(Canvas canvas,
@@ -257,5 +273,6 @@ class _LightGlowPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _LightGlowPainter old) => old.style != style;
+  bool shouldRepaint(covariant _LightGlowPainter old) =>
+      old.style != style || old.cfg != cfg;
 }
