@@ -53,9 +53,9 @@ class PageVibrancy {
 
   // ========== 其余页面（默认 0 = 现状，需要时在此调高） ==========
 
-  /// 今日学习计划（首页「学习」Tab）：顶底差小、整体明亮、卡片清晰
+  /// 今日学习计划（首页「学习」Tab）：顶底差小、整体明亮、卡片清晰；卡片更实更明亮
   static const PageVibrancyConfig todayPlan =
-      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05);
+      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 0.85);
 
   /// 词表（首页「词表」Tab）
   static const PageVibrancyConfig wordLists = PageVibrancyConfig.none;

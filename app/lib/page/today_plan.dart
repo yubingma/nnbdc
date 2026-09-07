@@ -530,97 +530,97 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             // 视口并分发 spaceBetween；而内建高度量算会触发懒加载视口
                             // (ReorderableListView/RenderShrinkWrappingViewport) 拒绝返回内建尺寸而崩溃。
                             children: [
-                            // 极简顶栏（与原型 1:1 对齐：TODAY'S PLAN + 今日学习计划 + 右侧高级设置图标）
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      '今日学习计划',
-                                      style: TextStyle(
-                                        color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: -0.3,
+                              // 极简顶栏（与原型 1:1 对齐：TODAY'S PLAN + 今日学习计划 + 右侧高级设置图标）
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '今日学习计划',
+                                        style: TextStyle(
+                                          color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: -0.3,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    GestureDetector(
-                                      onTap: () => StudyDateExplanationDialog.show(context),
-                                      child: Icon(
-                                        Icons.help_outline_rounded,
-                                        size: 16,
-                                        color: themeConfig.textSecondary.withValues(alpha: 0.45),
+                                      const SizedBox(width: 6),
+                                      GestureDetector(
+                                        onTap: () => StudyDateExplanationDialog.show(context),
+                                        child: Icon(
+                                          Icons.help_outline_rounded,
+                                          size: 16,
+                                          color: themeConfig.textSecondary.withValues(alpha: 0.45),
+                                        ),
                                       ),
-                                    ),
-                                    if (_isSyncingFromCloud) ...[
-                                      const SizedBox(width: 8),
-                                      SizedBox(
-                                        width: 12,
-                                        height: 12,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 1.8,
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            isDarkMode ? Colors.white54 : Colors.black45,
+                                      if (_isSyncingFromCloud) ...[
+                                        const SizedBox(width: 8),
+                                        SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 1.8,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              isDarkMode ? Colors.white54 : Colors.black45,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                // 右侧高级设置按钮（微透晶莹小圆钮，呼应全页毛玻璃）
-                                GestureDetector(
-                                  onTap: () => _showAdvancedSettingsDialog(),
-                                  child: Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: isDarkMode
-                                          ? Colors.white.withValues(alpha: 0.08)
-                                          : Colors.white.withValues(alpha: 0.65),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: isDarkMode
-                                            ? Colors.white.withValues(alpha: 0.10)
-                                            : Colors.white.withValues(alpha: 0.24),
-                                        width: 1,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
                                       ],
-                                    ),
-                                    child: Icon(
-                                      Icons.tune_rounded,
-                                      size: 17,
-                                      color: themeConfig.textSecondary,
+                                    ],
+                                  ),
+                                  // 右侧高级设置按钮（微透晶莹小圆钮，呼应全页毛玻璃）
+                                  GestureDetector(
+                                    onTap: () => _showAdvancedSettingsDialog(),
+                                    child: Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: isDarkMode
+                                            ? Colors.white.withValues(alpha: 0.08)
+                                            : Colors.white.withValues(alpha: 0.65),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: isDarkMode
+                                              ? Colors.white.withValues(alpha: 0.10)
+                                              : Colors.white.withValues(alpha: 0.24),
+                                          width: 1,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        Icons.tune_rounded,
+                                        size: 17,
+                                        color: themeConfig.textSecondary,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
 
-                            const SizedBox(height: 22),
+                              const SizedBox(height: 22),
 
-                            // 核心大仪表盘
-                            renderMissionCard(),
+                              // 核心大仪表盘
+                              renderMissionCard(),
 
-                            const SizedBox(height: 22),
+                              const SizedBox(height: 22),
 
-                            // 学习轨道区域
-                            renderStudySteps(),
+                              // 学习轨道区域
+                              renderStudySteps(),
 
-                            const SizedBox(height: 20),
+                              const SizedBox(height: 20),
 
-                              ],
-                            ),
+                            ],
                           ),
-                        );
+                        ),
+                      );
                     },
                   ),
                 ),
