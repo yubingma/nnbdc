@@ -16,6 +16,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/bdc/models/bdc_page_args.dart';
 import 'package:nnbdc/services/ai_service.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -4048,6 +4049,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
 
     return AppScaffold(
+      vibrancy: PageVibrancy.wordDetail,
       body: SafeArea(
         bottom: false,
         child: Container(

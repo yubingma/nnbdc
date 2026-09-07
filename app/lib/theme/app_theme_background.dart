@@ -8,8 +8,10 @@ import 'app_theme.dart';
 /// - **方正屏(iPad/桌面，宽高比>=0.62)**：白底 + 主题色柔光晕(保持已认可的 iPad 质感)。
 /// 深色模式：保留贯满全屏的"浅→深"纵向渐变带(带主题色相，无中心热点、无边缘骤退)。
 ///
-/// [vibrancy]：各页可独立调节的"提气强度"(0~1，默认 0 即当前观感)。同一主题，
+/// [vibrancy]：各页可独立调节的"提气强度"(默认 0 即当前观感)。同一主题，
 /// 需要更通透、更亮的页面(如登录页)传入更高强度，其余页面保持 0 不变。
+/// 值越大提得越多，无上限；但只有"饱和度和明度"这两个物理量被收紧到 [0,1]，
+/// 所以背景到纯白(亮度=1)即封顶，之后继续加大不再变亮。
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
   final bool? isDarkMode;
@@ -27,7 +29,8 @@ class AppThemeBackground extends StatelessWidget {
     return themeStyle.isDark;
   }
 
-  /// 提气：在 HSL 空间内同时抬升饱和度和明度，范围收窄到 [0,1]
+  /// 提气：在 HSL 空间内同时抬升饱和度和明度。两者各按 [0,1] 收紧，
+  /// 因此 [vibrancy] 越大越亮，但到纯白即封顶。
   Color _lift(Color color) {
     if (vibrancy <= 0) return color;
     final hsl = HSLColor.fromColor(color);
@@ -65,7 +68,7 @@ class AppThemeBackground extends StatelessWidget {
 
   /// 浅色·手机：低饱和单色渐变 —— 以主题色为基，降饱和度、调整明度，
   /// 生成"顶部浅 → 底部深"的同色相莫兰迪渐变(无光晕、安静统一)。
-  /// [vibrancy]>0 时逐段提气：抬升饱和度与明度，让基础色从"雾灰"透出主题色鲜活感。
+  /// [vibrancy] 越大，逐段抬升饱和度与明度越多，让基础色从"雾灰"透出主题色鲜活感。
   Widget _buildLightMutedGradient(AppThemeStyle style) {
     // 鼠尾草玻璃主题：用参考图的精确取样曲线(多点渐变)复现"安静高级"的灰绿质感
     if (style == AppThemeStyle.sageglass) {

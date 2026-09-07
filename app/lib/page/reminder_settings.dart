@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/util/notification_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -210,6 +211,7 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> with Widget
         : Border.all(color: cardBorder, width: 0.8);
 
     return AppScaffold(
+      vibrancy: PageVibrancy.reminderSettings,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,

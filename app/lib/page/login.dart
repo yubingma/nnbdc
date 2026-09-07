@@ -19,6 +19,7 @@ import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 import '../config.dart';
 import '../global.dart';
 import '../socket_io.dart';
@@ -135,7 +136,7 @@ class LoginPageState extends State<LoginPage>
 
     return AppScaffold(
       // 登录页在手机浅色模式下用莫兰迪灰调背景，偏暗；提气让整页透出主题色鲜活感
-      vibrancy: 2,
+      vibrancy: PageVibrancy.login,
       body: Stack(
         children: [
           // 1. 顶部与底部柔和环境微光

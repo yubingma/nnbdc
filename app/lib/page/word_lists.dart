@@ -11,6 +11,7 @@ import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/widget/desk_section.dart';
 import 'package:nnbdc/widget/dict_book_icon.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
@@ -135,6 +136,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final isDarkMode = themeStyle.isDark;
 
     return AppScaffold(
+      vibrancy: PageVibrancy.wordLists,
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../global.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 import '../util/app_clock.dart';
 
 const List<double> _treeStageStops = [
@@ -52,6 +53,7 @@ class _FarmPageState extends State<FarmPage> {
   @override
   Widget build(BuildContext context) {
     return const AppScaffold(
+      vibrancy: PageVibrancy.farm,
       appBar: AppAppBar(
         title: '我的小天地',
       ),

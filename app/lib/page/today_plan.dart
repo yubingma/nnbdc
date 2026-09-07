@@ -9,6 +9,7 @@ import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
+import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
@@ -475,6 +476,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             child: AppThemeBackground(
               isDarkMode: isDarkMode,
               themeStyle: themeStyle,
+              vibrancy: PageVibrancy.todayPlan,
             ),
           ),
           (!dataLoaded)

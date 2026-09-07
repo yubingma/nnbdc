@@ -17,6 +17,7 @@ import '../db/db.dart';
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 import '../util/study_audio_session_controller.dart';
 import '../util/tts.dart';
 import '../widget/theme_select_dialog.dart';
@@ -1296,6 +1297,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
 
     return AppScaffold(
+      vibrancy: PageVibrancy.walkman,
       body: Container(
         // 横屏模式下调整内边距
         padding: EdgeInsets.fromLTRB(leftPadding, isLandscape ? 8.0 : 16.0, rightPadding, 0),

@@ -31,6 +31,7 @@ import '../global.dart';
 import '../state.dart';
 import 'package:nnbdc/event/events.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 import '../theme/app_theme_background.dart';
 
 class SelectBookPage extends StatefulWidget {
@@ -1942,6 +1943,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           Positioned.fill(
             child: AppThemeBackground(
               themeStyle: themeStyle,
+              vibrancy: PageVibrancy.selectBook,
             ),
           ),
           (filteredCategories.isEmpty || tabController == null)

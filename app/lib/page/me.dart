@@ -41,6 +41,7 @@ import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:nnbdc/widget/pronunciation_accent_dialog.dart';
 import 'package:nnbdc/widget/theme_select_dialog.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -3145,6 +3146,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
             child: AppThemeBackground(
               isDarkMode: isDarkModeEnabled,
               themeStyle: themeStyle,
+              vibrancy: PageVibrancy.me,
             ),
           ),
           (studyProgress == null || last30DaysDakaStatus == null)

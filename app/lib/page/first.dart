@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 import '../api/api.dart';
 import '../api/bo/user_bo.dart';
 import '../config.dart';
@@ -252,6 +253,7 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
     final accentColor = context.primaryColor;
 
     return AppScaffold(
+      vibrancy: PageVibrancy.splash,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

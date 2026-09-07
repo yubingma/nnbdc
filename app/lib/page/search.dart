@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 
 import '../state.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 import '../widget/sound_wave_icon.dart';
 
 class SearchPage extends StatefulWidget {
@@ -427,6 +428,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final textMain = themeConfig.textPrimary;
 
     return AppScaffold(
+      vibrancy: PageVibrancy.search,
       appBar: AppBar(
         toolbarHeight: 68,
         backgroundColor: Colors.transparent,

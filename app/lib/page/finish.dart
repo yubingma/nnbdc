@@ -14,6 +14,7 @@ import '../api/result.dart';
 import '../config.dart';
 import '../global.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 import '../util/analytics_util.dart';
 import '../util/notification_util.dart';
 import '../util/platform_util.dart';
@@ -574,6 +575,7 @@ class FinishPageState extends State<FinishPage> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      vibrancy: PageVibrancy.finish,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context.themeConfig),
       body: renderPage(),

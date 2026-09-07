@@ -14,6 +14,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import '../global.dart';
 import '../util/client_type.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 
 class MsgPage extends StatefulWidget {
   const MsgPage({super.key});
@@ -510,6 +511,7 @@ class MsgPageState extends State<MsgPage> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      vibrancy: PageVibrancy.message,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,

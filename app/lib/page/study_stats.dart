@@ -8,6 +8,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 
 enum HeatmapDisplayMode { date, time, count }
 
@@ -62,6 +63,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
     final accentColor = themeConfig.primaryColor;
 
     return AppScaffold(
+      vibrancy: PageVibrancy.studyStats,
       appBar: AppBar(
         title: Text('学习统计', style: TextStyle(fontWeight: FontWeight.w900, color: textColor, fontFamily: 'NotoSansSC')),
         backgroundColor: Colors.transparent,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/util/level_util.dart';
 
 class LevelPathPage extends StatefulWidget {
@@ -61,6 +62,7 @@ class _LevelPathPageState extends State<LevelPathPage> {
     final nextLevelObj = nextLevelIndex < levels.length ? levels[nextLevelIndex] : null;
 
     return AppScaffold(
+      vibrancy: PageVibrancy.levelPath,
       appBar: AppBar(
         title: Text(
           '成长之路',

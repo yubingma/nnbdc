@@ -9,6 +9,7 @@ import 'package:nnbdc/state.dart';
 import '../api/vo.dart';
 import '../global.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 import '../theme/app_theme_background.dart';
 import '../util/error_handler.dart';
 
@@ -405,6 +406,7 @@ class _GamePageState extends State<GamePage> {
             Positioned.fill(
               child: AppThemeBackground(
                 themeStyle: themeStyle,
+                vibrancy: PageVibrancy.game,
               ),
             ),
             SafeArea(
@@ -477,6 +479,7 @@ class _GamePageState extends State<GamePage> {
           Positioned.fill(
             child: AppThemeBackground(
               themeStyle: themeStyle,
+              vibrancy: PageVibrancy.game,
             ),
           ),
           SafeArea(

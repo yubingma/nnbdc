@@ -7,6 +7,7 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/page_vibrancy.dart';
 
 class BadgeWallPage extends StatefulWidget {
   const BadgeWallPage({super.key});
@@ -505,6 +506,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     final borderColor = themeConfig.cardBorder;
 
     return AppScaffold(
+      vibrancy: PageVibrancy.badgeWall,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,

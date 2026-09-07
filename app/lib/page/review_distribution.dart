@@ -7,6 +7,7 @@ import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/page/word_list/bucket_words.dart';
 import '../theme/app_theme.dart';
+import '../theme/page_vibrancy.dart';
 
 class ReviewDistributionPage extends StatefulWidget {
   const ReviewDistributionPage({super.key});
@@ -168,6 +169,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     final borderColor = themeConfig.cardBorder;
 
     return AppScaffold(
+      vibrancy: PageVibrancy.reviewDistribution,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,

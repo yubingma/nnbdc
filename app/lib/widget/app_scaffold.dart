@@ -59,7 +59,8 @@ class AppScaffold extends StatelessWidget {
   final bool extendBodyBehindAppBar;
   final bool extendBody;
   final bool showBackground;
-  /// 背景"提气强度"(0~1)，透传给 AppThemeBackground；页面可独立调节，默认 0 即当前观感
+  /// 背景"提气强度"(默认 0 即当前观感)，透传给 AppThemeBackground；页面可独立调节。
+  /// 值越大越亮，无上限，但饱和度和明度有 [0,1] 物理上限，到纯白即封顶。
   final double vibrancy;
   final Key? scaffoldKey;
 
