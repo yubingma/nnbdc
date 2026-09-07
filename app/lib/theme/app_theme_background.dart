@@ -223,11 +223,12 @@ class _LightGlowPainter extends CustomPainter {
     final themeCfg = AppThemeConfig.of(style);
     final rect = Offset.zero & size;
 
-    // 1) 基础底色：与手机渐变同源 —— 主题色取低饱和(0.14)莫兰迪，按 cfg.midLight 生成浅色渐变
+    // 1) 基础底色：与手机莫兰迪渐变【完全同源】——同一套 midLight/topShift/bottomShift + 提气，
+    //    仅方向为纵向渐变。确保平板底色与手机一致，不会更重；平板特有的光晕仅作提亮补充。
     final hsl = HSLColor.fromColor(themeCfg.primaryColor);
     Color shade(double light) => hsl.withSaturation(0.14).withLightness(light).toColor();
-    final topColor = _lift(shade((cfg.midLight + 0.12).clamp(0.0, 1.0)));
-    final bottomColor = _lift(shade((cfg.midLight - 0.10).clamp(0.0, 1.0)));
+    final topColor = _lift(shade((cfg.midLight + cfg.topShift).clamp(0.0, 1.0)));
+    final bottomColor = _lift(shade((cfg.midLight + cfg.bottomShift).clamp(0.0, 1.0)));
     canvas.drawRect(
       rect,
       Paint()
