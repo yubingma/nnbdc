@@ -223,37 +223,36 @@ class _LightGlowPainter extends CustomPainter {
     final themeCfg = AppThemeConfig.of(style);
     final rect = Offset.zero & size;
 
-    // 1) 基础底色：与手机莫兰迪渐变【完全同源】——同一套 midLight/topShift/bottomShift + 提气，
-    //    仅方向为纵向渐变。确保平板底色与手机一致，不会更重；平板特有的光晕仅作提亮补充。
+    // 1) 基础底色：与手机莫兰迪渐变【同源同构】——同一套 midLight/topShift/bottomShift + 提气，
+    //    并沿用与手机相同的三段(stops 0/0.55/1)纵向渐变，保证平板渐变层次明确、不再是一色平铺。
     final hsl = HSLColor.fromColor(themeCfg.primaryColor);
     Color shade(double light) => hsl.withSaturation(0.14).withLightness(light).toColor();
-    final topColor = _lift(shade((cfg.midLight + cfg.topShift).clamp(0.0, 1.0)));
-    final bottomColor = _lift(shade((cfg.midLight + cfg.bottomShift).clamp(0.0, 1.0)));
+    final top = _lift(shade((cfg.midLight + cfg.topShift).clamp(0.0, 1.0)));
+    final mid = _lift(shade(cfg.midLight));
+    final bottom = _lift(shade((cfg.midLight + cfg.bottomShift).clamp(0.0, 1.0)));
     canvas.drawRect(
       rect,
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [topColor, bottomColor],
+          colors: [top, mid, bottom],
+          stops: const [0.0, 0.55, 1.0],
         ).createShader(rect),
     );
 
-    // 2) 三团主题色柔光晕(同色系)：强度随提气增强；基准 alpha 为 iPad 认可参数
-    final boost = (1.0 + cfg.vibrancy * 0.15).clamp(0.6, 1.8);
-    final a1 = (0.28 * boost).clamp(0.0, 0.6);
-    final a2 = (0.24 * boost).clamp(0.0, 0.55);
-    final a3 = (0.27 * boost).clamp(0.0, 0.6);
+    // 2) 弱光晕提亮：仅作轻量氛围光，避免压重底色/掩盖渐变。基准 alpha 大幅下调。
+    final boost = (1.0 + cfg.vibrancy * 0.06).clamp(0.6, 1.2);
     final glowColor = _lift(themeCfg.primaryColor);
     _glow(canvas,
-        center: Offset(size.width * 0.16, size.height * 0.26),
-        radius: size.width * 0.80, color: glowColor, alpha: a1);
+        center: Offset(size.width * 0.16, size.height * 0.22),
+        radius: size.width * 0.70, color: glowColor, alpha: 0.10 * boost);
     _glow(canvas,
-        center: Offset(size.width * 0.94, size.height * 0.30),
-        radius: size.width * 0.78, color: glowColor, alpha: a2);
+        center: Offset(size.width * 0.94, size.height * 0.26),
+        radius: size.width * 0.68, color: glowColor, alpha: 0.09 * boost);
     _glow(canvas,
-        center: Offset(size.width * 0.48, size.height * 1.00),
-        radius: size.width * 0.98, color: glowColor, alpha: a3);
+        center: Offset(size.width * 0.50, size.height * 1.00),
+        radius: size.width * 0.80, color: glowColor, alpha: 0.10 * boost);
   }
 
   void _glow(Canvas canvas,
