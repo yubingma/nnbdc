@@ -477,7 +477,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               isDarkMode: isDarkMode,
               themeStyle: themeStyle,
               vibrancy: PageVibrancy.todayPlan.vibrancy,
-              gradientSpan: PageVibrancy.todayPlan.gradientSpan,
+              midLight: PageVibrancy.todayPlan.midLight,
+              topShift: PageVibrancy.todayPlan.topShift,
+              bottomShift: PageVibrancy.todayPlan.bottomShift,
             ),
           ),
           (!dataLoaded)

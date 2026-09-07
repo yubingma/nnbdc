@@ -59,6 +59,13 @@ public class AiController {
     private final  ExecutorService aiChatExecutor =  Executors.newFixedThreadPool(50);
 
     /**
+     * AI 裁判专用线程池：把 /ai/chat.do 的裁判判定从同步阻塞改为异步执行，
+     * 避免长期占用 Tomcat 请求线程（maxThreads），高峰期被其它请求耗尽后排队导致响应时快时慢。
+     * 大小取全局裁判并发上限（默认 30）的合理余量，保证不会成为新的瓶颈。
+     */
+    private final ExecutorService aiRefereeExecutor = Executors.newFixedThreadPool(50);
+
+    /**
      * 根据单词列表生成小短文
      * @param wordsJson JSON array of word spells
      * @return 生成的小短文
@@ -193,41 +200,64 @@ public class AiController {
 
     /**
      * 阿里云AI对话 (阻塞输出)
+     *
+     * 已改造为异步 <code>DeferredResult</code>：把真正的大模型判定提交到专属 AI 裁判线程池，
+     * 不再长期占用 Tomcat 请求线程，避免高峰期线程耗尽后请求排队造成响应时快时慢。
      */
     @PostMapping("/ai/chat.do")
-    public Result<String> aiChat(
+    public DeferredResult<Result<String>> aiChat(
             @RequestParam("messagesJson") String messagesJson,
             @RequestParam("userId") String userId) {
+        DeferredResult<Result<String>> deferredResult = new DeferredResult<>(60000L); // 60秒超时
+        deferredResult.onTimeout(() -> {
+            if (!deferredResult.isSetOrExpired()) {
+                deferredResult.setErrorResult(Result.fail("AI 裁判响应超时，请稍后再试"));
+            }
+        });
+
         if (userBo.findById(userId) == null) {
-            return Result.fail("用户身份验证失败");
+            deferredResult.setResult(Result.fail("用户身份验证失败"));
+            return deferredResult;
         }
 
+        final Map<String, String> mdcContext = MDC.getCopyOfContextMap();
         final String userIdentifier = MDC.get("userContext") != null ? MDC.get("userContext") : "User(" + userId + ")";
         final String clientType = MDC.get("platform") != null ? MDC.get("platform") : "Unknown";
 
-        Result<Runnable> admissionResult = aiBo.enterAiReferee(userId, userIdentifier, clientType);
-        if (!admissionResult.isSuccess()) {
-            return Result.fail(admissionResult.getMsg());
-        }
+        aiRefereeExecutor.execute(() -> {
+            if (mdcContext != null) MDC.setContextMap(mdcContext);
+            Result<Runnable> admissionResult = null;
+            try {
+                // 并发与流控逻辑
+                admissionResult = aiBo.enterAiReferee(userId, userIdentifier, clientType);
+                if (!admissionResult.isSuccess()) {
+                    deferredResult.setResult(Result.fail(admissionResult.getMsg()));
+                    return;
+                }
 
-        try {
-            List<Message> messages = new ArrayList<>();
-            JsonNode arrayNode = mapper.readTree(messagesJson);
-            for (JsonNode node : arrayNode) {
-                messages.add(Message.builder()
-                        .role(node.get("role").asText())
-                        .content(node.get("content").asText())
-                        .build());
+                List<Message> messages = new ArrayList<>();
+                JsonNode arrayNode = mapper.readTree(messagesJson);
+                for (JsonNode node : arrayNode) {
+                    messages.add(Message.builder()
+                            .role(node.get("role").asText())
+                            .content(node.get("content").asText())
+                            .build());
+                }
+                String result = aiBo.chat(messages);
+                deferredResult.setResult(Result.success(result));
+            } catch (Exception e) {
+                log.error("AI 裁判处理发生异常", e);
+                if (!deferredResult.isSetOrExpired()) {
+                    deferredResult.setResult(Result.fail(e.getMessage()));
+                }
+            } finally {
+                if (admissionResult != null && admissionResult.isSuccess() && admissionResult.getData() != null) {
+                    admissionResult.getData().run();
+                }
+                MDC.clear();
             }
-            String result = aiBo.chat(messages);
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail(e.getMessage());
-        } finally {
-            if (admissionResult.getData() != null) {
-                admissionResult.getData().run();
-            }
-        }
+        });
+        return deferredResult;
     }
 
     /**

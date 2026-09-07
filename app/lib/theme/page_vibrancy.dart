@@ -1,23 +1,35 @@
 /// 页面级背景调参集中配置（全站唯一调整入口）
 ///
-/// 每个页面一个 `PageVibrancyConfig` 值对象，统一描述该页背景的两项微调：
+/// 每个页面一个 `PageVibrancyConfig` 值对象，统一描述该页背景的各项微调：
 /// - [vibrancy]：提气强度。值越大越亮，无上限；但饱和度和明度被收紧到 [0,1]，
 ///   背景到纯白即封顶。`0` 即当前默认观感。
-/// - [gradientSpan]：手机浅色背景的渐变幅度（顶部与底部的明度差）。值越大顶底
-///   对比越强，`0` 为纯平色。以渐变中点 0.675 为轴对称推导，只改变落差不整体变亮。
+/// - [midLight]：手机浅色背景的"中部基准明度"，顶部/底部以其为中心偏移。
+/// - [topShift] / [bottomShift]：顶部、底部相对中部基准的明度偏移量，可正可负，
+///   甚至可反相（顶部比底部更重）。正值更亮，负值更深。
 ///
 /// 用法：页面在构造 `AppScaffold(vibrancy: ...)` 或 `AppThemeBackground(vibrancy: ...)`
-/// 时引用这里的常量。统一调整某个页面的提气档位或渐变幅度，只需改本文件。
+/// 时引用这里的常量。统一调整某个页面的提气档位或渐变，只需改本文件。
 class PageVibrancyConfig {
-  const PageVibrancyConfig({this.vibrancy = 0, this.gradientSpan = 0.23});
+  const PageVibrancyConfig({
+    this.vibrancy = 0,
+    this.midLight = 0.675,
+    this.topShift = 0.115,
+    this.bottomShift = -0.115,
+  });
 
   /// 提气强度（0 即现状；越大越亮，到纯白封顶）
   final double vibrancy;
 
-  /// 渐变幅度（顶部与底部的明度差；默认 0.23 即现状）
-  final double gradientSpan;
+  /// 中部基准明度（默认 0.675 即现状）
+  final double midLight;
 
-  /// 现状默认值（0 提气 + 现状渐变幅度）
+  /// 顶部相对中部的明度偏移量（默认 +0.115 即现状；负值则顶部更深）
+  final double topShift;
+
+  /// 底部相对中部的明度偏移量（默认 -0.115 即现状；正值则底部更亮）
+  final double bottomShift;
+
+  /// 现状默认值（0 提气 + 现状渐变）
   static const PageVibrancyConfig none = PageVibrancyConfig();
 }
 
@@ -36,7 +48,8 @@ class PageVibrancy {
   // ========== 其余页面（默认 0 = 现状，需要时在此调高） ==========
 
   /// 今日学习计划（首页「学习」Tab）
-  static const PageVibrancyConfig todayPlan = PageVibrancyConfig(vibrancy: 2);
+  static const PageVibrancyConfig todayPlan =
+      PageVibrancyConfig(vibrancy: 2, topShift: 0.45, bottomShift: -0.45);
 
   /// 词表（首页「词表」Tab）
   static const PageVibrancyConfig wordLists = PageVibrancyConfig.none;

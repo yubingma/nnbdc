@@ -114,7 +114,9 @@ class AppScaffold extends StatelessWidget {
           child: AppThemeBackground(
             themeStyle: style,
             vibrancy: vibrancy.vibrancy,
-            gradientSpan: vibrancy.gradientSpan,
+            midLight: vibrancy.midLight,
+            topShift: vibrancy.topShift,
+            bottomShift: vibrancy.bottomShift,
           ),
         ),
         scaffold,

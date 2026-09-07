@@ -42,7 +42,7 @@ server:
     context-path: /
   port: ${port:5200}
   tomcat:
-    maxThreads: 20 # tomcat可并发处理的请求数
+    maxThreads: 100 # tomcat可并发处理的请求数；AI 裁判已接入独立线程池异步化，不再长期占满请求线程（与数据库连接池 30 配套）
     connection-timeout: 30000 # 连接超时时间增加到30秒
     max-http-post-size: 20MB # 增加POST请求体限制，处理较大的Base64图片
   compression:

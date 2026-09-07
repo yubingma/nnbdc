@@ -13,21 +13,26 @@ import 'app_theme.dart';
 /// 值越大提得越多，无上限；但只有"饱和度和明度"这两个物理量被收紧到 [0,1]，
 /// 所以背景到纯白(亮度=1)即封顶，之后继续加大不再变亮。
 ///
-/// [gradientSpan]：手机浅色背景的"渐变幅度"——页面顶部与底部的明度差(默认 0.23 即现状)。
-/// 值越大顶底对比越强，0 则为纯平色。以渐变中点(明度 0.675)为轴左右对称推导
-/// 顶部/底部明度，避免整体变亮或变暗，只改变落差。
+/// [midLight]：手机浅色背景的"中部基准明度"(默认 0.675 即现状)。其余两段以此为中心。
+/// [topShift] / [bottomShift]：顶部、底部相对中部基准的**明度偏移量**，可正可负。
+/// 偏移为正则更亮/更白，为负则更重/更深，甚至可以反相(顶部比底部更重)。
+/// 各段明度 = midLight + shift，并各自收紧到 [0,1]。
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
   final bool? isDarkMode;
   final double vibrancy;
-  final double gradientSpan;
+  final double midLight;
+  final double topShift;
+  final double bottomShift;
 
   const AppThemeBackground({
     super.key,
     required this.themeStyle,
     this.isDarkMode,
     this.vibrancy = 0,
-    this.gradientSpan = 0.23,
+    this.midLight = 0.675,
+    this.topShift = 0.115,
+    this.bottomShift = -0.115,
   });
 
   bool _resolveIsDark(BuildContext context) {
@@ -97,11 +102,10 @@ class AppThemeBackground extends StatelessWidget {
     final hsl = HSLColor.fromColor(AppThemeConfig.of(style).primaryColor);
     Color shade(double sat, double light) =>
         hsl.withSaturation(sat).withLightness(light).toColor();
-    // 渐变中点明度 0.675；顶部/底部围绕中点对称展开，跨度 = gradientSpan。
-    // 这样调整幅度只改变顶底落差，不会整体变亮/变暗，也不影响提气(_lift)的独立叠加。
-    const midLight = 0.675;
-    final topLight = (midLight + gradientSpan / 2).clamp(0.0, 1.0);
-    final bottomLight = (midLight - gradientSpan / 2).clamp(0.0, 1.0);
+    // 以中部为基准，顶/底各加一个明度偏移量（可正可负，甚至反相）。
+    // 三者分别收紧到 [0,1]，与提气(_lift)独立叠加。
+    final topLight = (midLight + topShift).clamp(0.0, 1.0);
+    final bottomLight = (midLight + bottomShift).clamp(0.0, 1.0);
     return _buildVerticalGradient(
       _lift(shade(0.14, topLight)),
       _lift(shade(0.14, midLight)),

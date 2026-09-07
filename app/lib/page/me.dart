@@ -3147,7 +3147,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
               isDarkMode: isDarkModeEnabled,
               themeStyle: themeStyle,
               vibrancy: PageVibrancy.me.vibrancy,
-              gradientSpan: PageVibrancy.me.gradientSpan,
+              midLight: PageVibrancy.me.midLight,
+              topShift: PageVibrancy.me.topShift,
+              bottomShift: PageVibrancy.me.bottomShift,
             ),
           ),
           (studyProgress == null || last30DaysDakaStatus == null)

@@ -361,7 +361,7 @@ public class AdminController {
     }
 
     @PostMapping("/admin/aiChat.do")
-    public Result<String> legacyAiChat(
+    public org.springframework.web.context.request.async.DeferredResult<Result<String>> legacyAiChat(
             @RequestParam("messagesJson") String messagesJson,
             @RequestParam(value = "userId", required = false) String userId) {
         if (userId == null || userId.isEmpty()) {

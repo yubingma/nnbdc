@@ -360,6 +360,9 @@ public class AiBo {
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", aiProperties.getTextModel());
+            // 对齐 generateText / chatStream：关闭深度思考、限制输出长度，显著降低裁判响应耗时
+            body.put("enable_thinking", false);
+            body.put("max_tokens", 200);
 
             List<Map<String, String>> compatibleMessages = new ArrayList<>();
             for (Message msg : messages) {
