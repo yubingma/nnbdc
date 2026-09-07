@@ -611,7 +611,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             decoration: BoxDecoration(
                               color: _cachedIsDarkMode
                                   ? const Color(0xB8161E2A)
-                                  : Colors.white.withValues(alpha: 0.50),
+                                  : context.cardBg,
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
                                 // 极淡中性描边，仅一丝定义；边界主要靠"卡更白 + 柔和阴影"，避免生硬灰线
