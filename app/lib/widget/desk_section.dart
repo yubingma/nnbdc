@@ -144,9 +144,7 @@ class _MyDeskSectionState extends State<MyDeskSection> {
       decoration: BoxDecoration(
         color: themeConfig.cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: themeConfig.cardBorder == Colors.transparent
-            ? (isDarkMode ? Border.all(color: Colors.white.withValues(alpha: 0.08), width: 0.8) : null)
-            : Border.all(color: themeConfig.cardBorder, width: 0.8),
+        // 与外层卡片一致：摒弃硬描边，边缘靠卡面明度 + 柔和阴影定义
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),

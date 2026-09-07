@@ -9,8 +9,8 @@
 /// - [cardOpacity]：浅色模式下卡面（毛玻璃卡片底色）的不透明度，0~1。值越大卡片越实
 ///   (更不透明、更清晰明亮)，值越小越透。默认 0.50 即现状。
 ///
-/// 用法：页面在构造 `AppScaffold(vibrancy: ...)` 或 `AppThemeBackground(vibrancy: ...)`
-/// 时引用这里的常量。统一调整某个页面的提气档位、渐变或卡片透明度，只需改本文件。
+/// 平板档为手机档的"分字段系数"推导：vibrancy、渐变偏移、cardOpacity 各用一个系数，
+/// 系数即平板相对手机的比例（<1 更收敛、>1 更张扬）。
 class PageVibrancyConfig {
   const PageVibrancyConfig({
     this.vibrancy = 0,
@@ -35,8 +35,29 @@ class PageVibrancyConfig {
   /// 浅色模式下卡面不透明度（默认 0.50 即现状；越大越实）
   final double cardOpacity;
 
-  /// 现状默认值（0 提气 + 现状渐变 + 现状卡片透明度）
-  static const PageVibrancyConfig none = PageVibrancyConfig();
+  // ---------- 手机基准档 ----------
+  // 当前线上观感的统一基准：提气 1.6 + 轻微渐变 + 卡片全实。
+  static const PageVibrancyConfig phoneDefault =
+      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 1);
+
+  // ---------- 平板分字段系数（平板相对手机的比率，<1 更收敛） ----------
+  /// 平板对手机「提气强度」的系数
+  static const double _tabletVibrancyRatio = 0.75;
+
+  /// 平板对手机「渐变偏移」的系数（作用于顶部/底部偏移的绝对值）
+  static const double _tabletGradientRatio = 0.8;
+
+  /// 平板对手机「卡片透明度」的系数（1 对应手机的全实）
+  static const double _tabletOpacityRatio = 0.85;
+
+  /// 平板默认档：由手机基准 × 分字段系数推导。平板已用「白底+光晕」背景，整体较亮，
+  /// 故提气、渐变、卡面透明度都按系数收敛，避免过亮与死白。
+  static const PageVibrancyConfig tabletDefault = PageVibrancyConfig(
+    vibrancy: 1.6 * _tabletVibrancyRatio,
+    topShift: 0.05 * _tabletGradientRatio,
+    bottomShift: -0.05 * _tabletGradientRatio,
+    cardOpacity: 1.0 * _tabletOpacityRatio,
+  );
 }
 
 /// 各页面背景调参常量引用
@@ -54,51 +75,50 @@ class PageVibrancy {
   // ========== 其余页面（默认 0 = 现状，需要时在此调高） ==========
 
   /// 今日学习计划（首页「学习」Tab）：顶底差小、整体明亮、卡片清晰；卡片更实更明亮
-  static const PageVibrancyConfig todayPlan =
-      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 1);
+  static const PageVibrancyConfig todayPlan =PageVibrancyConfig.phoneDefault;
 
   /// 词表（首页「词表」Tab）
-  static const PageVibrancyConfig wordLists = PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 1);
+  static const PageVibrancyConfig wordLists = PageVibrancyConfig.phoneDefault;
 
   /// 查词（首页「查词」Tab）
-  static const PageVibrancyConfig search = PageVibrancyConfig.none;
+  static const PageVibrancyConfig search = PageVibrancyConfig.phoneDefault;
 
   /// 我（首页「我」Tab）
-  static const PageVibrancyConfig me = PageVibrancyConfig.none;
+  static const PageVibrancyConfig me = PageVibrancyConfig.phoneDefault;
 
   /// 学习统计
-  static const PageVibrancyConfig studyStats = PageVibrancyConfig.none;
+  static const PageVibrancyConfig studyStats = PageVibrancyConfig.phoneDefault;
 
   /// 记忆分布 / 复习分布
-  static const PageVibrancyConfig reviewDistribution = PageVibrancyConfig.none;
+  static const PageVibrancyConfig reviewDistribution = PageVibrancyConfig.phoneDefault;
 
   /// 消息
-  static const PageVibrancyConfig message = PageVibrancyConfig.none;
+  static const PageVibrancyConfig message = PageVibrancyConfig.phoneDefault;
 
   /// 单词详情
-  static const PageVibrancyConfig wordDetail = PageVibrancyConfig.none;
+  static const PageVibrancyConfig wordDetail = PageVibrancyConfig.phoneDefault;
 
   /// 选词书
-  static const PageVibrancyConfig selectBook = PageVibrancyConfig.none;
+  static const PageVibrancyConfig selectBook = PageVibrancyConfig.phoneDefault;
 
   /// 完成页
-  static const PageVibrancyConfig finish = PageVibrancyConfig.none;
+  static const PageVibrancyConfig finish = PageVibrancyConfig.phoneDefault;
 
   /// 农场
-  static const PageVibrancyConfig farm = PageVibrancyConfig.none;
+  static const PageVibrancyConfig farm = PageVibrancyConfig.phoneDefault;
 
   /// 徽章墙
-  static const PageVibrancyConfig badgeWall = PageVibrancyConfig.none;
+  static const PageVibrancyConfig badgeWall = PageVibrancyConfig.phoneDefault;
 
   /// 游戏大厅
-  static const PageVibrancyConfig game = PageVibrancyConfig.none;
+  static const PageVibrancyConfig game = PageVibrancyConfig.phoneDefault;
 
   /// 随身听
-  static const PageVibrancyConfig walkman = PageVibrancyConfig.none;
+  static const PageVibrancyConfig walkman = PageVibrancyConfig.phoneDefault;
 
   /// 等级路径
-  static const PageVibrancyConfig levelPath = PageVibrancyConfig.none;
+  static const PageVibrancyConfig levelPath = PageVibrancyConfig.phoneDefault;
 
   /// 提醒设置
-  static const PageVibrancyConfig reminderSettings = PageVibrancyConfig.none;
+  static const PageVibrancyConfig reminderSettings = PageVibrancyConfig.phoneDefault;
 }

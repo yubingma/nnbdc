@@ -60,10 +60,11 @@ class AppScaffold extends StatelessWidget {
   final bool extendBodyBehindAppBar;
   final bool extendBody;
   final bool showBackground;
-  /// 背景"提气"调参（提气强度 + 渐变幅度），透传给 AppThemeBackground；页面可独立调节。
-  /// 默认 [PageVibrancyConfig.none] 即当前观感。值越大越亮，无上限，但饱和度和明度
+  /// 背景"提气"调参（提气强度 + 渐变幅度）。页面可显式指定；传 null 时按当前设备
+  /// （手机/平板宽高比）自动落到 [PageVibrancyConfig.phoneDefault] 或
+  /// [PageVibrancyConfig.tabletDefault]。值越大越亮，无上限，但饱和度和明度
   /// 有 [0,1] 物理上限，到纯白即封顶。
-  final PageVibrancyConfig vibrancy;
+  final PageVibrancyConfig? vibrancy;
   final Key? scaffoldKey;
 
   const AppScaffold({
@@ -80,13 +81,24 @@ class AppScaffold extends StatelessWidget {
     this.extendBodyBehindAppBar = false,
     this.extendBody = false,
     this.showBackground = true,
-    this.vibrancy = PageVibrancyConfig.none,
+    this.vibrancy,
     this.scaffoldKey,
   });
+
+  /// 按当前屏幕宽高比分流设备默认档：窄高屏(手机, 宽高比<0.62)用 phoneDefault，否则用 tabletDefault。
+  /// 与 AppThemeBackground 的窄/方屏判断口径保持一致。
+  PageVibrancyConfig _resolveVibrancy(BuildContext context) {
+    final cfg = vibrancy;
+    if (cfg != null) return cfg;
+    final size = MediaQuery.of(context).size;
+    final isNarrow = size.width / size.height < 0.62;
+    return isNarrow ? PageVibrancyConfig.phoneDefault : PageVibrancyConfig.tabletDefault;
+  }
 
   @override
   Widget build(BuildContext context) {
     final style = context.themeStyle;
+    final resolved = _resolveVibrancy(context);
 
     final scaffold = Scaffold(
       key: scaffoldKey,
@@ -113,10 +125,10 @@ class AppScaffold extends StatelessWidget {
         Positioned.fill(
           child: AppThemeBackground(
             themeStyle: style,
-            vibrancy: vibrancy.vibrancy,
-            midLight: vibrancy.midLight,
-            topShift: vibrancy.topShift,
-            bottomShift: vibrancy.bottomShift,
+            vibrancy: resolved.vibrancy,
+            midLight: resolved.midLight,
+            topShift: resolved.topShift,
+            bottomShift: resolved.bottomShift,
           ),
         ),
         scaffold,
