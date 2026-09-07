@@ -55,10 +55,10 @@ class PageVibrancy {
 
   /// 今日学习计划（首页「学习」Tab）：顶底差小、整体明亮、卡片清晰；卡片更实更明亮
   static const PageVibrancyConfig todayPlan =
-      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 0.85);
+      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 1);
 
   /// 词表（首页「词表」Tab）
-  static const PageVibrancyConfig wordLists = PageVibrancyConfig.none;
+  static const PageVibrancyConfig wordLists = PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 1);
 
   /// 查词（首页「查词」Tab）
   static const PageVibrancyConfig search = PageVibrancyConfig.none;

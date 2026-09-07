@@ -643,7 +643,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return FrostedGlassCard(
       borderRadius: 28,
-      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
+      bgColor: isDarkMode ? const Color(0xB818202F) : Colors.white.withValues(alpha: PageVibrancy.todayPlan.cardOpacity),
       borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
       shadow: BoxShadow(
         color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
@@ -1625,7 +1625,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Widget _buildTrackDisplayCard(bool isDarkMode) {
     return FrostedGlassCard(
       borderRadius: 24,
-      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
+      bgColor: isDarkMode ? const Color(0xB818202F) : Colors.white.withValues(alpha: PageVibrancy.todayPlan.cardOpacity),
       borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
       shadow: BoxShadow(
         color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.06),
