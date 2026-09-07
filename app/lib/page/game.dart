@@ -406,10 +406,7 @@ class _GamePageState extends State<GamePage> {
             Positioned.fill(
               child: AppThemeBackground(
                 themeStyle: themeStyle,
-                vibrancy: PageVibrancy.game.vibrancy,
-                midLight: PageVibrancy.game.midLight,
-                topShift: PageVibrancy.game.topShift,
-                bottomShift: PageVibrancy.game.bottomShift,
+                config: PageVibrancy.game,
               ),
             ),
             SafeArea(
@@ -482,10 +479,7 @@ class _GamePageState extends State<GamePage> {
           Positioned.fill(
             child: AppThemeBackground(
               themeStyle: themeStyle,
-              vibrancy: PageVibrancy.game.vibrancy,
-              midLight: PageVibrancy.game.midLight,
-              topShift: PageVibrancy.game.topShift,
-              bottomShift: PageVibrancy.game.bottomShift,
+              config: PageVibrancy.game,
             ),
           ),
           SafeArea(

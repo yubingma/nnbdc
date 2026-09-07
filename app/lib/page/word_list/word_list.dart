@@ -39,6 +39,7 @@ import '../../global.dart';
 import '../../state.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_theme_background.dart';
+import '../../theme/page_vibrancy.dart';
 import '../../util/app_clock.dart';
 import '../../util/phoneme_util.dart';
 import '../../util/platform_util.dart';
@@ -2991,6 +2992,7 @@ class WordListPageState extends State<WordListPage>
         Positioned.fill(
           child: AppThemeBackground(
             themeStyle: themeStyle,
+            config: PageVibrancy.wordList,
           ),
         ),
         Scaffold(

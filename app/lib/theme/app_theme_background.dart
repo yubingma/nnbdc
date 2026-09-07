@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
+import 'page_vibrancy.dart';
 
 /// 全局自适应主题背景层组件
 ///
@@ -13,10 +14,10 @@ import 'app_theme.dart';
 /// 值越大提得越多，无上限；但只有"饱和度和明度"这两个物理量被收紧到 [0,1]，
 /// 所以背景到纯白(亮度=1)即封顶，之后继续加大不再变亮。
 ///
-/// [midLight]：手机浅色背景的"中部基准明度"(默认 0.675 即现状)。其余两段以此为中心。
-/// [topShift] / [bottomShift]：顶部、底部相对中部基准的**明度偏移量**，可正可负。
-/// 偏移为正则更亮/更白，为负则更重/更深，甚至可以反相(顶部比底部更重)。
-/// 各段明度 = midLight + shift，并各自收紧到 [0,1]。
+/// [config]：本页的"基准"提气配置（手机档）。传 null 时用 [PageVibrancyConfig.base]。
+/// 平板(方正屏)时内部自动调用 [PageVibrancyConfig.forTablet] 乘以各分字段系数，
+/// 从而与 AppScaffold 主路径共用同一套设备分流逻辑。之前以散参数(midLight/topShift/...)
+/// 传值的形式仍兼容，但不再自动做平板换算；如需平板自动换算请改用 [config]。
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
   final bool? isDarkMode;
@@ -24,6 +25,7 @@ class AppThemeBackground extends StatelessWidget {
   final double midLight;
   final double topShift;
   final double bottomShift;
+  final PageVibrancyConfig? config;
 
   const AppThemeBackground({
     super.key,
@@ -33,6 +35,7 @@ class AppThemeBackground extends StatelessWidget {
     this.midLight = 0.675,
     this.topShift = 0.115,
     this.bottomShift = -0.115,
+    this.config,
   });
 
   bool _resolveIsDark(BuildContext context) {
@@ -40,9 +43,26 @@ class AppThemeBackground extends StatelessWidget {
     return themeStyle.isDark;
   }
 
+  /// 解析本页实际使用的配置：优先 [config]（平板自动乘系数），否则用散参数组合。
+  PageVibrancyConfig _resolveConfig(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isNarrow = size.width / size.height < 0.62;
+    if (config != null) {
+      return isNarrow ? config! : config!.forTablet();
+    }
+    // 向后兼容：未传 config 时，用散参数构造基准档（不乘平板系数，值即页面显式所给）。
+    return PageVibrancyConfig(
+      vibrancy: vibrancy,
+      midLight: midLight,
+      topShift: topShift,
+      bottomShift: bottomShift,
+      cardOpacity: 1, // 散参数不携带卡片透明度，按全实处理，保持现状
+    );
+  }
+
   /// 提气：在 HSL 空间内同时抬升饱和度和明度。两者各按 [0,1] 收紧，
   /// 因此 [vibrancy] 越大越亮，但到纯白即封顶。
-  Color _lift(Color color) {
+  Color _lift(Color color, double vibrancy) {
     if (vibrancy <= 0) return color;
     final hsl = HSLColor.fromColor(color);
     return hsl
@@ -60,7 +80,10 @@ class AppThemeBackground extends StatelessWidget {
     // 窄高屏(手机)用莫兰迪单色渐变；方正屏(iPad/桌面)保留白底+光晕
     final size = MediaQuery.of(context).size;
     final isNarrow = size.width / size.height < 0.62;
-    return isNarrow ? _buildLightMutedGradient(themeStyle) : _buildLightGlow(themeStyle);
+    final cfg = _resolveConfig(context);
+    return isNarrow
+        ? _buildLightMutedGradient(themeStyle, cfg)
+        : _buildLightGlow(themeStyle);
   }
 
   /// 统一垂直渐变构建器：三段色贯穿全屏，上半段保持轻盈、下半段更快沉深
@@ -79,8 +102,8 @@ class AppThemeBackground extends StatelessWidget {
 
   /// 浅色·手机：低饱和单色渐变 —— 以主题色为基，降饱和度、调整明度，
   /// 生成"顶部浅 → 底部深"的同色相莫兰迪渐变(无光晕、安静统一)。
-  /// [vibrancy] 越大，逐段抬升饱和度与明度越多，让基础色从"雾灰"透出主题色鲜活感。
-  Widget _buildLightMutedGradient(AppThemeStyle style) {
+  /// 提气/渐变参数取自 [cfg]，其中 [cfg.vibrancy] 逐段抬升饱和度与明度。
+  Widget _buildLightMutedGradient(AppThemeStyle style, PageVibrancyConfig cfg) {
     // 鼠尾草玻璃主题：用参考图的精确取样曲线(多点渐变)复现"安静高级"的灰绿质感
     if (style == AppThemeStyle.sageglass) {
       return Container(
@@ -89,10 +112,10 @@ class AppThemeBackground extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              _lift(const Color(0xFFB8C4C0)), // 顶部
-              _lift(const Color(0xFF9BAEAD)), // 62%
-              _lift(const Color(0xFF91A3A2)), // 90%
-              _lift(const Color(0xFF8B9E9D)), // 底部(比原版更浅)
+              _lift(const Color(0xFFB8C4C0), cfg.vibrancy), // 顶部
+              _lift(const Color(0xFF9BAEAD), cfg.vibrancy), // 62%
+              _lift(const Color(0xFF91A3A2), cfg.vibrancy), // 90%
+              _lift(const Color(0xFF8B9E9D), cfg.vibrancy), // 底部(比原版更浅)
             ],
             stops: const [0.0, 0.62, 0.90, 1.0],
           ),
@@ -104,12 +127,12 @@ class AppThemeBackground extends StatelessWidget {
         hsl.withSaturation(sat).withLightness(light).toColor();
     // 以中部为基准，顶/底各加一个明度偏移量（可正可负，甚至反相）。
     // 三者分别收紧到 [0,1]，与提气(_lift)独立叠加。
-    final topLight = (midLight + topShift).clamp(0.0, 1.0);
-    final bottomLight = (midLight + bottomShift).clamp(0.0, 1.0);
+    final topLight = (cfg.midLight + cfg.topShift).clamp(0.0, 1.0);
+    final bottomLight = (cfg.midLight + cfg.bottomShift).clamp(0.0, 1.0);
     return _buildVerticalGradient(
-      _lift(shade(0.14, topLight)),
-      _lift(shade(0.14, midLight)),
-      _lift(shade(0.14, bottomLight)),
+      _lift(shade(0.14, topLight), cfg.vibrancy),
+      _lift(shade(0.14, cfg.midLight), cfg.vibrancy),
+      _lift(shade(0.14, bottomLight), cfg.vibrancy),
     );
   }
 

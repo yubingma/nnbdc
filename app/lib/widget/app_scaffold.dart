@@ -60,10 +60,10 @@ class AppScaffold extends StatelessWidget {
   final bool extendBodyBehindAppBar;
   final bool extendBody;
   final bool showBackground;
-  /// 背景"提气"调参（提气强度 + 渐变幅度）。页面可显式指定；传 null 时按当前设备
-  /// （手机/平板宽高比）自动落到 [PageVibrancyConfig.phoneDefault] 或
-  /// [PageVibrancyConfig.tabletDefault]。值越大越亮，无上限，但饱和度和明度
-  /// 有 [0,1] 物理上限，到纯白即封顶。
+  /// 背景"提气"调参（提气强度 + 渐变幅度 + 卡片透明度）。页面显式指定的是"基准(手机)档"；
+  /// 传 null 时用 [PageVibrancyConfig.base]。平板时自动对该基准调用 [PageVibrancyConfig.forTablet]
+  /// 乘各分字段系数，从而复用手机调整成果，无需单独调平板。值越大越亮，无上限，但饱和度和
+  /// 明度有 [0,1] 物理上限，到纯白即封顶。
   final PageVibrancyConfig? vibrancy;
   final Key? scaffoldKey;
 
@@ -85,14 +85,14 @@ class AppScaffold extends StatelessWidget {
     this.scaffoldKey,
   });
 
-  /// 按当前屏幕宽高比分流设备默认档：窄高屏(手机, 宽高比<0.62)用 phoneDefault，否则用 tabletDefault。
+  /// 解析本页最终使用的配置：以页面显式配置(未指定则 [PageVibrancyConfig.base])为基准；
+  /// 窄高屏(手机, 宽高比<0.62)直接用基准，方正屏(平板)用基准 × 平板系数。
   /// 与 AppThemeBackground 的窄/方屏判断口径保持一致。
   PageVibrancyConfig _resolveVibrancy(BuildContext context) {
-    final cfg = vibrancy;
-    if (cfg != null) return cfg;
+    final base = vibrancy ?? PageVibrancyConfig.base;
     final size = MediaQuery.of(context).size;
     final isNarrow = size.width / size.height < 0.62;
-    return isNarrow ? PageVibrancyConfig.phoneDefault : PageVibrancyConfig.tabletDefault;
+    return isNarrow ? base : base.forTablet();
   }
 
   @override

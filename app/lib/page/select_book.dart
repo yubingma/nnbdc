@@ -1943,10 +1943,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           Positioned.fill(
             child: AppThemeBackground(
               themeStyle: themeStyle,
-              vibrancy: PageVibrancy.selectBook.vibrancy,
-              midLight: PageVibrancy.selectBook.midLight,
-              topShift: PageVibrancy.selectBook.topShift,
-              bottomShift: PageVibrancy.selectBook.bottomShift,
+              config: PageVibrancy.selectBook,
             ),
           ),
           (filteredCategories.isEmpty || tabController == null)

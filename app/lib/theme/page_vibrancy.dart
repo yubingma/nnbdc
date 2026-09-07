@@ -1,6 +1,6 @@
 /// 页面级背景调参集中配置（全站唯一调整入口）
 ///
-/// 每个页面一个 `PageVibrancyConfig` 值对象，统一描述该页背景与卡片的各项微调：
+/// 一个值对象统一描述某页背景与卡片的各项微调：
 /// - [vibrancy]：提气强度。值越大越亮，无上限；但饱和度和明度被收紧到 [0,1]，
 ///   背景到纯白即封顶。`0` 即当前默认观感。
 /// - [midLight]：手机浅色背景的"中部基准明度"，顶部/底部以其为中心偏移。
@@ -9,8 +9,8 @@
 /// - [cardOpacity]：浅色模式下卡面（毛玻璃卡片底色）的不透明度，0~1。值越大卡片越实
 ///   (更不透明、更清晰明亮)，值越小越透。默认 0.50 即现状。
 ///
-/// 平板档为手机档的"分字段系数"推导：vibrancy、渐变偏移、cardOpacity 各用一个系数，
-/// 系数即平板相对手机的比例（<1 更收敛、>1 更张扬）。
+/// 设计：手机调好的成果即 [base] 基准（各页面常量在手机上就是这个值），
+/// 平板无需单独调，调用 [forTablet] 把基准 × 各分字段系数即可复用手机成果。
 class PageVibrancyConfig {
   const PageVibrancyConfig({
     this.vibrancy = 0,
@@ -35,36 +35,35 @@ class PageVibrancyConfig {
   /// 浅色模式下卡面不透明度（默认 0.50 即现状；越大越实）
   final double cardOpacity;
 
-  // ---------- 手机基准档 ----------
-  // 当前线上观感的统一基准：提气 1.6 + 轻微渐变 + 卡片全实。
-  static const PageVibrancyConfig phoneDefault =
+  // ---------- 默认基准档（= 手机调好的观感） ----------
+  /// 在手机上各页面实际使用的基准：提气 1.6 + 轻微渐变 + 卡片全实。
+  static const PageVibrancyConfig base =
       PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 1);
 
-  // ---------- 平板分字段系数（平板相对手机的比率，<1 更收敛） ----------
-  /// 平板对手机「提气强度」的系数
-  static const double _tabletVibrancyRatio = 0.75;
+  // ---------- 平板对手机的分字段系数（<1 更收敛、>1 更张扬） ----------
+  /// 平板相对手机「提气强度」的系数
+  static const double tabletVibrancyRatio = 0.75;
 
-  /// 平板对手机「渐变偏移」的系数（作用于顶部/底部偏移的绝对值）
-  static const double _tabletGradientRatio = 0.8;
+  /// 平板相对手机「渐变偏移」的系数（作用于顶部/底部偏移的绝对值）
+  static const double tabletGradientRatio = 0.8;
 
-  /// 平板对手机「卡片透明度」的系数（1 对应手机的全实）
-  static const double _tabletOpacityRatio = 0.85;
+  /// 平板相对手机「卡片透明度」的系数（1 对应手机的全实）
+  static const double tabletOpacityRatio = 0.85;
 
-  /// 平板默认档：由手机基准 × 分字段系数推导。平板已用「白底+光晕」背景，整体较亮，
-  /// 故提气、渐变、卡面透明度都按系数收敛，避免过亮与死白。
-  static const PageVibrancyConfig tabletDefault = PageVibrancyConfig(
-    vibrancy: 1.6 * _tabletVibrancyRatio,
-    topShift: 0.05 * _tabletGradientRatio,
-    bottomShift: -0.05 * _tabletGradientRatio,
-    cardOpacity: 1.0 * _tabletOpacityRatio,
-  );
+  /// 平板档：把【本配置】的提气、渐变偏移、卡片透明度各乘相应系数，得到同页面在平板上的值。
+  /// 中部基准明度 [midLight] 保持不变。从而手机上的调整成果一键传导到平板，无需分别调。
+  PageVibrancyConfig forTablet() => PageVibrancyConfig(
+        vibrancy: vibrancy * tabletVibrancyRatio,
+        midLight: midLight,
+        topShift: topShift * tabletGradientRatio,
+        bottomShift: bottomShift * tabletGradientRatio,
+        cardOpacity: cardOpacity * tabletOpacityRatio,
+      );
 }
 
-/// 各页面背景调参常量引用
+/// 各页面背景调参常量引用（均为手机/基准档；平板时由 AppScaffold 自动 × 系数）
 class PageVibrancy {
   PageVibrancy._();
-
-  // ========== 当前已生效的非零档位 ==========
 
   /// 启动/欢迎页（浅色模式下整页明亮、透出主题色氛围）
   static const PageVibrancyConfig splash = PageVibrancyConfig(vibrancy: 3);
@@ -72,53 +71,54 @@ class PageVibrancy {
   /// 登录页（与启动页一致的明亮通透氛围）
   static const PageVibrancyConfig login = PageVibrancyConfig(vibrancy: 3);
 
-  // ========== 其余页面（默认 0 = 现状，需要时在此调高） ==========
-
-  /// 今日学习计划（首页「学习」Tab）：顶底差小、整体明亮、卡片清晰；卡片更实更明亮
-  static const PageVibrancyConfig todayPlan =PageVibrancyConfig.phoneDefault;
+  /// 今日学习计划（首页「学习」Tab）：统一基准
+  static const PageVibrancyConfig todayPlan = PageVibrancyConfig.base;
 
   /// 词表（首页「词表」Tab）
-  static const PageVibrancyConfig wordLists = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig wordLists = PageVibrancyConfig.base;
 
   /// 查词（首页「查词」Tab）
-  static const PageVibrancyConfig search = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig search = PageVibrancyConfig.base;
+
+  /// 单词列表（词库详情页）
+  static const PageVibrancyConfig wordList = PageVibrancyConfig.base;
 
   /// 我（首页「我」Tab）
-  static const PageVibrancyConfig me = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig me = PageVibrancyConfig.base;
 
   /// 学习统计
-  static const PageVibrancyConfig studyStats = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig studyStats = PageVibrancyConfig.base;
 
   /// 记忆分布 / 复习分布
-  static const PageVibrancyConfig reviewDistribution = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig reviewDistribution = PageVibrancyConfig.base;
 
   /// 消息
-  static const PageVibrancyConfig message = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig message = PageVibrancyConfig.base;
 
   /// 单词详情
-  static const PageVibrancyConfig wordDetail = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig wordDetail = PageVibrancyConfig.base;
 
   /// 选词书
-  static const PageVibrancyConfig selectBook = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig selectBook = PageVibrancyConfig.base;
 
   /// 完成页
-  static const PageVibrancyConfig finish = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig finish = PageVibrancyConfig.base;
 
   /// 农场
-  static const PageVibrancyConfig farm = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig farm = PageVibrancyConfig.base;
 
   /// 徽章墙
-  static const PageVibrancyConfig badgeWall = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig badgeWall = PageVibrancyConfig.base;
 
   /// 游戏大厅
-  static const PageVibrancyConfig game = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig game = PageVibrancyConfig.base;
 
   /// 随身听
-  static const PageVibrancyConfig walkman = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig walkman = PageVibrancyConfig.base;
 
   /// 等级路径
-  static const PageVibrancyConfig levelPath = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig levelPath = PageVibrancyConfig.base;
 
   /// 提醒设置
-  static const PageVibrancyConfig reminderSettings = PageVibrancyConfig.phoneDefault;
+  static const PageVibrancyConfig reminderSettings = PageVibrancyConfig.base;
 }
