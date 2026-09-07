@@ -182,4 +182,37 @@ void main() {
       expect(fuzzyChineseContains('汽车', '自行车'), false);
     });
   });
+
+  group('Search Pinyin', () {
+    test('full pinyin and initials for Chinese', () {
+      expect(toSearchPinyin('考研').full, 'kaoyan');
+      expect(toSearchPinyin('考研').initials, 'ky');
+      expect(toSearchPinyin('考研英语').full, 'kaoyanyingyu');
+      expect(toSearchPinyin('考研英语').initials, 'kyyy');
+    });
+
+    test('non-Chinese chars preserved lowercased', () {
+      expect(toSearchPinyin('CET4').full, 'cet4');
+      expect(toSearchPinyin('CET4').initials, 'cet4');
+    });
+
+    test('pinyin search matches word book name', () {
+      // 输入 kaoyan 应匹配名字含「考研」的词书
+      expect(toSearchPinyin('考研').full.contains('kaoyan'), true);
+      expect(toSearchPinyin('考研英语词汇').full.contains('kaoyan'), true);
+      // 首字母缩写也支持
+      expect(toSearchPinyin('考研').initials.contains('ky'), true);
+    });
+
+    test('supports incremental pinyin typing', () {
+      final p = toSearchPinyin('大学英语六级');
+      expect(p.full.contains('daxue'), true);
+      expect(p.full.contains('daxueyingyu'), true);
+      expect(p.initials.contains('dxy'), true);
+    });
+
+    test('caches results by string', () {
+      expect(identical(toSearchPinyin('考研'), toSearchPinyin('考研')), true);
+    });
+  });
 }

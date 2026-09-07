@@ -12,6 +12,7 @@ import 'package:nnbdc/db/dict_import_worker.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/pinyin.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -82,6 +83,10 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     // 先尝试直接包含
     if (targetLower.contains(queryLower)) return true;
 
+    // 拼音匹配：支持全拼与首字母缩写两种形式
+    final searchPinyin = toSearchPinyin(targetLower);
+    if (searchPinyin.full.contains(queryLower) || searchPinyin.initials.contains(queryLower)) return true;
+
     // 模糊匹配：查询字符串中的每个字符都必须出现在目标字符串中
     final chars = queryLower.split('');
     return chars.every((char) => targetLower.contains(char));
@@ -97,6 +102,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     // 注意：不要用 addListener，它会在焦点变化时也触发，导致点击 Tab 时 setState 重置控制器
     // 改为只在 onChanged 中更新，避免 Tab 点击被打断
     Future.microtask(() => loadData());
+    prewarmPinyin(); // 预热拼音词典，避免首次拼音搜索时卡顿
   }
 
   @override

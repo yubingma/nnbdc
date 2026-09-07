@@ -622,6 +622,34 @@ bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<P
   return false;
 }
 
+/// 用于搜索的拼音形式：全拼与首字母缩写。
+typedef SearchPinyin = ({String full, String initials});
+
+final Map<String, SearchPinyin> _searchPinyinCache = {};
+
+/// 把字符串转换为用于拼音搜索的两种形式：
+/// - full: 无声调、无分隔符的全拼，如 "考研英语" -> "kaoyanyingyu"
+/// - initials: 每个汉字首字母缩写，如 "考研英语" -> "kyyy"
+/// 非中文字符保持原样（统一小写）。
+/// 结果带缓存，避免搜索框逐字输入时反复调用 lpinyin 解析字典。
+SearchPinyin toSearchPinyin(String text) {
+  final key = text.toLowerCase();
+  final cached = _searchPinyinCache[key];
+  if (cached != null) return cached;
+
+  String full = '';
+  String initials = '';
+  try {
+    full = PinyinHelper.getPinyin(key, separator: '').toLowerCase();
+    initials = PinyinHelper.getShortPinyin(key).toLowerCase();
+  } catch (_) {
+    // 少数生僻字不在 lpinyin 字典内，降级为不支持拼音，仅保留原文字匹配
+  }
+  final result = (full: full, initials: initials);
+  _searchPinyinCache[key] = result;
+  return result;
+}
+
 /// 异步预热拼音词典，避免首次匹配时加载词典文件引发的数秒卡顿
 void prewarmPinyin() {
   unawaited(() async {

@@ -1615,331 +1615,173 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 【显示模式】—— 极简微透图形化分叉决策树卡片
+  /// 【显示模式】—— 一体化毛玻璃分组卡：纯排版驱动，无盒中盒、无流程导线
   Widget _buildTrackDisplayCard(bool isDarkMode) {
-    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDarkMode
-                  ? [
-                      const Color(0xB818202F),
-                      const Color(0x99121722),
-                    ]
-                  : [
-                      const Color(0x80FFFFFF),
-                      const Color(0x80FFFFFF),
-                    ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.10)
-                  : Colors.white.withValues(alpha: 0.24),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.05),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
+    return FrostedGlassCard(
+      borderRadius: 24,
+      bgColor: isDarkMode ? const Color(0xB818202F) : const Color(0x80FFFFFF),
+      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
+      shadow: BoxShadow(
+        color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.06),
+        blurRadius: 18,
+        offset: const Offset(0, 6),
+      ),
+      sigma: 7,
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
+      child: Column(
+        children: [
+          // 新词轨道（点击精准定位至新词轨道配置 Tab）
+          _buildTrackDisplayRow(
+            checkStep: _newCheckStep ?? 'En2Ch',
+            correctSteps: _newCorrectSteps,
+            wrongSteps: _newWrongSteps,
+            isDarkMode: isDarkMode,
+            isNewWord: true,
           ),
-          child: Column(
-            children: [
-              // 新词轨道（点击精准定位至新词轨道配置 Tab）
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() {
-                  _studyStepsTab = 0;
-                  _isEditingTracks = true;
-                }),
-                child: _buildVisualForkTree(
-                  title: '新词轨道',
-                  checkStep: _newCheckStep ?? 'En2Ch',
-                  correctSteps: _newCorrectSteps,
-                  wrongSteps: _newWrongSteps,
-                  isDarkMode: isDarkMode,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Container(height: 0.6, color: dividerColor),
-              ),
-              // 旧词轨道（点击精准定位至旧词轨道配置 Tab）
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() {
-                  _studyStepsTab = 1;
-                  _isEditingTracks = true;
-                }),
-                child: _buildVisualForkTree(
-                  title: '旧词轨道',
-                  checkStep: _reviewCheckStep ?? 'En2Ch',
-                  correctSteps: _reviewCorrectSteps,
-                  wrongSteps: _reviewWrongSteps,
-                  isDarkMode: isDarkMode,
-                ),
-              ),
-            ],
+          // 发丝分割线（极细、不抢戏）
+          Container(height: 0.6, color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.055)),
+          // 旧词轨道（点击精准定位至旧词轨道配置 Tab）
+          _buildTrackDisplayRow(
+            checkStep: _reviewCheckStep ?? 'En2Ch',
+            correctSteps: _reviewCorrectSteps,
+            wrongSteps: _reviewWrongSteps,
+            isDarkMode: isDarkMode,
+            isNewWord: false,
           ),
-        ),
+        ],
       ),
     );
   }
 
-  /// 绘制单个轨道的图形化分叉决策树（高精度微节点 + 纤细导线 + 胶囊分支）
-  Widget _buildVisualForkTree({
-    required String title,
+  /// 单个轨道的纯排版展示行：左侧裸排版「测评起点」，右侧「答对/答错 → 结果」语义色
+  Widget _buildTrackDisplayRow({
     required String checkStep,
     required List<String> correctSteps,
     required List<String> wrongSteps,
     required bool isDarkMode,
+    required bool isNewWord,
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
 
     final checkDesc = StudyStepExt.fromString(checkStep).description;
-    final subColor = themeConfig.textMuted;
     final textPrimary = themeConfig.textPrimary;
-    final textSecondary = themeConfig.textSecondary;
-    final themeAccent = themeConfig.primaryColor;
+    final textMuted = themeConfig.textMuted;
     final successGreen = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
     final errorCoral = isDarkMode ? const Color(0xFFF87171) : const Color(0xFFEF4444);
-    final isNewWord = title.contains('新');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 轨道类型小标签（微圆点指示）
-        Row(
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: isNewWord ? const Color(0xFF0EA5E9) : const Color(0xFF10B981),
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: textSecondary,
-                letterSpacing: 0.1,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() {
+        _studyStepsTab = isNewWord ? 0 : 1;
+        _isEditingTracks = true;
+      }),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 左侧：测评核心芯片节点（微透亚克力高光白边 + 极简科技感）
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6.5),
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? themeAccent.withValues(alpha: 0.18)
-                    : Colors.white.withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(
-                  color: isDarkMode
-                      ? themeAccent.withValues(alpha: 0.35)
-                      : Colors.white.withValues(alpha: 0.95),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isDarkMode ? themeAccent : Colors.black).withValues(alpha: isDarkMode ? 0.2 : 0.04),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
+            // 左侧：测评起点（裸排版，无容器）
+            SizedBox(
+              width: 92,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '测评',
                     style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      color: themeAccent,
-                      letterSpacing: 0.6,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: textMuted,
+                      letterSpacing: 0.04,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     checkDesc,
                     style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: textPrimary,
+                      letterSpacing: -0.2,
                     ),
                   ),
                 ],
               ),
             ),
-
-            // 中间：优雅 Bezier 导线
-            SizedBox(
-              width: 24,
-              height: 58,
-              child: CustomPaint(
-                painter: ForkBezierPainter(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.22)
-                      : themeConfig.primaryColor.withValues(alpha: 0.35),
-                ),
-              ),
-            ),
-
-            // 右侧：分叉步进流（胶囊标签 + 纯文字步进）
+            // 右侧：分支结果（纯排版 + 语义色）
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 答对分支
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                        decoration: BoxDecoration(
-                          color: successGreen.withValues(alpha: isDarkMode ? 0.16 : 0.08),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.check_rounded, size: 11.5, color: successGreen),
-                            const SizedBox(width: 2.5),
-                            Text(
-                              '答对',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                color: successGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (correctSteps.isEmpty)
-                        Text(
-                          '直接结束',
-                          style: TextStyle(fontSize: 12, color: subColor, fontWeight: FontWeight.w500),
-                        )
-                      else
-                        ...() {
-                          final items = <Widget>[];
-                          for (int i = 0; i < correctSteps.length; i++) {
-                            items.add(
-                              Text(
-                                StudyStepExt.fromString(correctSteps[i]).description,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: textPrimary,
-                                ),
-                              ),
-                            );
-                            if (i < correctSteps.length - 1) {
-                              items.add(
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 14,
-                                  color: textSecondary.withValues(alpha: 0.4),
-                                ),
-                              );
-                            }
-                          }
-                          return items;
-                        }(),
-                    ],
+                  _buildBranchOutcomeRow(
+                    label: '答对',
+                    isCorrect: true,
+                    steps: correctSteps,
+                    color: successGreen,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
                   ),
-                  const SizedBox(height: 8),
-                  // 答错分支
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                        decoration: BoxDecoration(
-                          color: errorCoral.withValues(alpha: isDarkMode ? 0.16 : 0.08),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.close_rounded, size: 11.5, color: errorCoral),
-                            const SizedBox(width: 2.5),
-                            Text(
-                              '答错',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                color: errorCoral,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (wrongSteps.isEmpty)
-                        Text(
-                          '直接结束',
-                          style: TextStyle(fontSize: 12, color: subColor, fontWeight: FontWeight.w500),
-                        )
-                      else
-                        ...() {
-                          final items = <Widget>[];
-                          for (int i = 0; i < wrongSteps.length; i++) {
-                            items.add(
-                              Text(
-                                StudyStepExt.fromString(wrongSteps[i]).description,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: textPrimary,
-                                ),
-                              ),
-                            );
-                            if (i < wrongSteps.length - 1) {
-                              items.add(
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 14,
-                                  color: textSecondary.withValues(alpha: 0.4),
-                                ),
-                              );
-                            }
-                          }
-                          return items;
-                        }(),
-                    ],
+                  const SizedBox(height: 12),
+                  _buildBranchOutcomeRow(
+                    label: '答错',
+                    isCorrect: false,
+                    steps: wrongSteps,
+                    color: errorCoral,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 单条分支结果行：「✓/✕ 答对/答错 → 结果环节流」（弱化箭头，突出语义色）
+  Widget _buildBranchOutcomeRow({
+    required String label,
+    required bool isCorrect,
+    required List<String> steps,
+    required Color color,
+    required Color textPrimary,
+    required Color textMuted,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(isCorrect ? Icons.check_rounded : Icons.close_rounded, size: 13, color: color),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: color),
+        ),
+        const SizedBox(width: 8),
+        Icon(Icons.arrow_forward_rounded, size: 11, color: textMuted.withValues(alpha: 0.55)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: steps.isEmpty
+              ? Text(
+                  '直接结束',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMuted),
+                )
+              : Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 3,
+                  children: [
+                    for (int i = 0; i < steps.length; i++) ...[
+                      Text(
+                        StudyStepExt.fromString(steps[i]).description,
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textPrimary),
+                      ),
+                      if (i < steps.length - 1)
+                        Icon(Icons.chevron_right_rounded, size: 13, color: textMuted.withValues(alpha: 0.5)),
+                    ],
+                  ],
+                ),
         ),
       ],
     );
@@ -3202,36 +3044,5 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       ),
     );
   }
-}
-
-/// 绘制极简纯粹 Bezier 分叉导线（去除冗余端点，保持平滑流动感）
-class ForkBezierPainter extends CustomPainter {
-  final Color color;
-  const ForkBezierPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final midY = size.height / 2;
-    // 向上扬起连接正确分支
-    final pathUp = Path()
-      ..moveTo(0, midY)
-      ..cubicTo(size.width * 0.45, midY, size.width * 0.45, 12, size.width, 12);
-    canvas.drawPath(pathUp, paint);
-
-    // 向下探入连接错误分支
-    final pathDown = Path()
-      ..moveTo(0, midY)
-      ..cubicTo(size.width * 0.45, midY, size.width * 0.45, size.height - 12, size.width, size.height - 12);
-    canvas.drawPath(pathDown, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant ForkBezierPainter oldDelegate) => oldDelegate.color != color;
 }
 
