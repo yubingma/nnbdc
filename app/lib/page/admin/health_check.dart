@@ -69,6 +69,12 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       'step': 12,
       'category': 'local_tts'
     },
+    {
+      'id': 13,
+      'title': '词书重复单词检查',
+      'step': 13,
+      'category': 'duplicate_dict_word'
+    },
   ];
 
   @override

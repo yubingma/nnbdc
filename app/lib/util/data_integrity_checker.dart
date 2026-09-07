@@ -184,9 +184,19 @@ class DataIntegrityChecker {
       onProgress?.call(12, '检查本地TTS功能...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
+      // 13. 检查词书重复单词
+      onProgress?.call(13, '检查词书重复单词...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer13 = Stopwatch()..start();
+      await _checkDuplicateDictWords(result);
+      timer13.stop();
+      Global.logger.d('✓ 检查词书重复单词: ${timer13.elapsedMilliseconds}ms');
+      onProgress?.call(13, '检查词书重复单词...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(12, '检查完成！', result: result);
+      onProgress?.call(13, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
     } catch (e, stackTrace) {
       stopwatch.stop();
@@ -308,6 +318,89 @@ class DataIntegrityChecker {
     } catch (e, stack) {
       Global.logger.e('检查词典单词数量时出错', error: e, stackTrace: stack);
       result.addError('检查词典单词数量时出错: $e');
+    }
+  }
+
+  /// 检查词书是否存在重复单词（用户反馈"同一词书里同一单词出现两遍"的现象）
+  ///
+  /// 覆盖三种情况：
+  /// 1. 同一词书内，同一拼写出现多次（可能由两个字/不同 word_id 拼写相同造成）——这是用户看到的直接症状；
+  /// 2. 同一词书内同一 (dict_id, word_id) 出现两行（dict_word 复合主键被破坏）；
+  /// 3. words 表同一拼写存在多条不同 word_id（本地无 spell 唯一约束时的脏数据）。
+  Future<void> _checkDuplicateDictWords(IntegrityCheckResult result) async {
+    try {
+      // 1. 同一词书内，同一拼写出现多次
+      final dupInDict = await _db.customSelect(
+        'SELECT dw.dict_id, d.name AS dict_name, w.spell, '
+        '       COUNT(*) AS c, group_concat(dw.seq) AS seqs '
+        'FROM dict_words dw '
+        'JOIN words w ON w.id = dw.word_id '
+        'LEFT JOIN dicts d ON d.id = dw.dict_id '
+        'GROUP BY dw.dict_id, w.spell '
+        'HAVING COUNT(*) > 1',
+      ).get();
+
+      for (final row in dupInDict) {
+        final dictId = row.read<String>('dict_id');
+        final dictName = row.read<String?>('dict_name') ?? dictId;
+        final spell = row.read<String>('spell');
+        final c = row.read<int>('c');
+        final seqs = row.read<String>('seqs');
+        Global.logger.w('⚠️ [DUPLICATE] 词书 "$dictName" 中单词 "$spell" 出现 $c 次 (seq: $seqs)');
+        result.addIssue(
+          '词书重复单词',
+          '词书 "$dictName" 中单词 "$spell" 出现了 $c 次 (位置: $seqs)，存在重复词条',
+          'duplicate_dict_word',
+          logMessage: 'DUPLICATE_DICT spell=$spell dictId=$dictId count=$c seqs=$seqs',
+        );
+      }
+
+      // 2. 同一词书内同一 word_id 出现两行（复合主键被破坏）
+      final dupDictWord = await _db.customSelect(
+        'SELECT dw.dict_id, d.name AS dict_name, dw.word_id, w.spell, '
+        '       COUNT(*) AS c, group_concat(dw.seq) AS seqs '
+        'FROM dict_words dw '
+        'JOIN words w ON w.id = dw.word_id '
+        'LEFT JOIN dicts d ON d.id = dw.dict_id '
+        'GROUP BY dw.dict_id, dw.word_id '
+        'HAVING COUNT(*) > 1',
+      ).get();
+
+      for (final row in dupDictWord) {
+        final dictId = row.read<String>('dict_id');
+        final dictName = row.read<String?>('dict_name') ?? dictId;
+        final wordId = row.read<String>('word_id');
+        final spell = row.read<String>('spell');
+        final c = row.read<int>('c');
+        final seqs = row.read<String>('seqs');
+        Global.logger.w('⚠️ [DUPLICATE] 词书 "$dictName" 中词条 word_id=$wordId($spell) 出现 $c 行 (seq: $seqs)');
+        result.addIssue(
+          '词书重复词条',
+          '词书 "$dictName" 中词条(word_id=$wordId, $spell) 出现了 $c 行 (位置: $seqs)，数据完整性异常',
+          'duplicate_dict_word',
+          logMessage: 'DUPLICATE_WORD_ID dictId=$dictId wordId=$wordId spell=$spell count=$c seqs=$seqs',
+        );
+      }
+
+      // 3. words 表同一拼写存在多条不同 word_id（本地无 spell 唯一约束）
+      final dupWords = await _db.customSelect(
+        'SELECT spell, COUNT(*) AS c FROM words GROUP BY spell HAVING COUNT(*) > 1',
+      ).get();
+
+      for (final row in dupWords) {
+        final spell = row.read<String>('spell');
+        final c = row.read<int>('c');
+        Global.logger.w('⚠️ [DUPLICATE] 单词表 $spell 存在 $c 条不同 word_id 词条');
+        result.addIssue(
+          '单词表重复拼写',
+          '单词表中拼写 "$spell" 存在 $c 条不同词条',
+          'duplicate_dict_word',
+          logMessage: 'DUPLICATE_WORD spell=$spell count=$c',
+        );
+      }
+    } catch (e, stack) {
+      Global.logger.e('检查词书重复单词时出错', error: e, stackTrace: stack);
+      result.addError('检查词书重复单词时出错: $e');
     }
   }
 
