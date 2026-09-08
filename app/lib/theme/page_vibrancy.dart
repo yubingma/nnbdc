@@ -41,7 +41,7 @@ class PageVibrancyConfig {
   // ---------- 默认基准档（= 手机调好的观感） ----------
   /// 在手机上各页面实际使用的基准：提气 1.6 + 轻微渐变 + 卡片全实。
   static const PageVibrancyConfig base =
-      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 1.0);
+      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 0.0);
 
   // ---------- 平板对手机的分字段系数（<1 更收敛、>1 更张扬） ----------
   /// 平板相对手机「提气强度」的系数
