@@ -193,14 +193,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             padding: EdgeInsets.fromLTRB(
                 20, 10, 20, MediaQuery.of(context).padding.bottom + 18),
             decoration: BoxDecoration(
-              color: context.cardBg,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.30 : 0.06),
-                  blurRadius: 20,
-                  offset: const Offset(0, -6),
-                ),
-              ],
+              color: isDarkMode ? const Color(0xB8161E2A) : context.cardBg,
+              boxShadow: [context.cardShadow],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -617,17 +611,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 // 极淡中性描边，仅一丝定义；边界主要靠"卡更白 + 柔和阴影"，避免生硬灰线
                                 color: _cachedIsDarkMode
                                     ? Colors.white.withValues(alpha: 0.10)
-                                    : Colors.black.withValues(alpha: 0.05),
+                                    : context.cardBorder,
                                 width: 1.0,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(
-                                      alpha: _cachedIsDarkMode ? 0.28 : 0.12),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
+                              boxShadow: [context.cardShadow],
                             ),
                             padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
                             child: Column(

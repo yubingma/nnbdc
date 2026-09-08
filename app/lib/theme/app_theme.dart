@@ -31,20 +31,23 @@ enum AppThemeStyle {
   /// 极简白墨 (极客硬朗线条，纯白高对比 + 纯黑墨水屏)
   minimal('minimal', '极简白墨', '极客纯粹高对比', Icons.contrast_rounded),
 
-  /// 深邃曜黑 (沉浸夜间赛博，曜黑深空 + 极光霓虹翡翠)
-  midnight('midnight', '深邃曜黑', '夜间沉浸护眼', Icons.dark_mode_rounded),
-
   /// 京都朱砂 (Bear / 和风书卷，和纸纯粹米白 + 典雅朱砂赤红)
   crimson('crimson', '京都朱砂', '典雅书卷朱砂红', Icons.menu_book_rounded),
 
   /// 星云深靛 (Linear & Raycast，数字工艺深靛蓝 + 纯净冷灰)
   indigo('indigo', '星云深靛', '未来极客星云靛', Icons.blur_on_rounded),
 
+  /// 琥珀金 (温润金琥珀，蜂蜜流淌般的暖金 + 清透米黄)
+  amber('amber', '琥珀金', '温润蜂蜜暖金', Icons.lightbulb_outline_rounded),
+
   /// 鼠尾草森 (低饱和灰绿单色渐变质感，复现学习页"安静高级"的氛围)
   sage('sage', '鼠尾草森', '低饱和灰绿渐变质感', Icons.spa_rounded),
 
   /// 暮光深空 (Arc & Linear Dark，曜石深空黑 + 霓虹紫罗兰光晕)
-  twilight('twilight', '暮光深空', '曜石深空霓虹紫', Icons.nights_stay_rounded);
+  twilight('twilight', '暮光深空', '曜石深空霓虹紫', Icons.nights_stay_rounded),
+
+  /// 深邃曜黑 (沉浸夜间赛博，曜黑深空 + 极光霓虹翡翠)
+  midnight('midnight', '深邃曜黑', '夜间沉浸护眼', Icons.dark_mode_rounded);
 
   final String code;
   final String label;
@@ -110,9 +113,9 @@ class AppThemeConfig {
       case AppThemeStyle.emerald:
         return AppThemeConfig(
           style: style,
-          primaryColor: const Color(0xFF0891B2), // 清新明快湖蓝青
-          primaryLightColor: const Color(0xFF5BC0DA),
-          primaryDarkColor: const Color(0xFF0E7490),
+          primaryColor: const Color(0xFF0B7C9E), // 清新明快湖蓝青（加深，更具色重感）
+          primaryLightColor: const Color(0xFF47AFCB),
+          primaryDarkColor: const Color(0xFF0A6B8C),
           textPrimary: const Color(0xFF17262D), // 中性深墨（非青非蓝，保证可读）
           textSecondary: const Color(0xFF3E4A52),
           textMuted: const Color(0xFF5A646C),
@@ -250,7 +253,31 @@ class AppThemeConfig {
           isDark: false,
         );
 
-      // 7. 鼠尾草森: 低饱和灰绿单色渐变，复现学习页"安静高级"的氛围
+      // 7. 琥珀金: 温润蜂蜜暖金
+      case AppThemeStyle.amber:
+        return AppThemeConfig(
+          style: style,
+          primaryColor: const Color(0xFFF59E0B), // 温润蜂蜜金琥珀
+          primaryLightColor: const Color(0xFFFBBF24),
+          primaryDarkColor: const Color(0xFFD97706),
+          textPrimary: const Color(0xFF2B1D0E), // 暖可可深褐黑
+          textSecondary: const Color(0xFF6B5741),
+          textMuted: const Color(0xFF9A8670),
+          cardBg: const Color(0x80FFFFFF),
+          cardBorder: const Color(0x26000000), // 极淡中性描边：白底上勾勒卡片轮廓
+          subtleBg: const Color(0x14F59E0B),
+          warmAccentColor: const Color(0xFFE8543B), // 琥珀珊瑚橙
+          cardShadows: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          isDark: false,
+        );
+
+      // 8. 鼠尾草森: 低饱和灰绿单色渐变，复现学习页"安静高级"的氛围
       case AppThemeStyle.sage:
         return AppThemeConfig(
           style: style,
