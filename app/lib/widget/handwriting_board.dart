@@ -43,17 +43,23 @@ class HandwritingBoard extends StatefulWidget {
     this.onRewrite,
     this.language = 'en-US',
     this.manualSubmit = false,
+    this.onRecognizedPreview,
   });
 
   final VoidCallback? onUndo;
   final VoidCallback? onRewrite;
 
-  /// 手写识别语言（BCP-47）。英文拼写默认 'en-US'；中文默写传 'zh-Hans'。
+  /// 手写识别语言（ML Kit 数字墨迹语言标签）。英文拼写默认 'en-US'；中文默写传 'zh-Hani'
+  /// （ML Kit 的中文模型标签是 zh-Hani，而非 BCP-47 的 zh-Hans）。
   final String language;
 
   /// 手动提交模式（用于中文默写）：停笔后不再自动识别/判题，而是在底部操作栏新增「提交」按钮，
   /// 只有当用户点击提交后才触发识别与匹配，规避过早识别导致的漏题/误判；键盘输入不受此影响。
   final bool manualSubmit;
+
+  /// 手动提交模式的"回显预览"回调：停笔时的自动识别仅把结果同步到输入框供用户反馈，
+  /// 但不触发判题（判题只在点击「提交」后走 [onRecognized]）。为 null 时回退为 [onRecognized]。
+  final ValueChanged<String>? onRecognizedPreview;
 
   @override
   State<HandwritingBoard> createState() => HandwritingBoardState();
@@ -113,9 +119,14 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     widget.onUndo?.call();
   }
 
-  Future<void> _recognize() async {
+  Future<void> _recognize({bool preview = false}) async {
     if (_lines.isEmpty) {
-      widget.onRecognized("");
+      // 手动提交模式的"回显预览"清空时仅同步输入框，不触发判题
+      if (preview) {
+        widget.onRecognizedPreview?.call("");
+      } else {
+        widget.onRecognized("");
+      }
       return;
     }
 
@@ -151,7 +162,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
       String text = response;
 
       final String result;
-      if (widget.language == 'zh-Hans') {
+      if (widget.language == 'zh-Hani') {
         // 中文默写：保留识别出的中文字符，不套用英文近形替换/字母过滤
         result = text.replaceAll(RegExp(r'\s+'), ' ').trim();
       } else {
@@ -176,7 +187,12 @@ class HandwritingBoardState extends State<HandwritingBoard> {
             .trim();
       }
 
-      widget.onRecognized(result);
+      // 手动提交模式：停笔自动识别仅用于回显预览，不判题；只有提交按钮才走完整匹配
+      if (preview) {
+        widget.onRecognizedPreview?.call(result);
+      } else {
+        widget.onRecognized(result);
+      }
     } on TimeoutException {
       debugPrint('HB: Recognition timeout (5s)');
     } catch (e) {
@@ -255,6 +271,10 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   rightZoneVisibleNotifier: widget.rightZoneVisibleNotifier,
                   onHint: widget.onHint,
                   manualSubmit: widget.manualSubmit,
+                  onRecognizePreview:
+                      widget.onRecognizedPreview != null
+                          ? () => _recognize(preview: true)
+                          : null,
                 ),
               ],
             ),
@@ -282,6 +302,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final ValueNotifier<bool>? rightZoneVisibleNotifier;
   final VoidCallback? onHint;
   final bool manualSubmit;
+  final VoidCallback? onRecognizePreview;
 
   const _HandwritingCanvas({
     super.key,
@@ -301,6 +322,7 @@ class _HandwritingCanvas extends StatefulWidget {
     this.rightZoneVisibleNotifier,
     this.onHint,
     this.manualSubmit = false,
+    this.onRecognizePreview,
   });
 
   @override
@@ -420,12 +442,16 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
       _controller.removeLast();
     });
     widget.onUndo();
-    // 手动提交模式下，回退仅撤销笔画，不触发识别/判题（自动模式维持原行为）
     if (!widget.manualSubmit) {
+      // 自动模式：回退后重新识别并判题（维持原行为）
       widget.onRecognize();
       if (widget.lines.isEmpty) {
         widget.onRewrite();
       }
+    } else {
+      // 手动提交模式：回退仅撤销笔画，不判题；若仍有笔迹则重新做一次"回显预览"，
+      // 让下方输入框及时反映删掉笔画后的识别结果
+      widget.onRecognizePreview?.call();
     }
   }
 
@@ -528,8 +554,16 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             
             if (widget.lines.isNotEmpty) {
               _autoRecognizeTimer?.cancel();
-              // 手动提交模式（中文默写）下停笔不自动识别/判题，待用户点击「提交」再触发
-              if (!widget.manualSubmit) {
+              // 手动提交模式（中文默写）下停笔自动识别仅做"回显预览"（把结果同步到输入框，不判题）；
+              // 判题只发生在用户点击「提交」按钮时。
+              if (widget.manualSubmit && widget.onRecognizePreview != null) {
+                _autoRecognizeTimer = Timer(const Duration(milliseconds: 300), () {
+                  if (mounted && widget.lines.isNotEmpty) {
+                    debugPrint('HB: Auto-triggering preview recognition via timer');
+                    widget.onRecognizePreview!();
+                  }
+                });
+              } else if (!widget.manualSubmit) {
                 _autoRecognizeTimer = Timer(const Duration(milliseconds: 300), () {
                   if (mounted && widget.lines.isNotEmpty) {
                     debugPrint('HB: Auto-triggering recognition via timer');

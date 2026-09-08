@@ -68,7 +68,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                     showHeader: false, // 隐藏内部自带的标题栏
                     useBoxDecoration: false, // 隐藏内部背景和圆角，直接使用外层背景
                     // 中文默写（英译汉）时识别中文汉字；否则识别英文拼写
-                    language: state.isChineseDictation ? 'zh-Hans' : 'en-US',
+                    // ML Kit 数字墨迹识别的中文标签是 "zh-Hani"（Han 手写体），不是 BCP-47 的 "zh-Hans"，
+                    // 传错会导致 native 侧 DigitalInkRecognitionModelIdentifier(forLanguageTag:) 返回 nil。
+                    language: state.isChineseDictation ? 'zh-Hani' : 'en-US',
                     // 中文默写采用手动提交：停笔不自动判题，仅点击「提交」后才识别+匹配，规避过早识别
                     manualSubmit: state.isChineseDictation,
                     onStartWriting: () {
@@ -96,6 +98,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                       notifier.meaningController.text = text;
                       await notifier.checkAsrResult(
                           asrInput: text, isVoice: false);
+                    },
+                    // 手动提交模式（中文默写）：停笔自动识别仅把结果同步到输入框，给用户实时反馈，
+                    // 不判题；判题只在点击「提交」后走上面的 onRecognized。
+                    onRecognizedPreview: (text) {
+                      notifier.meaningController.text = text;
                     },
                     onCancel: () {
                       _meaningFocusNode.unfocus();
