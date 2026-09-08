@@ -118,6 +118,17 @@ void main() {
       expect(result.newMatchCount, 0);
     });
 
+    test('accepts full-length answer with a homophone misread (女商仁 for 女商人), not 100% exact', () {
+      // 手写识别可能把个别字误识成同音/形近字，严格模式应容忍这类小出入
+      var result = matchInputChineseWithMeaningItems(wrapper, '女商仁', strict: true);
+      expect(result.newMatchCount, 1);
+    });
+
+    test('rejects a full-length but genuinely wrong answer (男子人 for 女商人) in strict mode', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '男子人', strict: true);
+      expect(result.newMatchCount, 0);
+    });
+
     test('strict mode does not change default fuzzy behavior (voice ASR 容错)', () {
       // 默认（非 strict）仍应保留 ASR 同音字/模糊匹配，供语音"说中文"使用
       var result = matchInputChineseWithMeaningItems(wrapper, '女商人');

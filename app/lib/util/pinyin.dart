@@ -437,14 +437,17 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
   for (var unit in meaningUnits) {
     if (unit.isEmpty) continue;
 
-    // 严格模式（中文手写默写）：手写输入是用户逐字书写的答案，没有 ASR 同音字噪声，
-    // 因此要求书写内容与释义每一个汉字都完全一致，绝不允许只写部分子串（如"女"或"商人"）
-    // 就被当作"女商人"而判对。若有出入则交由 AI 裁判兜底，而不是本地模糊放水。
+    // 严格模式（中文手写默写）：手写输入没有 ASR 噪声，但仍可能因手写识别出现个别同音/形近字，
+    // 因此不要求 100% 逐字相等，而是采用更高的拼音模糊阈值：既拒绝只写部分子串（如"女"或"商人"），
+    // 又允许"完整写出但个别字略有出入"的通关。明显缺失或错字则交由 AI 裁判兜底。
     if (strict) {
       final String cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
       final String cleanUnit = unit.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
       if (cleanUnit.isEmpty) continue;
-      if (cleanInput == cleanUnit) return true;
+      if (_matchSingleCandidate(cleanInput, cleanUnit,
+          targetPinyinsCache: targetPinyinsCache, strict: true)) {
+        return true;
+      }
       continue;
     }
 
@@ -482,7 +485,10 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
 }
 
 /// 针对单个候选文本的拼音模糊匹配（核心 DP 算法）
-bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
+///
+/// [strict] 为 true 时（中文手写默写）：不要求 100% 逐字相等，而是用更高的匹配阈值，
+/// 同时要求用户写出与释义等长的字数——只写部分子串（如"女"/"商人"）直接判不匹配。
+bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache, bool strict = false}) {
   if (asrText.isEmpty) return false;
 
   List<List<PinyinParser>> userPinyins = [];
@@ -512,6 +518,10 @@ bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<P
 
   int M = targetPinyins.length;
   int N = userPinyins.length;
+
+  // 手写默写（strict）：必须写出与释义等长的字数，否则视为"没写完"直接判不匹配，
+  // 防止只写一个"女"字就被当作"女商人"。
+  if (strict && N < M) return false;
 
   List<List<double>> dp = List.generate(M + 1, (_) => List.filled(N + 1, 0.0));
 
@@ -602,7 +612,11 @@ bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<P
     avgSim *= penalty;
   }
 
-  double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.72 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch)));
+  // 手写默写（strict）：用更严的阈值——短词几乎要求完全一致，长词保留 90% 相似度，
+  // 容忍手写识别带来的个别同音/形近字，同时拦住明显缺字或错字。
+  final double finalThreshold = strict
+      ? (M <= 2 ? 0.92 : 0.90)
+      : (M == 1 ? 0.82 : (M == 2 ? 0.72 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch))));
 
   if (avgSim > finalThreshold) {
     return true;
@@ -625,7 +639,8 @@ bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<P
       }
       String dedupedText = deduped.toString();
       if (dedupedText.length < asrCharCount) {
-        return _matchSingleCandidate(dedupedText, unit, targetPinyinsCache: targetPinyinsCache);
+        return _matchSingleCandidate(dedupedText, unit,
+            targetPinyinsCache: targetPinyinsCache, strict: strict);
       }
     }
   }
