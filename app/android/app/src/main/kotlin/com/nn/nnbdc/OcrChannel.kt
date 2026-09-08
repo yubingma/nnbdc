@@ -38,14 +38,16 @@ class OcrChannel(private val context: Context) {
                 }
                 "recognizeHandwriting" -> {
                     val strokes = call.argument<List<List<Map<String, Double>>>>("strokes")
+                    val language = call.argument<String>("language") ?: "en-US"
                     if (strokes != null) {
-                        recognizeHandwriting(strokes, result)
+                        recognizeHandwriting(strokes, language, result)
                     } else {
                         result.error("INVALID_ARGUMENTS", "Missing strokes parameter", null)
                     }
                 }
                 "prepareModel" -> {
-                    prepareModel(result)
+                    val language = call.argument<String>("language") ?: "en-US"
+                    prepareModel(language, result)
                 }
                 else -> result.notImplemented()
             }
@@ -93,7 +95,7 @@ class OcrChannel(private val context: Context) {
         }
     }
 
-    private fun recognizeHandwriting(strokesData: List<List<Map<String, Double>>>, result: MethodChannel.Result) {
+    private fun recognizeHandwriting(strokesData: List<List<Map<String, Double>>>, language: String, result: MethodChannel.Result) {
         val inkBuilder = Ink.builder()
         for (strokeData in strokesData) {
             val strokeBuilder = Ink.Stroke.builder()
@@ -107,9 +109,10 @@ class OcrChannel(private val context: Context) {
         }
         val ink = inkBuilder.build()
 
-        val modelIdentifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag("en-US")
+        val languageTag = language
+        val modelIdentifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(languageTag)
         if (modelIdentifier == null) {
-            result.error("MODEL_ERROR", "无法识别语言模型: en-US", null)
+            result.error("MODEL_ERROR", "无法识别语言模型: $languageTag", null)
             return
         }
         
@@ -166,10 +169,11 @@ class OcrChannel(private val context: Context) {
         }
     }
 
-    private fun prepareModel(result: MethodChannel.Result) {
-        val modelIdentifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag("en-US")
+    private fun prepareModel(language: String, result: MethodChannel.Result) {
+        val languageTag = language
+        val modelIdentifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag(languageTag)
         if (modelIdentifier == null) {
-            result.error("MODEL_ERROR", "无法识别语言模型: en-US", null)
+            result.error("MODEL_ERROR", "无法识别语言模型: $languageTag", null)
             return
         }
         
@@ -179,18 +183,18 @@ class OcrChannel(private val context: Context) {
         remoteModelManager.isModelDownloaded(model)
             .addOnSuccessListener { isDownloaded ->
                 if (isDownloaded) {
-                    android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model already downloaded")
+                    android.util.Log.d("OcrChannel", "OcrChannel: $languageTag handwriting model already downloaded")
                     warmupRecognizer(model)
                     result.success(null)
                 } else {
-                    android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model is downloading...")
+                    android.util.Log.d("OcrChannel", "OcrChannel: $languageTag handwriting model is downloading...")
                     remoteModelManager.download(model, DownloadConditions.Builder().build())
                         .addOnSuccessListener {
-                            android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model downloaded successfully")
+                            android.util.Log.d("OcrChannel", "OcrChannel: $languageTag handwriting model downloaded successfully")
                             warmupRecognizer(model)
                         }
                         .addOnFailureListener { e ->
-                            android.util.Log.e("OcrChannel", "OcrChannel: en-US handwriting model download failed", e)
+                            android.util.Log.e("OcrChannel", "OcrChannel: $languageTag handwriting model download failed", e)
                         }
                     result.success(null)
                 }

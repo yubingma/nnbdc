@@ -42,6 +42,8 @@ class BdcState extends Equatable {
   final List<WordVo>? words;
   final bool buttonsEnabled;
   final bool showHandwritingBoard;
+  /// 手写板是否为「中文默写」模式（英译汉时手写中文释义，结果走中文匹配而非英文拼写）
+  final bool isChineseDictation;
   
   final AsrState asrState;
   final String asrResult;
@@ -117,6 +119,7 @@ class BdcState extends Equatable {
     this.words,
     this.buttonsEnabled = true,
     this.showHandwritingBoard = false,
+    this.isChineseDictation = false,
     this.asrState = AsrState.unknown,
     this.asrResult = "",
     this.currentAsrCandidates = const [],
@@ -193,6 +196,7 @@ class BdcState extends Equatable {
     Object? words = _sentinel,
     bool? buttonsEnabled,
     bool? showHandwritingBoard,
+    bool? isChineseDictation,
     AsrState? asrState,
     String? asrResult,
     List<String>? currentAsrCandidates,
@@ -255,6 +259,7 @@ class BdcState extends Equatable {
       words: words == _sentinel ? this.words : (words as List<WordVo>?),
       buttonsEnabled: buttonsEnabled ?? this.buttonsEnabled,
       showHandwritingBoard: showHandwritingBoard ?? this.showHandwritingBoard,
+      isChineseDictation: isChineseDictation ?? this.isChineseDictation,
       asrState: asrState ?? this.asrState,
       asrResult: asrResult ?? this.asrResult,
       currentAsrCandidates: currentAsrCandidates ?? this.currentAsrCandidates,
@@ -329,6 +334,7 @@ class BdcState extends Equatable {
     words,
     buttonsEnabled,
     showHandwritingBoard,
+    isChineseDictation,
     asrState,
     asrResult,
     currentAsrCandidates,

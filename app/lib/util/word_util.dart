@@ -27,19 +27,23 @@ class SpellingTextEditingController extends TextEditingController {
     final List<TextSpan> children = [];
 
     for (int i = 0; i < input.length; i++) {
+      final ch = input[i];
       Color charColor = baseColor;
-      if (i < target.length) {
-        // 比较单个字符，忽略大小写
-        if (input[i].toLowerCase() != target[i].toLowerCase()) {
+      // 仅对英文字母做逐字符相似度标色；非字母（如中文默写）保持基色，避免整句被误标红
+      if (RegExp(r'[a-zA-Z]').hasMatch(ch)) {
+        if (i < target.length) {
+          // 比较单个字符，忽略大小写
+          if (ch.toLowerCase() != target[i].toLowerCase()) {
+            charColor = Colors.red;
+          }
+        } else {
+          // 超出目标长度的部分显示红色
           charColor = Colors.red;
         }
-      } else {
-        // 超出目标长度的部分显示红色
-        charColor = Colors.red;
       }
 
       children.add(TextSpan(
-        text: input.substring(i, i + 1),
+        text: ch,
         style: style?.copyWith(color: charColor),
       ));
     }

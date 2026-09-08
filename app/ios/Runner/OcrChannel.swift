@@ -41,10 +41,12 @@ class OcrChannel {
                     ))
                     return
                 }
-                recognizeHandwriting(strokesData: strokes, result: result)
+                let language = args["language"] as? String ?? "en-US"
+                recognizeHandwriting(strokesData: strokes, language: language, result: result)
                 
             case "prepareModel":
-                prepareModel(result: result)
+                let language = (call.arguments as? [String: Any])?["language"] as? String ?? "en-US"
+                prepareModel(language: language, result: result)
                 
             default:
                 result(FlutterMethodNotImplemented)
@@ -131,7 +133,7 @@ class OcrChannel {
         }
     }
 
-    private static func recognizeHandwriting(strokesData: [[[String: Any]]], result: @escaping FlutterResult) {
+    private static func recognizeHandwriting(strokesData: [[[String: Any]]], language: String, result: @escaping FlutterResult) {
         var recognitionStrokes: [Stroke] = []
         for strokeData in strokesData {
             var points: [StrokePoint] = []
@@ -145,7 +147,7 @@ class OcrChannel {
         }
         let ink = Ink(strokes: recognitionStrokes)
         
-        let languageTag = "en-US"
+        let languageTag = language
         guard let modelIdentifier = DigitalInkRecognitionModelIdentifier(forLanguageTag: languageTag) else {
             result(FlutterError(code: "MODEL_ERROR", message: "无法识别语言模型: \(languageTag)", details: nil))
             return
@@ -179,8 +181,8 @@ class OcrChannel {
         }
     }
 
-    private static func prepareModel(result: @escaping FlutterResult) {
-        let languageTag = "en-US"
+    private static func prepareModel(language: String, result: @escaping FlutterResult) {
+        let languageTag = language
         guard let modelIdentifier = DigitalInkRecognitionModelIdentifier(forLanguageTag: languageTag) else {
             result(FlutterError(code: "MODEL_ERROR", message: "无法识别语言模型: \(languageTag)", details: nil))
             return
@@ -190,17 +192,17 @@ class OcrChannel {
         let modelManager = ModelManager.modelManager()
         
         if modelManager.isModelDownloaded(model) {
-            print("OcrChannel: en-US handwriting model already downloaded")
+            print("OcrChannel: \(languageTag) handwriting model already downloaded")
             warmupRecognizer(model: model)
             result(nil)
         } else {
-            print("OcrChannel: en-US handwriting model is downloading...")
+            print("OcrChannel: \(languageTag) handwriting model is downloading...")
             NotificationCenter.default.addObserver(
                 forName: .mlkitModelDownloadDidSucceed,
                 object: nil,
                 queue: nil
             ) { notification in
-                print("OcrChannel: en-US handwriting model downloaded successfully")
+                print("OcrChannel: \(languageTag) handwriting model downloaded successfully")
                 warmupRecognizer(model: model)
             }
             
@@ -209,7 +211,7 @@ class OcrChannel {
                 object: nil,
                 queue: nil
             ) { notification in
-                print("OcrChannel: en-US handwriting model download failed")
+                print("OcrChannel: \(languageTag) handwriting model download failed")
             }
             
             modelManager.download(model, conditions: ModelDownloadConditions())

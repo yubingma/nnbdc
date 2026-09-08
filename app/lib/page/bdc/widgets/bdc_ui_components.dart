@@ -67,6 +67,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                     showCloseButton: false,
                     showHeader: false, // 隐藏内部自带的标题栏
                     useBoxDecoration: false, // 隐藏内部背景和圆角，直接使用外层背景
+                    // 中文默写（英译汉）时识别中文汉字；否则识别英文拼写
+                    language: state.isChineseDictation ? 'zh-Hans' : 'en-US',
                     onStartWriting: () {
                       // 一旦用户开始手写，立即收起键盘
                       if (_meaningFocusNode.hasFocus) {
@@ -95,10 +97,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                     },
                     onCancel: () {
                       _meaningFocusNode.unfocus();
-                      updateUI(() {
-                        notifier.updateShowHandwritingBoard(false);
-                      }, tag: 'hw-cancel');
-                      notifier.handleTabChangeForAsr();
+                      // 中文默写用 closeChineseDictation 一并重置中文默写标记
+                      if (state.isChineseDictation) {
+                        notifier.closeChineseDictation();
+                      } else {
+                        updateUI(() {
+                          notifier.updateShowHandwritingBoard(false);
+                        }, tag: 'hw-cancel');
+                        notifier.handleTabChangeForAsr();
+                      }
                     },
                   ),
                 ),
@@ -135,7 +142,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  '请拼写单词：',
+                                  state.isChineseDictation
+                                      ? '请写出中文释义：'
+                                      : '请拼写单词：',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -172,10 +181,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                               ),
                               onPressed: () {
                                 _meaningFocusNode.unfocus();
-                                updateUI(() {
-                                  notifier.updateShowHandwritingBoard(false);
-                                }, tag: 'hw-close');
-                                notifier.handleTabChangeForAsr();
+                                // 中文默写关闭时一并重置中文默写标记
+                                if (state.isChineseDictation) {
+                                  notifier.closeChineseDictation();
+                                } else {
+                                  updateUI(() {
+                                    notifier.updateShowHandwritingBoard(false);
+                                  }, tag: 'hw-close');
+                                  notifier.handleTabChangeForAsr();
+                                }
                               },
                             ),
                           ],
@@ -674,6 +688,47 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         )
                                       else
                                         const Spacer(),
+                                      // 英译汉：中文「默写」入口（手写中文释义；不适用语音时替代）
+                                      if (state.studyStep ==
+                                              StudyStep.en2Ch.json &&
+                                          !state.isChineseDictation)
+                                        GestureDetector(
+                                          key: const Key(
+                                              'bdc_chinese_dictation_btn'),
+                                          onTap: () {
+                                            _meaningFocusNode.unfocus();
+                                            notifier.openChineseDictation();
+                                          },
+                                          behavior: HitTestBehavior.opaque,
+                                          child: Padding(
+                                            padding: const EdgeInsets
+                                                .symmetric(
+                                                horizontal: 6, vertical: 3),
+                                            child: Row(
+                                              mainAxisSize:
+                                                  MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.edit_outlined,
+                                                  size: 13.5,
+                                                  color:
+                                                      const Color(0xFF10B981),
+                                                ),
+                                                const SizedBox(width: 3.5),
+                                                Text(
+                                                  '默写',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.w500,
+                                                    color: const Color(
+                                                        0xFF10B981),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                       _buildModeSwitchButton(),
                                     ],
                                   ),

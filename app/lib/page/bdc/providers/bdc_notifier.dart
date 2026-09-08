@@ -1833,11 +1833,10 @@ class BdcNotifier extends _$BdcNotifier {
     String inputText = asrInput ?? meaningController.text;
 
     // ==========================================
-    // 优先处理：全屏手写/拼写板练习的拼写匹配
-    // 只要当前开启了手写拼写板，用户的一切输入（手写/键盘）均以当前单词拼写为目标。
-    // 无论当前处于何种题型模式（英中、中英、列表、例句），拼写正确后必须立即退出手写板并返回背单词主页面！
+    // 优先处理：全屏手写/拼写板练习的拼写匹配（英文拼写）
+    // 中文默写（isChineseDictation）不在此分支，走下方中文释义匹配。
     // ==========================================
-    if (state.showHandwritingBoard && state.word != null) {
+    if (state.showHandwritingBoard && state.word != null && !state.isChineseDictation) {
       final correctSpell = state.word!.spell.toLowerCase();
       final inputLower = inputText.trim().toLowerCase();
       final isSpellingMatch = inputLower.replaceAll(RegExp(r'[^a-z]'), '') == correctSpell.replaceAll(RegExp(r'[^a-z]'), '');
@@ -2084,7 +2083,10 @@ class BdcNotifier extends _$BdcNotifier {
       }
 
       final isFromAsr = asrInput != null || meaningController.text == _handlingChinese;
-      final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
+      // 中文默写（手写中文释义）：直接用中文手写结果作为匹配输入，而非空当前候选
+      final inputs = state.isChineseDictation
+          ? [asrInput ?? _handlingChinese]
+          : (isFromAsr ? state.currentAsrCandidates : [_handlingChinese]);
       
       final matchStopwatch = Stopwatch()..start();
       final clonedWrapper = state.wordWrapper!.clone();
@@ -2117,12 +2119,20 @@ class BdcNotifier extends _$BdcNotifier {
             );
           }
           final ratingResult = _calculateRating(method);
+          // 中文默写匹配成功后，退出中文字写板并重置中文默写标记
+          if (state.isChineseDictation) {
+            state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
+          }
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         } else {
           _playCorrectSound();
         }
       } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
-        // 本地未匹配成功：触发单词 AI 裁判防抖判定
+        // 本地未匹配成功：触发单词 AI 裁判防抖判定。
+        // 中文默写已提交手写，先退出手写板，让用户回到背单词页等待 AI 判定结果（与语音"说中文未中→AI裁判"一致）。
+        if (state.isChineseDictation) {
+          state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
+        }
         _scheduleWordAiRefereeCheck(inputs);
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
@@ -2917,6 +2927,21 @@ class BdcNotifier extends _$BdcNotifier {
       _isAnswerCorrectHandling = false;
     }
     state = state.copyWith(showHandwritingBoard: show);
+    handleTabChangeForAsr();
+  }
+
+  /// 英译汉（en2Ch）中文默写：打开手写板，标记为中文默写模式（识别中文释义，非英文拼写）
+  void openChineseDictation() {
+    _isAnswerCorrectHandling = false;
+    _handlingChinese = "";
+    state = state.copyWith(showHandwritingBoard: true, isChineseDictation: true);
+    handleTabChangeForAsr();
+  }
+
+  /// 关闭手写板并重置中文默写标记
+  void closeChineseDictation() {
+    _handlingChinese = "";
+    state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
     handleTabChangeForAsr();
   }
 

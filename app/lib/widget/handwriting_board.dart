@@ -41,10 +41,14 @@ class HandwritingBoard extends StatefulWidget {
     this.onHint,
     this.onUndo,
     this.onRewrite,
+    this.language = 'en-US',
   });
 
   final VoidCallback? onUndo;
   final VoidCallback? onRewrite;
+
+  /// 手写识别语言（BCP-47）。英文拼写默认 'en-US'；中文默写传 'zh-Hans'。
+  final String language;
 
   @override
   State<HandwritingBoard> createState() => HandwritingBoardState();
@@ -65,8 +69,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   @override
   void initState() {
     super.initState();
-    // 异步静默加载手写识别模型，避免用户在写完第一笔时因模型下载引发卡顿
-    OcrService.prepareModel();
+    // 异步静默加载当前识别语言的手写模型，避免用户在写完第一笔时因模型下载引发卡顿
+    OcrService.prepareModel(language: widget.language);
   }
   
   void hideRightZone() {
@@ -125,7 +129,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
         'y': p.offset.dy,
         't': p.t
       }).toList()).toList();
-      final recognitionFuture = OcrService.recognizeHandwriting(strokes);
+      final recognitionFuture = OcrService.recognizeHandwriting(strokes, language: widget.language);
         
       final startTime = DateTime.now();
       final response = await recognitionFuture.timeout(const Duration(seconds: 5));
@@ -141,25 +145,31 @@ class HandwritingBoardState extends State<HandwritingBoard> {
       // 4. 后处理识别结果
       String text = response;
 
-      // 视觉近形词替换
-      String processedText = text
-          .replaceAll('1', 'l')
-          .replaceAll('0', 'o')
-          .replaceAll('5', 's')
-          .replaceAll('2', 'z')
-          .replaceAll('8', 'b')
-          .replaceAll('9', 'g')
-          .replaceAll('6', 'g')
-          .replaceAll('4', 'a')
-          .replaceAll('7', 't');
-          
-      String result = processedText
-          .replaceAll('|', 'l')
-          .replaceAll('/', 'l')
-          .replaceAll('\\', 'l')
-          .replaceAll(RegExp(r"[^a-zA-Z\s\-']"), '') // 允许连字符和单引号
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
+      final String result;
+      if (widget.language == 'zh-Hans') {
+        // 中文默写：保留识别出的中文字符，不套用英文近形替换/字母过滤
+        result = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+      } else {
+        // 英文拼写：视觉近形替换
+        String processedText = text
+            .replaceAll('1', 'l')
+            .replaceAll('0', 'o')
+            .replaceAll('5', 's')
+            .replaceAll('2', 'z')
+            .replaceAll('8', 'b')
+            .replaceAll('9', 'g')
+            .replaceAll('6', 'g')
+            .replaceAll('4', 'a')
+            .replaceAll('7', 't');
+
+        result = processedText
+            .replaceAll('|', 'l')
+            .replaceAll('/', 'l')
+            .replaceAll('\\', 'l')
+            .replaceAll(RegExp(r"[^a-zA-Z\s\-']"), '') // 允许连字符和单引号
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+      }
 
       widget.onRecognized(result);
     } on TimeoutException {
@@ -347,37 +357,43 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
           HapticFeedback.lightImpact();
           onTap();
         },
-        child: Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(height / 2),
-            border: Border.all(color: border, width: 0.8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.08),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(height / 2),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+            child: Container(
+              width: width,
+              height: height,
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(height / 2),
+                border: Border.all(color: border, width: 0.8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.08),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: foreground, size: 20),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  color: foreground,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                  decoration: TextDecoration.none,
-                ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: foreground, size: 20),
+                  const SizedBox(height: 3),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -407,29 +423,31 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             ? (width * 0.21).clamp(60.0, 95.0) 
             : (width * 0.28).clamp(70.0, 120.0);
         final double zoneHeight = isNarrow ? 56 : 65;
-        final double bottomMargin = isNarrow ? 20 : 40; 
-        
+        final double bottomMargin = isNarrow ? 10 : 16; 
+        // 让操作按钮在底部操作栏内垂直居中（操作栏高度 = zoneHeight + bottomMargin + 10）
+        final double zoneTop = height - zoneHeight - bottomMargin - 10 + (bottomMargin + 10) / 2;
+
         final rewriteZone = Rect.fromLTWH(
           width / 2 - (hasHint ? zoneWidth * 2.15 : zoneWidth * 1.6), 
-          height - zoneHeight - bottomMargin, 
+          zoneTop, 
           zoneWidth, 
           zoneHeight
         );
         final undoZone = Rect.fromLTWH(
           width / 2 - (hasHint ? zoneWidth * 1.05 : zoneWidth / 2), 
-          height - zoneHeight - bottomMargin, 
+          zoneTop, 
           zoneWidth, 
           zoneHeight
         );
         final hintZone = hasHint ? Rect.fromLTWH(
           width / 2 + zoneWidth * 0.05, 
-          height - zoneHeight - bottomMargin, 
+          zoneTop, 
           zoneWidth, 
           zoneHeight
         ) : Rect.zero;
         final closeZone = Rect.fromLTWH(
           width / 2 + (hasHint ? zoneWidth * 1.15 : zoneWidth * 0.6), 
-          height - zoneHeight - bottomMargin, 
+          zoneTop, 
           zoneWidth, 
           zoneHeight
         );
