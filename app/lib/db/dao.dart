@@ -147,7 +147,7 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
       return AppThemeStyle.fromCode(param?.value);
     } catch (e) {
       Global.logger.e('getThemeStyle 失败，使用默认值: $e');
-      return AppThemeStyle.aurora;
+      return AppThemeStyle.emerald;
     }
   }
 

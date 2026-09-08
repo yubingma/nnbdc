@@ -104,8 +104,8 @@ class AppThemeBackground extends StatelessWidget {
   /// 生成"顶部浅 → 底部深"的同色相莫兰迪渐变(无光晕、安静统一)。
   /// 提气/渐变参数取自 [cfg]，其中 [cfg.vibrancy] 逐段抬升饱和度与明度。
   Widget _buildLightMutedGradient(AppThemeStyle style, PageVibrancyConfig cfg) {
-    // 鼠尾草玻璃主题：用参考图的精确取样曲线(多点渐变)复现"安静高级"的灰绿质感
-    if (style == AppThemeStyle.sageglass) {
+    // 鼠尾草森主题：用参考图的精确取样曲线(多点渐变)复现"安静高级"的灰绿质感
+    if (style == AppThemeStyle.sage) {
       return Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -146,11 +146,6 @@ class AppThemeBackground extends StatelessWidget {
   }
 
   (Color, Color, Color) _darkGradient(AppThemeStyle style) => switch (style) {
-        AppThemeStyle.aurora => (
-            const Color(0xFF072032),
-            const Color(0xFF061624),
-            const Color(0xFF040D17),
-          ),
         AppThemeStyle.emerald => (
             const Color(0xFF0C1A20),
             const Color(0xFF0A151B),
@@ -182,11 +177,6 @@ class AppThemeBackground extends StatelessWidget {
             const Color(0xFF080917),
           ),
         AppThemeStyle.sage => (
-            const Color(0xFF09201E),
-            const Color(0xFF071716),
-            const Color(0xFF05100F),
-          ),
-        AppThemeStyle.sageglass => (
             const Color(0xFF09201E),
             const Color(0xFF071716),
             const Color(0xFF05100F),

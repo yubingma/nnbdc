@@ -3,7 +3,7 @@ import 'theme/app_theme.dart';
 
 /// 全局视觉主题状态管理
 class DarkMode with ChangeNotifier {
-  AppThemeStyle _themeStyle = AppThemeStyle.aurora;
+  AppThemeStyle _themeStyle = AppThemeStyle.emerald;
 
   AppThemeStyle get themeStyle => _themeStyle;
 
@@ -21,7 +21,7 @@ class DarkMode with ChangeNotifier {
     if (value && !_themeStyle.isDark) {
       setThemeStyle(AppThemeStyle.midnight);
     } else if (!value && _themeStyle.isDark) {
-      setThemeStyle(AppThemeStyle.aurora);
+      setThemeStyle(AppThemeStyle.emerald);
     }
   }
 }

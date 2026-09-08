@@ -22,10 +22,7 @@ extension FsrsRatingColorExt on FsrsRating {
 
 /// 应用视觉主题风格枚举 (5 款风格截然不同、性格鲜明的专属美学)
 enum AppThemeStyle {
-  /// 晨曦流光 (DeepSeek 空灵科技，冰川极光冷蓝 + 高透毛玻璃)
-  aurora('aurora', '晨曦流光', '空灵科技冰川蓝', Icons.auto_awesome_rounded),
-
-  /// 青碧湖蓝 (清新明快，亮蓝青 + 中性深色文字)
+  /// 青碧湖蓝 (清新明快，亮蓝青 + 中性深色文字) —— 默认主题
   emerald('emerald', '青碧湖蓝', '清新明快湖蓝青', Icons.spa_rounded),
 
   /// 暮色落日 (温暖活力晚霞，落日暖橘 + 蜜桃暖色光晕)
@@ -43,11 +40,8 @@ enum AppThemeStyle {
   /// 星云深靛 (Linear & Raycast，数字工艺深靛蓝 + 纯净冷灰)
   indigo('indigo', '星云深靛', '未来极客星云靛', Icons.blur_on_rounded),
 
-  /// 鼠尾草森 (Gentler Streak / Apple，低饱和海盐青绿 + 视觉疗愈)
-  sage('sage', '鼠尾草森', '海盐青木温润舒缓', Icons.grass_rounded),
-
-  /// 鼠尾草玻璃 (低饱和灰绿单色渐变质感，复现学习页"安静高级"的氛围)
-  sageglass('sageglass', '鼠尾草玻璃', '低饱和灰绿渐变质感', Icons.spa_rounded),
+  /// 鼠尾草森 (低饱和灰绿单色渐变质感，复现学习页"安静高级"的氛围)
+  sage('sage', '鼠尾草森', '低饱和灰绿渐变质感', Icons.spa_rounded),
 
   /// 暮光深空 (Arc & Linear Dark，曜石深空黑 + 霓虹紫罗兰光晕)
   twilight('twilight', '暮光深空', '曜石深空霓虹紫', Icons.nights_stay_rounded);
@@ -60,13 +54,13 @@ enum AppThemeStyle {
   const AppThemeStyle(this.code, this.label, this.description, this.icon);
 
   static AppThemeStyle fromCode(String? code) {
-    if (code == null) return AppThemeStyle.aurora;
+    if (code == null) return AppThemeStyle.emerald;
     // 兼容旧代码 'jade' 映射为 'sunset'
     if (code == 'jade') return AppThemeStyle.sunset;
     for (final style in AppThemeStyle.values) {
       if (style.code == code) return style;
     }
-    return AppThemeStyle.aurora;
+    return AppThemeStyle.emerald;
   }
 
   /// 该主题是否为深底/暗色主题
@@ -112,31 +106,7 @@ class AppThemeConfig {
 
   static AppThemeConfig of(AppThemeStyle style) {
     switch (style) {
-      // 1. 晨曦流光: 科技冰川冷蓝
-      case AppThemeStyle.aurora:
-        return AppThemeConfig(
-          style: style,
-          primaryColor: const Color(0xFF0284C7), // 鲜明深邃天空科技蓝
-          primaryLightColor: const Color(0xFF38BDF8),
-          primaryDarkColor: const Color(0xFF0369A1),
-          textPrimary: const Color(0xFF0C2136), // 现代高质感深冷灰黑
-          textSecondary: const Color(0xFF335372), // 优雅次级灰
-          textMuted: const Color(0xFF6B8BAA),
-          cardBg: const Color(0x80FFFFFF), // 统一规格透光磨砂白 (50%)
-          cardBorder: const Color(0x26000000), // 极淡中性描边：白底上勾勒卡片轮廓 // 彻底消除灰色硬边框
-          subtleBg: const Color(0x140284C7), // 轻透冷蓝微底色
-          warmAccentColor: const Color(0xFFF97316), // 晨曦暖阳橙
-          cardShadows: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          isDark: false,
-        );
-
-      // 2. 经典翡翠: 扇贝经典护眼生机绿 / 不背单词原版翡翠晨雾
+      // 1. 青碧湖蓝: 清新明快湖蓝青（默认主题）
       case AppThemeStyle.emerald:
         return AppThemeConfig(
           style: style,
@@ -280,32 +250,8 @@ class AppThemeConfig {
           isDark: false,
         );
 
-      // 8. 鼠尾草森: Gentler Streak 风格治愈海盐青绿
+      // 7. 鼠尾草森: 低饱和灰绿单色渐变，复现学习页"安静高级"的氛围
       case AppThemeStyle.sage:
-        return AppThemeConfig(
-          style: style,
-          primaryColor: const Color(0xFF0D9488), // 舒缓海盐青木绿
-          primaryLightColor: const Color(0xFF2DD4BF),
-          primaryDarkColor: const Color(0xFF0F766E),
-          textPrimary: const Color(0xFF0E2624), // 深青木墨黑
-          textSecondary: const Color(0xFF395E5A),
-          textMuted: const Color(0xFF6B9792),
-          cardBg: const Color(0x80FFFFFF),
-          cardBorder: const Color(0x26000000), // 极淡中性描边：白底上勾勒卡片轮廓
-          subtleBg: const Color(0x140D9488),
-          warmAccentColor: const Color(0xFFF97316), // 秋叶温和暖橙
-          cardShadows: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          isDark: false,
-        );
-
-      // 鼠尾草玻璃: 低饱和灰绿单色渐变，复现学习页"安静高级"的氛围
-      case AppThemeStyle.sageglass:
         return AppThemeConfig(
           style: style,
           primaryColor: const Color(0xFF0D9488), // 舒缓青木绿(强调色)
@@ -328,7 +274,7 @@ class AppThemeConfig {
           isDark: false,
         );
 
-      // 9. 暮光深空: Arc & Linear 曜石深空霓虹紫
+      // 8. 暮光深空: Arc & Linear 曜石深空霓虹紫
       case AppThemeStyle.twilight:
         return AppThemeConfig(
           style: style,
@@ -497,7 +443,7 @@ class AppTheme {
   }
 
   // 兼容旧调用
-  static ThemeData lightTheme() => getThemeData(AppThemeStyle.aurora);
+  static ThemeData lightTheme() => getThemeData(AppThemeStyle.emerald);
   static ThemeData darkTheme() => getThemeData(AppThemeStyle.midnight);
 
   /// 创建渐变背景的 AppBar
