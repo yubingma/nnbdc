@@ -2090,7 +2090,10 @@ class BdcNotifier extends _$BdcNotifier {
       
       final matchStopwatch = Stopwatch()..start();
       final clonedWrapper = state.wordWrapper!.clone();
-      final result = matchInputChineseWithMeaningItems(clonedWrapper, inputs);
+      // 中文默写（手写中文释义）：无 ASR 噪声，采用严格逐字匹配，防止"女"被当作"女商人"判对；
+      // 语音"说中文"仍用宽松的拼音模糊匹配以容错同音字。
+      final result = matchInputChineseWithMeaningItems(
+          clonedWrapper, inputs, strict: state.isChineseDictation);
       bool isMatch = _isAsrPassSync(result.totalCount, result.matchedCount);
       Global.logger.d('[PERF] checkAsrResult -> matchInputChineseWithMeaningItems cost: ${matchStopwatch.elapsedMilliseconds}ms');
       

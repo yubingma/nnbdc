@@ -416,10 +416,10 @@ double similarityOf2Pinyin(String pinyin1, String pinyin2) {
   return similarityOf2ParsedPinyin(parts1, parts2);
 }
 
-bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
+bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache, bool strict = false}) {
   if (chinese1 is List<String>) {
     for (final item in chinese1) {
-      if (fuzzyChineseContains(item, chinese2, targetPinyinsCache: targetPinyinsCache)) {
+      if (fuzzyChineseContains(item, chinese2, targetPinyinsCache: targetPinyinsCache, strict: strict)) {
         return true;
       }
     }
@@ -436,6 +436,17 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
 
   for (var unit in meaningUnits) {
     if (unit.isEmpty) continue;
+
+    // 严格模式（中文手写默写）：手写输入是用户逐字书写的答案，没有 ASR 同音字噪声，
+    // 因此要求书写内容与释义每一个汉字都完全一致，绝不允许只写部分子串（如"女"或"商人"）
+    // 就被当作"女商人"而判对。若有出入则交由 AI 裁判兜底，而不是本地模糊放水。
+    if (strict) {
+      final String cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+      final String cleanUnit = unit.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+      if (cleanUnit.isEmpty) continue;
+      if (cleanInput == cleanUnit) return true;
+      continue;
+    }
 
     int M = unit.length;
     

@@ -42,6 +42,7 @@ class HandwritingBoard extends StatefulWidget {
     this.onUndo,
     this.onRewrite,
     this.language = 'en-US',
+    this.manualSubmit = false,
   });
 
   final VoidCallback? onUndo;
@@ -49,6 +50,10 @@ class HandwritingBoard extends StatefulWidget {
 
   /// 手写识别语言（BCP-47）。英文拼写默认 'en-US'；中文默写传 'zh-Hans'。
   final String language;
+
+  /// 手动提交模式（用于中文默写）：停笔后不再自动识别/判题，而是在底部操作栏新增「提交」按钮，
+  /// 只有当用户点击提交后才触发识别与匹配，规避过早识别导致的漏题/误判；键盘输入不受此影响。
+  final bool manualSubmit;
 
   @override
   State<HandwritingBoard> createState() => HandwritingBoardState();
@@ -249,6 +254,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   smartRightZoneWidth: widget.smartRightZoneWidth,
                   rightZoneVisibleNotifier: widget.rightZoneVisibleNotifier,
                   onHint: widget.onHint,
+                  manualSubmit: widget.manualSubmit,
                 ),
               ],
             ),
@@ -275,6 +281,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final double smartRightZoneWidth;
   final ValueNotifier<bool>? rightZoneVisibleNotifier;
   final VoidCallback? onHint;
+  final bool manualSubmit;
 
   const _HandwritingCanvas({
     super.key,
@@ -293,6 +300,7 @@ class _HandwritingCanvas extends StatefulWidget {
     this.smartRightZoneWidth = 0.0,
     this.rightZoneVisibleNotifier,
     this.onHint,
+    this.manualSubmit = false,
   });
 
   @override
@@ -333,7 +341,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
     }
   }
 
-  /// 手写画布底部的操作按钮（重写/回退/关闭/提示）
+  /// 手写画布底部的操作按钮（重写/回退/提交/关闭/提示）
   /// 采用主题感知的柔光薄雾胶囊，替代原先生硬的灰色药丸，保持与整体极简美学一致。
   Widget _buildCanvasControlButton({
     required double left,
@@ -400,6 +408,32 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
     );
   }
 
+  void _handleRewrite() {
+    _autoRecognizeTimer?.cancel();
+    _controller.clear();
+    widget.onRewrite();
+  }
+
+  void _handleUndo() {
+    _autoRecognizeTimer?.cancel();
+    setState(() {
+      _controller.removeLast();
+    });
+    widget.onUndo();
+    // 手动提交模式下，回退仅撤销笔画，不触发识别/判题（自动模式维持原行为）
+    if (!widget.manualSubmit) {
+      widget.onRecognize();
+      if (widget.lines.isEmpty) {
+        widget.onRewrite();
+      }
+    }
+  }
+
+  void _handleSubmit() {
+    _autoRecognizeTimer?.cancel();
+    widget.onRecognize();
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -419,38 +453,36 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         final Color controlBorder = isDark
             ? Colors.white.withValues(alpha: 0.12)
             : Colors.black.withValues(alpha: 0.06);
-        final double zoneWidth = hasHint 
-            ? (width * 0.21).clamp(60.0, 95.0) 
-            : (width * 0.28).clamp(70.0, 120.0);
         final double zoneHeight = isNarrow ? 56 : 65;
         final double bottomMargin = isNarrow ? 10 : 16; 
         // 让操作按钮在底部操作栏内垂直居中（操作栏高度 = zoneHeight + bottomMargin + 10）
         final double zoneTop = height - zoneHeight - bottomMargin - 10 + (bottomMargin + 10) / 2;
 
-        final rewriteZone = Rect.fromLTWH(
-          width / 2 - (hasHint ? zoneWidth * 2.15 : zoneWidth * 1.6), 
-          zoneTop, 
-          zoneWidth, 
-          zoneHeight
-        );
-        final undoZone = Rect.fromLTWH(
-          width / 2 - (hasHint ? zoneWidth * 1.05 : zoneWidth / 2), 
-          zoneTop, 
-          zoneWidth, 
-          zoneHeight
-        );
-        final hintZone = hasHint ? Rect.fromLTWH(
-          width / 2 + zoneWidth * 0.05, 
-          zoneTop, 
-          zoneWidth, 
-          zoneHeight
-        ) : Rect.zero;
-        final closeZone = Rect.fromLTWH(
-          width / 2 + (hasHint ? zoneWidth * 1.15 : zoneWidth * 0.6), 
-          zoneTop, 
-          zoneWidth, 
-          zoneHeight
-        );
+        // 底部操作按钮（自左向右）。中文默写（手动提交）额外增加「提交」按钮。
+        final List<({IconData icon, String label, VoidCallback onTap})> controls = [
+          (icon: Icons.delete_sweep_outlined, label: '重写', onTap: _handleRewrite),
+          (icon: Icons.undo_outlined, label: '回退', onTap: _handleUndo),
+          if (widget.manualSubmit)
+            (icon: Icons.check, label: '提交', onTap: _handleSubmit),
+          (icon: Icons.close, label: '关闭', onTap: () => widget.onCancel?.call()),
+          if (hasHint)
+            (icon: Icons.lightbulb_outline, label: '提示', onTap: () => widget.onHint?.call()),
+        ];
+
+        const double controlGap = 10;
+        final double controlSide = isNarrow ? 8 : 12;
+        final int controlCount = controls.length;
+        // 依据按钮数量自适应宽度，确保全部按钮居中且不超出屏幕
+        final double zoneWidth =
+            ((width - controlSide * 2 - controlGap * (controlCount - 1)) / controlCount)
+                .clamp(56.0, 110.0);
+        final double totalWidth =
+            zoneWidth * controlCount + controlGap * (controlCount - 1);
+        final double startX = width / 2 - totalWidth / 2;
+        final List<Rect> controlZones = List.generate(controlCount, (i) {
+          return Rect.fromLTWH(
+              startX + i * (zoneWidth + controlGap), zoneTop, zoneWidth, zoneHeight);
+        });
 
         return Listener(
           behavior: _currentSmartZoneWidth > 0 ? HitTestBehavior.translucent : HitTestBehavior.opaque,
@@ -467,7 +499,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               }
             }
 
-            if (rewriteZone.contains(p) || undoZone.contains(p) || closeZone.contains(p) || hintZone.contains(p)) {
+            if (controlZones.any((zone) => zone.contains(p))) {
               _ignoredPointers.add(event.pointer);
               return;
             }
@@ -496,12 +528,15 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             
             if (widget.lines.isNotEmpty) {
               _autoRecognizeTimer?.cancel();
-              _autoRecognizeTimer = Timer(const Duration(milliseconds: 300), () {
-                if (mounted && widget.lines.isNotEmpty) {
-                  debugPrint('HB: Auto-triggering recognition via timer');
-                  widget.onRecognize();
-                }
-              });
+              // 手动提交模式（中文默写）下停笔不自动识别/判题，待用户点击「提交」再触发
+              if (!widget.manualSubmit) {
+                _autoRecognizeTimer = Timer(const Duration(milliseconds: 300), () {
+                  if (mounted && widget.lines.isNotEmpty) {
+                    debugPrint('HB: Auto-triggering recognition via timer');
+                    widget.onRecognize();
+                  }
+                });
+              }
             } else {
               debugPrint('HB: Skip auto-trigger because lines is empty');
             }
@@ -561,73 +596,20 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     ),
                   ),
                 ),
-                _buildCanvasControlButton(
-                  left: rewriteZone.left,
-                  top: rewriteZone.top,
-                  width: zoneWidth,
-                  height: zoneHeight,
-                  icon: Icons.delete_sweep_outlined,
-                  label: '重写',
-                  onTap: () {
-                    _autoRecognizeTimer?.cancel();
-                    _controller.clear();
-                    widget.onRewrite();
-                  },
-                  isDark: isDark,
-                  foreground: controlFg,
-                  background: controlBg,
-                  border: controlBorder,
-                ),
-                if (hasHint)
+                for (int i = 0; i < controls.length; i++)
                   _buildCanvasControlButton(
-                    left: hintZone.left,
-                    top: hintZone.top,
+                    left: controlZones[i].left,
+                    top: controlZones[i].top,
                     width: zoneWidth,
                     height: zoneHeight,
-                    icon: Icons.lightbulb_outline,
-                    label: '提示',
-                    onTap: () => widget.onHint?.call(),
+                    icon: controls[i].icon,
+                    label: controls[i].label,
+                    onTap: controls[i].onTap,
                     isDark: isDark,
                     foreground: controlFg,
                     background: controlBg,
                     border: controlBorder,
                   ),
-                _buildCanvasControlButton(
-                  left: closeZone.left,
-                  top: closeZone.top,
-                  width: zoneWidth,
-                  height: zoneHeight,
-                  icon: Icons.close,
-                  label: '关闭',
-                  onTap: () => widget.onCancel?.call(),
-                  isDark: isDark,
-                  foreground: controlFg,
-                  background: controlBg,
-                  border: controlBorder,
-                ),
-                _buildCanvasControlButton(
-                  left: undoZone.left,
-                  top: undoZone.top,
-                  width: zoneWidth,
-                  height: zoneHeight,
-                  icon: Icons.undo_outlined,
-                  label: '回退',
-                  onTap: () {
-                    _autoRecognizeTimer?.cancel();
-                    setState(() {
-                      _controller.removeLast();
-                    });
-                    widget.onUndo();
-                    widget.onRecognize();
-                    if (widget.lines.isEmpty) {
-                      widget.onRewrite();
-                    }
-                  },
-                  isDark: isDark,
-                  foreground: controlFg,
-                  background: controlBg,
-                  border: controlBorder,
-                ),
               ],
             ],
           ),

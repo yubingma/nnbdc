@@ -213,8 +213,11 @@ List<String> splitMeaning2Parts(String meaning) {
 }
 
 /// 在单词的所有释义项子项，以及给定的中文内容(或多候选列表)之间进行匹配，返回释义项子项总数量/匹配上的释义项子项数量/本次新增匹配数量
+///
+/// [strict] 为 true 时（用于中文手写默写，无 ASR 噪声）：要求书写内容与释义逐字完全一致，
+/// 杜绝截断子串（如"女"/"商人"被误判为"女商人"）导致泄题式放水。
 MeaningMatchResult matchInputChineseWithMeaningItems(
-    WordWrapper wordWrapper, Object asrInput) {
+    WordWrapper wordWrapper, Object asrInput, {bool strict = false}) {
   var count = 0; // 所有释义项子项数量
   var newMatchCount = 0; //本次匹配新匹配上的释义项数量
   var meaningItems = wordWrapper.word.getMergedMeaningItems();
@@ -242,7 +245,8 @@ MeaningMatchResult matchInputChineseWithMeaningItems(
         bool isMatched = false;
         String? matchedInput;
         for (final input in inputs) {
-          if (fuzzyChineseContains(input, part, targetPinyinsCache: wordWrapper.targetPinyinsCache)) {
+          if (fuzzyChineseContains(input, part,
+              targetPinyinsCache: wordWrapper.targetPinyinsCache, strict: strict)) {
             isMatched = true;
             matchedInput = input;
             break;

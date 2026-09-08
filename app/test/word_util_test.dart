@@ -76,6 +76,55 @@ void main() {
     });
   });
 
+  group('Chinese Dictation Strict Matching (手写中文默写)', () {
+    late WordVo testWord;
+    late WordWrapper wrapper;
+
+    setUp(() {
+      testWord = WordVo.c2('businesswoman');
+      testWord.id = '1';
+      testWord.meaningItems = [
+        MeaningItemVo.from('n.', '女商人'),
+      ];
+      wrapper = WordWrapper(testWord, null);
+    });
+
+    test('rejects partial single-char answer (女 for 女商人) in strict mode', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '女', strict: true);
+      expect(result.newMatchCount, 0);
+      expect(wrapper.asrMatchedMeaningItemParts.isEmpty, true);
+    });
+
+    test('rejects truncated substring answer (商人 for 女商人) in strict mode', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '商人', strict: true);
+      expect(result.newMatchCount, 0);
+      expect(wrapper.asrMatchedMeaningItemParts.isEmpty, true);
+    });
+
+    test('accepts exact full answer (女商人) in strict mode', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '女商人', strict: true);
+      expect(result.newMatchCount, 1);
+      expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 0)), true);
+    });
+
+    test('rejects truncated answer in strict mode even when meaning has comma-synonyms', () {
+      final w = WordVo.c2('businesswomen')..id = '2';
+      w.meaningItems = [
+        MeaningItemVo.from('n.', '女商人，商界女性'),
+      ];
+      final wr = WordWrapper(w, null);
+      // 只写其中一个同义词的截断子串，不应被当作完整写出
+      var result = matchInputChineseWithMeaningItems(wr, '女性', strict: true);
+      expect(result.newMatchCount, 0);
+    });
+
+    test('strict mode does not change default fuzzy behavior (voice ASR 容错)', () {
+      // 默认（非 strict）仍应保留 ASR 同音字/模糊匹配，供语音"说中文"使用
+      var result = matchInputChineseWithMeaningItems(wrapper, '女商人');
+      expect(result.newMatchCount, 1);
+    });
+  });
+
   group('WordWrapper Equality and Deduplication', () {
     test('wrappers with same word id are equal regardless of UI answering state', () {
       final w1 = WordVo.c2('journal')..id = 'w_123';

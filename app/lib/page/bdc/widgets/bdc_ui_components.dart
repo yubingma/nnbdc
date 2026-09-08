@@ -69,6 +69,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                     useBoxDecoration: false, // 隐藏内部背景和圆角，直接使用外层背景
                     // 中文默写（英译汉）时识别中文汉字；否则识别英文拼写
                     language: state.isChineseDictation ? 'zh-Hans' : 'en-US',
+                    // 中文默写采用手动提交：停笔不自动判题，仅点击「提交」后才识别+匹配，规避过早识别
+                    manualSubmit: state.isChineseDictation,
                     onStartWriting: () {
                       // 一旦用户开始手写，立即收起键盘
                       if (_meaningFocusNode.hasFocus) {
@@ -154,8 +156,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   ),
                                 ),
                                 const SizedBox(height: 3),
+                                // 中文默写（英译汉）时，顶部展示英文原词作为题目，而非中文释义，否则会直接泄题
                                 Text(
-                                  combinedMeaning,
+                                  state.isChineseDictation
+                                      ? (state.word?.spell ?? combinedMeaning)
+                                      : combinedMeaning,
                                   style: TextStyle(
                                     fontSize: 19,
                                     fontWeight: FontWeight.w700,
@@ -712,7 +717,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                                                   Icons.edit_outlined,
                                                   size: 13.5,
                                                   color:
-                                                      const Color(0xFF10B981),
+                                                      _cachedIsDarkMode
+                                                          ? const Color(
+                                                              0xFF94A3B8)
+                                                          : const Color(
+                                                              0xFF5A716E),
                                                 ),
                                                 const SizedBox(width: 3.5),
                                                 Text(
@@ -721,8 +730,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                                                     fontSize: 12,
                                                     fontWeight:
                                                         FontWeight.w500,
-                                                    color: const Color(
-                                                        0xFF10B981),
+                                                    color: _cachedIsDarkMode
+                                                        ? const Color(
+                                                            0xFF94A3B8)
+                                                        : const Color(
+                                                            0xFF5A716E),
                                                   ),
                                                 ),
                                               ],
