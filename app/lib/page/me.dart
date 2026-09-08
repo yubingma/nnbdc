@@ -43,6 +43,7 @@ import 'package:nnbdc/widget/theme_select_dialog.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
+import 'package:nnbdc/widget/frosted_glass_card.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:nnbdc/util/notification_util.dart';
@@ -1106,27 +1107,20 @@ class MePageState extends State<MePage> implements RefreshableTab {
     final accentColor = themeConfig.primaryColor;
     final cardColor = context.pageCardBg(PageVibrancy.me);
     final borderColor = themeConfig.cardBorder;
-    final cardShadow = themeConfig.cardShadows;
 
     return Column(
       children: [
         // 1. 个人资料 + 高光展台卡片 (Profile & Highlights Card)
-        Container(
-          margin: EdgeInsets.symmetric(
+        Padding(
+          padding: EdgeInsets.symmetric(
             vertical: MediaQuery.of(context).size.width > 600 ? 16 : 10,
           ),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: cardShadow,
-            border: borderColor == Colors.transparent
-                ? (isDarkModeEnabled ? Border.all(color: Colors.white.withValues(alpha: 0.08), width: 0.8) : null)
-                : Border.all(color: borderColor, width: 0.8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: FrostedGlassCard(
+            borderRadius: 20,
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // 1.1 头像和昵称行 (紧凑对齐，1:1 对齐原型头像光圈+小笔头)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -1456,6 +1450,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
             ],
           ),
         ),
+      ),
 
         // 3. 学习成就统计卡片
         Container(

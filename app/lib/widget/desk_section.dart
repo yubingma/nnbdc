@@ -15,6 +15,7 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/page_vibrancy.dart';
+import 'package:nnbdc/widget/frosted_glass_card.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/privileged_dict_explanation_dialog.dart';
@@ -139,26 +140,16 @@ class _MyDeskSectionState extends State<MyDeskSection> {
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: PageVibrancyConfig.base.cardColor(themeConfig),
-        borderRadius: BorderRadius.circular(20),
-        // 与外层卡片一致：摒弃硬描边，边缘靠卡面明度 + 柔和阴影定义
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 标题行：左边「我的书桌」 + 右边轻灵「选词书 ›」
-          Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: FrostedGlassCard(
+        borderRadius: 20,
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 标题行：左边「我的书桌」 + 右边轻灵「选词书 ›」
+            Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
@@ -375,7 +366,8 @@ class _MyDeskSectionState extends State<MyDeskSection> {
                 ],
               ],
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

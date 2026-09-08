@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
+import '../widget/frosted_glass_card.dart';
 
 enum HeatmapDisplayMode { date, time, count }
 
@@ -90,15 +91,9 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
   }
 
   Widget _buildHeatmapSection(bool isDarkMode, Color cardColor, Color textColor, Color subtitleColor, Color accentColor, AppThemeConfig themeConfig) {
-    return Container(
-      width: double.infinity,
+    return FrostedGlassCard(
+      borderRadius: 24,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: themeConfig.cardBorder, width: 1.2),
-        boxShadow: themeConfig.cardShadows,
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
