@@ -95,14 +95,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                         config.saveToCurrentUser();
                       }
 
-                      notifier.meaningController.text = text;
+                      // 设置文本时抑制自动判题监听；判题显式在下面调用（避免 150ms 防抖重复判题）
+                      notifier.updateMeaningTextWithoutCheck(text);
                       await notifier.checkAsrResult(
                           asrInput: text, isVoice: false);
                     },
                     // 手动提交模式（中文默写）：停笔自动识别仅把结果同步到输入框，给用户实时反馈，
                     // 不判题；判题只在点击「提交」后走上面的 onRecognized。
                     onRecognizedPreview: (text) {
-                      notifier.meaningController.text = text;
+                      notifier.updateMeaningTextWithoutCheck(text);
                     },
                     onCancel: () {
                       _meaningFocusNode.unfocus();

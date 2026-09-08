@@ -113,6 +113,10 @@ class BdcNotifier extends _$BdcNotifier {
   
   String _handlingChinese = "";
 
+  /// 手写"回显预览"正同步输入框文本时，临时抑制 meaningController 的自动判题监听，
+  /// 避免停笔识别把结果写进输入框就提前触发 checkAsrResult（判题只在点「提交」后才进行）。
+  bool _suppressMeaningListenerCheck = false;
+
   @override
   BdcState build() {
     asr = ref.watch(asrProvider);
@@ -130,6 +134,12 @@ class BdcNotifier extends _$BdcNotifier {
     asr.addStateListener(_onAsrStateChanged);
     
     meaningController.addListener(() {
+      // 手写"回显预览"同步文本时不判题；判题只在点击「提交」后由调用方显式触发。
+      // 同时取消可能遗留的防抖，避免预览写入文本后仍被之前的输入触发一次检查。
+      if (_suppressMeaningListenerCheck) {
+        _checkAsrDebounceTimer?.cancel();
+        return;
+      }
       _checkAsrDebounceTimer?.cancel();
       _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
         checkAsrResult();
@@ -2131,11 +2141,14 @@ class BdcNotifier extends _$BdcNotifier {
           _playCorrectSound();
         }
       } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
-        // 本地未匹配成功：触发单词 AI 裁判防抖判定。
-        // 中文默写已提交手写，先退出手写板，让用户回到背单词页等待 AI 判定结果（与语音"说中文未中→AI裁判"一致）。
         if (state.isChineseDictation) {
-          state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
+          // 中文默写（手写）判错：保持手写板打开，提示用户答案不正确/未写完整、可重写。
+          // 不退出手写板、不触发 AI 裁判——默写要求完整写出释义，走严格匹配，
+          // 避免"写了个女就静默返回、用户不知道对错"的困惑体验。
+          ToastUtil.error('答案不正确或未写完整，请重写');
+          return;
         }
+        // 语音"说中文"未匹配：落到单词 AI 裁判判定（原逻辑不变）。
         _scheduleWordAiRefereeCheck(inputs);
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
@@ -2946,6 +2959,15 @@ class BdcNotifier extends _$BdcNotifier {
     _handlingChinese = "";
     state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
     handleTabChangeForAsr();
+  }
+
+  /// 手写输入同步文本到输入框时，抑制 meaningController 的自动判题监听。
+  /// 判题决策由调用方显式掌控：回显预览不判题；提交则随后显式调用 checkAsrResult，
+  /// 避免"预览/提交写入文本"就触发 150ms 防抖的 checkAsrResult 造成提前判题或重复判题。
+  void updateMeaningTextWithoutCheck(String text) {
+    _suppressMeaningListenerCheck = true;
+    meaningController.text = text;
+    _suppressMeaningListenerCheck = false;
   }
 
   void updateShowSentenceTranslation(bool show) {
