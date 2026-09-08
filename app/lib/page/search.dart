@@ -539,33 +539,26 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       body: SafeArea(
         child: matchedWords.isEmpty
             ? _buildEmptyState(themeConfig)
-            : Padding(
-                padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
-                  child: Material(
-                    color: context.pageCardBg(PageVibrancy.search),
-                    borderRadius: BorderRadius.circular(16),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      children: [
-                        for (int i = 0; i < matchedWords.length; i++) ...[
-                          if (i > 0)
-                            Divider(
-                              height: 1,
-                              thickness: 0.5,
-                              indent: 14,
-                              endIndent: 14,
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.black.withValues(alpha: 0.055),
-                            ),
-                          renderWord(i),
-                        ],
-                      ],
-                    ),
-                  ),
+            : SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 20),
+                // 结果列表直接铺满内容区：无卡片底/圆角/阴影，仅发丝分隔线隔行，更大气
+                child: Column(
+                  children: [
+                    for (int i = 0; i < matchedWords.length; i++) ...[
+                      if (i > 0)
+                        Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          indent: 14,
+                          endIndent: 14,
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.055),
+                        ),
+                      renderWord(i),
+                    ],
+                  ],
                 ),
               ),
       ),
