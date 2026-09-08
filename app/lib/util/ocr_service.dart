@@ -21,7 +21,7 @@ class OcrService {
 
   /// 识别手写轨迹中的文字 (Digital Ink Recognition)
   /// [strokes] 笔画列表，每个笔画是点的列表 [{'x': ..., 'y': ..., 't': ...}]
-  /// [language] BCP-47 语言标签（默认英文 en-US；中文手写传 'zh-Hans'）
+  /// [language] ML Kit 数字墨迹语言标签（默认英文 en-US；中文手写传 'zh-Hani'）
   static Future<String> recognizeHandwriting(List<List<Map<String, dynamic>>> strokes,
       {String language = 'en-US'}) async {
     try {
@@ -36,7 +36,7 @@ class OcrService {
   }
 
   /// 提前下载/准备手写识别模型 (Digital Ink Recognition Model)
-  /// [language] BCP-47 语言标签（默认英文 en-US；中文手写传 'zh-Hans'）
+  /// [language] ML Kit 数字墨迹语言标签（默认英文 en-US；中文手写传 'zh-Hani'）
   static Future<void> prepareModel({String language = 'en-US'}) async {
     try {
       await _channel.invokeMethod<void>('prepareModel', {
