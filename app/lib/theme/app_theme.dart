@@ -20,7 +20,7 @@ extension FsrsRatingColorExt on FsrsRating {
   }
 }
 
-/// 应用视觉主题风格枚举 (5 款风格截然不同、性格鲜明的专属美学)
+/// 应用视觉主题风格枚举 (10 款风格截然不同、性格鲜明的专属美学)
 enum AppThemeStyle {
   /// 青碧湖蓝 (清新明快，亮蓝青 + 中性深色文字) —— 默认主题
   emerald('emerald', '青碧湖蓝', '清新明快湖蓝青', Icons.spa_rounded),
@@ -47,7 +47,10 @@ enum AppThemeStyle {
   twilight('twilight', '暮光深空', '曜石深空霓虹紫', Icons.nights_stay_rounded),
 
   /// 深邃曜黑 (沉浸夜间赛博，曜黑深空 + 极光霓虹翡翠)
-  midnight('midnight', '深邃曜黑', '夜间沉浸护眼', Icons.dark_mode_rounded);
+  midnight('midnight', '深邃曜黑', '夜间沉浸护眼', Icons.dark_mode_rounded),
+
+  /// 绛紫夜岚 (明亮绛紫晨雾，清透薰衣草渐变 + 绛紫罗兰光晕)
+  plum('plum', '绛紫夜岚', '明亮绛紫柔光渐变', Icons.auto_awesome_rounded);
 
   final String code;
   final String label;
@@ -323,6 +326,30 @@ class AppThemeConfig {
             ),
           ],
           isDark: true,
+        );
+
+      // 9. 绛紫夜岚: 明亮绛紫晨雾 (清透薰衣草渐变 + 魅惑绛紫罗兰光晕)
+      case AppThemeStyle.plum:
+        return AppThemeConfig(
+          style: style,
+          primaryColor: const Color(0xFFC44BE0), // 魅惑绛紫罗兰
+          primaryLightColor: const Color(0xFFE6A5F3),
+          primaryDarkColor: const Color(0xFF9A28C4),
+          textPrimary: const Color(0xFF2E163B), // 深绛紫墨色
+          textSecondary: const Color(0xFF6B4A80),
+          textMuted: const Color(0xFF9A7FB0),
+          cardBg: const Color(0x80FFFFFF), // 统一规格透光磨砂白 (50%)
+          cardBorder: const Color(0x26000000), // 极淡中性描边：白底上勾勒卡片轮廓
+          subtleBg: const Color(0x14C44BE0),
+          warmAccentColor: const Color(0xFFFF9E5C), // 温润晚霞杏橙 (不认识/再学学专用)
+          cardShadows: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          isDark: false,
         );
     }
   }

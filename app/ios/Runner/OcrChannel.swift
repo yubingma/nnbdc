@@ -42,7 +42,12 @@ class OcrChannel {
                     return
                 }
                 let language = args["language"] as? String ?? "en-US"
-                recognizeHandwriting(strokesData: strokes, language: language, result: result)
+                let areaWidth = (args["writingAreaWidth"] as? NSNumber)?.doubleValue
+                let areaHeight = (args["writingAreaHeight"] as? NSNumber)?.doubleValue
+                recognizeHandwriting(
+                    strokesData: strokes, language: language,
+                    writingAreaWidth: areaWidth, writingAreaHeight: areaHeight,
+                    result: result)
                 
             case "prepareModel":
                 let language = (call.arguments as? [String: Any])?["language"] as? String ?? "en-US"
@@ -133,7 +138,7 @@ class OcrChannel {
         }
     }
 
-    private static func recognizeHandwriting(strokesData: [[[String: Any]]], language: String, result: @escaping FlutterResult) {
+    private static func recognizeHandwriting(strokesData: [[[String: Any]]], language: String, writingAreaWidth: Double?, writingAreaHeight: Double?, result: @escaping FlutterResult) {
         var recognitionStrokes: [Stroke] = []
         for strokeData in strokesData {
             var points: [StrokePoint] = []
@@ -147,6 +152,13 @@ class OcrChannel {
         }
         let ink = Ink(strokes: recognitionStrokes)
         
+        // 提供手写区尺寸上下文，帮助 ML Kit 正确切分多字连写（避免多个汉字被合成一个字）
+        var context: DigitalInkRecognitionContext? = nil
+        if let width = writingAreaWidth, let height = writingAreaHeight, width > 0, height > 0 {
+            let area = WritingArea(width: Float(width), height: Float(height))
+            context = DigitalInkRecognitionContext(preContext: nil, writingArea: area)
+        }
+        
         let languageTag = language
         guard let modelIdentifier = DigitalInkRecognitionModelIdentifier(forLanguageTag: languageTag) else {
             result(FlutterError(code: "MODEL_ERROR", message: "无法识别语言模型: \(languageTag)", details: nil))
@@ -157,7 +169,7 @@ class OcrChannel {
         let modelManager = ModelManager.modelManager()
         
         if modelManager.isModelDownloaded(model) {
-            performHandwritingRecognition(ink: ink, model: model, result: result)
+            performHandwritingRecognition(ink: ink, model: model, context: context, result: result)
         } else {
             // 开始下载模型，并监听下载完成通知
             NotificationCenter.default.addObserver(
@@ -166,7 +178,7 @@ class OcrChannel {
                 queue: nil
             ) { notification in
                 // 模型下载成功后，执行识别
-                performHandwritingRecognition(ink: ink, model: model, result: result)
+                performHandwritingRecognition(ink: ink, model: model, context: context, result: result)
             }
             
             NotificationCenter.default.addObserver(
@@ -252,7 +264,7 @@ class OcrChannel {
     }
 
     
-    private static func performHandwritingRecognition(ink: Ink, model: DigitalInkRecognitionModel, result: @escaping FlutterResult) {
+    private static func performHandwritingRecognition(ink: Ink, model: DigitalInkRecognitionModel, context: DigitalInkRecognitionContext?, result: @escaping FlutterResult) {
         // 缓存 model 和 recognizer，防止被 ARC 释放
         if currentModel != model {
             let options = DigitalInkRecognizerOptions(model: model)
@@ -265,7 +277,7 @@ class OcrChannel {
             return
         }
         
-        activeRecognizer.recognize(ink: ink) { recognitionResult, error in
+        let onRecognitionDone: (DigitalInkRecognitionResult?, Error?) -> Void = { recognitionResult, error in
             if let error = error {
                 result(FlutterError(code: "RECOGNITION_ERROR", message: "识别失败: \(error.localizedDescription)", details: nil))
                 return
@@ -276,6 +288,12 @@ class OcrChannel {
             } else {
                 result("")
             }
+        }
+        
+        if let ctx = context {
+            activeRecognizer.recognize(ink: ink, context: ctx, completion: onRecognitionDone)
+        } else {
+            activeRecognizer.recognize(ink: ink, completion: onRecognitionDone)
         }
     }
 }

@@ -173,7 +173,7 @@ class ThemeSelectDialog extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
 
-                    // 2. 9 个主题网格选择器
+                    // 2. 10 个主题网格选择器
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),

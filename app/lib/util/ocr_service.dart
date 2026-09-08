@@ -22,12 +22,18 @@ class OcrService {
   /// 识别手写轨迹中的文字 (Digital Ink Recognition)
   /// [strokes] 笔画列表，每个笔画是点的列表 [{'x': ..., 'y': ..., 't': ...}]
   /// [language] ML Kit 数字墨迹语言标签（默认英文 en-US；中文手写传 'zh-Hani'）
+  /// [writingAreaWidth]/[writingAreaHeight] 手写区尺寸（与 stroke 坐标同单位）。
+  /// 传入可帮助 ML Kit 正确切分多字连写（如连续写多个汉字时避免被合成一个字）。
   static Future<String> recognizeHandwriting(List<List<Map<String, dynamic>>> strokes,
-      {String language = 'en-US'}) async {
+      {String language = 'en-US',
+      double? writingAreaWidth,
+      double? writingAreaHeight}) async {
     try {
       final result = await _channel.invokeMethod<String>('recognizeHandwriting', {
         'strokes': strokes,
         'language': language,
+        'writingAreaWidth': writingAreaWidth,
+        'writingAreaHeight': writingAreaHeight,
       });
       return result ?? '';
     } on PlatformException catch (e) {

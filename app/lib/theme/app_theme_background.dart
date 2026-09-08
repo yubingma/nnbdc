@@ -191,6 +191,11 @@ class AppThemeBackground extends StatelessWidget {
             const Color(0xFF150821),
             const Color(0xFF0E0516),
           ),
+        AppThemeStyle.plum => (
+            const Color(0xFF3A0F52),
+            const Color(0xFF1C0426),
+            const Color(0xFF0B0212),
+          ),
       };
 }
 

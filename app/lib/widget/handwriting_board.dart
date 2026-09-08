@@ -77,6 +77,13 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   int _recognitionVersion = 0;
   final GlobalKey<_HandwritingCanvasState> _canvasKey = GlobalKey<_HandwritingCanvasState>();
 
+  /// 手写画布尺寸，识别时作为 WritingArea 上下文传给 ML Kit，帮助正确切分多字连写。
+  Size? _writingAreaSize;
+
+  void _handleWritingArea(Size size) {
+    _writingAreaSize = size;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -145,7 +152,10 @@ class HandwritingBoardState extends State<HandwritingBoard> {
         'y': p.offset.dy,
         't': p.t
       }).toList()).toList();
-      final recognitionFuture = OcrService.recognizeHandwriting(strokes, language: widget.language);
+      final recognitionFuture = OcrService.recognizeHandwriting(strokes,
+          language: widget.language,
+          writingAreaWidth: _writingAreaSize?.width,
+          writingAreaHeight: _writingAreaSize?.height);
         
       final startTime = DateTime.now();
       final response = await recognitionFuture.timeout(const Duration(seconds: 5));
@@ -275,6 +285,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                       widget.onRecognizedPreview != null
                           ? () => _recognize(preview: true)
                           : null,
+                  onWritingAreaChanged: _handleWritingArea,
                 ),
               ],
             ),
@@ -303,6 +314,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback? onHint;
   final bool manualSubmit;
   final VoidCallback? onRecognizePreview;
+  final ValueChanged<Size>? onWritingAreaChanged;
 
   const _HandwritingCanvas({
     super.key,
@@ -323,6 +335,7 @@ class _HandwritingCanvas extends StatefulWidget {
     this.onHint,
     this.manualSubmit = false,
     this.onRecognizePreview,
+    this.onWritingAreaChanged,
   });
 
   @override
@@ -466,6 +479,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
       builder: (context, constraints) {
         final height = constraints.maxHeight;
         final width = constraints.maxWidth;
+        // 上报手写区尺寸，供识别时作为 WritingArea 上下文帮助 ML Kit 切分多字连写
+        widget.onWritingAreaChanged?.call(Size(width, height));
         
         final bool isNarrow = width < 500;
         final bool hasHint = widget.onHint != null;

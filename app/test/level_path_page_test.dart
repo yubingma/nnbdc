@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 void main() {
   testWidgets('LevelPathPage renders correctly with back button, header, and timeline nodes', (tester) async {
     final darkMode = DarkMode();
-    darkMode.setThemeStyle(AppThemeStyle.aurora);
+    darkMode.setThemeStyle(AppThemeStyle.emerald);
 
     await tester.pumpWidget(
       ChangeNotifierProvider<DarkMode>.value(

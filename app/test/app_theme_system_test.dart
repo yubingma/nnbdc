@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 
 void main() {
   group('AppThemeStyle & AppThemeConfig 全局质感与扇贝设计系统测试', () {
-    test('全部 9 款主题均已配置完整的 warmAccentColor、主色及微悬浮阴影', () {
+    test('全部 10 款主题均已配置完整的 warmAccentColor、主色及微悬浮阴影', () {
       for (final style in AppThemeStyle.values) {
         final config = AppThemeConfig.of(style);
 
@@ -107,7 +107,7 @@ void main() {
       }
     });
 
-    testWidgets('ThemeSelectDialog 毛玻璃弹窗能正常弹出、展示 9 种主题、点击切换并关闭', (tester) async {
+    testWidgets('ThemeSelectDialog 毛玻璃弹窗能正常弹出、展示 10 种主题、点击切换并关闭', (tester) async {
       final darkMode = DarkMode();
       darkMode.setThemeStyle(AppThemeStyle.emerald);
 
@@ -141,7 +141,7 @@ void main() {
       expect(find.text('外观主题'), findsOneWidget);
       expect(find.byType(BackdropFilter), findsOneWidget);
 
-      // 验证 9 款主题均正常展示
+      // 验证 10 款主题均正常展示
       for (final style in AppThemeStyle.values) {
         expect(find.text(style.label), findsOneWidget);
       }
