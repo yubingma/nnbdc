@@ -1626,6 +1626,38 @@ void main() {
     expect(state.word!.spell, 'banana', reason: '定时器到期后不应跳过 banana，当前词仍必须是 banana');
     expect(state.hasFinishedAnswering, false, reason: 'banana 绝不能被上一词的幽灵定时器误判为答对');
   });
+
+  test('BdcNotifier - 中文默写手写匹配成功后应回显释义（与语音说对一致）', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+
+    // 打开中文默写
+    notifier.openChineseDictation();
+    var st = container.read(bdcNotifierProvider);
+    expect(st.showHandwritingBoard, true);
+    expect(st.isChineseDictation, true);
+
+    // 手写识别出正确中文释义（"apple" -> "苹果"），与语音走同一套释义匹配+回显
+    expect(st.asrPassRuleCache, 'ONE');
+    await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
+
+    st = container.read(bdcNotifierProvider);
+    expect(st.hasFinishedAnswering, true, reason: '手写中文释义正确应标记为已答完');
+    expect(st.showHandwritingBoard, false, reason: '答对后应退出全屏手写板回到主页面');
+    expect(st.isChineseDictation, false, reason: '答对后应复位中文默写标记');
+
+    final ww = st.wordWrapper!;
+    // 用户写对的释义项应被标记为"已匹配"（绿色回显），这正是语音说对时的回显来源
+    expect(ww.asrMatchedMeaningItemParts, isNotEmpty,
+        reason: '用户手写写对的中文释义应被标记为已匹配，从而在主页面释义下划线处回显');
+  });
 }
 
 
