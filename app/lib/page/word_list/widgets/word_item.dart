@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../api/enum.dart';
 import '../../../state.dart';
 import '../../../util/word_util.dart';
+import '../../../widget/app_scaffold.dart';
 import '../../../widget/handwriting_board.dart';
 
 abstract class WordProgressProvider {
@@ -107,9 +108,7 @@ class _WordItemState extends State<WordItem> {
           : null,
       color: widget.isBookmarked
           ? null
-          : isDarkMode
-              ? const Color(0xFF1E1E1E).withValues(alpha: 0.6)
-              : Colors.white.withValues(alpha: 0.8),
+          : context.cardBg,
       borderRadius: BorderRadius.circular(12),
       border: widget.isBookmarked
           ? Border.all(
@@ -118,15 +117,17 @@ class _WordItemState extends State<WordItem> {
             )
           : Border.all(
               width: 1,
-              color: isDarkMode ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
+              color: context.cardBorder,
             ),
-      boxShadow: [
-        BoxShadow(
-          color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-          blurRadius: widget.isBookmarked ? 8 : 4,
-          offset: Offset(0, widget.isBookmarked ? 4 : 2),
-        ),
-      ],
+      boxShadow: widget.isBookmarked
+          ? [
+              BoxShadow(
+                color: const Color(0xFF0097A7),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ]
+          : [context.cardShadow],
     );
   }
 

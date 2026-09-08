@@ -224,7 +224,7 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFF59E0B), // 暗夜琥珀金
           cardShadows: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -344,7 +344,7 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFEC4899), // 暮光霓虹粉
           cardShadows: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),

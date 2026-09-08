@@ -79,9 +79,9 @@ class PageVibrancyConfig {
   /// 深色模式阴影略重、浅色更轻。[isNarrow] 为手机判定，含义见 [cardColor]。
   BoxShadow cardShadow(AppThemeConfig theme, {bool isNarrow = true}) {
     final cfg = isNarrow ? this : forTablet();
-    // 卡面越实(接近 1)阴影越明显，越透(接近 0)阴影越淡；基准上限 0.10
+    // 卡面越实(接近 1)阴影越明显，越透(接近 0)阴影越淡；深色基准更轻，避免深底上拖黑影
     final spread = cfg.cardOpacity.clamp(0.0, 1.0);
-    final alpha = (theme.isDark ? 0.30 : 0.05) * (0.3 + 0.7 * spread);
+    final alpha = (theme.isDark ? 0.14 : 0.05) * (0.3 + 0.7 * spread);
     return BoxShadow(
       color: Colors.black.withValues(alpha: alpha),
       blurRadius: 16,

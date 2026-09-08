@@ -70,7 +70,7 @@ class WordListItemLayout extends StatelessWidget {
         ? accentColor.withValues(alpha: isDarkMode ? 0.6 : 0.45)
         : themeConfig.cardBorder;
 
-    // 选中时赋予优雅微悬浮微光投影，未选中时为常规微投影
+    // 选中收藏：保留精致半透主题微光投影；未选中：统一卡片阴影(随透明度联动, 深色不拖黑影)
     final cardShadow = isBookmarked
         ? [
             BoxShadow(
@@ -78,13 +78,9 @@ class WordListItemLayout extends StatelessWidget {
               blurRadius: 16,
               offset: const Offset(0, 3),
             ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 1),
-            ),
+            context.cardShadow,
           ]
-        : themeConfig.cardShadows;
+        : [context.cardShadow];
 
     final borderRadius = switch (groupPosition) {
       GroupCardPosition.single => BorderRadius.circular(16),
