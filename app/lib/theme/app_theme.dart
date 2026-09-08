@@ -128,9 +128,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFF97316), // 晨曦暖阳橙
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF0C2136).withValues(alpha: 0.16),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
@@ -152,9 +152,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFFF7B40), // 温润珊瑚橙 (不认识/再学学专用)
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF11211C).withValues(alpha: 0.16),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
@@ -176,9 +176,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFEA580C), // 沉静暖砖橙
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF2E1912).withValues(alpha: 0.16),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
@@ -200,9 +200,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFF71717A), // 极客中性石板灰
           cardShadows: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
@@ -224,9 +224,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFF59E0B), // 暗夜琥珀金
           cardShadows: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 28,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: true,
@@ -248,9 +248,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFD97706), // 和纸暖金琥珀
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF301018).withValues(alpha: 0.16),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
@@ -272,9 +272,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFFB923C), // 星云暖杏金
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF17183B).withValues(alpha: 0.16),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
@@ -296,9 +296,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFF97316), // 秋叶温和暖橙
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF0E2624).withValues(alpha: 0.16),
-              blurRadius: 18,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
@@ -320,9 +320,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFF97316),
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF22302B).withValues(alpha: 0.16),
-              blurRadius: 20,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
@@ -344,9 +344,9 @@ class AppThemeConfig {
           warmAccentColor: const Color(0xFFEC4899), // 暮光霓虹粉
           cardShadows: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.40),
-              blurRadius: 28,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
           isDark: true,

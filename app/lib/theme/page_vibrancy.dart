@@ -74,6 +74,20 @@ class PageVibrancyConfig {
     final baseColor = theme.isDark ? const Color(0xFF18202F) : Colors.white;
     return baseColor.withValues(alpha: cfg.cardOpacity.clamp(0.0, 1.0));
   }
+
+  /// 本页卡片阴影（与卡片透明度联动）：卡越透阴影越淡，避免透明卡久拖一圈黑影。
+  /// 深色模式阴影略重、浅色更轻。[isNarrow] 为手机判定，含义见 [cardColor]。
+  BoxShadow cardShadow(AppThemeConfig theme, {bool isNarrow = true}) {
+    final cfg = isNarrow ? this : forTablet();
+    // 卡面越实(接近 1)阴影越明显，越透(接近 0)阴影越淡；基准上限 0.10
+    final spread = cfg.cardOpacity.clamp(0.0, 1.0);
+    final alpha = (theme.isDark ? 0.30 : 0.05) * (0.3 + 0.7 * spread);
+    return BoxShadow(
+      color: Colors.black.withValues(alpha: alpha),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+    );
+  }
 }
 
 /// 各页面背景调参常量引用（均为手机/基准档；平板时由 AppScaffold 自动 × 系数）

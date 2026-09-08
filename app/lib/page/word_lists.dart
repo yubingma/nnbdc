@@ -370,13 +370,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
         FrostedGlassCard(
           borderRadius: 16,
-          bgColor: isDarkMode ? const Color(0xB818202F) : context.pageCardBg(PageVibrancy.wordLists),
-          borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
-          shadow: BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
           sigma: 7,
           child: Column(
             children: [
@@ -774,13 +767,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
     return FrostedGlassCard(
       borderRadius: 16,
-      bgColor: isDarkMode ? const Color(0xB818202F) : context.pageCardBg(PageVibrancy.wordLists),
-      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
-      shadow: BoxShadow(
-        color: Colors.black.withValues(alpha: isDarkMode ? 0.30 : 0.03),
-        blurRadius: 16,
-        offset: const Offset(0, 4),
-      ),
       sigma: 7,
       child: Material(
         color: Colors.transparent,

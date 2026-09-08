@@ -40,6 +40,12 @@ extension AppThemeContextExtension on BuildContext {
   /// 指定页面配置的卡片底色（按设备自动乘平板系数）
   Color pageCardBg(PageVibrancyConfig config) =>
       config.cardColor(themeConfig, isNarrow: _isNarrow);
+  /// 默认卡片阴影（随卡片透明度联动，卡越透影越淡；按设备乘平板系数）
+  BoxShadow get cardShadow =>
+      PageVibrancyConfig.base.cardShadow(themeConfig, isNarrow: _isNarrow);
+  /// 指定页面配置的卡片阴影
+  BoxShadow pageCardShadow(PageVibrancyConfig config) =>
+      config.cardShadow(themeConfig, isNarrow: _isNarrow);
   Color get buttonBg => themeConfig.cardBg.withValues(alpha: Constants.buttonOpacity);
   Color get cardBorder => themeConfig.cardBorder;
   Color get textPrimary => themeConfig.textPrimary;

@@ -15,6 +15,7 @@ import '../config.dart';
 import '../global.dart';
 import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
+import '../widget/frosted_glass_card.dart';
 import '../util/analytics_util.dart';
 import '../util/notification_util.dart';
 import '../util/platform_util.dart';
@@ -278,14 +279,9 @@ class FinishPageState extends State<FinishPage> {
   Widget _buildMetricsCard(AppThemeConfig themeConfig) {
     final continuousDays = Global.getLoggedInUser()?.continuousDakaDayCount ?? 0;
 
-    return Container(
+    return FrostedGlassCard(
+      borderRadius: 20,
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-      decoration: BoxDecoration(
-        color: context.cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: themeConfig.cardBorder, width: 1),
-        boxShadow: themeConfig.cardShadows,
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -638,16 +638,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final textPrimary = themeConfig.textPrimary;
     final textMuted = themeConfig.textMuted;
 
-    return FrostedGlassCard(
-      borderRadius: 28,
-      bgColor: isDarkMode ? const Color(0xB818202F) : context.pageCardBg(PageVibrancy.todayPlan),
-      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
-      shadow: BoxShadow(
-        color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-        blurRadius: 20,
-        offset: const Offset(0, 6),
-      ),
-      sigma: 7,
+    return FrostedGlassCard.primary(
       padding: const EdgeInsets.fromLTRB(22, 28, 22, 22),
       child: Column(
         children: [
@@ -1621,15 +1612,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 【显示模式】—— 一体化毛玻璃分组卡：纯排版驱动，无盒中盒、无流程导线
   Widget _buildTrackDisplayCard(bool isDarkMode) {
     return FrostedGlassCard(
-      borderRadius: 24,
-      bgColor: isDarkMode ? const Color(0xB818202F) : context.pageCardBg(PageVibrancy.todayPlan),
-      borderColor: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x24FFFFFF),
-      shadow: BoxShadow(
-        color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.06),
-        blurRadius: 18,
-        offset: const Offset(0, 6),
-      ),
-      sigma: 7,
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
       child: Column(
         children: [

@@ -11,6 +11,7 @@ import '../global.dart';
 import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
 import '../theme/app_theme_background.dart';
+import '../widget/frosted_glass_card.dart';
 import '../util/error_handler.dart';
 
 class GamePage extends StatefulWidget {
@@ -80,7 +81,6 @@ class _GamePageState extends State<GamePage> {
     final controller = TextEditingController();
     final themeStyle = context.read<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBg = context.cardBg;
     final cardBorder = themeConfig.cardBorder;
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
@@ -94,14 +94,9 @@ class _GamePageState extends State<GamePage> {
         return Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Container(
+          child: FrostedGlassCard(
+            borderRadius: 22,
             padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: cardBorder, width: 1),
-              boxShadow: themeConfig.cardShadows,
-            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -641,8 +636,6 @@ class _GamePageState extends State<GamePage> {
 
   /// 大厅分组折叠卡片
   Widget _buildGroupCard(HallGroupVo group, AppThemeConfig themeConfig) {
-    final cardBg = context.cardBg;
-    final cardBorder = themeConfig.cardBorder;
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
     final isDarkMode = themeConfig.isDark;
@@ -651,16 +644,17 @@ class _GamePageState extends State<GamePage> {
     _expandedGroups[group.groupName] ??= true;
     final isExpanded = _expandedGroups[group.groupName]!;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cardBorder, width: 1),
-        boxShadow: themeConfig.cardShadows,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: FrostedGlassCard(
+        borderRadius: 20,
+        child: _buildGroupCardContent(group, textMain, textSub, themeConfig, isExpanded, isDarkMode),
       ),
-      child: Column(
+    );
+  }
+
+  Widget _buildGroupCardContent(HallGroupVo group, Color textMain, Color textSub, AppThemeConfig themeConfig, bool isExpanded, bool isDarkMode) {
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 组标题行（点击可展开/折叠）
@@ -739,8 +733,7 @@ class _GamePageState extends State<GamePage> {
             const SizedBox(height: 8),
           ],
         ],
-      ),
-    );
+      );
   }
 
   /// 单个大厅竞技场项目（聚合卡片内的一行，不再独立浮卡）
