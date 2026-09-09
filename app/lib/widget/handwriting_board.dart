@@ -47,6 +47,7 @@ class HandwritingBoard extends StatefulWidget {
     this.onRecognizedPreview,
     this.onCellIdle,
     this.onSubmit,
+    this.onUndoRequest,
   });
 
   /// 一格内停笔回调：用于在当前格识别并提前回显（不判题、不清空）。
@@ -55,6 +56,10 @@ class HandwritingBoard extends StatefulWidget {
   /// 点击「提交」时的外部拦截：返回 true 表示上层已处理（例如键盘输入法弹起时直接提交输入框
   /// 文本），此时不再识别手写区域；返回 false/null 则走正常的手写识别提交。
   final bool Function()? onSubmit;
+
+  /// 点击「回退」时的外部拦截：返回 true 表示上层已处理（例如键盘输入法弹起时删除输入框
+  /// 最后一个字符）；返回 false/null 则走手写板自身的回退逻辑。
+  final bool Function()? onUndoRequest;
 
   final VoidCallback? onUndo;
   final VoidCallback? onRewrite;
@@ -475,6 +480,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   onCellChanged: _handleCellChange,
                   onCellIdle: _handleCellIdle,
                   onSubmit: widget.onSubmit,
+                  onUndoRequest: widget.onUndoRequest,
                 ),
               ],
             ),
@@ -508,6 +514,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final ValueChanged<Offset>? onCellChanged;
   final VoidCallback? onCellIdle;
   final bool Function()? onSubmit;
+  final bool Function()? onUndoRequest;
 
   const _HandwritingCanvas({
     super.key,
@@ -533,6 +540,7 @@ class _HandwritingCanvas extends StatefulWidget {
     this.onCellChanged,
     this.onCellIdle,
     this.onSubmit,
+    this.onUndoRequest,
   });
 
   @override
@@ -649,9 +657,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   void _handleUndo() {
     _autoRecognizeTimer?.cancel();
     if (widget.manualSubmit && widget.cellCount > 1) {
-      // 分格模式（中文默写）：回退逻辑（清当前格 / 删已定稿最后一个字）由板子统一处理，
-      // 这里不再直接清空画布，交给板子判断"当前格是否还有内容"。
-      widget.onUndo();
+      // 键盘输入法弹起时：上层直接删输入框最后一个字符（返回 true），不再走手写板回退
+      final handledByCaller = widget.onUndoRequest?.call() ?? false;
+      if (!handledByCaller) {
+        // 否则由板子统一处理（清当前格 / 删已定稿最后一个字）
+        widget.onUndo();
+      }
       return;
     }
     // 单格（英文拼写）：移除最后一笔（原行为）

@@ -117,6 +117,18 @@ extension BdcPageStateUIComponents on BdcPageState {
                       }
                       return false;
                     },
+                    // 键盘输入法弹起时点「回退」= 删除输入框最后一个字符
+                    onUndoRequest: () {
+                      if (_meaningFocusNode.hasFocus) {
+                        final text = notifier.meaningController.text;
+                        if (text.isNotEmpty) {
+                          notifier.updateMeaningTextWithoutCheck(
+                              text.substring(0, text.length - 1));
+                        }
+                        return true;
+                      }
+                      return false;
+                    },
                     onCancel: () {
                       _meaningFocusNode.unfocus();
                       // 中文默写用 closeChineseDictation 一并重置中文默写标记
