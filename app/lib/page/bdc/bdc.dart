@@ -90,6 +90,11 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   /// 释义输入框焦点控制
   final FocusNode _meaningFocusNode = FocusNode();
 
+  /// 手写板状态 key：键盘手动编辑输入框时，用于清掉手写板的"提前回显"预览，
+  /// 避免用户用键盘删掉文字后又被手写预览回填。
+  final GlobalKey<HandwritingBoardState> _handwritingBoardKey =
+      GlobalKey<HandwritingBoardState>();
+
   /// 例句答案区(可编辑识别结果)焦点控制
   final FocusNode _sentenceAnswerFocusNode = FocusNode();
 
@@ -227,6 +232,8 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       final notifier = ref.read(bdcNotifierProvider.notifier);
       if (_meaningFocusNode.hasFocus) {
         Global.logger.d('BDC: 输入框获取焦点，停止 ASR');
+        // 用户切到键盘输入：清掉手写板提前回显预览，避免删改后又被手写预览回填
+        _handwritingBoardKey.currentState?.clearHandwritingPreview();
         notifier.asr.stopMicrophone();
 
         final config = StudyConfig.fromCurrentUser();

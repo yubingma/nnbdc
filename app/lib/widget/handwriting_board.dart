@@ -45,7 +45,16 @@ class HandwritingBoard extends StatefulWidget {
     this.manualSubmit = false,
     this.cellCount = 1,
     this.onRecognizedPreview,
+    this.onCellIdle,
+    this.onSubmit,
   });
+
+  /// 一格内停笔回调：用于在当前格识别并提前回显（不判题、不清空）。
+  final VoidCallback? onCellIdle;
+
+  /// 点击「提交」时的外部拦截：返回 true 表示上层已处理（例如键盘输入法弹起时直接提交输入框
+  /// 文本），此时不再识别手写区域；返回 false/null 则走正常的手写识别提交。
+  final bool Function()? onSubmit;
 
   final VoidCallback? onUndo;
   final VoidCallback? onRewrite;
@@ -54,9 +63,9 @@ class HandwritingBoard extends StatefulWidget {
   /// （ML Kit 的中文模型标签是 zh-Hani，而非 BCP-47 的 zh-Hans）。
   final String language;
 
-  /// 手动提交模式（用于中文默写）：停笔后不自动识别，而是在底部操作栏新增「提交」按钮，
-  /// 只有在用户点击提交后才一次性识别完整笔画并匹配，避免对不完整/中间态笔画切分
-  /// 导致"多个汉字被合成一个字"；键盘输入不受此影响。
+  /// 手动提交模式（用于中文默写/分格书写）：底部操作栏新增「提交」按钮，只有点击提交才做
+  /// 正式识别+匹配判题；但停笔达到防抖时间后会做"当前格预览识别"并回显到输入框（不判题、不清空），
+  /// 让用户边写边看到当前格识别结果。键盘输入不受此影响。
   final bool manualSubmit;
 
   /// 分格书写数量。>1 时（中文默写）画布横向均分为 [cellCount] 个格子，每个格子写一个汉字，
@@ -79,7 +88,7 @@ class PointWithTime {
 }
 
 class HandwritingBoardState extends State<HandwritingBoard> {
-  List<List<PointWithTime>> _lines = [];
+  final List<List<PointWithTime>> _lines = [];
   bool _isRecognizing = false;
   int _recognitionVersion = 0;
   final GlobalKey<_HandwritingCanvasState> _canvasKey = GlobalKey<_HandwritingCanvasState>();
@@ -118,39 +127,84 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     return (pos.dx / cellW).floor().clamp(0, widget.cellCount - 1);
   }
 
+  /// 当前格"停笔预览"识别出的文本（不停笔识别结果，用于提前回显，不判题）。
+  String _currentCellText = '';
+
+  /// 停笔识别（当前格）防抖定时器。
+  Timer? _cellPauseTimer;
+
   /// 画布上报"新一笔落点"：分格模式下若起点已换到新格子，就完成上一格识别并清空，切换到新格子。
+  /// 注意：这里必须【同步】快照并清空当前格，因为随后紧接着就是 _controller.start 把新一笔
+  /// 写入 _lines——若延迟到异步/微任务再清空，会把新一笔误当上一格笔画或丢失。
   void _handleCellChange(Offset pos) {
     if (widget.cellCount <= 1) return;
     final cell = _cellIndexAt(pos);
     if (cell != _activeCell) {
-      unawaited(_enqueueFinalize());
+      _finalizeAndClearCurrentCellSync();
       _activeCell = cell;
       if (mounted) setState(() {});
     }
   }
 
-  /// 把一次逐格识别排队执行（串行，保证顺序）。
-  Future<void> _enqueueFinalize() {
-    final next = _finalizeChain.then((_) => _finalizeCurrentCell());
-    _finalizeChain = next.catchError((_) {});
-    return next;
+  /// 当前格"停笔预览"的提前回显文本 = 已识别(已完成格) + 当前格停笔识别结果。
+  void _updatePreview() {
+    widget.onRecognizedPreview?.call(
+        (_recognizedChars + [_currentCellText]).join());
   }
 
-  /// 分格模式下：识别当前格子笔画，追加到已识别序列，清空当前格，并提前回显前缀。
-  Future<void> _finalizeCurrentCell() async {
-    if (_lines.isEmpty) return;
-    // 先快照当前格笔画并清空，避免后续写入新格笔画影响本格识别
+  /// 停笔(一格内)触发：识别当前格并回显到输入框，不判题、不清空。
+  void _handleCellIdle() {
+    if (widget.cellCount <= 1) return;
+    _cellPauseTimer?.cancel();
+    _cellPauseTimer = Timer(const Duration(milliseconds: 500), () {
+      _recognizeCurrentCellPreview();
+    });
+  }
+
+  /// 停笔识别当前格（快照，识别后只更新 _currentCellText，不清空 _lines）。
+  /// 用 _recognitionVersion 做陈旧结果保护：若识别期间发生了换格/清空，则丢弃本次预览。
+  Future<void> _recognizeCurrentCellPreview() async {
+    if (_lines.isEmpty) {
+      _currentCellText = '';
+      _updatePreview();
+      return;
+    }
+    final version = _recognitionVersion;
     final snapshot = List<List<PointWithTime>>.generate(_lines.length,
         (i) => List<PointWithTime>.from(_lines[i]));
-    _lines = [];
-    _recognitionVersion++;
-    final char = await _recognizeLines(snapshot, cellIndex: _activeCell);
-    if (char.isNotEmpty) {
-      _recognizedChars.add(char);
-    }
-    // 提前反馈：把已识别前缀同步到输入框（不判题）
-    widget.onRecognizedPreview?.call(_recognizedChars.join());
-    if (mounted) setState(() {});
+    final cellIndex = _activeCell;
+    final char = await _recognizeLines(snapshot, cellIndex: cellIndex);
+    if (version != _recognitionVersion) return; // 已换格/清空，丢弃过期预览
+    _currentCellText = char;
+    _updatePreview();
+  }
+
+  /// 同步快照并清空当前格，随后把识别任务排队。
+  void _finalizeAndClearCurrentCellSync() {
+    _cellPauseTimer?.cancel();
+    _currentCellText = '';
+    if (_lines.isEmpty) return;
+    final snapshot = List<List<PointWithTime>>.generate(_lines.length,
+        (i) => List<PointWithTime>.from(_lines[i]));
+    final cellIndex = _activeCell;
+    // 原地清空（不清空引用，保留画布控制器与 _lines 的同一引用），并擦除已画笔迹
+    clearBoardSilently();
+    unawaited(_enqueueRecognize(snapshot, cellIndex));
+  }
+
+  /// 把一次逐格识别排队执行（串行，保证按书写顺序追加）。
+  Future<void> _enqueueRecognize(List<List<PointWithTime>> snapshot, int cellIndex) {
+    final next = _finalizeChain.then((_) async {
+      final char = await _recognizeLines(snapshot, cellIndex: cellIndex);
+      if (char.isNotEmpty) {
+        _recognizedChars.add(char);
+      }
+      // 提前反馈：把已识别前缀同步到输入框（不判题）
+      _updatePreview();
+      if (mounted) setState(() {});
+    });
+    _finalizeChain = next.catchError((_) {});
+    return next;
   }
 
   /// 识别给定笔画并返回文本。分格模式下：把该字笔画归一化到自身包围盒，并以包围盒尺寸作为
@@ -248,14 +302,23 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   }
 
   void clearBoard() {
+    // 原地清空（保留画布控制器与 _lines 的同一引用），避免后续笔画写入被"孤儿"列表吞掉
+    _cellPauseTimer?.cancel();
+    _canvasKey.currentState?._controller.clear();
+    _lines.clear();
+    if (widget.cellCount > 1) {
+      // 分格模式：重写 = 全部清空，包括已识别序列、当前格文本、当前格高亮
+      _recognizedChars = [];
+      _currentCellText = '';
+      _activeCell = 0;
+    }
     setState(() {
-      _lines = [];
       _isRecognizing = false;
       _recognitionVersion++;
     });
     if (widget.cellCount > 1) {
-      // 分格模式：只清空当前格笔画，已识别前缀保留（提前回显不变）
-      widget.onRecognizedPreview?.call(_recognizedChars.join());
+      // 重写要点：底部输入框也要清空
+      widget.onRecognizedPreview?.call('');
     } else {
       // 内容清空时，同步清空外部输入框
       widget.onRecognized("");
@@ -269,20 +332,51 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _recognitionVersion++;
   }
 
+  /// 键盘手动编辑输入框时调用：清掉手写板的"提前回显"预览状态（已识别序列 + 当前格预览），
+  /// 并取消停笔识别定时器，避免手写预览回填覆盖用户用键盘删改后的输入框。
+  void clearHandwritingPreview() {
+    _cellPauseTimer?.cancel();
+    _recognizedChars = [];
+    _currentCellText = '';
+  }
+
   void _clear() {
     clearBoard();
     widget.onRewrite?.call();
   }
 
+  /// 回退（分格模式）：
+  /// 1) 当前格还有内容（笔画或预览）→ 清空当前格；
+  /// 2) 当前格已空 → 从已定稿序列里删掉最后一个字（每点一次删一个字）。
+  /// 单格（英文拼写）仅递增版本号（画布已负责移除最后一笔）。
   void _incrementVersion() {
+    _cellPauseTimer?.cancel();
     _recognitionVersion++;
+    if (widget.cellCount > 1) {
+      final bool hasCurrent = _lines.isNotEmpty || _currentCellText.isNotEmpty;
+      if (hasCurrent) {
+        // 清空当前格（擦除笔画 + 清掉当前格预览）
+        _canvasKey.currentState?._controller.clear();
+        _lines.clear(); // 兜底（正常情况下 controller.clear 已清空同一引用）
+        _currentCellText = '';
+      } else if (_recognizedChars.isNotEmpty) {
+        // 当前格已空：删掉已定稿的最后一个字（若该格识别出多字，只删最后一个）
+        final last = _recognizedChars.removeLast();
+        if (last.length > 1) {
+          _recognizedChars.add(last.substring(0, last.length - 1));
+        }
+      }
+      _updatePreview();
+      if (mounted) setState(() {});
+    }
     widget.onUndo?.call();
   }
 
   Future<void> _recognize() async {
     // 分格模式（中文默写）：提交时先识别当前格，再拼接所有格子成完整答案
     if (widget.cellCount > 1) {
-      await _enqueueFinalize();
+      _finalizeAndClearCurrentCellSync();
+      await _finalizeChain; // 等待所有已排队的逐格识别（含本次当前格）按顺序完成
       final answer = _recognizedChars.join();
       _recognizedChars = [];
       _activeCell = 0;
@@ -379,6 +473,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   cellCount: widget.cellCount,
                   activeCellIndex: _activeCell,
                   onCellChanged: _handleCellChange,
+                  onCellIdle: _handleCellIdle,
+                  onSubmit: widget.onSubmit,
                 ),
               ],
             ),
@@ -410,6 +506,8 @@ class _HandwritingCanvas extends StatefulWidget {
   final int cellCount;
   final int activeCellIndex;
   final ValueChanged<Offset>? onCellChanged;
+  final VoidCallback? onCellIdle;
+  final bool Function()? onSubmit;
 
   const _HandwritingCanvas({
     super.key,
@@ -433,6 +531,8 @@ class _HandwritingCanvas extends StatefulWidget {
     this.cellCount = 1,
     this.activeCellIndex = 0,
     this.onCellChanged,
+    this.onCellIdle,
+    this.onSubmit,
   });
 
   @override
@@ -548,6 +648,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
 
   void _handleUndo() {
     _autoRecognizeTimer?.cancel();
+    if (widget.manualSubmit && widget.cellCount > 1) {
+      // 分格模式（中文默写）：回退逻辑（清当前格 / 删已定稿最后一个字）由板子统一处理，
+      // 这里不再直接清空画布，交给板子判断"当前格是否还有内容"。
+      widget.onUndo();
+      return;
+    }
+    // 单格（英文拼写）：移除最后一笔（原行为）
     setState(() {
       _controller.removeLast();
     });
@@ -559,12 +666,15 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         widget.onRewrite();
       }
     }
-    // 手动提交模式（中文默写）：回退仅撤销笔画，不识别不判题（识别只在点「提交」后一次性进行）
   }
 
   void _handleSubmit() {
     _autoRecognizeTimer?.cancel();
-    widget.onRecognize();
+    // 键盘输入法弹起时，上层直接提交输入框文本（返回 true），不再识别手写区域
+    final handledByCaller = widget.onSubmit?.call() ?? false;
+    if (!handledByCaller) {
+      widget.onRecognize();
+    }
   }
 
   @override
@@ -665,10 +775,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             
             if (widget.lines.isNotEmpty) {
               _autoRecognizeTimer?.cancel();
-              // 自动模式（英文拼写）：停笔后自动识别+判题（维持原行为）。
-              // 手动提交模式（中文默写）：停笔不自动识别，只在用户点击「提交」后一次性识别，
-              // 避免对不完整/中间态笔画做切分导致"多个汉字被合成一个字"。
-              if (!widget.manualSubmit) {
+              if (widget.manualSubmit && widget.cellCount > 1) {
+                // 分格模式（中文默写）：停笔不判题，但触发"当前格停笔预览识别"，
+                // 把当前格内容提前回显到输入框（不停笔、不判题）。
+                widget.onCellIdle?.call();
+              } else if (!widget.manualSubmit) {
+                // 自动模式（英文拼写）：停笔后自动识别+判题（维持原行为）。
                 _autoRecognizeTimer = Timer(const Duration(milliseconds: 300), () {
                   if (mounted && widget.lines.isNotEmpty) {
                     debugPrint('HB: Auto-triggering recognition via timer');

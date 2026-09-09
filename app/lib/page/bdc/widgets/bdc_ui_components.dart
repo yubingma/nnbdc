@@ -64,6 +64,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 // 底层：手写板 (去除边框和内部标题，最大化感应面积)
                 Positioned.fill(
                   child: HandwritingBoard(
+                    key: _handwritingBoardKey,
                     showCloseButton: false,
                     showHeader: false, // 隐藏内部自带的标题栏
                     useBoxDecoration: false, // 隐藏内部背景和圆角，直接使用外层背景
@@ -107,6 +108,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                     onRecognizedPreview: (text) {
                       notifier.updateMeaningTextWithoutCheck(text);
                     },
+                    // 键盘输入法弹起时点「提交」= 完成键盘输入：直接判输入框文本，不识别手写区域。
+                    // 答错时保留键盘焦点，方便用户继续修改重提。
+                    onSubmit: () {
+                      if (_meaningFocusNode.hasFocus) {
+                        notifier.checkAsrResult();
+                        return true;
+                      }
+                      return false;
+                    },
                     onCancel: () {
                       _meaningFocusNode.unfocus();
                       // 中文默写用 closeChineseDictation 一并重置中文默写标记
@@ -122,95 +132,86 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
                 ),
 
-                // 顶层：浮动释义头部 (采用渐变背景确保文字清晰，且支持笔触穿透)
+                // 顶层：浮动释义头部（整层 IgnorePointer，确保顶部起笔也能正常书写；
+                // 关闭按钮单独放在上层，保持可点击）
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(
-                        16, MediaQuery.of(context).padding.top + 8, 8, 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          (isDarkMode ? const Color(0xFF121212) : Colors.white)
-                              .withValues(alpha: 0.85),
-                          (isDarkMode ? const Color(0xFF121212) : Colors.white)
-                              .withValues(alpha: 0.0),
-                        ],
-                        stops: const [0.6, 1.0],
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(
+                          16, MediaQuery.of(context).padding.top + 4, 48, 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            (isDarkMode ? const Color(0xFF121212) : Colors.white)
+                                .withValues(alpha: 0.16),
+                            (isDarkMode ? const Color(0xFF121212) : Colors.white)
+                                .withValues(alpha: 0.0),
+                          ],
+                          stops: const [0.35, 1.0],
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: IgnorePointer(
-                            // 使用 IgnorePointer 让用户可以在释义文字区域直接起笔书写
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  state.isChineseDictation
-                                      ? '请写出中文释义：'
-                                      : '请拼写单词：',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.3,
-                                    color: context.textSecondary
-                                        .withValues(alpha: 0.85),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                // 中文默写（英译汉）时，顶部展示英文原词作为题目，而非中文释义，否则会直接泄题
-                                Text(
-                                  state.isChineseDictation
-                                      ? (state.word?.spell ?? combinedMeaning)
-                                      : combinedMeaning,
-                                  style: TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: -0.3,
-                                    color: context.textPrimary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            state.isChineseDictation
+                                ? '请写出中文释义：'
+                                : '请拼写单词：',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.3,
+                              color: context.textSecondary.withValues(alpha: 0.85),
                             ),
                           ),
-                        ),
-                        // 功能按钮 (不被 IgnorePointer 包裹，确保可点击)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.close,
-                                size: 22,
-                                color: context.textSecondary,
-                              ),
-                              onPressed: () {
-                                _meaningFocusNode.unfocus();
-                                // 中文默写关闭时一并重置中文默写标记
-                                if (state.isChineseDictation) {
-                                  notifier.closeChineseDictation();
-                                } else {
-                                  updateUI(() {
-                                    notifier.updateShowHandwritingBoard(false);
-                                  }, tag: 'hw-close');
-                                  notifier.handleTabChangeForAsr();
-                                }
-                              },
+                          const SizedBox(height: 3),
+                          // 中文默写（英译汉）时，顶部展示英文原词作为题目，而非中文释义，否则会直接泄题
+                          Text(
+                            state.isChineseDictation
+                                ? (state.word?.spell ?? combinedMeaning)
+                                : combinedMeaning,
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3,
+                              color: context.textPrimary,
                             ),
-                          ],
-                        ),
-                      ],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
+                ),
+                // 关闭按钮（独立于顶部提示层，保持可点击）
+                Positioned(
+                  top: MediaQuery.of(context).padding.top,
+                  right: 4,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      size: 22,
+                      color: context.textSecondary,
+                    ),
+                    onPressed: () {
+                      _meaningFocusNode.unfocus();
+                      // 中文默写关闭时一并重置中文默写标记
+                      if (state.isChineseDictation) {
+                        notifier.closeChineseDictation();
+                      } else {
+                        updateUI(() {
+                          notifier.updateShowHandwritingBoard(false);
+                        }, tag: 'hw-close');
+                        notifier.handleTabChangeForAsr();
+                      }
+                    },
                   ),
                 ),
               ],
@@ -264,6 +265,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                         ),
                         textInputAction: TextInputAction.done,
                         onChanged: (value) {
+                          // 用户用键盘手动编辑输入框：清掉手写板的提前回显预览，
+                          // 避免删改后又被手写预览回填（键盘输入以输入框为准）。
+                          _handwritingBoardKey.currentState
+                              ?.clearHandwritingPreview();
                           notifier.updateIsUpdatingByHint(false);
                           if (value.isNotEmpty && state.word?.spell != null) {
                             if (Util.equalsIgnoreCase(
