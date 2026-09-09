@@ -229,9 +229,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                         focusNode: _meaningFocusNode,
                         autofocus: StudyConfig.fromCurrentUser()
                             .preferKeyboardInSpelling,
-                        keyboardType: TextInputType.visiblePassword,
+                        // 中文默写：要用键盘输入汉字，需用 text 键盘以调出中文输入法（拼音候选）；
+                        // 英文拼写：用 visiblePassword 键盘避免自动纠错/候选污染拼写。
+                        keyboardType: state.isChineseDictation
+                            ? TextInputType.text
+                            : TextInputType.visiblePassword,
                         autocorrect: false,
-                        enableSuggestions: false,
+                        // 中文默写允许输入法候选（拼音→汉字），英文拼写关闭候选
+                        enableSuggestions: state.isChineseDictation,
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w600,
@@ -239,7 +244,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                           color: context.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: '在此键入单词...',
+                          hintText: state.isChineseDictation
+                              ? '在此键入中文释义...'
+                              : '在此键入单词...',
                           hintStyle: TextStyle(
                             fontSize: 30,
                             color: context.textMuted.withValues(alpha: 0.6),

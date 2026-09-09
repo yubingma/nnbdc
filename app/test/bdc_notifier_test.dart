@@ -1693,6 +1693,9 @@ void main() {
     // 释义回显不应变化
     expect(st.wordWrapper!.asrMatchedMeaningItemParts, matchedBefore,
         reason: '已回显的释义不应因再次默写而改变');
+
+    // Note: 答错重写会走 ToastUtil.error 提示（保持手写板打开），
+    // 但纯单元测试环境没有 ToastificationWrapper，无法实例化 toast，故此处不覆盖答错分支。
   });
 }
 

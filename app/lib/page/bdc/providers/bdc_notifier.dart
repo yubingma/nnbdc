@@ -140,6 +140,9 @@ class BdcNotifier extends _$BdcNotifier {
         _checkAsrDebounceTimer?.cancel();
         return;
       }
+      // 中文默写：键盘输入在按"完成/回车"（onSubmitted）或点击「提交」时才判题，
+      // 避免输入法拼音候选/中间态触发提前"不正确"提示。
+      if (state.isChineseDictation) return;
       _checkAsrDebounceTimer?.cancel();
       _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
         checkAsrResult();
@@ -2144,15 +2147,17 @@ class BdcNotifier extends _$BdcNotifier {
           state.hasFinishedAnswering &&
           !_isAnswerCorrectHandling) {
         // 单词已答对后，再次打开默写把释义重写一遍并提交：
-        // 此时释义已回显，无需改判题/回显状态——只需返回背单词页面；
-        // 若这次重写命中释义则补一声正确提示音（回显效果保持不变）。
+        // 重写正确：返回背单词页面 + 正确提示音（释义回显保持不变）；
+        // 重写不对：保持手写板打开，弹出"不正确"提示，让用户继续重写。
         final bool correct = state.word != null &&
             chineseInputMatchesAnyMeaning(state.word!, inputs, strict: true);
-        state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
-        _handleTabChangeForAsr();
         if (correct) {
+          state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
+          _handleTabChangeForAsr();
           // 主动重写提交：强制播放反馈音，不受 800ms 防回声去抖限制
           _playCorrectSound(force: true);
+        } else {
+          ToastUtil.error('答案不正确，请重写');
         }
       } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
         if (state.isChineseDictation) {
