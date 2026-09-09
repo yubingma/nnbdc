@@ -2140,6 +2140,19 @@ class BdcNotifier extends _$BdcNotifier {
         } else {
           _playCorrectSound();
         }
+      } else if (state.isChineseDictation &&
+          state.hasFinishedAnswering &&
+          !_isAnswerCorrectHandling) {
+        // 单词已答对后，再次打开默写把释义重写一遍并提交：
+        // 此时释义已回显，无需改判题/回显状态——只需返回背单词页面；
+        // 若这次重写命中释义则补一声正确提示音（回显效果保持不变）。
+        final bool correct = state.word != null &&
+            chineseInputMatchesAnyMeaning(state.word!, inputs, strict: true);
+        state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
+        _handleTabChangeForAsr();
+        if (correct) {
+          _playCorrectSound();
+        }
       } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
         if (state.isChineseDictation) {
           // 中文默写（手写）判错：保持手写板打开，提示用户答案不正确/未写完整、可重写。

@@ -1658,6 +1658,42 @@ void main() {
     expect(ww.asrMatchedMeaningItemParts, isNotEmpty,
         reason: '用户手写写对的中文释义应被标记为已匹配，从而在主页面释义下划线处回显');
   });
+
+  test('BdcNotifier - 单词已答对后再默写重写同一释义提交，应返回主页面且回显不变', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+
+    // 第一次默写答对
+    notifier.openChineseDictation();
+    await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
+    var st = container.read(bdcNotifierProvider);
+    expect(st.hasFinishedAnswering, true);
+    expect(st.showHandwritingBoard, false);
+    expect(st.wordWrapper!.asrMatchedMeaningItemParts, isNotEmpty);
+    final matchedBefore = List.of(st.wordWrapper!.asrMatchedMeaningItemParts);
+
+    // 已答对后再次打开默写，把同一释义重写一遍并提交
+    notifier.openChineseDictation();
+    st = container.read(bdcNotifierProvider);
+    expect(st.showHandwritingBoard, true);
+    expect(st.isChineseDictation, true);
+
+    await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
+    st = container.read(bdcNotifierProvider);
+    expect(st.hasFinishedAnswering, true, reason: '已答对状态应保持不变');
+    expect(st.showHandwritingBoard, false, reason: '重写提交后应返回背单词主页面');
+    expect(st.isChineseDictation, false, reason: '重写提交后应复位中文默写标记');
+    // 释义回显不应变化
+    expect(st.wordWrapper!.asrMatchedMeaningItemParts, matchedBefore,
+        reason: '已回显的释义不应因再次默写而改变');
+  });
 }
 
 

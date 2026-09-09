@@ -100,11 +100,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                       await notifier.checkAsrResult(
                           asrInput: text, isVoice: false);
                     },
-                    // 手动提交模式（中文默写）：停笔自动识别仅把结果同步到输入框，给用户实时反馈，
-                    // 不判题；判题只在点击「提交」后走上面的 onRecognized。
-                    onRecognizedPreview: (text) {
-                      notifier.updateMeaningTextWithoutCheck(text);
-                    },
                     onCancel: () {
                       _meaningFocusNode.unfocus();
                       // 中文默写用 closeChineseDictation 一并重置中文默写标记

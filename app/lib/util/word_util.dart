@@ -289,6 +289,24 @@ bool _isWholeBracketed(String s) {
   return false;
 }
 
+/// 判断输入是否命中该单词的任意释义项子项（不区分该子项是否已在之前被匹配）。
+/// 用于"单词已答对后，再次打开默写把释义重写一遍"的正确性判断：
+/// 此时 matchInputChineseWithMeaningItems 会因该子项已匹配而返回 newMatchCount=0，
+/// 无法再据此判断本次手写是否正确，需要独立做一次命中判断。
+bool chineseInputMatchesAnyMeaning(WordVo word, Object input, {bool strict = false}) {
+  final meaningItems = word.getMergedMeaningItems();
+  for (final meaningItem in meaningItems) {
+    if (meaningItem.meaning == null) continue;
+    for (final part in splitMeaning2Parts(meaningItem.meaning!)) {
+      if (_isWholeBracketed(part)) continue;
+      if (fuzzyChineseContains(input, part, targetPinyinsCache: null, strict: strict)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 List<Widget> renderAsrMeaningItems(WordWrapper word,
     {bool isDarkMode = false}) {
   List<Widget> items = [];
