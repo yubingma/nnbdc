@@ -2151,7 +2151,8 @@ class BdcNotifier extends _$BdcNotifier {
         state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
         _handleTabChangeForAsr();
         if (correct) {
-          _playCorrectSound();
+          // 主动重写提交：强制播放反馈音，不受 800ms 防回声去抖限制
+          _playCorrectSound(force: true);
         }
       } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
         if (state.isChineseDictation) {
@@ -2366,9 +2367,11 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
-  void _playCorrectSound() {
+  void _playCorrectSound({bool force = false}) {
     final now = DateTime.now();
-    if (_lastCorrectSoundTime != null &&
+    // 防回声去抖：800ms 内不重复播。但如果是用户的主动操作（如已答对后再次默写重写提交），
+    // 应强制播放反馈音，不受去抖影响。
+    if (!force && _lastCorrectSoundTime != null &&
         now.difference(_lastCorrectSoundTime!) < const Duration(milliseconds: 800)) {
       debugPrint('⚡ [Audio-Filter] 800ms 内已播放过正确反馈音，忽略本次播放以防止回声');
       return;
