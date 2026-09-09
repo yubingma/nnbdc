@@ -73,6 +73,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                     language: state.isChineseDictation ? 'zh-Hani' : 'en-US',
                     // 中文默写采用手动提交：停笔不自动判题，仅点击「提交」后才识别+匹配，规避过早识别
                     manualSubmit: state.isChineseDictation,
+                    // 中文默写分 2 格书写，一格一个字（竖屏上下两格、横屏左右两格）；
+                    // 新一笔起点换格即识别上一格，显著提升单字识别率
+                    cellCount: state.isChineseDictation ? 2 : 1,
                     onStartWriting: () {
                       // 一旦用户开始手写，立即收起键盘
                       if (_meaningFocusNode.hasFocus) {
@@ -99,6 +102,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                       notifier.updateMeaningTextWithoutCheck(text);
                       await notifier.checkAsrResult(
                           asrInput: text, isVoice: false);
+                    },
+                    // 分格模式提前回显：每识别完一格就把"已识别前缀"同步到输入框供用户反馈，不判题
+                    onRecognizedPreview: (text) {
+                      notifier.updateMeaningTextWithoutCheck(text);
                     },
                     onCancel: () {
                       _meaningFocusNode.unfocus();

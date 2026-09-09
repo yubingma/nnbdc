@@ -43,6 +43,8 @@ class HandwritingBoard extends StatefulWidget {
     this.onRewrite,
     this.language = 'en-US',
     this.manualSubmit = false,
+    this.cellCount = 1,
+    this.onRecognizedPreview,
   });
 
   final VoidCallback? onUndo;
@@ -56,6 +58,15 @@ class HandwritingBoard extends StatefulWidget {
   /// 只有在用户点击提交后才一次性识别完整笔画并匹配，避免对不完整/中间态笔画切分
   /// 导致"多个汉字被合成一个字"；键盘输入不受此影响。
   final bool manualSubmit;
+
+  /// 分格书写数量。>1 时（中文默写）画布横向均分为 [cellCount] 个格子，每个格子写一个汉字，
+  /// "第一笔进入另一个格子"即视为开始写下一个字——识别上一格、清空上一格，显著提升单字识别率；
+  /// 提交时拼接所有格子识别结果判题。=1（英文拼写）时维持整块书写/识别。
+  final int cellCount;
+
+  /// 提前回显回调：分格模式下，每识别完一个格子就把"已识别前缀"同步到输入框供用户反馈，不判题。
+  /// 判题只在提交后走 [onRecognized]。
+  final ValueChanged<String>? onRecognizedPreview;
 
   @override
   State<HandwritingBoard> createState() => HandwritingBoardState();
@@ -76,8 +87,149 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   /// 手写画布尺寸，识别时作为 WritingArea 上下文传给 ML Kit，帮助正确切分多字连写。
   Size? _writingAreaSize;
 
+  /// 分格模式下已识别出的字序列（每个格子一个字）。提交时拼接成最终答案。
+  List<String> _recognizedChars = [];
+
+  /// 当前正在书写的格子索引（分格模式下有效）。
+  int _activeCell = 0;
+
+  /// 串行化逐格识别，保证"已识别字"按书写顺序追加（避免异步 OCR 乱序）。
+  Future<void> _finalizeChain = Future.value();
+
   void _handleWritingArea(Size size) {
     _writingAreaSize = size;
+  }
+
+  /// 竖屏（高>宽）时为上下两格，横屏（宽>=高）时为左右两格。
+  bool get _isVerticalLayout =>
+      (_writingAreaSize?.width ?? 0) < (_writingAreaSize?.height ?? 0);
+
+  /// 计算某"落笔起点"落在哪个格子。换字只看新一笔的起点，忽略笔画延伸/终点进入其他格子。
+  int _cellIndexAt(Offset pos) {
+    final size = _writingAreaSize;
+    if (size == null) return 0;
+    if (_isVerticalLayout) {
+      final cellH = size.height / widget.cellCount;
+      if (cellH <= 0) return 0;
+      return (pos.dy / cellH).floor().clamp(0, widget.cellCount - 1);
+    }
+    final cellW = size.width / widget.cellCount;
+    if (cellW <= 0) return 0;
+    return (pos.dx / cellW).floor().clamp(0, widget.cellCount - 1);
+  }
+
+  /// 画布上报"新一笔落点"：分格模式下若起点已换到新格子，就完成上一格识别并清空，切换到新格子。
+  void _handleCellChange(Offset pos) {
+    if (widget.cellCount <= 1) return;
+    final cell = _cellIndexAt(pos);
+    if (cell != _activeCell) {
+      unawaited(_enqueueFinalize());
+      _activeCell = cell;
+      if (mounted) setState(() {});
+    }
+  }
+
+  /// 把一次逐格识别排队执行（串行，保证顺序）。
+  Future<void> _enqueueFinalize() {
+    final next = _finalizeChain.then((_) => _finalizeCurrentCell());
+    _finalizeChain = next.catchError((_) {});
+    return next;
+  }
+
+  /// 分格模式下：识别当前格子笔画，追加到已识别序列，清空当前格，并提前回显前缀。
+  Future<void> _finalizeCurrentCell() async {
+    if (_lines.isEmpty) return;
+    // 先快照当前格笔画并清空，避免后续写入新格笔画影响本格识别
+    final snapshot = List<List<PointWithTime>>.generate(_lines.length,
+        (i) => List<PointWithTime>.from(_lines[i]));
+    _lines = [];
+    _recognitionVersion++;
+    final char = await _recognizeLines(snapshot, cellIndex: _activeCell);
+    if (char.isNotEmpty) {
+      _recognizedChars.add(char);
+    }
+    // 提前反馈：把已识别前缀同步到输入框（不判题）
+    widget.onRecognizedPreview?.call(_recognizedChars.join());
+    if (mounted) setState(() {});
+  }
+
+  /// 识别给定笔画并返回文本。分格模式下：把该字笔画归一化到自身包围盒，并以包围盒尺寸作为
+  /// WritingArea（单字识别更准，且对"横/竖屏"布局都成立）；单格（英文拼写）保持整幅画布。
+  Future<String> _recognizeLines(List<List<PointWithTime>> strokes,
+      {int cellIndex = 0}) async {
+    if (strokes.isEmpty) return '';
+
+    final canvasW = _writingAreaSize?.width ?? 0;
+    final canvasH = _writingAreaSize?.height ?? 0;
+
+    final bool isCellMode = widget.cellCount > 1;
+    double areaW = canvasW;
+    double areaH = canvasH;
+    double offsetX = 0.0;
+    double offsetY = 0.0;
+
+    if (isCellMode) {
+      // 以该字笔画包围盒为坐标系原点+尺寸，使单字以最合适尺度送入 ML Kit
+      double minX = double.infinity, maxX = -double.infinity;
+      double minY = double.infinity, maxY = -double.infinity;
+      for (final line in strokes) {
+        for (final p in line) {
+          final x = p.offset.dx;
+          final y = p.offset.dy;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (maxX < minX || maxY < minY) return '';
+      offsetX = minX;
+      offsetY = minY;
+      areaW = (maxX - minX).clamp(1.0, double.infinity);
+      areaH = (maxY - minY).clamp(1.0, double.infinity);
+    }
+
+    final strokesData = strokes.map((line) => line.map((p) => {
+      'x': p.offset.dx - offsetX,
+      'y': p.offset.dy - offsetY,
+      't': p.t,
+    }).toList()).toList();
+
+    try {
+      final response = await OcrService.recognizeHandwriting(strokesData,
+          language: widget.language,
+          writingAreaWidth: areaW > 0 ? areaW : null,
+          writingAreaHeight: areaH > 0 ? areaH : null)
+          .timeout(const Duration(seconds: 5));
+      return _postProcess(response);
+    } catch (e) {
+      debugPrint('HB: Recognition error: $e');
+      return '';
+    }
+  }
+
+  /// 根据语言对识别结果做后处理（中文保留汉字；英文做近形替换/字母过滤）。
+  String _postProcess(String text) {
+    if (widget.language == 'zh-Hani') {
+      return text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    }
+    String processedText = text
+        .replaceAll('1', 'l')
+        .replaceAll('0', 'o')
+        .replaceAll('5', 's')
+        .replaceAll('2', 'z')
+        .replaceAll('8', 'b')
+        .replaceAll('9', 'g')
+        .replaceAll('6', 'g')
+        .replaceAll('4', 'a')
+        .replaceAll('7', 't');
+    return processedText
+        .replaceAll('|', 'l')
+        .replaceAll('/', 'l')
+        .replaceAll('\\', 'l')
+        .replaceAll(RegExp(r"[^a-zA-Z\s\-']"), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   @override
@@ -101,8 +253,13 @@ class HandwritingBoardState extends State<HandwritingBoard> {
       _isRecognizing = false;
       _recognitionVersion++;
     });
-    // 内容清空时，同步清空外部输入框
-    widget.onRecognized("");
+    if (widget.cellCount > 1) {
+      // 分格模式：只清空当前格笔画，已识别前缀保留（提前回显不变）
+      widget.onRecognizedPreview?.call(_recognizedChars.join());
+    } else {
+      // 内容清空时，同步清空外部输入框
+      widget.onRecognized("");
+    }
   }
 
   void clearBoardSilently() {
@@ -123,82 +280,33 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   }
 
   Future<void> _recognize() async {
+    // 分格模式（中文默写）：提交时先识别当前格，再拼接所有格子成完整答案
+    if (widget.cellCount > 1) {
+      await _enqueueFinalize();
+      final answer = _recognizedChars.join();
+      _recognizedChars = [];
+      _activeCell = 0;
+      widget.onRecognized(answer);
+      return;
+    }
+
+    // 单格（英文拼写）：整块识别
     if (_lines.isEmpty) {
       widget.onRecognized("");
       return;
     }
-
     final int currentVersion = ++_recognitionVersion;
-    debugPrint('HB: Triggering _recognize (version $currentVersion, strokes: ${_lines.length})');
-
     setState(() {
       _isRecognizing = true;
     });
-
-    try {
-      // 1. 调用识别引擎 (统一使用 Google ML Kit Digital Ink Recognition)
-      // 现在包含了时间戳 't' (毫秒)
-      final strokes = _lines.map((line) => line.map((p) => {
-        'x': p.offset.dx, 
-        'y': p.offset.dy,
-        't': p.t
-      }).toList()).toList();
-      final recognitionFuture = OcrService.recognizeHandwriting(strokes,
-          language: widget.language,
-          writingAreaWidth: _writingAreaSize?.width,
-          writingAreaHeight: _writingAreaSize?.height);
-        
-      final startTime = DateTime.now();
-      final response = await recognitionFuture.timeout(const Duration(seconds: 5));
-      final duration = DateTime.now().difference(startTime).inMilliseconds;
-      debugPrint('HB: OCR Recognition finished in ${duration}ms, result: "$response"');
-
-      // 关键：如果版本已改变，则丢弃当前陈旧的结果
-      if (currentVersion != _recognitionVersion) {
-        debugPrint('HB: Discarding stale result: version $currentVersion < $_recognitionVersion');
-        return;
-      }
-
-      // 4. 后处理识别结果
-      String text = response;
-
-      final String result;
-      if (widget.language == 'zh-Hani') {
-        // 中文默写：保留识别出的中文字符，不套用英文近形替换/字母过滤
-        result = text.replaceAll(RegExp(r'\s+'), ' ').trim();
-      } else {
-        // 英文拼写：视觉近形替换
-        String processedText = text
-            .replaceAll('1', 'l')
-            .replaceAll('0', 'o')
-            .replaceAll('5', 's')
-            .replaceAll('2', 'z')
-            .replaceAll('8', 'b')
-            .replaceAll('9', 'g')
-            .replaceAll('6', 'g')
-            .replaceAll('4', 'a')
-            .replaceAll('7', 't');
-
-        result = processedText
-            .replaceAll('|', 'l')
-            .replaceAll('/', 'l')
-            .replaceAll('\\', 'l')
-            .replaceAll(RegExp(r"[^a-zA-Z\s\-']"), '') // 允许连字符和单引号
-            .replaceAll(RegExp(r'\s+'), ' ')
-            .trim();
-      }
-
-      widget.onRecognized(result);
-    } on TimeoutException {
-      debugPrint('HB: Recognition timeout (5s)');
-    } catch (e) {
-      debugPrint('HB: Recognition error: $e');
-    } finally {
-      if (mounted && currentVersion == _recognitionVersion) {
+    final result = await _recognizeLines(_lines, cellIndex: 0);
+    if (currentVersion == _recognitionVersion) {
+      if (mounted) {
         setState(() {
           _isRecognizing = false;
         });
       }
+      widget.onRecognized(result);
     }
   }
 
@@ -268,6 +376,9 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   onHint: widget.onHint,
                   manualSubmit: widget.manualSubmit,
                   onWritingAreaChanged: _handleWritingArea,
+                  cellCount: widget.cellCount,
+                  activeCellIndex: _activeCell,
+                  onCellChanged: _handleCellChange,
                 ),
               ],
             ),
@@ -296,6 +407,9 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback? onHint;
   final bool manualSubmit;
   final ValueChanged<Size>? onWritingAreaChanged;
+  final int cellCount;
+  final int activeCellIndex;
+  final ValueChanged<Offset>? onCellChanged;
 
   const _HandwritingCanvas({
     super.key,
@@ -316,6 +430,9 @@ class _HandwritingCanvas extends StatefulWidget {
     this.onHint,
     this.manualSubmit = false,
     this.onWritingAreaChanged,
+    this.cellCount = 1,
+    this.activeCellIndex = 0,
+    this.onCellChanged,
   });
 
   @override
@@ -526,6 +643,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _ignoredPointers.remove(event.pointer);
             widget.onStartWriting?.call();
             _autoRecognizeTimer?.cancel();
+            // 分格模式：新一笔的落笔起点落在哪个格子就决定当前字（起点换格即新字，识别上一格）
+            widget.onCellChanged?.call(p);
             _controller.start(p, DateTime.now().millisecondsSinceEpoch);
           },
           onPointerMove: (event) {
@@ -573,6 +692,16 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
           },
           child: Stack(
             children: [
+              if (widget.cellCount > 1)
+                CustomPaint(
+                  painter: _CellGuidePainter(
+                    cellCount: widget.cellCount,
+                    activeCell: widget.activeCellIndex,
+                    isDark: isDark,
+                    accent: context.primaryColor,
+                  ),
+                  size: Size.infinite,
+                ),
               RepaintBoundary(
                 child: CustomPaint(
                   painter: _HandwritingPainter(_controller, penColor),
@@ -762,4 +891,60 @@ class _HandwritingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _HandwritingPainter oldDelegate) => true;
+}
+
+/// 分格书写提示：绘制格子分隔线，并高亮当前正在书写的格子。
+class _CellGuidePainter extends CustomPainter {
+  final int cellCount;
+  final int activeCell;
+  final bool isDark;
+  final Color accent;
+
+  _CellGuidePainter({
+    required this.cellCount,
+    required this.activeCell,
+    required this.isDark,
+    required this.accent,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 竖屏（高>宽）为上下两格（行），横屏（宽>=高）为左右两格（列）
+    final bool vertical = size.height > size.width;
+    final double cellMajor = (vertical ? size.height : size.width) / cellCount;
+
+    // 高亮当前格（浅色填充 + 主题色描边）
+    final Rect activeRect = vertical
+        ? Rect.fromLTWH(0, activeCell * cellMajor, size.width, cellMajor)
+        : Rect.fromLTWH(activeCell * cellMajor, 0, cellMajor, size.height);
+    final highlight = Paint()
+      ..color = accent.withValues(alpha: isDark ? 0.10 : 0.08);
+    canvas.drawRect(activeRect, highlight);
+    final activeBorder = Paint()
+      ..color = accent.withValues(alpha: isDark ? 0.55 : 0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
+    canvas.drawRect(activeRect.deflate(1.0), activeBorder);
+
+    // 分隔线
+    final line = Paint()
+      ..color = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.18)
+      ..strokeWidth = 1.0;
+    for (int i = 1; i < cellCount; i++) {
+      if (vertical) {
+        final y = cellMajor * i;
+        canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
+      } else {
+        final x = cellMajor * i;
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), line);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CellGuidePainter oldDelegate) =>
+      oldDelegate.cellCount != cellCount ||
+      oldDelegate.activeCell != activeCell ||
+      oldDelegate.isDark != isDark ||
+      oldDelegate.accent != accent;
 }
