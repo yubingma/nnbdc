@@ -76,6 +76,25 @@
 				</array>
 			</dict>
 		</array>
+		<!-- 接收外部应用（微信、文件 App 等）分享的 Excel 词表 -->
+		<key>CFBundleDocumentTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeName</key>
+				<string>Excel 词表</string>
+				<key>CFBundleTypeRole</key>
+				<string>Viewer</string>
+				<key>LSHandlerRank</key>
+				<string>Alternate</string>
+				<key>LSItemContentTypes</key>
+				<array>
+					<string>org.openxmlformats.spreadsheetml.sheet</string>
+					<string>com.microsoft.excel.xls</string>
+				</array>
+			</dict>
+		</array>
+		<key>LSSupportsOpeningDocumentsInPlace</key>
+		<true/>
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<string>weixin</string>

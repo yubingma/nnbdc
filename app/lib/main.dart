@@ -30,6 +30,7 @@ import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/local_embedding_cache.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/services/external_file_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config.dart';
@@ -192,6 +193,10 @@ void main() async {
       await MyDatabase.initPrepopulatedDb();
       logMark('initPrepopulatedDb');
 
+      // 尽早注册外部文件接收通道（微信等应用「用其他应用打开」），
+      // 避免热启动推送早于 handler 就位而丢失
+      ExternalFileService.initialize();
+
       runApp(
         ProviderScope(
           child: provider.MultiProvider(
@@ -243,6 +248,9 @@ void main() async {
             }
           }
           logMark('loadUserFromDb + handleAutoLogin');
+
+          // 用户态就绪后处理外部传入的 Excel（冷启动遗留文件 + 运行期监听）
+          unawaited(ExternalFileService.startHandling());
 
           // 检查并强制执行会员限制（非会员每日单词限额 20）
           await SubscriptionUtil.checkAndEnforceMemberLimits();

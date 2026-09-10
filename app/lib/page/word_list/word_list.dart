@@ -50,6 +50,7 @@ import '../word_detail.dart';
 import 'dict_words.dart';
 import 'edit_meaning_dialog.dart';
 import 'modes/handwriting_mode_item.dart';
+import 'import_from_excel_page.dart';
 import 'modes/hide_mode_item.dart';
 import 'modes/list_mode_item.dart';
 import 'modes/speak_mode_item.dart';
@@ -2558,8 +2559,9 @@ class WordListPageState extends State<WordListPage>
         if (!context.mounted) return;
         final needRefresh =
         await context.push('/import_from_excel',
-        extra: args.wordsProvider
-        as WordModifier);
+        extra: ExcelImportArgs(
+        wordModifier: args.wordsProvider
+        as WordModifier));
 
         if (needRefresh == true) {
 

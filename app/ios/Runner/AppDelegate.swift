@@ -30,6 +30,12 @@ import StoreKit
     private var asrStreamHandler: SimpleStreamHandler?
     private var meterStreamHandler: SimpleStreamHandler?
     private var ttsStreamHandler: SimpleStreamHandler?
+
+    // 外部文件导入（微信等应用「用其他应用打开」）
+    private var pendingImportURL: URL?
+    private var externalFileChannel: FlutterMethodChannel?
+    /// Dart 侧是否已就绪；未就绪时先缓存文件，避免冷启动时推送丢失。
+    private var externalFileReady = false
     
     // TTS 相关属性
     private var ttsEventSink: FlutterEventSink?
@@ -163,6 +169,9 @@ import StoreKit
         
         // Register OCR channel
         OcrChannel.register(with: controller.binaryMessenger)
+
+        // 外部文件导入通道
+        setupExternalFileChannel(controller)
         
         // 监听音频引擎配置变化（如蓝牙耳机插拔导致采样率变化）
         NotificationCenter.default.addObserver(
@@ -174,6 +183,80 @@ import StoreKit
         
         print(String(format: "IOS启动: didFinishLaunchingWithOptions 完成 +%.2fs", Date().timeIntervalSince(nativeStart)))
         return result
+    }
+
+    // MARK: - External File Import
+
+    /// 接收「用其他应用打开」传入的文件；URL scheme（如微信登录回调）交给插件处理。
+    override func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        if url.isFileURL {
+            handleIncomingImportFile(url)
+        }
+        return super.application(app, open: url, options: options)
+    }
+
+    private func setupExternalFileChannel(_ controller: FlutterViewController) {
+        let channel = FlutterMethodChannel(name: "nnbdc/external_file", binaryMessenger: controller.binaryMessenger)
+        channel.setMethodCallHandler { [weak self] call, result in
+            guard let self = self else {
+                result(nil)
+                return
+            }
+            if call.method == "getInitialFile" {
+                self.externalFileReady = true
+                guard let url = self.pendingImportURL else {
+                    result(nil)
+                    return
+                }
+                self.pendingImportURL = nil
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let payload = self.copyImportFileToTemporary(url)
+                    DispatchQueue.main.async { result(payload) }
+                }
+            } else {
+                result(FlutterMethodNotImplemented)
+            }
+        }
+        self.externalFileChannel = channel
+    }
+
+    private func handleIncomingImportFile(_ url: URL) {
+        // Dart 侧尚未就绪时先缓存，等 getInitialFile 取走，避免冷启动推送丢失
+        guard externalFileReady, let channel = externalFileChannel else {
+            pendingImportURL = url
+            return
+        }
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self, let payload = self.copyImportFileToTemporary(url) else { return }
+            DispatchQueue.main.async {
+                channel.invokeMethod("onFileReceived", arguments: payload)
+            }
+        }
+    }
+
+    /// 复制到临时目录：外部文件可能位于安全作用域沙盒中，需要一个稳定可读的本地路径。
+    private func copyImportFileToTemporary(_ url: URL) -> [String: String]? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+
+        let name = url.lastPathComponent
+        let safeName = name.replacingOccurrences(of: "/", with: "_")
+        let target = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(Int(Date().timeIntervalSince1970 * 1000))_\(safeName)")
+        do {
+            if FileManager.default.fileExists(atPath: target.path) {
+                try FileManager.default.removeItem(at: target)
+            }
+            try FileManager.default.copyItem(at: url, to: target)
+            return ["name": name, "path": target.path]
+        } catch {
+            print("IOS: 复制外部导入文件失败: \(error)")
+            return nil
+        }
     }
 
     @objc private func handleAudioEngineConfigurationChange(_ notification: Notification) {

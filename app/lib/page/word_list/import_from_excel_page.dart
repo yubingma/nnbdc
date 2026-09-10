@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
+import 'package:nnbdc/models/external_import_file.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/excel_import_parser.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -13,13 +16,26 @@ import 'package:nnbdc/util/xlsx_reader.dart';
 import 'package:provider/provider.dart';
 
 import '../../state.dart';
+import 'dict_words.dart';
+import 'mastered_words.dart';
 import 'word_list.dart';
 
-/// 从 .xlsx 批量导入单词到可编辑词表（自定义词书 / 生词本 / 已掌握）。
-class ImportFromExcelPage extends StatefulWidget {
-  final WordModifier wordModifier;
+/// 进入 Excel 导入页的两种入口参数。
+class ExcelImportArgs {
+  /// App 内入口：目标词表已由当前词表页确定。
+  final WordModifier? wordModifier;
 
-  const ImportFromExcelPage({super.key, required this.wordModifier});
+  /// 外部入口（微信等「用其他应用打开」）：文件已就位，目标词表待用户选择。
+  final ExternalImportFile? file;
+
+  const ExcelImportArgs({this.wordModifier, this.file});
+}
+
+/// 从 .xlsx 批量导入单词到可编辑词表（生词本 / 已掌握 / 自定义词书）。
+class ImportFromExcelPage extends StatefulWidget {
+  final ExcelImportArgs args;
+
+  const ImportFromExcelPage({super.key, required this.args});
 
   @override
   State<ImportFromExcelPage> createState() => _ImportFromExcelPageState();
@@ -34,6 +50,16 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
   /// 未收录清单在结果页最多列出的单词数。
   static const int _maxMissingPreview = 60;
 
+  /// 目标词表；外部入口在用户选定前为 null。
+  WordModifier? _wordModifier;
+
+  /// 外部入口带入的文件；App 内入口为 null。
+  ExternalImportFile? _externalFile;
+
+  List<_ImportTarget>? _targets;
+  _ImportTarget? _selectedTarget;
+  bool _isLoadingTargets = false;
+
   String? _fileName;
   String? _sheetName;
   List<List<String>> _worksheetRows = const [];
@@ -46,6 +72,104 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
   _ImportOutcome? _outcome;
 
   bool get _hasFile => _worksheetRows.isNotEmpty;
+
+  bool get _needsTargetSelection => _wordModifier == null;
+
+  @override
+  void initState() {
+    super.initState();
+    _wordModifier = widget.args.wordModifier;
+    _externalFile = widget.args.file;
+    if (_externalFile != null) {
+      _loadImportTargets();
+    }
+  }
+
+  /// 加载可作为导入目标的词表：生词本 + 已掌握 + 自定义词书。
+  ///
+  /// 注意 [WordBo.getCustomDicts] 按 ownerId 查询，会把生词本和已掌握一并返回，
+  /// 必须显式排除，否则候选会出现重复项。
+  Future<void> _loadImportTargets() async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) {
+      ToastUtil.error('请先登录后再导入');
+      return;
+    }
+
+    setState(() => _isLoadingTargets = true);
+    try {
+      final db = MyDatabase.instance;
+      final rawDict = await db.dictsDao.findUserRawDict(userId);
+      final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
+      final customDicts = await WordBo().getCustomDicts(userId);
+
+      final targets = <_ImportTarget>[
+        if (rawDict != null)
+          _ImportTarget(dictId: rawDict.id, name: rawDict.name, wordCount: rawDict.wordCount, kind: _ImportTargetKind.rawDict),
+        if (masteredDict != null)
+          _ImportTarget(
+            dictId: masteredDict.id,
+            name: masteredDict.name,
+            wordCount: masteredDict.wordCount,
+            kind: _ImportTargetKind.mastered,
+          ),
+        for (final dict in customDicts)
+          if (dict.name != '生词本' && dict.name != '已掌握')
+            _ImportTarget(
+              dictId: dict.id,
+              name: dict.name ?? '未命名',
+              wordCount: dict.wordCount ?? 0,
+              kind: _ImportTargetKind.custom,
+            ),
+      ];
+
+      if (!mounted) return;
+
+      // 只有一本候选词表时不必让用户白点一次
+      if (targets.length == 1) {
+        _selectTarget(targets.first);
+        return;
+      }
+
+      setState(() => _targets = targets);
+    } catch (e, s) {
+      Global.logger.e('加载可导入词表失败: $e', stackTrace: s);
+      ToastUtil.error('加载词表失败：$e');
+    } finally {
+      if (mounted) setState(() => _isLoadingTargets = false);
+    }
+  }
+
+  /// 选定目标词表：外部文件随之进入解析流程。
+  void _selectTarget(_ImportTarget target) {
+    setState(() {
+      _selectedTarget = target;
+      _wordModifier = target.kind == _ImportTargetKind.mastered
+          ? MasteredWordsProvider()
+          : (DictWordsProvider(DictVo.c2(target.dictId)..name = target.name));
+    });
+    final file = _externalFile;
+    if (file != null) _parseExternalFile(file);
+  }
+
+  /// 返回选词表态重新选择目标词表。
+  void _changeTarget() {
+    setState(() {
+      _wordModifier = null;
+      _selectedTarget = null;
+    });
+  }
+
+  /// 仅外部入口、且候选多于一本时才需要「更换」。
+  bool get _canChangeTarget => _externalFile != null && (_targets?.length ?? 0) > 1;
+
+  Future<void> _parseExternalFile(ExternalImportFile file) async {
+    try {
+      await _parseBytes(await file.readBytes(), file.name);
+    } catch (e) {
+      ToastUtil.error('读取文件失败：$e');
+    }
+  }
 
   bool _isSelectable(ExcelImportRow row) {
     if (row.status == ExcelRowStatus.ready) return true;
@@ -72,7 +196,11 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
       ToastUtil.error('无法读取所选文件');
       return;
     }
+    await _parseBytes(bytes, file.name);
+  }
 
+  /// 解析 Excel 字节；App 内选择文件与外部应用传入共用这一条路径。
+  Future<void> _parseBytes(Uint8List bytes, String fileName) async {
     // 旧版 .xls 是 OLE2 二进制格式，与 .xlsx 毫无关系。
     // 这里给出明确出路，而不是丢给解析层报一句「无法解压」。
     if (XlsxReader.isLegacyXls(bytes)) {
@@ -82,7 +210,7 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
 
     setState(() {
       _isParsing = true;
-      _fileName = file.name;
+      _fileName = fileName;
       _outcome = null;
     });
 
@@ -151,7 +279,7 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
   /// 目标词表中已有的词条 ID；无法确定目标词表时返回空集合，
   /// 与「从词书导入」的处理保持一致（不预判，由写入时的去重兜住）。
   Future<Set<String>> _loadExistingWordIds() async {
-    final dictId = await widget.wordModifier.resolveTargetDictId();
+    final dictId = await _wordModifier?.resolveTargetDictId();
     if (dictId == null) return <String>{};
     final db = MyDatabase.instance;
     final entries = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
@@ -184,7 +312,7 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
 
     setState(() => _isImporting = true);
     try {
-      final inserted = await widget.wordModifier.addWords(items, updateMeanings: _updateMeanings);
+      final inserted = await _wordModifier!.addWords(items, updateMeanings: _updateMeanings);
       if (!mounted) return;
       setState(() {
         _outcome = _ImportOutcome(
@@ -255,7 +383,8 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
       appBar: AppAppBar(
         title: '从 Excel 导入',
         actions: [
-          if (_hasFile && _outcome == null)
+          // 外部入口的文件由其他应用指定，只能换词表、不能换文件
+          if (_hasFile && _outcome == null && _externalFile == null)
             TextButton(
               onPressed: _isParsing ? null : _pickFile,
               child: const Text('重选', style: TextStyle(color: Colors.white)),
@@ -264,9 +393,125 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
       ),
       body: SafeArea(
         top: false,
-        child: _outcome != null
-            ? _buildOutcome(themeConfig)
-            : (_hasFile ? _buildPreview(themeConfig) : _buildEmpty(themeConfig)),
+        child: _buildBody(themeConfig),
+      ),
+    );
+  }
+
+  Widget _buildBody(AppThemeConfig themeConfig) {
+    if (_outcome != null) return _buildOutcome(themeConfig);
+    if (_needsTargetSelection) return _buildTargetSelection(themeConfig);
+    if (_isParsing && !_hasFile) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
+    }
+    if (_hasFile) return _buildPreview(themeConfig);
+    return _buildEmpty(themeConfig);
+  }
+
+  // ------------------------------------------------------------ 选择目标词表
+
+  Widget _buildTargetSelection(AppThemeConfig themeConfig) {
+    if (_isLoadingTargets || _targets == null) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
+    }
+    final targets = _targets!;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '选择接收这个文件的词表',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: themeConfig.textPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              if (_externalFile != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  _externalFile!.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11.5, color: themeConfig.textSecondary),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (targets.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                '没有可导入的词表，「生词本」缺失',
+                style: TextStyle(fontSize: 12.5, color: themeConfig.textSecondary),
+              ),
+            ),
+          )
+        else
+          Container(
+            decoration: BoxDecoration(
+              color: themeConfig.cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: themeConfig.cardBorder),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (var i = 0; i < targets.length; i++) ...[
+                  if (i > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 14),
+                      child: Divider(height: 1, thickness: 0.5, color: themeConfig.cardBorder),
+                    ),
+                  _buildTargetTile(themeConfig, targets[i]),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTargetTile(AppThemeConfig themeConfig, _ImportTarget target) {
+    return InkWell(
+      onTap: () => _selectTarget(target),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                target.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: themeConfig.textPrimary,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ),
+            Text(
+              '${target.wordCount} 词',
+              style: TextStyle(fontSize: 12.5, color: themeConfig.textSecondary, fontFamily: 'Roboto'),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 11,
+              color: themeConfig.textSecondary.withValues(alpha: 0.4),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -500,15 +745,27 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '工作表「${_sheetName ?? ''}」· ${_worksheetRows.length} 行',
+                  _fileMetaText(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 11, color: themeConfig.textSecondary),
                 ),
               ],
             ),
           ),
+          if (_canChangeTarget)
+            _buildTextAction(themeConfig, '更换', _changeTarget),
         ],
       ),
     );
+  }
+
+  String _fileMetaText() {
+    return [
+      if (_selectedTarget != null) '导入到「${_selectedTarget!.name}」',
+      '工作表「${_sheetName ?? ''}」',
+      '${_worksheetRows.length} 行',
+    ].join(' · ');
   }
 
   Widget _buildRecognizeBar(AppThemeConfig themeConfig) {
@@ -977,6 +1234,23 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
 Map<String, dynamic> _parseXlsxBytes(Uint8List bytes) {
   final sheet = XlsxReader.read(bytes);
   return {'sheet': sheet.name, 'rows': sheet.rows};
+}
+
+enum _ImportTargetKind { rawDict, mastered, custom }
+
+/// 一个可作为导入目标的词表（生词本 / 已掌握 / 自定义词书）。
+class _ImportTarget {
+  final String dictId;
+  final String name;
+  final int wordCount;
+  final _ImportTargetKind kind;
+
+  const _ImportTarget({
+    required this.dictId,
+    required this.name,
+    required this.wordCount,
+    required this.kind,
+  });
 }
 
 class _ColumnOption {
