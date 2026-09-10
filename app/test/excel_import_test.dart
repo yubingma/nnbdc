@@ -249,7 +249,8 @@ void main() {
       ]);
 
       expect(result.success, isTrue);
-      expect(result.data, 3);
+      expect(result.data!.inserted, 3);
+      expect(result.data!.updated, 0, reason: '全部是新词，不应计入「更新释义」');
 
       final entries = await entriesOf('d1');
       expect(entries.map((e) => e.wordId).toList(), ['w1', 'w2', 'w3']);
@@ -273,7 +274,8 @@ void main() {
         DictWordImportItem(wordId: 'w2'),
       ]);
 
-      expect(second.data, 1);
+      expect(second.data!.inserted, 1);
+      expect(second.data!.updated, 0, reason: '未开启更新且已存在词无释义，不应计入更新');
       expect((await entriesOf('d1')).length, 2);
     });
 
@@ -288,12 +290,15 @@ void main() {
       );
       expect((await meaningsOf('d1')).map((m) => m.meaning).toList(), ['旧释义']);
 
-      await WordBo().addWordsToCustomDict(
+      final refreshed = await WordBo().addWordsToCustomDict(
         'd1',
         const [DictWordImportItem(wordId: 'w1', meaning: '新释义')],
         updateMeanings: true,
       );
       expect((await meaningsOf('d1')).map((m) => m.meaning).toList(), ['新释义']);
+      // 已存在词被更新时应计入 updated 而非 inserted，否则结果页会错报成「已全部跳过」
+      expect(refreshed.data!.updated, 1);
+      expect(refreshed.data!.inserted, 0);
     });
 
     test('续接已有词表的最大 seq', () async {

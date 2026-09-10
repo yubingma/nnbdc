@@ -313,12 +313,16 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
 
     setState(() => _isImporting = true);
     try {
-      final inserted = await _wordModifier!.addWords(items, updateMeanings: _updateMeanings);
+      final stats = await _wordModifier!.addWords(items, updateMeanings: _updateMeanings);
       if (!mounted) return;
+      final totalExisting = _rows.where((row) => row.status == ExcelRowStatus.alreadyInDict).length;
       setState(() {
         _outcome = _ImportOutcome(
-          inserted: inserted,
-          alreadyInDict: _rows.where((row) => row.status == ExcelRowStatus.alreadyInDict).length,
+          inserted: stats.inserted,
+          updated: stats.updated,
+          // 「已跳过」只统计真正没动的词：此前把所有已存在的词都算进来，
+          // 导致勾选更新释义后仍然显示成全部被跳过
+          skippedExisting: totalExisting - stats.updated,
           notInLibrary: _rows.where((row) => row.status == ExcelRowStatus.notInLibrary).length,
           invalid: _rows.where((row) => row.status == ExcelRowStatus.invalid).length,
           duplicate: _rows.where((row) => row.status == ExcelRowStatus.duplicate).length,
@@ -330,7 +334,7 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
       });
 
       // 通知词表总览等页面重新统计词数：切回这些页面时不会再触发查询
-      if (inserted > 0) {
+      if (stats.inserted > 0 || stats.updated > 0) {
         EventBus.publishDictWordsChanged(
           DictWordsChangedEvent(dictId: await _wordModifier!.resolveTargetDictId()),
         );
@@ -872,7 +876,7 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '默认跳过词表中已存在的单词',
+                  '开启后会勾选并覆盖已存在单词的释义',
                   style: TextStyle(fontSize: 11, color: themeConfig.textSecondary),
                 ),
               ],
@@ -880,7 +884,20 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
           ),
           Switch(
             value: _updateMeanings,
-            onChanged: (value) => setState(() => _updateMeanings = value),
+            onChanged: (value) => setState(() {
+              _updateMeanings = value;
+              // 打开开关的意图就是「要更新这些词」，因此自动勾选已存在的行。
+              // 否则用户还要再逐行手动勾选，很容易误以为开关一开就已生效。
+              final existingLines = _rows
+                  .where((row) => row.status == ExcelRowStatus.alreadyInDict)
+                  .map((row) => row.lineNumber)
+                  .toSet();
+              if (value) {
+                _selectedLines.addAll(existingLines);
+              } else {
+                _selectedLines.removeAll(existingLines);
+              }
+            }),
           ),
         ],
       ),
@@ -1084,8 +1101,12 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
                 child: Column(
                   children: [
                     _buildOutcomeRow(themeConfig, '新增', outcome.inserted, themeConfig.primaryColor),
+                    if (outcome.updated > 0) ...[
+                      _buildOutcomeDivider(themeConfig),
+                      _buildOutcomeRow(themeConfig, '已更新释义', outcome.updated, const Color(0xFF2563EB)),
+                    ],
                     _buildOutcomeDivider(themeConfig),
-                    _buildOutcomeRow(themeConfig, '已跳过（词表中已存在）', outcome.alreadyInDict, const Color(0xFF8A9A96)),
+                    _buildOutcomeRow(themeConfig, '已跳过（词表中已存在）', outcome.skippedExisting, const Color(0xFF8A9A96)),
                     _buildOutcomeDivider(themeConfig),
                     _buildOutcomeRow(themeConfig, '未收录（词库中暂无）', outcome.notInLibrary, const Color(0xFFD97706)),
                     _buildOutcomeDivider(themeConfig),
@@ -1277,7 +1298,13 @@ class _ColumnOption {
 
 class _ImportOutcome {
   final int inserted;
-  final int alreadyInDict;
+
+  /// 已存在词中被更新了释义的数量
+  final int updated;
+
+  /// 已存在且未做任何改动的数量
+  final int skippedExisting;
+
   final int notInLibrary;
   final int invalid;
   final int duplicate;
@@ -1285,7 +1312,8 @@ class _ImportOutcome {
 
   const _ImportOutcome({
     required this.inserted,
-    required this.alreadyInDict,
+    required this.updated,
+    required this.skippedExisting,
     required this.notInLibrary,
     required this.invalid,
     required this.duplicate,

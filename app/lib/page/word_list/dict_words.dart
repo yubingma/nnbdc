@@ -103,13 +103,13 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   }
 
   @override
-  Future<int> addWords(List<DictWordImportItem> items, {bool updateMeanings = false}) async {
+  Future<DictImportStats> addWords(List<DictWordImportItem> items, {bool updateMeanings = false}) async {
     final result = await WordBo().addWordsToCustomDict(dict.id, items, updateMeanings: updateMeanings);
     if (!result.success) {
       ToastUtil.error(result.msg ?? '导入失败');
-      return 0;
+      return const DictImportStats();
     }
-    return result.data ?? 0;
+    return result.data ?? const DictImportStats();
   }
 
   @override

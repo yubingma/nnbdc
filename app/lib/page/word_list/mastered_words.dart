@@ -80,15 +80,15 @@ class MasteredWordsProvider with WordsProvider implements WordModifier {
   }
 
   @override
-  Future<int> addWords(List<DictWordImportItem> items, {bool updateMeanings = false}) async {
+  Future<DictImportStats> addWords(List<DictWordImportItem> items, {bool updateMeanings = false}) async {
     final dictId = await _getMasteredDictId();
-    if (dictId == null) return 0;
+    if (dictId == null) return const DictImportStats();
     final result = await WordBo().addWordsToCustomDict(dictId, items, updateMeanings: updateMeanings);
     if (!result.success) {
       ToastUtil.error(result.msg ?? '导入失败');
-      return 0;
+      return const DictImportStats();
     }
-    return result.data ?? 0;
+    return result.data ?? const DictImportStats();
   }
 
   @override

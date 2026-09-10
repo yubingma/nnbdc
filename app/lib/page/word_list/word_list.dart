@@ -138,9 +138,9 @@ mixin WordsProvider {
 abstract class WordModifier {
   Future<bool> addWord(String wordId);
 
-  /// 批量加入单词（Excel 导入），返回实际新增的数量。
+  /// 批量加入单词（Excel 导入），返回新增与更新释义的数量统计。
   /// [updateMeanings] 为 true 时用导入释义覆盖词表中已有单词的定制释义。
-  Future<int> addWords(List<DictWordImportItem> items, {bool updateMeanings = false});
+  Future<DictImportStats> addWords(List<DictWordImportItem> items, {bool updateMeanings = false});
 
   Future<bool> updateMeanings(String wordId, List<MeaningUpdateItem> meanings);
   Future<bool> deleteMeaning(String wordId);

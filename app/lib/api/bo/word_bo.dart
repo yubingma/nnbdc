@@ -135,6 +135,17 @@ class DictWordImportItem {
   });
 }
 
+/// 批量导入的结果统计。
+class DictImportStats {
+  /// 新加入词表的词数
+  final int inserted;
+
+  /// 更新了定制释义的已存在词数
+  final int updated;
+
+  const DictImportStats({this.inserted = 0, this.updated = 0});
+}
+
 class WordBo {
   static final WordBo _instance = WordBo._internal();
   factory WordBo() => _instance;
@@ -2177,23 +2188,24 @@ class WordBo {
   /// - 已在词表中的单词默认跳过；[updateMeanings] 为 true 时用导入释义覆盖其定制释义
   /// - 列表顺序即词表内的 seq 顺序
   /// - 全部写入在单个事务内完成，避免出现「导入一半」的中间态
-  Future<Result<int>> addWordsToCustomDict(
+  Future<Result<DictImportStats>> addWordsToCustomDict(
     String dictId,
     List<DictWordImportItem> items, {
     bool updateMeanings = false,
   }) async {
     if (items.isEmpty) {
-      return Result<int>("SUCCESS", "没有需要导入的单词", true)..data = 0;
+      return Result<DictImportStats>("SUCCESS", "没有需要导入的单词", true)..data = const DictImportStats();
     }
 
     final db = MyDatabase.instance;
     try {
       final dict = await db.dictsDao.findById(dictId);
       if (dict == null) {
-        return Result<int>("ERROR", "词表不存在", false);
+        return Result<DictImportStats>("ERROR", "词表不存在", false);
       }
       final now = AppClock.now();
       var inserted = 0;
+      var updated = 0;
 
       await db.transaction(() async {
         final existingEntries = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
@@ -2239,6 +2251,8 @@ class WordBo {
             meanings: [MeaningUpdateItem(ciXing: item.partOfSpeech, meaning: item.meaning)],
             now: now,
           );
+          // 新增词写入释义属于「随词附带」，只有已存在词才算「更新释义」
+          if (existingWordIds.contains(item.wordId)) updated++;
         }
 
         await db.dictsDao.updateWordCount(dictId, true);
@@ -2247,10 +2261,11 @@ class WordBo {
       clearTspCache(dictId);
       ThrottledDbSyncService().requestSync();
 
-      return Result<int>("SUCCESS", "导入完成", true)..data = inserted;
+      return Result<DictImportStats>("SUCCESS", "导入完成", true)
+        ..data = DictImportStats(inserted: inserted, updated: updated);
     } catch (e, s) {
       Global.logger.e('批量导入单词失败: $e', stackTrace: s);
-      return Result<int>("ERROR", "导入失败: $e", false);
+      return Result<DictImportStats>("ERROR", "导入失败: $e", false);
     }
   }
 
