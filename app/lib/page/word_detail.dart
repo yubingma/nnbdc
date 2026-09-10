@@ -3022,6 +3022,18 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       color: subtitleColor,
                     ),
                   ),
+                  // 兜底例句（借自通用词典）标注来源，便于日后区分「释义与例句对不上」
+                  if (sent.isFallback) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      '通用词典例句',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        height: 1.2,
+                        color: subtitleColor.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
                   if (isEditMode) ...[
                     const SizedBox(height: 4),
                     Text.rich(TextSpan(children: [

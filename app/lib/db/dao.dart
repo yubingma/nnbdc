@@ -1191,6 +1191,20 @@ class SentencesDao extends DatabaseAccessor<MyDatabase> with _$SentencesDaoMixin
     return (select(sentences)..where((s) => s.id.equals(id))).getSingleOrNull();
   }
 
+  /// 某单词在通用词典下的全部例句。
+  ///
+  /// 用户自定义释义（Excel 导入 / 手工编辑）是新建的 UUID，与系统例句没有关联，
+  /// 直接借通用词典中同一单词的例句兜底，避免学习时整词无例句。
+  Future<List<Sentence>> findCommonDictSentences(String wordId) async {
+    final commonItems = await (db.select(db.meaningItems)
+          ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId)))
+        .get();
+    if (commonItems.isEmpty) return const [];
+
+    final meaningItemIds = commonItems.map((item) => item.id).toList();
+    return (db.select(db.sentences)..where((s) => s.meaningItemId.isIn(meaningItemIds))).get();
+  }
+
   Future<void> insertEntity(Sentence entry) async {
     await into(sentences).insertOnConflictUpdate(entry);
   }

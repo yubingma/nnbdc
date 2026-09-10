@@ -712,7 +712,7 @@ class WordBo {
   }
 
   // 通用的查询例句数据并分配给释义项的方法
-  Future<void> _loadSentencesForMeaningItems(List<MeaningItemVo> meaningItemVos) async {
+  Future<void> _loadSentencesForMeaningItems(List<MeaningItemVo> meaningItemVos, {String? wordId}) async {
     final db = MyDatabase.instance;
     final selectedMeaningItemIds = meaningItemVos.map((mi) => mi.id!).toList();
 
@@ -731,18 +731,31 @@ class WordBo {
 
     // 将例句分配给对应的释义项
     for (final miVo in meaningItemVos) {
-      if (sentencesMap.containsKey(miVo.id)) {
-        final sentenceVos = <SentenceVo>[];
-        for (final s in sentencesMap[miVo.id!]!) {
-          final author = UserVo.c2(s.authorId);
-          final sentenceVo = SentenceVo(
-              s.id, s.english, s.chinese, s.englishDigest, s.partOfSpeech, s.theType.isEmpty ? 'tts' : s.theType, s.footCount, s.handCount, author);
-          sentenceVo.wordMeaning = s.wordMeaning;
-          sentenceVos.add(sentenceVo);
-        }
-        miVo.sentences = sentenceVos;
+      final own = sentencesMap[miVo.id];
+      if (own != null && own.isNotEmpty) {
+        miVo.sentences = own.map((s) => SentenceVo.fromEntity(s)).toList();
       }
     }
+
+    await _attachFallbackSentences(meaningItemVos, wordId: wordId);
+  }
+
+  /// 为没有例句的释义借通用词典中同一单词的例句兜底。
+  ///
+  /// 用户自定义释义（Excel 导入 / 手工编辑）是新建的 UUID，与系统例句没有关联，
+  /// 若不兜底，这些词在学习时会整词无例句。兜底例句带 [SentenceVo.isFallback]
+  /// 标记，UI 上做轻微区分，便于日后排查「释义与例句对不上」的疑问。
+  Future<void> _attachFallbackSentences(List<MeaningItemVo> meaningItemVos, {String? wordId}) async {
+    if (wordId == null) return;
+
+    final missing = meaningItemVos.where((mi) => mi.sentences == null || mi.sentences!.isEmpty).toList();
+    if (missing.isEmpty) return;
+
+    final fallback = await MyDatabase.instance.sentencesDao.findCommonDictSentences(wordId);
+    if (fallback.isEmpty) return;
+
+    // 只挂在第一条缺例句的释义上，避免同一批例句在多个义项下重复出现
+    missing.first.sentences = fallback.map((s) => SentenceVo.fromEntity(s, fallback: true)).toList();
   }
 
   // 通用的查询例句数据并返回映射的方法（用于批量处理）
@@ -813,7 +826,7 @@ class WordBo {
       wordVo.meaningItems = meaningItemVos;
 
       // 查询例句数据
-      await _loadSentencesForMeaningItems(meaningItemVos);
+      await _loadSentencesForMeaningItems(meaningItemVos, wordId: localWord.id);
 
       // 查询形近词数据
       final similarWordsQuery = db.select(db.similarWords)

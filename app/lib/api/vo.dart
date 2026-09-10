@@ -447,8 +447,34 @@ class SentenceVo {
   String? ttsVoice;
   String? ttsEngine;
 
+  /// 是否为兜底例句：用户自定义释义（如 Excel 导入的释义）本身没有关联例句，
+  /// 此处借用的是通用词典中同一单词的例句。
+  ///
+  /// 仅用于本地 UI 做轻微区分，便于日后排查「释义与例句对不上」的疑问；
+  /// 不参与序列化与端云同步。
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  bool isFallback = false;
+
   SentenceVo(this.id, this.english, this.chinese, this.englishDigest, this.partOfSpeech, this.theType, this.footCount, this.handCount, this.author,
       {this.ttsVoice, this.ttsEngine});
+
+  /// 由本地实体构建；[fallback] 为 true 表示这是借自通用词典的兜底例句。
+  factory SentenceVo.fromEntity(Sentence entity, {bool fallback = false}) {
+    final vo = SentenceVo(
+      entity.id,
+      entity.english,
+      entity.chinese,
+      entity.englishDigest,
+      entity.partOfSpeech,
+      entity.theType.isEmpty ? 'tts' : entity.theType,
+      entity.footCount,
+      entity.handCount,
+      UserVo.c2(entity.authorId),
+    );
+    vo.wordMeaning = entity.wordMeaning;
+    vo.isFallback = fallback;
+    return vo;
+  }
 
   factory SentenceVo.fromJson(Map<String, dynamic> json) => _$SentenceVoFromJson(json);
 
@@ -863,46 +889,36 @@ class MeaningItemVo {
 
   /// 安全获取例句列表的方法，避免空指针异常
   Future<List<SentenceVo>> getSentences() async {
-    // 初始化一个空列表存储所有例句
-    List<SentenceVo> result = [];
-
     // 检查id是否为空，如果是则直接返回空列表
     if (id == null || id!.isEmpty) {
-      return result;
+      return [];
     }
 
     try {
       // 从本地数据库查询该释义项的所有例句
       final db = MyDatabase.instance;
-      final sentencesQuery = db.select(db.sentences)..where((s) => s.meaningItemId.equals(id!));
+      final sentenceEntries = await (db.select(db.sentences)..where((s) => s.meaningItemId.equals(id!))).get();
 
-      final sentenceEntries = await sentencesQuery.get();
-
-      // 将查询结果转换为SentenceVo对象
-      for (final sentenceEntry in sentenceEntries) {
-        // 创建默认的作者信息
-        final author = UserVo.c2(sentenceEntry.authorId);
-
-        // 创建SentenceVo对象
-        final sentenceVo = SentenceVo(
-            sentenceEntry.id, 
-            sentenceEntry.english, 
-            sentenceEntry.chinese, 
-            sentenceEntry.englishDigest,
-            sentenceEntry.partOfSpeech,
-            sentenceEntry.theType.isEmpty ? 'tts' : sentenceEntry.theType, 
-            sentenceEntry.footCount, 
-            sentenceEntry.handCount, 
-            author);
-        sentenceVo.wordMeaning = sentenceEntry.wordMeaning;
-
-        result.add(sentenceVo);
+      if (sentenceEntries.isNotEmpty) {
+        return sentenceEntries.map((entry) => SentenceVo.fromEntity(entry)).toList();
       }
+
+      // 用户自定义释义没有系统例句，借通用词典同词的例句兜底
+      return _loadFallbackSentences(db);
     } catch (e) {
       Global.logger.d('获取释义项例句失败: $e');
+      return [];
     }
+  }
 
-    return result;
+  /// 借通用词典中同一单词的例句兜底；详见 [SentenceVo.isFallback]。
+  Future<List<SentenceVo>> _loadFallbackSentences(MyDatabase db) async {
+    final self = await (db.select(db.meaningItems)..where((mi) => mi.id.equals(id!))).getSingleOrNull();
+    final wordId = self?.wordId;
+    if (wordId == null || self?.dictId == Global.commonDictId) return [];
+
+    final fallback = await db.sentencesDao.findCommonDictSentences(wordId);
+    return fallback.map((entry) => SentenceVo.fromEntity(entry, fallback: true)).toList();
   }
 
   factory MeaningItemVo.fromJson(Map<String, dynamic> json) => _$MeaningItemVoFromJson(json);
