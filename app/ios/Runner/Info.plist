@@ -95,6 +95,9 @@
 		</array>
 		<key>LSSupportsOpeningDocumentsInPlace</key>
 		<true/>
+		<!-- 关闭 Flutter 深链：外部打开传入的是本地文件 URL，不应交给路由系统解析 -->
+		<key>FlutterDeepLinkingEnabled</key>
+		<false/>
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<string>weixin</string>
