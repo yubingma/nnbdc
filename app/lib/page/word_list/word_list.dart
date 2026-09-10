@@ -75,7 +75,6 @@ const String menuImportFromScan = '扫描导入';
 const String menuImportFromExcel = '从 Excel 导入';
 const String menuAiStory = 'AI短文';
 const String menuSettings = '学习设置';
-const String menuLegend = '学习状态图例';
 const String menuHideChinese = '遮挡中文';
 const String menuHideEnglish = '遮挡英文';
 const String menuSortSettings = '排序设置';
