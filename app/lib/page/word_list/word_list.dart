@@ -2753,40 +2753,41 @@ class WordListPageState extends State<WordListPage>
       _asrModelLoadingController.stop();
     }
 
-    final List<String> menuItems = [
-      if (args.wordsProvider.canCustomizeSort)
-        menuSortSettings,
-      menuWordList,
-    ];
-    if (args.canAddWord && args.wordsProvider is WordModifier) {
-      menuItems.add(menuImportFromBook);
-      menuItems.add(menuImportFromScan);
-      menuItems.add(menuImportFromExcel);
-    }
-    if (PlatformUtils.isAsrSupported()) {
-      menuItems.add(menuSpeakChinese);
-    }
-    if (PlatformUtils.isEnglishAsrSupported()) {
-      menuItems.add(menuSpeakEnglish);
-    }
-    if (PlatformUtils.isAsrSupported()) {
-      menuItems.add(menuTranslateSentence);
-    }
-    menuItems.add(menuWriteSpellTyping);
-    menuItems.add(menuWriteSpellHandwriting);
-    menuItems.add(menuHideChinese);
-    menuItems.add(menuHideEnglish);
-
-    if (args.showAiStory) {
-      menuItems.add(menuAiStory);
-    }
-    if (studyMode == WordListStudyMode.speakChinese) {
-      menuItems.add(menuSettings);
-    }
-
-    menuItems.add(menuWalkman);
-    menuItems.add(menuTheme);
-    menuItems.add(menuExportPdf);
+    // 菜单按语义分组、组内按使用频率排序，组间以发丝线分隔：
+    // 十余项平铺且无分组时，用户只能逐行扫。
+    final List<List<String>> menuGroups = [
+      // 学习模式：互斥，当前模式高亮
+      [
+        menuWordList,
+        if (PlatformUtils.isAsrSupported()) menuSpeakChinese,
+        if (PlatformUtils.isEnglishAsrSupported()) menuSpeakEnglish,
+        if (PlatformUtils.isAsrSupported()) menuTranslateSentence,
+        menuWriteSpellTyping,
+        menuWriteSpellHandwriting,
+        menuHideChinese,
+        menuHideEnglish,
+      ],
+      // 往当前词表添加内容
+      [
+        if (args.canAddWord && args.wordsProvider is WordModifier) ...[
+          menuImportFromBook,
+          menuImportFromScan,
+          menuImportFromExcel,
+        ],
+      ],
+      // 辅助工具
+      [
+        menuWalkman,
+        if (args.showAiStory) menuAiStory,
+      ],
+      // 设置与输出
+      [
+        if (args.wordsProvider.canCustomizeSort) menuSortSettings,
+        menuTheme,
+        menuExportPdf,
+        if (studyMode == WordListStudyMode.speakChinese) menuSettings,
+      ],
+    ].where((group) => group.isNotEmpty).toList();
 
     showGeneralDialog<String>(
       context: context,
@@ -2846,7 +2847,18 @@ class WordListPageState extends State<WordListPage>
                           child: SingleChildScrollView(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
-                              children: menuItems.map((String choice) {
+                              children: [
+                                for (var groupIndex = 0; groupIndex < menuGroups.length; groupIndex++) ...[
+                                  if (groupIndex > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      child: Divider(
+                                        height: 1,
+                                        thickness: 0.5,
+                                        color: isDarkMode ? const Color(0x1FFFFFFF) : const Color(0x14000000),
+                                      ),
+                                    ),
+                                  ...menuGroups[groupIndex].map((String choice) {
                                 IconData icon;
                                 switch (choice) {
                                   case menuWordList:
@@ -2977,7 +2989,9 @@ class WordListPageState extends State<WordListPage>
                                     ),
                                   ),
                                 );
-                              }).toList(),
+                                  }),
+                                ],
+                              ],
                             ),
                           ),
                         ),
