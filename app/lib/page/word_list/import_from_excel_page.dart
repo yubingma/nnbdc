@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/models/external_import_file.dart';
 import 'package:nnbdc/theme/app_theme.dart';
@@ -327,6 +328,13 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
               .toList(),
         );
       });
+
+      // 通知词表总览等页面重新统计词数：切回这些页面时不会再触发查询
+      if (inserted > 0) {
+        EventBus.publishDictWordsChanged(
+          DictWordsChangedEvent(dictId: await _wordModifier!.resolveTargetDictId()),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }

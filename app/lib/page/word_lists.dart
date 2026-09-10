@@ -38,6 +38,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   StreamSubscription? _subscription;
   StreamSubscription? _dictDownloadSub;
   StreamSubscription? _learningDictChangedSub;
+  StreamSubscription? _dictWordsChangedSub;
+  StreamSubscription? _wordDeletedSub;
 
   @override
   bool get isDirty => _isDirty;
@@ -73,6 +75,18 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
       Global.logger.d('[WordLists] 书桌词书发生变化，刷新书桌');
       loadData();
     });
+
+    // 监听词表单词数变化（批量导入/删除），刷新各词表显示的词数
+    _dictWordsChangedSub = EventBus.onDictWordsChanged().listen((_) {
+      Global.logger.d('[WordLists] 词表单词数变化，刷新词数');
+      loadData();
+    });
+
+    // 在词表内删除单词同样会改变词数
+    _wordDeletedSub = EventBus.onWordDeletedFromWordList().listen((_) {
+      Global.logger.d('[WordLists] 词表内删除单词，刷新词数');
+      loadData();
+    });
   }
 
   @override
@@ -83,6 +97,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     _subscription?.cancel();
     _dictDownloadSub?.cancel();
     _learningDictChangedSub?.cancel();
+    _dictWordsChangedSub?.cancel();
+    _wordDeletedSub?.cancel();
     super.dispose();
   }
 

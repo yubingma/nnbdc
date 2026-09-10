@@ -75,6 +75,17 @@ class EventBus {
   static Stream<LearningDictChangedEvent> onLearningDictChanged() {
     return _learningDictChangedController.stream;
   }
+
+  /// 词表单词集合变化事件：批量导入、删除单词后，通知词表总览等页面重新统计词数
+  static final _dictWordsChangedController = StreamController<DictWordsChangedEvent>.broadcast();
+
+  static void publishDictWordsChanged(DictWordsChangedEvent event) {
+    _dictWordsChangedController.add(event);
+  }
+
+  static Stream<DictWordsChangedEvent> onDictWordsChanged() {
+    return _dictWordsChangedController.stream;
+  }
 }
 
 /// 产生了新错词的具体业务事件
@@ -125,4 +136,10 @@ class DictDownloadCompletedEvent {
 /// 书桌词书发生变化事件（停学/选书保存后发射，通知所有页面刷新书桌）
 class LearningDictChangedEvent {
   const LearningDictChangedEvent();
+}
+
+/// 词表的单词集合发生变化（批量导入、删除单词等），用于跨页面同步刷新词数
+class DictWordsChangedEvent {
+  final String? dictId;
+  const DictWordsChangedEvent({this.dictId});
 }

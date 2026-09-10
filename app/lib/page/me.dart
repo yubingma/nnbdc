@@ -100,6 +100,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
   StreamSubscription<List<PurchaseDetails>>? _subscriptionStreamSubscription;
   StreamSubscription<DictDownloadCompletedEvent>? _dictDownloadCompletedSub;
   StreamSubscription<LearningDictChangedEvent>? _learningDictChangedSub;
+  StreamSubscription<DictWordsChangedEvent>? _dictWordsChangedSub;
 
   /// 最近一次同步是否失败
   bool _isLastSyncFailed = false;
@@ -350,6 +351,15 @@ class MePageState extends State<MePage> implements RefreshableTab {
       }
     });
 
+    // 监听词表单词数变化（批量导入/删除），刷新词数与掌握统计
+    _dictWordsChangedSub = EventBus.onDictWordsChanged().listen((_) {
+      _isDirty = true;
+      if (mounted) {
+        Global.logger.i("📚 MePage 收到词表单词数变化事件，刷新数据");
+        loadData();
+      }
+    });
+
     // 异步执行loadData，避免阻塞UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
       loadData();
@@ -375,6 +385,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
     // 取消书桌词书变化事件监听
     _learningDictChangedSub?.cancel();
+
+    // 取消词表单词数变化事件监听
+    _dictWordsChangedSub?.cancel();
 
     super.dispose();
   }
