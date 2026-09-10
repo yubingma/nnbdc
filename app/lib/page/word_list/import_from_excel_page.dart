@@ -1326,7 +1326,9 @@ class _ColumnMappingSheetState extends State<_ColumnMappingSheet> {
     final themeConfig = widget.themeConfig;
     return Container(
       decoration: BoxDecoration(
-        color: themeConfig.cardBg,
+        // 弹窗下方没有毛玻璃背景作底，必须是实色；cardBg 是页内卡片的半透明规格，
+        // 直接用会透出页面内容导致文字难读。这里保留主题色相、只去掉透明度。
+        color: themeConfig.cardBg.withValues(alpha: 1),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(16, 10, 16, 20 + MediaQuery.of(context).padding.bottom),
@@ -1364,17 +1366,31 @@ class _ColumnMappingSheetState extends State<_ColumnMappingSheet> {
                   _buildField(themeConfig, 'pos', '词性', value: _partOfSpeech),
                   _buildField(themeConfig, 'unit', '单元', value: _unit),
                   const SizedBox(height: 4),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: _skipHeader,
-                    onChanged: (value) => setState(() => _skipHeader = value),
-                    title: Text(
-                      '跳过第一行表头',
-                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: themeConfig.textPrimary),
-                    ),
-                    subtitle: Text(
-                      '表格首行是列名时开启',
-                      style: TextStyle(fontSize: 11, color: themeConfig.textSecondary),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '跳过第一行表头',
+                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: themeConfig.textPrimary),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '表格首行是列名时开启',
+                                style: TextStyle(fontSize: 11, color: themeConfig.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _skipHeader,
+                          onChanged: (value) => setState(() => _skipHeader = value),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1489,40 +1505,69 @@ class _ColumnMappingSheetState extends State<_ColumnMappingSheet> {
               borderRadius: BorderRadius.circular(12),
             ),
             clipBehavior: Clip.antiAlias,
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              itemCount: widget.options.length + (required ? 0 : 1),
-              itemBuilder: (context, index) {
-                if (!required && index == 0) {
-                  return ListTile(
-                    dense: true,
-                    title: Text('未指定', style: TextStyle(fontSize: 13, color: themeConfig.textSecondary)),
+            // 自带背景色的 Container 之上需要一层 Material，InkWell 的水波才画得出来
+            child: Material(
+              color: Colors.transparent,
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: widget.options.length + (required ? 0 : 1),
+                itemBuilder: (context, index) {
+                  if (!required && index == 0) {
+                    return _buildOptionTile(
+                      themeConfig,
+                      label: '未指定',
+                      labelColor: themeConfig.textSecondary,
+                      selected: value == null,
+                      onTap: () => setState(() {
+                        _assign(field, null);
+                        _expandedField = null;
+                      }),
+                    );
+                  }
+                  final optionIndex = required ? index : index - 1;
+                  if (optionIndex >= widget.options.length) return const SizedBox.shrink();
+                  final item = widget.options[optionIndex];
+                  return _buildOptionTile(
+                    themeConfig,
+                    label: item.label,
+                    labelColor: themeConfig.textPrimary,
+                    selected: item.index == value,
                     onTap: () => setState(() {
-                      _assign(field, null);
+                      _assign(field, item.index);
                       _expandedField = null;
                     }),
                   );
-                }
-                final optionIndex = required ? index : index - 1;
-                if (optionIndex >= widget.options.length) return const SizedBox.shrink();
-                final item = widget.options[optionIndex];
-                return ListTile(
-                  dense: true,
-                  title: Text(item.label, style: TextStyle(fontSize: 13, color: themeConfig.textPrimary)),
-                  trailing: item.index == value
-                      ? Icon(Icons.check_rounded, size: 16, color: themeConfig.primaryColor)
-                      : null,
-                  onTap: () => setState(() {
-                    _assign(field, item.index);
-                    _expandedField = null;
-                  }),
-                );
-              },
+                },
+              ),
             ),
           ),
         Divider(height: 1, thickness: 0.5, color: themeConfig.cardBorder),
       ],
+    );
+  }
+
+  /// 列选项行；用 InkWell 而非 ListTile，避免其背景/水波依赖 Material 祖先的问题。
+  Widget _buildOptionTile(
+    AppThemeConfig themeConfig, {
+    required String label,
+    required Color labelColor,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(label, style: TextStyle(fontSize: 13, color: labelColor)),
+            ),
+            if (selected) Icon(Icons.check_rounded, size: 16, color: themeConfig.primaryColor),
+          ],
+        ),
+      ),
     );
   }
 
