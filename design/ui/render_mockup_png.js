@@ -214,15 +214,27 @@ function renderFile(fileName, shouldImportToPhotos = false) {
   }
 
   try {
-    execSync(`"${CHROME}" \
+    // 受限环境（如 DSH 文件沙箱）下：Chrome 自带沙箱无法初始化、默认用户数据目录不可写，
+    // 且截图完成后主进程可能不主动退出。故固定 --no-sandbox + 独立 user-data-dir，
+    // 并用 timeout 兜底：超时但截图已落盘即视为成功。
+    const shotCmd = `"${CHROME}" \
       --headless \
+      --no-sandbox \
+      --user-data-dir=${path.join('/tmp', `chrome_mockup_${process.pid}_${Date.now()}`)} \
       --disable-gpu \
+      --disable-breakpad \
+      --disable-crash-reporter \
       --hide-scrollbars \
       --default-background-color=00000000 \
       --force-device-scale-factor=2 \
       --window-size=460,940 \
       --screenshot="${outPng}" \
-      "${targetUrl}" 2>/dev/null`);
+      "${targetUrl}" 2>/dev/null`;
+    try {
+      execSync(shotCmd, { timeout: 30000, killSignal: 'SIGTERM' });
+    } catch (shotErr) {
+      if (!fs.existsSync(outPng)) throw shotErr;
+    }
 
     const stats = fs.statSync(outPng);
     console.log(`✅ [完成] ${baseName}.png (${Math.round(stats.size / 1024)} KB) -> design/ui/png/${baseName}.png`);

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Excel 导入 · 选择文件</title>
+<style>
+  :root{
+    --bg:#F6F9F8; --card-bg:#FFFFFF; --card-subtle:#F0F6F3; --card-border:#E1EFEA;
+    --text-primary:#152724; --text-secondary:#425B57; --text-muted:#789691; --text-faint:#B2CDC8;
+    --primary:#18BA7C; --primary-soft:#EDF8F3;
+    --amber-text:#D97706; --coral-text:#E54D3B;
+    --divider:rgba(21,39,36,0.055);
+    --shadow-card:0 4px 16px rgba(24,186,124,0.05),0 1px 3px rgba(0,0,0,0.02);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    background:#DFE7E4;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;
+  }
+  .device-mockup{
+    width:393px;height:852px;background:var(--bg);border-radius:54px;
+    overflow:hidden;display:flex;flex-direction:column;position:relative;
+  }
+
+  /* 状态栏 */
+  .status-bar{
+    height:44px;padding:0 24px;display:flex;justify-content:space-between;align-items:center;
+    font-size:13.5px;font-weight:700;color:var(--text-primary);flex-shrink:0;
+  }
+  .status-right{display:flex;gap:6px;align-items:center;}
+
+  /* 导航栏 */
+  .nav-bar{
+    height:52px;padding:0 12px;display:grid;grid-template-columns:44px 1fr 44px;
+    align-items:center;flex-shrink:0;
+  }
+  .nav-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--text-primary);}
+  .nav-title{text-align:center;font-size:16px;font-weight:600;color:var(--text-primary);letter-spacing:-0.2px;}
+
+  /* 内容区 */
+  .content{flex:1;overflow:hidden;padding:4px 16px 0;}
+
+  /* 空态 */
+  .empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 12px 24px;}
+  .empty-icon{
+    width:60px;height:60px;border-radius:20px;background:var(--primary-soft);
+    display:flex;align-items:center;justify-content:center;color:var(--primary);margin-bottom:14px;
+  }
+  .empty-title{font-size:15.5px;font-weight:600;color:var(--text-primary);letter-spacing:-0.2px;}
+  .empty-desc{font-size:11.5px;color:var(--text-secondary);margin-top:7px;line-height:1.7;}
+
+  /* 卡片 */
+  .card{background:var(--card-bg);border-radius:16px;box-shadow:var(--shadow-card);}
+  .format-card{padding:15px 14px 4px;}
+  .card-title{font-size:13px;font-weight:600;color:var(--text-primary);letter-spacing:-0.1px;}
+  .format-row{display:flex;align-items:baseline;gap:12px;padding:8px 0;}
+  .format-col{width:40px;font-size:13px;font-weight:600;color:var(--primary);flex-shrink:0;}
+  .format-desc{font-size:11.5px;color:var(--text-secondary);line-height:1.5;}
+  .divider{height:1px;background:var(--divider);}
+  .format-foot{display:flex;align-items:center;padding:11px 0;}
+  .format-note{font-size:11px;color:var(--text-muted);line-height:1.6;}
+
+  /* 提示 */
+  .hint{display:flex;gap:6px;padding:14px 4px 0;font-size:11px;color:var(--text-muted);line-height:1.6;}
+  .hint svg{flex-shrink:0;margin-top:2px;}
+
+  /* 底部操作栏 */
+  .bottom-bar{padding:12px 16px 24px;flex-shrink:0;display:flex;align-items:center;gap:14px;}
+  .btn-primary{
+    flex:1;height:48px;border-radius:14px;background:var(--primary);color:#FFFFFF;
+    font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;
+    box-shadow:0 8px 20px -6px rgba(24,186,124,0.5);letter-spacing:-0.1px;
+  }
+</style>
+</head>
+<body>
+<div class="device-mockup">
+
+  <!-- 状态栏 -->
+  <div class="status-bar">
+    <span>09:41</span>
+    <div class="status-right"><span>5G</span><span>100%</span></div>
+  </div>
+
+  <!-- 导航栏 -->
+  <div class="nav-bar">
+    <div class="nav-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </div>
+    <div class="nav-title">从 Excel 导入</div>
+    <div></div>
+  </div>
+
+  <!-- 内容 -->
+  <div class="content">
+
+    <!-- 空态 -->
+    <div class="empty">
+      <div class="empty-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="8" y1="13" x2="16" y2="13"></line>
+          <line x1="8" y1="17" x2="16" y2="17"></line>
+        </svg>
+      </div>
+      <div class="empty-title">选择你的 Excel 词表</div>
+      <div class="empty-desc">支持 .xlsx 文件，自动识别各列含义<br>列顺序随意，无需调整格式</div>
+    </div>
+
+    <!-- 识别说明 -->
+    <div class="card format-card">
+      <div class="card-title">会自动识别这些列</div>
+      <div style="height:4px"></div>
+      <div class="format-row">
+        <div class="format-col">单词</div>
+        <div class="format-desc">必填，英文拼写</div>
+      </div>
+      <div class="format-row">
+        <div class="format-col">释义</div>
+        <div class="format-desc">可选，多个义项用分号「;」分隔</div>
+      </div>
+      <div class="format-row">
+        <div class="format-col">词性</div>
+        <div class="format-desc">可选，如 n. / v. / adj.</div>
+      </div>
+      <div class="format-row">
+        <div class="format-col">单元</div>
+        <div class="format-desc">可选，用于按单元分组</div>
+      </div>
+      <div class="format-row">
+        <div class="format-col">其他</div>
+        <div class="format-desc">音标、例句、序号等列会自动忽略</div>
+      </div>
+      <div class="divider"></div>
+      <div class="format-foot">
+        <div class="format-note">列顺序、表头名称都不限，识别不准可在下一步手动指定</div>
+      </div>
+    </div>
+
+    <!-- 提示 -->
+    <div class="hint">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <span>词库暂未收录的单词会被跳过，并在导入完成后列出清单。</span>
+    </div>
+
+  </div>
+
+  <!-- 底部操作栏 -->
+  <div class="bottom-bar">
+    <div class="btn-primary">选择 Excel 文件</div>
+  </div>
+
+</div>
+</body>
+</html>

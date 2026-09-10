@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Excel 导入 · 导入结果</title>
+<style>
+  :root{
+    --bg:#F6F9F8; --card-bg:#FFFFFF; --card-subtle:#F0F6F3; --card-border:#E1EFEA;
+    --text-primary:#152724; --text-secondary:#425B57; --text-muted:#789691; --text-faint:#B2CDC8;
+    --primary:#18BA7C; --primary-soft:#EDF8F3;
+    --amber-text:#D97706; --coral-text:#E54D3B;
+    --divider:rgba(21,39,36,0.055);
+    --shadow-card:0 4px 16px rgba(24,186,124,0.05),0 1px 3px rgba(0,0,0,0.02);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    background:#DFE7E4;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;
+  }
+  .device-mockup{
+    width:393px;height:852px;background:var(--bg);border-radius:54px;
+    overflow:hidden;display:flex;flex-direction:column;position:relative;
+  }
+
+  /* 状态栏 */
+  .status-bar{
+    height:44px;padding:0 24px;display:flex;justify-content:space-between;align-items:center;
+    font-size:13.5px;font-weight:700;color:var(--text-primary);flex-shrink:0;
+  }
+  .status-right{display:flex;gap:6px;align-items:center;}
+
+  /* 导航栏 */
+  .nav-bar{
+    height:52px;padding:0 12px;display:grid;grid-template-columns:44px 1fr 44px;
+    align-items:center;flex-shrink:0;
+  }
+  .nav-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--text-primary);}
+  .nav-title{text-align:center;font-size:16px;font-weight:600;color:var(--text-primary);letter-spacing:-0.2px;}
+
+  /* 内容区 */
+  .content{flex:1;overflow:hidden;padding:4px 16px 0;}
+
+  /* 成功主视觉 */
+  .result-hero{display:flex;flex-direction:column;align-items:center;padding:24px 0 22px;}
+  .hero-icon{
+    width:52px;height:52px;border-radius:50%;background:var(--primary-soft);color:var(--primary);
+    display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+  }
+  .hero-num{
+    font-size:34px;font-weight:700;color:var(--text-primary);line-height:1;
+    font-family:'Roboto',-apple-system,sans-serif;letter-spacing:-1px;
+  }
+  .hero-label{font-size:12.5px;color:var(--text-secondary);margin-top:9px;}
+  .hero-target{font-size:13.5px;font-weight:600;color:var(--primary);margin-top:4px;letter-spacing:-0.1px;}
+
+  /* 卡片 */
+  .card{background:var(--card-bg);border-radius:16px;box-shadow:var(--shadow-card);}
+  .divider{height:1px;background:var(--divider);}
+  .card-title{font-size:13px;font-weight:600;color:var(--text-primary);letter-spacing:-0.1px;}
+  .text-action{display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:500;color:var(--primary);flex-shrink:0;}
+
+  /* 明细卡 */
+  .detail-row{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;}
+  .detail-label{font-size:13.5px;color:var(--text-secondary);}
+  .detail-num{
+    font-size:15px;font-weight:700;font-family:'Roboto',-apple-system,sans-serif;letter-spacing:-0.3px;
+  }
+
+  /* 未收录清单卡 */
+  .missing-card{padding:15px 14px 14px;margin-top:12px;}
+  .missing-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .missing-list{font-size:12px;color:var(--text-secondary);line-height:1.8;}
+  .missing-hint{font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.6;}
+
+  /* 底部操作栏 */
+  .bottom-bar{padding:12px 16px 24px;flex-shrink:0;display:flex;align-items:center;gap:14px;}
+  .btn-primary{
+    flex:1;height:48px;border-radius:14px;background:var(--primary);color:#FFFFFF;
+    font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 20px -6px rgba(24,186,124,0.5);letter-spacing:-0.1px;
+  }
+</style>
+</head>
+<body>
+<div class="device-mockup">
+
+  <!-- 状态栏 -->
+  <div class="status-bar">
+    <span>09:41</span>
+    <div class="status-right"><span>5G</span><span>100%</span></div>
+  </div>
+
+  <!-- 导航栏 -->
+  <div class="nav-bar">
+    <div class="nav-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </div>
+    <div class="nav-title">导入结果</div>
+    <div></div>
+  </div>
+
+  <!-- 内容 -->
+  <div class="content">
+
+    <!-- 成功主视觉 -->
+    <div class="result-hero">
+      <div class="hero-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <div class="hero-num">96</div>
+      <div class="hero-label">个单词已加入</div>
+      <div class="hero-target">考研核心词 Unit1-3</div>
+    </div>
+
+    <!-- 明细 -->
+    <div class="card">
+      <div class="detail-row">
+        <div class="detail-label">新增</div>
+        <div class="detail-num" style="color:var(--primary)">96</div>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-row">
+        <div class="detail-label">已跳过（词表中已存在）</div>
+        <div class="detail-num" style="color:var(--text-muted)">12</div>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-row">
+        <div class="detail-label">未收录（词库中暂无）</div>
+        <div class="detail-num" style="color:var(--amber-text)">8</div>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-row">
+        <div class="detail-label">格式错误（已忽略）</div>
+        <div class="detail-num" style="color:var(--coral-text)">4</div>
+      </div>
+    </div>
+
+    <!-- 未收录清单 -->
+    <div class="card missing-card">
+      <div class="missing-head">
+        <div class="card-title">未收录的单词</div>
+        <div class="text-action">
+          复制清单
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="missing-list">algorithm、blockchain、quantum、neural、gradient、tensor、inference、embedding</div>
+      <div class="missing-hint">这些单词暂未收录到词库，本次已跳过。</div>
+    </div>
+
+  </div>
+
+  <!-- 底部操作栏 -->
+  <div class="bottom-bar">
+    <div class="btn-primary">完成</div>
+  </div>
+
+</div>
+</body>
+</html>
