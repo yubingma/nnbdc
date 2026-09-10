@@ -133,7 +133,10 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
   static const Duration timeoutDuration = Duration(seconds: 10);
 
   /// 请求大模型进行单词释义裁判（英中 en2Ch）
-  static Future<({bool isCorrect, String explanation, String? intendedMeaning, String? rawResponse})> judgeWordMeaning({
+  ///
+  /// [unavailableReason] 非空表示"裁判根本没有执行"（额度用尽、并发受限、超时、网络异常等），
+  /// 此时 isCorrect=false 并不代表用户答错，调用方必须区别对待：只提示原因，不得判错。
+  static Future<({bool isCorrect, String explanation, String? intendedMeaning, String? rawResponse, String? unavailableReason})> judgeWordMeaning({
     required String targetWord,
     required String referenceMeanings,
     required String userInput,
@@ -171,18 +174,22 @@ ASR Candidate List: $candidateStr
           explanation: parsed.explanation,
           intendedMeaning: parsed.intendedMeaning,
           rawResponse: result.data,
+          unavailableReason: null,
         );
       } else {
-        return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', intendedMeaning: null, rawResponse: null);
+        final reason = result.msg ?? '调用 AI 裁判失败';
+        return (isCorrect: false, explanation: reason, intendedMeaning: null, rawResponse: null, unavailableReason: reason);
       }
     } catch (e) {
       Global.logger.e('[AI裁判-单词] 请求异常: $e');
-      return (isCorrect: false, explanation: 'AI裁判请求异常', intendedMeaning: null, rawResponse: null);
+      return (isCorrect: false, explanation: 'AI 裁判请求异常，请重试', intendedMeaning: null, rawResponse: null, unavailableReason: 'AI 裁判请求异常，请重试');
     }
   }
 
   /// 请求大模型进行单词中英（ch2En）发音与同义词裁判
-  static Future<({bool isCorrect, bool isSynonym, String explanation, String? rawResponse})> judgeWordEnglish({
+  ///
+  /// [unavailableReason] 语义同 [judgeWordMeaning]。
+  static Future<({bool isCorrect, bool isSynonym, String explanation, String? rawResponse, String? unavailableReason})> judgeWordEnglish({
     required String targetWord,
     required String referenceMeanings,
     required String userInput,
@@ -220,18 +227,22 @@ ASR Candidate List: $candidateStr
           isSynonym: parsed.isSynonym,
           explanation: parsed.explanation,
           rawResponse: result.data,
+          unavailableReason: null,
         );
       } else {
-        return (isCorrect: false, isSynonym: false, explanation: result.msg ?? '调用 AI 裁判失败', rawResponse: null);
+        final reason = result.msg ?? '调用 AI 裁判失败';
+        return (isCorrect: false, isSynonym: false, explanation: reason, rawResponse: null, unavailableReason: reason);
       }
     } catch (e) {
       Global.logger.e('[AI裁判-中英单词] 请求异常: $e');
-      return (isCorrect: false, isSynonym: false, explanation: 'AI裁判请求异常', rawResponse: null);
+      return (isCorrect: false, isSynonym: false, explanation: 'AI 裁判请求异常，请重试', rawResponse: null, unavailableReason: 'AI 裁判请求异常，请重试');
     }
   }
 
   /// 请求大模型进行例句翻译裁判
-  static Future<({bool isCorrect, String explanation, String? rawResponse})> judgeSentenceTranslation({
+  ///
+  /// [unavailableReason] 语义同 [judgeWordMeaning]。
+  static Future<({bool isCorrect, String explanation, String? rawResponse, String? unavailableReason})> judgeSentenceTranslation({
     required String sourceSentence,
     required String referenceTranslation,
     required String userInput,
@@ -260,13 +271,14 @@ User Answer: $userInput
 
       if (result.success && result.data != null) {
         final parsed = parseRefereeResponse(result.data);
-        return (isCorrect: parsed.isCorrect, explanation: parsed.explanation, rawResponse: result.data);
+        return (isCorrect: parsed.isCorrect, explanation: parsed.explanation, rawResponse: result.data, unavailableReason: null);
       } else {
-        return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', rawResponse: null);
+        final reason = result.msg ?? '调用 AI 裁判失败';
+        return (isCorrect: false, explanation: reason, rawResponse: null, unavailableReason: reason);
       }
     } catch (e) {
       Global.logger.e('[AI裁判-例句] 请求异常: $e');
-      return (isCorrect: false, explanation: 'AI裁判请求异常', rawResponse: null);
+      return (isCorrect: false, explanation: 'AI 裁判请求异常，请重试', rawResponse: null, unavailableReason: 'AI 裁判请求异常，请重试');
     }
   }
 }

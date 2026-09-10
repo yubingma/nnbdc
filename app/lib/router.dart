@@ -23,6 +23,7 @@ import 'package:nnbdc/page/word_lists.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:nnbdc/page/word_list/import_from_book_page.dart';
+import 'package:nnbdc/page/word_list/import_from_excel_page.dart';
 import 'package:nnbdc/page/word_list/import_from_scan_page.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/page/admin/page_viewer.dart';
@@ -60,6 +61,7 @@ final goRouter = GoRouter(
     GoRoute(path: '/word_list', builder: (context, state) => const WordListPage()),
     GoRoute(path: '/import_from_book', builder: (context, state) => ImportFromBookPage(wordModifier: state.extra as WordModifier)),
     GoRoute(path: '/import_from_scan', builder: (context, state) => ImportFromScanPage(wordModifier: state.extra as WordModifier)),
+    GoRoute(path: '/import_from_excel', builder: (context, state) => ImportFromExcelPage(wordModifier: state.extra as WordModifier)),
     GoRoute(path: '/finish', builder: (context, state) => const FinishPage()),
     GoRoute(path: '/farm', builder: (context, state) => const FarmPage()),
     GoRoute(path: '/word_lists', builder: (context, state) => const WordListsPage()),

@@ -67,6 +67,9 @@ class MasteredWordsProvider with WordsProvider implements WordModifier {
   String? get targetDictId => null;
 
   @override
+  Future<String?> resolveTargetDictId() => _getMasteredDictId();
+
+  @override
   Future<bool> addWord(String wordId) async {
     final dictId = await _getMasteredDictId();
     if (dictId == null) return false;
@@ -74,6 +77,18 @@ class MasteredWordsProvider with WordsProvider implements WordModifier {
     if (result.success) return true;
     ToastUtil.error(result.msg ?? '添加失败');
     return false;
+  }
+
+  @override
+  Future<int> addWords(List<DictWordImportItem> items, {bool updateMeanings = false}) async {
+    final dictId = await _getMasteredDictId();
+    if (dictId == null) return 0;
+    final result = await WordBo().addWordsToCustomDict(dictId, items, updateMeanings: updateMeanings);
+    if (!result.success) {
+      ToastUtil.error(result.msg ?? '导入失败');
+      return 0;
+    }
+    return result.data ?? 0;
   }
 
   @override

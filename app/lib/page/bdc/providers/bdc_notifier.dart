@@ -3376,6 +3376,14 @@ class BdcNotifier extends _$BdcNotifier {
         return;
       }
 
+      // 裁判未执行（额度用尽/并发受限/超时/异常）：只提示原因，不判错、不污染失败去重集合
+      if (refereeResult.unavailableReason != null) {
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+        ToastUtil.info(refereeResult.unavailableReason!, autoCloseDuration: const Duration(seconds: 4));
+        return;
+      }
+
       final isCorrect = refereeResult.isCorrect;
       final explanation = refereeResult.explanation;
       Global.logger.d('~~~~~[AI裁判-单词] 裁判结果: isCorrect=$isCorrect, response=${refereeResult.rawResponse}');
@@ -3511,6 +3519,14 @@ class BdcNotifier extends _$BdcNotifier {
         if (!_isDisposed && state.isAiEvaluating) {
           state = state.copyWith(isAiEvaluating: false);
         }
+        return;
+      }
+
+      // 裁判未执行（额度用尽/并发受限/超时/异常）：只提示原因，不判错、不污染失败去重集合
+      if (refereeResult.unavailableReason != null) {
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+        ToastUtil.info(refereeResult.unavailableReason!, autoCloseDuration: const Duration(seconds: 4));
         return;
       }
 
@@ -3659,6 +3675,14 @@ class BdcNotifier extends _$BdcNotifier {
         if (!_isDisposed && state.isAiEvaluating) {
           state = state.copyWith(isAiEvaluating: false);
         }
+        return;
+      }
+
+      // 裁判未执行（额度用尽/并发受限/超时/异常）：只提示原因，不判错、不污染失败去重集合
+      if (refereeResult.unavailableReason != null) {
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+        ToastUtil.info(refereeResult.unavailableReason!, autoCloseDuration: const Duration(seconds: 4));
         return;
       }
 

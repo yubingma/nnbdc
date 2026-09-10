@@ -72,6 +72,7 @@ const String menuWriteSpellTyping = '拼写(打字)';
 const String menuWriteSpellHandwriting = '拼写(手写)';
 const String menuImportFromBook = '从词书导入';
 const String menuImportFromScan = '扫描导入';
+const String menuImportFromExcel = '从 Excel 导入';
 const String menuAiStory = 'AI短文';
 const String menuSettings = '学习设置';
 const String menuLegend = '学习状态图例';
@@ -136,9 +137,17 @@ mixin WordsProvider {
 
 abstract class WordModifier {
   Future<bool> addWord(String wordId);
+
+  /// 批量加入单词（Excel 导入），返回实际新增的数量。
+  /// [updateMeanings] 为 true 时用导入释义覆盖词表中已有单词的定制释义。
+  Future<int> addWords(List<DictWordImportItem> items, {bool updateMeanings = false});
+
   Future<bool> updateMeanings(String wordId, List<MeaningUpdateItem> meanings);
   Future<bool> deleteMeaning(String wordId);
   String? get targetDictId => null;
+
+  /// 目标词表 ID；目标词表不固定的数据源（如「已掌握」）需异步解析。
+  Future<String?> resolveTargetDictId() async => targetDictId;
 }
 
 abstract class WordProgressProvider {
@@ -1624,6 +1633,13 @@ class WordListPageState extends State<WordListPage>
         return;
       }
 
+      // 裁判未执行（额度用尽/并发受限/超时/异常）：只提示原因，不判错、不污染失败去重集合
+      if (refereeResult.unavailableReason != null) {
+        Global.logger.w('~~~~~[AI裁判-单词] 裁判未执行: ${refereeResult.unavailableReason}');
+        ToastUtil.info(refereeResult.unavailableReason!, autoCloseDuration: const Duration(seconds: 4));
+        return;
+      }
+
       final isCorrect = refereeResult.isCorrect;
       Global.logger.d('~~~~~[AI裁判-单词] 裁判结果: isCorrect=$isCorrect, response=${refereeResult.rawResponse}');
 
@@ -1806,6 +1822,13 @@ class WordListPageState extends State<WordListPage>
       if (studyMode != WordListStudyMode.translateSentence) return;
       if (getBookMarkUiPosition() != wordIndex || words[wordIndex].word.id != checkWordId) {
         Global.logger.d('~~~~~[AI裁判] 单词已切换，放弃本次AI裁判结果');
+        return;
+      }
+
+      // 裁判未执行（额度用尽/并发受限/超时/异常）：只提示原因，不判错、不污染失败去重集合
+      if (refereeResult.unavailableReason != null) {
+        Global.logger.w('~~~~~[AI裁判] 裁判未执行: ${refereeResult.unavailableReason}');
+        ToastUtil.info(refereeResult.unavailableReason!, autoCloseDuration: const Duration(seconds: 4));
         return;
       }
 
@@ -2532,6 +2555,24 @@ class WordListPageState extends State<WordListPage>
         setState(() {});
         }
         break;
+        case menuImportFromExcel:
+        if (!context.mounted) return;
+        final needRefresh =
+        await context.push('/import_from_excel',
+        extra: args.wordsProvider
+        as WordModifier);
+
+        if (needRefresh == true) {
+
+        // 刷新当前页面
+        totalWordCount = -1;
+        baseIndex ??= 0;
+        await doQuery(
+        true, baseIndex!, _pageSize, false);
+        if (!context.mounted) return;
+        setState(() {});
+        }
+        break;
         case menuWriteSpellTyping:
         if (studyMode != WordListStudyMode.dictation) {
         setState(() {
@@ -2720,6 +2761,7 @@ class WordListPageState extends State<WordListPage>
     if (args.canAddWord && args.wordsProvider is WordModifier) {
       menuItems.add(menuImportFromBook);
       menuItems.add(menuImportFromScan);
+      menuItems.add(menuImportFromExcel);
     }
     if (PlatformUtils.isAsrSupported()) {
       menuItems.add(menuSpeakChinese);
@@ -2818,6 +2860,9 @@ class WordListPageState extends State<WordListPage>
                                     break;
                                   case menuImportFromScan:
                                     icon = Icons.camera_alt_rounded;
+                                    break;
+                                  case menuImportFromExcel:
+                                    icon = Icons.table_chart_rounded;
                                     break;
                                   case menuSpeakChinese:
                                     icon = Icons.record_voice_over_rounded;

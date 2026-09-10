@@ -114,6 +114,27 @@ class _WordTspNode {
   }
 }
 
+/// 批量导入时描述一个待加入词表的单词。
+class DictWordImportItem {
+  final String wordId;
+
+  /// 所属单元；0 表示无单元。
+  final int unit;
+
+  /// 释义（多个义项以 `;` 分隔）；为空表示不写定制释义。
+  final String meaning;
+
+  /// 词性，如 `n.`；为空表示不限定。
+  final String partOfSpeech;
+
+  const DictWordImportItem({
+    required this.wordId,
+    this.unit = 0,
+    this.meaning = '',
+    this.partOfSpeech = '',
+  });
+}
+
 class WordBo {
   static final WordBo _instance = WordBo._internal();
   factory WordBo() => _instance;
@@ -1933,67 +1954,20 @@ class WordBo {
   /// 用户输入的每个 MeaningUpdateItem.meaning 可以包含多个释义，用分号分隔
   /// 例如: MeaningUpdateItem(ciXing: "n.", meaning: "脸,脸面;面对") 会产生2个释义项
   Future<Result> updateMeaningForCustomDict(String dictId, String wordId, List<MeaningUpdateItem> meanings) async {
-    final db = MyDatabase.instance;
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) {
+      return Result("ERROR", "用户未登录", false);
+    }
     try {
       final now = AppClock.now();
-      final userId = Global.getLoggedInUser()?.id;
-
-      await db.transaction(() async {
-        // 1. 查询并删除现有定制释义
-        final existingQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
-        final existingItems = await existingQuery.get();
-
-        // 记录删除日志
-        for (final item in existingItems) {
-          if (userId != null) {
-            await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, item);
-          }
-        }
-
-        // 删除现有定制释义
-        await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
-
-        // 2. 解析用户输入，创建新的释义项
-        // 按分号分隔(支持中文和英文分号)
-        final semicolonRegex = RegExp(r'[;；]');
-        int popularity = 1;
-
-        // 用于去重 (ciXing + meaning 的组合)
-        Set<String> seen = {};
-
-        for (final item in meanings) {
-          final cixing = item.ciXing;
-          final meaningText = item.meaning;
-
-          if (meaningText.isEmpty) continue;
-
-          // 按分号分割
-          final parts = meaningText.split(semicolonRegex);
-
-          for (final part in parts) {
-            final trimmed = part.trim();
-            if (trimmed.isEmpty) continue;
-
-            // 去重
-            final key = '$cixing|$trimmed';
-            if (seen.contains(key)) continue;
-            seen.add(key);
-
-            final newId = Util.uuid();
-            final newItem = MeaningItem(
-              id: newId,
-              wordId: wordId,
-              dictId: dictId,
-              ciXing: cixing,
-              meaning: trimmed,
-              popularity: popularity++,
-              ownerId: userId!,
-              createTime: now,
-              updateTime: now,
-            );
-            await db.meaningItemsDao.insertEntity(newItem, true);
-          }
-        }
+      await MyDatabase.instance.transaction(() async {
+        await _replaceCustomMeanings(
+          dictId: dictId,
+          wordId: wordId,
+          ownerId: userId,
+          meanings: meanings,
+          now: now,
+        );
       });
 
       // 触发同步
@@ -2072,6 +2046,230 @@ class WordBo {
     } catch (e, s) {
       Global.logger.e('删除词典失败: $e', stackTrace: s);
       return Result("ERROR", "删除失败: $e", false);
+    }
+  }
+
+  /// 批量按拼写匹配本地词库，返回「拼写(小写) → wordId」。
+  ///
+  /// 匹配顺序与 [searchWordLocalOnly] 一致（原样、大小写、常见词形变体），
+  /// 保证 Excel 导入与手动加词对「词库是否收录」的判断口径完全相同。
+  Future<Map<String, String>> matchWordIdsBySpells(List<String> spells) async {
+    final result = <String, String>{};
+    if (spells.isEmpty) return result;
+
+    final db = MyDatabase.instance;
+    final variantsBySpell = <String, List<String>>{};
+    final variants = <String>{};
+
+    for (final spell in spells) {
+      final key = spell.trim().toLowerCase();
+      if (key.isEmpty || variantsBySpell.containsKey(key)) continue;
+      final candidates = _spellMatchVariants(spell.trim());
+      variantsBySpell[key] = candidates;
+      variants.addAll(candidates);
+    }
+    if (variants.isEmpty) return result;
+
+    final variantList = variants.toList();
+    final hitByVariant = <String, String>{};
+    const batchSize = 400;
+    for (var i = 0; i < variantList.length; i += batchSize) {
+      final end = i + batchSize < variantList.length ? i + batchSize : variantList.length;
+      final batch = variantList.sublist(i, end);
+      final rows = await (db.select(db.words)..where((w) => w.spell.isIn(batch))).get();
+      for (final word in rows) {
+        hitByVariant[word.spell] = word.id;
+      }
+    }
+
+    variantsBySpell.forEach((key, candidates) {
+      for (final candidate in candidates) {
+        final wordId = hitByVariant[candidate];
+        if (wordId != null) {
+          result[key] = wordId;
+          return;
+        }
+      }
+    });
+    return result;
+  }
+
+  /// 生成一个拼写的候选匹配形式，顺序与 [searchWordLocalOnly] 的分支顺序一致。
+  static List<String> _spellMatchVariants(String spell) {
+    final bases = <String>[spell];
+    if (spell.endsWith('s') && spell.length > 2) {
+      bases.add(spell.substring(0, spell.length - 1));
+    }
+    if (spell.endsWith('es') && spell.length > 3) {
+      bases.add(spell.substring(0, spell.length - 2));
+    }
+    if (spell.endsWith("'s") && spell.length > 3) {
+      bases.add(spell.substring(0, spell.length - 2));
+    }
+    if (spell.endsWith('ies') && spell.length > 4) {
+      bases.add('${spell.substring(0, spell.length - 3)}y');
+    }
+
+    final variants = <String>[];
+    for (final base in bases) {
+      final lower = base.toLowerCase();
+      final upper = base.toUpperCase();
+      final capitalized = base.isEmpty ? base : base[0].toUpperCase() + base.substring(1).toLowerCase();
+      for (final candidate in [base, lower, upper, capitalized]) {
+        if (candidate.isNotEmpty && !variants.contains(candidate)) variants.add(candidate);
+      }
+    }
+    return variants;
+  }
+
+  /// 把界面/导入的释义拆分、去重为待写入的定制释义项。
+  ///
+  /// 多个义项以中英文分号分隔；同一（词性, 释义）组合只保留一次。
+  static List<MeaningItem> buildCustomMeaningItems({
+    required String wordId,
+    required String dictId,
+    required List<MeaningUpdateItem> meanings,
+    required String ownerId,
+    required DateTime now,
+  }) {
+    final semicolonRegex = RegExp(r'[;；]');
+    final items = <MeaningItem>[];
+    final seen = <String>{};
+    var popularity = 1;
+
+    for (final meaning in meanings) {
+      if (meaning.meaning.isEmpty) continue;
+      for (final part in meaning.meaning.split(semicolonRegex)) {
+        final trimmed = part.trim();
+        if (trimmed.isEmpty) continue;
+        if (!seen.add('${meaning.ciXing}|$trimmed')) continue;
+        items.add(MeaningItem(
+          id: Util.uuid(),
+          wordId: wordId,
+          dictId: dictId,
+          ciXing: meaning.ciXing,
+          meaning: trimmed,
+          popularity: popularity++,
+          ownerId: ownerId,
+          createTime: now,
+          updateTime: now,
+        ));
+      }
+    }
+    return items;
+  }
+
+  /// 批量把单词加入自定义词表（自定义词书 / 生词本）。
+  ///
+  /// - 已在词表中的单词默认跳过；[updateMeanings] 为 true 时用导入释义覆盖其定制释义
+  /// - 列表顺序即词表内的 seq 顺序
+  /// - 全部写入在单个事务内完成，避免出现「导入一半」的中间态
+  Future<Result<int>> addWordsToCustomDict(
+    String dictId,
+    List<DictWordImportItem> items, {
+    bool updateMeanings = false,
+  }) async {
+    if (items.isEmpty) {
+      return Result<int>("SUCCESS", "没有需要导入的单词", true)..data = 0;
+    }
+
+    final db = MyDatabase.instance;
+    try {
+      final dict = await db.dictsDao.findById(dictId);
+      if (dict == null) {
+        return Result<int>("ERROR", "词表不存在", false);
+      }
+      final now = AppClock.now();
+      var inserted = 0;
+
+      await db.transaction(() async {
+        final existingEntries = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
+        final existingWordIds = existingEntries.map((e) => e.wordId).toSet();
+        var maxSeq = 0;
+        for (final entry in existingEntries) {
+          if (entry.seq > maxSeq) maxSeq = entry.seq;
+        }
+
+        final newEntries = <DictWord>[];
+        final meaningTargets = <DictWordImportItem>[];
+        for (final item in items) {
+          final exists = existingWordIds.contains(item.wordId);
+          if (!exists) {
+            maxSeq++;
+            newEntries.add(DictWord(
+              dictId: dictId,
+              wordId: item.wordId,
+              seq: maxSeq,
+              unit: item.unit,
+              createTime: now,
+              updateTime: now,
+            ));
+          }
+          if (item.meaning.isNotEmpty && (!exists || updateMeanings)) {
+            meaningTargets.add(item);
+          }
+        }
+
+        if (newEntries.isNotEmpty) {
+          await db.batch((batch) => batch.insertAll(db.dictWords, newEntries));
+          for (final entry in newEntries) {
+            await DbLogUtil.logOperation(dict.ownerId, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', entry);
+          }
+          inserted = newEntries.length;
+        }
+
+        for (final item in meaningTargets) {
+          await _replaceCustomMeanings(
+            dictId: dictId,
+            wordId: item.wordId,
+            ownerId: dict.ownerId,
+            meanings: [MeaningUpdateItem(ciXing: item.partOfSpeech, meaning: item.meaning)],
+            now: now,
+          );
+        }
+
+        await db.dictsDao.updateWordCount(dictId, true);
+      });
+
+      clearTspCache(dictId);
+      ThrottledDbSyncService().requestSync();
+
+      return Result<int>("SUCCESS", "导入完成", true)..data = inserted;
+    } catch (e, s) {
+      Global.logger.e('批量导入单词失败: $e', stackTrace: s);
+      return Result<int>("ERROR", "导入失败: $e", false);
+    }
+  }
+
+  /// 用给定释义替换某个词在指定词表中的全部定制释义。
+  Future<void> _replaceCustomMeanings({
+    required String dictId,
+    required String wordId,
+    required String ownerId,
+    required List<MeaningUpdateItem> meanings,
+    required DateTime now,
+  }) async {
+    final db = MyDatabase.instance;
+    final existing = await (db.select(db.meaningItems)
+          ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId)))
+        .get();
+
+    for (final item in existing) {
+      await DbLogUtil.logOperation(ownerId, 'DELETE', 'meaningItems', item.id, item);
+    }
+    if (existing.isNotEmpty) {
+      await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
+    }
+
+    final newItems = buildCustomMeaningItems(
+      wordId: wordId,
+      dictId: dictId,
+      meanings: meanings,
+      ownerId: ownerId,
+      now: now,
+    );
+    for (final item in newItems) {
+      await db.meaningItemsDao.insertEntity(item, true);
     }
   }
 

@@ -86,6 +86,9 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   String? get targetDictId => dict.id;
 
   @override
+  Future<String?> resolveTargetDictId() async => dict.id;
+
+  @override
   bool get keepWordsOnMaster => true;
 
   @override
@@ -97,6 +100,16 @@ class DictWordsProvider with WordsProvider implements WordModifier {
       ToastUtil.error(result.msg ?? '添加失败');
       return false;
     }
+  }
+
+  @override
+  Future<int> addWords(List<DictWordImportItem> items, {bool updateMeanings = false}) async {
+    final result = await WordBo().addWordsToCustomDict(dict.id, items, updateMeanings: updateMeanings);
+    if (!result.success) {
+      ToastUtil.error(result.msg ?? '导入失败');
+      return 0;
+    }
+    return result.data ?? 0;
   }
 
   @override
