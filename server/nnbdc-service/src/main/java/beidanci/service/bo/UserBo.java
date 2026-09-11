@@ -485,17 +485,17 @@ public class UserBo extends BaseBo<User> {
     }
 
     /**
-     * 随机挑选一个“超过指定天数未登录”的真实用户，用作机器人陪玩。
+     * 随机挑选一个“超过指定天数未登录”的真实用户昵称，用作机器人陪玩。
+     * 机器人只借用昵称，积分、魔法泡泡、战绩全部虚构（见 RussiaRoom#createBot），
+     * 因此这里只读昵称、不加载用户实体，也不会读写任何真实账号的数据。
      * (已不再限制必须玩过该游戏，以便扩大机器人池)
      */
-    public User pickRandomInactiveUser(int idleDays, int maxCandidates) {
-        String sql = "SELECT * FROM \"user\" " +
-                "WHERE is_sys_user = false AND user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND last_login_time < ? " +
+    public String pickRandomInactiveNickName(int idleDays, int maxCandidates) {
+        String sql = "SELECT nick_name FROM \"user\" " +
+                "WHERE is_sys_user = false AND nick_name IS NOT NULL AND user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND last_login_time < ? " +
                 "ORDER BY last_login_time DESC LIMIT ?";
         Date time = Utils.localDate2Date(LocalDate.now().plusDays(-idleDays));
-        List<User> candidates = jdbcTemplate.query(sql,
-                new EntityRowMapper<>(User.class),
-                time, maxCandidates);
+        List<String> candidates = jdbcTemplate.queryForList(sql, String.class, time, maxCandidates);
         if (candidates == null || candidates.isEmpty()) {
             return null;
         }

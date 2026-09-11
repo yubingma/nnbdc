@@ -24,10 +24,9 @@ import beidanci.service.bo.SysParamBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.bo.UserGameBo;
 import beidanci.service.bo.WordBo;
-import beidanci.service.po.User;
-import beidanci.service.po.UserGame;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.game.russia.state.EmptyState;
+import beidanci.service.socket.system.game.russia.state.GameOverProcessor;
 import beidanci.service.socket.system.game.russia.state.ReadyState;
 import beidanci.service.socket.system.game.russia.state.RoomState;
 import beidanci.service.socket.system.game.russia.state.WaitState;
@@ -236,45 +235,66 @@ public class RussiaRoom {
     }
 
     /**
-     * 创建机器人用户
+     * 创建机器人用户。
+     * 机器人只借用真实用户（一年以上未登录）的昵称，积分、魔法泡泡、战绩全部虚构：
+     * 它不携带任何真实用户 ID，因此比赛结果不会落库，也不会影响任何真实账号。
      */
     private UserVo createBot(UserVo humanUser) {
         UserVo bot = new UserVo();
-        // 选取"超过一年未登录且玩过游戏"的真实用户作为机器人，比赛结果会反映到该用户账户
-        User real = null;
+        bot.setId(Util.uuid());
+        // userName 仅作为机器人的识别标记（就绪、自动开始等逻辑依赖它）
+        bot.setUserName("bot_" + roomId);
+
+        String nickName = null;
         try {
-            real = Global.getUserBo().pickRandomInactiveUser(365, 50);
+            nickName = Global.getUserBo().pickRandomInactiveNickName(365, 50);
         } catch (Exception e) {
-            log.error("选取机器人失败", e);
+            log.error("选取机器人昵称失败", e);
+        }
+        if (nickName == null || nickName.trim().isEmpty()) {
+            // 兜底：昵称池取不到时用一个临时的名字
+            nickName = Util.getNickNameOfUser(humanUser) + "·朋友";
+        }
+        // 直接使用真实用户的昵称，避免把 bot_xx 暴露给玩家
+        bot.setDisplayNickName(nickName);
+        bot.setNickName(nickName);
+
+        fillFakeUserData(bot, humanUser);
+        return bot;
+    }
+
+    /**
+     * 为机器人虚构用户数据。
+     * 强度（胜率，进而决定答题正确率与速度，见 ReadyState#triggerBotAnswer）跟随玩家自身水平；
+     * 场次与积分再由强度派生，保证显示出来的“场次-胜率-积分”三者互相自洽。
+     */
+    private void fillFakeUserData(UserVo bot, UserVo humanUser) {
+        // 强度基准：玩家自己的历史胜率，战绩不足 3 局时按五五开（与 ReadyState 判定胜率的阈值一致）
+        double humanWinRatio = 0.5;
+        int humanTotalCount = 0;
+        UserGameVo humanGame = humanUser.getGameByName("russia");
+        if (humanGame != null && humanGame.getWinCount() != null && humanGame.getLoseCount() != null) {
+            humanTotalCount = humanGame.getWinCount() + humanGame.getLoseCount();
+            if (humanTotalCount >= 3) {
+                humanWinRatio = (double) humanGame.getWinCount() / humanTotalCount;
+            }
         }
 
-        if (real != null) {
-            bot.setId(real.getId());
-            // 使用真实用户的ID以便比赛结果落库，但将userName标记为bot以便就绪逻辑识别为机器人
-            bot.setUserName("bot_" + roomId);
-            // 直接使用真实用户的展示昵称，避免显示为 bot_xx
-            bot.setDisplayNickName(real.getDisplayNickName());
-            bot.setNickName(real.getDisplayNickName());
-            bot.setCowDung(real.getCowDung());
-            bot.setGameScore(real.getGameScore());
-            List<UserGameVo> games = new ArrayList<>();
-            List<UserGame> realGames = Global.getUserGameBo()
-                    .getUserGamesOfUser(real.getId(), true);
-            for (UserGame ug : realGames) {
-                games.add(new UserGameVo(bot, ug.getWinCount(), ug.getLoseCount(), ug.getScore(), ug.getId().getGame()));
-            }
-            bot.setUserGames(games);
-        } else {
-            // 兜底：若找不到符合条件的老用户，则使用游客数据作为临时bot（仅前端显示，不持久化）
-            bot.setId("bot_" + roomId);
-            bot.setUserName("bot_" + roomId);
-            bot.setNickName(Util.getNickNameOfUser(humanUser) + "·朋友");
-            bot.setCowDung(0);
-            bot.setGameScore(0);
-            bot.setUserGames(new ArrayList<>());
-        }
-        
-        return bot;
+        // 在玩家水平附近小幅波动，并限制在 [0.15, 0.85]，避免出现 0%/100% 这类一眼假的战绩
+        double botWinRatio = Math.min(0.85, Math.max(0.15, humanWinRatio + (Math.random() - 0.5) * 0.2));
+
+        // 场次与玩家同量级（否则积分会明显偏离玩家分段，结算收益会掉到 ±10/±60 的极值），胜负由强度反解
+        int totalCount = Math.max(20, (int) Math.round(humanTotalCount * (0.6 + Math.random() * 0.8)));
+        int winCount = (int) Math.round(totalCount * botWinRatio);
+        int loseCount = totalCount - winCount;
+
+        // 积分按每局净得分折算（calculateWinerScoreAdjustment(0, 0) 即势均力敌时每局的净得分）
+        int score = Math.max(0, (winCount - loseCount) * GameOverProcessor.calculateWinerScoreAdjustment(0, 0));
+
+        bot.setGameScore(score);
+        // 魔法泡泡只作展示，按同量级玩家的水平虚构
+        bot.setCowDung((int) Math.round(humanUser.getCowDung() * (0.5 + Math.random())));
+        bot.setUserGames(new ArrayList<>(List.of(new UserGameVo(bot, winCount, loseCount, score, "russia"))));
     }
 
     /**

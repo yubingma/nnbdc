@@ -112,8 +112,11 @@ public class MsgBoAdviceRedeemTest {
         assertEquals("你好，我的兑换码是 vip888 谢谢！", createdMsgs.get(0).getContent());
 
         assertEquals(MsgType.AdviceReply, createdMsgs.get(1).getMsgType());
-        assertTrue(createdMsgs.get(1).getContent().contains("恭喜您！已成功兑换【测试赠送VIP】"));
-        assertTrue(createdMsgs.get(1).getContent().contains("30天"));
+        // 未配置 replyMessage 时走默认回复模板：应体现激活成功，并带上活动名称与会员时长
+        String reply = createdMsgs.get(1).getContent();
+        assertTrue(reply.contains("授权码激活成功"), "应回复激活成功文案，实际=" + reply);
+        assertTrue(reply.contains("测试赠送VIP"), "回复应带上活动名称，实际=" + reply);
+        assertTrue(reply.contains("30天"), "回复应带上会员时长，实际=" + reply);
     }
 
     @Test

@@ -5,6 +5,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/util/word_form.dart';
 import 'package:drift/drift.dart' as drift;
 
 abstract class DistractorStrategy {
@@ -241,6 +242,9 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
 }
 
 class ShapeSimilarDistractorStrategy implements DistractorStrategy {
+  /// 一次最多取多少个候选词去查释义：要留出被"同词形 / 释义相同"筛掉的余量
+  static const int _probeCount = 8;
+
   @override
   Future<List<WordVo>> getTwoOtherWords({
     required List<String> trackSteps,
@@ -263,73 +267,26 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         targetSpell = targetWords.first.spell;
       }
 
-      final candidateIds = <String>[];
-      final selectedWordIds = <String>{targetWordLearningData.wordId};
+      // 1. 收集候选：预设形近词中剔除"目标词自身的屈折变形"（confuse → confused/confusing），
+      //    这类词的释义与目标词相同，选它用户无从判断
       final candidateIdToSpell = <String, String>{};
-
-      // 1. 获取数据库预设的形近词
       final similarWordsQuery = db.select(db.similarWords)
         ..where((tbl) => tbl.wordId.equals(targetWordLearningData.wordId));
       final presetSimilarWords = await similarWordsQuery.get();
-      
-      final inDictCandidateIds = <String>[];
-      final outOfDictCandidateIds = <String>[];
-      
-      // 获取用户当前正在学的词书 ID 列表
-      final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(targetWordLearningData.userId);
-      final selectedDictIds = learningDicts.map((e) => e.dictId).toList();
-      
-      if (selectedDictIds.isNotEmpty && presetSimilarWords.isNotEmpty) {
-        final presetIds = presetSimilarWords.map((e) => e.similarWordId).toList();
-        // 查出哪些预设词在当前词书中
-        final dictWordsQuery = db.select(db.dictWords)
-          ..where((tbl) => tbl.dictId.isIn(selectedDictIds) & tbl.wordId.isIn(presetIds));
-        final inDictWords = await dictWordsQuery.get();
-        final inDictIdSet = inDictWords.map((e) => e.wordId).toSet();
-        
-        for (final sw in presetSimilarWords) {
-          if (!selectedWordIds.contains(sw.similarWordId)) {
-            if (inDictIdSet.contains(sw.similarWordId)) {
-              inDictCandidateIds.add(sw.similarWordId);
-            } else {
-              outOfDictCandidateIds.add(sw.similarWordId);
-            }
-            candidateIdToSpell[sw.similarWordId] = sw.similarWordSpell;
-            selectedWordIds.add(sw.similarWordId);
-          }
-        }
-      } else {
-        for (final sw in presetSimilarWords) {
-          if (!selectedWordIds.contains(sw.similarWordId)) {
-            outOfDictCandidateIds.add(sw.similarWordId);
-            candidateIdToSpell[sw.similarWordId] = sw.similarWordSpell;
-            selectedWordIds.add(sw.similarWordId);
-          }
-        }
+      for (final sw in presetSimilarWords) {
+        _addCandidate(candidateIdToSpell, sw.similarWordId, sw.similarWordSpell,
+            targetWordLearningData.wordId, targetSpell);
       }
-      
-      // 分层随机化：范围内的优先，范围外的兜底
-      inDictCandidateIds.shuffle();
-      outOfDictCandidateIds.shuffle();
-      
-      candidateIds.addAll(inDictCandidateIds);
-      candidateIds.addAll(outOfDictCandidateIds);
 
       // 2. 动态形近词补充：【只有当预设形近词不足 2 个时】，才去动态查找邻近词补足
-      if (candidateIds.length < 2 && targetSpell.isNotEmpty) {
-        final fallbackCandidateIds = <String>[];
+      if (candidateIdToSpell.length < 2 && targetSpell.isNotEmpty) {
         // 拼写更大的（向后取 50 个）
         final largerWordsQuery = db.select(db.words)
           ..where((tbl) => tbl.spell.isBiggerThanValue(targetSpell) & tbl.id.equals(targetWordLearningData.wordId).not())
           ..orderBy([(tbl) => drift.OrderingTerm(expression: tbl.spell)])
           ..limit(50);
-        final largerWords = await largerWordsQuery.get();
-        for (final w in largerWords) {
-          if (!selectedWordIds.contains(w.id)) {
-            fallbackCandidateIds.add(w.id);
-            candidateIdToSpell[w.id] = w.spell;
-            selectedWordIds.add(w.id);
-          }
+        for (final w in await largerWordsQuery.get()) {
+          _addCandidate(candidateIdToSpell, w.id, w.spell, targetWordLearningData.wordId, targetSpell);
         }
 
         // 拼写更小的（向前取 50 个）
@@ -337,110 +294,46 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
           ..where((tbl) => tbl.spell.isSmallerThanValue(targetSpell) & tbl.id.equals(targetWordLearningData.wordId).not())
           ..orderBy([(tbl) => drift.OrderingTerm(expression: tbl.spell, mode: drift.OrderingMode.desc)])
           ..limit(50);
-        final smallerWords = await smallerWordsQuery.get();
-        for (final w in smallerWords) {
-          if (!selectedWordIds.contains(w.id)) {
-            fallbackCandidateIds.add(w.id);
-            candidateIdToSpell[w.id] = w.spell;
-            selectedWordIds.add(w.id);
-          }
-        }
-        
-        // 邻近词内部随机打乱后追加到末尾
-        fallbackCandidateIds.shuffle();
-        candidateIds.addAll(fallbackCandidateIds);
-      }
-
-      // 3. 重排 candidateIds：尽量不要选前三个字母和目标单词完全相同的
-      final checkLen = targetSpell.length < 3 ? targetSpell.length : 3;
-      if (checkLen > 0) {
-        final targetPrefix = targetSpell.substring(0, checkLen).toLowerCase();
-        
-        final prefixDifferentIds = <String>[];
-        final prefixSameIds = <String>[];
-        
-        for (final id in candidateIds) {
-          final spell = candidateIdToSpell[id] ?? '';
-          final spellPrefix = spell.length < checkLen ? spell.toLowerCase() : spell.substring(0, checkLen).toLowerCase();
-          
-          if (spellPrefix == targetPrefix) {
-            prefixSameIds.add(id);
-          } else {
-            prefixDifferentIds.add(id);
-          }
-        }
-        
-        prefixDifferentIds.shuffle();
-        prefixSameIds.shuffle();
-        
-        candidateIds.clear();
-        candidateIds.addAll(prefixDifferentIds);
-        candidateIds.addAll(prefixSameIds);
-      }
-
-      // 4. 加载备选词的基础数据
-      if (candidateIds.isNotEmpty) {
-        // 取前 10 个来加载，避免 IN 语句过大
-        final topCandidateIds = candidateIds.take(10).toList();
-        final wordsList = await db.wordsDao.getWordsByIds(topCandidateIds);
-        
-        // 将加载出的词按前缀是否相同分类，并各自随机打乱
-        final List<Word> prefixDifferentWords = [];
-        final List<Word> prefixSameWords = [];
-
-        if (checkLen > 0) {
-          final targetPrefix = targetSpell.substring(0, checkLen).toLowerCase();
-          for (final wordDetails in wordsList) {
-            final spell = wordDetails.spell;
-            final spellPrefix = spell.length < checkLen ? spell.toLowerCase() : spell.substring(0, checkLen).toLowerCase();
-            
-            if (spellPrefix == targetPrefix) {
-              prefixSameWords.add(wordDetails);
-            } else {
-              prefixDifferentWords.add(wordDetails);
-            }
-          }
-          
-          prefixDifferentWords.shuffle();
-          prefixSameWords.shuffle();
-        } else {
-          prefixDifferentWords.addAll(wordsList);
-          prefixDifferentWords.shuffle();
-        }
-
-        final List<Word> finalWordsList = [...prefixDifferentWords, ...prefixSameWords];
-
-        // ⚡ 优化：ShapeSimilarDistractorStrategy 中的释义加载也使用 Future.wait 并行异步化
-        final chosenSimilarCandidates = <Word>[];
-        for (final wordDetails in finalWordsList) {
-          chosenSimilarCandidates.add(wordDetails);
-          if (chosenSimilarCandidates.length >= 2) break;
-        }
-
-        if (chosenSimilarCandidates.isNotEmpty) {
-          final similarMeaningResults = await Future.wait(chosenSimilarCandidates.map((wordDetails) async {
-            final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-            return MapEntry(wordDetails, realMeaningItems);
-          }));
-
-          for (final entry in similarMeaningResults) {
-            final wordDetails = entry.key;
-            final realMeaningItems = entry.value;
-            final otherWordVo = WordVo.c2(wordDetails.spell)
-              ..id = wordDetails.id
-              ..shortDesc = wordDetails.shortDesc
-              ..longDesc = wordDetails.longDesc
-              ..pronounce = wordDetails.pronounce
-              ..americaPronounce = wordDetails.americaPronounce
-              ..britishPronounce = wordDetails.britishPronounce
-              ..popularity = wordDetails.popularity
-              ..meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-            otherWords.add(otherWordVo);
-          }
+        for (final w in await smallerWordsQuery.get()) {
+          _addCandidate(candidateIdToSpell, w.id, w.spell, targetWordLearningData.wordId, targetSpell);
         }
       }
 
-      // 5. 如果不足 2 个（理论上拼写排序必然够，除非词库极小），使用“学习中单词”策略补足
+      // 3. 排序：学习范围内的候选优先（范围外仅作兜底），同层内"前三字母与目标词不同"的优先
+      final candidateIds = candidateIdToSpell.keys.toList();
+      final inScopeIds =
+          await _loadInScopeWordIds(db, targetWordLearningData.userId, candidateIds);
+      _orderCandidates(candidateIds, candidateIdToSpell, targetSpell, inScopeIds);
+
+      // 4. 逐个查释义：跳过与目标词释义完全相同的候选（否则各选项释义相同、无从判断）
+      final probeIds = candidateIds.take(_probeCount).toList();
+      if (probeIds.isNotEmpty) {
+        final wordsById = {for (final w in await db.wordsDao.getWordsByIds(probeIds)) w.id: w};
+        final orderedWords = [
+          for (final id in probeIds)
+            if (wordsById[id] != null) wordsById[id]!,
+        ];
+        // ⚡ 释义加载并行化；单个候选缺释义时跳过该候选，不影响其余候选
+        final probeResults = await Future.wait(orderedWords.map((wordDetails) async {
+          try {
+            final realMeaningItems =
+                await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
+            return MapEntry(wordDetails, _toMeaningItemVos(realMeaningItems));
+          } catch (e) {
+            Global.logger.w('形近词候选释义加载失败，跳过 ${wordDetails.spell}: $e');
+            return null;
+          }
+        }));
+
+        for (final entry in probeResults) {
+          if (entry == null) continue;
+          if (otherWords.length >= 2) break;
+          if (_sharesMeaning(meaningItemVos, entry.value)) continue;
+          otherWords.add(_buildWordVo(entry.key, entry.value));
+        }
+      }
+
+      // 5. 如果不足 2 个，使用“学习中单词”策略补足（同样剔除变形词与同义项词）
       if (otherWords.length < 2) {
         final fallbackWords = await LearningWordsDistractorStrategy().getTwoOtherWords(
           trackSteps: trackSteps,
@@ -450,12 +343,14 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
           targetWordLearningData: targetWordLearningData,
           db: db,
         );
-        for (var fw in fallbackWords) {
+        for (final fw in fallbackWords) {
           if (otherWords.length >= 2) break;
           // 确保不和目标单词重复，也不和已选单词重复
-          if (fw.id != targetWordLearningData.wordId && !otherWords.any((w) => w.id == fw.id)) {
-            otherWords.add(fw);
-          }
+          if (fw.id == targetWordLearningData.wordId) continue;
+          if (otherWords.any((w) => w.id == fw.id)) continue;
+          if (targetSpell.isNotEmpty && isSameWordForm(targetSpell, fw.spell)) continue;
+          if (_sharesMeaning(meaningItemVos, fw.meaningItems ?? const [])) continue;
+          otherWords.add(fw);
         }
       }
 
@@ -474,8 +369,100 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
     }
   }
 
+  /// 收录一个候选词；与目标词同拼写或同词形的屈折变形不入候选
+  void _addCandidate(Map<String, String> candidateIdToSpell, String wordId, String spell,
+      String targetWordId, String targetSpell) {
+    if (wordId == targetWordId) return;
+    if (candidateIdToSpell.containsKey(wordId)) return;
+    if (targetSpell.isNotEmpty && isSameWordForm(targetSpell, spell)) return;
+    candidateIdToSpell[wordId] = spell;
+  }
 
+  /// 用户"学习范围"内的单词集合：所选学习词书（含父词库）收录的词，
+  /// 以及已有学习记录的词（学习中 / 已掌握）——与详情页「学习范围」标注口径一致。
+  Future<Set<String>> _loadInScopeWordIds(
+      MyDatabase db, String userId, List<String> wordIds) async {
+    if (wordIds.isEmpty) return {};
+    final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
+    // 未选学习词书时与详情页一致：不作范围限制
+    if (learningDicts.isEmpty) return wordIds.toSet();
+
+    final inScope = <String>{};
+    final dictIds = <String>{for (final d in learningDicts) d.dictId};
+    final dicts = await (db.select(db.dicts)..where((d) => d.id.isIn(dictIds))).get();
+    for (final d in dicts) {
+      if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
+        dictIds.add(d.baseDictId!);
+      }
+    }
+    final dictWordRows = await (db.select(db.dictWords)
+          ..where((dw) => dw.dictId.isIn(dictIds) & dw.wordId.isIn(wordIds)))
+        .get();
+    inScope.addAll(dictWordRows.map((r) => r.wordId));
+
+    final learningStatus = await WordBo.getWordsLearningStatusBatch(userId, wordIds);
+    learningStatus.forEach((wordId, status) {
+      if (status != null) inScope.add(wordId);
+    });
+    return inScope;
+  }
+
+  /// 分层排序（层内随机）：范围内 > 范围外；层内"前三字母与目标词不同"的优先
+  void _orderCandidates(List<String> candidateIds, Map<String, String> idToSpell,
+      String targetSpell, Set<String> inScopeIds) {
+    final checkLen = targetSpell.length < 3 ? targetSpell.length : 3;
+    final targetPrefix = checkLen > 0 ? targetSpell.substring(0, checkLen).toLowerCase() : '';
+
+    int layerOf(String id) {
+      final scopeLayer = inScopeIds.contains(id) ? 0 : 1;
+      final spell = idToSpell[id] ?? '';
+      final spellPrefix =
+          spell.length < checkLen ? spell.toLowerCase() : spell.substring(0, checkLen).toLowerCase();
+      final prefixLayer = (checkLen == 0 || spellPrefix != targetPrefix) ? 0 : 1;
+      return scopeLayer * 2 + prefixLayer;
+    }
+
+    final buckets = <int, List<String>>{};
+    for (final id in candidateIds) {
+      buckets.putIfAbsent(layerOf(id), () => []).add(id);
+    }
+    candidateIds.clear();
+    for (final layer in buckets.keys.toList()..sort()) {
+      candidateIds.addAll(buckets[layer]!..shuffle());
+    }
+  }
+
+  /// 两个词的义项中是否存在完全相同的一条（忽略空格与标点）
+  bool _sharesMeaning(List<MeaningItemVo> a, List<MeaningItemVo> b) {
+    final keys = <String>{
+      for (final item in a)
+        if (_meaningKey(item).isNotEmpty) _meaningKey(item),
+    };
+    if (keys.isEmpty) return false;
+    for (final item in b) {
+      if (keys.contains(_meaningKey(item))) return true;
+    }
+    return false;
+  }
+
+  String _meaningKey(MeaningItemVo item) =>
+      (item.meaning ?? '').toLowerCase().replaceAll(_meaningNoise, '');
+
+  List<MeaningItemVo> _toMeaningItemVos(List<MeaningItem> items) =>
+      [for (final e in items) MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)];
+
+  WordVo _buildWordVo(Word word, List<MeaningItemVo> meaningItems) => WordVo.c2(word.spell)
+    ..id = word.id
+    ..shortDesc = word.shortDesc
+    ..longDesc = word.longDesc
+    ..pronounce = word.pronounce
+    ..americaPronounce = word.americaPronounce
+    ..britishPronounce = word.britishPronounce
+    ..popularity = word.popularity
+    ..meaningItems = meaningItems;
 }
+
+final RegExp _meaningNoise = RegExp("[\\s,，、;；.。!！?？:：'\"“”‘’()（）\\[\\]【】]+");
 
 class DistractorStrategyFactory {
   static DistractorStrategy getStrategy(String strategyName) {
