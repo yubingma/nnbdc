@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 void main() {
@@ -168,6 +169,38 @@ void main() {
       final w3 = WordVo.c2('banana');
       expect(WordWrapper(w1, null) == WordWrapper(w2, null), true);
       expect(WordWrapper(w1, null) == WordWrapper(w3, null), false);
+    });
+  });
+
+  group('词性规范化（历史脏数据 "v.，" → "v."）', () {
+    test('normalizeCiXing 剥离尾部标点', () {
+      expect(MeaningItemVo.normalizeCiXing('v.，'), 'v.');
+      expect(MeaningItemVo.normalizeCiXing(' n.， '), 'n.');
+      expect(MeaningItemVo.normalizeCiXing('phr. v.'), 'phr. v.');
+      expect(MeaningItemVo.normalizeCiXing(null), '');
+    });
+
+    test('getMergedMeaningItems 归并同一词性且词性干净', () {
+      final word = WordVo.c2('trade ... for ...')
+        ..meaningItems = [
+          MeaningItemVo.from('v.，', '交换, 交易'),
+          MeaningItemVo.from('v.', '交易'),
+        ];
+
+      final merged = word.getMergedMeaningItems();
+      expect(merged.length, 1);
+      expect(merged.first.ciXing, 'v.');
+      expect(word.getMeaningStr(), startsWith('v. '));
+    });
+
+    test('Util.mergeMeaningItems 同样归并并规范化词性', () {
+      final merged = Util.mergeMeaningItems([
+        MeaningItemVo.from('n.，', '灾难'),
+        MeaningItemVo.from('n.', '悲剧'),
+      ]);
+
+      expect(merged.length, 1);
+      expect(merged.first.ciXing, 'n.');
     });
   });
 }

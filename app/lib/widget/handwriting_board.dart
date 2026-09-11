@@ -258,7 +258,9 @@ class HandwritingBoardState extends State<HandwritingBoard> {
       final response = await OcrService.recognizeHandwriting(strokesData,
           language: widget.language,
           writingAreaWidth: areaW > 0 ? areaW : null,
-          writingAreaHeight: areaH > 0 ? areaH : null)
+          writingAreaHeight: areaH > 0 ? areaH : null,
+          // 已定稿的前缀文本即"书写位置之前的文本"，交给 ML Kit 判断词边界；无前缀传空串（不能传 nil）
+          preContext: _recognizedChars.join())
           .timeout(const Duration(seconds: 5));
       return _postProcess(response);
     } catch (e) {

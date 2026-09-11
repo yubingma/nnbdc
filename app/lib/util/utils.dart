@@ -805,10 +805,11 @@ class Util {
   static List<MeaningItemVo> mergeMeaningItems(final List<MeaningItemVo> meaningItems) {
     List<MeaningItemVo> meaningItemVos = [];
     for (MeaningItemVo meaningItemVo in meaningItems) {
+      final ciXing = MeaningItemVo.normalizeCiXing(meaningItemVo.ciXing);
       // 尝试查找现有的具有相同词性的释义项
       MeaningItemVo? existingItemWithSameCiXing;
       for (MeaningItemVo itemVo in meaningItemVos) {
-        if (itemVo.ciXing == (meaningItemVo.ciXing)) {
+        if (MeaningItemVo.normalizeCiXing(itemVo.ciXing) == ciXing) {
           existingItemWithSameCiXing = itemVo;
         }
       }
@@ -843,7 +844,7 @@ class Util {
         if (sb.isNotEmpty) {
           sb = sb.substring(0, sb.length - 1);
         }
-        MeaningItemVo mergedItem = MeaningItemVo.from(existingItemWithSameCiXing.ciXing, sb.toString());
+        MeaningItemVo mergedItem = MeaningItemVo.from(ciXing, sb.toString());
         if (existingItemWithSameCiXing.synonyms != null || meaningItemVo.synonyms != null) {
           Set<SynonymVo> synonyms = {};
           if (existingItemWithSameCiXing.synonyms != null) {

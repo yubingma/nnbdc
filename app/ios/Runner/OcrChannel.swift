@@ -44,9 +44,11 @@ class OcrChannel {
                 let language = args["language"] as? String ?? "en-US"
                 let areaWidth = (args["writingAreaWidth"] as? NSNumber)?.doubleValue
                 let areaHeight = (args["writingAreaHeight"] as? NSNumber)?.doubleValue
+                let preContext = args["preContext"] as? String ?? ""
                 recognizeHandwriting(
                     strokesData: strokes, language: language,
                     writingAreaWidth: areaWidth, writingAreaHeight: areaHeight,
+                    preContext: preContext,
                     result: result)
                 
             case "prepareModel":
@@ -138,7 +140,7 @@ class OcrChannel {
         }
     }
 
-    private static func recognizeHandwriting(strokesData: [[[String: Any]]], language: String, writingAreaWidth: Double?, writingAreaHeight: Double?, result: @escaping FlutterResult) {
+    private static func recognizeHandwriting(strokesData: [[[String: Any]]], language: String, writingAreaWidth: Double?, writingAreaHeight: Double?, preContext: String, result: @escaping FlutterResult) {
         var recognitionStrokes: [Stroke] = []
         for strokeData in strokesData {
             var points: [StrokePoint] = []
@@ -152,11 +154,14 @@ class OcrChannel {
         }
         let ink = Ink(strokes: recognitionStrokes)
         
-        // 提供手写区尺寸上下文，帮助 ML Kit 正确切分多字连写（避免多个汉字被合成一个字）
+        // 提供手写区尺寸与前置文本上下文，帮助 ML Kit 正确切分多字连写（避免多个汉字被合成一个字）。
+        // 注意：preContext 必须非 nil。ML Kit 头文件声明它是 nullable，但内部按 C 字符串（UTF8String）
+        // 构造 std::string，传 nil 会在 -[MLKDigitalInkRecognizer recognitionForInk:context:error:]
+        // 里 strlen(NULL) 崩溃（UCrash 已抓到该栈）。
         var context: DigitalInkRecognitionContext? = nil
         if let width = writingAreaWidth, let height = writingAreaHeight, width > 0, height > 0 {
             let area = WritingArea(width: Float(width), height: Float(height))
-            context = DigitalInkRecognitionContext(preContext: nil, writingArea: area)
+            context = DigitalInkRecognitionContext(preContext: preContext, writingArea: area)
         }
         
         let languageTag = language

@@ -701,7 +701,7 @@ class WordVo {
     // 按词性分组
     Map<String, List<MeaningItemVo>> meaningItemsByCixing = {};
     for (MeaningItemVo meaningItemVo in meaningItems!) {
-      String ciXing = meaningItemVo.ciXing ?? '';
+      String ciXing = MeaningItemVo.normalizeCiXing(meaningItemVo.ciXing);
       meaningItemsByCixing[ciXing] = meaningItemsByCixing[ciXing] ?? [];
       meaningItemsByCixing[ciXing]!.add(meaningItemVo);
     }
@@ -886,6 +886,16 @@ class MeaningItemVo {
   MeaningItemVo(this.id, this.ciXing, this.meaning, this.dict, this.synonyms, this.sentences, [this.popularityPercent]);
 
   MeaningItemVo.from(this.ciXing, this.meaning);
+
+  /// 规范化词性：历史数据中存在 "v.，"/"n.，" 这类尾部粘连标点的脏值，
+  /// 展示前统一剥离尾部标点（"v.，" → "v."），使词性可正确分组与渲染。
+  static String normalizeCiXing(String? ciXing) {
+    var text = (ciXing ?? '').trim();
+    while (text.isNotEmpty && ';；,，。'.contains(text[text.length - 1])) {
+      text = text.substring(0, text.length - 1).trim();
+    }
+    return text;
+  }
 
   /// 安全获取例句列表的方法，避免空指针异常
   Future<List<SentenceVo>> getSentences() async {
