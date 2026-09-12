@@ -681,8 +681,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final totalPlannedWords = (newWordCount ?? 0) + (oldWordCount ?? 0);
     final targetWords = user?.effectiveWordsPerDay ?? 20;
     final totalBase = totalPlannedWords > 0 ? totalPlannedWords : (targetWords > 0 ? targetWords : 20);
-    final newPercent = totalBase > 0 ? (((newWordCount ?? 0) / totalBase) * 100).round() : 0;
-    final oldPercent = totalBase > 0 ? (((oldWordCount ?? 0) / totalBase) * 100).round() : 0;
     final newRatio = totalBase > 0 ? ((newWordCount ?? 0) / totalBase).clamp(0.0, 1.0) : 0.0;
     final oldRatio = totalBase > 0 ? ((oldWordCount ?? 0) / totalBase).clamp(0.0, 1.0) : 0.0;
 
@@ -817,18 +815,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
           const SizedBox(height: 14),
 
-          // 双列对称纯粹排版数据（新词 | 旧词，带语义微色标与百分比说明）
+          // 双列对称纯粹排版数据（新词 | 旧词，带语义微色标）
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                _buildStatItem('新词', newWordCount ?? 0, const Color(0xFF0EA5E9), newPercent),
+                _buildStatItem('新词', newWordCount ?? 0, const Color(0xFF0EA5E9)),
                 Container(
                   width: 0.8,
                   height: 32,
                   color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
                 ),
-                _buildStatItem('旧词', oldWordCount ?? 0, const Color(0xFF10B981), oldPercent),
+                _buildStatItem('旧词', oldWordCount ?? 0, const Color(0xFF10B981)),
               ],
             ),
           ),
@@ -899,7 +897,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  Widget _buildStatItem(String label, int count, [Color? dotColor, int? percent]) {
+  Widget _buildStatItem(String label, int count, [Color? dotColor]) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textMuted = themeConfig.textMuted;
@@ -946,7 +944,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   const SizedBox(width: 5),
                 ],
                 Text(
-                  percent != null ? '$label · $percent%' : label,
+                  label,
                   style: TextStyle(
                     color: textMuted,
                     fontSize: 11.5,

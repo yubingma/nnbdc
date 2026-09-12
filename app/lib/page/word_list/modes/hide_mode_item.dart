@@ -112,7 +112,7 @@ class HideModeItem extends StatelessWidget {
               ),
               const SizedBox(width: 4.5),
               Text(
-                isEnglish ? '查看英文' : '查看释义',
+                isEnglish ? '英文' : '释义',
                 style: TextStyle(
                   fontSize: 12,
                   color: hintColor,

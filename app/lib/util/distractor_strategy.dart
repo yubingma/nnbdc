@@ -6,6 +6,7 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/util/word_form.dart';
+import 'package:nnbdc/util/edit_distance.dart';
 import 'package:drift/drift.dart' as drift;
 
 abstract class DistractorStrategy {
@@ -270,12 +271,13 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
       // 1. 收集候选：预设形近词中剔除"目标词自身的屈折变形"（confuse → confused/confusing），
       //    这类词的释义与目标词相同，选它用户无从判断
       final candidateIdToSpell = <String, String>{};
+      final candidateIdToDistance = <String, int>{};
       final similarWordsQuery = db.select(db.similarWords)
         ..where((tbl) => tbl.wordId.equals(targetWordLearningData.wordId));
       final presetSimilarWords = await similarWordsQuery.get();
       for (final sw in presetSimilarWords) {
-        _addCandidate(candidateIdToSpell, sw.similarWordId, sw.similarWordSpell,
-            targetWordLearningData.wordId, targetSpell);
+        _addCandidate(candidateIdToSpell, candidateIdToDistance, sw.similarWordId,
+            sw.similarWordSpell, sw.distance, targetWordLearningData.wordId, targetSpell);
       }
 
       // 2. 动态形近词补充：【只有当预设形近词不足 2 个时】，才去动态查找邻近词补足
@@ -286,7 +288,9 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
           ..orderBy([(tbl) => drift.OrderingTerm(expression: tbl.spell)])
           ..limit(50);
         for (final w in await largerWordsQuery.get()) {
-          _addCandidate(candidateIdToSpell, w.id, w.spell, targetWordLearningData.wordId, targetSpell);
+          final dist = EditDistance.forStrings(targetSpell.toLowerCase(), w.spell.toLowerCase());
+          _addCandidate(candidateIdToSpell, candidateIdToDistance, w.id, w.spell, dist,
+              targetWordLearningData.wordId, targetSpell);
         }
 
         // 拼写更小的（向前取 50 个）
@@ -295,15 +299,17 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
           ..orderBy([(tbl) => drift.OrderingTerm(expression: tbl.spell, mode: drift.OrderingMode.desc)])
           ..limit(50);
         for (final w in await smallerWordsQuery.get()) {
-          _addCandidate(candidateIdToSpell, w.id, w.spell, targetWordLearningData.wordId, targetSpell);
+          final dist = EditDistance.forStrings(targetSpell.toLowerCase(), w.spell.toLowerCase());
+          _addCandidate(candidateIdToSpell, candidateIdToDistance, w.id, w.spell, dist,
+              targetWordLearningData.wordId, targetSpell);
         }
       }
 
-      // 3. 排序：学习范围内的候选优先（范围外仅作兜底），同层内"前三字母与目标词不同"的优先
+      // 3. 排序：学习范围内优先，同层内编辑距离更小优先（同组内随机打乱保持多样性）
       final candidateIds = candidateIdToSpell.keys.toList();
       final inScopeIds =
           await _loadInScopeWordIds(db, targetWordLearningData.userId, candidateIds);
-      _orderCandidates(candidateIds, candidateIdToSpell, targetSpell, inScopeIds);
+      _orderCandidates(candidateIds, candidateIdToDistance, inScopeIds);
 
       // 4. 逐个查释义：跳过与目标词释义完全相同的候选（否则各选项释义相同、无从判断）
       final probeIds = candidateIds.take(_probeCount).toList();
@@ -370,12 +376,20 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
   }
 
   /// 收录一个候选词；与目标词同拼写或同词形的屈折变形不入候选
-  void _addCandidate(Map<String, String> candidateIdToSpell, String wordId, String spell,
-      String targetWordId, String targetSpell) {
+  void _addCandidate(
+    Map<String, String> candidateIdToSpell,
+    Map<String, int> candidateIdToDistance,
+    String wordId,
+    String spell,
+    int distance,
+    String targetWordId,
+    String targetSpell,
+  ) {
     if (wordId == targetWordId) return;
     if (candidateIdToSpell.containsKey(wordId)) return;
     if (targetSpell.isNotEmpty && isSameWordForm(targetSpell, spell)) return;
     candidateIdToSpell[wordId] = spell;
+    candidateIdToDistance[wordId] = distance;
   }
 
   /// 用户"学习范围"内的单词集合：所选学习词书（含父词库）收录的词，
@@ -407,19 +421,16 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
     return inScope;
   }
 
-  /// 分层排序（层内随机）：范围内 > 范围外；层内"前三字母与目标词不同"的优先
-  void _orderCandidates(List<String> candidateIds, Map<String, String> idToSpell,
-      String targetSpell, Set<String> inScopeIds) {
-    final checkLen = targetSpell.length < 3 ? targetSpell.length : 3;
-    final targetPrefix = checkLen > 0 ? targetSpell.substring(0, checkLen).toLowerCase() : '';
-
+  /// 分层排序（层内随机）：范围内 > 范围外；编辑距离小 > 编辑距离大
+  void _orderCandidates(
+    List<String> candidateIds,
+    Map<String, int> idToDistance,
+    Set<String> inScopeIds,
+  ) {
     int layerOf(String id) {
       final scopeLayer = inScopeIds.contains(id) ? 0 : 1;
-      final spell = idToSpell[id] ?? '';
-      final spellPrefix =
-          spell.length < checkLen ? spell.toLowerCase() : spell.substring(0, checkLen).toLowerCase();
-      final prefixLayer = (checkLen == 0 || spellPrefix != targetPrefix) ? 0 : 1;
-      return scopeLayer * 2 + prefixLayer;
+      final dist = idToDistance[id] ?? 2;
+      return scopeLayer * 1000 + dist;
     }
 
     final buckets = <int, List<String>>{};

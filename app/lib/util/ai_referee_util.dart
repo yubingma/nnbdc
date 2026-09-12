@@ -1,10 +1,19 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/global.dart';
 
 /// AI 裁判统一工具类，消除背单词页面与词表页面在提示词及结果解析上的冗余
 class AiRefereeUtil {
+  /// 测试用：替换底层大模型调用（默认走 [Api.client.aiChat]），
+  /// 以便单元测试控制裁判返回的时机（例如复现"结果落地前本地已命中"的竞态）。
+  @visibleForTesting
+  static Future<Result<String>> Function(String messagesJson, String userId)? aiChatOverride;
+
+  static Future<Result<String>> _chat(String messagesJson, String userId) =>
+      (aiChatOverride ?? Api.client.aiChat)(messagesJson, userId);
+
   /// 单词释义裁判系统提示词（含 ASR 声学容错与同义词覆盖规则）
   static const String wordRefereeSystemPrompt = '''
 You are an expert bilingual lexicographer and translation referee. Your task is to judge whether the user's spoken answer accurately represents a valid meaning, synonym, or translation of the target English word.
@@ -160,8 +169,7 @@ ASR Candidate List: $candidateStr
     ];
 
     try {
-      final result = await Api.client
-          .aiChat(jsonEncode(messages), userId)
+      final result = await _chat(jsonEncode(messages), userId)
           .timeout(timeoutDuration, onTimeout: () {
         Global.logger.w('[AI裁判-单词] 请求超时(>${timeoutDuration.inSeconds}s)');
         return Result('TIMEOUT', 'AI裁判响应超时', false);
@@ -213,8 +221,7 @@ ASR Candidate List: $candidateStr
     ];
 
     try {
-      final result = await Api.client
-          .aiChat(jsonEncode(messages), userId)
+      final result = await _chat(jsonEncode(messages), userId)
           .timeout(timeoutDuration, onTimeout: () {
         Global.logger.w('[AI裁判-中英单词] 请求超时(>${timeoutDuration.inSeconds}s)');
         return Result('TIMEOUT', 'AI裁判响应超时', false);
@@ -262,8 +269,7 @@ User Answer: $userInput
     ];
 
     try {
-      final result = await Api.client
-          .aiChat(jsonEncode(messages), userId)
+      final result = await _chat(jsonEncode(messages), userId)
           .timeout(timeoutDuration, onTimeout: () {
         Global.logger.w('[AI裁判-例句] 请求超时(>${timeoutDuration.inSeconds}s)');
         return Result('TIMEOUT', 'AI裁判响应超时', false);

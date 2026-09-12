@@ -815,8 +815,10 @@ class WordListPageState extends State<WordListPage>
             _isAiRefereeJudging = false;
             words[currWordIndex].isAiEvaluating = false;
           }
-        } else if (!words[currWordIndex].answeredAllMeanings) {
-          // 本地未命中：触发单词 AI 裁判防抖判定
+        } else if (result.matchedCount == 0 && !words[currWordIndex].answeredAllMeanings) {
+          // 本地一个释义都没命中，才触发单词 AI 裁判兜底判定。
+          // 已命中过释义时（本次没有新增命中往往只是重复识别到同一答案）不得再交给
+          // AI 裁判：其整词放行会绕过"答对半数/全部"的通过门槛。
           _scheduleWordAiRefereeCheck(currWordIndex, words[currWordIndex], asrResult);
         }
       }
@@ -1628,6 +1630,15 @@ class WordListPageState extends State<WordListPage>
       if (studyMode != WordListStudyMode.speakChinese) return;
       if (getBookMarkUiPosition() != wordIndex || words[wordIndex].word.id != checkWordId || words[wordIndex].answeredAllMeanings) {
         Global.logger.d('~~~~~[AI裁判-单词] 单词已切换或已答对，放弃本次AI裁判结果');
+        wordWrapper.isAiEvaluating = false;
+        return;
+      }
+
+      // 自动兜底裁判在等待大模型期间，本地可能已经命中释义（例如用户接着说出了
+      // 可识别的释义）。此时回答已被本地理解，绝不能再由 AI 裁判整词放行，
+      // 否则会越过"答对半数/全部"的通过门槛。
+      if (words[wordIndex].asrMatchedMeaningItemParts.isNotEmpty) {
+        Global.logger.d('~~~~~[AI裁判-单词] 等待期间本地已命中释义，放弃本次AI裁判结果');
         wordWrapper.isAiEvaluating = false;
         return;
       }

@@ -2186,8 +2186,15 @@ class BdcNotifier extends _$BdcNotifier {
           ToastUtil.error('答案不正确或未写完整，请重写');
           return;
         }
-        // 语音"说中文"未匹配：落到单词 AI 裁判判定（原逻辑不变）。
-        _scheduleWordAiRefereeCheck(inputs);
+        // 本地只要命中过释义，就不再回落 AI 裁判：本次没有"新增"命中往往只是
+        // 收尾识别帧重复了同一答案，而非用户没答对。AI 裁判一旦认可会调用
+        // markAllMeaningsAsAiMatched 把全部释义标记为已答对并整词放行，绕过
+        // "答对半数/全部"的通过门槛，出现"释义已变绿却又弹 AI 裁判认可"的割裂。
+        // AI 裁判只兜底本地一个释义都识别不出的回答。
+        if (result.matchedCount == 0) {
+          // 语音"说中文"未匹配：落到单词 AI 裁判判定（原逻辑不变）。
+          _scheduleWordAiRefereeCheck(inputs);
+        }
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
       if (isSpellingMatch) {
@@ -3356,6 +3363,10 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+  /// 是否有待触发的单词 AI 裁判（防抖计时中），供测试断言调度时机。
+  @visibleForTesting
+  bool get hasPendingWordAiReferee => _wordAiRefereeDebounceTimer?.isActive ?? false;
+
   /// 当用户说出中文释义但本地未命中时，触发大模型裁判防抖调度（1500ms）
   void _scheduleWordAiRefereeCheck(List<String> inputs) {
     _wordAiRefereeDebounceTimer?.cancel();
@@ -3373,16 +3384,21 @@ class BdcNotifier extends _$BdcNotifier {
     if (_wordAiEvaluationCountForCurrentWord >= 5) return;
 
     _wordAiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
-      await _evaluateWordWithAiReferee(cleanInput, rawInput: asrText, candidates: inputs);
+      await _evaluateWordWithAiReferee(cleanInput,
+          rawInput: asrText, candidates: inputs, autoScheduled: true);
     });
   }
 
   /// 执行单词中文释义大模型智能裁决
+  ///
+  /// [autoScheduled] 为 true 表示这是等待用户停顿后自动触发的兜底裁判（而非用户显式请求）：
+  /// 它在等待期间若本地已识别命中释义，则结果作废——见下方落地守卫。
   Future<void> _evaluateWordWithAiReferee(
     String cleanInput, {
     String? rawInput,
     List<String>? candidates,
     BuildContext? context,
+    bool autoScheduled = false,
   }) async {
     if (_isDisposed || _isWordAiRefereeJudging) return;
     if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
@@ -3418,6 +3434,18 @@ class BdcNotifier extends _$BdcNotifier {
         Global.logger.d('~~~~~[AI裁判-单词] 单词已切换、已答对或已销毁，丢弃裁判结果');
         wordWrapper.isAiEvaluating = false;
         if (!_isDisposed && state.isAiEvaluating) {
+          state = state.copyWith(isAiEvaluating: false);
+        }
+        return;
+      }
+
+      // 自动兜底裁判在等待大模型期间，本地可能已经命中释义（例如用户接着说出了
+      // 可识别的释义，或 ASR 收尾帧补齐了答案）。此时回答已被本地理解，
+      // 绝不能再由 AI 裁判整词放行，否则会越过"答对半数/全部"的通过门槛。
+      if (autoScheduled && (state.wordWrapper?.asrMatchedMeaningItemParts.isNotEmpty ?? false)) {
+        Global.logger.d('~~~~~[AI裁判-单词] 等待期间本地已命中释义，丢弃自动裁判结果');
+        wordWrapper.isAiEvaluating = false;
+        if (state.isAiEvaluating) {
           state = state.copyWith(isAiEvaluating: false);
         }
         return;

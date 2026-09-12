@@ -86,12 +86,12 @@ void main() {
         ));
   }
 
-  Future<void> insertSimilar(String targetId, String similarId, String spell) async {
+  Future<void> insertSimilar(String targetId, String similarId, String spell, [int distance = 1]) async {
     await db.into(db.similarWords).insert(SimilarWord(
           wordId: targetId,
           similarWordId: similarId,
           similarWordSpell: spell,
-          distance: 1,
+          distance: distance,
           createTime: now,
           updateTime: now,
         ));
@@ -185,12 +185,12 @@ void main() {
       expect(words.map((w) => w.spell), containsAll(['consume', 'confess']));
     });
 
-    test('学习范围内的形近词优先，即使其前三字母与目标词相同', () async {
+    test('学习范围内的形近词优先于范围外的形近词', () async {
       await insertDict('d1');
       await insertLearningDict('d1');
       await insertWord('w_confuse', 'confuse');
-      await insertWord('w_confer', 'confer'); // 范围内，前缀与目标词相同
-      await insertWord('w_infuse', 'infuse'); // 范围外，前缀不同
+      await insertWord('w_confer', 'confer'); // 范围内
+      await insertWord('w_infuse', 'infuse'); // 范围外
       await insertDictWord('d1', 'w_confuse');
       await insertDictWord('d1', 'w_confer');
       await insertSimilar('w_confuse', 'w_confer', 'confer');
@@ -202,6 +202,30 @@ void main() {
       final words = await pickDistractors('w_confuse', '使困惑');
 
       expect(words.first.spell, 'confer');
+    });
+
+    test('更形近（编辑距离更小）的形近词优先（如 change 优先选 charge/chance 而非 orange）', () async {
+      await insertDict('d1');
+      await insertLearningDict('d1');
+      await insertWord('w_change', 'change');
+      await insertWord('w_charge', 'charge');
+      await insertWord('w_chance', 'chance');
+      await insertWord('w_orange', 'orange');
+      for (final id in ['w_change', 'w_charge', 'w_chance', 'w_orange']) {
+        await insertDictWord('d1', id);
+      }
+      await insertSimilar('w_change', 'w_charge', 'charge', 1);
+      await insertSimilar('w_change', 'w_chance', 'chance', 1);
+      await insertSimilar('w_change', 'w_orange', 'orange', 2);
+      await insertMeaning('w_change', '改变');
+      await insertMeaning('w_charge', '充电; 索价');
+      await insertMeaning('w_chance', '机会');
+      await insertMeaning('w_orange', '橙子');
+
+      final words = await pickDistractors('w_change', '改变');
+
+      expect(words.map((w) => w.spell), containsAll(['charge', 'chance']));
+      expect(words.map((w) => w.spell), isNot(contains('orange')));
     });
 
     test('个别候选缺少释义时跳过该候选，不影响其余干扰项', () async {

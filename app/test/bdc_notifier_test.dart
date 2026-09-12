@@ -8,10 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
+import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -586,6 +588,115 @@ void main() {
     // 现在全部答对，应该通过
     expect(state.hasFinishedAnswering, true);
     expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 3);
+  });
+
+  test('BdcNotifier - 英中模式已说中的释义重复识别时不应触发 AI 裁判（不得整词放行绕过半数门槛）', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 3 个释义子项 + 通过线为"答对一半"（需答对 2 个）
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('a.', '竞争的;竞争激烈的;好胜的'),
+    ];
+    notifier.updateAsrPassRuleCache('HALF');
+
+    // 用户说"竞争性的"（命中"竞争的"，变绿），只答对 1/2，未通过
+    await notifier.onAsrResult(jsonEncode({
+      'best': '竞争性的',
+      'candidates': ['竞争性的'],
+      'isFinal': false,
+    }));
+    var state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false, reason: '只答对 1/2，不应通过');
+    expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 1);
+    expect(notifier.hasPendingWordAiReferee, false, reason: '本地命中后不应有待触发的 AI 裁判');
+
+    // 同一答案的收尾识别帧（重复文本）：本次没有"新增"命中，但本地已命中过释义，
+    // 绝不能因此把回答交给 AI 裁判——AI 认可会把全部释义标记为已答对并整词放行。
+    await notifier.onAsrResult(jsonEncode({
+      'best': '竞争性的',
+      'candidates': ['竞争性的'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false, reason: '仍只答对 1/2，不应通过');
+    expect(notifier.hasPendingWordAiReferee, false,
+        reason: '本地已命中释义时，AI 裁判不应被调度（否则整词放行会绕过半数门槛）');
+
+    // 继续说中第二个释义才应通过
+    await notifier.onAsrResult(jsonEncode({
+      'best': '好胜的',
+      'candidates': ['好胜的'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true, reason: '答对 2/3 达到半数门槛，应通过');
+  });
+
+  test('BdcNotifier - 自动 AI 裁判在等待期间本地已命中释义时结果应被丢弃（不得整词放行）', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    // 本用例含 1.5s 以上的真实等待：必须持有监听，避免 autoDispose 在等待期间销毁 notifier
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    // 用可控的 Completer 替代真实大模型调用，模拟"裁判请求仍在途"
+    final judgeCompleter = Completer<Result<String>>();
+    AiRefereeUtil.aiChatOverride = (messagesJson, userId) => judgeCompleter.future;
+    addTearDown(() => AiRefereeUtil.aiChatOverride = null);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('a.', '竞争的;竞争激烈的;好胜的'),
+    ];
+    notifier.updateAsrPassRuleCache('HALF');
+
+    // 说了一句本地完全识别不出的回答 -> 调度自动 AI 裁判兜底
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果香蕉',
+      'candidates': ['苹果香蕉'],
+      'isFinal': true,
+    }));
+    expect(notifier.hasPendingWordAiReferee, true, reason: '本地一个都没命中，应调度 AI 裁判兜底');
+
+    // 防抖到期，AI 裁判进入在途等待（大模型尚未返回）
+    await Future.delayed(const Duration(milliseconds: 1700));
+    expect(container.read(bdcNotifierProvider).isAiEvaluating, true, reason: 'AI 裁判应在途等待');
+
+    // 在途期间本地命中释义："竞争性的" -> "竞争的"
+    await notifier.onAsrResult(jsonEncode({
+      'best': '竞争性的',
+      'candidates': ['竞争性的'],
+      'isFinal': true,
+    }));
+    var state = container.read(bdcNotifierProvider);
+    expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 1);
+    expect(state.hasFinishedAnswering, false, reason: '只答对 1/2，尚未通过');
+
+    // AI 裁判此时返回"认可"：因本地已命中，结果必须作废，不能整词放行
+    judgeCompleter.complete(Result('200', '', true)
+      ..data = '{"isCorrect": true, "intendedMeaning": "竞争性的"}');
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false, reason: 'AI 裁判结果应被丢弃，不得整词放行');
+    expect(state.wordWrapper!.aiApprovedAnswer, null, reason: '不应记录 AI 认可回答');
+    expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 1,
+        reason: '本地命中结果不应被 AI 整词覆盖');
+    expect(state.isAiEvaluating, false, reason: '裁判结束后应复位判定中状态');
   });
 
   test('测试例句模式下的语音识别与LCS相似度模糊匹配判定', () async {
