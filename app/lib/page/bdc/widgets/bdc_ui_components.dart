@@ -47,6 +47,14 @@ extension BdcPageStateUIComponents on BdcPageState {
   Widget _buildFullscreenImmersiveInputMode() {
     final isDarkMode = _cachedIsDarkMode;
 
+    // 「键盘 vs 手写」的接管判据（「提交」「回退」共用）：
+    // 只有键盘没在用、且画布上有笔迹时，才把手势交给手写板处理；否则都作用于输入框文本。
+    // 不能只看键盘焦点——点一下画布就会让输入框失焦，只看焦点会让键盘已打好的内容被判空/被覆盖。
+    // 用闭包而非局部变量：焦点与笔迹在 build 之后仍会变化，必须在点击当刻读取。
+    bool handwritingTakesOver() =>
+        !_meaningFocusNode.hasFocus &&
+        (_handwritingBoardKey.currentState?.hasInk ?? false);
+
     // 获取合并后的所有释义项
     final meaningItems = state.word?.getMergedMeaningItems() ?? [];
     final combinedMeaning = meaningItems
@@ -108,27 +116,26 @@ extension BdcPageStateUIComponents on BdcPageState {
                     onRecognizedPreview: (text) {
                       notifier.updateMeaningTextWithoutCheck(text);
                     },
-                    // 点「提交」：画布上有笔迹 → 走手写识别判题；没有笔迹（例如只用键盘打字）→ 直接判输入框文本。
-                    // 用"有没有笔迹"而非"键盘是否聚焦"作判据：点一下画布就会让输入框失焦，
-                    // 若按焦点分发，键盘已打好的内容会被空手写结果覆盖清空。
+                    // 点「提交」：键盘在用或画布没有笔迹 → 直接判输入框文本；否则交回手写板识别判题。
                     onSubmit: () {
-                      if (_handwritingBoardKey.currentState?.hasInk ?? false) {
-                        return false;
-                      }
+                      if (handwritingTakesOver()) return false;
                       notifier.checkAsrResult();
                       return true;
                     },
-                    // 键盘输入法弹起时点「回退」= 删除输入框最后一个字符
+                    // 落笔接管的当刻读取输入框文本，作为本次手写答案的前缀（"打字→手写"不丢键盘内容）
+                    onReadCurrentText: () => notifier.meaningController.text,
+                    // 点「回退」：键盘在用或画布没有笔迹 → 删除输入框最后一个字符；
+                    // 否则交回手写板（清当前格 / 删已定稿的最后一个字）。
                     onUndoRequest: () {
-                      if (_meaningFocusNode.hasFocus) {
-                        final text = notifier.meaningController.text;
-                        if (text.isNotEmpty) {
-                          notifier.updateMeaningTextWithoutCheck(
-                              text.substring(0, text.length - 1));
-                        }
-                        return true;
+                      if (handwritingTakesOver()) return false;
+                      final text = notifier.meaningController.text;
+                      if (text.isNotEmpty) {
+                        notifier.updateMeaningTextWithoutCheck(
+                            text.substring(0, text.length - 1));
                       }
-                      return false;
+                      // 键盘已接管输入框：同步清掉手写板状态，避免下次落笔时把被删掉的内容又带回来
+                      _handwritingBoardKey.currentState?.clearHandwritingPreview();
+                      return true;
                     },
                     onCancel: () {
                       _meaningFocusNode.unfocus();
@@ -1562,9 +1569,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         icon: Icons.edit_note_rounded,
                         label: '拼写',
                         onTap: () {
-                          notifier.updateIsUpdatingByHint(true);
-                          notifier.meaningController.clear();
-                          notifier.updateIsUpdatingByHint(false);
+                          // 输入框空白由 updateShowHandwritingBoard(true) 统一保证，这里不再单独清
                           updateUI(() {
                             notifier.updateShowHandwritingBoard(true);
                           }, tag: 'hw-open');

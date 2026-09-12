@@ -48,7 +48,13 @@ class HandwritingBoard extends StatefulWidget {
     this.onCellIdle,
     this.onSubmit,
     this.onUndoRequest,
+    this.onReadCurrentText,
   });
+
+  /// 读取输入框当前文本。分格（中文默写）模式下，本次手写作答的第一笔落下时调用一次：
+  /// 把"手写接管前输入框里已有的文本（键盘输入或更早的回显）"作为答案前缀并入后续判题文本，
+  /// 保证"打字 → 手写"切换时不丢键盘已打好的内容。
+  final String Function()? onReadCurrentText;
 
   /// 一格内停笔回调：用于在当前格识别并提前回显（不判题、不清空）。
   final VoidCallback? onCellIdle;
@@ -104,6 +110,13 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   /// 分格模式下已识别出的字序列（每个格子一个字）。提交时拼接成最终答案。
   List<String> _recognizedChars = [];
 
+  /// 本次手写作答开始前，输入框里已有的文本（键盘输入或更早的回显），作为答案前缀。
+  /// 在本次作答的第一笔落下时捕获；被清空（重写）或键盘接管输入框后失效。
+  String _prefixText = '';
+
+  /// 当前完整答案文本 = 答案前缀 + 已定稿字序列 + 当前格预览。
+  String get _answerText => '$_prefixText${_recognizedChars.join()}$_currentCellText';
+
   /// 当前正在书写的格子索引（分格模式下有效）。
   int _activeCell = 0;
 
@@ -151,10 +164,20 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     }
   }
 
-  /// 当前格"停笔预览"的提前回显文本 = 已识别(已完成格) + 当前格停笔识别结果。
+  /// 落笔：本次手写作答的第一笔（画布上还没有任何待判定内容）落下时，
+  /// 把输入框里已有文本（键盘输入/更早的回显）记作答案前缀，后续回显与判题都带上它，
+  /// 于是"打字 → 手写"切换时键盘已打好的内容不会丢。
+  void _handleStartWriting() {
+    if (widget.cellCount > 1 && !hasInk) {
+      _prefixText = widget.onReadCurrentText?.call() ?? '';
+    }
+    widget.onStartWriting?.call();
+  }
+
+  /// 回显文本（不判题）= 答案前缀 + 已定稿字序列 + 当前格停笔识别结果，
+  /// 用于停笔预览/换格定稿/回退时保持输入框与手写内容一致。
   void _updatePreview() {
-    widget.onRecognizedPreview?.call(
-        (_recognizedChars + [_currentCellText]).join());
+    widget.onRecognizedPreview?.call(_answerText);
   }
 
   /// 停笔(一格内)触发：识别当前格并回显到输入框，不判题、不清空。
@@ -259,8 +282,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
           language: widget.language,
           writingAreaWidth: areaW > 0 ? areaW : null,
           writingAreaHeight: areaH > 0 ? areaH : null,
-          // 已定稿的前缀文本即"书写位置之前的文本"，交给 ML Kit 判断词边界；无前缀传空串（不能传 nil）
-          preContext: _recognizedChars.join())
+          // 已定稿/键盘前缀文本即"书写位置之前的文本"，交给 ML Kit 判断词边界；无前缀传空串（不能传 nil）
+          preContext: '$_prefixText${_recognizedChars.join()}')
           .timeout(const Duration(seconds: 5));
       return _postProcess(response);
     } catch (e) {
@@ -314,7 +337,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _canvasKey.currentState?._controller.clear();
     _lines.clear();
     if (widget.cellCount > 1) {
-      // 分格模式：重写 = 全部清空，包括已识别序列、当前格文本、当前格高亮
+      // 分格模式：重写 = 全部清空，包括答案前缀、已识别序列、当前格文本、当前格高亮
+      _prefixText = '';
       _recognizedChars = [];
       _currentCellText = '';
       _activeCell = 0;
@@ -339,18 +363,24 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _recognitionVersion++;
   }
 
-  /// 键盘手动编辑输入框时调用：清掉手写板的"提前回显"预览状态（已识别序列 + 当前格预览），
-  /// 并取消停笔识别定时器，避免手写预览回填覆盖用户用键盘删改后的输入框。
+  /// 键盘手动编辑输入框时调用：取消停笔识别定时器，并清掉手写板的答案前缀、已识别序列与当前格预览，
+  /// 避免手写预览回填覆盖用户用键盘删改后的输入框。
+  /// 中文默写下画布笔迹一并擦除：键盘接管输入框后，残留的旧笔迹会在下次「提交」时
+  /// 覆盖掉键盘内容，导致"输入框显示"与"实际判题文本"不一致。
   void clearHandwritingPreview() {
     _cellPauseTimer?.cancel();
+    _prefixText = '';
     _recognizedChars = [];
     _currentCellText = '';
+    if (widget.cellCount > 1) {
+      clearBoardSilently();
+    }
   }
 
   /// 画布上是否存在待判定的手写内容（笔迹 / 已定稿字 / 当前格预览）。
-  /// 供上层决定「提交」是按手写识别判题，还是直接判输入框里的键盘输入：
+  /// 供上层决定「提交」「回退」是按手写处理，还是作用于输入框里的键盘输入：
   /// 用"有没有笔迹"而不是"键盘是否聚焦"作判据——点一下画布就会让输入框失焦，
-  /// 若按焦点分发，键盘打好的内容会被空手写结果覆盖清空。
+  /// 若只看焦点，键盘打好的内容会被空手写结果覆盖清空。
   bool get hasInk =>
       _lines.isNotEmpty || _recognizedChars.isNotEmpty || _currentCellText.isNotEmpty;
 
@@ -393,7 +423,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     if (widget.cellCount > 1) {
       _finalizeAndClearCurrentCellSync();
       await _finalizeChain; // 等待所有已排队的逐格识别（含本次当前格）按顺序完成
-      widget.onRecognized(_recognizedChars.join());
+      widget.onRecognized(_answerText);
       return;
     }
 
@@ -471,7 +501,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   onRewrite: _clear,
                   onUndo: _incrementVersion,
                   onRecognize: _recognize,
-                  onStartWriting: widget.onStartWriting,
+                  onStartWriting: _handleStartWriting,
                   onPointerUp: widget.onPointerUp,
                   onSwipeUp: widget.onSwipeUp,
                   onSwipeDown: widget.onSwipeDown,

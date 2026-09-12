@@ -1742,6 +1742,39 @@ void main() {
     expect(st.dictationMatchedCount, 0, reason: '通过后复位进度');
     expect(st.dictationRequiredCount, 0, reason: '通过后复位进度');
   });
+
+  test('BdcNotifier - 每次进入全屏拼写/默写界面时底部输入框保证为空白', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 模拟上一轮残留/恢复出来的作答文本
+    notifier.updateMeaningTextWithoutCheck('残留文本');
+
+    // 1. 英文拼写入口
+    notifier.updateShowHandwritingBoard(true);
+    expect(container.read(bdcNotifierProvider).showHandwritingBoard, true);
+    expect(notifier.meaningController.text, '', reason: '进入拼写界面时输入框必须空白');
+
+    // 界面内作答后退出，再次进入（重新进入也要空白）
+    notifier.updateMeaningTextWithoutCheck('interim');
+    notifier.updateShowHandwritingBoard(false);
+    notifier.updateShowHandwritingBoard(true);
+    expect(notifier.meaningController.text, '', reason: '重新进入拼写界面必须重新空白');
+
+    // 2. 中文默写入口
+    notifier.updateMeaningTextWithoutCheck('残留文本');
+    notifier.openChineseDictation();
+    final st = container.read(bdcNotifierProvider);
+    expect(st.showHandwritingBoard, true);
+    expect(st.isChineseDictation, true);
+    expect(notifier.meaningController.text, '', reason: '进入默写界面时输入框必须空白');
+  });
 }
 
 

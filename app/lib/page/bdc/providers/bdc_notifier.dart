@@ -2984,16 +2984,26 @@ class BdcNotifier extends _$BdcNotifier {
   void updateShowHandwritingBoard(bool show) {
     if (show) {
       _isAnswerCorrectHandling = false;
+      _prepareHandwritingEntry();
     }
     state = state.copyWith(showHandwritingBoard: show);
     handleTabChangeForAsr();
+  }
+
+  /// 进入全屏拼写/默写界面前的统一准备：底部输入框必须从空白开始。
+  /// 该界面是"本轮重新作答"的容器（手写板状态随页面销毁），若残留上一轮/恢复出来的文本，
+  /// 用户会以为旧作答还在，而且它还会被"手写答案前缀"并进本次判题。
+  /// 「拼写」「默写」两个入口都经过这里，新增入口也必须走它。
+  void _prepareHandwritingEntry() {
+    _handlingChinese = "";
+    updateMeaningTextWithoutCheck("");
   }
 
   /// 英译汉（en2Ch）中文默写：打开手写板，标记为中文默写模式（识别中文释义，非英文拼写）。
   /// 同时按当前"答对几个释义才算通过"的设置预置通过门槛，供手写页展示进度。
   void openChineseDictation() {
     _isAnswerCorrectHandling = false;
-    _handlingChinese = "";
+    _prepareHandwritingEntry();
     final word = state.word;
     final required = (word == null || state.hasFinishedAnswering)
         ? 0
