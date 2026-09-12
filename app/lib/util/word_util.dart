@@ -212,15 +212,28 @@ List<String> splitMeaning2Parts(String meaning) {
   return parts.where((part) => part.isNotEmpty).toList();
 }
 
+/// 统计参与判题的释义子项总数（分号拆分，忽略整体被括号包裹的子项）。
+/// 与 [matchInputChineseWithMeaningItems] 的口径严格一致，用于展示"还差几个释义"的通过门槛。
+int countMeaningParts(WordVo word) {
+  var count = 0;
+  for (final meaningItem in word.getMergedMeaningItems()) {
+    for (final part in splitMeaning2Parts(meaningItem.meaning ?? '')) {
+      if (!_isWholeBracketed(part)) count++;
+    }
+  }
+  return count;
+}
+
 /// 在单词的所有释义项子项，以及给定的中文内容(或多候选列表)之间进行匹配，返回释义项子项总数量/匹配上的释义项子项数量/本次新增匹配数量
 ///
 /// [strict] 为 true 时（用于中文手写默写，无 ASR 噪声）：要求书写内容与释义逐字完全一致，
 /// 杜绝截断子串（如"女"/"商人"被误判为"女商人"）导致泄题式放水。
 MeaningMatchResult matchInputChineseWithMeaningItems(
     WordWrapper wordWrapper, Object asrInput, {bool strict = false}) {
-  var count = 0; // 所有释义项子项数量
   var newMatchCount = 0; //本次匹配新匹配上的释义项数量
   var meaningItems = wordWrapper.word.getMergedMeaningItems();
+  // 子项总数与"通过门槛/进度"展示共用同一口径，避免两处统计漂移
+  final count = countMeaningParts(wordWrapper.word);
 
   // 统一转为列表处理
   final List<String> inputs =
@@ -239,7 +252,6 @@ MeaningMatchResult matchInputChineseWithMeaningItems(
       if (_isWholeBracketed(part)) {
         continue;
       }
-      count++;
       if (!wordWrapper.asrMatchedMeaningItemParts.contains(Pair(i, j))) {
         // 只要任一候选匹配上，就认为该释义项被答对
         bool isMatched = false;

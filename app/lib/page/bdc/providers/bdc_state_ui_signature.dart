@@ -16,6 +16,9 @@ class BdcStateUiSignature {
   final int historyIndex;
   final int historyLength;
   final bool showHandwritingBoard;
+  final int dictationMatchedCount;
+  final int dictationRequiredCount;
+  final int hintLetterCount;
   final bool buttonsEnabled;
   final bool isKeyboardVisible;
   final String? loadError;
@@ -43,6 +46,9 @@ class BdcStateUiSignature {
         historyIndex = s.historyIndex,
         historyLength = s.history.length,
         showHandwritingBoard = s.showHandwritingBoard,
+        dictationMatchedCount = s.dictationMatchedCount,
+        dictationRequiredCount = s.dictationRequiredCount,
+        hintLetterCount = s.wordWrapper?.hintLetterCount ?? 0,
         buttonsEnabled = s.buttonsEnabled,
         isKeyboardVisible = s.isKeyboardVisible,
         loadError = s.loadError,
@@ -73,6 +79,9 @@ class BdcStateUiSignature {
         historyIndex == other.historyIndex &&
         historyLength == other.historyLength &&
         showHandwritingBoard == other.showHandwritingBoard &&
+        dictationMatchedCount == other.dictationMatchedCount &&
+        dictationRequiredCount == other.dictationRequiredCount &&
+        hintLetterCount == other.hintLetterCount &&
         buttonsEnabled == other.buttonsEnabled &&
         isKeyboardVisible == other.isKeyboardVisible &&
         loadError == other.loadError &&
@@ -102,6 +111,9 @@ class BdcStateUiSignature {
         historyIndex,
         historyLength,
         showHandwritingBoard,
+        dictationMatchedCount,
+        dictationRequiredCount,
+        hintLetterCount,
         buttonsEnabled,
         isKeyboardVisible,
         loadError,

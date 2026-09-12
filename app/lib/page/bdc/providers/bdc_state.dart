@@ -44,6 +44,10 @@ class BdcState extends Equatable {
   final bool showHandwritingBoard;
   /// 手写板是否为「中文默写」模式（英译汉时手写中文释义，结果走中文匹配而非英文拼写）
   final bool isChineseDictation;
+  /// 中文默写判题进度：已命中的释义子项数（仅用于展示，不参与判题决策）
+  final int dictationMatchedCount;
+  /// 中文默写判题进度：达到通过线所需命中的释义子项数（0 表示无进度可展示）
+  final int dictationRequiredCount;
   
   final AsrState asrState;
   final String asrResult;
@@ -120,6 +124,8 @@ class BdcState extends Equatable {
     this.buttonsEnabled = true,
     this.showHandwritingBoard = false,
     this.isChineseDictation = false,
+    this.dictationMatchedCount = 0,
+    this.dictationRequiredCount = 0,
     this.asrState = AsrState.unknown,
     this.asrResult = "",
     this.currentAsrCandidates = const [],
@@ -197,6 +203,8 @@ class BdcState extends Equatable {
     bool? buttonsEnabled,
     bool? showHandwritingBoard,
     bool? isChineseDictation,
+    int? dictationMatchedCount,
+    int? dictationRequiredCount,
     AsrState? asrState,
     String? asrResult,
     List<String>? currentAsrCandidates,
@@ -260,6 +268,8 @@ class BdcState extends Equatable {
       buttonsEnabled: buttonsEnabled ?? this.buttonsEnabled,
       showHandwritingBoard: showHandwritingBoard ?? this.showHandwritingBoard,
       isChineseDictation: isChineseDictation ?? this.isChineseDictation,
+      dictationMatchedCount: dictationMatchedCount ?? this.dictationMatchedCount,
+      dictationRequiredCount: dictationRequiredCount ?? this.dictationRequiredCount,
       asrState: asrState ?? this.asrState,
       asrResult: asrResult ?? this.asrResult,
       currentAsrCandidates: currentAsrCandidates ?? this.currentAsrCandidates,
@@ -335,6 +345,8 @@ class BdcState extends Equatable {
     buttonsEnabled,
     showHandwritingBoard,
     isChineseDictation,
+    dictationMatchedCount,
+    dictationRequiredCount,
     asrState,
     asrResult,
     currentAsrCandidates,

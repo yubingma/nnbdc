@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
@@ -1696,6 +1697,50 @@ void main() {
 
     // Note: 答错重写会走 ToastUtil.error 提示（保持手写板打开），
     // 但纯单元测试环境没有 ToastificationWrapper，无法实例化 toast，故此处不覆盖答错分支。
+  });
+
+  test('BdcNotifier - 中文默写只提交部分释义时发布进度且判题时机不变（需提交才判）', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 把当前词构造成 3 个释义子项，并把通过线设为"答对一半"（3 个需答对 2 个）
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('n.', '悲剧;灾难;惨案'),
+    ];
+    notifier.updateAsrPassRuleCache('HALF');
+
+    // 打开默写：门槛已预置（写对 2 个才通过），尚未判题所以已答对为 0
+    notifier.openChineseDictation();
+    var st = container.read(bdcNotifierProvider);
+    expect(st.dictationRequiredCount, 2, reason: '3 个子项按"答对一半"需答对 2 个');
+    expect(st.dictationMatchedCount, 0);
+    expect(st.hasFinishedAnswering, false, reason: '打开默写本身不判题');
+
+    // 只写对一个释义后提交：未达通过线 → 手写板保持打开，进度前进到 1/2
+    await notifier.checkAsrResult(asrInput: '悲剧', isVoice: false);
+    st = container.read(bdcNotifierProvider);
+    expect(st.hasFinishedAnswering, false);
+    expect(st.showHandwritingBoard, true, reason: '未达通过线不应退出手写板');
+    expect(st.dictationMatchedCount, 1, reason: '已答对 1 个释义');
+    expect(st.dictationRequiredCount, 2, reason: '距通过还差 1 个释义');
+
+    // 提交对不上任何释义时会走 ToastUtil.error（保持手写板打开），
+    // 纯单元测试环境没有 ToastificationWrapper，无法覆盖该分支（详见上一个用例的说明）。
+
+    // 再提交一个释义达到通过线 → 通过并退出手写板，进度复位
+    await notifier.checkAsrResult(asrInput: '悲剧灾难', isVoice: false);
+    st = container.read(bdcNotifierProvider);
+    expect(st.hasFinishedAnswering, true);
+    expect(st.showHandwritingBoard, false);
+    expect(st.isChineseDictation, false);
+    expect(st.dictationMatchedCount, 0, reason: '通过后复位进度');
+    expect(st.dictationRequiredCount, 0, reason: '通过后复位进度');
   });
 }
 

@@ -347,6 +347,13 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _currentCellText = '';
   }
 
+  /// 画布上是否存在待判定的手写内容（笔迹 / 已定稿字 / 当前格预览）。
+  /// 供上层决定「提交」是按手写识别判题，还是直接判输入框里的键盘输入：
+  /// 用"有没有笔迹"而不是"键盘是否聚焦"作判据——点一下画布就会让输入框失焦，
+  /// 若按焦点分发，键盘打好的内容会被空手写结果覆盖清空。
+  bool get hasInk =>
+      _lines.isNotEmpty || _recognizedChars.isNotEmpty || _currentCellText.isNotEmpty;
+
   void _clear() {
     clearBoard();
     widget.onRewrite?.call();
@@ -380,14 +387,13 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   }
 
   Future<void> _recognize() async {
-    // 分格模式（中文默写）：提交时先识别当前格，再拼接所有格子成完整答案
+    // 分格模式（中文默写）：提交时先定稿当前格（只擦笔迹，保留已识别序列），再拼接成完整答案判题。
+    // 保留 _recognizedChars 是为了让提交失败后用户能直接续写（与键盘"补字再交"一致），
+    // 否则已写对的内容会从答案里消失、输入框也会在下次停笔回显时突然缩水。
     if (widget.cellCount > 1) {
       _finalizeAndClearCurrentCellSync();
       await _finalizeChain; // 等待所有已排队的逐格识别（含本次当前格）按顺序完成
-      final answer = _recognizedChars.join();
-      _recognizedChars = [];
-      _activeCell = 0;
-      widget.onRecognized(answer);
+      widget.onRecognized(_recognizedChars.join());
       return;
     }
 

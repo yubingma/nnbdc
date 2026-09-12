@@ -108,14 +108,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                     onRecognizedPreview: (text) {
                       notifier.updateMeaningTextWithoutCheck(text);
                     },
-                    // 键盘输入法弹起时点「提交」= 完成键盘输入：直接判输入框文本，不识别手写区域。
-                    // 答错时保留键盘焦点，方便用户继续修改重提。
+                    // 点「提交」：画布上有笔迹 → 走手写识别判题；没有笔迹（例如只用键盘打字）→ 直接判输入框文本。
+                    // 用"有没有笔迹"而非"键盘是否聚焦"作判据：点一下画布就会让输入框失焦，
+                    // 若按焦点分发，键盘已打好的内容会被空手写结果覆盖清空。
                     onSubmit: () {
-                      if (_meaningFocusNode.hasFocus) {
-                        notifier.checkAsrResult();
-                        return true;
+                      if (_handwritingBoardKey.currentState?.hasInk ?? false) {
+                        return false;
                       }
-                      return false;
+                      notifier.checkAsrResult();
+                      return true;
                     },
                     // 键盘输入法弹起时点「回退」= 删除输入框最后一个字符
                     onUndoRequest: () {
@@ -315,20 +316,63 @@ extension BdcPageStateUIComponents on BdcPageState {
                   color: context.primaryColor.withValues(alpha: 0.35),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  '支持键盘输入与手写混合使用',
-                  style: TextStyle(
-                    color: context.textMuted.withValues(alpha: 0.8),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.3,
+                // 中文默写：只读展示"距离通过还差几个释义"。
+                // 判题时机仍由「提交」触发，进度仅作展示，不接管任何手势或输入行为。
+                if (state.dictationRequiredCount > 0)
+                  _buildDictationProgressText(state)
+                else
+                  Text(
+                    '支持键盘输入与手写混合使用',
+                    style: TextStyle(
+                      color: context.textMuted.withValues(alpha: 0.8),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.3,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// 中文默写的通过进度（只读）：尚未命中任何释义时提示通过门槛，已有命中时提示还差几个。
+  /// 与静态提示保持同字号同字距，仅数字改用主色 + 半粗，确保出现进度时底部面板不跳动。
+  Widget _buildDictationProgressText(BdcState state) {
+    final int matched = state.dictationMatchedCount;
+    final int required = state.dictationRequiredCount;
+    final int remaining = required - matched > 0 ? required - matched : 0;
+    final TextStyle baseStyle = TextStyle(
+      color: context.textMuted.withValues(alpha: 0.8),
+      fontSize: 11.5,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.3,
+    );
+    final TextStyle numberStyle = baseStyle.copyWith(
+      color: context.textPrimary,
+      fontWeight: FontWeight.w600,
+    );
+
+    return Text.rich(
+      TextSpan(
+        children: matched == 0
+            ? [
+                const TextSpan(text: '写对 '),
+                TextSpan(text: '$required', style: numberStyle),
+                const TextSpan(text: ' 个释义即可通过'),
+              ]
+            : [
+                const TextSpan(text: '已答对 '),
+                TextSpan(text: '$matched/$required', style: numberStyle),
+                const TextSpan(text: ' · 还差 '),
+                TextSpan(text: '$remaining', style: numberStyle),
+                const TextSpan(text: ' 个即可通过'),
+              ],
+      ),
+      style: baseStyle,
+      textAlign: TextAlign.center,
     );
   }
 

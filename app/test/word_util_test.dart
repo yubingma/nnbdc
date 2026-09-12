@@ -203,4 +203,30 @@ void main() {
       expect(merged.first.ciXing, 'n.');
     });
   });
+
+  group('释义子项计数（通过门槛/进度展示口径）', () {
+    test('按分号拆分，忽略整体被括号包裹的子项', () {
+      final word = WordVo.c2('apple')..meaningItems = [
+        MeaningItemVo.from('n.', '苹果;公司'),
+        MeaningItemVo.from('adj.', '[ 废弃的用法 ]'),
+      ];
+
+      expect(countMeaningParts(word), 2);
+    });
+
+    test('与判题返回的 totalCount 口径一致（答对一半的算数）', () {
+      final word = WordVo.c2('tragedy')
+        ..meaningItems = [MeaningItemVo.from('n.', '悲剧;灾难;惨案')];
+
+      final result = matchInputChineseWithMeaningItems(
+          WordWrapper(word, null), '悲剧',
+          strict: true);
+
+      expect(result.totalCount, 3);
+      expect(result.totalCount, countMeaningParts(word));
+      expect(result.matchedCount, 1);
+      // 答对一半（向上取整）需 2 个：只写对 1 个时还差 1 个
+      expect(((result.totalCount + 1) >> 1) - result.matchedCount, 1);
+    });
+  });
 }

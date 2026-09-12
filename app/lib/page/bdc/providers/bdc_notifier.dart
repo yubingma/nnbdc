@@ -2109,7 +2109,16 @@ class BdcNotifier extends _$BdcNotifier {
           clonedWrapper, inputs, strict: state.isChineseDictation);
       bool isMatch = _isAsrPassSync(result.totalCount, result.matchedCount);
       Global.logger.d('[PERF] checkAsrResult -> matchInputChineseWithMeaningItems cost: ${matchStopwatch.elapsedMilliseconds}ms');
-      
+
+      // 中文默写：把本次判题结果同步为进度数据，仅供手写页展示"还差几个释义即可通过"。
+      // 这里只记录数据，不改变判题时机、不改变通过判定；已答完后的重写练习无通过线，保持 0 以隐藏进度。
+      if (state.isChineseDictation && !state.hasFinishedAnswering) {
+        state = state.copyWith(
+          dictationMatchedCount: result.matchedCount,
+          dictationRequiredCount: _requiredMatchCount(result.totalCount),
+        );
+      }
+
       if (result.newMatchCount > 0) {
         _wordAiRefereeDebounceTimer?.cancel(); // 本地匹配命中，取消待触发的AI裁判
         _wordAccumulatedAsrText = "";
@@ -2137,7 +2146,12 @@ class BdcNotifier extends _$BdcNotifier {
           final ratingResult = _calculateRating(method);
           // 中文默写匹配成功后，退出中文字写板并重置中文默写标记
           if (state.isChineseDictation) {
-            state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
+            state = state.copyWith(
+              showHandwritingBoard: false,
+              isChineseDictation: false,
+              dictationMatchedCount: 0,
+              dictationRequiredCount: 0,
+            );
           }
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         } else {
@@ -2152,7 +2166,12 @@ class BdcNotifier extends _$BdcNotifier {
         final bool correct = state.word != null &&
             chineseInputMatchesAnyMeaning(state.word!, inputs, strict: true);
         if (correct) {
-          state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
+          state = state.copyWith(
+            showHandwritingBoard: false,
+            isChineseDictation: false,
+            dictationMatchedCount: 0,
+            dictationRequiredCount: 0,
+          );
           _handleTabChangeForAsr();
           // 主动重写提交：强制播放反馈音，不受 800ms 防回声去抖限制
           _playCorrectSound(force: true);
@@ -2220,14 +2239,17 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
+  /// 通过当前环节需要命中的释义子项数（由学习设置"答对几个释义才算通过"决定）。
+  /// 判题与手写页的"还差几个释义"进度提示共用此口径，避免两处算法漂移。
+  int _requiredMatchCount(int total) {
+    if (state.asrPassRuleCache == 'ALL') return total;
+    if (state.asrPassRuleCache == 'HALF') return (total + 1) >> 1;
+    return 1;
+  }
+
   bool _isAsrPassSync(int total, int matched) {
-    if (state.asrPassRuleCache == 'ALL') {
-      return matched >= total && total > 0;
-    } else if (state.asrPassRuleCache == 'HALF') {
-      return matched >= ((total + 1) >> 1);
-    } else {
-      return matched >= 1;
-    }
+    if (state.asrPassRuleCache == 'ALL' && total <= 0) return false;
+    return matched >= _requiredMatchCount(total);
   }
 
   ({FsrsRating rating, String reason}) _calculateRating(String method, {int? customResponseTime}) {
@@ -2967,18 +2989,33 @@ class BdcNotifier extends _$BdcNotifier {
     handleTabChangeForAsr();
   }
 
-  /// 英译汉（en2Ch）中文默写：打开手写板，标记为中文默写模式（识别中文释义，非英文拼写）
+  /// 英译汉（en2Ch）中文默写：打开手写板，标记为中文默写模式（识别中文释义，非英文拼写）。
+  /// 同时按当前"答对几个释义才算通过"的设置预置通过门槛，供手写页展示进度。
   void openChineseDictation() {
     _isAnswerCorrectHandling = false;
     _handlingChinese = "";
-    state = state.copyWith(showHandwritingBoard: true, isChineseDictation: true);
+    final word = state.word;
+    final required = (word == null || state.hasFinishedAnswering)
+        ? 0
+        : _requiredMatchCount(countMeaningParts(word));
+    state = state.copyWith(
+      showHandwritingBoard: true,
+      isChineseDictation: true,
+      dictationMatchedCount: 0,
+      dictationRequiredCount: required,
+    );
     handleTabChangeForAsr();
   }
 
   /// 关闭手写板并重置中文默写标记
   void closeChineseDictation() {
     _handlingChinese = "";
-    state = state.copyWith(showHandwritingBoard: false, isChineseDictation: false);
+    state = state.copyWith(
+      showHandwritingBoard: false,
+      isChineseDictation: false,
+      dictationMatchedCount: 0,
+      dictationRequiredCount: 0,
+    );
     handleTabChangeForAsr();
   }
 
