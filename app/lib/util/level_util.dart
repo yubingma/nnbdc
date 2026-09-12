@@ -26,8 +26,13 @@ class Level {
 }
 
 class LevelUtil {
+  /// 每个段位内可点亮的星数, 满星即晋升
+  static const int starsPerLevel = 3;
+
   static List<Level> get allLevels => _levels;
 
+  /// 段位阶梯按真实用户词量分布校准: 前密后疏, 0-650 词即含 9 个段位,
+  /// 顶端封顶在 10000 词 (覆盖 GRE 量级), 避免出现永远够不到的段位.
   static const List<Level> _levels = [
     Level(
       name: '毛毛虫',
@@ -42,8 +47,24 @@ class LevelUtil {
       color: Color(0xFF81C784),
       level: 0,
       minWords: 0,
-      maxWords: 49,
+      maxWords: 7,
       style: "color:gray;",
+    ),
+    Level(
+      name: '蜗牛',
+      icon: '🐌',
+      quotes: [
+        '慢，但我从没停过。',
+        '我把家背在背上，走到哪算哪。',
+        '别人跑一天，我走十天，也到了。',
+        '壳重一点没关系，那是我自己攒的。',
+        '不看终点，只吃眼前这片叶子。',
+      ],
+      color: Color(0xFFAED581),
+      level: 1,
+      minWords: 8,
+      maxWords: 19,
+      style: "color:darkolivegreen;",
     ),
     Level(
       name: '皮皮虾',
@@ -56,9 +77,9 @@ class LevelUtil {
         '蹦就对了，踩空算惊喜。',
       ],
       color: Color(0xFFFF8A65),
-      level: 1,
-      minWords: 50,
-      maxWords: 199,
+      level: 2,
+      minWords: 20,
+      maxWords: 44,
       style: "color:black;",
     ),
     Level(
@@ -72,9 +93,9 @@ class LevelUtil {
         '慢慢囤，迟早用得上。',
       ],
       color: Color(0xFFFFD54F),
-      level: 2,
-      minWords: 200,
-      maxWords: 599,
+      level: 3,
+      minWords: 45,
+      maxWords: 79,
       style: "color:darkcyan;",
     ),
     Level(
@@ -88,10 +109,26 @@ class LevelUtil {
         '看起来乱，其实都在我脑子里。',
       ],
       color: Color(0xFFBA68C8),
-      level: 3,
-      minWords: 600,
-      maxWords: 1199,
+      level: 4,
+      minWords: 80,
+      maxWords: 129,
       style: "color:blue;",
+    ),
+    Level(
+      name: '乌龟',
+      icon: '🐢',
+      quotes: [
+        '稳，是我的超能力。',
+        '我不跟兔子比速度，我跟自己比耐力。',
+        '缩进壳里休息，不代表我认输。',
+        '路很长，但我走得也久。',
+        '一步一个脚印，脚印多了就是路。',
+      ],
+      color: Color(0xFF4DB6AC),
+      level: 5,
+      minWords: 130,
+      maxWords: 199,
+      style: "color:seagreen;",
     ),
     Level(
       name: '树懒',
@@ -104,9 +141,9 @@ class LevelUtil {
         '我不赶时间，时间会帮我。',
       ],
       color: Color(0xFF9575CD),
-      level: 4,
-      minWords: 1200,
-      maxWords: 2499,
+      level: 6,
+      minWords: 200,
+      maxWords: 299,
       style: "color:coral;",
     ),
     Level(
@@ -120,9 +157,9 @@ class LevelUtil {
         '人生是长跑，不是爆肝赛。',
       ],
       color: Color(0xFF90A4AE),
-      level: 5,
-      minWords: 2500,
-      maxWords: 4999,
+      level: 7,
+      minWords: 300,
+      maxWords: 449,
       style: "color:darkgoldenrod;",
     ),
     Level(
@@ -136,10 +173,26 @@ class LevelUtil {
         '成果，是堆出来的。',
       ],
       color: Color(0xFFA1887F),
-      level: 6,
-      minWords: 5000,
-      maxWords: 9999,
+      level: 8,
+      minWords: 450,
+      maxWords: 649,
       style: "color:darkmagenta;",
+    ),
+    Level(
+      name: '兔子',
+      icon: '🐰',
+      quotes: [
+        '耳朵竖起来，机会才跑不掉。',
+        '跳得高不算本事，跳得准才算。',
+        '我跑得快，但我也知道停下来吃草。',
+        '警惕四周，也别忘了向前。',
+        '今天多蹦两级台阶。',
+      ],
+      color: Color(0xFFF06292),
+      level: 9,
+      minWords: 650,
+      maxWords: 899,
+      style: "color:sienna;",
     ),
     Level(
       name: '鲨鱼',
@@ -152,10 +205,26 @@ class LevelUtil {
         '在深海里，专注就是一切。',
       ],
       color: Color(0xFF64B5F6),
-      level: 7,
-      minWords: 10000,
-      maxWords: 19999,
+      level: 10,
+      minWords: 900,
+      maxWords: 1249,
       style: "color:midnightblue;",
+    ),
+    Level(
+      name: '狐狸',
+      icon: '🦊',
+      quotes: [
+        '聪明不是捷径，是少走弯路。',
+        '我闻得到答案的方向。',
+        '狡猾一点，是对困难的尊重。',
+        '换条路走，也是一样的抵达。',
+        '眼睛亮着，脑子就没停过。',
+      ],
+      color: Color(0xFFFF8A3D),
+      level: 11,
+      minWords: 1250,
+      maxWords: 1699,
+      style: "color:orangered;",
     ),
     Level(
       name: '长颈鹿',
@@ -168,10 +237,26 @@ class LevelUtil {
         '高处的树叶，总是更好吃。',
       ],
       color: Color(0xFFFFB74D),
-      level: 8,
-      minWords: 20000,
-      maxWords: 29999,
+      level: 12,
+      minWords: 1700,
+      maxWords: 2299,
       style: "color:peru;",
+    ),
+    Level(
+      name: '狼',
+      icon: '🐺',
+      quotes: [
+        '一个人也能跑，一群人才叫远征。',
+        '我盯着目标，不盯着别人的速度。',
+        '夜里出发，天亮了就到。',
+        '忍耐是狼的第二种牙齿。',
+        '风往哪吹，我就往哪追。',
+      ],
+      color: Color(0xFF78909C),
+      level: 13,
+      minWords: 2300,
+      maxWords: 3199,
+      style: "color:dimgray;",
     ),
     Level(
       name: '虎鲸',
@@ -184,10 +269,26 @@ class LevelUtil {
         '安静，但致命。',
       ],
       color: Color(0xFF455A64),
-      level: 9,
-      minWords: 30000,
-      maxWords: 39999,
+      level: 14,
+      minWords: 3200,
+      maxWords: 4499,
       style: "color:purple;",
+    ),
+    Level(
+      name: '鹰',
+      icon: '🦅',
+      quotes: [
+        '站得高，是因为我摔过很多次。',
+        '风越大，我飞得越省力。',
+        '我看得远，所以我不慌。',
+        '收起翅膀是休息，不是放弃。',
+        '从高空看，难题都很小。',
+      ],
+      color: Color(0xFF8D6E63),
+      level: 15,
+      minWords: 4500,
+      maxWords: 6499,
+      style: "color:teal;",
     ),
     Level(
       name: '蓝鲸',
@@ -199,11 +300,27 @@ class LevelUtil {
         '我在自己的节奏里，探索世界。',
         '越深的地方，越安静。',
       ],
-      color: Color(0xFF4DB6AC),
-      level: 10,
-      minWords: 40000,
-      maxWords: 99999999,
+      color: Color(0xFF42A5F5),
+      level: 16,
+      minWords: 6500,
+      maxWords: 9999,
       style: "color:rosybrown;",
+    ),
+    Level(
+      name: '龙',
+      icon: '🐉',
+      quotes: [
+        '从一条虫到一条龙，我用了很久。',
+        '我不需要证明什么了，我只是在飞。',
+        '云层之上，是我习惯的高度。',
+        '传说，是一天天熬出来的。',
+        '终点不是我的对手，天空才是。',
+      ],
+      color: Color(0xFFE53935),
+      level: 17,
+      minWords: 10000,
+      maxWords: 99999999,
+      style: "color:crimson;",
     ),
   ];
 
@@ -243,6 +360,24 @@ class LevelUtil {
       }
     }
     return _levels[0]; // 默认返回最低等级
+  }
+
+  /// 下一段位的入门词数; 已是最高段位时返回 null
+  static int? nextLevelMinWords(int level) {
+    if (level < 0 || level >= _levels.length - 1) return null;
+    return _levels[level + 1].minWords;
+  }
+
+  /// 当前段位内已点亮的星数 (1 ~ starsPerLevel), 满星即晋升下一段位
+  static int getStarsInLevel(Level level, int wordCount) {
+    final nextMin = nextLevelMinWords(level.level);
+    if (nextMin == null || nextMin <= level.minWords) return starsPerLevel;
+    final progress = (wordCount - level.minWords) / (nextMin - level.minWords);
+    return ((progress * starsPerLevel).floor() + 1).clamp(1, starsPerLevel);
+  }
+
+  static int getStarsByWordCount(int wordCount) {
+    return getStarsInLevel(getLevelByWordCount(wordCount), wordCount);
   }
 
   static LevelVo getLevelVoByWordCount(int wordCount) {

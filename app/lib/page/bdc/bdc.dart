@@ -31,6 +31,7 @@ import '../../constants.dart';
 import '../../db/db.dart';
 import '../../global.dart';
 import '../../state.dart';
+import '../../services/level_service.dart';
 import '../../theme/app_theme.dart';
 import '../../util/analytics_util.dart';
 import '../../util/app_clock.dart';
@@ -126,6 +127,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   void initState() {
     super.initState();
     
+    // 答题期间不打断用户: 段位晋升仪式延迟到本次学习结束时补办
+    LevelService().enterStudy();
+
     // 静默加载并预热手写识别模型，避免进入手写板写完第一笔后产生首次识别延迟
     OcrService.prepareModel();
     
@@ -276,6 +280,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     _soundController.dispose();
     _wordSoundController.dispose();
     _sentenceSoundController.dispose();
+
+    // 本次学习结束或中途退出, 补办答题期间被延迟的晋升仪式
+    LevelService().leaveStudy();
 
     super.dispose();
     }

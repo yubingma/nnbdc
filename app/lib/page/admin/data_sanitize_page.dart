@@ -20,24 +20,29 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   bool _isChecking = false;
   bool _isImageSanitizing = false;
   bool _isPopularitySanitizing = false;
+  bool _isMeaningSanitizing = false;
   SystemHealthFixResult? _fixResult;
   SystemHealthCheckResult? _checkResult;
   SystemHealthFixResult? _popularityFixResult;
   SystemHealthFixResult? _imageFixResult;
+  SystemHealthFixResult? _meaningFixResult;
   Timer? _statusTimer;
   Timer? _imageStatusTimer;
+  Timer? _meaningStatusTimer;
 
   @override
   void initState() {
     super.initState();
     _checkInitialPopularitySanitizeStatus();
     _checkInitialWordImageSanitizeStatus();
+    _checkInitialMeaningSanitizeStatus();
   }
 
   @override
   void dispose() {
     _statusTimer?.cancel();
     _imageStatusTimer?.cancel();
+    _meaningStatusTimer?.cancel();
     super.dispose();
   }
 
@@ -193,6 +198,119 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
         ToastUtil.error('发生错误: $e');
         setState(() {
           _isPopularitySanitizing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _checkInitialMeaningSanitizeStatus() async {
+    try {
+      final res = await Api.client.getMeaningSeparatorSanitizeStatus();
+      if (!mounted) return;
+      if (res.success && res.data != null) {
+        final isRunning = res.data!.fixedCount == 1;
+        if (isRunning) {
+          setState(() {
+            _isMeaningSanitizing = true;
+            _meaningFixResult = res.data;
+          });
+          _startPollingMeaningStatus();
+        }
+      }
+    } catch (e) {
+      // Ignore initial check error
+    }
+  }
+
+  void _startPollingMeaningStatus() {
+    _meaningStatusTimer?.cancel();
+    _meaningStatusTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      try {
+        final res = await Api.client.getMeaningSeparatorSanitizeStatus();
+        if (!mounted) return;
+        if (res.success && res.data != null) {
+          final isRunning = res.data!.fixedCount == 1;
+          setState(() {
+            _meaningFixResult = res.data;
+            _isMeaningSanitizing = isRunning;
+          });
+          if (!isRunning) {
+            timer.cancel();
+            ToastUtil.success('释义项清洗完成');
+          }
+        }
+      } catch (e) {
+        // Ignore background errors
+      }
+    });
+  }
+
+  Future<void> _runMeaningSanitizing() async {
+    if (_isSanitizing || _isChecking || _isPopularitySanitizing || _isImageSanitizing || _isMeaningSanitizing) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('释义项清洗确认'),
+        content: const Text(
+            '该操作将启动后台异步任务，逐条清洗释义项中非法的分号分隔：\n'
+            '1. 扫描全库「用分号把多个义项挤在一条记录里」的释义项。\n'
+            '2. 通过 AI 判定分号两侧是「同一义项的近义复述」还是「不同义项」。\n'
+            '3. 近义合并为一条（逗号连接）；异义拆成多条独立释义项。\n'
+            '4. 拆分产生的新释义项暂无例句，将由「系统健康检查」补全。\n\n'
+            '修复后将产生同步日志。是否立即开始？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
+            child: const Text('开始清洗', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    setState(() {
+      _isMeaningSanitizing = true;
+      _meaningFixResult = null;
+    });
+
+    try {
+      final res = await LoadingUtils.withApiLoading(operation: () async {
+        return await Api.client.sanitizeMeaningSeparators();
+      });
+
+      if (!mounted) return;
+
+      if (res.success) {
+        setState(() {
+          _meaningFixResult = res.data;
+        });
+        ToastUtil.success('释义项清洗任务已在后台启动');
+        _startPollingMeaningStatus();
+      } else {
+        ToastUtil.error('启动失败: ${res.msg}');
+        setState(() {
+          _isMeaningSanitizing = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastUtil.error('发生错误: $e');
+        setState(() {
+          _isMeaningSanitizing = false;
         });
       }
     }
@@ -386,6 +504,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             if (_fixResult != null) _buildFixResultCard(isDarkMode),
             if (_imageFixResult != null) _buildWordImageFixResultCard(isDarkMode),
             if (_popularityFixResult != null) _buildPopularityFixResultCard(isDarkMode),
+            if (_meaningFixResult != null) _buildMeaningFixResultCard(isDarkMode),
             const SizedBox(height: 30),
             _buildActionButtons(),
           ],
@@ -395,7 +514,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Widget _buildActionButtons() {
-    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isPopularitySanitizing;
+    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isPopularitySanitizing || _isMeaningSanitizing;
     return Center(
       child: Column(
         children: [
@@ -458,6 +577,21 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: 220,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: isAnyRunning ? null : _runMeaningSanitizing,
+              icon: Icon(_isMeaningSanitizing ? Icons.hourglass_empty : Icons.call_split),
+              label: Text(_isMeaningSanitizing ? '正在清洗释义项...' : '清洗释义项分号'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.indigo[800],
+                side: BorderSide(color: Colors.indigo[800]!),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -490,6 +624,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             _buildBulletPoint('清理损坏或无效的单词配图（如非图片文件、404错误HTML等）。'),
             _buildBulletPoint('同步海词(dict.cn)释义频率占比，更新释义常用度。'),
             _buildBulletPoint('自动对齐并补全缺失的高频释义（频率 >= 10%）并配套生成例句与发音。'),
+            _buildBulletPoint('清洗释义项中非法的分号分隔：近义合并为一条，异义拆成多条独立释义项。'),
             _buildBulletPoint('修复后的数据将生成同步日志，确保客户端数据一致。'),
           ],
         ),
@@ -683,6 +818,53 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               const SizedBox(height: 15),
               const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
               ..._popularityFixResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMeaningFixResultCard(bool isDarkMode) {
+    if (_meaningFixResult == null) return const SizedBox.shrink();
+
+    return Card(
+      elevation: 2,
+      color: isDarkMode ? Colors.indigo.withValues(alpha: 0.1) : Colors.indigo[50],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.indigo.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _isMeaningSanitizing ? Icons.hourglass_top : Icons.done_all,
+                  color: Colors.indigo[700]
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _isMeaningSanitizing ? '释义项清洗执行中' : '释义项清洗完成报告',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo[800])
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            ..._meaningFixResult!.fixed.map((msg) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                _isMeaningSanitizing ? msg : '✓ $msg',
+                style: const TextStyle(fontSize: 14)
+              ),
+            )),
+            if (_meaningFixResult!.errors.isNotEmpty) ...[
+              const SizedBox(height: 15),
+              const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ..._meaningFixResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
             ],
           ],
         ),

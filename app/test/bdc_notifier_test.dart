@@ -699,6 +699,42 @@ void main() {
     expect(state.isAiEvaluating, false, reason: '裁判结束后应复位判定中状态');
   });
 
+  test('BdcNotifier - 英译汉英文拼写板内拼写不应触发释义 AI 裁判', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('a.', '苹果;香蕉;橘子'),
+    ];
+    notifier.updateAsrPassRuleCache('HALF');
+
+    // 进入英文拼写板（非中文默写）
+    notifier.updateShowHandwritingBoard(true);
+    var state = container.read(bdcNotifierProvider);
+    expect(state.showHandwritingBoard, true);
+    expect(state.isChineseDictation, false);
+
+    // 拼写过程中的英文片段：它既不是中文释义，也还没拼对
+    notifier.updateMeaningTextWithoutCheck('appl');
+    await notifier.checkAsrResult();
+
+    expect(notifier.hasPendingWordAiReferee, false,
+        reason: '拼写练习中的英文不是释义答案，不应触发释义 AI 裁判兜底');
+
+    // 拼对后应正常退出手写板返回学习页，且英译汉拼写正确不等于答对该题
+    notifier.updateMeaningTextWithoutCheck('apple');
+    await notifier.checkAsrResult();
+    state = container.read(bdcNotifierProvider);
+    expect(state.showHandwritingBoard, false, reason: '拼写正确应退出手写板');
+    expect(state.hasFinishedAnswering, false, reason: '拼写正确只是练习，不等于答对英译汉');
+  });
+
   test('测试例句模式下的语音识别与LCS相似度模糊匹配判定', () async {
     final container = ProviderContainer(
       overrides: [

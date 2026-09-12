@@ -11,6 +11,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 
 import '../global.dart';
+import '../services/level_service.dart';
 import '../services/throttled_sync_service.dart';
 import '../theme/app_theme.dart';
 import '../util/error_handler.dart';
@@ -1993,6 +1994,10 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     final user = await db.usersDao.getUserById(userId);
     if (user != null) {
       await db.usersDao.saveUser(user.copyWith(masteredWordsCount: masteredCount), true);
+      await LevelService().checkPromotion(
+        oldWordCount: user.masteredWordsCount,
+        newWordCount: masteredCount,
+      );
     }
   }
 

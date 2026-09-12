@@ -1929,6 +1929,16 @@ class BdcNotifier extends _$BdcNotifier {
         return;
       }
     }
+
+    // 英译汉模式且英文拼写板（非中文默写）打开期间，输入框/手写板里的内容只是拼写练习，
+    // 不是中文释义答案，不参与释义判题与 AI 裁判兜底。否则拼写过程中的英文（如 "competitiv"）
+    // 会因匹配不到任何中文释义而被当作"本地完全没命中"交给 AI 裁判，
+    // 出现"拼对返回学习页并播放发音后，突然弹出 AI 裁判"的割裂。
+    if (state.studyStep == StudyStep.en2Ch.json &&
+        state.showHandwritingBoard &&
+        !state.isChineseDictation) {
+      return;
+    }
     if (asrInput == null) {
       if (state.studyStep == StudyStep.ch2En.json) {
         // Ch2En 模式：ASR 识别结果可能包含标点（如 "hello."），而

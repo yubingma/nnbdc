@@ -16,7 +16,7 @@ void main() {
         child: const MaterialApp(
           home: LevelPathPage(
             currentLevel: 1,
-            masteredWords: 120,
+            masteredWords: 12,
           ),
         ),
       ),
@@ -28,12 +28,17 @@ void main() {
     expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
 
     // 2. 验证顶部概览卡片
-    expect(find.text('皮皮虾'), findsWidgets);
+    expect(find.text('蜗牛'), findsWidgets);
     expect(find.text('已掌握词汇'), findsOneWidget);
-    expect(find.text('120'), findsOneWidget);
+    expect(find.text('12'), findsOneWidget);
+    expect(find.text('已达成 2 / 18 个段位'), findsOneWidget);
     expect(find.text('当前段位'), findsOneWidget);
 
-    // 3. 验证未达成等级有锁图标
+    // 3. 验证段内星级 (已点亮的星与未点亮的星都存在)
+    expect(find.byIcon(Icons.star_rounded), findsWidgets);
+    expect(find.byIcon(Icons.star_outline_rounded), findsWidgets);
+
+    // 4. 验证未达成等级有锁图标
     expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets);
   });
 }

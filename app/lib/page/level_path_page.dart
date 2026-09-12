@@ -60,6 +60,9 @@ class _LevelPathPageState extends State<LevelPathPage> {
     final currentLevelObj = LevelUtil.getTitle(widget.currentLevel);
     final nextLevelIndex = widget.currentLevel + 1;
     final nextLevelObj = nextLevelIndex < levels.length ? levels[nextLevelIndex] : null;
+    final currentStars = widget.masteredWords == null
+        ? LevelUtil.starsPerLevel
+        : LevelUtil.getStarsInLevel(currentLevelObj, widget.masteredWords!);
 
     return AppScaffold(
       vibrancy: PageVibrancy.levelPath,
@@ -98,6 +101,7 @@ class _LevelPathPageState extends State<LevelPathPage> {
                 cardBg: cardBg,
                 currentLevelObj: currentLevelObj,
                 nextLevelObj: nextLevelObj,
+                currentStars: currentStars,
                 totalLevels: levels.length,
               ),
             ),
@@ -113,6 +117,12 @@ class _LevelPathPageState extends State<LevelPathPage> {
                   final isCurrent = level.level == widget.currentLevel;
                   final isFirst = index == 0;
                   final isLast = index == levels.length - 1;
+                  // 已走过的段位视为满星, 当前段位按实际进度点亮
+                  final stars = isCurrent
+                      ? (widget.masteredWords == null
+                          ? LevelUtil.starsPerLevel
+                          : LevelUtil.getStarsInLevel(level, widget.masteredWords!))
+                      : (isReached ? LevelUtil.starsPerLevel : 0);
 
                   return _TimelineNodeItem(
                     level: level,
@@ -120,6 +130,7 @@ class _LevelPathPageState extends State<LevelPathPage> {
                     isCurrent: isCurrent,
                     isFirst: isFirst,
                     isLast: isLast,
+                    stars: stars,
                     themeConfig: themeConfig,
                     isDarkMode: isDarkMode,
                     textColor: textColor,
@@ -146,6 +157,7 @@ class _LevelPathPageState extends State<LevelPathPage> {
     required Color cardBg,
     required Level currentLevelObj,
     required Level? nextLevelObj,
+    required int currentStars,
     required int totalLevels,
   }) {
     // 计算升至下一级所需词数进度
@@ -214,12 +226,22 @@ class _LevelPathPageState extends State<LevelPathPage> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '已达成 ${(widget.currentLevel + 1)} / $totalLevels 个段位',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: subTextColor,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          '已达成 ${(widget.currentLevel + 1)} / $totalLevels 个段位',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: subTextColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _StarRow(
+                          stars: currentStars,
+                          activeColor: primaryColor,
+                          inactiveColor: primaryColor.withValues(alpha: 0.22),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -289,6 +311,7 @@ class _TimelineNodeItem extends StatelessWidget {
   final bool isCurrent;
   final bool isFirst;
   final bool isLast;
+  final int stars;
   final AppThemeConfig themeConfig;
   final bool isDarkMode;
   final Color textColor;
@@ -302,6 +325,7 @@ class _TimelineNodeItem extends StatelessWidget {
     required this.isCurrent,
     required this.isFirst,
     required this.isLast,
+    required this.stars,
     required this.themeConfig,
     required this.isDarkMode,
     required this.textColor,
@@ -458,6 +482,12 @@ class _TimelineNodeItem extends StatelessWidget {
                             color: isReached ? primaryColor : subTextColor,
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        _StarRow(
+                          stars: stars,
+                          activeColor: isReached ? primaryColor : subTextColor.withValues(alpha: 0.5),
+                          inactiveColor: subTextColor.withValues(alpha: 0.2),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -520,5 +550,37 @@ class _TimelineNodeItem extends StatelessWidget {
     }
 
     return cardContent;
+  }
+}
+
+/// 段内星级: 满 starsPerLevel 星即晋升下一段位
+class _StarRow extends StatelessWidget {
+  final int stars;
+  final Color activeColor;
+  final Color inactiveColor;
+
+  const _StarRow({
+    required this.stars,
+    required this.activeColor,
+    required this.inactiveColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(LevelUtil.starsPerLevel, (index) {
+        return Padding(
+          padding: EdgeInsets.only(
+            right: index == LevelUtil.starsPerLevel - 1 ? 0 : 3,
+          ),
+          child: Icon(
+            index < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+            size: 12,
+            color: index < stars ? activeColor : inactiveColor,
+          ),
+        );
+      }),
+    );
   }
 }
