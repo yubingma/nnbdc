@@ -166,17 +166,17 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     actualCurrentIndex = actualCurrentIndex.clamp(0, pages.isEmpty ? 0 : pages.length - 1);
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    // 沉浸式融合背景：微透浅白/微透墨色 + 极轻发丝上边框 + 真实毛玻璃模糊
+    // 方案二：呼吸级超薄透光磨砂，白色透明度降至 18%，sigma 降至 7，彻底杜绝死白并透出底层渐变
     final navBg = isDarkMode
-        ? const Color(0x99101E1A)
-        : Colors.white.withValues(alpha: 0.72);
+        ? const Color(0x66101E1A)
+        : Colors.white.withValues(alpha: 0.18);
     final borderTopColor = isDarkMode
         ? Colors.white.withValues(alpha: 0.08)
-        : Colors.black.withValues(alpha: 0.045);
+        : Colors.black.withValues(alpha: 0.05);
 
     final customBottomNav = ClipRect(
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
         child: Container(
           decoration: BoxDecoration(
             color: navBg,
