@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import beidanci.api.Result;
-import beidanci.api.model.MsgCountVo;
 import beidanci.api.model.MsgVo;
 import beidanci.api.model.UserVo;
 import beidanci.service.bo.MsgBo;
@@ -94,21 +93,17 @@ public class MsgController {
     }
 
     /**
-     * 获取用户消息数量（消息总数和未读数量）
+     * 获取发往指定用户的未读消息数量
      *
      * @throws IOException
      */
     @GetMapping("/getMsgCounts.do")
-    public Result<MsgCountVo> getMsgCounts(@RequestParam(name = "userId") String userId) {
+    public Result<Integer> getMsgCounts(@RequestParam(name = "userId") String userId) {
         User user = userBo.findById(userId);
         if (user == null) {
-            return Result.success(new MsgCountVo(0, 0));
+            return Result.success(0);
         }
-        // 确保返回的值不为 null，避免 JSON 序列化时出现 null
-        int allCount = msgBo.getAllPersistentMsgCountToUser(user.getId());
-        int unviewedCount = msgBo.getUnViewedPersistentMsgCountToUser(user.getId());
-        // 使用专门的 DTO 类，确保字段名与 Flutter 端匹配
-        return Result.success(new MsgCountVo(allCount, unviewedCount));
+        return Result.success(msgBo.getUnViewedPersistentMsgCountToUser(user.getId()));
     }
 
     /**

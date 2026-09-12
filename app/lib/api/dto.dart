@@ -513,6 +513,7 @@ class UserDto {
   int? wordsPerDay;
   int? dakaDayCount;
   int? masteredWordsCount;
+  int? maxMasteredWords;
   int? cowDung;
   int? throwDiceChance;
   int? gameScore;

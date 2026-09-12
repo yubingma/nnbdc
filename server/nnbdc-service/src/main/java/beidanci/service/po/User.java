@@ -72,6 +72,9 @@ public class User extends UuidPo {
     private Integer dakaDayCount;
     @Column(name = "mastered_words", nullable = false)
     private Integer masteredWordsCount;
+    /** 历史最高掌握词数(单调量, 只增不减): 勋章描述"曾达成过", 判定必须用它而非当前值 */
+    @Column(name = "max_mastered_words")
+    private Integer maxMasteredWords;
     @Column(name = "cow_dung", nullable = false)
     private Integer cowDung;
     @Column(name = "throw_dice_chance", nullable = false)
@@ -560,6 +563,14 @@ public class User extends UuidPo {
         this.masteredWordsCount = masteredWords;
     }
 
+    public Integer getMaxMasteredWords() {
+        return this.maxMasteredWords;
+    }
+
+    public void setMaxMasteredWords(Integer maxMasteredWords) {
+        this.maxMasteredWords = maxMasteredWords;
+    }
+
     public Integer getCowDung() {
         return this.cowDung;
     }
@@ -899,6 +910,9 @@ public class User extends UuidPo {
 
         Integer masteredWordsCount = dto.getMasteredWordsCount();
         user.setMasteredWordsCount(masteredWordsCount != null ? masteredWordsCount : 0);
+        // 老客户端可能不下发该字段, 此时用当前掌握词数兜底, 保证新老客户端语义一致
+        Integer maxMasteredWords = dto.getMaxMasteredWords();
+        user.setMaxMasteredWords(maxMasteredWords != null ? maxMasteredWords : user.getMasteredWordsCount());
 
         Integer cowDung = dto.getCowDung();
         user.setCowDung(cowDung != null ? cowDung : 0);
@@ -986,6 +1000,7 @@ public class User extends UuidPo {
         dto.setWordsPerDay(this.getWordsPerDay());
         dto.setDakaDayCount(this.getDakaDayCount());
         dto.setMasteredWordsCount(this.getMasteredWordsCount());
+        dto.setMaxMasteredWords(this.getMaxMasteredWords() != null ? this.getMaxMasteredWords() : this.getMasteredWordsCount());
         dto.setCowDung(this.getCowDung());
         dto.setThrowDiceChance(this.getThrowDiceChance());
         dto.setGameScore(this.getGameScore());

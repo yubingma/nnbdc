@@ -231,6 +231,8 @@ class UserVo {
 
   int? masteredWordsCount;
 
+  int? maxMasteredWords;
+
   int? cowDung;
 
   int? throwDiceChance;
@@ -333,6 +335,7 @@ class UserVo {
     userVo.wordsPerDay = user.wordsPerDay;
     userVo.dakaDayCount = user.dakaDayCount;
     userVo.masteredWordsCount = user.masteredWordsCount;
+    userVo.maxMasteredWords = user.maxMasteredWords ?? user.masteredWordsCount;
     userVo.cowDung = user.cowDung;
     userVo.throwDiceChance = user.throwDiceChance;
     userVo.displayNickName = user.nickName;
@@ -1383,6 +1386,7 @@ User userVo2User(UserVo userVo) {
       learnedDays: userVo.learnedDays!,
       learningFinished: userVo.learningFinished!,
       masteredWordsCount: userVo.masteredWordsCount!,
+      maxMasteredWords: userVo.maxMasteredWords,
       maxContinuousDakaDayCount: userVo.maxContinuousDakaDayCount!,
       throwDiceChance: userVo.throwDiceChance!,
       userName: userVo.userName!,

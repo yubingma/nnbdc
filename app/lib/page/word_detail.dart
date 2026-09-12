@@ -51,6 +51,10 @@ class WordDetailPageArgs {
   /// 是否在底部显示"下一词"按钮（从背单词页面进入时设置为 true）
   bool showNextWordButton;
 
+  /// 进入详情页时是否自动播放单词发音。
+  /// 若进入前刚刚播放过该单词发音（如汉译英答对反馈），应传 false 避免重复播放。
+  final bool autoPlayWordOnEnter;
+
   /// "下一词"按钮点击时的预拉取回调：在详情页 Pop 之前静默执行切词，
   /// 消除 Pop 后主页的旧词停留和二次卡片淡入。
   final Future<void> Function()? onNextWord;
@@ -59,7 +63,7 @@ class WordDetailPageArgs {
   final StudyAudioSessionController? sessionController;
 
   WordDetailPageArgs(this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong,
-      {this.priorityDictIds, this.showNextWordButton = false, this.onNextWord, this.sessionController});
+      {this.priorityDictIds, this.showNextWordButton = false, this.autoPlayWordOnEnter = true, this.onNextWord, this.sessionController});
 
   @override
   String toString() {
@@ -494,8 +498,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       _prefetchAiExplanation();
     }
 
-    // 自动播放单词发音
-    if (!_sessionDisposed) {
+    // 自动播放单词发音（若进入前已播放过，如汉译英答对反馈，则跳过以避免重复）
+    if (args.autoPlayWordOnEnter && !_sessionDisposed) {
       _playWithAnimation(() async {
         try {
           await sessionController.playWordAndSentence(

@@ -27,6 +27,7 @@ extension UserExtensions on User {
     userVo.isInputor = isInputor;
     userVo.dakaDayCount = dakaDayCount;
     userVo.masteredWordsCount = masteredWordsCount;
+    userVo.maxMasteredWords = maxMasteredWords ?? masteredWordsCount;
     // 魔法泡泡记录
     userVo.cowDung = cowDung;
     userVo.throwDiceChance = throwDiceChance;

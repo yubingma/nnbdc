@@ -266,8 +266,8 @@ public class SocketService {
                 log.info(String.format("用户[%s]上线，在线用户数[%d]", Util.getNickNameOfUser(user), sessionsByUser.size()));
                 onUserLogin(user);
 
-                // 向该用户发送 未读/所有 持久消息数量
-                sendPersistentMsgCountToUser(user);
+                // 向该用户发送未读消息数量
+                sendUnviewedMsgCountToUser(user);
             } catch (IllegalAccessException e) {
                 log.error("", e);
             }
@@ -300,14 +300,13 @@ public class SocketService {
     }
 
     /**
-     * 向指定用户发送该用户的 未读/所有 持久消息数量
+     * 向指定用户发送该用户的未读消息数量
      *
      * @param user
      */
-    public void sendPersistentMsgCountToUser(UserVo user) {
-        int unreadPersistentMsgCount = msgBo.getUnViewedPersistentMsgCountToUser(user.getId());
-        int allPersistentMsgCount = msgBo.getAllPersistentMsgCountToUser(user.getId());
-        sendEventToUser(user, "persistentMsgCount", new Integer[]{unreadPersistentMsgCount, allPersistentMsgCount});
+    public void sendUnviewedMsgCountToUser(UserVo user) {
+        int unviewedMsgCount = msgBo.getUnviewedMsgCountToUser(user.getId());
+        sendEventToUser(user, "unviewedMsgCount", unviewedMsgCount);
     }
 
     public void sendEventToUser(UserVo user, String event, Object data) {

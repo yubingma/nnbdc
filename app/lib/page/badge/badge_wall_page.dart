@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/services/badge_service.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
@@ -43,6 +44,9 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     }
 
     try {
+      // 0. 先静默对齐"状态型"勋章, 补发历史已达标却从未触发过判定的勋章
+      await BadgeService().syncStateBadges();
+
       // 1. 查询本地 user_badges 记录
       final localRecords = await MyDatabase.instance.userBadgesDao.getBadgesByUserId(user.id);
       final Map<String, UserBadge> localMap = {for (var item in localRecords) item.badgeCode: item};
@@ -51,9 +55,10 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
       final streakDays = user.continuousDakaDayCount;
       final masteredWords = user.masteredWordsCount;
 
-      // 3. 本地全量装配 16 枚勋章，并自动对齐历史已达标勋章
+      // 3. 本地装配全部可获得的勋章
       final List<UserBadgeVo> list = [];
       for (final def in BadgeSvgAssets.allBadgeDefinitions) {
+        if (def['isAvailable'] == false) continue;
         final code = def['code'] as String;
         final targetValue = def['targetValue'] as int;
         final conditionType = def['conditionType'] as String;

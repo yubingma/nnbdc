@@ -253,7 +253,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 51;
+  int get schemaVersion => 52;
 
   @override
   MigrationStrategy get migration {
@@ -417,6 +417,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 51) {
             await _migrateFromV50ToV51AddUserBadges(m);
+          }
+          if (from < 52) {
+            await _migrateFromV51ToV52AddMaxMasteredWords(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -625,6 +628,18 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV50ToV51AddUserBadges(Migrator m) async {
     await transaction(() async {
       await m.createTable(userBadges);
+    });
+  }
+
+  /// 新增"历史最高掌握词数"单调量。
+  /// 该列上线前的历史峰值不可回溯(用户表的同步日志消费即删), 因此用当前掌握词数播种——
+  /// 这是现有数据能给出的最好下界, 此后由 updateUserMasteredWordCount 单调抬升。
+  Future<void> _migrateFromV51ToV52AddMaxMasteredWords(Migrator m) async {
+    await transaction(() async {
+      await m.addColumn(users, users.maxMasteredWords);
+      await customStatement(
+        'UPDATE users SET max_mastered_words = mastered_words_count WHERE max_mastered_words IS NULL',
+      );
     });
   }
 

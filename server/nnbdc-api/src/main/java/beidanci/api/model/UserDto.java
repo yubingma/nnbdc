@@ -28,6 +28,9 @@ public class UserDto extends Dto {
     private Integer wordsPerDay;
     private Integer dakaDayCount;
     private Integer masteredWordsCount;
+
+    /** 历史最高掌握词数(单调量) */
+    private Integer maxMasteredWords;
     private Integer cowDung;
     private Integer throwDiceChance;
     private Integer gameScore;
@@ -251,6 +254,14 @@ public class UserDto extends Dto {
 
     public void setMasteredWordsCount(Integer masteredWordsCount) {
         this.masteredWordsCount = masteredWordsCount;
+    }
+
+    public Integer getMaxMasteredWords() {
+        return maxMasteredWords;
+    }
+
+    public void setMaxMasteredWords(Integer maxMasteredWords) {
+        this.maxMasteredWords = maxMasteredWords;
     }
 
     public Integer getCowDung() {

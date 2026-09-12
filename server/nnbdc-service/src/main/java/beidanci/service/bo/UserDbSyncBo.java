@@ -627,6 +627,11 @@ public class UserDbSyncBo {
                         userDto.getCreateTime() != null ? sdf.format(userDto.getCreateTime()) : "未知");
                 User userFromClient = User.fromDto(userDto);
 
+                // 单调量保护：最高掌握词数只增不减。同步未完成的设备可能带着过期峰值上来, 不能把正确值压低
+                int clientMax = userFromClient.getMaxMasteredWords() != null ? userFromClient.getMaxMasteredWords() : 0;
+                int serverMax = user.getMaxMasteredWords() != null ? user.getMaxMasteredWords() : 0;
+                userFromClient.setMaxMasteredWords(Math.max(clientMax, serverMax));
+
                 // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端
                 // 将这些字段从后端数据库的原始值恢复到 userFromClient
                 userFromClient.setIsAdmin(user.getIsAdmin());

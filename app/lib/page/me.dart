@@ -85,7 +85,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
   final password2 = TextEditingController();
   final nickname = TextEditingController();
 
-  late int msgCount = 0;
   late int unreadMsgCount = 0;
 
   StudyProgress? studyProgress;
@@ -313,10 +312,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
     _socketEventListener = (event, args) {
       if (event == 'persistentMsgCount' && mounted) {
         int newUnread = args[0];
-        int newMsg = args[1];
-        if (newUnread != unreadMsgCount || newMsg != msgCount) {
+        if (newUnread != unreadMsgCount) {
           unreadMsgCount = newUnread;
-          msgCount = newMsg;
           setState(() {});
         }
       }
@@ -402,7 +399,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
       UserVo? loggedInUserVal;
       List<String>? last30DaysDakaStatusVal;
-      int msgCountVal = 0;
       int unreadMsgCountVal = 0;
       StudyProgress? studyProgressVal;
 
@@ -526,7 +522,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
           }
           studyProgress = studyProgressVal;
           last30DaysDakaStatus = last30DaysDakaStatusVal;
-          msgCount = msgCountVal;
           unreadMsgCount = unreadMsgCountVal;
           _isDirty = false;
         });
@@ -552,7 +547,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
           var result3 = await Api.client.getMsgCounts(loggedInUserVal.id!);
           if (result3.success) {
             setState(() {
-              msgCount = result3.data!.first;
               unreadMsgCount = result3.data!.second;
             });
           }
@@ -1674,15 +1668,15 @@ class MePageState extends State<MePage> implements RefreshableTab {
               _buildMenuTile(
                 icon: Icons.chat_bubble_outline_rounded,
                 title: '意见建议 / 客服',
-                trailing: msgCount > 0
+                trailing: unreadMsgCount > 0
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: unreadMsgCount == 0 ? Colors.grey : const Color(0xFFFA6E59),
+                          color: const Color(0xFFFA6E59),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          unreadMsgCount == 0 ? msgCount.toString() : unreadMsgCount.toString(),
+                          unreadMsgCount.toString(),
                           style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       )

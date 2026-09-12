@@ -964,7 +964,8 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext? context, {FsrsRating? fsrsRating, String? reason}) async {
+  Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext? context,
+      {FsrsRating? fsrsRating, String? reason, bool autoPlayWordOnEnter = true}) async {
     _cancelPendingWordTimers();
     debugPrint('🕵️ [AudioDiag] showWordDetail.enter | word=${word.spell} isAnswerWrong=$isAnswerWrong');
     // 强制并平滑地关闭正在播放的音频与清理 ASR。通过 Future.wait 并行执行，并设置 1.5s 的硬超时，
@@ -998,6 +999,7 @@ class BdcNotifier extends _$BdcNotifier {
     _pageTransitionBarrier = barrier;
     final result = await goRouter.push<bool>('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong,
         showNextWordButton: true,
+        autoPlayWordOnEnter: autoPlayWordOnEnter,
         sessionController: StudyAudioSessionController.instance,
         onNextWord: () => getNextWord(true, fsrsRating: state.lastFsrsRating, fastPath: false)));
     
@@ -2426,7 +2428,8 @@ class BdcNotifier extends _$BdcNotifier {
     // 1. 中英模式 (Ch2En)：用户通过识别/拼写回答正确。此时播放单词发音，帮助用户纠正发音并加深印象。
     //    await 等待发音播完，使用户完整听到后再跳转，避免突兀感。
     // 2. 其他模式 (如 En2Ch)：用户已经听过发音。此时仅播放轻快的正确提示音，避免冗余感。
-    if (state.studyStep == StudyStep.ch2En.json) {
+    final bool wordSoundPlayed = state.studyStep == StudyStep.ch2En.json;
+    if (wordSoundPlayed) {
       final playSw = Stopwatch()..start();
       await playWordAndFirstSentence(true, false);
       debugPrint('⚡ [PERF] _onAnswerCorrect -> playWordAndFirstSentence cost: ${playSw.elapsedMilliseconds}ms');
@@ -2435,12 +2438,14 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     if (state.showWordDetailAfterCorrect && state.word != null && state.historyIndex == -1) {
-      final showDelayMs = state.studyStep == StudyStep.ch2En.json ? 200 : 500;
+      final showDelayMs = wordSoundPlayed ? 200 : 500;
       final correctWord = state.word!;
       final correctWordId = correctWord.id;
       _showWordDetailTimer = Timer(Duration(milliseconds: showDelayMs), () {
         if (!_isDisposed && state.word?.id == correctWordId) {
-          showWordDetail(correctWord, false, null, fsrsRating: rating, reason: reason);
+          // 单词发音刚刚已作为答对反馈播放过，详情页不再重复播放。
+          showWordDetail(correctWord, false, null,
+              fsrsRating: rating, reason: reason, autoPlayWordOnEnter: !wordSoundPlayed);
         }
       });
       Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class BadgeSvgAssets {
-  /// 16 枚核心勋章元数据配置池 (自包含、离线优先)
+  /// 勋章元数据配置池 (自包含、离线优先)。
+  /// isAvailable 为 false 表示该勋章依赖的产品功能尚未落地(邀请统计/学习小组/排行榜/AI 使用计数),
+  /// 当前不参与判定也不在勋章墙展示, 将来功能上线后置回 true 即可。
   static const List<Map<String, dynamic>> allBadgeDefinitions = [
     // 1. 恒心打卡
     {'code': 'STREAK_3', 'name': '萌芽初醒', 'category': 'HABIT', 'tier': 'BRONZE', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 3, 'rewardBubbles': 50, 'description': '千里之行始于足下，连续背单词 3 天'},
@@ -22,11 +24,11 @@ class BadgeSvgAssets {
     {'code': 'DAWN_LEARN', 'name': '破晓之翼', 'category': 'MASTERY', 'tier': 'GOLD', 'isStackable': true, 'conditionType': 'DAWN_CHECKIN', 'targetValue': 1, 'rewardBubbles': 30, 'description': '早晨 6:00 ~ 7:30 间完成背词打卡，见证清晨自律'},
     {'code': 'NIGHT_LEARN', 'name': '夜行学者', 'category': 'MASTERY', 'tier': 'GOLD', 'isStackable': true, 'conditionType': 'NIGHT_CHECKIN', 'targetValue': 1, 'rewardBubbles': 30, 'description': '深夜 23:00 后自律复习，万籁俱寂唯有求知欲'},
 
-    // 4. 共鸣探索
-    {'code': 'INVITE_FRIEND', 'name': '布道同行', 'category': 'SOCIAL', 'tier': 'BRONZE', 'isStackable': false, 'conditionType': 'INVITE_FRIEND', 'targetValue': 1, 'rewardBubbles': 100, 'description': '一人行速，二人行远。分享知识的光芒'},
-    {'code': 'GROUP_CHECKIN', 'name': '并肩同行', 'category': 'SOCIAL', 'tier': 'SILVER', 'isStackable': false, 'conditionType': 'GROUP_CHECKIN', 'targetValue': 20, 'rewardBubbles': 250, 'description': '在学习小组/班级中与同伴共同自律打卡满 20 次'},
-    {'code': 'RANK_TOP3', 'name': '登顶时刻', 'category': 'SOCIAL', 'tier': 'GOLD', 'isStackable': false, 'conditionType': 'RANK_TOP3', 'targetValue': 1, 'rewardBubbles': 600, 'description': '登上所在班级或全站周背词排行榜 TOP 3'},
-    {'code': 'AI_ORACLE', 'name': 'AI 智囊伙伴', 'category': 'SOCIAL', 'tier': 'LEGENDARY', 'isStackable': false, 'conditionType': 'AI_ASSIST', 'targetValue': 100, 'rewardBubbles': 1000, 'description': '拥抱 AI 时代学习方式，人机协同背诵词汇'},
+    // 4. 共鸣探索 (仅邀请/小组/排行榜/AI 计数功能落地后才可判定)
+    {'code': 'INVITE_FRIEND', 'name': '布道同行', 'category': 'SOCIAL', 'tier': 'BRONZE', 'isStackable': false, 'isAvailable': false, 'conditionType': 'INVITE_FRIEND', 'targetValue': 1, 'rewardBubbles': 100, 'description': '一人行速，二人行远。分享知识的光芒'},
+    {'code': 'GROUP_CHECKIN', 'name': '并肩同行', 'category': 'SOCIAL', 'tier': 'SILVER', 'isStackable': false, 'isAvailable': false, 'conditionType': 'GROUP_CHECKIN', 'targetValue': 20, 'rewardBubbles': 250, 'description': '在学习小组/班级中与同伴共同自律打卡满 20 次'},
+    {'code': 'RANK_TOP3', 'name': '登顶时刻', 'category': 'SOCIAL', 'tier': 'GOLD', 'isStackable': false, 'isAvailable': false, 'conditionType': 'RANK_TOP3', 'targetValue': 1, 'rewardBubbles': 600, 'description': '登上所在班级或全站周背词排行榜 TOP 3'},
+    {'code': 'AI_ORACLE', 'name': 'AI 智囊伙伴', 'category': 'SOCIAL', 'tier': 'LEGENDARY', 'isStackable': false, 'isAvailable': false, 'conditionType': 'AI_ASSIST', 'targetValue': 100, 'rewardBubbles': 1000, 'description': '拥抱 AI 时代学习方式，人机协同背诵词汇'},
   ];
 
   /// 全局高保真渐变与材质滤镜定义池 (与 HTML 方案 100% 对齐)

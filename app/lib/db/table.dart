@@ -133,6 +133,11 @@ class Users extends Table {
 
   IntColumn get masteredWordsCount => integer()();
 
+  /// 历史最高掌握词数(单调量, 只增不减)。
+  /// 阶段/勋章判定必须用它而不是当前值, 否则"曾达标后掌握数回落"的用户会永久失去应得的成就。
+  /// 可空: 本列上线前的历史数据无法回溯(同步日志消费即删), 迁移时用当前值播种, NULL 等同 0。
+  IntColumn get maxMasteredWords => integer().nullable()();
+
   IntColumn get cowDung => integer()();
 
   IntColumn get throwDiceChance => integer()();

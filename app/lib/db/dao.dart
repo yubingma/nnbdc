@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/enum.dart';
@@ -11,6 +13,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 
 import '../global.dart';
+import '../services/badge_service.dart';
 import '../services/level_service.dart';
 import '../services/throttled_sync_service.dart';
 import '../theme/app_theme.dart';
@@ -1993,11 +1996,24 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
 
     final user = await db.usersDao.getUserById(userId);
     if (user != null) {
-      await db.usersDao.saveUser(user.copyWith(masteredWordsCount: masteredCount), true);
+      // 历史最高掌握词数: 单调量, 只增不减。勋章描述的是"曾达成过", 必须用它判定,
+      // 否则用户退火重学导致当前掌握数回落后, 曾达标的勋章会永久拿不到。
+      final previousMax = user.maxMasteredWords ?? 0;
+      final maxMasteredCount = masteredCount > previousMax ? masteredCount : previousMax;
+
+      await db.usersDao.saveUser(
+        user.copyWith(
+          masteredWordsCount: masteredCount,
+          maxMasteredWords: Value(maxMasteredCount),
+        ),
+        true,
+      );
       await LevelService().checkPromotion(
         oldWordCount: user.masteredWordsCount,
         newWordCount: masteredCount,
       );
+      // 词汇勋章判定收敛到此处: 手动标记与自动毕业共用同一口径, 不再依赖各 UI 入口自行触发
+      unawaited(BadgeService().checkMasteredWords(masteredCount: maxMasteredCount));
     }
   }
 
@@ -2377,6 +2393,29 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
           ..where((l) => l.userId.equals(userId) & l.wordId.equals(wordId))
           ..orderBy([(l) => OrderingTerm(expression: l.createTime, mode: OrderingMode.desc)]))
         .get();
+  }
+
+  /// 今日全部评分(按时间正序), 用于单次学习表现类勋章(百发百中/极速心流)的判定
+  Future<List<int>> getTodayRatings(String userId) async {
+    final today = AppClock.today();
+    final rows = await (select(learningLogs)
+          ..where((l) => l.userId.equals(userId) & l.createTime.isBiggerOrEqualValue(today))
+          ..orderBy([(l) => OrderingTerm(expression: l.createTime, mode: OrderingMode.asc)]))
+        .get();
+    return rows.map((r) => r.rating).toList();
+  }
+
+  /// 全部评分按学习日分组(日内按时间正序), 用于勋章的全量重放
+  Future<Map<DateTime, List<int>>> getRatingsGroupedByDay(String userId) async {
+    final rows = await (select(learningLogs)
+          ..where((l) => l.userId.equals(userId))
+          ..orderBy([(l) => OrderingTerm(expression: l.createTime, mode: OrderingMode.asc)]))
+        .get();
+    final grouped = <DateTime, List<int>>{};
+    for (final row in rows) {
+      grouped.putIfAbsent(DateUtils.businessDate(row.createTime), () => []).add(row.rating);
+    }
+    return grouped;
   }
 
   Future<void> batchDeleteUserRecords(String userId, {Map<String, dynamic>? filters}) async {

@@ -108,9 +108,6 @@ class FinishPageState extends State<FinishPage> {
 
           // 漏斗：用户成功打卡完成
           AnalyticsUtil.trackFinishDaka(cowDung, user.data!.continuousDakaDayCount ?? 0);
-
-          // 🌟 实时检测是否达成连续打卡勋章 (如萌芽初醒 3天, 习惯微光 21天, 百日筑基 100天, 早起/深夜打卡等)
-          BadgeService().checkStreakDays(context: mounted ? context : null);
         } else {
           cowDung = 0; // 确保失败时为0
           ToastUtil.error(result.msg!);
@@ -128,6 +125,13 @@ class FinishPageState extends State<FinishPage> {
       todayDakaScore = 10; // 模拟获得10积分
       // 模拟打卡成功的结果
       dakaResult = Result("SUCCESS", "页面查看器模式（模拟打卡，数据未入库）", true);
+    }
+
+    if (!isFromPageViewer) {
+      // 🌟 本次学习结束: 判定连续打卡、打卡时段(破晓/夜行)与单次学习表现(全对/心流)类勋章
+      await BadgeService().checkStreakDays();
+      await BadgeService().checkStudyTimeBadge();
+      await BadgeService().checkStudyPerformance();
     }
 
     if (!mounted) return;

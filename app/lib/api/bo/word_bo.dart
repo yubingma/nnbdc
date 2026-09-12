@@ -21,7 +21,6 @@ import 'package:nnbdc/constants.dart';
 import '../../services/throttled_sync_service.dart';
 import 'package:nnbdc/util/local_embedding_cache.dart';
 import 'package:nnbdc/util/confusable_sort.dart';
-import 'package:nnbdc/services/badge_service.dart';
 
 
 const _popCountTable = [
@@ -2830,9 +2829,8 @@ class WordBo {
   Future<Result> setLearningWordAsMastered(String userId, String wordId, bool deleteLearningWord) async {
     try {
       await MyDatabase.instance.masteredWordsDao.setLearningWordAsMastered(userId, wordId, deleteLearningWord);
+      // 词汇勋章判定已收敛到 updateUserMasteredWordCount 内部, 此处不再重复触发
       await MyDatabase.instance.masteredWordsDao.updateUserMasteredWordCount(userId);
-      // 🌟 只要将单词标记为已掌握，统一实时触发勋章检测与全屏高光授勋弹窗
-      unawaited(BadgeService().checkMasteredWords());
       return Result("SUCCESS", "标记单词为已掌握成功", true);
     } catch (e) {
       Global.logger.e('本地化setLearningWordAsMastered失败: $e');
