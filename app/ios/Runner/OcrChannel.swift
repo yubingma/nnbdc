@@ -176,26 +176,77 @@ class OcrChannel {
         if modelManager.isModelDownloaded(model) {
             performHandwritingRecognition(ink: ink, model: model, context: context, result: result)
         } else {
-            // 开始下载模型，并监听下载完成通知
-            NotificationCenter.default.addObserver(
-                forName: .mlkitModelDownloadDidSucceed,
-                object: nil,
-                queue: nil
-            ) { notification in
-                // 模型下载成功后，执行识别
+            // 模型还没下载：先触发下载，等"就是这个模型"下载完成后再识别。
+            // 不能像以前那样用 object: nil 注册 observer 且用完不移除：
+            // 下载通知是全局广播（任意模型，比如英文模型），且观察者只增不减——
+            // 一次下载成功会让此前所有挂起的识别在同一时刻一起回调，表现为
+            // "点提交后没反应，过一会儿一堆结果/提示一起涌出来"。
+            waitForModelDownload(model: model, onReady: {
                 performHandwritingRecognition(ink: ink, model: model, context: context, result: result)
-            }
-            
-            NotificationCenter.default.addObserver(
-                forName: .mlkitModelDownloadDidFail,
-                object: nil,
-                queue: nil
-            ) { notification in
-                result(FlutterError(code: "MODEL_DOWNLOAD_ERROR", message: "模型下载失败", details: nil))
-            }
-            
-            modelManager.download(model, conditions: ModelDownloadConditions())
+            }, onFailure: { error in
+                result(FlutterError(
+                    code: "MODEL_DOWNLOAD_ERROR",
+                    message: "模型下载失败: \(error?.localizedDescription ?? "未知错误")",
+                    details: nil
+                ))
+            })
         }
+    }
+
+    /// 等待 [model] 这一个模型下载完成后再回调 [onReady]；下载失败则回调 [onFailure]。
+    ///
+    /// 下载通知里带着"是哪个模型下载好了"（见 MLKModelDownloadNotifications.h），因此必须
+    /// 过滤出自己等的模型，并在回调后立刻移除观察者。否则任意模型下载完成都会唤醒等待方，
+    /// 而且每等待一次就永久多一个观察者，历次挂起的识别会在同一次通知里成批完成。
+    private static func waitForModelDownload(
+        model: DigitalInkRecognitionModel,
+        onReady: @escaping () -> Void,
+        onFailure: @escaping (Error?) -> Void
+    ) {
+        var successObserver: NSObjectProtocol?
+        var failureObserver: NSObjectProtocol?
+        func removeObservers() {
+            if let observer = successObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            if let observer = failureObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            successObserver = nil
+            failureObserver = nil
+        }
+        func isTargetModel(_ notification: Notification) -> Bool {
+            guard let notified = notification.userInfo?[ModelDownloadUserInfoKey.remoteModel.rawValue]
+                as? RemoteModel else {
+                return false
+            }
+            if let notifiedInkModel = notified as? DigitalInkRecognitionModel {
+                return notifiedInkModel.modelIdentifier.languageTag == model.modelIdentifier.languageTag
+            }
+            return notified.name == model.name
+        }
+
+        successObserver = NotificationCenter.default.addObserver(
+            forName: .mlkitModelDownloadDidSucceed,
+            object: nil,
+            queue: nil
+        ) { notification in
+            guard isTargetModel(notification) else { return }
+            removeObservers()
+            onReady()
+        }
+
+        failureObserver = NotificationCenter.default.addObserver(
+            forName: .mlkitModelDownloadDidFail,
+            object: nil,
+            queue: nil
+        ) { notification in
+            guard isTargetModel(notification) else { return }
+            removeObservers()
+            onFailure(notification.userInfo?[ModelDownloadUserInfoKey.error.rawValue] as? Error)
+        }
+
+        ModelManager.modelManager().download(model, conditions: ModelDownloadConditions())
     }
 
     private static func prepareModel(language: String, result: @escaping FlutterResult) {
@@ -214,24 +265,12 @@ class OcrChannel {
             result(nil)
         } else {
             print("OcrChannel: \(languageTag) handwriting model is downloading...")
-            NotificationCenter.default.addObserver(
-                forName: .mlkitModelDownloadDidSucceed,
-                object: nil,
-                queue: nil
-            ) { notification in
+            waitForModelDownload(model: model, onReady: {
                 print("OcrChannel: \(languageTag) handwriting model downloaded successfully")
                 warmupRecognizer(model: model)
-            }
-            
-            NotificationCenter.default.addObserver(
-                forName: .mlkitModelDownloadDidFail,
-                object: nil,
-                queue: nil
-            ) { notification in
-                print("OcrChannel: \(languageTag) handwriting model download failed")
-            }
-            
-            modelManager.download(model, conditions: ModelDownloadConditions())
+            }, onFailure: { error in
+                print("OcrChannel: \(languageTag) handwriting model download failed: \(error?.localizedDescription ?? "未知错误")")
+            })
             result(nil)
         }
     }

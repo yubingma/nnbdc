@@ -13,6 +13,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
+import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
@@ -1962,6 +1963,144 @@ void main() {
     expect(st.showHandwritingBoard, true);
     expect(st.isChineseDictation, true);
     expect(notifier.meaningController.text, '', reason: '进入默写界面时输入框必须空白');
+  });
+
+  test('BdcNotifier - 中文默写模式只属于打开中的手写板：关板/换模式后不得残留', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    // 换词是长异步流程：必须保持 provider 存活，否则中途会被 autoDispose 重建，
+    // 后续读取到的就是全新 notifier 而不是被测实例
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 1. 中文默写开着时，模式有效
+    notifier.openChineseDictation();
+    var st = container.read(bdcNotifierProvider);
+    expect(st.showHandwritingBoard, true);
+    expect(st.isChineseDictation, true);
+
+    // 2. 板子被关闭（答对过渡/取消等任意关板路径的统一点）→ 模式与进度一并复位
+    notifier.updateShowHandwritingBoard(false);
+    st = container.read(bdcNotifierProvider);
+    expect(st.showHandwritingBoard, false);
+    expect(st.isChineseDictation, false,
+        reason: '手写板关闭后绝不能残留中文默写标记（否则背单词页会按默写严格判错并刷提示）');
+    expect(st.dictationMatchedCount, 0);
+    expect(st.dictationRequiredCount, 0);
+
+    // 3. 先默写再开「拼写」入口：拼写板必须是拼写模式，不能继承中文默写模式
+    notifier.openChineseDictation();
+    notifier.updateShowHandwritingBoard(true);
+    st = container.read(bdcNotifierProvider);
+    expect(st.showHandwritingBoard, true);
+    expect(st.isChineseDictation, false, reason: '「拼写」入口打开的必须是英文拼写板');
+    expect(st.dictationRequiredCount, 0, reason: '拼写板不应带默写通过门槛');
+  });
+
+  test('BdcState - 关闭手写板时中文默写模式与进度必须一并复位', () {
+    const dictating = BdcState(
+      showHandwritingBoard: true,
+      isChineseDictation: true,
+      dictationMatchedCount: 2,
+      dictationRequiredCount: 3,
+    );
+
+    // 关板（答对过渡/取消/换词等所有关板路径的统一点）→ 模式与进度必须一并复位
+    final closed = dictating.copyWith(showHandwritingBoard: false);
+    expect(closed.isChineseDictation, false,
+        reason: '残留的默写标记会让背单词页的正常作答被按默写严格判错并刷提示');
+    expect(closed.dictationMatchedCount, 0);
+    expect(closed.dictationRequiredCount, 0);
+
+    // 板子仍打开时模式保持不变（不误伤正常默写）
+    expect(dictating.copyWith(tabIndex: 1).isChineseDictation, true);
+    expect(dictating.copyWith(tabIndex: 1).dictationRequiredCount, 3);
+  });
+
+  test('BdcNotifier - 进入中文默写会取消挂起的 AI 裁判，当前词不会被换走', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    // 本用例含 1.5s 以上的真实等待：必须持有监听，避免 autoDispose 在等待期间销毁 notifier
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    // 用可控的 Completer 替代真实大模型调用，模拟"裁判请求仍在途"
+    final judgeCompleter = Completer<Result<String>>();
+    AiRefereeUtil.aiChatOverride = (messagesJson, userId) => judgeCompleter.future;
+    addTearDown(() => AiRefereeUtil.aiChatOverride = null);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('a.', '竞争的;竞争激烈的;好胜的'),
+    ];
+    notifier.updateAsrPassRuleCache('HALF');
+    final spellBefore = container.read(bdcNotifierProvider).word!.spell;
+
+    // 说了一句本地完全识别不出的回答 → 挂起 1.5s 防抖的 AI 裁判兜底
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果香蕉',
+      'candidates': ['苹果香蕉'],
+      'isFinal': true,
+    }));
+    expect(notifier.hasPendingWordAiReferee, true, reason: '本地一个都没命中，应调度 AI 裁判兜底');
+
+    // 用户在裁判返回前打开默写：挂起的裁判必须被取消。
+    // 否则裁判一旦认可就把当前词换走，用户正写着的默写板被强行关闭、模式标记残留。
+    notifier.openChineseDictation();
+    expect(notifier.hasPendingWordAiReferee, false,
+        reason: '进入默写应取消挂起的 AI 裁判兜底，避免默写期间词被换走');
+
+    await Future.delayed(const Duration(milliseconds: 1700));
+    final st = container.read(bdcNotifierProvider);
+    expect(st.showHandwritingBoard, true, reason: '默写板应保持打开');
+    expect(st.isChineseDictation, true);
+    expect(st.word!.spell, spellBefore, reason: '当前词不得在默写期间被换走');
+  });
+
+  test('BdcNotifier - 关闭默写板后，背单词页的语音判题不再走中文默写分支', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('a.', '苹果;香蕉;橘子'),
+    ];
+    notifier.updateAsrPassRuleCache('HALF');
+
+    // 默写板打开后又被关闭（不经成功路径）
+    notifier.openChineseDictation();
+    notifier.updateShowHandwritingBoard(false);
+
+    // 回到背单词页说话：本地一个释义都没识别出的回答应回落 AI 裁判兜底（正常链路）。
+    // 若残留了中文默写标记，判题会走默写分支并在判错处直接 return，
+    // 既不调度 AI 裁判、也不推进答题——正是用户反馈的"页面就停止了"。
+    await notifier.onAsrResult(jsonEncode({
+      'best': '完全对不上的答案',
+      'candidates': ['完全对不上的答案'],
+      'isFinal': true,
+    }));
+    expect(notifier.hasPendingWordAiReferee, true,
+        reason: '关板后应回到正常语音判题链路（可回落 AI 裁判），而不是中文默写分支');
   });
 }
 
