@@ -23,16 +23,26 @@ void main() {
       expect(LevelUtil.getLevelByWordCount(999999).name, '龙');
     });
 
-    test('段内星级: 进入即有 1 星, 满 3 星后晋级', () {
-      // 皮皮虾区间 [20, 45), 三等分点为 28.33 / 36.67
+    test('段内星级: 进入即有 1 星, 每跨 1/5 区间点亮一颗', () {
+      // 皮皮虾区间 [20, 45), 五等分点为 25 / 30 / 35 / 40
       expect(LevelUtil.getStarsByWordCount(20), 1);
-      expect(LevelUtil.getStarsByWordCount(28), 1);
-      expect(LevelUtil.getStarsByWordCount(29), 2);
-      expect(LevelUtil.getStarsByWordCount(36), 2);
-      expect(LevelUtil.getStarsByWordCount(37), 3);
-      expect(LevelUtil.getStarsByWordCount(44), 3);
-      // 满 45 词即晋升仓鼠, 重新从 1 星开始
+      expect(LevelUtil.getStarsByWordCount(24), 1);
+      expect(LevelUtil.getStarsByWordCount(25), 2);
+      expect(LevelUtil.getStarsByWordCount(30), 3);
+      expect(LevelUtil.getStarsByWordCount(35), 4);
+      expect(LevelUtil.getStarsByWordCount(40), 5);
+      expect(LevelUtil.getStarsByWordCount(44), 5);
+      // 满 45 词即晋升仓鼠, 星数重新从 1 开始
       expect(LevelUtil.getStarsByWordCount(45), 1);
+    });
+
+    test('星级文本表达', () {
+      expect(LevelUtil.starsText(1), '★☆☆☆☆');
+      expect(LevelUtil.starsText(3), '★★★☆☆');
+      expect(LevelUtil.starsText(5), '★★★★★');
+      // 越界收敛, 不产生畸形字符串
+      expect(LevelUtil.starsText(0), '☆☆☆☆☆');
+      expect(LevelUtil.starsText(9), '★★★★★');
     });
 
     test('最高段位视为满星且无下一段', () {

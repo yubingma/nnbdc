@@ -2008,7 +2008,7 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
         ),
         true,
       );
-      await LevelService().checkPromotion(
+      await LevelService().checkProgress(
         oldWordCount: user.masteredWordsCount,
         newWordCount: masteredCount,
       );

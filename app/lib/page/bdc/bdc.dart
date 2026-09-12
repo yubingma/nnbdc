@@ -54,6 +54,7 @@ import 'providers/bdc_state_ui_signature.dart';
 import "widgets/chinese_asr_input_widget.dart";
 import "widgets/english_asr_input_widget.dart";
 import "widgets/word_images_widget.dart";
+import "widgets/study_guide_overlay.dart";
 
 part 'dialogs/bdc_dialogs.dart';
 part 'widgets/bdc_ui_components.dart';
@@ -107,6 +108,17 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
   // 底部按钮实际高度，用于为做题区内容预留空间，避免被遮挡
   final GlobalKey _bottomButtonsKey = GlobalKey();
+
+  /// 新手引导：遮罩层自身 / 题目卡 / 本组环节进度指示 的高亮锚点
+  final GlobalKey _guideOverlayKey = GlobalKey();
+  final GlobalKey _questionCardKey = GlobalKey();
+  final GlobalKey _groupStepIndicatorKey = GlobalKey();
+
+  /// 是否正在展示新手引导（首次进入学习页自动展示，也可从设置里再次打开）
+  bool _showStudyGuide = false;
+
+  /// 本次进入页面是否已做过新手引导检查（避免重复查库与重复弹出）
+  bool _studyGuideChecked = false;
 
   // 题目区和做题区之间的统一间距
   static const double _questionAnswerGap = 8.0;
@@ -166,6 +178,12 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(bdcNotifierProvider.notifier).loadData(context);
     });
+
+    // 数据就绪后检查新手引导（首次进入学习页自动展示一次）
+    ref.listenManual(bdcNotifierProvider.select((s) => s.dataLoaded),
+        (previous, next) {
+      if (next == true) _checkStudyGuide();
+    }, fireImmediately: true);
 
     // Listen for studyStep changes to update TabController length safely
     ref.listenManual(bdcNotifierProvider.select((s) => _getShouldShowSpeakTab(s)), (previous, next) {
@@ -286,6 +304,67 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     super.dispose();
     }
+
+  /// 首次进入学习页时展示新手引导，讲清「测评 → 巩固 → 本组小结」的闭环
+  /// 与整组横向推进的顺序，避免新用户把它当成"认识/不认识"的翻卡软件。
+  Future<void> _checkStudyGuide() async {
+    if (_studyGuideChecked) return;
+    _studyGuideChecked = true;
+    final cacheKey = 'bdcStudyGuideShown_${Global.currentUserId}';
+    try {
+      if (Prefs.read<bool>(cacheKey) == true) return;
+      final stored = await MyDatabase.instance.localParamsDao.getValue(cacheKey);
+      if (stored == 'true') {
+        Prefs.write(cacheKey, true);
+        return;
+      }
+      if (!mounted) return;
+      // 当前没有在学的单词（学习已完成/无词可学）时不展示：引导没有锚点
+      if (ref.read(bdcNotifierProvider).word == null) return;
+      startStudyGuide();
+    } catch (e) {
+      Global.logger.e('新手引导检查失败: $e');
+    }
+  }
+
+  /// 展示学习引导（首次自动触发；设置弹窗的「学习引导」入口也走这里）
+  void startStudyGuide() {
+    updateUI(() => _showStudyGuide = true, tag: 'study-guide');
+  }
+
+  /// 关闭学习引导并记为已看过（不再自动弹出）
+  Future<void> _finishStudyGuide() async {
+    updateUI(() => _showStudyGuide = false, tag: 'study-guide-done');
+    final cacheKey = 'bdcStudyGuideShown_${Global.currentUserId}';
+    Prefs.write(cacheKey, true);
+    try {
+      await MyDatabase.instance.localParamsDao.setValue(cacheKey, 'true');
+    } catch (e) {
+      Global.logger.e('新手引导标记保存失败: $e');
+    }
+  }
+
+  /// 学习引导的三步：题目卡 → 底部按钮 → 本组环节进度
+  List<StudyGuideStep> _buildStudyGuideSteps() => [
+        StudyGuideStep(
+          targetKey: _questionCardKey,
+          title: '先测评，不是翻卡自评',
+          text: '看英文选释义（也可以切到「说」）。每题都真的作答，系统才知道你认不认识，'
+              '而不是靠你给自己打分。',
+        ),
+        StudyGuideStep(
+          targetKey: _bottomButtonsKey,
+          title: '「不认识」不会让这个词消失',
+          text: '点「不认识」会立刻显示释义，并把这个词排进本组后面的巩固环节；'
+              '它只决定接下来怎么练，不是跳过。',
+        ),
+        StudyGuideStep(
+          targetKey: _groupStepIndicatorKey,
+          title: '整组推进：先英译汉，再汉译英',
+          text: '本组 10 个词先全部做完英译汉，才进入汉译英，最后是「本组小结」——'
+              '所以刚答错的词会在汉译英里按顺序回来。',
+        ),
+      ];
   @override
   Widget build(BuildContext context) {
     final stopwatch = Stopwatch()..start();
@@ -449,6 +528,15 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
                   ),
                 ],
               ),
+            ),
+          ),
+        // 新手引导（首次进入学习页自动展示，遮罩吸收点击）
+        if (_showStudyGuide)
+          Positioned.fill(
+            child: StudyGuideOverlay(
+              overlayKey: _guideOverlayKey,
+              steps: _buildStudyGuideSteps(),
+              onFinish: _finishStudyGuide,
             ),
           ),
       ],

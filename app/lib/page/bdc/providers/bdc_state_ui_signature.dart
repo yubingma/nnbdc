@@ -32,6 +32,9 @@ class BdcStateUiSignature {
   final bool isSelectModePreferred;
   final int? currentScore;
   final String? asrFirstCandidate;
+  final int groupStepPosition;
+  final int groupStepTotal;
+  final String? groupStepHint;
 
   BdcStateUiSignature(BdcState s)
       : dataLoaded = s.dataLoaded,
@@ -62,7 +65,10 @@ class BdcStateUiSignature {
         isWordImageEdited = s.isWordImageEdited,
         isSelectModePreferred = s.isSelectModePreferred,
         currentScore = s.currentScore,
-        asrFirstCandidate = s.currentAsrCandidates.isNotEmpty ? s.currentAsrCandidates.first : null;
+        asrFirstCandidate = s.currentAsrCandidates.isNotEmpty ? s.currentAsrCandidates.first : null,
+        groupStepPosition = s.groupStepPosition,
+        groupStepTotal = s.groupStepTotal,
+        groupStepHint = s.groupStepHint;
 
   @override
   bool operator ==(Object other) {
@@ -96,7 +102,10 @@ class BdcStateUiSignature {
         isWordImageEdited == other.isWordImageEdited &&
         isSelectModePreferred == other.isSelectModePreferred &&
         currentScore == other.currentScore &&
-        asrFirstCandidate == other.asrFirstCandidate;
+        asrFirstCandidate == other.asrFirstCandidate &&
+        groupStepPosition == other.groupStepPosition &&
+        groupStepTotal == other.groupStepTotal &&
+        groupStepHint == other.groupStepHint;
   }
 
   @override
@@ -130,5 +139,8 @@ class BdcStateUiSignature {
         isSelectModePreferred,
         currentScore,
         asrFirstCandidate,
+        groupStepPosition,
+        groupStepTotal,
+        groupStepHint,
       ]);
 }

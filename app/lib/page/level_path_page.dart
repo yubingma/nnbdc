@@ -198,13 +198,17 @@ class _LevelPathPageState extends State<LevelPathPage> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          currentLevelObj.name,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                            letterSpacing: -0.3,
+                        Flexible(
+                          child: Text(
+                            currentLevelObj.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                              letterSpacing: -0.3,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -226,22 +230,19 @@ class _LevelPathPageState extends State<LevelPathPage> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          '已达成 ${(widget.currentLevel + 1)} / $totalLevels 个段位',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: subTextColor,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _StarRow(
-                          stars: currentStars,
-                          activeColor: primaryColor,
-                          inactiveColor: primaryColor.withValues(alpha: 0.22),
-                        ),
-                      ],
+                    Text(
+                      '已达成 ${(widget.currentLevel + 1)} / $totalLevels 个段位',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: subTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    _StarRow(
+                      stars: currentStars,
+                      size: 13,
+                      activeColor: primaryColor,
+                      inactiveColor: primaryColor.withValues(alpha: 0.22),
                     ),
                   ],
                 ),
@@ -464,13 +465,17 @@ class _TimelineNodeItem extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          level.name,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                            letterSpacing: -0.2,
+                        Flexible(
+                          child: Text(
+                            level.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                              letterSpacing: -0.2,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -482,23 +487,32 @@ class _TimelineNodeItem extends StatelessWidget {
                             color: isReached ? primaryColor : subTextColor,
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            level.maxWords > 1000000
+                                ? '≥ ${level.minWords} 词'
+                                : '${level.minWords} - ${level.maxWords} 词',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: subTextColor,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         _StarRow(
                           stars: stars,
+                          size: 11,
                           activeColor: isReached ? primaryColor : subTextColor.withValues(alpha: 0.5),
                           inactiveColor: subTextColor.withValues(alpha: 0.2),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      level.maxWords > 1000000
-                          ? '≥ ${level.minWords} 词'
-                          : '${level.minWords} - ${level.maxWords} 词',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: subTextColor,
-                      ),
                     ),
                   ],
                 ),
@@ -558,11 +572,13 @@ class _StarRow extends StatelessWidget {
   final int stars;
   final Color activeColor;
   final Color inactiveColor;
+  final double size;
 
   const _StarRow({
     required this.stars,
     required this.activeColor,
     required this.inactiveColor,
+    this.size = 12,
   });
 
   @override
@@ -572,11 +588,11 @@ class _StarRow extends StatelessWidget {
       children: List.generate(LevelUtil.starsPerLevel, (index) {
         return Padding(
           padding: EdgeInsets.only(
-            right: index == LevelUtil.starsPerLevel - 1 ? 0 : 3,
+            right: index == LevelUtil.starsPerLevel - 1 ? 0 : size / 4,
           ),
           child: Icon(
             index < stars ? Icons.star_rounded : Icons.star_outline_rounded,
-            size: 12,
+            size: size,
             color: index < stars ? activeColor : inactiveColor,
           ),
         );

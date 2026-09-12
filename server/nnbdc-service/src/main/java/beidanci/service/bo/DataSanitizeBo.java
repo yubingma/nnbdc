@@ -89,7 +89,6 @@ public class DataSanitizeBo {
     private static volatile String dataSanitizeStepLabel = "";
     private static volatile int dataSanitizeTotal = 0;
     private static volatile int dataSanitizeProcessed = 0;
-    private static volatile int dataSanitizeFixedCount = 0;
     private static volatile List<String> dataSanitizeMessages = new ArrayList<>();
     private static volatile List<String> dataSanitizeErrors = new ArrayList<>();
 
@@ -144,7 +143,6 @@ public class DataSanitizeBo {
         dataSanitizeStepLabel = "准备扫描";
         dataSanitizeTotal = 0;
         dataSanitizeProcessed = 0;
-        dataSanitizeFixedCount = 0;
         dataSanitizeMessages = new ArrayList<>();
         dataSanitizeErrors = new ArrayList<>();
 
@@ -231,7 +229,6 @@ public class DataSanitizeBo {
             errors.add("数据清洗过程中出错: " + e.getMessage());
         }
 
-        dataSanitizeFixedCount = totalFixedCount;
         if (errors.isEmpty()) {
             messages.add(totalFixedCount == 0
                     ? "未发现需要清洗的数据。"

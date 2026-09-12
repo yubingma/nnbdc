@@ -26,8 +26,8 @@ class Level {
 }
 
 class LevelUtil {
-  /// 每个段位内可点亮的星数, 满星即晋升
-  static const int starsPerLevel = 3;
+  /// 每个段位内可点亮的星数。点亮满星后走完最后一段即晋升下一段位
+  static const int starsPerLevel = 5;
 
   static List<Level> get allLevels => _levels;
 
@@ -368,7 +368,9 @@ class LevelUtil {
     return _levels[level + 1].minWords;
   }
 
-  /// 当前段位内已点亮的星数 (1 ~ starsPerLevel), 满星即晋升下一段位
+  /// 当前段位内已点亮的星数 (1 ~ starsPerLevel)。
+  /// 进入段位即为 1 星, 每跨过 1/starsPerLevel 的区间再点亮一颗;
+  /// 点亮满星后剩下的最后一段走完即晋升下一段位。
   static int getStarsInLevel(Level level, int wordCount) {
     final nextMin = nextLevelMinWords(level.level);
     if (nextMin == null || nextMin <= level.minWords) return starsPerLevel;
@@ -378,6 +380,12 @@ class LevelUtil {
 
   static int getStarsByWordCount(int wordCount) {
     return getStarsInLevel(getLevelByWordCount(wordCount), wordCount);
+  }
+
+  /// 星级的文本表达, 如 ★★★☆☆
+  static String starsText(int stars) {
+    final lit = stars.clamp(0, starsPerLevel);
+    return '★' * lit + '☆' * (starsPerLevel - lit);
   }
 
   static LevelVo getLevelVoByWordCount(int wordCount) {

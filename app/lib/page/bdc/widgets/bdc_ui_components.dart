@@ -636,10 +636,13 @@ extension BdcPageStateUIComponents on BdcPageState {
 
         // 顶部按钮
         _buildTopButtonsRow(),
+        // 本组环节进度（让"整组先英译汉、再整组汉译英"的顺序可见）
+        _buildGroupStepIndicator(),
         // 顶部按钮和题目区之间的间距
         const SizedBox(height: 8),
         // 题目区 - 保持固定匀称比例（4:5）
         Expanded(
+          key: _questionCardKey,
           flex: 4,
           child: Consumer(
             builder: (context, ref, child) {
@@ -1114,6 +1117,76 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
         ),
       ),
+    );
+  }
+
+  /// 本组环节进度：本组（10 词一批）当前环节的排队位置（见 StudyBo.getBatchPhaseProgress）。
+  /// 极简裸排版、无容器 —— 只为让"整组先英译汉、再整组汉译英"的顺序变得可见可预期。
+  Widget _buildGroupStepIndicator() {
+    final position = state.groupStepPosition;
+    final total = state.groupStepTotal;
+    final hint = state.groupStepHint;
+    final stepDesc = StudyStepExt.fromString(state.studyStep ?? '').description;
+    return SizedBox(
+      key: _groupStepIndicatorKey,
+      width: double.infinity,
+      child: (position <= 0 || total <= 0)
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '本组 ',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            color: context.textSecondary,
+                          ),
+                        ),
+                        TextSpan(
+                          text: '$position/$total',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: context.textPrimary,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' · $stepDesc',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: context.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 环节切换的一次性轻提示（只在切换后第一个词上出现）
+                  if (hint != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Text(
+                        hint,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          height: 1.35,
+                          color: context.primaryColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
     );
   }
 

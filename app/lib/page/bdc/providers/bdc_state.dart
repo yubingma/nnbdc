@@ -76,6 +76,14 @@ class BdcState extends Equatable {
   final bool isReviewWord;
   /// 今天测评首条评分是否被判为 again（答错），决定环节名与评分修正的「答对/答错」措辞。
   final bool assessmentIsAgain;
+
+  /// 本组（10 词一批）当前环节的排队位置与队列长度，用于学习页「本组 x/y · 环节」指示；
+  /// 0 表示当前无指示可展示（如 List 环节或无法定位）。
+  final int groupStepPosition;
+  final int groupStepTotal;
+
+  /// 本组环节切换时的一次性轻提示（只在切换后第一个词上展示，切词即清空）
+  final String? groupStepHint;
   
   final DateTime? wordStartTime;
   final DateTime? firstMatchTime;
@@ -150,6 +158,9 @@ class BdcState extends Equatable {
     this.isWordMastered = false,
     this.isReviewWord = false,
     this.assessmentIsAgain = false,
+    this.groupStepPosition = 0,
+    this.groupStepTotal = 0,
+    this.groupStepHint,
     this.wordStartTime,
     this.firstMatchTime,
     this.isUpdatingByHint = false,
@@ -230,6 +241,9 @@ class BdcState extends Equatable {
     bool? isWordMastered,
     bool? isReviewWord,
     bool? assessmentIsAgain,
+    int? groupStepPosition,
+    int? groupStepTotal,
+    Object? groupStepHint = _sentinel,
     Object? wordStartTime = _sentinel,
     Object? firstMatchTime = _sentinel,
     bool? isUpdatingByHint,
@@ -308,6 +322,9 @@ class BdcState extends Equatable {
       isWordMastered: isWordMastered ?? this.isWordMastered,
       isReviewWord: isReviewWord ?? this.isReviewWord,
       assessmentIsAgain: assessmentIsAgain ?? this.assessmentIsAgain,
+      groupStepPosition: groupStepPosition ?? this.groupStepPosition,
+      groupStepTotal: groupStepTotal ?? this.groupStepTotal,
+      groupStepHint: groupStepHint == _sentinel ? this.groupStepHint : (groupStepHint as String?),
       wordStartTime: wordStartTime == _sentinel ? this.wordStartTime : (wordStartTime as DateTime?),
       firstMatchTime: firstMatchTime == _sentinel ? this.firstMatchTime : (firstMatchTime as DateTime?),
       isUpdatingByHint: isUpdatingByHint ?? this.isUpdatingByHint,
@@ -385,6 +402,9 @@ class BdcState extends Equatable {
     isWordMastered,
     isReviewWord,
     assessmentIsAgain,
+    groupStepPosition,
+    groupStepTotal,
+    groupStepHint,
     wordStartTime,
     firstMatchTime,
     isUpdatingByHint,

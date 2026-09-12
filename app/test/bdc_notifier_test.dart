@@ -141,6 +141,17 @@ class FakeBuildContext implements BuildContext {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// 等待 notifier 内部异步刷新的「本组进度」落定（handleWord 中以 unawaited 调用）
+Future<void> _waitUntil(
+  ProviderContainer container,
+  bool Function(BdcState state) predicate,
+) async {
+  for (int i = 0; i < 100; i++) {
+    if (predicate(container.read(bdcNotifierProvider))) return;
+    await Future.delayed(const Duration(milliseconds: 20));
+  }
+}
+
 void main() {
   // 确保 Flutter 绑定初始化（针对测试环境下的 MethodChannel 等服务模拟）
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -1629,6 +1640,59 @@ void main() {
         reason: '恢复环节答对后应进入列表页环节');
 
     await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('BdcNotifier - 本组进度指示：环节切换后的首个词给出顺序轻提示', () async {
+    // 本组轨道补全为 [En2Ch, Ch2En, List]，让环节切换真实发生
+    for (final group in ['correct', 'wrong']) {
+      await db.into(db.userStudySteps).insert(UserStudyStep(
+            userId: testUser.id,
+            scope: 'new',
+            group: group,
+            studyStep: 'Ch2En',
+            seq: 0,
+            state: 'Active',
+            createTime: now,
+            updateTime: now,
+          ));
+    }
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 测评环节：本组仅 1 个词，进度 1/1；首次进入不提示
+    await _waitUntil(container,
+        (s) => s.groupStepPosition == 1 && s.groupStepTotal == 1);
+    var state = container.read(bdcNotifierProvider);
+    expect(state.studyStep, StudyStep.en2Ch.json);
+    expect(state.groupStepHint, null, reason: '首次进入学习页不应弹出提示');
+
+    // 测评答对 → 本组进入汉译英环节：首词给出"整组推进"的顺序提示
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
+    await _waitUntil(container, (s) => s.groupStepHint != null);
+    state = container.read(bdcNotifierProvider);
+    expect(state.studyStep, StudyStep.ch2En.json);
+    expect(state.groupStepPosition, 1);
+    expect(state.groupStepTotal, 1);
+    expect(state.groupStepHint, isNot(null),
+        reason: '环节切换后的首个词应提示"前面答错的词会在后面的环节回来"');
+
+    // 进入 List（本组小结）环节后指示与提示一并清空
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
+    state = container.read(bdcNotifierProvider);
+    expect(state.groupStepPosition, 0);
+    expect(state.groupStepTotal, 0);
+    expect(state.groupStepHint, null);
   });
 
   test('BdcNotifier - Ch2En环节发音通过后残余低分ASR帧不应覆盖通关评分', () async {

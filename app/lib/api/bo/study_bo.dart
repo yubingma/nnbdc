@@ -30,6 +30,9 @@ import 'package:nnbdc/util/sound.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
+  /// 学习批次大小：与 getWord / _calculateBatchStartIndex 的批次划分保持一致
+  static const int batchSize = 10;
+
   final StudyStepsService _studyStepsService = StudyStepsService();
   static final StudyBo _instance = StudyBo._internal();
 
@@ -160,7 +163,6 @@ class StudyBo {
       final masteredWordIds = masteredWords.map((e) => e.wordId).toSet();
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
-      const int batchSize = 10;
       final firstLogs =
           await _loadTodayFirstLogs(user.id, todayWords);
       int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
@@ -442,14 +444,14 @@ class StudyBo {
           firstLogs: firstLogs,
           newCfg: newCfg,
           reviewCfg: reviewCfg,
-          batchSize: 10);
+          batchSize: batchSize);
       if (batchStartIndex == -1) {
         return Result("ERROR", "所有单词已完成列表学习", false);
       }
 
       // 获取当前 batch words
       final batchWords = <LearningWord>[];
-      for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + 10; i++) {
+      for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + batchSize; i++) {
         batchWords.add(todayWords[i]);
       }
 
@@ -607,7 +609,6 @@ class StudyBo {
       // 旧词三组显式规则（未设置时轨道层回退默认）
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
-      const int batchSize = 10;
       int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
           firstLogs: firstLogs,
           newCfg: newCfg,
@@ -1293,6 +1294,69 @@ class StudyBo {
       return a.todayLearnedTimes.compareTo(b.todayLearnedTimes);
     }
     return a.learningOrder.compareTo(b.learningOrder);
+  }
+
+  /// 学习页「本组 x/y」指示：本组（[batchSize] 词一批）内 [step] 环节的完成进度
+  /// —— 已走完该环节的词数 + 1 即当前词在该环节的顺位（与 _compareBatchWords
+  /// "整组横向推进"的出题顺序一致），y 为本组含该环节的词数。
+  /// 无法定位（当前词不在本组、或该词今天不走这个环节）时返回 null。
+  Future<({int position, int total})?> getBatchPhaseProgress({
+    required String wordId,
+    required String step,
+  }) async {
+    final user = Global.getLoggedInUser();
+    if (user == null) return null;
+    final db = MyDatabase.instance;
+    final todayWords = await StudyCacheManager().getTodayWords(db, user.id);
+    final wordIndex = todayWords.indexWhere((w) => w.wordId == wordId);
+    if (wordIndex < 0) return null;
+
+    final batchStart = (wordIndex ~/ batchSize) * batchSize;
+    final batchEnd = (batchStart + batchSize) > todayWords.length
+        ? todayWords.length
+        : batchStart + batchSize;
+    final batchWords = todayWords.sublist(batchStart, batchEnd);
+
+    // 与 getWord 完全相同的轨道口径：今天首条评分日志固化当天轨道（新词/复习词、答对/答错组）
+    final newCfg = await _studyStepsService.getThreeGroupConfig('new');
+    final reviewCfg = await _studyStepsService.getThreeGroupConfig('review');
+    final firstLogs = await _loadTodayFirstLogs(user.id, batchWords);
+    final masteredWordIds = await StudyCacheManager().getMasteredWordIds(db, user.id);
+    final today = AppClock.today();
+
+    int done = 0;
+    int total = 0;
+    bool found = false;
+    for (final word in batchWords) {
+      // 已掌握的词不再出题，也不再占用本组名额
+      if (word.isEffectivelyMastered(masteredWordIds)) continue;
+      final first = firstLogs[word.wordId];
+      final track = StudyTrack.trackOf(
+        stability: word.stability,
+        state: word.state,
+        lastLearningDate: word.lastLearningDate,
+        todayFirstLogElapsedDays: first?.elapsedDays,
+        todayFirstLogRating: first?.rating,
+        newCheck: newCfg.check,
+        newCorrect: newCfg.correct,
+        newWrong: newCfg.wrong,
+        reviewCheck: reviewCfg.check,
+        reviewCorrect: reviewCfg.correct,
+        reviewWrong: reviewCfg.wrong,
+        today: today,
+      );
+      // 该词今天不走这个环节（如复习词答对后没有 Ch2En），不计入本环节名额
+      final stepIndexInTrack = track.indexOf(step);
+      if (stepIndexInTrack < 0) continue;
+      total++;
+      if (word.todayLearnedTimes > stepIndexInTrack) {
+        done++;
+      } else if (word.wordId == wordId) {
+        found = true;
+      }
+    }
+    if (!found) return null;
+    return (position: done + 1, total: total);
   }
 
   /// 计算指定单词的指定学习模式, 在第几个顺位出现

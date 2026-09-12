@@ -135,6 +135,46 @@ extension BdcPageStateDialogs on BdcPageState {
     );
   }
 
+  /// 学习引导入口：再次查看学习页新手引导（讲清「测评 → 巩固 → 本组小结」的闭环）
+  Widget _buildStudyGuideEntry(BuildContext dialogContext) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+      dense: true,
+      title: const Text(
+        '学习引导',
+        textScaler: TextScaler.linear(1.0),
+        style: TextStyle(
+          fontFamily: "NotoSansSC",
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        '再看一遍背单词的流程与顺序',
+        textScaler: const TextScaler.linear(1.0),
+        style: TextStyle(
+          fontFamily: "NotoSansSC",
+          fontSize: 12,
+          color: Theme.of(dialogContext)
+              .textTheme
+              .bodySmall
+              ?.color
+              ?.withValues(alpha: 0.6),
+        ),
+      ),
+      trailing: Icon(Icons.chevron_right, color: dialogContext.primaryColor),
+      onTap: () {
+        Navigator.of(dialogContext).pop();
+        if (state.word == null) {
+          ToastUtil.info('当前没有在学的单词，无法展示引导');
+          return;
+        }
+        startStudyGuide();
+      },
+    );
+  }
+
   /// 发音口音选择项：展示当前口音（美音/英音），点击后弹出美化选择弹框
   Widget _buildPronunciationAccentEntry(
       BuildContext dialogContext, StateSetter setDialogState) {
@@ -446,6 +486,7 @@ extension BdcPageStateDialogs on BdcPageState {
                               builder: (context, constraints) {
                                 final List<Widget> items = [
                                   _buildThemeEntry(context),
+                                  _buildStudyGuideEntry(context),
                                   _buildPronunciationAccentEntry(
                                       context, setState),
                                   _buildAsrPassRuleSelector(
