@@ -2249,26 +2249,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           ),
                         ),
                       ],
-                      if (!item.inDict) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : Colors.black.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '未选',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                   if (formulaPart != null && formulaPart.isNotEmpty)
@@ -3200,26 +3180,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 ),
                               ),
                             ],
-                            if (!inDict) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.08)
-                                      : Colors.black.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  '未选',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 3),
@@ -3378,26 +3338,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                     color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   ),
                                   overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                            if (!inDict) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.08)
-                                      : Colors.black.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  '未选',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
                                 ),
                               ),
                             ],
