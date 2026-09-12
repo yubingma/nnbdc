@@ -751,13 +751,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                                     _tabController != null &&
                                     _tabController!.length > 1) ...[
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
                                       if (state.tabIndex == 0)
-                                        Flexible(
+                                        Expanded(
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
@@ -770,24 +768,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                                                     : const Color(0xFF5A716E),
                                               ),
                                               const SizedBox(width: 4.5),
-                                              Flexible(
-                                                child: Text(
-                                                  state.studyStep ==
-                                                          StudyStep.en2Ch.json
-                                                      ? '请说出中文释义：'
-                                                      : '请说出单词发音：',
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: _cachedIsDarkMode
-                                                        ? const Color(
-                                                            0xFFCBD5E1)
-                                                        : const Color(
-                                                            0xFF475569),
-                                                    letterSpacing: -0.1,
-                                                  ),
+                                              Text(
+                                                state.studyStep ==
+                                                        StudyStep.en2Ch.json
+                                                    ? '请说出中文释义：'
+                                                    : '请说出单词发音：',
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: _cachedIsDarkMode
+                                                      ? const Color(0xFFCBD5E1)
+                                                      : const Color(0xFF475569),
+                                                  letterSpacing: -0.1,
                                                 ),
                                               ),
                                               if (state.isAiEvaluating) ...[
@@ -813,12 +806,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                                           },
                                           behavior: HitTestBehavior.opaque,
                                           child: Padding(
-                                            padding: const EdgeInsets
-                                                .symmetric(
-                                                horizontal: 6, vertical: 3),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 4, vertical: 3),
                                             child: Row(
-                                              mainAxisSize:
-                                                  MainAxisSize.min,
+                                              mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Icon(
                                                   Icons.edit_outlined,

@@ -761,19 +761,24 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.done_all, color: Colors.blue),
-                SizedBox(width: 10),
-                Text('清洗执行报告', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+                Icon(_isSanitizing ? Icons.hourglass_top : Icons.done_all, color: Colors.blue),
+                const SizedBox(width: 10),
+                Text(
+                  _isSanitizing ? '数据清洗执行中' : '数据清洗完成报告',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+                ),
               ],
             ),
             const SizedBox(height: 15),
-            Text('本次操作共修复记录数：${_fixResult!.fixedCount}', style: const TextStyle(fontWeight: FontWeight.bold)),
             const Divider(height: 25),
             ..._fixResult!.fixed.map((msg) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('✓ $msg', style: const TextStyle(fontSize: 14)),
+              child: Text(
+                _isSanitizing ? msg : '✓ $msg',
+                style: const TextStyle(fontSize: 14),
+              ),
             )),
             if (_fixResult!.errors.isNotEmpty) ...[
               const SizedBox(height: 15),

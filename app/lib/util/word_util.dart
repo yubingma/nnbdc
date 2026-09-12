@@ -242,6 +242,29 @@ MeaningMatchResult matchInputChineseWithMeaningItems(
   Global.logger.d('🔍 [ASR-Match] 开始中文匹配。word: ${wordWrapper.word.spell}');
   Global.logger.d('🔍 [ASR-Match] 所有候选词列表 inputs: $inputs');
 
+  // 中文默写用户会把多个释义连着一次写完（如 view 写成"查看考虑观察"），
+  // 此时整串既无法逐项匹配（"查看"≠"查看考虑观察"），也不该被判全错。
+  // 先按顺序把输入切成与各释义子项对应的连续片段，能覆盖全部子项时直接采用这个结果；
+  // 覆盖不成立（只写了部分释义、或写错）时回落到下面的逐项匹配，保留"答对几个算几个"的口径。
+  if (strict && inputs.length == 1) {
+    final covered = _coverMeaningPartsWithContinuousInput(
+        meaningItems, inputs.first, wordWrapper.targetPinyinsCache);
+    if (covered.isNotEmpty) {
+      for (final part in covered) {
+        if (!wordWrapper.asrMatchedMeaningItemParts.contains(part)) {
+          newMatchCount++;
+          wordWrapper.asrMatchedMeaningItemParts.add(part);
+        }
+      }
+      Global.logger.d('✅ [ASR-Match] 连续覆盖匹配命中 ${covered.length} 个释义子项');
+      return MeaningMatchResult(
+        totalCount: count,
+        matchedCount: wordWrapper.asrMatchedMeaningItemParts.length,
+        newMatchCount: newMatchCount,
+      );
+    }
+  }
+
   for (var i = 0; i < meaningItems.length; i++) {
     // 每个元素对应一个词性
     var meaningItem = meaningItems[i];
@@ -299,6 +322,78 @@ bool _isWholeBracketed(String s) {
     if (p.hasMatch(t)) return true;
   }
   return false;
+}
+
+/// 把用户连续写出的释义（如 view 写成"查看考虑观察"）切成与各释义子项对应的片段。
+///
+/// 释义子项按顺序依次认领一段连续输入：先认领与自身长度等长的段，
+/// 其次允许稍长的段（含个别漏字/多字或多打了一个字）。若所有子项都能认领到，
+/// 返回被覆盖的子项集合（释义项索引, 子项索引）；否则返回空集合，交由调用方回落到逐项匹配。
+Set<Pair<int, int>> _coverMeaningPartsWithContinuousInput(
+    List<MeaningItemVo> meaningItems,
+    String input,
+    Map<String, List<List<PinyinParser>>> targetPinyinsCache) {
+  final clean = input.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+  if (clean.isEmpty) return {};
+
+  // 参与判题的释义子项（跳过整体被括号包裹的），并记录其在释义项中的真实坐标
+  final units = <({Pair<int, int> pos, String text})>[];
+  for (var i = 0; i < meaningItems.length; i++) {
+    final parts = splitMeaning2Parts(meaningItems[i].meaning ?? '');
+    for (var j = 0; j < parts.length; j++) {
+      if (!_isWholeBracketed(parts[j])) {
+        units.add((pos: Pair(i, j), text: parts[j]));
+      }
+    }
+  }
+  if (units.isEmpty) return {};
+
+  final memo = <String, List<int>?>{};
+  List<int>? cover(int unitIndex, int start) {
+    if (unitIndex == units.length) return const [];
+    if (start >= clean.length) return null;
+    final key = '$unitIndex:$start';
+    if (memo.containsKey(key)) return memo[key];
+    memo[key] = null; // 先占位，避免同一状态被重复计算
+
+    final unitText = units[unitIndex].text
+        .replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+    // 先尝试"精确等长"的片段：用户逐个写全释义时走这条路径
+    for (var len = unitText.length; len <= clean.length - start; len++) {
+      final segment = clean.substring(start, start + len);
+      final bool matched = len == unitText.length
+          ? segment == unitText
+          : fuzzyChineseContains(
+              segment, unitText,
+              targetPinyinsCache: targetPinyinsCache, strict: true);
+      if (!matched) continue;
+      if (len == unitText.length) {
+        final rest = cover(unitIndex + 1, start + len);
+        if (rest != null) {
+          memo[key] = [unitIndex, ...rest];
+          return memo[key];
+        }
+      }
+    }
+    // 等长片段无法覆盖全部子项时，再接受含个别同音/形近字误识的等长片段
+    for (var len = unitText.length; len <= clean.length - start; len++) {
+      final segment = clean.substring(start, start + len);
+      if (!fuzzyChineseContains(segment, unitText,
+          targetPinyinsCache: targetPinyinsCache, strict: true)) {
+        continue;
+      }
+      final rest = cover(unitIndex + 1, start + len);
+      if (rest != null) {
+        memo[key] = [unitIndex, ...rest];
+        return memo[key];
+      }
+    }
+    return null;
+  }
+
+  final matchedIndices = cover(0, 0);
+  if (matchedIndices == null) return {};
+  return matchedIndices.map((index) => units[index].pos).toSet();
 }
 
 /// 判断输入是否命中该单词的任意释义项子项（不区分该子项是否已在之前被匹配）。

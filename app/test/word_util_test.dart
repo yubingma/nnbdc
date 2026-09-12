@@ -137,6 +137,53 @@ void main() {
     });
   });
 
+  group('Chinese Dictation Strict Matching - 连续写出多个释义', () {
+    late WordVo testWord;
+    late WordWrapper wrapper;
+
+    setUp(() {
+      // view: 查看;考虑;观察
+      testWord = WordVo.c2('view');
+      testWord.id = '1';
+      testWord.meaningItems = [
+        MeaningItemVo.from('v.', '查看;考虑;观察'),
+      ];
+      wrapper = WordWrapper(testWord, null);
+    });
+
+    test('一次性连续写出全部释义应全部匹配', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '查看考虑观察', strict: true);
+      expect(result.totalCount, 3);
+      expect(result.matchedCount, 3);
+      expect(result.newMatchCount, 3);
+      expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 0)), true);
+      expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 1)), true);
+      expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 2)), true);
+    });
+
+    test('只写其中一个释义仍只匹配该释义', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '查看', strict: true);
+      expect(result.matchedCount, 1);
+      expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 0)), true);
+    });
+
+    test('连续写出部分释义只匹配对应部分', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '查看考虑', strict: true);
+      expect(result.matchedCount, 2);
+      expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 2)), false);
+    });
+
+    test('连续写出全部释义时允许个别同音字误识', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '查看考虚观察', strict: true);
+      expect(result.matchedCount, 3);
+    });
+
+    test('连续写出但含错误释义时不匹配错误项', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '查看思考观察', strict: true);
+      expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 1)), false);
+    });
+  });
+
   group('WordWrapper Equality and Deduplication', () {
     test('wrappers with same word id are equal regardless of UI answering state', () {
       final w1 = WordVo.c2('journal')..id = 'w_123';
