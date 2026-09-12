@@ -224,7 +224,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       ),
                     )
                   : Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

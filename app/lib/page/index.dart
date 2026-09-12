@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/page/today_plan.dart';
@@ -165,40 +166,45 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     actualCurrentIndex = actualCurrentIndex.clamp(0, pages.isEmpty ? 0 : pages.length - 1);
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final navBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.90) : Colors.white.withValues(alpha: 0.90);
-    final borderTopColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
+    // 沉浸式融合背景：微透浅白/微透墨色 + 极轻发丝上边框 + 真实毛玻璃模糊
+    final navBg = isDarkMode
+        ? const Color(0x99101E1A)
+        : Colors.white.withValues(alpha: 0.72);
+    final borderTopColor = isDarkMode
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.045);
 
-    final customBottomNav = Container(
-      decoration: BoxDecoration(
-        color: navBg,
-        border: Border(top: BorderSide(color: borderTopColor, width: 0.8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, -3),
+    final customBottomNav = ClipRect(
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: navBg,
+            border: Border(top: BorderSide(color: borderTopColor, width: 0.5)),
           ),
-        ],
-      ),
-      child: Container(
-        padding: EdgeInsets.only(
-          top: 2,
-          bottom: MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom * 0.5 : 4,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildCustomNavItem(Icons.school, "学习", 0, actualCurrentIndex),
-            _buildCustomNavItem(Icons.library_books, "词表", 1, actualCurrentIndex),
-            _buildCustomNavItem(Icons.search_rounded, "查词", 2, actualCurrentIndex),
-            if (!Global.isGuest) _buildCustomNavItem(Icons.sports_esports, "比赛", 3, actualCurrentIndex),
-            _buildCustomNavItem(Icons.person_rounded, "我", 4, actualCurrentIndex),
-          ],
+          child: SafeArea(
+            top: false,
+            child: Container(
+              height: 52,
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildCustomNavItem(Icons.school, "学习", 0, actualCurrentIndex),
+                  _buildCustomNavItem(Icons.library_books, "词表", 1, actualCurrentIndex),
+                  _buildCustomNavItem(Icons.search_rounded, "查词", 2, actualCurrentIndex),
+                  if (!Global.isGuest) _buildCustomNavItem(Icons.sports_esports, "比赛", 3, actualCurrentIndex),
+                  _buildCustomNavItem(Icons.person_rounded, "我", 4, actualCurrentIndex),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [

@@ -541,7 +541,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             ? _buildEmptyState(themeConfig)
             : SingleChildScrollView(
                 controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(10, 6, 10, 20),
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 96),
                 // 结果列表直接铺满内容区：无卡片底/圆角/阴影，仅发丝分隔线隔行，更大气
                 child: Column(
                   children: [

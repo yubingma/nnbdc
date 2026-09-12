@@ -3162,7 +3162,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
               : CustomScrollView(
                   slivers: [
                     SliverPadding(
-                      padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 0),
+                      padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 96),
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
                           renderStudyProgress(),

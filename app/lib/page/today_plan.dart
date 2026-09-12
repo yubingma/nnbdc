@@ -514,11 +514,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     builder: (context, constraints) {
                       return SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 96),
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            // 减去上下 padding(12+36)，让内容恰好铺满视口，iPad 等大屏不再底部留白
-                            minHeight: constraints.maxHeight - 48,
+                            // 减去上下 padding(12+96=108)，让内容恰好铺满视口，底栏悬浮不挡卡片
+                            minHeight: constraints.maxHeight - 108,
                           ),
                           child: Column(
                             // 内容高度不足视口时，将各组均匀铺开占满整屏
