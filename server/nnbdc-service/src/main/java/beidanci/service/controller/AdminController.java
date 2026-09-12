@@ -257,6 +257,11 @@ public class AdminController {
         return Result.success(dataSanitizeBo.sanitizeData());
     }
 
+    @GetMapping("/admin/getDataSanitizeStatus.do")
+    public Result<SystemHealthFixResult> getDataSanitizeStatus() {
+        return Result.success(dataSanitizeBo.getDataSanitizeStatus());
+    }
+
     @PostMapping("/admin/sanitizeWordImages.do")
     public Result<SystemHealthFixResult> sanitizeWordImages() {
         return Result.success(dataSanitizeBo.sanitizeWordImagesOnly());

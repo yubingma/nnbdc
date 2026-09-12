@@ -29,6 +29,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   Timer? _statusTimer;
   Timer? _imageStatusTimer;
   Timer? _meaningStatusTimer;
+  Timer? _dataStatusTimer;
 
   @override
   void initState() {
@@ -36,6 +37,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     _checkInitialPopularitySanitizeStatus();
     _checkInitialWordImageSanitizeStatus();
     _checkInitialMeaningSanitizeStatus();
+    _checkInitialDataSanitizeStatus();
   }
 
   @override
@@ -43,6 +45,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     _statusTimer?.cancel();
     _imageStatusTimer?.cancel();
     _meaningStatusTimer?.cancel();
+    _dataStatusTimer?.cancel();
     super.dispose();
   }
 
@@ -356,17 +359,20 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Future<void> _runDataSanitizing() async {
-    if (_isSanitizing || _isChecking) return;
+    if (_isSanitizing || _isChecking || _isMeaningSanitizing || _isPopularitySanitizing || _isImageSanitizing) {
+      return;
+    }
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('数据清洗确认'),
         content: const Text(
-            '该操作将扫描全库并自动修复不规范的数据格式：\n'
-            '1. 移除音标前后的斜线(/)和方括号([])\n'
+            '该操作将在后台扫描全库并自动修复不规范的数据格式：\n'
+            '1. 音标归一为"裸音标"：移除首尾的斜线(/)与方括号([])，移除尾部残留逗号\n'
             '2. 移除单词、释义、例句末尾的多余逗号\n'
             '3. 清理损坏或无效的单词配图（如非图片文件、404错误HTML等）\n\n'
+            '全量清洗需改写数万条记录并扫描全部配图，耗时较长，任务将在后台执行并显示进度。\n'
             '修复后将产生同步日志。是否立即开始？'),
         actions: [
           TextButton(
@@ -388,6 +394,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     setState(() {
       _isSanitizing = true;
       _fixResult = null;
+      _checkResult = null; // 清洗后重置检查结果
     });
 
     try {
@@ -400,20 +407,68 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
       if (res.success) {
         setState(() {
           _fixResult = res.data;
-          _checkResult = null; // 清洗后重置检查结果
         });
-        ToastUtil.success('数据清洗完成');
+        ToastUtil.success('数据清洗任务已在后台启动');
+        _startPollingDataStatus();
       } else {
-        ToastUtil.error('清洗失败: ${res.msg}');
-      }
-    } catch (e) {
-      if (mounted) ToastUtil.error('发生错误: $e');
-    } finally {
-      if (mounted) {
+        ToastUtil.error('启动失败: ${res.msg}');
         setState(() {
           _isSanitizing = false;
         });
       }
+    } catch (e) {
+      if (mounted) {
+        ToastUtil.error('发生错误: $e');
+        setState(() {
+          _isSanitizing = false;
+        });
+      }
+    }
+  }
+
+  void _startPollingDataStatus() {
+    _dataStatusTimer?.cancel();
+    _dataStatusTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      try {
+        final res = await Api.client.getDataSanitizeStatus();
+        if (!mounted) return;
+        if (res.success && res.data != null) {
+          final isRunning = res.data!.fixedCount == 1;
+          setState(() {
+            _fixResult = res.data;
+            _isSanitizing = isRunning;
+          });
+          if (!isRunning) {
+            timer.cancel();
+            ToastUtil.success('数据清洗完成');
+          }
+        }
+      } catch (e) {
+        // Ignore background errors
+      }
+    });
+  }
+
+  Future<void> _checkInitialDataSanitizeStatus() async {
+    try {
+      final res = await Api.client.getDataSanitizeStatus();
+      if (!mounted) return;
+      if (res.success && res.data != null) {
+        final isRunning = res.data!.fixedCount == 1;
+        if (isRunning) {
+          setState(() {
+            _isSanitizing = true;
+            _fixResult = res.data;
+          });
+          _startPollingDataStatus();
+        }
+      }
+    } catch (e) {
+      // Ignore initial check error
     }
   }
 

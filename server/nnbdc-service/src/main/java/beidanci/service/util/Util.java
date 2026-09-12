@@ -1246,12 +1246,18 @@ public class Util {
     }
 
     /**
-     * 规范化音标（移除斜线、方括号和多余逗号）
+     * 规范化音标。
+     * <p>
+     * 音标的规范形态是"裸音标"（如 {@code ˈæpl}）：客户端在展示时会统一自行添加方括号，
+     * 因此首尾的 {@code / [ ［ ] ］} 包裹、尾部残留的逗号、以及 JSON 转义残留的反斜杠都属于脏数据。
+     * 判定脏数据的 SQL 条件必须与本方法的修复范围严格一致，否则会出现"洗完仍报脏"的假告警。
      */
     public static String sanitizePhonetic(String s) {
         if (s == null) return null;
         s = sanitizeAiString(s);
-        // 移除斜线和方括号
+        // 去除 JSON 转义残留的反斜杠（如 \'pin,straipt -> 'pin,straipt）
+        s = s.replace("\\", "");
+        // 移除首尾的斜线和方括号包裹
         while (s.startsWith("/") || s.startsWith("[") || s.startsWith("［")) s = s.substring(1).trim();
         while (s.endsWith("/") || s.endsWith("]") || s.endsWith("］")) s = s.substring(0, s.length() - 1).trim();
         return s;

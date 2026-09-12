@@ -85,16 +85,27 @@ public class DataSanitizeBo {
     private static volatile int meaningSanitizeFixedCount = 0;
     private static volatile String meaningSanitizeLog = "";
 
+    private static volatile boolean isDataSanitizing = false;
+    private static volatile int dataSanitizeStepIndex = 0;
+    private static volatile String dataSanitizeStepLabel = "";
+    private static volatile int dataSanitizeTotal = 0;
+    private static volatile int dataSanitizeProcessed = 0;
+    private static volatile int dataSanitizeFixedCount = 0;
+    private static volatile List<String> dataSanitizeMessages = new ArrayList<>();
+    private static volatile List<String> dataSanitizeErrors = new ArrayList<>();
+
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
             .build();
 
     // 数据规范性检查相关的 SQL 条件片段
+    // 音标：判定条件必须与 Util.sanitizePhonetic 的修复范围严格一致，否则会出现"洗完仍报脏"的假告警。
+    // 脏形态 = 首尾包裹了 / [ ［ ] ］、尾部残留逗号、或 JSON 转义残留的反斜杠。
     private static final String DIRTY_WORD_PHONETIC_SQL_WHERE = 
-        "(pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|[,，]\\s*$') " +
-        "OR (british_pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|[,，]\\s*$') " +
-        "OR (america_pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|[,，]\\s*$')";
+        "(btrim(pronounce) ~ '^[/\\[［]' OR btrim(pronounce) ~ '[/\\]］]$' OR btrim(pronounce) ~ '[,，]$' OR pronounce ~ '\\\\') " +
+        "OR (btrim(british_pronounce) ~ '^[/\\[［]' OR btrim(british_pronounce) ~ '[/\\]］]$' OR btrim(british_pronounce) ~ '[,，]$' OR british_pronounce ~ '\\\\') " +
+        "OR (btrim(america_pronounce) ~ '^[/\\[［]' OR btrim(america_pronounce) ~ '[/\\]］]$' OR btrim(america_pronounce) ~ '[,，]$' OR america_pronounce ~ '\\\\')";
     
     private static final String DIRTY_MEANING_SQL_WHERE = 
         "(meaning ~ '[,，]\\s*$') OR (ci_xing ~ '[,，]\\s*$')";
@@ -108,37 +119,129 @@ public class DataSanitizeBo {
         "OR (word_meaning ~ '[,，]\\s*$') OR (part_of_speech ~ '[,，]\\s*$')";
 
     /**
-     * 清洗系统数据（修复AI导入产生的多余逗号和斜线，清理损坏/无效的单词配图等）
+     * 清洗系统数据（后台异步线程执行，修复AI导入产生的多余逗号和斜线，清理损坏/无效的单词配图等）。
+     * <p>
+     * 全量清洗要改写数万条记录并扫描全部配图文件，同步执行极易超过客户端 5 分钟超时并诱发重复触发，
+     * 因此与"配图清洗""常用度清洗"保持一致：后台异步 + 进度轮询 + 并发保护。
      */
     public SystemHealthFixResult sanitizeData() {
         List<String> fixed = new ArrayList<>();
         List<String> errors = new ArrayList<>();
+
+        if (isDataSanitizing) {
+            errors.add("数据清洗任务正在后台运行中，请勿重复触发。");
+            fixed.add(describeDataSanitizeProgress());
+            return new SystemHealthFixResult(1, errors, fixed);
+        }
+
+        isDataSanitizing = true;
+        dataSanitizeStepIndex = 0;
+        dataSanitizeStepLabel = "准备扫描";
+        dataSanitizeTotal = 0;
+        dataSanitizeProcessed = 0;
+        dataSanitizeFixedCount = 0;
+        dataSanitizeMessages = new ArrayList<>();
+        dataSanitizeErrors = new ArrayList<>();
+
+        new Thread(() -> {
+            try {
+                executeDataSanitization();
+            } finally {
+                isDataSanitizing = false;
+            }
+        }).start();
+
+        fixed.add("数据清洗任务已成功在后台启动。");
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    /**
+     * 获取全量数据清洗状态及进度
+     */
+    public SystemHealthFixResult getDataSanitizeStatus() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isDataSanitizing) {
+            fixed.add(describeDataSanitizeProgress());
+            fixed.addAll(dataSanitizeMessages);
+            return new SystemHealthFixResult(1, errors, fixed);
+        }
+        if (dataSanitizeTotal > 0) {
+            fixed.addAll(dataSanitizeMessages);
+            errors.addAll(dataSanitizeErrors);
+        } else {
+            fixed.add("任务未运行。");
+        }
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    private String describeDataSanitizeProgress() {
+        if (dataSanitizeStepIndex == 0) {
+            return "正在统计待清洗数据...";
+        }
+        return String.format("正在清洗第 %d/4 步「%s」: %d/%d",
+                dataSanitizeStepIndex, dataSanitizeStepLabel, dataSanitizeProcessed, dataSanitizeTotal);
+    }
+
+    private void executeDataSanitization() {
+        List<String> messages = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
         int totalFixedCount = 0;
 
         try {
+            dataSanitizeTotal = countSanitizeTargets();
+            dataSanitizeProcessed = 0;
+
             // 1. 清洗单词音标
-            totalFixedCount += sanitizeWordPhonetics(fixed);
+            dataSanitizeStepIndex = 1;
+            dataSanitizeStepLabel = "音标";
+            totalFixedCount += sanitizeWordPhonetics(messages);
+            dataSanitizeMessages = new ArrayList<>(messages);
 
             // 2. 清洗释义项
-            totalFixedCount += sanitizeMeaningItems(fixed);
+            dataSanitizeStepIndex = 2;
+            dataSanitizeStepLabel = "释义项";
+            totalFixedCount += sanitizeMeaningItems(messages);
+            dataSanitizeMessages = new ArrayList<>(messages);
 
             // 3. 清洗例句
-            totalFixedCount += sanitizeSentences(fixed);
+            dataSanitizeStepIndex = 3;
+            dataSanitizeStepLabel = "例句";
+            totalFixedCount += sanitizeSentences(messages);
+            dataSanitizeMessages = new ArrayList<>(messages);
 
             // 4. 清洗损坏或无效的单词配图
-            totalFixedCount += sanitizeWordImages(fixed);
-
-            if (totalFixedCount == 0) {
-                fixed.add("未发现需要清洗的数据。");
-            } else {
-                fixed.add(String.format("数据清洗完成，共修复 %d 条记录。", totalFixedCount));
-            }
+            dataSanitizeStepIndex = 4;
+            dataSanitizeStepLabel = "单词配图";
+            totalFixedCount += sanitizeWordImages(messages);
         } catch (Exception e) {
             logger.error("数据清洗失败", e);
             errors.add("数据清洗过程中出错: " + e.getMessage());
         }
 
-        return new SystemHealthFixResult(totalFixedCount, errors, fixed);
+        dataSanitizeFixedCount = totalFixedCount;
+        if (errors.isEmpty()) {
+            messages.add(totalFixedCount == 0
+                    ? "未发现需要清洗的数据。"
+                    : String.format("数据清洗完成，共修复 %d 条记录。", totalFixedCount));
+        } else {
+            messages.add(String.format("数据清洗中断，已修复 %d 条记录。", totalFixedCount));
+        }
+        dataSanitizeMessages = new ArrayList<>(messages);
+        dataSanitizeErrors = new ArrayList<>(errors);
+    }
+
+    /**
+     * 统计本轮全量清洗需要处理的记录总数（用于进度展示）。
+     */
+    private int countSanitizeTargets() {
+        Integer imageCount = namedParameterJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM word_image", new MapSqlParameterSource(), Integer.class);
+        return countDirtyRecords("word", DIRTY_WORD_PHONETIC_SQL_WHERE)
+                + countDirtyRecords("meaning_item", DIRTY_MEANING_SQL_WHERE)
+                + countDirtyRecords("sentence", DIRTY_SENTENCE_SQL_WHERE)
+                + (imageCount != null ? imageCount : 0);
     }
 
     /**
@@ -203,7 +306,7 @@ public class DataSanitizeBo {
             wordImageSanitizeTotal = images.size();
             wordImageSanitizeProcessed = 0;
             wordImageSanitizeFixedCount = 0;
-            String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
+            File wordImageDir = requireWordImageDir();
 
             User sysUser = null;
             try {
@@ -221,7 +324,7 @@ public class DataSanitizeBo {
                 if (fileName == null || fileName.trim().isEmpty()) {
                     invalid = true;
                 } else {
-                    File file = new File(baseDir + fileName);
+                    File file = new File(wordImageDir, fileName);
                     if (!MyImage.isValidImage(file)) {
                         invalid = true;
                     }
@@ -305,7 +408,7 @@ public class DataSanitizeBo {
     private int countInvalidWordImages() {
         String sql = "SELECT id, image_file FROM word_image";
         List<Map<String, Object>> images = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
-        String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
+        File wordImageDir = requireWordImageDir();
         int count = 0;
         for (Map<String, Object> map : images) {
             String fileName = (String) map.get("image_file");
@@ -313,7 +416,7 @@ public class DataSanitizeBo {
                 count++;
                 continue;
             }
-            File file = new File(baseDir + fileName);
+            File file = new File(wordImageDir, fileName);
             if (!MyImage.isValidImage(file)) {
                 count++;
             }
@@ -321,11 +424,30 @@ public class DataSanitizeBo {
         return count;
     }
 
+    /**
+     * 配图目录预检。
+     * <p>
+     * {@link MyImage#isValidImage} 对"文件不存在/不可读/任何异常"一律返回 false，
+     * 若目录本身不可用（未配置、路径写错、权限不足、挂载丢失），会把全部配图误判为损坏并删除，
+     * 且删除会连带删除物理图片文件、不可恢复。因此这里必须先确认目录可用，否则直接报错中止。
+     */
+    private File requireWordImageDir() {
+        String baseDir = sysParamUtil.getImageBaseDir();
+        if (baseDir == null || baseDir.trim().isEmpty()) {
+            throw new IllegalStateException("系统参数 imgBaseDir 未配置，已中止配图清洗以避免误删全部配图");
+        }
+        File dir = new File(baseDir.trim(), "word");
+        if (!dir.isDirectory() || !dir.canRead()) {
+            throw new IllegalStateException("配图目录不可用，已中止配图清洗以避免误删全部配图: " + dir.getAbsolutePath());
+        }
+        return dir;
+    }
+
     private int sanitizeWordImages(List<String> fixed) {
         int count = 0;
         String sql = "SELECT id, image_file FROM word_image";
         List<Map<String, Object>> images = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
-        String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
+        File wordImageDir = requireWordImageDir();
 
         User sysUser = null;
         try {
@@ -342,7 +464,7 @@ public class DataSanitizeBo {
             if (fileName == null || fileName.trim().isEmpty()) {
                 invalid = true;
             } else {
-                File file = new File(baseDir + fileName);
+                File file = new File(wordImageDir, fileName);
                 if (!MyImage.isValidImage(file)) {
                     invalid = true;
                 }
@@ -356,13 +478,13 @@ public class DataSanitizeBo {
                     logger.error("清洗单词配图失败, id=" + id, e);
                 }
             }
+            dataSanitizeProcessed++;
         }
         if (count > 0) {
             fixed.add(String.format("清理了 %d 张损坏或无效的单词配图记录，并已生成同步日志。", count));
         }
         return count;
     }
-
     private int sanitizeWordPhonetics(List<String> fixed) throws Exception {
         int count = 0;
         // 查找可能需要修复的单词：音标包含斜线、方括号，或以逗号结尾
@@ -390,6 +512,7 @@ public class DataSanitizeBo {
                 sysDbSyncBo.logOperation(wordBo.toDto(word), "UPDATE", "word", id, JsonUtils.toJson(wordBo.toDto(word)));
                 count++;
             }
+            dataSanitizeProcessed++;
         }
         if (count > 0) fixed.add(String.format("修复了 %d 个单词的音标格式。", count));
         return count;
@@ -420,6 +543,7 @@ public class DataSanitizeBo {
                 }
                 count++;
             }
+            dataSanitizeProcessed++;
         }
         if (count > 0) fixed.add(String.format("修复了 %d 个释义项的文本格式。", count));
         return count;
@@ -456,6 +580,7 @@ public class DataSanitizeBo {
                 }
                 count++;
             }
+            dataSanitizeProcessed++;
         }
         if (count > 0) fixed.add(String.format("修复了 %d 个例句的文本格式。", count));
         return count;
@@ -962,6 +1087,7 @@ public class DataSanitizeBo {
         mi.setMeaning(String.join("，", parts));
         meaningItemBo.updateEntity(mi);
         logMeaningItemChange(mi, "UPDATE");
+        updateSentenceWordMeaning(mi);
         return 1;
     }
 
@@ -976,6 +1102,7 @@ public class DataSanitizeBo {
         first.setMeaning(parts.get(0));
         meaningItemBo.updateEntity(first);
         logMeaningItemChange(first, "UPDATE");
+        updateSentenceWordMeaning(first);
 
         int count = 1;
         for (int i = 1; i < parts.size(); i++) {
@@ -1004,6 +1131,30 @@ public class DataSanitizeBo {
             sysDbSyncBo.logOperation(dto, operation, "meaning_item", mi.getId(), JsonUtils.toJson(dto));
         } else if (ownerId != null) {
             userDbSyncBo.logUserOperation(mi, ownerId, "meaning_item", operation, mi.getId(), JsonUtils.toJson(dto));
+        }
+    }
+
+    /**
+     * 释义文本变更后，同步回填其下例句的冗余字段 {@code word_meaning}。
+     * <p>
+     * 该字段是释义的副本，若不同步回填，例句会一直显示拆分前那条分号串。
+     */
+    private void updateSentenceWordMeaning(MeaningItem mi) throws Exception {
+        String wordMeaning = mi.getMeaning();
+        for (Sentence sentence : sentenceBo.findByMeaningItem(mi.getId())) {
+            if (Objects.equals(sentence.getWordMeaning(), wordMeaning)) {
+                continue;
+            }
+            sentence.setWordMeaning(wordMeaning);
+            sentenceBo.updateEntity(sentence);
+
+            String ownerId = sentence.getOwner() != null ? sentence.getOwner().getId() : null;
+            String record = JsonUtils.toJson(sentenceBo.toDto(sentence));
+            if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                sysDbSyncBo.logOperation(sentence, "UPDATE", "sentence", sentence.getId(), record);
+            } else if (ownerId != null) {
+                userDbSyncBo.logUserOperation(sentence, ownerId, "sentence", "UPDATE", sentence.getId(), record);
+            }
         }
     }
 

@@ -1848,7 +1848,7 @@ class BdcNotifier extends _$BdcNotifier {
   /// 拼写/默写成功后的驻留时长（测试环境下为 0，防止 AutoDispose 导致测试失败并加速测试套件执行）
   @visibleForTesting
   static Duration spellingSuccessTransitionDelay =
-      PlatformUtils.isUnitTest ? Duration.zero : const Duration(milliseconds: 280);
+      PlatformUtils.isUnitTest ? Duration.zero : const Duration(milliseconds: 500);
 
   /// 拼写/默写判定正确时的平滑过渡处理：
   /// 1. 设置成功视觉态（输入框文字、下划线变绿，右侧呈现绿勾，播放正确提示音）；

@@ -455,7 +455,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     );
 
     final res = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 350),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       layoutBuilder: (currentChild, previousChildren) {
