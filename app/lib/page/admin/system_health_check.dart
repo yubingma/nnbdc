@@ -6,6 +6,7 @@ import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/services/badge_service.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:provider/provider.dart';
@@ -63,6 +64,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       'step': 13,
       'category': 'sentence_audio_integrity'
     },
+    {'id': 14, 'title': '勋章一致性', 'step': 14, 'category': 'user_badges'},
     {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
     {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
     {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
@@ -665,6 +667,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 13. 检查例句发音完整性
       await _checkSentenceAudioIntegrity(result, 13);
 
+      // 14. 检查勋章与事实源一致性(需回放全部学习日志, 只放在管理端)
+      await _checkBadges(result, 14);
+
       // 8. 检查网络连接
       await _checkNetworkConnectivity(result, 8);
 
@@ -1119,6 +1124,51 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         'missing_user_dict',
         stackTrace: stackTrace.toString(),
         logMessage: '用户词书完整性检查: $e',
+      );
+      setState(() {
+        _checkStates[step] = 'failed';
+      });
+    }
+  }
+
+  /// 勋章与事实源一致性诊断。
+  /// 走 BadgeService 的重放入口(dryRun), 保证"诊断"与"修复"共用同一份事实源逻辑;
+  /// 该检查需回放用户全部学习日志(最重用户约 47k 条 / 200ms), 因此只挂在管理端。
+  Future<void> _checkBadges(SystemHealthResult result, int step) async {
+    setState(() {
+      _checkStates[step] = false; // 进行中
+    });
+
+    try {
+      final rebuild = await BadgeService().rebuildBadgesFromFacts(dryRun: true);
+
+      if (rebuild.granted.isNotEmpty) {
+        result.addIssue(
+          '勋章漏发',
+          '有 ${rebuild.granted.length} 枚勋章已按事实源达标但未授予: ${rebuild.granted.join(', ')}',
+          'user_badges',
+        );
+      }
+      if (rebuild.adjusted.isNotEmpty) {
+        result.addIssue(
+          '勋章叠层次数偏少',
+          '${rebuild.adjusted.length} 枚可叠层勋章的次数低于事实值: '
+              '${rebuild.adjusted.entries.map((e) => '${e.key}→${e.value}').join(', ')}',
+          'user_badges',
+        );
+      }
+
+      setState(() {
+        _checkStates[step] = rebuild.hasChange ? 'failed' : true;
+      });
+    } catch (e, stackTrace) {
+      Global.logger.e('检查勋章一致性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '勋章检查失败',
+        '无法完成勋章一致性检查: $e',
+        'user_badges',
+        stackTrace: stackTrace.toString(),
+        logMessage: '勋章一致性检查: $e',
       );
       setState(() {
         _checkStates[step] = 'failed';

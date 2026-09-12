@@ -10,7 +10,6 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/tts.dart';
-import 'package:nnbdc/services/badge_service.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
@@ -94,12 +93,6 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查学习步骤完整性: ${timer3.elapsedMilliseconds}ms');
       onProgress?.call(3, '检查学习步骤完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-
-      // 3.1 检查勋章与事实源是否一致(只诊断不落库)
-      final timerBadge = Stopwatch()..start();
-      await _checkBadges(result, userId);
-      timerBadge.stop();
-      Global.logger.d('✓ 检查勋章一致性: ${timerBadge.elapsedMilliseconds}ms');
 
       // 4. 检查用户数据库版本一致性
       onProgress?.call(4, '检查数据库版本一致性...');
@@ -412,31 +405,6 @@ class DataIntegrityChecker {
   }
 
     
-  /// 检查勋章与事实源是否一致。
-  /// 用重建入口的 dryRun 做诊断, 保证"诊断"和"修复"共用同一份事实源逻辑, 不会各说各话。
-  Future<void> _checkBadges(IntegrityCheckResult result, String userId) async {
-    try {
-      final rebuild = await BadgeService().rebuildBadgesFromFacts(dryRun: true);
-      if (rebuild.granted.isNotEmpty) {
-        result.addIssue(
-          '勋章漏发',
-          '有 ${rebuild.granted.length} 枚勋章已按事实源达标但未授予: ${rebuild.granted.join(', ')}',
-          'user_badges',
-        );
-      }
-      if (rebuild.adjusted.isNotEmpty) {
-        result.addIssue(
-          '勋章叠层次数偏少',
-          '${rebuild.adjusted.length} 枚可叠层勋章的次数低于事实值: ${rebuild.adjusted.entries.map((e) => '${e.key}→${e.value}').join(', ')}',
-          'user_badges',
-        );
-      }
-    } catch (e, stack) {
-      Global.logger.e('检查勋章一致性时出错', error: e, stackTrace: stack);
-      result.addError('检查勋章一致性时出错: $e');
-    }
-  }
-
   /// 检查用户学习步骤完整性
   Future<void> _checkUserStudySteps(IntegrityCheckResult result, String userId) async {
     try {
@@ -733,21 +701,6 @@ class DataIntegrityChecker {
         } catch (e, stack) {
           Global.logger.e('修复学习步骤时发生中断性错误', error: e, stackTrace: stack);
           fixResult.addError('修复学习步骤失败: $e');
-        }
-      }
-
-      // 修复勋章漏发/少发: 按事实源全量重放补齐(只补不撤)
-      if (checkResult.hasIssue('user_badges')) {
-        try {
-          final rebuild = await BadgeService().rebuildBadgesFromFacts();
-          if (rebuild.hasChange) {
-            fixResult.addFixed('勋章已按事实源补齐: 补发 ${rebuild.granted.length} 枚, 校正 ${rebuild.adjusted.length} 枚叠层次数');
-          } else {
-            fixResult.addFixed('勋章无需修复');
-          }
-        } catch (e, stack) {
-          Global.logger.e('修复勋章时发生中断性错误', error: e, stackTrace: stack);
-          fixResult.addError('修复勋章失败: $e');
         }
       }
 
