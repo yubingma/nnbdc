@@ -7,7 +7,6 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/enum.dart';
@@ -27,7 +26,6 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/handwriting_board.dart';
 import 'package:nnbdc/widget/theme_select_dialog.dart';
-import '../../widget/sound_wave_icon.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:share_plus/share_plus.dart';
@@ -47,6 +45,7 @@ import '../../util/word_util.dart';
 import '../index.dart';
 import '../walkman.dart';
 import '../word_detail.dart';
+import 'ai_story_page.dart';
 import 'dict_words.dart';
 import 'edit_meaning_dialog.dart';
 import 'modes/handwriting_mode_item.dart';
@@ -3587,103 +3586,15 @@ class WordListPageState extends State<WordListPage>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppTheme.createGradientAppBar(
-            title: 'AI 单词小短文',
-            actions: [
-              if (storyVo.enTtsEnabled)
-                IconButton(
-                  icon: const Row(
-                    children: [
-                      ModernSoundWaveIcon(size: 18, color: Colors.white),
-                      Text(' En',
-                          style: TextStyle(fontSize: 12, color: Colors.white)),
-                    ],
-                  ),
-                  tooltip: '播放英文配音',
-                  onPressed: () {
-                    _sessionController.playAiStoryEnSound(storyVo.wordsHash);
-                  },
-                ),
-              if (storyVo.cnTtsEnabled)
-                IconButton(
-                  icon: const Row(
-                    children: [
-                      ModernSoundWaveIcon(size: 18, color: Colors.white),
-                      Text(' 中',
-                          style: TextStyle(fontSize: 12, color: Colors.white)),
-                    ],
-                  ),
-                  tooltip: '播放中文配音',
-                  onPressed: () {
-                    _sessionController.playAiStoryCnSound(storyVo.wordsHash);
-                  },
-                ),
-              IconButton(
-                icon: const Icon(Icons.copy, color: Colors.white),
-                tooltip: '复制',
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: storyVo.storyContent));
-                  ToastUtil.info('已复制到剪贴板');
-                },
-              ),
-            ],
-          ),
-          body: Container(
-            color: Theme.of(context).scaffoldBackgroundColor, // 为背景提供清晰颜色，避免透视
-            child: _buildClickableStory(storyVo.storyContent),
-          ),
+        builder: (context) => AiStoryPage(
+          storyContent: storyVo.storyContent,
+          enTtsEnabled: storyVo.enTtsEnabled,
+          cnTtsEnabled: storyVo.cnTtsEnabled,
+          onPlayEn: () =>
+              _sessionController.playAiStoryEnSound(storyVo.wordsHash),
+          onPlayCn: () =>
+              _sessionController.playAiStoryCnSound(storyVo.wordsHash),
         ),
-      ),
-    );
-  }
-
-  Widget _buildClickableStory(String story) {
-    // 预处理：将 **word** 替换为 <b>word</b>
-    String processedStory =
-        story.replaceAllMapped(RegExp(r'\*\*(.*?)\*\*'), (match) {
-      return '<b>${match.group(1)}</b>';
-    });
-
-    List<String> paragraphs = processedStory.split('\n');
-    List<Widget> widgets = [];
-
-    for (var p in paragraphs) {
-      if (p.trim().isEmpty) {
-        // 空行作为段落间隔
-        widgets.add(const SizedBox(height: 16));
-        continue;
-      }
-
-      // 判断是否是中文（含有汉字），用于判断是故事还是翻译，或者标题
-      bool hasChinese = RegExp(r'[\u4e00-\u9fa5]').hasMatch(p);
-
-      if (hasChinese) {
-        // 中文部分（翻译或引导句）
-        widgets.add(Util.makeChineseSpanText(p, context,
-            style: const TextStyle(fontSize: 17, height: 1.6)));
-      } else {
-        // 英文部分（故事正文)
-        widgets.add(Util.makeEnglishSpanText(
-          p,
-          '', // highlightWord
-          true, // highlightWordHasBeenTaged
-          context,
-          false, // maskHighlightWord
-          null, // maskTextField
-          false, // isHighlightWordUnClickable
-          FontWeight.w400,
-          fontSize: 17, // 设置与全屏匹配的字体大小
-        ));
-      }
-      widgets.add(const SizedBox(height: 12));
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: widgets,
       ),
     );
   }
