@@ -54,7 +54,7 @@ class NotificationUtil {
       channelDescription: '每天定时提醒背单词',
       importance: Importance.max,
       priority: Priority.high,
-      icon: 'ic_launcher',
+      icon: 'ic_stat_nnbdc',
     );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
@@ -98,7 +98,7 @@ class NotificationUtil {
       tz.setLocalLocation(tz.getLocation(timeZoneInfo));
 
       const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('ic_launcher');
+          AndroidInitializationSettings('ic_stat_nnbdc');
 
       const DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings(
@@ -144,7 +144,7 @@ class NotificationUtil {
       channelDescription: '每天定时提醒背单词',
       importance: Importance.max,
       priority: Priority.high,
-      icon: 'ic_launcher',
+      icon: 'ic_stat_nnbdc',
     );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
