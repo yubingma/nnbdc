@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle, ByteData;
 import 'package:drift/drift.dart';
+import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -125,6 +126,8 @@ class MyDatabase extends _$MyDatabase {
   /// 此方法会检查关键表是否存在，如果不存在则自动重建数据库
   /// 应该在应用启动时调用，确保数据库在使用前是完整的
   static Future<void> ensureDatabaseIntegrity() async {
+    // 本方法末尾会静默删库重建, 记录原因用于上报(否则线上丢数据不可见)
+    String? rebuildReason;
     try {
       final db = instance;
 
@@ -133,6 +136,7 @@ class MyDatabase extends _$MyDatabase {
         await db.customSelect('SELECT 1', readsFrom: {}).get();
       } catch (e) {
         // 如果数据库打开失败，可能表不存在，继续检查
+        rebuildReason = 'open_failed:${e.runtimeType}';
       }
 
       // 检查关键表是否存在（通过查询 sqlite_master 来判断）
@@ -183,12 +187,18 @@ class MyDatabase extends _$MyDatabase {
         }
       } catch (e) {
         // 如果查询失败，可能是表不存在或其他问题
+        rebuildReason ??= 'probe_failed:${e.runtimeType}';
         Global.logger.d('数据库完整性检查查询失败: $e');
       }
 
       // 如果表不存在，自动重建数据库
       // 直接使用 wipeAllTables 进行完整重建，确保表结构正确
       Global.logger.w('⚠️ 检测到数据库表缺失，自动重建数据库...');
+      // 这是另一条静默删库路径(打开失败/表缺失/文件损坏), 删库前上报
+      AnalyticsUtil.trackEvent('db_rebuild_on_integrity_check', {
+        'app_version': Global.version,
+        'reason': rebuildReason ?? 'users_table_missing',
+      });
       await db.wipeAllTables();
       Global.logger.i('✅ 数据库自动重建完成');
     } catch (e, stackTrace) {
@@ -424,6 +434,16 @@ class MyDatabase extends _$MyDatabase {
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
+
+          // 删库会抹掉本地所有记录(本地异常表不参与端云同步), 因此必须在删库前上报,
+          // 否则线上大面积删库完全不可见 —— 而这正是决定要不要紧急发版的唯一信号
+          AnalyticsUtil.trackEvent('db_upgrade_failed', {
+            'from_version': from,
+            'to_version': to,
+            'app_version': Global.version,
+            'error_type': e.runtimeType.toString(),
+            'error': _briefError(e),
+          });
 
           // 给用户提示
           _showDatabaseRebuildNotification();
@@ -1610,6 +1630,12 @@ class MyDatabase extends _$MyDatabase {
       _showDatabaseRebuildFailureNotification();
       rethrow;
     }
+  }
+
+  /// 截断异常文本, 避免超长 SQL 语句进埋点
+  static String _briefError(Object? error) {
+    final text = error?.toString() ?? '';
+    return text.length <= 200 ? text : '${text.substring(0, 200)}…';
   }
 
   /// 显示数据库重建通知（开始重建时）

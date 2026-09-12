@@ -399,7 +399,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
       UserVo? loggedInUserVal;
       List<String>? last30DaysDakaStatusVal;
-      int unreadMsgCountVal = 0;
       StudyProgress? studyProgressVal;
 
       if (Global.isGuest) {
@@ -522,7 +521,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
           }
           studyProgress = studyProgressVal;
           last30DaysDakaStatus = last30DaysDakaStatusVal;
-          unreadMsgCount = unreadMsgCountVal;
           _isDirty = false;
         });
       }

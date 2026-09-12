@@ -127,6 +127,8 @@ dev_dependencies:
   icons_launcher: ^3.0.0
   riverpod_generator: ^2.6.5
   sqflite_common_ffi: ^2.3.0
+  # 数据库迁移测试需要直接构造"旧版本 schema"的 sqlite 文件
+  sqlite3: ^2.9.4
 
 
 dependency_overrides:
