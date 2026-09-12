@@ -185,7 +185,7 @@ public class DataSanitizeBo {
         if (dataSanitizeStepIndex == 0) {
             return "正在统计待清洗数据...";
         }
-        return String.format("正在清洗第 %d/4 步「%s」: %d/%d",
+        return String.format("正在清洗第 %d/5 步「%s」: %d/%d",
                 dataSanitizeStepIndex, dataSanitizeStepLabel, dataSanitizeProcessed, dataSanitizeTotal);
     }
 
@@ -220,6 +220,12 @@ public class DataSanitizeBo {
             dataSanitizeStepIndex = 4;
             dataSanitizeStepLabel = "单词配图";
             totalFixedCount += sanitizeWordImages(messages);
+            dataSanitizeMessages = new ArrayList<>(messages);
+
+            // 5. 拆分释义项中非法的分号分隔
+            dataSanitizeStepIndex = 5;
+            dataSanitizeStepLabel = "释义项分号";
+            totalFixedCount += sanitizeMeaningSeparatorsStep(messages);
         } catch (Exception e) {
             logger.error("数据清洗失败", e);
             errors.add("数据清洗过程中出错: " + e.getMessage());
@@ -246,7 +252,18 @@ public class DataSanitizeBo {
         return countDirtyRecords("word", DIRTY_WORD_PHONETIC_SQL_WHERE)
                 + countDirtyRecords("meaning_item", DIRTY_MEANING_SQL_WHERE)
                 + countDirtyRecords("sentence", DIRTY_SENTENCE_SQL_WHERE)
-                + (imageCount != null ? imageCount : 0);
+                + (imageCount != null ? imageCount : 0)
+                + countMeaningSeparatorGroups();
+    }
+
+    /**
+     * 统计含分号的释义项归属多少个词条（口径与 {@link #sanitizeMeaningSeparatorsCore} 的扫描完全一致）。
+     */
+    private int countMeaningSeparatorGroups() {
+        String sql = "SELECT COUNT(*) FROM (SELECT 1 FROM meaning_item WHERE " + DIRTY_MEANING_SEPARATOR_SQL_WHERE
+                + " GROUP BY word_id, dict_id) dirty_words";
+        Integer count = namedParameterJdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Integer.class);
+        return count != null ? count : 0;
     }
 
     /**
@@ -953,48 +970,109 @@ public class DataSanitizeBo {
 
     private void executeMeaningSeparatorSanitization() {
         try {
-            meaningSanitizeLog = "正在查询含分号的释义项...";
-            String sql = "SELECT word_id, dict_id FROM meaning_item WHERE " + DIRTY_MEANING_SEPARATOR_SQL_WHERE
-                    + " GROUP BY word_id, dict_id";
-            List<Map<String, Object>> groups = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
-            meaningSanitizeTotal = groups.size();
-            meaningSanitizeProcessed = 0;
-            meaningSanitizeFixedCount = 0;
-            meaningSanitizeLog = String.format("查询完成，共找到 %d 个待清洗词条。", meaningSanitizeTotal);
-            logger.info("开始释义项清洗。待清洗词条数: {}", meaningSanitizeTotal);
-
-            for (Map<String, Object> group : groups) {
-                if (Thread.currentThread().isInterrupted()) {
-                    meaningSanitizeLog = "清洗任务已被系统强行中断。";
-                    break;
-                }
-
-                String wordId = (String) group.get("word_id");
-                String dictId = (String) group.get("dict_id");
-                Word word = wordBo.findById(wordId);
-                if (word == null) {
-                    logger.warn("释义项清洗跳过不存在的单词: wordId={}", wordId);
-                    meaningSanitizeProcessed++;
-                    continue;
-                }
-
-                meaningSanitizeLog = String.format("正在处理 [%s] (%d/%d)...",
-                        word.getSpell(), meaningSanitizeProcessed + 1, meaningSanitizeTotal);
-                try {
-                    meaningSanitizeFixedCount += sanitizeMeaningsOfWord(word, dictId);
-                } catch (Exception e) {
-                    logger.error("清洗单词 [{}] 的释义项失败", word.getSpell(), e);
-                }
-                meaningSanitizeProcessed++;
-            }
-
-            meaningSanitizeLog = String.format("清洗完成。共处理 %d 个词条，共修复 %d 个释义项。",
-                    meaningSanitizeProcessed, meaningSanitizeFixedCount);
-            logger.info("释义项清洗完成: 词条数={}, 修复数={}", meaningSanitizeProcessed, meaningSanitizeFixedCount);
+            sanitizeMeaningSeparatorsCore((processed, total, fixedCount, log) -> {
+                meaningSanitizeProcessed = processed;
+                meaningSanitizeTotal = total;
+                meaningSanitizeFixedCount = fixedCount;
+                meaningSanitizeLog = log;
+            });
         } catch (Exception e) {
             logger.error("执行释义项清洗任务失败", e);
             meaningSanitizeLog = "执行清洗任务失败: " + e.getMessage();
         }
+    }
+
+    /**
+     * 全量清洗的第 5 步：拆分释义项中非法的分号分隔。
+     * <p>
+     * 与「清洗释义项分号」按钮共用 {@link #sanitizeMeaningSeparatorsCore}，
+     * 保证"检查数据清洁状态"报出的每一项都能被全量清洗真正洗掉。
+     */
+    private int sanitizeMeaningSeparatorsStep(List<String> messages) throws Exception {
+        if (isMeaningSanitizing) {
+            messages.add("释义项分号清洗已在运行中，本轮跳过该步骤。");
+            return 0;
+        }
+
+        isMeaningSanitizing = true;
+        int baseProcessed = dataSanitizeProcessed;
+        try {
+            int separatorFixedCount = sanitizeMeaningSeparatorsCore((processed, total, fixedCount, log) -> {
+                dataSanitizeProcessed = baseProcessed + processed;
+                meaningSanitizeTotal = total;
+                meaningSanitizeProcessed = processed;
+                meaningSanitizeFixedCount = fixedCount;
+                meaningSanitizeLog = log;
+            });
+            if (separatorFixedCount > 0) {
+                messages.add(String.format("修复了 %d 个释义项的分号分隔。", separatorFixedCount));
+            }
+            return separatorFixedCount;
+        } finally {
+            isMeaningSanitizing = false;
+        }
+    }
+
+    /**
+     * 释义项分号清洗的进度上报出口：独立按钮与全量清洗各自把进度落到自己的状态字段上。
+     */
+    private interface MeaningSeparatorProgress {
+        void report(int processed, int total, int fixedCount, String log);
+    }
+
+    /**
+     * 拆分释义项中非法的分号分隔：对每个含分号的词条调用大模型判定分号两侧是「同一义项的近义复述」
+     * 还是「不同义项」，近义合并为一条，异义拆成多条独立释义项。
+     * <p>
+     * 这是该规则的唯一实现，「清洗释义项分号」按钮与全量清洗都走这里。
+     *
+     * @return 修复（含拆分新增）的释义项条数
+     */
+    private int sanitizeMeaningSeparatorsCore(MeaningSeparatorProgress progress) throws Exception {
+        progress.report(0, 0, 0, "正在查询含分号的释义项...");
+        String sql = "SELECT word_id, dict_id FROM meaning_item WHERE " + DIRTY_MEANING_SEPARATOR_SQL_WHERE
+                + " GROUP BY word_id, dict_id";
+        List<Map<String, Object>> groups = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
+        int total = groups.size();
+        int processed = 0;
+        int fixedCount = 0;
+        int failedCount = 0;
+        progress.report(0, total, 0, String.format("查询完成，共找到 %d 个待清洗词条。", total));
+        logger.info("开始释义项分号清洗。待清洗词条数: {}", total);
+
+        for (Map<String, Object> group : groups) {
+            if (Thread.currentThread().isInterrupted()) {
+                progress.report(processed, total, fixedCount, "清洗任务已被系统强行中断。");
+                break;
+            }
+
+            String wordId = (String) group.get("word_id");
+            String dictId = (String) group.get("dict_id");
+            Word word = wordBo.findById(wordId);
+            if (word == null) {
+                logger.warn("释义项清洗跳过不存在的单词: wordId={}", wordId);
+                processed++;
+                continue;
+            }
+
+            progress.report(processed, total, fixedCount,
+                    String.format("正在处理 [%s] (%d/%d)...", word.getSpell(), processed + 1, total));
+            try {
+                fixedCount += sanitizeMeaningsOfWord(word, dictId);
+            } catch (Exception e) {
+                failedCount++;
+                logger.error("清洗单词 [{}] 的释义项失败", word.getSpell(), e);
+            }
+            processed++;
+        }
+
+        String summary = failedCount == 0
+                ? String.format("清洗完成。共处理 %d 个词条，共修复 %d 个释义项。", processed, fixedCount)
+                : String.format("清洗完成。共处理 %d 个词条，修复 %d 个释义项，其中 %d 个词条失败(详见服务端日志)。",
+                        processed, fixedCount, failedCount);
+        progress.report(processed, total, fixedCount, summary);
+        logger.info("释义项分号清洗完成: 词条数={}, 修复数={}, 失败数={}", processed, fixedCount, failedCount);
+        return fixedCount;
     }
 
     /**
