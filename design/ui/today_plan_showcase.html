@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日学习计划 · 高端美学重构方案对比展示台</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg-page: #0B0F12;
+      --panel-bg: rgba(22, 27, 34, 0.8);
+      --panel-border: rgba(255, 255, 255, 0.1);
+      --text-main: #F0F6FC;
+      --text-sub: #8B949E;
+      --accent: #10B981;
+
+      /* 方案内部变量 - 浅色模式 */
+      --mockup-bg: 
+        radial-gradient(circle at 86% 6%, rgba(16, 185, 129, 0.22) 0%, transparent 42%),
+        radial-gradient(circle at 6% 36%, rgba(255, 255, 255, 0.95) 0%, transparent 48%),
+        radial-gradient(circle at 60% 102%, rgba(14, 165, 233, 0.16) 0%, transparent 50%),
+        #E4EDE8;
+      --card-bg: rgba(255, 255, 255, 0.68);
+      --card-edge: rgba(255, 255, 255, 0.32);
+      --card-shadow: 0 16px 40px -12px rgba(18, 52, 38, 0.14), 0 4px 14px -3px rgba(18, 52, 38, 0.04);
+      --inner-text-primary: #12211C;
+      --inner-text-secondary: #475E57;
+      --inner-text-muted: #789088;
+      --inner-text-faint: #A6BDB6;
+      --divider: rgba(18, 52, 38, 0.07);
+      --hairline: rgba(18, 52, 38, 0.05);
+
+      --new-word: #0EA5E9;
+      --new-word-soft: rgba(14, 165, 233, 0.10);
+      --old-word: #10B981;
+      --old-word-soft: rgba(16, 185, 129, 0.10);
+      --wrong: #EF4444;
+      --wrong-soft: rgba(239, 68, 68, 0.08);
+      --accent-glow: rgba(16, 185, 129, 0.42);
+
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --mockup-bg: 
+        radial-gradient(circle at 86% 6%, rgba(16, 185, 129, 0.16) 0%, transparent 40%),
+        radial-gradient(circle at 8% 34%, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 50% 105%, rgba(14, 165, 233, 0.10) 0%, transparent 50%),
+        #0E1513;
+      --card-bg: rgba(24, 34, 30, 0.72);
+      --card-edge: rgba(255, 255, 255, 0.09);
+      --card-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.55);
+      --inner-text-primary: #F2F7F4;
+      --inner-text-secondary: #A0B5AE;
+      --inner-text-muted: #6A827B;
+      --inner-text-faint: #3F524C;
+      --divider: rgba(255, 255, 255, 0.08);
+      --hairline: rgba(255, 255, 255, 0.06);
+      --accent-glow: rgba(52, 211, 153, 0.32);
+      --new-word-soft: rgba(14, 165, 233, 0.14);
+      --old-word-soft: rgba(16, 185, 129, 0.14);
+    }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px 60px;
+      overflow-x: auto;
+    }
+
+    /* 顶部控制台与解说栏 */
+    .top-deck {
+      max-width: 1000px;
+      width: 100%;
+      margin-bottom: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .top-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-group h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-group p {
+      font-size: 13.5px;
+      color: var(--text-sub);
+      margin-top: 5px;
+    }
+
+    .control-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ctrl-pill-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #F0F6FC;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .ctrl-pill-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .ctrl-pill-btn.active {
+      background: #10B981;
+      border-color: #10B981;
+      color: #FFFFFF;
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+    }
+
+    /* 设计维度亮点解读卡 */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .insight-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .insight-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #34D399;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .insight-desc {
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    /* 真机舞台区 */
+    .stage-container {
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      width: 100%;
+      max-width: 960px;
+      align-items: flex-start;
+      margin-top: 10px;
+    }
+
+    /* 方案外壳及外标 */
+    .device-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .plan-header-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .plan-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: rgba(16, 185, 129, 0.16);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .plan-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    .plan-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    /* iPhone 16 旗舰模具 */
+    .device-wrapper {
+      position: relative;
+    }
+    .device-shell {
+      width: 393px;
+      height: 852px;
+      border-radius: 54px;
+      border: 3.5px solid #000000;
+      box-shadow: 
+        0 0 0 11px #1B221E,
+        0 0 0 12.5px rgba(255, 255, 255, 0.16),
+        0 0 0 13.5px rgba(0, 0, 0, 0.4),
+        0 30px 80px -15px rgba(0, 0, 0, 0.7);
+      background: var(--mockup-bg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* 侧键 */
+    .side-btn {
+      position: absolute;
+      background: #232A26;
+      border-radius: 3px;
+      z-index: 0;
+    }
+    .btn-act { left: -14px; top: 105px; width: 4px; height: 28px; }
+    .btn-v-up { left: -14px; top: 148px; width: 4px; height: 48px; }
+    .btn-v-dn { left: -14px; top: 206px; width: 4px; height: 48px; }
+    .btn-pwr { right: -14px; top: 160px; width: 4px; height: 68px; }
+
+    /* 灵动岛 */
+    .dynamic-island {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 116px;
+      height: 29px;
+      background: #000000;
+      border-radius: 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 12px;
+      box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.08) inset;
+    }
+    .camera-lens {
+      width: 10.5px;
+      height: 10.5px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #1D2A3B 0%, #0A0F16 80%);
+      box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.15);
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      height: 48px;
+      padding: 0 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-bottom: 6px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--inner-text-primary);
+      z-index: 10;
+    }
+
+    /* Home Bar */
+    .home-bar {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 134px;
+      height: 5px;
+      background: var(--inner-text-primary);
+      opacity: 0.25;
+      border-radius: 100px;
+      z-index: 90;
+      pointer-events: none;
+    }
+
+    /* 手机内部主内容 */
+    .app-screen-body {
+      flex: 1;
+      padding: 6px 20px 14px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      color: var(--inner-text-primary);
+    }
+
+    /* 顶栏 */
+    .screen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2px;
+      margin-bottom: 6px;
+    }
+    .header-caption {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--inner-text-muted);
+    }
+    .streak-chip {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #D97706;
+      background: rgba(245, 158, 11, 0.14);
+      padding: 2px 7px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .header-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-title {
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--inner-text-primary);
+    }
+    .header-tool-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--card-edge);
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--inner-text-secondary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+    }
+
+    /* 毛玻璃卡片通用 */
+    .hero-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-edge);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 26px;
+      position: relative;
+    }
+
+    /* 方案 A 特有样式 */
+    .hero-card-a {
+      padding: 20px 22px 18px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .arc-dashboard-wrap {
+      position: relative;
+      width: 172px;
+      height: 172px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 2px 0 10px 0;
+    }
+    .arc-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .arc-bg-track {
+      fill: none;
+      stroke: var(--hairline);
+      stroke-width: 8;
+    }
+    .arc-segment-old {
+      fill: none;
+      stroke: url(#gradOldA);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 452;
+      stroke-dashoffset: 120;
+      filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.25));
+    }
+    .arc-segment-new {
+      fill: none;
+      stroke: url(#gradNewA);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 452;
+      stroke-dashoffset: 334;
+      transform-origin: center;
+      transform: rotate(266deg);
+      filter: drop-shadow(0 2px 8px rgba(14, 165, 233, 0.25));
+    }
+    .arc-center-content {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .target-num {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -1.6px;
+      line-height: 1;
+      color: var(--inner-text-primary);
+    }
+    .target-unit {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--inner-text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .target-subtext {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--inner-text-muted);
+      margin-top: 3px;
+    }
+    .step-progress-row {
+      width: 100%;
+      max-width: 250px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .step-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--inner-text-muted);
+    }
+    .step-track {
+      height: 3.5px;
+      width: 100%;
+      background: var(--hairline);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .step-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 100px;
+    }
+    .stats-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      padding: 10px 10px 16px 10px;
+      border-top: 1px solid var(--divider);
+    }
+    .stat-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+    .stat-col + .stat-col {
+      border-left: 1px solid var(--divider);
+    }
+    .stat-val {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      line-height: 1.1;
+      color: var(--inner-text-primary);
+    }
+    .stat-tag-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--inner-text-muted);
+    }
+    .stat-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .stat-dot.new { background: var(--new-word); }
+    .stat-dot.old { background: var(--old-word); }
+
+    /* 方案 B 特有样式 */
+    .hero-card-b {
+      padding: 22px 22px 20px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .goal-hero-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .goal-hero-tag {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--inner-text-muted);
+      margin-bottom: 2px;
+    }
+    .goal-hero-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .goal-hero-num {
+      font-size: 54px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+      color: var(--inner-text-primary);
+    }
+    .ratio-bar-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .ratio-bar-capsule {
+      width: 100%;
+      height: 12px;
+      border-radius: 100px;
+      background: var(--hairline);
+      display: flex;
+      overflow: hidden;
+      padding: 1.5px;
+      gap: 2px;
+    }
+    .ratio-segment-new {
+      width: 26%;
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, #0284C7, #38BDF8);
+      box-shadow: 0 0 8px rgba(14, 165, 233, 0.4);
+    }
+    .ratio-segment-old {
+      width: 74%;
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, #059669, #34D399);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+    }
+    .ratio-bar-legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--inner-text-muted);
+    }
+    .data-cards-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .sub-data-card {
+      background: rgba(255, 255, 255, 0.45);
+      border: 1px solid var(--card-edge);
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+    }
+    [data-theme="dark"] .sub-data-card {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .sub-data-card.new { border-left: 3px solid var(--new-word); }
+    .sub-data-card.old { border-left: 3px solid var(--old-word); }
+    .card-top-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--inner-text-muted);
+    }
+    .card-big-num {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-top: 2px;
+    }
+    .sub-data-card.new .card-big-num { color: var(--new-word); }
+    .sub-data-card.old .card-big-num { color: var(--old-word); }
+    .total-step-info {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--inner-text-muted);
+      padding: 0 4px;
+    }
+
+    /* 旗舰主按钮 */
+    .hero-btn {
+      width: 100%;
+      height: 50px;
+      border-radius: 25px;
+      border: none;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 10px 24px -4px var(--accent-glow), 0 3px 8px -2px rgba(16, 185, 129, 0.3);
+      transition: all 0.2s ease;
+    }
+    .hero-btn:active {
+      transform: scale(0.975);
+    }
+
+    /* 学习轨道通用 */
+    .track-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .track-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2px;
+    }
+    .track-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--inner-text-primary);
+    }
+    .track-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--inner-text-secondary);
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    .track-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-edge);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 22px;
+      padding: 12px 18px;
+      display: flex;
+      flex-direction: column;
+    }
+    .track-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .track-item + .track-item {
+      border-top: 1px solid var(--divider);
+    }
+    .track-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .track-badge-title {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .track-step-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--inner-text-primary);
+    }
+    .track-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .flow-branch {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .branch-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .branch-status.correct {
+      color: var(--accent);
+      background: var(--old-word-soft);
+    }
+    .branch-status.wrong {
+      color: var(--wrong);
+      background: var(--wrong-soft);
+    }
+    .flow-arrow {
+      color: var(--inner-text-faint);
+      font-size: 10px;
+    }
+    .flow-target-chip {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--inner-text-primary);
+      background: rgba(0, 0, 0, 0.03);
+      padding: 2px 7px;
+      border-radius: 6px;
+      border: 1px solid var(--hairline);
+    }
+    [data-theme="dark"] .flow-target-chip {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* 底部导航 */
+    .nav-bar {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      border-top: 1px solid var(--hairline);
+      margin-top: 6px;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--inner-text-muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .nav-item.active {
+      color: var(--accent);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部控制台 -->
+  <div class="top-deck">
+    <div class="top-header-row">
+      <div class="brand-group">
+        <h1>✨ 今日学习计划 · 高端极简美学重构方案</h1>
+        <p>对标「不背单词」+ Apple 级现代精品质感：告别灰暗平涂、盒中盒与次级按钮</p>
+      </div>
+      <div class="control-actions">
+        <button class="ctrl-pill-btn active" id="btnSideBySide" onclick="setViewMode('both')">
+          <span>📱 并排对比</span>
+        </button>
+        <button class="ctrl-pill-btn" id="btnOnlyA" onclick="setViewMode('a')">
+          <span>环形能量环 (方案 A)</span>
+        </button>
+        <button class="ctrl-pill-btn" id="btnOnlyB" onclick="setViewMode('b')">
+          <span>比例胶囊槽 (方案 B)</span>
+        </button>
+        <button class="ctrl-pill-btn" id="btnThemeToggle" onclick="toggleTheme()">
+          <span id="themeLabel">🌙 切换深色模式</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 方案设计维度解析 -->
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="insight-title">🌌 双光源非对称微光背景</div>
+        <div class="insight-desc">右上薄荷翡翠晨光 + 左下一丝纯净微曦，赋予毛玻璃真实的折射深度，杜绝死板平涂灰。</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-title">⚡️ 极光微光旗舰行动按钮</div>
+        <div class="insight-desc">高饱和翡翠微渐变实体充填 + 漫射微发光柔影，解决原版幽灵半透明按钮缺乏点击欲的问题。</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-title">🪐 方案 A：环形能量仪表盘</div>
+        <div class="insight-desc">双色微渐变圆环将新词(天蓝26%)与旧词(翡翠74%)图形化收拢，具有强烈的视觉张力与成就感。</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-title">📰 方案 B：杂志排版与比例槽</div>
+        <div class="insight-desc">54px 超大挺拔数字 + 双段比例胶囊条，搭配新旧词轻触控卡，克制通透，纯排版驱动。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 真机舞台 -->
+  <div class="stage-container" id="stageContainer">
+
+    <!-- ================= 方案 A 手机 ================= -->
+    <div class="device-column" id="colA">
+      <div class="plan-header-badge">
+        <span class="plan-tag">OPTION A</span>
+        <span class="plan-name">方案 A · 环形能量仪表盘</span>
+        <span class="plan-sub">对标 Apple 健身环哲学 · 视觉冲击力强 · 充满活力</span>
+      </div>
+
+      <div class="device-wrapper">
+        <div class="side-btn btn-act"></div>
+        <div class="side-btn btn-v-up"></div>
+        <div class="side-btn btn-v-dn"></div>
+        <div class="side-btn btn-pwr"></div>
+
+        <div class="device-shell">
+          <!-- 灵动岛 -->
+          <div class="dynamic-island">
+            <div class="camera-lens"></div>
+          </div>
+          <!-- 状态栏 -->
+          <div class="status-bar">
+            <span>09:41</span>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <svg width="15" height="11" viewBox="0 0 17 12" fill="currentColor">
+                <rect x="0" y="8" width="2.5" height="4" rx="0.8"/>
+                <rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/>
+                <rect x="9" y="3" width="2.5" height="9" rx="0.8"/>
+                <rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/>
+              </svg>
+              <svg width="22" height="11" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/>
+                <rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/>
+                <path d="M22 4.5v3" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- 主内容 -->
+          <div class="app-screen-body">
+            <!-- 顶栏 -->
+            <div class="screen-header">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="header-caption">TODAY'S MISSION</span>
+                  <span class="streak-chip">⚡️ 12天连胜</span>
+                </div>
+                <div class="header-title-wrap">
+                  <span class="header-title">今日学习计划</span>
+                  <span style="opacity: 0.6; display: flex;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                  </span>
+                </div>
+              </div>
+              <div class="header-tool-btn">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+                  <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                  <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- 核心大卡：方案 A 环形仪表盘 -->
+            <div class="hero-card hero-card-a">
+              <div class="arc-dashboard-wrap">
+                <svg class="arc-svg" viewBox="0 0 160 160">
+                  <defs>
+                    <linearGradient id="gradOldA" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#10B981"/>
+                      <stop offset="100%" stop-color="#34D399"/>
+                    </linearGradient>
+                    <linearGradient id="gradNewA" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#0EA5E9"/>
+                      <stop offset="100%" stop-color="#38BDF8"/>
+                    </linearGradient>
+                  </defs>
+                  <circle class="arc-bg-track" cx="80" cy="80" r="72"/>
+                  <circle class="arc-segment-old" cx="80" cy="80" r="72"/>
+                  <circle class="arc-segment-new" cx="80" cy="80" r="72"/>
+                </svg>
+                <div class="arc-center-content">
+                  <div style="display: flex; align-items: baseline; gap: 4px;">
+                    <span class="target-num">500</span>
+                    <span class="target-unit">
+                      词
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                  </div>
+                  <span class="target-subtext">点击调整目标</span>
+                </div>
+              </div>
+
+              <!-- 步数胶囊 -->
+              <div class="step-progress-row">
+                <div class="step-labels">
+                  <span>今日进度 0 / 1000 步</span>
+                  <span style="font-weight: 700; color: var(--inner-text-primary);">0%</span>
+                </div>
+                <div class="step-track">
+                  <div class="step-fill"></div>
+                </div>
+              </div>
+
+              <!-- 新旧词数据行 -->
+              <div class="stats-row">
+                <div class="stat-col">
+                  <span class="stat-val" style="color: var(--new-word);">130</span>
+                  <div class="stat-tag-wrap">
+                    <span class="stat-dot new"></span>
+                    <span>新词 · 26%</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
+                </div>
+                <div class="stat-col">
+                  <span class="stat-val" style="color: var(--old-word);">370</span>
+                  <div class="stat-tag-wrap">
+                    <span class="stat-dot old"></span>
+                    <span>旧词 · 74%</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 旗舰主行动按钮 -->
+              <button class="hero-btn">
+                <span>开始学习</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+
+            <!-- 学习轨道 -->
+            <div class="track-section">
+              <div class="track-header">
+                <span class="track-title">学习轨道</span>
+                <button class="track-action">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                  </svg>
+                  <span>调整轨道</span>
+                </button>
+              </div>
+
+              <div class="track-card">
+                <div class="track-item">
+                  <div class="track-meta">
+                    <span class="track-badge-title" style="color: var(--new-word);">新词测评</span>
+                    <span class="track-step-name">英译汉</span>
+                  </div>
+                  <div class="track-flow">
+                    <div class="flow-branch">
+                      <span class="branch-status correct">✓ 答对</span>
+                      <span class="flow-arrow">➔</span>
+                      <span class="flow-target-chip">汉译英</span>
+                    </div>
+                    <div class="flow-branch">
+                      <span class="branch-status wrong">✕ 答错</span>
+                      <span class="flow-arrow">➔</span>
+                      <span class="flow-target-chip">汉译英</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="track-item">
+                  <div class="track-meta">
+                    <span class="track-badge-title" style="color: var(--old-word);">旧词测评</span>
+                    <span class="track-step-name">英译汉</span>
+                  </div>
+                  <div class="track-flow">
+                    <div class="flow-branch">
+                      <span class="branch-status correct">✓ 答对</span>
+                      <span class="flow-arrow">➔</span>
+                      <span class="flow-target-chip" style="color: var(--accent); font-weight: 700;">直接结束</span>
+                    </div>
+                    <div class="flow-branch">
+                      <span class="branch-status wrong">✕ 答错</span>
+                      <span class="flow-arrow">➔</span>
+                      <span class="flow-target-chip">汉译英</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 底部导航 -->
+            <div class="nav-bar">
+              <div class="nav-item active">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+                </svg>
+                <span>学习</span>
+              </div>
+              <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <span>词表</span>
+              </div>
+              <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>查词</span>
+              </div>
+              <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="6"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/></svg>
+                <span>比赛</span>
+              </div>
+              <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>我</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="home-bar"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================= 方案 B 手机 ================= -->
+    <div class="device-column" id="colB">
+      <div class="plan-header-badge">
+        <span class="plan-tag" style="background: rgba(14, 165, 233, 0.16); color: #38BDF8; border-color: rgba(14, 165, 233, 0.3);">OPTION B</span>
+        <span class="plan-name">方案 B · 极简杂志风与比例槽</span>
+        <span class="plan-sub">对标「不背单词」极简主义 · 留白呼吸 · 精确比例掌控</span>
+      </div>
+
+      <div class="device-wrapper">
+        <div class="side-btn btn-act"></div>
+        <div class="side-btn btn-v-up"></div>
+        <div class="side-btn btn-v-dn"></div>
+        <div class="side-btn btn-pwr"></div>
+
+        <div class="device-shell">
+          <!-- 灵动岛 -->
+          <div class="dynamic-island">
+            <div class="camera-lens"></div>
+          </div>
+          <!-- 状态栏 -->
+          <div class="status-bar">
+            <span>09:41</span>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <svg width="15" height="11" viewBox="0 0 17 12" fill="currentColor">
+                <rect x="0" y="8" width="2.5" height="4" rx="0.8"/>
+                <rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/>
+                <rect x="9" y="3" width="2.5" height="9" rx="0.8"/>
+                <rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/>
+              </svg>
+              <svg width="22" height="11" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/>
+                <rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/>
+                <path d="M22 4.5v3" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- 主内容 -->
+          <div class="app-screen-body">
+            <!-- 顶栏 -->
+            <div class="screen-header">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="header-caption">TODAY'S PLAN</span>
+                  <span class="streak-chip">🔥 12天连胜</span>
+                </div>
+                <div class="header-title-wrap">
+                  <span class="header-title">今日学习计划</span>
+                  <span style="opacity: 0.6; display: flex;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                  </span>
+                </div>
+              </div>
+              <div class="header-tool-btn">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+                  <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                  <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- 核心大卡：方案 B 极简杂志风 -->
+            <div class="hero-card hero-card-b">
+              <!-- 大数字 -->
+              <div class="goal-hero-box">
+                <span class="goal-hero-tag">TARGET PER DAY</span>
+                <div class="goal-hero-row">
+                  <span class="goal-hero-num">500</span>
+                  <span style="font-size: 14px; font-weight: 600; color: var(--inner-text-secondary); display: inline-flex; align-items: center; gap: 3px;">
+                    词
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+              </div>
+
+              <!-- 双段能量比例胶囊槽 -->
+              <div class="ratio-bar-section">
+                <div class="ratio-bar-capsule">
+                  <div class="ratio-segment-new" title="新词 26%"></div>
+                  <div class="ratio-segment-old" title="旧词 74%"></div>
+                </div>
+                <div class="ratio-bar-legend">
+                  <span style="color: var(--new-word);">● 新学 26% (130词)</span>
+                  <span style="color: var(--old-word);">● 温故 74% (370词)</span>
+                </div>
+              </div>
+
+              <!-- 双微悬浮触控卡 -->
+              <div class="data-cards-grid">
+                <div class="sub-data-card new">
+                  <div class="card-top-row">
+                    <span>今日新词</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
+                  <div class="card-big-num">130</div>
+                </div>
+                <div class="sub-data-card old">
+                  <div class="card-top-row">
+                    <span>今日复习</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
+                  <div class="card-big-num">370</div>
+                </div>
+              </div>
+
+              <!-- 总步数进度 -->
+              <div class="total-step-info">
+                <span>今日进度 0 / 1000 步</span>
+                <span style="font-weight: 700; color: var(--inner-text-primary);">0%</span>
+              </div>
+
+              <!-- 旗舰主行动按钮 -->
+              <button class="hero-btn">
+                <span>开始学习</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+
+            <!-- 学习轨道 -->
+            <div class="track-section">
+              <div class="track-header">
+                <span class="track-title">学习轨道</span>
+                <button class="track-action">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                  </svg>
+                  <span>调整轨道</span>
+                </button>
+              </div>
+
+              <div class="track-card">
+                <div class="track-item">
+                  <div class="track-meta">
+                    <span class="track-badge-title" style="color: var(--new-word);">新词测评</span>
+                    <span class="track-step-name">英译汉</span>
+                  </div>
+                  <div class="track-flow">
+                    <div class="flow-branch">
+                      <span class="branch-status correct">✓ 答对</span>
+                      <span class="flow-arrow">➔</span>
+                      <span class="flow-target-chip">汉译英</span>
+                    </div>
+                    <div class="flow-branch">
+                      <span class="branch-status wrong">✕ 答错</span>
+                      <span class="flow-arrow">➔</span>
+                      <span class="flow-target-chip">汉译英</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="track-item">
+                  <div class="track-meta">
+                    <span class="track-badge-title" style="color: var(--old-word);">旧词测评</span>
+                    <span class="track-step-name">英译汉</span>
+                  </div>
+                  <div class="track-flow">
+                    <div class="flow-branch">
+                      <span class="branch-status correct">✓ 答对</span>
+                      <span class="flow-arrow">➔</span>
+                      <span class="flow-target-chip" style="color: var(--accent); font-weight: 700;">直接结束</span>
+                    </div>
+                    <div class="flow-branch">
+                      <span class="branch-status wrong">✕ 答错</span>
+                      <span class="flow-arrow">➔</span>
+                      <span class="flow-target-chip">汉译英</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 底部导航 -->
+            <div class="nav-bar">
+              <div class="nav-item active">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+                </svg>
+                <span>学习</span>
+              </div>
+              <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <span>词表</span>
+              </div>
+              <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>查词</span>
+              </div>
+              <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="6"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/></svg>
+                <span>比赛</span>
+              </div>
+              <div class="nav-item">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>我</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="home-bar"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function setViewMode(mode) {
+      const colA = document.getElementById('colA');
+      const colB = document.getElementById('colB');
+      const btnBoth = document.getElementById('btnSideBySide');
+      const btnA = document.getElementById('btnOnlyA');
+      const btnB = document.getElementById('btnOnlyB');
+
+      btnBoth.classList.remove('active');
+      btnA.classList.remove('active');
+      btnB.classList.remove('active');
+
+      if (mode === 'both') {
+        colA.style.display = 'flex';
+        colB.style.display = 'flex';
+        btnBoth.classList.add('active');
+      } else if (mode === 'a') {
+        colA.style.display = 'flex';
+        colB.style.display = 'none';
+        btnA.classList.add('active');
+      } else if (mode === 'b') {
+        colA.style.display = 'none';
+        colB.style.display = 'flex';
+        btnB.classList.add('active');
+      }
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      document.getElementById('themeLabel').innerText = next === 'dark' ? '☀️ 切换浅色模式' : '🌙 切换深色模式';
+    }
+  </script>
+
+</body>
+</html>
