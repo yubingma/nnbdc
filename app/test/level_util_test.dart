@@ -17,14 +17,14 @@ void main() {
       expect(LevelUtil.getLevelByWordCount(0).name, '毛毛虫');
       expect(LevelUtil.getLevelByWordCount(7).name, '毛毛虫');
       expect(LevelUtil.getLevelByWordCount(8).name, '蜗牛');
-      expect(LevelUtil.getLevelByWordCount(120).name, '章鱼');
+      expect(LevelUtil.getLevelByWordCount(120).name, '乌龟');
       expect(LevelUtil.getLevelByWordCount(9999).name, '蓝鲸');
       expect(LevelUtil.getLevelByWordCount(10000).name, '龙');
       expect(LevelUtil.getLevelByWordCount(999999).name, '龙');
     });
 
     test('段内星级: 进入即有 1 星, 每跨 1/5 区间点亮一颗', () {
-      // 皮皮虾区间 [20, 45), 五等分点为 25 / 30 / 35 / 40
+      // 仓鼠区间 [20, 45), 五等分点为 25 / 30 / 35 / 40
       expect(LevelUtil.getStarsByWordCount(20), 1);
       expect(LevelUtil.getStarsByWordCount(24), 1);
       expect(LevelUtil.getStarsByWordCount(25), 2);
@@ -32,7 +32,7 @@ void main() {
       expect(LevelUtil.getStarsByWordCount(35), 4);
       expect(LevelUtil.getStarsByWordCount(40), 5);
       expect(LevelUtil.getStarsByWordCount(44), 5);
-      // 满 45 词即晋升仓鼠, 星数重新从 1 开始
+      // 满 45 词即晋升皮皮虾, 星数重新从 1 开始
       expect(LevelUtil.getStarsByWordCount(45), 1);
     });
 

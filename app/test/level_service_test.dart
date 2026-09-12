@@ -37,12 +37,12 @@ void main() {
     });
 
     test('段内跨星级分位返回 starUp 及当前星数', () async {
-      // 皮皮虾 20-44(五等分点 25/30/35/40): 24 词是 1 星, 25 词进入 2 星
+      // 仓鼠 20-44(五等分点 25/30/35/40): 24 词是 1 星, 25 词进入 2 星
       final advance = await LevelService().checkProgress(oldWordCount: 24, newWordCount: 25);
 
       expect(advance, isNotNull);
       expect(advance!.isPromotion, isFalse);
-      expect(advance.level.name, '皮皮虾');
+      expect(advance.level.name, '仓鼠');
       expect(advance.stars, 2);
     });
 
@@ -59,7 +59,7 @@ void main() {
       final advance = await LevelService().checkProgress(oldWordCount: 0, newWordCount: 130);
 
       expect(advance!.isPromotion, isTrue);
-      expect(advance.level.name, '乌龟');
+      expect(advance.level.name, '兔子');
     });
   });
 
@@ -89,7 +89,7 @@ void main() {
       await LevelService().checkProgress(oldWordCount: 19, newWordCount: 20);
       await tester.pumpAndSettle();
       expect(find.text('段 位 晋 升'), findsOneWidget);
-      expect(find.text('皮皮虾'), findsOneWidget);
+      expect(find.text('仓鼠'), findsOneWidget);
 
       await tester.tap(find.text('开心收下'));
       await tester.pumpAndSettle();
@@ -109,7 +109,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('段 位 晋 升'), findsOneWidget);
-      expect(find.text('仓鼠'), findsOneWidget);
+      expect(find.text('皮皮虾'), findsOneWidget);
 
       await tester.tap(find.text('开心收下'));
       await tester.pumpAndSettle();

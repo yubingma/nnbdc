@@ -13,7 +13,9 @@ MyDatabase constructDb() {
     dbFolder = await getApplicationDocumentsDirectory();
 
     final file = File(p.join(dbFolder.path, 'db.sqlite'));
-    return NativeDatabase(
+    // 数据库放到独立 isolate: Flutter 在 Android 已将 UI 线程合并到主线程,
+    // 在主 isolate 打开数据库会让事务提交的 fsync 直接阻塞主线程(表现为 ANR)
+    return NativeDatabase.createInBackground(
       file,
       setup: (rawDb) {
         rawDb.execute('PRAGMA journal_mode=WAL;');
