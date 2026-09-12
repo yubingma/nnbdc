@@ -235,11 +235,6 @@ public class AdminController {
         return Result.success(systemHealthCheckBo.checkCommonDictIntegrity());
     }
 
-    @GetMapping("/admin/checkUserStudySteps.do")
-    public Result<SystemHealthCheckResult> checkUserStudySteps() {
-        return Result.success(systemHealthCheckBo.checkUserStudySteps());
-    }
-
     @GetMapping("/admin/checkMissingUserDicts.do")
     public Result<SystemHealthCheckResult> checkMissingUserDicts() {
         return Result.success(systemHealthCheckBo.checkMissingUserDicts());

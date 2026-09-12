@@ -12,7 +12,6 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/tts.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/socket_io.dart';
-import 'package:nnbdc/util/study_steps_service.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
@@ -406,20 +405,12 @@ class DataIntegrityChecker {
 
     
   /// 检查用户学习步骤完整性
+  ///
+  /// 注意：学习规则「未配置」是合法状态——StudyStepsService.getThreeGroupConfig 会在运行期
+  /// 返回默认三组（new: En2Ch/Ch2En；review 的 check 由 new 派生），因此表为空不算问题。
+  /// 这里只校验已存在记录的字段是否合法。
   Future<void> _checkUserStudySteps(IntegrityCheckResult result, String userId) async {
     try {
-      // 检查当前用户的 new 与 review 学习规则是否有效
-      final newCfg = await StudyStepsService().getThreeGroupConfig('new');
-      final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
-
-      if (newCfg.check.isEmpty) {
-        result.addIssue('学习步骤缺失', '新词测评环节 (scope=new, group=check) 缺失', 'user_study_steps');
-      }
-      if (reviewCfg.check.isEmpty) {
-        result.addIssue('学习步骤缺失', '旧词复习测评环节 (scope=review, group=check) 缺失', 'user_study_steps');
-      }
-
-      // 检查本地库中若存在该用户的学习步骤记录，字段是否合法
       final userSteps = await _db.userStudyStepsDao.getUserStudySteps(userId);
       const validGroups = {'check', 'correct', 'wrong'};
       const validScopes = {'new', 'review'};
@@ -694,16 +685,6 @@ class DataIntegrityChecker {
       }
 
     
-      // 修复学习步骤缺失问题
-      if (checkResult.hasIssue('user_study_steps')) {
-        try {
-          await _fixUserStudySteps(fixResult, userId);
-        } catch (e, stack) {
-          Global.logger.e('修复学习步骤时发生中断性错误', error: e, stackTrace: stack);
-          fixResult.addError('修复学习步骤失败: $e');
-        }
-      }
-
       // 修复用户词书缺失问题
       if (checkResult.hasIssue('missing_user_dict')) {
         try {
@@ -1222,12 +1203,6 @@ class DataIntegrityChecker {
       fixResult.addError('请求服务端基础数据时发生异常: $e');
       return false;
     }
-  }
-
-  /// 修复用户学习步骤缺失问题（三组结构下由运行时默认补全，本地表为空也无需修复）
-  Future<void> _fixUserStudySteps(IntegrityFixResult fixResult, String currentUserId) async {
-    // 三组结构（scope/group）下，学习规则缺失时 StudyStepsService.getThreeGroupConfig 会运行时返回默认三组，
-    // 不再需要"五步骤补全"逻辑。
   }
 
   /// 修复用户缺失的词书（生词本 / 已掌握）

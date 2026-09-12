@@ -37,8 +37,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       'category': 'system_dict_integrity'
     },
     {'id': 2, 'title': '用户词典完整性', 'step': 2, 'category': 'user_dict_integrity'},
-    {'id': 4, 'title': '用户学习步骤完整性', 'step': 4, 'category': 'user_study_steps'},
-    {'id': 5, 'title': '数据库版本一致性', 'step': 5, 'category': 'db_version'},
+    {'id': 4, 'title': '数据库版本一致性', 'step': 4, 'category': 'db_version'},
     {
       'id': 6,
       'title': '通用词典完整性',
@@ -646,11 +645,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 2. 检查用户词典完整性
       await _checkUserDictIntegrity(result, 2);
 
-      // 4. 检查用户学习步骤完整性
-      await _checkUserStudySteps(result, 4);
-
-      // 5. 检查数据库版本一致性
-      await _checkDbVersionConsistency(result, 5);
+      // 4. 检查数据库版本一致性
+      await _checkDbVersionConsistency(result, 4);
 
       // 6. 检查通用词典完整性
       await _checkCommonDictIntegrity(result, 6);
@@ -800,51 +796,6 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         'user_dict_integrity',
         stackTrace: stackTrace.toString(),
         logMessage: '用户词典完整性检查: $e',
-      );
-      setState(() {
-        _checkStates[step] = 'failed';
-      });
-    }
-  }
-
-  Future<void> _checkUserStudySteps(SystemHealthResult result, int step) async {
-    setState(() {
-      _checkStates[step] = false; // 进行中
-    });
-
-    try {
-      final apiResult = await Api.client.checkUserStudySteps();
-
-      if (apiResult.success && apiResult.data != null) {
-        final data = apiResult.data!;
-
-        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
-          for (final issue in data.issues) {
-            result.addIssue(issue.type, issue.description, 'user_study_steps');
-          }
-          setState(() {
-            _checkStates[step] = 'failed';
-          });
-        } else {
-          setState(() {
-            _checkStates[step] = true; // 通过
-          });
-        }
-      } else {
-        result.addIssue(
-            '用户学习步骤完整性', 'API调用失败: ${apiResult.msg}', 'user_study_steps');
-        setState(() {
-          _checkStates[step] = 'failed';
-        });
-      }
-    } catch (e, stackTrace) {
-      Global.logger.e('检查用户学习步骤完整性时出错: $e', error: e, stackTrace: stackTrace);
-      result.addIssue(
-        '用户学习步骤完整性',
-        '检查用户学习步骤完整性时出错: $e',
-        'user_study_steps',
-        stackTrace: stackTrace.toString(),
-        logMessage: '用户学习步骤完整性检查: $e',
       );
       setState(() {
         _checkStates[step] = 'failed';

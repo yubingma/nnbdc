@@ -171,57 +171,6 @@ public class SystemHealthCheckBo {
     }
 
     /**
-     * 检查所有用户的学习步骤完整性
-     * 使用单个 SQL 查询直接找出缺少学习步骤的用户，性能最优
-     */
-    public SystemHealthCheckResult checkUserStudySteps() {
-        List<SystemHealthIssue> issues = new ArrayList<>();
-        List<String> errors = new ArrayList<>();
-        
-        try {
-            // 使用一个 SQL 查询直接找出缺少新词测评环节(scope='new' 且 group='check')的用户
-            String sql = "SELECT u.id, u.user_name, 'new-check' as missing_step " +
-                        "FROM \"user\" u " +
-                        "LEFT JOIN user_study_step uss ON u.id = uss.user_id " +
-                        "  AND uss.scope = 'new' AND uss.group_name = 'check' " +
-                        "WHERE uss.user_id IS NULL " +
-                        "UNION ALL " +
-                        "SELECT u.id, u.user_name, 'review-check' as missing_step " +
-                        "FROM \"user\" u " +
-                        "LEFT JOIN user_study_step uss ON u.id = uss.user_id " +
-                        "  AND uss.scope = 'review' AND uss.group_name = 'check' " +
-                        "WHERE uss.user_id IS NULL";
-            
-            List<Object[]> missingSteps = namedParameterJdbcTemplate.query(sql, 
-                new MapSqlParameterSource(), 
-                (rs, rowNum) -> new Object[]{
-                    rs.getString("id"),
-                    rs.getString("user_name"),
-                    rs.getString("missing_step")
-                }
-            );
-            
-            // 将查询结果转换为问题列表
-            for (Object[] record : missingSteps) {
-                String userId = (String) record[0];
-                String userName = (String) record[1];
-                String missingStep = (String) record[2];
-                
-                issues.add(new SystemHealthIssue(
-                    "学习步骤缺失",
-                    String.format("用户 %s (%s) 缺少学习步骤：%s", userName, userId, missingStep),
-                    "user_study_steps"
-                ));
-            }
-            
-        } catch (DataAccessException e) {
-            errors.add("检查用户学习步骤时出错: " + e.getMessage());
-        }
-        
-        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
-    }
-
-    /**
      * 检查通用词典完整性
      */
     public SystemHealthCheckResult checkCommonDictIntegrity() {
@@ -449,7 +398,6 @@ public class SystemHealthCheckBo {
                     case "db_version" -> fixedCount += fixDbVersionConsistency(fixed);
                     case "common_dict_integrity" -> fixedCount += fixCommonDictIntegrity(fixed);
                     case "sys_dict_missing_fallback" -> fixedCount += fixSystemDictMissingFallback(fixed);
-                    case "user_study_steps" -> fixedCount += fixUserStudySteps(fixed);
                     case "missing_raw_word_dict", "missing_user_dict" -> fixedCount += fixMissingUserDicts(fixed);
                     case "word_image_integrity" -> fixedCount += fixWordImageIntegrity(fixed);
                     case "sentence_audio_integrity" -> fixedCount += fixSentenceAudioIntegrity(fixed);
@@ -1244,32 +1192,6 @@ public class SystemHealthCheckBo {
 
         fixed.add("缺失例句释义项的 AI 后台补齐任务已提交，进度可在服务器日志中查看，补齐会自动同步到客户端更新。");
         return totalFixed + (meaningsWithoutSentences != null ? meaningsWithoutSentences.size() : 0);
-    }
-
-    private int fixUserStudySteps(List<String> fixed) {
-        int fixedCount = 0;
-        try {
-            // 获取所有缺失学习步骤的用户 ID（新词测评环节缺失即视为不完整）
-            String findUsersSql = "SELECT DISTINCT id FROM \"user\" u " +
-                                 "WHERE NOT EXISTS (" +
-                                 "  SELECT 1 FROM user_study_step uss " +
-                                 "  WHERE uss.user_id = u.id AND uss.scope = 'new' AND uss.group_name = 'check'" +
-                                 ")";
-            List<String> userIds = namedParameterJdbcTemplate.query(findUsersSql, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("id"));
-            
-            for (String userId : userIds) {
-                userDbSyncBo.repairUserBaseData(userId);
-                fixedCount++;
-            }
-            
-            if (fixedCount > 0) {
-                fixed.add(String.format("为 %d 个缺失学习步骤的用户执行了基础数据修复及日志生成", fixedCount));
-            }
-            
-        } catch (org.springframework.dao.DataAccessException e) {
-            org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复失败", e);
-        }
-        return fixedCount;
     }
 
     private int fixMissingUserDicts(List<String> fixed) {
