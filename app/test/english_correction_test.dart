@@ -230,6 +230,7 @@ void main() {
           learningOrder: 1,
           createTime: now,
           updateTime: now,
+        isExtra: false,
         ));
   });
 

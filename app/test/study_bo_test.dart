@@ -181,6 +181,7 @@ void main() {
             learningOrder: i,
             createTime: now,
             updateTime: now,
+          isExtra: false,
           ));
     }
   });

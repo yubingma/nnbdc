@@ -13,6 +13,10 @@ public class LearningWordDto {
     private Integer learnedTimes;
     private Integer todayLearnedTimes;
     private Integer batchId;
+    /**
+     * 是否为"加餐"单词（打卡后额外追加的学习批次）
+     */
+    private Boolean isExtra;
     private Double stability;
     private Double difficulty;
     private Integer elapsedDays;
@@ -125,6 +129,14 @@ public class LearningWordDto {
 
     public void setBatchId(Integer batchId) {
         this.batchId = batchId;
+    }
+
+    public Boolean getIsExtra() {
+        return isExtra;
+    }
+
+    public void setIsExtra(Boolean isExtra) {
+        this.isExtra = isExtra;
     }
 
     public Double getStability() {

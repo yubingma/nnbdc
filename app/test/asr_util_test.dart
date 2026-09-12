@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/asr_util.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
@@ -138,6 +139,57 @@ TWELVE T W EH1 L V
       );
       expect(result.text, equals('said the master'));
       expect(result.score, greaterThanOrEqualTo(30));
+    });
+  });
+
+  group('AsrUtil Abbreviation Expansion Test', () {
+    test('独立缩写展开为完整单词', () {
+      expect(AsrUtil.expandAbbreviations('get on with sth'), equals('get on with something'));
+      expect(AsrUtil.expandAbbreviations('be in love with sb.'), equals('be in love with somebody.'));
+      expect(AsrUtil.expandAbbreviations("sb's help"), equals("somebody's help"));
+    });
+
+    test('斜线并列展开为无连接词形态，兼容 or / and / 直接连读', () {
+      expect(AsrUtil.expandAbbreviations('let out sb/sth'), equals('let out somebody something'));
+      expect(AsrUtil.expandAbbreviations('let out sth/sb'), equals('let out something somebody'));
+      expect(AsrUtil.expandAbbreviations('let out sb./sth.'), equals('let out somebody something'));
+    });
+
+    test('大小写不敏感', () {
+      expect(AsrUtil.expandAbbreviations('SB/STH'), equals('somebody something'));
+    });
+
+    test('不误伤其它斜线与包含 sb/sth 字母序列的单词', () {
+      expect(AsrUtil.expandAbbreviations('km/h and/or he or she'), equals('km/h and/or he or she'));
+      expect(AsrUtil.expandAbbreviations('absolutely asthma'), equals('absolutely asthma'));
+    });
+
+    test('hasAbbreviation 判定', () {
+      expect(AsrUtil.hasAbbreviation('get on with sth'), isTrue);
+      expect(AsrUtil.hasAbbreviation('absolutely asthma'), isFalse);
+    });
+
+    test('用户按 somebody or something 朗读能通过判定', () async {
+      final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
+        ['let out somebody or something'],
+        'let out sb/sth',
+      );
+      // 词级匹配用整句音素相似度打分，多出的连接词会略微掉分，但必须仍在判定阈值之上
+      expect(result.score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+
+    test('说 somebody and something / somebody something 同样能通过判定', () async {
+      final andResult = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
+        ['let out somebody and something'],
+        'let out sb/sth',
+      );
+      expect(andResult.score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+
+      final plainResult = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
+        ['let out somebody something'],
+        'let out sb/sth',
+      );
+      expect(plainResult.score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });
 }

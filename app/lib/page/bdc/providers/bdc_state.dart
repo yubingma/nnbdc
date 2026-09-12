@@ -42,7 +42,9 @@ class BdcState extends Equatable {
   final List<WordVo>? words;
   final bool buttonsEnabled;
   final bool showHandwritingBoard;
-  /// 手写板是否为「中文默写」模式（英译汉时手写中文释义，结果走中文匹配而非英文拼写）
+  /// 手写板是否为「中文默写」模式（英译汉时手写中文释义，结果走中文匹配而非英文拼写）。
+  /// 它是手写板的子模式：只在 [showHandwritingBoard] 为 true 期间有意义，
+  /// 板子关闭时由 copyWith 强制复位（见 [copyWith] 中的说明）。
   final bool isChineseDictation;
   /// 中文默写判题进度：已命中的释义子项数（仅用于展示，不参与判题决策）
   final int dictationMatchedCount;
@@ -242,6 +244,12 @@ class BdcState extends Equatable {
     bool? isPttPressed,
     bool? isAiEvaluating,
   }) {
+    // 「中文默写」及其进度是手写板的子状态：板子不在时一律不成立。
+    // 关闭手写板的路径很多（答对成功过渡、主动点「答对/认识」、换词、提示已全展示、取消），
+    // 逐一清标记必漏；一旦残留，回到背单词页后的正常作答会被当成"中文默写"严格判错，
+    // 并连发"答案不正确或未写完整，请重写"。故在状态构造处收口：不开板子就不存在默写模式。
+    final bool handwritingBoardVisible =
+        showHandwritingBoard ?? this.showHandwritingBoard;
     return BdcState(
       dataLoaded: dataLoaded ?? this.dataLoaded,
       isGettingNextWord: isGettingNextWord ?? this.isGettingNextWord,
@@ -270,10 +278,16 @@ class BdcState extends Equatable {
       lastFsrsRatingReason: lastFsrsRatingReason == _sentinel ? this.lastFsrsRatingReason : (lastFsrsRatingReason as String?),
       words: words == _sentinel ? this.words : (words as List<WordVo>?),
       buttonsEnabled: buttonsEnabled ?? this.buttonsEnabled,
-      showHandwritingBoard: showHandwritingBoard ?? this.showHandwritingBoard,
-      isChineseDictation: isChineseDictation ?? this.isChineseDictation,
-      dictationMatchedCount: dictationMatchedCount ?? this.dictationMatchedCount,
-      dictationRequiredCount: dictationRequiredCount ?? this.dictationRequiredCount,
+      showHandwritingBoard: handwritingBoardVisible,
+      isChineseDictation: handwritingBoardVisible
+          ? (isChineseDictation ?? this.isChineseDictation)
+          : false,
+      dictationMatchedCount: handwritingBoardVisible
+          ? (dictationMatchedCount ?? this.dictationMatchedCount)
+          : 0,
+      dictationRequiredCount: handwritingBoardVisible
+          ? (dictationRequiredCount ?? this.dictationRequiredCount)
+          : 0,
       isSpellingSuccess: isSpellingSuccess ?? this.isSpellingSuccess,
       asrState: asrState ?? this.asrState,
       asrResult: asrResult ?? this.asrResult,

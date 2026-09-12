@@ -18,6 +18,7 @@ import beidanci.service.bo.SysDbSyncBo;
 import beidanci.service.po.Sentence;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.util.Util;
 import beidanci.service.dao.EntityRowMapper;
 
 @Component
@@ -53,8 +54,9 @@ public class TtsTask {
         for (Sentence sentence : sentences) {
             log.info("开始为例句生成 TTS: {} (英语: {})", sentence.getId(), sentence.getEnglish());
             try {
-                // 生成语音前必须去除可能的 HTML 标签（如高亮用的 <b> 等），否则会被TTS引擎读出来
-                String pureEnglish = sentence.getEnglish().replaceAll("<[^>]*>", "");
+                // 生成语音前必须去除可能的 HTML 标签（如高亮用的 <b> 等），否则会被TTS引擎读出来；
+                // 同时把 sb/sth 这类占位缩写展开成 somebody/something，避免被逐字母朗读。
+                String pureEnglish = Util.toSpokenEnglish(sentence.getEnglish().replaceAll("<[^>]*>", ""));
                 AiBo.TtsResult ttsResult = aiBo.generateSpeech(pureEnglish, sentence.getTtsVoice(), sentence.getTtsInstruction());
                 byte[] audioData = ttsResult.audioData;
                 if (audioData != null && audioData.length > 0) {

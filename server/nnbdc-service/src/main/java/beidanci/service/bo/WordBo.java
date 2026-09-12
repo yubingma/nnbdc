@@ -533,13 +533,16 @@ public class WordBo extends BaseBo<Word> {
         if (!dir.exists()) dir.mkdirs();
 
         boolean isUk = "_uk".equals(accentSuffix);
+        // 送给 TTS 的文本必须先展开占位缩写，否则 sb/sth 会被逐字母朗读。
+        // 展开要放在 uniformSpellForFilename 之外——那一步会剔除 '/'，导致 sb/sth 变成 sbsth 而无法识别。
+        String ttsText = Util.toSpokenEnglish(spell).trim().toLowerCase();
         // 有道 dictvoice 官方约定: type=1 为英音, type=2 为美音
         String[] urlStrs = isUk ? new String[]{
-                "http://dict.youdao.com/dictvoice?type=1&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
-                "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8")
+                "http://dict.youdao.com/dictvoice?type=1&audio=" + java.net.URLEncoder.encode(ttsText, "UTF-8"),
+                "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(ttsText, "UTF-8")
         } : new String[]{
-                "http://dict.youdao.com/dictvoice?type=2&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
-                "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8")
+                "http://dict.youdao.com/dictvoice?type=2&audio=" + java.net.URLEncoder.encode(ttsText, "UTF-8"),
+                "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(ttsText, "UTF-8")
         };
 
         for (String urlStr : urlStrs) {
@@ -571,7 +574,7 @@ public class WordBo extends BaseBo<Word> {
                 ? "Speak in a clear British English accent."
                 : "Speak in a clear American English accent.";
         try {
-            AiBo.TtsResult ttsResult = aiBo.generateSpeech(pureSpell, null, ttsInstruction);
+            AiBo.TtsResult ttsResult = aiBo.generateSpeech(ttsText, null, ttsInstruction);
             if (ttsResult.audioData != null && ttsResult.audioData.length > 0) {
                 try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
                     fos.write(ttsResult.audioData);
@@ -589,7 +592,15 @@ public class WordBo extends BaseBo<Word> {
         return null;
     }
 
-    public void regeneratePronunciation(String wordId) throws Exception {
+    /**
+     * 强制重新生成单词发音（无后缀 / 英音 / 美音三个变体），并刷新 update_time 触发客户端换新音频。
+     * <p>
+     * 客户端音频 URL 带 {@code ?v=updateTime}，所以只有真的生成了音频才刷新 updateTime，
+     * 否则会让客户端白白重新下载同一个文件。
+     *
+     * @return 是否至少有一个变体成功生成
+     */
+    public boolean regeneratePronunciation(String wordId) throws Exception {
         Word word = findById(wordId);
         if (word == null) {
             throw new RuntimeException("Word not found: " + wordId);
@@ -597,14 +608,20 @@ public class WordBo extends BaseBo<Word> {
 
         String spell = word.getSpell();
 
-        downloadWordSound(spell, null, true);
-        downloadWordSound(spell, "_uk", true);
-        downloadWordSound(spell, "_us", true);
+        boolean anySuccess = downloadWordSound(spell, null, true) != null;
+        anySuccess = downloadWordSound(spell, "_uk", true) != null || anySuccess;
+        anySuccess = downloadWordSound(spell, "_us", true) != null || anySuccess;
+
+        if (!anySuccess) {
+            log.warn("单词发音重生成全部失败，未刷新 updateTime: {}", spell);
+            return false;
+        }
 
         // 记录同步日志，并更新数据库中的 update_time
         word.setUpdateTime(new Date());
         updateEntity(word);
         sysDbSyncBo.logOperation(word, "UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(toDto(word)));
+        return true;
     }
 
     public WordDto toDto(Word word) {

@@ -262,6 +262,16 @@ public class AdminController {
         return Result.success(dataSanitizeBo.getDataSanitizeStatus());
     }
 
+    @PostMapping("/admin/regenerateAbbreviationSounds.do")
+    public Result<SystemHealthFixResult> regenerateAbbreviationSounds() {
+        return Result.success(dataSanitizeBo.regenerateAbbreviationSounds());
+    }
+
+    @GetMapping("/admin/getAbbreviationSoundRegenerateStatus.do")
+    public Result<SystemHealthFixResult> getAbbreviationSoundRegenerateStatus() {
+        return Result.success(dataSanitizeBo.getAbbreviationSoundRegenerateStatus());
+    }
+
     @PostMapping("/admin/sanitizeWordImages.do")
     public Result<SystemHealthFixResult> sanitizeWordImages() {
         return Result.success(dataSanitizeBo.sanitizeWordImagesOnly());

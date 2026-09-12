@@ -35,6 +35,7 @@ import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
@@ -65,6 +66,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _completedStepCount = 0;
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
+
+  /// 今日"加餐"中尚未学完的单词数（打卡后额外追加的批次）。
+  /// > 0 表示有加餐任务待继续，首页据此提供"继续加餐"入口。
+  int _pendingExtraWordCount = 0;
   Set<String> _masteredWordIds = {};
   /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道配置）
   int _studyStepsTab = 0;
@@ -80,6 +85,16 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   List<String> _reviewCorrectSteps = [];
   List<String> _reviewWrongSteps = [];
   bool _reviewConfigSaved = false;
+
+  /// 今日计划词（不含打卡后额外追加的加餐批次）。
+  /// 所有"今日计划"口径（进度环、词数统计、单词量未满提示）都必须用它，
+  /// 否则加餐会撑大计划分母，把已达成 100% 的进度打回未完成。
+  List<LearningWord> get _planWords =>
+      (_todayWords ?? const <LearningWord>[]).where((w) => !w.isExtra).toList();
+
+  /// 今日加餐词（打卡后额外追加的批次，不计入今日计划）
+  List<LearningWord> get _extraWords =>
+      (_todayWords ?? const <LearningWord>[]).where((w) => w.isExtra).toList();
 
   /// 近期已下载/尝试下载的词书 ID 集合（防止导入后异步可见性延迟导致的循环）
   static final Map<String, DateTime> _recentlyDownloadedAt = {};
@@ -267,12 +282,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       _masteredWordIds = await StudyCacheManager().getMasteredWordIds(db, user!.id!);
 
       int calcNewWordCount = 0;
-      for (var word in _todayWords!) {
+      for (var word in _planWords) {
         if (word.isTodayNewWord) calcNewWordCount++;
       }
       newWordCount = calcNewWordCount;
-      oldWordCount = _todayWords!.length - newWordCount!;
-      todayWordCount = _todayWords!.length;
+      oldWordCount = _planWords.length - newWordCount!;
+      todayWordCount = _planWords.length;
 
       unawaited(_updateProgress());
       Global.logger.d('Progress calculated: $_completedStepCount / $_totalStepCount');
@@ -337,12 +352,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       // 估算今日单词数（基于本地已有数据）
       if (_todayWords != null && _todayWords!.isNotEmpty) {
         int calcNewWordCount = 0;
-        for (var word in _todayWords!) {
+        for (var word in _planWords) {
           if (word.isTodayNewWord) calcNewWordCount++;
         }
         newWordCount = calcNewWordCount;
-        oldWordCount = _todayWords!.length - newWordCount!;
-        todayWordCount = _todayWords!.length;
+        oldWordCount = _planWords.length - newWordCount!;
+        todayWordCount = _planWords.length;
       }
     }
   }
@@ -436,11 +451,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
     final newCfg = await StudyStepsService().getThreeGroupConfig('new');
     final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
-    _totalStepCount = 0;
-    _completedStepCount = 0;
-    for (final word in _todayWords!) {
+
+    // 每词按其自身轨道（计划词与加餐词使用同一套轨道规则）推导长度
+    int trackLenOf(LearningWord word) {
       final first = firstLogs[word.wordId];
-      final trackLen = StudyTrack.trackOf(
+      return StudyTrack.trackOf(
         stability: word.stability,
         state: word.state,
         lastLearningDate: word.lastLearningDate,
@@ -454,8 +469,24 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         reviewWrong: reviewCfg.wrong,
         today: today,
       ).length;
+    }
+
+    // 今日计划进度（严格排除加餐词，保证打卡后不会因加餐而回落）
+    _totalStepCount = 0;
+    _completedStepCount = 0;
+    for (final word in _planWords) {
+      final trackLen = trackLenOf(word);
       _totalStepCount += trackLen;
       _completedStepCount += word.getCompletedSteps(_masteredWordIds, trackLen);
+    }
+
+    // 加餐任务中还有多少词没学完（首页据此提供"继续加餐"入口）
+    _pendingExtraWordCount = 0;
+    for (final word in _extraWords) {
+      final trackLen = trackLenOf(word);
+      if (word.getCompletedSteps(_masteredWordIds, trackLen) < trackLen) {
+        _pendingExtraWordCount++;
+      }
     }
     // 异步计算完成后刷新进度显示（调用方多以 unawaited 方式调用）
     if (mounted) setState(() {});
@@ -1193,38 +1224,158 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
+  /// 加餐主按钮（首页"继续加餐"/"再来一组"）
+  Widget _buildExtraStudyButton(
+    AppThemeConfig themeConfig,
+    bool isDarkMode, {
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [themeConfig.primaryColor, themeConfig.primaryDarkColor],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.32 : 0.34),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          minimumSize: const Size(0, 0),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        ),
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_circle_outline_rounded, size: 18, color: Colors.white),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 进入学习页（沿用"开始学习"的入口约定）
+  Future<void> _gotoStudyPage() async {
+    await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
+    if (!mounted) return;
+    context.push('/bdc').then((value) {
+      if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
+    });
+  }
+
+  /// 继续未完成的加餐批次：直接回到学习页，绝不追加新词
+  /// （学习页按 batchId 顺序会自动定位到未学完的加餐批次）
+  Future<void> _resumeExtraStudy() => _gotoStudyPage();
+
+  /// 追加一组新的加餐单词后进入学习页。加餐是会员权益，非会员引导至订阅页。
+  Future<void> _startExtraStudy() async {
+    if (!SubscriptionUtil.isPremium()) {
+      ToastUtil.info('加餐是会员专属权益');
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const SubscriptionPage()),
+      );
+      return;
+    }
+
+    final result = await StudyBo().prepareExtraStudy();
+    if (!mounted) return;
+    if (!result.success) {
+      ToastUtil.error(result.msg ?? '加餐失败');
+      return;
+    }
+
+    await _gotoStudyPage();
+  }
+
   Widget renderStartButton() {
     final darkModeState = context.watch<DarkMode>();
     final themeStyle = darkModeState.themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
 
-    if (hasDakaToday && _totalStepCount > 0 && _completedStepCount >= _totalStepCount) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: themeConfig.subtleBg,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(
-            color: themeConfig.cardBorder,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle_rounded, color: themeConfig.primaryColor, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              '今日目标已达成',
-              style: TextStyle(
-                color: isDarkMode ? themeConfig.primaryColor : themeConfig.textPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+    final bool planFinished =
+        _totalStepCount > 0 && _completedStepCount >= _totalStepCount;
+
+    if (hasDakaToday && planFinished) {
+      return Column(
+        children: [
+          if (_pendingExtraWordCount > 0)
+            _buildExtraStudyButton(
+              themeConfig,
+              isDarkMode,
+              label: '继续加餐（还剩 $_pendingExtraWordCount 词）',
+              onPressed: _resumeExtraStudy,
+            )
+          else ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: themeConfig.subtleBg,
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(
+                  color: themeConfig.cardBorder,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_rounded, color: themeConfig.primaryColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    '今日目标已达成',
+                    style: TextStyle(
+                      color: isDarkMode ? themeConfig.primaryColor : themeConfig.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton.icon(
+              key: const Key('today_plan_extra_again_btn'),
+              onPressed: _startExtraStudy,
+              icon: Icon(Icons.add_circle_outline_rounded,
+                  size: 17, color: themeConfig.primaryColor),
+              label: Text(
+                '再来一组',
+                style: TextStyle(
+                  color: themeConfig.primaryColor,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
-        ),
+        ],
       );
     }
 

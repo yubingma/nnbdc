@@ -2774,6 +2774,12 @@ class BdcNotifier extends _$BdcNotifier {
               
               // C. 核心词/主单词权重加倍
               phrases.add(state.word!.spell);
+              // D. sb/sth 这类占位缩写：把展开后的整句也加入热词，
+              //    让用户按 "somebody or something" 读时同样能被识别
+              final expandedSentence = _extractEnglishWords(AsrUtil.expandAbbreviations(rawSentence));
+              if (expandedSentence.isNotEmpty && expandedSentence.join(' ') != words.join(' ')) {
+                phrases.add(expandedSentence.join(' '));
+              }
               for (final boldPhrase in boldPhrases) {
                 final boldWords = _extractEnglishWords(boldPhrase);
                 phrases.addAll(boldWords);
@@ -2995,6 +3001,9 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<int> getEnglishSentenceMatchScore(String input, String target) async {
+    // sb/sth 这类占位缩写先展开再比对，否则用户按 somebody/something 读会被判错
+    final comparableInput = AsrUtil.expandAbbreviations(input);
+    final comparableTarget = AsrUtil.expandAbbreviations(target);
     List<String> getWords(String s) {
       final list = s.toLowerCase().split(RegExp(r"[^a-zA-Z\d\u0027]")).where((w) => w.isNotEmpty).toList();
       // 过滤由于呼吸声/吸气声或拟声产生的非单词辅音块(如单字母t, s, 独立's 等)，只保留 a, i 和长度大于 1 且不是 's 的有效单词
@@ -3005,8 +3014,8 @@ class BdcNotifier extends _$BdcNotifier {
         return true;
       }).toList();
     }
-    final inputWords = getWords(input);
-    final targetWords = getWords(target);
+    final inputWords = getWords(comparableInput);
+    final targetWords = getWords(comparableTarget);
     if (targetWords.isEmpty) return 0;
 
     // 1. 使用最长公共子序列 (LCS) 算法并结合音素相似度计算两个单词列表的匹配度
@@ -3040,7 +3049,7 @@ class BdcNotifier extends _$BdcNotifier {
     final wordScore = (lcs * 100 / targetWords.length).round().clamp(0, 100);
 
     // 2. 同时计算整句的音素相似度，取两者最大值作为容错
-    final phonemeScore = await PhonemeUtil.similarity(input, target);
+    final phonemeScore = await PhonemeUtil.similarity(comparableInput, comparableTarget);
 
     return wordScore > phonemeScore ? wordScore : phonemeScore;
   }
@@ -3054,12 +3063,23 @@ class BdcNotifier extends _$BdcNotifier {
     _syncAudioHardware();
   }
 
+  /// 打开/关闭英文拼写板（说面板的「拼写」入口）。
   void updateShowHandwritingBoard(bool show) {
     if (show) {
       _isAnswerCorrectHandling = false;
+      // 与中文默写入口同样先撤掉挂起的定时器：自动跳转/单词详情/AI 裁判
+      // 会在用户拼写期间把当前词换走，板子被强行关闭。
+      _cancelPendingWordTimers();
       _prepareHandwritingEntry();
     }
-    state = state.copyWith(showHandwritingBoard: show);
+    state = state.copyWith(
+      showHandwritingBoard: show,
+      // 手写板的模式只能由开板方指定：这个入口是英文拼写，必须显式声明不是中文默写，
+      // 绝不能继承 state 里上一次残留的取值（否则拼写板会按中文默写识别与判题）。
+      isChineseDictation: false,
+      dictationMatchedCount: 0,
+      dictationRequiredCount: 0,
+    );
     handleTabChangeForAsr();
   }
 
@@ -3076,6 +3096,9 @@ class BdcNotifier extends _$BdcNotifier {
   /// 同时按当前"答对几个释义才算通过"的设置预置通过门槛，供手写页展示进度。
   void openChineseDictation() {
     _isAnswerCorrectHandling = false;
+    // 先撤掉挂起的自动跳转/单词详情/AI 裁判定时器：它们会在用户默写期间把当前词换走，
+    // 手写板被强行关闭、默写进度错位（AI 裁判认可后板子突然消失就是这条路径）。
+    _cancelPendingWordTimers();
     _prepareHandwritingEntry();
     final word = state.word;
     final required = (word == null || state.hasFinishedAnswering)

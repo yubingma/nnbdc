@@ -87,6 +87,13 @@ public class LearningWord extends Po {
     private Boolean isTodayNewWord;
 
     /**
+     * 是否为"加餐"单词（打卡后额外追加的学习批次）。
+     * 与 batchId 同步维护：本属性为 true 当且仅当该词属于当日加餐批次。
+     */
+    @Column(name = "is_extra", nullable = false)
+    private Boolean isExtra = false;
+
+    /**
      * default constructor
      */
     public LearningWord() {
@@ -123,6 +130,14 @@ public class LearningWord extends Po {
 
     public void setIsTodayNewWord(Boolean isTodayNewWord) {
         this.isTodayNewWord = isTodayNewWord;
+    }
+
+    public Boolean getIsExtra() {
+        return isExtra;
+    }
+
+    public void setIsExtra(Boolean isExtra) {
+        this.isExtra = isExtra;
     }
 
 
@@ -278,6 +293,8 @@ public class LearningWord extends Po {
         learningWord.setIsTodayNewWord(dto.getIsTodayNewWord());
         Integer batchId = dto.getBatchId();
         learningWord.setBatchId(batchId != null ? batchId : 0);
+        Boolean isExtra = dto.getIsExtra();
+        learningWord.setIsExtra(isExtra != null && isExtra);
         if (dto.getCreateTime() != null) {
             learningWord.setCreateTime(dto.getCreateTime());
         }
@@ -308,6 +325,7 @@ public class LearningWord extends Po {
         dto.setTodayLearnedTimes(todayLearnedTimes);
         dto.setIsTodayNewWord(isTodayNewWord);
         dto.setBatchId(batchId);
+        dto.setIsExtra(isExtra);
         dto.setStability(stability);
         dto.setDifficulty(difficulty);
         dto.setElapsedDays(elapsedDays);

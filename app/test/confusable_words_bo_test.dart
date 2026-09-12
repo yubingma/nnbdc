@@ -143,6 +143,7 @@ void main() {
       lastLearningDate: lastLearningDate,
       createTime: now,
       updateTime: now,
+    isExtra: false,
     ), false);
   }
 
@@ -525,6 +526,7 @@ void main() {
         todayLearnedTimes: 0,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
       await insertDictWord('mastered_dict', 'w5');
 

@@ -145,6 +145,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
 
       await db.into(db.dicts).insert(Dict(
@@ -196,6 +197,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       );
       await db.into(db.learningWords).insert(initialWord);
 
@@ -232,6 +234,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       );
       await db.into(db.learningWords).insert(initialWord);
 
@@ -264,6 +267,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       );
       await db.into(db.learningWords).insert(initialWord);
 
@@ -298,6 +302,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
 
       // User 2 的数据
@@ -313,6 +318,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
 
       // 1. 加载 User 1
@@ -342,6 +348,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
 
       // 此时缓存落后
@@ -368,6 +375,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       );
       
       // 使用缓存管理器存入
@@ -404,6 +412,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       );
       await db.into(db.learningWords).insert(initialWord);
 
@@ -426,6 +435,7 @@ void main() {
         isTodayNewWord: true,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       );
 
       // 模拟多端增量同步

@@ -108,6 +108,7 @@ void main() {
         todayLearnedTimes: 0,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       );
 
   List<MeaningItemVo> targetMeanings(String meaning) =>

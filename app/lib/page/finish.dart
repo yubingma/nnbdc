@@ -19,9 +19,13 @@ import '../widget/frosted_glass_card.dart';
 import '../util/analytics_util.dart';
 import '../util/notification_util.dart';
 import '../util/platform_util.dart';
+import '../util/prefs.dart';
+import '../util/subscription_util.dart';
 import '../widget/daka_poster.dart';
 import '../widget/daka_poster_dialog.dart';
 import 'index.dart';
+import 'bdc/models/bdc_page_args.dart';
+import 'subscription.dart';
 
 class FinishPage extends StatefulWidget {
   const FinishPage({super.key});
@@ -37,6 +41,10 @@ class FinishPageState extends State<FinishPage> {
   int cowDung = 0; // 初始化为0，防止 LateInitializationError
   late Result<int> dakaResult;
   int todayDakaScore = 0; // 今日打卡积分
+
+  /// 本次进入完成页是否属于"加餐完成"（今日已完成打卡后的额外学习批次）。
+  /// 加餐模式下不写打卡记录、不掷骰子、不判定打卡类勋章，只展示成果并提供"再来一组"。
+  bool isExtraRound = false;
 
   String? marketAppUrl; // 应用市场的对应Url
 
@@ -83,39 +91,52 @@ class FinishPageState extends State<FinishPage> {
       }
     }
 
+    // 今日是否已经打卡：已打卡说明本次进入完成页是"加餐完成"。
+    // 加餐不重复打卡、不掷骰子（掷骰子机会仅在每日首次打卡时发放，重复掷必然失败），
+    // 也不再判定打卡类勋章（破晓/夜行等必须在完成打卡的当下判定一次）。
+    final currentUser = Global.getLoggedInUser();
+    isExtraRound = !isFromPageViewer &&
+        currentUser != null &&
+        ((await UserBo().hasDakaToday(currentUser.id)).data ?? false);
+
     if (!isFromPageViewer) {
-      // 正常流程：执行打卡逻辑
-      dakaResult = await StudyBo().saveDakaRecord("好好学习，天天向上");
-      if (dakaResult.success) {
-        var user = await UserBo().getLoggedInUser();
-        await Global.setLoggedInUser(user.data!);
+      if (isExtraRound) {
+        // 加餐完成：打卡已在今日首次完成，此处只展示成果
+        dakaResult = Result("SUCCESS", "加餐完成", true);
+      } else {
+        // 正常流程：执行打卡逻辑
+        dakaResult = await StudyBo().saveDakaRecord("好好学习，天天向上");
+        if (dakaResult.success) {
+          var user = await UserBo().getLoggedInUser();
+          await Global.setLoggedInUser(user.data!);
 
-        // 注：打卡操作记录（user_oper 的 DAKA）已由 saveDakaRecord 内部写入，这里不再重复记录，
-        // 否则每天会产生两条 DAKA 操作记录（重复打卡日志）。
-        // 精确打击：重置本地通知提醒时间到明天
-        try {
-          await NotificationUtil.scheduleDailyReminder();
-        } catch (e) {
-          Global.logger.e('打卡重置提醒失败: $e');
-        }
+          // 注：打卡操作记录（user_oper 的 DAKA）已由 saveDakaRecord 内部写入，这里不再重复记录，
+          // 否则每天会产生两条 DAKA 操作记录（重复打卡日志）。
+          // 精确打击：重置本地通知提醒时间到明天
+          try {
+            await NotificationUtil.scheduleDailyReminder();
+          } catch (e) {
+            Global.logger.e('打卡重置提醒失败: $e');
+          }
 
-        todayDakaScore = 10; // 每天固定10分
+          todayDakaScore = 10; // 每天固定10分
 
-        var result = await StudyBo().throwDiceAndSave();
-        if (result.success) {
-          cowDung = result.data!;
-          // 不再播放特殊声音，因为不再有翻倍机制
+          var result = await StudyBo().throwDiceAndSave();
+          if (result.success) {
+            cowDung = result.data!;
+            // 不再播放特殊声音，因为不再有翻倍机制
 
-          // 漏斗：用户成功打卡完成
-          AnalyticsUtil.trackFinishDaka(cowDung, user.data!.continuousDakaDayCount ?? 0);
-        } else {
-          cowDung = 0; // 确保失败时为0
-          ToastUtil.error(result.msg!);
-        }
+            // 漏斗：用户成功打卡完成
+            AnalyticsUtil.trackFinishDaka(cowDung, user.data!.continuousDakaDayCount ?? 0);
+          } else {
+            cowDung = 0; // 确保失败时为0
+            ToastUtil.error(result.msg!);
+          }
 
-        // iOS/macOS 平台：打卡成功后请求应用内评分
-        if ((PlatformUtils.isIOS || PlatformUtils.isMacOS) && Config.enableAppStoreReview) {
-          _requestAppReview();
+          // iOS/macOS 平台：打卡成功后请求应用内评分
+          if ((PlatformUtils.isIOS || PlatformUtils.isMacOS) && Config.enableAppStoreReview) {
+            _requestAppReview();
+          }
         }
       }
     } else {
@@ -127,7 +148,7 @@ class FinishPageState extends State<FinishPage> {
       dakaResult = Result("SUCCESS", "页面查看器模式（模拟打卡，数据未入库）", true);
     }
 
-    if (!isFromPageViewer) {
+    if (!isFromPageViewer && !isExtraRound) {
       // 🌟 本次学习结束: 判定连续打卡、打卡时段(破晓/夜行)与单次学习表现(全对/心流)类勋章
       await BadgeService().checkStreakDays();
       await BadgeService().checkStudyTimeBadge();
@@ -180,8 +201,11 @@ class FinishPageState extends State<FinishPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildMetricsCard(themeConfig),
-          const SizedBox(height: 14),
+          // 加餐不产生新的打卡成果（积分/魔法泡泡只在每日首次打卡时结算），故不展示成果卡
+          if (!isExtraRound) ...[
+            _buildMetricsCard(themeConfig),
+            const SizedBox(height: 14),
+          ],
           _buildActionGroup(themeConfig),
         ],
       ),
@@ -252,9 +276,9 @@ class FinishPageState extends State<FinishPage> {
                   child: const Icon(Icons.check_rounded, color: Colors.white, size: 34),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  '打卡成功',
-                  style: TextStyle(
+                Text(
+                  isExtraRound ? '加餐完成' : '打卡成功',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
@@ -263,7 +287,9 @@ class FinishPageState extends State<FinishPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '今日学习完成 · 继续坚持每天进步一点点',
+                  isExtraRound
+                      ? '额外加餐已学完 · 状态正好就再多背一组'
+                      : '今日学习完成 · 继续坚持每天进步一点点',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.92),
                     fontSize: 12,
@@ -398,6 +424,19 @@ class FinishPageState extends State<FinishPage> {
           color: context.cardBg,
           child: Column(
             children: [
+              // 加餐完成后可继续加餐（不限次数，会员权益）
+              if (isExtraRound) ...[
+                _buildActionItem(
+                  themeConfig,
+                  key: const Key('finish_extra_again_btn'),
+                  icon: Icons.add_circle_outline_rounded,
+                  iconColor: themeConfig.primaryColor,
+                  title: '再来一组',
+                  subtitle: '趁状态正好，再背 10 个单词',
+                  onTap: _startExtraStudy,
+                ),
+                _buildActionDivider(themeConfig),
+              ],
               _buildActionItem(
                 themeConfig,
                 key: const Key('finish_word_list_btn'),
@@ -543,6 +582,29 @@ class FinishPageState extends State<FinishPage> {
         ],
       ),
     );
+  }
+
+  /// 打卡后继续加餐：追加一组单词后直接进入学习页。
+  /// 加餐是会员权益，非会员引导至订阅页。
+  Future<void> _startExtraStudy() async {
+    if (!SubscriptionUtil.isPremium()) {
+      ToastUtil.info('加餐是会员专属权益');
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const SubscriptionPage()),
+      );
+      return;
+    }
+
+    final result = await StudyBo().prepareExtraStudy();
+    if (!mounted) return;
+    if (!result.success) {
+      ToastUtil.error(result.msg ?? '加餐失败');
+      return;
+    }
+
+    await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
+    if (!mounted) return;
+    context.push('/bdc');
   }
 
   /// 打开海报分享弹窗

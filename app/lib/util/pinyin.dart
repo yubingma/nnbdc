@@ -416,6 +416,10 @@ double similarityOf2Pinyin(String pinyin1, String pinyin2) {
   return similarityOf2ParsedPinyin(parts1, parts2);
 }
 
+/// 判断 ASR/手写文本中是否说出/写出了释义（[chinese2]），支持多候选列表。
+///
+/// [strict] 为 true 时（中文手写默写）额外要求把释义写全：允许带上自己的话（"我查看"），
+/// 也容忍个别同音/形近字，但不接受只写一部分（"商人"当"女商人"）。
 bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache, bool strict = false}) {
   if (chinese1 is List<String>) {
     for (final item in chinese1) {
@@ -438,14 +442,12 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
     if (unit.isEmpty) continue;
 
     if (strict) {
-      // 中文手写默写（严格模式）：判题算法与语音"说中文"同一套（下面的滑动候选 + DP 匹配），
-      // 唯一的区别是要求用户把释义写全——允许在释义前后带上自己的话（"我查看"），
-      // 但不接受只写一部分（如"商人"当"女商人"、"看察"当"查看"），
+      // 中文手写默写：判题算法与语音"说中文"同一套（滑动候选 + 拼音模糊匹配），
+      // 区别是要求用户把释义写全——只写一部分（"商人"当"女商人"、"看察"当"查看"）不算对，
       // 否则默写会退化成"写对两个字就给过"。
-      int M = unit.length;
+      final int M = unit.length;
       for (var start = 0; start + M <= asrText.length; start++) {
-        final cand = asrText.substring(start, start + M);
-        if (_coversUnit(cand, unit,
+        if (_coversUnit(asrText.substring(start, start + M), unit,
             targetPinyinsCache: targetPinyinsCache)) {
           return true;
         }
@@ -453,23 +455,11 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
       continue;
     }
 
-    int M = unit.length;
+    // 从输入中提取长度接近释义的滑动窗口候选，逐个做拼音模糊匹配，
+    // 只要有一个通过（发音相似即可）就认为该释义被答对。
+    // 多句累积的长文本靠这个滑动窗口避免字数惩罚过重。
+    List<String> subCandidates = _asrCandidates(asrText, unit.length);
 
-    // 核心优化：为了防止 ASR 长期累积的长句或背景噪声导致字数惩罚过重，
-    // 我们从 ASR 文本（特别是最近说出的末尾部分）中提取长度为 M 到 M+3 的滑动窗口子串作为候选。
-    List<String> subCandidates = [asrText];
-    int startIdx = asrText.length > 12 ? asrText.length - 12 : 0;
-    String recentText = asrText.substring(startIdx);
-    for (int len = M; len <= M + 3; len++) {
-      for (int i = 0; i <= recentText.length - len; i++) {
-        String sub = recentText.substring(i, i + len);
-        if (!subCandidates.contains(sub)) {
-          subCandidates.add(sub);
-        }
-      }
-    }
-
-    // 对每个候选子串进行 DP 匹配，只要有一个通过，该 unit 即匹配成功
     bool unitMatched = false;
     for (var cand in subCandidates) {
       if (_matchSingleCandidate(cand, unit, targetPinyinsCache: targetPinyinsCache)) {
@@ -486,9 +476,26 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
   return false;
 }
 
+/// 从 ASR/手写文本中提取用于匹配的候选片段：原文，加上靠近末尾处
+/// 长度为 [unitLength] 到 [unitLength]+3 的所有滑动窗口子串。
+List<String> _asrCandidates(String asrText, int unitLength) {
+  List<String> subCandidates = [asrText];
+  int startIdx = asrText.length > 12 ? asrText.length - 12 : 0;
+  String recentText = asrText.substring(startIdx);
+  for (int len = unitLength; len <= unitLength + 3; len++) {
+    for (int i = 0; i <= recentText.length - len; i++) {
+      String sub = recentText.substring(i, i + len);
+      if (!subCandidates.contains(sub)) {
+        subCandidates.add(sub);
+      }
+    }
+  }
+  return subCandidates;
+}
+
 /// 判断等长的用户输入片段是否已"完整写出"释义。
 ///
-/// 逐字取拼音相似度，要求输入[b]每个字[/b]都能对应上释义的对应字，
+/// 逐字取拼音相似度，要求输入的每个字都能对应上释义的对应字，
 /// 从而拒绝只写一部分的截断答案（"商人" ≠ "女商人"、"看察" ≠ "查看"），
 /// 同时容忍手写识别的个别同音/形近字误识（"女商仁" = "女商人"）。
 bool _coversUnit(String input, String unit,
@@ -526,7 +533,7 @@ List<List<PinyinParser>> _pinyinsOf(
   return pinyins;
 }
 
-/// 针对单个候选文本的拼音模糊匹配（核心 DP 算法），用于非严格模式（语音"说中文"）：
+/// 针对单个候选文本的拼音模糊匹配（核心 DP 算法）：
 /// 允许候选文本比释义长（ASR 会把多句累积在一起），用一个综合平均相似度加长句惩罚来判定。
 bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
   if (asrText.isEmpty) return false;

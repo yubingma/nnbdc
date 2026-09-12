@@ -49,6 +49,7 @@ class HandwritingBoard extends StatefulWidget {
     this.onSubmit,
     this.onUndoRequest,
     this.onReadCurrentText,
+    this.onRecognizeFailed,
   });
 
   /// 读取输入框当前文本。分格（中文默写）模式下，本次手写作答的第一笔落下时调用一次：
@@ -62,6 +63,10 @@ class HandwritingBoard extends StatefulWidget {
   /// 点击「提交」时的外部拦截：返回 true 表示上层已处理（例如键盘输入法弹起时直接提交输入框
   /// 文本），此时不再识别手写区域；返回 false/null 则走正常的手写识别提交。
   final bool Function()? onSubmit;
+
+  /// 手写识别失败/超时的通知。识别失败与"答案不对"是两回事：识别不出来时既不能判题
+  /// （会把失败当成"答案不正确或未写完整"），也不能静默无反应，需要让上层给出提示。
+  final VoidCallback? onRecognizeFailed;
 
   /// 点击「回退」时的外部拦截：返回 true 表示上层已处理（例如键盘输入法弹起时删除输入框
   /// 最后一个字符）；返回 false/null 则走手写板自身的回退逻辑。
@@ -122,6 +127,15 @@ class HandwritingBoardState extends State<HandwritingBoard> {
 
   /// 串行化逐格识别，保证"已识别字"按书写顺序追加（避免异步 OCR 乱序）。
   Future<void> _finalizeChain = Future.value();
+
+  /// 本轮作答是否有过识别失败（超时/底层报错）。识别失败的字不在答案里，
+  /// 此时提交只能得到"未写完整"，必须拦下判题并提示重写。重写/键盘接管时复位。
+  bool _answerHasRecognitionFailure = false;
+
+  /// 最后一次交给上层判题的答案文本。内容没变就说明本次提交没有新增内容
+  /// （典型是同一份答案连点「提交」）：直接忽略，避免同一帧内并发判题 N 次、
+  /// 弹出 N 条一模一样的提示。重写/键盘接管/答案变化时自然失效。
+  String? _lastSubmittedAnswer;
 
   void _handleWritingArea(Size size) {
     _writingAreaSize = size;
@@ -202,7 +216,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
         (i) => List<PointWithTime>.from(_lines[i]));
     final cellIndex = _activeCell;
     final char = await _recognizeLines(snapshot, cellIndex: cellIndex);
-    if (version != _recognitionVersion) return; // 已换格/清空，丢弃过期预览
+    // 识别失败（null）时保持上一次回显，不能把预览清成空——那会让用户以为字没写进去
+    if (char == null || version != _recognitionVersion) return;
     _currentCellText = char;
     _updatePreview();
   }
@@ -224,6 +239,11 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   Future<void> _enqueueRecognize(List<List<PointWithTime>> snapshot, int cellIndex) {
     final next = _finalizeChain.then((_) async {
       final char = await _recognizeLines(snapshot, cellIndex: cellIndex);
+      if (char == null) {
+        // 识别失败：该字不能进入答案（否则提交只会被判"未写完整"）
+        _answerHasRecognitionFailure = true;
+        return;
+      }
       if (char.isNotEmpty) {
         _recognizedChars.add(char);
       }
@@ -237,7 +257,9 @@ class HandwritingBoardState extends State<HandwritingBoard> {
 
   /// 识别给定笔画并返回文本。分格模式下：把该字笔画归一化到自身包围盒，并以包围盒尺寸作为
   /// WritingArea（单字识别更准，且对"横/竖屏"布局都成立）；单格（英文拼写）保持整幅画布。
-  Future<String> _recognizeLines(List<List<PointWithTime>> strokes,
+  /// 识别失败/超时返回 null——调用方必须把"识别不出来"与"识别出了但不对"区别对待，
+  /// 否则超时会被当成"答案不正确或未写完整"提示给用户。
+  Future<String?> _recognizeLines(List<List<PointWithTime>> strokes,
       {int cellIndex = 0}) async {
     if (strokes.isEmpty) return '';
 
@@ -288,7 +310,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
       return _postProcess(response);
     } catch (e) {
       debugPrint('HB: Recognition error: $e');
-      return '';
+      return null;
     }
   }
 
@@ -336,6 +358,9 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _cellPauseTimer?.cancel();
     _canvasKey.currentState?._controller.clear();
     _lines.clear();
+    // 本轮作答作废：识别失败标记与提交去重记录一并复位（重写后同样的内容要能重新判题）
+    _answerHasRecognitionFailure = false;
+    _lastSubmittedAnswer = null;
     if (widget.cellCount > 1) {
       // 分格模式：重写 = 全部清空，包括答案前缀、已识别序列、当前格文本、当前格高亮
       _prefixText = '';
@@ -372,6 +397,9 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _prefixText = '';
     _recognizedChars = [];
     _currentCellText = '';
+    // 键盘接管输入框 = 本轮手写作答作废：识别失败标记与提交去重记录一并复位
+    _answerHasRecognitionFailure = false;
+    _lastSubmittedAnswer = null;
     if (widget.cellCount > 1) {
       clearBoardSilently();
     }
@@ -423,13 +451,18 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     if (widget.cellCount > 1) {
       _finalizeAndClearCurrentCellSync();
       await _finalizeChain; // 等待所有已排队的逐格识别（含本次当前格）按顺序完成
-      widget.onRecognized(_answerText);
+      if (_answerHasRecognitionFailure) {
+        // 有字没识别出来：答案本身是残缺的，判题只会得到"未写完整"，提示重写
+        widget.onRecognizeFailed?.call();
+        return;
+      }
+      _submitForJudging(_answerText);
       return;
     }
 
     // 单格（英文拼写）：整块识别
     if (_lines.isEmpty) {
-      widget.onRecognized("");
+      _submitForJudging("");
       return;
     }
     final int currentVersion = ++_recognitionVersion;
@@ -443,8 +476,22 @@ class HandwritingBoardState extends State<HandwritingBoard> {
           _isRecognizing = false;
         });
       }
-      widget.onRecognized(result);
+      if (result == null) {
+        widget.onRecognizeFailed?.call();
+        return;
+      }
+      _submitForJudging(result);
     }
+  }
+
+  /// 把本次答案交给上层判题，并做提交去重：
+  /// 答案与上一次提交完全相同时（同一份答案连点「提交」）不再重复判题——
+  /// 多次点击本会各自 await 同一条识别链，链一结束就在同一帧内并发判题 N 次，
+  /// 弹出 N 条一模一样的提示（历史问题：一次"识别中"期间连点提交，提示成批涌出）。
+  void _submitForJudging(String answer) {
+    if (answer == _lastSubmittedAnswer) return;
+    _lastSubmittedAnswer = answer;
+    widget.onRecognized(answer);
   }
 
   @override

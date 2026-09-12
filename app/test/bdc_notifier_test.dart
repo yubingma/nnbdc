@@ -305,6 +305,7 @@ void main() {
           learningOrder: 1,
           createTime: now,
           updateTime: now,
+        isExtra: false,
         ));
   });
 
@@ -433,6 +434,7 @@ void main() {
           learningOrder: 2,
           createTime: now,
           updateTime: now,
+        isExtra: false,
         ));
 
     final mockAsr = MockAsr();
@@ -520,6 +522,7 @@ void main() {
           learningOrder: 5,
           createTime: now,
           updateTime: now,
+        isExtra: false,
         ));
 
     // Clear StudyCacheManager cache so it fetches the new list
@@ -778,6 +781,14 @@ void main() {
     expect(await notifier.getEnglishSentenceMatchScore('I eat an apple morning', 'I eat an apple every morning.'), 83);
     // 匹对“I eat an apple every morning”，LCS单词为 6, 6/6 = 100%
     expect(await notifier.getEnglishSentenceMatchScore('I eat an apple every morning.', 'I eat an apple every morning.'), 100);
+
+    // sb/sth 这类占位缩写：目标句里的 sb/sth 展开为 somebody/something 后再比对，
+    // 用户按 somebody or something / somebody and something / somebody something 朗读都应判为通过
+    expect(await notifier.getEnglishSentenceMatchScore('let out somebody or something', 'let out sb/sth'), 100);
+    expect(await notifier.getEnglishSentenceMatchScore('let out somebody and something', 'let out sb/sth'), 100);
+    expect(await notifier.getEnglishSentenceMatchScore('let out somebody something', 'let out sb/sth'), 100);
+    // 逆序写法 sth/sb 同样兼容
+    expect(await notifier.getEnglishSentenceMatchScore('let out something or somebody', 'let out sth/sb'), 100);
 
     // 3. 验证智能重叠拼接去重算法 (stitchTexts)
     // 中文无重合拼接
@@ -1728,6 +1739,7 @@ void main() {
           learningOrder: 2,
           createTime: now,
           updateTime: now,
+        isExtra: false,
         ));
 
     final mockAsr = MockAsr();

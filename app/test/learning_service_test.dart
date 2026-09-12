@@ -171,6 +171,7 @@ void main() {
         learningOrder: 0,
         createTime: pastDate,
         updateTime: pastDate,
+      isExtra: false,
       ));
 
       await db.into(db.learningWords).insert(LearningWord(
@@ -192,6 +193,7 @@ void main() {
         learningOrder: 0,
         createTime: pastDate,
         updateTime: pastDate,
+      isExtra: false,
       ));
 
       final result = await LearningService.prepareTodayStudy(true);
@@ -237,6 +239,7 @@ void main() {
           learningOrder: i,
           createTime: now,
           updateTime: now,
+        isExtra: false,
         ));
       }
 
@@ -282,6 +285,7 @@ void main() {
           learningOrder: 1,
           createTime: yesterday,
           updateTime: yesterday,
+      isExtra: false,
       ));
 
       // 强行准备今日：该跨天流程会自动把 batchId 清除，todayLearnedTimes 归零，并且作为新的一天的新鲜状态
@@ -320,6 +324,7 @@ void main() {
           todayLearnedTimes: 0,
           learningOrder: 0,
           createTime: yesterday,
+          isExtra: false,
           updateTime: yesterday));
       // word_done：对照——已学完进入 review，scheduledDays=2 未到期 → 今天不应出现
       await db.into(db.learningWords).insert(LearningWord(
@@ -341,6 +346,7 @@ void main() {
           todayLearnedTimes: 0,
           learningOrder: 0,
           createTime: yesterday,
+          isExtra: false,
           updateTime: yesterday));
 
       await LearningService.prepareTodayStudy(true);
@@ -375,6 +381,7 @@ void main() {
           learningOrder: 0,
           createTime: now,
           updateTime: now,
+        isExtra: false,
         ));
       }
 
@@ -550,6 +557,7 @@ void main() {
         learningOrder: 0,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
 
       // 3. 将 word_3 也加入 learning_words（没有 mastered 的正常新词，应正常被选取）
@@ -565,6 +573,7 @@ void main() {
         learningOrder: 0,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
 
       // 4. 将 word_1 标记为已掌握（加入 mastered_words）
@@ -629,6 +638,7 @@ void main() {
         learningOrder: 0,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
 
       // 4. 插入 word_4 到 learning_words（正常未掌握的新词，也 batchId=0）
@@ -645,6 +655,7 @@ void main() {
         learningOrder: 0,
         createTime: now,
         updateTime: now,
+      isExtra: false,
       ));
 
       // 5. 将 word_2 标记为已掌握
@@ -688,6 +699,7 @@ void main() {
           learningOrder: 0,
           createTime: testTime,
           updateTime: testTime,
+        isExtra: false,
         ));
       }
 
@@ -714,6 +726,7 @@ void main() {
           learningOrder: 0,
           createTime: testTime,
           updateTime: testTime,
+        isExtra: false,
         ));
       }
 
@@ -761,6 +774,7 @@ void main() {
           learningOrder: 0,
           createTime: testTime,
           updateTime: testTime,
+        isExtra: false,
         ));
       }
 
@@ -949,6 +963,7 @@ void main() {
         todayLearnedTimes: 0,
         createTime: testTime,
         updateTime: testTime,
+      isExtra: false,
       ));
 
       await db.into(db.learningWords).insert(LearningWord(
@@ -971,6 +986,7 @@ void main() {
         todayLearnedTimes: 0,
         createTime: testTime,
         updateTime: testTime,
+      isExtra: false,
       ));
 
       // 3. 执行今日计划生成！
@@ -1217,6 +1233,7 @@ void main() {
           learningOrder: 0,
           createTime: pastDate,
           updateTime: pastDate,
+        isExtra: false,
         ));
       }
     }
@@ -1279,6 +1296,7 @@ void main() {
           learningOrder: 0,
           createTime: pastDate,
           updateTime: pastDate,
+        isExtra: false,
         ));
       }
 
@@ -1317,6 +1335,125 @@ void main() {
       int firstReviewIndex = words2.indexWhere((w) => !w.isTodayNewWord);
       expect(firstNewIndex, lessThan(firstReviewIndex),
           reason: '新词应排在复习词前面，实际顺序: ${words2.map((w) => '${w.wordId}(${w.isTodayNewWord ? "新" : "复"})').join(", ")}');
+    });
+  });
+
+  group('LearningService - 打卡后的"加餐"批次', () {
+    /// 模拟用户学完今日全部计划词（打卡前的真实状态）
+    Future<void> finishAllPlanWords() async {
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      for (var lw in todayWords) {
+        await db.learningWordsDao.saveEntity(
+          lw.copyWith(
+            stability: const Value(15.0),
+            scheduledDays: const Value(100),
+            lastLearningDate: Value(AppClock.today()),
+            learnedTimes: 2,
+            todayLearnedTimes: 1,
+          ),
+          true,
+        );
+      }
+      // 真实场景下打卡意味着用户已开始学习；否则 prepareTodayStudy 会清理"未学但已掌握"的计划词
+      // 必须基于库中最新用户改写，避免用过期对象覆盖掉 prepareTodayStudy 写入的 lastLearningDate
+      final latest = await db.usersDao.getUserById(testUser.id) ?? testUser;
+      final started = latest.copyWith(todayStudyStarted: true);
+      await db.usersDao.saveUser(started, true);
+      Global.updateUserCache(started);
+    }
+
+    /// 追加一组加餐词（等价于 StudyBo.prepareExtraStudy 的取词与落库部分）
+    Future<List<LearningWord>> appendExtra(int count) async {
+      final all = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      final updated = await LearningService.genTodayWords(
+        testUser.id,
+        AppClock.now(),
+        all,
+        targetTotalWords: all.length + count,
+        isExtra: true,
+      );
+      await LearningService.updateTodayLearningWords(updated, AppClock.now());
+      return updated;
+    }
+
+    test('加餐独占一个新批次并全部标记 isExtra，计划词不受影响', () async {
+      await LearningService.prepareTodayStudy(true);
+      await finishAllPlanWords();
+
+      final updated = await appendExtra(5);
+
+      final planWords = updated.where((w) => !w.isExtra).toList();
+      final extraWords = updated.where((w) => w.isExtra).toList();
+      expect(updated.length, 10);
+      expect(planWords.length, 5, reason: '加餐不得改变计划词数量');
+      expect(extraWords.length, 5, reason: '加餐应追加一组新词');
+      expect(extraWords.every((w) => w.batchId == 2), true, reason: '加餐应独占一个新的取词批次');
+      expect(planWords.every((w) => w.batchId == 1), true, reason: '计划词批次不受加餐影响');
+    });
+
+    test('加餐后重回今日计划页：计划口径不变、加餐任务不被削减', () async {
+      await LearningService.prepareTodayStudy(true);
+      await finishAllPlanWords();
+      await appendExtra(5);
+
+      // 模拟用户中途退出后重新进入今日计划页（forceSupplement=false）
+      final result = await LearningService.prepareTodayStudy(false);
+      expect(result.success, true);
+      expect(result.data![0] + result.data![1], 5, reason: '计划口径总数仍为 5，不含加餐');
+
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 10, reason: '加餐任务必须保留，否则用户回来就找不到未完成的加餐');
+      expect(todayWords.where((w) => w.isExtra).length, 5);
+    });
+
+    test('shrinkTodayWords 只削减计划词，加餐词整体保留', () async {
+      await LearningService.prepareTodayStudy(true);
+      // 加餐发生在已开始学习之后（否则 updateTodayLearningWords 的断言会拦下"未开始却有进度"的状态）
+      final latest = await db.usersDao.getUserById(testUser.id) ?? testUser;
+      final started = latest.copyWith(todayStudyStarted: true);
+      await db.usersDao.saveUser(started, true);
+      Global.updateUserCache(started);
+
+      // 只学完 2 个计划词，库中仍有未学的计划词（今天已经学了很多的场景）
+      final planWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      for (var lw in planWords.take(2)) {
+        await db.learningWordsDao.saveEntity(
+          lw.copyWith(
+            todayLearnedTimes: 1,
+            learnedTimes: 1,
+            lastLearningDate: Value(AppClock.today()),
+          ),
+          true,
+        );
+      }
+      await appendExtra(5);
+
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      // 目标 3：已学 2 < 3，削减必然执行
+      final shrunk = await LearningService.shrinkTodayWords(testUser.id, todayWords, 3);
+
+      expect(shrunk.where((w) => w.isExtra).length, 5, reason: '加餐词绝不可被削减');
+      expect(shrunk.where((w) => !w.isExtra).length, 3, reason: '削减只作用于计划词');
+    });
+
+    test('跨逻辑天：加餐批次与 isExtra 标记一并被重置', () async {
+      final fakeClock = FakeClock(DateTime(2026, 3, 1, 8, 0));
+      AppClock.setClock(fakeClock);
+      try {
+        await LearningService.prepareTodayStudy(true);
+        await finishAllPlanWords();
+        await appendExtra(5);
+
+        // 推进到下一个逻辑天
+        fakeClock.advanceDays(1);
+        await LearningService.prepareTodayStudy(true);
+
+        final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+        expect(todayWords.where((w) => w.isExtra).isEmpty, true,
+            reason: '加餐是当日概念，跨逻辑天必须清空标记，否则会污染新一天的计划口径');
+      } finally {
+        AppClock.reset();
+      }
     });
   });
 }

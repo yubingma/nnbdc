@@ -135,6 +135,7 @@ void main() {
       state: 1, // 已评分（Learning），离开 New → 算学过
       createTime: now,
       updateTime: now,
+    isExtra: false,
     ), false);
   }
 

@@ -263,7 +263,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 52;
+  int get schemaVersion => 53;
 
   @override
   MigrationStrategy get migration {
@@ -430,6 +430,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 52) {
             await _migrateFromV51ToV52AddMaxMasteredWords(m);
+          }
+          if (from < 53) {
+            await _migrateFromV52ToV53AddLearningWordIsExtra(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -660,6 +663,14 @@ class MyDatabase extends _$MyDatabase {
       await customStatement(
         'UPDATE users SET max_mastered_words = mastered_words_count WHERE max_mastered_words IS NULL',
       );
+    });
+  }
+
+  /// 从版本 52 升级到版本 53：在 learning_words 表中添加 is_extra 字段（打卡后的"加餐"学习批次标记）。
+  /// 该列上线前不存在加餐概念，因此历史数据一律播种为 false（默认值即 false，无需回填）。
+  Future<void> _migrateFromV52ToV53AddLearningWordIsExtra(Migrator m) async {
+    await transaction(() async {
+      await m.addColumn(learningWords, learningWords.isExtra);
     });
   }
 

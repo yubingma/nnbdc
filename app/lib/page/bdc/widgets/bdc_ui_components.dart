@@ -124,6 +124,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                         notifier.checkAsrResult();
                         return true;
                       },
+                      // 手写识别失败/超时：与"答案不对"区分开提示，避免用户把识别失败
+                      // 误当成自己写错（历史问题：超时返回空串被当成"答案不正确或未写完整"）
+                      onRecognizeFailed: () {
+                        ToastUtil.error('手写识别失败，请重写');
+                      },
                       // 落笔接管的当刻读取输入框文本，作为本次手写答案的前缀（"打字→手写"不丢键盘内容）
                       onReadCurrentText: () => notifier.meaningController.text,
                       // 点「回退」：键盘在用或画布没有笔迹 → 删除输入框最后一个字符；

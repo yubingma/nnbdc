@@ -36,6 +36,48 @@ class AsrUtil {
     '=': ['equal', 'equals'],
   };
 
+  /// 英语学习材料中的占位缩写 -> 完整单词
+  static const Map<String, String> _abbreviationWords = {
+    'sb': 'somebody',
+    'sth': 'something',
+  };
+
+  /// 斜线并列形态：sb/sth、sb./sth.、sth/sb
+  static final RegExp _abbreviationPair =
+      RegExp(r'\b(sb|sth)\s*\.?\s*/\s*(sb|sth)\s*\.?', caseSensitive: false);
+
+  /// 所有格：sb's / sth's
+  static final RegExp _abbreviationPossessive =
+      RegExp(r"\b(sb|sth)\s*'s\b", caseSensitive: false);
+
+  /// 独立的 sb / sth（允许结尾带句点）
+  static final RegExp _abbreviation = RegExp(r'\b(sb|sth)\b\.?', caseSensitive: false);
+
+  /// 把 sb/sth 这类占位缩写展开成完整单词，用于 ASR 比对。
+  ///
+  /// 与 TTS 侧（服务端 Util.toSpokenEnglish）有意不同：这里展开成**不带连接词**的形态
+  /// （sb/sth -> "somebody something"）。因为例句比对分数的分母是目标词数，多出来的词不扣分，
+  /// 所以用户说 "somebody or something"、"somebody and something"、"somebody something" 都能命中。
+  static String expandAbbreviations(String text) {
+    if (text.isEmpty) return text;
+
+    String result = text.replaceAllMapped(_abbreviationPair, (m) {
+      final first = _abbreviationWords[m.group(1)!.toLowerCase()]!;
+      final second = _abbreviationWords[m.group(2)!.toLowerCase()]!;
+      return '$first $second';
+    });
+    result = result.replaceAllMapped(_abbreviationPossessive, (m) {
+      return "${_abbreviationWords[m.group(1)!.toLowerCase()]!}'s";
+    });
+    return result.replaceAllMapped(_abbreviation, (m) {
+      final word = _abbreviationWords[m.group(1)!.toLowerCase()]!;
+      return m.group(0)!.endsWith('.') ? '$word.' : word;
+    });
+  }
+
+  /// 文本中是否含有占位缩写
+  static bool hasAbbreviation(String text) => _abbreviation.hasMatch(text);
+
   /// 将阿拉伯数字转换为中文数字（支持0-9999）
   /// 例如：12 -> 十二，123 -> 一百二十三
   static String _convertArabicToChinese(int num) {
@@ -225,12 +267,14 @@ class AsrUtil {
     String targetWord,
   ) async {
     if (candidates.isEmpty) return AsrCandidateResult('', 0);
-    final lowerTarget = targetWord.toLowerCase().trim();
+    // sb/sth 这类占位缩写先展开，用户按 somebody/something 读时才能命中
+    final lowerTarget = expandAbbreviations(targetWord.toLowerCase().trim());
     // 目标是否为单字（无空格）：用于触发多词候选的拼接容错
     final targetIsSingleWord = !lowerTarget.contains(' ');
 
-    // 预处理候选列表（主要进行数字单词归一化等操作）
-    final preprocessedCandidates = candidates.map((c) => preprocessEnglish(c, targetWord)).toList();
+    // 预处理候选列表（数字单词归一化 + 占位缩写展开）
+    final preprocessedCandidates =
+        candidates.map((c) => expandAbbreviations(preprocessEnglish(c, targetWord))).toList();
 
     // 快速路径：精确匹配时跳过音素加载和计算，避免 3.5MB cmudict 加载阻塞 ASR 响应
     for (int i = 0; i < preprocessedCandidates.length; i++) {

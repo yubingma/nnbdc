@@ -1234,6 +1234,57 @@ public class Util {
     }
 
     /**
+     * 英语学习材料中的占位缩写 -> 可朗读的完整单词。
+     */
+    private static final Map<String, String> ENGLISH_ABBREVIATIONS = Map.of(
+            "sb", "somebody",
+            "sth", "something");
+
+    /** 斜线并列形态：sb/sth、sb./sth.、sth/sb（斜线表示"或者"） */
+    private static final Pattern ABBREVIATION_PAIR_PATTERN =
+            Pattern.compile("\\b(sb|sth)\\s*\\.?\\s*/\\s*(sb|sth)\\s*\\.?", Pattern.CASE_INSENSITIVE);
+
+    /** 所有格：sb's / sth's */
+    private static final Pattern ABBREVIATION_POSSESSIVE_PATTERN =
+            Pattern.compile("\\b(sb|sth)\\s*'s\\b", Pattern.CASE_INSENSITIVE);
+
+    /** 独立的 sb / sth（允许结尾带句点） */
+    private static final Pattern ABBREVIATION_PATTERN =
+            Pattern.compile("\\b(sb|sth)\\b\\.?", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * 把英语学习材料里的占位缩写展开成可朗读的完整单词，供语音合成使用。
+     * <p>
+     * 约定：sb = somebody、sth = something；斜线并列表示"或者"，所以 sb/sth 读作 "somebody or something"。
+     * 只处理这几个约定缩写，不碰其它斜线（如 km/h、and/or），避免误改。
+     * <p>
+     * 注意：客户端 ASR 比对用的是「无连接词」的展开形态（见 AsrUtil），两者有意不同，
+     * 因为比对分数的分母是目标词数，省略连接词不应扣分。
+     */
+    public static String toSpokenEnglish(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        String result = ABBREVIATION_PAIR_PATTERN.matcher(text)
+                .replaceAll(m -> abbreviationWord(m.group(1)) + " or " + abbreviationWord(m.group(2)));
+        result = ABBREVIATION_POSSESSIVE_PATTERN.matcher(result)
+                .replaceAll(m -> abbreviationWord(m.group(1)) + "'s");
+        return ABBREVIATION_PATTERN.matcher(result)
+                .replaceAll(m -> abbreviationWord(m.group(1)) + (m.group().endsWith(".") ? "." : ""));
+    }
+
+    private static String abbreviationWord(String abbreviation) {
+        return ENGLISH_ABBREVIATIONS.get(abbreviation.toLowerCase());
+    }
+
+    /**
+     * 判断文本中是否含有需要展开的占位缩写（sb / sth 及其变体）
+     */
+    public static boolean hasEnglishAbbreviation(String text) {
+        return text != null && ABBREVIATION_PATTERN.matcher(text).find();
+    }
+
+    /**
      * 规范化AI生成的字符串（移除末尾逗号等）
      */
     public static String sanitizeAiString(String s) {

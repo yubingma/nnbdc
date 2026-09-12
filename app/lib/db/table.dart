@@ -533,6 +533,13 @@ class LearningWords extends Table {
   /// nullable() to handle legacy data where batch_id might be NULL
   IntColumn get batchId => integer().nullable()();
 
+  /// 是否为"加餐"单词（打卡后额外追加的学习批次）
+  ///
+  /// 与 [batchId] 共同表达单词的归属，二者必须同步维护，不变量为：
+  /// `isExtra == true` 当且仅当该词属于今日加餐批次（即 batchId > 0 且由加餐取词产生）。
+  /// 凡是将 batchId 置 0 的地方（跨天重置、削减、已掌握清理）都必须同时将其置回 false，
+  /// 否则残留标记会污染下一个逻辑天的"今日计划"口径。
+  BoolColumn get isExtra => boolean().withDefault(const Constant(false))();
 
   /// FSRS 算法相关字段
   RealColumn get stability => real().nullable()();

@@ -85,14 +85,19 @@ public class DataSanitizeBo {
     private static volatile int meaningSanitizeFixedCount = 0;
     private static volatile String meaningSanitizeLog = "";
 
-    private static volatile boolean isDataSanitizing = false;
-    private static volatile int dataSanitizeStepIndex = 0;
+    private static volatile boolean isDataSanitizing = false;    private static volatile int dataSanitizeStepIndex = 0;
     private static volatile String dataSanitizeStepLabel = "";
     private static volatile int dataSanitizeTotal = 0;
     private static volatile int dataSanitizeProcessed = 0;
     private static volatile int dataSanitizeFixedCount = 0;
     private static volatile List<String> dataSanitizeMessages = new ArrayList<>();
     private static volatile List<String> dataSanitizeErrors = new ArrayList<>();
+
+    private static volatile boolean isAbbreviationSoundRegenerating = false;
+    private static volatile int abbreviationSoundTotal = 0;
+    private static volatile int abbreviationSoundProcessed = 0;
+    private static volatile int abbreviationSoundRegeneratedCount = 0;
+    private static volatile String abbreviationSoundLog = "";
 
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
@@ -1156,6 +1161,147 @@ public class DataSanitizeBo {
                 userDbSyncBo.logUserOperation(sentence, ownerId, "sentence", "UPDATE", sentence.getId(), record);
             }
         }
+    }
+
+    /**
+     * 重生成含占位缩写（sb / sth）的发音（后台异步线程执行）。
+     * <p>
+     * 这些拼写里的 sb/sth 会被 TTS 逐字母朗读（"ess-bee slash ess-tee-aitch"），
+     * 现在已经按 sb=somebody、sth=something、斜线="or" 展开后再送合成，
+     * 但存量音频文件还是老的，必须强制覆盖重生成：
+     * <ul>
+     *   <li>单词：重新生成 3 个变体音频（无后缀 / _uk / _us），并 bump update_time —— 客户端音频 URL 带
+     *       {@code ?v=updateTime}，updateTime 一变缓存即失效。</li>
+     *   <li>例句：置为待合成状态，交给既有的 TtsTask 重新合成（写回同一个 digest 文件）。</li>
+     * </ul>
+     */
+    public SystemHealthFixResult regenerateAbbreviationSounds() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isAbbreviationSoundRegenerating) {
+            errors.add("缩写发音重生成任务正在后台运行中，请勿重复触发。");
+            fixed.add(describeAbbreviationSoundProgress());
+            return new SystemHealthFixResult(0, errors, fixed);
+        }
+
+        isAbbreviationSoundRegenerating = true;
+        abbreviationSoundTotal = 0;
+        abbreviationSoundProcessed = 0;
+        abbreviationSoundRegeneratedCount = 0;
+        abbreviationSoundLog = "准备扫描含 sb/sth 的单词与例句...";
+
+        new Thread(() -> {
+            try {
+                executeAbbreviationSoundRegeneration();
+            } finally {
+                isAbbreviationSoundRegenerating = false;
+            }
+        }).start();
+
+        fixed.add("缩写发音重生成任务已成功在后台启动。");
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    /**
+     * 获取缩写发音重生成任务的状态及进度
+     */
+    public SystemHealthFixResult getAbbreviationSoundRegenerateStatus() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isAbbreviationSoundRegenerating) {
+            fixed.add(describeAbbreviationSoundProgress());
+            return new SystemHealthFixResult(1, errors, fixed);
+        }
+        if (abbreviationSoundTotal > 0) {
+            fixed.add(String.format("缩写发音重生成完成。共处理 %d 项，成功重生成 %d 项。",
+                    abbreviationSoundProcessed, abbreviationSoundRegeneratedCount));
+        } else {
+            fixed.add("任务未运行。");
+        }
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    private String describeAbbreviationSoundProgress() {
+        return String.format("%s (%d/%d)", abbreviationSoundLog,
+                abbreviationSoundProcessed, abbreviationSoundTotal);
+    }
+
+    private void executeAbbreviationSoundRegeneration() {
+        try {
+            abbreviationSoundLog = "正在查询含 sb/sth 的单词与例句...";
+            List<Map<String, Object>> words = namedParameterJdbcTemplate.queryForList(
+                    "SELECT id FROM word WHERE " + abbreviationSqlWhere("spell"), new MapSqlParameterSource());
+            List<String> sentenceIds = namedParameterJdbcTemplate.queryForList(
+                    "SELECT id FROM sentence WHERE " + abbreviationSqlWhere("english") + " AND english_digest IS NOT NULL",
+                    new MapSqlParameterSource(), String.class);
+            abbreviationSoundTotal = words.size() + sentenceIds.size();
+            abbreviationSoundProcessed = 0;
+            abbreviationSoundRegeneratedCount = 0;
+            abbreviationSoundLog = String.format("查询完成：%d 个单词、%d 条例句待重生成。", words.size(), sentenceIds.size());
+            logger.info("开始重生成缩写发音。单词数={}, 例句数={}", words.size(), sentenceIds.size());
+
+            int consecutiveFailures = 0;
+            for (Map<String, Object> word : words) {
+                if (Thread.currentThread().isInterrupted()) {
+                    abbreviationSoundLog = "任务已被系统强行中断。";
+                    break;
+                }
+                String wordId = (String) word.get("id");
+                try {
+                    if (wordBo.regeneratePronunciation(wordId)) {
+                        abbreviationSoundRegeneratedCount++;
+                        consecutiveFailures = 0;
+                    } else if (++consecutiveFailures >= 20) {
+                        abbreviationSoundLog = "连续 20 个单词发音全部生成失败，已中止（请检查发音服务是否可用）。";
+                        logger.error("缩写发音重生成连续失败，提前中止");
+                        break;
+                    }
+                } catch (Exception e) {
+                    logger.error("重生成单词发音失败: wordId=" + wordId, e);
+                }
+                abbreviationSoundProcessed++;
+                abbreviationSoundLog = "正在重生成单词发音...";
+            }
+
+            abbreviationSoundLog = "正在标记待重合成的例句...";
+            for (String sentenceId : sentenceIds) {
+                if (Thread.currentThread().isInterrupted()) {
+                    abbreviationSoundLog = "任务已被系统强行中断。";
+                    break;
+                }
+                try {
+                    Sentence sentence = sentenceBo.findById(sentenceId);
+                    if (sentence != null) {
+                        // 交给既有的 TtsTask 重新合成：它会用展开后的文本，并覆盖同一个 digest 音频文件
+                        sentence.setNeedTts(true);
+                        sentence.setTheType("waitting_tts");
+                        sentenceBo.updateEntity(sentence);
+                        sysDbSyncBo.logOperation(sentence, "UPDATE", "sentence", sentenceId,
+                                JsonUtils.toJson(sentenceBo.toDto(sentence)));
+                        abbreviationSoundRegeneratedCount++;
+                    }
+                } catch (Exception e) {
+                    logger.error("标记例句待重合成失败: sentenceId=" + sentenceId, e);
+                }
+                abbreviationSoundProcessed++;
+            }
+
+            abbreviationSoundLog = String.format("完成。共处理 %d 项，成功 %d 项。例句音频将由 TTS 定时任务陆续重新合成。",
+                    abbreviationSoundProcessed, abbreviationSoundRegeneratedCount);
+            logger.info("缩写发音重生成完成: 处理={}, 成功={}", abbreviationSoundProcessed, abbreviationSoundRegeneratedCount);
+        } catch (Exception e) {
+            logger.error("执行缩写发音重生成任务失败", e);
+            abbreviationSoundLog = "执行任务失败: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 英语占位缩写（sb / sth 及其所有格）的 SQL 匹配条件
+     */
+    private static String abbreviationSqlWhere(String column) {
+        return "(" + column + " ~* '\\y(sb|sth)\\y')";
     }
 
     private Map<String, Object> parseChartData(String html, String patternStr) {

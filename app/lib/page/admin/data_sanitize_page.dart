@@ -21,15 +21,18 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   bool _isImageSanitizing = false;
   bool _isPopularitySanitizing = false;
   bool _isMeaningSanitizing = false;
+  bool _isAbbreviationSoundRegenerating = false;
   SystemHealthFixResult? _fixResult;
   SystemHealthCheckResult? _checkResult;
   SystemHealthFixResult? _popularityFixResult;
   SystemHealthFixResult? _imageFixResult;
   SystemHealthFixResult? _meaningFixResult;
+  SystemHealthFixResult? _abbreviationSoundResult;
   Timer? _statusTimer;
   Timer? _imageStatusTimer;
   Timer? _meaningStatusTimer;
   Timer? _dataStatusTimer;
+  Timer? _abbreviationSoundStatusTimer;
 
   @override
   void initState() {
@@ -38,6 +41,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     _checkInitialWordImageSanitizeStatus();
     _checkInitialMeaningSanitizeStatus();
     _checkInitialDataSanitizeStatus();
+    _checkInitialAbbreviationSoundStatus();
   }
 
   @override
@@ -46,6 +50,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     _imageStatusTimer?.cancel();
     _meaningStatusTimer?.cancel();
     _dataStatusTimer?.cancel();
+    _abbreviationSoundStatusTimer?.cancel();
     super.dispose();
   }
 
@@ -472,6 +477,119 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     }
   }
 
+  Future<void> _runAbbreviationSoundRegenerating() async {
+    if (_isSanitizing || _isChecking || _isMeaningSanitizing || _isPopularitySanitizing || _isImageSanitizing || _isAbbreviationSoundRegenerating) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('重生成缩写发音确认'),
+        content: const Text(
+            'sb / sth 是英语学习材料里的占位缩写，直接送语音合成会被逐字母朗读。\n'
+            '该操作将在后台重新生成含这些缩写的发音：\n'
+            '1. 读音按 sb=somebody、sth=something、斜线="or" 展开（如 sb/sth → somebody or something）。\n'
+            '2. 单词：重新生成无后缀 / 英音 / 美音三个音频文件，并刷新 updateTime（客户端据此换新音频）。\n'
+            '3. 例句：置为待合成状态，由 TTS 定时任务重新合成。\n\n'
+            '涉及数千个单词，需逐条访问语音服务，耗时较长。是否立即开始？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+            child: const Text('开始重生成', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    setState(() {
+      _isAbbreviationSoundRegenerating = true;
+      _abbreviationSoundResult = null;
+    });
+
+    try {
+      final res = await LoadingUtils.withApiLoading(operation: () async {
+        return await Api.client.regenerateAbbreviationSounds();
+      });
+
+      if (!mounted) return;
+
+      if (res.success) {
+        setState(() {
+          _abbreviationSoundResult = res.data;
+        });
+        ToastUtil.success('缩写发音重生成任务已在后台启动');
+        _startPollingAbbreviationSoundStatus();
+      } else {
+        ToastUtil.error('启动失败: ${res.msg}');
+        setState(() {
+          _isAbbreviationSoundRegenerating = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastUtil.error('发生错误: $e');
+        setState(() {
+          _isAbbreviationSoundRegenerating = false;
+        });
+      }
+    }
+  }
+
+  void _startPollingAbbreviationSoundStatus() {
+    _abbreviationSoundStatusTimer?.cancel();
+    _abbreviationSoundStatusTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      try {
+        final res = await Api.client.getAbbreviationSoundRegenerateStatus();
+        if (!mounted) return;
+        if (res.success && res.data != null) {
+          final isRunning = res.data!.fixedCount == 1;
+          setState(() {
+            _abbreviationSoundResult = res.data;
+            _isAbbreviationSoundRegenerating = isRunning;
+          });
+          if (!isRunning) {
+            timer.cancel();
+            ToastUtil.success('缩写发音重生成完成');
+          }
+        }
+      } catch (e) {
+        // Ignore background errors
+      }
+    });
+  }
+
+  Future<void> _checkInitialAbbreviationSoundStatus() async {
+    try {
+      final res = await Api.client.getAbbreviationSoundRegenerateStatus();
+      if (!mounted) return;
+      if (res.success && res.data != null) {
+        final isRunning = res.data!.fixedCount == 1;
+        if (isRunning) {
+          setState(() {
+            _isAbbreviationSoundRegenerating = true;
+            _abbreviationSoundResult = res.data;
+          });
+          _startPollingAbbreviationSoundStatus();
+        }
+      }
+    } catch (e) {
+      // Ignore initial check error
+    }
+  }
+
   Future<void> _runWordImageSanitizing() async {
     if (_isSanitizing || _isChecking || _isPopularitySanitizing || _isImageSanitizing) return;
 
@@ -560,6 +678,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             if (_imageFixResult != null) _buildWordImageFixResultCard(isDarkMode),
             if (_popularityFixResult != null) _buildPopularityFixResultCard(isDarkMode),
             if (_meaningFixResult != null) _buildMeaningFixResultCard(isDarkMode),
+            if (_abbreviationSoundResult != null) _buildAbbreviationSoundResultCard(isDarkMode),
             const SizedBox(height: 30),
             _buildActionButtons(),
           ],
@@ -569,7 +688,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Widget _buildActionButtons() {
-    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isPopularitySanitizing || _isMeaningSanitizing;
+    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isPopularitySanitizing || _isMeaningSanitizing || _isAbbreviationSoundRegenerating;
     return Center(
       child: Column(
         children: [
@@ -647,6 +766,21 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: 220,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: isAnyRunning ? null : _runAbbreviationSoundRegenerating,
+              icon: Icon(_isAbbreviationSoundRegenerating ? Icons.hourglass_empty : Icons.record_voice_over),
+              label: Text(_isAbbreviationSoundRegenerating ? '正在重生成发音...' : '重生成缩写发音'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.deepPurple[700],
+                side: BorderSide(color: Colors.deepPurple[700]!),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -680,6 +814,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             _buildBulletPoint('同步海词(dict.cn)释义频率占比，更新释义常用度。'),
             _buildBulletPoint('自动对齐并补全缺失的高频释义（频率 >= 10%）并配套生成例句与发音。'),
             _buildBulletPoint('清洗释义项中非法的分号分隔：近义合并为一条，异义拆成多条独立释义项。'),
+            _buildBulletPoint('重生成 sb/sth 这类占位缩写的发音：按 somebody/something 展开后再合成，避免逐字母朗读。'),
             _buildBulletPoint('修复后的数据将生成同步日志，确保客户端数据一致。'),
           ],
         ),
@@ -925,6 +1060,53 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               const SizedBox(height: 15),
               const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
               ..._meaningFixResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAbbreviationSoundResultCard(bool isDarkMode) {
+    if (_abbreviationSoundResult == null) return const SizedBox.shrink();
+
+    return Card(
+      elevation: 2,
+      color: isDarkMode ? Colors.deepPurple.withValues(alpha: 0.1) : Colors.deepPurple[50],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.deepPurple.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _isAbbreviationSoundRegenerating ? Icons.hourglass_top : Icons.done_all,
+                  color: Colors.deepPurple[700],
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _isAbbreviationSoundRegenerating ? '缩写发音重生成执行中' : '缩写发音重生成完成报告',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple[800]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            ..._abbreviationSoundResult!.fixed.map((msg) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                _isAbbreviationSoundRegenerating ? msg : '✓ $msg',
+                style: const TextStyle(fontSize: 14),
+              ),
+            )),
+            if (_abbreviationSoundResult!.errors.isNotEmpty) ...[
+              const SizedBox(height: 15),
+              const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ..._abbreviationSoundResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
             ],
           ],
         ),

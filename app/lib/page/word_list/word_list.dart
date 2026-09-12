@@ -1239,7 +1239,12 @@ class WordListPageState extends State<WordListPage>
 
       List<String> phrases = [];
       if (studyMode == WordListStudyMode.speakEnglish) {
-        if (targetWord != null) phrases.add(targetWord.spell);
+        if (targetWord != null) {
+          phrases.add(targetWord.spell);
+          // sb/sth 这类占位缩写：把展开后的说法也加进热词，让引擎对两种读法都能识别
+          final expanded = AsrUtil.expandAbbreviations(targetWord.spell);
+          if (expanded != targetWord.spell) phrases.add(expanded);
+        }
       } else if (studyMode == WordListStudyMode.speakChinese) {
         if (targetWord != null) phrases.addAll(AsrUtil.extractContextualPhrases(targetWord.meaningItems ?? []));
       } else if (studyMode == WordListStudyMode.translateSentence) {
