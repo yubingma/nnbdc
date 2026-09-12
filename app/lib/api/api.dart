@@ -721,6 +721,12 @@ abstract class RestClient {
   @GET("/admin/getWordPopularitySanitizeStatus.do")
   Future<Result<SystemHealthFixResult>> getWordPopularitySanitizeStatus();
 
+  @POST("/admin/sanitizeMeaningSeparators.do")
+  Future<Result<SystemHealthFixResult>> sanitizeMeaningSeparators();
+
+  @GET("/admin/getMeaningSeparatorSanitizeStatus.do")
+  Future<Result<SystemHealthFixResult>> getMeaningSeparatorSanitizeStatus();
+
   @POST("/admin/checkDataSanitization.do")
   Future<Result<SystemHealthCheckResult>> checkDataSanitization();
 

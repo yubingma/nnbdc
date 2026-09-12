@@ -1839,6 +1839,41 @@ class BdcNotifier extends _$BdcNotifier {
     checkAsrResult(asrInput: judgeInput, isVoice: true, isFinal: isFinal);
   }
 
+  /// 拼写/默写判定正确时的平滑过渡处理：
+  /// 1. 设置成功视觉态（输入框文字、下划线变绿，右侧呈现绿勾，播放正确提示音）；
+  /// 2. 短暂驻留（约 280ms），给予用户明确的心理确认感；
+  /// 3. 关闭手写板与成功态，交由 UI 层的 AnimatedSwitcher 原地柔和淡退至主学习页面。
+  /// 拼写/默写成功后的驻留时长（测试环境下为 0，防止 AutoDispose 导致测试失败并加速测试套件执行）
+  @visibleForTesting
+  static Duration spellingSuccessTransitionDelay =
+      PlatformUtils.isUnitTest ? Duration.zero : const Duration(milliseconds: 280);
+
+  /// 拼写/默写判定正确时的平滑过渡处理：
+  /// 1. 设置成功视觉态（输入框文字、下划线变绿，右侧呈现绿勾，播放正确提示音）；
+  /// 2. 短暂驻留（约 280ms），给予用户明确的心理确认感；
+  /// 3. 关闭手写板与成功态，交由 UI 层的 AnimatedSwitcher 原地柔和淡退至主学习页面。
+  Future<void> _handleSpellingSuccessTransition({
+    required Future<void> Function() onComplete,
+  }) async {
+    // 立即给予正向视觉与听觉反馈
+    state = state.copyWith(isSpellingSuccess: true);
+    _playCorrectSound();
+
+    // 短暂驻留供大脑视觉确认
+    if (spellingSuccessTransitionDelay > Duration.zero) {
+      await Future.delayed(spellingSuccessTransitionDelay);
+    }
+    if (_isDisposed) return;
+
+    // 退出手写板全屏界面，平滑交接给主学习页面
+    state = state.copyWith(
+      showHandwritingBoard: false,
+      isSpellingSuccess: false,
+      isKeyboardVisible: false,
+    );
+    await onComplete();
+  }
+
   Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false}) async {
     if (_isDisposed) return;
     if (!state.showHandwritingBoard && (state.hasFinishedAnswering || _isAnswerCorrectHandling)) return;
@@ -1858,23 +1893,25 @@ class BdcNotifier extends _$BdcNotifier {
         // 1. 中译英模式 (Ch2En) 且未完成答题：拼写英文即代表回答该题正确！
         if (!state.hasFinishedAnswering && state.studyStep == StudyStep.ch2En.json) {
           meaningController.text = state.word!.spell;
-          state = state.copyWith(showHandwritingBoard: false, isKeyboardVisible: false);
-          final hintRevealedAll =
-              (state.wordWrapper?.hintLetterCount ?? 0) >= (state.word?.spell.length ?? 0);
-          if (!hintRevealedAll || isVoice) {
-            String method = isVoice ? "语音识别" : (asrInput != null ? "手写输入" : "键盘输入");
-            final ratingResult = _calculateRating(method);
-            _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-          }
+          await _handleSpellingSuccessTransition(onComplete: () async {
+            final hintRevealedAll =
+                (state.wordWrapper?.hintLetterCount ?? 0) >= (state.word?.spell.length ?? 0);
+            if (!hintRevealedAll || isVoice) {
+              String method = isVoice ? "语音识别" : (asrInput != null ? "手写输入" : "键盘输入");
+              final ratingResult = _calculateRating(method);
+              _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+            }
+          });
           return;
         }
 
         // 2. 已完成答题状态（无论何种题型）：用户在已掌握或已做完当前词后进行的手写/拼写巩固
         if (state.hasFinishedAnswering) {
           meaningController.text = state.word!.spell;
-          state = state.copyWith(showHandwritingBoard: false, isKeyboardVisible: false);
-          _handleTabChangeForAsr();
-          StudyAudioSessionController.instance.playWordSound(state.word!);
+          await _handleSpellingSuccessTransition(onComplete: () async {
+            _handleTabChangeForAsr();
+            StudyAudioSessionController.instance.playWordSound(state.word!);
+          });
           return;
         }
 
@@ -1884,11 +1921,10 @@ class BdcNotifier extends _$BdcNotifier {
         // 不能把英文留在 meaningController，必须恢复英译汉做题状态并重新唤醒麦克风！
         meaningController.clear();
         _handlingChinese = "";
-        state = state.copyWith(showHandwritingBoard: false, isKeyboardVisible: false);
-        
-        // 播放发音，播放完毕后重新唤醒硬件麦克风状态，保证用户回到英译汉页面后能继续正常语音做题
-        await StudyAudioSessionController.instance.playWordSound(state.word!);
-        _handleTabChangeForAsr();
+        await _handleSpellingSuccessTransition(onComplete: () async {
+          await StudyAudioSessionController.instance.playWordSound(state.word!);
+          _handleTabChangeForAsr();
+        });
         Global.logger.d('[PERF] checkAsrResult handwriting board spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
         return;
       }
@@ -2087,10 +2123,10 @@ class BdcNotifier extends _$BdcNotifier {
           );
         }
         
-        // 退出手写板全屏界面，平滑返回背单词主页面
-        state = state.copyWith(showHandwritingBoard: false);
-        _handleTabChangeForAsr();
-        StudyAudioSessionController.instance.playWordSound(state.word!);
+        await _handleSpellingSuccessTransition(onComplete: () async {
+          _handleTabChangeForAsr();
+          StudyAudioSessionController.instance.playWordSound(state.word!);
+        });
         Global.logger.d('[PERF] checkAsrResult spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
         return;
       }
@@ -2146,12 +2182,15 @@ class BdcNotifier extends _$BdcNotifier {
           final ratingResult = _calculateRating(method);
           // 中文默写匹配成功后，退出中文字写板并重置中文默写标记
           if (state.isChineseDictation) {
-            state = state.copyWith(
-              showHandwritingBoard: false,
-              isChineseDictation: false,
-              dictationMatchedCount: 0,
-              dictationRequiredCount: 0,
-            );
+            await _handleSpellingSuccessTransition(onComplete: () async {
+              state = state.copyWith(
+                isChineseDictation: false,
+                dictationMatchedCount: 0,
+                dictationRequiredCount: 0,
+              );
+              _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+            });
+            return;
           }
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         } else {
@@ -2166,15 +2205,17 @@ class BdcNotifier extends _$BdcNotifier {
         final bool correct = state.word != null &&
             chineseInputMatchesAnyMeaning(state.word!, inputs, strict: true);
         if (correct) {
-          state = state.copyWith(
-            showHandwritingBoard: false,
-            isChineseDictation: false,
-            dictationMatchedCount: 0,
-            dictationRequiredCount: 0,
-          );
-          _handleTabChangeForAsr();
-          // 主动重写提交：强制播放反馈音，不受 800ms 防回声去抖限制
-          _playCorrectSound(force: true);
+          await _handleSpellingSuccessTransition(onComplete: () async {
+            state = state.copyWith(
+              isChineseDictation: false,
+              dictationMatchedCount: 0,
+              dictationRequiredCount: 0,
+            );
+            _handleTabChangeForAsr();
+            // 主动重写提交：强制播放反馈音，不受 800ms 防回声去抖限制
+            _playCorrectSound(force: true);
+          });
+          return;
         } else {
           ToastUtil.error('答案不正确，请重写');
         }
@@ -2219,8 +2260,18 @@ class BdcNotifier extends _$BdcNotifier {
         if (state.hasFinishedAnswering) {
           // 若处于已答完状态（复习或查看详情时的手写/拼写练习），退出手写板并返回背单词页面
           if (state.showHandwritingBoard) {
-            state = state.copyWith(showHandwritingBoard: false);
-            _handleTabChangeForAsr();
+            await _handleSpellingSuccessTransition(onComplete: () async {
+              _handleTabChangeForAsr();
+              await StudyAudioSessionController.instance.syncHardwareIntent(
+                isInSpeakTab: false,
+                isAnsweringActive: false,
+                language: AsrLanguage.english,
+                phrases: [],
+                caller: this,
+              );
+              StudyAudioSessionController.instance.playWordSound(state.word!);
+            });
+            return;
           }
           // 需先等待麦克风关停（含切换至 playback），再播放发音防止回声
           await StudyAudioSessionController.instance.syncHardwareIntent(

@@ -378,13 +378,10 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       );
     }
 
-    if (state.showHandwritingBoard || (_meaningFocusNode.hasFocus && !state.hasFinishedAnswering)) {
-      final res = _buildFullscreenImmersiveInputMode();
-      debugPrint('⚡ [PERF] BdcPage.renderPage (immersive) cost: ${stopwatch.elapsedMilliseconds}ms');
-      return res;
-    }
+    final isImmersive = state.showHandwritingBoard ||
+        (_meaningFocusNode.hasFocus && !state.hasFinishedAnswering);
 
-    final res = Stack(
+    final mainContent = Stack(
       children: [
         Column(
           children: [
@@ -449,6 +446,45 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
           ),
       ],
     );
+
+    final res = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 240),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (currentChild, previousChildren) {
+        return Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        );
+      },
+      transitionBuilder: (child, animation) {
+        final isCurrent = child.key ==
+            ValueKey(isImmersive ? 'immersive_mode' : 'main_mode');
+        return IgnorePointer(
+          ignoring: !isCurrent,
+          child: FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.98, end: 1.0).animate(animation),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: isImmersive
+          ? KeyedSubtree(
+              key: const ValueKey('immersive_mode'),
+              child: _buildFullscreenImmersiveInputMode(),
+            )
+          : KeyedSubtree(
+              key: const ValueKey('main_mode'),
+              child: mainContent,
+            ),
+    );
+
     debugPrint('⚡ [PERF] BdcPage.renderPage cost: ${stopwatch.elapsedMilliseconds}ms');
     return res;
   }

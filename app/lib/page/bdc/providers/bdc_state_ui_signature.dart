@@ -16,6 +16,7 @@ class BdcStateUiSignature {
   final int historyIndex;
   final int historyLength;
   final bool showHandwritingBoard;
+  final bool isSpellingSuccess;
   final int dictationMatchedCount;
   final int dictationRequiredCount;
   final int hintLetterCount;
@@ -46,6 +47,7 @@ class BdcStateUiSignature {
         historyIndex = s.historyIndex,
         historyLength = s.history.length,
         showHandwritingBoard = s.showHandwritingBoard,
+        isSpellingSuccess = s.isSpellingSuccess,
         dictationMatchedCount = s.dictationMatchedCount,
         dictationRequiredCount = s.dictationRequiredCount,
         hintLetterCount = s.wordWrapper?.hintLetterCount ?? 0,
@@ -79,6 +81,7 @@ class BdcStateUiSignature {
         historyIndex == other.historyIndex &&
         historyLength == other.historyLength &&
         showHandwritingBoard == other.showHandwritingBoard &&
+        isSpellingSuccess == other.isSpellingSuccess &&
         dictationMatchedCount == other.dictationMatchedCount &&
         dictationRequiredCount == other.dictationRequiredCount &&
         hintLetterCount == other.hintLetterCount &&
@@ -111,6 +114,7 @@ class BdcStateUiSignature {
         historyIndex,
         historyLength,
         showHandwritingBoard,
+        isSpellingSuccess,
         dictationMatchedCount,
         dictationRequiredCount,
         hintLetterCount,

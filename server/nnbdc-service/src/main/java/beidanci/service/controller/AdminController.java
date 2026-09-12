@@ -277,6 +277,16 @@ public class AdminController {
         return Result.success(dataSanitizeBo.getWordPopularitySanitizeStatus());
     }
 
+    @PostMapping("/admin/sanitizeMeaningSeparators.do")
+    public Result<SystemHealthFixResult> sanitizeMeaningSeparators() {
+        return Result.success(dataSanitizeBo.sanitizeMeaningSeparators());
+    }
+
+    @GetMapping("/admin/getMeaningSeparatorSanitizeStatus.do")
+    public Result<SystemHealthFixResult> getMeaningSeparatorSanitizeStatus() {
+        return Result.success(dataSanitizeBo.getMeaningSeparatorSanitizeStatus());
+    }
+
     @PostMapping("/admin/checkDataSanitization.do")
     public Result<SystemHealthCheckResult> checkDataSanitization() {
         return Result.success(dataSanitizeBo.checkDataSanitization());

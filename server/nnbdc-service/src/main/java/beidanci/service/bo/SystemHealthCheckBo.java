@@ -1060,19 +1060,26 @@ public class SystemHealthCheckBo {
             int fixedMeaningCount = 0;
             if (candidates != null) {
                 for (MeaningItemDto mDto : candidates) {
-                    try {
-                        String newId = Util.uuid();
-                        mDto.setId(newId);
-                        mDto.setDictId(commonDictId);
-                        mDto.setOwnerId(Constants.SYS_USER_SYS_ID);
-                        mDto.setCreateTime(new java.util.Date());
-                        mDto.setUpdateTime(new java.util.Date());
-                        
-                        meaningItemBo.createMeaningItem(mDto);
-                        sysDbSyncBo.logOperation("INSERT", "meaning_item", newId, JsonUtils.toJson(mDto));
-                        fixedMeaningCount++;
+                    boolean copied = false;
+                    // 拷贝来源若用分号挤进了多个义项，同样按约定拆成多条独立释义项
+                    for (String part : Util.splitMeanings(mDto.getMeaning())) {
+                        try {
+                            mDto.setId(Util.uuid());
+                            mDto.setMeaning(part);
+                            mDto.setDictId(commonDictId);
+                            mDto.setOwnerId(Constants.SYS_USER_SYS_ID);
+                            mDto.setCreateTime(new java.util.Date());
+                            mDto.setUpdateTime(new java.util.Date());
+
+                            meaningItemBo.createMeaningItem(mDto);
+                            sysDbSyncBo.logOperation("INSERT", "meaning_item", mDto.getId(), JsonUtils.toJson(mDto));
+                            fixedMeaningCount++;
+                            copied = true;
+                        } catch (Exception ignore) {}
+                    }
+                    if (copied) {
                         fixedByCopy.add(mDto.getWordId());
-                    } catch (Exception ignore) {}
+                    }
                 }
             }
             if (fixedMeaningCount > 0) {
@@ -1121,22 +1128,24 @@ public class SystemHealthCheckBo {
                             String ciXing = map.containsKey("ciXing") ? (String) map.get("ciXing") : "";
                             String meaning = (String) map.get("meaning");
                             logger.info(String.format("【健康检查】AI 为单词 [%s] 生成了释义: %s", spell, meaning));
-                            
-                            MeaningItemDto newMeaning = new MeaningItemDto();
-                            String newId = Util.uuid();
-                            newMeaning.setId(newId);
-                            newMeaning.setWordId(wordId);
-                            newMeaning.setDictId(commonDictId);
-                            newMeaning.setCiXing(ciXing);
-                            newMeaning.setMeaning(meaning);
-                            newMeaning.setOwnerId(Constants.SYS_USER_SYS_ID);
-                            newMeaning.setPopularity(1);
-                            newMeaning.setCreateTime(new java.util.Date());
-                            newMeaning.setUpdateTime(new java.util.Date());
-                            
-                            meaningItemBo.createMeaningItem(newMeaning);
-                            sysDbSyncBo.logOperation("INSERT", "meaning_item", newId, JsonUtils.toJson(newMeaning));
-                            aiFixedCount++;
+
+                            // AI 偶发违约：一条释义里用分号挤进了多个义项，按约定拆成多条独立释义项
+                            for (String part : Util.splitMeanings(meaning)) {
+                                MeaningItemDto newMeaning = new MeaningItemDto();
+                                newMeaning.setId(Util.uuid());
+                                newMeaning.setWordId(wordId);
+                                newMeaning.setDictId(commonDictId);
+                                newMeaning.setCiXing(ciXing);
+                                newMeaning.setMeaning(part);
+                                newMeaning.setOwnerId(Constants.SYS_USER_SYS_ID);
+                                newMeaning.setPopularity(1);
+                                newMeaning.setCreateTime(new java.util.Date());
+                                newMeaning.setUpdateTime(new java.util.Date());
+
+                                meaningItemBo.createMeaningItem(newMeaning);
+                                sysDbSyncBo.logOperation("INSERT", "meaning_item", newMeaning.getId(), JsonUtils.toJson(newMeaning));
+                                aiFixedCount++;
+                            }
                         }
                     }
                 } catch (Exception e) {

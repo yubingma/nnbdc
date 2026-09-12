@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ import beidanci.service.po.Word;
 import beidanci.service.po.WordImage;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
+import beidanci.service.util.Util;
 import beidanci.util.Constants;
 import beidanci.util.Utils;
 import okhttp3.OkHttpClient;
@@ -545,7 +547,7 @@ public class DictImportBo {
             
             lastAiResult = getAiResult(spell, null, null, false, null, sentenceRequirement, null);
 
-            String sanitizedPhonetic = beidanci.service.util.Util.sanitizePhonetic(lastAiResult.phonetic);
+            String sanitizedPhonetic = Util.sanitizePhonetic(lastAiResult.phonetic);
             word.setBritishPronounce(sanitizedPhonetic);
             word.setAmericaPronounce(sanitizedPhonetic);
             word.setPronounce(sanitizedPhonetic);
@@ -842,6 +844,29 @@ public class DictImportBo {
             return;
         }
 
+        // AI 偶发违约：一条释义里用分号挤进了多个义项。按约定拆成多条独立释义项，
+        // 首条保留 AI 给出的例句与同义词，其余条目的例句交由系统健康检查补全。
+        List<AiMeaning> expandedMeanings = new ArrayList<>();
+        for (AiMeaning am : aiResult.meanings) {
+            if (am.meaning == null) continue;
+            List<String> parts = Util.splitMeanings(am.meaning);
+            if (parts.isEmpty()) continue;
+            if (parts.size() > 1) {
+                logger.warn("AI 返回的释义使用了分号，已拆分为 {} 条义项 - word: {}, meaning: {}",
+                        parts.size(), word.getSpell(), am.meaning);
+            }
+            for (int p = 0; p < parts.size(); p++) {
+                AiMeaning part = new AiMeaning();
+                part.pos = am.pos;
+                part.meaning = parts.get(p);
+                part.sentenceEn = p == 0 ? am.sentenceEn : null;
+                part.sentenceCn = p == 0 ? am.sentenceCn : null;
+                part.synonyms = p == 0 ? am.synonyms : null;
+                expandedMeanings.add(part);
+            }
+        }
+        aiResult.meanings = expandedMeanings;
+
         for (int i = 0; i < aiResult.meanings.size(); i++) {
             AiMeaning am = aiResult.meanings.get(i);
             if (am.meaning == null || am.meaning.trim().isEmpty()) continue;
@@ -854,9 +879,9 @@ public class DictImportBo {
                 logger.warn("单词词性超长已被截断: [{}] -> [{}] - word: {}", pos, pos.substring(0, 10), word.getSpell());
                 pos = pos.substring(0, 10);
             }
-            meaning.setCiXing(beidanci.service.util.Util.sanitizeAiString(pos));
+            meaning.setCiXing(Util.sanitizeAiString(pos));
             
-            meaning.setMeaning(beidanci.service.util.Util.sanitizeAiString(am.meaning.trim().replaceAll("[;；]", "，")));
+            meaning.setMeaning(Util.sanitizeAiString(am.meaning));
             meaning.setPopularity(aiResult.popularity != null && aiResult.popularity > i ? aiResult.popularity - i : 1);
             
             User owner = new User();
@@ -886,11 +911,11 @@ public class DictImportBo {
             // 创建 Sentence
             if (am.sentenceEn != null && !am.sentenceEn.trim().isEmpty()) {
                 Sentence sentence = new Sentence();
-                sentence.setEnglish(beidanci.service.util.Util.sanitizeAiString(am.sentenceEn));
-                sentence.setChinese(beidanci.service.util.Util.sanitizeAiString(am.sentenceCn));
+                sentence.setEnglish(Util.sanitizeAiString(am.sentenceEn));
+                sentence.setChinese(Util.sanitizeAiString(am.sentenceCn));
                 
-                sentence.setWordMeaning(beidanci.service.util.Util.sanitizeAiString(am.meaning.trim().replaceAll("[;；]", "，")));
-                sentence.setPartOfSpeech(beidanci.service.util.Util.sanitizeAiString(pos));
+                sentence.setWordMeaning(Util.sanitizeAiString(am.meaning));
+                sentence.setPartOfSpeech(Util.sanitizeAiString(pos));
                 
                 sentence.setMeaningItem(meaning);
                 sentence.setNeedTts(true); // 标记需要生成音频
@@ -899,7 +924,7 @@ public class DictImportBo {
                 if (preferredVoices != null && !preferredVoices.trim().isEmpty()) {
                     sentence.setTtsVoice(preferredVoices);
                 }
-                sentence.setEnglishDigest(beidanci.service.util.Util.makeSentenceDigest(am.sentenceEn));
+                sentence.setEnglishDigest(Util.makeSentenceDigest(am.sentenceEn));
                 sentence.setAuthor(owner);
                 sentence.setOwner(owner);
                 sentenceBo.createEntity(sentence);

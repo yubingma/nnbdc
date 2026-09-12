@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,6 +60,9 @@ public class DataSanitizeBo {
     private SysDbSyncBo sysDbSyncBo;
 
     @Autowired
+    private UserDbSyncBo userDbSyncBo;
+
+    @Autowired
     private AiBo aiBo;
 
     @Autowired
@@ -75,6 +79,12 @@ public class DataSanitizeBo {
     private static volatile int wordImageSanitizeFixedCount = 0;
     private static volatile String wordImageSanitizeLog = "";
 
+    private static volatile boolean isMeaningSanitizing = false;
+    private static volatile int meaningSanitizeTotal = 0;
+    private static volatile int meaningSanitizeProcessed = 0;
+    private static volatile int meaningSanitizeFixedCount = 0;
+    private static volatile String meaningSanitizeLog = "";
+
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
@@ -88,6 +98,10 @@ public class DataSanitizeBo {
     
     private static final String DIRTY_MEANING_SQL_WHERE = 
         "(meaning ~ '[,，]\\s*$') OR (ci_xing ~ '[,，]\\s*$')";
+
+    // 释义项内部禁止出现分号：一条释义项只能承载一个义项
+    private static final String DIRTY_MEANING_SEPARATOR_SQL_WHERE =
+        "(meaning ~ '" + Util.MEANING_SEPARATOR_REGEX + "')";
     
     private static final String DIRTY_SENTENCE_SQL_WHERE = 
         "(english ~ '[,，]\\s*$') OR (chinese ~ '[,，]\\s*$') " +
@@ -253,6 +267,12 @@ public class DataSanitizeBo {
             int meaningCount = countDirtyRecords("meaning_item", DIRTY_MEANING_SQL_WHERE);
             if (meaningCount > 0) {
                 issues.add(new SystemHealthIssue("释义项不规范", String.format("发现 %d 个释义项内容或词性以逗号结尾", meaningCount), "data_sanitization"));
+            }
+
+            // 释义项内用分号挤入了多个义项（应拆分为多条独立释义项）
+            int meaningSeparatorCount = countDirtyRecords("meaning_item", DIRTY_MEANING_SEPARATOR_SQL_WHERE);
+            if (meaningSeparatorCount > 0) {
+                issues.add(new SystemHealthIssue("释义项含分号", String.format("发现 %d 个释义项把多个义项用分号挤在了一条记录里", meaningSeparatorCount), "data_sanitization"));
             }
 
             // 3. 检查例句
@@ -646,38 +666,46 @@ public class DataSanitizeBo {
                                 
                                 // 只有百分比大于等于 10% 且词性与释义不为空才进行补全
                                 if (percent >= 10 && pos != null && meaning != null && word != null) {
-                                    // 插入 MeaningItem
-                                    MeaningItem mi = new MeaningItem();
-                                    mi.setWord(word);
-                                    mi.setCiXing(pos);
-                                    mi.setMeaning(meaning);
-                                    mi.setPopularityPercent(percent);
-                                    mi.setOwner(systemUser);
-                                    mi.setDict(commonDict);
-                                    meaningItemBo.createEntity(mi);
-                                    
-                                    // 记录同步日志
-                                    sysDbSyncBo.logOperation(meaningItemBo.toDto(mi), "INSERT", "meaning_item", mi.getId(), JsonUtils.toJson(meaningItemBo.toDto(mi)));
+                                    // AI 偶发违约：一条释义里用分号挤进了多个义项，按约定拆成多条独立释义项
+                                    List<String> meaningParts = Util.splitMeanings(meaning);
+                                    if (meaningParts.size() > 1) {
+                                        logger.warn("AI 返回的释义使用了分号，已拆分为 {} 条义项 - word: {}, meaning: {}",
+                                                meaningParts.size(), spell, meaning);
+                                    }
+                                    for (int p = 0; p < meaningParts.size(); p++) {
+                                        // 插入 MeaningItem
+                                        MeaningItem mi = new MeaningItem();
+                                        mi.setWord(word);
+                                        mi.setCiXing(pos);
+                                        mi.setMeaning(meaningParts.get(p));
+                                        mi.setPopularityPercent(percent);
+                                        mi.setOwner(systemUser);
+                                        mi.setDict(commonDict);
+                                        meaningItemBo.createEntity(mi);
 
-                                    // 插入 Sentence 例句
-                                    String sentenceEn = (String) missingMap.get("sentenceEn");
-                                    String sentenceCn = (String) missingMap.get("sentenceCn");
-                                    if (sentenceEn != null && !sentenceEn.trim().isEmpty()) {
-                                        Sentence sentence = new Sentence();
-                                        sentence.setEnglish(sentenceEn);
-                                        sentence.setChinese(sentenceCn);
-                                        sentence.setWordMeaning(meaning);
-                                        sentence.setPartOfSpeech(pos);
-                                        sentence.setMeaningItem(mi);
-                                        sentence.setNeedTts(true); // 触发 TTS 定时任务生成语音
-                                        sentence.setTheType("waitting_tts");
-                                        sentence.setOwner(systemUser);
-                                        sentence.setAuthor(systemUser);
-                                        sentence.setEnglishDigest(Util.makeSentenceDigest(sentenceEn));
-                                        
-                                        sentenceBo.createEntity(sentence);
-                                        // 记录例句同步日志
-                                        sysDbSyncBo.logOperation(sentence, "INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
+                                        // 记录同步日志
+                                        sysDbSyncBo.logOperation(meaningItemBo.toDto(mi), "INSERT", "meaning_item", mi.getId(), JsonUtils.toJson(meaningItemBo.toDto(mi)));
+
+                                        // 插入 Sentence 例句（AI 只提供了一条例句，归属首条义项）
+                                        String sentenceEn = (String) missingMap.get("sentenceEn");
+                                        String sentenceCn = (String) missingMap.get("sentenceCn");
+                                        if (p == 0 && sentenceEn != null && !sentenceEn.trim().isEmpty()) {
+                                            Sentence sentence = new Sentence();
+                                            sentence.setEnglish(sentenceEn);
+                                            sentence.setChinese(sentenceCn);
+                                            sentence.setWordMeaning(meaningParts.get(p));
+                                            sentence.setPartOfSpeech(pos);
+                                            sentence.setMeaningItem(mi);
+                                            sentence.setNeedTts(true); // 触发 TTS 定时任务生成语音
+                                            sentence.setTheType("waitting_tts");
+                                            sentence.setOwner(systemUser);
+                                            sentence.setAuthor(systemUser);
+                                            sentence.setEnglishDigest(Util.makeSentenceDigest(sentenceEn));
+
+                                            sentenceBo.createEntity(sentence);
+                                            // 记录例句同步日志
+                                            sysDbSyncBo.logOperation(sentence, "INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
+                                        }
                                     }
                                 }
                             }
@@ -734,6 +762,248 @@ public class DataSanitizeBo {
         } catch (Exception e) {
             logger.error("执行常用度清洗任务失败", e);
             popularitySanitizeLog = "执行清洗任务失败: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 清洗释义项中非法的分号分隔（由管理员点击触发，后台异步线程执行）。
+     * <p>
+     * 对每个含分号的释义项调用大模型判定分号两侧是「同一义项的近义复述」还是「不同义项」：
+     * 近义则合并为一条（逗号连接），异义则拆成多条独立释义项。
+     */
+    public SystemHealthFixResult sanitizeMeaningSeparators() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isMeaningSanitizing) {
+            errors.add("释义项清洗任务正在后台运行中，请勿重复触发。");
+            fixed.add(String.format("当前进度: %d/%d。详情: %s",
+                    meaningSanitizeProcessed, meaningSanitizeTotal, meaningSanitizeLog));
+            return new SystemHealthFixResult(0, errors, fixed);
+        }
+
+        isMeaningSanitizing = true;
+        meaningSanitizeTotal = 0;
+        meaningSanitizeProcessed = 0;
+        meaningSanitizeFixedCount = 0;
+        meaningSanitizeLog = "准备扫描含分号的释义项...";
+
+        new Thread(() -> {
+            try {
+                executeMeaningSeparatorSanitization();
+            } finally {
+                isMeaningSanitizing = false;
+            }
+        }).start();
+
+        fixed.add("释义项清洗任务已成功在后台启动。");
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    /**
+     * 获取释义项清洗状态及进度
+     */
+    public SystemHealthFixResult getMeaningSeparatorSanitizeStatus() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isMeaningSanitizing) {
+            fixed.add(String.format("当前进度: %d/%d。已修复: %d 个释义项。详情: %s",
+                    meaningSanitizeProcessed, meaningSanitizeTotal, meaningSanitizeFixedCount, meaningSanitizeLog));
+            return new SystemHealthFixResult(1, errors, fixed);
+        }
+        if (meaningSanitizeTotal > 0) {
+            fixed.add(String.format("释义项清洗完成。共处理 %d 个词条，共修复 %d 个释义项。",
+                    meaningSanitizeTotal, meaningSanitizeFixedCount));
+        } else {
+            fixed.add("任务未运行。");
+        }
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    private void executeMeaningSeparatorSanitization() {
+        try {
+            meaningSanitizeLog = "正在查询含分号的释义项...";
+            String sql = "SELECT word_id, dict_id FROM meaning_item WHERE " + DIRTY_MEANING_SEPARATOR_SQL_WHERE
+                    + " GROUP BY word_id, dict_id";
+            List<Map<String, Object>> groups = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
+            meaningSanitizeTotal = groups.size();
+            meaningSanitizeProcessed = 0;
+            meaningSanitizeFixedCount = 0;
+            meaningSanitizeLog = String.format("查询完成，共找到 %d 个待清洗词条。", meaningSanitizeTotal);
+            logger.info("开始释义项清洗。待清洗词条数: {}", meaningSanitizeTotal);
+
+            for (Map<String, Object> group : groups) {
+                if (Thread.currentThread().isInterrupted()) {
+                    meaningSanitizeLog = "清洗任务已被系统强行中断。";
+                    break;
+                }
+
+                String wordId = (String) group.get("word_id");
+                String dictId = (String) group.get("dict_id");
+                Word word = wordBo.findById(wordId);
+                if (word == null) {
+                    logger.warn("释义项清洗跳过不存在的单词: wordId={}", wordId);
+                    meaningSanitizeProcessed++;
+                    continue;
+                }
+
+                meaningSanitizeLog = String.format("正在处理 [%s] (%d/%d)...",
+                        word.getSpell(), meaningSanitizeProcessed + 1, meaningSanitizeTotal);
+                try {
+                    meaningSanitizeFixedCount += sanitizeMeaningsOfWord(word, dictId);
+                } catch (Exception e) {
+                    logger.error("清洗单词 [{}] 的释义项失败", word.getSpell(), e);
+                }
+                meaningSanitizeProcessed++;
+            }
+
+            meaningSanitizeLog = String.format("清洗完成。共处理 %d 个词条，共修复 %d 个释义项。",
+                    meaningSanitizeProcessed, meaningSanitizeFixedCount);
+            logger.info("释义项清洗完成: 词条数={}, 修复数={}", meaningSanitizeProcessed, meaningSanitizeFixedCount);
+        } catch (Exception e) {
+            logger.error("执行释义项清洗任务失败", e);
+            meaningSanitizeLog = "执行清洗任务失败: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 清洗一个单词在指定词典下的全部含分号释义项，返回修复的释义项条数。
+     */
+    private int sanitizeMeaningsOfWord(Word word, String dictId) throws Exception {
+        List<MeaningItemDto> dirtyItems = new ArrayList<>();
+        for (MeaningItemDto dto : meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId)) {
+            if (Util.hasMeaningSeparator(dto.getMeaning())) {
+                dirtyItems.add(dto);
+            }
+        }
+        if (dirtyItems.isEmpty()) {
+            return 0;
+        }
+
+        Map<String, String> actions = decideMeaningActions(word.getSpell(), dirtyItems);
+        int fixedCount = 0;
+        for (MeaningItemDto dto : dirtyItems) {
+            List<String> parts = Util.splitMeanings(dto.getMeaning());
+            if (parts.size() < 2) {
+                continue;
+            }
+            String action = actions.get(dto.getId());
+            if (action == null) {
+                logger.warn("大模型未对该释义项给出判定，保持原样等待下次清洗: id={}, meaning={}", dto.getId(), dto.getMeaning());
+                continue;
+            }
+            if ("split".equals(action)) {
+                fixedCount += splitMeaningItem(dto, parts);
+            } else {
+                fixedCount += mergeMeaningItem(dto, parts);
+            }
+        }
+        return fixedCount;
+    }
+
+    /**
+     * 让大模型逐条判定分号两侧是近义复述（merge）还是不同义项（split）。
+     * 判定失败时返回空 Map，调用方保持数据原样，不擅自猜测。
+     */
+    private Map<String, String> decideMeaningActions(String spell, List<MeaningItemDto> items) {
+        String systemPrompt = "你是一个中文词典释义整理专家。系统约定：一条释义项只能承载一个义项，同一义项内的近义表达用逗号连接，不允许出现分号。\n"
+                + "下面给出某个单词的若干条释义项，它们的释义文本内部用分号连接了多个表达。请逐条判断分号两侧属于哪种情况：\n"
+                + "1. 同一义项的不同说法（近义复述）-> action = \"merge\"，表示应合并为一条并用逗号连接；\n"
+                + "2. 不同的义项 -> action = \"split\"，表示应拆成多条独立释义项。\n"
+                + "严格只返回 JSON，不要有任何 Markdown 标注或说明性文字，格式为：\n"
+                + "{\"decisions\": [{\"id\": \"释义项id\", \"action\": \"merge\"}]}";
+
+        StringBuilder itemsJson = new StringBuilder("[");
+        for (MeaningItemDto dto : items) {
+            if (itemsJson.length() > 1) {
+                itemsJson.append(",");
+            }
+            itemsJson.append(String.format("{\"id\": \"%s\", \"ciXing\": \"%s\", \"meaning\": \"%s\"}",
+                    dto.getId(), dto.getCiXing() == null ? "" : dto.getCiXing(), dto.getMeaning()));
+        }
+        itemsJson.append("]");
+
+        Map<String, String> actions = new HashMap<>();
+        String aiOutput = aiBo.generateText(systemPrompt, String.format("{\"word\": \"%s\", \"items\": %s}", spell, itemsJson));
+        if (aiOutput != null) {
+            aiOutput = aiOutput.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
+        }
+        Map<String, Object> aiRes = JsonUtils.parseMap(aiOutput);
+        if (aiRes == null) {
+            logger.warn("释义项清洗：大模型返回结果解析失败, spell={}", spell);
+            return actions;
+        }
+        List<?> decisions = (List<?>) aiRes.get("decisions");
+        if (decisions == null) {
+            return actions;
+        }
+        for (Object decisionObj : decisions) {
+            if (decisionObj instanceof Map) {
+                Map<?, ?> decisionMap = (Map<?, ?>) decisionObj;
+                String id = (String) decisionMap.get("id");
+                String action = (String) decisionMap.get("action");
+                if (id != null && action != null) {
+                    actions.put(id, action.trim().toLowerCase());
+                }
+            }
+        }
+        return actions;
+    }
+
+    /**
+     * 近义合并：把分号分隔的多段用逗号连回一条释义项，并生成同步日志。
+     */
+    private int mergeMeaningItem(MeaningItemDto dto, List<String> parts) throws Exception {
+        MeaningItem mi = meaningItemBo.findById(dto.getId());
+        if (mi == null) {
+            return 0;
+        }
+        mi.setMeaning(String.join("，", parts));
+        meaningItemBo.updateEntity(mi);
+        logMeaningItemChange(mi, "UPDATE");
+        return 1;
+    }
+
+    /**
+     * 异义拆分：首段保留在原释义项上，其余各段新建为独立释义项（继承词性、常用度与归属），并生成同步日志。
+     */
+    private int splitMeaningItem(MeaningItemDto dto, List<String> parts) throws Exception {
+        MeaningItem first = meaningItemBo.findById(dto.getId());
+        if (first == null) {
+            return 0;
+        }
+        first.setMeaning(parts.get(0));
+        meaningItemBo.updateEntity(first);
+        logMeaningItemChange(first, "UPDATE");
+
+        int count = 1;
+        for (int i = 1; i < parts.size(); i++) {
+            MeaningItem extra = new MeaningItem();
+            extra.setWord(first.getWord());
+            extra.setDict(first.getDict());
+            extra.setOwner(first.getOwner());
+            extra.setCiXing(first.getCiXing());
+            extra.setMeaning(parts.get(i));
+            extra.setPopularity(first.getPopularity());
+            extra.setPopularityPercent(first.getPopularityPercent());
+            meaningItemBo.createEntity(extra);
+            logMeaningItemChange(extra, "INSERT");
+            count++;
+        }
+        return count;
+    }
+
+    /**
+     * 按释义项归属写入端云同步日志（系统资源写 sys_db_log，用户私有资源写 user_db_log）。
+     */
+    private void logMeaningItemChange(MeaningItem mi, String operation) {
+        MeaningItemDto dto = meaningItemBo.toDto(mi);
+        String ownerId = mi.getOwner() != null ? mi.getOwner().getId() : null;
+        if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+            sysDbSyncBo.logOperation(dto, operation, "meaning_item", mi.getId(), JsonUtils.toJson(dto));
+        } else if (ownerId != null) {
+            userDbSyncBo.logUserOperation(mi, ownerId, "meaning_item", operation, mi.getId(), JsonUtils.toJson(dto));
         }
     }
 

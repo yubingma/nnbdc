@@ -192,43 +192,35 @@ public class WordBo extends BaseBo<Word> {
             sysDbSyncBo.logOperation("DELETE", "meaning_item", item.getId(), "{}");
         }
 
-        // 2. 更新被修改的 meaningItems
+        List<MeaningItem> newItems = new ArrayList<>();
+
+        // 2. 更新被修改的 meaningItems（一条释义若用分号挤进了多个义项，按约定拆成多条独立释义项）
         for (MeaningItem item : existingMeaningItems) {
             MeaningItemVo itemVo = getMeaningItemVoFromList(item.getId(), wordVo.getMeaningItems());
             if (itemVo != null) {
                 String ciXing = Util.sanitizeAiString(itemVo.getCiXing());
-                String meaning = Util.sanitizeAiString(itemVo.getMeaning());
+                List<String> meanings = Util.splitMeanings(itemVo.getMeaning());
+                String meaning = meanings.isEmpty() ? "" : meanings.get(0);
                 if (!Objects.equals(item.getCiXing(), ciXing) || !Objects.equals(item.getMeaning(), meaning)) {
                     item.setCiXing(ciXing);
                     item.setMeaning(meaning);
                     meaningItemBo.updateEntity(item);
                     sysDbSyncBo.logOperation("UPDATE", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
                 }
+                for (int i = 1; i < meanings.size(); i++) {
+                    newItems.add(addMeaningItem(word, ciXing, meanings.get(i), itemVo.getOwnerId()));
+                }
             }
         }
 
         // 3. 添加新增的 meaningItems
-        List<MeaningItem> newItems = new ArrayList<>();
         for (MeaningItemVo itemVo : wordVo.getMeaningItems()) {
-            if (itemVo.getId() == null) {
-                MeaningItem item = new MeaningItem();
-                item.setCiXing(Util.sanitizeAiString(itemVo.getCiXing()));
-                item.setMeaning(Util.sanitizeAiString(itemVo.getMeaning()));
-                item.setWord(word);
-                // 释义归属通用词典，保证全员可见
-                Dict commonDict = new Dict();
-                commonDict.setId(Constants.COMMON_DICT_ID);
-                item.setDict(commonDict);
-
-                // 设置所有者：优先使用 Vo 传入的，否则默认为系统管理员
-                User owner = new User();
-                owner.setId(itemVo.getOwnerId() != null ? itemVo.getOwnerId() : Constants.SYS_USER_SYS_ID);
-                item.setOwner(owner);
-                item.setPopularity(1);
-
-                meaningItemBo.createEntity(item);
-                sysDbSyncBo.logOperation("INSERT", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
-                newItems.add(item);
+            if (itemVo.getId() != null) {
+                continue;
+            }
+            String ciXing = Util.sanitizeAiString(itemVo.getCiXing());
+            for (String meaning : Util.splitMeanings(itemVo.getMeaning())) {
+                newItems.add(addMeaningItem(word, ciXing, meaning, itemVo.getOwnerId()));
             }
         }
 
@@ -282,6 +274,30 @@ public class WordBo extends BaseBo<Word> {
         }
 
         return null;
+    }
+
+    /**
+     * 新建一条释义项并记录同步日志。释义归属通用词典，保证全员可见。
+     */
+    private MeaningItem addMeaningItem(Word word, String ciXing, String meaning, String ownerId) {
+        MeaningItem item = new MeaningItem();
+        item.setCiXing(ciXing);
+        item.setMeaning(meaning);
+        item.setWord(word);
+
+        Dict commonDict = new Dict();
+        commonDict.setId(Constants.COMMON_DICT_ID);
+        item.setDict(commonDict);
+
+        // 设置所有者：优先使用 Vo 传入的，否则默认为系统管理员
+        User owner = new User();
+        owner.setId(ownerId != null ? ownerId : Constants.SYS_USER_SYS_ID);
+        item.setOwner(owner);
+        item.setPopularity(1);
+
+        meaningItemBo.createEntity(item);
+        sysDbSyncBo.logOperation("INSERT", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
+        return item;
     }
 
     /**

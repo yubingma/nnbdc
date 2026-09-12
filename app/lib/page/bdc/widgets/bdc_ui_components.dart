@@ -71,84 +71,87 @@ extension BdcPageStateUIComponents on BdcPageState {
               children: [
                 // 底层：手写板 (去除边框和内部标题，最大化感应面积)
                 Positioned.fill(
-                  child: HandwritingBoard(
-                    key: _handwritingBoardKey,
-                    showCloseButton: false,
-                    showHeader: false, // 隐藏内部自带的标题栏
-                    useBoxDecoration: false, // 隐藏内部背景和圆角，直接使用外层背景
-                    // 中文默写（英译汉）时识别中文汉字；否则识别英文拼写
-                    // ML Kit 数字墨迹识别的中文标签是 "zh-Hani"（Han 手写体），不是 BCP-47 的 "zh-Hans"，
-                    // 传错会导致 native 侧 DigitalInkRecognitionModelIdentifier(forLanguageTag:) 返回 nil。
-                    language: state.isChineseDictation ? 'zh-Hani' : 'en-US',
-                    // 中文默写采用手动提交：停笔不自动判题，仅点击「提交」后才识别+匹配，规避过早识别
-                    manualSubmit: state.isChineseDictation,
-                    // 中文默写分 2 格书写，一格一个字（竖屏上下两格、横屏左右两格）；
-                    // 新一笔起点换格即识别上一格，显著提升单字识别率
-                    cellCount: state.isChineseDictation ? 2 : 1,
-                    onStartWriting: () {
-                      // 一旦用户开始手写，立即收起键盘
-                      if (_meaningFocusNode.hasFocus) {
-                        _meaningFocusNode.unfocus();
-                        // 同时记录偏好：既然开始了手写，下次默认就不弹出键盘了
+                  child: IgnorePointer(
+                    ignoring: state.isSpellingSuccess,
+                    child: HandwritingBoard(
+                      key: _handwritingBoardKey,
+                      showCloseButton: false,
+                      showHeader: false, // 隐藏内部自带的标题栏
+                      useBoxDecoration: false, // 隐藏内部背景和圆角，直接使用外层背景
+                      // 中文默写（英译汉）时识别中文汉字；否则识别英文拼写
+                      // ML Kit 数字墨迹识别的中文标签是 "zh-Hani"（Han 手写体），不是 BCP-47 的 "zh-Hans"，
+                      // 传错会导致 native 侧 DigitalInkRecognitionModelIdentifier(forLanguageTag:) 返回 nil。
+                      language: state.isChineseDictation ? 'zh-Hani' : 'en-US',
+                      // 中文默写采用手动提交：停笔不自动判题，仅点击「提交」后才识别+匹配，规避过早识别
+                      manualSubmit: state.isChineseDictation,
+                      // 中文默写分 2 格书写，一格一个字（竖屏上下两格、横屏左右两格）；
+                      // 新一笔起点换格即识别上一格，显著提升单字识别率
+                      cellCount: state.isChineseDictation ? 2 : 1,
+                      onStartWriting: () {
+                        // 一旦用户开始手写，立即收起键盘
+                        if (_meaningFocusNode.hasFocus) {
+                          _meaningFocusNode.unfocus();
+                          // 同时记录偏好：既然开始了手写，下次默认就不弹出键盘了
+                          final config = StudyConfig.fromCurrentUser();
+                          if (config.preferKeyboardInSpelling) {
+                            config.preferKeyboardInSpelling = false;
+                            config.saveToCurrentUser();
+                          }
+                        }
+                      },
+                      onRecognized: (text) async {
+                        notifier.updateIsUpdatingByHint(false);
+
+                        // 记录用户偏好：使用手写输入
                         final config = StudyConfig.fromCurrentUser();
                         if (config.preferKeyboardInSpelling) {
                           config.preferKeyboardInSpelling = false;
                           config.saveToCurrentUser();
                         }
-                      }
-                    },
-                    onRecognized: (text) async {
-                      notifier.updateIsUpdatingByHint(false);
 
-                      // 记录用户偏好：使用手写输入
-                      final config = StudyConfig.fromCurrentUser();
-                      if (config.preferKeyboardInSpelling) {
-                        config.preferKeyboardInSpelling = false;
-                        config.saveToCurrentUser();
-                      }
-
-                      // 设置文本时抑制自动判题监听；判题显式在下面调用（避免 150ms 防抖重复判题）
-                      notifier.updateMeaningTextWithoutCheck(text);
-                      await notifier.checkAsrResult(
-                          asrInput: text, isVoice: false);
-                    },
-                    // 分格模式提前回显：每识别完一格就把"已识别前缀"同步到输入框供用户反馈，不判题
-                    onRecognizedPreview: (text) {
-                      notifier.updateMeaningTextWithoutCheck(text);
-                    },
-                    // 点「提交」：键盘在用或画布没有笔迹 → 直接判输入框文本；否则交回手写板识别判题。
-                    onSubmit: () {
-                      if (handwritingTakesOver()) return false;
-                      notifier.checkAsrResult();
-                      return true;
-                    },
-                    // 落笔接管的当刻读取输入框文本，作为本次手写答案的前缀（"打字→手写"不丢键盘内容）
-                    onReadCurrentText: () => notifier.meaningController.text,
-                    // 点「回退」：键盘在用或画布没有笔迹 → 删除输入框最后一个字符；
-                    // 否则交回手写板（清当前格 / 删已定稿的最后一个字）。
-                    onUndoRequest: () {
-                      if (handwritingTakesOver()) return false;
-                      final text = notifier.meaningController.text;
-                      if (text.isNotEmpty) {
-                        notifier.updateMeaningTextWithoutCheck(
-                            text.substring(0, text.length - 1));
-                      }
-                      // 键盘已接管输入框：同步清掉手写板状态，避免下次落笔时把被删掉的内容又带回来
-                      _handwritingBoardKey.currentState?.clearHandwritingPreview();
-                      return true;
-                    },
-                    onCancel: () {
-                      _meaningFocusNode.unfocus();
-                      // 中文默写用 closeChineseDictation 一并重置中文默写标记
-                      if (state.isChineseDictation) {
-                        notifier.closeChineseDictation();
-                      } else {
-                        updateUI(() {
-                          notifier.updateShowHandwritingBoard(false);
-                        }, tag: 'hw-cancel');
-                        notifier.handleTabChangeForAsr();
-                      }
-                    },
+                        // 设置文本时抑制自动判题监听；判题显式在下面调用（避免 150ms 防抖重复判题）
+                        notifier.updateMeaningTextWithoutCheck(text);
+                        await notifier.checkAsrResult(
+                            asrInput: text, isVoice: false);
+                      },
+                      // 分格模式提前回显：每识别完一格就把"已识别前缀"同步到输入框供用户反馈，不判题
+                      onRecognizedPreview: (text) {
+                        notifier.updateMeaningTextWithoutCheck(text);
+                      },
+                      // 点「提交」：键盘在用或画布没有笔迹 → 直接判输入框文本；否则交回手写板识别判题。
+                      onSubmit: () {
+                        if (handwritingTakesOver()) return false;
+                        notifier.checkAsrResult();
+                        return true;
+                      },
+                      // 落笔接管的当刻读取输入框文本，作为本次手写答案的前缀（"打字→手写"不丢键盘内容）
+                      onReadCurrentText: () => notifier.meaningController.text,
+                      // 点「回退」：键盘在用或画布没有笔迹 → 删除输入框最后一个字符；
+                      // 否则交回手写板（清当前格 / 删已定稿的最后一个字）。
+                      onUndoRequest: () {
+                        if (handwritingTakesOver()) return false;
+                        final text = notifier.meaningController.text;
+                        if (text.isNotEmpty) {
+                          notifier.updateMeaningTextWithoutCheck(
+                              text.substring(0, text.length - 1));
+                        }
+                        // 键盘已接管输入框：同步清掉手写板状态，避免下次落笔时把被删掉的内容又带回来
+                        _handwritingBoardKey.currentState?.clearHandwritingPreview();
+                        return true;
+                      },
+                      onCancel: () {
+                        _meaningFocusNode.unfocus();
+                        // 中文默写用 closeChineseDictation 一并重置中文默写标记
+                        if (state.isChineseDictation) {
+                          notifier.closeChineseDictation();
+                        } else {
+                          updateUI(() {
+                            notifier.updateShowHandwritingBoard(false);
+                          }, tag: 'hw-cancel');
+                          notifier.handleTabChangeForAsr();
+                        }
+                      },
+                    ),
                   ),
                 ),
 
@@ -269,7 +272,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                           fontSize: 30,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.3,
-                          color: context.textPrimary,
+                          color: state.isSpellingSuccess
+                              ? const Color(0xFF10B981)
+                              : context.textPrimary,
                         ),
                         decoration: InputDecoration(
                           hintText: state.isChineseDictation
@@ -308,19 +313,36 @@ extension BdcPageStateUIComponents on BdcPageState {
                         },
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.lightbulb_outline, size: 24,
-                          color: context.primaryColor),
-                      onPressed: () {
-                        notifier.giveFullHint();
-                        // 不自动提交，用户应继续手动拼写答题
-                      },
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: state.isSpellingSuccess
+                          ? const Padding(
+                              key: ValueKey('spelling_success_icon'),
+                              padding: EdgeInsets.all(8.0),
+                              child: Icon(
+                                Icons.check_circle_rounded,
+                                size: 24,
+                                color: Color(0xFF10B981),
+                              ),
+                            )
+                          : IconButton(
+                              key: const ValueKey('spelling_hint_btn'),
+                              icon: Icon(Icons.lightbulb_outline, size: 24,
+                                  color: context.primaryColor),
+                              onPressed: () {
+                                notifier.giveFullHint();
+                                // 不自动提交，用户应继续手动拼写答题
+                              },
+                            ),
                     ),
                   ],
                 ),
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
                   height: 1.5,
-                  color: context.primaryColor.withValues(alpha: 0.35),
+                  color: state.isSpellingSuccess
+                      ? const Color(0xFF10B981)
+                      : context.primaryColor.withValues(alpha: 0.35),
                 ),
                 const SizedBox(height: 10),
                 // 中文默写：只读展示"距离通过还差几个释义"。

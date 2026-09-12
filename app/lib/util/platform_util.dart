@@ -109,4 +109,7 @@ class PlatformUtils {
     if (isLinux) return 'Linux';
     return 'Unknown';
   }
+
+  /// 是否运行在 Flutter 单元测试环境中
+  static bool get isUnitTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 }

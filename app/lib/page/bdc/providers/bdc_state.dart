@@ -48,6 +48,8 @@ class BdcState extends Equatable {
   final int dictationMatchedCount;
   /// 中文默写判题进度：达到通过线所需命中的释义子项数（0 表示无进度可展示）
   final int dictationRequiredCount;
+  /// 拼写或默写判对成功后的视觉反馈与退场过渡态（文字变绿、绿勾反馈，随后平滑淡退）
+  final bool isSpellingSuccess;
   
   final AsrState asrState;
   final String asrResult;
@@ -126,6 +128,7 @@ class BdcState extends Equatable {
     this.isChineseDictation = false,
     this.dictationMatchedCount = 0,
     this.dictationRequiredCount = 0,
+    this.isSpellingSuccess = false,
     this.asrState = AsrState.unknown,
     this.asrResult = "",
     this.currentAsrCandidates = const [],
@@ -205,6 +208,7 @@ class BdcState extends Equatable {
     bool? isChineseDictation,
     int? dictationMatchedCount,
     int? dictationRequiredCount,
+    bool? isSpellingSuccess,
     AsrState? asrState,
     String? asrResult,
     List<String>? currentAsrCandidates,
@@ -270,6 +274,7 @@ class BdcState extends Equatable {
       isChineseDictation: isChineseDictation ?? this.isChineseDictation,
       dictationMatchedCount: dictationMatchedCount ?? this.dictationMatchedCount,
       dictationRequiredCount: dictationRequiredCount ?? this.dictationRequiredCount,
+      isSpellingSuccess: isSpellingSuccess ?? this.isSpellingSuccess,
       asrState: asrState ?? this.asrState,
       asrResult: asrResult ?? this.asrResult,
       currentAsrCandidates: currentAsrCandidates ?? this.currentAsrCandidates,

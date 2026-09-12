@@ -246,6 +246,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             Timestamp now = new Timestamp(System.currentTimeMillis());
             for (int i = 0; i < meanings.size(); i++) {
                 Map<String, String> meaning = meanings.get(i);
+                assertMeaningHasNoSeparator(meaning.get("meaning"));
                 MapSqlParameterSource insertParams = new MapSqlParameterSource();
                 insertParams.addValue("id", Util.uuid());
                 insertParams.addValue("wordId", wordId);
@@ -263,6 +264,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     public void createMeaningItem(MeaningItemDto dto) {
+        assertMeaningHasNoSeparator(dto.getMeaning());
         String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, owner_id, ci_xing, meaning, popularity, popularity_percent, create_time, update_time, is_updating) "
                 +
                 "VALUES (:id, :wordId, :dictId, :ownerId, :ciXing, :meaning, :popularity, :popularityPercent, :createTime, :updateTime, false)";
@@ -284,6 +286,17 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         String deleteSql = "DELETE FROM meaning_item WHERE id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource("id", id);
         namedParameterJdbcTemplate.update(deleteSql, params);
+    }
+
+    /**
+     * 释义项落库闸门：一条释义项只能承载一个义项，分号必须已在上游用 {@link Util#splitMeanings} 拆开。
+     * <p>
+     * 未拆分就落库说明有写入路径绕过了规范化，此处直接报错暴露问题，绝不静默改写。
+     */
+    private void assertMeaningHasNoSeparator(String meaning) {
+        if (Util.hasMeaningSeparator(meaning)) {
+            throw new IllegalArgumentException("释义项中不允许出现分号，请先拆分为多个义项: " + meaning);
+        }
     }
 
     public MeaningItemDto toDto(MeaningItem meaningItem) {

@@ -38,6 +38,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.HostnameVerifier;
@@ -1192,6 +1193,44 @@ public class Util {
             return true;
         }
         return isNetworkException(e.getCause());
+    }
+
+    /**
+     * 释义项内部禁止出现的分隔符（中英文分号）。
+     * <p>
+     * 释义项的内部契约：一条释义项 = 一个义项，同一义项内的近义表达用逗号连接。
+     * 分号表示"多个义项挤在了一条记录里"，属于非法数据，必须拆开。
+     */
+    public static final String MEANING_SEPARATOR_REGEX = "[;；]";
+
+    private static final Pattern MEANING_SEPARATOR_PATTERN = Pattern.compile(MEANING_SEPARATOR_REGEX);
+
+    /**
+     * 判断释义文本中是否含有非法的分号分隔符
+     */
+    public static boolean hasMeaningSeparator(String meaning) {
+        return meaning != null && MEANING_SEPARATOR_PATTERN.matcher(meaning).find();
+    }
+
+    /**
+     * 按中英文分号把释义文本拆成多个独立义项（去空白、去末尾逗号、去重）。
+     * <p>
+     * 该方法是"分号即多个释义项"这一约定的唯一实现，服务端所有释义写入路径共用。
+     *
+     * @return 拆分后的义项列表；入参为空时返回空列表
+     */
+    public static List<String> splitMeanings(String meaning) {
+        List<String> parts = new ArrayList<>();
+        if (meaning == null) {
+            return parts;
+        }
+        for (String part : meaning.split(MEANING_SEPARATOR_REGEX)) {
+            String trimmed = sanitizeAiString(part);
+            if (trimmed != null && !trimmed.isEmpty() && !parts.contains(trimmed)) {
+                parts.add(trimmed);
+            }
+        }
+        return parts;
     }
 
     /**
