@@ -1807,6 +1807,35 @@ void main() {
         reason: '用户手写写对的中文释义应被标记为已匹配，从而在主页面释义下划线处回显');
   });
 
+  test('BdcNotifier - 中文默写一次性连续写出多个释义应全部回显并通过', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('v.', '查看;考虑;观察'),
+    ];
+    // 通过线设为"全部释义都要答对"，从而检验连续写全时 3 个释义是否都算命中
+    notifier.updateAsrPassRuleCache('ALL');
+
+    notifier.openChineseDictation();
+    var st = container.read(bdcNotifierProvider);
+    // 进度门槛在开板时就按新释义预置：3 个释义全部答对才通过
+    expect(st.dictationRequiredCount, 3);
+
+    await notifier.checkAsrResult(asrInput: '查看考虑观察', isVoice: false);
+
+    st = container.read(bdcNotifierProvider);
+    expect(st.hasFinishedAnswering, true, reason: '一次连续写全释义应判通过');
+    expect(st.showHandwritingBoard, false, reason: '通过后应退出手写板');
+    expect(st.wordWrapper!.asrMatchedMeaningItemParts.length, 3,
+        reason: '连续写出的三个释义都应被标记为已匹配并回显');
+  });
+
   test('BdcNotifier - 单词已答对后再默写重写同一释义提交，应返回主页面且回显不变', () async {
     final mockAsr = MockAsr();
     final container = ProviderContainer(

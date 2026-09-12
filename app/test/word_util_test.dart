@@ -77,7 +77,7 @@ void main() {
     });
   });
 
-  group('Chinese Dictation Strict Matching (手写中文默写)', () {
+  group('Chinese Dictation Matching (手写中文默写：判题算法与语音一致，但要求写全释义)', () {
     late WordVo testWord;
     late WordWrapper wrapper;
 
@@ -90,54 +90,53 @@ void main() {
       wrapper = WordWrapper(testWord, null);
     });
 
-    test('rejects partial single-char answer (女 for 女商人) in strict mode', () {
+    test('rejects partial single-char answer (女 for 女商人)', () {
       var result = matchInputChineseWithMeaningItems(wrapper, '女', strict: true);
       expect(result.newMatchCount, 0);
       expect(wrapper.asrMatchedMeaningItemParts.isEmpty, true);
     });
 
-    test('rejects truncated substring answer (商人 for 女商人) in strict mode', () {
+    test('rejects truncated substring answer (商人 for 女商人)', () {
       var result = matchInputChineseWithMeaningItems(wrapper, '商人', strict: true);
       expect(result.newMatchCount, 0);
       expect(wrapper.asrMatchedMeaningItemParts.isEmpty, true);
     });
 
-    test('accepts exact full answer (女商人) in strict mode', () {
+    test('accepts exact full answer (女商人)', () {
       var result = matchInputChineseWithMeaningItems(wrapper, '女商人', strict: true);
       expect(result.newMatchCount, 1);
       expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 0)), true);
     });
 
-    test('rejects truncated answer in strict mode even when meaning has comma-synonyms', () {
+    test('accepts answer carrying user wording (我女商人)', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '我女商人', strict: true);
+      expect(result.newMatchCount, 1);
+    });
+
+    test('rejects truncated answer when meaning has comma-synonyms', () {
       final w = WordVo.c2('businesswomen')..id = '2';
       w.meaningItems = [
         MeaningItemVo.from('n.', '女商人，商界女性'),
       ];
       final wr = WordWrapper(w, null);
-      // 只写其中一个同义词的截断子串，不应被当作完整写出
+      // 只写其中一个同义词的一部分，没把该同义词写全，不通过
       var result = matchInputChineseWithMeaningItems(wr, '女性', strict: true);
       expect(result.newMatchCount, 0);
     });
 
-    test('accepts full-length answer with a homophone misread (女商仁 for 女商人), not 100% exact', () {
-      // 手写识别可能把个别字误识成同音/形近字，严格模式应容忍这类小出入
+    test('accepts full-length answer with a homophone misread (女商仁 for 女商人)', () {
+      // 手写识别可能把个别字误识成同音/形近字，应容忍这类小出入
       var result = matchInputChineseWithMeaningItems(wrapper, '女商仁', strict: true);
       expect(result.newMatchCount, 1);
     });
 
-    test('rejects a full-length but genuinely wrong answer (男子人 for 女商人) in strict mode', () {
+    test('rejects a genuinely wrong answer (男子人 for 女商人)', () {
       var result = matchInputChineseWithMeaningItems(wrapper, '男子人', strict: true);
       expect(result.newMatchCount, 0);
     });
-
-    test('strict mode does not change default fuzzy behavior (voice ASR 容错)', () {
-      // 默认（非 strict）仍应保留 ASR 同音字/模糊匹配，供语音"说中文"使用
-      var result = matchInputChineseWithMeaningItems(wrapper, '女商人');
-      expect(result.newMatchCount, 1);
-    });
   });
 
-  group('Chinese Dictation Strict Matching - 连续写出多个释义', () {
+  group('Chinese Dictation Matching - 连续写出多个释义', () {
     late WordVo testWord;
     late WordWrapper wrapper;
 
@@ -167,6 +166,12 @@ void main() {
       expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 0)), true);
     });
 
+    test('写释义时带上自己的话（我查看）同样算写对', () {
+      var result = matchInputChineseWithMeaningItems(wrapper, '我查看', strict: true);
+      expect(result.matchedCount, 1);
+      expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 0)), true);
+    });
+
     test('连续写出部分释义只匹配对应部分', () {
       var result = matchInputChineseWithMeaningItems(wrapper, '查看考虑', strict: true);
       expect(result.matchedCount, 2);
@@ -174,12 +179,15 @@ void main() {
     });
 
     test('连续写出全部释义时允许个别同音字误识', () {
-      var result = matchInputChineseWithMeaningItems(wrapper, '查看考虚观察', strict: true);
+      // 手写识别把"虑"误识成同音的"滤"
+      var result = matchInputChineseWithMeaningItems(wrapper, '查看考滤观察', strict: true);
       expect(result.matchedCount, 3);
     });
 
     test('连续写出但含错误释义时不匹配错误项', () {
-      var result = matchInputChineseWithMeaningItems(wrapper, '查看思考观察', strict: true);
+      final result =
+          matchInputChineseWithMeaningItems(wrapper, '查看思考观察', strict: true);
+      expect(result.matchedCount, 2, reason: '只有"查看"和"观察"写对');
       expect(wrapper.asrMatchedMeaningItemParts.contains(Pair(0, 1)), false);
     });
   });

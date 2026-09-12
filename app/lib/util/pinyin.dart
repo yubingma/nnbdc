@@ -437,22 +437,24 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
   for (var unit in meaningUnits) {
     if (unit.isEmpty) continue;
 
-    // 严格模式（中文手写默写）：手写输入没有 ASR 噪声，但仍可能因手写识别出现个别同音/形近字，
-    // 因此不要求 100% 逐字相等，而是采用更高的拼音模糊阈值：既拒绝只写部分子串（如"女"或"商人"），
-    // 又允许"完整写出但个别字略有出入"的通关。明显缺失或错字则交由 AI 裁判兜底。
     if (strict) {
-      final String cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
-      final String cleanUnit = unit.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
-      if (cleanUnit.isEmpty) continue;
-      if (_matchSingleCandidate(cleanInput, cleanUnit,
-          targetPinyinsCache: targetPinyinsCache, strict: true)) {
-        return true;
+      // 中文手写默写（严格模式）：判题算法与语音"说中文"同一套（下面的滑动候选 + DP 匹配），
+      // 唯一的区别是要求用户把释义写全——允许在释义前后带上自己的话（"我查看"），
+      // 但不接受只写一部分（如"商人"当"女商人"、"看察"当"查看"），
+      // 否则默写会退化成"写对两个字就给过"。
+      int M = unit.length;
+      for (var start = 0; start + M <= asrText.length; start++) {
+        final cand = asrText.substring(start, start + M);
+        if (_coversUnit(cand, unit,
+            targetPinyinsCache: targetPinyinsCache)) {
+          return true;
+        }
       }
       continue;
     }
 
     int M = unit.length;
-    
+
     // 核心优化：为了防止 ASR 长期累积的长句或背景噪声导致字数惩罚过重，
     // 我们从 ASR 文本（特别是最近说出的末尾部分）中提取长度为 M 到 M+3 的滑动窗口子串作为候选。
     List<String> subCandidates = [asrText];
@@ -484,11 +486,49 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
   return false;
 }
 
-/// 针对单个候选文本的拼音模糊匹配（核心 DP 算法）
+/// 判断等长的用户输入片段是否已"完整写出"释义。
 ///
-/// [strict] 为 true 时（中文手写默写）：不要求 100% 逐字相等，而是用更高的匹配阈值，
-/// 同时要求用户写出与释义等长的字数——只写部分子串（如"女"/"商人"）直接判不匹配。
-bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache, bool strict = false}) {
+/// 逐字取拼音相似度，要求输入[b]每个字[/b]都能对应上释义的对应字，
+/// 从而拒绝只写一部分的截断答案（"商人" ≠ "女商人"、"看察" ≠ "查看"），
+/// 同时容忍手写识别的个别同音/形近字误识（"女商仁" = "女商人"）。
+bool _coversUnit(String input, String unit,
+    {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
+  if (input.length != unit.length) return false;
+  final userPinyins = _pinyinsOf(input, targetPinyinsCache);
+  final targetPinyins = _pinyinsOf(unit, targetPinyinsCache);
+  final double threshold = unit.length <= 2 ? 0.92 : 0.90;
+  double sum = 0.0;
+  for (var i = 0; i < unit.length; i++) {
+    double maxSim = 0.0;
+    for (final pUser in userPinyins[i]) {
+      for (final pTarget in targetPinyins[i]) {
+        final sim = similarityOf2ParsedPinyin(pUser, pTarget);
+        if (sim > maxSim) maxSim = sim;
+      }
+    }
+    // 释义的某个字完全对不上，说明用户没写出这个字，不算写全
+    if (maxSim < 0.6) return false;
+    sum += maxSim;
+  }
+  return sum / unit.length >= threshold;
+}
+
+/// 取一个汉字串每个字的候选拼音（带缓存）
+List<List<PinyinParser>> _pinyinsOf(
+    String text, Map<String, List<List<PinyinParser>>>? cache) {
+  final cached = cache?[text];
+  if (cached != null) return cached;
+  final pinyins = [
+    for (var i = 0; i < text.length; i++)
+      hanziToPinyin(text[i]).map((p) => PinyinParser(p)).toList()
+  ];
+  cache?[text] = pinyins;
+  return pinyins;
+}
+
+/// 针对单个候选文本的拼音模糊匹配（核心 DP 算法），用于非严格模式（语音"说中文"）：
+/// 允许候选文本比释义长（ASR 会把多句累积在一起），用一个综合平均相似度加长句惩罚来判定。
+bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
   if (asrText.isEmpty) return false;
 
   List<List<PinyinParser>> userPinyins = [];
@@ -518,10 +558,6 @@ bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<P
 
   int M = targetPinyins.length;
   int N = userPinyins.length;
-
-  // 手写默写（strict）：必须写出与释义等长的字数，否则视为"没写完"直接判不匹配，
-  // 防止只写一个"女"字就被当作"女商人"。
-  if (strict && N < M) return false;
 
   List<List<double>> dp = List.generate(M + 1, (_) => List.filled(N + 1, 0.0));
 
@@ -612,11 +648,8 @@ bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<P
     avgSim *= penalty;
   }
 
-  // 手写默写（strict）：用更严的阈值——短词几乎要求完全一致，长词保留 90% 相似度，
-  // 容忍手写识别带来的个别同音/形近字，同时拦住明显缺字或错字。
-  final double finalThreshold = strict
-      ? (M <= 2 ? 0.92 : 0.90)
-      : (M == 1 ? 0.82 : (M == 2 ? 0.72 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch))));
+  final double finalThreshold =
+      M == 1 ? 0.82 : (M == 2 ? 0.72 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch)));
 
   if (avgSim > finalThreshold) {
     return true;
@@ -640,7 +673,7 @@ bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<P
       String dedupedText = deduped.toString();
       if (dedupedText.length < asrCharCount) {
         return _matchSingleCandidate(dedupedText, unit,
-            targetPinyinsCache: targetPinyinsCache, strict: strict);
+            targetPinyinsCache: targetPinyinsCache);
       }
     }
   }
