@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:drift/drift.dart' as drift;
@@ -739,6 +740,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
     final isStarted = user?.todayStudyStarted == true;
 
+    // 今日已打卡：圆环就从"装饰性目标环"变成一枚印章——加内侧发丝圈、垫一层极淡印油，
+    // 环心的"目标已锁定"换成微微倾斜的"今日已打卡"。词数仍留在环心，印章只是把已完成的
+    // 事实盖上去，不抢走这一天到底背了多少词。
+    final isDakaStamped = hasDakaToday;
+
     final textPrimary = themeConfig.textPrimary;
     final textMuted = themeConfig.textMuted;
 
@@ -766,12 +772,30 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   height: 128,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
+                    // 已打卡时才垫这一层极淡的"印油"（未打卡保持完全通透，环只是锚点）
+                    color: isDakaStamped
+                        ? themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.10 : 0.055)
+                        : null,
                     border: Border.all(
-                      color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.14),
+                      color: themeConfig.primaryColor
+                          .withValues(alpha: isDakaStamped ? (isDarkMode ? 0.34 : 0.24) : (isDarkMode ? 0.22 : 0.14)),
                       width: 6.5,
                     ),
                   ),
                 ),
+                // 印章的双线边框：外沿是上面那圈 6.5 的粗环，里面再落一道发丝圈
+                if (isDakaStamped)
+                  Container(
+                    width: 108,
+                    height: 108,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.42 : 0.32),
+                        width: 1,
+                      ),
+                    ),
+                  ),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: isStarted
@@ -823,15 +847,30 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         ],
                       ),
                       const SizedBox(height: 3),
-                      Text(
-                        isStarted ? '目标已锁定' : '点击调整目标',
-                        style: TextStyle(
-                          color: textMuted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.2,
+                      if (isDakaStamped)
+                        // 印面文字微微倾斜，配合双线圆环读成一枚刚盖上去的章
+                        Transform.rotate(
+                          angle: -6 * math.pi / 180,
+                          child: Text(
+                            '今日已打卡',
+                            style: TextStyle(
+                              color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.90 : 0.80),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        )
+                      else
+                        Text(
+                          isStarted ? '目标已锁定' : '点击调整目标',
+                          style: TextStyle(
+                            color: textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.2,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
