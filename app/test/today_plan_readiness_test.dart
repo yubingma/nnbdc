@@ -154,6 +154,43 @@ void main() {
     }
   }
 
+  /// 造一个"今天已开始学习、本地却没有任何计划数据"的账号：重装或换端后本地库为空，
+  /// 但用户行日期已是今天，页面会先把空的 0/0 当成本地数据渲染出来。
+  Future<void> seedEmptyTodayPlan(String userId) async {
+    final user = User(
+      id: userId,
+      userName: 'mock_user',
+      password: '',
+      nickName: 'Tester',
+      email: '',
+      gameScore: 0,
+      dakaScore: 0,
+      learnedDays: 1,
+      learningFinished: false,
+      inviteAwardTaken: false,
+      isSuperAdmin: false,
+      isAdmin: false,
+      isInputor: false,
+      cowDung: 0,
+      throwDiceChance: 0,
+      wordsPerDay: 5,
+      dakaDayCount: 1,
+      masteredWordsCount: 0,
+      maxContinuousDakaDayCount: 1,
+      continuousDakaDayCount: 1,
+      todayStudyStarted: false,
+      lastLearningDate: now, // 最近学习日 = 今天 → 非跨天
+      totalLearningSeconds: 0,
+      todayLearningSeconds: 0,
+      createTime: now,
+      updateTime: now,
+    );
+    await db.usersDao.saveUser(user, false);
+    Global.currentUserId = userId;
+    Global.updateUserCache(user);
+    Prefs.write('currentUserId', userId);
+  }
+
   Future<void> pumpTodayPlan(WidgetTester tester) async {
     await tester.pumpWidget(
       ChangeNotifierProvider<DarkMode>.value(
@@ -206,5 +243,31 @@ void main() {
     });
 
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
+  });
+
+  testWidgets('本地数据为空而计划仍在准备时点击"开始学习"：按钮立即给出准备中反馈', (tester) async {
+    await seedEmptyTodayPlan('test_user_id');
+
+    // 同样用"挂起的网络探测"卡住阻塞式云端同步，还原重装后本地库为空、
+    // 页面先渲染出 0/0 而计划仍在准备的那个窗口期
+    final networkProbe = Completer<dynamic>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+      (MethodCall methodCall) => networkProbe.future,
+    );
+
+    await pumpTodayPlan(tester);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('开始学习'), findsOneWidget, reason: '本地数据先渲染，页面此时已给出入口');
+
+    await tester.tap(find.text('开始学习'));
+    await tester.pump();
+
+    expect(find.text('正在准备今日计划…'), findsOneWidget,
+        reason: '计划尚未就绪，点击后必须立刻给出反馈，不能毫无动静');
+    expect(find.text('开始学习'), findsNothing, reason: '准备中的按钮不得再显示为可开始');
+
+    // 挂起的同步不再放行：本用例只验证"点击 → 立即反馈"这一段，放行会继续触发词书下载
   });
 }

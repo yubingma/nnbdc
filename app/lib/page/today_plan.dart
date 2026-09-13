@@ -63,6 +63,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
 
+  /// 点击"开始学习"后正在等待今日计划就绪：按钮据此给出"准备中"反馈，
+  /// 避免计划准备期间（重装/换端后要等云端数据落地）点击后毫无动静。
+  bool _isPreparingStudy = false;
+
   /// 在途的"今日计划准备"。点击"开始学习"必须等它完成：
   /// 跨天重置就发生在准备流程里，准备没完成就进学习页，昨天残留的进度会被当成今日已完成。
   Future<void>? _loadFuture;
@@ -1449,6 +1453,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
             ),
         onPressed: () async {
+          if (_isPreparingStudy) return;
           if (_newCheckStep == null) {
             ToastUtil.error('请选择测评环节');
             return;
@@ -1456,8 +1461,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
           // 必须等今日计划准备完成再进入学习页：跨天重置就发生在准备流程里，
           // 计划没就绪就进去，昨天残留的进度会被当成"今日已完成"而直接跳打卡页。
-          await _awaitPlanReady();
-          if (!mounted) return;
+          if (_loadFuture != null || prepareResult == null) {
+            setState(() => _isPreparingStudy = true);
+            await _awaitPlanReady();
+            if (!mounted) return;
+            setState(() => _isPreparingStudy = false);
+          }
 
           if (!(user?.todayStudyStarted ?? false)) {
             final shouldStart = await showDialog<bool>(
@@ -1713,26 +1722,50 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
           });
         },
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              user?.todayStudyStarted == true ? '继续学习' : '开始学习',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-                color: Colors.white,
+        child: _isPreparingStudy
+            ? const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 17,
+                    height: 17,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  SizedBox(width: 9),
+                  Text(
+                    '正在准备今日计划…',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    user?.todayStudyStarted == true ? '继续学习' : '开始学习',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: 6),
-            const Icon(
-              Icons.arrow_forward_rounded,
-              size: 18,
-              color: Colors.white,
-            ),
-          ],
-        ),
       ),
     );
   }
