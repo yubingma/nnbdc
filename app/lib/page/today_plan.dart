@@ -75,9 +75,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
 
-  /// 今日"加量"中尚未学完的单词数（打卡后额外追加的批次）。
-  /// > 0 表示尚有未学完的加量批次，首页据此把主按钮换成"继续学习（加量）"入口。
-  int _pendingExtraWordCount = 0;
+  /// 今日加量批次的词数（打卡后额外追加的那一组）。
+  int _extraTotalCount = 0;
+
+  /// 今日加量批次里已学完的词数。
+  int _extraCompletedCount = 0;
+
+  /// 加量批次里尚未学完的词数（由总数与已学完派生，避免两处口径打架）。
+  /// > 0 表示还有加量要接着学，首页据此把主按钮换成"继续学习（加量）"入口。
+  int get _pendingExtraWordCount => _extraTotalCount - _extraCompletedCount;
   Set<String> _masteredWordIds = {};
   /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道配置）
   int _studyStepsTab = 0;
@@ -520,12 +526,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       _completedStepCount += word.getCompletedSteps(_masteredWordIds, trackLen);
     }
 
-    // 加量任务中还有多少词没学完（首页据此把主按钮换成"继续学习（加量）"入口）
-    _pendingExtraWordCount = 0;
+    // 加量批次的口径：这一组一共多少词、学完了多少（主按钮是否换成"继续学习（加量）"也据此判定）
+    _extraTotalCount = _extraWords.length;
+    _extraCompletedCount = 0;
     for (final word in _extraWords) {
       final trackLen = trackLenOf(word);
-      if (word.getCompletedSteps(_masteredWordIds, trackLen) < trackLen) {
-        _pendingExtraWordCount++;
+      if (word.getCompletedSteps(_masteredWordIds, trackLen) >= trackLen) {
+        _extraCompletedCount++;
       }
     }
     // 异步计算完成后刷新进度显示（调用方多以 unawaited 方式调用）
@@ -1007,12 +1014,72 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               ),
             ),
 
+          // 加量批次的进度：它有自己的口径（不计入今日计划），所以单独一条更细、更淡的进度，
+          // 把"加量了多少词、学到哪儿了"讲清楚，又不跟计划的进度抢视线
+          if (_extraTotalCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: _buildExtraProgress(themeConfig, isDarkMode),
+            ),
+
           const SizedBox(height: 18),
 
           // 主操作按钮
           (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
               ? renderErrorActions()
               : renderStartButton(),
+        ],
+      ),
+    );
+  }
+
+  /// 加量批次进度条：数量（x / y 词）与进度（百分比 + 细胶囊条）一次讲清。
+  /// 用同一套排版与轨宽，只把墨色压淡一档：它是打卡后的"额外"，不该压过今日计划。
+  Widget _buildExtraProgress(AppThemeConfig themeConfig, bool isDarkMode) {
+    final int total = _extraTotalCount;
+    final int completed = _extraCompletedCount;
+    final double progress = total > 0 ? completed / total : 0.0;
+
+    return SizedBox(
+      width: 250,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '加量已完成 $completed / $total 词',
+                style: TextStyle(
+                  color: themeConfig.textMuted,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                '${(progress * 100).round()}%',
+                style: TextStyle(
+                  color: themeConfig.textSecondary,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Roboto',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 3.5,
+              backgroundColor: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.04),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                themeConfig.primaryColor.withValues(alpha: 0.55),
+              ),
+            ),
+          ),
         ],
       ),
     );

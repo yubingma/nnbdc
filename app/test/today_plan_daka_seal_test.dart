@@ -55,7 +55,11 @@ void main() {
 
   /// 造一个"今日计划已学完"的账号：[dakaed] 决定今天是否已有打卡记录，
   /// [pendingExtraWords] > 0 表示打卡后追加的加量批次还没学完。
-  Future<void> seedTodayPlan({required bool dakaed, int pendingExtraWords = 0}) async {
+  Future<void> seedTodayPlan({
+    required bool dakaed,
+    int extraWords = 0,
+    int extraDone = 0,
+  }) async {
     const String userId = 'test_user_id';
     final user = User(
       id: userId,
@@ -168,8 +172,9 @@ void main() {
     for (int i = 1; i <= 5; i++) {
       await addLearningWord('word_$i', 1, false, 99);
     }
-    for (int i = 1; i <= pendingExtraWords; i++) {
-      await addLearningWord('word_${5 + i}', 2, true, 0);
+    // 加量的前 extraDone 个词已学完，其余还等着继续学
+    for (int i = 1; i <= extraWords; i++) {
+      await addLearningWord('word_${5 + i}', 2, true, i <= extraDone ? 99 : 0);
     }
   }
 
@@ -200,7 +205,7 @@ void main() {
     final dateLabel = '${today.year}.${today.month.toString().padLeft(2, '0')}'
         '.${today.day.toString().padLeft(2, '0')}';
 
-    await seedTodayPlan(dakaed: true, pendingExtraWords: 3);
+    await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
     await pumpTodayPlan(tester);
     await pumpUntil(tester, seal);
 
@@ -211,6 +216,9 @@ void main() {
     expect(find.text('目标已锁定'), findsNothing, reason: '印章态不再重复讲"目标已锁定"');
     expect(find.text('继续学习（加量）'), findsOneWidget,
         reason: '还有未学完的加量批次时，主按钮是继续学习，而不是让人以为要新增单词');
+    expect(find.text('加量已完成 2 / 5 词'), findsOneWidget,
+        reason: '卡片里要同时讲清加量的数量（2 / 5 词）');
+    expect(find.text('40%'), findsOneWidget, reason: '以及加量自己的进度（40%）');
 
     semantics.dispose();
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
@@ -226,6 +234,8 @@ void main() {
         reason: '还没打卡就不能盖已打卡的章');
     expect(find.byKey(const Key('today_plan_daka_seal_date')), findsNothing,
         reason: '还没打卡就没有盖章日期');
+    expect(find.textContaining('加量已完成'), findsNothing,
+        reason: '今天没有加量批次，就不该出现加量进度');
 
     await tester.pump(const Duration(seconds: 60));
   });
