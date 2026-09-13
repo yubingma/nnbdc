@@ -47,7 +47,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
     }
 
     public List<LearningWordDto> getLearningWordDtosOfUser(String userId) {
-        String sql = "SELECT user_id, word_id, learning_order, is_today_new_word, last_learning_date, add_time, add_day, learned_times, today_learned_times, batch_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, create_time, update_time FROM learning_word WHERE user_id = :userId";
+        String sql = "SELECT user_id, word_id, learning_order, is_today_new_word, last_learning_date, add_time, add_day, learned_times, today_learned_times, batch_id, is_extra, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, create_time, update_time FROM learning_word WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<LearningWordDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -62,6 +62,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             dto.setLearnedTimes(rs.getInt("learned_times"));
             dto.setTodayLearnedTimes(rs.getInt("today_learned_times"));
             dto.setBatchId(rs.getInt("batch_id"));
+            dto.setIsExtra(rs.getBoolean("is_extra"));
             dto.setStability(rs.getDouble("stability"));
             dto.setDifficulty(rs.getDouble("difficulty"));
             dto.setElapsedDays(rs.getInt("elapsed_days"));

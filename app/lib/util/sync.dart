@@ -1142,48 +1142,44 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, St
   logsToBackend.retainWhere((log) => seen.add("${log['tblName']}|${log['recordId']}|${log['operate']}"));
 }
 /// 同步数据 JSON 补全工具
-/// 
-/// 当服务端返回的数据缺少某些前端定义的非空字段时，在此处提供默认值。
-/// 这种改造能有效防止由于前后端版本不一致导致的同步崩溃。
+///
+/// user_db_log.record 是各历史版本客户端写入的实体快照，后新增的字段不会出现在老日志里。
+/// 反序列化前在此补全缺失字段，避免新旧版本日志不兼容导致整条记录被跳过（静默丢失数据）。
+///
+/// 补全规则：按本地表结构，用非空列声明的默认值（withDefault）填充缺失字段。
+/// 因此新增字段只要在 table.dart 中声明了默认值，老日志天然兼容；
+/// 只有表结构未声明默认值的历史字段，才在下表中显式给出兼容默认值。
 void _sanitizeEntityJson(String tableName, Map<String, dynamic> json) {
   // 通用处理：如果缺少 updateTime，则尝试用 createTime 补齐，防止非空约束导致反序列化或写入失败
   if (json.containsKey('createTime')) {
     json['updateTime'] ??= json['createTime'];
   }
 
-  switch (tableName) {
-    case 'users':
-      json['todayStudyStarted'] ??= false;
-      json['todayLearningSeconds'] ??= 0;
-      json['totalLearningSeconds'] ??= 0;
-      break;
-    case 'dicts':
-      json['editable'] ??= true;
-      json['deletable'] ??= true;
-      json['visible'] ??= true;
-      json['isReady'] ??= true;
-      json['isShared'] ??= false;
-      json['wordCount'] ??= 0;
-      break;
-    case 'dictWords':
-      json['unit'] ??= 0;
-      json['seq'] ??= 1;
-      break;
-    case 'learningDicts':
-      json['isCurrent'] ??= false;
-      json['isFinished'] ??= false;
-      break;
-    case 'learningWords':
-      json['difficulty'] ??= 5;
-      json['status'] ??= 0;
-      break;
-    case 'meaningItems':
-      json['popularity'] ??= 1;
-      break;
-    case 'dakas':
-      json['totalStudyCount'] ??= 0;
-      json['newStudyCount'] ??= 0;
-      json['reviewCount'] ??= 0;
-      break;
+  // 表结构未声明默认值的历史非空字段
+  const legacyDefaults = <String, Map<String, Object>>{
+    'dicts': {'isReady': true, 'isShared': false, 'visible': true, 'wordCount': 0},
+    'dictWords': {'seq': 1},
+  };
+  legacyDefaults[tableName]?.forEach((field, value) => json.putIfAbsent(field, () => value));
+
+  final table = _localTablesByName[tableName];
+  if (table == null) return;
+  for (final column in table.$columns) {
+    if (column.$nullable) continue;
+    final defaultValue = column.defaultValue;
+    if (defaultValue is Constant && defaultValue.value != null) {
+      json.putIfAbsent(_dartFieldName(column.$name), () => defaultValue.value);
+    }
   }
+}
+
+/// 本地同步表名（如 learningWords）→ 本地表结构
+final Map<String, TableInfo> _localTablesByName = {
+  for (final table in MyDatabase.instance.allTables) _dartFieldName(table.actualTableName): table,
+};
+
+/// 下划线列名转 Dart 字段名，如 is_extra -> isExtra
+String _dartFieldName(String columnName) {
+  final parts = columnName.split('_');
+  return parts.first + parts.skip(1).map((part) => part[0].toUpperCase() + part.substring(1)).join();
 }
