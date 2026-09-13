@@ -301,11 +301,23 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     return AppScaffold(
       appBar: AppBar(
-        title: const Text(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.textPrimary, size: 19),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
           '会员中心',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: context.textPrimary,
+          ),
         ),
         centerTitle: true,
+        iconTheme: IconThemeData(color: context.textPrimary),
         actions: [
           TextButton(
             onPressed: _isRestoring ? null : _restorePurchases,
