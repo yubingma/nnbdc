@@ -265,70 +265,42 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
       ),
     );
 
+    // 波形与状态文字同行排布：与右侧「拼写/提示/清除」处于同一行，避免波形独占一行留下大片空高
+    final statusColor = widget.isSentenceStep
+        ? (isDarkMode ? Colors.white38 : Colors.black26)
+        : (isDarkMode ? Colors.white54 : Colors.black45);
+
     return RepaintBoundary(
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: FittedBox(
           fit: BoxFit.scaleDown,
-          child: widget.isSentenceStep
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    waveformWidget,
-                    const SizedBox(width: 12),
-                    if (widget.isAiEvaluating) ...[
-                      _buildAiJudgingBadge(context),
-                    ] else ...[
-                      Text(
-                        statusText,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isDarkMode ? Colors.white38 : Colors.black26,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (scoreWidget != null) ...[
-                        const SizedBox(width: 6),
-                        scoreWidget,
-                      ],
-                    ],
-                  ],
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    waveformWidget,
-                    const SizedBox(height: 2),
-                    if (widget.isAiEvaluating)
-                      _buildAiJudgingBadge(context)
-                    else
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            statusText,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isDarkMode ? Colors.white54 : Colors.black45,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          if (scoreWidget != null) ...[
-                            const SizedBox(width: 4),
-                            scoreWidget,
-                          ],
-                        ],
-                      ),
-                  ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              waveformWidget,
+              const SizedBox(width: 12),
+              if (widget.isAiEvaluating)
+                _buildAiJudgingBadge(context)
+              else ...[
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: statusColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
+                if (scoreWidget != null) ...[
+                  const SizedBox(width: 6),
+                  scoreWidget,
+                ],
+              ],
+            ],
+          ),
         ),
       ),
     );

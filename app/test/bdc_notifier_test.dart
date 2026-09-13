@@ -1762,6 +1762,18 @@ void main() {
     expect(state.groupStepNo, 1, reason: '本组仅 1 个词，仍是今日第 1 组');
     expect(state.currentWordTrackName, '新词答对',
         reason: '测评答对后轨道分化出"答对"，与环节名"汉译英"并列展示');
+
+    // 修改今日评分（答题卡底部的"新词测评: xx"随之变化）：
+    // 轨道名必须跟着变 —— 它与底部标签同源，不允许顶部"答错"、底部"良好"的分裂。
+    notifier.updateFsrsRating(FsrsRating.again);
+    state = container.read(bdcNotifierProvider);
+    expect(state.assessmentRating, FsrsRating.again);
+    expect(state.currentWordTrackName, '新词答错',
+        reason: '改评分后轨道名必须与"新词测评"标签一致');
+    notifier.updateFsrsRating(FsrsRating.good);
+    state = container.read(bdcNotifierProvider);
+    expect(state.currentWordTrackName, '新词答对', reason: '改回答对后轨道名同步回复');
+
     expect(state.groupStepHint, isNot(null),
         reason: '环节切换后的首个词应提示"整组逐个推进到下一个环节"');
 

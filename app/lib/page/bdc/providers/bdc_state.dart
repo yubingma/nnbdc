@@ -180,13 +180,17 @@ class BdcState extends Equatable {
   });
 
   /// 当前词的轨道名，六种互斥状态，与今日计划页「学习轨道」的措辞一致：
-  /// 测评环节（[currentGetWordResult].stepIndex == 0）为「新词测评 / 旧词测评」，
-  /// 测评之后（stepIndex > 0，与 notifier 的 isFollowUpStep 同一判据）分化为
+  /// 测评环节为「新词测评 / 旧词测评」，测评之后分化为
   /// 「新词答对 / 新词答错 / 旧词答对 / 旧词答错」。
+  ///
+  /// 判据只取 [assessmentRating]（今天测评的评分：巩固阶段才非空，且「修改今日评分」
+  /// 会同步它），与答题卡底部"新词测评: 良好"同一个来源 —— 不再出现顶部写"答错"、
+  /// 底部写"良好"的分裂（assessmentIsAgain 是它的旧副本，改评分时不会同步）。
   String get currentWordTrackName {
     final wordType = isReviewWord ? '旧词' : '新词';
-    final graded = (currentGetWordResult?.stepIndex ?? 0) > 0;
-    return graded ? '$wordType${assessmentIsAgain ? '答错' : '答对'}' : '$wordType测评';
+    final rating = assessmentRating;
+    if (rating == null) return '$wordType测评';
+    return '$wordType${rating == FsrsRating.again ? '答错' : '答对'}';
   }
 
   bool get autoJumpAfterCorrect {
