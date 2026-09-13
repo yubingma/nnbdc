@@ -42,6 +42,7 @@ class _PageViewerPageState extends State<PageViewerPage> {
     PageRouteInfo('/ai_diagnostic', 'AI 诊断', Icons.healing),
     PageRouteInfo('/study_stats', '学习统计', Icons.analytics),
     PageRouteInfo('/reminder_settings', '学习提醒设置', Icons.notifications_active),
+    PageRouteInfo('/subscription', '订阅会员', Icons.workspace_premium),
     PageRouteInfo('/golden_master', '黄金母版工具', Icons.auto_fix_high),
     PageRouteInfo('/admin', '系统管理', Icons.admin_panel_settings),
   ];

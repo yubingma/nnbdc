@@ -87,7 +87,6 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
   static const double leftPadding = 16;
   static const double rightPadding = 16;
-  static const int batchSize = 10;
   
   var errorReportController = TextEditingController();
   

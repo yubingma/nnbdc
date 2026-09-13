@@ -29,6 +29,7 @@ import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/page/admin/page_viewer.dart';
 import 'package:nnbdc/page/reminder_settings.dart';
 import 'package:nnbdc/page/study_stats.dart';
+import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/test.dart';
 import 'services/dialog_service.dart';
 
@@ -74,6 +75,7 @@ final goRouter = GoRouter(
     GoRoute(path: '/golden_master', builder: (context, state) => const GoldenMasterToolPage()),
     GoRoute(path: '/study_stats', builder: (context, state) => const StudyStatsPage()),
     GoRoute(path: '/reminder_settings', builder: (context, state) => const ReminderSettingsPage()),
+    GoRoute(path: '/subscription', builder: (context, state) => const SubscriptionPage()),
     GoRoute(path: '/page_viewer', builder: (context, state) => const PageViewerPage()),
   ],
 );
