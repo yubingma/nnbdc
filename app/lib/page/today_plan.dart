@@ -62,6 +62,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   bool _isSyncingFromCloud = false;
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
+
+  /// 在途的"今日计划准备"。点击"开始学习"必须等它完成：
+  /// 跨天重置就发生在准备流程里，准备没完成就进学习页，昨天残留的进度会被当成今日已完成。
+  Future<void>? _loadFuture;
   int _completedStepCount = 0;
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
@@ -196,25 +200,52 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   Future<void> loadData({bool forceSupplement = false, bool isReturnFromStudy = false}) async {
-    Global.logger.d('Entering loadData: forceSupplement=$forceSupplement, _isLoadingData=$_isLoadingData');
     if (!forceSupplement) {
       _hasTriedSupplement = false;
     }
     if (_isLoadingData) {
-      Global.logger.d('loadData already in progress, returning');
+      // 复用在途的今日计划准备，让调用方（如"开始学习"）能等到它完成
+      Global.logger.d('loadData already in progress, awaiting in-flight prepare');
+      await _loadFuture;
       return;
     }
-    
+
+    final future = _prepareTodayPlan(forceSupplement: forceSupplement, isReturnFromStudy: isReturnFromStudy);
+    _loadFuture = future;
+    try {
+      await future;
+    } finally {
+      _loadFuture = null;
+    }
+  }
+
+  /// 确保今日计划已就绪后再进入学习页：等在途的准备流程结束；若本日计划从未准备过，则主动准备一次。
+  /// 任何"计划尚未就绪"的状态都不允许进入学习页——跨天重置尚未执行时，残留进度会被当成今日成绩。
+  Future<void> _awaitPlanReady() async {
+    if (_loadFuture != null) {
+      await _loadFuture;
+      return;
+    }
+    if (prepareResult == null) {
+      await loadData();
+    }
+  }
+
+  /// 今日计划的完整准备流程：本地加载 → 云端同步 → 跨天重置/取词 → 词书资源 → 统计
+  Future<void> _prepareTodayPlan({required bool forceSupplement, required bool isReturnFromStudy}) async {
+    Global.logger.d('Entering loadData: forceSupplement=$forceSupplement, _isLoadingData=$_isLoadingData');
     _isLoadingData = true;
 
     try {
       // 1. 第一步：优先从本地数据库快速加载现有数据，以便立刻展示 UI
-      await _loadEssentialLocalData();
-      
-      // 如果已经有基本数据了，或者不是第一次加载，就直接展示 UI
-      if (mounted && (user != null || dataLoaded)) {
+      final bool isNewDay = await _loadEssentialLocalData();
+
+      // 跨天时本日计划尚未初始化（跨天重置与取词都在第 3 步）：此时绝不能把页面当成"已就绪"呈现，
+      // 否则用户会在计划就绪前就点"开始学习"，把昨天残留的进度当成今日已完成而直接跳打卡页。
+      // 其余情况下保持原有行为：本地数据拿到就先展示 UI。
+      if (mounted) {
         setState(() {
-          dataLoaded = true;
+          dataLoaded = !isNewDay && (user != null || dataLoaded);
         });
       }
 
@@ -305,8 +336,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
   }
 
-  /// 快速加载本地基础数据（不涉及网络和复杂的计划准备）
-  Future<void> _loadEssentialLocalData() async {
+  /// 快速加载本地基础数据（不涉及网络和复杂的计划准备）。
+  /// 返回是否已跨天（跨天时本日计划还没初始化，页面必须保持"未就绪"直到准备流程跑完）。
+  Future<bool> _loadEssentialLocalData() async {
     final userResult = await UserBo().getLoggedInUser();
     if (userResult.success) {
       user = userResult.data;
@@ -342,7 +374,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         todayWordCount = 0;
         _completedStepCount = 0;
         _totalStepCount = 0;
-        return;
+        return true;
       }
 
       _todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
@@ -359,6 +391,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         todayWordCount = _planWords.length;
       }
     }
+    return false;
   }
 
   /// 检查并下载缺失的词典
@@ -1420,6 +1453,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             ToastUtil.error('请选择测评环节');
             return;
           }
+
+          // 必须等今日计划准备完成再进入学习页：跨天重置就发生在准备流程里，
+          // 计划没就绪就进去，昨天残留的进度会被当成"今日已完成"而直接跳打卡页。
+          await _awaitPlanReady();
+          if (!mounted) return;
 
           if (!(user?.todayStudyStarted ?? false)) {
             final shouldStart = await showDialog<bool>(

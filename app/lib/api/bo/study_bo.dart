@@ -595,6 +595,13 @@ class StudyBo {
       var todayWords = await StudyCacheManager().getTodayWords(db, user.id);
 
       if (todayWords.isEmpty) {
+        // 空计划绝不能一概当成"今日已完成"去打卡：跨天重置尚未执行时（用户最近学习日早于今天），
+        // 空计划只说明本日计划还没就绪（重置刚清零、取词尚未落库），必须回今日计划页重新准备。
+        final bool crossDayPending = lastDate == null || lastDate.isBefore(today);
+        if (crossDayPending) {
+          Global.logger.w('🛑 [StudyBo-DateCheck] 今日计划为空且跨天重置尚未执行，终止学习流程！');
+          return Result<GetWordResult>("NEW_DAY", "已进入新的一天，请重新开始学习", false);
+        }
         return _buildTodayStudyFinishedResult();
       }
 

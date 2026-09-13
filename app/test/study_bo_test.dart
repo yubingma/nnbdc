@@ -302,6 +302,35 @@ void main() {
       expect(result.success, false);
       expect(result.code, 'NEW_DAY');
     });
+
+    test('跨天且今日计划为空（本日计划尚未就绪）时，绝不判定"今日已完成"', () async {
+      // 跨天：用户最近学习日还是昨天，而计划里一个词都没有（重置刚清零、取词还没落库）
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      final user = (await db.usersDao.getUserById(testUser.id))!;
+      final crossDayUser = user.copyWith(lastLearningDate: Value(yesterday));
+      await db.usersDao.saveUser(crossDayUser, true);
+      Global.updateUserCache(crossDayUser);
+
+      await (db.delete(db.learningWords)..where((w) => w.userId.equals(testUser.id))).go();
+      StudyCacheManager().clear();
+
+      final result = await studyBo.getWord(false, false);
+
+      expect(result.success, false);
+      expect(result.code, 'NEW_DAY',
+          reason: '空计划＋跨天未重置 = 计划还没就绪，绝不能替用户打卡');
+    });
+
+    test('同一天内计划已被学完移出后，仍判定"今日已完成"', () async {
+      // 同日（用户最近学习日就是今天）计划被清空 = 今日的词已全部学完，维持原有"已完成"语义
+      await (db.delete(db.learningWords)..where((w) => w.userId.equals(testUser.id))).go();
+      StudyCacheManager().clear();
+
+      final result = await studyBo.getWord(false, false);
+
+      expect(result.success, true);
+      expect(result.data!.finished, true);
+    });
   });
 
   group('StudyBo - FSRS 状态机（学习/复习事件区分）', () {
