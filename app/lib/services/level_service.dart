@@ -1,6 +1,7 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/page/level_path_page.dart';
 import 'package:nnbdc/services/dialog_service.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/level_util.dart';
@@ -102,10 +103,26 @@ class LevelService {
     try {
       final context = DialogService.navigatorKey.currentContext;
       if (context == null || !context.mounted) return;
-      LevelUpDialog.show(context, level: level, rewardBubbles: promotionReward(level.level));
+      LevelUpDialog.show(
+        context,
+        level: level,
+        rewardBubbles: promotionReward(level.level),
+        onViewPath: () => _openLevelPath(context, level),
+      );
     } catch (e, s) {
       Global.logger.e('展示段位晋升仪式失败: $e', stackTrace: s);
     }
+  }
+
+  /// 打开"成长之路"。
+  /// 它压在晋升卡之上(同一 Navigator 中后推的路由画在更上层), 用户看完返回时卡片仍在, 还能"开心收下"。
+  void _openLevelPath(BuildContext context, Level level) {
+    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+      builder: (_) => LevelPathPage(
+        currentLevel: level.level,
+        masteredWords: Global.getLoggedInUser()?.masteredWordsCount,
+      ),
+    ));
   }
 
   void _showStarUp(_StarUp starUp) {

@@ -646,11 +646,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '• 解除每日20的单词上限, 上限提升至500\n'
-                    '• 可自定义单词书\n',
+                    '• 解除每日20个单词的学习上限\n'
+                    '• 支持自由加量学习（计划中或打卡后随时追加新词）\n'
+                    '• 支持全库词书畅学与自定义词书导入\n'
+                    '• AI 智能助教与深度解析\n',
                     style: TextStyle(
                       fontSize: 12,
-                      height: 1.4,
+                      height: 1.5,
                       color: isDarkMode ? Colors.white70 : Colors.black87,
                     ),
                   ),

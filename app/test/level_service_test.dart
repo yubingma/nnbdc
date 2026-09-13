@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nnbdc/page/level_path_page.dart';
 import 'package:nnbdc/services/dialog_service.dart';
 import 'package:nnbdc/services/level_service.dart';
 import 'package:nnbdc/state.dart';
@@ -110,6 +111,29 @@ void main() {
 
       expect(find.text('段 位 晋 升'), findsOneWidget);
       expect(find.text('皮皮虾'), findsOneWidget);
+
+      await tester.tap(find.text('开心收下'));
+      await tester.pumpAndSettle();
+      expect(find.text('段 位 晋 升'), findsNothing);
+    });
+
+    testWidgets('点成长之路: 打开成长之路页, 返回后晋升卡还在, 仍可开心收下', (tester) async {
+      await pumpApp(tester);
+      LevelService().leaveStudy();
+
+      await LevelService().checkProgress(oldWordCount: 19, newWordCount: 20);
+      await tester.pumpAndSettle();
+      expect(find.text('段 位 晋 升'), findsOneWidget);
+
+      await tester.tap(find.text('成长之路'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LevelPathPage), findsOneWidget);
+
+      // 从成长之路返回: 卡片没有被吞掉, 用户还有机会"开心收下"
+      await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+      await tester.pumpAndSettle();
+      expect(find.byType(LevelPathPage), findsNothing);
+      expect(find.text('段 位 晋 升'), findsOneWidget);
 
       await tester.tap(find.text('开心收下'));
       await tester.pumpAndSettle();

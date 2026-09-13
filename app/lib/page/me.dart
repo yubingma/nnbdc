@@ -985,7 +985,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 _buildPrivilegeRow(
                   Icons.all_inclusive_rounded,
                   '每日学习新词量无上限',
-                  isPremium ? '已解锁自由设定每日新词量 (无限制)' : '非会员每日计划最多仅可学习 20 个新词',
+                  isPremium ? '每日新词自由设定，不限词数' : '非会员每日上限 20 词',
                   accentColor,
                   textColor,
                   subtitleColor,
@@ -994,7 +994,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 _buildPrivilegeRow(
                   Icons.psychology_rounded,
                   'AI 智能助教与深度解析',
-                  isPremium ? '尊享离线/在线模型助教无限量助记与答疑' : '非会员无法使用 AI 助教解析',
+                  isPremium ? '无限量智能助记与答疑' : '非会员暂不支持 AI 解析',
                   accentColor,
                   textColor,
                   subtitleColor,
@@ -1003,7 +1003,16 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 _buildPrivilegeRow(
                   Icons.auto_stories_rounded,
                   '全量官方词书与导入畅学',
-                  isPremium ? '全库海量词书自由畅选，支持自定义导入' : '非会员限制添加与切换新词书',
+                  isPremium ? '全库词书畅学，支持自主导入' : '非会员限制切换与导入词书',
+                  accentColor,
+                  textColor,
+                  subtitleColor,
+                ),
+                const SizedBox(height: 12),
+                _buildPrivilegeRow(
+                  Icons.playlist_add_rounded,
+                  '支持自由加量学习',
+                  isPremium ? '打卡前后随时追加新批次' : '非会员不可追加批次',
                   accentColor,
                   textColor,
                   subtitleColor,
@@ -1093,7 +1102,12 @@ class MePageState extends State<MePage> implements RefreshableTab {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC')),
-              Text(desc, style: TextStyle(color: subtitleColor, fontSize: 10.5, fontFamily: 'NotoSansSC')),
+              Text(
+                desc,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: subtitleColor, fontSize: 10.5, fontFamily: 'NotoSansSC'),
+              ),
             ],
           ),
         ),

@@ -10,20 +10,17 @@ import 'package:nnbdc/util/level_util.dart';
 class LevelUpDialog extends StatelessWidget {
   final Level level;
   final int rewardBubbles;
-  final VoidCallback? onViewPath;
 
   const LevelUpDialog({
     super.key,
     required this.level,
     this.rewardBubbles = 0,
-    this.onViewPath,
   });
 
   static Future<void> show(
     BuildContext? context, {
     required Level level,
     int rewardBubbles = 0,
-    VoidCallback? onViewPath,
   }) {
     if (context == null) return Future.value();
     final isDark = context.read<DarkMode>().isDarkMode;
@@ -77,14 +74,16 @@ class LevelUpDialog extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            // sigma 7: 抹掉底层字形只留朦胧墨水色块; 面层接近不透明, 保证"读得清"
+            // sigma 7: 抹掉底层字形只留朦胧墨水色块
             filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 26, 24, 20),
               decoration: BoxDecoration(
+                // 面层只到 65%: 底层模糊色块要透得出来才算毛玻璃。
+                // 之前 85% 太白, 玻璃退化成一张纯白卡; 字读得清靠的是"模糊", 不是"糊一层厚白"。
                 color: themeStyle.isDark
-                    ? const Color(0xD91C2127)
-                    : const Color(0xD9FFFFFF),
+                    ? const Color(0xC71C2127)
+                    : const Color(0xA6FFFFFF),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: accent.withValues(alpha: 0.35),
@@ -185,10 +184,9 @@ class LevelUpDialog extends StatelessWidget {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            onViewPath?.call();
-                          },
+                          // 只跳转, 不关卡片: 成长之路页会盖在本卡之上, 看完返回后本卡还在, 用户依然收得下奖励。
+                          // 卡片一旦被这里 pop 掉, 用户就再没有"开心收下"的机会了。
+                          onPressed: onViewPath,
                           child: const Text(
                             '成长之路',
                             style: TextStyle(

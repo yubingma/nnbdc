@@ -19,10 +19,12 @@ void main() {
     );
 
     final level = LevelUtil.getTitle(3); // 仓鼠
+    var viewPathTapped = 0;
     final closed = LevelUpDialog.show(
       tester.element(find.byType(Scaffold)),
       level: level,
       rewardBubbles: 90,
+      onViewPath: () => viewPathTapped++,
     );
     await tester.pumpAndSettle();
 
@@ -33,6 +35,12 @@ void main() {
     expect(find.text('晋升奖励 +90 魔法泡泡'), findsOneWidget);
     expect(find.text('开心收下'), findsOneWidget);
     expect(find.text('成长之路'), findsOneWidget);
+
+    // 成长之路只跳转, 不能把卡片吞掉: 否则用户再没有"开心收下"的机会
+    await tester.tap(find.text('成长之路'));
+    await tester.pumpAndSettle();
+    expect(viewPathTapped, 1);
+    expect(find.text('段 位 晋 升'), findsOneWidget);
 
     await tester.tap(find.text('开心收下'));
     await tester.pumpAndSettle();
