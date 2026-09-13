@@ -234,5 +234,21 @@ void main() {
       final w6 = await database.dictWordsDao.getById(dictId, 'w6');
       expect(w6!.seq, 5);
     });
+
+    test('批量回放删除时不逐条重算 wordCount，由调用方整批重算一次', () async {
+      await insertDict(2);
+      await insertWords(['w1', 'w2'], [1, 2]);
+
+      // 批量回放路径：每条删除只删数据、不失效缓存、不重算整本词书统计
+      await database.dictWordsDao.deleteDictWordWithCleanup(dictId, 'w1', userId, false,
+          invalidateTspCache: false, updateWordCount: false);
+
+      expect((await database.dictsDao.findById(dictId))?.wordCount, 2,
+          reason: '逐条删除时不得重算整本词书的 wordCount');
+
+      await database.dictsDao.updateWordCount(dictId, false);
+      expect((await database.dictsDao.findById(dictId))?.wordCount, 1,
+          reason: '整批结束时重算一次，wordCount 必须与实际一致');
+    });
   });
 }

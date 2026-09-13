@@ -1957,7 +1957,8 @@ class WordBo {
       );
 
       await db.transaction(() async {
-        await db.dictWordsDao.insertEntity(dictWord, true);
+        // 语义排序缓存失效统一放在事务外做一次，DAO 内不再重复失效
+        await db.dictWordsDao.insertEntity(dictWord, true, invalidateTspCache: false);
         await db.dictsDao.updateWordCount(dictId, true);
       });
 
@@ -2595,7 +2596,8 @@ class WordBo {
       }
 
       await db.transaction(() async {
-        await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, userId, true);
+        // 语义排序缓存失效统一放在事务外做一次，DAO 内不再重复失效
+        await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, userId, true, invalidateTspCache: false);
       });
 
       clearTspCache(dictId);

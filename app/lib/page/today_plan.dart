@@ -244,12 +244,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       // 1. 第一步：优先从本地数据库快速加载现有数据，以便立刻展示 UI
       final bool isNewDay = await _loadEssentialLocalData();
 
-      // 跨天时本日计划尚未初始化（跨天重置与取词都在第 3 步）：此时绝不能把页面当成"已就绪"呈现，
-      // 否则用户会在计划就绪前就点"开始学习"，把昨天残留的进度当成今日已完成而直接跳打卡页。
-      // 其余情况下保持原有行为：本地数据拿到就先展示 UI。
+      // 跨天时本日计划尚未初始化（跨天重置与取词都在第 3 步）；重装/换端后本地更是一份计划词都没有，
+      // 计划数据还在云端。这两种情况都必须维持加载态：否则页面会呈现一个 0/0 的"就绪"假象，
+      // 用户在计划就绪前点"开始学习"，跨天时还会把昨天残留的进度当成今日已完成。
+      // 只有本地确实拿到了今日计划词，才允许提前展示 UI。
+      // 注意：准备流程结束时（finally）无条件置 dataLoaded=true，因此这里不会把页面卡在加载态。
+      final bool hasLocalPlan = _todayWords?.isNotEmpty ?? false;
       if (mounted) {
         setState(() {
-          dataLoaded = !isNewDay && (user != null || dataLoaded);
+          dataLoaded = !isNewDay && user != null && hasLocalPlan;
         });
       }
 

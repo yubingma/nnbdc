@@ -104,6 +104,9 @@ Future<void> syncSysDb() async {
 Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
   final db = MyDatabase.instance;
   Set<String> affectedBaseDictIds = {};
+  // 本批有单词被删除的词书：删除会改变单词数，需要在本批结束时重算一次 wordCount。
+  // 新增/更新不会（服务端的 dict 记录已带来最新的 wordCount，原本也不重算）。
+  final Set<String> deletedDictIds = <String>{};
 
   await db.transaction(() async {
     for (var log in logs) {
@@ -158,14 +161,16 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
               final dictId = parts[0];
               final wordId = parts[1];
               affectedBaseDictIds.add(dictId);
+              deletedDictIds.add(dictId);
               // 使用统一删除方法，不传userId（系统词典不涉及用户学习进度）
-              await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, null, false);
+              await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, null, false,
+                  invalidateTspCache: false, updateWordCount: false);
             }
           } else {
             // INSERT 或 UPDATE 操作
             DictWord entity = DictWord.fromJson(entityJson);
             affectedBaseDictIds.add(entity.dictId);
-            await db.dictWordsDao.insertEntity(entity, false);
+            await db.dictWordsDao.insertEntity(entity, false, invalidateTspCache: false);
           }
         } else if (log.tblName == 'word') {
           // 单词主体
@@ -251,6 +256,15 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
 
   // ========== 触发联动乱序版重新生成 ==========
   if (affectedBaseDictIds.isNotEmpty) {
+    // 整批回放结束后，对每本受影响的词书只做一次"整本词书"级别的收尾。
+    // 逐条做会让一本几千词的词书在回放期间被反复整表重写。
+    for (var dictId in affectedBaseDictIds) {
+      WordBo.clearTspCache(dictId, db);
+    }
+    for (var dictId in deletedDictIds) {
+      await db.dictsDao.updateWordCount(dictId, false);
+    }
+
     for (var baseDictId in affectedBaseDictIds) {
       // 找出手机本地拥有的所有派生于这本正序词书的衍生词书（如乱序版等）
       final derivedDicts = await (db.select(db.dicts)..where((d) => d.baseDictId.equals(baseDictId))).get();

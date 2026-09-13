@@ -297,5 +297,34 @@ void main() {
       final sortedIds = await wordBo.getTspSortedWordIdsInternal(dictId2);
       expect(sortedIds, ['w5', 'w4']);
     });
+
+    test('批量回放期间不逐条失效词书缓存，由调用方整批失效一次', () async {
+      for (final id in ['w1', 'w2']) {
+        await db.into(db.words).insert(Word(id: id, spell: id, popularity: 1, createTime: now, updateTime: now));
+        await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: id, seq: id == 'w1' ? 1 : 2, unit: 0, createTime: now, updateTime: now));
+      }
+      // 模拟已算好的语义排序缓存（w1 -> w2）
+      await db.dictWordsDao.updateSemanticSeqs(dictId, ['w1', 'w2']);
+
+      // 1. 同步日志回放/数据修复等批量路径逐条写入时不做失效：
+      //    失效粒度是"整本词书"，逐条触发会让一本几千词的词书被反复整表重写
+      await db.into(db.words).insert(Word(id: 'w3', spell: 'w3', popularity: 1, createTime: now, updateTime: now));
+      await db.dictWordsDao.insertEntity(
+        DictWord(dictId: dictId, wordId: 'w3', seq: 3, unit: 0, createTime: now, updateTime: now),
+        false,
+        invalidateTspCache: false,
+      );
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect((await db.dictWordsDao.getById(dictId, 'w1'))?.semanticSeq, 1,
+          reason: '批量回放期间不得逐条失效整本词书的语义排序缓存');
+
+      // 2. 整批结束时由调用方统一失效一次，持久化缓存照样被清空
+      WordBo.clearTspCache(dictId, db);
+      await Future.delayed(const Duration(milliseconds: 50));
+      final dws = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
+      for (final dw in dws) {
+        expect(dw.semanticSeq, null, reason: '整批失效后持久化缓存必须清空');
+      }
+    });
   });
 }

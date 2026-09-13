@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
@@ -883,11 +884,16 @@ class DataIntegrityChecker {
            await _db.transaction(() async {
              // 1. 恢复 DictWord
              final dwList = data['dictWords'] as List<dynamic>? ?? [];
+             final touchedDictIds = <String>{};
              for (final item in dwList) {
                final Map<String, dynamic> dictWordMap = Map<String, dynamic>.from(item as Map);
                final dw = DictWord.fromJson(dictWordMap);
-               await _db.dictWordsDao.insertEntity(dw, false);
+               await _db.dictWordsDao.insertEntity(dw, false, invalidateTspCache: false);
+               touchedDictIds.add(dw.dictId);
                dwCount++;
+             }
+             for (final dictId in touchedDictIds) {
+               WordBo.clearTspCache(dictId, _db);
              }
 
              // 2. 恢复 MeaningItem
@@ -1022,11 +1028,16 @@ class DataIntegrityChecker {
                
                // 1. 恢复 DictWord (为了能让单词在词典中显示)
                final dwList = data['dictWords'] as List<dynamic>? ?? [];
+               final touchedDictIds = <String>{};
                for (final item in dwList) {
                  final Map<String, dynamic> dictWordMap = Map<String, dynamic>.from(item as Map);
                  final dw = DictWord.fromJson(dictWordMap);
-                 await _db.dictWordsDao.insertEntity(dw, false);
+                 await _db.dictWordsDao.insertEntity(dw, false, invalidateTspCache: false);
+                 touchedDictIds.add(dw.dictId);
                  dwCount++;
+               }
+               for (final dictId in touchedDictIds) {
+                 WordBo.clearTspCache(dictId, _db);
                }
 
                // 2. 恢复 MeaningItem

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -390,6 +391,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     final List<LearningWord> updatedLearningWords = [];
     final List<String> newMasteredWordIds = [];
     final List<String> removedLearningWordIds = [];
+    // 本批回放中被改动的词书：回放结束后每本只做一次语义排序缓存失效
+    final Set<String> touchedDictIds = <String>{};
 
     await db.transaction(() async {
       final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
@@ -466,12 +469,14 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           } else if (log.tblName == 'dictWords') {
             final entity = DictWord.fromJson(entityJson);
             if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-              await db.dictWordsDao.insertEntity(entity, false);
+              await db.dictWordsDao.insertEntity(entity, false, invalidateTspCache: false);
+              touchedDictIds.add(entity.dictId);
               if (masteredDict != null && entity.dictId == masteredDict.id) {
                 newMasteredWordIds.add(entity.wordId);
               }
             } else if (log.operate == 'DELETE') {
-              await db.dictWordsDao.deleteEntity(entity, false);
+              await db.dictWordsDao.deleteEntity(entity, false, invalidateTspCache: false);
+              touchedDictIds.add(entity.dictId);
             }
           } else if (log.tblName == 'dakas') {
             Daka entity = Daka.fromJson(entityJson);
@@ -570,6 +575,12 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
              // 暂时统一不抛出，改为记录日志并继续，实现生产级容错
           }
         }
+      }
+
+      // 词书单词整批回放完毕，对每本受影响的词书只失效一次语义排序缓存
+      // （逐条失效会让一本几千词的词书被反复整表重写）
+      for (final dictId in touchedDictIds) {
+        WordBo.clearTspCache(dictId, db);
       }
 
       // 更新本地数据库版本为服务端版本（此时已成功写入服务端数据，即使后续上传失败，数据也保住了）

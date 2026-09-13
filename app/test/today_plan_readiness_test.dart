@@ -57,7 +57,9 @@ void main() {
   });
 
   /// 造一个"昨天学过、今天还没学"的账号：用户行日期停在昨天，计划里 5 个词带着昨日的今日进度。
-  Future<void> seedYesterdayPlan(String userId) async {
+  /// [learningDateIsToday] 为 true 时把最近学习日改成今天，用于复现"今天就学过、本地也有计划词"的
+  /// 同日刷新场景（此时页面会先渲染本地数据，而云端同步与取词仍在途）。
+  Future<void> seedYesterdayPlan(String userId, {bool learningDateIsToday = false}) async {
     final yesterday = now.subtract(const Duration(days: 1));
     final user = User(
       id: userId,
@@ -81,7 +83,7 @@ void main() {
       maxContinuousDakaDayCount: 1,
       continuousDakaDayCount: 1,
       todayStudyStarted: true, // 昨天已开始学习
-      lastLearningDate: yesterday, // 最近学习日 = 昨天 → 今天跨天
+      lastLearningDate: learningDateIsToday ? now : yesterday, // 昨天 → 今天跨天；今天 → 同日刷新
       totalLearningSeconds: 0,
       todayLearningSeconds: 0,
       createTime: now,
@@ -245,11 +247,11 @@ void main() {
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
   });
 
-  testWidgets('本地数据为空而计划仍在准备时点击"开始学习"：按钮立即给出准备中反馈', (tester) async {
+  testWidgets('本地一份计划词都拿不到而准备仍在途时：页面不得呈现 0/0 的"就绪"假象', (tester) async {
     await seedEmptyTodayPlan('test_user_id');
 
-    // 同样用"挂起的网络探测"卡住阻塞式云端同步，还原重装后本地库为空、
-    // 页面先渲染出 0/0 而计划仍在准备的那个窗口期
+    // 用"挂起的网络探测"卡住阻塞式云端同步，还原重装/换端后本地库为空、
+    // 计划数据还在云端的那段窗口期
     final networkProbe = Completer<dynamic>();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('dev.fluttercommunity.plus/connectivity'),
@@ -259,15 +261,22 @@ void main() {
     await pumpTodayPlan(tester);
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('开始学习'), findsOneWidget, reason: '本地数据先渲染，页面此时已给出入口');
+    expect(find.text('开始学习'), findsNothing,
+        reason: '本地没有计划词时 0/0 只是假象，不得给出开始学习入口');
+    expect(find.byType(CircularProgressIndicator), findsWidgets, reason: '此时应呈现加载中');
 
-    await tester.tap(find.text('开始学习'));
-    await tester.pump();
+    networkProbe.complete(<String>[]); // 放行，避免残留未完成的 Future
+  });
 
-    expect(find.text('正在准备今日计划…'), findsOneWidget,
-        reason: '计划尚未就绪，点击后必须立刻给出反馈，不能毫无动静');
-    expect(find.text('开始学习'), findsNothing, reason: '准备中的按钮不得再显示为可开始');
+  testWidgets('本地已有今日计划词时：页面先渲染入口，不被准备流程挡住', (tester) async {
+    await seedYesterdayPlan('test_user_id', learningDateIsToday: true);
 
-    // 挂起的同步不再放行：本用例只验证"点击 → 立即反馈"这一段，放行会继续触发词书下载
+    await pumpTodayPlan(tester);
+    await pumpUntil(tester, find.text('开始学习'));
+
+    expect(find.text('开始学习'), findsOneWidget, reason: '本地已有今日计划词，必须先把页面渲染出来');
+    expect(find.text('LOADING PLAN'), findsNothing, reason: '不得因为云端同步在途而把页面挡在加载态');
+
+    await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
   });
 }

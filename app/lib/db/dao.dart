@@ -636,7 +636,12 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     return (select(dictWords)..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId))).getSingleOrNull();
   }
 
-  Future<void> insertEntity(DictWord entry, bool genLog) async {
+  /// 插入词书单词。
+  /// [invalidateTspCache] 供批量回放（同步日志回放、数据修复）置为 false：语义排序缓存的
+  /// 失效粒度是"整本词书"，逐条触发会让一本几千词的词书被反复整表重写。
+  /// 置为 false 的调用方必须自己负责失效——批量路径在本批结束时对每本受影响词书调用一次
+  /// [WordBo.clearTspCache]，单条路径则在自己事务之外显式调用一次。
+  Future<void> insertEntity(DictWord entry, bool genLog, {bool invalidateTspCache = true}) async {
     var existing = await getById(entry.dictId, entry.wordId);
     if (existing == null) {
       DictWord entryToInsert = entry;
@@ -656,7 +661,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       }
 
       await into(dictWords).insert(entryToInsert);
-      WordBo.clearTspCache(entry.dictId, db);
+      if (invalidateTspCache) WordBo.clearTspCache(entry.dictId, db);
       if (genLog) {
         var dict = await db.dictsDao.findById(entry.dictId);
         var owner = dict?.ownerId;
@@ -669,7 +674,8 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
   // 删除词书中的单词（用户主动删除时删除后重排剩余词 seq 并生成 UPDATE 日志；
   // genLog=false 仅供服务端日志回放，不重排）
-  Future<void> deleteEntity(DictWord entry, bool genLog) async {
+  // [invalidateTspCache] 语义同 [insertEntity]：批量回放置为 false，由调用方整批失效一次。
+  Future<void> deleteEntity(DictWord entry, bool genLog, {bool invalidateTspCache = true}) async {
     if (genLog) {
       var dict = await db.dictsDao.findById(entry.dictId);
       var owner = dict?.ownerId;
@@ -678,7 +684,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
     // 删除数据
     await delete(dictWords).delete(entry);
-    WordBo.clearTspCache(entry.dictId, db);
+    if (invalidateTspCache) WordBo.clearTspCache(entry.dictId, db);
 
     // 删除后重排剩余词的seq，保证连续（仅用户主动删除时；服务端日志回放不重排，避免日志循环）
     if (genLog) {
@@ -686,12 +692,16 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
   }
 
-  /// 完整删除词典单词（包括后续序号调整、wordCount更新、学习进度修复）
+  /// 删除词典单词（包括后续序号调整、wordCount更新、学习进度修复）
   /// [dictId] 词典ID
   /// [wordId] 单词ID
   /// [userId] 用户ID（用于修复特定用户的学习进度，如果为null则修复所有用户）
   /// [genLog] 是否生成日志
-  Future<void> deleteDictWordWithCleanup(String dictId, String wordId, String? userId, bool genLog) async {
+  /// [invalidateTspCache] 语义同 [insertEntity]：由调用方自行失效时置为 false。
+  /// [updateWordCount] 批量回放置为 false：wordCount 是整本词书的统计值，
+  /// 逐条删除时重算毫无意义，由调用方在本批结束时对每本受影响词书重算一次。
+  Future<void> deleteDictWordWithCleanup(String dictId, String wordId, String? userId, bool genLog,
+      {bool invalidateTspCache = true, bool updateWordCount = true}) async {
     final dictWord = await getById(dictId, wordId);
     if (dictWord == null) {
       Global.logger.w('词书中无该单词: dictId=$dictId, wordId=$wordId');
@@ -709,11 +719,11 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     // 删除记录
     await delete(dictWords).delete(dictWord);
-    WordBo.clearTspCache(dictId, db);
+    if (invalidateTspCache) WordBo.clearTspCache(dictId, db);
 
 
     // 更新词书的wordCount
-    await db.dictsDao.updateWordCount(dictId, genLog);
+    if (updateWordCount) await db.dictsDao.updateWordCount(dictId, genLog);
 
     // 删除后重排剩余词的seq，保证连续（仅用户主动删除时；服务端日志回放不重排，避免日志循环）
     if (genLog) {
