@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>会员中心 - 极简高质感订阅原型</title>
+  <style>
+    :root {
+      --bg: #F5F1EB;
+      --bg-gradient: linear-gradient(180deg, #EBE6DF 0%, #F5F1EB 50%, #FAF8F5 100%);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-border: rgba(0, 0, 0, 0.06);
+      --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+      --primary: #2A9D6A;
+      --primary-light: rgba(42, 157, 106, 0.08);
+      --primary-border: #2A9D6A;
+      --text-primary: #1C1E21;
+      --text-secondary: #586069;
+      --text-muted: #8C959F;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg: #141A22;
+      --bg-gradient: linear-gradient(180deg, #10151C 0%, #141A22 50%, #18202A 100%);
+      --card-bg: rgba(24, 32, 47, 0.72);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      --primary: #34D399;
+      --primary-light: rgba(52, 211, 153, 0.12);
+      --primary-border: #34D399;
+      --text-primary: #F0F6FC;
+      --text-secondary: #8B949E;
+      --text-muted: #6E7681;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #E5E7EB;
+      font-family: var(--font-stack);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+
+    .phone-container {
+      width: 393px;
+      height: 852px;
+      background: var(--bg-gradient);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 顶部导航栏 */
+    .app-header {
+      height: 44px;
+      margin-top: 44px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .header-btn-back {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+    }
+
+    .header-btn-restore {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 6px 4px;
+    }
+
+    /* 滚动主视区 */
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 18px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* 1. 会员状态尊享卡片 */
+    .vip-status-card {
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .vip-badge-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+      color: #451A03;
+      font-size: 24px;
+    }
+
+    .vip-info {
+      flex: 1;
+    }
+
+    .vip-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vip-name {
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .vip-tag {
+      padding: 2px 7px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 0.8px solid rgba(245, 158, 11, 0.45);
+      border-radius: 6px;
+      color: #FDE68A;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .vip-expiry {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 12.5px;
+      margin-top: 4px;
+      letter-spacing: 0.2px;
+    }
+
+    /* 2. 会员专属特权板块 */
+    .privileges-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      padding: 18px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+
+    .section-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .privilege-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 12px;
+    }
+
+    .privilege-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .privilege-icon-box {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+
+    .privilege-text h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .privilege-text p {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.25;
+    }
+
+    /* 3. 方案选择器（横向双列对比） */
+    .plans-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .plan-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .plan-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 18px;
+      padding: 16px 12px 14px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .plan-card.selected {
+      background: var(--primary-light);
+      border: 1.8px solid var(--primary-border);
+      box-shadow: 0 8px 20px rgba(42, 157, 106, 0.16);
+    }
+
+    .plan-badge-recommend {
+      position: absolute;
+      top: -11px;
+      background: var(--primary);
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2.5px 9px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(42, 157, 106, 0.25);
+    }
+
+    .plan-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 2px;
+    }
+
+    .plan-period {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .plan-price {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 10px 0 3px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      letter-spacing: -0.5px;
+    }
+
+    .plan-card.selected .plan-price {
+      color: var(--primary);
+    }
+
+    .plan-detail {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .plan-card.selected .plan-detail {
+      color: var(--primary);
+    }
+
+    .plan-active-tag {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2.5px 8px;
+      background: rgba(42, 157, 106, 0.12);
+      border-radius: 6px;
+    }
+
+    .plan-status-unselected {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      padding: 2.5px 0;
+    }
+
+    /* 4. 条款说明 */
+    .terms-box {
+      padding: 4px 6px;
+      text-align: center;
+    }
+
+    .terms-desc {
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--text-muted);
+      text-align: left;
+      margin-bottom: 12px;
+    }
+
+    .terms-links {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+    }
+
+    .terms-links a {
+      color: var(--text-secondary);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* 5. 常驻底部行动栏 */
+    .bottom-action-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 12px 18px 32px;
+      border-top: 0.5px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      z-index: 50;
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 48px;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 24px;
+      font-size: 15.5px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      box-shadow: 0 4px 14px rgba(42, 157, 106, 0.28);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-tips {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-container">
+    <!-- 顶部导航栏 -->
+    <header class="app-header">
+      <div class="header-btn-back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </div>
+      <div class="header-title">会员中心</div>
+      <div class="header-btn-restore">恢复购买</div>
+    </header>
+
+    <!-- 滚动视区 -->
+    <main class="scroll-content">
+      <!-- 1. VIP 状态尊享卡片 -->
+      <div class="vip-status-card">
+        <div class="vip-badge-icon">👑</div>
+        <div class="vip-info">
+          <div class="vip-title-row">
+            <span class="vip-name">年度会员</span>
+            <span class="vip-tag">PRO VIP</span>
+          </div>
+          <div class="vip-expiry">有效期至：2026年01月15日</div>
+        </div>
+      </div>
+
+      <!-- 2. 会员专属特权板块 -->
+      <section class="privileges-card">
+        <div class="section-header">
+          <span class="section-title">会员特权</span>
+          <span class="section-sub">· 专享高效背词服务</span>
+        </div>
+        <div class="privilege-grid">
+          <div class="privilege-item">
+            <div class="privilege-icon-box" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9;">⚡</div>
+            <div class="privilege-text">
+              <h4>无上限学词</h4>
+              <p>解除每日20词限制</p>
+            </div>
+          </div>
+          <div class="privilege-item">
+            <div class="privilege-icon-box" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">🚀</div>
+            <div class="privilege-text">
+              <h4>自由加量学习</h4>
+              <p>打卡后随时随心追加</p>
+            </div>
+          </div>
+          <div class="privilege-item">
+            <div class="privilege-icon-box" style="background: rgba(16, 185, 129, 0.12); color: #10B981;">📚</div>
+            <div class="privilege-text">
+              <h4>全库词书畅学</h4>
+              <p>全库解锁与自定义导入</p>
+            </div>
+          </div>
+          <div class="privilege-item">
+            <div class="privilege-icon-box" style="background: rgba(139, 92, 246, 0.12); color: #8B5CF6;">🤖</div>
+            <div class="privilege-text">
+              <h4>AI 深度助教</h4>
+              <p>语境联想与记忆溯源</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 方案选择器 -->
+      <section class="plans-container">
+        <div class="section-title">选择订阅方案</div>
+        <div class="plan-grid">
+          <!-- 年度方案（选中推荐态） -->
+          <div class="plan-card selected">
+            <span class="plan-badge-recommend">超值推荐</span>
+            <div class="plan-name">年度订阅</div>
+            <div class="plan-period">12个月</div>
+            <div class="plan-price">$3.99</div>
+            <div class="plan-detail">折合 $0.33/月</div>
+            <div class="plan-active-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              当前生效
+            </div>
+          </div>
+
+          <!-- 月度方案 -->
+          <div class="plan-card">
+            <div class="plan-name">月度订阅</div>
+            <div class="plan-period">1个月</div>
+            <div class="plan-price">$0.99</div>
+            <div class="plan-detail" style="color: var(--text-muted); font-weight: 400;">灵活按月畅学</div>
+            <div class="plan-status-unselected">轻触选择</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. 说明与条款 -->
+      <footer class="terms-box">
+        <p class="terms-desc">
+          • 付款与续订：确认购买后将由 iTunes 账户扣款。到期前24小时内苹果会自动扣款续订。<br>
+          • 取消续订：如需取消，请在当前周期结束前至少24小时在 Apple ID 订阅管理中关闭。<br>
+          • 恢复权益：如曾在其他 iOS 设备购买过，可轻触右上角“恢复购买”。
+        </p>
+        <div class="terms-links">
+          <a>用户协议</a>
+          <span>·</span>
+          <a>隐私政策</a>
+          <span>·</span>
+          <a>Apple EULA</a>
+        </div>
+      </footer>
+    </main>
+
+    <!-- 5. 常驻底部行动栏 -->
+    <div class="bottom-action-bar">
+      <button class="btn-submit">续订年度会员 ($3.99)</button>
+      <div class="btn-tips">自动续期可随时取消 · 支持跨设备通用</div>
+    </div>
+  </div>
+</body>
+</html>
