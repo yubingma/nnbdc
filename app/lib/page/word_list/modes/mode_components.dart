@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
 import '../../../../theme/app_theme.dart';
 
@@ -25,7 +26,10 @@ class ModeComponents {
             softWrap: false,
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
-              color: textMain,
+              // 今天测评答错的词标红（口径见 StudyBo.getTodayWrongWordIds）
+              color: word.isWrongToday
+                  ? FsrsRating.again.colorWithDark(isDarkMode)
+                  : textMain,
               fontSize: 16.5,
               fontWeight: FontWeight.w700,
               height: 1.25,

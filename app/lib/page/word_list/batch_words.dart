@@ -16,15 +16,23 @@ import '../../util/word_util.dart';
 
 class StageWordsProvider with WordsProvider {
   List<LearningWordVo>? _cachedWords;
+  Set<String>? _cachedWrongWordIds;
 
   Future<List<LearningWordVo>> _getAllWords() async {
     return _cachedWords ??= await StudyBo().getCurrentBatchCache();
+  }
+
+  /// 今天测评答错的词（与「新词答错/旧词答错」轨道同一判据），用于把拼写标红
+  Future<Set<String>> _getWrongWordIds(List<LearningWordVo> words) async {
+    return _cachedWrongWordIds ??= await StudyBo()
+        .getTodayWrongWordIds(words.map((w) => w.word.id).whereType<String>());
   }
 
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
     final sw = Stopwatch()..start();
     var allWords = await _getAllWords();
+    final wrongWordIds = await _getWrongWordIds(allWords);
     var results = PagedResults<WordWrapper>(allWords.length);
     
     if (fromIndex < 0) fromIndex = 0;
@@ -32,7 +40,8 @@ class StageWordsProvider with WordsProvider {
     
     for (var i = fromIndex; i < end; i++) {
       var word = allWords[i];
-      results.rows.add(WordWrapper(word.word, word));
+      results.rows.add(WordWrapper(word.word, word)
+        ..isWrongToday = wrongWordIds.contains(word.word.id));
     }
     Global.logger.d('StageWordsProvider: getAPageOfWords(from=$fromIndex) completed in ${sw.elapsedMilliseconds}ms');
     return results;

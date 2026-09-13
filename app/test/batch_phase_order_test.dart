@@ -174,7 +174,8 @@ void main() {
   });
 
   /// 一整天的出题序列：每次取当前词 → 记录(词, 环节) → 评分 → List 环节批量完成。
-  /// [wrongOnceWordId] 指定的词在测评环节按"不认识"（again）作答。
+  /// [wrongOnceWordId] 指定的词在测评环节按"不认识"（again）作答；
+  /// [wrongAtCh2EnWordId] 指定的词在汉译英环节按"不认识"作答（测评仍是答对）。
   Future<
       List<
           ({
@@ -184,7 +185,8 @@ void main() {
             int groupPosition,
             int groupTotal,
             String trackName
-          })>> playWholeDay({String? wrongOnceWordId}) async {
+          })>>
+      playWholeDay({String? wrongOnceWordId, String? wrongAtCh2EnWordId}) async {
     final seq = <({
       String wordId,
       String step,
@@ -231,7 +233,8 @@ void main() {
         trackName: group?.trackName ?? '',
       ));
 
-      final rating = wordId == wrongOnceWordId && step == 'En2Ch'
+      final rating = (wordId == wrongOnceWordId && step == 'En2Ch') ||
+              (wordId == wrongAtCh2EnWordId && step == 'Ch2En')
           ? FsrsRating.again
           : FsrsRating.good;
       await studyBo.getWord(false, true, fsrsRating: rating);
@@ -367,6 +370,29 @@ void main() {
     expect(right.map((e) => e.position).toList(),
         List.generate(batchSize - 1, (i) => i + 1));
     expect(right.every((e) => e.total == batchSize - 1), true);
+  });
+
+  test('小结标红只认"测评答错"：后续环节答错不参与', () async {
+    final prep = await LearningService.prepareTodayStudy(true);
+    expect(prep.success, true);
+
+    // w_1 测评答错；w_2 测评答对、但汉译英答错
+    await playWholeDay(wrongOnceWordId: 'w_1', wrongAtCh2EnWordId: 'w_2');
+
+    // 前提校验：w_2 确实在今天留下过 again 日志，否则本用例会空转
+    final w2Logs = await db.learningLogsDao.getHistory(testUser.id, 'w_2');
+    expect(
+        w2Logs.any((l) =>
+            l.rating == FsrsRating.again.value &&
+            !l.createTime.isBefore(AppClock.today())),
+        true,
+        reason: 'w_2 应在汉译英环节留下今天的 again 日志');
+
+    final batchWordIds = [for (int i = 1; i <= batchSize; i++) 'w_$i'];
+    final wrongIds = await studyBo.getTodayWrongWordIds(batchWordIds);
+
+    expect(wrongIds, {'w_1'},
+        reason: '标红口径 = 当天首条评分，与「新词答错」轨道一致；w_2 是汉译英答错，测评答对，不标红');
   });
 
   test('第 N 组指示：组号按今日列表每 10 词一组递增', () async {

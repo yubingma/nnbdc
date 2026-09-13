@@ -90,6 +90,9 @@ class WordWrapper {
   /// 是否在“背英文”模式下已经答对（用于揭示英文拼写）
   bool speakEnglishPassed = false;
 
+  /// 今天测评答错（当天首条评分为 again）—— 本组小结据此把拼写标红
+  bool isWrongToday = false;
+
   /// 初始学习状态（进入词表时的状态）
   bool? initialLearningStatus;
 

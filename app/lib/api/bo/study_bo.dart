@@ -1058,17 +1058,35 @@ class StudyBo {
     return nextFsrs;
   }
 
+  /// 今天测评答错（当天**首条**评分为 again）的词 id 集合。
+  /// 与轨道名「新词答错 / 旧词答错」同一判据（不是"今天任何一次答错"），
+  /// 供本组小结把答错的词标红。
+  Future<Set<String>> getTodayWrongWordIds(Iterable<String> wordIds) async {
+    final user = Global.getLoggedInUser();
+    if (user == null) return {};
+    final logs = await _loadTodayFirstLogsOfIds(user.id, wordIds);
+    return {
+      for (final e in logs.entries)
+        if (e.value.rating == FsrsRating.again.value) e.key,
+    };
+  }
+
   /// 查询今日单词在今天的首条评分日志的 elapsedDays（用于固化当天学习/复习轨道）
   Future<Map<String, ({int elapsedDays, int rating})>> _loadTodayFirstLogs(
-      String userId, List<LearningWord> words) async {
+          String userId, List<LearningWord> words) =>
+      _loadTodayFirstLogsOfIds(userId, words.map((w) => w.wordId));
+
+  Future<Map<String, ({int elapsedDays, int rating})>> _loadTodayFirstLogsOfIds(
+      String userId, Iterable<String> wordIds) async {
     final result = <String, ({int elapsedDays, int rating})>{};
-    if (words.isEmpty) return result;
+    final ids = wordIds.toList();
+    if (ids.isEmpty) return result;
     final db = MyDatabase.instance;
     final todayStart = AppClock.today();
     final rows = await (db.select(db.learningLogs)
           ..where((l) =>
               l.userId.equals(userId) &
-              l.wordId.isIn(words.map((w) => w.wordId)) &
+              l.wordId.isIn(ids) &
               l.createTime.isBiggerOrEqualValue(todayStart)))
         .get();
     // 每词取最早一条日志（今天首条评分）的 elapsedDays 与 rating（用于固化轨道与扩展复习轨道）
