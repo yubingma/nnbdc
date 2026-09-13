@@ -177,25 +177,37 @@ void main() {
       final state = WalkmanPageState();
       addTearDown(() => state.playWordTimer?.cancel());
 
+      state.ambientVolume = 0.65; // 用户设定的环境白噪音音量
+
       // 开始播放
       state.resetPlayState();
       expect(state.isPaused, isFalse);
+      expect(state.ambientEffectiveVolume, 0.65);
       state.playWordTimer?.cancel(); // 清掉开始播放时挂的计时器，使下面只反映暂停后的行为
 
-      // 暂停：立即进入暂停态，当前单词标记为已停止
+      // 暂停：立即进入暂停态，当前单词标记为已停止，环境白噪音一并静音
       state.pausePlayback();
       expect(state.isPaused, isTrue);
       expect(state.currentWordPlayingStopped, isTrue);
       expect(state.playWordTimer?.isActive, isFalse);
+      expect(state.ambientEffectiveVolume, 0.0);
 
       // 暂停期间即使计时器被驱动，也不允许再排下一个计时器（旧实现在这里会自动续播）
       await state.playWordTick();
       expect(state.playWordTimer?.isActive, isFalse);
 
-      // 恢复播放：清除暂停态并重新开启播放循环
+      // 用户自己按了静音：恢复播放也不该出声
+      state.ambientMuted = true;
+
+      // 恢复播放：清除暂停态、重新开启播放循环
       state.resetPlayState();
       expect(state.isPaused, isFalse);
       expect(state.playWordTimer?.isActive, isTrue);
+      expect(state.ambientEffectiveVolume, 0.0);
+
+      // 取消静音后回到用户设定音量
+      state.ambientMuted = false;
+      expect(state.ambientEffectiveVolume, 0.65);
     });
   });
 }
