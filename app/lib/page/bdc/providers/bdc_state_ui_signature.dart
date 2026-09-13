@@ -35,6 +35,7 @@ class BdcStateUiSignature {
   final int groupStepNo;
   final int groupStepPosition;
   final int groupStepTotal;
+  final String? groupStepTrackName;
   final String? groupStepHint;
 
   BdcStateUiSignature(BdcState s)
@@ -70,6 +71,7 @@ class BdcStateUiSignature {
         groupStepNo = s.groupStepNo,
         groupStepPosition = s.groupStepPosition,
         groupStepTotal = s.groupStepTotal,
+        groupStepTrackName = s.groupStepTrackName,
         groupStepHint = s.groupStepHint;
 
   @override
@@ -108,6 +110,7 @@ class BdcStateUiSignature {
         groupStepNo == other.groupStepNo &&
         groupStepPosition == other.groupStepPosition &&
         groupStepTotal == other.groupStepTotal &&
+        groupStepTrackName == other.groupStepTrackName &&
         groupStepHint == other.groupStepHint;
   }
 
@@ -145,6 +148,7 @@ class BdcStateUiSignature {
         groupStepNo,
         groupStepPosition,
         groupStepTotal,
+        groupStepTrackName,
         groupStepHint,
       ]);
 }

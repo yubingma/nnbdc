@@ -43,6 +43,7 @@ import '../../util/performance_watchdog.dart';
 import '../../util/prefs.dart';
 import '../../util/utils.dart';
 import '../../widget/handwriting_board.dart';
+import '../../widget/learning_history_dialog.dart';
 import '../../widget/pronunciation_accent_badge.dart';
 import '../../widget/sound_wave_icon.dart';
 import '../../widget/pronunciation_accent_dialog.dart';

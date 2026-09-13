@@ -74,15 +74,16 @@ class BdcState extends Equatable {
   final bool isWordMastered;
   /// 当前单词今天是否走复习轨道（旧词），由 handleWord 按轨道推导，用于把环节名映射为「新词/旧词」。
   final bool isReviewWord;
-  /// 今天测评首条评分是否被判为 again（答错），决定环节名与评分修正的「答对/答错」措辞。
-  final bool assessmentIsAgain;
-
   /// 本组（10 词一批）的序号（1 起）与当前环节的排队位置、队列长度，
-  /// 用于学习页「第 N 组 · 环节 x/y」指示；位置为 0 表示当前无指示可展示
+  /// 用于学习页「第 N 组 · 轨道 · 环节 x/y」指示；位置为 0 表示当前无指示可展示
   /// （如 List 环节或无法定位）。
   final int groupStepNo;
   final int groupStepPosition;
   final int groupStepTotal;
+
+  /// 当前词所属的轨道名（如「新词答错」）；x/y 是该轨道在本组本环节内的进度，
+  /// 见 StudyBo.getBatchPhaseProgress。
+  final String? groupStepTrackName;
 
   /// 本组环节切换时的一次性轻提示（只在切换后第一个词上展示，切词即清空）
   final String? groupStepHint;
@@ -159,10 +160,10 @@ class BdcState extends Equatable {
     this.hintTapCount = 0,
     this.isWordMastered = false,
     this.isReviewWord = false,
-    this.assessmentIsAgain = false,
     this.groupStepNo = 0,
     this.groupStepPosition = 0,
     this.groupStepTotal = 0,
+    this.groupStepTrackName,
     this.groupStepHint,
     this.wordStartTime,
     this.firstMatchTime,
@@ -178,20 +179,6 @@ class BdcState extends Equatable {
     this.isPttPressed = false,
     this.isAiEvaluating = false,
   });
-
-  /// 当前词的轨道名，六种互斥状态，与今日计划页「学习轨道」的措辞一致：
-  /// 测评环节为「新词测评 / 旧词测评」，测评之后分化为
-  /// 「新词答对 / 新词答错 / 旧词答对 / 旧词答错」。
-  ///
-  /// 判据只取 [assessmentRating]（今天测评的评分：巩固阶段才非空，且「修改今日评分」
-  /// 会同步它），与答题卡底部"新词测评: 良好"同一个来源 —— 不再出现顶部写"答错"、
-  /// 底部写"良好"的分裂（assessmentIsAgain 是它的旧副本，改评分时不会同步）。
-  String get currentWordTrackName {
-    final wordType = isReviewWord ? '旧词' : '新词';
-    final rating = assessmentRating;
-    if (rating == null) return '$wordType测评';
-    return '$wordType${rating == FsrsRating.again ? '答错' : '答对'}';
-  }
 
   bool get autoJumpAfterCorrect {
     if (studyStep == StudyStep.ch2En.json) {
@@ -257,10 +244,10 @@ class BdcState extends Equatable {
     int? hintTapCount,
     bool? isWordMastered,
     bool? isReviewWord,
-    bool? assessmentIsAgain,
     int? groupStepNo,
     int? groupStepPosition,
     int? groupStepTotal,
+    Object? groupStepTrackName = _sentinel,
     Object? groupStepHint = _sentinel,
     Object? wordStartTime = _sentinel,
     Object? firstMatchTime = _sentinel,
@@ -339,10 +326,10 @@ class BdcState extends Equatable {
       hintTapCount: hintTapCount ?? this.hintTapCount,
       isWordMastered: isWordMastered ?? this.isWordMastered,
       isReviewWord: isReviewWord ?? this.isReviewWord,
-      assessmentIsAgain: assessmentIsAgain ?? this.assessmentIsAgain,
       groupStepNo: groupStepNo ?? this.groupStepNo,
       groupStepPosition: groupStepPosition ?? this.groupStepPosition,
       groupStepTotal: groupStepTotal ?? this.groupStepTotal,
+      groupStepTrackName: groupStepTrackName == _sentinel ? this.groupStepTrackName : (groupStepTrackName as String?),
       groupStepHint: groupStepHint == _sentinel ? this.groupStepHint : (groupStepHint as String?),
       wordStartTime: wordStartTime == _sentinel ? this.wordStartTime : (wordStartTime as DateTime?),
       firstMatchTime: firstMatchTime == _sentinel ? this.firstMatchTime : (firstMatchTime as DateTime?),
@@ -420,10 +407,10 @@ class BdcState extends Equatable {
     hintTapCount,
     isWordMastered,
     isReviewWord,
-    assessmentIsAgain,
     groupStepNo,
     groupStepPosition,
     groupStepTotal,
+    groupStepTrackName,
     groupStepHint,
     wordStartTime,
     firstMatchTime,

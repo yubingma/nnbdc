@@ -1688,9 +1688,11 @@ void main() {
 
     final notifier = container.read(bdcNotifierProvider.notifier);
     await notifier.loadData(FakeBuildContext());
+    // 组进度由 handleWord 里的异步刷新落定（unawaited 调用）
+    await _waitUntil(container, (s) => s.groupStepTrackName != null);
     var state = container.read(bdcNotifierProvider);
-    expect(state.currentWordTrackName, '旧词测评',
-        reason: '复习词的测评环节轨道名为"旧词测评"');
+    expect(state.groupStepTrackName, '旧词测评',
+        reason: '测评环节尚未评分，当前词轨道名为"旧词测评"');
 
     // 测评答错 → 应进入恢复环节
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
@@ -1701,10 +1703,11 @@ void main() {
         reason: '恢复环节词状态应为 relearning');
     expect(state.isReviewWord, true,
         reason: '恢复环节仍属复习轨道,应标记为新词/旧词中的[旧词]');
-    expect(state.assessmentIsAgain, true,
-        reason: '当天首条测评评分为 again,环节名应判为[答错]');
-    expect(state.currentWordTrackName, '旧词答错',
-        reason: '旧词测评答错后进入恢复环节,轨道名为"旧词答错"');
+    // 组进度异步刷新落定后再断言（该值只能由本次刷新生出）
+    await _waitUntil(container, (s) => s.groupStepTrackName == '旧词答错');
+    state = container.read(bdcNotifierProvider);
+    expect(state.groupStepTrackName, '旧词答错',
+        reason: '恢复环节当前词轨道名为"旧词答错"');
 
     // 恢复环节答对 → 复习轨道今日完成，进入 List 环节（列表页）
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
@@ -1749,8 +1752,8 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.studyStep, StudyStep.en2Ch.json);
     expect(state.groupStepHint, null, reason: '首次进入学习页不应弹出提示');
-    expect(state.currentWordTrackName, '新词测评',
-        reason: '测评环节尚未评分，轨道名为"新词测评"');
+    expect(state.groupStepTrackName, '新词测评',
+        reason: '测评环节尚未评分，当前词轨道名为"新词测评"');
 
     // 测评答对 → 本组进入汉译英环节：首词给出"整组推进"的顺序提示
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
@@ -1760,19 +1763,8 @@ void main() {
     expect(state.groupStepPosition, 1);
     expect(state.groupStepTotal, 1);
     expect(state.groupStepNo, 1, reason: '本组仅 1 个词，仍是今日第 1 组');
-    expect(state.currentWordTrackName, '新词答对',
-        reason: '测评答对后轨道分化出"答对"，与环节名"汉译英"并列展示');
-
-    // 修改今日评分（答题卡底部的"新词测评: xx"随之变化）：
-    // 轨道名必须跟着变 —— 它与底部标签同源，不允许顶部"答错"、底部"良好"的分裂。
-    notifier.updateFsrsRating(FsrsRating.again);
-    state = container.read(bdcNotifierProvider);
-    expect(state.assessmentRating, FsrsRating.again);
-    expect(state.currentWordTrackName, '新词答错',
-        reason: '改评分后轨道名必须与"新词测评"标签一致');
-    notifier.updateFsrsRating(FsrsRating.good);
-    state = container.read(bdcNotifierProvider);
-    expect(state.currentWordTrackName, '新词答对', reason: '改回答对后轨道名同步回复');
+    expect(state.groupStepTrackName, '新词答对',
+        reason: '本组只有 1 个词且答对，轨道名为"新词答对"');
 
     expect(state.groupStepHint, isNot(null),
         reason: '环节切换后的首个词应提示"整组逐个推进到下一个环节"');

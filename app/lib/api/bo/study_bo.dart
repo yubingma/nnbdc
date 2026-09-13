@@ -1314,12 +1314,19 @@ class StudyBo {
     return a.learningOrder.compareTo(b.learningOrder);
   }
 
-  /// 学习页「第 N 组 · 环节 x/y」指示：[batchSize] 词一批，[groupNo] 为本组在今日
-  /// 学习列表中的序号（1 起），x 为已走完该环节的词数 + 1（当前词在该环节的顺位，
-  /// 与 _compareBatchWords "整组横向推进"的出题顺序一致），y 为本组走该环节的词数
-  /// （≠ 组内词数：已掌握的词、以及答对后不再走该环节的复习词都不计入）。
+  /// 学习页「第 N 组 · 轨道 · 环节 x/y」指示：[batchSize] 词一批，[groupNo] 为本组在今日
+  /// 学习列表中的序号（1 起），[trackName] 为当前词所属的轨道名。
+  ///
+  /// x/y 是**当前词所在轨道**在本组本环节内的进度：一个环节常由多条轨道汇聚而来
+  /// （如"新词答对 8 个 + 新词答错 2 个"都走汉译英），各条轨道分别计数 ——
+  /// x 为该轨道内已走完本环节的词数 + 1，y 为该轨道内走本环节的词数
+  /// （≠ 组内词数：已掌握的词、以及答对后不再走本环节的复习词都不计入）。
+  /// 注意：这只影响指示器的显示口径，不参与任何调度 —— 出题顺序仍由
+  /// _calculateBatchStartIndex / _compareBatchWords 决定（整组横向混排）。
+  ///
   /// 无法定位（当前词不在本组、或该词今天不走这个环节）时返回 null。
-  Future<({int position, int total, int groupNo})?> getBatchPhaseProgress({
+  Future<({int position, int total, int groupNo, String trackName})?>
+      getBatchPhaseProgress({
     required String wordId,
     required String step,
   }) async {
@@ -1343,9 +1350,14 @@ class StudyBo {
     final masteredWordIds = await StudyCacheManager().getMasteredWordIds(db, user.id);
     final today = AppClock.today();
 
-    int done = 0;
-    int total = 0;
-    bool found = false;
+    // 本组内走本环节的每个词 → (轨道环节序列, 是否旧词、今天首评, 已走完的环节数)
+    final entries = <({
+      String wordId,
+      List<String> track,
+      bool isReview,
+      int? firstRating,
+      int learnedTimes
+    })>[];
     for (final word in batchWords) {
       // 已掌握的词不再出题，也不再占用本组名额
       if (word.isEffectivelyMastered(masteredWordIds)) continue;
@@ -1367,15 +1379,66 @@ class StudyBo {
       // 该词今天不走这个环节（如复习词答对后没有 Ch2En），不计入本环节名额
       final stepIndexInTrack = track.indexOf(step);
       if (stepIndexInTrack < 0) continue;
-      total++;
-      if (word.todayLearnedTimes > stepIndexInTrack) {
-        done++;
-      } else if (word.wordId == wordId) {
-        found = true;
-      }
+      entries.add((
+        wordId: word.wordId,
+        track: track,
+        isReview: StudyTrack.isReviewTrack(
+          stability: word.stability,
+          state: word.state,
+          lastLearningDate: word.lastLearningDate,
+          todayFirstLogElapsedDays: first?.elapsedDays,
+          today: today,
+        ),
+        firstRating: first?.rating,
+        learnedTimes: word.todayLearnedTimes,
+      ));
     }
-    if (!found) return null;
-    return (position: done + 1, total: total, groupNo: batchStart ~/ batchSize + 1);
+
+    final currentIndex = entries.indexWhere((e) => e.wordId == wordId);
+    if (currentIndex < 0) return null;
+    final current = entries[currentIndex];
+
+    // 当前环节在轨道中的位置 = 该词今天已走完的环节数。
+    // 不能用 track.indexOf(step)：当"答对组/答错组"里配了测评环节本身时，轨道会出现
+    // 两次同名环节（如 [En2Ch, En2Ch, List]），indexOf 只会命中第一次，
+    // 把第二遍英译汉误判成测评环节（轨道名错、分子还会超过分母）。
+    final stepIndexInTrack = current.learnedTimes;
+    if (stepIndexInTrack >= current.track.length ||
+        current.track[stepIndexInTrack] != step) {
+      return null;
+    }
+    // 同一阶段整组共用同一个"是否测评环节"判定；同轨道名的词轨道环节序列必然相同
+    final isCheckStep = stepIndexInTrack == 0;
+    String trackNameOf(
+            ({String wordId, List<String> track, bool isReview, int? firstRating, int learnedTimes}) e) =>
+        _trackNameOf(
+          isReview: e.isReview,
+          isCheckStep: isCheckStep,
+          todayFirstLogRating: e.firstRating,
+        );
+    final currentTrackName = trackNameOf(current);
+    final sameTrack = entries.where((e) => trackNameOf(e) == currentTrackName);
+    final done =
+        sameTrack.where((e) => e.learnedTimes > stepIndexInTrack).length;
+
+    return (
+      position: done + 1,
+      total: sameTrack.length,
+      groupNo: batchStart ~/ batchSize + 1,
+      trackName: currentTrackName,
+    );
+  }
+
+  /// 单个词在某环节上的轨道名：[isCheckStep] 为真表示该环节就是这个词的测评环节
+  /// （还没评分，只到「新词测评/旧词测评」），否则按今天首条评分分化为「答对/答错」。
+  static String _trackNameOf({
+    required bool isReview,
+    required bool isCheckStep,
+    required int? todayFirstLogRating,
+  }) {
+    final wordType = isReview ? '旧词' : '新词';
+    if (isCheckStep) return '$wordType测评';
+    return '$wordType${todayFirstLogRating == FsrsRating.again.value ? '答错' : '答对'}';
   }
 
   /// 计算指定单词的指定学习模式, 在第几个顺位出现

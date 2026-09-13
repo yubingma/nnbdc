@@ -175,9 +175,24 @@ void main() {
 
   /// 一整天的出题序列：每次取当前词 → 记录(词, 环节) → 评分 → List 环节批量完成。
   /// [wrongOnceWordId] 指定的词在测评环节按"不认识"（again）作答。
-  Future<List<({String wordId, String step, int groupNo, int groupPosition, int groupTotal})>>
-      playWholeDay({String? wrongOnceWordId}) async {
-    final seq = <({String wordId, String step, int groupNo, int groupPosition, int groupTotal})>[];
+  Future<
+      List<
+          ({
+            String wordId,
+            String step,
+            int groupNo,
+            int groupPosition,
+            int groupTotal,
+            String trackName
+          })>> playWholeDay({String? wrongOnceWordId}) async {
+    final seq = <({
+      String wordId,
+      String step,
+      int groupNo,
+      int groupPosition,
+      int groupTotal,
+      String trackName
+    })>[];
     int guard = 0;
     while (guard++ < 300) {
       final res = await studyBo.getWord(false, false);
@@ -193,6 +208,7 @@ void main() {
           groupNo: 0,
           groupPosition: 0,
           groupTotal: 0,
+          trackName: '',
         ));
         final completeRes = await studyBo.completeListStepForCurrentBatch();
         expect(completeRes.success, true);
@@ -212,6 +228,7 @@ void main() {
         groupNo: group?.groupNo ?? -1,
         groupPosition: group?.position ?? -1,
         groupTotal: group?.total ?? -1,
+        trackName: group?.trackName ?? '',
       ));
 
       final rating = wordId == wrongOnceWordId && step == 'En2Ch'
@@ -248,8 +265,108 @@ void main() {
     expect(w1Index, greaterThan(0), reason: 'w_1 答错后必须在本组汉译英环节回来');
     expect(seq[w1Index].wordId, 'w_1');
     expect(seq[w1Index].groupNo, 1);
+
+    // 3. 进度按"当前词所在轨道"分别计数：第 1 组的汉译英由两条轨道汇聚而来 ——
+    //    w_1 答错自成一条（1 个词），其余 9 个答对自成一条，各数各的。
+    expect(seq[w1Index].trackName, '新词答错');
     expect(seq[w1Index].groupPosition, 1);
-    expect(seq[w1Index].groupTotal, batchSize);
+    expect(seq[w1Index].groupTotal, 1,
+        reason: '本组只有 w_1 答错，这条轨道就 1 个词');
+    final firstEn2Ch = seq.firstWhere((e) => e.step == 'En2Ch');
+    expect(firstEn2Ch.trackName, '新词测评');
+    expect(firstEn2Ch.groupTotal, batchSize, reason: '测评环节整组同属一条轨道');
+    // 第 2 组没人答错：汉译英只有一条轨道，分母就是整组词数
+    final secondBatchCh2En = seq.firstWhere((e) => e.step == 'Ch2En' && e.groupNo == 2);
+    expect(secondBatchCh2En.trackName, '新词答对');
+    expect(secondBatchCh2En.groupTotal, batchSize);
+  });
+
+  test('两轨道走不同环节：各按自己的轨道计数（答对组与测评环节同名）', () async {
+    // 配置：测评 英译汉；答对组 英译汉（与测评环节同名！）；答错组 汉译英
+    for (final c in [
+      (group: 'check', step: 'En2Ch'),
+      (group: 'correct', step: 'En2Ch'),
+      (group: 'wrong', step: 'Ch2En'),
+    ]) {
+      await db.into(db.userStudySteps).insert(UserStudyStep(
+            userId: testUser.id,
+            scope: 'new',
+            group: c.group,
+            studyStep: c.step,
+            seq: 0,
+            state: 'Active',
+            createTime: AppClock.now(),
+            updateTime: AppClock.now(),
+          ));
+    }
+
+    final prep = await LearningService.prepareTodayStudy(true);
+    expect(prep.success, true);
+
+    // 新词轨道：答对 → [英译汉, 英译汉, 小结]；答错 → [英译汉, 汉译英, 小结]
+    const rightTrack = ['En2Ch', 'En2Ch', 'List'];
+    const wrongTrack = ['En2Ch', 'Ch2En', 'List'];
+    const wrongWordId = 'w_1';
+
+    final seq = <({String wordId, int groupNo, int stepIndex, String step, String trackName, int position, int total})>[];
+    var guard = 0;
+    while (guard++ < 100) {
+      final res = await studyBo.getWord(false, false);
+      final data = res.data!;
+      if (data.finished || data.learningWord == null) break;
+      if (data.progress != null && data.progress![1] == 0) {
+        await studyBo.completeListStepForCurrentBatch();
+        continue;
+      }
+      final wordId = data.learningWord!.word.id!;
+      // 只有 w_1 在测评环节答错；用各自轨道取真实环节名（同一个 stepIndex 可能是不同环节）
+      final track = wordId == wrongWordId ? wrongTrack : rightTrack;
+      final step = track[data.stepIndex];
+      final progress =
+          await studyBo.getBatchPhaseProgress(wordId: wordId, step: step);
+      seq.add((
+        wordId: wordId,
+        groupNo: progress!.groupNo,
+        stepIndex: data.stepIndex,
+        step: step,
+        trackName: progress.trackName,
+        position: progress.position,
+        total: progress.total,
+      ));
+      await studyBo.getWord(false, true,
+          fsrsRating: wordId == wrongWordId && data.stepIndex == 0
+              ? FsrsRating.again
+              : FsrsRating.good);
+    }
+
+    // 只看第 1 组（本文件今日共 20 词，第 2 组无人答错）
+    final group1 = seq.where((e) => e.groupNo == 1).toList();
+
+    // 调度：整组横向混排，不按轨道分组 —— 答错的 w_1 组内序号最靠前，先做它的汉译英
+    final second = group1.where((e) => e.stepIndex == 1).toList();
+    expect(second.first.wordId, wrongWordId);
+
+    // 测评环节：整组同轨道，顺位 1..10
+    final assess = group1.where((e) => e.stepIndex == 0).toList();
+    expect(assess.map((e) => e.trackName).toSet(), {'新词测评'});
+    expect(assess.map((e) => e.position).toList(),
+        List.generate(batchSize, (i) => i + 1));
+    expect(assess.every((e) => e.total == batchSize), true);
+
+    // 第二环节：两条轨道各走各的环节、各数各的词数
+    final wrong = second.where((e) => e.trackName == '新词答错').toList();
+    expect(wrong.map((e) => e.wordId).toList(), [wrongWordId]);
+    expect(wrong.single.step, 'Ch2En');
+    expect(wrong.single.position, 1);
+    expect(wrong.single.total, 1);
+
+    final right = second.where((e) => e.trackName == '新词答对').toList();
+    expect(right.length, batchSize - 1);
+    expect(right.every((e) => e.step == 'En2Ch'), true,
+        reason: '答对组配的就是英译汉，与测评同名也不能被误判成测评环节');
+    expect(right.map((e) => e.position).toList(),
+        List.generate(batchSize - 1, (i) => i + 1));
+    expect(right.every((e) => e.total == batchSize - 1), true);
   });
 
   test('第 N 组指示：组号按今日列表每 10 词一组递增', () async {
@@ -269,36 +386,41 @@ void main() {
     }
   });
 
-  test('本组环节进度指示与出题顺序一致（第 N 组 · 环节 x/10）', () async {
+  test('轨道内进度指示与出题顺序一致（第 N 组 · 轨道 · 环节 x/y）', () async {
     final prep = await LearningService.prepareTodayStudy(true);
     expect(prep.success, true);
 
     final seq = await playWholeDay(wrongOnceWordId: 'w_1');
 
-    for (final entry in seq) {
-      if (entry.step == 'List') continue;
-      // 每组的每个环节队列长度恒为本组词数，位置在 1..10 之间且不重复
-      expect(entry.groupTotal, batchSize, reason: '${entry.wordId}@${entry.step}');
-      expect(entry.groupPosition, inInclusiveRange(1, batchSize));
-    }
+    // 测评环节：整组同属一条轨道，顺位恰好 1..10
+    final en2Ch1 = seq.where((e) => e.step == 'En2Ch' && e.groupNo == 1).toList();
+    expect(en2Ch1.map((e) => e.trackName).toSet(), {'新词测评'});
+    expect(en2Ch1.map((e) => e.groupPosition).toList(),
+        List.generate(batchSize, (i) => i + 1));
+    expect(en2Ch1.every((e) => e.groupTotal == batchSize), true);
 
-    // 本组第一个环节：第 3 个词位于队列第 3 位，且整组顺位恰好 1..10
-    expect(seq[2].wordId, 'w_3');
-    expect(seq[2].groupPosition, 3);
-    expect(
-      seq.skip(0).take(batchSize).map((e) => e.groupPosition).toList(),
-      List.generate(batchSize, (i) => i + 1),
-    );
-    // 本组汉译英环节的第一个词：答错的 w_1 排在队列第 1 位
-    final firstCh2En = seq.firstWhere((e) => e.step == 'Ch2En');
-    expect(firstCh2En.wordId, 'w_1');
-    expect(firstCh2En.groupPosition, 1);
-    // 本组汉译英环节的最后一个词
-    final lastCh2En = seq.lastWhere((e) => e.step == 'Ch2En' && e.wordId == 'w_10');
-    expect(lastCh2En.groupPosition, batchSize);
+    // 汉译英：两条轨道各自从 1 数到自己那条轨道的词数（不是共用整组队列）
+    final ch2En1 = seq.where((e) => e.step == 'Ch2En' && e.groupNo == 1).toList();
+    final wrongTrack = ch2En1.where((e) => e.trackName == '新词答错').toList();
+    final rightTrack = ch2En1.where((e) => e.trackName == '新词答对').toList();
+    expect(wrongTrack.map((e) => e.wordId).toList(), ['w_1'],
+        reason: '答错的 w_1 排在汉译英队列第 1 位');
+    expect(wrongTrack.single.groupPosition, 1);
+    expect(wrongTrack.single.groupTotal, 1);
+    expect(rightTrack.length, batchSize - 1);
+    expect(rightTrack.map((e) => e.groupPosition).toList(),
+        List.generate(batchSize - 1, (i) => i + 1));
+    expect(rightTrack.every((e) => e.groupTotal == batchSize - 1), true);
+
+    // 第 2 组无人答错：汉译英只有一条轨道，进度 1..10
+    final ch2En2 = seq.where((e) => e.step == 'Ch2En' && e.groupNo == 2).toList();
+    expect(ch2En2.map((e) => e.trackName).toSet(), {'新词答对'});
+    expect(ch2En2.every((e) => e.groupTotal == batchSize), true);
+    expect(ch2En2.map((e) => e.groupPosition).toList(),
+        List.generate(batchSize, (i) => i + 1));
   });
 
-  test('分母是本环节队列长度而非组内词数：复习词答对后不再走汉译英', () async {
+  test('分母是当前词所在轨道的词数：同组内的新词/旧词也各算各的', () async {
     final prep = await LearningService.prepareTodayStudy(true);
     expect(prep.success, true);
 
@@ -321,13 +443,22 @@ void main() {
 
     final seq = await playWholeDay();
 
-    // 复习词答对：轨道为 [En2Ch, List]，汉译英环节不含它，故本组 10 词只排 9 个
+    // 复习词答对：轨道为 [En2Ch, List]，汉译英环节不含它
     expect(seq.any((e) => e.wordId == 'w_5' && e.step == 'Ch2En'), false,
         reason: '复习词答对后不再走汉译英');
-    for (final entry in seq) {
-      if (entry.step == 'List' || entry.groupNo != 1) continue;
-      expect(entry.groupTotal, entry.step == 'En2Ch' ? batchSize : batchSize - 1,
-          reason: '${entry.wordId}@${entry.step}');
-    }
+
+    // 测评环节：w_5 是旧词、其余 9 个是新词 → 两条轨道各自计数
+    final en2Ch1 = seq.where((e) => e.step == 'En2Ch' && e.groupNo == 1).toList();
+    final oldTrack = en2Ch1.where((e) => e.trackName == '旧词测评').toList();
+    expect(oldTrack.map((e) => e.wordId).toList(), ['w_5']);
+    expect(oldTrack.single.groupTotal, 1);
+    final newTrack = en2Ch1.where((e) => e.trackName == '新词测评').toList();
+    expect(newTrack.length, batchSize - 1);
+    expect(newTrack.every((e) => e.groupTotal == batchSize - 1), true);
+
+    // 汉译英：只剩「新词答对」一条轨道，分母是该轨道的 9 个词
+    final ch2En1 = seq.where((e) => e.step == 'Ch2En' && e.groupNo == 1).toList();
+    expect(ch2En1.map((e) => e.trackName).toSet(), {'新词答对'});
+    expect(ch2En1.every((e) => e.groupTotal == batchSize - 1), true);
   });
 }

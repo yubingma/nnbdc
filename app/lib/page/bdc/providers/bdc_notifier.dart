@@ -574,6 +574,7 @@ class BdcNotifier extends _$BdcNotifier {
         groupStepNo: 0,
         groupStepPosition: 0,
         groupStepTotal: 0,
+        groupStepTrackName: null,
         groupStepHint: null,
       );
       
@@ -681,8 +682,6 @@ class BdcNotifier extends _$BdcNotifier {
       wordWrapper: wordWrapper,
       studyStep: newStudyStep,
       isReviewWord: trackResult.isReview,
-      assessmentIsAgain:
-          trackResult.todayFirstLogRating == FsrsRating.again.value,
       assessmentRating: followUpAssessment,
       assessmentScheduledDays: followUpAssessmentDays,
       canLeaveCurrWord: false,
@@ -822,7 +821,13 @@ class BdcNotifier extends _$BdcNotifier {
     final step = state.studyStep;
     final stepIndex = state.currentGetWordResult?.stepIndex ?? 0;
     if (wordId == null || step == null || step == StudyStep.list.json) {
-      state = state.copyWith(groupStepNo: 0, groupStepPosition: 0, groupStepTotal: 0, groupStepHint: null);
+      state = state.copyWith(
+        groupStepNo: 0,
+        groupStepPosition: 0,
+        groupStepTotal: 0,
+        groupStepTrackName: null,
+        groupStepHint: null,
+      );
       return;
     }
     final progress =
@@ -843,6 +848,7 @@ class BdcNotifier extends _$BdcNotifier {
       groupStepNo: progress?.groupNo ?? 0,
       groupStepPosition: progress?.position ?? 0,
       groupStepTotal: progress?.total ?? 0,
+      groupStepTrackName: progress?.trackName,
       groupStepHint: hint,
     );
   }

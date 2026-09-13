@@ -1120,11 +1120,12 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-  /// 本组环节进度：本组（10 词一批）的序号、当前词的轨道、当前环节的排队位置
+  /// 本组环节进度：本组（10 词一批）的序号、当前词的轨道名、该轨道在本环节的排队位置
   /// （见 StudyBo.getBatchPhaseProgress）。
   /// 极简裸排版、无容器 —— 只为让"整组先英译汉、再整组汉译英"的顺序变得可见可预期。
   Widget _buildGroupStepIndicator() {
     final groupNo = state.groupStepNo;
+    final trackName = state.groupStepTrackName;
     final position = state.groupStepPosition;
     final total = state.groupStepTotal;
     final hint = state.groupStepHint;
@@ -1142,7 +1143,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: '第 $groupNo 组 · ${state.currentWordTrackName}',
+                          text: '第 $groupNo 组 · $trackName',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
@@ -2051,10 +2052,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    // 以"新词/旧词"这套对称词型描述今日测评；词型由 handleWord 写入的 isReviewWord 决定。
-    // 具体措辞直接落到"新词测评/旧词测评"，不再叠加抽象的内部环节名（重测/巩固/答对/答错）。
-    final String wordType = state.isReviewWord ? '旧词' : '新词';
-
     if (!state.hasFinishedAnswering || state.fsrsItem == null) {
       if (state.currentGetWordResult != null &&
           state.currentGetWordResult!.stepIndex > 0 &&
@@ -2079,7 +2076,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '$wordType测评: $assLabel',
+                          '测评结果: $assLabel',
                           style: TextStyle(fontSize: 11, color: assColor),
                         ),
                         Padding(
@@ -2120,7 +2117,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 4, vertical: 2),
                                 child: Text(
-                                  '$wordType测评: $fallbackLabel',
+                                  '测评结果: $fallbackLabel',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: hasRating
@@ -2133,7 +2130,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                               ),
                             )
                           : Text(
-                              '$wordType测评中',
+                              '测评中',
                               style: TextStyle(fontSize: 11, color: textColor),
                             ),
                       Padding(
@@ -2177,7 +2174,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         child: Row(
                           children: [
                             Text(
-                              '$wordType测评: $ratingLabel',
+                              '测评结果: $ratingLabel',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: ratingColor,
@@ -2271,7 +2268,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 4, vertical: 2),
                         child: Text(
-                          '$wordType测评: $fallbackLabel',
+                          '测评结果: $fallbackLabel',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
@@ -2284,7 +2281,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         ),
                       ))
                   : Text(
-                      '$wordType测评中',
+                      '测评中',
                       style: TextStyle(fontSize: 11.5, color: textColor),
                     ),
               Padding(
@@ -2324,7 +2321,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Text(
-                  '$wordType测评: $ratingLabel',
+                  '测评结果: $ratingLabel',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
