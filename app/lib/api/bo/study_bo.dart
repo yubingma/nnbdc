@@ -6,7 +6,7 @@ import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/learning_service.dart';
-import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
@@ -95,8 +95,8 @@ class StudyBo {
         return Result("ERROR", "用户未登录", false);
       }
 
-      if (!SubscriptionUtil.isPremium()) {
-        Global.logger.i('加量被拒：非会员');
+      if (!UserPrivilegeManager.canExtraStudy) {
+        Global.logger.i('加量被拒：无加量权限');
         return Result("NO_PREMIUM", "加量是会员专属权益", false);
       }
 

@@ -26,7 +26,7 @@ import 'package:provider/provider.dart';
 import '../global.dart';
 import '../state.dart';
 import '../util/study_config.dart';
-import '../util/subscription_util.dart';
+import '../services/user_privilege_manager.dart';
 import '../util/utils.dart';
 import '../widget/pronunciation_accent_badge.dart';
 import '../widget/sound_wave_icon.dart';
@@ -280,7 +280,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         }
       }
 
-      _canUseAiAssistant = Global.getLoggedInUser()?.isAdmin == true || SubscriptionUtil.isPremium();
+      _canUseAiAssistant = UserPrivilegeManager.canUseAiAssistant;
       final count = calcTabsCount();
       if (count != _tabController.length) {
         _tabController.dispose();

@@ -33,7 +33,7 @@ import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_config.dart';
-import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
@@ -1296,8 +1296,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         itemBuilder: (context, index) {
                           final v = wordOptions[index];
                           final isSelected = v == currentValue;
-                          final isPremium = SubscriptionUtil.isPremium();
-                          final isRestricted = !isPremium && v > 20;
+                          final isRestricted = !UserPrivilegeManager.isDailyWordsAllowed(v);
 
                           return GestureDetector(
                             onTap: () async {
@@ -1464,7 +1463,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 追加一组新的加量单词后进入学习页。加量是会员权益，非会员引导至订阅页。
   Future<void> _startExtraStudy() async {
-    if (!SubscriptionUtil.isPremium()) {
+    if (!UserPrivilegeManager.canExtraStudy) {
       ToastUtil.info('加量是会员专属权益');
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const SubscriptionPage()),

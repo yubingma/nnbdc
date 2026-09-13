@@ -13,8 +13,7 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/pinyin.dart';
-import 'package:nnbdc/util/platform_util.dart';
-import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -740,7 +739,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Builder(builder: (context) {
-            final restricted = PlatformUtils.isIOS && !SubscriptionUtil.isPremium();
+            final restricted = !UserPrivilegeManager.canManageCustomDict;
             final themeStyle = context.watch<DarkMode>().themeStyle;
             final themeConfig = AppThemeConfig.of(themeStyle);
             final primaryColor = themeConfig.primaryColor;
@@ -856,7 +855,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                     child: InkWell(
                       borderRadius: BorderRadius.circular(14),
                       onTap: () {
-                        if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本' && !isSelected) {
+                        if (!UserPrivilegeManager.canManageCustomDict && dict.name != '生词本' && !isSelected) {
                           _showPremiumPrompt();
                           return;
                         }
@@ -887,7 +886,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                                           ),
                                         ),
                                       ),
-                                      if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') ...[
+                                      if (!UserPrivilegeManager.canManageCustomDict && dict.name != '生词本') ...[
                                         const SizedBox(width: 4),
                                         const Icon(Icons.lock_outline_rounded, size: 14, color: Colors.grey),
                                       ],
@@ -917,12 +916,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                               icon: Icon(
                                 Icons.edit_note_rounded,
                                 size: 22,
-                                color: (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本')
+                                color: (!UserPrivilegeManager.canManageCustomDict && dict.name != '生词本')
                                     ? Colors.grey
                                     : primaryColor,
                               ),
                               onPressed: () async {
-                                if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') {
+                                if (!UserPrivilegeManager.canManageCustomDict && dict.name != '生词本') {
                                   _showPremiumPrompt();
                                   return;
                                 }
@@ -976,7 +975,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   }
 
   void _showCreateDictDialog() async {
-    if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium()) {
+    if (!UserPrivilegeManager.canManageCustomDict) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(

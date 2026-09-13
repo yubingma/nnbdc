@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:nnbdc/util/platform_util.dart';
-import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:nnbdc/services/ai_runtime_remote.dart';
 
 /// AI 能力等级，用于根据设备和模型情况决定功能开关
@@ -101,9 +101,9 @@ class AiService {
   
   final AiRuntime _remoteRuntime = RemoteAiRuntime();
 
-  // 根据会员状态动态选择运行时
+  // 根据用户权限动态选择运行时
   AiRuntime get runtime {
-    if (SubscriptionUtil.isPremium()) {
+    if (UserPrivilegeManager.canUseAiAssistant) {
       return _remoteRuntime;
     }
     return _runtime;

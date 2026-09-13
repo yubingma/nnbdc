@@ -21,7 +21,7 @@ import '../util/learning_service.dart';
 import '../util/notification_util.dart';
 import '../util/platform_util.dart';
 import '../util/prefs.dart';
-import '../util/subscription_util.dart';
+import '../services/user_privilege_manager.dart';
 import '../widget/daka_poster.dart';
 import '../widget/daka_poster_dialog.dart';
 import 'index.dart';
@@ -600,7 +600,7 @@ class FinishPageState extends State<FinishPage> {
   /// 打卡后继续加量：追加一组单词后直接进入学习页。
   /// 加量是会员权益，非会员引导至订阅页。
   Future<void> _startExtraStudy() async {
-    if (!SubscriptionUtil.isPremium()) {
+    if (!UserPrivilegeManager.canExtraStudy) {
       ToastUtil.info('加量是会员专属权益');
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const SubscriptionPage()),
