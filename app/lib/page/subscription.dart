@@ -58,15 +58,18 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         return a.id.compareTo(b.id);
       });
 
+      ProductDetails? defaultProduct;
+      for (final p in products) {
+        if (p.id.contains('yearly') || p.id.contains('annual')) {
+          defaultProduct = p;
+          break;
+        }
+      }
+      defaultProduct ??= products.isNotEmpty ? products.first : null;
+
       setState(() {
         _products = products;
-        if (products.isNotEmpty) {
-          // 默认优先选中年度订阅
-          _selectedProduct = products.firstWhere(
-            (p) => p.id.contains('yearly') || p.id.contains('annual'),
-            orElse: () => products.first,
-          );
-        }
+        _selectedProduct = defaultProduct;
         _isLoading = false;
       });
     } catch (e) {
