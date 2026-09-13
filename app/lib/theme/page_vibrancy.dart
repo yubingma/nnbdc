@@ -39,9 +39,9 @@ class PageVibrancyConfig {
   final double cardOpacity;
 
   // ---------- 默认基准档（= 手机调好的观感） ----------
-  /// 在手机上各页面实际使用的基准：提气 1.6 + 轻微渐变 + 卡片全实。
+  /// 在手机上各页面实际使用的基准：提气 1.6 + 轻微渐变 + 卡片对齐 [AppThemeConfig.cardBg] 的 50% 磨砂白。
   static const PageVibrancyConfig base =
-      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 0.4);
+      PageVibrancyConfig(vibrancy: 1.6, topShift: 0.05, bottomShift: -0.05, cardOpacity: 0.5);
 
   // ---------- 平板对手机的分字段系数（<1 更收敛、>1 更张扬） ----------
   /// 平板相对手机「提气强度」的系数
@@ -100,8 +100,11 @@ class PageVibrancy {
   /// 登录页（与启动页一致的明亮通透氛围）
   static const PageVibrancyConfig login = PageVibrancyConfig(vibrancy: 3);
 
-  /// 今日学习计划（首页「学习」Tab）：统一基准
-  static const PageVibrancyConfig todayPlan = PageVibrancyConfig.base;
+  /// 今日学习计划（首页「学习」Tab）：背景比基准收敛一档。
+  /// 基准 1.6 会把浅色模式顶部背景提到近白(≈244)，卡片(50% 磨砂白)叠上去只差 4 个色阶，
+  /// 分组结构整片糊掉；1.2 让顶部回落到 ≈232，卡片对比度回到 ≈11 个色阶，卡片重新"浮"起来。
+  static const PageVibrancyConfig todayPlan =
+      PageVibrancyConfig(vibrancy: 1.2, topShift: 0.05, bottomShift: -0.05, cardOpacity: 0.5);
 
   /// 词表（首页「词表」Tab）
   static const PageVibrancyConfig wordLists = PageVibrancyConfig.base;

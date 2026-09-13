@@ -581,21 +581,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                             ),
                                           ),
                                           const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF59E0B).withValues(alpha: isDarkMode ? 0.20 : 0.12),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              (user?.continuousDakaDayCount ?? 0) > 0
-                                                  ? '⚡️ ${user!.continuousDakaDayCount}天连胜'
-                                                  : '✨ 今日专注',
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFFD97706),
-                                              ),
+                                          Text(
+                                            (user?.continuousDakaDayCount ?? 0) > 0
+                                                ? '⚡️ ${user!.continuousDakaDayCount}天连胜'
+                                                : '✨ 今日专注',
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0.2,
+                                              color: themeConfig.primaryDarkColor,
                                             ),
                                           ),
                                         ],
@@ -709,17 +703,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final textPrimary = themeConfig.textPrimary;
     final textMuted = themeConfig.textMuted;
 
-    final totalPlannedWords = (newWordCount ?? 0) + (oldWordCount ?? 0);
-    final targetWords = user?.effectiveWordsPerDay ?? 20;
-    final totalBase = totalPlannedWords > 0 ? totalPlannedWords : (targetWords > 0 ? targetWords : 20);
-    final newRatio = totalBase > 0 ? ((newWordCount ?? 0) / totalBase).clamp(0.0, 1.0) : 0.0;
-    final oldRatio = totalBase > 0 ? ((oldWordCount ?? 0) / totalBase).clamp(0.0, 1.0) : 0.0;
-
     return FrostedGlassCard.primary(
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
       child: Column(
         children: [
-          // 环形能量仪表盘（方案 A：微渐变双色能量环 + 环心挺拔大数）
+          // 环形进度仪表盘（进度环 + 环心今日目标词数）
           SizedBox(
             width: 172,
             height: 172,
@@ -728,9 +716,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               children: [
                 CustomPaint(
                   size: const Size(172, 172),
-                  painter: _CircularEnergyArcPainter(
-                    oldRatio: oldRatio,
-                    newRatio: newRatio,
+                  painter: _CircularProgressArcPainter(
+                    progress: progress.clamp(0.0, 1.0),
+                    accentColor: themeConfig.primaryColor,
+                    accentLightColor: themeConfig.primaryLightColor,
                     isDarkMode: isDarkMode,
                   ),
                 ),
@@ -812,7 +801,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '今日进度 $_completedStepCount / $_totalStepCount 步',
+                      '已完成 $_completedStepCount / $_totalStepCount 步',
                       style: TextStyle(
                         color: textMuted,
                         fontSize: 11.5,
@@ -851,13 +840,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                _buildStatItem('新词', newWordCount ?? 0, const Color(0xFF0EA5E9)),
+                _buildStatItem('新词', newWordCount ?? 0, themeConfig.primaryColor),
                 Container(
                   width: 0.8,
                   height: 32,
                   color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
                 ),
-                _buildStatItem('旧词', oldWordCount ?? 0, const Color(0xFF10B981)),
+                _buildStatItem('旧词', oldWordCount ?? 0, themeConfig.primaryColor),
               ],
             ),
           ),
@@ -1383,22 +1372,22 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(25),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF10B981),
-            Color(0xFF059669),
+            themeConfig.primaryColor,
+            themeConfig.primaryDarkColor,
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: isDarkMode ? 0.35 : 0.40),
+            color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.24),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: isDarkMode ? 0.20 : 0.15),
+            color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.12 : 0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1873,7 +1862,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final textMuted = themeConfig.textMuted;
     final successGreen = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
     final errorCoral = isDarkMode ? const Color(0xFFF87171) : const Color(0xFFEF4444);
-    final trackTone = isNewWord ? const Color(0xFF0EA5E9) : const Color(0xFF10B981);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -1897,7 +1885,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w600,
-                      color: trackTone,
+                      color: themeConfig.primaryColor,
                       letterSpacing: 0.04,
                     ),
                   ),
@@ -1983,54 +1971,57 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         Icon(Icons.arrow_forward_rounded, size: 10, color: textMuted.withValues(alpha: 0.4)),
         const SizedBox(width: 6),
         Expanded(
-          child: steps.isEmpty
-              ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: isCorrect
-                        ? color.withValues(alpha: isDarkMode ? 0.14 : 0.08)
-                        : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.035)),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '直接结束',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: isCorrect ? FontWeight.w700 : FontWeight.w500,
-                      color: isCorrect ? color : textMuted,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: steps.isEmpty
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isCorrect
+                          ? color.withValues(alpha: isDarkMode ? 0.14 : 0.08)
+                          : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.035)),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                  ),
-                )
-              : Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: [
-                    for (int i = 0; i < steps.length; i++) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.06)
-                              : Colors.black.withValues(alpha: 0.035),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
+                    child: Text(
+                      '直接结束',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: isCorrect ? FontWeight.w700 : FontWeight.w500,
+                        color: isCorrect ? color : textMuted,
+                      ),
+                    ),
+                  )
+                : Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      for (int i = 0; i < steps.length; i++) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
                             color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : Colors.black.withValues(alpha: 0.04),
-                            width: 0.8,
+                                ? Colors.white.withValues(alpha: 0.06)
+                                : Colors.black.withValues(alpha: 0.035),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.04),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            StudyStepExt.fromString(steps[i]).description,
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: textPrimary),
                           ),
                         ),
-                        child: Text(
-                          StudyStepExt.fromString(steps[i]).description,
-                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: textPrimary),
-                        ),
-                      ),
-                      if (i < steps.length - 1)
-                        Icon(Icons.chevron_right_rounded, size: 12, color: textMuted.withValues(alpha: 0.4)),
+                        if (i < steps.length - 1)
+                          Icon(Icons.chevron_right_rounded, size: 12, color: textMuted.withValues(alpha: 0.4)),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
+          ),
         ),
       ],
     );
@@ -3295,15 +3286,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 }
 
-/// 今日学习计划 - 方案 A 环形双色能量仪表盘绘制器
-class _CircularEnergyArcPainter extends CustomPainter {
-  final double oldRatio;
-  final double newRatio;
+/// 今日学习计划 - 环形完成度仪表盘绘制器
+class _CircularProgressArcPainter extends CustomPainter {
+  final double progress;
+  final Color accentColor;
+  final Color accentLightColor;
   final bool isDarkMode;
 
-  _CircularEnergyArcPainter({
-    required this.oldRatio,
-    required this.newRatio,
+  _CircularProgressArcPainter({
+    required this.progress,
+    required this.accentColor,
+    required this.accentLightColor,
     required this.isDarkMode,
   });
 
@@ -3319,57 +3312,34 @@ class _CircularEnergyArcPainter extends CustomPainter {
           ? Colors.white.withValues(alpha: 0.08)
           : Colors.black.withValues(alpha: 0.05)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = strokeWidth;
 
     canvas.drawCircle(center, radius, trackPaint);
 
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    const totalCircumference = 2 * math.pi;
+    // 2. 完成度弧段（同色相微渐变，起点顶部 -pi/2，顺时针推进）
+    final sweep = (2 * math.pi * progress).clamp(0.0, 2 * math.pi);
+    if (sweep <= 0.01) return;
 
-    // 起点：顶部 -pi/2
     const startAngle = -math.pi / 2;
-
-    // 旧词弧段（翡翠绿微渐变）
-    final oldSweep = (totalCircumference * oldRatio).clamp(0.0, totalCircumference);
-    if (oldSweep > 0.05) {
-      final oldGradient = SweepGradient(
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final progressPaint = Paint()
+      ..shader = SweepGradient(
         startAngle: startAngle,
-        endAngle: startAngle + oldSweep,
-        colors: const [Color(0xFF10B981), Color(0xFF34D399)],
-      );
-      final oldPaint = Paint()
-        ..shader = oldGradient.createShader(rect)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
+        endAngle: startAngle + sweep,
+        colors: [accentColor, accentLightColor],
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
 
-      canvas.drawArc(rect, startAngle, oldSweep, false, oldPaint);
-    }
-
-    // 新词弧段（天蓝微渐变）
-    final newSweep = (totalCircumference * newRatio).clamp(0.0, totalCircumference);
-    if (newSweep > 0.05) {
-      final newStartAngle = startAngle + oldSweep;
-      final newGradient = SweepGradient(
-        startAngle: newStartAngle,
-        endAngle: newStartAngle + newSweep,
-        colors: const [Color(0xFF0EA5E9), Color(0xFF38BDF8)],
-      );
-      final newPaint = Paint()
-        ..shader = newGradient.createShader(rect)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
-
-      canvas.drawArc(rect, newStartAngle, newSweep, false, newPaint);
-    }
+    canvas.drawArc(rect, startAngle, sweep, false, progressPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _CircularEnergyArcPainter oldDelegate) {
-    return oldDelegate.oldRatio != oldRatio ||
-        oldDelegate.newRatio != newRatio ||
+  bool shouldRepaint(covariant _CircularProgressArcPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.accentColor != accentColor ||
+        oldDelegate.accentLightColor != accentLightColor ||
         oldDelegate.isDarkMode != isDarkMode;
   }
 }
