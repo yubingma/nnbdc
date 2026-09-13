@@ -8,6 +8,16 @@ import 'cartesian_product.dart';
 /// 认为两个发音匹配的最小相似度
 const minSimularityForMatch = 0.7;
 
+/// 模糊匹配的字距分级：匹配的字之间每多夹一个字，要求的平均相似度就上抬这么多。
+/// 距离为 0（相邻）时用各长度原本的阈值，最远只能夹 [maxSkippedCharsForMatch] 个字。
+/// 取 0.10：事故串"习模式到"命中"协调"时两字平均 0.86，夹 2 个字（阈值 0.92）刚好拦住；
+/// 而实测的正当容错（平均 0.96 上下）仍能通过。
+const skipDistanceThresholdStep = 0.10;
+
+/// 模糊匹配允许的字距上限：用户说出的字之间最多夹 [maxSkippedCharsForMatch] 个字。
+/// 例如"工资本"命中"工资"夹 1 个字；超过上限说明是两段无关的话被 ASR 拼到了一起。
+const maxSkippedCharsForMatch = 2;
+
 /// 声母相似度在整个拼音相似度中所占权重（略降权）
 const shengmuSimilarityWeight = 0.4;
 
@@ -455,9 +465,8 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
       continue;
     }
 
-    // 从输入中提取长度接近释义的滑动窗口候选，逐个做拼音模糊匹配，
+    // 从输入中提取长度不超过 释义长度+字距上限 的滑动窗口候选，逐个做拼音模糊匹配，
     // 只要有一个通过（发音相似即可）就认为该释义被答对。
-    // 多句累积的长文本靠这个滑动窗口避免字数惩罚过重。
     List<String> subCandidates = _asrCandidates(asrText, unit.length);
 
     bool unitMatched = false;
@@ -476,16 +485,21 @@ bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<Li
   return false;
 }
 
-/// 从 ASR/手写文本中提取用于匹配的候选片段：原文，加上靠近末尾处
-/// 长度为 [unitLength] 到 [unitLength]+3 的所有滑动窗口子串。
+/// 从 ASR/手写文本中提取用于匹配的候选片段：整段文本上所有
+/// 长度不超过 [unitLength] + [maxSkippedCharsForMatch] 的滑窗。
+///
+/// 不再把整段文本本身作为候选，否则隔着任意多个字也能"捞"出释义
+/// （如"以就发奖金右然"命中"引诱"）。窗口最短取输入长度，以保留
+/// "只说出部分释义"（如"西"之于"吸引"）的容错。
 List<String> _asrCandidates(String asrText, int unitLength) {
-  List<String> subCandidates = [asrText];
-  int startIdx = asrText.length > 12 ? asrText.length - 12 : 0;
-  String recentText = asrText.substring(startIdx);
-  for (int len = unitLength; len <= unitLength + 3; len++) {
-    for (int i = 0; i <= recentText.length - len; i++) {
-      String sub = recentText.substring(i, i + len);
-      if (!subCandidates.contains(sub)) {
+  final int maxLen = unitLength + maxSkippedCharsForMatch;
+  final int minLen = asrText.length < unitLength ? asrText.length : unitLength;
+  final seen = <String>{};
+  List<String> subCandidates = [];
+  for (int len = minLen; len <= maxLen; len++) {
+    for (int i = 0; i <= asrText.length - len; i++) {
+      String sub = asrText.substring(i, i + len);
+      if (seen.add(sub)) {
         subCandidates.add(sub);
       }
     }
@@ -533,16 +547,27 @@ List<List<PinyinParser>> _pinyinsOf(
   return pinyins;
 }
 
+/// 单字拼音解析缓存：模糊匹配要在同一段文本上开很多滑窗，
+/// 每个窗口都重新解析同一批字的拼音是纯浪费（长噪声串上尤其明显）。
+final Map<String, List<PinyinParser>> _charPinyinsCache = {};
+
+List<PinyinParser> _parsedPinyinsOfChar(String hanzi) {
+  final cached = _charPinyinsCache[hanzi];
+  if (cached != null) return cached;
+  final parsed = hanziToPinyin(hanzi).map((p) => PinyinParser(p)).toList();
+  _charPinyinsCache[hanzi] = parsed;
+  return parsed;
+}
+
 /// 针对单个候选文本的拼音模糊匹配（核心 DP 算法）：
-/// 允许候选文本比释义长（ASR 会把多句累积在一起），用一个综合平均相似度加长句惩罚来判定。
+/// 允许候选文本比释义长（ASR 会把多句累积在一起）：按平均相似度判定，
+/// 中间夹的字越多要求的阈值越高（见 [skipDistanceThresholdStep]）。
 bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
   if (asrText.isEmpty) return false;
 
   List<List<PinyinParser>> userPinyins = [];
   for (var i = 0; i < asrText.length; i++) {
-    var hanzi = asrText[i];
-    var pinyins = hanziToPinyin(hanzi);
-    userPinyins.add(pinyins.map((p) => PinyinParser(p)).toList());
+    userPinyins.add(_parsedPinyinsOfChar(asrText[i]));
   }
 
   // 获取 target 的每一个字的可能拼音（优先从缓存中获取）
@@ -647,16 +672,12 @@ bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<P
     }
   }
 
-  if (asrCharCount > M) {
-    double factor = M <= 2 ? 0.03 : 0.025;
-    double penalty = 1.0 - factor * (asrCharCount - M);
-    double minPenalty = M <= 2 ? 0.70 : 0.75;
-    if (penalty < minPenalty) penalty = minPenalty;
-    avgSim *= penalty;
-  }
-
-  final double finalThreshold =
+  // 候选长度上界只比释义多 maxSkippedCharsForMatch 个字（见 _asrCandidates），
+  // 超出的部分就是"中间夹了几个字"：距离越远，要求的相似度越高。
+  final int skippedChars = asrCharCount > M ? asrCharCount - M : 0;
+  final double baseThreshold =
       M == 1 ? 0.82 : (M == 2 ? 0.72 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch)));
+  final double finalThreshold = baseThreshold + skippedChars * skipDistanceThresholdStep;
 
   if (avgSim > finalThreshold) {
     return true;

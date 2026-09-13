@@ -106,13 +106,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   /// 说意/英拼写面板的滚动控制
   final ScrollController _speakPanelScrollController = ScrollController();
 
-  // 底部按钮实际高度，用于为做题区内容预留空间，避免被遮挡
-  final GlobalKey _bottomButtonsKey = GlobalKey();
-
-  /// 新手引导：遮罩层自身 / 题目卡 / 本组环节进度指示 的高亮锚点
+  /// 新手引导：遮罩层自身 / 「正在倾听」语音识别区 的锚点
   final GlobalKey _guideOverlayKey = GlobalKey();
-  final GlobalKey _questionCardKey = GlobalKey();
-  final GlobalKey _groupStepIndicatorKey = GlobalKey();
+  final GlobalKey _asrListeningKey = GlobalKey();
 
   /// 是否正在展示新手引导（首次进入学习页自动展示，也可从设置里再次打开）
   bool _showStudyGuide = false;
@@ -305,11 +301,13 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     super.dispose();
     }
 
-  /// 首次进入学习页时展示新手引导，讲清「测评 → 巩固 → 本组小结」的闭环
-  /// 与整组横向推进的顺序，避免新用户把它当成"认识/不认识"的翻卡软件。
+  /// 首次进入学习页时展示新手引导：只讲「你说，我来听」这一件事，
+  /// 其余功能留给用户自己探索。
   Future<void> _checkStudyGuide() async {
     if (_studyGuideChecked) return;
     _studyGuideChecked = true;
+    // 引导只讲开口说，平台不支持语音识别时弹出来只会误导
+    if (!PlatformUtils.isAsrSupported()) return;
     final cacheKey = 'bdcStudyGuideShown_${Global.currentUserId}';
     try {
       if (Prefs.read<bool>(cacheKey) == true) return;
@@ -329,12 +327,15 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
   /// 展示学习引导（首次自动触发；设置弹窗的「学习引导」入口也走这里）
   void startStudyGuide() {
+    // 引导遮住页面时先停掉语音识别：此时用户说话不该被识别判分
+    ref.read(bdcNotifierProvider.notifier).setGuideShowing(true);
     updateUI(() => _showStudyGuide = true, tag: 'study-guide');
   }
 
   /// 关闭学习引导并记为已看过（不再自动弹出）
   Future<void> _finishStudyGuide() async {
     updateUI(() => _showStudyGuide = false, tag: 'study-guide-done');
+    ref.read(bdcNotifierProvider.notifier).setGuideShowing(false);
     final cacheKey = 'bdcStudyGuideShown_${Global.currentUserId}';
     Prefs.write(cacheKey, true);
     try {
@@ -344,27 +345,6 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     }
   }
 
-  /// 学习引导的三步：题目卡 → 底部按钮 → 本组环节进度
-  List<StudyGuideStep> _buildStudyGuideSteps() => [
-        StudyGuideStep(
-          targetKey: _questionCardKey,
-          title: '先测评，不是翻卡自评',
-          text: '看英文选释义（也可以切到「说」）。每题都真的作答，系统才知道你认不认识，'
-              '而不是靠你给自己打分。',
-        ),
-        StudyGuideStep(
-          targetKey: _bottomButtonsKey,
-          title: '「不认识」不会让这个词消失',
-          text: '点「不认识」会立刻显示释义，并把这个词排进本组后面的巩固环节；'
-              '它只决定接下来怎么练，不是跳过。',
-        ),
-        StudyGuideStep(
-          targetKey: _groupStepIndicatorKey,
-          title: '整组推进：先英译汉，再汉译英',
-          text: '本组 10 个词先全部做完英译汉，才进入汉译英，最后是「本组小结」——'
-              '所以刚答错的词会在汉译英里按顺序回来。',
-        ),
-      ];
   @override
   Widget build(BuildContext context) {
     final stopwatch = Stopwatch()..start();
@@ -530,12 +510,14 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
               ),
             ),
           ),
-        // 新手引导（首次进入学习页自动展示，遮罩吸收点击）
+        // 新手引导：只讲「你说，我来听」（首次进入学习页自动展示，遮罩吸收点击）
         if (_showStudyGuide)
           Positioned.fill(
             child: StudyGuideOverlay(
               overlayKey: _guideOverlayKey,
-              steps: _buildStudyGuideSteps(),
+              targetKey: _asrListeningKey,
+              title: '你说，我来听',
+              text: studyGuideTextFor(StudyStepExt.fromString(state.studyStep ?? '')),
               onFinish: _finishStudyGuide,
             ),
           ),

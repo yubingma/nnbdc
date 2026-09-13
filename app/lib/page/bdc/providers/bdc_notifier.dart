@@ -189,6 +189,10 @@ class BdcNotifier extends _$BdcNotifier {
   /// 例句环节 PTT(按下说话):是否按住中
   bool _isPttPressed = false;
 
+  /// 新手引导遮挡页面期间挂起语音识别：此时用户说话不该被判分，
+  /// 收起引导后按当前环节恢复。开关只影响是否开麦，不改变用户的选择。
+  bool _isGuideShowing = false;
+
   /// 例句练习模式:看答案后隐藏答案,恢复语音识别练习。
   /// 练习时识别判定照常但答对不改今日测评结果(不写 LearningLog、不更新 FSRS)。
   bool _isPracticeMode = false;
@@ -1659,7 +1663,9 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> onAsrResult(event) async {
-    if (_isDisposed || state.isGettingNextWord) return;
+    // 引导遮挡页面期间一律丢弃识别结果：引导弹出的那一瞬，原生端可能仍有排队事件返回，
+    // 放任其进入判定会让"没打算答题"的一句话变成作答（与例句环节的遗留事件隔离同理）。
+    if (_isDisposed || state.isGettingNextWord || _isGuideShowing) return;
     final currentWordId = state.word?.id;
     final int pttRoundAtEntry = _pttRoundToken;
     String processedResult = "";
@@ -2774,7 +2780,8 @@ class BdcNotifier extends _$BdcNotifier {
     final isInSpeakTab = isSentenceStep
         ? _isPttPressed && state.tabIndex == 0
         : _shouldShowSpeakTab && state.tabIndex == 0;
-    final isAnsweringActive = state.word != null &&
+    final isAnsweringActive = !_isGuideShowing &&
+        state.word != null &&
         state.loadError == null &&
         !state.hasFinishedAnswering &&
         !state.showHandwritingBoard &&
@@ -3099,6 +3106,13 @@ class BdcNotifier extends _$BdcNotifier {
 
   void handleTabChangeForAsr() {
     _handleTabChangeForAsr();
+  }
+
+  /// 新手引导弹出/收起：引导期间先停掉语音识别，收起后按当前环节恢复开麦。
+  void setGuideShowing(bool showing) {
+    if (_isGuideShowing == showing) return;
+    _isGuideShowing = showing;
+    _syncAudioHardware();
   }
 
   void updateKeyboardVisibility(bool visible) {

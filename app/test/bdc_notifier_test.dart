@@ -384,6 +384,69 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
   });
 
+  test('BdcNotifier - 新手引导展示期间挂起语音识别，收起后恢复', () async {
+    final mockAsr = MockAsr();
+    StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+    PlatformUtils.asrSupportedOverride = true;
+    addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    expect(container.read(bdcNotifierProvider).studyStep, 'En2Ch');
+
+    // 单词环节默认开麦：等到识别真正启动
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 1; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    final startBaseline = mockAsr.startAsrCallCount;
+    expect(startBaseline, greaterThanOrEqualTo(1));
+
+    // 引导弹出：识别立刻停掉
+    final stopBaseline = mockAsr.stopAsrCallCount;
+    notifier.setGuideShowing(true);
+    for (var i = 0; i < 20 && mockAsr.stopAsrCallCount < stopBaseline + 1; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    expect(mockAsr.stopAsrCallCount, stopBaseline + 1,
+        reason: '引导弹出时应先停掉识别');
+
+    // 引导期间任何硬件意图同步都不得再开麦：用户此时说话不该被判分
+    notifier.handleTabChangeForAsr();
+    await Future.delayed(const Duration(milliseconds: 150));
+    expect(mockAsr.startAsrCallCount, startBaseline,
+        reason: '引导展示期间不得开麦');
+
+    // 引导期间到达的遗留识别结果同样不得进入判定
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+      'isFinal': true,
+    }));
+    await Future.delayed(const Duration(milliseconds: 150));
+    expect(container.read(bdcNotifierProvider).hasFinishedAnswering, false,
+        reason: '引导展示期间的识别结果不得判分');
+
+    // 收起引导：按当前环节恢复开麦
+    notifier.setGuideShowing(false);
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount <= startBaseline; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    expect(mockAsr.startAsrCallCount, greaterThan(startBaseline),
+        reason: '收起引导后应恢复识别');
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
   test('BdcNotifier - isWordMastered 在切换下一个词时应重置为 false', () async {
     // 清除 StudyCacheManager 单例缓存，防止上一条测试的缓存干扰该测试
     StudyCacheManager().clear();

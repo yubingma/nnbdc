@@ -642,7 +642,6 @@ extension BdcPageStateUIComponents on BdcPageState {
         const SizedBox(height: 8),
         // 题目区 - 保持固定匀称比例（4:5）
         Expanded(
-          key: _questionCardKey,
           flex: 4,
           child: Consumer(
             builder: (context, ref, child) {
@@ -936,7 +935,6 @@ extension BdcPageStateUIComponents on BdcPageState {
         state.studyStep == StudyStep.list.json);
 
     final result = Container(
-      key: _bottomButtonsKey,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1130,7 +1128,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     final hint = state.groupStepHint;
     final stepDesc = StudyStepExt.fromString(state.studyStep ?? '').description;
     return SizedBox(
-      key: _groupStepIndicatorKey,
       width: double.infinity,
       child: (position <= 0 || total <= 0)
           ? const SizedBox.shrink()
@@ -1597,8 +1594,9 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 语音波形反馈
+              // 语音波形反馈（新手引导高亮此处：用户要做的就是说，不是点）
               Expanded(
+                key: _asrListeningKey,
                 child: Consumer(
                   builder: (context, ref, child) {
                     final currentAsrState = ref

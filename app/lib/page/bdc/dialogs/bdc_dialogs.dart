@@ -135,7 +135,7 @@ extension BdcPageStateDialogs on BdcPageState {
     );
   }
 
-  /// 学习引导入口：再次查看学习页新手引导（讲清「测评 → 巩固 → 本组小结」的闭环）
+  /// 学习引导入口：再次查看学习页新手引导（只讲「你说，我来听」这一件事）
   Widget _buildStudyGuideEntry(BuildContext dialogContext) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -151,7 +151,7 @@ extension BdcPageStateDialogs on BdcPageState {
         ),
       ),
       subtitle: Text(
-        '再看一遍背单词的流程与顺序',
+        '再看一遍：你说，我来听',
         textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
