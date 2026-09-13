@@ -130,9 +130,9 @@ class LearningService {
       List<LearningWord> todayWords = await getTodayLearningWordsFromDb(user.id);
       Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: ${todayWords.length}, 目标计划: ${user.effectiveWordsPerDay}');
 
-      // 加餐词（打卡后额外追加的批次）不属于"今日计划"：
-      // 补词、削减、溢出报警等计划逻辑一律只在计划词上推导，加餐词仅在最后拼回结果交给学习页续学。
-      // 这样加餐既不会撑大计划口径（进度环分母、今日词数），也不会被溢出削减当作可删对象清除。
+      // 加量词（打卡后额外追加的批次）不属于"今日计划"：
+      // 补词、削减、溢出报警等计划逻辑一律只在计划词上推导，加量词仅在最后拼回结果交给学习页续学。
+      // 这样加量既不会撑大计划口径（进度环分母、今日词数），也不会被溢出削减当作可删对象清除。
       final extraWords = todayWords.where((w) => w.isExtra).toList();
       List<LearningWord> planWords = todayWords.where((w) => !w.isExtra).toList();
 
@@ -178,7 +178,7 @@ class LearningService {
       if (needAddNewWords) {
         planWords = await genTodayWords(user.id, AppClock.now(), planWords,
             minNewWordsPerDay: minNewWordsPerDay,
-            // 加餐词已在今日列表中，必须排除，否则会被重复选中并覆盖其加餐归属
+            // 加量词已在今日列表中，必须排除，否则会被重复选中并覆盖其加量归属
             excludeWordIds: extraWords.map((w) => w.wordId).toSet());
         wordExhausted = planWords.length < (user.effectiveWordsPerDay);
         
@@ -215,14 +215,14 @@ class LearningService {
         planWords = await shrinkTodayWords(user.id, planWords, user.effectiveWordsPerDay);
       }
 
-      // 拼回加餐词：学习页按 batchId 顺序自动续学，无需额外游标
+      // 拼回加量词：学习页按 batchId 顺序自动续学，无需额外游标
       todayWords = [...planWords, ...extraWords];
 
       // 最后统一校正标记并刷新学习顺序（处理已经分配在DB但需要纠零标记的数据，以及在调整目标后重排顺序）
       // 注意：它会就地修正元素的 isTodayNewWord，因此新词统计必须放在其后、读修正后的列表
       await updateTodayLearningWords(todayWords, AppClock.now());
 
-      // 计算今日新词数（计划口径：不计加餐）
+      // 计算今日新词数（计划口径：不计加量）
       int newWordCount = 0;
       int planWordCount = 0;
       for (var word in todayWords) {
@@ -274,10 +274,10 @@ class LearningService {
   /// [minNewWordsPerDay] 今日最少新词数量（配额内保证：总词数保持 wordsPerDay，新词优先到配额）
   /// 参数说明：
   /// - [targetTotalWords] 本次取词后的目标总词数，缺省为用户的每日计划量。
-  ///   加餐取词时传入「当前已选词数 + 本次加餐词数」，即可让配额与排序逻辑等价于
+  ///   加量取词时传入「当前已选词数 + 本次加量词数」，即可让配额与排序逻辑等价于
   ///   "当初把今日计划直接设置为该总数时的最后 N 个词"。
-  /// - [excludeWordIds] 额外的排除集（今日已在列表中的加餐词），防止被重复选中而覆盖其归属。
-  /// - [isExtra] 新选中的词是否标记为加餐词。
+  /// - [excludeWordIds] 额外的排除集（今日已在列表中的加量词），防止被重复选中而覆盖其归属。
+  /// - [isExtra] 新选中的词是否标记为加量词。
   static Future<List<LearningWord>> genTodayWords(String userId, DateTime now, List<LearningWord> todayLearningWords,
       {int minNewWordsPerDay = 0, Set<String>? excludeWordIds, int? targetTotalWords, bool isExtra = false}) async {
     final db = MyDatabase.instance;
@@ -309,7 +309,7 @@ class LearningService {
     }
 
     Global.logger.i('[DIAGNOSTIC] === 今日学习计划生成诊断 ===');
-    Global.logger.i('[DIAGNOSTIC] 1. 用户 ID: $userId, 计划每日单词量: ${user.effectiveWordsPerDay}, 本次目标总数: $targetTotal, 是否加餐: $isExtra');
+    Global.logger.i('[DIAGNOSTIC] 1. 用户 ID: $userId, 计划每日单词量: ${user.effectiveWordsPerDay}, 本次目标总数: $targetTotal, 是否加量: $isExtra');
     Global.logger.i('[DIAGNOSTIC] 2. 数据库 learning_words 中尚未毕业的候选人总数 (allLearningWords.length): ${allLearningWords.length}');
     Global.logger.i('[DIAGNOSTIC] 3. 排除项过滤: 今天已选单词数: ${todayWordIds.length}, 用户已掌握单词数: ${masteredWordIds.length}');
     Global.logger.i('[DIAGNOSTIC] 4. 剩余待评估候选词数 (candidateWords.length): ${candidateWords.length}');
@@ -525,7 +525,7 @@ class LearningService {
   static Future<List<LearningWord>> shrinkTodayWords(String userId, List<LearningWord> todayWords, int targetCount) async {
     final db = MyDatabase.instance;
 
-    // 加餐词不参与计划容量调整：它是用户主动追加的批次，无论目标如何变化都整体保留
+    // 加量词不参与计划容量调整：它是用户主动追加的批次，无论目标如何变化都整体保留
     final extraWords = todayWords.where((w) => w.isExtra).toList();
     final planWords = todayWords.where((w) => !w.isExtra).toList();
 
@@ -541,7 +541,7 @@ class LearningService {
 
     Global.logger.d('[FETCH-WORD] [shrinkTodayWords] 执行削减：计划词 ${planWords.length} -> 目标 $targetCount, 计划移除 ${planWords.length - targetCount} 个未学单词');
 
-    // 2. 计算需要移除的数量（只按计划词计算，加餐词不占计划名额）
+    // 2. 计算需要移除的数量（只按计划词计算，加量词不占计划名额）
     int needToRemove = planWords.length - targetCount;
 
     // 3. 排序待移除的单词：按 batchId 降序，然后再按 learningOrder 降序（先移除后面批次的，再移除批次内靠后的）
@@ -570,7 +570,7 @@ class LearningService {
 
     Global.logger.d('已成功移除 $needToRemove 个未学习单词');
 
-    // 5. 合并并返回剩余的单词（加餐词整体保留）
+    // 5. 合并并返回剩余的单词（加量词整体保留）
     List<LearningWord> finalWords = [...learnedWords, ...remainingUntaughtWords, ...extraWords];
 
     // 重新校正剩余单词的 learningOrder
@@ -675,7 +675,7 @@ class LearningService {
   }
 
   /// 从词书取新词（支持优先级和已掌握过滤）
-  /// [isExtra] 抓取到的词是否标记为加餐批次。
+  /// [isExtra] 抓取到的词是否标记为加量批次。
   static Future<List<LearningWord>> fetchNewWordsToLearn(
       String userId, int todayDayNumber, int countToFetch, {Set<String>? excludeWordIds, bool isExtra = false}) async {
     if (countToFetch <= 0) {

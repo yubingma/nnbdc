@@ -666,8 +666,8 @@ class MyDatabase extends _$MyDatabase {
     });
   }
 
-  /// 从版本 52 升级到版本 53：在 learning_words 表中添加 is_extra 字段（打卡后的"加餐"学习批次标记）。
-  /// 该列上线前不存在加餐概念，因此历史数据一律播种为 false（默认值即 false，无需回填）。
+  /// 从版本 52 升级到版本 53：在 learning_words 表中添加 is_extra 字段（打卡后的"加量"学习批次标记）。
+  /// 该列上线前不存在加量概念，因此历史数据一律播种为 false（默认值即 false，无需回填）。
   Future<void> _migrateFromV52ToV53AddLearningWordIsExtra(Migrator m) async {
     await transaction(() async {
       await m.addColumn(learningWords, learningWords.isExtra);

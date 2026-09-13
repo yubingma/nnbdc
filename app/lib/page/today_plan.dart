@@ -74,8 +74,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
 
-  /// 今日"加餐"中尚未学完的单词数（打卡后额外追加的批次）。
-  /// > 0 表示有加餐任务待继续，首页据此提供"继续加餐"入口。
+  /// 今日"加量"中尚未学完的单词数（打卡后额外追加的批次）。
+  /// > 0 表示有加量任务待继续，首页据此提供"继续加量"入口。
   int _pendingExtraWordCount = 0;
   Set<String> _masteredWordIds = {};
   /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道配置）
@@ -93,13 +93,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   List<String> _reviewWrongSteps = [];
   bool _reviewConfigSaved = false;
 
-  /// 今日计划词（不含打卡后额外追加的加餐批次）。
+  /// 今日计划词（不含打卡后额外追加的加量批次）。
   /// 所有"今日计划"口径（进度环、词数统计、单词量未满提示）都必须用它，
-  /// 否则加餐会撑大计划分母，把已达成 100% 的进度打回未完成。
+  /// 否则加量会撑大计划分母，把已达成 100% 的进度打回未完成。
   List<LearningWord> get _planWords =>
       (_todayWords ?? const <LearningWord>[]).where((w) => !w.isExtra).toList();
 
-  /// 今日加餐词（打卡后额外追加的批次，不计入今日计划）
+  /// 今日加量词（打卡后额外追加的批次，不计入今日计划）
   List<LearningWord> get _extraWords =>
       (_todayWords ?? const <LearningWord>[]).where((w) => w.isExtra).toList();
 
@@ -491,7 +491,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final newCfg = await StudyStepsService().getThreeGroupConfig('new');
     final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
 
-    // 每词按其自身轨道（计划词与加餐词使用同一套轨道规则）推导长度
+    // 每词按其自身轨道（计划词与加量词使用同一套轨道规则）推导长度
     int trackLenOf(LearningWord word) {
       final first = firstLogs[word.wordId];
       return StudyTrack.trackOf(
@@ -510,7 +510,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       ).length;
     }
 
-    // 今日计划进度（严格排除加餐词，保证打卡后不会因加餐而回落）
+    // 今日计划进度（严格排除加量词，保证打卡后不会因加量而回落）
     _totalStepCount = 0;
     _completedStepCount = 0;
     for (final word in _planWords) {
@@ -519,7 +519,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       _completedStepCount += word.getCompletedSteps(_masteredWordIds, trackLen);
     }
 
-    // 加餐任务中还有多少词没学完（首页据此提供"继续加餐"入口）
+    // 加量任务中还有多少词没学完（首页据此提供"继续加量"入口）
     _pendingExtraWordCount = 0;
     for (final word in _extraWords) {
       final trackLen = trackLenOf(word);
@@ -1262,7 +1262,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 加餐主按钮（首页"继续加餐"/"再来一组"）
+  /// 加量主按钮（首页"继续加量"/"再来一组"）
   Widget _buildExtraStudyButton(
     AppThemeConfig themeConfig,
     bool isDarkMode, {
@@ -1327,14 +1327,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     });
   }
 
-  /// 继续未完成的加餐批次：直接回到学习页，绝不追加新词
-  /// （学习页按 batchId 顺序会自动定位到未学完的加餐批次）
+  /// 继续未完成的加量批次：直接回到学习页，绝不追加新词
+  /// （学习页按 batchId 顺序会自动定位到未学完的加量批次）
   Future<void> _resumeExtraStudy() => _gotoStudyPage();
 
-  /// 追加一组新的加餐单词后进入学习页。加餐是会员权益，非会员引导至订阅页。
+  /// 追加一组新的加量单词后进入学习页。加量是会员权益，非会员引导至订阅页。
   Future<void> _startExtraStudy() async {
     if (!SubscriptionUtil.isPremium()) {
-      ToastUtil.info('加餐是会员专属权益');
+      ToastUtil.info('加量是会员专属权益');
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const SubscriptionPage()),
       );
@@ -1344,7 +1344,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final result = await StudyBo().prepareExtraStudy();
     if (!mounted) return;
     if (!result.success) {
-      ToastUtil.error(result.msg ?? '加餐失败');
+      ToastUtil.error(result.msg ?? '加量失败');
       return;
     }
 
@@ -1367,7 +1367,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             _buildExtraStudyButton(
               themeConfig,
               isDarkMode,
-              label: '继续加餐（还剩 $_pendingExtraWordCount 词）',
+              label: '继续加量（还剩 $_pendingExtraWordCount 词）',
               onPressed: _resumeExtraStudy,
             )
           else ...[

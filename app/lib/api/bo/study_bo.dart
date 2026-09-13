@@ -75,24 +75,24 @@ class StudyBo {
   }
 
 
-  /// 加餐：打卡后额外追加一组（默认 10 个）单词。
+  /// 加量：打卡后额外追加一组（默认 10 个）单词。
   ///
-  /// 加餐是会员权益，且**不计入"今日计划"**：它只是追加一个新的取词批次
+  /// 加量是会员权益，且**不计入"今日计划"**：它只是追加一个新的取词批次
   /// （复用语料配额与排序逻辑，等价于"当初把今日计划设为 已选词数 + count 时的最后 count 个词"）。
-  /// 学习页按 batchId 顺序自动续学，因此中途退出后重新进入可继续未完成的加餐批次。
+  /// 学习页按 batchId 顺序自动续学，因此中途退出后重新进入可继续未完成的加量批次。
   ///
   /// 返回 [Result.data] 为本次实际追加的词数。
   Future<Result<int>> prepareExtraStudy({int count = 10}) async {
     try {
       final user = Global.getLoggedInUser();
       if (user == null) {
-        Global.logger.e('加餐失败：用户未登录');
+        Global.logger.e('加量失败：用户未登录');
         return Result("ERROR", "用户未登录", false);
       }
 
       if (!SubscriptionUtil.isPremium()) {
-        Global.logger.i('加餐被拒：非会员');
-        return Result("NO_PREMIUM", "加餐是会员专属权益", false);
+        Global.logger.i('加量被拒：非会员');
+        return Result("NO_PREMIUM", "加量是会员专属权益", false);
       }
 
       final todayWords = await LearningService.getTodayLearningWordsFromDb(user.id);
@@ -104,7 +104,7 @@ class StudyBo {
       final int beforeCount = todayWords.length;
       final targetTotal = beforeCount + count;
 
-      Global.logger.d('开始加餐：当前今日词数=$beforeCount, 本次追加=$count, 目标总数=$targetTotal');
+      Global.logger.d('开始加量：当前今日词数=$beforeCount, 本次追加=$count, 目标总数=$targetTotal');
       final allWords = await LearningService.genTodayWords(
         user.id,
         AppClock.now(),
@@ -116,19 +116,19 @@ class StudyBo {
 
       final int addedCount = allWords.length - beforeCount;
       if (addedCount <= 0) {
-        Global.logger.w('加餐未取到新词：词书已无可学单词');
-        return Result("NNBDC-0012", "词书已没有更多单词可供加餐", false);
+        Global.logger.w('加量未取到新词：词书已无可学单词');
+        return Result("NNBDC-0012", "词书已没有更多单词可供加量", false);
       }
 
       await LearningService.updateTodayLearningWords(allWords, AppClock.now());
       StudyCacheManager().clear();
       ThrottledDbSyncService().requestSync(immediate: true);
-      Global.logger.d('加餐完成：已追加 $addedCount 个单词');
+      Global.logger.d('加量完成：已追加 $addedCount 个单词');
 
       return Result("SUCCESS", "已追加 $addedCount 个单词", true)..data = addedCount;
     } catch (e, stackTrace) {
-      Global.logger.e('加餐失败: $e', stackTrace: stackTrace);
-      return Result("ERROR", "加餐失败: ${e.toString()}", false);
+      Global.logger.e('加量失败: $e', stackTrace: stackTrace);
+      return Result("ERROR", "加量失败: ${e.toString()}", false);
     }
   }
 

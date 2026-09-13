@@ -69,7 +69,7 @@ void main() {
         contains('max_mastered_words'),
       );
 
-      // v52 → v53: learning_words 补上加餐标记列, 且历史数据一律为非加餐
+      // v52 → v53: learning_words 补上加量标记列, 且历史数据一律为非加量
       final learningWordColumns = await db.customSelect("PRAGMA table_info('learning_words')").get();
       expect(
         learningWordColumns.map((row) => row.read<String>('name')),

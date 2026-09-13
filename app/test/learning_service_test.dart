@@ -1417,7 +1417,7 @@ void main() {
     });
   });
 
-  group('LearningService - 打卡后的"加餐"批次', () {
+  group('LearningService - 打卡后的"加量"批次', () {
     /// 模拟用户学完今日全部计划词（打卡前的真实状态）
     Future<void> finishAllPlanWords() async {
       final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
@@ -1441,7 +1441,7 @@ void main() {
       Global.updateUserCache(started);
     }
 
-    /// 追加一组加餐词（等价于 StudyBo.prepareExtraStudy 的取词与落库部分）
+    /// 追加一组加量词（等价于 StudyBo.prepareExtraStudy 的取词与落库部分）
     Future<List<LearningWord>> appendExtra(int count) async {
       final all = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       final updated = await LearningService.genTodayWords(
@@ -1455,7 +1455,7 @@ void main() {
       return updated;
     }
 
-    test('加餐独占一个新批次并全部标记 isExtra，计划词不受影响', () async {
+    test('加量独占一个新批次并全部标记 isExtra，计划词不受影响', () async {
       await LearningService.prepareTodayStudy(true);
       await finishAllPlanWords();
 
@@ -1464,13 +1464,13 @@ void main() {
       final planWords = updated.where((w) => !w.isExtra).toList();
       final extraWords = updated.where((w) => w.isExtra).toList();
       expect(updated.length, 10);
-      expect(planWords.length, 5, reason: '加餐不得改变计划词数量');
-      expect(extraWords.length, 5, reason: '加餐应追加一组新词');
-      expect(extraWords.every((w) => w.batchId == 2), true, reason: '加餐应独占一个新的取词批次');
-      expect(planWords.every((w) => w.batchId == 1), true, reason: '计划词批次不受加餐影响');
+      expect(planWords.length, 5, reason: '加量不得改变计划词数量');
+      expect(extraWords.length, 5, reason: '加量应追加一组新词');
+      expect(extraWords.every((w) => w.batchId == 2), true, reason: '加量应独占一个新的取词批次');
+      expect(planWords.every((w) => w.batchId == 1), true, reason: '计划词批次不受加量影响');
     });
 
-    test('加餐后重回今日计划页：计划口径不变、加餐任务不被削减', () async {
+    test('加量后重回今日计划页：计划口径不变、加量任务不被削减', () async {
       await LearningService.prepareTodayStudy(true);
       await finishAllPlanWords();
       await appendExtra(5);
@@ -1478,16 +1478,16 @@ void main() {
       // 模拟用户中途退出后重新进入今日计划页（forceSupplement=false）
       final result = await LearningService.prepareTodayStudy(false);
       expect(result.success, true);
-      expect(result.data![0] + result.data![1], 5, reason: '计划口径总数仍为 5，不含加餐');
+      expect(result.data![0] + result.data![1], 5, reason: '计划口径总数仍为 5，不含加量');
 
       final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
-      expect(todayWords.length, 10, reason: '加餐任务必须保留，否则用户回来就找不到未完成的加餐');
+      expect(todayWords.length, 10, reason: '加量任务必须保留，否则用户回来就找不到未完成的加量');
       expect(todayWords.where((w) => w.isExtra).length, 5);
     });
 
-    test('shrinkTodayWords 只削减计划词，加餐词整体保留', () async {
+    test('shrinkTodayWords 只削减计划词，加量词整体保留', () async {
       await LearningService.prepareTodayStudy(true);
-      // 加餐发生在已开始学习之后（否则 updateTodayLearningWords 的断言会拦下"未开始却有进度"的状态）
+      // 加量发生在已开始学习之后（否则 updateTodayLearningWords 的断言会拦下"未开始却有进度"的状态）
       final latest = await db.usersDao.getUserById(testUser.id) ?? testUser;
       final started = latest.copyWith(todayStudyStarted: true);
       await db.usersDao.saveUser(started, true);
@@ -1511,11 +1511,11 @@ void main() {
       // 目标 3：已学 2 < 3，削减必然执行
       final shrunk = await LearningService.shrinkTodayWords(testUser.id, todayWords, 3);
 
-      expect(shrunk.where((w) => w.isExtra).length, 5, reason: '加餐词绝不可被削减');
+      expect(shrunk.where((w) => w.isExtra).length, 5, reason: '加量词绝不可被削减');
       expect(shrunk.where((w) => !w.isExtra).length, 3, reason: '削减只作用于计划词');
     });
 
-    test('跨逻辑天：加餐批次与 isExtra 标记一并被重置', () async {
+    test('跨逻辑天：加量批次与 isExtra 标记一并被重置', () async {
       final fakeClock = FakeClock(DateTime(2026, 3, 1, 8, 0));
       AppClock.setClock(fakeClock);
       try {
@@ -1529,7 +1529,7 @@ void main() {
 
         final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
         expect(todayWords.where((w) => w.isExtra).isEmpty, true,
-            reason: '加餐是当日概念，跨逻辑天必须清空标记，否则会污染新一天的计划口径');
+            reason: '加量是当日概念，跨逻辑天必须清空标记，否则会污染新一天的计划口径');
       } finally {
         AppClock.reset();
       }

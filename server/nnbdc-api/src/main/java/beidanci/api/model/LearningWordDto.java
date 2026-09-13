@@ -14,7 +14,7 @@ public class LearningWordDto {
     private Integer todayLearnedTimes;
     private Integer batchId;
     /**
-     * 是否为"加餐"单词（打卡后额外追加的学习批次）
+     * 是否为"加量"单词（打卡后额外追加的学习批次）
      */
     private Boolean isExtra;
     private Double stability;

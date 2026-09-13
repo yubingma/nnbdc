@@ -87,8 +87,8 @@ public class LearningWord extends Po {
     private Boolean isTodayNewWord;
 
     /**
-     * 是否为"加餐"单词（打卡后额外追加的学习批次）。
-     * 与 batchId 同步维护：本属性为 true 当且仅当该词属于当日加餐批次。
+     * 是否为"加量"单词（打卡后额外追加的学习批次）。
+     * 与 batchId 同步维护：本属性为 true 当且仅当该词属于当日加量批次。
      */
     @Column(name = "is_extra", nullable = false)
     private Boolean isExtra = false;

@@ -17,6 +17,7 @@ import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
 import '../widget/frosted_glass_card.dart';
 import '../util/analytics_util.dart';
+import '../util/learning_service.dart';
 import '../util/notification_util.dart';
 import '../util/platform_util.dart';
 import '../util/prefs.dart';
@@ -42,8 +43,13 @@ class FinishPageState extends State<FinishPage> {
   late Result<int> dakaResult;
   int todayDakaScore = 0; // 今日打卡积分
 
-  /// 本次进入完成页是否属于"加餐完成"（今日已完成打卡后的额外学习批次）。
-  /// 加餐模式下不写打卡记录、不掷骰子、不判定打卡类勋章，只展示成果并提供"再来一组"。
+  /// 今日是否已经打卡。打卡记录、掷骰子、打卡类勋章每日只结算一次，
+  /// 因此本标志只决定"本次是否还要执行打卡结算"，不决定完成页怎么讲。
+  bool hasDakaToday = false;
+
+  /// 本次完成的是否为「加量」批次（打卡后用户主动追加的"再来一组"）。
+  /// 判据必须是"今日确实存在加量词"，不能用"今日已打卡"代替：打卡后重学今日计划
+  /// （调整单词量后的补词、他端打卡后本端首次学完）同样会回到完成页，那些是正常学习，不是加量。
   bool isExtraRound = false;
 
   String? marketAppUrl; // 应用市场的对应Url
@@ -91,18 +97,25 @@ class FinishPageState extends State<FinishPage> {
       }
     }
 
-    // 今日是否已经打卡：已打卡说明本次进入完成页是"加餐完成"。
-    // 加餐不重复打卡、不掷骰子（掷骰子机会仅在每日首次打卡时发放，重复掷必然失败），
+    // 今日是否已经打卡：已打卡则本次不重复打卡、不掷骰子
+    // （掷骰子机会仅在每日首次打卡时发放，重复掷必然失败），
     // 也不再判定打卡类勋章（破晓/夜行等必须在完成打卡的当下判定一次）。
     final currentUser = Global.getLoggedInUser();
-    isExtraRound = !isFromPageViewer &&
+    hasDakaToday = !isFromPageViewer &&
         currentUser != null &&
         ((await UserBo().hasDakaToday(currentUser.id)).data ?? false);
 
+    // 加量完成 = 打卡后确实追加过"再来一组"，即今日学习列表里存在标记为 isExtra 的词。
+    // 学习页只有在今日所有词（含加量批次）都学完时才会跳到这里，"存在加量词"即"本次学完的是加量批次"。
+    if (hasDakaToday) {
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(currentUser!.id);
+      isExtraRound = todayWords.any((w) => w.isExtra);
+    }
+
     if (!isFromPageViewer) {
-      if (isExtraRound) {
-        // 加餐完成：打卡已在今日首次完成，此处只展示成果
-        dakaResult = Result("SUCCESS", "加餐完成", true);
+      if (hasDakaToday) {
+        // 打卡已在今日首次完成，此处只展示成果
+        dakaResult = Result("SUCCESS", isExtraRound ? "加量完成" : "学习完成", true);
       } else {
         // 正常流程：执行打卡逻辑
         dakaResult = await StudyBo().saveDakaRecord("好好学习，天天向上");
@@ -148,7 +161,7 @@ class FinishPageState extends State<FinishPage> {
       dakaResult = Result("SUCCESS", "页面查看器模式（模拟打卡，数据未入库）", true);
     }
 
-    if (!isFromPageViewer && !isExtraRound) {
+    if (!isFromPageViewer && !hasDakaToday) {
       // 🌟 本次学习结束: 判定连续打卡、打卡时段(破晓/夜行)与单次学习表现(全对/心流)类勋章
       await BadgeService().checkStreakDays();
       await BadgeService().checkStudyTimeBadge();
@@ -201,8 +214,8 @@ class FinishPageState extends State<FinishPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 加餐不产生新的打卡成果（积分/魔法泡泡只在每日首次打卡时结算），故不展示成果卡
-          if (!isExtraRound) ...[
+          // 打卡成果（积分/魔法泡泡）只在本次真正结算了打卡时才有值，已在今日打过卡时不再展示
+          if (!hasDakaToday) ...[
             _buildMetricsCard(themeConfig),
             const SizedBox(height: 14),
           ],
@@ -277,7 +290,7 @@ class FinishPageState extends State<FinishPage> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  isExtraRound ? '加餐完成' : '打卡成功',
+                  isExtraRound ? '加量完成' : '打卡成功',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -288,7 +301,7 @@ class FinishPageState extends State<FinishPage> {
                 const SizedBox(height: 6),
                 Text(
                   isExtraRound
-                      ? '额外加餐已学完 · 状态正好就再多背一组'
+                      ? '加量已学完 · 状态正好就再多背一组'
                       : '今日学习完成 · 继续坚持每天进步一点点',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.92),
@@ -424,8 +437,8 @@ class FinishPageState extends State<FinishPage> {
           color: context.cardBg,
           child: Column(
             children: [
-              // 加餐完成后可继续加餐（不限次数，会员权益）
-              if (isExtraRound) ...[
+              // 打卡后完成的学习都可以继续加量（不限次数，会员权益）
+              if (hasDakaToday) ...[
                 _buildActionItem(
                   themeConfig,
                   key: const Key('finish_extra_again_btn'),
@@ -584,11 +597,11 @@ class FinishPageState extends State<FinishPage> {
     );
   }
 
-  /// 打卡后继续加餐：追加一组单词后直接进入学习页。
-  /// 加餐是会员权益，非会员引导至订阅页。
+  /// 打卡后继续加量：追加一组单词后直接进入学习页。
+  /// 加量是会员权益，非会员引导至订阅页。
   Future<void> _startExtraStudy() async {
     if (!SubscriptionUtil.isPremium()) {
-      ToastUtil.info('加餐是会员专属权益');
+      ToastUtil.info('加量是会员专属权益');
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const SubscriptionPage()),
       );
@@ -598,7 +611,7 @@ class FinishPageState extends State<FinishPage> {
     final result = await StudyBo().prepareExtraStudy();
     if (!mounted) return;
     if (!result.success) {
-      ToastUtil.error(result.msg ?? '加餐失败');
+      ToastUtil.error(result.msg ?? '加量失败');
       return;
     }
 
