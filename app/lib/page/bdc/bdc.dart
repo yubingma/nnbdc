@@ -15,6 +15,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/util/ocr_service.dart';

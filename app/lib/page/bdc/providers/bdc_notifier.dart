@@ -12,6 +12,7 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_detail.dart';
 import 'package:nnbdc/page/word_list/batch_words.dart';
@@ -544,6 +545,10 @@ class BdcNotifier extends _$BdcNotifier {
         word: null,
         wordWrapper: null,
       );
+      // 今日学习列表已全部走完（含加量批次）。必须显式广播这个业务事实：
+      // 紧随其后的 pushReplacement 会让计划页 push('/bdc') 的 future 永不完成，
+      // 计划页的 .then 刷新因此失效，只能靠事件把最新进度同步过去。
+      EventBus.publishTodayStudyListChanged(const TodayStudyListChangedEvent());
       goRouter.pushReplacement("/finish");
       return false;
     } else if (getWordResult.noWord) {

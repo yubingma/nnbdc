@@ -170,12 +170,22 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         loadData();
       }
     });
+
+    // 学习页学完（含加量批次）后只重算今日列表进度，不再走取词/削减：
+    // 计划此刻已经学完，重新准备计划只会带来副作用。
+    _todayStudyListChangedSubscription = EventBus.onTodayStudyListChanged().listen((event) {
+      Global.logger.d('TodayPlanPage received TodayStudyListChangedEvent, refreshing data...');
+      if (mounted && !_isLoadingData) {
+        loadData(isReturnFromStudy: true);
+      }
+    });
   }
 
   StreamSubscription? _dakaSubscription;
   StreamSubscription? _wordDeletedSubscription;
   StreamSubscription? _wordMasteredSubscription;
   StreamSubscription? _wordUnMasteredSubscription;
+  StreamSubscription? _todayStudyListChangedSubscription;
 
   @override
   void dispose() {
@@ -184,6 +194,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     _wordDeletedSubscription?.cancel();
     _wordMasteredSubscription?.cancel();
     _wordUnMasteredSubscription?.cancel();
+    _todayStudyListChangedSubscription?.cancel();
     super.dispose();
   }
 
@@ -2866,7 +2877,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
   }
 
-  /// 弹出"高级设置"对话框，可配置今日最少新词数量
+  /// 弹出"高级设置"对话框，可配置今日最少新词数量与每组单词数
   void _showAdvancedSettingsDialog() {
     final darkMode = context.read<DarkMode>();
     final isDarkMode = darkMode.isDarkMode;
@@ -2876,6 +2887,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final config = StudyConfig.fromCurrentUser();
     final wordsPerDay = user?.effectiveWordsPerDay ?? 20;
     int selected = config.minNewWordsPerDay.clamp(0, wordsPerDay);
+    // 每组单词数不得超过当日计划词数，否则加量批次会被并进计划组
+    final batchSizeLimit = wordsPerDay > 0
+        ? math.min(StudyConfig.maxBatchSize, wordsPerDay)
+        : StudyConfig.maxBatchSize;
+    int selectedBatchSize =
+        config.batchSize.clamp(1, batchSizeLimit);
+    final batchSizeChips =
+        [5, 10, 15, 20, 30].where((v) => v <= batchSizeLimit).toList();
 
     showDialog(
       context: context,
@@ -3125,6 +3144,140 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ],
                         ),
                       ],
+                      const SizedBox(height: 22),
+
+                      // 每组单词数：整组横向推进时一组容纳多少词
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '每组单词数',
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                isStarted ? '今日学习已开始，设置暂时锁定' : '一组学完再进下一组，组越大打断越少',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (isStarted)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                              decoration: BoxDecoration(
+                                color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$selectedBatchSize 词',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      if (!isStarted) ...[
+                        const SizedBox(height: 14),
+
+                        // 步进调节条
+                        Container(
+                          height: 52,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              _buildAdvancedStepBtn(
+                                icon: Icons.remove_rounded,
+                                enabled: selectedBatchSize > 1,
+                                onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize - 1).clamp(1, batchSizeLimit)),
+                                isDarkMode: isDarkMode,
+                              ),
+                              Expanded(
+                                child: Center(
+                                  child: RichText(
+                                    text: TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: '$selectedBatchSize',
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w800,
+                                            fontFamily: 'Roboto',
+                                            color: primaryColor,
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: ' 词/组',
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: primaryColor.withValues(alpha: 0.8),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              _buildAdvancedStepBtn(
+                                icon: Icons.add_rounded,
+                                enabled: selectedBatchSize < batchSizeLimit,
+                                onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize + 1).clamp(1, batchSizeLimit)),
+                                isDarkMode: isDarkMode,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // 快捷药丸标签（不超过当日计划词数的档位）
+                        if (batchSizeChips.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              for (int i = 0; i < batchSizeChips.length; i++) ...[
+                                if (i > 0) const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildAdvancedQuickChip(
+                                    '${batchSizeChips[i]}词',
+                                    batchSizeChips[i],
+                                    selectedBatchSize,
+                                    (v) => setDialogState(() => selectedBatchSize = v),
+                                    primaryColor,
+                                    isDarkMode,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ],
                       const SizedBox(height: 20),
 
                       // 底部对称行动条
@@ -3154,6 +3307,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                     ? null
                                     : () async {
                                         config.minNewWordsPerDay = selected;
+                                        config.batchSize = selectedBatchSize;
                                         await config.saveToCurrentUser();
                                         if (ctx.mounted) Navigator.of(ctx).pop();
                                         loadData(forceSupplement: true);

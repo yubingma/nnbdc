@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/today_plan.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
@@ -236,6 +237,36 @@ void main() {
         reason: '还没打卡就没有盖章日期');
     expect(find.textContaining('加量已完成'), findsNothing,
         reason: '今天没有加量批次，就不该出现加量进度');
+
+    await tester.pump(const Duration(seconds: 60));
+  });
+
+  testWidgets('学完加量批次后广播 TodayStudyListChangedEvent：计划页必须刷新到最新进度，不能停在旧快照',
+      (tester) async {
+    await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
+    await pumpTodayPlan(tester);
+    await pumpUntil(tester, find.text('加量已完成 2 / 5 词'));
+    expect(find.text('继续学习（加量）'), findsOneWidget,
+        reason: '进入学习页之前，计划页停在"还有 3 个加量词没学"');
+
+    // 模拟学习页把剩余加量词学完：只改数据，不经过任何页面级刷新
+    final extraRows =
+        await (db.select(db.learningWords)..where((t) => t.isExtra.equals(true))).get();
+    for (final word in extraRows) {
+      await db.learningWordsDao
+          .saveEntity(word.copyWith(todayLearnedTimes: 99, learnedTimes: 99), false);
+    }
+
+    // 学习页跳完成页前广播的业务事实：pushReplacement 会让计划页 push('/bdc') 的
+    // future 永不完成，计划页只能靠这个事件刷新，否则会一直显示旧快照
+    // （完成页说"加量完成"，计划页却说"还有加量没学"，还会给一个点进去就被弹回的入口）
+    EventBus.publishTodayStudyListChanged(const TodayStudyListChangedEvent());
+    await pumpUntil(tester, find.text('加量已完成 5 / 5 词'));
+
+    expect(find.text('加量已完成 5 / 5 词'), findsOneWidget,
+        reason: '收到事件后必须重算加量进度');
+    expect(find.text('继续学习（加量）'), findsNothing,
+        reason: '加量已学完，不能再给"继续学习（加量）"入口');
 
     await tester.pump(const Duration(seconds: 60));
   });

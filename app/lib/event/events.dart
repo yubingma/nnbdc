@@ -86,6 +86,20 @@ class EventBus {
   static Stream<DictWordsChangedEvent> onDictWordsChanged() {
     return _dictWordsChangedController.stream;
   }
+
+  /// 今日学习列表进度变化事件：学习页学完（含加量批次）后发射。
+  /// 学习页跳完成页用的是 pushReplacement，被替换路由的 push future 永远不会完成，
+  /// 计划页挂在 push('/bdc').then(...) 上的刷新会失效，必须靠这个业务事实补齐，
+  /// 否则计划页会停留在进入学习页之前的旧快照（加量进度、主按钮全都不对）。
+  static final _todayStudyListChangedController = StreamController<TodayStudyListChangedEvent>.broadcast();
+
+  static void publishTodayStudyListChanged(TodayStudyListChangedEvent event) {
+    _todayStudyListChangedController.add(event);
+  }
+
+  static Stream<TodayStudyListChangedEvent> onTodayStudyListChanged() {
+    return _todayStudyListChangedController.stream;
+  }
 }
 
 /// 产生了新错词的具体业务事件
@@ -142,4 +156,12 @@ class LearningDictChangedEvent {
 class DictWordsChangedEvent {
   final String? dictId;
   const DictWordsChangedEvent({this.dictId});
+}
+
+/// 今日学习列表（含打卡后追加的加量批次）的进度已变化。
+/// 与 [TodayStudyPlanFinishedEvent] 的区别：后者是打卡这一事实，计划页收到后会重新准备
+/// 今日计划（取词/削减）；本事件只表示"列表进度变了"，计划页只需重算进度与主按钮。
+class TodayStudyListChangedEvent {
+  final String? wordId;
+  const TodayStudyListChangedEvent({this.wordId});
 }

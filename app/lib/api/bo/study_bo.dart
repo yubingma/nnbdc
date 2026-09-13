@@ -10,6 +10,7 @@ import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
+import 'package:nnbdc/db/user_extensions.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
@@ -30,8 +31,12 @@ import 'package:nnbdc/util/sound.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
-  /// 学习批次大小：与 getWord / _calculateBatchStartIndex 的批次划分保持一致
-  static const int batchSize = 10;
+  /// 学习批次大小（每组单词数）：用户在「高级学习设置」中配置，
+  /// 且不超过当日计划词数（见 [StudyConfig.effectiveBatchSize]）。
+  /// 与 getWord / _calculateBatchStartIndex 的批次划分保持一致。
+  /// 调用方取一次到局部变量复用：每次访问都会重新解析一遍 studyConfig。
+  static int get batchSize => StudyConfig.fromCurrentUser()
+      .effectiveBatchSize(Global.getLoggedInUser()?.effectiveWordsPerDay ?? 0);
 
   final StudyStepsService _studyStepsService = StudyStepsService();
   static final StudyBo _instance = StudyBo._internal();
@@ -75,14 +80,14 @@ class StudyBo {
   }
 
 
-  /// 加量：打卡后额外追加一组（默认 10 个）单词。
+  /// 加量：打卡后额外追加一组单词（词数 = 当前生效的每组单词数）。
   ///
   /// 加量是会员权益，且**不计入"今日计划"**：它只是追加一个新的取词批次
   /// （复用语料配额与排序逻辑，等价于"当初把今日计划设为 已选词数 + count 时的最后 count 个词"）。
   /// 学习页按 batchId 顺序自动续学，因此中途退出后重新进入可继续未完成的加量批次。
   ///
-  /// 返回 [Result.data] 为本次实际追加的词数。
-  Future<Result<int>> prepareExtraStudy({int count = 10}) async {
+  /// [count] 缺省为一组；返回 [Result.data] 为本次实际追加的词数。
+  Future<Result<int>> prepareExtraStudy({int? count}) async {
     try {
       final user = Global.getLoggedInUser();
       if (user == null) {
@@ -100,11 +105,13 @@ class StudyBo {
         return Result("ERROR", "请先完成今日学习", false);
       }
 
+      final int extraCount = count ?? batchSize;
+
       // genTodayWords 会就地向传入列表追加并返回同一实例，故先记录追加前的词数
       final int beforeCount = todayWords.length;
-      final targetTotal = beforeCount + count;
+      final targetTotal = beforeCount + extraCount;
 
-      Global.logger.d('开始加量：当前今日词数=$beforeCount, 本次追加=$count, 目标总数=$targetTotal');
+      Global.logger.d('开始加量：当前今日词数=$beforeCount, 本次追加=$extraCount, 目标总数=$targetTotal');
       final allWords = await LearningService.genTodayWords(
         user.id,
         AppClock.now(),
@@ -122,6 +129,10 @@ class StudyBo {
 
       await LearningService.updateTodayLearningWords(allWords, AppClock.now());
       StudyCacheManager().clear();
+      // 今日学习列表已追加新的加量批次：在事实源头广播，让今日计划页刷新加量进度与主按钮。
+      // 不能只依赖计划页 push('/bdc') 的 .then：学习页跳完成页用 pushReplacement，
+      // 被替换路由的 future 永不完成，从完成页发起的加量回到计划页时会停在旧快照。
+      EventBus.publishTodayStudyListChanged(const TodayStudyListChangedEvent());
       ThrottledDbSyncService().requestSync(immediate: true);
       Global.logger.d('加量完成：已追加 $addedCount 个单词');
 
@@ -165,6 +176,7 @@ class StudyBo {
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       final firstLogs =
           await _loadTodayFirstLogs(user.id, todayWords);
+      final int batchSize = StudyBo.batchSize;
       int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
           firstLogs: firstLogs,
           newCfg: newCfg,
@@ -175,7 +187,7 @@ class StudyBo {
         return [];
       }
 
-      // 获取当前批次的单词（最多10个）
+      // 获取当前批次的单词
       List<LearningWord> batchWords = [];
       for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + batchSize; i++) {
         batchWords.add(todayWords[i]);
@@ -440,6 +452,7 @@ class StudyBo {
       // 计算 batchStartIndex
       final firstLogs =
           await _loadTodayFirstLogs(user.id, todayWords);
+      final int batchSize = StudyBo.batchSize;
       final batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
           firstLogs: firstLogs,
           newCfg: newCfg,
@@ -627,6 +640,7 @@ class StudyBo {
       // 旧词三组显式规则（未设置时轨道层回退默认）
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
+      final int batchSize = StudyBo.batchSize;
       int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
           firstLogs: firstLogs,
           newCfg: newCfg,
@@ -636,7 +650,7 @@ class StudyBo {
         return _buildTodayStudyFinishedResult();
       }
 
-      // 获取当前批次的 10 个词
+      // 获取当前批次的单词
       List<LearningWord> batchWords = [];
       for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + batchSize; i++) {
         batchWords.add(todayWords[i]);
@@ -1257,7 +1271,7 @@ class StudyBo {
       {required Map<String, ({int elapsedDays, int rating})> firstLogs,
       required ThreeGroupSteps newCfg,
       required ThreeGroupSteps reviewCfg,
-      int batchSize = 10}) {
+      required int batchSize}) {
     final today = AppClock.today();
     for (int i = 0; i < todayWords.length; i += batchSize) {
       bool batchFinished = true;
@@ -1355,6 +1369,7 @@ class StudyBo {
     final wordIndex = todayWords.indexWhere((w) => w.wordId == wordId);
     if (wordIndex < 0) return null;
 
+    final int batchSize = StudyBo.batchSize;
     final batchStart = (wordIndex ~/ batchSize) * batchSize;
     final batchEnd = (batchStart + batchSize) > todayWords.length
         ? todayWords.length

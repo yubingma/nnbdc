@@ -1120,7 +1120,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-  /// 本组环节进度：本组（10 词一批）的序号、当前词的轨道名、该轨道在本环节的排队位置
+  /// 本组环节进度：本组（每组单词数可配置）的序号、当前词的轨道名、该轨道在本环节的排队位置
   /// （见 StudyBo.getBatchPhaseProgress）。
   /// 极简裸排版、无容器 —— 只为让"整组先英译汉、再整组汉译英"的顺序变得可见可预期。
   Widget _buildGroupStepIndicator() {

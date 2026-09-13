@@ -1700,8 +1700,8 @@ extension BdcPageStateDialogs on BdcPageState {
       return a.learningOrder.compareTo(b.learningOrder);
     });
 
-    // 分组：底层调度系统固定是 10 个词为一个学习循环（也就是一个 Batch）
-    const int batchSize = 10;
+    // 分组：与调度层同一口径，按用户设置的每组单词数切分（也就是一个 Batch）
+    final int batchSize = StudyBo.batchSize;
     final Map<int, List<dynamic>> batches = {};
     for (int i = 0; i < words.length; i++) {
       final w = words[i];

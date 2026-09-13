@@ -74,7 +74,8 @@ class BdcState extends Equatable {
   final bool isWordMastered;
   /// 当前单词今天是否走复习轨道（旧词），由 handleWord 按轨道推导，用于把环节名映射为「新词/旧词」。
   final bool isReviewWord;
-  /// 本组（10 词一批）的序号（1 起）与当前环节的排队位置、队列长度，
+  /// 本组（每组单词数可配置，见 StudyBo.batchSize）的序号（1 起）
+  /// 与当前环节的排队位置、队列长度，
   /// 用于学习页「第 N 组 · 轨道 · 环节 x/y」指示；位置为 0 表示当前无指示可展示
   /// （如 List 环节或无法定位）。
   final int groupStepNo;

@@ -21,8 +21,14 @@ class StudyConfig {
   Map<String, dynamic>? walkman;
   int minNewWordsPerDay;
 
+  /// 每组单词数（学习批次大小）：整组横向推进时一组容纳多少词，见 [effectiveBatchSize]
+  int batchSize;
+
   /// 用户已关闭学习页「本组环节顺序提示」，不再展示
   bool hideGroupStepHint;
+
+  /// 每组单词数的上限
+  static const int maxBatchSize = 30;
 
   StudyConfig({
     this.autoPlayWord = true,
@@ -41,6 +47,7 @@ class StudyConfig {
     this.showWordDetailAfterCorrect = false,
     this.walkman,
     this.minNewWordsPerDay = 0,
+    this.batchSize = 10,
     this.hideGroupStepHint = false,
   });
 
@@ -62,9 +69,16 @@ class StudyConfig {
       showWordDetailAfterCorrect: _toBool(json['showWordDetailAfterCorrect'], false),
       walkman: json['walkman'] is Map<String, dynamic> ? json['walkman'] : null,
       minNewWordsPerDay: _toInt(json['minNewWordsPerDay']),
+      batchSize: _toInt(json['batchSize'], 10).clamp(1, maxBatchSize),
       hideGroupStepHint: _toBool(json['hideGroupStepHint'], false),
     );
   }
+
+  /// 实际生效的每组单词数：一组不得超过当日计划词数，否则加量批次会被并进计划组，
+  /// 破坏"加量不计入今日计划"的口径（组内进度指示也会把计划词算进加量的分母）。
+  /// [wordsPerDay] <= 0 表示未设置计划量，不做压缩。
+  int effectiveBatchSize(int wordsPerDay) =>
+      wordsPerDay > 0 ? batchSize.clamp(1, wordsPerDay) : batchSize;
 
   static bool _toBool(dynamic value, bool defaultValue) {
     if (value == null) return defaultValue;
@@ -74,10 +88,10 @@ class StudyConfig {
     return defaultValue;
   }
 
-  static int _toInt(dynamic value) {
+  static int _toInt(dynamic value, [int defaultValue = 0]) {
     if (value is int) return value;
     if (value is num) return value.toInt();
-    return 0;
+    return defaultValue;
   }
 
   static String _toAsrPassRule(dynamic value) {
@@ -108,6 +122,7 @@ class StudyConfig {
       'showWordDetailAfterCorrect': showWordDetailAfterCorrect,
       if (walkman != null) 'walkman': walkman,
       'minNewWordsPerDay': minNewWordsPerDay,
+      'batchSize': batchSize,
       'hideGroupStepHint': hideGroupStepHint,
     };
   }

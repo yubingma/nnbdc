@@ -12,6 +12,7 @@ import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/prefs.dart';
+import 'package:nnbdc/util/study_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 批次推进顺序回归测试。
@@ -486,5 +487,37 @@ void main() {
     final ch2En1 = seq.where((e) => e.step == 'Ch2En' && e.groupNo == 1).toList();
     expect(ch2En1.map((e) => e.trackName).toSet(), {'新词答对'});
     expect(ch2En1.every((e) => e.groupTotal == batchSize - 1), true);
+  });
+
+  test('每组单词数：缺省 10，超出上限或当日计划词数时被压缩', () {
+    expect(StudyConfig.fromJson({}).batchSize, batchSize, reason: '老配置无该字段时保持旧行为');
+    expect(StudyConfig.fromJson({'batchSize': 999}).batchSize, StudyConfig.maxBatchSize);
+    expect(StudyConfig.fromJson({'batchSize': 0}).batchSize, 1);
+
+    final configured = StudyConfig(batchSize: 30);
+    expect(configured.effectiveBatchSize(20), 20,
+        reason: '不得超过当日计划词数，否则加量批次会被并进计划组');
+    expect(configured.effectiveBatchSize(0), 30, reason: '未设置计划量时不压缩');
+  });
+
+  test('每组单词数可配置：设为当日计划词数时全天同属第 1 组', () async {
+    // 用户在「高级学习设置」里把每组单词数调成 20（= 当日计划词数）
+    final configured = testUser.copyWith(
+        studyConfig: const Value<String?>(
+            '{"autoPlayWord":false,"autoPlaySentence":false,"batchSize":20}'));
+    await db.usersDao.saveUser(configured, true);
+    Global.updateUserCache(configured);
+
+    final prep = await LearningService.prepareTodayStudy(true);
+    expect(prep.success, true);
+
+    final seq = await playWholeDay();
+
+    expect(seq.every((e) => e.step == 'List' || e.groupNo == 1), true,
+        reason: '20 词一组时全天只有第 1 组，不再出现第 2 组');
+    final en2Ch = seq.where((e) => e.step == 'En2Ch').toList();
+    expect(en2Ch.length, wordTotal, reason: '整组一次走完 20 个词的测评');
+    expect(en2Ch.every((e) => e.groupTotal == wordTotal), true,
+        reason: '组内进度分母 = 用户设置的每组单词数');
   });
 }
