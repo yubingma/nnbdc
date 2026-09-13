@@ -569,6 +569,30 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
+  /// 关闭随身听后，把词表书签同步到随身听停留的位置：
+  /// 随身听播放时会逐词推进同一个书签，这里重新读取书签并定位刷新列表。
+  Future<void> _syncBookMarkAfterWalkman() async {
+    if (!mounted || !_controllerInitialized) return;
+    setState(() {
+      _isSwitchingMode = true;
+      _switchingMessage = '同步随身听进度...';
+    });
+    try {
+      await controller.loadData(
+        checkAndShowGuide: () {},
+        restoreAsrIfNeeded: (caller) {
+          _restoreAsrIfNeeded(caller);
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSwitchingMode = false;
+        });
+      }
+    }
+  }
+
   /// 检查并显示新手引导
   Future<void> _checkAndShowGuide() async {
     try {
@@ -2728,7 +2752,10 @@ class WordListPageState extends State<WordListPage>
         extra:
         WalkmanParams(args.wordsProvider,
         bookMarkProvider: args.bookMarkProvider,
-        initialWordIndex: initialIndex));
+        initialWordIndex: initialIndex)).then((_) {
+        // 随身听播放中会把书签一路推进，返回词表时同步到它停留的位置
+        _syncBookMarkAfterWalkman();
+        });
 
 
         break;

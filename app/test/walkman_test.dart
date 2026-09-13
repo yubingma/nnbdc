@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/result.dart';
+import 'package:nnbdc/api/sort_alg.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/walkman.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
@@ -33,6 +34,9 @@ class MockWordsProvider with WordsProvider {
 class MockBookMarkProvider implements BookMarkProvider {
   BookMarkVo? _bookMark;
   MockBookMarkProvider([this._bookMark]);
+
+  /// 当前已保存的书签（供测试断言）
+  BookMarkVo? get saved => _bookMark;
 
   @override
   Future<BookMarkVo?> getBookMark() async => _bookMark;
@@ -160,6 +164,31 @@ void main() {
       expect(WalkmanScene.forest.hasAudio, isTrue);
       expect(WalkmanScene.forest.videoAsset, equals('assets/video/scenes/forest.mp4'));
       expect(WalkmanScene.forest.audioAsset, equals('assets/audio/scenes/forest.mp3'));
+    });
+  });
+
+  group('随身听书签写入', () {
+    test('推进位置时写入词表书签，并沿用词表当前的排序', () async {
+      final bookMarkProvider = MockBookMarkProvider(
+        BookMarkVo(5, 'apple', WordSortAlg.alphabetical.code),
+      );
+      final state = WalkmanPageState();
+      state.params = WalkmanParams(MockWordsProvider([]), bookMarkProvider: bookMarkProvider);
+      state.bookMarkSortAlg = WordSortAlg.alphabetical.code; // loadData 从书签读到的词表排序
+
+      await state.saveCurrentPosition(42, WordWrapper(WordVo.c2('banana'), null));
+
+      expect(bookMarkProvider.saved!.position, 42);
+      expect(bookMarkProvider.saved!.spell, 'banana');
+      // 关键：不能把词表排序改回默认，否则回到词表后顺序会整体改变
+      expect(bookMarkProvider.saved!.sortAlg, WordSortAlg.alphabetical.code);
+    });
+
+    test('没有书签提供者或单词为空时安全跳过', () async {
+      final state = WalkmanPageState();
+      expect(state.params, isNull);
+      await state.saveCurrentPosition(1, null);
+      await state.saveCurrentPosition(1, WordWrapper(WordVo.c2('apple'), null));
     });
   });
 

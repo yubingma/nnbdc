@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/sort_alg.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -139,6 +140,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   Timer? playWordTimer;
   bool dataLoaded = false;
   WalkmanParams? params; // 改为可空类型，在checkArgs中验证
+  String bookMarkSortAlg = WordSortAlg.original.code; // 词表当前排序，推进书签时原样沿用
   final Map<int, WordWrapper> _wordCache = {};
   final Set<int> _loadingPages = {};
   static const int _pageSize = 20;
@@ -455,10 +457,12 @@ class WalkmanPageState extends State<WalkmanPage> {
     }
   }
 
-  Future<void> _saveCurrentPosition(int index, WordWrapper? word) async {
+  /// 把当前位置写入词表书签：随身听推进到哪个词，词表的书签就停在哪个词
+  Future<void> saveCurrentPosition(int index, WordWrapper? word) async {
     if (word == null || params?.bookMarkProvider == null) return;
     try {
-      await params!.bookMarkProvider!.saveBookMark(BookMarkVo(index, word.word.spell));
+      // 沿用词表当前的排序：随身听只推进位置，不能把词表排序改回默认
+      await params!.bookMarkProvider!.saveBookMark(BookMarkVo(index, word.word.spell, bookMarkSortAlg));
     } catch (e) {
       Global.logger.w('保存随身听当前位置失败: $e');
     }
@@ -475,19 +479,23 @@ class WalkmanPageState extends State<WalkmanPage> {
       return;
     }
 
-    // 确定起始位置
+    // 确定起始位置，并记住词表当前的排序（推进书签时要沿用，否则会把词表排序改回默认）
     int startPos = 0;
-    if (params!.initialWordIndex != null && params!.initialWordIndex! >= 0) {
-      startPos = params!.initialWordIndex!;
-    } else if (params!.bookMarkProvider != null) {
+    if (params!.bookMarkProvider != null) {
       try {
         final bookmark = await params!.bookMarkProvider!.getBookMark();
-        if (bookmark != null && bookmark.position >= 0) {
-          startPos = bookmark.position;
+        if (bookmark != null) {
+          bookMarkSortAlg = bookmark.sortAlg;
+          if (bookmark.position >= 0) {
+            startPos = bookmark.position;
+          }
         }
       } catch (e) {
         Global.logger.w('获取随身听书签失败: $e');
       }
+    }
+    if (params!.initialWordIndex != null && params!.initialWordIndex! >= 0) {
+      startPos = params!.initialWordIndex!;
     }
 
     final initialPage = startPos ~/ _pageSize;
@@ -531,7 +539,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     // 退出时保存最后播放的位置
     final currentWord = _wordCache[currWordIndex];
     if (currentWord != null) {
-      _saveCurrentPosition(currWordIndex, currentWord);
+      saveCurrentPosition(currWordIndex, currentWord);
     }
 
     // 退出全屏并恢复默认方向设置
@@ -686,7 +694,7 @@ class WalkmanPageState extends State<WalkmanPage> {
           return;
         }
 
-        _saveCurrentPosition(currWordIndex, word);
+        saveCurrentPosition(currWordIndex, word);
         prefetchAround(currWordIndex);
 
         // 提前获取例句，确保例句与当前单词匹配
@@ -1824,7 +1832,7 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     final word = _wordCache[currWordIndex];
     if (word != null) {
-      _saveCurrentPosition(currWordIndex, word);
+      saveCurrentPosition(currWordIndex, word);
     }
     prefetchAround(currWordIndex);
 
