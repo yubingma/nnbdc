@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:drift/drift.dart' as drift;
@@ -707,20 +706,28 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
       child: Column(
         children: [
-          // 环形进度仪表盘（进度环 + 环心今日目标词数）
+          // 环心今日目标词数（外圈仅为装饰性锚点环）
           SizedBox(
-            width: 172,
-            height: 172,
+            width: 140,
+            height: 140,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                CustomPaint(
-                  size: const Size(172, 172),
-                  painter: _CircularProgressArcPainter(
-                    progress: progress.clamp(0.0, 1.0),
-                    accentColor: themeConfig.primaryColor,
-                    accentLightColor: themeConfig.primaryLightColor,
-                    isDarkMode: isDarkMode,
+                // 装饰性锚点环：纯主题色极淡描边，刻意不含任何进度语义。
+                // 环心「500 词 🔒」是左重右轻的组合（46pt 大数字 + 13pt 小单位），整组居中
+                // 会让大数字自身的中心落到圆心左侧；一圈对称的环把它锚回圆心，消除重心失稳。
+                // 若这里再画进度弧，就会与下方细进度条表达同一个值，环退化为冗余空壳。
+                // 尺寸：172 时环占屏宽 41%、环心内容仅占内径 37%，内圈空掉六成显得虚大；
+                // 收到 140 后占屏宽 33%（回到仪表盘常规区间），描边同比缩到 7 保持相对粗细。
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.14),
+                      width: 7,
+                    ),
                   ),
                 ),
                 GestureDetector(
@@ -3285,62 +3292,3 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 }
-
-/// 今日学习计划 - 环形完成度仪表盘绘制器
-class _CircularProgressArcPainter extends CustomPainter {
-  final double progress;
-  final Color accentColor;
-  final Color accentLightColor;
-  final bool isDarkMode;
-
-  _CircularProgressArcPainter({
-    required this.progress,
-    required this.accentColor,
-    required this.accentLightColor,
-    required this.isDarkMode,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    const strokeWidth = 8.5;
-    final radius = (size.width - strokeWidth) / 2;
-
-    // 1. 底轨
-    final trackPaint = Paint()
-      ..color = isDarkMode
-          ? Colors.white.withValues(alpha: 0.08)
-          : Colors.black.withValues(alpha: 0.05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    canvas.drawCircle(center, radius, trackPaint);
-
-    // 2. 完成度弧段（同色相微渐变，起点顶部 -pi/2，顺时针推进）
-    final sweep = (2 * math.pi * progress).clamp(0.0, 2 * math.pi);
-    if (sweep <= 0.01) return;
-
-    const startAngle = -math.pi / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final progressPaint = Paint()
-      ..shader = SweepGradient(
-        startAngle: startAngle,
-        endAngle: startAngle + sweep,
-        colors: [accentColor, accentLightColor],
-      ).createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(rect, startAngle, sweep, false, progressPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _CircularProgressArcPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.accentColor != accentColor ||
-        oldDelegate.accentLightColor != accentLightColor ||
-        oldDelegate.isDarkMode != isDarkMode;
-  }
-}
-
