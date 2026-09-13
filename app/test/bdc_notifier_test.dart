@@ -582,6 +582,10 @@ void main() {
     expect(state.hasFinishedAnswering, false);
     // 但是 matchedCount 增加到了 1
     expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 1);
+    // 已命中部分释义即可离开，但答案尚未揭晓：底部「下一词」流转按钮此时不渲染，
+    // 只能由「不认识/再学学」进入单词详情页看答案，杜绝未看答案就跳到下一词
+    expect(state.canLeaveCurrWord, true, reason: '已命中部分释义允许离开当前词');
+    expect(notifier.hasSeenAnswer, false, reason: '未达通过线时答案未揭晓，不渲染「下一词」按钮');
 
     // 4. 用户又说对一个新释义：“芭蕉”
     await notifier.onAsrResult(jsonEncode({
@@ -603,6 +607,7 @@ void main() {
     // 现在全部答对，应该通过
     expect(state.hasFinishedAnswering, true);
     expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 3);
+    expect(notifier.hasSeenAnswer, true, reason: '答案已揭晓，此时才渲染「下一词」按钮');
   });
 
   test('BdcNotifier - 英中模式已说中的释义重复识别时不应触发 AI 裁判（不得整词放行绕过半数门槛）', () async {

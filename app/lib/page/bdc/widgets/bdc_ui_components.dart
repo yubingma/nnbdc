@@ -1052,7 +1052,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               ),
             ),
           ],
-          if (state.canLeaveCurrWord) ...[
+          // 答案未看过(仅答对部分释义、未达通过线)时不渲染流转按钮：此时唯一出口是「不认识/再学学」，
+          // 两者都会进入单词详情页看答案并留下评分。这样"没看答案就跳到下一词"在结构上不可能发生。
+          if (state.canLeaveCurrWord && notifier.hasSeenAnswer) ...[
             if (showStudyActions) const SizedBox(width: 20),
             _buildMinimalPillButton(
               key: const Key('bdc_next_word_btn'),

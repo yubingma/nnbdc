@@ -928,6 +928,11 @@ class BdcNotifier extends _$BdcNotifier {
     _handleTabChangeForAsr();
   }
 
+  /// 当前词答案用户是否已看过：答对/看答案后揭晓，或练习模式下已看过再隐藏答案。
+  /// 底部「下一词」流转按钮只在答案已看过时渲染；未看过时只能经「不认识/再学学」进入详情页看答案，
+  /// 杜绝"未达通过线却直接跳到下一词、既不显示详情也不产生任何评分"。
+  bool get hasSeenAnswer => state.hasFinishedAnswering || _isPracticeMode;
+
   void revealAnswerAndMarkWrong(BuildContext context) {
     // 用户显式点击"看答案"是强意图,即使 _isAnswerCorrectHandling 残留也执行
     _isAnswerCorrectHandling = false;
