@@ -1120,9 +1120,11 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-  /// 本组环节进度：本组（10 词一批）当前环节的排队位置（见 StudyBo.getBatchPhaseProgress）。
+  /// 本组环节进度：本组（10 词一批）的序号、当前词的轨道、当前环节的排队位置
+  /// （见 StudyBo.getBatchPhaseProgress）。
   /// 极简裸排版、无容器 —— 只为让"整组先英译汉、再整组汉译英"的顺序变得可见可预期。
   Widget _buildGroupStepIndicator() {
+    final groupNo = state.groupStepNo;
     final position = state.groupStepPosition;
     final total = state.groupStepTotal;
     final hint = state.groupStepHint;
@@ -1140,11 +1142,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: '本组 ',
+                          text: '第 $groupNo 组 · ${state.currentWordTrackName}',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
                             color: context.textSecondary,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' · $stepDesc ',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: context.textPrimary,
                           ),
                         ),
                         TextSpan(
@@ -1156,31 +1166,43 @@ extension BdcPageStateUIComponents on BdcPageState {
                             color: context.textPrimary,
                           ),
                         ),
-                        TextSpan(
-                          text: ' · $stepDesc',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: context.textPrimary,
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                  // 环节切换的一次性轻提示（只在切换后第一个词上出现）
+                  // 环节切换的一次性轻提示（只在切换后第一个词上出现，点 × 永久关闭）
                   if (hint != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
-                      child: Text(
-                        hint,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                          height: 1.35,
-                          color: context.primaryColor,
-                        ),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              hint,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                height: 1.35,
+                                color: context.primaryColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: notifier.dismissGroupStepHint,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 13,
+                                color: context.textSecondary
+                                    .withValues(alpha: 0.55),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],

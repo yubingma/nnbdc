@@ -20,6 +20,7 @@ import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/study_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
@@ -1700,6 +1701,8 @@ void main() {
         reason: '恢复环节仍属复习轨道,应标记为新词/旧词中的[旧词]');
     expect(state.assessmentIsAgain, true,
         reason: '当天首条测评评分为 again,环节名应判为[答错]');
+    expect(state.currentWordTrackName, '旧词答错',
+        reason: '旧词测评答错后进入恢复环节,轨道名为"旧词答错"');
 
     // 恢复环节答对 → 复习轨道今日完成，进入 List 环节（列表页）
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
@@ -1710,7 +1713,7 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
   });
 
-  test('BdcNotifier - 本组进度指示：环节切换后的首个词给出顺序轻提示', () async {
+  test('BdcNotifier - 本组进度指示：环节切换后的首个词给出顺序轻提示，点 × 关闭后不再出现', () async {
     // 本组轨道补全为 [En2Ch, Ch2En, List]，让环节切换真实发生
     for (final group in ['correct', 'wrong']) {
       await db.into(db.userStudySteps).insert(UserStudyStep(
@@ -1744,6 +1747,8 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.studyStep, StudyStep.en2Ch.json);
     expect(state.groupStepHint, null, reason: '首次进入学习页不应弹出提示');
+    expect(state.currentWordTrackName, '新词',
+        reason: '测评环节尚未评分，轨道只到"新词/旧词"这一层');
 
     // 测评答对 → 本组进入汉译英环节：首词给出"整组推进"的顺序提示
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
@@ -1752,8 +1757,33 @@ void main() {
     expect(state.studyStep, StudyStep.ch2En.json);
     expect(state.groupStepPosition, 1);
     expect(state.groupStepTotal, 1);
+    expect(state.groupStepNo, 1, reason: '本组仅 1 个词，仍是今日第 1 组');
+    expect(state.currentWordTrackName, '新词答对',
+        reason: '测评答对后轨道分化出"答对"，与环节名"汉译英"并列展示');
     expect(state.groupStepHint, isNot(null),
-        reason: '环节切换后的首个词应提示"前面答错的词会在后面的环节回来"');
+        reason: '环节切换后的首个词应提示"整组逐个推进到下一个环节"');
+
+    // 点 × 关闭：立即收起当前这条，并把偏好落库（之后不再出现）
+    await notifier.dismissGroupStepHint();
+    state = container.read(bdcNotifierProvider);
+    expect(state.groupStepHint, null, reason: '关闭后当前提示应立即收起');
+    expect(StudyConfig.fromCurrentUser().hideGroupStepHint, true,
+        reason: '关闭偏好应持久化');
+
+    // 重新进入学习页（新 notifier 回到本环节首个词）：指示器仍在，但提示不再出现。
+    // 新 notifier 的 groupStepPosition 只能由这次异步刷新人，故等待它就是等提示判定落定。
+    final container2 = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive2 = container2.listen(bdcNotifierProvider, (_, __) {});
+    await container2.read(bdcNotifierProvider.notifier).loadData(FakeBuildContext());
+    await _waitUntil(container2,
+        (s) => s.studyStep == StudyStep.ch2En.json && s.groupStepPosition == 1);
+    state = container2.read(bdcNotifierProvider);
+    expect(state.groupStepPosition, 1, reason: '指示器本身仍应展示');
+    expect(state.groupStepHint, null, reason: '已关闭的提示不应再次出现');
+    keepAlive2.close();
+    container2.dispose();
 
     // 进入 List（本组小结）环节后指示与提示一并清空
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);

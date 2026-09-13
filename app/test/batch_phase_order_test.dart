@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -174,9 +175,9 @@ void main() {
 
   /// 一整天的出题序列：每次取当前词 → 记录(词, 环节) → 评分 → List 环节批量完成。
   /// [wrongOnceWordId] 指定的词在测评环节按"不认识"（again）作答。
-  Future<List<({String wordId, String step, int groupPosition, int groupTotal})>>
+  Future<List<({String wordId, String step, int groupNo, int groupPosition, int groupTotal})>>
       playWholeDay({String? wrongOnceWordId}) async {
-    final seq = <({String wordId, String step, int groupPosition, int groupTotal})>[];
+    final seq = <({String wordId, String step, int groupNo, int groupPosition, int groupTotal})>[];
     int guard = 0;
     while (guard++ < 300) {
       final res = await studyBo.getWord(false, false);
@@ -189,6 +190,7 @@ void main() {
         seq.add((
           wordId: '',
           step: 'List',
+          groupNo: 0,
           groupPosition: 0,
           groupTotal: 0,
         ));
@@ -207,6 +209,7 @@ void main() {
       seq.add((
         wordId: wordId,
         step: step,
+        groupNo: group?.groupNo ?? -1,
         groupPosition: group?.position ?? -1,
         groupTotal: group?.total ?? -1,
       ));
@@ -244,11 +247,29 @@ void main() {
     final w1Index = seq.indexWhere((e) => e.wordId == 'w_1' && e.step == 'Ch2En');
     expect(w1Index, greaterThan(0), reason: 'w_1 答错后必须在本组汉译英环节回来');
     expect(seq[w1Index].wordId, 'w_1');
+    expect(seq[w1Index].groupNo, 1);
     expect(seq[w1Index].groupPosition, 1);
     expect(seq[w1Index].groupTotal, batchSize);
   });
 
-  test('本组环节进度指示与出题顺序一致（本组 x/10）', () async {
+  test('第 N 组指示：组号按今日列表每 10 词一组递增', () async {
+    final prep = await LearningService.prepareTodayStudy(true);
+    expect(prep.success, true);
+
+    final seq = await playWholeDay();
+
+    // 前 10 词属第 1 组，后 10 词属第 2 组
+    for (final entry in seq) {
+      if (entry.step == 'List') {
+        expect(entry.groupNo, 0, reason: 'List 环节不展示组内进度指示');
+        continue;
+      }
+      final wordNo = int.parse(entry.wordId.substring(2));
+      expect(entry.groupNo, (wordNo - 1) ~/ batchSize + 1, reason: '${entry.wordId}@${entry.step}');
+    }
+  });
+
+  test('本组环节进度指示与出题顺序一致（第 N 组 · 环节 x/10）', () async {
     final prep = await LearningService.prepareTodayStudy(true);
     expect(prep.success, true);
 
@@ -275,5 +296,38 @@ void main() {
     // 本组汉译英环节的最后一个词
     final lastCh2En = seq.lastWhere((e) => e.step == 'Ch2En' && e.wordId == 'w_10');
     expect(lastCh2En.groupPosition, batchSize);
+  });
+
+  test('分母是本环节队列长度而非组内词数：复习词答对后不再走汉译英', () async {
+    final prep = await LearningService.prepareTodayStudy(true);
+    expect(prep.success, true);
+
+    // w_5 改造成复习词（同「复习词测评答错进入恢复环节」用例的口径）
+    final yesterday = AppClock.today().subtract(const Duration(days: 1));
+    await (db.update(db.learningWords)
+          ..where((lw) => lw.userId.equals(testUser.id) & lw.wordId.equals('w_5')))
+        .write(LearningWordsCompanion(
+          stability: const Value(2.4),
+          difficulty: const Value(3.05),
+          elapsedDays: const Value(0),
+          scheduledDays: const Value(2),
+          reps: const Value(1),
+          lapses: const Value(0),
+          state: const Value(2),
+          lastLearningDate: Value(yesterday),
+          todayLearnedTimes: const Value(0),
+        ));
+    StudyCacheManager().clear();
+
+    final seq = await playWholeDay();
+
+    // 复习词答对：轨道为 [En2Ch, List]，汉译英环节不含它，故本组 10 词只排 9 个
+    expect(seq.any((e) => e.wordId == 'w_5' && e.step == 'Ch2En'), false,
+        reason: '复习词答对后不再走汉译英');
+    for (final entry in seq) {
+      if (entry.step == 'List' || entry.groupNo != 1) continue;
+      expect(entry.groupTotal, entry.step == 'En2Ch' ? batchSize : batchSize - 1,
+          reason: '${entry.wordId}@${entry.step}');
+    }
   });
 }

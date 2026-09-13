@@ -571,6 +571,7 @@ class BdcNotifier extends _$BdcNotifier {
         loadError: '正在跳转到单词列表...',
         word: null,
         wordWrapper: null,
+        groupStepNo: 0,
         groupStepPosition: 0,
         groupStepTotal: 0,
         groupStepHint: null,
@@ -804,17 +805,24 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   /// 本组环节推进到"汉译英"时的一次性顺序提示：把"整组横向推进"讲清楚，
-  /// 消除"刚答错的词怎么没在后面的环节里出现"的误解。
-  static const String _ch2EnPhaseHint =
-      '本组测评已完成 · 现在逐个汉译英，前面答错的词会在这里回来';
+  /// 消除"刚答错的词怎么没在后面的环节里出现"的误解。用户可点 × 永久关闭。
+  static const String _ch2EnPhaseHint = '本组测评已完成 · 现在逐个汉译英';
 
-  /// 刷新学习页「本组 x/y · 环节」指示；环节推进到本组新环节的首个词时给出一次顺序提示。
+  /// 用户关闭「本组环节顺序提示」：记住偏好（之后不再展示），并收起当前这条。
+  Future<void> dismissGroupStepHint() async {
+    final config = StudyConfig.fromCurrentUser()..hideGroupStepHint = true;
+    await config.saveToCurrentUser();
+    if (_isDisposed) return;
+    state = state.copyWith(groupStepHint: null);
+  }
+
+  /// 刷新学习页「第 N 组 · 环节 x/y」指示；环节推进到本组新环节的首个词时给出一次顺序提示。
   Future<void> _refreshGroupStepProgress() async {
     final wordId = state.word?.id;
     final step = state.studyStep;
     final stepIndex = state.currentGetWordResult?.stepIndex ?? 0;
     if (wordId == null || step == null || step == StudyStep.list.json) {
-      state = state.copyWith(groupStepPosition: 0, groupStepTotal: 0, groupStepHint: null);
+      state = state.copyWith(groupStepNo: 0, groupStepPosition: 0, groupStepTotal: 0, groupStepHint: null);
       return;
     }
     final progress =
@@ -823,14 +831,16 @@ class BdcNotifier extends _$BdcNotifier {
     // 计算期间已切到别的词/环节：这次结果作废，避免旧位置覆盖新词
     if (state.word?.id != wordId || state.studyStep != step) return;
     // 提示只在"本组后续环节的首个词"上出现：首次环节（测评）无需解释顺序，
-    // 回看历史词时也不提示，避免重放打乱顺序的错觉。
+    // 回看历史词时也不提示，避免重放打乱顺序的错觉。用户关掉后不再提示。
     final hint = (stepIndex > 0 &&
             step == StudyStep.ch2En.json &&
             progress?.position == 1 &&
-            state.historyIndex == -1)
+            state.historyIndex == -1 &&
+            !StudyConfig.fromCurrentUser().hideGroupStepHint)
         ? _ch2EnPhaseHint
         : null;
     state = state.copyWith(
+      groupStepNo: progress?.groupNo ?? 0,
       groupStepPosition: progress?.position ?? 0,
       groupStepTotal: progress?.total ?? 0,
       groupStepHint: hint,

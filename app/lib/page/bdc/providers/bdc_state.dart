@@ -77,8 +77,10 @@ class BdcState extends Equatable {
   /// 今天测评首条评分是否被判为 again（答错），决定环节名与评分修正的「答对/答错」措辞。
   final bool assessmentIsAgain;
 
-  /// 本组（10 词一批）当前环节的排队位置与队列长度，用于学习页「本组 x/y · 环节」指示；
-  /// 0 表示当前无指示可展示（如 List 环节或无法定位）。
+  /// 本组（10 词一批）的序号（1 起）与当前环节的排队位置、队列长度，
+  /// 用于学习页「第 N 组 · 环节 x/y」指示；位置为 0 表示当前无指示可展示
+  /// （如 List 环节或无法定位）。
+  final int groupStepNo;
   final int groupStepPosition;
   final int groupStepTotal;
 
@@ -158,6 +160,7 @@ class BdcState extends Equatable {
     this.isWordMastered = false,
     this.isReviewWord = false,
     this.assessmentIsAgain = false,
+    this.groupStepNo = 0,
     this.groupStepPosition = 0,
     this.groupStepTotal = 0,
     this.groupStepHint,
@@ -175,6 +178,14 @@ class BdcState extends Equatable {
     this.isPttPressed = false,
     this.isAiEvaluating = false,
   });
+
+  /// 当前词的轨道名：「新词/旧词」，测评之后（[currentGetWordResult].stepIndex > 0，
+  /// 与 notifier 的 isFollowUpStep 同一判据）才分化出「答对/答错」，如「新词答对」。
+  String get currentWordTrackName {
+    final wordType = isReviewWord ? '旧词' : '新词';
+    final graded = (currentGetWordResult?.stepIndex ?? 0) > 0;
+    return graded ? '$wordType${assessmentIsAgain ? '答错' : '答对'}' : wordType;
+  }
 
   bool get autoJumpAfterCorrect {
     if (studyStep == StudyStep.ch2En.json) {
@@ -241,6 +252,7 @@ class BdcState extends Equatable {
     bool? isWordMastered,
     bool? isReviewWord,
     bool? assessmentIsAgain,
+    int? groupStepNo,
     int? groupStepPosition,
     int? groupStepTotal,
     Object? groupStepHint = _sentinel,
@@ -322,6 +334,7 @@ class BdcState extends Equatable {
       isWordMastered: isWordMastered ?? this.isWordMastered,
       isReviewWord: isReviewWord ?? this.isReviewWord,
       assessmentIsAgain: assessmentIsAgain ?? this.assessmentIsAgain,
+      groupStepNo: groupStepNo ?? this.groupStepNo,
       groupStepPosition: groupStepPosition ?? this.groupStepPosition,
       groupStepTotal: groupStepTotal ?? this.groupStepTotal,
       groupStepHint: groupStepHint == _sentinel ? this.groupStepHint : (groupStepHint as String?),
@@ -402,6 +415,7 @@ class BdcState extends Equatable {
     isWordMastered,
     isReviewWord,
     assessmentIsAgain,
+    groupStepNo,
     groupStepPosition,
     groupStepTotal,
     groupStepHint,

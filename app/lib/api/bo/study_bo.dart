@@ -1314,11 +1314,12 @@ class StudyBo {
     return a.learningOrder.compareTo(b.learningOrder);
   }
 
-  /// 学习页「本组 x/y」指示：本组（[batchSize] 词一批）内 [step] 环节的完成进度
-  /// —— 已走完该环节的词数 + 1 即当前词在该环节的顺位（与 _compareBatchWords
-  /// "整组横向推进"的出题顺序一致），y 为本组含该环节的词数。
+  /// 学习页「第 N 组 · 环节 x/y」指示：[batchSize] 词一批，[groupNo] 为本组在今日
+  /// 学习列表中的序号（1 起），x 为已走完该环节的词数 + 1（当前词在该环节的顺位，
+  /// 与 _compareBatchWords "整组横向推进"的出题顺序一致），y 为本组走该环节的词数
+  /// （≠ 组内词数：已掌握的词、以及答对后不再走该环节的复习词都不计入）。
   /// 无法定位（当前词不在本组、或该词今天不走这个环节）时返回 null。
-  Future<({int position, int total})?> getBatchPhaseProgress({
+  Future<({int position, int total, int groupNo})?> getBatchPhaseProgress({
     required String wordId,
     required String step,
   }) async {
@@ -1374,7 +1375,7 @@ class StudyBo {
       }
     }
     if (!found) return null;
-    return (position: done + 1, total: total);
+    return (position: done + 1, total: total, groupNo: batchStart ~/ batchSize + 1);
   }
 
   /// 计算指定单词的指定学习模式, 在第几个顺位出现

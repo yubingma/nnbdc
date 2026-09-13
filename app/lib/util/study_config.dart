@@ -21,6 +21,9 @@ class StudyConfig {
   Map<String, dynamic>? walkman;
   int minNewWordsPerDay;
 
+  /// 用户已关闭学习页「本组环节顺序提示」，不再展示
+  bool hideGroupStepHint;
+
   StudyConfig({
     this.autoPlayWord = true,
     this.autoPlaySentence = false,
@@ -38,6 +41,7 @@ class StudyConfig {
     this.showWordDetailAfterCorrect = false,
     this.walkman,
     this.minNewWordsPerDay = 0,
+    this.hideGroupStepHint = false,
   });
 
   factory StudyConfig.fromJson(Map<String, dynamic> json) {
@@ -58,6 +62,7 @@ class StudyConfig {
       showWordDetailAfterCorrect: _toBool(json['showWordDetailAfterCorrect'], false),
       walkman: json['walkman'] is Map<String, dynamic> ? json['walkman'] : null,
       minNewWordsPerDay: _toInt(json['minNewWordsPerDay']),
+      hideGroupStepHint: _toBool(json['hideGroupStepHint'], false),
     );
   }
 
@@ -103,6 +108,7 @@ class StudyConfig {
       'showWordDetailAfterCorrect': showWordDetailAfterCorrect,
       if (walkman != null) 'walkman': walkman,
       'minNewWordsPerDay': minNewWordsPerDay,
+      'hideGroupStepHint': hideGroupStepHint,
     };
   }
 
