@@ -745,6 +745,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 事实盖上去，不抢走这一天到底背了多少词。
     final isDakaStamped = hasDakaToday;
 
+    // 印章上的年·月·日：用逻辑日期（AppClock）而不是系统时间，与打卡/跨天口径一致
+    final DateTime stampDay = AppClock.today();
+    final String stampDate =
+        '${stampDay.year}.${stampDay.month.toString().padLeft(2, '0')}.${stampDay.day.toString().padLeft(2, '0')}';
+
     final textPrimary = themeConfig.textPrimary;
     final textMuted = themeConfig.textMuted;
 
@@ -767,32 +772,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 // 注意约束来自环心的「宽度」而非高度——172/140/128 下内容角点距圆心恒为
                 // 55.5pt，故数字须同步由 46 缩到 38（同时贴回规范的核心指标字档），
                 // 角点余量才从 2pt 恢复到 7.4pt。描边按外径 5% 取 6.5。
-                Container(
-                  width: 128,
-                  height: 128,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    // 已打卡时才垫这一层极淡的"印油"（未打卡保持完全通透，环只是锚点）
-                    color: isDakaStamped
-                        ? themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.10 : 0.055)
-                        : null,
-                    border: Border.all(
-                      color: themeConfig.primaryColor
-                          .withValues(alpha: isDakaStamped ? (isDarkMode ? 0.34 : 0.24) : (isDarkMode ? 0.22 : 0.14)),
-                      width: 6.5,
-                    ),
-                  ),
-                ),
-                // 印章的双线边框：外沿是上面那圈 6.5 的粗环，里面再落一道发丝圈
                 if (isDakaStamped)
+                  // 已打卡：这枚章交给画笔去"盖"——墨迹的浓淡、断口、飞白都不是描边能表达的
+                  SizedBox(
+                    width: 128,
+                    height: 128,
+                    child: CustomPaint(
+                      painter: _DakaSealPainter(
+                        color: themeConfig.primaryColor,
+                        isDark: isDarkMode,
+                      ),
+                    ),
+                  )
+                else
                   Container(
-                    width: 108,
-                    height: 108,
+                    width: 128,
+                    height: 128,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.42 : 0.32),
-                        width: 1,
+                        color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.14),
+                        width: 6.5,
                       ),
                     ),
                   ),
@@ -848,17 +848,30 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                       const SizedBox(height: 3),
                       if (isDakaStamped)
-                        // 印面文字微微倾斜，配合双线圆环读成一枚刚盖上去的章
+                        // 整枚章微微歪着；印面文字与日期都由画笔逐字"盖"上去
                         Transform.rotate(
                           angle: -6 * math.pi / 180,
-                          child: Text(
-                            '今日已打卡',
-                            style: TextStyle(
-                              color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.90 : 0.80),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                            ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _DakaSealText(
+                                key: const Key('today_plan_daka_seal_text'),
+                                text: '今日已打卡',
+                                color: themeConfig.primaryColor
+                                    .withValues(alpha: isDarkMode ? 0.90 : 0.80),
+                              ),
+                              const SizedBox(height: 3),
+                              _DakaSealText(
+                                key: const Key('today_plan_daka_seal_date'),
+                                text: stampDate,
+                                color: themeConfig.primaryColor
+                                    .withValues(alpha: isDarkMode ? 0.62 : 0.52),
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 1.1,
+                                seed: 20260913,
+                              ),
+                            ],
                           ),
                         )
                       else
@@ -3410,4 +3423,302 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       ),
     );
   }
+}
+
+/// 「今日已打卡」印章的画笔：不描一条平滑的圆环，而是把整枚章"盖"出来 ——
+/// 断墨的粗环、残缺的发丝圈、印油没吃上的缺口、深浅不一的墨粒。
+///
+/// 随机数用固定种子：斑驳纹理必须每次重建都一模一样，
+/// 否则热重载/刷新会让印章"抖动"，反而不像一枚盖定的章。
+class _DakaSealPainter extends CustomPainter {
+  _DakaSealPainter({required this.color, required this.isDark});
+
+  final Color color;
+  final bool isDark;
+
+  static const int _seed = 20260912;
+
+  /// 章面印油（极淡，只负责"盖过"的痕迹）
+  double get _washAlpha => isDark ? 0.10 : 0.055;
+  /// 外圈粗环
+  double get _ringAlpha => isDark ? 0.34 : 0.24;
+  /// 内圈发丝线
+  double get _innerAlpha => isDark ? 0.42 : 0.32;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Offset center = size.center(Offset.zero);
+    final math.Random random = math.Random(_seed);
+
+    // saveLayer 圈的这块"纸面"允许被 clear 挖空，缺口的下面就是卡片本身
+    canvas.saveLayer(Offset.zero & size, Paint());
+
+    // 1. 印油底：中心略浓、近边缘转淡的一层薄雾
+    canvas.drawCircle(
+      center,
+      size.width / 2 - 3,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            color.withValues(alpha: _washAlpha),
+            color.withValues(alpha: _washAlpha * 0.4),
+          ],
+          stops: const [0.7, 1],
+        ).createShader(Rect.fromCircle(center: center, radius: size.width / 2)),
+    );
+
+    // 2. 双线边框：外粗内细，各由数百段短弧叠成，每段的半径/粗细/浓淡都抖一下
+    _strokeRoughRing(canvas, center, random,
+        radius: 60.7, width: 6.5, alpha: _ringAlpha, segments: 230, gapChance: 0.08);
+    _strokeRoughRing(canvas, center, random,
+        radius: 54, width: 1.2, alpha: _innerAlpha, segments: 150, gapChance: 0.05);
+
+    // 3. 环上的沙眼：印油没吃到的地方挖掉一点点。只能是小口子 ——
+    // 挖大了就成了环被磕坏的豁口，看着硌眼（毛糙要来自墨迹不匀，不是来自破损）
+    final Paint eraser = Paint()..blendMode = BlendMode.clear;
+    for (int i = 0; i < 10; i++) {
+      final double angle = random.nextDouble() * 2 * math.pi;
+      final double r = 57.2 + (random.nextDouble() - 0.5) * 8;
+      canvas.drawCircle(
+        center + Offset(math.cos(angle) * r, math.sin(angle) * r),
+        0.4 + random.nextDouble() * 0.7,
+        eraser,
+      );
+    }
+
+    // 4. 飞白墨粒：章面上深浅不一的小墨点，让印面不至于空得发假
+    final Paint grain = Paint();
+    for (int i = 0; i < 96; i++) {
+      final double angle = random.nextDouble() * 2 * math.pi;
+      final double r = math.sqrt(random.nextDouble()) * (size.width / 2 - 12);
+      grain.color = color.withValues(alpha: _ringAlpha * (0.2 + random.nextDouble() * 0.55));
+      canvas.drawCircle(
+        center + Offset(math.cos(angle) * r, math.sin(angle) * r),
+        0.4 + random.nextDouble() * 1.2,
+        grain,
+      );
+    }
+    // 再补几处更大更淡的油渍，模拟印油在纸上洇开的块状深浅
+    for (int i = 0; i < 4; i++) {
+      final double angle = random.nextDouble() * 2 * math.pi;
+      final double r = math.sqrt(random.nextDouble()) * (size.width / 2 - 30);
+      grain.color = color.withValues(alpha: _washAlpha * (0.35 + random.nextDouble() * 0.5));
+      canvas.drawCircle(
+        center + Offset(math.cos(angle) * r, math.sin(angle) * r),
+        2.5 + random.nextDouble() * 3,
+        grain,
+      );
+    }
+
+    canvas.restore();
+  }
+
+  /// 用短弧叠一圈毛糙的环：[gapChance] 是断墨概率，半径/粗细/浓淡各带一份抖动。
+  /// 弧长刻意略微叠过一格——"毛糙"要来自墨迹自身的不匀与缺口，
+  /// 而不是让短弧彼此脱开，否则圆环会读成一条虚线/串珠。
+  void _strokeRoughRing(
+    Canvas canvas,
+    Offset center,
+    math.Random random, {
+    required double radius,
+    required double width,
+    required double alpha,
+    required int segments,
+    required double gapChance,
+  }) {
+    final Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final double step = 2 * math.pi / segments;
+    for (int i = 0; i < segments; i++) {
+      if (random.nextDouble() < gapChance) continue; // 断墨
+      paint
+        ..color = color.withValues(alpha: alpha * (0.68 + random.nextDouble() * 0.32))
+        ..strokeWidth = width * (0.82 + random.nextDouble() * 0.36);
+      canvas.drawArc(
+        Rect.fromCircle(
+          center: center,
+          radius: radius + (random.nextDouble() - 0.5) * width * 0.14,
+        ),
+        i * step,
+        step * (1.08 + random.nextDouble() * 0.4),
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DakaSealPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.isDark != isDark;
+}
+
+/// 印面文字（「今日已打卡」与日期）：不用一个 Text 写上去，而是逐字"盖"。
+///
+/// 每个字的落点、倾角、浓淡各差一点，再补一次错开一点的落墨，最后在字面上挖掉几粒
+/// 没吃上印油的沙眼 —— 真章的字不会排得一样齐、也不会一样实。抖动幅度与沙眼都随字号
+/// 缩放：11.5 的印面文字抖 ±0.35pt，9 的日期只抖 ±0.27pt，小字不会抖得比大字还野。
+class _DakaSealText extends StatelessWidget {
+  const _DakaSealText({
+    super.key,
+    required this.text,
+    required this.color,
+    this.fontSize = 11.5,
+    this.fontWeight = FontWeight.w700,
+    this.letterSpacing = 1.2,
+    this.seed = 20260912,
+  });
+
+  final String text;
+  final Color color;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final double letterSpacing;
+
+  /// 抖动的随机种子：两行字用不同种子，免得两行抖得一模一样
+  final int seed;
+
+  @override
+  Widget build(BuildContext context) {
+    // 字体族必须沿用外层主题：画笔不走 Text 的样式继承，不接就会掉成豆腐块
+    final TextStyle inherited = DefaultTextStyle.of(context).style.copyWith(
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          letterSpacing: letterSpacing,
+        );
+    // 先用一次真实排版量出这行字该占的位置，画笔再照着这个尺寸把字盖进去
+    final TextPainter ruler = TextPainter(
+      text: TextSpan(text: text, style: inherited),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    return Semantics(
+      label: text,
+      container: true, // 自成一个语义节点：画出来的字读屏也要能读到
+      child: SizedBox(
+        width: ruler.width,
+        height: ruler.height,
+        child: CustomPaint(
+          painter: _DakaSealTextPainter(
+            text: text,
+            base: inherited,
+            color: color,
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            letterSpacing: letterSpacing,
+            seed: seed,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DakaSealTextPainter extends CustomPainter {
+  _DakaSealTextPainter({
+    required this.text,
+    required this.base,
+    required this.color,
+    required this.fontSize,
+    required this.fontWeight,
+    required this.letterSpacing,
+    required this.seed,
+  });
+
+  final String text;
+
+  /// 外层（主题）的字体样式：逐字重排时只借用字体族，字号字重由印章自己定
+  final TextStyle base;
+
+  final Color color;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final double letterSpacing;
+  final int seed;
+
+  /// 逐字抖动幅度（±）：半个字号的比例，小字自然抖得轻
+  double get _jitterX => fontSize * 0.03;
+  double get _jitterY => fontSize * 0.035;
+
+  /// 单字倾角（±，弧度）≈ ±1.4°
+  static const double _tiltRange = 0.05;
+
+  /// 最淡的一笔也保留 84% 的墨：要"不匀"，不要"看不清"
+  static const double _minInk = 0.84;
+
+  /// 沙眼半径上限（随字号缩放）
+  double get _holeRadius => fontSize * 0.038;
+
+  /// 单字排版。[alpha] 是这一笔的浓淡；极轻的 solid 模糊把字形锋利的边缘磨一下
+  TextPainter _glyph(String char, double alpha) {
+    final Paint ink = Paint()
+      ..color = color.withValues(alpha: color.a * alpha)
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.solid, 0.25);
+    return TextPainter(
+      text: TextSpan(
+        text: char,
+        style: TextStyle(
+          fontFamily: base.fontFamily,
+          fontFamilyFallback: base.fontFamilyFallback,
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          letterSpacing: 0,
+          foreground: ink,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final math.Random random = math.Random(seed);
+    final List<String> chars = text.split('');
+    final List<TextPainter> glyphs = chars.map((c) => _glyph(c, 1)).toList();
+    final double totalWidth = glyphs.fold<double>(0, (sum, g) => sum + g.width) +
+        letterSpacing * chars.length;
+
+    // 同样圈一块可以挖空的"纸面"，挖掉的地方露出底下的印油
+    canvas.saveLayer(Offset.zero & size, Paint());
+
+    double x = (size.width - totalWidth) / 2;
+    for (int i = 0; i < chars.length; i++) {
+      final TextPainter glyph = glyphs[i];
+      final Offset jitter = Offset(
+        (random.nextDouble() * 2 - 1) * _jitterX,
+        (random.nextDouble() * 2 - 1) * _jitterY,
+      );
+      final double tilt = (random.nextDouble() - 0.5) * _tiltRange;
+      final double alpha = _minInk + random.nextDouble() * (1 - _minInk);
+
+      canvas.save();
+      canvas.translate(x + jitter.dx, size.height / 2 + jitter.dy);
+      canvas.rotate(tilt);
+      _glyph(chars[i], alpha).paint(canvas, Offset(0, -glyph.height / 2));
+      // 同一笔在纸上按了两下：错开一点点再落一次墨，边缘因此发毛
+      _glyph(chars[i], alpha * 0.28).paint(canvas, Offset(0.3, -glyph.height / 2 - 0.2));
+      canvas.restore();
+
+      x += glyph.width + letterSpacing;
+    }
+
+    // 字面上的沙眼：只挖很小的一粒，不能把笔画挖断
+    final Paint eraser = Paint()..blendMode = BlendMode.clear;
+    final int holes = (chars.length * 1.6).round();
+    for (int i = 0; i < holes; i++) {
+      canvas.drawCircle(
+        Offset(random.nextDouble() * size.width, random.nextDouble() * size.height),
+        0.2 + random.nextDouble() * _holeRadius,
+        eraser,
+      );
+    }
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_DakaSealTextPainter oldDelegate) =>
+      oldDelegate.text != text ||
+      oldDelegate.color != color ||
+      oldDelegate.base != base ||
+      oldDelegate.fontSize != fontSize;
 }

@@ -192,15 +192,27 @@ void main() {
 
   testWidgets('今日已打卡：环心盖上"今日已打卡"印章，并有未学完的加量批次时主按钮为"继续学习（加量）"',
       (tester) async {
+    // 印面文字是逐字画出来的（不是 Text），断言走承载它的 Key 与语义标签
+    final semantics = tester.ensureSemantics();
+    final seal = find.byKey(const Key('today_plan_daka_seal_text'));
+    final sealDate = find.byKey(const Key('today_plan_daka_seal_date'));
+    final today = AppClock.today();
+    final dateLabel = '${today.year}.${today.month.toString().padLeft(2, '0')}'
+        '.${today.day.toString().padLeft(2, '0')}';
+
     await seedTodayPlan(dakaed: true, pendingExtraWords: 3);
     await pumpTodayPlan(tester);
-    await pumpUntil(tester, find.text('今日已打卡'));
+    await pumpUntil(tester, seal);
 
-    expect(find.text('今日已打卡'), findsOneWidget, reason: '今天打过卡，环心要盖上印章');
+    expect(seal, findsOneWidget, reason: '今天打过卡，环心要盖上印章');
+    expect(tester.getSemantics(seal).label, '今日已打卡', reason: '印章上写的必须是"今日已打卡"');
+    expect(sealDate, findsOneWidget, reason: '印章上要有年月日的日期');
+    expect(tester.getSemantics(sealDate).label, dateLabel, reason: '日期要是今天（逻辑日期）');
     expect(find.text('目标已锁定'), findsNothing, reason: '印章态不再重复讲"目标已锁定"');
     expect(find.text('继续学习（加量）'), findsOneWidget,
         reason: '还有未学完的加量批次时，主按钮是继续学习，而不是让人以为要新增单词');
 
+    semantics.dispose();
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
   });
 
@@ -210,7 +222,10 @@ void main() {
     await pumpUntil(tester, find.text('目标已锁定'));
 
     expect(find.text('目标已锁定'), findsOneWidget);
-    expect(find.text('今日已打卡'), findsNothing, reason: '还没打卡就不能盖已打卡的章');
+    expect(find.byKey(const Key('today_plan_daka_seal_text')), findsNothing,
+        reason: '还没打卡就不能盖已打卡的章');
+    expect(find.byKey(const Key('today_plan_daka_seal_date')), findsNothing,
+        reason: '还没打卡就没有盖章日期');
 
     await tester.pump(const Duration(seconds: 60));
   });
