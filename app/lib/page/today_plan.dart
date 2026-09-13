@@ -1647,8 +1647,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
               final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
               if (dbUser != null) {
-                await MyDatabase.instance.usersDao.saveUser(
-                    dbUser.copyWith(todayStudyStarted: true, lastLearningDate: drift.Value(AppClock.today())), true);
+                // 只标记"今日已开始学习"。绝不能在这里写 lastLearningDate：它是跨天重置的标记，
+                // 而本页的按钮在今日计划就绪之前就可能被点到，抢先把标记写成今天会让跨天重置被整段跳过，
+                // 昨日残留的进度随即被当成"今日已完成"而直接放行打卡（见 prepareTodayStudy / getWord 的跨天判据）。
+                // 计划就绪时 prepareTodayStudy 早已把 lastLearningDate 写成今天，此处的写入本就是多余的。
+                await MyDatabase.instance.usersDao.saveUser(dbUser.copyWith(todayStudyStarted: true), true);
               }
               await Global.loadUserFromDb();
 

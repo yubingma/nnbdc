@@ -299,6 +299,85 @@ void main() {
       expect(updatedWord.batchId, 1);
     });
 
+    test('跨天重置的数据事实判据：用户在计划就绪前点"开始学习"抢先写入今日日期，昨日残留进度仍必须被清零', () async {
+      final fakeClock = FakeClock(DateTime(2026, 1, 1, 8, 0));
+      AppClock.setClock(fakeClock);
+      try {
+        // 第 1 天：生成计划，并把 5 个词的今日轨道全部走完
+        await LearningService.prepareTodayStudy(true);
+        final day1Words = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+        expect(day1Words.length, 5);
+        for (final lw in day1Words) {
+          await db.learningWordsDao.saveEntity(
+            lw.copyWith(
+              lastLearningDate: Value(AppClock.today()),
+              learnedTimes: 1,
+              todayLearnedTimes: 2, // 新词轨道 [测评, List] 长 2 → 今日已走完
+            ),
+            true,
+          );
+        }
+        fakeClock.advanceDays(1);
+
+        // 第 2 天：今日计划页的按钮在 prepareForStudy 之前就被点到，
+        // 把跨天标记 lastLearningDate 抢先写成今天 —— 只看日期的跨天判据会因此失明
+        final startedUser = (await db.usersDao.getUserById(testUser.id))!
+            .copyWith(todayStudyStarted: true, lastLearningDate: Value(AppClock.today()));
+        await db.usersDao.saveUser(startedUser, true);
+        Global.updateUserCache(startedUser);
+
+        await LearningService.prepareTodayStudy(false);
+
+        // 残留的昨日进度必须被清零，否则学习页会判定"今日已全部完成"而直接跳打卡页
+        final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+        expect(todayWords, isNotEmpty, reason: '新一天的计划必须重新生成');
+        expect(todayWords.where((w) => w.todayLearnedTimes > 0).toList(), isEmpty,
+            reason: '带昨日进度的词必须随跨天重置清零，否则会被当成本日成绩');
+      } finally {
+        AppClock.reset();
+      }
+    });
+
+    test('跨天数据判据只认"严格更早"的进度：更晚业务日（多设备/时区差异）的进度绝不回滚清零', () async {
+      // 另一台设备已经在更晚的业务日学过（user.lastLearningDate 与词的进度都属于那个更晚的日子），
+      // 本机业务日还停在今天：这份进度不能当作"残留"被重置掉。
+      final today = AppClock.today();
+      final tomorrow = today.add(const Duration(days: 1));
+      final futureUser = testUser.copyWith(
+        todayStudyStarted: true,
+        lastLearningDate: Value(tomorrow),
+        learnedDays: 3,
+      );
+      await db.usersDao.saveUser(futureUser, true);
+      Global.updateUserCache(futureUser);
+
+      await db.into(db.learningWords).insert(LearningWord(
+            userId: testUser.id,
+            wordId: 'word_1',
+            addTime: now,
+            addDay: 2,
+            batchId: 1,
+            stability: 0.0,
+            isTodayNewWord: true,
+            learnedTimes: 1,
+            todayLearnedTimes: 1,
+            lastLearningDate: tomorrow,
+            learningOrder: 1,
+            createTime: now,
+            updateTime: now,
+            isExtra: false,
+          ));
+
+      await LearningService.prepareTodayStudy(false);
+
+      final word = await (db.select(db.learningWords)..where((lw) => lw.wordId.equals('word_1'))).getSingle();
+      expect(word.todayLearnedTimes, 1, reason: '更晚业务日的进度必须原样保留，否则会倒扣用户的学习进度');
+      expect(word.batchId, 1, reason: '本日计划不得被误判为跨天而重新分配');
+      final userInDb = await db.usersDao.getUserById(testUser.id);
+      expect(userInDb!.learnedDays, 3, reason: '不得把更晚的业务日当成新的一天重复计数');
+      expect(userInDb.lastLearningDate, tomorrow, reason: '跨天标记不得被回滚到本机今天');
+    });
+
     test('学一半的词次日强制到期入计划（scheduledDays 未到期也出现）', () async {
       final yesterday = now.subtract(const Duration(days: 1));
       testUser = testUser.copyWith(lastLearningDate: Value(yesterday));

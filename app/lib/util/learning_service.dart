@@ -9,6 +9,7 @@ import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/user_extensions.dart';
+import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'dart:math';
@@ -38,38 +39,46 @@ class LearningService {
       final lastDate = user.lastLearningDate != null
           ? DateUtils.businessDate(user.lastLearningDate!)
           : null;
-      bool isNewDay = lastDate == null || lastDate.isBefore(today);
+
+      // 跨天判据有两条，任一成立都说明本日计划还没有初始化过：
+      // 1) 日期判据：用户的最近学习日期早于今天；
+      // 2) 数据事实判据：计划里残留着早于本日计划日的"今日进度"（见 LearningWord.hasTodayProgressBefore）。
+      //    只看日期是不够的——用户在本日计划就绪之前就点"开始学习"，会把 lastLearningDate 抢先写成今天，
+      //    令日期判据失明、整段跨天重置被跳过；昨日残留的进度随后会让学习页判定"今日已全部完成"，
+      //    直接把人送去打卡页，用户一整天再也学不了单词。
+      final DateTime planDay = lastDate ?? today; // 本日计划所属业务日（跨天标记缺失时以今天为准）
+      final progressedWords = await (db.select(db.learningWords)
+            ..where((lw) => lw.userId.equals(user.id) & lw.todayLearnedTimes.isBiggerThanValue(0)))
+          .get();
+      final staleProgressWords = progressedWords.where((lw) => lw.hasTodayProgressBefore(planDay)).toList();
+      final bool dayAdvanced = lastDate == null || lastDate.isBefore(today) || staleProgressWords.isNotEmpty;
       Global.logger.i('💡 [LearningService-DateCheck] 跨天检测细节：'
           'user.lastLearningDate=${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc}), '
           'today=$today (isUtc: ${today.isUtc}), '
-          'lastDate=$lastDate -> isNewDay=$isNewDay, now=${AppClock.now()}');
+          'lastDate=$lastDate -> dayAdvanced=$dayAdvanced, '
+          'staleProgressWords=${staleProgressWords.length}, now=${AppClock.now()}');
 
-      // [核心修复] 自动修复机制：即使日期没变，但如果检测到“今天有单词背词进度”且“用户开始学习标记却为 false”这种状态，
+      // [核心修复] 自动修复机制：同一天里如果检测到"今天有单词背词进度"且"用户开始学习标记却为 false"这种状态，
       // 说明真实情况绝对是已经开始学习了。我们应该自动将 todayStudyStarted 设为 true 予以正面纠正，完美保护用户的背词进度不被清空！
+      // 注意：只有"进度确实属于今天"才算数，否则那是昨日残留，必须交给下面的跨天重置去清零。
       bool needRepair = false; // 绝不再为了这个情况去重置用户数据
-      if (user.todayStudyStarted == false) {
-        final inconsistencyCheck = await (db.select(db.learningWords)
-              ..where((lw) => lw.userId.equals(user.id) & lw.todayLearnedTimes.isBiggerThanValue(0))
-              ..limit(1))
-            .get();
-        if (inconsistencyCheck.isNotEmpty) {
-          Global.logger.w('⚠️ [LearningService] 检测到状态不一致：日期已对上且状态记录为未开始学习，但发现实际已存在单词进度！');
-          Global.logger.i('💡 [LearningService] 自动正面纠正：将 user.todayStudyStarted 修正为 true，完美保全今日学习进度！');
-          
-          final upgradedUser = user.copyWith(
-              todayStudyStarted: true,
-              lastLearningDate: Value(today),
-          );
-          await db.usersDao.saveUser(upgradedUser, true);
-          
-          // 同步刷新全局缓存
-          Global.clearUserCache();
-          await Global.loadUserFromDb();
-        }
+      if (!dayAdvanced && user.todayStudyStarted == false && progressedWords.length > staleProgressWords.length) {
+        Global.logger.w('⚠️ [LearningService] 检测到状态不一致：日期已对上且状态记录为未开始学习，但发现实际已存在单词进度！');
+        Global.logger.i('💡 [LearningService] 自动正面纠正：将 user.todayStudyStarted 修正为 true，完美保全今日学习进度！');
+
+        final upgradedUser = user.copyWith(
+          todayStudyStarted: true,
+          lastLearningDate: Value(today),
+        );
+        await db.usersDao.saveUser(upgradedUser, true);
+
+        // 同步刷新全局缓存
+        Global.clearUserCache();
+        await Global.loadUserFromDb();
       }
 
-      if (isNewDay || needRepair) {
-        Global.logger.d('开始重置用户每日数据（isNewDay=$isNewDay, repair=$needRepair）: userId=${user.id}');
+      if (dayAdvanced || needRepair) {
+        Global.logger.d('开始重置用户每日数据（dayAdvanced=$dayAdvanced, repair=$needRepair）: userId=${user.id}');
 
         // 使用事务确保整个重置过程的原子性：要么全部完成，要么全部失败
         await db.transaction(() async {
@@ -104,7 +113,7 @@ class LearningService {
           // 3. 最后一步：更新用户信息，并标记重置已完成 (这一步完成后，下次重入将不再进入重置逻辑)
           final upgradedUser = user.copyWith(
               lastLearningDate: Value(today), // 标记, 防止再次重置
-              learnedDays: isNewDay ? user.learnedDays + 1 : user.learnedDays, // 仅新的一天增加天数
+              learnedDays: dayAdvanced ? user.learnedDays + 1 : user.learnedDays, // 仅新的一天增加天数
               learningFinished: const Value(false),
               todayStudyStarted: false,
               todayLearningSeconds: const Value(0));

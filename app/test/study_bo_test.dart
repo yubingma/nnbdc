@@ -278,6 +278,30 @@ void main() {
       expect(result.success, true);
       expect(result.data!.finished, true); // 返回结束标记
     });
+
+    test('跨天残留防线：计划里残留着往日的今日进度时，绝不放行"今日已完成"', () async {
+      // 昨日学完但本日尚未跨天重置：每个词都带着昨日的今日进度
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      for (int i = 1; i <= 5; i++) {
+        final lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals('word_$i'))).getSingle();
+        await db.learningWordsDao.saveEntity(
+          lw.copyWith(
+            todayLearnedTimes: 2, // 达到该词轨道长度(2: 测评 + List)
+            learnedTimes: 2,
+            lastLearningDate: Value(yesterday),
+          ),
+          true,
+        );
+      }
+      StudyCacheManager().clear();
+
+      final result = await studyBo.getWord(false, false);
+
+      // 这不是"今日已完成"，而是本日计划尚未重置：必须回今日计划页去重置，
+      // 绝不能跳打卡页替用户打卡（一旦打卡，hasDakaToday=true，用户当天再也学不了单词）
+      expect(result.success, false);
+      expect(result.code, 'NEW_DAY');
+    });
   });
 
   group('StudyBo - FSRS 状态机（学习/复习事件区分）', () {

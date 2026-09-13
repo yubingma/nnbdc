@@ -597,6 +597,17 @@ class StudyBo {
       if (todayWords.isEmpty) {
         return _buildTodayStudyFinishedResult();
       }
+
+      // 跨天残留防线：计划里的"今日进度"必须属于本日计划所属的业务日。若残留着更早的进度，
+      // 说明本日计划尚未跨天重置，此时"所有词都走完了轨道"只是昨日残留造成的假象，
+      // 绝不能让学习页据此判定今日已完成并把人送去打卡页。
+      final DateTime planDay = currentUser.lastLearningDate != null
+          ? DateUtils.businessDate(currentUser.lastLearningDate!)
+          : today;
+      if (todayWords.any((w) => w.hasTodayProgressBefore(planDay))) {
+        Global.logger.w('🛑 [StudyBo-DateCheck] 检测到跨天残留的今日进度，本日计划尚未重置，终止学习流程！');
+        return Result<GetWordResult>("NEW_DAY", "已进入新的一天，请重新开始学习", false);
+      }
       Global.logger.d('🐛 [BDC Performance Item] 查询今日单词列表耗时: ${swWords.elapsedMilliseconds} ms');
 
       final swMastered = Stopwatch()..start();
