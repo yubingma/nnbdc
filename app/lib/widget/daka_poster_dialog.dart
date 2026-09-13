@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../global.dart';
 import '../theme/app_theme.dart';
+import '../util/share_util.dart';
 import '../util/toast_util.dart';
 import '../util/wechat_util.dart';
 import 'daka_poster.dart';
@@ -188,9 +189,10 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
     }
 
     try {
-      await Share.shareXFiles(
+      await ShareUtil.shareXFiles(
         [XFile(filePath)],
         text: '我在泡泡单词已连续打卡 ${widget.data.continuousDays} 天！',
+        context: mounted ? context : null,
       );
     } catch (e) {
       ToastUtil.error('唤起分享失败');

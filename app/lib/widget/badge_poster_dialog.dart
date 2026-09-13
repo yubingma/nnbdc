@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../api/vo.dart';
 import '../config.dart';
 import '../global.dart';
+import '../util/share_util.dart';
 import '../util/toast_util.dart';
 import '../util/wechat_util.dart';
 import 'badge_svg_assets.dart';
@@ -100,9 +101,10 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
 
       // 桌面端 (macOS / Windows / Linux)：因无移动端OpenSDK协议，直接呼出系统原生分享面板
       if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-        await Share.shareXFiles(
+        await ShareUtil.shareXFiles(
           [XFile(imagePath)],
           text: '我在「泡泡单词」点亮了【${widget.userBadge.badge?.name}】勋章！',
+          context: mounted ? context : null,
         );
         return;
       }
@@ -220,9 +222,10 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
       final imagePath = await _capturePosterToTempFile();
       if (imagePath == null) return;
 
-      await Share.shareXFiles(
+      await ShareUtil.shareXFiles(
         [XFile(imagePath)],
         text: '我在「泡泡单词」点亮了【${widget.userBadge.badge?.name}】勋章！',
+        context: mounted ? context : null,
       );
     } catch (e) {
       Global.logger.w('系统分享异常: $e');

@@ -21,6 +21,7 @@ import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/pdf_exporter.dart';
 import 'package:nnbdc/util/prefs.dart';
+import 'package:nnbdc/util/share_util.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -4036,9 +4037,10 @@ class WordListPageState extends State<WordListPage>
       // 关键！等待 250 毫秒，让进度提示框的 Overlay 淡出动画完全结束，再拉起可能会挂起 UI 的原生分享弹窗
       await Future.delayed(const Duration(milliseconds: 250));
       try {
-        await Share.shareXFiles(
+        await ShareUtil.shareXFiles(
           [XFile(pdfFile.path)],
           subject: '$title - 导出词表',
+          context: mounted ? context : null,
         );
       } catch (e) {
         Global.logger.e('分享 PDF 失败', error: e);
