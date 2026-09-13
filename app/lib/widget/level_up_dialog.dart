@@ -10,17 +10,20 @@ import 'package:nnbdc/util/level_util.dart';
 class LevelUpDialog extends StatelessWidget {
   final Level level;
   final int rewardBubbles;
+  final VoidCallback? onViewPath;
 
   const LevelUpDialog({
     super.key,
     required this.level,
     this.rewardBubbles = 0,
+    this.onViewPath,
   });
 
   static Future<void> show(
     BuildContext? context, {
     required Level level,
     int rewardBubbles = 0,
+    VoidCallback? onViewPath,
   }) {
     if (context == null) return Future.value();
     final isDark = context.read<DarkMode>().isDarkMode;
