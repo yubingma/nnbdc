@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:drift/drift.dart' as drift;
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,7 @@ import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
 import '../util/study_audio_session_controller.dart';
 import '../util/tts.dart';
+import '../widget/app_scaffold.dart';
 import '../widget/theme_select_dialog.dart';
 import 'index.dart';
 
@@ -635,101 +637,206 @@ class WalkmanPageState extends State<WalkmanPage> {
   }
 
   Widget renderWord(WordWrapper word) {
-    // 横屏模式下文字大小调整
-    final spellFontSize = isLandscape ? 32.0 : 24.0;
-    final meaningFontSize = isLandscape ? 16.0 : 14.0;
+    final themeConfig = context.themeConfig;
+    final spellFontSize = isLandscape ? 34.0 : 42.0;
+    final meaningFontSize = isLandscape ? 15.0 : 15.5;
 
-    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      // 单词英文
-      showSpell
-          ? Text(
-              word.word.spell,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: spellFontSize),
-            )
-          : Container(),
-
-      // 音标
-      showPronounce
-          ? Text(
-              word.word.mergedPronounce.isNotEmpty ? '[${word.word.mergedPronounce}]' : '',
-              style: const TextStyle(fontFamily: 'NotoSans'),
-            )
-          : Container(),
-
-      // 释义
-      showMeaning ? renderWordMeaning(word, meaningFontSize) : Container(),
-
-      // 例句
-      showSentence
-          ? Padding(
-              padding: const EdgeInsets.only(top: 16.0, left: 24, right: 24),
-              child: renderRichText(
-                currSentences.isNotEmpty
-                    ? (playSentence ? currSentences[currSentenceIndex].english! : currSentences[0].english!)
-                    : '',
-                TextStyle(fontSize: meaningFontSize, fontStyle: FontStyle.italic),
-              ),
-            )
-          : Container(),
-
-      // 翻译 (例句翻译)
-      showChinese && showSentence
-          ? Padding(
-              padding: const EdgeInsets.only(top: 8.0, left: 24, right: 24),
-              child: renderRichText(
-                currSentences.isNotEmpty
-                    ? (playSentence ? currSentences[currSentenceIndex].chinese! : currSentences[0].chinese!)
-                    : '',
-                TextStyle(fontSize: meaningFontSize * 0.9, color: normalTextColor),
-              ),
-            )
-          : Container(),
-
-      // 播放/暂停按钮
-      isShowingSettingPanel
-          ? InkWell(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Icon(
-                  playEvenIfSettingPanelIsShowing ? Icons.pause_circle_outline_outlined : Icons.play_circle_outline_outlined,
-                  // 横屏模式下图标增大
-                  size: isLandscape ? 36.0 : 24.0,
-                ),
-              ),
-              onTap: () {
-                setState(() {
-                  playEvenIfSettingPanelIsShowing = !playEvenIfSettingPanelIsShowing;
-
-                  if (playEvenIfSettingPanelIsShowing) {
-                    // 开始播放：立即设置停止标志，然后重置播放状态
-                    currentWordPlayShouldStop = true;
-                    // 延迟重置播放状态，确保当前播放停止
-                    Future.delayed(const Duration(milliseconds: 50), () {
-                      if (mounted) {
-                        resetPlayState();
-                      }
-                    });
-                  } else {
-                    // 暂停播放：只设置停止标志
-                    currentWordPlayShouldStop = true;
-                  }
-                });
-              },
-            )
-          : Container(),
-    ]);
-  }
-
-  Widget renderWordMeaning(WordWrapper word, [double fontSize = 14.0]) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        for (var meaningItem in word.word.getMergedMeaningItems())
+        // 单词英文
+        if (showSpell)
           Text(
-            '${meaningItem.ciXing} ${meaningItem.meaning!}',
-            style: TextStyle(fontSize: fontSize),
+            word.word.spell,
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontWeight: FontWeight.w700,
+              fontSize: spellFontSize,
+              letterSpacing: -0.5,
+              color: themeConfig.textPrimary,
+            ),
             textAlign: TextAlign.center,
           ),
+
+        // 音标
+        if (showPronounce && word.word.mergedPronounce.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              '[${word.word.mergedPronounce}]',
+              style: TextStyle(
+                fontFamily: 'NotoSans',
+                fontSize: isLandscape ? 14.0 : 16.0,
+                color: themeConfig.textSecondary.withValues(alpha: 0.85),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+        // 释义
+        if (showMeaning) renderWordMeaning(word, meaningFontSize),
+
+        // 例句
+        if (showSentence && currSentences.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 20.0, left: 16, right: 16),
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxWidth: 480),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              decoration: BoxDecoration(
+                color: context.cardBg.withValues(alpha: context.isDarkMode ? 0.4 : 0.55),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: context.cardBorder.withValues(alpha: 0.5),
+                  width: 0.8,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  renderRichText(
+                    playSentence
+                        ? (currSentences[currSentenceIndex].english ?? '')
+                        : (currSentences[0].english ?? ''),
+                    TextStyle(
+                      fontSize: meaningFontSize,
+                      fontStyle: FontStyle.italic,
+                      color: themeConfig.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (showChinese) ...[
+                    const SizedBox(height: 8),
+                    renderRichText(
+                      playSentence
+                          ? (currSentences[currSentenceIndex].chinese ?? '')
+                          : (currSentences[0].chinese ?? ''),
+                      TextStyle(
+                        fontSize: meaningFontSize * 0.9,
+                        color: themeConfig.textSecondary,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+
+        // 播放/暂停悬浮控制按钮
+        Padding(
+          padding: const EdgeInsets.only(top: 28.0),
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                if (isShowingSettingPanel) {
+                  playEvenIfSettingPanelIsShowing = !playEvenIfSettingPanelIsShowing;
+                  if (playEvenIfSettingPanelIsShowing) {
+                    currentWordPlayShouldStop = true;
+                    Future.delayed(const Duration(milliseconds: 50), () {
+                      if (mounted) resetPlayState();
+                    });
+                  } else {
+                    currentWordPlayShouldStop = true;
+                  }
+                } else {
+                  if (currentWordPlayingStopped) {
+                    resetPlayState();
+                  } else {
+                    currentWordPlayShouldStop = true;
+                    currentWordPlayingStopped = true;
+                  }
+                }
+              });
+            },
+            child: Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.cardBg,
+                border: Border.all(
+                  color: themeConfig.primaryColor.withValues(alpha: 0.35),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: themeConfig.primaryColor.withValues(alpha: 0.16),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                ((isShowingSettingPanel ? playEvenIfSettingPanelIsShowing : !currentWordPlayingStopped))
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                size: 30,
+                color: themeConfig.primaryColor,
+              ),
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget renderWordMeaning(WordWrapper word, [double fontSize = 15.0]) {
+    final themeConfig = context.themeConfig;
+    final meanings = word.word.getMergedMeaningItems();
+    if (meanings.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var meaningItem in meanings)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2.5),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  if (meaningItem.ciXing != null && meaningItem.ciXing!.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: themeConfig.primaryColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        meaningItem.ciXing!,
+                        style: TextStyle(
+                          fontSize: fontSize * 0.82,
+                          fontWeight: FontWeight.w600,
+                          color: themeConfig.primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Flexible(
+                    child: Text(
+                      meaningItem.meaning ?? '',
+                      style: TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.w400,
+                        color: themeConfig.textPrimary,
+                        height: 1.3,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -762,6 +869,149 @@ class WalkmanPageState extends State<WalkmanPage> {
     );
   }
 
+  void toggleSettingPanel({bool? show}) {
+    final targetState = show ?? !isShowingSettingPanel;
+    if (targetState == isShowingSettingPanel) return;
+
+    setState(() {
+      isShowingSettingPanel = targetState;
+
+      if (isShowingSettingPanel) {
+        // 显示设置面板时，停止当前单词播放
+        forceFinishCurrentWord();
+        playEvenIfSettingPanelIsShowing = false;
+      } else {
+        // 关闭设置面板时，确保立即开始播放当前单词
+        nextWordIndex = currWordIndex; // 重播当前单词
+        resetPlayState();
+      }
+    });
+  }
+
+  Widget _renderTopBar() {
+    final themeConfig = context.themeConfig;
+    final isDark = context.isDarkMode;
+    final total = totalWordCount > 0 ? totalWordCount : 1;
+    final progress = ((currWordIndex + 1) / total).clamp(0.0, 1.0);
+
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: isLandscape ? 28.0 : 16.0,
+          vertical: 8.0,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // 退出按钮
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.04),
+                ),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 20,
+                  color: themeConfig.textPrimary,
+                ),
+              ),
+            ),
+
+            // 挺拔修长的当前学习进度
+            Column(
+               mainAxisSize: MainAxisSize.min,
+               children: [
+                 Row(
+                   mainAxisSize: MainAxisSize.min,
+                   crossAxisAlignment: CrossAxisAlignment.baseline,
+                   textBaseline: TextBaseline.alphabetic,
+                   children: [
+                     Text(
+                       '${currWordIndex + 1}',
+                       style: TextStyle(
+                         fontFamily: 'Roboto',
+                         fontSize: 15,
+                         fontWeight: FontWeight.w700,
+                         color: themeConfig.textPrimary,
+                       ),
+                     ),
+                     Text(
+                       ' / $totalWordCount',
+                       style: TextStyle(
+                         fontFamily: 'Roboto',
+                         fontSize: 12.5,
+                         fontWeight: FontWeight.w400,
+                         color: themeConfig.textSecondary.withValues(alpha: 0.65),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 5),
+                 // 极细微进度条
+                 ClipRRect(
+                   borderRadius: BorderRadius.circular(2),
+                   child: SizedBox(
+                     width: 108,
+                     height: 3,
+                     child: Stack(
+                       children: [
+                         Container(
+                           color: isDark
+                               ? Colors.white.withValues(alpha: 0.1)
+                               : Colors.black.withValues(alpha: 0.06),
+                         ),
+                         FractionallySizedBox(
+                           widthFactor: progress,
+                           alignment: Alignment.centerLeft,
+                           child: Container(
+                             color: themeConfig.primaryColor,
+                           ),
+                         ),
+                       ],
+                     ),
+                   ),
+                 ),
+               ],
+            ),
+
+            // 设置开关按钮
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => toggleSettingPanel(),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isShowingSettingPanel
+                      ? themeConfig.primaryColor.withValues(alpha: 0.15)
+                      : (isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.04)),
+                ),
+                child: Icon(
+                  Icons.tune_rounded,
+                  size: 19,
+                  color: isShowingSettingPanel
+                      ? themeConfig.primaryColor
+                      : themeConfig.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget renderPage() {
     if (totalWordCount == 0) {
       return const Center(
@@ -778,477 +1028,458 @@ class WalkmanPageState extends State<WalkmanPage> {
       });
       return const Center(child: CircularProgressIndicator());
     }
-    // 横屏模式下调整外边距
-    final horizontalPadding = isLandscape ? 40.0 : 0.0;
 
     return Stack(
       children: [
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              // 切换设置面板显示状态
-              isShowingSettingPanel = !isShowingSettingPanel;
-
-              if (isShowingSettingPanel) {
-                // 显示设置面板时，停止当前单词播放
-                forceFinishCurrentWord();
-                // 默认不在设置面板显示时播放
-                playEvenIfSettingPanelIsShowing = false;
-              } else {
-                // 关闭设置面板时，确保立即开始播放当前单词
-                nextWordIndex = currWordIndex; // 重播当前单词
-
-                // 使用新方法完全重置播放状态
-                resetPlayState();
+        // 主内容与触控手势区
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              toggleSettingPanel();
+            },
+            onHorizontalDragEnd: (DragEndDetails details) async {
+              if (totalWordCount <= 0) return;
+              // 向左滑动, 播放下一个单词
+              if (details.velocity.pixelsPerSecond.dx <= -500) {
+                int nextIdx = (currWordIndex + 1) % totalWordCount;
+                _handleWordSwitch(nextIdx);
               }
-            });
-          },
-          onHorizontalDragEnd: (DragEndDetails details) async {
-            if (totalWordCount <= 0) return;
-            // 向左滑动, 播放下一个单词
-            if (details.velocity.pixelsPerSecond.dx <= -500) {
-              int nextIdx = (currWordIndex + 1) % totalWordCount;
-              _handleWordSwitch(nextIdx);
-            }
-
-            // 向右滑动, 播放上一个单词
-            else if (details.velocity.pixelsPerSecond.dx >= 500) {
-              int prevIdx = currWordIndex >= 1 ? currWordIndex - 1 : totalWordCount - 1;
-              _handleWordSwitch(prevIdx);
-            }
-          },
-          child: Container(
-            decoration: const BoxDecoration(color: Colors.transparent),
-            // 横屏模式下调整内边距
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            child: Stack(
+              // 向右滑动, 播放上一个单词
+              else if (details.velocity.pixelsPerSecond.dx >= 500) {
+                int prevIdx = currWordIndex >= 1 ? currWordIndex - 1 : totalWordCount - 1;
+                _handleWordSwitch(prevIdx);
+              }
+            },
+            child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${currWordIndex + 1} / $totalWordCount',
-                      style: TextStyle(fontSize: isLandscape ? 12.0 : 9.0),
+                _renderTopBar(),
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isLandscape ? 40.0 : 20.0,
+                        vertical: 12.0,
+                      ),
+                      child: renderWord(word),
                     ),
-                  ],
+                  ),
                 ),
-                Center(child: renderWord(word)),
+                SizedBox(height: isLandscape ? 12.0 : 24.0),
               ],
             ),
           ),
         ),
-        isShowingSettingPanel
-            ? Positioned(
-                bottom: 0,
-                left: 0,
-                width: MediaQuery.of(context).size.width,
-                child: renderSettingPanel(),
-              )
-            : Container(),
+
+        // 面板展开时的轻柔背景遮罩（点击可收起面板）
+        if (isShowingSettingPanel)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () => toggleSettingPanel(show: false),
+              child: Container(
+                color: Colors.black.withValues(alpha: context.isDarkMode ? 0.35 : 0.12),
+              ),
+            ),
+          ),
+
+        // 底部毛玻璃控制面板（使用 AnimatedSlide 做平滑位移，避免任何 OpacityLayer 破坏底层渲染）
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: AnimatedSlide(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            offset: isShowingSettingPanel ? Offset.zero : const Offset(0, 1.15),
+            child: renderSettingPanel(),
+          ),
+        ),
       ],
     );
   }
 
   Widget renderSettingPanel() {
+    final isDark = context.isDarkMode;
+
     return Container(
-      color: Global.highlight,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-        child: DefaultTextStyle.merge(
-          // 统一缩小设置面板文字尺寸
-          style: const TextStyle(fontSize: 12.0),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '显示',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
-                    ),
-                    InkWell(
-                      child: Text(
-                        '英文',
-                        style: TextStyle(color: showSpell ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          showSpell = !showSpell;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '音标',
-                        style: TextStyle(color: showPronounce ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          showPronounce = !showPronounce;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '释义',
-                        style: TextStyle(color: showMeaning ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          showMeaning = !showMeaning;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '例句',
-                        style: TextStyle(color: showSentence ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          showSentence = !showSentence;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '翻译',
-                        style: TextStyle(color: showChinese ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          showChinese = !showChinese;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                  ],
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+            blurRadius: 30,
+            offset: const Offset(0, -6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xD9171C26)
+                  : const Color(0xCCFFFFFF),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border(
+                top: BorderSide(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.14)
+                      : Colors.white.withValues(alpha: 0.85),
+                  width: 1.0,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      '发音',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
-                    ),
-                    InkWell(
-                      child: Text(
-                        '英文',
-                        style: TextStyle(color: playPronounce ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          playPronounce = !playPronounce;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    if (PlatformUtils.isTtsSupported())
-                      InkWell(
-                        child: Text(
-                          '释义',
-                          style: TextStyle(color: playMeaning ? selectedTextColor : normalTextColor),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            playMeaning = !playMeaning;
-                            saveConfig();
-                          });
-                        },
-                      ),
-                    InkWell(
-                      child: Text(
-                        '例句',
-                        style: TextStyle(color: playSentence ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          playSentence = !playSentence;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    if (PlatformUtils.isTtsSupported())
-                      InkWell(
-                        child: Text(
-                          '翻译',
-                          style: TextStyle(color: playChinese ? selectedTextColor : normalTextColor),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            playChinese = !playChinese;
-                            saveConfig();
-                          });
-                        },
-                      ),
-                    const Text('　　'),
-                  ],
-                ),
-              ),
-              /*
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '音速',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
-                    ),
-                    for (var speed in [0.5, 0.7, 0.8, 0.9, 1.0])
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            sentencePlaySpeed = speed;
-                            saveConfig();
-                          });
-                        },
-                        child: Text(
-                          '${speed}x',
-                          style: TextStyle(
-                            color: ((sentencePlaySpeed - speed).abs() < 0.01 ? selectedTextColor : normalTextColor),
-                          ),
+                    // 顶部拖拽手柄
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                    const Text('　　'),
-                  ],
-                ),
-              ),
-              */
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '句数',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: playSentence ? Colors.white : normalTextColor.withValues(alpha: 0.5), fontSize: 13.0),
                     ),
-                    for (var count in [1, 2, 3, 4])
-                      InkWell(
-                        onTap: !playSentence
-                            ? null
-                            : () {
-                                setState(() {
-                                  playSentenceCount = count;
-                                  saveConfig();
-                                });
-                              },
-                        child: Text(
-                          '$count句',
-                          style: TextStyle(
-                            color: !playSentence ? normalTextColor.withValues(alpha: 0.5) : (playSentenceCount == count ? selectedTextColor : normalTextColor),
-                          ),
+                    // 1. 显示行
+                    _buildSettingRow(
+                      title: '显示',
+                      children: [
+                        _buildSettingPill(
+                          label: '英文',
+                          selected: showSpell,
+                          onTap: () {
+                            setState(() {
+                              showSpell = !showSpell;
+                              saveConfig();
+                            });
+                          },
                         ),
-                      ),
-                    InkWell(
-                      onTap: !playSentence
-                          ? null
-                          : () {
+                        _buildSettingPill(
+                          label: '音标',
+                          selected: showPronounce,
+                          onTap: () {
+                            setState(() {
+                              showPronounce = !showPronounce;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: '释义',
+                          selected: showMeaning,
+                          onTap: () {
+                            setState(() {
+                              showMeaning = !showMeaning;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: '例句',
+                          selected: showSentence,
+                          onTap: () {
+                            setState(() {
+                              showSentence = !showSentence;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: '翻译',
+                          selected: showChinese,
+                          onTap: () {
+                            setState(() {
+                              showChinese = !showChinese;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    // 2. 发音行
+                    _buildSettingRow(
+                      title: '发音',
+                      children: [
+                        _buildSettingPill(
+                          label: '英文',
+                          selected: playPronounce,
+                          onTap: () {
+                            setState(() {
+                              playPronounce = !playPronounce;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                        if (PlatformUtils.isTtsSupported())
+                          _buildSettingPill(
+                            label: '释义',
+                            selected: playMeaning,
+                            onTap: () {
                               setState(() {
-                                playSentenceCount = -1;
+                                playMeaning = !playMeaning;
                                 saveConfig();
                               });
                             },
-                      child: Text(
-                        '全部',
-                        style: TextStyle(
-                          color: !playSentence ? normalTextColor.withValues(alpha: 0.5) : (playSentenceCount == -1 ? selectedTextColor : normalTextColor),
+                          ),
+                        _buildSettingPill(
+                          label: '例句',
+                          selected: playSentence,
+                          onTap: () {
+                            setState(() {
+                              playSentence = !playSentence;
+                              saveConfig();
+                            });
+                          },
                         ),
-                      ),
+                        if (PlatformUtils.isTtsSupported())
+                          _buildSettingPill(
+                            label: '翻译',
+                            selected: playChinese,
+                            onTap: () {
+                              setState(() {
+                                playChinese = !playChinese;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                      ],
                     ),
-                    const Text('　　'),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '重复',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
+                    // 3. 句数行
+                    _buildSettingRow(
+                      title: '句数',
+                      titleEnabled: playSentence,
+                      children: [
+                        for (var count in [1, 2, 3, 4])
+                          _buildSettingPill(
+                            label: '$count句',
+                            selected: playSentence && playSentenceCount == count,
+                            enabled: playSentence,
+                            onTap: () {
+                              setState(() {
+                                playSentenceCount = count;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                        _buildSettingPill(
+                          label: '全部',
+                          selected: playSentence && playSentenceCount == -1,
+                          enabled: playSentence,
+                          onTap: () {
+                            setState(() {
+                              playSentenceCount = -1;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                      ],
                     ),
-                    InkWell(
-                      child: Text(
-                        '1次',
-                        style: TextStyle(color: repeatCount == 1 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          repeatCount = 1;
-                          saveConfig();
-                        });
-                      },
+                    // 4. 重复行
+                    _buildSettingRow(
+                      title: '重复',
+                      children: [
+                        for (var count in [1, 2, 3, 4, 5])
+                          _buildSettingPill(
+                            label: '$count次',
+                            selected: repeatCount == count,
+                            onTap: () {
+                              setState(() {
+                                repeatCount = count;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                      ],
                     ),
-                    InkWell(
-                      child: Text(
-                        '2次',
-                        style: TextStyle(color: repeatCount == 2 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          repeatCount = 2;
-                          saveConfig();
-                        });
-                      },
+                    // 5. 间隔行
+                    _buildSettingRow(
+                      title: '间隔',
+                      children: [
+                        _buildSettingPill(
+                          label: '0秒',
+                          selected: playInterval == 0,
+                          onTap: () {
+                            setState(() {
+                              playInterval = 0;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: '1秒',
+                          selected: playInterval == 1000,
+                          onTap: () {
+                            setState(() {
+                              playInterval = 1000;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: '2秒',
+                          selected: playInterval == 2000,
+                          onTap: () {
+                            setState(() {
+                              playInterval = 2000;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: '3秒',
+                          selected: playInterval == 3000,
+                          onTap: () {
+                            setState(() {
+                              playInterval = 3000;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: '手动',
+                          selected: playInterval == maxIntValue,
+                          onTap: () {
+                            setState(() {
+                              playInterval = maxIntValue;
+                              saveConfig();
+                            });
+                            ToastUtil.info('手指向左滑动，播放下一单词');
+                          },
+                        ),
+                      ],
                     ),
-                    InkWell(
-                      child: Text(
-                        '3次',
-                        style: TextStyle(color: repeatCount == 3 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          repeatCount = 3;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '4次',
-                        style: TextStyle(color: repeatCount == 4 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          repeatCount = 4;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '5次',
-                        style: TextStyle(color: repeatCount == 5 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          repeatCount = 5;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '间隔',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
-                    ),
-                    InkWell(
-                      child: Text(
-                        '0秒',
-                        style: TextStyle(color: playInterval == 0 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          playInterval = 0;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '1秒',
-                        style: TextStyle(color: playInterval == 1000 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          playInterval = 1000;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '2秒',
-                        style: TextStyle(color: playInterval == 2000 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          playInterval = 2000;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '3秒',
-                        style: TextStyle(color: playInterval == 3000 ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          playInterval = 3000;
-                          saveConfig();
-                        });
-                      },
-                    ),
-                    InkWell(
-                      child: Text(
-                        '手动',
-                        style: TextStyle(color: playInterval == maxIntValue ? selectedTextColor : normalTextColor),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          playInterval = maxIntValue;
-                          saveConfig();
-                        });
-                        ToastUtil.info('手指向左滑动，播放下一单词');
-                      },
+                    // 6. 其他行
+                    _buildSettingRow(
+                      title: '其他',
+                      children: [
+                        _buildSettingPill(
+                          label: context.watch<DarkMode>().themeStyle.label,
+                          selected: false,
+                          onTap: () {
+                            ThemeSelectDialog.show(context);
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: isLandscape ? '竖屏' : '横屏',
+                          selected: false,
+                          onTap: () {
+                            toggleOrientation();
+                          },
+                        ),
+                        _buildSettingPill(
+                          label: '离开',
+                          selected: false,
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '其他',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
-                    ),
-                    InkWell(
-                        onTap: () {
-                          ThemeSelectDialog.show(context);
-                        },
-                        child: Text(context.watch<DarkMode>().themeStyle.label, style: TextStyle(color: selectedTextColor))),
-                    InkWell(
-                      child: Text(
-                        isLandscape ? '竖屏' : '横屏',
-                        style: TextStyle(color: selectedTextColor),
-                      ),
-                      onTap: () {
-                        toggleOrientation();
-                      },
-                    ),
-                    InkWell(
-                      child: Text('离开', style: TextStyle(color: selectedTextColor)),
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                    const Text('　　'),
-                  ],
-                ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingRow({
+    required String title,
+    required List<Widget> children,
+    bool titleEnabled = true,
+  }) {
+    final isDark = context.isDarkMode;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.5),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 36,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: titleEnabled
+                    ? (isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF334155))
+                    : (isDark ? Colors.white.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.25)),
               ),
-            ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingPill({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    bool enabled = true,
+  }) {
+    final themeConfig = context.themeConfig;
+    final isDark = context.isDarkMode;
+
+    Color bgColor;
+    Color textColor;
+    BoxShadow? shadow;
+
+    if (!enabled) {
+      bgColor = Colors.transparent;
+      textColor = isDark ? Colors.white.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.22);
+    } else if (selected) {
+      bgColor = themeConfig.primaryColor;
+      textColor = Colors.white;
+      shadow = BoxShadow(
+        color: themeConfig.primaryColor.withValues(alpha: 0.3),
+        blurRadius: 6,
+        offset: const Offset(0, 2),
+      );
+    } else {
+      bgColor = isDark
+          ? Colors.white.withValues(alpha: 0.06)
+          : Colors.black.withValues(alpha: 0.04);
+      textColor = themeConfig.textSecondary;
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: enabled ? onTap : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(9),
+          boxShadow: shadow != null ? [shadow] : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.0,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: textColor,
           ),
         ),
       ),

@@ -88,5 +88,25 @@ void main() {
       expect(saved!.position, equals(25));
       expect(saved.spell, equals('banana'));
     });
+
+    test('WalkmanConfig serialization and defaults work correctly', () {
+      final config = WalkmanConfig();
+      expect(config.showSpell, isTrue);
+      expect(config.repeatCount, equals(1));
+      expect(config.playSentenceCount, equals(1));
+
+      config.repeatCount = 3;
+      config.showMeaning = true;
+      config.playInterval = 2000;
+      final json = config.toJson();
+      expect(json['repeatCount'], equals(3));
+      expect(json['showMeaning'], isTrue);
+      expect(json['playInterval'], equals(2000));
+
+      final restored = WalkmanConfig.fromJson(json);
+      expect(restored.repeatCount, equals(3));
+      expect(restored.showMeaning, isTrue);
+      expect(restored.playInterval, equals(2000));
+    });
   });
 }
