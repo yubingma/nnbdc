@@ -44,8 +44,8 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     }
 
     try {
-      // 0. 先静默对齐"状态型"勋章, 补发历史已达标却从未触发过判定的勋章
-      await BadgeService().syncStateBadges();
+      // 0. 先静默自愈: 补齐历史已达标却从未触发过判定的勋章(状态型 + 事件型)
+      await BadgeService().healBadges();
 
       // 1. 查询本地 user_badges 记录
       final localRecords = await MyDatabase.instance.userBadgesDao.getBadgesByUserId(user.id);

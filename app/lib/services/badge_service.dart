@@ -14,6 +14,8 @@ import 'package:nnbdc/widget/badge_svg_assets.dart';
 /// 勋章按判定方式分两类, 混淆两者会造成漏发或重复授予:
 /// - 状态型(已掌握词数 / 连续打卡 / 全书通关): 只依赖当前状态, 任何时候都可对齐补发, 见 [syncStateBadges]
 /// - 事件型(打卡时段 / 单次学习表现): 依赖"刚刚发生过什么", 只能在事件发生的那一刻判定一次
+///
+/// 事件型一旦漏判就再也补不回来, 因此用户进入勋章墙时会走 [healBadges] 按事实源重放历史, 自动补齐。
 class BadgeService {
   static final BadgeService _instance = BadgeService._internal();
   factory BadgeService() => _instance;
@@ -147,6 +149,19 @@ class BadgeService {
     await checkMasteredWords(celebrate: false);
     await checkStreakDays(celebrate: false);
     await checkBookFinished(celebrate: false);
+  }
+
+  /// 用户侧自愈入口: 进入勋章墙时静默补齐历史已达标却从未触发过判定的勋章。
+  ///
+  /// 两条腿互补, 缺一不可:
+  /// - [syncStateBadges] 信任 user 表的缓存字段(峰值掌握词数 / 历史最长连续天数), 覆盖原始打卡记录缺失的用户;
+  /// - [rebuildBadgesFromFacts] 信任学习日志与打卡原始记录, 覆盖缓存字段被写坏的情况, 并补全全部事件型勋章。
+  ///
+  /// 两者都"只补不撤"且幂等, 合起来才是用户真实的成就历史。
+  /// 因此本方法是唯一入口, 不要只调用其中一条腿。
+  Future<void> healBadges() async {
+    await syncStateBadges();
+    await rebuildBadgesFromFacts();
   }
 
   /// 按事实源全量重放, 修复全部勋章。

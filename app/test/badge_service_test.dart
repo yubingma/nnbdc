@@ -430,5 +430,54 @@ void main() {
 
       expect(report.granted, contains('STREAK_3'));
     });
+
+    test('重放幂等: 重复执行无差异也不重复发奖', () async {
+      await createUser();
+      await insertTodayRatings([FsrsRating.good.value, FsrsRating.good.value]);
+      await insertDaka(AppClock.today().add(const Duration(hours: 23, minutes: 10)), dayOffset: 1);
+
+      await BadgeService().rebuildBadgesFromFacts();
+      final cowDung = (await db.usersDao.getUserById(userId))!.cowDung;
+      // 补发确实发放了奖励, 否则下面的"不再重复发奖"无从谈起
+      expect(cowDung, greaterThan(0));
+
+      final again = await BadgeService().rebuildBadgesFromFacts();
+      expect(again.granted, isEmpty);
+      expect(again.adjusted, isEmpty);
+      expect((await db.usersDao.getUserById(userId))!.cowDung, cowDung);
+    });
+  });
+
+  group('用户侧自愈', () {
+    test('原始打卡记录缺失时, 依据 user 表缓存字段补发连续勋章', () async {
+      // 只有缓存字段、没有 daka 原始记录 —— 这是纯事实源重放覆盖不到的盲区
+      await createUser(streakDays: 0, maxStreakDays: 21);
+
+      await BadgeService().healBadges();
+
+      expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_21'), isNotNull);
+    });
+
+    test('缓存字段被写坏时, 依据原始打卡记录补发连续勋章', () async {
+      await createUser(streakDays: 0, maxStreakDays: 0);
+      for (var day = 0; day < 21; day++) {
+        await insertDaka(AppClock.today().add(const Duration(hours: 9)), dayOffset: day);
+      }
+
+      await BadgeService().healBadges();
+
+      expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_21'), isNotNull);
+    });
+
+    test('事件型勋章的历史漏发被补齐', () async {
+      await createUser();
+      await insertTodayRatings([FsrsRating.good.value, FsrsRating.good.value]);
+      await insertDaka(AppClock.today().add(const Duration(hours: 23, minutes: 10)), dayOffset: 1);
+
+      await BadgeService().healBadges();
+
+      expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'PERFECT_SCORE'), isNotNull);
+      expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'NIGHT_LEARN'), isNotNull);
+    });
   });
 }
