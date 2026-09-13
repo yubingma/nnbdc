@@ -68,4 +68,70 @@ void main() {
       });
     }
   });
+
+  group('isSameWordFamily - 同一词族的派生词与拼写变体', () {
+    const sameFamily = <List<String>>[
+      // 用户反馈的场景：fertilizer 的题里不得再出现 fertilize / fertilise
+      ['fertilizer', 'fertilize'],
+      ['fertilizer', 'fertilise'],
+      ['fertilize', 'fertilise'],
+      ['fertilizer', 'fertilization'],
+      ['fertile', 'fertilizer'],
+      // 屈折变形同样算同族
+      ['confuse', 'confused'],
+      ['study', 'studying'],
+      // 派生词
+      ['confuse', 'confusion'],
+      ['nation', 'national'],
+      ['nation', 'nationality'],
+      ['happy', 'happiness'],
+      ['organize', 'organization'],
+      ['danger', 'dangerous'],
+      ['beauty', 'beautiful'],
+      ['create', 'creation'],
+      ['inform', 'information'],
+      ['teach', 'teacher'],
+      ['visit', 'visitor'],
+      ['simple', 'simplify'],
+      ['Fertilizer', 'fertilize'],
+    ];
+
+    for (final pair in sameFamily) {
+      test('${pair[0]} ↔ ${pair[1]} 判为同一词族', () {
+        expect(isSameWordFamily(pair[0], pair[1]), isTrue);
+        expect(isSameWordFamily(pair[1], pair[0]), isTrue);
+      });
+    }
+  });
+
+  group('isSameWordFamily - 形近但不同族不得误并', () {
+    const differentFamily = <List<String>>[
+      ['liver', 'live'],
+      ['only', 'one'],
+      ['hard', 'hardy'],
+      ['interest', 'interment'],
+      ['nation', 'nature'],
+      ['cat', 'cart'],
+      ['house', 'horse'],
+      ['form', 'from'],
+      ['notes', 'not'],
+      // 形近词干扰项必须保留（形近词策略的既有用例依赖它们）
+      ['confuse', 'confute'],
+      ['confuse', 'consume'],
+      ['confuse', 'confess'],
+      ['confuse', 'confer'],
+      ['change', 'charge'],
+      ['change', 'chance'],
+      ['change', 'orange'],
+      ['happy birthday', 'happy birthday!'],
+      ['', 'word'],
+    ];
+
+    for (final pair in differentFamily) {
+      test('${pair[0]} ↔ ${pair[1]} 不判为同一词族', () {
+        expect(isSameWordFamily(pair[0], pair[1]), isFalse);
+        expect(isSameWordFamily(pair[1], pair[0]), isFalse);
+      });
+    }
+  });
 }

@@ -36,6 +36,10 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
         // 用于跟踪已选择的单词ID，避免重复
         final selectedWordIds = <String>{targetWordLearningData.wordId};
         final candidateIds = <String>[];
+
+        // 目标词拼写：剔除与它同词族（fertilizer / fertilize / fertilise）的候选
+        final targetWords = await db.wordsDao.getWordsByIds([targetWordLearningData.wordId]);
+        final targetSpell = targetWords.isEmpty ? '' : targetWords.first.spell;
         
         String? targetCiXing;
         if (meaningItemVos.isNotEmpty && meaningItemVos.first.ciXing != null) {
@@ -128,16 +132,16 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
           }
         }
 
-        // 加载候选词详情，并优先匹配词性
+        // 加载候选词详情，并按「词性一致优先」排序，由统一的入选判据挑出干扰项
         if (candidateIds.isNotEmpty) {
           // 随机打乱候选池，保证不固定
           candidateIds.shuffle();
 
           final wordsList = await db.wordsDao.getWordsByIds(candidateIds.take(15).toList());
-          
+
           final List<Word> matchedWords = [];
           final List<Word> unmatchedWords = [];
-          
+
           for (final wordDetails in wordsList) {
             bool isCiXingMatch = false;
             if (targetCiXing != null && wordDetails.shortDesc != null) {
@@ -147,7 +151,7 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
                 isCiXingMatch = true;
               }
             }
-            
+
             if (isCiXingMatch) {
               matchedWords.add(wordDetails);
             } else {
@@ -158,41 +162,18 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
           // 随机打乱两部分，优先挑词性一致的
           matchedWords.shuffle();
           unmatchedWords.shuffle();
-          final List<Word> finalCandidates = [...matchedWords, ...unmatchedWords];
-          
-          // ⚡ 优化：不再使用 N+1 串行加载，而是提取最多 2 个目标候选词，并行进行加载
-          final chosenCandidates = <Word>[];
-          for (final wordDetails in finalCandidates) {
-            chosenCandidates.add(wordDetails);
-            if (chosenCandidates.length >= 2) break;
-          }
 
-          if (chosenCandidates.isNotEmpty) {
-            final meaningResults = await Future.wait(chosenCandidates.map((wordDetails) async {
-              final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-              return MapEntry(wordDetails, realMeaningItems);
-            }));
-
-            for (final entry in meaningResults) {
-              final wordDetails = entry.key;
-              final realMeaningItems = entry.value;
-              final otherWordVo = WordVo.c2(wordDetails.spell)
-                ..id = wordDetails.id
-                ..shortDesc = wordDetails.shortDesc
-                ..longDesc = wordDetails.longDesc
-                ..pronounce = wordDetails.pronounce
-                ..americaPronounce = wordDetails.americaPronounce
-                ..britishPronounce = wordDetails.britishPronounce
-                ..popularity = wordDetails.popularity
-                ..meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-              otherWords.add(otherWordVo);
-            }
-          }
+          otherWords = await _pickDistractors(
+            candidates: [...matchedWords, ...unmatchedWords],
+            targetSpell: targetSpell,
+            targetMeanings: meaningItemVos,
+            userId: targetWordLearningData.userId,
+            count: 2,
+          );
         }
 
-        // 最终极兜底
+        // 最终极兜底：全局随机词，同样按判据筛掉同词族/同义项的词
         if (otherWords.length < 2) {
-          final int needed = 2 - otherWords.length;
           final excludeIds = selectedWordIds.toList()..add(targetWordLearningData.wordId);
 
           // ⚡ 优化：不再使用低效的数据库 ORDER BY random()，而是只加载前 50 个不重复单词，在内存中进行随机打乱
@@ -203,35 +184,14 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
           final globalWords = await wordsQuery.get();
           final shufflableWords = List<Word>.from(globalWords)..shuffle();
 
-          // 并行加载兜底单词的释义
-          final chosenGlobalDetailsList = <Word>[];
-          for (final wordDetails in shufflableWords) {
-            chosenGlobalDetailsList.add(wordDetails);
-            selectedWordIds.add(wordDetails.id);
-            if (chosenGlobalDetailsList.length >= needed) break;
-          }
-
-          if (chosenGlobalDetailsList.isNotEmpty) {
-            final globalMeaningResults = await Future.wait(chosenGlobalDetailsList.map((wordDetails) async {
-              final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-              return MapEntry(wordDetails, realMeaningItems);
-            }));
-
-            for (final entry in globalMeaningResults) {
-              final wordDetails = entry.key;
-              final realMeaningItems = entry.value;
-              final otherWordVo = WordVo.c2(wordDetails.spell)
-                ..id = wordDetails.id
-                ..shortDesc = wordDetails.shortDesc
-                ..longDesc = wordDetails.longDesc
-                ..pronounce = wordDetails.pronounce
-                ..americaPronounce = wordDetails.americaPronounce
-                ..britishPronounce = wordDetails.britishPronounce
-                ..popularity = wordDetails.popularity
-                ..meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-              otherWords.add(otherWordVo);
-            }
-          }
+          otherWords.addAll(await _pickDistractors(
+            candidates: shufflableWords,
+            targetSpell: targetSpell,
+            targetMeanings: meaningItemVos,
+            userId: targetWordLearningData.userId,
+            count: 2 - otherWords.length,
+            selected: otherWords,
+          ));
         }
       }
       return otherWords;
@@ -311,35 +271,24 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
           await _loadInScopeWordIds(db, targetWordLearningData.userId, candidateIds);
       _orderCandidates(candidateIds, candidateIdToDistance, inScopeIds);
 
-      // 4. 逐个查释义：跳过与目标词释义完全相同的候选（否则各选项释义相同、无从判断）
+      // 4. 查释义：跳过与目标词或已选干扰项同词族 / 释义重合的候选
       final probeIds = candidateIds.take(_probeCount).toList();
       if (probeIds.isNotEmpty) {
         final wordsById = {for (final w in await db.wordsDao.getWordsByIds(probeIds)) w.id: w};
-        final orderedWords = [
-          for (final id in probeIds)
-            if (wordsById[id] != null) wordsById[id]!,
-        ];
-        // ⚡ 释义加载并行化；单个候选缺释义时跳过该候选，不影响其余候选
-        final probeResults = await Future.wait(orderedWords.map((wordDetails) async {
-          try {
-            final realMeaningItems =
-                await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-            return MapEntry(wordDetails, _toMeaningItemVos(realMeaningItems));
-          } catch (e) {
-            Global.logger.w('形近词候选释义加载失败，跳过 ${wordDetails.spell}: $e');
-            return null;
-          }
-        }));
-
-        for (final entry in probeResults) {
-          if (entry == null) continue;
-          if (otherWords.length >= 2) break;
-          if (_sharesMeaning(meaningItemVos, entry.value)) continue;
-          otherWords.add(_buildWordVo(entry.key, entry.value));
-        }
+        otherWords.addAll(await _pickDistractors(
+          candidates: [
+            for (final id in probeIds)
+              if (wordsById[id] != null) wordsById[id]!,
+          ],
+          targetSpell: targetSpell,
+          targetMeanings: meaningItemVos,
+          userId: targetWordLearningData.userId,
+          count: 2,
+          probeLimit: _probeCount,
+        ));
       }
 
-      // 5. 如果不足 2 个，使用“学习中单词”策略补足（同样剔除变形词与同义项词）
+      // 5. 如果不足 2 个，使用“学习中单词”策略补足（同样剔除同词族与同义项词）
       if (otherWords.length < 2) {
         final fallbackWords = await LearningWordsDistractorStrategy().getTwoOtherWords(
           trackSteps: trackSteps,
@@ -354,8 +303,13 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
           // 确保不和目标单词重复，也不和已选单词重复
           if (fw.id == targetWordLearningData.wordId) continue;
           if (otherWords.any((w) => w.id == fw.id)) continue;
-          if (targetSpell.isNotEmpty && isSameWordForm(targetSpell, fw.spell)) continue;
+          if (targetSpell.isNotEmpty && isSameWordFamily(targetSpell, fw.spell)) continue;
+          if (otherWords.any((w) => isSameWordFamily(w.spell, fw.spell))) continue;
           if (_sharesMeaning(meaningItemVos, fw.meaningItems ?? const [])) continue;
+          if (otherWords.any(
+              (w) => _sharesMeaning(w.meaningItems ?? const [], fw.meaningItems ?? const []))) {
+            continue;
+          }
           otherWords.add(fw);
         }
       }
@@ -375,7 +329,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
     }
   }
 
-  /// 收录一个候选词；与目标词同拼写或同词形的屈折变形不入候选
+  /// 收录一个候选词；与目标词同拼写或同词族（fertilizer / fertilize / fertilise）的不入候选
   void _addCandidate(
     Map<String, String> candidateIdToSpell,
     Map<String, int> candidateIdToDistance,
@@ -387,7 +341,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
   ) {
     if (wordId == targetWordId) return;
     if (candidateIdToSpell.containsKey(wordId)) return;
-    if (targetSpell.isNotEmpty && isSameWordForm(targetSpell, spell)) return;
+    if (targetSpell.isNotEmpty && isSameWordFamily(targetSpell, spell)) return;
     candidateIdToSpell[wordId] = spell;
     candidateIdToDistance[wordId] = distance;
   }
@@ -442,38 +396,100 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
       candidateIds.addAll(buckets[layer]!..shuffle());
     }
   }
-
-  /// 两个词的义项中是否存在完全相同的一条（忽略空格与标点）
-  bool _sharesMeaning(List<MeaningItemVo> a, List<MeaningItemVo> b) {
-    final keys = <String>{
-      for (final item in a)
-        if (_meaningKey(item).isNotEmpty) _meaningKey(item),
-    };
-    if (keys.isEmpty) return false;
-    for (final item in b) {
-      if (keys.contains(_meaningKey(item))) return true;
-    }
-    return false;
-  }
-
-  String _meaningKey(MeaningItemVo item) =>
-      (item.meaning ?? '').toLowerCase().replaceAll(_meaningNoise, '');
-
-  List<MeaningItemVo> _toMeaningItemVos(List<MeaningItem> items) =>
-      [for (final e in items) MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)];
-
-  WordVo _buildWordVo(Word word, List<MeaningItemVo> meaningItems) => WordVo.c2(word.spell)
-    ..id = word.id
-    ..shortDesc = word.shortDesc
-    ..longDesc = word.longDesc
-    ..pronounce = word.pronounce
-    ..americaPronounce = word.americaPronounce
-    ..britishPronounce = word.britishPronounce
-    ..popularity = word.popularity
-    ..meaningItems = meaningItems;
 }
 
+/// 从有序候选词中挑出 [count] 个可用干扰项。
+///
+/// 淘汰两类候选：与目标词或已选干扰项**同词族**（[isSameWordFamily]：既含屈折变形，
+/// 也含 fertilizer / fertilize / fertilise 这类派生词与拼写变体），以及与目标词或已选
+/// 干扰项**释义有完全相同的义项**——两者都会让用户面对几乎一样的选项，只能碰运气。
+///
+/// 只对排在前面的 [probeLimit] 个候选查释义，留出被上面两条判据筛掉的余量。
+Future<List<WordVo>> _pickDistractors({
+  required List<Word> candidates,
+  required String targetSpell,
+  required List<MeaningItemVo> targetMeanings,
+  required String userId,
+  required int count,
+  List<WordVo> selected = const [],
+  int probeLimit = 8,
+}) async {
+  if (count <= 0) return const [];
+
+  // 词形判据不需要释义，先据此从候选池里挑出待查释义的词
+  final occupiedSpells = <String>[
+    if (targetSpell.isNotEmpty) targetSpell,
+    for (final w in selected) w.spell,
+  ];
+  final probes = <Word>[];
+  for (final word in candidates) {
+    if (probes.length >= probeLimit) break;
+    if (word.spell.isEmpty) continue;
+    if (occupiedSpells.any((spell) => isSameWordFamily(spell, word.spell))) continue;
+    occupiedSpells.add(word.spell);
+    probes.add(word);
+  }
+  if (probes.isEmpty) return const [];
+
+  // ⚡ 释义加载并行化；单个候选缺释义时跳过该候选，不影响其余候选
+  final probeResults = await Future.wait(probes.map((word) async {
+    try {
+      final realMeaningItems = await WordBo().getWordMeaningItems(word.id, userId);
+      return MapEntry(word, _toMeaningItemVos(realMeaningItems));
+    } catch (e) {
+      Global.logger.w('干扰项候选释义加载失败，跳过 ${word.spell}: $e');
+      return null;
+    }
+  }));
+
+  final picked = <WordVo>[];
+  final occupiedMeanings = <List<MeaningItemVo>>[
+    targetMeanings,
+    for (final w in selected) w.meaningItems ?? const <MeaningItemVo>[],
+  ];
+  for (final entry in probeResults) {
+    if (entry == null) continue;
+    if (picked.length >= count) break;
+    if (occupiedMeanings.any((meanings) => _sharesMeaning(meanings, entry.value))) continue;
+    picked.add(_buildWordVo(entry.key, entry.value));
+    occupiedMeanings.add(entry.value);
+  }
+  return picked;
+}
+
+/// 两个词的义项中是否存在相同的义项（把 `施肥；使受精` 拆成 `施肥`、`使受精`
+/// 逐个比较，忽略空格与标点）——释义条目内的义项不同、但含义完全一致时同样算重合
+bool _sharesMeaning(List<MeaningItemVo> a, List<MeaningItemVo> b) =>
+    _meaningKeys(a).intersection(_meaningKeys(b)).isNotEmpty;
+
+Set<String> _meaningKeys(List<MeaningItemVo> items) {
+  final keys = <String>{};
+  for (final item in items) {
+    for (final part in (item.meaning ?? '').split(_meaningSplit)) {
+      final key = part.toLowerCase().replaceAll(_meaningNoise, '');
+      if (key.isNotEmpty) keys.add(key);
+    }
+  }
+  return keys;
+}
+
+List<MeaningItemVo> _toMeaningItemVos(List<MeaningItem> items) =>
+    [for (final e in items) MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)];
+
+WordVo _buildWordVo(Word word, List<MeaningItemVo> meaningItems) => WordVo.c2(word.spell)
+  ..id = word.id
+  ..shortDesc = word.shortDesc
+  ..longDesc = word.longDesc
+  ..pronounce = word.pronounce
+  ..americaPronounce = word.americaPronounce
+  ..britishPronounce = word.britishPronounce
+  ..popularity = word.popularity
+  ..meaningItems = meaningItems;
+
 final RegExp _meaningNoise = RegExp("[\\s,，、;；.。!！?？:：'\"“”‘’()（）\\[\\]【】]+");
+
+/// 一条释义内多个义项的分隔符（`施肥；使受精`）
+final RegExp _meaningSplit = RegExp('[;；,，、/]');
 
 class DistractorStrategyFactory {
   static DistractorStrategy getStrategy(String strategyName) {

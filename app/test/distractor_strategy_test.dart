@@ -266,5 +266,115 @@ void main() {
 
       expect(words.map((w) => w.spell), containsAll(['consume', 'confess']));
     });
+
+    test('同一词族的派生词与拼写变体（fertilize/fertilise/fertilization）不作为干扰项', () async {
+      await insertDict('d1');
+      await insertLearningDict('d1');
+      const family = ['w_fertilize', 'w_fertilise', 'w_fertilization'];
+      await insertWord('w_fertilizer', 'fertilizer');
+      await insertWord('w_fertilize', 'fertilize');
+      await insertWord('w_fertilise', 'fertilise');
+      await insertWord('w_fertilization', 'fertilization');
+      await insertWord('w_consume', 'consume');
+      await insertWord('w_confess', 'confess');
+      for (final id in ['w_fertilizer', ...family, 'w_consume', 'w_confess']) {
+        await insertDictWord('d1', id);
+      }
+      for (final id in family) {
+        await insertSimilar('w_fertilizer', id, id.substring(2));
+      }
+      await insertSimilar('w_fertilizer', 'w_consume', 'consume');
+      await insertSimilar('w_fertilizer', 'w_confess', 'confess');
+      await insertMeaning('w_fertilizer', '肥料');
+      await insertMeaning('w_fertilize', '施肥');
+      await insertMeaning('w_fertilise', '施肥');
+      await insertMeaning('w_fertilization', '施肥');
+      await insertMeaning('w_consume', '消耗');
+      await insertMeaning('w_confess', '坦白');
+
+      final words = await pickDistractors('w_fertilizer', '肥料');
+      final spells = words.map((w) => w.spell);
+
+      expect(spells, isNot(contains('fertilize')));
+      expect(spells, isNot(contains('fertilise')));
+      expect(spells, isNot(contains('fertilization')));
+      expect(spells, containsAll(['consume', 'confess']));
+    });
+
+    test('两个候选释义完全重合时只取其中一个', () async {
+      await insertDict('d1');
+      await insertLearningDict('d1');
+      for (final id in ['w_confuse', 'w_consume', 'w_confess', 'w_confer']) {
+        await insertWord(id, id.substring(2));
+        await insertDictWord('d1', id);
+        await insertSimilar('w_confuse', id, id.substring(2));
+      }
+      await insertMeaning('w_confuse', '使困惑');
+      await insertMeaning('w_consume', '消耗；耗费');
+      await insertMeaning('w_confess', '消耗');
+      await insertMeaning('w_confer', '授予');
+
+      final words = await pickDistractors('w_confuse', '使困惑');
+      final spells = words.map((w) => w.spell).toList();
+
+      expect(spells.length, 2);
+      expect(spells.where((s) => s == 'consume' || s == 'confess').length, 1);
+      expect(spells, contains('confer'));
+    });
+  });
+
+  group('LearningWordsDistractorStrategy - 最近学习词干扰项', () {
+    Future<List<WordVo>> pickRecentDistractors(String targetWordId, String targetMeaning) {
+      return LearningWordsDistractorStrategy().getTwoOtherWords(
+        trackSteps: const ['En2Ch'],
+        learningMode: 0,
+        meaningItemVos: targetMeanings(targetMeaning),
+        todayWords: [
+          targetLearningWord('w_fertilize'),
+          targetLearningWord('w_fertilise'),
+          targetLearningWord('w_consume'),
+          targetLearningWord('w_confess'),
+        ],
+        targetWordLearningData: targetLearningWord(targetWordId),
+        db: db,
+      );
+    }
+
+    test('今日词中的同词族候选（fertilize/fertilise）不作为干扰项', () async {
+      await insertWord('w_fertilizer', 'fertilizer');
+      await insertWord('w_fertilize', 'fertilize');
+      await insertWord('w_fertilise', 'fertilise');
+      await insertWord('w_consume', 'consume');
+      await insertWord('w_confess', 'confess');
+      await insertMeaning('w_fertilizer', '肥料');
+      await insertMeaning('w_fertilize', '施肥');
+      await insertMeaning('w_fertilise', '施肥');
+      await insertMeaning('w_consume', '消耗');
+      await insertMeaning('w_confess', '坦白');
+
+      final words = await pickRecentDistractors('w_fertilizer', '肥料');
+      final spells = words.map((w) => w.spell);
+
+      expect(spells, isNot(contains('fertilize')));
+      expect(spells, isNot(contains('fertilise')));
+      expect(spells, containsAll(['consume', 'confess']));
+    });
+
+    test('两个候选释义完全重合时只取其中一个', () async {
+      await insertWord('w_learn', 'learn');
+      await insertWord('w_consume', 'consume');
+      await insertWord('w_confess', 'confess');
+      await insertWord('w_confer', 'confer');
+      await insertMeaning('w_learn', '学习');
+      await insertMeaning('w_consume', '消耗');
+      await insertMeaning('w_confess', '消耗');
+      await insertMeaning('w_confer', '授予');
+
+      final words = await pickRecentDistractors('w_learn', '学习');
+      final spells = words.map((w) => w.spell).toList();
+
+      expect(spells.length, 2);
+      expect(spells.where((s) => s == 'consume' || s == 'confess').length, 1);
+    });
   });
 }

@@ -25,6 +25,76 @@ bool isSameWordForm(String a, String b) {
   return _stems(x).intersection(_stems(y)).isNotEmpty;
 }
 
+/// 英文单词的"同一词族"归并：在 [isSameWordForm]（屈折变形）之上，再归并
+/// 派生词与英美拼写变体。
+///
+/// - 拼写变体：-ise/-ize（fertilise → fertilize、organisation → organization）、
+///   -yse/-yze（analyse → analyze）；
+/// - 派生词：confuse → confusion、nation → national、happy → happiness、
+///   organize → organization、danger → dangerous、beauty → beautiful。
+///
+/// 判据是"剥离派生后缀后的词干相同"，且词干不少于 5 个字母：
+/// fertilizer / fertilize / fertilise / fertilization 的词干都是 fertiliz，
+/// 因此它们不会出现在同一道题的选项里。
+///
+/// 阈值取 5 是为了不误并前缀相同而实为两词的组合——liver/live、only/one、
+/// hardy/hard、interest/interment 都不算同族：被误并的词本可作干扰项，白白损失。
+///
+/// 代价是 [isSameWordForm] 的 -er 比较级规则会顺带把"名词 + er"一并归并
+/// （corner/corn、flower/flow、mother/moth），方向同样是宁可多排除。
+bool isSameWordFamily(String a, String b) {
+  final x = a.trim().toLowerCase();
+  final y = b.trim().toLowerCase();
+  if (x.isEmpty || y.isEmpty) return false;
+  if (x == y) return true;
+  if (!_isPlainWord(x) || !_isPlainWord(y)) return false;
+  if (isSameWordForm(x, y)) return true;
+  return _familyStems(x).intersection(_familyStems(y)).isNotEmpty;
+}
+
+/// 词干短于该长度不作词族归并（见 [isSameWordFamily]）
+const int _minFamilyStemLength = 5;
+
+/// 派生后缀（屈折后缀由 [_stems] 负责）；顺序无关，逐个尝试并迭代剥离
+const List<String> _derivationSuffixes = [
+  'ation', 'ness', 'ment', 'ance', 'ence', 'able', 'ible', 'ity', 'ive',
+  'ous', 'ful', 'less', 'ish', 'ism', 'ist', 'ize', 'ify', 'ion', 'al',
+  'ic', 'ly', 'er', 'or', 'ant', 'ent', 'age', 'ary', 'ery',
+];
+
+/// 一个单词所有可能的词干（含原词本身与拼写变体），短于阈值的词干不收录
+Set<String> _familyStems(String word) {
+  final stems = <String>{};
+  final pending = <String>[_normalizeSpelling(word)];
+  while (pending.isNotEmpty) {
+    final w = pending.removeLast();
+    if (w.length < _minFamilyStemLength) continue;
+    if (!stems.add(w)) continue;
+
+    // happy → happi、nice → nic、running → run
+    if (w.endsWith('y')) pending.add('${w.substring(0, w.length - 1)}i');
+    if (w.endsWith('e')) pending.add(w.substring(0, w.length - 1));
+    pending.add(_unDouble(w));
+
+    // -ize 家族：剥掉派生后缀后残留的 -iz（fertiliz → fertil、organiz → organ）
+    if (w.endsWith('iz')) pending.add(w.substring(0, w.length - 2));
+
+    for (final suffix in _derivationSuffixes) {
+      if (w.endsWith(suffix)) {
+        pending.add(w.substring(0, w.length - suffix.length));
+      }
+    }
+  }
+  return stems;
+}
+
+/// 英式拼写归一为美式：fertilise → fertilize、organisation → organization
+String _normalizeSpelling(String word) {
+  if (word.endsWith('ise')) return '${word.substring(0, word.length - 3)}ize';
+  if (word.endsWith('yse')) return '${word.substring(0, word.length - 3)}yze';
+  return word.replaceAll('isat', 'izat');
+}
+
 final RegExp _plainWord = RegExp(r'^[a-z]+$');
 
 bool _isPlainWord(String w) => _plainWord.hasMatch(w);
