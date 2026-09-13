@@ -125,7 +125,7 @@ void main() {
     });
 
     test('WalkmanScene enum properties and assets configuration', () {
-      expect(WalkmanScene.values.length, equals(7));
+      expect(WalkmanScene.values.length, equals(6));
       expect(WalkmanScene.none.hasVideo, isFalse);
       expect(WalkmanScene.none.hasAudio, isFalse);
 
@@ -141,7 +141,7 @@ void main() {
       expect(WalkmanScene.night.videoAsset, equals('assets/video/scenes/night.mp4'));
       expect(WalkmanScene.night.audioAsset, equals('assets/audio/scenes/night.mp3'));
 
-      expect(WalkmanScene.river.title, equals('清幽山溪'));
+      expect(WalkmanScene.river.title, equals('湖光水镜'));
       expect(WalkmanScene.river.hasVideo, isTrue);
       expect(WalkmanScene.river.hasAudio, isTrue);
       expect(WalkmanScene.river.videoAsset, equals('assets/video/scenes/river.mp4'));
@@ -153,13 +153,7 @@ void main() {
       expect(WalkmanScene.waves.videoAsset, equals('assets/video/scenes/waves.mp4'));
       expect(WalkmanScene.waves.audioAsset, equals('assets/audio/scenes/waves.mp3'));
 
-      expect(WalkmanScene.campfire.title, equals('温暖炉火'));
-      expect(WalkmanScene.campfire.hasVideo, isTrue);
-      expect(WalkmanScene.campfire.hasAudio, isTrue);
-      expect(WalkmanScene.campfire.videoAsset, equals('assets/video/scenes/campfire.mp4'));
-      expect(WalkmanScene.campfire.audioAsset, equals('assets/audio/scenes/campfire.mp3'));
-
-      expect(WalkmanScene.forest.title, equals('禅意林野'));
+      expect(WalkmanScene.forest.title, equals('高山流云'));
       expect(WalkmanScene.forest.hasVideo, isTrue);
       expect(WalkmanScene.forest.hasAudio, isTrue);
       expect(WalkmanScene.forest.videoAsset, equals('assets/video/scenes/forest.mp4'));

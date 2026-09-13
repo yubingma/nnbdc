@@ -34,10 +34,9 @@ enum WalkmanScene {
   none('极简', null, null),
   rain('闲时听雨', 'assets/video/scenes/rain.mp4', 'assets/audio/scenes/rain.mp3'),
   night('夏夜虫鸣', 'assets/video/scenes/night.mp4', 'assets/audio/scenes/night.mp3'),
-  river('清幽山溪', 'assets/video/scenes/river.mp4', 'assets/audio/scenes/river.mp3'),
+  river('湖光水镜', 'assets/video/scenes/river.mp4', 'assets/audio/scenes/river.mp3'),
   waves('潮汐海浪', 'assets/video/scenes/waves.mp4', 'assets/audio/scenes/waves.mp3'),
-  campfire('温暖炉火', 'assets/video/scenes/campfire.mp4', 'assets/audio/scenes/campfire.mp3'),
-  forest('禅意林野', 'assets/video/scenes/forest.mp4', 'assets/audio/scenes/forest.mp3');
+  forest('高山流云', 'assets/video/scenes/forest.mp4', 'assets/audio/scenes/forest.mp3');
 
   final String title;
   final String? videoAsset;
@@ -243,7 +242,13 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     if (scene.hasVideo) {
       try {
-        final vController = VideoPlayerController.asset(scene.videoAsset!);
+        final vController = VideoPlayerController.asset(
+          scene.videoAsset!,
+          // 背景视频是静音的，Android 上必须声明"与其他声音共存"：默认(false)会让 ExoPlayer 去抢音频焦点，
+          // 环境白噪音/单词发音随后再取焦点时，系统就把视频暂停，画面永久卡在第一帧（iOS 无音频焦点机制，故正常）。
+          // iOS 上该选项是 AVAudioSession 混音语义，与焦点无关，保持原样以免改变 App 的音频会话行为。
+          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: PlatformUtils.isAndroid),
+        );
         await vController.initialize();
         await vController.setLooping(true);
         await vController.setVolume(0.0); // 视频背景本身静音
