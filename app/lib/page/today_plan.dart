@@ -708,25 +708,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         children: [
           // 环心今日目标词数（外圈仅为装饰性锚点环）
           SizedBox(
-            width: 140,
-            height: 140,
+            width: 128,
+            height: 128,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 // 装饰性锚点环：纯主题色极淡描边，刻意不含任何进度语义。
-                // 环心「500 词 🔒」是左重右轻的组合（46pt 大数字 + 13pt 小单位），整组居中
+                // 环心「500 词 🔒」是左重右轻的组合（大数字 + 小单位），整组居中
                 // 会让大数字自身的中心落到圆心左侧；一圈对称的环把它锚回圆心，消除重心失稳。
                 // 若这里再画进度弧，就会与下方细进度条表达同一个值，环退化为冗余空壳。
-                // 尺寸：172 时环占屏宽 41%、环心内容仅占内径 37%，内圈空掉六成显得虚大；
-                // 收到 140 后占屏宽 33%（回到仪表盘常规区间），描边同比缩到 7 保持相对粗细。
+                // 尺寸：172 时环占屏宽 41%、内圈空六成，显得虚大。收到 128 后占屏宽 31%；
+                // 注意约束来自环心的「宽度」而非高度——172/140/128 下内容角点距圆心恒为
+                // 55.5pt，故数字须同步由 46 缩到 38（同时贴回规范的核心指标字档），
+                // 角点余量才从 2pt 恢复到 7.4pt。描边按外径 5% 取 6.5。
                 Container(
-                  width: 140,
-                  height: 140,
+                  width: 128,
+                  height: 128,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.14),
-                      width: 7,
+                      width: 6.5,
                     ),
                   ),
                 ),
@@ -747,10 +749,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             '${user?.effectiveWordsPerDay ?? 0}',
                             style: TextStyle(
                               color: textPrimary,
-                              fontSize: 46,
+                              fontSize: 38,
                               fontWeight: FontWeight.w700,
                               fontFamily: 'Roboto',
-                              letterSpacing: -1.6,
+                              letterSpacing: -1.3,
                               height: 1.0,
                             ),
                           ),
