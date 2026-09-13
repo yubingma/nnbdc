@@ -165,6 +165,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   var currentWordPlayShouldStop = false;
   var currentWordPlayingStopped = true;
   var playEvenIfSettingPanelIsShowing = false;
+  bool isPaused = false; // 用户主动暂停：暂停后播放循环彻底停住，不会自动续播（区别于"当前单词已播完"的 currentWordPlayingStopped）
   List<SentenceVo> currSentences = [];
   int currSentenceIndex = 0;
   static const maxIntValue = 0x7fffffff;
@@ -264,7 +265,7 @@ class WalkmanPageState extends State<WalkmanPage> {
         await _ambientPlayer!.stop();
         await _ambientPlayer!.setAsset(scene.audioAsset!);
         await _ambientPlayer!.setLoopMode(LoopMode.one);
-        await _ambientPlayer!.setVolume(ambientMuted ? 0.0 : ambientVolume);
+        await _ambientPlayer!.setVolume(ambientEffectiveVolume);
         await _ambientPlayer!.play();
       } catch (e) {
         Global.logger.d("初始化随身听环境音效失败: $e");
@@ -280,15 +281,25 @@ class WalkmanPageState extends State<WalkmanPage> {
     }
   }
 
+  /// 环境白噪音当前应输出的音量：用户静音、或整体暂停时都为 0
+  double get ambientEffectiveVolume => (ambientMuted || isPaused) ? 0.0 : ambientVolume;
+
+  /// 把环境白噪音音量同步到应有的状态（切场景、调音量、暂停/恢复都走这里）
+  Future<void> _applyAmbientVolume() async {
+    try {
+      await _ambientPlayer?.setVolume(ambientEffectiveVolume);
+    } catch (e) {
+      Global.logger.d("同步环境白噪音音量失败: $e");
+    }
+  }
+
   /// 切换环境白噪音静音态
   Future<void> _toggleAmbientMute() async {
     setState(() {
       ambientMuted = !ambientMuted;
     });
     await Prefs.write('walkman_ambient_muted', ambientMuted);
-    if (_ambientPlayer != null) {
-      await _ambientPlayer!.setVolume(ambientMuted ? 0.0 : ambientVolume);
-    }
+    await _applyAmbientVolume();
     saveConfig();
   }
 
@@ -300,9 +311,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     });
     await Prefs.write('walkman_ambient_volume', volume);
     await Prefs.write('walkman_ambient_muted', false);
-    if (_ambientPlayer != null) {
-      await _ambientPlayer!.setVolume(volume);
-    }
+    await _applyAmbientVolume();
     saveConfig();
   }
 
@@ -570,7 +579,37 @@ class WalkmanPageState extends State<WalkmanPage> {
     }
   }
 
+  /// 立即打断当前发音：作废进行中的播放代次（_playSessionId），并掐断正在发声的 TTS 与音频
+  Future<void> _interruptPlayback() async {
+    currentWordPlayShouldStop = true;
+    _playSessionId++;
+    try {
+      await tts?.stop();
+      await StudyAudioSessionController().cancelPlayback();
+    } catch (e) {
+      Global.logger.d("打断播放时出错: $e");
+    }
+  }
+
+  /// 暂停：立刻掐断正在发声的 TTS/发音，并彻底停住播放循环（暂停后不会自动续播）
+  void pausePlayback() {
+    isPaused = true;
+    currentWordPlayingStopped = true;
+    unawaited(_interruptPlayback());
+    unawaited(_applyAmbientVolume()); // 环境白噪音一并静音
+  }
+
+  /// 恢复播放：先掐断残余声音与排队中的旧发音，再从当前单词立即开始
+  Future<void> resumePlayback() async {
+    await _interruptPlayback();
+    if (!mounted) return;
+    setState(() {
+      resetPlayState();
+    });
+  }
+
   playWordTick() async {
+    if (isPaused) return; // 用户已暂停：不再计时、不再自动续播，直到用户点击播放
     final int session = _playSessionId;
     if (isShowingSettingPanel && !playEvenIfSettingPanelIsShowing) {
       // 设置面板显示且不播放时，只更新计时器
@@ -907,20 +946,14 @@ class WalkmanPageState extends State<WalkmanPage> {
                 if (isShowingSettingPanel) {
                   playEvenIfSettingPanelIsShowing = !playEvenIfSettingPanelIsShowing;
                   if (playEvenIfSettingPanelIsShowing) {
-                    currentWordPlayShouldStop = true;
-                    Future.delayed(const Duration(milliseconds: 50), () {
-                      if (mounted) resetPlayState();
-                    });
+                    unawaited(resumePlayback());
                   } else {
-                    currentWordPlayShouldStop = true;
+                    pausePlayback();
                   }
+                } else if (isPaused) {
+                  unawaited(resumePlayback());
                 } else {
-                  if (currentWordPlayingStopped) {
-                    resetPlayState();
-                  } else {
-                    currentWordPlayShouldStop = true;
-                    currentWordPlayingStopped = true;
-                  }
+                  pausePlayback();
                 }
               });
             },
@@ -945,7 +978,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                 ],
               ),
               child: Icon(
-                ((isShowingSettingPanel ? playEvenIfSettingPanelIsShowing : !currentWordPlayingStopped))
+                (isShowingSettingPanel ? playEvenIfSettingPanelIsShowing : !isPaused)
                     ? Icons.pause_rounded
                     : Icons.play_arrow_rounded,
                 size: 30,
@@ -1775,24 +1808,15 @@ class WalkmanPageState extends State<WalkmanPage> {
 
   // 统一处理单词切换，确保响应迅速
   Future<void> _handleWordSwitch(int newIndex) async {
-    // 1. 立即设置停止信号并增加 Session ID，这会瞬间阻断当前正在进行的 doPlayWord 循环
-    currentWordPlayShouldStop = true;
-    _playSessionId++;
-
-    // 2. 立即尝试停止物理播放器 (TTS 和 Just Audio)
-    try {
-      unawaited(tts?.stop());
-      await StudyAudioSessionController().cancelPlayback();
-    } catch (e) {
-      Global.logger.d("切换单词时停止播放出错: $e");
-    }
+    // 1. 立即打断当前发音：作废进行中的播放代次并掐断物理播放器 (TTS 和 Just Audio)
+    await _interruptPlayback();
 
     if (totalWordCount > 0) {
       if (newIndex < 0) newIndex = totalWordCount - 1;
       if (newIndex >= totalWordCount) newIndex = 0;
     }
 
-    // 3. 立即更新 UI 和索引
+    // 2. 立即更新 UI 和索引
     setState(() {
       currWordIndex = newIndex;
       nextWordIndex = currWordIndex;
@@ -1804,7 +1828,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     }
     prefetchAround(currWordIndex);
 
-    // 4. 重置状态并开启新一轮播放
+    // 3. 重置状态并开启新一轮播放
     _forceNoWaitOnce = true;
     resetPlayState();
   }
@@ -1823,6 +1847,8 @@ class WalkmanPageState extends State<WalkmanPage> {
   // 完全重置播放状态，确保可以重新开始播放
   void resetPlayState() {
     _playSessionId++; // 每次重置时递增，强行阻断旧的休眠或播放异步等待
+    isPaused = false; // 恢复播放
+    unawaited(_applyAmbientVolume()); // 恢复环境白噪音音量
     // 重置状态标志
     currentWordPlayingStopped = true;
     currentWordPlayShouldStop = false;

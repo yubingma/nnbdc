@@ -1,8 +1,10 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/walkman.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 class MockWordsProvider with WordsProvider {
@@ -158,6 +160,42 @@ void main() {
       expect(WalkmanScene.forest.hasAudio, isTrue);
       expect(WalkmanScene.forest.videoAsset, equals('assets/video/scenes/forest.mp4'));
       expect(WalkmanScene.forest.audioAsset, equals('assets/audio/scenes/forest.mp3'));
+    });
+  });
+
+  group('Walkman 暂停/恢复状态机', () {
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('com.ryanheise.just_audio.methods'),
+        (MethodCall methodCall) async => {},
+      );
+      StudyAudioSessionController.instance.resetForTesting();
+    });
+
+    test('暂停后播放循环彻底停住（不再自动续播），恢复播放会清除暂停态', () async {
+      final state = WalkmanPageState();
+      addTearDown(() => state.playWordTimer?.cancel());
+
+      // 开始播放
+      state.resetPlayState();
+      expect(state.isPaused, isFalse);
+      state.playWordTimer?.cancel(); // 清掉开始播放时挂的计时器，使下面只反映暂停后的行为
+
+      // 暂停：立即进入暂停态，当前单词标记为已停止
+      state.pausePlayback();
+      expect(state.isPaused, isTrue);
+      expect(state.currentWordPlayingStopped, isTrue);
+      expect(state.playWordTimer?.isActive, isFalse);
+
+      // 暂停期间即使计时器被驱动，也不允许再排下一个计时器（旧实现在这里会自动续播）
+      await state.playWordTick();
+      expect(state.playWordTimer?.isActive, isFalse);
+
+      // 恢复播放：清除暂停态并重新开启播放循环
+      state.resetPlayState();
+      expect(state.isPaused, isFalse);
+      expect(state.playWordTimer?.isActive, isTrue);
     });
   });
 }

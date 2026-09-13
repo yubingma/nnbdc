@@ -208,6 +208,7 @@ class StudyAudioSessionController {
     _playerLoadedAsset.clear();
     _playerLoadedUrl.clear();
     _failedAudioUrls.clear();
+    _currentWordSoundPlayer = null;
     _configureFuture = null;
   }
 
@@ -296,9 +297,24 @@ class StudyAudioSessionController {
   /// 中断当前正在进行的发音播放，并清空所有排队中的旧发音任务（用于用户点击新单词时即时抢占）
   void interruptPlayback() {
     _queueLock.cancel();
+    unawaited(_stopCurrentWordSound());
     try {
       if (_audioPlayer.playing) {
         _audioPlayer.stop();
+      }
+    } catch (_) {}
+  }
+
+  /// 正在发声的单词发音播放器（"按拼写播放"用的是独立一次性播放器，不掐断它就无法真正静音）
+  ja.AudioPlayer? _currentWordSoundPlayer;
+
+  /// 立刻停掉正在发声的单词发音（若有）
+  Future<void> _stopCurrentWordSound() async {
+    final player = _currentWordSoundPlayer;
+    if (player == null) return;
+    try {
+      if (player.playing) {
+        await player.stop().timeout(const Duration(milliseconds: 300));
       }
     } catch (_) {}
   }
@@ -343,9 +359,16 @@ class StudyAudioSessionController {
     }
     return _queueLock.protect(() async {
       final player = SoundUtil.createAudioPlayer();
+      _currentWordSoundPlayer = player;
       _watchPlayer(player);
-      await playSoundByUrl(Util.getWordSoundUrl(spell), player, true,
-          fallbackText: spell, fallbackUrls: Util.getWordSoundFallbackUrls(spell));
+      try {
+        await playSoundByUrl(Util.getWordSoundUrl(spell), player, true,
+            fallbackText: spell, fallbackUrls: Util.getWordSoundFallbackUrls(spell));
+      } finally {
+        if (identical(_currentWordSoundPlayer, player)) {
+          _currentWordSoundPlayer = null;
+        }
+      }
     });
   }
 
@@ -529,6 +552,7 @@ class StudyAudioSessionController {
   Future<void> cancelPlayback() async {
     _logPlayerState('cancelPlayback.enter');
     _queueLock.cancel();
+    await _stopCurrentWordSound();
     try {
       await _audioPlayer.setVolume(0.0);
       _logPlayerState('cancelPlayback.afterMute');
