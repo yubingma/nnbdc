@@ -179,12 +179,14 @@ class BdcState extends Equatable {
     this.isAiEvaluating = false,
   });
 
-  /// 当前词的轨道名：「新词/旧词」，测评之后（[currentGetWordResult].stepIndex > 0，
-  /// 与 notifier 的 isFollowUpStep 同一判据）才分化出「答对/答错」，如「新词答对」。
+  /// 当前词的轨道名，六种互斥状态，与今日计划页「学习轨道」的措辞一致：
+  /// 测评环节（[currentGetWordResult].stepIndex == 0）为「新词测评 / 旧词测评」，
+  /// 测评之后（stepIndex > 0，与 notifier 的 isFollowUpStep 同一判据）分化为
+  /// 「新词答对 / 新词答错 / 旧词答对 / 旧词答错」。
   String get currentWordTrackName {
     final wordType = isReviewWord ? '旧词' : '新词';
     final graded = (currentGetWordResult?.stepIndex ?? 0) > 0;
-    return graded ? '$wordType${assessmentIsAgain ? '答错' : '答对'}' : wordType;
+    return graded ? '$wordType${assessmentIsAgain ? '答错' : '答对'}' : '$wordType测评';
   }
 
   bool get autoJumpAfterCorrect {

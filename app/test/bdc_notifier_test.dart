@@ -1689,6 +1689,8 @@ void main() {
     final notifier = container.read(bdcNotifierProvider.notifier);
     await notifier.loadData(FakeBuildContext());
     var state = container.read(bdcNotifierProvider);
+    expect(state.currentWordTrackName, '旧词测评',
+        reason: '复习词的测评环节轨道名为"旧词测评"');
 
     // 测评答错 → 应进入恢复环节
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
@@ -1747,8 +1749,8 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.studyStep, StudyStep.en2Ch.json);
     expect(state.groupStepHint, null, reason: '首次进入学习页不应弹出提示');
-    expect(state.currentWordTrackName, '新词',
-        reason: '测评环节尚未评分，轨道只到"新词/旧词"这一层');
+    expect(state.currentWordTrackName, '新词测评',
+        reason: '测评环节尚未评分，轨道名为"新词测评"');
 
     // 测评答对 → 本组进入汉译英环节：首词给出"整组推进"的顺序提示
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
