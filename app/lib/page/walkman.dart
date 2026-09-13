@@ -32,7 +32,11 @@ import 'index.dart';
 enum WalkmanScene {
   none('极简', null, null),
   rain('闲时听雨', 'assets/video/scenes/rain.mp4', 'assets/audio/scenes/rain.mp3'),
-  night('夏夜虫鸣', 'assets/video/scenes/night.mp4', 'assets/audio/scenes/night.mp3');
+  night('夏夜虫鸣', 'assets/video/scenes/night.mp4', 'assets/audio/scenes/night.mp3'),
+  river('清幽山溪', 'assets/video/scenes/river.mp4', 'assets/audio/scenes/river.mp3'),
+  waves('潮汐海浪', 'assets/video/scenes/waves.mp4', 'assets/audio/scenes/waves.mp3'),
+  campfire('温暖炉火', 'assets/video/scenes/campfire.mp4', 'assets/audio/scenes/campfire.mp3'),
+  forest('禅意林野', 'assets/video/scenes/forest.mp4', 'assets/audio/scenes/forest.mp3');
 
   final String title;
   final String? videoAsset;
@@ -1042,6 +1046,9 @@ class WalkmanPageState extends State<WalkmanPage> {
     );
   }
 
+  /// 底部面板是否使用深色毛玻璃：暗色主题，或开启了沉浸场景（底层为深色视频）
+  bool get _useDarkGlass => context.isDarkMode || currentScene != WalkmanScene.none;
+
   void toggleSettingPanel({bool? show}) {
     final targetState = show ?? !isShowingSettingPanel;
     if (targetState == isShowingSettingPanel) return;
@@ -1265,23 +1272,32 @@ class WalkmanPageState extends State<WalkmanPage> {
                 _handleWordSwitch(prevIdx);
               }
             },
-            child: Column(
-              children: [
-                _renderTopBar(),
-                Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isLandscape ? 40.0 : 20.0,
-                        vertical: 12.0,
+            // 内容内边距（顶部留白用于避开灵动岛）只作用于内容层，沉浸背景层仍铺满全屏
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                leftPadding,
+                isLandscape ? 8.0 : 16.0,
+                rightPadding,
+                0,
+              ),
+              child: Column(
+                children: [
+                  _renderTopBar(),
+                  Expanded(
+                    child: Center(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isLandscape ? 40.0 : 20.0,
+                          vertical: 12.0,
+                        ),
+                        child: renderWord(word),
                       ),
-                      child: renderWord(word),
                     ),
                   ),
-                ),
-                SizedBox(height: isLandscape ? 12.0 : 24.0),
-              ],
+                  SizedBox(height: isLandscape ? 12.0 : 24.0),
+                ],
+              ),
             ),
           ),
         ),
@@ -1313,7 +1329,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   }
 
   Widget renderSettingPanel() {
-    final isDark = context.isDarkMode;
+    final darkGlass = _useDarkGlass;
 
     return Container(
       width: double.infinity,
@@ -1321,7 +1337,7 @@ class WalkmanPageState extends State<WalkmanPage> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+            color: Colors.black.withValues(alpha: darkGlass ? 0.45 : 0.08),
             blurRadius: 30,
             offset: const Offset(0, -6),
           ),
@@ -1330,16 +1346,17 @@ class WalkmanPageState extends State<WalkmanPage> {
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          // 模糊半径取 6~7：既抹去底层字形轮廓，又保留凝聚的墨水色块，过大(如 18)会把底层均化成纯色
+          filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xD9171C26)
-                  : const Color(0xCCFFFFFF),
+              color: darkGlass
+                  ? const Color(0xB81C2127)
+                  : const Color(0x4DFFFFFF),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               border: Border(
                 top: BorderSide(
-                  color: isDark
+                  color: darkGlass
                       ? Colors.white.withValues(alpha: 0.14)
                       : Colors.white.withValues(alpha: 0.85),
                   width: 1.0,
@@ -1362,7 +1379,8 @@ class WalkmanPageState extends State<WalkmanPage> {
                           height: 4,
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
-                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                            color: (darkGlass ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -1578,6 +1596,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       // 6. 自然沉浸场景行
                       _buildSettingRow(
                         title: '场景',
+                        scrollable: true,
                         children: [
                           for (var s in WalkmanScene.values)
                             _buildSettingPill(
@@ -1653,8 +1672,9 @@ class WalkmanPageState extends State<WalkmanPage> {
     required String title,
     required List<Widget> children,
     bool titleEnabled = true,
+    bool scrollable = false,
   }) {
-    final isDark = context.isDarkMode;
+    final darkGlass = _useDarkGlass;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.5),
       child: Row(
@@ -1667,17 +1687,31 @@ class WalkmanPageState extends State<WalkmanPage> {
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: titleEnabled
-                    ? (isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF334155))
-                    : (isDark ? Colors.white.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.25)),
+                    ? (darkGlass ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF334155))
+                    : (darkGlass ? Colors.white.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.25)),
               ),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: children,
-            ),
+            child: scrollable
+                ? SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (int i = 0; i < children.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 6),
+                          children[i],
+                        ],
+                      ],
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: children,
+                  ),
           ),
         ],
       ),
@@ -1691,7 +1725,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     bool enabled = true,
   }) {
     final themeConfig = context.themeConfig;
-    final isDark = context.isDarkMode;
+    final darkGlass = _useDarkGlass;
 
     Color bgColor;
     Color textColor;
@@ -1699,7 +1733,7 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     if (!enabled) {
       bgColor = Colors.transparent;
-      textColor = isDark ? Colors.white.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.22);
+      textColor = darkGlass ? Colors.white.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.22);
     } else if (selected) {
       bgColor = themeConfig.primaryColor;
       textColor = Colors.white;
@@ -1709,10 +1743,10 @@ class WalkmanPageState extends State<WalkmanPage> {
         offset: const Offset(0, 2),
       );
     } else {
-      bgColor = isDark
+      bgColor = darkGlass
           ? Colors.white.withValues(alpha: 0.06)
           : Colors.black.withValues(alpha: 0.04);
-      textColor = themeConfig.textSecondary;
+      textColor = darkGlass ? Colors.white.withValues(alpha: 0.72) : themeConfig.textSecondary;
     }
 
     return GestureDetector(
@@ -1782,11 +1816,7 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     return AppScaffold(
       vibrancy: PageVibrancy.walkman,
-      body: Container(
-        // 横屏模式下调整内边距
-        padding: EdgeInsets.fromLTRB(leftPadding, isLandscape ? 8.0 : 16.0, rightPadding, 0),
-        child: (!dataLoaded) ? const Center(child: Text('')) : renderPage(),
-      ),
+      body: (!dataLoaded) ? const Center(child: Text('')) : renderPage(),
     );
   }
 
