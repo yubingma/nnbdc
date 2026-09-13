@@ -98,15 +98,41 @@ void main() {
       config.repeatCount = 3;
       config.showMeaning = true;
       config.playInterval = 2000;
+      config.scene = 'rain';
+      config.ambientVolume = 0.5;
+      config.ambientMuted = true;
       final json = config.toJson();
       expect(json['repeatCount'], equals(3));
       expect(json['showMeaning'], isTrue);
       expect(json['playInterval'], equals(2000));
+      expect(json['scene'], equals('rain'));
+      expect(json['ambientVolume'], equals(0.5));
+      expect(json['ambientMuted'], isTrue);
 
       final restored = WalkmanConfig.fromJson(json);
       expect(restored.repeatCount, equals(3));
       expect(restored.showMeaning, isTrue);
       expect(restored.playInterval, equals(2000));
+      expect(restored.scene, equals('rain'));
+      expect(restored.ambientVolume, equals(0.5));
+      expect(restored.ambientMuted, isTrue);
+    });
+
+    test('WalkmanScene enum properties and assets configuration', () {
+      expect(WalkmanScene.none.hasVideo, isFalse);
+      expect(WalkmanScene.none.hasAudio, isFalse);
+
+      expect(WalkmanScene.rain.title, equals('闲时听雨'));
+      expect(WalkmanScene.rain.hasVideo, isTrue);
+      expect(WalkmanScene.rain.hasAudio, isTrue);
+      expect(WalkmanScene.rain.videoAsset, equals('assets/video/scenes/rain.mp4'));
+      expect(WalkmanScene.rain.audioAsset, equals('assets/audio/scenes/rain.mp3'));
+
+      expect(WalkmanScene.night.title, equals('夏夜虫鸣'));
+      expect(WalkmanScene.night.hasVideo, isTrue);
+      expect(WalkmanScene.night.hasAudio, isTrue);
+      expect(WalkmanScene.night.videoAsset, equals('assets/video/scenes/night.mp4'));
+      expect(WalkmanScene.night.audioAsset, equals('assets/audio/scenes/night.mp3'));
     });
   });
 }

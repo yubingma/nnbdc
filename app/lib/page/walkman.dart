@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -13,6 +14,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 
 import '../db/db.dart';
 import '../global.dart';
@@ -21,9 +23,25 @@ import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
 import '../util/study_audio_session_controller.dart';
 import '../util/tts.dart';
+import '../util/prefs.dart';
 import '../widget/app_scaffold.dart';
 import '../widget/theme_select_dialog.dart';
 import 'index.dart';
+
+/// 随身听自然沉浸场景（动态微动态背景 + 原版高保真环境白噪音）
+enum WalkmanScene {
+  none('极简', null, null),
+  rain('闲时听雨', 'assets/video/scenes/rain.mp4', 'assets/audio/scenes/rain.mp3'),
+  night('夏夜虫鸣', 'assets/video/scenes/night.mp4', 'assets/audio/scenes/night.mp3');
+
+  final String title;
+  final String? videoAsset;
+  final String? audioAsset;
+  const WalkmanScene(this.title, this.videoAsset, this.audioAsset);
+
+  bool get hasVideo => videoAsset != null;
+  bool get hasAudio => audioAsset != null;
+}
 
 class WalkmanConfig {
   bool showSpell = true;
@@ -39,6 +57,9 @@ class WalkmanConfig {
   int playInterval = 0;
   double sentencePlaySpeed = 1.0;
   int playSentenceCount = 1; // 1, 2, 3, 4, -1 (全部)
+  String scene = 'none';
+  double ambientVolume = 0.35;
+  bool ambientMuted = false;
 
   WalkmanConfig();
 
@@ -57,6 +78,9 @@ class WalkmanConfig {
     config.playInterval = json['playInterval'] ?? 0;
     config.sentencePlaySpeed = (json['sentencePlaySpeed'] ?? 1.0).toDouble();
     config.playSentenceCount = json['playSentenceCount'] ?? 1;
+    config.scene = json['scene'] ?? 'none';
+    config.ambientVolume = (json['ambientVolume'] ?? 0.35).toDouble();
+    config.ambientMuted = json['ambientMuted'] ?? false;
     return config;
   }
 
@@ -74,6 +98,9 @@ class WalkmanConfig {
         'playInterval': playInterval,
         'sentencePlaySpeed': sentencePlaySpeed,
         'playSentenceCount': playSentenceCount,
+        'scene': scene,
+        'ambientVolume': ambientVolume,
+        'ambientMuted': ambientMuted,
       };
 }
 
@@ -144,6 +171,13 @@ class WalkmanPageState extends State<WalkmanPage> {
   bool isLandscape = false;
   int _playSessionId = 0;
 
+  // 自然沉浸场景与环境音效状态
+  WalkmanScene currentScene = WalkmanScene.none;
+  VideoPlayerController? _videoController;
+  AudioPlayer? _ambientPlayer;
+  double ambientVolume = 0.35;
+  bool ambientMuted = false;
+
   Future<bool> checkArgs() async {
     final extra = GoRouterState.of(context).extra;
     if (extra == null) {
@@ -167,6 +201,105 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     tts = Tts();
     tts?.init();
+
+    // 读取本地保存的场景与白噪音偏好
+    final sceneName = Prefs.read<String>('walkman_scene') ?? 'none';
+    currentScene = WalkmanScene.values.firstWhere(
+      (s) => s.name == sceneName,
+      orElse: () => WalkmanScene.none,
+    );
+    ambientVolume = Prefs.read<double>('walkman_ambient_volume') ?? 0.35;
+    ambientMuted = Prefs.read<bool>('walkman_ambient_muted') ?? false;
+
+    if (currentScene != WalkmanScene.none) {
+      _applyScene(currentScene, save: false);
+    }
+  }
+
+  /// 切换沉浸场景（支持动态视频背景 + 高保真环境音效循环）
+  Future<void> _applyScene(WalkmanScene scene, {bool save = true}) async {
+    if (save) {
+      await Prefs.write('walkman_scene', scene.name);
+    }
+    currentScene = scene;
+    if (mounted) setState(() {});
+
+    // 1. 处理微动态视频背景
+    final oldVideo = _videoController;
+    _videoController = null;
+    if (mounted) setState(() {});
+    if (oldVideo != null) {
+      try {
+        await oldVideo.dispose();
+      } catch (_) {}
+    }
+
+    if (scene.hasVideo) {
+      try {
+        final vController = VideoPlayerController.asset(scene.videoAsset!);
+        await vController.initialize();
+        await vController.setLooping(true);
+        await vController.setVolume(0.0); // 视频背景本身静音
+        await vController.play();
+        if (mounted) {
+          setState(() {
+            _videoController = vController;
+          });
+        } else {
+          await vController.dispose();
+        }
+      } catch (e) {
+        Global.logger.d("初始化随身听场景微动态背景失败: $e");
+      }
+    }
+
+    // 2. 处理环境白噪音音效
+    if (scene.hasAudio) {
+      try {
+        _ambientPlayer ??= AudioPlayer();
+        await _ambientPlayer!.stop();
+        await _ambientPlayer!.setAsset(scene.audioAsset!);
+        await _ambientPlayer!.setLoopMode(LoopMode.one);
+        await _ambientPlayer!.setVolume(ambientMuted ? 0.0 : ambientVolume);
+        await _ambientPlayer!.play();
+      } catch (e) {
+        Global.logger.d("初始化随身听环境音效失败: $e");
+      }
+    } else {
+      try {
+        await _ambientPlayer?.stop();
+      } catch (_) {}
+    }
+
+    if (save) {
+      saveConfig();
+    }
+  }
+
+  /// 切换环境白噪音静音态
+  Future<void> _toggleAmbientMute() async {
+    setState(() {
+      ambientMuted = !ambientMuted;
+    });
+    await Prefs.write('walkman_ambient_muted', ambientMuted);
+    if (_ambientPlayer != null) {
+      await _ambientPlayer!.setVolume(ambientMuted ? 0.0 : ambientVolume);
+    }
+    saveConfig();
+  }
+
+  /// 调节环境白噪音音量
+  Future<void> _setAmbientVolume(double volume) async {
+    setState(() {
+      ambientVolume = volume;
+      ambientMuted = false;
+    });
+    await Prefs.write('walkman_ambient_volume', volume);
+    await Prefs.write('walkman_ambient_muted', false);
+    if (_ambientPlayer != null) {
+      await _ambientPlayer!.setVolume(volume);
+    }
+    saveConfig();
   }
 
   @override
@@ -225,7 +358,10 @@ class WalkmanPageState extends State<WalkmanPage> {
       ..repeatCount = repeatCount
       ..playInterval = playInterval
       ..sentencePlaySpeed = sentencePlaySpeed
-      ..playSentenceCount = playSentenceCount;
+      ..playSentenceCount = playSentenceCount
+      ..scene = currentScene.name
+      ..ambientVolume = ambientVolume
+      ..ambientMuted = ambientMuted;
 
     try {
       User user = Global.getLoggedInUserNotNull();
@@ -370,6 +506,14 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     // 取消所有计时器
     playWordTimer?.cancel();
+
+    // 释放微动态视频背景与环境音效
+    try {
+      _videoController?.dispose();
+    } catch (_) {}
+    try {
+      _ambientPlayer?.dispose();
+    } catch (_) {}
 
     // 退出时保存最后播放的位置
     final currentWord = _wordCache[currWordIndex];
@@ -638,6 +782,9 @@ class WalkmanPageState extends State<WalkmanPage> {
 
   Widget renderWord(WordWrapper word) {
     final themeConfig = context.themeConfig;
+    final hasScene = currentScene != WalkmanScene.none;
+    final primaryTextColor = hasScene ? Colors.white : themeConfig.textPrimary;
+    final secondaryTextColor = hasScene ? Colors.white.withValues(alpha: 0.85) : themeConfig.textSecondary;
     final spellFontSize = isLandscape ? 34.0 : 42.0;
     final meaningFontSize = isLandscape ? 15.0 : 15.5;
 
@@ -654,7 +801,16 @@ class WalkmanPageState extends State<WalkmanPage> {
               fontWeight: FontWeight.w700,
               fontSize: spellFontSize,
               letterSpacing: -0.5,
-              color: themeConfig.textPrimary,
+              color: primaryTextColor,
+              shadows: hasScene
+                  ? [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        offset: const Offset(0, 2),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : null,
             ),
             textAlign: TextAlign.center,
           ),
@@ -668,14 +824,14 @@ class WalkmanPageState extends State<WalkmanPage> {
               style: TextStyle(
                 fontFamily: 'NotoSans',
                 fontSize: isLandscape ? 14.0 : 16.0,
-                color: themeConfig.textSecondary.withValues(alpha: 0.85),
+                color: secondaryTextColor,
               ),
               textAlign: TextAlign.center,
             ),
           ),
 
         // 释义
-        if (showMeaning) renderWordMeaning(word, meaningFontSize),
+        if (showMeaning) renderWordMeaning(word, meaningFontSize, hasScene),
 
         // 例句
         if (showSentence && currSentences.isNotEmpty)
@@ -686,12 +842,25 @@ class WalkmanPageState extends State<WalkmanPage> {
               constraints: const BoxConstraints(maxWidth: 480),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               decoration: BoxDecoration(
-                color: context.cardBg.withValues(alpha: context.isDarkMode ? 0.4 : 0.55),
+                color: hasScene
+                    ? Colors.black.withValues(alpha: 0.38)
+                    : context.cardBg.withValues(alpha: context.isDarkMode ? 0.4 : 0.55),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: context.cardBorder.withValues(alpha: 0.5),
+                  color: hasScene
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : context.cardBorder.withValues(alpha: 0.5),
                   width: 0.8,
                 ),
+                boxShadow: hasScene
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    : null,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -703,7 +872,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                     TextStyle(
                       fontSize: meaningFontSize,
                       fontStyle: FontStyle.italic,
-                      color: themeConfig.textPrimary,
+                      color: primaryTextColor,
                       height: 1.4,
                     ),
                   ),
@@ -715,7 +884,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                           : (currSentences[0].chinese ?? ''),
                       TextStyle(
                         fontSize: meaningFontSize * 0.9,
-                        color: themeConfig.textSecondary,
+                        color: secondaryTextColor,
                         height: 1.35,
                       ),
                     ),
@@ -756,14 +925,16 @@ class WalkmanPageState extends State<WalkmanPage> {
               height: 54,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: context.cardBg,
+                color: hasScene ? const Color(0xDD1E293B) : context.cardBg,
                 border: Border.all(
-                  color: themeConfig.primaryColor.withValues(alpha: 0.35),
+                  color: hasScene
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : themeConfig.primaryColor.withValues(alpha: 0.35),
                   width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: themeConfig.primaryColor.withValues(alpha: 0.16),
+                    color: themeConfig.primaryColor.withValues(alpha: hasScene ? 0.25 : 0.16),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -774,7 +945,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                     ? Icons.pause_rounded
                     : Icons.play_arrow_rounded,
                 size: 30,
-                color: themeConfig.primaryColor,
+                color: hasScene ? Colors.white : themeConfig.primaryColor,
               ),
             ),
           ),
@@ -783,7 +954,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     );
   }
 
-  Widget renderWordMeaning(WordWrapper word, [double fontSize = 15.0]) {
+  Widget renderWordMeaning(WordWrapper word, [double fontSize = 15.0, bool hasScene = false]) {
     final themeConfig = context.themeConfig;
     final meanings = word.word.getMergedMeaningItems();
     if (meanings.isEmpty) return const SizedBox.shrink();
@@ -806,7 +977,9 @@ class WalkmanPageState extends State<WalkmanPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: themeConfig.primaryColor.withValues(alpha: 0.12),
+                        color: hasScene
+                            ? Colors.white.withValues(alpha: 0.16)
+                            : themeConfig.primaryColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -814,7 +987,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                         style: TextStyle(
                           fontSize: fontSize * 0.82,
                           fontWeight: FontWeight.w600,
-                          color: themeConfig.primaryColor,
+                          color: hasScene ? Colors.white : themeConfig.primaryColor,
                         ),
                       ),
                     ),
@@ -826,7 +999,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       style: TextStyle(
                         fontSize: fontSize,
                         fontWeight: FontWeight.w400,
-                        color: themeConfig.textPrimary,
+                        color: hasScene ? Colors.white.withValues(alpha: 0.95) : themeConfig.textPrimary,
                         height: 1.3,
                       ),
                       textAlign: TextAlign.center,
@@ -875,15 +1048,14 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     setState(() {
       isShowingSettingPanel = targetState;
-
       if (isShowingSettingPanel) {
-        // 显示设置面板时，停止当前单词播放
-        forceFinishCurrentWord();
-        playEvenIfSettingPanelIsShowing = false;
+        playEvenIfSettingPanelIsShowing = !currentWordPlayingStopped;
       } else {
-        // 关闭设置面板时，确保立即开始播放当前单词
-        nextWordIndex = currWordIndex; // 重播当前单词
-        resetPlayState();
+        if (playEvenIfSettingPanelIsShowing) {
+          if (currentWordPlayingStopped) {
+            resetPlayState();
+          }
+        }
       }
     });
   }
@@ -891,15 +1063,15 @@ class WalkmanPageState extends State<WalkmanPage> {
   Widget _renderTopBar() {
     final themeConfig = context.themeConfig;
     final isDark = context.isDarkMode;
-    final total = totalWordCount > 0 ? totalWordCount : 1;
-    final progress = ((currWordIndex + 1) / total).clamp(0.0, 1.0);
+    final hasScene = currentScene != WalkmanScene.none;
+    final progress = totalWordCount > 0 ? (currWordIndex + 1) / totalWordCount : 0.0;
 
     return SafeArea(
       bottom: false,
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: isLandscape ? 28.0 : 16.0,
-          vertical: 8.0,
+          horizontal: isLandscape ? 32.0 : 16.0,
+          vertical: 6.0,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -913,14 +1085,16 @@ class WalkmanPageState extends State<WalkmanPage> {
                 height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.black.withValues(alpha: 0.04),
+                  color: hasScene
+                      ? Colors.black.withValues(alpha: 0.35)
+                      : (isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.04)),
                 ),
                 child: Icon(
                   Icons.close_rounded,
                   size: 20,
-                  color: themeConfig.textPrimary,
+                  color: hasScene ? Colors.white : themeConfig.textPrimary,
                 ),
               ),
             ),
@@ -940,7 +1114,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                          fontFamily: 'Roboto',
                          fontSize: 15,
                          fontWeight: FontWeight.w700,
-                         color: themeConfig.textPrimary,
+                         color: hasScene ? Colors.white : themeConfig.textPrimary,
                        ),
                      ),
                      Text(
@@ -949,7 +1123,9 @@ class WalkmanPageState extends State<WalkmanPage> {
                          fontFamily: 'Roboto',
                          fontSize: 12.5,
                          fontWeight: FontWeight.w400,
-                         color: themeConfig.textSecondary.withValues(alpha: 0.65),
+                         color: hasScene
+                             ? Colors.white.withValues(alpha: 0.75)
+                             : themeConfig.textSecondary.withValues(alpha: 0.65),
                        ),
                      ),
                    ],
@@ -964,9 +1140,11 @@ class WalkmanPageState extends State<WalkmanPage> {
                      child: Stack(
                        children: [
                          Container(
-                           color: isDark
-                               ? Colors.white.withValues(alpha: 0.1)
-                               : Colors.black.withValues(alpha: 0.06),
+                           color: hasScene
+                               ? Colors.white.withValues(alpha: 0.22)
+                               : (isDark
+                                   ? Colors.white.withValues(alpha: 0.1)
+                                   : Colors.black.withValues(alpha: 0.06)),
                          ),
                          FractionallySizedBox(
                            widthFactor: progress,
@@ -993,16 +1171,18 @@ class WalkmanPageState extends State<WalkmanPage> {
                   shape: BoxShape.circle,
                   color: isShowingSettingPanel
                       ? themeConfig.primaryColor.withValues(alpha: 0.15)
-                      : (isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : Colors.black.withValues(alpha: 0.04)),
+                      : (hasScene
+                          ? Colors.black.withValues(alpha: 0.35)
+                          : (isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.04))),
                 ),
                 child: Icon(
                   Icons.tune_rounded,
                   size: 19,
                   color: isShowingSettingPanel
                       ? themeConfig.primaryColor
-                      : themeConfig.textPrimary,
+                      : (hasScene ? Colors.white : themeConfig.textPrimary),
                 ),
               ),
             ),
@@ -1031,7 +1211,41 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     return Stack(
       children: [
-        // 主内容与触控手势区
+        // 0. 动态微动态背景视频层（FittedBox cover充满全屏，静音平滑无缝循环）
+        if (currentScene.hasVideo &&
+            _videoController != null &&
+            _videoController!.value.isInitialized)
+          Positioned.fill(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              clipBehavior: Clip.hardEdge,
+              child: SizedBox(
+                width: _videoController!.value.size.width,
+                height: _videoController!.value.size.height,
+                child: VideoPlayer(_videoController!),
+              ),
+            ),
+          ),
+
+        // 0.1 沉浸式暗色渐变蒙层（保留微动态美感的同时确保文字清晰度）
+        if (currentScene != WalkmanScene.none)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.58),
+                    Colors.black.withValues(alpha: 0.36),
+                    Colors.black.withValues(alpha: 0.65),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        // 1. 主内容与触控手势区
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -1136,230 +1350,268 @@ class WalkmanPageState extends State<WalkmanPage> {
               top: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 顶部拖拽手柄
-                    Center(
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(2),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 顶部拖拽手柄
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    // 1. 显示行
-                    _buildSettingRow(
-                      title: '显示',
-                      children: [
-                        _buildSettingPill(
-                          label: '英文',
-                          selected: showSpell,
-                          onTap: () {
-                            setState(() {
-                              showSpell = !showSpell;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        _buildSettingPill(
-                          label: '音标',
-                          selected: showPronounce,
-                          onTap: () {
-                            setState(() {
-                              showPronounce = !showPronounce;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        _buildSettingPill(
-                          label: '释义',
-                          selected: showMeaning,
-                          onTap: () {
-                            setState(() {
-                              showMeaning = !showMeaning;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        _buildSettingPill(
-                          label: '例句',
-                          selected: showSentence,
-                          onTap: () {
-                            setState(() {
-                              showSentence = !showSentence;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        _buildSettingPill(
-                          label: '翻译',
-                          selected: showChinese,
-                          onTap: () {
-                            setState(() {
-                              showChinese = !showChinese;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    // 2. 发音行
-                    _buildSettingRow(
-                      title: '发音',
-                      children: [
-                        _buildSettingPill(
-                          label: '英文',
-                          selected: playPronounce,
-                          onTap: () {
-                            setState(() {
-                              playPronounce = !playPronounce;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        if (PlatformUtils.isTtsSupported())
+                      // 1. 显示行
+                      _buildSettingRow(
+                        title: '显示',
+                        children: [
+                          _buildSettingPill(
+                            label: '英文',
+                            selected: showSpell,
+                            onTap: () {
+                              setState(() {
+                                showSpell = !showSpell;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                          _buildSettingPill(
+                            label: '音标',
+                            selected: showPronounce,
+                            onTap: () {
+                              setState(() {
+                                showPronounce = !showPronounce;
+                                saveConfig();
+                              });
+                            },
+                          ),
                           _buildSettingPill(
                             label: '释义',
-                            selected: playMeaning,
+                            selected: showMeaning,
                             onTap: () {
                               setState(() {
-                                playMeaning = !playMeaning;
+                                showMeaning = !showMeaning;
                                 saveConfig();
                               });
                             },
                           ),
-                        _buildSettingPill(
-                          label: '例句',
-                          selected: playSentence,
-                          onTap: () {
-                            setState(() {
-                              playSentence = !playSentence;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        if (PlatformUtils.isTtsSupported())
+                          _buildSettingPill(
+                            label: '例句',
+                            selected: showSentence,
+                            onTap: () {
+                              setState(() {
+                                showSentence = !showSentence;
+                                saveConfig();
+                              });
+                            },
+                          ),
                           _buildSettingPill(
                             label: '翻译',
-                            selected: playChinese,
+                            selected: showChinese,
                             onTap: () {
                               setState(() {
-                                playChinese = !playChinese;
+                                showChinese = !showChinese;
                                 saveConfig();
                               });
                             },
                           ),
-                      ],
-                    ),
-                    // 3. 句数行
-                    _buildSettingRow(
-                      title: '句数',
-                      titleEnabled: playSentence,
-                      children: [
-                        for (var count in [1, 2, 3, 4])
+                        ],
+                      ),
+                      // 2. 发音行
+                      _buildSettingRow(
+                        title: '发音',
+                        children: [
                           _buildSettingPill(
-                            label: '$count句',
-                            selected: playSentence && playSentenceCount == count,
+                            label: '英文',
+                            selected: playPronounce,
+                            onTap: () {
+                              setState(() {
+                                playPronounce = !playPronounce;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                          if (PlatformUtils.isTtsSupported())
+                            _buildSettingPill(
+                              label: '释义',
+                              selected: playMeaning,
+                              onTap: () {
+                                setState(() {
+                                  playMeaning = !playMeaning;
+                                  saveConfig();
+                                });
+                              },
+                            ),
+                          _buildSettingPill(
+                            label: '例句',
+                            selected: playSentence,
+                            onTap: () {
+                              setState(() {
+                                playSentence = !playSentence;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                          if (PlatformUtils.isTtsSupported())
+                            _buildSettingPill(
+                              label: '翻译',
+                              selected: playChinese,
+                              onTap: () {
+                                setState(() {
+                                  playChinese = !playChinese;
+                                  saveConfig();
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                      // 3. 句数行
+                      _buildSettingRow(
+                        title: '句数',
+                        titleEnabled: playSentence,
+                        children: [
+                          for (var count in [1, 2, 3, 4])
+                            _buildSettingPill(
+                              label: '$count句',
+                              selected: playSentence && playSentenceCount == count,
+                              enabled: playSentence,
+                              onTap: () {
+                                setState(() {
+                                  playSentenceCount = count;
+                                  saveConfig();
+                                });
+                              },
+                            ),
+                          _buildSettingPill(
+                            label: '全部',
+                            selected: playSentence && playSentenceCount == -1,
                             enabled: playSentence,
                             onTap: () {
                               setState(() {
-                                playSentenceCount = count;
+                                playSentenceCount = -1;
                                 saveConfig();
                               });
                             },
                           ),
-                        _buildSettingPill(
-                          label: '全部',
-                          selected: playSentence && playSentenceCount == -1,
-                          enabled: playSentence,
-                          onTap: () {
-                            setState(() {
-                              playSentenceCount = -1;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    // 4. 重复行
-                    _buildSettingRow(
-                      title: '重复',
-                      children: [
-                        for (var count in [1, 2, 3, 4, 5])
+                        ],
+                      ),
+                      // 4. 重复行
+                      _buildSettingRow(
+                        title: '重复',
+                        children: [
+                          for (var count in [1, 2, 3, 4, 5])
+                            _buildSettingPill(
+                              label: '$count次',
+                              selected: repeatCount == count,
+                              onTap: () {
+                                setState(() {
+                                  repeatCount = count;
+                                  saveConfig();
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                      // 5. 间隔行
+                      _buildSettingRow(
+                        title: '间隔',
+                        children: [
                           _buildSettingPill(
-                            label: '$count次',
-                            selected: repeatCount == count,
+                            label: '0秒',
+                            selected: playInterval == 0,
                             onTap: () {
                               setState(() {
-                                repeatCount = count;
+                                playInterval = 0;
                                 saveConfig();
                               });
                             },
                           ),
-                      ],
-                    ),
-                    // 5. 间隔行
-                    _buildSettingRow(
-                      title: '间隔',
-                      children: [
-                        _buildSettingPill(
-                          label: '0秒',
-                          selected: playInterval == 0,
-                          onTap: () {
-                            setState(() {
-                              playInterval = 0;
-                              saveConfig();
-                            });
-                          },
+                          _buildSettingPill(
+                            label: '1秒',
+                            selected: playInterval == 1000,
+                            onTap: () {
+                              setState(() {
+                                playInterval = 1000;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                          _buildSettingPill(
+                            label: '2秒',
+                            selected: playInterval == 2000,
+                            onTap: () {
+                              setState(() {
+                                playInterval = 2000;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                          _buildSettingPill(
+                            label: '3秒',
+                            selected: playInterval == 3000,
+                            onTap: () {
+                              setState(() {
+                                playInterval = 3000;
+                                saveConfig();
+                              });
+                            },
+                          ),
+                          _buildSettingPill(
+                            label: '手动',
+                            selected: playInterval == maxIntValue,
+                            onTap: () {
+                              setState(() {
+                                playInterval = maxIntValue;
+                                saveConfig();
+                              });
+                              ToastUtil.info('手指向左滑动，播放下一单词');
+                            },
+                          ),
+                        ],
+                      ),
+                      // 6. 自然沉浸场景行
+                      _buildSettingRow(
+                        title: '场景',
+                        children: [
+                          for (var s in WalkmanScene.values)
+                            _buildSettingPill(
+                              label: s.title,
+                              selected: currentScene == s,
+                              onTap: () {
+                                _applyScene(s);
+                              },
+                            ),
+                        ],
+                      ),
+                      // 7. 环境白噪音音效行（开启自然场景时展示）
+                      if (currentScene.hasAudio)
+                        _buildSettingRow(
+                          title: '音效',
+                          children: [
+                            _buildSettingPill(
+                              label: ambientMuted ? '已静音' : '静音',
+                              selected: ambientMuted,
+                              onTap: () {
+                                _toggleAmbientMute();
+                              },
+                            ),
+                            for (var vol in [0.35, 0.65, 1.0])
+                              _buildSettingPill(
+                                label: '${(vol * 100).round()}%',
+                                selected: !ambientMuted && (ambientVolume - vol).abs() < 0.08,
+                                onTap: () {
+                                  _setAmbientVolume(vol);
+                                },
+                              ),
+                          ],
                         ),
-                        _buildSettingPill(
-                          label: '1秒',
-                          selected: playInterval == 1000,
-                          onTap: () {
-                            setState(() {
-                              playInterval = 1000;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        _buildSettingPill(
-                          label: '2秒',
-                          selected: playInterval == 2000,
-                          onTap: () {
-                            setState(() {
-                              playInterval = 2000;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        _buildSettingPill(
-                          label: '3秒',
-                          selected: playInterval == 3000,
-                          onTap: () {
-                            setState(() {
-                              playInterval = 3000;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                        _buildSettingPill(
-                          label: '手动',
-                          selected: playInterval == maxIntValue,
-                          onTap: () {
-                            setState(() {
-                              playInterval = maxIntValue;
-                              saveConfig();
-                            });
-                            ToastUtil.info('手指向左滑动，播放下一单词');
-                          },
-                        ),
-                      ],
-                    ),
-                    // 6. 其他行
+                    // 8. 其他行
                     _buildSettingRow(
                       title: '其他',
                       children: [
@@ -1393,7 +1645,8 @@ class WalkmanPageState extends State<WalkmanPage> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildSettingRow({

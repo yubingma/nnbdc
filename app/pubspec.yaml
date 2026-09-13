@@ -156,7 +156,9 @@ flutter:
     - assets/protocol.html
     - assets/protocol_android.html
     - assets/audio/
+    - assets/audio/scenes/
     - assets/video/
+    - assets/video/scenes/
     - assets/fonts/
     - assets/cmudict.dict
     - assets/db/initial.sqlite.gz
