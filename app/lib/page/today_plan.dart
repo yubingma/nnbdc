@@ -75,7 +75,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   List<LearningWord>? _todayWords;
 
   /// 今日"加量"中尚未学完的单词数（打卡后额外追加的批次）。
-  /// > 0 表示有加量任务待继续，首页据此提供"继续加量"入口。
+  /// > 0 表示尚有未学完的加量批次，首页据此把主按钮换成"继续学习（加量）"入口。
   int _pendingExtraWordCount = 0;
   Set<String> _masteredWordIds = {};
   /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道配置）
@@ -519,7 +519,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       _completedStepCount += word.getCompletedSteps(_masteredWordIds, trackLen);
     }
 
-    // 加量任务中还有多少词没学完（首页据此提供"继续加量"入口）
+    // 加量任务中还有多少词没学完（首页据此把主按钮换成"继续学习（加量）"入口）
     _pendingExtraWordCount = 0;
     for (final word in _extraWords) {
       final trackLen = trackLenOf(word);
@@ -1262,7 +1262,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 加量主按钮（首页"继续加量"/"再来一组"）
+  /// 加量主按钮（首页"继续学习（加量）"/"再来一组"）
   Widget _buildExtraStudyButton(
     AppThemeConfig themeConfig,
     bool isDarkMode, {
@@ -1301,7 +1301,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_circle_outline_rounded, size: 18, color: Colors.white),
+            // 与"开始学习/继续学习"主按钮同一枚箭头：这里是接着学未完成的加量批次，不是新增单词
+            const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
             const SizedBox(width: 6),
             Text(
               label,
@@ -1367,7 +1368,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             _buildExtraStudyButton(
               themeConfig,
               isDarkMode,
-              label: '继续加量（还剩 $_pendingExtraWordCount 词）',
+              label: '继续学习（加量）',
               onPressed: _resumeExtraStudy,
             )
           else ...[
