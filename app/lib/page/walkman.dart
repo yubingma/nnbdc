@@ -34,15 +34,8 @@ enum WalkmanScene {
   none('极简', null, null),
   rain('闲时听雨', 'assets/video/scenes/rain.mp4', 'assets/audio/scenes/rain.mp3'),
   night('夏夜虫鸣', 'assets/video/scenes/night.mp4', 'assets/audio/scenes/night.mp3'),
-  river('湖光水镜', 'assets/video/scenes/river.mp4', 'assets/audio/scenes/river.mp3'),
-  waves('潮汐海浪', 'assets/video/scenes/waves.mp4', 'assets/audio/scenes/waves.mp3'),
-  forest('森林微风', 'assets/video/scenes/forest.mp4', 'assets/audio/scenes/forest.mp3'),
-  fire('围炉夜话', 'assets/video/scenes/fire.mp4', 'assets/audio/scenes/fire.mp3'),
   mist('空谷晨雾', 'assets/video/scenes/mist.mp4', 'assets/audio/scenes/mist.mp3'),
-  cosmos('瀚海星云', 'assets/video/scenes/cosmos.mp4', 'assets/audio/scenes/cosmos.mp3'),
-  snow('云巅雪峰', 'assets/video/scenes/snow.mp4', 'assets/audio/scenes/snow.mp3'),
-  sky('晴空白云', 'assets/video/scenes/sky.mp4', 'assets/audio/scenes/sky.mp3'),
-  winter('飞雪松林', 'assets/video/scenes/winter.mp4', 'assets/audio/scenes/winter.mp3');
+  river('湖光水镜', 'assets/video/scenes/river.mp4', 'assets/audio/scenes/river.mp3');
 
   final String title;
   final String? videoAsset;
@@ -955,57 +948,6 @@ class WalkmanPageState extends State<WalkmanPage> {
               ),
             ),
           ),
-
-        // 播放/暂停悬浮控制按钮
-        Padding(
-          padding: const EdgeInsets.only(top: 28.0),
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                if (isShowingSettingPanel) {
-                  playEvenIfSettingPanelIsShowing = !playEvenIfSettingPanelIsShowing;
-                  if (playEvenIfSettingPanelIsShowing) {
-                    unawaited(resumePlayback());
-                  } else {
-                    pausePlayback();
-                  }
-                } else if (isPaused) {
-                  unawaited(resumePlayback());
-                } else {
-                  pausePlayback();
-                }
-              });
-            },
-            child: Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: hasScene ? const Color(0xDD1E293B) : context.cardBg,
-                border: Border.all(
-                  color: hasScene
-                      ? Colors.white.withValues(alpha: 0.25)
-                      : themeConfig.primaryColor.withValues(alpha: 0.35),
-                  width: 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: themeConfig.primaryColor.withValues(alpha: hasScene ? 0.25 : 0.16),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                (isShowingSettingPanel ? playEvenIfSettingPanelIsShowing : !isPaused)
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
-                size: 30,
-                color: hasScene ? Colors.white : themeConfig.primaryColor,
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -1139,21 +1081,17 @@ class WalkmanPageState extends State<WalkmanPage> {
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
-              child: Container(
+              child: SizedBox(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: hasScene
-                      ? Colors.black.withValues(alpha: 0.35)
-                      : (isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : Colors.black.withValues(alpha: 0.04)),
-                ),
-                child: Icon(
-                  Icons.close_rounded,
-                  size: 20,
-                  color: hasScene ? Colors.white : themeConfig.textPrimary,
+                child: Center(
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 22,
+                    color: hasScene
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : themeConfig.textPrimary.withValues(alpha: 0.75),
+                  ),
                 ),
               ),
             ),
@@ -1223,25 +1161,19 @@ class WalkmanPageState extends State<WalkmanPage> {
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => toggleSettingPanel(),
-              child: Container(
+              child: SizedBox(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isShowingSettingPanel
-                      ? themeConfig.primaryColor.withValues(alpha: 0.15)
-                      : (hasScene
-                          ? Colors.black.withValues(alpha: 0.35)
-                          : (isDark
-                              ? Colors.white.withValues(alpha: 0.08)
-                              : Colors.black.withValues(alpha: 0.04))),
-                ),
-                child: Icon(
-                  Icons.tune_rounded,
-                  size: 19,
-                  color: isShowingSettingPanel
-                      ? themeConfig.primaryColor
-                      : (hasScene ? Colors.white : themeConfig.textPrimary),
+                child: Center(
+                  child: Icon(
+                    Icons.tune_rounded,
+                    size: 21,
+                    color: isShowingSettingPanel
+                        ? themeConfig.primaryColor
+                        : (hasScene
+                            ? Colors.white.withValues(alpha: 0.85)
+                            : themeConfig.textPrimary.withValues(alpha: 0.75)),
+                  ),
                 ),
               ),
             ),
@@ -1347,7 +1279,15 @@ class WalkmanPageState extends State<WalkmanPage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: isLandscape ? 12.0 : 24.0),
+                  // 固定在下方的高透明度播放/暂停控制按钮（无光晕，极简低干扰）
+                  _renderPlayPauseButton(),
+                  SizedBox(
+                    height: isLandscape
+                        ? 8.0
+                        : (MediaQuery.of(context).padding.bottom > 0
+                            ? MediaQuery.of(context).padding.bottom + 4.0
+                            : 20.0),
+                  ),
                 ],
               ),
             ),
@@ -1377,6 +1317,58 @@ class WalkmanPageState extends State<WalkmanPage> {
           ),
         ),
       ],
+    );
+  }
+
+  /// 固定在屏幕下方的高透明度低干扰播放/暂停按钮
+  Widget _renderPlayPauseButton() {
+    final hasScene = currentScene != WalkmanScene.none;
+    final isPlaying = isShowingSettingPanel ? playEvenIfSettingPanelIsShowing : !isPaused;
+    final isDark = context.isDarkMode;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() {
+          if (isShowingSettingPanel) {
+            playEvenIfSettingPanelIsShowing = !playEvenIfSettingPanelIsShowing;
+            if (playEvenIfSettingPanelIsShowing) {
+              unawaited(resumePlayback());
+            } else {
+              pausePlayback();
+            }
+          } else if (isPaused) {
+            unawaited(resumePlayback());
+          } else {
+            pausePlayback();
+          }
+        });
+      },
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: hasScene
+              ? Colors.white.withValues(alpha: 0.10)
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.05)),
+          border: Border.all(
+            color: (hasScene
+                    ? Colors.white
+                    : (isDark ? Colors.white : Colors.black))
+                .withValues(alpha: 0.12),
+            width: 0.8,
+          ),
+        ),
+        child: Icon(
+          isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+          size: 24,
+          color: (hasScene ? Colors.white : context.themeConfig.textPrimary)
+              .withValues(alpha: 0.38),
+        ),
+      ),
     );
   }
 

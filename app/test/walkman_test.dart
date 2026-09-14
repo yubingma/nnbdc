@@ -125,7 +125,7 @@ void main() {
     });
 
     test('WalkmanScene enum properties and assets configuration', () {
-      expect(WalkmanScene.values.length, equals(12));
+      expect(WalkmanScene.values.length, equals(5));
       expect(WalkmanScene.none.hasVideo, isFalse);
       expect(WalkmanScene.none.hasAudio, isFalse);
 
@@ -141,59 +141,17 @@ void main() {
       expect(WalkmanScene.night.videoAsset, equals('assets/video/scenes/night.mp4'));
       expect(WalkmanScene.night.audioAsset, equals('assets/audio/scenes/night.mp3'));
 
-      expect(WalkmanScene.river.title, equals('湖光水镜'));
-      expect(WalkmanScene.river.hasVideo, isTrue);
-      expect(WalkmanScene.river.hasAudio, isTrue);
-      expect(WalkmanScene.river.videoAsset, equals('assets/video/scenes/river.mp4'));
-      expect(WalkmanScene.river.audioAsset, equals('assets/audio/scenes/river.mp3'));
-
-      expect(WalkmanScene.waves.title, equals('潮汐海浪'));
-      expect(WalkmanScene.waves.hasVideo, isTrue);
-      expect(WalkmanScene.waves.hasAudio, isTrue);
-      expect(WalkmanScene.waves.videoAsset, equals('assets/video/scenes/waves.mp4'));
-      expect(WalkmanScene.waves.audioAsset, equals('assets/audio/scenes/waves.mp3'));
-
-      expect(WalkmanScene.forest.title, equals('森林微风'));
-      expect(WalkmanScene.forest.hasVideo, isTrue);
-      expect(WalkmanScene.forest.hasAudio, isTrue);
-      expect(WalkmanScene.forest.videoAsset, equals('assets/video/scenes/forest.mp4'));
-      expect(WalkmanScene.forest.audioAsset, equals('assets/audio/scenes/forest.mp3'));
-
-      expect(WalkmanScene.fire.title, equals('围炉夜话'));
-      expect(WalkmanScene.fire.hasVideo, isTrue);
-      expect(WalkmanScene.fire.hasAudio, isTrue);
-      expect(WalkmanScene.fire.videoAsset, equals('assets/video/scenes/fire.mp4'));
-      expect(WalkmanScene.fire.audioAsset, equals('assets/audio/scenes/fire.mp3'));
-
       expect(WalkmanScene.mist.title, equals('空谷晨雾'));
       expect(WalkmanScene.mist.hasVideo, isTrue);
       expect(WalkmanScene.mist.hasAudio, isTrue);
       expect(WalkmanScene.mist.videoAsset, equals('assets/video/scenes/mist.mp4'));
       expect(WalkmanScene.mist.audioAsset, equals('assets/audio/scenes/mist.mp3'));
 
-      expect(WalkmanScene.cosmos.title, equals('瀚海星云'));
-      expect(WalkmanScene.cosmos.hasVideo, isTrue);
-      expect(WalkmanScene.cosmos.hasAudio, isTrue);
-      expect(WalkmanScene.cosmos.videoAsset, equals('assets/video/scenes/cosmos.mp4'));
-      expect(WalkmanScene.cosmos.audioAsset, equals('assets/audio/scenes/cosmos.mp3'));
-
-      expect(WalkmanScene.snow.title, equals('云巅雪峰'));
-      expect(WalkmanScene.snow.hasVideo, isTrue);
-      expect(WalkmanScene.snow.hasAudio, isTrue);
-      expect(WalkmanScene.snow.videoAsset, equals('assets/video/scenes/snow.mp4'));
-      expect(WalkmanScene.snow.audioAsset, equals('assets/audio/scenes/snow.mp3'));
-
-      expect(WalkmanScene.sky.title, equals('晴空白云'));
-      expect(WalkmanScene.sky.hasVideo, isTrue);
-      expect(WalkmanScene.sky.hasAudio, isTrue);
-      expect(WalkmanScene.sky.videoAsset, equals('assets/video/scenes/sky.mp4'));
-      expect(WalkmanScene.sky.audioAsset, equals('assets/audio/scenes/sky.mp3'));
-
-      expect(WalkmanScene.winter.title, equals('飞雪松林'));
-      expect(WalkmanScene.winter.hasVideo, isTrue);
-      expect(WalkmanScene.winter.hasAudio, isTrue);
-      expect(WalkmanScene.winter.videoAsset, equals('assets/video/scenes/winter.mp4'));
-      expect(WalkmanScene.winter.audioAsset, equals('assets/audio/scenes/winter.mp3'));
+      expect(WalkmanScene.river.title, equals('湖光水镜'));
+      expect(WalkmanScene.river.hasVideo, isTrue);
+      expect(WalkmanScene.river.hasAudio, isTrue);
+      expect(WalkmanScene.river.videoAsset, equals('assets/video/scenes/river.mp4'));
+      expect(WalkmanScene.river.audioAsset, equals('assets/audio/scenes/river.mp3'));
     });
   });
 
