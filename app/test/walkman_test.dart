@@ -153,7 +153,7 @@ void main() {
       expect(WalkmanScene.waves.videoAsset, equals('assets/video/scenes/waves.mp4'));
       expect(WalkmanScene.waves.audioAsset, equals('assets/audio/scenes/waves.mp3'));
 
-      expect(WalkmanScene.forest.title, equals('高山流云'));
+      expect(WalkmanScene.forest.title, equals('森林微风'));
       expect(WalkmanScene.forest.hasVideo, isTrue);
       expect(WalkmanScene.forest.hasAudio, isTrue);
       expect(WalkmanScene.forest.videoAsset, equals('assets/video/scenes/forest.mp4'));

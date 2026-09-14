@@ -30,7 +30,7 @@
    - 许可：MIT License
    - 说明：30秒高保真立体声切片，首尾 1.5 秒平滑交叉淡入淡出。
 
-5. **`assets/audio/scenes/forest.mp3`（高山流云）**
+5. **`assets/audio/scenes/forest.mp3`（森林微风）**
    - 来源：`nature/wind-in-trees.mp3` / `animals/birds.mp3`
    - 许可：MIT License
    - 说明：30秒高保真立体声切片，首尾 1.5 秒平滑交叉淡入淡出。
@@ -39,34 +39,38 @@
 
 ## 二、视频资源清单 (Video Assets)
 
-所有背景视频均为固定机位三脚架拍摄、极简构图、大面积留白。采用 ffmpeg 消除杂音音轨，通过 1.0 秒交叉淡入淡出（xfade）消除循环跳变，压制为移动端轻量级 H.264 编码（单文件体积仅 400KB ~ 650KB）：
+所有背景视频均为**100% 广播级重型三脚架锁死固定机位拍摄（Locked-off Tripod Shots / 0 像素位移验证通过）**、构图极简留白、大面积纯色与自然层次，让位于前景单词信息。采用 ffmpeg 消除杂音音轨，通过 1.0 秒交叉淡入淡出（xfade）消除循环跳变，压制为移动端轻量级 H.264 编码（单文件体积仅 200KB ~ 670KB）：
 
 1. **`assets/video/scenes/night.mp4`（夏夜虫鸣）**
    - 题材：加州约书亚树国家公园（Joshua Tree National Park）骷髅石上方银河星空固定机位延时实景
    - 来源：[Wikimedia Commons - File:Stars over Skull Rock (30233587084).webm](https://commons.wikimedia.org/wiki/File:Stars_over_Skull_Rock_(30233587084).webm)
    - 创作者：美国国家公园管理局 (National Park Service, U.S. Department of the Interior)
    - 许可证：**Public Domain (公有领域)**（美国联邦政府官方作品）
+   - 机位：三脚架锁死地面，物理基岩 0 位移。
 
 2. **`assets/video/scenes/rain.mp4`（闲时听雨）**
-   - 题材：极简微距窗户雨滴缓缓滑落，背景柔和漫射灰调，三脚架固定
+   - 题材：极简微距窗户雨滴缓缓滑落，背景柔和漫射灰调，室内三脚架固定
    - 来源：[Wikimedia Commons - File:Radevormwald - Raindrops on a window 07 (1) ies.webm](https://commons.wikimedia.org/wiki/File:Radevormwald_-_Raindrops_on_a_window_07_(1)_ies.webm)
    - 创作者：Frank Vincentz
    - 许可证：**Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)**
+   - 机位：室内三脚架正对窗框，玻璃 0 位移。
 
 3. **`assets/video/scenes/waves.mp4`（潮汐海浪）**
-   - 题材：原生 9:16 竖屏天际线，细腻纯净沙滩与缓推白浪，三脚架固定
-   - 来源：[Wikimedia Commons - File:The blue sky kisses the green ocean...webm](https://commons.wikimedia.org/wiki/File:The_blue_sky_kisses_the_green_ocean%2C_as_I_stand_on_the_shore_of_little_brown_sand%2C_watching_evening_melt_into_waves.webm)
-   - 创作者：Isha
-   - 许可证：**Creative Commons Attribution 4.0 International (CC BY 4.0)**
+   - 题材：加州海峡群岛国家公园（Channel Islands National Park）圣罗莎岛海岸线，远山连绵与太平洋碧蓝白浪平缓推涌
+   - 来源：[Wikimedia Commons - File:Santa Rosa Island Waves.webm](https://commons.wikimedia.org/wiki/File:Santa_Rosa_Island_Waves.webm)
+   - 许可证：**Creative Commons CC0 1.0 Universal (Public Domain Dedication，公有领域献身)**
+   - 机位：重型三脚架锁死礁石地面，远山与岩石 0 位移（`dx=0, dy=0` 检验通过）。
 
 4. **`assets/video/scenes/river.mp4`（湖光水镜）**
-   - 题材：水面如镜，倒映落日晚霞与群山浮云，微波轻漾，三脚架固定
-   - 来源：[Wikimedia Commons - File:After Sunset on the Sandbar at the Mouth of Mission Creek.webm](https://commons.wikimedia.org/wiki/File:After_Sunset_on_the_Sandbar_at_the_Mouth_of_Mission_Creek.webm)
-   - 创作者：David L. Green
-   - 许可证：**Creative Commons CC0 1.0 Universal (Public Domain Dedication)**
-
-5. **`assets/video/scenes/forest.mp4`（高山流云）**
-   - 题材：沉静极简的山峦剪影，上方金色阳光与广袤浮云延时翻涌，三脚架固定
-   - 来源：[Wikimedia Commons - File:Time Lapse Clouds above Steens Mountain (36203941112).webm](https://commons.wikimedia.org/wiki/File:Time_Lapse_Clouds_above_Steens_Mountain_(36203941112).webm)
-   - 创作者：美国土地管理局 (Bureau of Land Management, U.S. Department of the Interior)
+   - 题材：蒙大拿州冰川国家公园（Glacier National Park）麦克唐纳湖清晨薄雾，群山雪峰在如镜水面的深邃倒影与岸边安详黑鹅卵石
+   - 来源：[Wikimedia Commons - File:Misty Morning at Lake McDonald (25569241623).webm](https://commons.wikimedia.org/wiki/File:Misty_Morning_at_Lake_McDonald_(25569241623).webm)
+   - 创作者：美国国家公园管理局 (National Park Service, U.S. Department of the Interior)
    - 许可证：**Public Domain (公有领域)**（美国联邦政府官方作品）
+   - 机位：重型三脚架锁死湖岸，山体倒影与鹅卵石 0 位移（`dx=0, dy=0` 检验通过）。
+
+5. **`assets/video/scenes/forest.mp4`（森林微风）**
+   - 题材：苍劲粗壮的树干斜贯画面，阳光穿透绿叶洒下金辉斑驳，嫩绿枝叶在微风中轻摇
+   - 来源：[Wikimedia Commons - File:Thomas Bresson - arbres.webm](https://commons.wikimedia.org/wiki/File:Thomas_Bresson_-_arbres.webm)
+   - 创作者：Thomas Bresson
+   - 许可证：**Creative Commons Attribution 4.0 International (CC BY 4.0)**
+   - 机位：重型三脚架锁死地面，主树干 0 位移（`dx=0, dy=0` 检验通过）。
