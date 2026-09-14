@@ -113,30 +113,31 @@
    - 机位：石壁炉前三脚架锁死地面，石质炉膛 0 位移（`dx=0, dy=0` 检验通过）。
 
 7. **`assets/video/scenes/mist.mp4`（空谷晨雾）**
-   - 题材：亚利桑那州大峡谷国家公园（Grand Canyon National Park）亚基点（Yaki Point）冬日暴风雪云海翻腾壮阔延时实景，近景绝壁岩石坚实沉稳，远景浓密云海在山峦间流卷升腾
-   - 来源：[Wikimedia Commons - File:Time-lapse Video- Winter Storm at Yaki Point Grand Canyon 2014-01-31 (12242435983).webm](https://commons.wikimedia.org/wiki/File:Time-lapse_Video-_Winter_Storm_at_Yaki_Point_Grand_Canyon_2014-01-31_%2812242435983%29.webm)
-   - 创作者：美国国家公园管理局 (National Park Service, U.S. Department of the Interior)
-   - 许可证：**Public Domain (公有领域)**（美国联邦政府官方作品）
-   - 机位：亚基点重型脚架深锁岩石地面，基岩 0 位移（`dx=0, dy=0` 相位相关检验通过，彻底根除抖动）。
+   - 题材：静水晨雾水墨画卷，远山如黛隐于迷蒙白雾之中，秋色浸染林木，水面上薄雾如轻纱徐徐升腾流淌，近处水波涟漪微澜，极其平缓空灵
+   - 来源：[Wikimedia Commons - File:Misty river 47 seconds.webm](https://commons.wikimedia.org/wiki/File:Misty_river_47_seconds.webm)
+   - 许可证：**Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**
+   - 机位：三脚架锁死地面（50fps 高清实拍，真实时间无快进延时，8.0 秒平滑无缝循环）。
 
 8. **`assets/video/scenes/cosmos.mp4`（瀚海星云）**
-   - 题材：哈勃太空望远镜超级计算机精确重构的猎户座大星云（Orion Nebula）3D 深度穿行漫游，气体光幕舒展、色彩如琉璃变幻，繁星点缀，深邃幽静
-   - 来源：[Wikimedia Commons - File:Orion Nebula 3D Fly-Through - HST.ogv](https://commons.wikimedia.org/wiki/File:Orion_Nebula_3D_Fly-Through_-_HST.ogv)
-   - 创作者：NASA, ESA, and F. Summers, G. Bacon, Z. Levay, and J. DePasquale (STScI/SAO)
-   - 许可证：**Public Domain (公有领域)**（美国 NASA / STScI 官方公有领域）
-   - 构图：9:16 居中深空，大面积黑色与暗调星云留白。
+   - 题材：乌拉圭波洛尼奥角（Cabo Polonio）深邃夜幕与璀璨银河，孤傲树木剪影，夜空繁星柔和微弱呼吸闪烁，恒古宁静，无剧烈运镜
+   - 来源：[Wikimedia Commons - File:Cabo Polonio - Árboles y Vía Láctea.webm](https://commons.wikimedia.org/wiki/File:Cabo_Polonio_-_%C3%81rboles_y_V%C3%ADa_L%C3%A1ctea.webm)
+   - 创作者：Fatu19
+   - 许可证：**Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**
+   - 构图：9:16 居中深蓝苍穹与银河，静止地平线，搭配西藏颂钵空灵泛音。
 
 9. **`assets/video/scenes/snow.mp4`（云巅雪峰）**
-   - 题材：瑞士采尔马特看阿尔卑斯马特洪峰（Matterhorn）雪山之巅隐入云雾、圣光自云层斜射倾泻向森林幽谷实景
-   - 来源：[Wikimedia Commons - File:Timelapse of the Matterhorn viewed from Zermatt.webm](https://commons.wikimedia.org/wiki/File:Timelapse_of_the_Matterhorn_viewed_from_Zermatt.webm)
-   - 许可证：**Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**
-   - 机位：采尔马特观景重型三脚架锁死地面，山体基底 0 位移（`dx=0, dy=0` 检验通过）。
+   - 题材：瑞士阿尔卑斯马特洪峰（Matterhorn）全高清实拍，白雪皑皑的雄伟雪峰岿然不动直插蔚蓝苍穹，冰川静穆，真实时间无快进，0 强光闪烁
+   - 来源：[Wikimedia Commons - File:Gornergrat-matterhorn-2010-05.ogv](https://commons.wikimedia.org/wiki/File:Gornergrat-matterhorn-2010-05.ogv)
+   - 创作者：Martin Steiger
+   - 许可证：**Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)**
+   - 机位：高纳葛拉特观景台重型专业三脚架锁死地面，雪峰 0 位移。
 
 10. **`assets/video/scenes/sky.mp4`（晴空白云）**
-    - 题材：盛夏午后树梢框景下的纯净蔚蓝晴空与棉花糖白云悠悠舒展翻滚，大面积明朗通透的蓝白自然色彩，治愈提神
-    - 来源：[Wikimedia Commons - File:2011-06-06-Timelapse-clouds.ogv](https://commons.wikimedia.org/wiki/File:2011-06-06-Timelapse-clouds.ogv)
-    - 许可证：**Creative Commons CC0 1.0 Universal (Public Domain Dedication，公有领域献身)**
-    - 机位：重型三脚架正对晴空与树梢，树干框景 0 位移（`dx=0, dy=0` 检验通过）。
+    - 题材：澄澈浅天蓝穹顶、正中央一轮柔和温暖的金色暖阳、高空极轻微漫游的白色云层，大面积极简留白与明媚通透色彩，视觉负荷接近于 0，极度沉静舒适
+    - 来源：[NASA Scientific Visualization Studio - Clouds 101 (SVS20383 - HightAltCloud V05)](https://commons.wikimedia.org/wiki/File:Clouds_101_(SVS20383_-_HightAltCloud_V05).webm)
+    - 创作者：NASA's Scientific Visualization Studio
+    - 许可证：**Public Domain (公有领域)**（美国 NASA 官方公有领域作品）
+    - 机位：中心构图，高空无抖动恒定视野，7.0 秒平滑无缝循环。
 
 11. **`assets/video/scenes/winter.mp4`（飞雪松林）**
     - 题材：北欧瑞典图恩托普静谧森林落雪实景，墨绿松柏枝头积雪皑皑，漫天鹅毛大雪静静飘洒，冬日氛围感拉满
