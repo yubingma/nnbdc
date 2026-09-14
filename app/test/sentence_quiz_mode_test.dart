@@ -7,6 +7,7 @@ import 'package:nnbdc/page/bdc/bdc.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/state.dart';
+import 'package:nnbdc/util/platform_util.dart';
 import 'package:provider/provider.dart' as provider;
 
 class MockBdcNotifier extends BdcNotifier {
@@ -79,6 +80,16 @@ class MockBdcNotifier extends BdcNotifier {
 }
 
 void main() {
+  setUp(() {
+    PlatformUtils.asrSupportedOverride = true;
+    PlatformUtils.englishAsrSupportedOverride = true;
+  });
+
+  tearDown(() {
+    PlatformUtils.asrSupportedOverride = null;
+    PlatformUtils.englishAsrSupportedOverride = null;
+  });
+
   testWidgets('例句英译汉(EnSentence2Ch)题目区显示英文拼写与选择题选项', (tester) async {
     final (testWord, mockGetWordResult) = _createTestData();
 
@@ -117,6 +128,10 @@ void main() {
 
     // 验证展示了例句内容
     expect(find.textContaining('This is a'), findsOneWidget);
+
+    // 验证选择题模式下切换按钮文案为「说例句」（非「说释义」）
+    expect(find.text('说例句'), findsOneWidget);
+    expect(find.text('说释义'), findsNothing);
   });
 
   testWidgets('例句汉译英(ChSentence2En)题目区展示中文例句与单行横滑释义', (tester) async {
@@ -162,5 +177,85 @@ void main() {
     // 验证展示了单词释义项（词性与释义内容）
     expect(find.textContaining('测试词'), findsWidgets);
     expect(find.textContaining('考验'), findsWidgets);
+
+    // 验证选择题模式下切换按钮文案为「读例句」（非「说发音」）
+    expect(find.text('读例句'), findsOneWidget);
+  });
+
+  testWidgets('例句模式文案彻底区分于单词模式（语音模式未作答状态）', (tester) async {
+    final (testWord, mockGetWordResult) = _createTestData();
+
+    final enStateUnanswered = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockGetWordResult,
+      studyStep: StudyStep.enSentence2Ch.json,
+      tabIndex: 0, // 语音模式
+      hasFinishedAnswering: false,
+      words: [testWord, ...mockGetWordResult.otherWords!],
+      correctAnswerIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: ProviderScope(
+          overrides: [
+            bdcNotifierProvider.overrideWith(() => MockBdcNotifier(enStateUnanswered)),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: BdcPage(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // 顶栏提示必须为「请说出例句翻译：」，绝不能是「请说出中文释义：」
+    expect(find.text('请说出例句翻译：'), findsOneWidget);
+    expect(find.text('请说出中文释义：'), findsNothing);
+    // 输入框占位提示为「请按住下方按钮，说出例句翻译」
+    expect(find.text('请按住下方按钮，说出例句翻译'), findsOneWidget);
+    // PTT 按钮在未作答时显示为「按住说话」
+    expect(find.text('按住说话'), findsOneWidget);
+  });
+
+  testWidgets('例句模式下已完成答题/看答案状态PTT按钮常驻且变为「按住练习」', (tester) async {
+    final (testWord, mockGetWordResult) = _createTestData();
+
+    final enStateAnswered = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockGetWordResult,
+      studyStep: StudyStep.enSentence2Ch.json,
+      tabIndex: 0, // 语音模式
+      hasFinishedAnswering: true,
+      canLeaveCurrWord: true,
+      words: [testWord, ...mockGetWordResult.otherWords!],
+      correctAnswerIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: ProviderScope(
+          overrides: [
+            bdcNotifierProvider.overrideWith(() => MockBdcNotifier(enStateAnswered)),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: BdcPage(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // 核心验证：答完题后 PTT 按钮绝不能消失留下空白，应常驻且变为「按住练习」
+    expect(find.text('按住练习'), findsOneWidget);
   });
 }
+

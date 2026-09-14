@@ -7,6 +7,8 @@ class PlatformUtils {
   /// 无法验证 PTT 按下→启动识别的链路，故允许测试注入 true。
   @visibleForTesting
   static bool? asrSupportedOverride;
+  @visibleForTesting
+  static bool? englishAsrSupportedOverride;
 
   static bool _isWeb() {
     // 通过kIsWeb变量判断是否为web环境!
@@ -63,7 +65,7 @@ class PlatformUtils {
   /// 判断当前平台是否支持英文ASR
   /// iOS 和 Android (Sherpa-ONNX) 都支持英文语音识别
   static bool isEnglishAsrSupported() {
-    return isIOS || isAndroid;
+    return englishAsrSupportedOverride ?? asrSupportedOverride ?? (isIOS || isAndroid);
   }
 
   /// 判断当前平台是否支持TTS（文本转语音）

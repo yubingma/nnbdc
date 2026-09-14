@@ -465,11 +465,19 @@ extension BdcPageStateUIComponents on BdcPageState {
       return const SizedBox.shrink();
     }
     final isDarkMode = _cachedIsDarkMode;
-    // 双 Tab 模式下：index 0 是说发音/说释义，index 1 是选择题
     final bool isSpeakMode = state.tabIndex == 0;
-    final bool isEn2Ch = state.studyStep == StudyStep.en2Ch.json ||
-        state.studyStep == StudyStep.enSentence2Ch.json;
-    final String targetLabel = isSpeakMode ? '选择题' : (isEn2Ch ? '说释义' : '说发音');
+    final String targetLabel;
+    if (isSpeakMode) {
+      targetLabel = '选择题';
+    } else if (state.studyStep == StudyStep.enSentence2Ch.json) {
+      targetLabel = '说中文';
+    } else if (state.studyStep == StudyStep.chSentence2En.json) {
+      targetLabel = '说英文';
+    } else if (state.studyStep == StudyStep.en2Ch.json) {
+      targetLabel = '说释义';
+    } else {
+      targetLabel = '说发音';
+    }
     final IconData targetIcon =
         isSpeakMode ? Icons.fact_check_outlined : Icons.mic_none_rounded;
 
@@ -791,14 +799,21 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               Flexible(
                                                 child: Text(
                                                   (state.studyStep ==
+                                                          StudyStep
+                                                              .enSentence2Ch
+                                                              .json)
+                                                      ? '请说出例句翻译：'
+                                                      : (state.studyStep ==
                                                               StudyStep
-                                                                  .en2Ch.json ||
-                                                          state.studyStep ==
-                                                              StudyStep
-                                                                  .enSentence2Ch
+                                                                  .chSentence2En
                                                                   .json)
-                                                      ? '请说出中文释义：'
-                                                      : '请说出单词发音：',
+                                                          ? '请朗读英文例句：'
+                                                          : (state.studyStep ==
+                                                                  StudyStep
+                                                                      .en2Ch
+                                                                      .json)
+                                                              ? '请说出中文释义：'
+                                                              : '请说出单词发音：',
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: TextStyle(
@@ -1787,8 +1802,8 @@ extension BdcPageStateUIComponents on BdcPageState {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(child: cardWidget),
-        // 3. 例句环节底部固定"按住说话"按钮：独立于滚动区，位置不随识别文本/反馈变化
-        if (isSentence && !state.hasFinishedAnswering) _buildPttSpeakButton(),
+        // 3. 例句环节底部固定"按住说话/练习"按钮：独立于滚动区，位置不随识别文本/反馈变化
+        if (isSentence) _buildPttSpeakButton(),
       ],
     );
   }
@@ -1914,7 +1929,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   Widget _buildSentenceAnswerArea() {
     final isDarkMode = _cachedIsDarkMode;
     final hintText = state.studyStep == StudyStep.enSentence2Ch.json
-        ? '请按住下方按钮，说出中文翻译'
+        ? '请按住下方按钮，说出例句翻译'
         : (state.studyStep == StudyStep.chSentence2En.json
             ? '请按住下方按钮，朗读英文例句'
             : '请按住下方按钮说话');
@@ -2004,6 +2019,8 @@ extension BdcPageStateUIComponents on BdcPageState {
   /// 按下即开始、任何抬起即停止，手指抖动不会中断识别。
   Widget _buildPttSpeakButton() {
     final isDarkMode = _cachedIsDarkMode;
+    final isFinished = state.hasFinishedAnswering;
+    final idleLabel = isFinished ? '按住练习' : '按住说话';
     // 用 Consumer 细粒度监听 isPttPressed，避免依赖顶层 _activeState 缓存（顶层按 BdcStateUiSignature 重建，不含该字段）
     return Consumer(
       builder: (context, ref, _) {
@@ -2025,6 +2042,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               // 按住说话时收起答案区键盘，避免键盘与说话手势冲突
               if (_sentenceAnswerFocusNode.hasFocus) {
                 _sentenceAnswerFocusNode.unfocus();
+              }
+              if (state.hasFinishedAnswering) {
+                notifier.hideAnswer();
               }
               notifier.startPttAsr();
             },
@@ -2052,7 +2072,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isPressed ? '松开结束并判定' : '按住说话',
+                    isPressed ? '松开结束并判定' : idleLabel,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

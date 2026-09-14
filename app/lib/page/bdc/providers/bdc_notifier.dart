@@ -3334,8 +3334,16 @@ class BdcNotifier extends _$BdcNotifier {
   List<Tab> get dynamicTabs {
     List<Tab> tabs = [];
     if (_shouldShowSpeakTab) {
-      final isEn2Ch = state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.enSentence2Ch.json;
-      final speakLabel = isEn2Ch ? '说释义' : '说发音';
+      final String speakLabel;
+      if (state.studyStep == StudyStep.enSentence2Ch.json) {
+        speakLabel = '说例句';
+      } else if (state.studyStep == StudyStep.chSentence2En.json) {
+        speakLabel = '读例句';
+      } else if (state.studyStep == StudyStep.en2Ch.json) {
+        speakLabel = '说释义';
+      } else {
+        speakLabel = '说发音';
+      }
       tabs.add(Tab(
         height: 30,
         child: Row(
