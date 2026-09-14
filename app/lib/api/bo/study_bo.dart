@@ -28,6 +28,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 
 /// 学习批次区间模型
 class BatchRange {
@@ -1600,6 +1601,10 @@ class StudyBo {
         todayLearnedTimes: stepCount, // 饱和今天的所有环节
       );
       await StudyCacheManager().saveAndSyncWordState(db, updatedWord);
+
+      // 学习中单词达到已掌握/毕业：播放泡泡回馈音效 (bubble-pop.wav)，给用户正向激励并便于运维感知
+      StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.0, volume: 0.8);
+      Global.logger.i('🫧 [Mastered-Sound] 学习中单词 ${learningWord.wordId} 已掌握/毕业，触发泡泡回馈音效 (bubble-pop.wav)');
     } else {
       // 还在规划阶段：直接删除该学习记录
       await StudyCacheManager().deleteAndSyncWordState(db, learningWord);
