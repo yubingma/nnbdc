@@ -445,7 +445,7 @@ class FinishPageState extends State<FinishPage> {
                   icon: Icons.add_circle_outline_rounded,
                   iconColor: themeConfig.primaryColor,
                   title: '再来一组',
-                  subtitle: '趁状态正好，再背 10 个单词',
+                  subtitle: '趁状态正好，再背 ${StudyBo.batchSize} 个单词',
                   onTap: _startExtraStudy,
                 ),
                 _buildActionDivider(themeConfig),
