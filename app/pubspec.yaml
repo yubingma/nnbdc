@@ -151,6 +151,7 @@ flutter:
   assets:
     - pubspec.yaml
     - assets/images/
+    - assets/images/scenes/
     - assets/privacy.html
     - assets/privacy_android.html
     - assets/protocol.html

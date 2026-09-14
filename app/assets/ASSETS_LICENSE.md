@@ -1,8 +1,8 @@
 # 随身听场景媒体资源合规与开源许可声明 (Scene Assets License)
 
-本项目随身听（Walkman）功能所使用的微动态背景视频及环境白噪音音频，均来自 100% 免版权争议的公共领域（Public Domain / CC0）或开源项目（MIT License / CC BY 3.0 / CC BY-SA 4.0）。
+本项目随身听（Walkman）功能所使用的微动态背景视频、高清自然风景背景图片及环境白噪音音频，均来自 100% 免版权争议的公共领域（Public Domain / CC0）或开源项目（MIT License / CC BY 3.0 / CC BY-SA 4.0）。
 
-所有镜头均为**专业三脚架固定机位拍摄（Zero Shake / Rock-Solid Tripod）**，构图极简留白，专为沉浸式单词记忆与学习心流设计。
+所有镜头与构图均为专业机位拍摄，极简留白，专为沉浸式单词记忆与学习心流设计。
 
 ---
 
@@ -32,9 +32,7 @@
 
 ---
 
-## 二、视频资源清单 (Video Assets)
-
-所有背景视频均为**100% 广播级重型三脚架锁死固定机位拍摄（Locked-off Tripod Shots / 0 像素位移验证通过）**、构图极简留白、大面积纯色与自然层次，让位于前景单词信息。采用 ffmpeg 消除杂音音轨，通过 1.0 秒交叉淡入淡出（xfade）消除循环跳变，压制为移动端轻量级 H.264 编码（单文件体积仅 200KB ~ 1.3MB）：
+## 二、微动态视频资源清单 (Video Assets)
 
 1. **`assets/video/scenes/rain.mp4`（闲时听雨）**
    - 题材：极简微距窗户雨滴缓缓滑落，背景柔和漫射灰调，室内三脚架固定
@@ -43,22 +41,27 @@
    - 许可证：**Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)**
    - 机位：室内三脚架正对窗框，玻璃 0 位移。
 
-2. **`assets/video/scenes/night.mp4`（夏夜虫鸣）**
-   - 题材：加州约书亚树国家公园（Joshua Tree National Park）骷髅石上方银河星空固定机位延时实景
+---
+
+## 三、高清定格与精选图片资源清单 (Image Assets)
+
+1. **`assets/images/scenes/night.jpg`（夏夜虫鸣 - 定格画面）**
+   - 题材：加州约书亚树国家公园（Joshua Tree National Park）骷髅石上方银河星空定格实景
    - 来源：[Wikimedia Commons - File:Stars over Skull Rock (30233587084).webm](https://commons.wikimedia.org/wiki/File:Stars_over_Skull_Rock_(30233587084).webm)
    - 创作者：美国国家公园管理局 (National Park Service, U.S. Department of the Interior)
    - 许可证：**Public Domain (公有领域)**（美国联邦政府官方作品）
-   - 机位：三脚架锁死地面，物理基岩 0 位移。
+   - 说明：截取高分辨率关键帧定格，画面静穆深邃，零动态耗电。
 
-3. **`assets/video/scenes/mist.mp4`（空谷晨雾）**
-   - 题材：静水晨雾水墨画卷，远山如黛隐于迷蒙白雾之中，秋色浸染林木，水面上薄雾如轻纱徐徐升腾流淌，近处水波涟漪微澜，极其平缓空灵
-   - 来源：[Wikimedia Commons - File:Misty river 47 seconds.webm](https://commons.wikimedia.org/wiki/File:Misty_river_47_seconds.webm)
+2. **`assets/images/scenes/mist.jpg`（空谷晨雾）**
+   - 题材：乌克兰 Synevyr 国家自然公园秋山晨雾漫卷水墨画卷，薄雾在古老森林山谷中徐徐流动升腾
+   - 来源：[Wikimedia Commons - File:21-224-5054 NNP Synevyr RB 18.jpg](https://commons.wikimedia.org/wiki/File:21-224-5054_NNP_Synevyr_RB_18.jpg)
+   - 创作者：Rbrechko
+   - 荣誉：Wiki Loves Earth 获奖神作 / Featured Picture 特色图片 / 年度图片决选 (POTY Finalist)
    - 许可证：**Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**
-   - 机位：三脚架锁死地面（50fps 高清实拍，真实时间无快进延时，8.0 秒平滑无缝循环）。
 
-4. **`assets/video/scenes/river.mp4`（湖光水镜）**
-   - 题材：蒙大拿州冰川国家公园（Glacier National Park）麦克唐纳湖清晨薄雾，群山雪峰在如镜水面的深邃倒影与岸边安详黑鹅卵石
-   - 来源：[Wikimedia Commons - File:Misty Morning at Lake McDonald (25569241623).webm](https://commons.wikimedia.org/wiki/File:Misty_Morning_at_Lake_McDonald_(25569241623).webm)
-   - 创作者：美国国家公园管理局 (National Park Service, U.S. Department of the Interior)
-   - 许可证：**Public Domain (公有领域)**（美国联邦政府官方作品）
-   - 机位：重型三脚架锁死湖岸，山体倒影与鹅卵石 0 位移（`dx=0, dy=0` 检验通过）。
+3. **`assets/images/scenes/river.jpg`（湖光水镜）**
+   - 题材：奥地利阿尔姆湖（Almsee）纯净无暇的天然水镜倒影，巍峨山脉与彩林在镜面般的碧澈湖水中如明镜般对称倒映
+   - 来源：[Wikimedia Commons - File:Almsee Nordbucht-4224.jpg](https://commons.wikimedia.org/wiki/File:Almsee_Nordbucht-4224.jpg)
+   - 创作者：Isiwal (Wikimedia Österreich)
+   - 荣誉：Featured Picture 特色图片 / Quality Image 优质图像
+   - 许可证：**Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**

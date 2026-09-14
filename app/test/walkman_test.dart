@@ -127,30 +127,35 @@ void main() {
     test('WalkmanScene enum properties and assets configuration', () {
       expect(WalkmanScene.values.length, equals(5));
       expect(WalkmanScene.none.hasVideo, isFalse);
+      expect(WalkmanScene.none.hasImage, isFalse);
       expect(WalkmanScene.none.hasAudio, isFalse);
 
       expect(WalkmanScene.rain.title, equals('闲时听雨'));
       expect(WalkmanScene.rain.hasVideo, isTrue);
+      expect(WalkmanScene.rain.hasImage, isFalse);
       expect(WalkmanScene.rain.hasAudio, isTrue);
       expect(WalkmanScene.rain.videoAsset, equals('assets/video/scenes/rain.mp4'));
       expect(WalkmanScene.rain.audioAsset, equals('assets/audio/scenes/rain.mp3'));
 
       expect(WalkmanScene.night.title, equals('夏夜虫鸣'));
-      expect(WalkmanScene.night.hasVideo, isTrue);
+      expect(WalkmanScene.night.hasVideo, isFalse);
+      expect(WalkmanScene.night.hasImage, isTrue);
       expect(WalkmanScene.night.hasAudio, isTrue);
-      expect(WalkmanScene.night.videoAsset, equals('assets/video/scenes/night.mp4'));
+      expect(WalkmanScene.night.imageAsset, equals('assets/images/scenes/night.jpg'));
       expect(WalkmanScene.night.audioAsset, equals('assets/audio/scenes/night.mp3'));
 
       expect(WalkmanScene.mist.title, equals('空谷晨雾'));
-      expect(WalkmanScene.mist.hasVideo, isTrue);
+      expect(WalkmanScene.mist.hasVideo, isFalse);
+      expect(WalkmanScene.mist.hasImage, isTrue);
       expect(WalkmanScene.mist.hasAudio, isTrue);
-      expect(WalkmanScene.mist.videoAsset, equals('assets/video/scenes/mist.mp4'));
+      expect(WalkmanScene.mist.imageAsset, equals('assets/images/scenes/mist.jpg'));
       expect(WalkmanScene.mist.audioAsset, equals('assets/audio/scenes/mist.mp3'));
 
       expect(WalkmanScene.river.title, equals('湖光水镜'));
-      expect(WalkmanScene.river.hasVideo, isTrue);
+      expect(WalkmanScene.river.hasVideo, isFalse);
+      expect(WalkmanScene.river.hasImage, isTrue);
       expect(WalkmanScene.river.hasAudio, isTrue);
-      expect(WalkmanScene.river.videoAsset, equals('assets/video/scenes/river.mp4'));
+      expect(WalkmanScene.river.imageAsset, equals('assets/images/scenes/river.jpg'));
       expect(WalkmanScene.river.audioAsset, equals('assets/audio/scenes/river.mp3'));
     });
   });

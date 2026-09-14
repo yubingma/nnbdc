@@ -31,18 +31,20 @@ import 'index.dart';
 
 /// 随身听自然沉浸场景（动态微动态背景 + 原版高保真环境白噪音）
 enum WalkmanScene {
-  none('极简', null, null),
-  rain('闲时听雨', 'assets/video/scenes/rain.mp4', 'assets/audio/scenes/rain.mp3'),
-  night('夏夜虫鸣', 'assets/video/scenes/night.mp4', 'assets/audio/scenes/night.mp3'),
-  mist('空谷晨雾', 'assets/video/scenes/mist.mp4', 'assets/audio/scenes/mist.mp3'),
-  river('湖光水镜', 'assets/video/scenes/river.mp4', 'assets/audio/scenes/river.mp3');
+  none('极简', null, null, null),
+  rain('闲时听雨', 'assets/video/scenes/rain.mp4', null, 'assets/audio/scenes/rain.mp3'),
+  night('夏夜虫鸣', null, 'assets/images/scenes/night.jpg', 'assets/audio/scenes/night.mp3'),
+  mist('空谷晨雾', null, 'assets/images/scenes/mist.jpg', 'assets/audio/scenes/mist.mp3'),
+  river('湖光水镜', null, 'assets/images/scenes/river.jpg', 'assets/audio/scenes/river.mp3');
 
   final String title;
   final String? videoAsset;
+  final String? imageAsset;
   final String? audioAsset;
-  const WalkmanScene(this.title, this.videoAsset, this.audioAsset);
+  const WalkmanScene(this.title, this.videoAsset, this.imageAsset, this.audioAsset);
 
   bool get hasVideo => videoAsset != null;
+  bool get hasImage => imageAsset != null;
   bool get hasAudio => audioAsset != null;
 }
 
@@ -182,6 +184,10 @@ class WalkmanPageState extends State<WalkmanPage> {
   AudioPlayer? _ambientPlayer;
   double ambientVolume = 0.35;
   bool ambientMuted = false;
+  bool showCustomAmbientSlider = false;
+
+  bool get _isPresetAmbientVolume =>
+      [0.35, 0.65, 1.0].any((vol) => (ambientVolume - vol).abs() < 0.04);
 
   Future<bool> checkArgs() async {
     final extra = GoRouterState.of(context).extra;
@@ -215,6 +221,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     );
     ambientVolume = Prefs.read<double>('walkman_ambient_volume') ?? 0.35;
     ambientMuted = Prefs.read<bool>('walkman_ambient_muted') ?? false;
+    showCustomAmbientSlider = !_isPresetAmbientVolume;
 
     if (currentScene != WalkmanScene.none) {
       _applyScene(currentScene, save: false);
@@ -315,6 +322,23 @@ class WalkmanPageState extends State<WalkmanPage> {
       ambientVolume = volume;
       ambientMuted = false;
     });
+    await Prefs.write('walkman_ambient_volume', volume);
+    await Prefs.write('walkman_ambient_muted', false);
+    await _applyAmbientVolume();
+    saveConfig();
+  }
+
+  /// 滑动条平滑调节环境白噪音音量（高频平滑生效，不卡顿）
+  void _onAmbientVolumeChanged(double volume) {
+    setState(() {
+      ambientVolume = volume;
+      ambientMuted = false;
+    });
+    unawaited(_ambientPlayer?.setVolume(ambientEffectiveVolume));
+  }
+
+  /// 滑动条调节结束，持久化配置
+  Future<void> _onAmbientVolumeChangeEnd(double volume) async {
     await Prefs.write('walkman_ambient_volume', volume);
     await Prefs.write('walkman_ambient_muted', false);
     await _applyAmbientVolume();
@@ -1218,7 +1242,16 @@ class WalkmanPageState extends State<WalkmanPage> {
             ),
           ),
 
-        // 0.1 沉浸式暗色渐变蒙层（保留微动态美感的同时确保文字清晰度）
+        // 0.05 静态定格/精选背景图片层
+        if (currentScene.hasImage)
+          Positioned.fill(
+            child: Image.asset(
+              currentScene.imageAsset!,
+              fit: BoxFit.cover,
+            ),
+          ),
+
+        // 0.1 沉浸式暗色渐变蒙层（保留微动态与自然图片美感的同时确保文字清晰度）
         if (currentScene != WalkmanScene.none)
           Positioned.fill(
             child: Container(
@@ -1320,11 +1353,10 @@ class WalkmanPageState extends State<WalkmanPage> {
     );
   }
 
-  /// 固定在屏幕下方的高透明度低干扰播放/暂停按钮
+  /// 固定在屏幕下方的高透明度低干扰播放/暂停按钮（纯图标，无外围圆圈）
   Widget _renderPlayPauseButton() {
     final hasScene = currentScene != WalkmanScene.none;
     final isPlaying = isShowingSettingPanel ? playEvenIfSettingPanelIsShowing : !isPaused;
-    final isDark = context.isDarkMode;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -1344,29 +1376,16 @@ class WalkmanPageState extends State<WalkmanPage> {
           }
         });
       },
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: hasScene
-              ? Colors.white.withValues(alpha: 0.10)
-              : (isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.05)),
-          border: Border.all(
-            color: (hasScene
-                    ? Colors.white
-                    : (isDark ? Colors.white : Colors.black))
-                .withValues(alpha: 0.12),
-            width: 0.8,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Center(
+          child: Icon(
+            isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            size: 28,
+            color: (hasScene ? Colors.white : context.themeConfig.textPrimary)
+                .withValues(alpha: 0.38),
           ),
-        ),
-        child: Icon(
-          isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          size: 24,
-          color: (hasScene ? Colors.white : context.themeConfig.textPrimary)
-              .withValues(alpha: 0.38),
         ),
       ),
     );
@@ -1374,6 +1393,7 @@ class WalkmanPageState extends State<WalkmanPage> {
 
   Widget renderSettingPanel() {
     final darkGlass = _useDarkGlass;
+    final themeConfig = context.themeConfig;
 
     return Container(
       width: double.infinity,
@@ -1653,7 +1673,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                         ],
                       ),
                       // 7. 环境白噪音音效行（开启自然场景时展示）
-                      if (currentScene.hasAudio)
+                      if (currentScene.hasAudio) ...[
                         _buildSettingRow(
                           title: '音效',
                           children: [
@@ -1667,13 +1687,99 @@ class WalkmanPageState extends State<WalkmanPage> {
                             for (var vol in [0.35, 0.65, 1.0])
                               _buildSettingPill(
                                 label: '${(vol * 100).round()}%',
-                                selected: !ambientMuted && (ambientVolume - vol).abs() < 0.08,
+                                selected: !ambientMuted &&
+                                    !showCustomAmbientSlider &&
+                                    (ambientVolume - vol).abs() < 0.04,
                                 onTap: () {
+                                  setState(() {
+                                    showCustomAmbientSlider = false;
+                                  });
                                   _setAmbientVolume(vol);
                                 },
                               ),
+                            _buildSettingPill(
+                              label: '定制',
+                              selected: !ambientMuted &&
+                                  (showCustomAmbientSlider || !_isPresetAmbientVolume),
+                              onTap: () {
+                                setState(() {
+                                  showCustomAmbientSlider = !showCustomAmbientSlider;
+                                  if (ambientMuted) {
+                                    ambientMuted = false;
+                                    unawaited(_applyAmbientVolume());
+                                  }
+                                });
+                              },
+                            ),
                           ],
                         ),
+                        if (showCustomAmbientSlider)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, bottom: 4),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 40),
+                                Icon(
+                                  ambientMuted || ambientVolume < 0.05
+                                      ? Icons.volume_mute_rounded
+                                      : (ambientVolume < 0.5
+                                          ? Icons.volume_down_rounded
+                                          : Icons.volume_up_rounded),
+                                  size: 17,
+                                  color: darkGlass
+                                      ? Colors.white.withValues(alpha: 0.5)
+                                      : themeConfig.textSecondary.withValues(alpha: 0.6),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: SliderTheme(
+                                    data: SliderTheme.of(context).copyWith(
+                                      trackHeight: 3.0,
+                                      activeTrackColor: themeConfig.primaryColor,
+                                      inactiveTrackColor: darkGlass
+                                          ? Colors.white.withValues(alpha: 0.12)
+                                          : Colors.black.withValues(alpha: 0.08),
+                                      thumbColor: Colors.white,
+                                      thumbShape: const RoundSliderThumbShape(
+                                        enabledThumbRadius: 6.5,
+                                        elevation: 1.5,
+                                      ),
+                                      overlayColor: themeConfig.primaryColor.withValues(alpha: 0.15),
+                                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 13.0),
+                                    ),
+                                    child: Slider(
+                                      value: ambientVolume.clamp(0.0, 1.0),
+                                      min: 0.0,
+                                      max: 1.0,
+                                      onChanged: (val) {
+                                        _onAmbientVolumeChanged(val);
+                                      },
+                                      onChangeEnd: (val) {
+                                        _onAmbientVolumeChangeEnd(val);
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                SizedBox(
+                                  width: 36,
+                                  child: Text(
+                                    '${(ambientVolume * 100).round()}%',
+                                    style: TextStyle(
+                                      fontSize: 12.0,
+                                      fontFamily: 'Roboto',
+                                      fontWeight: FontWeight.w600,
+                                      color: darkGlass
+                                          ? Colors.white.withValues(alpha: 0.85)
+                                          : themeConfig.textPrimary,
+                                    ),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     // 8. 其他行
                     _buildSettingRow(
                       title: '其他',
