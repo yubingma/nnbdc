@@ -56,6 +56,20 @@ class StudyBo {
   static int get batchSize => StudyConfig.fromCurrentUser()
       .effectiveBatchSize(Global.getLoggedInUser()?.effectiveWordsPerDay ?? 0);
 
+  static DateTime? _lastMasteredBubbleSoundTime;
+
+  /// 播放掌握毕业泡泡音效（带 1.5s 防抖，避免动效与入库切词时重复播放两次）
+  static void playMasteredBubbleSound() {
+    final now = DateTime.now();
+    if (_lastMasteredBubbleSoundTime != null &&
+        now.difference(_lastMasteredBubbleSoundTime!) < const Duration(milliseconds: 1500)) {
+      return;
+    }
+    _lastMasteredBubbleSoundTime = now;
+    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.0, volume: 0.8);
+    Global.logger.i('🫧 [Mastered-Sound] 触发掌握/毕业泡泡音效 (bubble-pop.wav)');
+  }
+
   final StudyStepsService _studyStepsService = StudyStepsService();
   static final StudyBo _instance = StudyBo._internal();
 
@@ -1603,8 +1617,7 @@ class StudyBo {
       await StudyCacheManager().saveAndSyncWordState(db, updatedWord);
 
       // 学习中单词达到已掌握/毕业：播放泡泡回馈音效 (bubble-pop.wav)，给用户正向激励并便于运维感知
-      StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.0, volume: 0.8);
-      Global.logger.i('🫧 [Mastered-Sound] 学习中单词 ${learningWord.wordId} 已掌握/毕业，触发泡泡回馈音效 (bubble-pop.wav)');
+      playMasteredBubbleSound();
     } else {
       // 还在规划阶段：直接删除该学习记录
       await StudyCacheManager().deleteAndSyncWordState(db, learningWord);

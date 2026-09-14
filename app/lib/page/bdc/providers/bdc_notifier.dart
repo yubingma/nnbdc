@@ -2475,6 +2475,7 @@ class BdcNotifier extends _$BdcNotifier {
     
     final fsrsStopwatch = Stopwatch()..start();
     final lw = state.currentGetWordResult?.learningWord;
+    FSRSItem? nextItem;
     if (lw != null) {
       final fsrs = FSRS();
       int daysSinceLastReview = 0;
@@ -2482,7 +2483,6 @@ class BdcNotifier extends _$BdcNotifier {
         daysSinceLastReview = AppClock.today().difference(app_date.DateUtils.businessDate(lw.lastLearningDate!)).inDays;
       }
       final int days = daysSinceLastReview;
-      FSRSItem nextItem;
       if (lw.stability == null || lw.stability == 0.0) {
         nextItem = fsrs.init(rating);
       } else {
@@ -2500,17 +2500,21 @@ class BdcNotifier extends _$BdcNotifier {
 
       state = state.copyWith(fsrsItem: nextItem, daysSinceLastReview: daysSinceLastReview);
 
-      // 若本次答对使稳定性跃升至毕业线（已掌握），触发飞向掌握按钮动效
+      // 记录本次答对是否达到毕业线（已掌握）
       if (nextItem.stability >= Constants.graduationStability && state.word?.spell != null) {
         Global.logger.i('🎓 [FSRS-Graduate] 稳定性跃升达到毕业掌握线: word=${state.word!.spell}, stability=${nextItem.stability.toStringAsFixed(2)} >= ${Constants.graduationStability}');
-        onWordMasteredGraduated?.call(state.word!.spell);
       }
     }
     Global.logger.d('[PERF] _onAnswerCorrect -> FSRS calculation cost: ${fsrsStopwatch.elapsedMilliseconds}ms');
 
+    final bool isMasteredGraduated = nextItem != null &&
+        nextItem.stability >= Constants.graduationStability &&
+        state.word?.spell != null;
+    final String? graduatedSpell = isMasteredGraduated ? state.word!.spell : null;
+
     // 答对后的反馈逻辑：
     // 1. 中英模式 (Ch2En)：用户通过识别/拼写回答正确。此时播放单词发音，帮助用户纠正发音并加深印象。
-    //    await 等待发音播完，使用户完整听到后再跳转，避免突兀感。
+    //    await 等待发音播完，使用户完整听到后再触发掌握仪式或跳转，避免动效与发音脱节。
     // 2. 其他模式 (如 En2Ch)：用户已经听过发音。此时仅播放轻快的正确提示音，避免冗余感。
     final bool wordSoundPlayed = state.studyStep == StudyStep.ch2En.json;
     if (wordSoundPlayed) {
@@ -2519,6 +2523,11 @@ class BdcNotifier extends _$BdcNotifier {
       debugPrint('⚡ [PERF] _onAnswerCorrect -> playWordAndFirstSentence cost: ${playSw.elapsedMilliseconds}ms');
     } else {
       _playCorrectSound();
+    }
+
+    // 发音播放完成后：若达成毕业掌握，统一在此刻触发掌握飞行动画与破茧泡泡音效
+    if (isMasteredGraduated && graduatedSpell != null) {
+      onWordMasteredGraduated?.call(graduatedSpell);
     }
 
     if (state.showWordDetailAfterCorrect && state.word != null && state.historyIndex == -1) {
@@ -2538,9 +2547,11 @@ class BdcNotifier extends _$BdcNotifier {
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
-      // 中英模式发音已完整播完，仅需 400ms 短暂缓冲即可舒适跳转；
-      // 其他模式保留原有 800ms 延迟。
-      final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 0 : 1000;
+      // 若触发了毕业掌握动效，留出适当时间(550ms)让用户欣赏胶囊破茧飞入掌握按钮并吸收；
+      // 普通答对时，中英模式发音已播完直接跳转(0ms)，其他模式保留原有延迟(1000ms)。
+      final jumpDelayMs = isMasteredGraduated
+          ? 550
+          : (state.studyStep == StudyStep.ch2En.json ? 0 : 1000);
       final correctWordId = state.word?.id;
       _autoJumpTimer = Timer(Duration(milliseconds: jumpDelayMs), () {
         if (!_isDisposed && state.word?.id == correctWordId && state.hasFinishedAnswering) {

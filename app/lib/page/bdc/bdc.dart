@@ -371,6 +371,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     await _questionCollapseController.forward(from: 0.0);
     if (!mounted) return;
 
+    // 破茧绽放瞬间：播放泡泡爆破回馈音效 (bubble-pop.wav)，视听 100% 毫秒级同步爆发
+    StudyBo.playMasteredBubbleSound();
+
     // 第二阶段：在凝聚中心破茧生成掌握胶囊，带流光轨迹飞向右上角掌握按钮
     MasteredFlyAnimation.play(
       context: context,
