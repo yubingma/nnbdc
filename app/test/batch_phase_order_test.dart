@@ -13,6 +13,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_config.dart';
+import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 批次推进顺序回归测试。
@@ -520,4 +521,157 @@ void main() {
     expect(en2Ch.every((e) => e.groupTotal == wordTotal), true,
         reason: '组内进度分母 = 用户设置的每组单词数');
   });
+
+  test('calculateBatches: 严格按 batchId 边界对齐分块，禁止跨批次合并', () {
+    final now = AppClock.now();
+    // 模拟 15 个计划词 (batchId = 1) + 10 个加量词 (batchId = 2)
+    final words = <LearningWord>[
+      for (int i = 0; i < 15; i++)
+        LearningWord(
+          userId: 'test_user_id',
+          wordId: 'w_$i',
+          batchId: 1,
+          learningOrder: i + 1,
+          learnedTimes: 0,
+          addTime: now,
+          addDay: 1,
+          todayLearnedTimes: 0,
+          isTodayNewWord: true,
+          isExtra: false,
+          createTime: now,
+          updateTime: now,
+        ),
+      for (int i = 15; i < 25; i++)
+        LearningWord(
+          userId: 'test_user_id',
+          wordId: 'w_$i',
+          batchId: 2,
+          learningOrder: i + 1,
+          learnedTimes: 0,
+          addTime: now,
+          addDay: 1,
+          todayLearnedTimes: 0,
+          isTodayNewWord: true,
+          isExtra: true,
+          createTime: now,
+          updateTime: now,
+        ),
+    ];
+
+    final batches = StudyBo.calculateBatches(words, 10);
+    expect(batches.length, 3, reason: '应切为 3 个独立批次：10词、5词、加量10词');
+
+    expect(batches[0].startIndex, 0);
+    expect(batches[0].length, 10);
+    expect(batches[0].groupNo, 1);
+
+    expect(batches[1].startIndex, 10);
+    expect(batches[1].length, 5);
+    expect(batches[1].groupNo, 2);
+
+    // 重点：加量词自成一组，绝对不能把前一组的 5 词跨 batchId 拼成 10 词
+    expect(batches[2].startIndex, 15);
+    expect(batches[2].length, 10);
+    expect(batches[2].groupNo, 3);
+  });
+
+  test('非整除计划打卡后加量：getCurrentBatchCache 仅返回加量词且学完后无多余批次', () async {
+    UserPrivilegeManager.isPremiumOverrideForTesting = true;
+    addTearDown(() => UserPrivilegeManager.isPremiumOverrideForTesting = null);
+
+    // 补充词书词量，确保加量能够抓取到 10 个新词
+    final now = AppClock.now();
+    for (int i = 21; i <= 35; i++) {
+      final wordId = 'w_$i';
+      await db.into(db.words).insert(Word(
+            id: wordId,
+            spell: 'word$i',
+            popularity: 100,
+            createTime: now,
+            updateTime: now,
+          ));
+      await db.into(db.meaningItems).insert(MeaningItem(
+            id: 'mim_$i',
+            wordId: wordId,
+            dictId: Global.commonDictId,
+            ciXing: 'n.',
+            meaning: 'word$i的含义',
+            popularity: 100,
+            ownerId: Global.sysUserId,
+            createTime: now,
+            updateTime: now,
+          ));
+      await db.into(db.dictWords).insert(DictWord(
+            dictId: 'mock_dict',
+            wordId: wordId,
+            seq: i,
+            unit: 0,
+            createTime: now,
+            updateTime: now,
+          ));
+    }
+
+    // 1. 设置每日计划为 15 词
+    final userWith15 = testUser.copyWith(wordsPerDay: 15);
+    await db.usersDao.saveUser(userWith15, true);
+    Global.updateUserCache(userWith15);
+
+    final prep = await LearningService.prepareTodayStudy(true);
+    expect(prep.success, true);
+
+    // 2. 学完全部 15 个计划词
+    int guard = 0;
+    while (guard++ < 200) {
+      final res = await studyBo.getWord(false, false);
+      final data = res.data!;
+      if (data.finished || data.learningWord == null) break;
+
+      if (data.progress != null && data.progress![1] == 0) {
+        final listRes = await studyBo.completeListStepForCurrentBatch();
+        expect(listRes.success, true);
+        continue;
+      }
+
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+    }
+
+    // 3. 点击「再来一组」（加量追加一组，即 10 个词）
+    final addRes = await studyBo.prepareExtraStudy(count: 10);
+    expect(addRes.success, true);
+    expect(addRes.data, 10);
+
+    // 4. 验证 getCurrentBatchCache 只包含新加量的 10 个词，不含今天之前学过的 15 个计划词
+    final batchCache = await studyBo.getCurrentBatchCache();
+    expect(batchCache.length, 10, reason: '加量批次应恰好包含 10 个加量词');
+    final batchCacheWordIds = batchCache.map((w) => w.word.id).toList();
+    for (int i = 1; i <= 15; i++) {
+      expect(batchCacheWordIds.contains('w_$i'), false,
+          reason: '今天之前学过的计划词 w_$i 绝不能混入加量批次');
+    }
+
+    // 5. 学完这一组加量词
+    guard = 0;
+    while (guard++ < 200) {
+      final res = await studyBo.getWord(false, false);
+      final data = res.data!;
+      if (data.finished || data.learningWord == null) break;
+
+      if (data.progress != null && data.progress![1] == 0) {
+        final listRes = await studyBo.completeListStepForCurrentBatch();
+        expect(listRes.success, true);
+        continue;
+      }
+
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+    }
+
+    // 6. 验证学完该组后全部完成，不会再多出一组单词
+    final afterBatch = await studyBo.getCurrentBatchCache();
+    expect(afterBatch.isEmpty, true, reason: '学完加量的一组后直接结束，绝不产生碎片批次');
+
+    final finalWordRes = await studyBo.getWord(false, false);
+    expect(finalWordRes.data?.finished, true,
+        reason: '按道理学完加量的一组就学完了，应标志 finished = true');
+  });
 }
+

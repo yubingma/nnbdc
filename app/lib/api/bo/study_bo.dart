@@ -29,11 +29,28 @@ import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/util/sound.dart';
 
+/// 学习批次区间模型
+class BatchRange {
+  final int startIndex;
+  final int length;
+  final int groupNo; // 1-based 序号，即「第 N 组」
+
+  const BatchRange({
+    required this.startIndex,
+    required this.length,
+    required this.groupNo,
+  });
+
+  int get endIndex => startIndex + length;
+
+  bool containsIndex(int index) => index >= startIndex && index < endIndex;
+}
+
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
   /// 学习批次大小（每组单词数）：用户在「高级学习设置」中配置，
   /// 且不超过当日计划词数（见 [StudyConfig.effectiveBatchSize]）。
-  /// 与 getWord / _calculateBatchStartIndex 的批次划分保持一致。
+  /// 与 getWord / calculateBatches 的批次划分保持一致。
   /// 调用方取一次到局部变量复用：每次访问都会重新解析一遍 studyConfig。
   static int get batchSize => StudyConfig.fromCurrentUser()
       .effectiveBatchSize(Global.getLoggedInUser()?.effectiveWordsPerDay ?? 0);
@@ -173,27 +190,24 @@ class StudyBo {
       final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
       final masteredWordIds = masteredWords.map((e) => e.wordId).toSet();
 
-      // 状态驱动：推导当前批次起始位置 (batchStartIndex)
+      // 状态驱动：推导当前批次 (BatchRange)
       final firstLogs =
           await _loadTodayFirstLogs(user.id, todayWords);
       final int batchSize = StudyBo.batchSize;
-      int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
+      final currentBatch = calculateCurrentBatch(todayWords, masteredWordIds,
           firstLogs: firstLogs,
           newCfg: newCfg,
           reviewCfg: reviewCfg,
           batchSize: batchSize);
-      if (batchStartIndex == -1) {
+      if (currentBatch == null) {
         Global.logger.d('所有批次单词已完成');
         return [];
       }
 
       // 获取当前批次的单词
-      List<LearningWord> batchWords = [];
-      for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + batchSize; i++) {
-        batchWords.add(todayWords[i]);
-      }
+      final batchWords = todayWords.sublist(currentBatch.startIndex, currentBatch.endIndex);
 
-      Global.logger.d('获取到批次单词数量: ${batchWords.length}, 批次起始索引: $batchStartIndex');
+      Global.logger.d('获取到批次单词数量: ${batchWords.length}, 批次起始索引: ${currentBatch.startIndex}, 第${currentBatch.groupNo}组');
 
       // 转换为 LearningWordVo
       final result = <LearningWordVo>[];
@@ -449,24 +463,21 @@ class StudyBo {
       final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
       final masteredWordIds = masteredWords.map((e) => e.wordId).toSet();
 
-      // 计算 batchStartIndex
+      // 计算当前批次 (BatchRange)
       final firstLogs =
           await _loadTodayFirstLogs(user.id, todayWords);
       final int batchSize = StudyBo.batchSize;
-      final batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
+      final currentBatch = calculateCurrentBatch(todayWords, masteredWordIds,
           firstLogs: firstLogs,
           newCfg: newCfg,
           reviewCfg: reviewCfg,
           batchSize: batchSize);
-      if (batchStartIndex == -1) {
+      if (currentBatch == null) {
         return Result("ERROR", "所有单词已完成列表学习", false);
       }
 
       // 获取当前 batch words
-      final batchWords = <LearningWord>[];
-      for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + batchSize; i++) {
-        batchWords.add(todayWords[i]);
-      }
+      final batchWords = todayWords.sublist(currentBatch.startIndex, currentBatch.endIndex);
 
       if (batchWords.isEmpty) {
         return Result("ERROR", "当前没有批次单词需要完成列表学习", false);
@@ -639,22 +650,19 @@ class StudyBo {
           await _loadTodayFirstLogs(user.id, todayWords);
       // 旧词三组显式规则（未设置时轨道层回退默认）
 
-      // 状态驱动：推导当前批次起始位置 (batchStartIndex)
+      // 状态驱动：推导当前批次 (BatchRange)
       final int batchSize = StudyBo.batchSize;
-      int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
+      final currentBatch = calculateCurrentBatch(todayWords, masteredWordIds,
           firstLogs: firstLogs,
           newCfg: newCfg,
           reviewCfg: reviewCfg,
           batchSize: batchSize);
-      if (batchStartIndex == -1) {
+      if (currentBatch == null) {
         return _buildTodayStudyFinishedResult();
       }
 
       // 获取当前批次的单词
-      List<LearningWord> batchWords = [];
-      for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + batchSize; i++) {
-        batchWords.add(todayWords[i]);
-      }
+      final batchWords = todayWords.sublist(currentBatch.startIndex, currentBatch.endIndex);
 
       // 异步在后台线程加载拼写并执行音频预取，不阻塞 getWord 的返回
       if (batchWords.isNotEmpty) {
@@ -694,7 +702,7 @@ class StudyBo {
       }
 
       // 添加批次状态日志
-      Global.logger.d('~~~~~BDC_BATCH: startIdx=$batchStartIndex, batchSize=${batchWords.length}');
+      Global.logger.d('~~~~~BDC_BATCH: startIdx=${currentBatch.startIndex}, batchSize=${batchWords.length}');
       for (var w in batchWords) {
         final bool isMastered = w.isEffectivelyMastered(masteredWordIds);
         final bool isFinished = w.isTodayFinished(masteredWordIds, trackOf(w).length);
@@ -776,7 +784,7 @@ class StudyBo {
       if (isListStep) {
         Global.logger.d('当前为列表模式，显示批次单词列表');
         // 构建当前批次第一个单词的 LearningWordVo 以携带当前批次正确的 batchId
-        final returnWord = todayWords[batchStartIndex];
+        final returnWord = todayWords[currentBatch.startIndex];
         final userVo = UserVo.fromUser(user);
         final wordVo = WordVo.c2('')..id = returnWord.wordId;
         final learningWordVo = LearningWordVo(
@@ -821,20 +829,17 @@ class StudyBo {
       }
 
       // 完全基于当前（已更新的）状态，重新推导下一个单词
-      int nextBatchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
+      final nextBatch = calculateCurrentBatch(todayWords, masteredWordIds,
           firstLogs: firstLogs,
           newCfg: newCfg,
           reviewCfg: reviewCfg,
           batchSize: batchSize);
-      if (nextBatchStartIndex == -1) {
+      if (nextBatch == null) {
         return _buildTodayStudyFinishedResult();
       }
 
       // 获取下一个单词所在的批次
-      List<LearningWord> nextBatchWords = [];
-      for (int i = nextBatchStartIndex; i < todayWords.length && i < nextBatchStartIndex + batchSize; i++) {
-        nextBatchWords.add(todayWords[i]);
-      }
+      final nextBatchWords = todayWords.sublist(nextBatch.startIndex, nextBatch.endIndex);
 
       // 按照优先级排序，找出该批次最需要学习的下一个单词（练习题优先，List在后）
       nextBatchWords.sort((a, b) => _compareBatchWords(
@@ -1265,23 +1270,63 @@ class StudyBo {
     return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
   }
 
-  /// 状态驱动：推导当前批次起始位置 (batchStartIndex)
+  /// 计算所有学习批次：严格按 batchId 边界对齐分块，并在同 batchId 内部按 batchSize 切片。
+  /// 绝对禁止跨越 batchId 合并批次（防止计划词与加量词混合或短批次后移导致多出碎片批次）。
+  static List<BatchRange> calculateBatches(List<LearningWord> todayWords, int batchSize) {
+    if (todayWords.isEmpty) return const [];
+    if (batchSize <= 0) batchSize = StudyBo.batchSize;
+
+    final List<BatchRange> batches = [];
+    int groupNo = 1;
+    int i = 0;
+
+    while (i < todayWords.length) {
+      final currentBatchId = todayWords[i].batchId;
+      // 找到同 batchId 的连续块终点
+      int chunkEnd = i + 1;
+      while (chunkEnd < todayWords.length && todayWords[chunkEnd].batchId == currentBatchId) {
+        chunkEnd++;
+      }
+
+      // 在该 chunk 内部按 batchSize 切片
+      for (int subStart = i; subStart < chunkEnd; subStart += batchSize) {
+        final subLength = min(batchSize, chunkEnd - subStart);
+        batches.add(BatchRange(
+          startIndex: subStart,
+          length: subLength,
+          groupNo: groupNo++,
+        ));
+      }
+
+      i = chunkEnd;
+    }
+
+    return batches;
+  }
+
+  /// 状态驱动：推导当前正在学习的批次 (BatchRange)
   /// 逻辑：找到第一个今日尚未完成所有轨道环节的批次（每词按其自身轨道长度判定）
-  static int _calculateBatchStartIndex(List<LearningWord> todayWords, Set<String> masteredWordIds,
-      {required Map<String, ({int elapsedDays, int rating})> firstLogs,
-      required ThreeGroupSteps newCfg,
-      required ThreeGroupSteps reviewCfg,
-      required int batchSize}) {
+  static BatchRange? calculateCurrentBatch(
+    List<LearningWord> todayWords,
+    Set<String> masteredWordIds, {
+    required Map<String, ({int elapsedDays, int rating})> firstLogs,
+    required ThreeGroupSteps newCfg,
+    required ThreeGroupSteps reviewCfg,
+    required int batchSize,
+  }) {
+    if (todayWords.isEmpty) return null;
+    final batches = calculateBatches(todayWords, batchSize);
     final today = AppClock.today();
-    for (int i = 0; i < todayWords.length; i += batchSize) {
+
+    for (final batch in batches) {
       bool batchFinished = true;
-      for (int j = i; j < i + batchSize && j < todayWords.length; j++) {
-        // 状态驱动：如果单词已学完（达到毕业稳定性，或者在 masteredWords 表中存在，或者今日学习次数已走完自身轨道）
-        final first = firstLogs[todayWords[j].wordId];
+      for (int j = batch.startIndex; j < batch.endIndex; j++) {
+        final word = todayWords[j];
+        final first = firstLogs[word.wordId];
         final trackLen = StudyTrack.trackOf(
-          stability: todayWords[j].stability,
-          state: todayWords[j].state,
-          lastLearningDate: todayWords[j].lastLearningDate,
+          stability: word.stability,
+          state: word.state,
+          lastLearningDate: word.lastLearningDate,
           todayFirstLogElapsedDays: first?.elapsedDays,
           todayFirstLogRating: first?.rating,
           newCheck: newCfg.check,
@@ -1292,17 +1337,37 @@ class StudyBo {
           reviewWrong: reviewCfg.wrong,
           today: today,
         ).length;
-        bool wordFinished = todayWords[j].isTodayFinished(masteredWordIds, trackLen);
+        final bool wordFinished = word.isTodayFinished(masteredWordIds, trackLen);
         if (!wordFinished) {
           batchFinished = false;
           break;
         }
       }
       if (!batchFinished) {
-        return i;
+        return batch;
       }
     }
-    return -1; // 所有批次都学完了
+    return null; // 所有批次都学完了
+  }
+
+  /// 兼容/便捷接口：获取当前批次起始位置索引，学完返回 -1
+  static int calculateBatchStartIndex(
+    List<LearningWord> todayWords,
+    Set<String> masteredWordIds, {
+    required Map<String, ({int elapsedDays, int rating})> firstLogs,
+    required ThreeGroupSteps newCfg,
+    required ThreeGroupSteps reviewCfg,
+    required int batchSize,
+  }) {
+    final currentBatch = calculateCurrentBatch(
+      todayWords,
+      masteredWordIds,
+      firstLogs: firstLogs,
+      newCfg: newCfg,
+      reviewCfg: reviewCfg,
+      batchSize: batchSize,
+    );
+    return currentBatch?.startIndex ?? -1;
   }
 
   /// 批次内单词调度排序比较器：
@@ -1370,11 +1435,12 @@ class StudyBo {
     if (wordIndex < 0) return null;
 
     final int batchSize = StudyBo.batchSize;
-    final batchStart = (wordIndex ~/ batchSize) * batchSize;
-    final batchEnd = (batchStart + batchSize) > todayWords.length
-        ? todayWords.length
-        : batchStart + batchSize;
-    final batchWords = todayWords.sublist(batchStart, batchEnd);
+    final batches = calculateBatches(todayWords, batchSize);
+    final currentBatch = batches.firstWhere(
+      (b) => b.containsIndex(wordIndex),
+      orElse: () => BatchRange(startIndex: 0, length: todayWords.length, groupNo: 1),
+    );
+    final batchWords = todayWords.sublist(currentBatch.startIndex, currentBatch.endIndex);
 
     // 与 getWord 完全相同的轨道口径：今天首条评分日志固化当天轨道（新词/复习词、答对/答错组）
     final newCfg = await _studyStepsService.getThreeGroupConfig('new');
@@ -1457,7 +1523,7 @@ class StudyBo {
     return (
       position: done + 1,
       total: sameTrack.length,
-      groupNo: batchStart ~/ batchSize + 1,
+      groupNo: currentBatch.groupNo,
       trackName: currentTrackName,
     );
   }
