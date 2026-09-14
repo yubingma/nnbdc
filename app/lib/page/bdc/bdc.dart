@@ -189,6 +189,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     // Initialize data and listen for state changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(bdcNotifierProvider.notifier).loadData(context);
     });
 
@@ -660,7 +661,8 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
   bool _getShouldShowSpeakTab(BdcState state) {
     if (!PlatformUtils.isAsrSupported()) return false;
-    if (state.studyStep == StudyStep.ch2En.json) {
+    if (state.studyStep == StudyStep.ch2En.json ||
+        state.studyStep == StudyStep.chSentence2En.json) {
       return PlatformUtils.isEnglishAsrSupported();
     }
     return true;

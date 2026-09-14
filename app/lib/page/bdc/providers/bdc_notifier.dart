@@ -2513,10 +2513,11 @@ class BdcNotifier extends _$BdcNotifier {
     final String? graduatedSpell = isMasteredGraduated ? state.word!.spell : null;
 
     // 答对后的反馈逻辑：
-    // 1. 中英模式 (Ch2En)：用户通过识别/拼写回答正确。此时播放单词发音，帮助用户纠正发音并加深印象。
+    // 1. 中英模式 (Ch2En / chSentence2En)：用户通过识别/拼写/选择题回答正确。此时播放单词发音，帮助用户纠正发音并加深印象。
     //    await 等待发音播完，使用户完整听到后再触发掌握仪式或跳转，避免动效与发音脱节。
-    // 2. 其他模式 (如 En2Ch)：用户已经听过发音。此时仅播放轻快的正确提示音，避免冗余感。
-    final bool wordSoundPlayed = state.studyStep == StudyStep.ch2En.json;
+    // 2. 其他模式 (如 En2Ch / enSentence2Ch)：用户已经听过发音。此时仅播放轻快的正确提示音，避免冗余感。
+    final bool wordSoundPlayed = state.studyStep == StudyStep.ch2En.json ||
+        state.studyStep == StudyStep.chSentence2En.json;
     if (wordSoundPlayed) {
       final playSw = Stopwatch()..start();
       await playWordAndFirstSentence(true, false);
@@ -2551,7 +2552,10 @@ class BdcNotifier extends _$BdcNotifier {
       // 普通答对时，中英模式发音已播完直接跳转(0ms)，其他模式保留原有延迟(1000ms)。
       final jumpDelayMs = isMasteredGraduated
           ? 550
-          : (state.studyStep == StudyStep.ch2En.json ? 0 : 1000);
+          : ((state.studyStep == StudyStep.ch2En.json ||
+                  state.studyStep == StudyStep.chSentence2En.json)
+              ? 0
+              : 1000);
       final correctWordId = state.word?.id;
       _autoJumpTimer = Timer(Duration(milliseconds: jumpDelayMs), () {
         if (!_isDisposed && state.word?.id == correctWordId && state.hasFinishedAnswering) {

@@ -32,7 +32,12 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
   }) async {
     try {
       List<WordVo> otherWords = [];
-      if ([StudyStep.en2Ch.json, StudyStep.ch2En.json].contains(trackSteps[learningMode])) {
+      if ([
+        StudyStep.en2Ch.json,
+        StudyStep.ch2En.json,
+        StudyStep.enSentence2Ch.json,
+        StudyStep.chSentence2En.json,
+      ].contains(trackSteps[learningMode])) {
         // 用于跟踪已选择的单词ID，避免重复
         final selectedWordIds = <String>{targetWordLearningData.wordId};
         final candidateIds = <String>[];
@@ -217,7 +222,12 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
   }) async {
     try {
       final List<WordVo> otherWords = [];
-      if (![StudyStep.en2Ch.json, StudyStep.ch2En.json].contains(trackSteps[learningMode])) {
+      if (![
+        StudyStep.en2Ch.json,
+        StudyStep.ch2En.json,
+        StudyStep.enSentence2Ch.json,
+        StudyStep.chSentence2En.json,
+      ].contains(trackSteps[learningMode])) {
         return otherWords;
       }
 

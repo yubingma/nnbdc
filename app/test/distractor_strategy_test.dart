@@ -376,5 +376,44 @@ void main() {
       expect(spells.length, 2);
       expect(spells.where((s) => s == 'consume' || s == 'confess').length, 1);
     });
+
+    test('例句英译汉(EnSentence2Ch)与例句汉译英(ChSentence2En)正常产生干扰项', () async {
+      await insertWord('w_target', 'target');
+      await insertWord('w_c1', 'candidate1');
+      await insertWord('w_c2', 'candidate2');
+      await insertMeaning('w_target', '目标');
+      await insertMeaning('w_c1', '候选一');
+      await insertMeaning('w_c2', '候选二');
+
+      final todayWords = [
+        targetLearningWord('w_target'),
+        targetLearningWord('w_c1'),
+        targetLearningWord('w_c2'),
+      ];
+
+      // 测试 EnSentence2Ch
+      final enSentenceWords = await LearningWordsDistractorStrategy().getTwoOtherWords(
+        trackSteps: const ['EnSentence2Ch'],
+        learningMode: 0,
+        meaningItemVos: targetMeanings('目标'),
+        todayWords: todayWords,
+        targetWordLearningData: targetLearningWord('w_target'),
+        db: db,
+      );
+      expect(enSentenceWords.length, 2);
+      expect(enSentenceWords.map((w) => w.spell), containsAll(['candidate1', 'candidate2']));
+
+      // 测试 ChSentence2En
+      final chSentenceWords = await LearningWordsDistractorStrategy().getTwoOtherWords(
+        trackSteps: const ['ChSentence2En'],
+        learningMode: 0,
+        meaningItemVos: targetMeanings('目标'),
+        todayWords: todayWords,
+        targetWordLearningData: targetLearningWord('w_target'),
+        db: db,
+      );
+      expect(chSentenceWords.length, 2);
+      expect(chSentenceWords.map((w) => w.spell), containsAll(['candidate1', 'candidate2']));
+    });
   });
 }

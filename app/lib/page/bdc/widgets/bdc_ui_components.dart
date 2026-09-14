@@ -763,7 +763,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                               children: [
                                 if ((state.studyStep == StudyStep.en2Ch.json ||
                                         state.studyStep ==
-                                            StudyStep.ch2En.json) &&
+                                            StudyStep.ch2En.json ||
+                                        state.studyStep ==
+                                            StudyStep.enSentence2Ch.json ||
+                                        state.studyStep ==
+                                            StudyStep.chSentence2En.json) &&
                                     _tabController != null &&
                                     _tabController!.length > 1) ...[
                                   Row(
@@ -786,8 +790,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               const SizedBox(width: 4.5),
                                               Flexible(
                                                 child: Text(
-                                                  state.studyStep ==
-                                                          StudyStep.en2Ch.json
+                                                  (state.studyStep ==
+                                                              StudyStep
+                                                                  .en2Ch.json ||
+                                                          state.studyStep ==
+                                                              StudyStep
+                                                                  .enSentence2Ch
+                                                                  .json)
                                                       ? '请说出中文释义：'
                                                       : '请说出单词发音：',
                                                   overflow:
@@ -868,7 +877,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   child: (state.studyStep ==
                                               StudyStep.en2Ch.json ||
                                           state.studyStep ==
-                                              StudyStep.ch2En.json)
+                                              StudyStep.ch2En.json ||
+                                          state.studyStep ==
+                                              StudyStep.enSentence2Ch.json ||
+                                          state.studyStep ==
+                                              StudyStep.chSentence2En.json)
                                       ? TabBarView(
                                           key: ValueKey(
                                               'bdc_tab_bar_view_${_tabController?.length}'),
@@ -882,24 +895,18 @@ extension BdcPageStateUIComponents on BdcPageState {
                                             _buildChoiceListScrollView(),
                                           ],
                                         )
-                                      : (state.studyStep ==
-                                                  StudyStep
-                                                      .enSentence2Ch.json ||
-                                              state.studyStep ==
-                                                  StudyStep.chSentence2En.json)
-                                          ? _buildSpeakPanel()
-                                          : Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                Flexible(
-                                                  child:
-                                                      _buildChoiceListScrollView(),
-                                                ),
-                                                Expanded(
-                                                    child: _buildSpeakPanel()),
-                                              ],
+                                      : Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Flexible(
+                                              child:
+                                                  _buildChoiceListScrollView(),
                                             ),
+                                            Expanded(
+                                                child: _buildSpeakPanel()),
+                                          ],
+                                        ),
                                 ),
                                 const SizedBox(height: 8),
                                 _buildFsrsResultPanel(),
@@ -1506,13 +1513,16 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildChoiceList() {
     if (!(state.studyStep == StudyStep.en2Ch.json ||
-        state.studyStep == StudyStep.ch2En.json)) {
+        state.studyStep == StudyStep.ch2En.json ||
+        state.studyStep == StudyStep.enSentence2Ch.json ||
+        state.studyStep == StudyStep.chSentence2En.json)) {
       return const SizedBox.shrink();
     }
 
     final isAnswered =
         state.selectedAnswerIndex != null || state.hasFinishedAnswering;
-    final isCh2En = state.studyStep == StudyStep.ch2En.json;
+    final isCh2En = state.studyStep == StudyStep.ch2En.json ||
+        state.studyStep == StudyStep.chSentence2En.json;
     final isDarkMode = _cachedIsDarkMode;
 
     return Column(
@@ -2562,6 +2572,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             ? state.word!.sentences!.first
             : null;
     final sentenceText = sentence?.english ?? "No sentence available";
+    final spell = state.word?.spell ?? '';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -2569,11 +2580,29 @@ extension BdcPageStateUIComponents on BdcPageState {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // 单词英文拼写：在例句英译汉模式下置顶显示，为选择题提供清晰的答题目标
+          if (spell.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 2),
+              child: Text(
+                spell,
+                key: const Key('en_sentence_word_spell'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 26,
+                  fontFamily: 'Roboto',
+                  letterSpacing: -0.4,
+                  color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                ),
+              ),
+            ),
+          ],
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Util.makeEnglishSpanText(
               sentenceText,
-              state.word?.spell ?? '',
+              spell,
               true,
               context,
               false,
@@ -2657,6 +2686,109 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
+  /// 单词释义单行横滑组件：在例句汉译英模式下展示，多个释义搞成单行横向排布，
+  /// 用户可通过向右滑动查看完整释义，视觉极简且为备用选择题提供清晰出口指引。
+  Widget _buildSingleLineMeanings(BdcState state) {
+    final allItems = state.word?.getMergedMeaningItems() ?? [];
+    final hasCixingItems =
+        allItems.any((item) => (item.ciXing ?? '').trim().isNotEmpty);
+    final displayItems = hasCixingItems
+        ? allItems
+            .where((item) => (item.ciXing ?? '').trim().isNotEmpty)
+            .toList()
+        : allItems;
+
+    String cleanMeaning(String? raw) {
+      if (raw == null) return '';
+      var text = notifier.hideParenthesesContent(raw).trim();
+      while (text.endsWith(';') ||
+          text.endsWith('；') ||
+          text.endsWith(',') ||
+          text.endsWith('，') ||
+          text.endsWith('。')) {
+        text = text.substring(0, text.length - 1).trim();
+      }
+      return text;
+    }
+
+    final isDark = _cachedIsDarkMode;
+    final cixingColor =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    if (displayItems.isEmpty) {
+      final rawMeaning = state.word?.getMeaningStr() ?? '';
+      final cleaned = cleanMeaning(rawMeaning);
+      if (cleaned.isEmpty) return const SizedBox.shrink();
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        child: Text(
+          cleaned,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: context.textSecondary,
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          for (int i = 0; i < displayItems.length; i++) ...[
+            if (i > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  '·',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: cixingColor.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                if ((displayItems[i].ciXing ?? '').trim().isNotEmpty) ...[
+                  Text(
+                    (displayItems[i].ciXing ?? '').trim(),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: cixingColor,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  cleanMeaning(displayItems[i].meaning),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: context.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildChSentenceStepCard(BdcState state) {
     final sentence =
         (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
@@ -2684,6 +2816,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               textAlign: TextAlign.center,
             ),
           ),
+          // 单词释义单行横滑展示区：为选择题提供精准指引，界面紧凑简洁
+          _buildSingleLineMeanings(state),
+          const SizedBox(height: 8),
           // 小喇叭 + 看答案/隐藏答案 同行,根据作答状态切换按钮,避免按钮被滚动区遮挡
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
