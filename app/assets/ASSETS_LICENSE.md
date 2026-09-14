@@ -46,9 +46,9 @@
    - 说明：30秒高保真立体声切片，首尾 1.5 秒平滑交叉淡入淡出。
 
 8. **`assets/audio/scenes/cosmos.mp3`（瀚海星云）**
-   - 来源：`binaural/binaural-theta.wav`
+   - 来源：`things/singing-bowl.mp3`
    - 许可：MIT License
-   - 说明：Theta 冥想脑波与深空低频共鸣白噪音，30秒切片，首尾 1.5 秒平滑交叉淡入淡出。
+   - 说明：西藏冥想颂钵（Tibetan Singing Bowl）铜钵空灵泛音与悠远长鸣，30秒高保真切片，首尾 2.0 秒平滑淡入淡出。深沉纯净，余音绕梁，专为深空宇宙心流设计。
 
 9. **`assets/audio/scenes/snow.mp3`（云巅雪峰）**
    - 来源：`nature/wind.mp3`
