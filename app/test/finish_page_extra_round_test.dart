@@ -7,11 +7,13 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/finish.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
+import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toastification/toastification.dart';
 
 /// 完成页"加量完成"判定的回归测试。
 ///
@@ -169,5 +171,130 @@ void main() {
 
     expect(find.text('加量完成'), findsOneWidget);
     expect(find.text('再来一组'), findsOneWidget);
+  });
+
+  testWidgets('从完成页点击加量学习(再来一组)进入学习页后，回退直接回到今日计划页(/index)而非再次进入完成页', (tester) async {
+    const String userId = 'test_user_id';
+    UserPrivilegeManager.isPremiumOverrideForTesting = true;
+    addTearDown(() {
+      UserPrivilegeManager.isPremiumOverrideForTesting = null;
+    });
+
+    await seedDakaedDay();
+
+    // 种入激活词书和可用候选词，确保 prepareExtraStudy 成功
+    final dictId = 'test_extra_dict';
+    await db.into(db.dicts).insert(Dict(
+          id: dictId,
+          name: '测试词书',
+          wordCount: 10,
+          isShared: false,
+          isReady: true,
+          ownerId: userId,
+          visible: true,
+          editable: false,
+          deletable: false,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.learningDicts).insert(LearningDict(
+          userId: userId,
+          dictId: dictId,
+          isPrivileged: false,
+          fetchMastered: false,
+          sortAlg: 'ORIGINAL',
+          createTime: now,
+          updateTime: now,
+        ));
+    for (int i = 1; i <= 10; i++) {
+      final wid = 'extra_candidate_$i';
+      await db.into(db.words).insert(Word(
+            id: wid,
+            spell: 'extra$i',
+            popularity: 10,
+            createTime: now,
+            updateTime: now,
+          ));
+      await db.into(db.dictWords).insert(DictWord(
+            dictId: dictId,
+            wordId: wid,
+            seq: i,
+            unit: 0,
+            createTime: now,
+            updateTime: now,
+          ));
+    }
+
+    String currentRoute = '/index';
+
+    final router = GoRouter(
+      initialLocation: '/index',
+      routes: [
+        GoRoute(
+          path: '/index',
+          builder: (context, state) {
+            currentRoute = '/index';
+            return const Scaffold(body: Text('今日学习计划'));
+          },
+        ),
+        GoRoute(
+          path: '/finish',
+          builder: (context, state) {
+            currentRoute = '/finish';
+            return const FinishPage();
+          },
+        ),
+        GoRoute(
+          path: '/bdc',
+          builder: (context, state) {
+            currentRoute = '/bdc';
+            return Scaffold(
+              body: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('退出背单词'),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ToastificationWrapper(
+        child: ChangeNotifierProvider<DarkMode>.value(
+          value: DarkMode(),
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(currentRoute, '/index');
+
+    // 模拟学完进入完成页（栈底为 /index，栈顶为 /finish）
+    router.push('/finish');
+    await tester.pumpAndSettle();
+    for (int i = 0; i < 200; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+      if (find.text('再来一组').evaluate().isNotEmpty) break;
+    }
+
+    expect(find.text('再来一组'), findsOneWidget);
+    expect(router.routerDelegate.currentConfiguration.uri.toString(), '/finish');
+
+    // 点击"再来一组"，由于使用 pushReplacement，完成页应被 /bdc 替换
+    await tester.tap(find.text('再来一组'));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.toString(), '/bdc');
+    expect(find.text('退出背单词'), findsOneWidget);
+
+    // 在学习页点击回退(pop)，应直接回退到底部的今日计划页(/index)，而非完成页
+    await tester.tap(find.text('退出背单词'));
+    await tester.pumpAndSettle();
+
+    expect(router.routerDelegate.currentConfiguration.uri.toString(), '/index');
+    expect(find.text('今日学习计划'), findsOneWidget);
+    expect(find.text('打卡成功'), findsNothing);
+    expect(find.text('加量完成'), findsNothing);
   });
 }
