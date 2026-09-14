@@ -129,8 +129,8 @@ void main() {
     // 验证展示了例句内容
     expect(find.textContaining('This is a'), findsOneWidget);
 
-    // 验证选择题模式下切换按钮文案为「说例句」（非「说释义」）
-    expect(find.text('说例句'), findsOneWidget);
+    // 验证选择题模式下切换按钮文案为「说中文」（非「说释义」）
+    expect(find.text('说中文'), findsOneWidget);
     expect(find.text('说释义'), findsNothing);
   });
 
@@ -178,8 +178,9 @@ void main() {
     expect(find.textContaining('测试词'), findsWidgets);
     expect(find.textContaining('考验'), findsWidgets);
 
-    // 验证选择题模式下切换按钮文案为「读例句」（非「说发音」）
-    expect(find.text('读例句'), findsOneWidget);
+    // 验证选择题模式下切换按钮文案为「说英文」（非「说发音」）
+    expect(find.text('说英文'), findsOneWidget);
+    expect(find.text('说发音'), findsNothing);
   });
 
   testWidgets('例句模式文案彻底区分于单词模式（语音模式未作答状态）', (tester) async {

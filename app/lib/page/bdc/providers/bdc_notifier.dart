@@ -3336,9 +3336,9 @@ class BdcNotifier extends _$BdcNotifier {
     if (_shouldShowSpeakTab) {
       final String speakLabel;
       if (state.studyStep == StudyStep.enSentence2Ch.json) {
-        speakLabel = '说例句';
+        speakLabel = '说中文';
       } else if (state.studyStep == StudyStep.chSentence2En.json) {
-        speakLabel = '读例句';
+        speakLabel = '说英文';
       } else if (state.studyStep == StudyStep.en2Ch.json) {
         speakLabel = '说释义';
       } else {
