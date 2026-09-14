@@ -103,7 +103,10 @@ class BdcNotifier extends _$BdcNotifier {
   /// 页面过渡屏障：详情页弹出时，让音频播放等待页面动画完成再启动，
   /// 避让 iOS 导航转场动画与 AVAudioSession 初始化在主线线程上冲突导致的爆音。
   Completer<void>? _pageTransitionBarrier;
-  
+
+  /// 单词达到已掌握/毕业时的动画回调（供 UI 层播放飞向掌握按钮的动效）
+  void Function(String spell)? onWordMasteredGraduated;
+
   late final SpellingTextEditingController meaningController = SpellingTextEditingController(
     getTargetSpell: () => state.word?.spell,
     baseColor: AppTheme.primaryColor,
@@ -2478,7 +2481,7 @@ class BdcNotifier extends _$BdcNotifier {
       if (lw.lastLearningDate != null) {
         daysSinceLastReview = AppClock.today().difference(app_date.DateUtils.businessDate(lw.lastLearningDate!)).inDays;
       }
-      int days = state.daysSinceLastReview ?? 0;
+      final int days = daysSinceLastReview;
       FSRSItem nextItem;
       if (lw.stability == null || lw.stability == 0.0) {
         nextItem = fsrs.init(rating);
@@ -2496,6 +2499,12 @@ class BdcNotifier extends _$BdcNotifier {
       }
 
       state = state.copyWith(fsrsItem: nextItem, daysSinceLastReview: daysSinceLastReview);
+
+      // 若本次答对使稳定性跃升至毕业线（已掌握），触发飞向掌握按钮动效
+      if (nextItem.stability >= Constants.graduationStability && state.word?.spell != null) {
+        Global.logger.i('🎓 [FSRS-Graduate] 稳定性跃升达到毕业掌握线: word=${state.word!.spell}, stability=${nextItem.stability.toStringAsFixed(2)} >= ${Constants.graduationStability}');
+        onWordMasteredGraduated?.call(state.word!.spell);
+      }
     }
     Global.logger.d('[PERF] _onAnswerCorrect -> FSRS calculation cost: ${fsrsStopwatch.elapsedMilliseconds}ms');
 

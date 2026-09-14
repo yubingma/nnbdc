@@ -422,6 +422,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               minHeight: max(0.0, constraints.maxHeight - 16),
             ),
             child: Center(
+              key: _wordSpellKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -1078,6 +1079,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildTopActionButton({
+    Key? key,
     required IconData icon,
     String? label,
     required VoidCallback onTap,
@@ -1086,6 +1088,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     // 极简排布：裸图标 + 轻文字，不包裹药丸/描边/阴影容器，靠字阶与色彩建立层级。
     final Color fg = isDark ? const Color(0xFFCBD5E1) : context.textSecondary;
     return Material(
+      key: key,
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
@@ -1259,15 +1262,21 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
 
                 // 已掌握按钮
-                _buildTopActionButton(
-                  icon: Icons.check_circle_outline_rounded,
-                  label: '掌握',
-                  onTap: () {
-                    notifier.updateHasFinishedAnswering(true);
-                    notifier.updateIsWordMastered(true);
-                    ToastUtil.info("不再学习 ${state.word!.spell}");
-                    notifier.getNextWord(true);
-                  },
+                ScaleTransition(
+                  scale: _masteredButtonScaleAnimation,
+                  child: _buildTopActionButton(
+                    key: _masteredButtonKey,
+                    icon: Icons.check_circle_outline_rounded,
+                    label: '掌握',
+                    onTap: () {
+                      final spell = state.word?.spell ?? '';
+                      playMasteredFlyAnimation(spell);
+                      notifier.updateHasFinishedAnswering(true);
+                      notifier.updateIsWordMastered(true);
+                      ToastUtil.info("不再学习 $spell");
+                      notifier.getNextWord(true);
+                    },
+                  ),
                 ),
 
                 // 报错按钮

@@ -57,6 +57,7 @@ import "widgets/chinese_asr_input_widget.dart";
 import "widgets/english_asr_input_widget.dart";
 import "widgets/word_images_widget.dart";
 import "widgets/study_guide_overlay.dart";
+import "widgets/mastered_fly_animation.dart";
 
 part 'dialogs/bdc_dialogs.dart';
 part 'widgets/bdc_ui_components.dart';
@@ -110,6 +111,15 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   /// 新手引导：遮罩层自身 / 「正在倾听」语音识别区 的锚点
   final GlobalKey _guideOverlayKey = GlobalKey();
   final GlobalKey _asrListeningKey = GlobalKey();
+
+  /// 掌握动画：顶部掌握小按钮锚点与单词拼写锚点
+  final GlobalKey _masteredButtonKey = GlobalKey();
+  final GlobalKey _wordSpellKey = GlobalKey();
+
+  /// 掌握小按钮受击时的弹跳反馈控制器
+  late final AnimationController _masteredButtonScaleController;
+  late final Animation<double> _masteredButtonScaleAnimation;
+  BdcNotifier? _notifierRef;
 
   /// 是否正在展示新手引导（首次进入学习页自动展示，也可从设置里再次打开）
   bool _showStudyGuide = false;
@@ -283,10 +293,33 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+
+    _masteredButtonScaleController = AnimationController(
+      duration: const Duration(milliseconds: 260),
+      vsync: this,
+    );
+    _masteredButtonScaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.25)
+            .chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 45,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.25, end: 1.0)
+            .chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 55,
+      ),
+    ]).animate(_masteredButtonScaleController);
+
+    // 绑定掌握毕业飞行动画回调
+    _notifierRef = ref.read(bdcNotifierProvider.notifier);
+    _notifierRef?.onWordMasteredGraduated = playMasteredFlyAnimation;
   }
 
   @override
   void dispose() {
+    _notifierRef?.onWordMasteredGraduated = null;
+    _notifierRef = null;
     _keyboardSubscription.cancel();
     _tabController?.dispose();
     _meaningFocusNode.dispose();
@@ -295,12 +328,28 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     _soundController.dispose();
     _wordSoundController.dispose();
     _sentenceSoundController.dispose();
+    _masteredButtonScaleController.dispose();
 
     // 本次学习结束或中途退出, 补办答题期间被延迟的晋升仪式
     LevelService().leaveStudy();
 
     super.dispose();
-    }
+  }
+
+  /// 播放单词飞向掌握按钮的动画
+  void playMasteredFlyAnimation(String spell) {
+    if (!mounted || spell.isEmpty) return;
+    MasteredFlyAnimation.play(
+      context: context,
+      spell: spell,
+      startKey: _wordSpellKey,
+      targetKey: _masteredButtonKey,
+      onArrived: () {
+        if (!mounted) return;
+        _masteredButtonScaleController.forward(from: 0.0);
+      },
+    );
+  }
 
   /// 首次进入学习页时展示新手引导：只讲「你说，我来听」这一件事，
   /// 其余功能留给用户自己探索。

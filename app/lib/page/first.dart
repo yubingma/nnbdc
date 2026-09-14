@@ -250,7 +250,6 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
     final textMainColor = themeConfig.textPrimary;
     final textSubColor = themeConfig.textSecondary;
     final textMutedColor = isDarkMode ? Colors.white38 : const Color(0xFF94A3B8);
-    final accentColor = context.primaryColor;
 
     return AppScaffold(
       vibrancy: PageVibrancy.splash,
@@ -266,37 +265,12 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
                   child: child,
                 );
               },
-              child: Container(
-                width: 88,
-                height: 88,
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: accentColor.withValues(alpha: 0.18),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.16),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    "assets/images/logo.png",
-                    width: 76,
-                    height: 76,
-                    fit: BoxFit.cover,
-                  ),
+              child: ClipOval(
+                child: Image.asset(
+                  "assets/images/logo.png",
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
