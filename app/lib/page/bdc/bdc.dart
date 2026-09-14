@@ -300,16 +300,16 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     );
 
     _questionCollapseController = AnimationController(
-      duration: const Duration(milliseconds: 180),
+      duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _questionCollapseScaleAnimation = Tween<double>(begin: 1.0, end: 0.76).animate(
+    _questionCollapseScaleAnimation = Tween<double>(begin: 1.0, end: 0.02).animate(
       CurvedAnimation(
         parent: _questionCollapseController,
         curve: Curves.easeInOutCubic,
       ),
     );
-    _questionCollapseOpacityAnimation = Tween<double>(begin: 1.0, end: 0.15).animate(
+    _questionCollapseOpacityAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _questionCollapseController,
         curve: Curves.easeInQuad,
@@ -359,15 +359,15 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     super.dispose();
   }
 
-  /// 播放单词掌握动画：题目区先向中心坍缩凝聚，随后从凝聚中心凝结出掌握胶囊飞向右上角掌握按钮
+  /// 播放单词掌握动画：题目区先向中心坍缩凝聚成微核，随后从凝聚中心破茧凝结出掌握胶囊飞向右上角掌握按钮
   void playMasteredFlyAnimation(String spell) async {
     if (!mounted || spell.isEmpty) return;
 
-    // 第一阶段：题目区向中心坍缩凝聚 (180ms)
+    // 第一阶段：题目区向中心深度坍缩凝聚为微核 (200ms)
     await _questionCollapseController.forward(from: 0.0);
     if (!mounted) return;
 
-    // 第二阶段：在凝聚中心生成掌握胶囊，带流光轨迹飞向右上角掌握按钮
+    // 第二阶段：在凝聚中心破茧生成掌握胶囊，带流光轨迹飞向右上角掌握按钮
     MasteredFlyAnimation.play(
       context: context,
       spell: spell,
@@ -379,8 +379,11 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       },
     );
 
-    // 胶囊飞出后，平滑复原题目区状态以迎接新内容
-    _questionCollapseController.reset();
+    // 第三阶段：等待胶囊飞离中心一段距离后（260ms），平滑复原题目区以迎接新内容
+    await Future.delayed(const Duration(milliseconds: 260));
+    if (mounted) {
+      _questionCollapseController.reset();
+    }
   }
 
   /// 首次进入学习页时展示新手引导：只讲「你说，我来听」这一件事，

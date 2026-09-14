@@ -135,13 +135,13 @@ class _FlyTrajectoryState extends State<_FlyTrajectory> with SingleTickerProvide
         final t = _animation.value;
         final currentPos = computePoint(widget.startOffset, widget.targetOffset, t);
 
-        // 缩放：从题目区坍缩中心破茧初生 (0.55 -> 1.05)，随后沿抛物线轨迹优雅聚敛融入右上角掌握按钮 (0.35)
-        final double scale = t < 0.16
-            ? 0.55 + 0.50 * sin((t / 0.16) * (pi / 2))
-            : 1.05 - 0.70 * ((t - 0.16) / 0.84);
+        // 缩放：与题目区坍缩微核无缝严丝合缝 (0.02 -> 1.08 破茧绽放)，随后沿抛物线轨迹优雅聚敛融入右上角掌握按钮 (0.35)
+        final double scale = t < 0.18
+            ? 0.02 + 1.06 * sin((t / 0.18) * (pi / 2))
+            : 1.08 - 0.73 * ((t - 0.18) / 0.82);
 
-        // 透明度：前 6% 瞬间自光晕中凝聚显形，最后 15% 融入掌握按钮
-        final double fadeIn = (t / 0.06).clamp(0.0, 1.0);
+        // 透明度：前 8% 自微核中无缝凝聚显形，最后 15% 融入掌握按钮
+        final double fadeIn = (t / 0.08).clamp(0.0, 1.0);
         final double fadeOut = t > 0.85 ? (1.0 - (t - 0.85) / 0.15).clamp(0.0, 1.0) : 1.0;
         final double opacity = fadeIn * fadeOut;
 
