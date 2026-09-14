@@ -775,19 +775,23 @@ extension BdcPageStateUIComponents on BdcPageState {
                                                     : const Color(0xFF5A716E),
                                               ),
                                               const SizedBox(width: 4.5),
-                                              Text(
-                                                state.studyStep ==
-                                                        StudyStep.en2Ch.json
-                                                    ? '请说出中文释义：'
-                                                    : '请说出单词发音：',
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: _cachedIsDarkMode
-                                                      ? const Color(0xFFCBD5E1)
-                                                      : const Color(0xFF475569),
-                                                  letterSpacing: -0.1,
+                                              Flexible(
+                                                child: Text(
+                                                  state.studyStep ==
+                                                          StudyStep.en2Ch.json
+                                                      ? '请说出中文释义：'
+                                                      : '请说出单词发音：',
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.w500,
+                                                    color: _cachedIsDarkMode
+                                                        ? const Color(0xFFCBD5E1)
+                                                        : const Color(0xFF475569),
+                                                    letterSpacing: -0.1,
+                                                  ),
                                                 ),
                                               ),
                                               if (state.isAiEvaluating) ...[
