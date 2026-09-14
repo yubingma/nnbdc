@@ -278,22 +278,22 @@ void main() {
       if (find.text('再来一组').evaluate().isNotEmpty) break;
     }
 
+    expect(find.byType(FinishPage), findsOneWidget);
     expect(find.text('再来一组'), findsOneWidget);
-    expect(router.routerDelegate.currentConfiguration.uri.toString(), '/finish');
 
     // 点击"再来一组"，由于使用 pushReplacement，完成页应被 /bdc 替换
     await tester.tap(find.text('再来一组'));
     await tester.pumpAndSettle();
 
-    expect(router.routerDelegate.currentConfiguration.uri.toString(), '/bdc');
+    expect(find.byType(FinishPage), findsNothing, reason: '完成页已被 pushReplacement 替换出栈');
     expect(find.text('退出背单词'), findsOneWidget);
 
     // 在学习页点击回退(pop)，应直接回退到底部的今日计划页(/index)，而非完成页
     await tester.tap(find.text('退出背单词'));
     await tester.pumpAndSettle();
 
-    expect(router.routerDelegate.currentConfiguration.uri.toString(), '/index');
-    expect(find.text('今日学习计划'), findsOneWidget);
+    expect(find.text('今日学习计划'), findsOneWidget, reason: '加量中途回退应直接回到今日学习计划页');
+    expect(find.byType(FinishPage), findsNothing, reason: '绝不得再次回到完成页造成已学完误解');
     expect(find.text('打卡成功'), findsNothing);
     expect(find.text('加量完成'), findsNothing);
   });
