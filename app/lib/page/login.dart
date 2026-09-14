@@ -35,8 +35,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginPageState extends State<LoginPage>
-    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  late AnimationController _bubbleController;
+    with WidgetsBindingObserver {
   bool _approved = false;
   bool _isWechatLoading = false;
   bool _isAppleLoading = false;
@@ -46,7 +45,6 @@ class LoginPageState extends State<LoginPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _bubbleController.dispose();
     super.dispose();
   }
 
@@ -69,11 +67,6 @@ class LoginPageState extends State<LoginPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
-    _bubbleController = AnimationController(
-      duration: const Duration(seconds: 10),
-      vsync: this,
-    )..repeat();
 
     loadData();
     _checkWechatInstallation();
@@ -137,101 +130,26 @@ class LoginPageState extends State<LoginPage>
     return AppScaffold(
       // 登录页在手机浅色模式下用莫兰迪灰调背景，偏暗；提气让整页透出主题色鲜活感
       vibrancy: PageVibrancy.login,
-      body: Stack(
-        children: [
-          // 1. 顶部与底部柔和环境微光
-          Positioned(
-            top: -100,
-            right: -80,
-            child: Container(
-              width: 320,
-              height: 320,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    accentColor.withValues(alpha: isDarkMode ? 0.15 : 0.09),
-                    accentColor.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 60,
-            left: -100,
-            child: Container(
-              width: 340,
-              height: 340,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    accentColor.withValues(alpha: isDarkMode ? 0.09 : 0.06),
-                    accentColor.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-            ),
-          ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            children: [
+              const Spacer(flex: 3),
 
-          // 2. 呼吸浮动泡泡
-          AnimatedBuilder(
-            animation: _bubbleController,
-            builder: (context, child) {
-              return Stack(
-                children: [
-                  _buildFloatingBubble(0.15, 0.75, 44, isDarkMode ? 0.04 : 0.06, offset: 0.1, isDark: isDarkMode, color: accentColor),
-                  _buildFloatingBubble(0.78, 0.60, 26, isDarkMode ? 0.03 : 0.05, offset: 0.4, isDark: isDarkMode, color: accentColor),
-                  _buildFloatingBubble(0.10, 0.25, 34, isDarkMode ? 0.03 : 0.04, offset: 0.7, isDark: isDarkMode, color: accentColor),
-                  _buildFloatingBubble(0.85, 0.18, 18, isDarkMode ? 0.04 : 0.06, offset: 0.2, isDark: isDarkMode, color: accentColor),
-                  _buildFloatingBubble(0.52, 0.48, 22, isDarkMode ? 0.02 : 0.04, offset: 0.9, isDark: isDarkMode, color: accentColor),
-                ],
-              );
-            },
-          ),
-
-          // 3. 核心内容
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                children: [
-                  const Spacer(flex: 3),
-
-                  // Brand Hero & Logo
-                  GestureDetector(
-                    onDoubleTap: _showVersionAndProfileDialog,
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 88,
-                          height: 88,
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF13201D) : Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDarkMode ? Colors.white12 : const Color(0x1418BA7C),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: isDarkMode ? Colors.black45 : const Color(0x1818BA7C),
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              width: 76,
-                              height: 76,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
+              // Brand Hero & Logo
+              GestureDetector(
+                onDoubleTap: _showVersionAndProfileDialog,
+                child: Column(
+                  children: [
+                    ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                         const SizedBox(height: 22),
                         Text(
                           Global.appName,
@@ -278,13 +196,6 @@ class LoginPageState extends State<LoginPage>
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withValues(alpha: isDarkMode ? 0.35 : 0.3),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
                           ),
                           child: ElevatedButton.icon(
                             onPressed: (_isWechatLoading || _isAppleLoading || _isGuestLoading)
@@ -330,13 +241,6 @@ class LoginPageState extends State<LoginPage>
                             border: Border.all(
                               color: isDarkMode ? Colors.white12 : Colors.transparent,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.15),
-                                blurRadius: 16,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
                           ),
                           child: ElevatedButton.icon(
                             onPressed: (_isWechatLoading || _isAppleLoading || _isGuestLoading)
@@ -383,13 +287,6 @@ class LoginPageState extends State<LoginPage>
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withValues(alpha: isDarkMode ? 0.35 : 0.3),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
                           ),
                           child: ElevatedButton.icon(
                             onPressed: (_isWechatLoading || _isAppleLoading || _isGuestLoading)
@@ -524,7 +421,7 @@ class LoginPageState extends State<LoginPage>
                                 style: TextStyle(
                                   color: textMutedColor,
                                   fontSize: 11.5,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.normal,
                                   fontFamily: 'NotoSansSC',
                                 ),
                               ),
@@ -534,7 +431,7 @@ class LoginPageState extends State<LoginPage>
                                 style: TextStyle(
                                   color: textMutedColor,
                                   fontSize: 11.5,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.normal,
                                   fontFamily: 'NotoSansSC',
                                 ),
                               ),
@@ -550,8 +447,6 @@ class LoginPageState extends State<LoginPage>
               ),
             ),
           ),
-        ],
-      ),
     );
   }
 
@@ -568,33 +463,9 @@ class LoginPageState extends State<LoginPage>
         text,
         style: TextStyle(
           fontSize: 13,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           fontFamily: 'NotoSansSC',
           color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFloatingBubble(double leftPercent, double startBottomPercent, double size, double opacity,
-      {required double offset, required bool isDark, required Color color}) {
-    double progress = (_bubbleController.value + offset) % 1.0;
-    double bottom = (startBottomPercent + (1.0 - startBottomPercent) * progress) * MediaQuery.of(context).size.height;
-    double currentOpacity = opacity * (1.0 - progress * 0.5);
-
-    return Positioned(
-      left: leftPercent * MediaQuery.of(context).size.width,
-      bottom: bottom,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color.withValues(alpha: currentOpacity),
-          border: Border.all(
-            color: color.withValues(alpha: currentOpacity * 1.6),
-            width: 0.8,
-          ),
         ),
       ),
     );
@@ -608,7 +479,7 @@ class LoginPageState extends State<LoginPage>
         style: TextStyle(
           color: mainColor,
           fontSize: 11.5,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.normal,
           fontFamily: 'NotoSansSC',
           decoration: TextDecoration.underline,
         ),
