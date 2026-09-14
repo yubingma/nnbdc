@@ -2027,7 +2027,11 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
         newWordCount: masteredCount,
       );
       // 词汇勋章判定收敛到此处: 手动标记与自动毕业共用同一口径, 不再依赖各 UI 入口自行触发
-      unawaited(BadgeService().checkMasteredWords(masteredCount: maxMasteredCount));
+      // 必须在 Zone.root 调度微任务以彻底脱离当前 Drift 事务 Zone，避免后台异步任务
+      // 继承已关闭事务的 executor 从而抛出 "A transaction was used after being closed"
+      Zone.root.scheduleMicrotask(() {
+        BadgeService().checkMasteredWords(masteredCount: maxMasteredCount);
+      });
     }
   }
 

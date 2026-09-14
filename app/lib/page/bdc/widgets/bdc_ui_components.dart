@@ -421,13 +421,8 @@ extension BdcPageStateUIComponents on BdcPageState {
             constraints: BoxConstraints(
               minHeight: max(0.0, constraints.maxHeight - 16),
             ),
-            child: ScaleTransition(
-              scale: _questionCollapseScaleAnimation,
-              child: FadeTransition(
-                opacity: _questionCollapseOpacityAnimation,
-                child: Center(
-                  key: _wordSpellKey,
-                  child: Column(
+            child: Center(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -460,11 +455,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
-  },
-);
   }
 
   Widget _buildModeSwitchButton() {
@@ -650,70 +643,79 @@ extension BdcPageStateUIComponents on BdcPageState {
         // 题目区 - 保持固定匀称比例（4:5）
         Expanded(
           flex: 4,
-          child: Consumer(
-            builder: (context, ref, child) {
-              // 物理隔离：只监听会影响卡片渲染的核心状态
-              final wordId =
-                  ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
-              final historyIndex =
-                  ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
-              final showSentenceTranslation = ref.watch(
-                  bdcNotifierProvider.select((s) => s.showSentenceTranslation));
-              final isEditMode =
-                  ref.watch(bdcNotifierProvider.select((s) => s.isEditMode));
-              final wordPlaying = ref.watch(bdcNotifierProvider
-                  .select((s) => s.playingStates['word'] ?? false));
-              final sentencePlaying = ref.watch(bdcNotifierProvider
-                  .select((s) => s.playingStates['sentence'] ?? false));
-              final imagesLength = ref.watch(bdcNotifierProvider
-                  .select((s) => s.currentGetWordResult?.images?.length ?? 0));
-              final highlightedWordImg = ref.watch(
-                  bdcNotifierProvider.select((s) => s.highlightedWordImg));
+          child: ScaleTransition(
+            scale: _questionCollapseScaleAnimation,
+            child: FadeTransition(
+              opacity: _questionCollapseOpacityAnimation,
+              child: Container(
+                key: _wordSpellKey,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    // 物理隔离：只监听会影响卡片渲染的核心状态
+                    final wordId =
+                        ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
+                    final historyIndex =
+                        ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
+                    final showSentenceTranslation = ref.watch(
+                        bdcNotifierProvider.select((s) => s.showSentenceTranslation));
+                    final isEditMode =
+                        ref.watch(bdcNotifierProvider.select((s) => s.isEditMode));
+                    final wordPlaying = ref.watch(bdcNotifierProvider
+                        .select((s) => s.playingStates['word'] ?? false));
+                    final sentencePlaying = ref.watch(bdcNotifierProvider
+                        .select((s) => s.playingStates['sentence'] ?? false));
+                    final imagesLength = ref.watch(bdcNotifierProvider
+                        .select((s) => s.currentGetWordResult?.images?.length ?? 0));
+                    final highlightedWordImg = ref.watch(
+                        bdcNotifierProvider.select((s) => s.highlightedWordImg));
 
-              // 获取当前最新脱敏 state 传给卡片渲染，以确保 state 中的其他字段也是最新的，但不会被其改变触发不必要的 rebuild
-              final currentState = ref.read(bdcNotifierProvider);
+                    // 获取当前最新脱敏 state 传给卡片渲染，以确保 state 中的其他字段也是最新的，但不会被其改变触发不必要的 rebuild
+                    final currentState = ref.read(bdcNotifierProvider);
 
-              // 确保 imagesLength 被显式使用以消除编译器警告并保持监听状态
-              if (imagesLength < 0) {
-                Global.logger.d('imagesLength: $imagesLength');
-              }
+                    // 确保 imagesLength 被显式使用以消除编译器警告并保持监听状态
+                    if (imagesLength < 0) {
+                      Global.logger.d('imagesLength: $imagesLength');
+                    }
 
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                layoutBuilder:
-                    (Widget? currentChild, List<Widget> previousChildren) {
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      ...previousChildren,
-                      if (currentChild != null) currentChild,
-                    ],
-                  );
-                },
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
-                },
-                child: SizedBox(
-                  key: ValueKey('word_card_${wordId}_$historyIndex'),
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: _buildQuestionContent(currentState.copyWith(
-                    showSentenceTranslation: showSentenceTranslation,
-                    isEditMode: isEditMode,
-                    playingStates: {
-                      'word': wordPlaying,
-                      'sentence': sentencePlaying
-                    },
-                    highlightedWordImg: highlightedWordImg,
-                  )),
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      layoutBuilder:
+                          (Widget? currentChild, List<Widget> previousChildren) {
+                        return Stack(
+                          fit: StackFit.expand,
+                          children: <Widget>[
+                            ...previousChildren,
+                            if (currentChild != null) currentChild,
+                          ],
+                        );
+                      },
+                      transitionBuilder: (Widget child, Animation<double> animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                      child: SizedBox(
+                        key: ValueKey('word_card_${wordId}_$historyIndex'),
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: _buildQuestionContent(currentState.copyWith(
+                          showSentenceTranslation: showSentenceTranslation,
+                          isEditMode: isEditMode,
+                          playingStates: {
+                            'word': wordPlaying,
+                            'sentence': sentencePlaying
+                          },
+                          highlightedWordImg: highlightedWordImg,
+                        )),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
         // 题目区和做题区之间的统一间距
