@@ -1500,8 +1500,11 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+  bool _isGettingNextWordLock = false;
+
   Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating, bool fastPath = false}) async {
-    if (state.isGettingNextWord) return false;
+    if (_isGettingNextWordLock || state.isGettingNextWord) return false;
+    _isGettingNextWordLock = true;
     _cancelPendingWordTimers();
     final totalStopwatch = Stopwatch()..start();
     debugPrint('🕵️ [AudioDiag] getNextWord.enter | gotoNext=$gotoNext fastPath=$fastPath word=${state.word?.spell}');
@@ -1509,85 +1512,7 @@ class BdcNotifier extends _$BdcNotifier {
     _saveCurrentWordState();
     _playToken++; // 取消任何待执行的自动播放延迟 callback
 
-    // 快速通道（详情页预拉取）：跳过音频/ASR 清理和视觉驻留，仅做数据加载。
-    if (!fastPath) {
-      // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
-      // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
-      try {
-        unawaited(StudyAudioSessionController.instance.cancelPlayback());
-      } catch (_) {}
-
-      // 答对单词后切换下一词前的视觉驻留延迟。
-      // Ch2En 模式（说英文）发音已播完提供充足的驻留时长，无需额外等待；
-      // 其他模式（如 En2Ch）仅播短促提示音，保留 50ms 缓冲让用户看一眼评分。
-      if (gotoNext && state.word != null) {
-        final dwellMs = state.studyStep == StudyStep.ch2En.json ? 0 : 50;
-        if (dwellMs > 0) await Future.delayed(Duration(milliseconds: dwellMs));
-      }
-    }
-
-    if (state.historyIndex != -1) {
-      if (gotoNext) {
-        final lw = state.currentGetWordResult?.learningWord;
-
-        // 回看模式下点击掌握：保存已掌握状态，并从历史中移除以避免回看时再次出现
-        bool didMaster = false;
-        if (state.isWordMastered && lw != null) {
-          await StudyBo().markWordAsMastered(lw);
-          final filteredHistory = state.history
-              .where((item) => item.learningWord?.word.id != lw.word.id)
-              .toList();
-          state = state.copyWith(history: filteredHistory);
-
-          // 同步更新持久化的历史记录：取消待执行定时器，用过滤后的最后一项替换或清除
-          _persistTimer?.cancel();
-          if (filteredHistory.isNotEmpty) {
-            final lastItem = filteredHistory.last;
-            final lastWordId = lastItem.learningWord?.word.id;
-            final lastUiState = lastWordId != null ? state.wordUIStates[lastWordId] : null;
-            if (lastUiState != null) {
-              _persistLastWordHistoryItemWith(lastItem, lastUiState);
-            } else {
-              Prefs.remove('last_word_history_item');
-            }
-          } else {
-            Prefs.remove('last_word_history_item');
-          }
-
-          didMaster = true;
-        }
-
-        if (lw != null && state.fsrsItem != null && state.lastFsrsRating != null) {
-          StudyBo().saveHistoryFSRSUpdate(
-            currWord: lw,
-            nextFsrs: state.fsrsItem!,
-            newRating: state.lastFsrsRating!,
-          );
-        }
-
-        // 若本次掌握了当前词，该词已从 history 中移除，后续词前移一位，nextIndex 不 +1
-        int nextIndex = didMaster ? state.historyIndex : state.historyIndex + 1;
-        if (nextIndex >= state.history.length) {
-          state = state.copyWith(historyIndex: -1);
-          final target = state.reviewReturnTarget;
-          if (target != null) {
-            final res = await handleWord(target, isFromBatchWordList: true);
-            Global.logger.i('[PERF] Total getNextWord (history exit) cost: ${totalStopwatch.elapsedMilliseconds}ms');
-            return res;
-          } else {
-            final res = await getNextWord(false);
-            Global.logger.i('[PERF] Total getNextWord (history fallback) cost: ${totalStopwatch.elapsedMilliseconds}ms');
-            return res;
-          }
-        } else {
-          state = state.copyWith(historyIndex: nextIndex);
-          final res = await handleWord(state.history[nextIndex]);
-          Global.logger.i('[PERF] Total getNextWord (history next) cost: ${totalStopwatch.elapsedMilliseconds}ms');
-          return res;
-        }
-      }
-    }
-
+    // 同步立即置位状态与锁，UI 按钮立即禁用，在任何 await 前彻底阻断后续并发与重复触发
     state = state.copyWith(
       isGettingNextWord: true,
       canLeaveCurrWord: false,
@@ -1595,7 +1520,86 @@ class BdcNotifier extends _$BdcNotifier {
       hasFinishedAnswering: false,
       showAnswerButtons: false,
     );
+
     try {
+      // 快速通道（详情页预拉取）：跳过音频/ASR 清理和视觉驻留，仅做数据加载。
+      if (!fastPath) {
+        // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
+        // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
+        try {
+          unawaited(StudyAudioSessionController.instance.cancelPlayback());
+        } catch (_) {}
+
+        // 答对单词后切换下一词前的视觉驻留延迟。
+        // Ch2En 模式（说英文）发音已播完提供充足的驻留时长，无需额外等待；
+        // 其他模式（如 En2Ch）仅播短促提示音，保留 50ms 缓冲让用户看一眼评分。
+        if (gotoNext && state.word != null) {
+          final dwellMs = state.studyStep == StudyStep.ch2En.json ? 0 : 50;
+          if (dwellMs > 0) await Future.delayed(Duration(milliseconds: dwellMs));
+        }
+      }
+
+      if (state.historyIndex != -1) {
+        if (gotoNext) {
+          final lw = state.currentGetWordResult?.learningWord;
+
+          // 回看模式下点击掌握：保存已掌握状态，并从历史中移除以避免回看时再次出现
+          bool didMaster = false;
+          if (state.isWordMastered && lw != null) {
+            await StudyBo().markWordAsMastered(lw);
+            final filteredHistory = state.history
+                .where((item) => item.learningWord?.word.id != lw.word.id)
+                .toList();
+            state = state.copyWith(history: filteredHistory);
+
+            // 同步更新持久化的历史记录：取消待执行定时器，用过滤后的最后一项替换或清除
+            _persistTimer?.cancel();
+            if (filteredHistory.isNotEmpty) {
+              final lastItem = filteredHistory.last;
+              final lastWordId = lastItem.learningWord?.word.id;
+              final lastUiState = lastWordId != null ? state.wordUIStates[lastWordId] : null;
+              if (lastUiState != null) {
+                _persistLastWordHistoryItemWith(lastItem, lastUiState);
+              } else {
+                Prefs.remove('last_word_history_item');
+              }
+            } else {
+              Prefs.remove('last_word_history_item');
+            }
+
+            didMaster = true;
+          }
+
+          if (lw != null && state.fsrsItem != null && state.lastFsrsRating != null) {
+            StudyBo().saveHistoryFSRSUpdate(
+              currWord: lw,
+              nextFsrs: state.fsrsItem!,
+              newRating: state.lastFsrsRating!,
+            );
+          }
+
+          // 若本次掌握了当前词，该词已从 history 中移除，后续词前移一位，nextIndex 不 +1
+          int nextIndex = didMaster ? state.historyIndex : state.historyIndex + 1;
+          if (nextIndex >= state.history.length) {
+            state = state.copyWith(historyIndex: -1);
+            final target = state.reviewReturnTarget;
+            if (target != null) {
+              final res = await handleWord(target, isFromBatchWordList: true);
+              Global.logger.i('[PERF] Total getNextWord (history exit) cost: ${totalStopwatch.elapsedMilliseconds}ms');
+              return res;
+            } else {
+              // 退出历史模式回到当前词：重置 gotoNext 为 false（仅刷新当前词位置），直接流转到后续正常取词流程
+              gotoNext = false;
+            }
+          } else {
+            state = state.copyWith(historyIndex: nextIndex);
+            final res = await handleWord(state.history[nextIndex]);
+            Global.logger.i('[PERF] Total getNextWord (history next) cost: ${totalStopwatch.elapsedMilliseconds}ms');
+            return res;
+          }
+        }
+      }
+
       if (!fastPath) {
         try {
           await Future.wait([
@@ -1650,6 +1654,7 @@ class BdcNotifier extends _$BdcNotifier {
       ErrorHandler.handleError(e, st, logPrefix: 'getNextWord');
       return false;
     } finally {
+      _isGettingNextWordLock = false;
       state = state.copyWith(isGettingNextWord: false);
       Global.logger.i('[PERF] Total getNextWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
     }

@@ -642,34 +642,36 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
   /// 置为 false 的调用方必须自己负责失效——批量路径在本批结束时对每本受影响词书调用一次
   /// [WordBo.clearTspCache]，单条路径则在自己事务之外显式调用一次。
   Future<void> insertEntity(DictWord entry, bool genLog, {bool invalidateTspCache = true}) async {
-    var existing = await getById(entry.dictId, entry.wordId);
-    if (existing == null) {
-      DictWord entryToInsert = entry;
+    await transaction(() async {
+      var existing = await getById(entry.dictId, entry.wordId);
+      if (existing == null) {
+        DictWord entryToInsert = entry;
 
-      if (genLog) {
-        // 获取词书中单词最大的seq
-        final maxSeqQuery = selectOnly(dictWords)
-          ..addColumns([dictWords.seq.max()])
-          ..where(dictWords.dictId.equals(entry.dictId));
+        if (genLog) {
+          // 获取词书中单词最大的seq
+          final maxSeqQuery = selectOnly(dictWords)
+            ..addColumns([dictWords.seq.max()])
+            ..where(dictWords.dictId.equals(entry.dictId));
 
-        final maxSeqResult = await maxSeqQuery.getSingle();
-        final maxSeq = maxSeqResult.read(dictWords.seq.max()) ?? 0;
+          final maxSeqResult = await maxSeqQuery.getSingle();
+          final maxSeq = maxSeqResult.read(dictWords.seq.max()) ?? 0;
 
-        // 创建新的entry，seq为最大值+1
-        entryToInsert = entry.copyWith(seq: maxSeq + 1);
-        Global.logger.d('词书添加单词: wordId=${entry.wordId}, 新seq=${maxSeq + 1}');
+          // 创建新的entry，seq为最大值+1
+          entryToInsert = entry.copyWith(seq: maxSeq + 1);
+          Global.logger.d('词书添加单词: wordId=${entry.wordId}, 新seq=${maxSeq + 1}');
+        }
+
+        await into(dictWords).insert(entryToInsert);
+        if (invalidateTspCache) WordBo.clearTspCache(entry.dictId, db);
+        if (genLog) {
+          var dict = await db.dictsDao.findById(entry.dictId);
+          var owner = dict?.ownerId;
+          await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', entryToInsert);
+
+          await _validateDictWordsOrder(entry.dictId);
+        }
       }
-
-      await into(dictWords).insert(entryToInsert);
-      if (invalidateTspCache) WordBo.clearTspCache(entry.dictId, db);
-      if (genLog) {
-        var dict = await db.dictsDao.findById(entry.dictId);
-        var owner = dict?.ownerId;
-        await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', entryToInsert);
-
-        await _validateDictWordsOrder(entry.dictId);
-      }
-    }
+    });
   }
 
   // 删除词书中的单词（用户主动删除时删除后重排剩余词 seq 并生成 UPDATE 日志；
@@ -1872,41 +1874,43 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
       return;
     }
 
-    // 检查是否已存在
-    final existing = await (select(db.dictWords)
-          ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId)))
-        .getSingleOrNull();
+    await transaction(() async {
+      // 检查是否已存在
+      final existing = await (select(db.dictWords)
+            ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId)))
+          .getSingleOrNull();
 
-    if (existing != null) {
-      Global.logger.d('单词已在已掌握词书中: wordId=$wordId');
-      return;
-    }
+      if (existing != null) {
+        Global.logger.d('单词已在已掌握词书中: wordId=$wordId');
+        return;
+      }
 
-    // 获取最大seq
-    final maxSeqResult = await (selectOnly(db.dictWords)
-          ..addColumns([db.dictWords.seq.max()])
-          ..where(db.dictWords.dictId.equals(dictId)))
-        .getSingle();
-    final maxSeq = maxSeqResult.read(db.dictWords.seq.max()) ?? 0;
+      // 获取最大seq
+      final maxSeqResult = await (selectOnly(db.dictWords)
+            ..addColumns([db.dictWords.seq.max()])
+            ..where(db.dictWords.dictId.equals(dictId)))
+          .getSingle();
+      final maxSeq = maxSeqResult.read(db.dictWords.seq.max()) ?? 0;
 
-    final now = AppClock.now();
-    final newDictWord = DictWord(
-      dictId: dictId,
-      wordId: wordId,
-      seq: maxSeq + 1,
-      unit: 0,
-      createTime: now,
-      updateTime: now,
-    );
+      final now = AppClock.now();
+      final newDictWord = DictWord(
+        dictId: dictId,
+        wordId: wordId,
+        seq: maxSeq + 1,
+        unit: 0,
+        createTime: now,
+        updateTime: now,
+      );
 
-    await db.dictWordsDao.insertEntity(newDictWord, genLog);
+      await db.dictWordsDao.insertEntity(newDictWord, genLog);
 
-    // 更新词书wordCount
-    await db.dictsDao.updateWordCount(dictId, genLog);
+      // 更新词书wordCount
+      await db.dictsDao.updateWordCount(dictId, genLog);
 
-    if (updateUser) {
-      await updateUserMasteredWordCount(userId);
-    }
+      if (updateUser) {
+        await updateUserMasteredWordCount(userId);
+      }
+    });
   }
 
   // 删除掌握的单词（从"已掌握"词书中移除，并移动到生词本）
