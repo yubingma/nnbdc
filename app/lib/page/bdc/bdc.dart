@@ -116,6 +116,11 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   final GlobalKey _masteredButtonKey = GlobalKey();
   final GlobalKey _wordSpellKey = GlobalKey();
 
+  /// 掌握动效：题目区向中心坍缩凝聚的控制器与动画
+  late final AnimationController _questionCollapseController;
+  late final Animation<double> _questionCollapseScaleAnimation;
+  late final Animation<double> _questionCollapseOpacityAnimation;
+
   /// 掌握小按钮受击时的弹跳反馈控制器
   late final AnimationController _masteredButtonScaleController;
   late final Animation<double> _masteredButtonScaleAnimation;
@@ -294,6 +299,23 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       vsync: this,
     );
 
+    _questionCollapseController = AnimationController(
+      duration: const Duration(milliseconds: 180),
+      vsync: this,
+    );
+    _questionCollapseScaleAnimation = Tween<double>(begin: 1.0, end: 0.76).animate(
+      CurvedAnimation(
+        parent: _questionCollapseController,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
+    _questionCollapseOpacityAnimation = Tween<double>(begin: 1.0, end: 0.15).animate(
+      CurvedAnimation(
+        parent: _questionCollapseController,
+        curve: Curves.easeInQuad,
+      ),
+    );
+
     _masteredButtonScaleController = AnimationController(
       duration: const Duration(milliseconds: 260),
       vsync: this,
@@ -328,6 +350,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     _soundController.dispose();
     _wordSoundController.dispose();
     _sentenceSoundController.dispose();
+    _questionCollapseController.dispose();
     _masteredButtonScaleController.dispose();
 
     // 本次学习结束或中途退出, 补办答题期间被延迟的晋升仪式
@@ -336,9 +359,15 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     super.dispose();
   }
 
-  /// 播放单词飞向掌握按钮的动画
-  void playMasteredFlyAnimation(String spell) {
+  /// 播放单词掌握动画：题目区先向中心坍缩凝聚，随后从凝聚中心凝结出掌握胶囊飞向右上角掌握按钮
+  void playMasteredFlyAnimation(String spell) async {
     if (!mounted || spell.isEmpty) return;
+
+    // 第一阶段：题目区向中心坍缩凝聚 (180ms)
+    await _questionCollapseController.forward(from: 0.0);
+    if (!mounted) return;
+
+    // 第二阶段：在凝聚中心生成掌握胶囊，带流光轨迹飞向右上角掌握按钮
     MasteredFlyAnimation.play(
       context: context,
       spell: spell,
@@ -349,6 +378,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         _masteredButtonScaleController.forward(from: 0.0);
       },
     );
+
+    // 胶囊飞出后，平滑复原题目区状态以迎接新内容
+    _questionCollapseController.reset();
   }
 
   /// 首次进入学习页时展示新手引导：只讲「你说，我来听」这一件事，

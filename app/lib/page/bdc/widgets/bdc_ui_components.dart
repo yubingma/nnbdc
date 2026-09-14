@@ -421,9 +421,13 @@ extension BdcPageStateUIComponents on BdcPageState {
             constraints: BoxConstraints(
               minHeight: max(0.0, constraints.maxHeight - 16),
             ),
-            child: Center(
-              key: _wordSpellKey,
-              child: Column(
+            child: ScaleTransition(
+              scale: _questionCollapseScaleAnimation,
+              child: FadeTransition(
+                opacity: _questionCollapseOpacityAnimation,
+                child: Center(
+                  key: _wordSpellKey,
+                  child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -456,9 +460,11 @@ extension BdcPageStateUIComponents on BdcPageState {
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
+  },
+);
   }
 
   Widget _buildModeSwitchButton() {
