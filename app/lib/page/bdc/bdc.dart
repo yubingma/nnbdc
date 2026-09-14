@@ -32,6 +32,7 @@ import '../../constants.dart';
 import '../../db/db.dart';
 import '../../global.dart';
 import '../../state.dart';
+import '../../event/events.dart';
 import '../../services/level_service.dart';
 import '../../theme/app_theme.dart';
 import '../../util/analytics_util.dart';
@@ -355,6 +356,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     // 本次学习结束或中途退出, 补办答题期间被延迟的晋升仪式
     LevelService().leaveStudy();
+
+    // 无论是学完退出还是中途返回，发布学习列表进度变化事件，确保计划页刷新最新学习状态
+    EventBus.publishTodayStudyListChanged(const TodayStudyListChangedEvent());
 
     super.dispose();
   }

@@ -617,7 +617,9 @@ class FinishPageState extends State<FinishPage> {
 
     await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
     if (!mounted) return;
-    context.push('/bdc');
+    // 使用 pushReplacement 替换当前完成页，避免加量学习中途回退时再次进入完成页造成“已学完”的误解，
+    // 使回退自然回到栈底的今日学习计划页面（/index）
+    context.pushReplacement('/bdc');
   }
 
   /// 打开海报分享弹窗
