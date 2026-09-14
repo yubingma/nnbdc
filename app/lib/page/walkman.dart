@@ -36,7 +36,9 @@ enum WalkmanScene {
   night('夏夜虫鸣', 'assets/video/scenes/night.mp4', 'assets/audio/scenes/night.mp3'),
   river('湖光水镜', 'assets/video/scenes/river.mp4', 'assets/audio/scenes/river.mp3'),
   waves('潮汐海浪', 'assets/video/scenes/waves.mp4', 'assets/audio/scenes/waves.mp3'),
-  forest('森林微风', 'assets/video/scenes/forest.mp4', 'assets/audio/scenes/forest.mp3');
+  forest('森林微风', 'assets/video/scenes/forest.mp4', 'assets/audio/scenes/forest.mp3'),
+  fire('围炉夜话', 'assets/video/scenes/fire.mp4', 'assets/audio/scenes/fire.mp3'),
+  mist('空谷晨雾', 'assets/video/scenes/mist.mp4', 'assets/audio/scenes/mist.mp3');
 
   final String title;
   final String? videoAsset;

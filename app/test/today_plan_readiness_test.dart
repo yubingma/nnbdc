@@ -8,6 +8,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/today_plan.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/prefs.dart';
@@ -51,6 +52,7 @@ void main() {
   });
 
   tearDown(() async {
+    ThrottledDbSyncService().reset();
     await db.close();
     Global.currentUserId = null;
     Global.commonDictId = "0";
@@ -228,6 +230,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsWidgets, reason: '此时应呈现加载中');
 
     networkProbe.complete(<String>[]); // 放行，避免残留未完成的 Future
+    await tester.pump(const Duration(seconds: 60)); // 放掉放行后恢复准备流程触发的节流同步等后台任务
   });
 
   testWidgets('跨天计划准备完成后：入口恢复，且昨日残留的今日进度已被跨天重置清零', (tester) async {
@@ -266,6 +269,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsWidgets, reason: '此时应呈现加载中');
 
     networkProbe.complete(<String>[]); // 放行，避免残留未完成的 Future
+    await tester.pump(const Duration(seconds: 60)); // 放掉放行后恢复准备流程触发的节流同步等后台任务
   });
 
   testWidgets('本地已有今日计划词时：页面先渲染入口，不被准备流程挡住', (tester) async {

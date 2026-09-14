@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/local_embedding_cache.dart';
 
@@ -82,6 +83,8 @@ void main() {
   });
 
   tearDown(() async {
+    await WordBo.awaitPendingTspDbOps();
+    ThrottledDbSyncService().reset();
     await db.close();
   });
 

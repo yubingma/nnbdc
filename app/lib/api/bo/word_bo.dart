@@ -157,18 +157,48 @@ class WordBo {
 
   // TSP 语义排序缓存，用 dictId 作为键，存储排好序的 wordId 列表
   static final Map<String, List<String>> _dictTspCache = {};
+  static final Set<Future<void>> _pendingTspDbOps = {};
+
+  /// 等待所有在途的 TSP 异步数据库操作完成（用于单元测试与安全关闭）
+  @visibleForTesting
+  static Future<void> awaitPendingTspDbOps() async {
+    if (_pendingTspDbOps.isNotEmpty) {
+      await Future.wait([..._pendingTspDbOps]);
+    }
+  }
+
+  static void _trackTspDbOp(Future<void> future) {
+    _pendingTspDbOps.add(future);
+    future.whenComplete(() => _pendingTspDbOps.remove(future));
+  }
 
   static void clearTspCache(String dictId, [MyDatabase? db]) {
     _dictTspCache.remove(dictId);
     final targetDb = db ?? MyDatabase.instance;
-    unawaited(targetDb.dictWordsDao.clearSemanticSeq(dictId));
+    final op = () async {
+      try {
+        await targetDb.dictWordsDao.clearSemanticSeq(dictId);
+      } catch (e) {
+        if (e.toString().contains('already been closed')) return;
+        Global.logger.e('clearTspCache 异步清空缓存失败: $e');
+      }
+    }();
+    _trackTspDbOp(op);
     Global.logger.d('clearTspCache: 已清除词书 $dictId 的 TSP 缓存及本地数据库缓存');
   }
 
   static void clearAllTspCache([MyDatabase? db]) {
     _dictTspCache.clear();
     final targetDb = db ?? MyDatabase.instance;
-    unawaited(targetDb.dictWordsDao.clearAllSemanticSeq());
+    final op = () async {
+      try {
+        await targetDb.dictWordsDao.clearAllSemanticSeq();
+      } catch (e) {
+        if (e.toString().contains('already been closed')) return;
+        Global.logger.e('clearAllTspCache 异步清空缓存失败: $e');
+      }
+    }();
+    _trackTspDbOp(op);
     Global.logger.d('clearAllTspCache: 已清除所有词书的 TSP 缓存及本地数据库缓存');
   }
 
@@ -386,14 +416,15 @@ class WordBo {
     if (wordsWithEmbeddings.isEmpty) {
       final result = [...wordsWithoutEmbeddings];
       _dictTspCache[dictId] = result;
-      // 异步保存到本地数据库缓存
-      unawaited(() async {
+      final op = () async {
         try {
           await db.dictWordsDao.updateSemanticSeqs(dictId, result);
         } catch (e) {
+          if (e.toString().contains('already been closed')) return;
           Global.logger.e('[SEMANTIC TSP] 写入空/无词嵌入本地缓存失败: $e');
         }
-      }());
+      }();
+      _trackTspDbOp(op);
       return result;
     }
 
@@ -404,14 +435,16 @@ class WordBo {
     _dictTspCache[dictId] = finalResult;
 
     // 2. 异步保存到本地数据库缓存
-    unawaited(() async {
+    final op = () async {
       try {
         await db.dictWordsDao.updateSemanticSeqs(dictId, finalResult);
         Global.logger.d('[SEMANTIC TSP] 成功写入本地数据库语义排序缓存: dictId=$dictId, length=${finalResult.length}');
       } catch (e, stack) {
+        if (e.toString().contains('already been closed')) return;
         Global.logger.e('[SEMANTIC TSP] 写入本地数据库语义排序缓存失败: $e', stackTrace: stack);
       }
-    }());
+    }();
+    _trackTspDbOp(op);
 
     return finalResult;
   }

@@ -35,11 +35,21 @@
    - 许可：MIT License
    - 说明：30秒高保真立体声切片，首尾 1.5 秒平滑交叉淡入淡出。
 
+6. **`assets/audio/scenes/fire.mp3`（围炉夜话）**
+   - 来源：`nature/campfire.mp3`
+   - 许可：MIT License
+   - 说明：30秒高保真立体声切片，首尾 1.5 秒平滑交叉淡入淡出。
+
+7. **`assets/audio/scenes/mist.mp3`（空谷晨雾）**
+   - 来源：`animals/birds.mp3`
+   - 许可：MIT License
+   - 说明：30秒高保真立体声切片，首尾 1.5 秒平滑交叉淡入淡出。
+
 ---
 
 ## 二、视频资源清单 (Video Assets)
 
-所有背景视频均为**100% 广播级重型三脚架锁死固定机位拍摄（Locked-off Tripod Shots / 0 像素位移验证通过）**、构图极简留白、大面积纯色与自然层次，让位于前景单词信息。采用 ffmpeg 消除杂音音轨，通过 1.0 秒交叉淡入淡出（xfade）消除循环跳变，压制为移动端轻量级 H.264 编码（单文件体积仅 200KB ~ 670KB）：
+所有背景视频均为**100% 广播级重型三脚架锁死固定机位拍摄（Locked-off Tripod Shots / 0 像素位移验证通过）**、构图极简留白、大面积纯色与自然层次，让位于前景单词信息。采用 ffmpeg 消除杂音音轨，通过 1.0 秒交叉淡入淡出（xfade）消除循环跳变，压制为移动端轻量级 H.264 编码（单文件体积仅 200KB ~ 960KB）：
 
 1. **`assets/video/scenes/night.mp4`（夏夜虫鸣）**
    - 题材：加州约书亚树国家公园（Joshua Tree National Park）骷髅石上方银河星空固定机位延时实景
@@ -74,3 +84,17 @@
    - 创作者：Thomas Bresson
    - 许可证：**Creative Commons Attribution 4.0 International (CC BY 4.0)**
    - 机位：重型三脚架锁死地面，主树干 0 位移（`dx=0, dy=0` 检验通过）。
+
+6. **`assets/video/scenes/fire.mp4`（围炉夜话）**
+   - 题材：宾夕法尼亚州福吉谷国家历史公园（Valley Forge National Historical Park）石砌古壁炉节日暖柴木炭实景，暗调炉膛红炭微燃，大面积深色留白
+   - 来源：[Wikimedia Commons - File:Valley Forge Yule Log.webm](https://commons.wikimedia.org/wiki/File:Valley_Forge_Yule_Log.webm)
+   - 创作者：美国国家公园管理局 (National Park Service, U.S. Department of the Interior)
+   - 许可证：**Public Domain (公有领域)**（美国联邦政府官方作品）
+   - 机位：石壁炉前三脚架锁死地面，石质炉膛 0 位移（`dx=0, dy=0` 检验通过）。
+
+7. **`assets/video/scenes/mist.mp4`（空谷晨雾）**
+   - 题材：亚利桑那州大峡谷国家公园（Grand Canyon National Park）罕见逆温云海瀑布（Inversion Clouds）壮阔延时实景，群峰如仙岛耸立于翻腾白云之中
+   - 来源：[Wikimedia Commons - File:Grand Canyon National Park- Time-lapse of Inversion Clouds (sunset) (11197630903).webm](https://commons.wikimedia.org/wiki/File:Grand_Canyon_National_Park-_Time-lapse_of_Inversion_Clouds_%28sunset%29_%2811197630903%29.webm)
+   - 创作者：美国国家公园管理局 (National Park Service, U.S. Department of the Interior)
+   - 许可证：**Public Domain (公有领域)**（美国联邦政府官方作品）
+   - 机位：峡谷观景台重型三脚架锁死地面，岩体绝壁 0 位移（`dx=0, dy=0` 检验通过）。

@@ -125,7 +125,7 @@ void main() {
     });
 
     test('WalkmanScene enum properties and assets configuration', () {
-      expect(WalkmanScene.values.length, equals(6));
+      expect(WalkmanScene.values.length, equals(8));
       expect(WalkmanScene.none.hasVideo, isFalse);
       expect(WalkmanScene.none.hasAudio, isFalse);
 
@@ -158,6 +158,18 @@ void main() {
       expect(WalkmanScene.forest.hasAudio, isTrue);
       expect(WalkmanScene.forest.videoAsset, equals('assets/video/scenes/forest.mp4'));
       expect(WalkmanScene.forest.audioAsset, equals('assets/audio/scenes/forest.mp3'));
+
+      expect(WalkmanScene.fire.title, equals('围炉夜话'));
+      expect(WalkmanScene.fire.hasVideo, isTrue);
+      expect(WalkmanScene.fire.hasAudio, isTrue);
+      expect(WalkmanScene.fire.videoAsset, equals('assets/video/scenes/fire.mp4'));
+      expect(WalkmanScene.fire.audioAsset, equals('assets/audio/scenes/fire.mp3'));
+
+      expect(WalkmanScene.mist.title, equals('空谷晨雾'));
+      expect(WalkmanScene.mist.hasVideo, isTrue);
+      expect(WalkmanScene.mist.hasAudio, isTrue);
+      expect(WalkmanScene.mist.videoAsset, equals('assets/video/scenes/mist.mp4'));
+      expect(WalkmanScene.mist.audioAsset, equals('assets/audio/scenes/mist.mp3'));
     });
   });
 
