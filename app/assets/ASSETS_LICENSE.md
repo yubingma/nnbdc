@@ -45,11 +45,31 @@
    - 许可：MIT License
    - 说明：30秒高保真立体声切片，首尾 1.5 秒平滑交叉淡入淡出。
 
+8. **`assets/audio/scenes/cosmos.mp3`（瀚海星云）**
+   - 来源：`binaural/binaural-theta.wav`
+   - 许可：MIT License
+   - 说明：Theta 冥想脑波与深空低频共鸣白噪音，30秒切片，首尾 1.5 秒平滑交叉淡入淡出。
+
+9. **`assets/audio/scenes/snow.mp3`（云巅雪峰）**
+   - 来源：`nature/wind.mp3`
+   - 许可：MIT License
+   - 说明：高山纯净微风白噪音，30秒切片，首尾 1.5 秒平滑交叉淡入淡出。
+
+10. **`assets/audio/scenes/sky.mp3`（晴空白云）**
+    - 来源：`nature/wind-in-trees.mp3`
+    - 许可：MIT License
+    - 说明：夏日林梢微风白噪音，30秒切片，首尾 1.5 秒平滑交叉淡入淡出。
+
+11. **`assets/audio/scenes/winter.mp3`（飞雪松林）**
+    - 来源：`noise/white-noise.wav`
+    - 许可：MIT License
+    - 说明：冬日柔和静谧雪地轻抚白噪音，30秒切片，首尾 1.5 秒平滑交叉淡入淡出。
+
 ---
 
 ## 二、视频资源清单 (Video Assets)
 
-所有背景视频均为**100% 广播级重型三脚架锁死固定机位拍摄（Locked-off Tripod Shots / 0 像素位移验证通过）**、构图极简留白、大面积纯色与自然层次，让位于前景单词信息。采用 ffmpeg 消除杂音音轨，通过 1.0 秒交叉淡入淡出（xfade）消除循环跳变，压制为移动端轻量级 H.264 编码（单文件体积仅 200KB ~ 960KB）：
+所有背景视频均为**100% 广播级重型三脚架锁死固定机位拍摄（Locked-off Tripod Shots / 0 像素位移验证通过）**、构图极简留白、大面积纯色与自然层次，让位于前景单词信息。采用 ffmpeg 消除杂音音轨，通过 1.0 秒交叉淡入淡出（xfade）消除循环跳变，压制为移动端轻量级 H.264 编码（单文件体积仅 200KB ~ 1.3MB）：
 
 1. **`assets/video/scenes/night.mp4`（夏夜虫鸣）**
    - 题材：加州约书亚树国家公园（Joshua Tree National Park）骷髅石上方银河星空固定机位延时实景
@@ -93,8 +113,33 @@
    - 机位：石壁炉前三脚架锁死地面，石质炉膛 0 位移（`dx=0, dy=0` 检验通过）。
 
 7. **`assets/video/scenes/mist.mp4`（空谷晨雾）**
-   - 题材：亚利桑那州大峡谷国家公园（Grand Canyon National Park）罕见逆温云海瀑布（Inversion Clouds）壮阔延时实景，群峰如仙岛耸立于翻腾白云之中
-   - 来源：[Wikimedia Commons - File:Grand Canyon National Park- Time-lapse of Inversion Clouds (sunset) (11197630903).webm](https://commons.wikimedia.org/wiki/File:Grand_Canyon_National_Park-_Time-lapse_of_Inversion_Clouds_%28sunset%29_%2811197630903%29.webm)
+   - 题材：亚利桑那州大峡谷国家公园（Grand Canyon National Park）亚基点（Yaki Point）冬日暴风雪云海翻腾壮阔延时实景，近景绝壁岩石坚实沉稳，远景浓密云海在山峦间流卷升腾
+   - 来源：[Wikimedia Commons - File:Time-lapse Video- Winter Storm at Yaki Point Grand Canyon 2014-01-31 (12242435983).webm](https://commons.wikimedia.org/wiki/File:Time-lapse_Video-_Winter_Storm_at_Yaki_Point_Grand_Canyon_2014-01-31_%2812242435983%29.webm)
    - 创作者：美国国家公园管理局 (National Park Service, U.S. Department of the Interior)
    - 许可证：**Public Domain (公有领域)**（美国联邦政府官方作品）
-   - 机位：峡谷观景台重型三脚架锁死地面，岩体绝壁 0 位移（`dx=0, dy=0` 检验通过）。
+   - 机位：亚基点重型脚架深锁岩石地面，基岩 0 位移（`dx=0, dy=0` 相位相关检验通过，彻底根除抖动）。
+
+8. **`assets/video/scenes/cosmos.mp4`（瀚海星云）**
+   - 题材：哈勃太空望远镜超级计算机精确重构的猎户座大星云（Orion Nebula）3D 深度穿行漫游，气体光幕舒展、色彩如琉璃变幻，繁星点缀，深邃幽静
+   - 来源：[Wikimedia Commons - File:Orion Nebula 3D Fly-Through - HST.ogv](https://commons.wikimedia.org/wiki/File:Orion_Nebula_3D_Fly-Through_-_HST.ogv)
+   - 创作者：NASA, ESA, and F. Summers, G. Bacon, Z. Levay, and J. DePasquale (STScI/SAO)
+   - 许可证：**Public Domain (公有领域)**（美国 NASA / STScI 官方公有领域）
+   - 构图：9:16 居中深空，大面积黑色与暗调星云留白。
+
+9. **`assets/video/scenes/snow.mp4`（云巅雪峰）**
+   - 题材：瑞士采尔马特看阿尔卑斯马特洪峰（Matterhorn）雪山之巅隐入云雾、圣光自云层斜射倾泻向森林幽谷实景
+   - 来源：[Wikimedia Commons - File:Timelapse of the Matterhorn viewed from Zermatt.webm](https://commons.wikimedia.org/wiki/File:Timelapse_of_the_Matterhorn_viewed_from_Zermatt.webm)
+   - 许可证：**Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**
+   - 机位：采尔马特观景重型三脚架锁死地面，山体基底 0 位移（`dx=0, dy=0` 检验通过）。
+
+10. **`assets/video/scenes/sky.mp4`（晴空白云）**
+    - 题材：盛夏午后树梢框景下的纯净蔚蓝晴空与棉花糖白云悠悠舒展翻滚，大面积明朗通透的蓝白自然色彩，治愈提神
+    - 来源：[Wikimedia Commons - File:2011-06-06-Timelapse-clouds.ogv](https://commons.wikimedia.org/wiki/File:2011-06-06-Timelapse-clouds.ogv)
+    - 许可证：**Creative Commons CC0 1.0 Universal (Public Domain Dedication，公有领域献身)**
+    - 机位：重型三脚架正对晴空与树梢，树干框景 0 位移（`dx=0, dy=0` 检验通过）。
+
+11. **`assets/video/scenes/winter.mp4`（飞雪松林）**
+    - 题材：北欧瑞典图恩托普静谧森林落雪实景，墨绿松柏枝头积雪皑皑，漫天鹅毛大雪静静飘洒，冬日氛围感拉满
+    - 来源：[Wikimedia Commons - File:Snow falling in Tuntorp.webm](https://commons.wikimedia.org/wiki/File:Snow_falling_in_Tuntorp.webm)
+    - 许可证：**Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**
+    - 构图：9:16 居中林木雪景，万籁俱寂。

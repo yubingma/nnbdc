@@ -125,7 +125,7 @@ void main() {
     });
 
     test('WalkmanScene enum properties and assets configuration', () {
-      expect(WalkmanScene.values.length, equals(8));
+      expect(WalkmanScene.values.length, equals(12));
       expect(WalkmanScene.none.hasVideo, isFalse);
       expect(WalkmanScene.none.hasAudio, isFalse);
 
@@ -170,6 +170,30 @@ void main() {
       expect(WalkmanScene.mist.hasAudio, isTrue);
       expect(WalkmanScene.mist.videoAsset, equals('assets/video/scenes/mist.mp4'));
       expect(WalkmanScene.mist.audioAsset, equals('assets/audio/scenes/mist.mp3'));
+
+      expect(WalkmanScene.cosmos.title, equals('瀚海星云'));
+      expect(WalkmanScene.cosmos.hasVideo, isTrue);
+      expect(WalkmanScene.cosmos.hasAudio, isTrue);
+      expect(WalkmanScene.cosmos.videoAsset, equals('assets/video/scenes/cosmos.mp4'));
+      expect(WalkmanScene.cosmos.audioAsset, equals('assets/audio/scenes/cosmos.mp3'));
+
+      expect(WalkmanScene.snow.title, equals('云巅雪峰'));
+      expect(WalkmanScene.snow.hasVideo, isTrue);
+      expect(WalkmanScene.snow.hasAudio, isTrue);
+      expect(WalkmanScene.snow.videoAsset, equals('assets/video/scenes/snow.mp4'));
+      expect(WalkmanScene.snow.audioAsset, equals('assets/audio/scenes/snow.mp3'));
+
+      expect(WalkmanScene.sky.title, equals('晴空白云'));
+      expect(WalkmanScene.sky.hasVideo, isTrue);
+      expect(WalkmanScene.sky.hasAudio, isTrue);
+      expect(WalkmanScene.sky.videoAsset, equals('assets/video/scenes/sky.mp4'));
+      expect(WalkmanScene.sky.audioAsset, equals('assets/audio/scenes/sky.mp3'));
+
+      expect(WalkmanScene.winter.title, equals('飞雪松林'));
+      expect(WalkmanScene.winter.hasVideo, isTrue);
+      expect(WalkmanScene.winter.hasAudio, isTrue);
+      expect(WalkmanScene.winter.videoAsset, equals('assets/video/scenes/winter.mp4'));
+      expect(WalkmanScene.winter.audioAsset, equals('assets/audio/scenes/winter.mp3'));
     });
   });
 
