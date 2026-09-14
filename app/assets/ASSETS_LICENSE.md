@@ -133,11 +133,11 @@
    - 机位：高纳葛拉特观景台重型专业三脚架锁死地面，雪峰 0 位移。
 
 10. **`assets/video/scenes/sky.mp4`（晴空白云）**
-    - 题材：澄澈浅天蓝穹顶、正中央一轮柔和温暖的金色暖阳、高空极轻微漫游的白色云层，大面积极简留白与明媚通透色彩，视觉负荷接近于 0，极度沉静舒适
-    - 来源：[NASA Scientific Visualization Studio - Clouds 101 (SVS20383 - HightAltCloud V05)](https://commons.wikimedia.org/wiki/File:Clouds_101_(SVS20383_-_HightAltCloud_V05).webm)
-    - 创作者：NASA's Scientific Visualization Studio
-    - 许可证：**Public Domain (公有领域)**（美国 NASA 官方公有领域作品）
-    - 机位：中心构图，高空无抖动恒定视野，7.0 秒平滑无缝循环。
+    - 题材：纯净高空仰拍绝美蔚蓝苍穹，洁白轻盈的积云在微风中舒卷变幻平缓漂流，100% 纯自然天空画面，零地面、零建筑物、零树枝遮挡、零人工图示/线条标注，视野开阔通透，明媚治愈
+    - 来源：[Wikimedia Commons - File:Wolken Zeitraffer - Clouds Timelapse (Royalty Free) (Kostenlos) 3840x2160p 30FPS.webm](https://commons.wikimedia.org/wiki/File:Wolken_Zeitraffer_-_Clouds_Timelapse_(Royalty_Free)_(Kostenlos)_3840x2160p_30FPS.webm)
+    - 创作者：FreeSwissVideo
+    - 许可证：**Creative Commons Attribution 3.0 Unported (CC BY 3.0)**
+    - 机位：重型三脚架仰角固定，零晃动，6.0 秒无缝交叉淡化平滑循环（Loop Seam 平均像素差异仅 3.1/255）。
 
 11. **`assets/video/scenes/winter.mp4`（飞雪松林）**
     - 题材：北欧瑞典图恩托普静谧森林落雪实景，墨绿松柏枝头积雪皑皑，漫天鹅毛大雪静静飘洒，冬日氛围感拉满
