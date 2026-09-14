@@ -2194,7 +2194,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                               fontSize: 11,
                               color:
                                   isDarkMode ? Colors.white70 : Colors.black54,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           TextSpan(
@@ -2260,7 +2259,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                           '测评结果: $fallbackLabel',
                           style: TextStyle(
                             fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
                             color: hasRating
                                 ? (state.lastFsrsRating
                                         ?.colorWithDark(isDarkMode) ??
@@ -2278,7 +2276,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                 child: Text('·',
                     style: TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
                         color: textColor.withValues(alpha: 0.4))),
               ),
               Text(
@@ -2313,7 +2310,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                   '测评结果: $ratingLabel',
                   style: TextStyle(
                     fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
                     color: ratingColor,
                   ),
                 ),
@@ -2324,7 +2320,6 @@ extension BdcPageStateUIComponents on BdcPageState {
               child: Text('·',
                   style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.bold,
                       color: textColor.withValues(alpha: 0.4))),
             ),
             Text.rich(
@@ -2340,7 +2335,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                       color: isDarkMode
                           ? const Color(0xFFEAF7F4)
                           : const Color(0xFF152724),
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   TextSpan(
