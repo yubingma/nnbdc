@@ -1141,30 +1141,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                 children: [
                   Text.rich(
                     TextSpan(
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: context.textSecondary,
+                      ),
                       children: [
                         TextSpan(
-                          text: '第 $groupNo 组 · $trackName',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w500,
-                            color: context.textSecondary,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' · $stepDesc ',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: context.textPrimary,
-                          ),
+                          text: '第 $groupNo 组 · $trackName · $stepDesc ',
                         ),
                         TextSpan(
                           text: '$position/$total',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'Roboto',
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: context.textPrimary,
                           ),
                         ),
                       ],
