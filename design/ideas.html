@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>灵感与创意档案 · Sparks & Ideas Hub</title>
+  <style>
+    :root {
+      --bg: #0d0f12;
+      --bg-card: rgba(26, 29, 36, 0.7);
+      --bg-card-hover: rgba(34, 38, 48, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(255, 255, 255, 0.16);
+      --text-primary: #f0f3f6;
+      --text-secondary: #9aa5b5;
+      --text-muted: #5e6878;
+      --accent-aurora: #6ee7b7;
+      --accent-blue: #60a5fa;
+      --accent-purple: #c084fc;
+      --accent-amber: #fbbf24;
+      --tag-bg: rgba(255, 255, 255, 0.05);
+      --code-bg: rgba(0, 0, 0, 0.35);
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --mono-stack: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-stack);
+      line-height: 1.6;
+      padding: 40px 24px 80px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(96, 165, 250, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(192, 132, 252, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(110, 231, 183, 0.04) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    /* 顶部导航与总览 */
+    header {
+      margin-bottom: 44px;
+      position: relative;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-aurora);
+      background: rgba(110, 231, 183, 0.1);
+      border: 1px solid rgba(110, 231, 183, 0.2);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .header-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent-aurora);
+      box-shadow: 0 0 8px var(--accent-aurora);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+      max-width: 680px;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-pill strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+
+
+    /* 创意卡片列表 */
+    .ideas-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .idea-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 28px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .idea-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-highlight);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .idea-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .idea-id-date {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono-stack);
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .idea-id {
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    .idea-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    .badge-status {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .status-concept {
+      background: rgba(192, 132, 252, 0.12);
+      color: var(--accent-purple);
+      border: 1px solid rgba(192, 132, 252, 0.2);
+    }
+
+    .status-evaluating {
+      background: rgba(251, 191, 36, 0.12);
+      color: var(--accent-amber);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+
+    .tags-container {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: var(--tag-bg);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 3px 9px;
+      border-radius: 6px;
+    }
+
+    .idea-body {
+      font-size: 14.5px;
+      color: #c9d1d9;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-top: 10px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 3px;
+      height: 12px;
+      background: var(--accent-aurora);
+      border-radius: 2px;
+    }
+
+    .idea-quote {
+      border-left: 2px solid var(--accent-blue);
+      padding: 10px 16px;
+      background: rgba(96, 165, 250, 0.05);
+      border-radius: 0 8px 8px 0;
+      font-style: normal;
+      color: #e2e8f0;
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .feature-item {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13.5px;
+    }
+
+    .feature-item strong {
+      display: block;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      font-size: 13.5px;
+    }
+
+    .feature-item p {
+      color: var(--text-secondary);
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .principle-box {
+      background: rgba(110, 231, 183, 0.04);
+      border: 1px solid rgba(110, 231, 183, 0.15);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #bbf7d0;
+      line-height: 1.5;
+    }
+
+    .principle-box strong {
+      color: var(--accent-aurora);
+    }
+
+    .actions-footer {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .action-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
+    .action-link:hover {
+      color: var(--text-secondary);
+    }
+
+    /* 动效与交互微调 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+      animation: fadeIn 0.3s ease forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- 顶部导航 -->
+    <header>
+      <div class="header-badge">Product Sparks & Creative Archive</div>
+      <h1>灵感与创意档案</h1>
+      <p class="subtitle">记录随时迸发的产品闪念、动效构想与玩法实验。遵循奥卡姆剃刀原理与极简高级美学，去伪存真，持续沉淀。</p>
+      
+      <div class="stats-bar">
+        <div class="stat-pill">沉淀创意: <strong>1</strong></div>
+        <div class="stat-pill">核心哲学: <strong>如非必要 · 勿增实体</strong></div>
+        <div class="stat-pill">美学基准: <strong>现代极简 · 灵动克制</strong></div>
+      </div>
+    </header>
+
+    <!-- 创意动态流水线 -->
+    <div class="ideas-feed" id="ideasFeed">
+
+      <!-- 创意 #001: 单词泡泡天空 -->
+      <article class="idea-card">
+        <div class="idea-header">
+          <div>
+            <div class="idea-id-date">
+              <span class="idea-id">IDEA #001</span>
+              <span>•</span>
+              <span>2026-09-15</span>
+              <span>•</span>
+              <span>激励与交互美学</span>
+            </div>
+            <h2 class="idea-title">单词泡泡天空（记忆苍穹 · Memory Aurora）</h2>
+          </div>
+          <span class="badge-status status-concept">概念成型 / 减法沉淀</span>
+        </div>
+
+        <div class="tags-container">
+          <span class="tag">#成就可视化</span>
+          <span class="tag">#直连反馈</span>
+          <span class="tag">#奥卡姆剃刀</span>
+          <span class="tag">#流体粒子</span>
+          <span class="tag">#极简沉浸</span>
+        </div>
+
+        <div class="idea-body">
+          <div class="idea-quote">
+            “如果每掌握一个单词，就奖励一颗专属泡泡升入天空。天空可拉近查看具体单词，也可远观浩瀚苍穹，让学习积累成为看得见的浪漫资产。”
+          </div>
+
+          <div class="section-title">减法哲学：为何坚决舍弃“小宠物+喂糖”？</div>
+          <div class="principle-box">
+            <strong>奥卡姆剃刀原则：</strong>原本构想中的“宠物嚼糖吐泡”增加了两道操作阻塞与沉重动画，容易沦为低幼小游戏并打断快速背词心流。剥离宠物后，实现<strong>「掌握单词 ➔ 单词直接化作微光气泡升空」</strong>，路径最简、反馈直连、品味高级。
+          </div>
+
+          <div class="section-title">核心体验维度</div>
+          <div class="feature-grid">
+            <div class="feature-item">
+              <strong>① 产生瞬间（微动不打断）</strong>
+              <p>背词正确时，单词卡轻微呼吸化作半透明气泡向上飘散（300ms），伴随细腻触觉震动，无缝切入下一题。</p>
+            </div>
+            <div class="feature-item">
+              <strong>② 远观态（上帝视角 · 词汇银河）</strong>
+              <p>双指捏合拉远，泡泡文字渐隐为成千上万点温润流光星云，宏观感知自己亲手点亮的庞大知识宇宙。</p>
+            </div>
+            <div class="feature-item">
+              <strong>③ 近看态（微观漫游 · 纯净交互）</strong>
+              <p>手势拖拽平移漫游，轻点气泡弹性呼吸播放发音，长按展开词义例句，兼具生词本与探索展厅属性。</p>
+            </div>
+            <div class="feature-item">
+              <strong>④ 遗忘曲线融合（生命周期）</strong>
+              <p>刚掌握时泡泡清透饱满；久未复习的泡泡边缘变薄、光泽暗淡，轻戳即可触发“挽救复习”。</p>
+            </div>
+          </div>
+
+          <div class="section-title">技术实现基线</div>
+          <p style="font-size: 13.5px; color: var(--text-secondary);">
+            基于 Canvas / Flutter CustomPainter 构建 2D 微重力流体粒子场。海量单词场景下采用视差分级（LOD）与视锥剔除：屏幕内精细渲染 30~50 个主焦点泡泡，远景仅渲染极低消耗的光斑粒子。
+          </p>
+        </div>
+
+        <div class="actions-footer">
+          <span class="action-link" onclick="copyIdeaMarkdown('idea-001')">复制摘要 Markdown</span>
+        </div>
+      </article>
+
+    </div>
+
+  </div>
+
+  <script>
+    function copyIdeaMarkdown(id) {
+      const text = `### 单词泡泡天空（记忆苍穹 · Memory Aurora）
+- **核心逻辑**：每掌握一个单词，化作一颗专属泡泡升入天空。
+- **减法原则**：剔除宠物与喂糖等低幼冗余环节，保留直连反馈与背词心流。
+- **双层视角**：远观是星云苍穹，近看可漫游轻点发音/查词；结合遗忘曲线衰减光泽。`;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('已复制该创意 Markdown 摘要到剪贴板');
+      });
+    }
+  </script>
+</body>
+</html>

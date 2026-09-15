@@ -258,5 +258,54 @@ void main() {
     // 核心验证：答完题后 PTT 按钮绝不能消失留下空白，应常驻且变为「按住练习」
     expect(find.text('按住练习'), findsOneWidget);
   });
+
+  testWidgets('例句模式能正确记忆选择题与说模式偏好（isSentenceSelectModePreferred）', (tester) async {
+    final (testWord, mockGetWordResult) = _createTestData();
+
+    // 初始状态：例句环节偏好选择题
+    final enStatePreferredSelect = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockGetWordResult,
+      studyStep: StudyStep.enSentence2Ch.json,
+      tabIndex: 1, // 当前在选择题模式
+      isSentenceSelectModePreferred: true,
+      isSelectModePreferred: false, // 单词模式偏好说，两者互不干扰
+      words: [testWord, ...mockGetWordResult.otherWords!],
+      correctAnswerIndex: 1,
+    );
+
+    final mockNotifier = MockBdcNotifier(enStatePreferredSelect);
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: ProviderScope(
+          overrides: [
+            bdcNotifierProvider.overrideWith(() => mockNotifier),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: BdcPage(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // 验证当前显示选择题切换按钮「说中文」
+    expect(find.text('说中文'), findsOneWidget);
+
+    // 模拟用户在例句模式下切换为语音 Tab（index 0）
+    mockNotifier.updateTabIndex(0);
+    expect(mockNotifier.state.isSentenceSelectModePreferred, false);
+    // 单词模式偏好保持不变
+    expect(mockNotifier.state.isSelectModePreferred, false);
+
+    // 模拟用户在例句模式下切换回选择题 Tab（index 1）
+    mockNotifier.updateTabIndex(1);
+    expect(mockNotifier.state.isSentenceSelectModePreferred, true);
+  });
 }
 

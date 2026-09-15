@@ -103,6 +103,7 @@ class BdcState extends Equatable {
   final String? loadError;
 
   final bool isSelectModePreferred;
+  final bool isSentenceSelectModePreferred;
 
   /// 例句环节 PTT(按下说话)按钮是否处于按住状态
   final bool isPttPressed;
@@ -177,6 +178,7 @@ class BdcState extends Equatable {
     this.isWordImageEdited = false,
     this.loadError,
     this.isSelectModePreferred = false,
+    this.isSentenceSelectModePreferred = false,
     this.isPttPressed = false,
     this.isAiEvaluating = false,
   });
@@ -261,6 +263,7 @@ class BdcState extends Equatable {
     bool? isWordImageEdited,
     Object? loadError = _sentinel,
     bool? isSelectModePreferred,
+    bool? isSentenceSelectModePreferred,
     bool? isPttPressed,
     bool? isAiEvaluating,
   }) {
@@ -343,6 +346,7 @@ class BdcState extends Equatable {
       isWordImageEdited: isWordImageEdited ?? this.isWordImageEdited,
       loadError: loadError == _sentinel ? this.loadError : (loadError as String?),
       isSelectModePreferred: isSelectModePreferred ?? this.isSelectModePreferred,
+      isSentenceSelectModePreferred: isSentenceSelectModePreferred ?? this.isSentenceSelectModePreferred,
       isPttPressed: isPttPressed ?? this.isPttPressed,
       isAiEvaluating: isAiEvaluating ?? this.isAiEvaluating,
     );
@@ -424,6 +428,7 @@ class BdcState extends Equatable {
     isWordImageEdited,
     loadError,
     isSelectModePreferred,
+    isSentenceSelectModePreferred,
     isPttPressed,
     isAiEvaluating,
   ];

@@ -183,7 +183,15 @@ class BdcNotifier extends _$BdcNotifier {
 
     _startLearningTimer();
 
-    return const BdcState();
+    final initialWordSelectPreferred =
+        Prefs.read<bool>('bdc_select_mode_preferred') ?? false;
+    final initialSentenceSelectPreferred =
+        Prefs.read<bool>('bdc_sentence_select_mode_preferred') ?? false;
+
+    return BdcState(
+      isSelectModePreferred: initialWordSelectPreferred,
+      isSentenceSelectModePreferred: initialSentenceSelectPreferred,
+    );
   }
 
   DateTime? _lastSyncTime;
@@ -665,7 +673,10 @@ class BdcNotifier extends _$BdcNotifier {
     bool speakTabAvailable = _getShouldShowSpeakTabFor(newStudyStep);
     final bool isSentenceStep = newStudyStep == StudyStep.enSentence2Ch.json || newStudyStep == StudyStep.chSentence2En.json;
     int newTabIndex = 0;
-    if (state.isSelectModePreferred && !isSentenceStep) {
+    final bool isPreferred = isSentenceStep
+        ? state.isSentenceSelectModePreferred
+        : state.isSelectModePreferred;
+    if (isPreferred) {
       newTabIndex = speakTabAvailable ? 1 : 0;
     }
 
@@ -952,7 +963,23 @@ class BdcNotifier extends _$BdcNotifier {
       _isPttPressed = false;
       unawaited(asr.stopAsr());
     }
-    state = state.copyWith(tabIndex: index, isSelectModePreferred: isSelectTab, isPttPressed: _isPttPressed);
+    final isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
+        state.studyStep == StudyStep.chSentence2En.json;
+    if (isSentence) {
+      state = state.copyWith(
+        tabIndex: index,
+        isSentenceSelectModePreferred: isSelectTab,
+        isPttPressed: _isPttPressed,
+      );
+      unawaited(Prefs.write('bdc_sentence_select_mode_preferred', isSelectTab));
+    } else {
+      state = state.copyWith(
+        tabIndex: index,
+        isSelectModePreferred: isSelectTab,
+        isPttPressed: _isPttPressed,
+      );
+      unawaited(Prefs.write('bdc_select_mode_preferred', isSelectTab));
+    }
     _handleTabChangeForAsr();
   }
 

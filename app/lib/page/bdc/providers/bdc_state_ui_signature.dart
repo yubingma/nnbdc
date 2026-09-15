@@ -30,6 +30,7 @@ class BdcStateUiSignature {
   final String? highlightedWordImgId;
   final bool isWordImageEdited;
   final bool isSelectModePreferred;
+  final bool isSentenceSelectModePreferred;
   final int? currentScore;
   final String? asrFirstCandidate;
   final int groupStepNo;
@@ -66,6 +67,7 @@ class BdcStateUiSignature {
         highlightedWordImgId = s.highlightedWordImg?.id,
         isWordImageEdited = s.isWordImageEdited,
         isSelectModePreferred = s.isSelectModePreferred,
+        isSentenceSelectModePreferred = s.isSentenceSelectModePreferred,
         currentScore = s.currentScore,
         asrFirstCandidate = s.currentAsrCandidates.isNotEmpty ? s.currentAsrCandidates.first : null,
         groupStepNo = s.groupStepNo,
@@ -105,6 +107,7 @@ class BdcStateUiSignature {
         highlightedWordImgId == other.highlightedWordImgId &&
         isWordImageEdited == other.isWordImageEdited &&
         isSelectModePreferred == other.isSelectModePreferred &&
+        isSentenceSelectModePreferred == other.isSentenceSelectModePreferred &&
         currentScore == other.currentScore &&
         asrFirstCandidate == other.asrFirstCandidate &&
         groupStepNo == other.groupStepNo &&
@@ -143,6 +146,7 @@ class BdcStateUiSignature {
         highlightedWordImgId,
         isWordImageEdited,
         isSelectModePreferred,
+        isSentenceSelectModePreferred,
         currentScore,
         asrFirstCandidate,
         groupStepNo,
