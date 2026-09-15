@@ -90,10 +90,10 @@ void main() {
     PlatformUtils.englishAsrSupportedOverride = null;
   });
 
-  testWidgets('例句英译汉(EnSentence2Ch)题目区显示英文拼写与选择题选项', (tester) async {
+  testWidgets('例句英译汉(EnSentence2Ch)选择题Tab显示单词拼写且不显示例句', (tester) async {
     final (testWord, mockGetWordResult) = _createTestData();
 
-    final enState = const BdcState().copyWith(
+    final choiceState = const BdcState().copyWith(
       dataLoaded: true,
       word: testWord,
       currentGetWordResult: mockGetWordResult,
@@ -108,7 +108,7 @@ void main() {
         create: (_) => DarkMode(),
         child: ProviderScope(
           overrides: [
-            bdcNotifierProvider.overrideWith(() => MockBdcNotifier(enState)),
+            bdcNotifierProvider.overrideWith(() => MockBdcNotifier(choiceState)),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -121,23 +121,56 @@ void main() {
 
     await tester.pump();
 
-    // 验证题目区展示了目标单词英文拼写
+    // 选择题模式：显示单词拼写，不显示例句
     final spellFinder = find.byKey(const Key('en_sentence_word_spell'));
     expect(spellFinder, findsOneWidget);
     expect(tester.widget<Text>(spellFinder).data, 'testword');
+    expect(find.textContaining('This is a'), findsNothing);
 
-    // 验证展示了例句内容
-    expect(find.textContaining('This is a'), findsOneWidget);
-
-    // 验证选择题模式下切换按钮文案为「说中文」（非「说释义」）
+    // 验证选择题模式下切换按钮文案为「说中文」
     expect(find.text('说中文'), findsOneWidget);
-    expect(find.text('说释义'), findsNothing);
   });
 
-  testWidgets('例句汉译英(ChSentence2En)题目区展示中文例句与单行横滑释义', (tester) async {
+  testWidgets('例句英译汉(EnSentence2Ch)说模式Tab只显示例句且不显示单词拼写', (tester) async {
     final (testWord, mockGetWordResult) = _createTestData();
 
-    final chState = const BdcState().copyWith(
+    final speakState = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockGetWordResult,
+      studyStep: StudyStep.enSentence2Ch.json,
+      tabIndex: 0, // 说模式
+      words: [testWord, ...mockGetWordResult.otherWords!],
+      correctAnswerIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: ProviderScope(
+          overrides: [
+            bdcNotifierProvider.overrideWith(() => MockBdcNotifier(speakState)),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: BdcPage(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    // 说模式：只显示例句，不显示单词拼写
+    expect(find.byKey(const Key('en_sentence_word_spell')), findsNothing);
+    expect(find.textContaining('This is a'), findsOneWidget);
+  });
+
+  testWidgets('例句汉译英(ChSentence2En)选择题Tab显示单行横滑释义且不显示例句', (tester) async {
+    final (testWord, mockGetWordResult) = _createTestData();
+
+    final choiceState = const BdcState().copyWith(
       dataLoaded: true,
       word: testWord,
       currentGetWordResult: mockGetWordResult,
@@ -152,7 +185,7 @@ void main() {
         create: (_) => DarkMode(),
         child: ProviderScope(
           overrides: [
-            bdcNotifierProvider.overrideWith(() => MockBdcNotifier(chState)),
+            bdcNotifierProvider.overrideWith(() => MockBdcNotifier(choiceState)),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -165,22 +198,55 @@ void main() {
 
     await tester.pump();
 
-    // 验证题目区展示了中文例句
-    expect(find.textContaining('这是一个测试词例句。'), findsOneWidget);
-
-    // 验证展示了单行水平滚动的单词释义组件
+    // 选择题模式：显示单行释义，不显示中文例句
+    expect(find.textContaining('这是一个测试词例句。'), findsNothing);
     final horizontalScrollFinder = find.byWidgetPredicate(
       (widget) => widget is SingleChildScrollView && widget.scrollDirection == Axis.horizontal,
     );
     expect(horizontalScrollFinder, findsAtLeastNWidgets(1));
-
-    // 验证展示了单词释义项（词性与释义内容）
     expect(find.textContaining('测试词'), findsWidgets);
-    expect(find.textContaining('考验'), findsWidgets);
 
     // 验证选择题模式下切换按钮文案为「说英文」（非「说发音」）
     expect(find.text('说英文'), findsOneWidget);
     expect(find.text('说发音'), findsNothing);
+  });
+
+  testWidgets('例句汉译英(ChSentence2En)说模式Tab只显示例句且不显示释义', (tester) async {
+    final (testWord, mockGetWordResult) = _createTestData();
+
+    final speakState = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockGetWordResult,
+      studyStep: StudyStep.chSentence2En.json,
+      tabIndex: 0, // 说模式
+      words: [testWord, ...mockGetWordResult.otherWords!],
+      correctAnswerIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: ProviderScope(
+          overrides: [
+            bdcNotifierProvider.overrideWith(() => MockBdcNotifier(speakState)),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: BdcPage(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    // 说模式：只显示中文例句，不显示单词释义单行横滑组件
+    expect(find.textContaining('这是一个测试词例句。'), findsOneWidget);
+    expect(find.byWidgetPredicate(
+      (widget) => widget is SingleChildScrollView && widget.scrollDirection == Axis.horizontal,
+    ), findsNothing);
   });
 
   testWidgets('例句模式文案彻底区分于单词模式（语音模式未作答状态）', (tester) async {

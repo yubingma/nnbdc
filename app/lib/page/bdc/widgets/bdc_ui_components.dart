@@ -2607,6 +2607,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             : null;
     final sentenceText = sentence?.english ?? "No sentence available";
     final spell = state.word?.spell ?? '';
+    final bool isChoiceTab = state.tabIndex == 1;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -2614,17 +2615,17 @@ extension BdcPageStateUIComponents on BdcPageState {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 单词英文拼写：在例句英译汉模式下置顶显示，为选择题提供清晰的答题目标
-          if (spell.isNotEmpty) ...[
+          // 1. 选择题 Tab：显示单词英文拼写，不显示例句
+          if (isChoiceTab && spell.isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 2),
+              padding: const EdgeInsets.only(top: 6, bottom: 4),
               child: Text(
                 spell,
                 key: const Key('en_sentence_word_spell'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  fontSize: 26,
+                  fontSize: 28,
                   fontFamily: 'Roboto',
                   letterSpacing: -0.4,
                   color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
@@ -2632,22 +2633,25 @@ extension BdcPageStateUIComponents on BdcPageState {
               ),
             ),
           ],
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Util.makeEnglishSpanText(
-              sentenceText,
-              spell,
-              true,
-              context,
-              false,
-              null,
-              false,
-              FontWeight.normal,
-              fontSize: 20,
-              textAlign: TextAlign.center,
-              color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+          // 2. 说中文 Tab：只显示英文例句，不显示单词
+          if (!isChoiceTab) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Util.makeEnglishSpanText(
+                sentenceText,
+                spell,
+                true,
+                context,
+                false,
+                null,
+                false,
+                FontWeight.normal,
+                fontSize: 20,
+                textAlign: TextAlign.center,
+                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 8),
           // 小喇叭 + 看答案/隐藏答案 同行,根据作答状态切换按钮,避免按钮被滚动区遮挡
           Row(
@@ -2702,7 +2706,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
             ],
           ),
-          if (state.hasFinishedAnswering && sentence != null) ...[
+          // 仅在说模式 Tab 且看答案状态下展示中文例句；选择题 Tab 不显示例句
+          if (!isChoiceTab && state.hasFinishedAnswering && sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeChineseSpanText(
               sentence.chinese ?? '',
@@ -2722,7 +2727,7 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   /// 单词释义单行横滑组件：在例句汉译英模式下展示，多个释义搞成单行横向排布，
   /// 用户可通过向右滑动查看完整释义，视觉极简且为备用选择题提供清晰出口指引。
-  Widget _buildSingleLineMeanings(BdcState state) {
+  Widget _buildSingleLineMeanings(BdcState state, {bool isChoiceTab = false}) {
     final allItems = state.word?.getMergedMeaningItems() ?? [];
     final hasCixingItems =
         allItems.any((item) => (item.ciXing ?? '').trim().isNotEmpty);
@@ -2748,6 +2753,8 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDark = _cachedIsDarkMode;
     final cixingColor =
         isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final double meaningFontSize = isChoiceTab ? 19.0 : 14.0;
+    final double cixingFontSize = isChoiceTab ? 14.5 : 12.5;
 
     if (displayItems.isEmpty) {
       final rawMeaning = state.word?.getMeaningStr() ?? '';
@@ -2761,9 +2768,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         child: Text(
           cleaned,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: context.textSecondary,
+            fontSize: meaningFontSize,
+            fontWeight: FontWeight.w600,
+            color: isChoiceTab ? context.textPrimary : context.textSecondary,
           ),
         ),
       );
@@ -2784,7 +2791,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 child: Text(
                   '·',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: meaningFontSize,
                     fontWeight: FontWeight.bold,
                     color: cixingColor.withValues(alpha: 0.6),
                   ),
@@ -2799,7 +2806,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   Text(
                     (displayItems[i].ciXing ?? '').trim(),
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: cixingFontSize,
                       fontWeight: FontWeight.w600,
                       color: cixingColor,
                       fontStyle: FontStyle.italic,
@@ -2810,9 +2817,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                 Text(
                   cleanMeaning(displayItems[i].meaning),
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: context.textSecondary,
+                    fontSize: meaningFontSize,
+                    fontWeight: isChoiceTab ? FontWeight.w600 : FontWeight.w500,
+                    color: isChoiceTab ? context.textPrimary : context.textSecondary,
                   ),
                 ),
               ],
@@ -2829,6 +2836,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             ? state.word!.sentences!.first
             : null;
     final translationText = sentence?.chinese ?? "暂无例句翻译";
+    final bool isChoiceTab = state.tabIndex == 1;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -2836,22 +2844,30 @@ extension BdcPageStateUIComponents on BdcPageState {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Util.makeChineseSpanText(
-              translationText,
-              context,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-                color: context.textPrimary,
-                height: 1.4,
+          // 1. 说英文 Tab：只显示中文例句，不显示中文释义
+          if (!isChoiceTab) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Util.makeChineseSpanText(
+                translationText,
+                context,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                  color: context.textPrimary,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
-          ),
-          // 单词释义单行横滑展示区：为选择题提供精准指引，界面紧凑简洁
-          _buildSingleLineMeanings(state),
+          ],
+          // 2. 选择题 Tab：只显示中文释义，不显示例句
+          if (isChoiceTab) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: _buildSingleLineMeanings(state, isChoiceTab: true),
+            ),
+          ],
           const SizedBox(height: 8),
           // 小喇叭 + 看答案/隐藏答案 同行,根据作答状态切换按钮,避免按钮被滚动区遮挡
           Row(
@@ -2906,7 +2922,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
             ],
           ),
-          if (state.hasFinishedAnswering && sentence != null) ...[
+          // 仅在说模式 Tab 且看答案状态下展示英文例句；选择题 Tab 不显示例句
+          if (!isChoiceTab && state.hasFinishedAnswering && sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeEnglishSpanText(
               sentence.english ?? '',
