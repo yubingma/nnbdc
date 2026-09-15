@@ -766,7 +766,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                               ),
                               boxShadow: [context.cardShadow],
                             ),
-                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                             child: Column(
                               children: [
                                 if ((state.studyStep == StudyStep.en2Ch.json ||
@@ -1596,7 +1596,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               }
 
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                padding: const EdgeInsets.symmetric(vertical: 2.5),
                 child: SizedBox(
                   width: double.infinity,
                   child: AnimatedContainer(
@@ -1619,11 +1619,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                             notifier.onAnswerClicked(index + 1, context),
                         child: Container(
                           width: double.infinity,
-                          constraints: const BoxConstraints(minHeight: 64),
+                          constraints: const BoxConstraints(minHeight: 56),
                           alignment: Alignment.centerLeft,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
-                            vertical: 10,
+                            vertical: 8,
                           ),
                           child: _buildChoiceItemContent(
                               word, isAnswered, isCh2En),
