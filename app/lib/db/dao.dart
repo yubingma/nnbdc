@@ -1211,14 +1211,83 @@ class SentencesDao extends DatabaseAccessor<MyDatabase> with _$SentencesDaoMixin
   ///
   /// 用户自定义释义（Excel 导入 / 手工编辑）是新建的 UUID，与系统例句没有关联，
   /// 直接借通用词典中同一单词的例句兜底，避免学习时整词无例句。
-  Future<List<Sentence>> findCommonDictSentences(String wordId) async {
+  ///
+  /// 支持按语义偏好与常用度（popularity）严格保序：
+  /// 1. 若提供 [preferredCiXing] 或 [preferredMeaning]，优先将词性一致、释义相近的释义项排在前面；
+  /// 2. 其它通用释义项严格按 [popularity] 升序排列（常用义项优先）；
+  /// 3. 同一释义项下的例句按好评与创建顺序稳定排序，杜绝底层数据库主键随机性导致冷门例句置顶。
+  Future<List<Sentence>> findCommonDictSentences(
+    String wordId, {
+    String? preferredCiXing,
+    String? preferredMeaning,
+  }) async {
     final commonItems = await (db.select(db.meaningItems)
-          ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId)))
+          ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId))
+          ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]))
         .get();
     if (commonItems.isEmpty) return const [];
 
-    final meaningItemIds = commonItems.map((item) => item.id).toList();
-    return (db.select(db.sentences)..where((s) => s.meaningItemId.isIn(meaningItemIds))).get();
+    // 若有偏好，计算匹配权重进行重新排序
+    final sortedItems = List<MeaningItem>.from(commonItems);
+    if ((preferredCiXing != null && preferredCiXing.isNotEmpty) ||
+        (preferredMeaning != null && preferredMeaning.isNotEmpty)) {
+      final cleanCiXing = preferredCiXing?.replaceAll('.', '').trim().toLowerCase();
+      final cleanMeaning = preferredMeaning?.trim().toLowerCase() ?? '';
+
+      sortedItems.sort((a, b) {
+        int score(MeaningItem item) {
+          int s = 0;
+          final itemCiXing = item.ciXing.replaceAll('.', '').trim().toLowerCase();
+          if (cleanCiXing != null && cleanCiXing.isNotEmpty && itemCiXing == cleanCiXing) {
+            s += 20; // 词性匹配
+          }
+          final itemMeaning = item.meaning.trim().toLowerCase();
+          if (cleanMeaning.isNotEmpty) {
+            if (itemMeaning == cleanMeaning) {
+              s += 50; // 完全匹配
+            } else if (itemMeaning.contains(cleanMeaning) || cleanMeaning.contains(itemMeaning)) {
+              s += 30; // 包含匹配
+            } else {
+              for (final char in cleanMeaning.runes) {
+                if (itemMeaning.contains(String.fromCharCode(char))) {
+                  s += 1;
+                }
+              }
+            }
+          }
+          return s;
+        }
+
+        final scoreA = score(a);
+        final scoreB = score(b);
+        if (scoreA != scoreB) {
+          return scoreB.compareTo(scoreA); // 分高者排前
+        }
+        return a.popularity.compareTo(b.popularity);
+      });
+    }
+
+    final meaningItemIds = sortedItems.map((item) => item.id).toList();
+    final allSentences = await (db.select(db.sentences)..where((s) => s.meaningItemId.isIn(meaningItemIds))).get();
+    if (allSentences.isEmpty) return const [];
+
+    final orderMap = {for (int i = 0; i < sortedItems.length; i++) sortedItems[i].id: i};
+
+    allSentences.sort((a, b) {
+      final orderA = orderMap[a.meaningItemId] ?? 999;
+      final orderB = orderMap[b.meaningItemId] ?? 999;
+      if (orderA != orderB) {
+        return orderA.compareTo(orderB);
+      }
+      final scoreA = a.handCount - a.footCount;
+      final scoreB = b.handCount - b.footCount;
+      if (scoreA != scoreB) {
+        return scoreB.compareTo(scoreA);
+      }
+      return a.id.compareTo(b.id);
+    });
+
+    return allSentences;
   }
 
   Future<void> insertEntity(Sentence entry) async {

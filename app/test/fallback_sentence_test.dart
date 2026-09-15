@@ -121,5 +121,112 @@ void main() {
 
       expect(sentences.map((s) => s.id).toList(), ['s1']);
     });
+
+    test('通用词典存在多义项时，例句严格按 popularity 排序，不受底层例句 ID 大小干扰（如 abandon 狂热 vs 放弃）', () async {
+      // 单词 abandon
+      await database.into(database.words).insert(Word(
+            id: 'w_abandon',
+            popularity: 1,
+            spell: 'abandon',
+            createTime: now,
+            updateTime: now,
+          ));
+
+      // 释义1：高频常用义项 (放弃, popularity=1)
+      await database.into(database.meaningItems).insert(MeaningItem(
+            id: 'mi_fangqi',
+            wordId: 'w_abandon',
+            dictId: Global.commonDictId,
+            ciXing: 'v.',
+            meaning: '放弃',
+            popularity: 1,
+            ownerId: Global.sysUserId,
+            createTime: now,
+            updateTime: now,
+          ));
+      // 释义2：冷门低频义项 (狂热, popularity=3)
+      await database.into(database.meaningItems).insert(MeaningItem(
+            id: 'mi_kuangre',
+            wordId: 'w_abandon',
+            dictId: Global.commonDictId,
+            ciXing: 'n.',
+            meaning: '狂热',
+            popularity: 3,
+            ownerId: Global.sysUserId,
+            createTime: now,
+            updateTime: now,
+          ));
+
+      // 模拟生产数据库：狂热的例句 ID (520563) 比 放弃的例句 ID (530918) 小
+      await database.into(database.sentences).insert(Sentence(
+            id: '520563',
+            english: 'His abandon in pursuing his goals was both admirable and concerning.',
+            chinese: '他追求目标时的狂热既令人钦佩又令人担忧。',
+            englishDigest: 'abandon',
+            theType: 'tts',
+            handCount: 0,
+            footCount: 0,
+            authorId: Global.sysUserId,
+            ownerId: Global.sysUserId,
+            meaningItemId: 'mi_kuangre',
+            wordMeaning: '狂热',
+            createTime: now,
+            updateTime: now,
+          ));
+      await database.into(database.sentences).insert(Sentence(
+            id: '530918',
+            english: 'After several failed attempts, the team had to abandon their project.',
+            chinese: '几次尝试失败后，团队不得不放弃他们的项目。',
+            englishDigest: 'abandon',
+            theType: 'tts',
+            handCount: 0,
+            footCount: 0,
+            authorId: Global.sysUserId,
+            ownerId: Global.sysUserId,
+            meaningItemId: 'mi_fangqi',
+            wordMeaning: '放弃',
+            createTime: now,
+            updateTime: now,
+          ));
+
+      // 1. 无偏好时，必须按 popularity 排序（放弃 popularity=1 优先于 狂热 popularity=3）
+      final sentences = await database.sentencesDao.findCommonDictSentences('w_abandon');
+      expect(sentences.first.id, '530918');
+      expect(sentences.first.wordMeaning, '放弃');
+
+      // 2. 自定义释义为 "v. 放弃" 时，语义优先匹配到 "放弃" 例句
+      final customFangqi = MeaningItemVo('mi_custom_fq', 'v.', '放弃', null, null, null);
+      await database.into(database.meaningItems).insert(MeaningItem(
+            id: 'mi_custom_fq',
+            wordId: 'w_abandon',
+            dictId: 'custom_dict',
+            ciXing: 'v.',
+            meaning: '放弃',
+            popularity: 1,
+            ownerId: 'u1',
+            createTime: now,
+            updateTime: now,
+          ));
+      final fallbackForFangqi = await customFangqi.getSentences();
+      expect(fallbackForFangqi.first.id, '530918');
+      expect(fallbackForFangqi.first.wordMeaning, '放弃');
+
+      // 3. 自定义释义为 "n. 狂热" 时，语义优先匹配到 "狂热" 例句
+      final customKuangre = MeaningItemVo('mi_custom_kr', 'n.', '狂热', null, null, null);
+      await database.into(database.meaningItems).insert(MeaningItem(
+            id: 'mi_custom_kr',
+            wordId: 'w_abandon',
+            dictId: 'custom_dict',
+            ciXing: 'n.',
+            meaning: '狂热',
+            popularity: 1,
+            ownerId: 'u1',
+            createTime: now,
+            updateTime: now,
+          ));
+      final fallbackForKuangre = await customKuangre.getSentences();
+      expect(fallbackForKuangre.first.id, '520563');
+      expect(fallbackForKuangre.first.wordMeaning, '狂热');
+    });
   });
 }

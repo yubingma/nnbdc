@@ -925,7 +925,11 @@ class MeaningItemVo {
     final wordId = self?.wordId;
     if (wordId == null || self?.dictId == Global.commonDictId) return [];
 
-    final fallback = await db.sentencesDao.findCommonDictSentences(wordId);
+    final fallback = await db.sentencesDao.findCommonDictSentences(
+      wordId,
+      preferredCiXing: ciXing,
+      preferredMeaning: meaning,
+    );
     return fallback.map((entry) => SentenceVo.fromEntity(entry, fallback: true)).toList();
   }
 

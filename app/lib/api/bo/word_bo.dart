@@ -794,11 +794,16 @@ class WordBo {
     final missing = meaningItemVos.where((mi) => mi.sentences == null || mi.sentences!.isEmpty).toList();
     if (missing.isEmpty) return;
 
-    final fallback = await MyDatabase.instance.sentencesDao.findCommonDictSentences(wordId);
+    final targetItem = missing.first;
+    final fallback = await MyDatabase.instance.sentencesDao.findCommonDictSentences(
+      wordId,
+      preferredCiXing: targetItem.ciXing,
+      preferredMeaning: targetItem.meaning,
+    );
     if (fallback.isEmpty) return;
 
     // 只挂在第一条缺例句的释义上，避免同一批例句在多个义项下重复出现
-    missing.first.sentences = fallback.map((s) => SentenceVo.fromEntity(s, fallback: true)).toList();
+    targetItem.sentences = fallback.map((s) => SentenceVo.fromEntity(s, fallback: true)).toList();
   }
 
   // 通用的查询例句数据并返回映射的方法（用于批量处理）
