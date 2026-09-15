@@ -724,6 +724,7 @@ class BdcNotifier extends _$BdcNotifier {
       hintTapCount: 0,
       isWordMastered: false,
       isPttPressed: false,
+      isPracticeMode: false,
     );
 
     final wordId = word.id;
@@ -1025,6 +1026,7 @@ class BdcNotifier extends _$BdcNotifier {
     _isAnswerCorrectHandling = false; // 重置答对锁,否则练习模式 checkAsrResult 被 L1555 拦截,评分不更新
     state = state.copyWith(
       hasFinishedAnswering: false,
+      isPracticeMode: true,
       selectedAnswerIndex: null,
       // 练习模式允许点"下一词"离开(canLeaveCurrWord=true 使底部按钮可见)
       canLeaveCurrWord: true,
@@ -1338,6 +1340,7 @@ class BdcNotifier extends _$BdcNotifier {
         _isAnswerCorrectHandling = false;
         state = state.copyWith(
           hasFinishedAnswering: false,
+          isPracticeMode: true,
           canLeaveCurrWord: true,
           currentScore: null,
         );

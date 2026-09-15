@@ -359,5 +359,58 @@ void main() {
     expect(find.text('看答案'), findsOneWidget);
     expect(find.text('隐藏答案继续练习'), findsNothing);
   });
+
+  testWidgets('例句模式点击「看答案」后即使隐藏答案继续练习，底部的测评结果（忘记）依然常驻展示', (tester) async {
+    final (testWord, mockGetWordResult) = _createTestData();
+
+    // 初始状态：例句环节语音模式未作答
+    final enState = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockGetWordResult,
+      studyStep: StudyStep.enSentence2Ch.json,
+      tabIndex: 0,
+      hasFinishedAnswering: false,
+    );
+
+    final mockNotifier = MockBdcNotifier(enState);
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: ProviderScope(
+          overrides: [
+            bdcNotifierProvider.overrideWith(() => mockNotifier),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: BdcPage(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // 1. 点击「看答案」
+    final seeAnswerBtnFinder = find.text('看答案');
+    expect(seeAnswerBtnFinder, findsOneWidget);
+    await tester.tap(seeAnswerBtnFinder);
+    await tester.pump();
+
+    // 验证看答案后：底部的测评结果（忘记）出现
+    expect(find.textContaining('测评结果: 忘记'), findsOneWidget);
+    expect(find.text('隐藏答案继续练习'), findsOneWidget);
+
+    // 2. 点击「隐藏答案继续练习」
+    final hideBtnFinder = find.text('隐藏答案继续练习');
+    await tester.tap(hideBtnFinder);
+    await tester.pump();
+
+    // 核心验证：进入练习模式后，底部的测评结果（忘记）必须依然常驻展示，不能变回空白占位
+    expect(mockNotifier.state.hasFinishedAnswering, isFalse);
+    expect(mockNotifier.state.isPracticeMode, isTrue);
+    expect(find.textContaining('测评结果: 忘记'), findsOneWidget);
+  });
 }
 

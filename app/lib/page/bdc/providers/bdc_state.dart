@@ -111,6 +111,9 @@ class BdcState extends Equatable {
   /// 大模型裁判是否正在判定中（单词中英/例句环节通用）
   final bool isAiEvaluating;
 
+  /// 例句环节当前词是否处于练习模式（查看答案后隐藏答案继续练习）
+  final bool isPracticeMode;
+
   const BdcState({
     this.dataLoaded = false,
     this.isGettingNextWord = false,
@@ -181,6 +184,7 @@ class BdcState extends Equatable {
     this.isSentenceSelectModePreferred = false,
     this.isPttPressed = false,
     this.isAiEvaluating = false,
+    this.isPracticeMode = false,
   });
 
   bool get autoJumpAfterCorrect {
@@ -266,6 +270,7 @@ class BdcState extends Equatable {
     bool? isSentenceSelectModePreferred,
     bool? isPttPressed,
     bool? isAiEvaluating,
+    bool? isPracticeMode,
   }) {
     // 「中文默写」及其进度是手写板的子状态：板子不在时一律不成立。
     // 关闭手写板的路径很多（答对成功过渡、主动点「答对/认识」、换词、提示已全展示、取消），
@@ -349,6 +354,7 @@ class BdcState extends Equatable {
       isSentenceSelectModePreferred: isSentenceSelectModePreferred ?? this.isSentenceSelectModePreferred,
       isPttPressed: isPttPressed ?? this.isPttPressed,
       isAiEvaluating: isAiEvaluating ?? this.isAiEvaluating,
+      isPracticeMode: isPracticeMode ?? this.isPracticeMode,
     );
   }
 
@@ -373,6 +379,7 @@ class BdcState extends Equatable {
     studyStep,
     activeUserStudySteps,
     hasFinishedAnswering,
+    isPracticeMode,
     canLeaveCurrWord,
     selectedAnswerIndex,
     correctAnswerIndex,

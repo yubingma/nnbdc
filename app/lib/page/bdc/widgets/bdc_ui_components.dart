@@ -2102,7 +2102,9 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    if (!state.hasFinishedAnswering || state.fsrsItem == null) {
+    final bool hasFinishedOrPractice =
+        state.hasFinishedAnswering || (state.isPracticeMode && state.lastFsrsRating != null);
+    if (!hasFinishedOrPractice || state.fsrsItem == null) {
       if (state.currentGetWordResult != null &&
           state.currentGetWordResult!.stepIndex > 0 &&
           state.wordWrapper?.word.id != null) {
@@ -2290,8 +2292,10 @@ extension BdcPageStateUIComponents on BdcPageState {
           },
         );
       }
-      // 非巩固环节（测评环节）未做题：直接返回占位
-      return const SizedBox(height: 24);
+      // 测评环节未作答且未进入练习模式：直接返回占位
+      if (!hasFinishedOrPractice) {
+        return const SizedBox(height: 24);
+      }
     }
 
     // 测评环节且已完成做题：展示测评结果
