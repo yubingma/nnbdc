@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="emerald" data-mode="gallery">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>泡泡单词 · 应用商店高转化海报素材与原型方案</title>
+  <style>
+    /* ========================================================
+       基础规范与跨平台字体栈（严格禁止外部 Google Fonts）
+       ======================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    :root {
+      /* 品牌基准色彩体系：翡翠青绿与暗夜深空 */
+      --primary: #10B981;
+      --primary-rgb: 16, 185, 129;
+      --primary-hover: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.12);
+      --accent-coral: #FF6B57;
+      --accent-sky: #0EA5E9;
+      --accent-amber: #F59E0B;
+      --accent-purple: #8B5CF6;
+
+      /* 背景与文本 */
+      --bg-workspace: #0F1412;
+      --panel-bg: rgba(25, 33, 30, 0.78);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text-white: #FFFFFF;
+      --text-muted: #8E9F99;
+      --text-faint: #52635D;
+
+      /* 统一跨平台原生现代字体栈 */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      background: var(--bg-workspace);
+      color: var(--text-white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ========================================================
+       顶部控制台（用于切换海报模式、文案版本与截屏辅助）
+       ======================================================== */
+    .top-control-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(15, 20, 18, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #10B981, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: #FFFFFF;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .control-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .segment-switch {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .segment-btn {
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 500;
+      border-radius: 7px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+
+    .segment-btn.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .action-btn {
+      padding: 7px 15px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.07);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .action-btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .action-btn.primary:hover {
+      background: var(--primary-hover);
+    }
+
+    /* ========================================================
+       工作区视图排布
+       ======================================================== */
+    .showcase-wrapper {
+      flex: 1;
+      padding: 36px 30px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* 展台画廊：支持横向一字排开与响应式平铺 */
+    .posters-gallery {
+      display: flex;
+      gap: 28px;
+      max-width: 100%;
+      width: 100%;
+      overflow-x: auto;
+      padding: 10px 10px 30px;
+      scroll-snap-type: x mandatory;
+      justify-content: flex-start;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+    .posters-gallery::-webkit-scrollbar {
+      height: 8px;
+    }
+    .posters-gallery::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 4px;
+    }
+
+    /* ========================================================
+       单张 App Store 宣传海报展板 (Poster Canvas)
+       规格：标准 9:19.5 竖屏视界比例，自带文案标题与真机居中下悬浮
+       ======================================================== */
+    .app-poster-card {
+      width: 390px;
+      min-width: 390px;
+      height: 844px;
+      border-radius: 44px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      background: #111A17;
+      scroll-snap-align: center;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+    }
+
+    .app-poster-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 30px 70px -12px rgba(0, 0, 0, 0.8), 0 0 0 1.5px rgba(255, 255, 255, 0.16);
+    }
+
+    /* 单张聚焦弹窗 / 独占全屏截图 */
+    .poster-quick-tools {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 50;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .app-poster-card:hover .poster-quick-tools {
+      opacity: 1;
+    }
+
+    .focus-btn {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .focus-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* 聚焦遮罩模态层 */
+    .focus-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(8, 12, 10, 0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    .focus-modal-overlay.active {
+      display: flex;
+    }
+
+    .focus-close-bar {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* 各卡片专属流光背景 */
+    .poster-bg-1 {
+      background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.28) 0%, rgba(11, 23, 19, 0.95) 45%, #0A110F 100%);
+    }
+    .poster-bg-2 {
+      background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.28) 0%, rgba(10, 20, 28, 0.95) 45%, #080E14 100%);
+    }
+    .poster-bg-3 {
+      background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.28) 0%, rgba(18, 14, 28, 0.95) 45%, #0D0914 100%);
+    }
+    .poster-bg-4 {
+      background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.24) 0%, rgba(28, 20, 11, 0.95) 45%, #120D07 100%);
+    }
+    .poster-bg-5 {
+      background: radial-gradient(circle at 50% 0%, rgba(20, 184, 166, 0.28) 0%, rgba(10, 24, 23, 0.95) 45%, #081211 100%);
+    }
+
+    /* 海报顶部大字报文案区（截图灵魂区） */
+    .poster-header {
+      padding: 40px 28px 18px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .poster-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3.5px 12px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.88);
+      margin-bottom: 12px;
+    }
+
+    .poster-title {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.4px;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .poster-title .highlight {
+      background: linear-gradient(135deg, #34D399, #10B981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .poster-title .highlight-sky {
+      background: linear-gradient(135deg, #38BDF8, #0EA5E9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .poster-title .highlight-purple {
+      background: linear-gradient(135deg, #A78BFA, #8B5CF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .poster-title .highlight-amber {
+      background: linear-gradient(135deg, #FBBF24, #F59E0B);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .poster-title .highlight-teal {
+      background: linear-gradient(135deg, #2DD4BF, #14B8A6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .poster-desc {
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.72);
+      font-weight: 400;
+      max-width: 320px;
+    }
+
+    /* 海报底部的悬浮真机展示区 */
+    .poster-phone-stage {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    /* ========================================================
+       统一规范的 iPhone 旗舰真机外壳模具 (严格对标规范)
+       钛金属微中框 + 优雅阴影 + 灵动岛 + Home Bar
+       ======================================================== */
+    .device-chassis {
+      width: 320px;
+      height: 692px;
+      border-radius: 46px;
+      border: 3.5px solid #000000;
+      box-shadow: 
+        0 0 0 7px #1D2421,
+        0 0 0 8.5px rgba(255, 255, 255, 0.16),
+        0 0 0 9.5px rgba(0, 0, 0, 0.4),
+        0 24px 50px -10px rgba(0, 0, 0, 0.6);
+      background: #0D1614;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    /* 浅色模式机身底色 */
+    .device-chassis.light-mode {
+      background: #F4F8F6;
+    }
+
+    /* 灵动岛 */
+    .mock-island {
+      position: absolute;
+      left: 50%;
+      top: 9px;
+      transform: translateX(-50%);
+      width: 86px;
+      height: 22px;
+      background: #000000;
+      border-radius: 14px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.08) inset;
+    }
+
+    .mock-lens {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #18273A 0%, #080D14 80%);
+      box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.15);
+    }
+
+    /* 状态栏 */
+    .mock-status-bar {
+      height: 38px;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 11.5px;
+      font-weight: 700;
+      z-index: 90;
+      flex-shrink: 0;
+    }
+
+    .device-chassis.light-mode .mock-status-bar {
+      color: #14231E;
+    }
+
+    .mock-status-icons {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* 底部 Home Bar */
+    .mock-home-bar {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 108px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 10px;
+      z-index: 90;
+    }
+
+    .device-chassis.light-mode .mock-home-bar {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* 屏幕主内容滑动/视界区域 */
+    .screen-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding: 0 14px 20px;
+    }
+
+    /* ========================================================
+       原型 1：真语境单词卡界面（基于真实背词卡，极简排版美学）
+       ======================================================== */
+    .word-card-stage {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+      height: 100%;
+    }
+
+    .word-header-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .meta-tag-pill {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2.5px 8px;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+    }
+
+    .meta-progress {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: Roboto, -apple-system, sans-serif;
+    }
+
+    .word-focus-hero {
+      text-align: left;
+      padding: 10px 8px 6px;
+    }
+
+    .hero-spelling {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+      font-family: Roboto, -apple-system, sans-serif;
+    }
+
+    .hero-phonetic-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .phonetic-text {
+      font-size: 12.5px;
+      color: #9DB4AD;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+
+    .audio-wave-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2.5px 7px;
+      border-radius: 100px;
+      background: rgba(16, 185, 129, 0.16);
+      color: #34D399;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .audio-bars {
+      display: flex;
+      align-items: center;
+      gap: 1.5px;
+      height: 10px;
+    }
+    .audio-bar {
+      width: 2px;
+      background: #34D399;
+      border-radius: 1px;
+    }
+    .audio-bar:nth-child(1) { height: 4px; }
+    .audio-bar:nth-child(2) { height: 9px; }
+    .audio-bar:nth-child(3) { height: 6px; }
+
+    /* 原生真机毛玻璃卡片规范（0x80FFFFFF / 深色 0xB818202F） */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.065);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 12px 14px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.3);
+    }
+
+    .def-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .def-pos {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #34D399;
+      font-style: italic;
+      padding-top: 1px;
+    }
+
+    .def-trans {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: #E2ECE8;
+      line-height: 1.35;
+    }
+
+    /* 原声影视例句特色卡片（核心杀手锏） */
+    .sentence-hero-card {
+      background: linear-gradient(145deg, rgba(20, 38, 32, 0.8), rgba(12, 22, 19, 0.95));
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 16px;
+      padding: 13px;
+      position: relative;
+    }
+
+    .sentence-source-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .source-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #34D399;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .sentence-en {
+      font-size: 13px;
+      line-height: 1.45;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+      font-weight: 400;
+    }
+
+    .sentence-en mark {
+      background: transparent;
+      color: #34D399;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .sentence-cn {
+      font-size: 11.5px;
+      color: #8CA39C;
+      line-height: 1.4;
+    }
+
+    /* 底部操作反馈栏 */
+    .action-bottom-row {
+      margin-top: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding-bottom: 8px;
+    }
+
+    .study-choice-btn {
+      padding: 10px 0;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      color: #FFFFFF;
+    }
+
+    .study-choice-btn.known {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+
+    /* ========================================================
+       原型 2：艾宾浩斯抗遗忘自适应复习
+       ======================================================== */
+    .review-hero-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .metric-gauge-card {
+      background: linear-gradient(160deg, rgba(14, 165, 233, 0.14) 0%, rgba(10, 24, 35, 0.8) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .gauge-info-title {
+      font-size: 11.5px;
+      color: #93C5FD;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .gauge-big-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: #FFFFFF;
+      font-family: Roboto, -apple-system, sans-serif;
+      letter-spacing: -0.5px;
+    }
+
+    .gauge-sub-desc {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 2px;
+    }
+
+    .circle-progress-visual {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: conic-gradient(#0EA5E9 0% 86%, rgba(255, 255, 255, 0.1) 86% 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .circle-progress-visual::after {
+      content: "86%";
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #0A141D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #38BDF8;
+      font-family: Roboto, -apple-system, sans-serif;
+    }
+
+    /* 记忆阶段四级漏斗 */
+    .stage-matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .stage-pill-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 8px 4px;
+      text-align: center;
+    }
+
+    .stage-day-label {
+      font-size: 9.5px;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+
+    .stage-count-num {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFFFFF;
+      font-family: Roboto, -apple-system, sans-serif;
+    }
+
+    /* 即将到期复习波次 */
+    .ebbinghaus-timeline-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+
+    .timeline-header {
+      font-size: 12px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .timeline-node-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .node-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .node-word {
+      font-weight: 600;
+      color: #E2ECE8;
+      font-family: Roboto, -apple-system, sans-serif;
+    }
+
+    .node-badge-status {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(14, 165, 233, 0.16);
+      color: #38BDF8;
+      font-weight: 600;
+    }
+
+    /* ========================================================
+       原型 3：原声盲听拼写与听力辨析
+       ======================================================== */
+    .spelling-hero-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding-bottom: 16px;
+    }
+
+    .audio-pulsing-disc {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, rgba(139, 92, 246, 0.08) 65%, transparent 100%);
+      border: 1.5px solid rgba(167, 139, 250, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 0 28px rgba(139, 92, 246, 0.35);
+    }
+
+    .disc-play-icon {
+      width: 0;
+      height: 0;
+      border-left: 14px solid #C4B5FD;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      margin-left: 3px;
+    }
+
+    .spelling-slots-wrapper {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .letter-slot {
+      width: 26px;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFFFFF;
+      font-family: Roboto, -apple-system, sans-serif;
+    }
+
+    .letter-slot.filled {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: #A78BFA;
+      color: #DDD6FE;
+    }
+
+    .letter-slot.cursor {
+      border-color: #8B5CF6;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+      animation: pulseCursor 1.2s infinite;
+    }
+
+    @keyframes pulseCursor {
+      0%, 100% { border-color: #8B5CF6; }
+      50% { border-color: transparent; }
+    }
+
+    .spelling-hint-cn {
+      font-size: 14px;
+      color: #C4B5FD;
+      font-weight: 500;
+      margin-bottom: 22px;
+    }
+
+    /* 虚拟琴键键盘 */
+    .mini-keyboard-pad {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 14px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .kb-key {
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #FFFFFF;
+      min-width: 23px;
+      text-align: center;
+    }
+
+    .kb-key.suggest {
+      background: rgba(139, 92, 246, 0.35);
+      color: #EDE9FE;
+    }
+
+    /* ========================================================
+       原型 4：极简书桌与今日计划（浅色温润质感）
+       ======================================================== */
+    .desktop-stage-light {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+      color: #14231E;
+    }
+
+    .desktop-hero-card {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 12px 30px -8px rgba(28, 66, 50, 0.12);
+    }
+
+    .book-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .book-name {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #14231E;
+    }
+
+    .book-words-num {
+      font-size: 12px;
+      color: #10B981;
+      font-weight: 600;
+      font-family: Roboto, -apple-system, sans-serif;
+    }
+
+    /* 规范的双段胶囊进度条 */
+    .dual-progress-track {
+      height: 4px;
+      background: rgba(20, 60, 45, 0.08);
+      border-radius: 2px;
+      position: relative;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+
+    .track-fetched {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 62%;
+      background: rgba(16, 185, 129, 0.35);
+      border-radius: 2px;
+    }
+
+    .track-mastered {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 42%;
+      background: #10B981;
+      border-radius: 2px;
+    }
+
+    .book-stat-sub {
+      font-size: 11px;
+      color: #68827B;
+      font-family: Roboto, -apple-system, sans-serif;
+    }
+
+    /* 2x2 指标卡片（对标规范） */
+    .metric-2x2-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric-white-card {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 4px 14px rgba(28, 66, 50, 0.05);
+    }
+
+    .metric-label {
+      font-size: 11.5px;
+      color: #58736B;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .metric-val {
+      font-size: 22px;
+      font-weight: 700;
+      color: #14231E;
+      font-family: Roboto, -apple-system, sans-serif;
+      letter-spacing: -0.3px;
+    }
+
+    .metric-val.green {
+      color: #10B981;
+    }
+
+    .start-study-cta {
+      margin-top: auto;
+      background: #10B981;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      padding: 12px 0;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* ========================================================
+       原型 5：全阶段权威词库选择与进度
+       ======================================================== */
+    .library-stage {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 4px;
+    }
+
+    .category-pills {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .cat-chip {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.08);
+      color: #B5D1CA;
+      white-space: nowrap;
+    }
+
+    .cat-chip.active {
+      background: #14B8A6;
+      color: #FFFFFF;
+    }
+
+    .book-list-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .book-cell-item {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .book-cover-mock {
+      width: 38px;
+      height: 50px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #14B8A6, #0F766E);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.1;
+      padding: 2px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+    }
+
+    .book-cover-mock.ielts {
+      background: linear-gradient(135deg, #F59E0B, #B45309);
+    }
+
+    .book-cover-mock.toefl {
+      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+    }
+
+    .book-detail-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .b-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .b-desc {
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+
+    .b-action-link {
+      font-size: 11px;
+      font-weight: 600;
+      color: #2DD4BF;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* ========================================================
+       文案与策略方案面板（方案手册视图）
+       ======================================================== */
+    .strategy-panel {
+      display: none;
+      max-width: 1000px;
+      width: 100%;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      padding: 36px 40px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      line-height: 1.6;
+    }
+
+    body[data-mode="strategy"] .posters-gallery {
+      display: none;
+    }
+    body[data-mode="strategy"] .strategy-panel {
+      display: block;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .copy-block {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 6px;
+      color: #FFFFFF;
+      cursor: pointer;
+    }
+
+    .copy-btn:hover {
+      background: var(--primary);
+    }
+
+    /* 响应式适配 */
+    @media (max-width: 768px) {
+      .top-control-bar {
+        padding: 10px 14px;
+      }
+      .showcase-wrapper {
+        padding: 16px 10px 40px;
+      }
+      .app-poster-card {
+        width: 100%;
+        max-width: 360px;
+        height: 780px;
+      }
+      .device-chassis {
+        width: 290px;
+        height: 630px;
+      }
+      .strategy-panel {
+        padding: 20px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部控制与操作台 -->
+  <header class="top-control-bar">
+    <div class="brand-section">
+      <div class="brand-logo-badge">泡</div>
+      <div>
+        <div class="brand-title">泡泡单词 · 应用商店高转化物料系统</div>
+        <div class="brand-sub">App Store & 应用市场 5 大高吸睛截屏海报与文案矩阵</div>
+      </div>
+    </div>
+
+    <div class="control-actions">
+      <!-- 视图模式切换 -->
+      <div class="segment-switch">
+        <button class="segment-btn active" onclick="switchViewMode('gallery')">5张海报展台 (截图用)</button>
+        <button class="segment-btn" onclick="switchViewMode('strategy')">文字文案手册 (上线用)</button>
+      </div>
+
+      <!-- 文案风格切换 -->
+      <div class="segment-switch">
+        <button class="segment-btn active" id="btn-copy-a" onclick="switchCopyStyle('a')">A 方案：极简品质风</button>
+        <button class="segment-btn" id="btn-copy-b" onclick="switchCopyStyle('b')">B 方案：痛点直效风</button>
+      </div>
+
+      <!-- 快速提示 -->
+      <button class="action-btn primary" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+        <span>快捷保存 / 截图</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="showcase-wrapper">
+
+    <!-- 1. 5 大 App Store 截屏大字报展台 (Gallery Mode) -->
+    <div class="posters-gallery" id="postersGallery">
+
+      <!-- Poster 1: 核心卖点·真实语境与原声例句 -->
+      <div class="app-poster-card poster-bg-1" id="poster1">
+        <div class="poster-header">
+          <div class="poster-eyebrow">SCREEN 01 · 真实语境记忆</div>
+          <h2 class="poster-title" id="p1-title">背词，何必<span class="highlight">死记硬背</span></h2>
+          <p class="poster-desc" id="p1-desc">真实美剧与原声例句 · 让单词自然长在脑海里</p>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="mock-island"><div class="mock-lens"></div></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="mock-status-icons">
+                <svg width="13" height="10" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.8"/><rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/><rect x="9" y="3" width="2.5" height="9" rx="0.8"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="18" height="9" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/><rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/><path d="M22 4.5v3" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-content">
+              <div class="word-card-stage">
+                <!-- 顶信息 -->
+                <div class="word-header-meta">
+                  <div class="meta-tag-pill">考研 · 雅思 · GRE 高频</div>
+                  <div class="meta-progress">今日 18 / 60</div>
+                </div>
+
+                <!-- 单词大卡 -->
+                <div class="word-focus-hero">
+                  <div class="hero-spelling">ephemeral</div>
+                  <div class="hero-phonetic-row">
+                    <span class="phonetic-text">/ɪˈfemərəl/</span>
+                    <div class="audio-wave-bubble">
+                      <div class="audio-bars">
+                        <div class="audio-bar"></div>
+                        <div class="audio-bar"></div>
+                        <div class="audio-bar"></div>
+                      </div>
+                      <span>美音原声</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 释义卡片 -->
+                <div class="glass-card">
+                  <div class="def-item">
+                    <span class="def-pos">adj.</span>
+                    <span class="def-trans">短暂的，转瞬即逝的；朝生暮死的</span>
+                  </div>
+                  <div class="def-item" style="margin-bottom: 0;">
+                    <span class="def-pos">n.</span>
+                    <span class="def-trans">生命短暂的事物；短生植物</span>
+                  </div>
+                </div>
+
+                <!-- 核心原声影视例句卡（对标不背单词的高级语境） -->
+                <div class="sentence-hero-card">
+                  <div class="sentence-source-badge">
+                    <span class="source-title">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                      经典影视原声 ·《爱乐之城》
+                    </span>
+                    <span style="font-size: 10px; color: #34D399;">00:42</span>
+                  </div>
+                  <div class="sentence-en">
+                    "Fame is <mark>ephemeral</mark>, but genuine art lasts forever."
+                  </div>
+                  <div class="sentence-cn">
+                    “名声或许转瞬即逝，但真正的艺术永恒长存。”
+                  </div>
+                </div>
+
+                <!-- 记忆法微卡 -->
+                <div class="glass-card" style="padding: 9px 12px;">
+                  <div style="font-size: 11px; color: #8EA8A3; display: flex; align-items: center; gap: 5px;">
+                    <span style="color: #F59E0B; font-weight: 700;">词根助记</span>
+                    <span>epi (在...之上) + hemer (天) → 仅存一天的</span>
+                  </div>
+                </div>
+
+                <!-- 底部交互反馈 -->
+                <div class="action-bottom-row">
+                  <div class="study-choice-btn">模糊 / 忘了</div>
+                  <div class="study-choice-btn known">记住了 ›</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mock-home-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Poster 2: 科学复习·艾宾浩斯抗遗忘自适应算法 -->
+      <div class="app-poster-card poster-bg-2" id="poster2">
+        <div class="poster-header">
+          <div class="poster-eyebrow">SCREEN 02 · 动态抗遗忘算法</div>
+          <h2 class="poster-title" id="p2-title">艾宾浩斯，<span class="highlight-sky">精准复习</span></h2>
+          <p class="poster-desc" id="p2-desc">测算遗忘临界点 · 最少时间实现长久内化</p>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="mock-island"><div class="mock-lens"></div></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="mock-status-icons">
+                <svg width="13" height="10" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.8"/><rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/><rect x="9" y="3" width="2.5" height="9" rx="0.8"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="18" height="9" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/><rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/><path d="M22 4.5v3" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-content">
+              <div class="review-hero-panel">
+                <div style="font-size: 14.5px; font-weight: 700; color: #FFFFFF; padding: 2px 4px;">记忆巩固追踪</div>
+
+                <!-- 记忆健康度仪表卡 -->
+                <div class="metric-gauge-card">
+                  <div>
+                    <div class="gauge-info-title">动态抗遗忘指数</div>
+                    <div class="gauge-big-num">96.4<span style="font-size: 14px; font-weight: 500; color: #38BDF8;">%</span></div>
+                    <div class="gauge-sub-desc">已克服 8 次高危遗忘临界点</div>
+                  </div>
+                  <div class="circle-progress-visual"></div>
+                </div>
+
+                <!-- 4级艾宾浩斯复习漏斗 -->
+                <div class="stage-matrix-grid">
+                  <div class="stage-pill-item">
+                    <div class="stage-day-label">第 1 天</div>
+                    <div class="stage-count-num">24</div>
+                  </div>
+                  <div class="stage-pill-item">
+                    <div class="stage-day-label">第 2 天</div>
+                    <div class="stage-count-num">18</div>
+                  </div>
+                  <div class="stage-pill-item">
+                    <div class="stage-day-label">第 4 天</div>
+                    <div class="stage-count-num">32</div>
+                  </div>
+                  <div class="stage-pill-item" style="border-color: rgba(14, 165, 233, 0.4); background: rgba(14, 165, 233, 0.1);">
+                    <div class="stage-day-label" style="color: #38BDF8;">牢固掌握</div>
+                    <div class="stage-count-num" style="color: #38BDF8;">1,840</div>
+                  </div>
+                </div>
+
+                <!-- 智能防遗忘调度表 -->
+                <div class="ebbinghaus-timeline-card">
+                  <div class="timeline-header">
+                    <span>今日遗忘预警词</span>
+                    <span style="color: #38BDF8; font-weight: 500;">精准推送</span>
+                  </div>
+                  <div class="timeline-node-list">
+                    <div class="node-row">
+                      <span class="node-word">ubiquitous</span>
+                      <span class="node-badge-status">即将超时 · 宜巩固</span>
+                    </div>
+                    <div class="node-row">
+                      <span class="node-word">serendipity</span>
+                      <span class="node-badge-status" style="background: rgba(16, 185, 129, 0.16); color: #34D399;">已达牢固态</span>
+                    </div>
+                    <div class="node-row">
+                      <span class="node-word">pragmatic</span>
+                      <span class="node-badge-status">今日需测 · 09:30</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 行动提示 -->
+                <div style="margin-top: 8px; background: rgba(14, 165, 233, 0.12); border: 1px dashed rgba(14, 165, 233, 0.35); border-radius: 12px; padding: 10px; text-align: center;">
+                  <span style="font-size: 11.5px; color: #7DD3FC; font-weight: 600;">✨ 算法已为你自适应编排今日 45 个黄金复习词</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mock-home-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Poster 3: 沉浸听写·地道原声盲练与拼写 -->
+      <div class="app-poster-card poster-bg-3" id="poster3">
+        <div class="poster-header">
+          <div class="poster-eyebrow">SCREEN 03 · 原声全真盲听盲写</div>
+          <h2 class="poster-title" id="p3-title">听得懂，<span class="highlight-purple">更会拼写</span></h2>
+          <p class="poster-desc" id="p3-desc">原声发音驱动盲听盲写 · 告别“认得却写不出”</p>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="mock-island"><div class="mock-lens"></div></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="mock-status-icons">
+                <svg width="13" height="10" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.8"/><rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/><rect x="9" y="3" width="2.5" height="9" rx="0.8"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="18" height="9" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/><rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/><path d="M22 4.5v3" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-content">
+              <div class="spelling-hero-stage">
+                <!-- 唤醒声波雷达 -->
+                <div class="audio-pulsing-disc">
+                  <div class="disc-play-icon"></div>
+                </div>
+
+                <div style="font-size: 11.5px; color: #A78BFA; font-weight: 600; margin-bottom: 8px;">盲听美音原声并拼写</div>
+
+                <!-- 字母拼写槽 -->
+                <div class="spelling-slots-wrapper">
+                  <div class="letter-slot filled">e</div>
+                  <div class="letter-slot filled">p</div>
+                  <div class="letter-slot filled">h</div>
+                  <div class="letter-slot filled">e</div>
+                  <div class="letter-slot cursor">m</div>
+                  <div class="letter-slot">_</div>
+                  <div class="letter-slot">_</div>
+                  <div class="letter-slot">_</div>
+                  <div class="letter-slot">_</div>
+                </div>
+
+                <div class="spelling-hint-cn">释义提示：短暂的，转瞬即逝的</div>
+
+                <!-- 虚拟轻量键盘原型 -->
+                <div class="mini-keyboard-pad">
+                  <div class="kb-row">
+                    <span class="kb-key">q</span><span class="kb-key">w</span><span class="kb-key suggest">e</span><span class="kb-key suggest">r</span><span class="kb-key">t</span><span class="kb-key">y</span><span class="kb-key">u</span><span class="kb-key">i</span><span class="kb-key">o</span><span class="kb-key">p</span>
+                  </div>
+                  <div class="kb-row">
+                    <span class="kb-key">a</span><span class="kb-key">s</span><span class="kb-key">d</span><span class="kb-key">f</span><span class="kb-key">g</span><span class="kb-key suggest">h</span><span class="kb-key">j</span><span class="kb-key">k</span><span class="kb-key">l</span>
+                  </div>
+                  <div class="kb-row">
+                    <span class="kb-key">z</span><span class="kb-key">x</span><span class="kb-key">c</span><span class="kb-key">v</span><span class="kb-key">b</span><span class="kb-key">n</span><span class="kb-key suggest">m</span><span class="kb-key" style="background: rgba(239, 68, 68, 0.25); color: #FCA5A5;">⌫</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mock-home-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Poster 4: 极简纯粹·无扰专注（温润浅色书桌与计划） -->
+      <div class="app-poster-card poster-bg-4" id="poster4">
+        <div class="poster-header">
+          <div class="poster-eyebrow">SCREEN 04 · 纯粹无扰专注</div>
+          <h2 class="poster-title" id="p4-title">克制纯粹，<span class="highlight-amber">无扰专注</span></h2>
+          <p class="poster-desc" id="p4-desc">零开屏广告 · 零冗余干扰 · 打开即背学完即走</p>
+        </div>
+
+        <div class="poster-phone-stage">
+          <!-- 浅色温润质感外壳展示（突出设计美学与多样性） -->
+          <div class="device-chassis light-mode">
+            <div class="mock-island"><div class="mock-lens"></div></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="mock-status-icons">
+                <svg width="13" height="10" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.8"/><rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/><rect x="9" y="3" width="2.5" height="9" rx="0.8"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="18" height="9" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/><rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/><path d="M22 4.5v3" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-content">
+              <div class="desktop-stage-light">
+                <!-- 顶栏问候 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 2px;">
+                  <div>
+                    <div style="font-size: 15px; font-weight: 700; color: #14231E;">早安，同学</div>
+                    <div style="font-size: 11px; color: #6F8881;">连续打卡 42 天 · 今日状态极佳</div>
+                  </div>
+                  <div style="width: 28px; height: 28px; border-radius: 50%; background: #10B981; color: #FFFFFF; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;">
+                    42
+                  </div>
+                </div>
+
+                <!-- 当前在学词书一体卡（带规范双段进度） -->
+                <div class="desktop-hero-card">
+                  <div class="book-title-row">
+                    <span class="book-name">考研英语必考词汇 (大纲版)</span>
+                    <span class="book-words-num">4428 词 ›</span>
+                  </div>
+                  <div class="dual-progress-track">
+                    <div class="track-fetched"></div>
+                    <div class="track-mastered"></div>
+                  </div>
+                  <div class="book-stat-sub">
+                    已掌握 1,840 · 已取 2,745 · 41.6%
+                  </div>
+                </div>
+
+                <!-- 2x2 指标卡片（对标规范） -->
+                <div class="metric-2x2-grid">
+                  <div class="metric-white-card">
+                    <div class="metric-label">今日新词</div>
+                    <div class="metric-val">20</div>
+                  </div>
+                  <div class="metric-white-card">
+                    <div class="metric-label">待复习词</div>
+                    <div class="metric-val" style="color: #0EA5E9;">45</div>
+                  </div>
+                  <div class="metric-white-card">
+                    <div class="metric-label">牢固掌握</div>
+                    <div class="metric-val green">1,840</div>
+                  </div>
+                  <div class="metric-white-card">
+                    <div class="metric-label">今日专注</div>
+                    <div class="metric-val">28 <span style="font-size: 12px; font-weight: 500; color: #6F8881;">min</span></div>
+                  </div>
+                </div>
+
+                <!-- 极简启动按钮 -->
+                <div class="start-study-cta">
+                  <span>开始今日背词</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="mock-home-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Poster 5: 权威词库·全学段全场景攻坚 -->
+      <div class="app-poster-card poster-bg-5" id="poster5">
+        <div class="poster-header">
+          <div class="poster-eyebrow">SCREEN 05 · 官方权威全词库</div>
+          <h2 class="poster-title" id="p5-title">海量词库，<span class="highlight-teal">按需冲刺</span></h2>
+          <p class="poster-desc" id="p5-desc">中高考 · 四六级 · 考研 · 雅思托福 GRE 全收录</p>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="mock-island"><div class="mock-lens"></div></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="mock-status-icons">
+                <svg width="13" height="10" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.8"/><rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/><rect x="9" y="3" width="2.5" height="9" rx="0.8"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="18" height="9" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/><rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/><path d="M22 4.5v3" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-content">
+              <div class="library-stage">
+                <!-- 类别切换标签 -->
+                <div class="category-pills">
+                  <span class="cat-chip active">升学备考</span>
+                  <span class="cat-chip">出国留学</span>
+                  <span class="cat-chip">职场日常</span>
+                  <span class="cat-chip">经典原著</span>
+                </div>
+
+                <!-- 词书列表 -->
+                <div class="book-list-stack">
+                  <!-- 考研 -->
+                  <div class="book-cell-item">
+                    <div class="book-cover-mock">考研<br>英语</div>
+                    <div class="book-detail-info">
+                      <div class="b-title">考研高频核心 5500 词</div>
+                      <div class="b-desc">十年真题考频排序 · 已学 41%</div>
+                    </div>
+                    <div class="b-action-link">在学 ›</div>
+                  </div>
+
+                  <!-- 六级 -->
+                  <div class="book-cell-item">
+                    <div class="book-cover-mock" style="background: linear-gradient(135deg, #0EA5E9, #0284C7);">CET<br>6级</div>
+                    <div class="book-detail-info">
+                      <div class="b-title">大学英语六级大纲核心词</div>
+                      <div class="b-desc">历年真题语料 · 共 2088 词</div>
+                    </div>
+                    <div class="b-action-link" style="color: #38BDF8;">换这本 ›</div>
+                  </div>
+
+                  <!-- 雅思 -->
+                  <div class="book-cell-item">
+                    <div class="book-cover-mock ielts">IELTS<br>8.0</div>
+                    <div class="book-detail-info">
+                      <div class="b-title">雅思核心高分词汇精选</div>
+                      <div class="b-desc">剑桥真题词库 · 共 3500 词</div>
+                    </div>
+                    <div class="b-action-link" style="color: #FBBF24;">查看 ›</div>
+                  </div>
+
+                  <!-- 托福 -->
+                  <div class="book-cell-item">
+                    <div class="book-cover-mock toefl">TOEFL<br>iBT</div>
+                    <div class="book-detail-info">
+                      <div class="b-title">托福进阶核心必背词</div>
+                      <div class="b-desc">学科分类专业词汇 · 共 3900 词</div>
+                    </div>
+                    <div class="b-action-link" style="color: #60A5FA;">查看 ›</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mock-home-bar"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 2. 应用商店上架文字文案手册 (Strategy Mode) -->
+    <div class="strategy-panel" id="strategyPanel">
+      <h3 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        应用商店上线文字资产（可直接复制使用）
+      </h3>
+
+      <div class="copy-block">
+        <button class="copy-btn" onclick="copyText('copy-app-name')">复制</button>
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">应用名称 (App Name - 建议 ≤ 30 字符)</div>
+        <div id="copy-app-name" style="font-size: 15px; font-weight: 700; color: #FFFFFF;">泡泡单词 - 真实原声例句与抗遗忘背词</div>
+      </div>
+
+      <div class="copy-block">
+        <button class="copy-btn" onclick="copyText('copy-subtitle')">复制</button>
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">副标题 / Slogan (Subtitle - 建议 ≤ 30 字符)</div>
+        <div id="copy-subtitle" style="font-size: 15px; font-weight: 700; color: #34D399;">不背干瘪词义，在鲜活语境里自然记住</div>
+      </div>
+
+      <div class="copy-block">
+        <button class="copy-btn" onclick="copyText('copy-keywords')">复制</button>
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ASO 核心关键词 (Keywords - 建议 100 字符内，逗号分隔)</div>
+        <div id="copy-keywords" style="font-size: 13.5px; color: #E2ECE8;">背单词,不背单词,英语,考研英语,四六级,雅思,托福,GRE,英语单词,记单词,艾宾浩斯,原声例句,背词软件,单词听写</div>
+      </div>
+
+      <div class="copy-block">
+        <button class="copy-btn" onclick="copyText('copy-promo')">复制</button>
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">宣传文本 (Promotional Text - 详情页折叠前首行)</div>
+        <div id="copy-promo" style="font-size: 14px; color: #E2ECE8;">拒绝低效死记硬背！精选原声语料与自适应抗遗忘算法，助你高效内化每一个生词。</div>
+      </div>
+
+      <div class="copy-block">
+        <button class="copy-btn" onclick="copyText('copy-desc')">复制</button>
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">完整描述 (Full Description)</div>
+        <div id="copy-desc" style="font-size: 13px; color: #C9D9D4; white-space: pre-line; line-height: 1.7;">
+【泡泡单词 —— 每一天，离地道表达更近一步】
+
+你是否也曾陷入“背了前面忘后面、背下释义却不会用”的死循环？
+单词从来不是孤立的符号。只有置身于鲜活的真实语境中，它才具备长久生命力。
+
+「泡泡单词」专为追求高效、纯粹与真实语境的英语学习者设计。我们剔除了一切花哨无用的噱头，回归记忆与语言学习的底层逻辑。
+
+———— 为什么选择泡泡单词？ ————
+
+◆ 真实原声与地道语境
+告别机械冰冷的机器合成音。精选纯正地道原声例句与影视语料，让你在真实的场景中建立声音、画面与意义的神经联结，不仅记牢，更能脱口而出。
+
+◆ 动态抗遗忘复习闭环
+融合艾宾浩斯遗忘曲线与自适应智能算法，精准测算每个单词的遗忘临界点。在你即将遗忘前及时推送复习，用最少的时间成本，实现从“短时记忆”到“长久内化”。
+
+◆ 极简克制，专注高效
+无开屏弹窗、无杂乱社交链、无花哨诱导。打开即背，学完即走。深浅双色精心调校排版，让每一次滑动都舒适沉浸。
+
+◆ 权威完备的全阶段词库
+涵盖中高考、大学英语四六级、专四专八、考研英语、雅思（IELTS）、托福（TOEFL）、GRE、商务英语（BEC）及日常高频表达，支持定制学习节奏与打卡计划。
+
+———— 联系与反馈 ————
+泡泡单词与你一起，日拱一卒，功不唐捐。
+官方反馈邮箱：support@nnbdc.com
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 独立海报高清截图聚焦模态框 -->
+    <div class="focus-modal-overlay" id="focusModal">
+      <div class="focus-close-bar">
+        <span style="font-size: 13px; color: var(--text-muted);">提示：可直接截取该张海报，按 ESC 或点击关闭退出</span>
+        <button class="action-btn" onclick="closeFocusModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <span>关闭退出</span>
+        </button>
+      </div>
+      <div id="focusModalCardContainer"></div>
+    </div>
+
+  </main>
+
+  <script>
+    // 切换视图模式：展台 vs 策略手册
+    function switchViewMode(mode) {
+      document.body.setAttribute('data-mode', mode);
+      const btns = document.querySelectorAll('.top-control-bar .segment-switch:first-of-type .segment-btn');
+      btns.forEach(b => b.classList.remove('active'));
+      if (mode === 'gallery') btns[0].classList.add('active');
+      else btns[1].classList.add('active');
+    }
+
+    // 切换文案风格：A (极简品质) vs B (痛点直效)
+    const copyData = {
+      a: {
+        p1Title: '背词，何必<span class="highlight">死记硬背</span>',
+        p1Desc: '真实美剧与原声例句 · 让单词自然长在脑海里',
+        p2Title: '艾宾浩斯，<span class="highlight-sky">精准复习</span>',
+        p2Desc: '测算遗忘临界点 · 最少时间实现长久内化',
+        p3Title: '听得懂，<span class="highlight-purple">更会拼写</span>',
+        p3Desc: '原声发音驱动盲听盲写 · 告别“认得却写不出”',
+        p4Title: '克制纯粹，<span class="highlight-amber">无扰专注</span>',
+        p4Desc: '零开屏广告 · 零冗余干扰 · 打开即背学完即走',
+        p5Title: '海量词库，<span class="highlight-teal">按需冲刺</span>',
+        p5Desc: '中高考 · 四六级 · 考研 · 雅思托福 GRE 全收录',
+        sub: '不背干瘪词义，在鲜活语境里自然记住'
+      },
+      b: {
+        p1Title: '背了就忘？<span class="highlight">语境搞定</span>',
+        p1Desc: '告别机械死记，原声例句唤醒立体记忆',
+        p2Title: '科学抗遗忘，<span class="highlight-sky">稳步提分</span>',
+        p2Desc: '智能算法动态锁住每个生词，记忆效率提升 3 倍',
+        p3Title: '盲听盲写，<span class="highlight-purple">脱口而出</span>',
+        p3Desc: '听说读写全闭环，不仅考得高，更能用得上',
+        p4Title: '无广告套路，<span class="highlight-amber">每天10分钟</span>',
+        p4Desc: '无多余打扰，纯粹沉浸，高效搞定每日词汇量',
+        p5Title: '备考攻坚，<span class="highlight-teal">一本就够</span>',
+        p5Desc: '大纲核心考频排序，把时间花在必考词上',
+        sub: '背了总忘？用科学语境闭环，搞定每个顽固生词'
+      }
+    };
+
+    function switchCopyStyle(style) {
+      const data = copyData[style];
+      document.getElementById('p1-title').innerHTML = data.p1Title;
+      document.getElementById('p1-desc').textContent = data.p1Desc;
+
+      document.getElementById('p2-title').innerHTML = data.p2Title;
+      document.getElementById('p2-desc').textContent = data.p2Desc;
+
+      document.getElementById('p3-title').innerHTML = data.p3Title;
+      document.getElementById('p3-desc').textContent = data.p3Desc;
+
+      document.getElementById('p4-title').innerHTML = data.p4Title;
+      document.getElementById('p4-desc').textContent = data.p4Desc;
+
+      document.getElementById('p5-title').innerHTML = data.p5Title;
+      document.getElementById('p5-desc').textContent = data.p5Desc;
+
+      document.getElementById('copy-subtitle').textContent = data.sub;
+
+      document.getElementById('btn-copy-a').classList.toggle('active', style === 'a');
+      document.getElementById('btn-copy-b').classList.toggle('active', style === 'b');
+    }
+
+    // 聚焦单张海报独立截图
+    function openFocusPoster(posterId) {
+      const targetPoster = document.getElementById(posterId);
+      if (!targetPoster) return;
+      const clone = targetPoster.cloneNode(true);
+      clone.style.margin = '0 auto';
+      clone.style.transform = 'none';
+      const tools = clone.querySelector('.poster-quick-tools');
+      if (tools) tools.remove();
+
+      const container = document.getElementById('focusModalCardContainer');
+      container.innerHTML = '';
+      container.appendChild(clone);
+      document.getElementById('focusModal').classList.add('active');
+    }
+
+    function closeFocusModal() {
+      document.getElementById('focusModal').classList.remove('active');
+      document.getElementById('focusModalCardContainer').innerHTML = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeFocusModal();
+    });
+
+    // 动态为各个海报注入聚焦按钮
+    document.querySelectorAll('.app-poster-card').forEach((card, index) => {
+      const toolDiv = document.createElement('div');
+      toolDiv.className = 'poster-quick-tools';
+      toolDiv.innerHTML = `<button class="focus-btn" onclick="openFocusPoster('${card.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>单张全屏截图</button>`;
+      card.appendChild(toolDiv);
+    });
+
+    // 复制剪贴板
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('已成功复制到剪贴板！');
+      }).catch(() => {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        alert('已成功复制到剪贴板！');
+      });
+    }
+  </script>
+</body>
+</html>
