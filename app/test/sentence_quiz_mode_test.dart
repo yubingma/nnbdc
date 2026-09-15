@@ -198,12 +198,9 @@ void main() {
 
     await tester.pump();
 
-    // 选择题模式：显示单行释义，不显示中文例句
+    // 选择题模式：显示多行排版释义，不显示中文例句
     expect(find.textContaining('这是一个测试词例句。'), findsNothing);
-    final horizontalScrollFinder = find.byWidgetPredicate(
-      (widget) => widget is SingleChildScrollView && widget.scrollDirection == Axis.horizontal,
-    );
-    expect(horizontalScrollFinder, findsAtLeastNWidgets(1));
+    expect(find.byType(Table), findsOneWidget);
     expect(find.textContaining('测试词'), findsWidgets);
 
     // 验证选择题模式下切换按钮文案为「说英文」（非「说发音」）

@@ -2725,9 +2725,9 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-  /// 单词释义单行横滑组件：在例句汉译英模式下展示，多个释义搞成单行横向排布，
-  /// 用户可通过向右滑动查看完整释义，视觉极简且为备用选择题提供清晰出口指引。
-  Widget _buildSingleLineMeanings(BdcState state, {bool isChoiceTab = false}) {
+  /// 单词释义多行展示组件：在例句汉译英选择题模式下展示，
+  /// 允许多行展示，词性列与释义列严格左对齐，视觉工整高级且易读。
+  Widget _buildChoiceMeanings(BdcState state) {
     final allItems = state.word?.getMergedMeaningItems() ?? [];
     final hasCixingItems =
         allItems.any((item) => (item.ciXing ?? '').trim().isNotEmpty);
@@ -2753,79 +2753,112 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDark = _cachedIsDarkMode;
     final cixingColor =
         isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final double meaningFontSize = isChoiceTab ? 19.0 : 14.0;
-    final double cixingFontSize = isChoiceTab ? 14.5 : 12.5;
+
+    final count = displayItems.length;
+    final double meaningFontSize = count <= 1 ? 22.0 : 18.0;
+    final double cixingFontSize = count <= 1 ? 15.0 : 13.5;
+    final double itemVerticalGap = count <= 1 ? 4.0 : 5.0;
 
     if (displayItems.isEmpty) {
       final rawMeaning = state.word?.getMeaningStr() ?? '';
       final cleaned = cleanMeaning(rawMeaning);
       if (cleaned.isEmpty) return const SizedBox.shrink();
 
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        child: Text(
-          cleaned,
-          style: TextStyle(
-            fontSize: meaningFontSize,
-            fontWeight: FontWeight.w600,
-            color: isChoiceTab ? context.textPrimary : context.textSecondary,
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            cleaned,
+            textAlign: TextAlign.left,
+            style: TextStyle(
+              fontSize: meaningFontSize,
+              fontWeight: FontWeight.w600,
+              color: context.textPrimary,
+              height: 1.4,
+              letterSpacing: -0.2,
+            ),
           ),
         ),
       );
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          for (int i = 0; i < displayItems.length; i++) ...[
-            if (i > 0)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  '·',
-                  style: TextStyle(
-                    fontSize: meaningFontSize,
-                    fontWeight: FontWeight.bold,
-                    color: cixingColor.withValues(alpha: 0.6),
-                  ),
-                ),
-              ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                if ((displayItems[i].ciXing ?? '').trim().isNotEmpty) ...[
-                  Text(
-                    (displayItems[i].ciXing ?? '').trim(),
-                    style: TextStyle(
-                      fontSize: cixingFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: cixingColor,
-                      fontStyle: FontStyle.italic,
+    final anyHasCixing = displayItems.any((i) => (i.ciXing ?? '').trim().isNotEmpty);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: anyHasCixing
+            ? Table(
+                defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                columnWidths: const {
+                  0: IntrinsicColumnWidth(),
+                  1: FlexColumnWidth(),
+                },
+                children: [
+                  for (final item in displayItems)
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(
+                            right: 10,
+                            top: itemVerticalGap,
+                            bottom: itemVerticalGap,
+                          ),
+                          child: Text(
+                            (item.ciXing ?? '').trim(),
+                            textAlign: TextAlign.left,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: TextStyle(
+                              color: cixingColor,
+                              fontSize: cixingFontSize,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Roboto',
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
+                          child: Text(
+                            cleanMeaning(item.meaning),
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontSize: meaningFontSize,
+                              fontWeight: FontWeight.w600,
+                              color: context.textPrimary,
+                              height: 1.4,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 4),
                 ],
-                Text(
-                  cleanMeaning(displayItems[i].meaning),
-                  style: TextStyle(
-                    fontSize: meaningFontSize,
-                    fontWeight: isChoiceTab ? FontWeight.w600 : FontWeight.w500,
-                    color: isChoiceTab ? context.textPrimary : context.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final item in displayItems)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
+                      child: Text(
+                        cleanMeaning(item.meaning),
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          fontSize: meaningFontSize,
+                          fontWeight: FontWeight.w600,
+                          color: context.textPrimary,
+                          height: 1.4,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
       ),
     );
   }
@@ -2865,7 +2898,7 @@ extension BdcPageStateUIComponents on BdcPageState {
           if (isChoiceTab) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
-              child: _buildSingleLineMeanings(state, isChoiceTab: true),
+              child: _buildChoiceMeanings(state),
             ),
           ],
           const SizedBox(height: 8),
