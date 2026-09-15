@@ -1580,6 +1580,16 @@ extension BdcPageStateUIComponents on BdcPageState {
                   bgColor = Colors.transparent;
                   borderColor = Colors.transparent;
                 }
+              } else if (state.hasFinishedAnswering) {
+                // 未点选选项但已进入看答案状态时，高亮正确选项
+                if ((index + 1) == state.correctAnswerIndex) {
+                  bgColor = Colors.transparent;
+                  borderColor = context.primaryColor;
+                  borderWidth = 1.2;
+                } else {
+                  bgColor = Colors.transparent;
+                  borderColor = Colors.transparent;
+                }
               } else {
                 bgColor = Colors.transparent;
                 borderColor = Colors.transparent;

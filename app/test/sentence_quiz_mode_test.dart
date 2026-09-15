@@ -307,5 +307,57 @@ void main() {
     mockNotifier.updateTabIndex(1);
     expect(mockNotifier.state.isSentenceSelectModePreferred, true);
   });
+
+  testWidgets('选择题模式下点击「隐藏答案继续练习」能成功隐藏答案并重置作答状态', (tester) async {
+    final (testWord, mockGetWordResult) = _createTestData();
+
+    // 初始状态：例句环节选择题模式，且已作答（已揭晓答案）
+    final enStateAnswered = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockGetWordResult,
+      studyStep: StudyStep.enSentence2Ch.json,
+      tabIndex: 1, // 选择题模式
+      hasFinishedAnswering: true,
+      selectedAnswerIndex: 1, // 选中第 1 个选项
+      words: [testWord, ...mockGetWordResult.otherWords!],
+      correctAnswerIndex: 1,
+    );
+
+    final mockNotifier = MockBdcNotifier(enStateAnswered);
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: ProviderScope(
+          overrides: [
+            bdcNotifierProvider.overrideWith(() => mockNotifier),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: BdcPage(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // 答题后状态：选项处于已揭晓答案状态，题目区展示「隐藏答案继续练习」按钮
+    final hideBtnFinder = find.text('隐藏答案继续练习');
+    expect(hideBtnFinder, findsOneWidget);
+
+    // 点击「隐藏答案继续练习」
+    await tester.tap(hideBtnFinder);
+    await tester.pump();
+
+    // 核心验证：selectedAnswerIndex 必须被清空为 null，hasFinishedAnswering 变回 false
+    expect(mockNotifier.state.selectedAnswerIndex, isNull);
+    expect(mockNotifier.state.hasFinishedAnswering, isFalse);
+
+    // 按钮文案变回「看答案」
+    expect(find.text('看答案'), findsOneWidget);
+    expect(find.text('隐藏答案继续练习'), findsNothing);
+  });
 }
 

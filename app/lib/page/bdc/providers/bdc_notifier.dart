@@ -1025,6 +1025,7 @@ class BdcNotifier extends _$BdcNotifier {
     _isAnswerCorrectHandling = false; // 重置答对锁,否则练习模式 checkAsrResult 被 L1555 拦截,评分不更新
     state = state.copyWith(
       hasFinishedAnswering: false,
+      selectedAnswerIndex: null,
       // 练习模式允许点"下一词"离开(canLeaveCurrWord=true 使底部按钮可见)
       canLeaveCurrWord: true,
       showSentenceTranslation: false,
@@ -1052,13 +1053,31 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(selectedAnswerIndex: index);
     bool correct = index == state.correctAnswerIndex;
     if (correct) {
-      final ratingResult = _calculateRating("选择题");
-      _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+      if (_isPracticeMode) {
+        // 练习模式：选对仅作正向反馈与揭晓答案，不修改今日测评结果/FSRS
+        _isAnswerCorrectHandling = false;
+        _playCorrectSound();
+        state = state.copyWith(
+          hasFinishedAnswering: true,
+          canLeaveCurrWord: true,
+        );
+      } else {
+        final ratingResult = _calculateRating("选择题");
+        _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+      }
     } else {
       StudyAudioSessionController.instance.playSoundEffect('failed.mp3', speed: 1.5, volume: 0.1);
-      showWordDetail(state.word!, true, context,
-          fsrsRating: FsrsRating.again,
-          reason: "选错了答案");
+      if (_isPracticeMode) {
+        // 练习模式下选错仅显示错题反馈与揭晓答案，不中断弹窗详情页
+        state = state.copyWith(
+          hasFinishedAnswering: true,
+          canLeaveCurrWord: true,
+        );
+      } else {
+        showWordDetail(state.word!, true, context,
+            fsrsRating: FsrsRating.again,
+            reason: "选错了答案");
+      }
     }
   }
 
