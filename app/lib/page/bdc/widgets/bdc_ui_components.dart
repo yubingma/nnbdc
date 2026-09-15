@@ -2605,7 +2605,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     final spell = state.word?.spell ?? '';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(color: Colors.transparent),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -2629,7 +2629,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             ),
           ],
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Util.makeEnglishSpanText(
               sentenceText,
               spell,
@@ -2827,13 +2827,13 @@ extension BdcPageStateUIComponents on BdcPageState {
     final translationText = sentence?.chinese ?? "暂无例句翻译";
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(color: Colors.transparent),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Util.makeChineseSpanText(
               translationText,
               context,
