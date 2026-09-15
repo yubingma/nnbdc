@@ -358,33 +358,67 @@ jobs:
       - name: Install NSIS and Create Installer
         if: matrix.platform == 'windows'
         run: |
-          # 安装 Chocolatey (如果未安装)
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-          
-          # 使用 Chocolatey 安装 NSIS
-          choco install nsis -y
-          
-          # 刷新环境变量
-          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
-          
-          # 验证 NSIS 安装
-          $nsisPath = Get-Command makensis -ErrorAction SilentlyContinue
-          if ($nsisPath) {
-            Write-Host "NSIS 安装成功: $($nsisPath.Source)"
-          } else {
-            Write-Host "NSIS 未找到，尝试手动添加到 PATH"
-            $nsisInstallPath = "C:\Program Files (x86)\NSIS\makensis.exe"
-            if (Test-Path $nsisInstallPath) {
-              $env:PATH += ";C:\Program Files (x86)\NSIS"
-              Write-Host "手动添加 NSIS 到 PATH"
-            } else {
-              Write-Host "NSIS 安装失败"
-              exit 1
+          # 检查是否已安装 makensis
+          $nsisCmd = Get-Command makensis -ErrorAction SilentlyContinue
+          if (-not $nsisCmd) {
+            # 1. 尝试通过预装的 Chocolatey 安装（带重试机制，应对 503 等网络波动）
+            $installed = $false
+            for ($i = 1; $i -le 3; $i++) {
+              Write-Host "尝试通过 Chocolatey 安装 NSIS (第 $i 次)..."
+              choco install nsis -y --no-progress
+              if ($LASTEXITCODE -eq 0) {
+                $installed = $true
+                break
+              }
+              Write-Host "Chocolatey 安装未成功，等待 5 秒后重试..."
+              Start-Sleep -Seconds 5
+            }
+
+            # 2. 若 Chocolatey 社区源不可用，尝试通过 winget 安装
+            if (-not $installed) {
+              Write-Host "Chocolatey 安装失败，尝试通过 winget 安装 NSIS..."
+              winget install --id NSIS.NSIS --silent --accept-source-agreements --accept-package-agreements
+            }
+
+            # 3. 若仍未成功，直接下载官方安装包静默安装
+            $nsisCandidatePaths = @(
+              "C:\Program Files (x86)\NSIS\makensis.exe",
+              "C:\Program Files\NSIS\makensis.exe"
+            )
+            $foundOnDisk = $nsisCandidatePaths | Where-Object { Test-Path $_ }
+            if (-not $foundOnDisk -and -not (Get-Command makensis -ErrorAction SilentlyContinue)) {
+              Write-Host "尝试直接从 SourceForge 下载官方 NSIS 安装包并静默安装..."
+              $installerPath = "$env:TEMP\nsis-setup.exe"
+              Invoke-WebRequest -Uri "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.10/nsis-3.10-setup.exe" -OutFile $installerPath -UseBasicParsing
+              Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait
             }
           }
-          
+
+          # 刷新并解析 NSIS 路径
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          $nsisPath = Get-Command makensis -ErrorAction SilentlyContinue
+          $nsisDir = $null
+          if ($nsisPath) {
+            $nsisDir = Split-Path -Parent $nsisPath.Source
+          } else {
+            foreach ($candidate in @("C:\Program Files (x86)\NSIS", "C:\Program Files\NSIS")) {
+              if (Test-Path (Join-Path $candidate "makensis.exe")) {
+                $nsisDir = $candidate
+                $env:PATH += ";$nsisDir"
+                break
+              }
+            }
+          }
+
+          if ($nsisDir) {
+            Write-Host "✅ NSIS 就绪: $nsisDir"
+            # 注入 GITHUB_PATH，确保后续 Step 自动生效
+            $nsisDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } else {
+            Write-Host "❌ NSIS 安装失败，未找到 makensis.exe"
+            exit 1
+          }
+
           # 设置部署目录
           $env:DEPLOY_DIR = Join-Path -Path $PWD -ChildPath 'deploy'
           New-Item -ItemType Directory -Path $env:DEPLOY_DIR -Force
