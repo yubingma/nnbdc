@@ -526,7 +526,7 @@ class LoginPageState extends State<LoginPage>
                   UserVo.fromJson(result.data as Map<String, dynamic>);
               userVo.lastLoginTime = AppClock.now();
               await MyDatabase.instance.usersDao
-                  .saveUser(userVo2User(userVo), true); // 开启同步信号
+                  .saveUser(userVo2User(userVo), false); // 登录落库本地缓存，无需生成上行同步日志
               await Global.setLoggedInUser(userVo);
 
               // 记录登录操作日志

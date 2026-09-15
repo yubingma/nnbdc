@@ -1955,7 +1955,7 @@ class WordBo {
         updateTime: now,
       );
 
-      await db.into(db.dicts).insert(dict);
+      await db.dictsDao.saveEntity(dict, true);
 
       // 触发同步
       ThrottledDbSyncService().requestSync();

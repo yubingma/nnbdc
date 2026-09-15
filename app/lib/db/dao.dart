@@ -62,7 +62,8 @@ class UsersDao extends DatabaseAccessor<MyDatabase> with _$UsersDaoMixin {
       if (user == null) {
         await into(users).insert(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.id, 'INSERT', 'users', entry.id, entry);
+          // 用户记录在云端必定已存在，同步语义统一为 UPDATE
+          await DbLogUtil.logOperation(entry.id, 'UPDATE', 'users', entry.id, entry);
           ThrottledDbSyncService().requestSync();
         }
       } else {

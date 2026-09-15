@@ -327,17 +327,22 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
     result.first.sort((a, b) {
       // 这里的 a, b 是 Map<String, dynamic>，tblName 还是本地格式
-      int timeCompare = (a['createTime'] as DateTime).compareTo(b['createTime'] as DateTime);
-      if (timeCompare != 0) {
-        return timeCompare;
+      String tableA = a['tblName'] as String;
+      String tableB = b['tblName'] as String;
+      // 同表内遵循生成时间先后顺序；跨表则必须严格遵循外键依赖优先级（如 dicts 先于 learningDicts）
+      if (tableA == tableB) {
+        int timeCompare = (a['createTime'] as DateTime).compareTo(b['createTime'] as DateTime);
+        if (timeCompare != 0) {
+          return timeCompare;
+        }
       }
       return _compareLogExecutionOrder(
-        a['tblName'] as String,
-        b['tblName'] as String,
+        tableA,
+        tableB,
         a['operate'] as String,
         b['operate'] as String,
-        getTableSyncPriority(a['tblName'] as String),
-        getTableSyncPriority(b['tblName'] as String),
+        getTableSyncPriority(tableA),
+        getTableSyncPriority(tableB),
       );
     });
 
@@ -364,9 +369,11 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
     // 对远端同步到本地的日志也要按同样的规则进行排序
     backendToLocal.sort((a, b) {
-      int timeCompare = a.createTime.compareTo(b.createTime);
-      if (timeCompare != 0) {
-        return timeCompare;
+      if (a.tblName == b.tblName) {
+        int timeCompare = a.createTime.compareTo(b.createTime);
+        if (timeCompare != 0) {
+          return timeCompare;
+        }
       }
       return _compareLogExecutionOrder(
         a.tblName,
@@ -1124,23 +1131,29 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, St
   for (var dictId in referencedDictIds) {
     try {
       final dict = await db.dictsDao.findById(dictId);
-      if (dict != null && dict.ownerId == userId) {
+      if (dict != null && (dict.ownerId == userId || dict.ownerId == Global.guestId)) {
         // 【强制约束】拦截核心词书：生词本和已掌握禁止由客户端通过同步方式“补全”
         // 这两本词书必须由后端在账户创建时初始化
         if (dict.name == '生词本' || dict.name == '已掌握' || dict.ownerId == Global.sysUserId) {
           continue;
         }
 
+        // 若原为游客创建的自建词书，在正式用户同步时将归属权转为当前登录用户
+        final targetDict = dict.ownerId == Global.guestId ? dict.copyWith(ownerId: userId) : dict;
+        if (dict.ownerId == Global.guestId) {
+          await db.dictsDao.saveEntity(targetDict, false);
+        }
+
         logsToBackend.add(<String, dynamic>{
           'id': Util.uuid(),
-          'userId': dict.ownerId,
+          'userId': targetDict.ownerId,
           'operate': 'INSERT',
           'tblName': 'dicts',
-          'recordId': dict.id,
-          'record': jsonEncode(dict.toJson()),
+          'recordId': targetDict.id,
+          'record': jsonEncode(targetDict.toJson()),
           'version': 0,
-          'createTime': dict.createTime,
-          'updateTime': dict.createTime,
+          'createTime': targetDict.createTime,
+          'updateTime': targetDict.createTime,
         });
       }
     } catch (e) {

@@ -577,6 +577,11 @@ public class UserDbSyncBo {
                     if (dict != null && "已掌握".equals(dict.getName())) {
                         throw new IllegalArgumentException("“已掌握”词书不允许作为学习计划同步");
                     }
+                    if (dict == null) {
+                        logger.warn("关联词书不存在，跳过 learning_dict INSERT 同步: userId={}, dictId={}",
+                                userId, learningDictDto.getDictId());
+                        break;
+                    }
 
                     // 检查记录是否已存在，避免主键冲突
                     LearningDict existing = learningDictBo.findById(learningDict.getId());
@@ -588,6 +593,11 @@ public class UserDbSyncBo {
                     }
                 }
                 case "UPDATE" -> {
+                    if (dictBo.findById(learningDictDto.getDictId()) == null) {
+                        logger.warn("关联词书不存在，跳过 learning_dict UPDATE 同步: userId={}, dictId={}",
+                                userId, learningDictDto.getDictId());
+                        break;
+                    }
                     // 检查记录是否存在，不存在则创建
                     LearningDict existingForUpdate = learningDictBo.findById(learningDict.getId());
                     if (existingForUpdate == null) {
@@ -607,7 +617,7 @@ public class UserDbSyncBo {
      */
     private void processUserSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
-        if ("UPDATE".equals(operation)) {
+        if ("UPDATE".equals(operation) || "INSERT".equals(operation)) {
             UserDto userDto = JsonUtils.makeObject(recordJson, UserDto.class);
             User user = userBo.findById(userId);
             if (user != null) {
