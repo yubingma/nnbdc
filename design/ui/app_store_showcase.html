@@ -1289,35 +1289,146 @@
                 </div>
 
                 <!-- 手写画布 -->
-                <div class="hw-canvas-container">
+                <div class="hw-canvas-container" style="padding: 0; overflow: visible;">
                   <div class="hw-guide-line"></div>
                   <div class="hw-realtime-badge">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
-                    实时笔锋识别
+                    Apple Pencil 真迹压感识别
                   </div>
 
-                  <!-- 手写中文仿真笔迹 SVG -->
-                  <svg width="100%" height="100%" viewBox="0 0 250 160" fill="none" style="z-index: 10;">
-                    <!-- “短” -->
-                    <path class="stroke-path-live" d="M35 55 Q 38 75 40 105 M25 75 H 55 M65 50 V 110 M65 75 H 95 M95 50 V 110" stroke="#C084FC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                    <!-- “暂” -->
-                    <path class="stroke-path-live" d="M125 55 H 165 M145 55 V 105 M125 105 H 170 M180 50 L 175 110 M175 80 H 215" stroke="#E879F9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- 手写仿真笔迹与真实手写笔 SVG -->
+                  <svg width="100%" height="175" viewBox="0 0 270 175" fill="none" style="overflow: visible;">
+                    <defs>
+                      <!-- 笔迹流光渐变 -->
+                      <linearGradient id="inkGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#C084FC"/>
+                        <stop offset="60%" stop-color="#E879F9"/>
+                        <stop offset="100%" stop-color="#F472B6"/>
+                      </linearGradient>
+                      <!-- 笔身立体金属光泽 -->
+                      <linearGradient id="pencilBarrel" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#FFFFFF"/>
+                        <stop offset="50%" stop-color="#F3F4F6"/>
+                        <stop offset="100%" stop-color="#D1D5DB"/>
+                      </linearGradient>
+                      <!-- 笔尖渐变 -->
+                      <linearGradient id="pencilTip" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#9CA3AF"/>
+                        <stop offset="50%" stop-color="#4B5563"/>
+                        <stop offset="100%" stop-color="#1F2937"/>
+                      </linearGradient>
+                      <!-- 接触光晕滤镜 -->
+                      <filter id="penTipGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="4" result="blur"/>
+                        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                      </filter>
+                      <filter id="strokeInkGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="glow"/>
+                        <feMerge>
+                          <feMergeNode in="glow"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                    </defs>
+
+                    <!-- 米字格 / 田字格极淡参考背景线 -->
+                    <rect x="25" y="32" width="100" height="100" rx="6" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <line x1="75" y1="32" x2="75" y2="132" stroke="rgba(255,255,255,0.03)" stroke-dasharray="2 3"/>
+                    <line x1="25" y1="82" x2="125" y2="82" stroke="rgba(255,255,255,0.03)" stroke-dasharray="2 3"/>
+
+                    <rect x="135" y="32" width="100" height="100" rx="6" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <line x1="185" y1="32" x2="185" y2="132" stroke="rgba(255,255,255,0.03)" stroke-dasharray="2 3"/>
+                    <line x1="135" y1="82" x2="235" y2="82" stroke="rgba(255,255,255,0.03)" stroke-dasharray="2 3"/>
+
+                    <!-- ===== 真实手写真迹：字「短」 ===== -->
+                    <g filter="url(#strokeInkGlow)" stroke="url(#inkGrad)" stroke-linecap="round" stroke-linejoin="round">
+                      <!-- 矢字旁：撇与横折 -->
+                      <path d="M 48 48 C 45 56, 40 68, 35 78" stroke-width="4.2"/>
+                      <path d="M 46 58 C 55 56, 68 54, 75 53" stroke-width="4.0"/>
+                      <path d="M 38 74 C 48 72, 65 69, 74 68" stroke-width="3.8"/>
+                      <path d="M 58 58 C 58 76, 52 98, 38 116" stroke-width="4.5"/>
+                      <path d="M 58 84 C 64 92, 70 102, 75 108" stroke-width="4.2"/>
+
+                      <!-- 豆字部：横、点、撇、横、口、横底 -->
+                      <path d="M 85 52 C 94 50, 110 48, 118 47" stroke-width="3.8"/>
+                      <path d="M 94 62 C 95 67, 96 72, 97 76" stroke-width="3.6"/>
+                      <path d="M 112 60 C 110 65, 108 72, 106 76" stroke-width="3.6"/>
+                      <path d="M 88 78 C 96 76, 112 73, 120 72" stroke-width="3.8"/>
+                      <!-- 行书顺势连带口部 -->
+                      <path d="M 92 86 C 94 100, 95 106, 96 112" stroke-width="4.0"/>
+                      <path d="M 94 88 C 104 86, 114 84, 118 85 C 117 96, 116 104, 115 110 C 108 111, 98 112, 93 113" stroke-width="3.8"/>
+                      <!-- 底长横提按有度 -->
+                      <path d="M 82 122 C 95 120, 115 118, 126 117" stroke-width="4.8"/>
+                    </g>
+
+                    <!-- ===== 真实手写真迹：字「暂」 ===== -->
+                    <g filter="url(#strokeInkGlow)" stroke="url(#inkGrad)" stroke-linecap="round" stroke-linejoin="round">
+                      <!-- 斩字部（车）：横、撇折折、竖 -->
+                      <path d="M 144 48 C 152 46, 164 45, 172 44" stroke-width="3.8"/>
+                      <path d="M 148 57 C 146 64, 144 72, 143 78 C 152 76, 165 74, 170 73 C 170 65, 171 58, 172 55" stroke-width="3.6"/>
+                      <path d="M 142 84 C 152 82, 166 80, 174 79" stroke-width="3.8"/>
+                      <path d="M 157 44 C 158 64, 157 88, 156 106" stroke-width="4.5"/>
+                      <!-- 斤字部：平撇、竖撇、横、竖 -->
+                      <path d="M 198 44 C 192 48, 184 53, 178 57" stroke-width="4.0"/>
+                      <path d="M 184 58 C 182 72, 177 88, 170 98" stroke-width="4.2"/>
+                      <path d="M 183 70 C 194 68, 208 65, 218 64" stroke-width="4.0"/>
+                      <path d="M 206 65 C 208 78, 209 94, 210 105" stroke-width="4.6"/>
+
+                      <!-- 日字底：框与横（最后一笔正在收笔） -->
+                      <path d="M 158 116 C 159 128, 160 140, 161 148" stroke-width="4.2"/>
+                      <path d="M 160 118 C 176 114, 194 111, 202 112 C 201 125, 200 137, 198 146 C 187 148, 172 150, 161 150" stroke-width="4.2"/>
+                      <path d="M 161 133 C 172 131, 186 129, 196 128" stroke-width="3.8"/>
+                      <!-- 最后一笔横，笔尖正落于此点 (198, 146) -->
+                      <path d="M 162 148 C 174 147, 188 146, 198 146" stroke-width="5.0"/>
+                    </g>
+
+                    <!-- ===== 手写笔（Apple Pencil / 旗舰手写笔）高保真渲染 ===== -->
+                    <!-- 笔尖下方纸面压感投影 -->
+                    <ellipse cx="199" cy="148" rx="8" ry="3.5" fill="rgba(0,0,0,0.4)" filter="blur(2px)"/>
+
+                    <!-- 笔尖电容触压光晕（脉冲反馈） -->
+                    <circle cx="198" cy="146" r="10" fill="rgba(232, 121, 249, 0.35)" filter="url(#penTipGlow)">
+                      <animate attributeName="r" values="8;13;8" dur="2s" repeatCount="indefinite"/>
+                      <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="198" cy="146" r="3" fill="#FFFFFF"/>
+
+                    <!-- 45度角伸入的逼真手写笔身 -->
+                    <g transform="rotate(45 198 146)">
+                      <!-- 笔尖高精细微圆锥体 (Nib) -->
+                      <path d="M 198 146 L 195 132 L 201 132 Z" fill="url(#pencilTip)"/>
+                      <!-- 笔尖顶端接触点 -->
+                      <circle cx="198" cy="146" r="1.2" fill="#374151"/>
+
+                      <!-- 笔尖锁紧金属微圈 (Collar) -->
+                      <rect x="194.2" y="129.5" width="7.6" height="2.5" rx="0.5" fill="#9CA3AF" stroke="#6B7280" stroke-width="0.3"/>
+
+                      <!-- 纯白哑光质感笔身 (Pencil Barrel) -->
+                      <rect x="193.5" y="10" width="9" height="119.5" rx="4" fill="url(#pencilBarrel)"/>
+
+                      <!-- 笔身高光与反光阴影线条 -->
+                      <line x1="195" y1="12" x2="195" y2="128" stroke="rgba(255,255,255,0.9)" stroke-width="1.2"/>
+                      <line x1="201.2" y1="12" x2="201.2" y2="128" stroke="rgba(156,163,175,0.4)" stroke-width="1"/>
+
+                      <!-- 笔顶金属装饰倒角 -->
+                      <rect x="194" y="9" width="8" height="2.5" rx="1" fill="#E5E7EB"/>
+                    </g>
                   </svg>
                 </div>
 
                 <!-- 识别与判题匹配度 -->
-                <div class="hw-rec-result-card">
+                <div class="hw-rec-result-card" style="margin-top: 4px;">
                   <div>
-                    <div style="font-size: 10px; color: #E9D5FF;">智能语义判题命中 (1/1)</div>
-                    <div style="font-size: 13.5px; font-weight: 700; color: #FFFFFF;">已识别：短暂的，转瞬即逝的</div>
+                    <div style="font-size: 10px; color: #E9D5FF; font-weight: 600;">真迹笔锋即时匹配 · 命中核心释义 (1/1)</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #FFFFFF;">已识别：短暂的，转瞬即逝的</div>
                   </div>
-                  <div style="width: 26px; height: 26px; border-radius: 50%; background: #A855F7; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                  <div style="width: 28px; height: 28px; border-radius: 50%; background: #A855F7; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 0 12px rgba(168,85,247,0.6);">
                     ✓
                   </div>
                 </div>
 
-                <div style="text-align: center; font-size: 10.5px; color: #9CA3AF;">
-                  支持 Apple Pencil / 手指顺滑书写，肌肉记忆更牢靠
+                <div style="text-align: center; font-size: 10.5px; color: #9CA3AF; margin-top: 2px;">
+                  真实手写笔锋 · 调动手指肌肉神经，深度烙印记忆
                 </div>
               </div>
             </div>
