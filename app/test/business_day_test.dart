@@ -1,6 +1,27 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/date_utils.dart';
+
+/// 构造一个只关心"今日进度归属"的 LearningWord。
+LearningWord _wordWithProgress({int todayLearnedTimes = 1, DateTime? lastLearningDate}) {
+  final now = DateTime(2026, 5, 10, 12);
+  return LearningWord(
+    userId: 'u',
+    wordId: 'w',
+    addDay: 1,
+    addTime: now,
+    lastLearningDate: lastLearningDate,
+    learningOrder: 1,
+    isExtra: false,
+    isTodayNewWord: true,
+    learnedTimes: 1,
+    todayLearnedTimes: todayLearnedTimes,
+    createTime: now,
+    updateTime: now,
+  );
+}
 
 void main() {
   group('Business Day (3 AM Cutoff) Tests', () {
@@ -71,13 +92,91 @@ void main() {
     test('Business day boundary calculation', () {
       final date = DateTime(2026, 5, 10, 12, 0, 0);
       
-      // 5月10日的业务天是从 5月10日 03:00 开始
+      // 5月10日的业务天是从 5月10日 03:00 开始（闭区间下界）
       final start = DateUtils.businessDayStart(date);
       expect(start, DateTime(2026, 5, 10, 3, 0, 0));
       
-      // 到 5月11日 02:59:59 结束
+      // 到 5月11日 03:00 结束（开区间上界），区间为 [start, end)
       final end = DateUtils.businessDayEnd(date);
-      expect(end, DateTime(2026, 5, 11, 2, 59, 59));
+      expect(end, DateTime(2026, 5, 11, 3, 0, 0));
+      expect(end, DateUtils.businessDayStart(DateTime(2026, 5, 11, 12, 0, 0)),
+          reason: '本业务日的开区间上界必须恰为下一业务日的起点，窗口无缝且不重叠');
+    });
+
+    test('不变式：任意瞬时恰好落在其业务日窗口 [start, end) 内（跨时区/夏令时均成立）', () {
+      // 采样覆盖普通日、跨月、跨年，以及夏令时切换的高发日期。
+      // 该不变式不依赖运行时区；但在夏令时时区下，旧实现（按绝对时长回拨 3 小时）会失败。
+      final samples = <DateTime>[
+        DateTime(2026, 5, 10, 0, 0, 0, 0, 1),
+        DateTime(2026, 5, 10, 2, 59, 59),
+        DateTime(2026, 5, 10, 3),
+        DateTime(2026, 5, 10, 23, 59, 59),
+        DateTime(2026, 1, 1, 3),
+        DateTime(2025, 12, 31, 23),
+        DateTime(2026, 3, 8, 1, 30),
+        DateTime(2026, 3, 8, 2, 30),
+        DateTime(2026, 3, 8, 3),
+        DateTime(2026, 3, 8, 4),
+        DateTime(2026, 11, 1, 0, 30),
+        DateTime(2026, 11, 1, 1, 30),
+        DateTime(2026, 11, 1, 2, 30),
+        DateTime(2026, 11, 1, 3, 30),
+        DateTime.utc(2026, 3, 8, 7),
+      ];
+
+      for (final t in samples) {
+        final bd = DateUtils.businessDate(t);
+        final start = DateUtils.businessDayStart(t);
+        final end = DateUtils.businessDayEnd(t);
+
+        expect(!t.isBefore(start) && t.isBefore(end), isTrue,
+            reason: '$t 必须落在业务日 $bd 的窗口 [$start, $end) 内');
+        expect(DateUtils.businessDate(start), bd,
+            reason: '窗口起点必须归入同一业务日');
+        expect(DateUtils.businessDate(end.subtract(const Duration(microseconds: 1))), bd,
+            reason: '窗口内最后一个瞬时必须归入同一业务日');
+        expect(DateUtils.businessDayStart(end), end,
+            reason: '窗口上界必须恰为下一业务日的起点（无缝、不重叠）');
+      }
+    });
+
+    test('夏令时春令当天：墙钟过 3 点即归当天（旧实现按绝对时长回拨会推迟到 4 点）', () {
+      // America/New_York 2026-03-08 本地时钟 02:00 直接跳到 03:00。
+      // 注意：该时区的 02:00~02:59 并不存在，Dart 会把不存在的墙钟时刻规范化到 03:00，
+      // 因此只断言确实存在的墙钟时刻，保证本用例在任何时区下都成立。
+      expect(DateUtils.businessDate(DateTime(2026, 3, 8, 0, 30)), DateTime(2026, 3, 7));
+      expect(DateUtils.businessDate(DateTime(2026, 3, 8, 1, 30)), DateTime(2026, 3, 7));
+      expect(DateUtils.businessDate(DateTime(2026, 3, 8, 3)), DateTime(2026, 3, 8),
+          reason: '墙钟已过 3 点，必须归入当天；旧实现按绝对时长回拨会把 03:00~03:59 误判为前一天');
+      expect(DateUtils.businessDate(DateTime(2026, 3, 8, 3, 59)), DateTime(2026, 3, 8));
+    });
+
+    test('夏令时秋令当天：03:00 前仍归前一天，窗口不被压缩出空洞', () {
+      // America/New_York 2026-11-01 本地时钟 02:00 回拨到 01:00
+      expect(DateUtils.businessDate(DateTime(2026, 11, 1, 1, 30)), DateTime(2026, 10, 31));
+      expect(DateUtils.businessDate(DateTime(2026, 11, 1, 2, 30)), DateTime(2026, 10, 31));
+      expect(DateUtils.businessDate(DateTime(2026, 11, 1, 3)), DateTime(2026, 11, 1));
+
+      final end = DateUtils.businessDayEnd(DateTime(2026, 10, 31, 12));
+      final nextStart = DateUtils.businessDayStart(DateTime(2026, 11, 1, 12));
+      expect(end, nextStart, reason: '秋令当天也不能在 02:00~03:00 出现无人认领的空洞');
+    });
+
+    test('整点午夜特例：已归一化的业务日被原样认领，并记录其 1 秒窗口的取舍', () {
+      // 业务日期以本地/UTC 午夜持久化，跨时区读回后必须原样认领，否则会被 toLocal 整体挪一天。
+      expect(DateUtils.businessDate(DateTime(2026, 5, 11)), DateTime(2026, 5, 11));
+      expect(DateUtils.businessDate(DateTime.utc(2026, 5, 11)), DateTime(2026, 5, 11));
+
+      // 已知取舍：整点午夜走幂等保护归入当天，其后 1 个微秒即按 3 点界归入前一天，
+      // 故二者分属不同业务日。这是幂等保护的代价，不是回归。
+      expect(DateUtils.businessDate(DateTime(2026, 5, 11, 0, 0, 0, 0, 1)), DateTime(2026, 5, 10));
+      expect(
+        DateUtils.isSameBusinessDay(
+          DateTime(2026, 5, 11, 0, 0, 0),
+          DateTime(2026, 5, 11, 0, 0, 0, 0, 1),
+        ),
+        isFalse,
+      );
     });
 
     test('DateUtils.isSameBusinessDay should correctly handle mixed UTC and Local DateTimes', () {
@@ -168,6 +267,57 @@ void main() {
 
       // 验证在美东时区下，从数据库读出来的 lastLearningDate 与本地计算的 today 必须是同一个业务天！
       expect(DateUtils.isSameBusinessDay(dbUserLastLearningDate, todayEST), isTrue);
+    });
+  });
+
+  group('今日进度归属：LearningWord.hasTodayProgressBefore', () {
+    final planDay = DateTime(2026, 5, 10); // 本日计划所属业务日
+
+    test('今日次数为 0 时，无论如何都不算残留', () {
+      expect(
+        _wordWithProgress(todayLearnedTimes: 0, lastLearningDate: DateTime(2026, 5, 1))
+            .hasTodayProgressBefore(planDay),
+        isFalse,
+      );
+    });
+
+    test('有进度但缺 lastLearningDate：无法证明属于本日，按残留处理', () {
+      expect(_wordWithProgress(lastLearningDate: null).hasTodayProgressBefore(planDay), isTrue);
+    });
+
+    test('进度日严格早于计划日 → 残留（本日跨天重置尚未执行）', () {
+      expect(
+        _wordWithProgress(lastLearningDate: DateTime(2026, 5, 9)).hasTodayProgressBefore(planDay),
+        isTrue,
+      );
+    });
+
+    test('进度日等于计划日 → 不是残留', () {
+      expect(
+        _wordWithProgress(lastLearningDate: DateTime(2026, 5, 10)).hasTodayProgressBefore(planDay),
+        isFalse,
+      );
+    });
+
+    test('进度日更晚（多设备/时区差异）→ 绝不当作残留，否则会倒扣别的设备的进度', () {
+      expect(
+        _wordWithProgress(lastLearningDate: DateTime(2026, 5, 11)).hasTodayProgressBefore(planDay),
+        isFalse,
+      );
+    });
+
+    test('判定走业务日而非自然日：5/11 凌晨 01:30 的进度仍属业务日 5/10，不算残留', () {
+      expect(
+        _wordWithProgress(lastLearningDate: DateTime(2026, 5, 11, 1, 30))
+            .hasTodayProgressBefore(planDay),
+        isFalse,
+      );
+      // 5/10 凌晨 01:30 属业务日 5/9 → 才是残留
+      expect(
+        _wordWithProgress(lastLearningDate: DateTime(2026, 5, 10, 1, 30))
+            .hasTodayProgressBefore(planDay),
+        isTrue,
+      );
     });
   });
 }

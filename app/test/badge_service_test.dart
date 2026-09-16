@@ -66,7 +66,10 @@ void main() {
   /// 写入今日评分日志(按传入顺序即时间顺序)
   Future<void> insertTodayRatings(List<int> ratings) async {
     for (var i = 0; i < ratings.length; i++) {
-      final time = AppClock.today().add(Duration(seconds: i + 1));
+      // 必须落在业务日窗口 [03:00, 次日03:00) 内：AppClock.today() 是业务日的 00:00，
+      // 直接加秒会写成语义上属于"前一业务日"的 00:00:0x，是错误造数。
+      final time =
+          du.DateUtils.businessDayStart(AppClock.now()).add(Duration(seconds: i + 1));
       await db.learningLogsDao.saveEntity(
         LearningLog(
           id: 'log_$i',
@@ -119,10 +122,12 @@ void main() {
 
   /// 写入一条打卡记录(用于破晓/夜行勋章重放)
   Future<void> insertDaka(DateTime createTime, {int dayOffset = 0}) async {
+    final today = AppClock.today();
     await db.dakasDao.saveDaka(
       Daka(
         userId: userId,
-        forLearningDate: AppClock.today().subtract(Duration(days: dayOffset)),
+        // 日历回退而非 Duration 减法：夏令时切换日用 Duration 会落到 01:00/23:00，跨到相邻业务日
+        forLearningDate: DateTime(today.year, today.month, today.day - dayOffset),
         createTime: createTime,
         updateTime: createTime,
       ),
@@ -479,6 +484,23 @@ void main() {
       expect(report.granted, contains('STREAK_3'));
     });
 
+    test('重放按"最长连续段"取最长，不把断档两侧的天数累加起来', () async {
+      await createUser(streakDays: 0, maxStreakDays: 0);
+      // 两段各 10 天，中间断 1 天：累计 20 天，但最长连续段只有 10 天
+      for (var day = 0; day < 10; day++) {
+        await insertDaka(AppClock.today().add(const Duration(hours: 9)), dayOffset: day);
+      }
+      for (var day = 11; day < 21; day++) {
+        await insertDaka(AppClock.today().add(const Duration(hours: 9)), dayOffset: day);
+      }
+
+      final report = await BadgeService().rebuildBadgesFromFacts();
+
+      expect(report.granted, contains('STREAK_3'));
+      expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_21'), isNull,
+          reason: '累计 20 天但最长连续段只有 10 天，不得按累计天数误发 21 天勋章');
+    });
+
     test('重放幂等: 重复执行无差异也不重复发奖', () async {
       await createUser();
       await insertTodayRatings([FsrsRating.good.value, FsrsRating.good.value]);
@@ -586,6 +608,64 @@ void main() {
       expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'NIGHT_LEARN'), isNotNull);
 
       AppClock.reset();
+    });
+  });
+
+  group('今日评分口径：业务日窗口 [03:00, 次日03:00)', () {
+    Future<void> insertRatingAt(DateTime time, int rating, String id) async {
+      await db.learningLogsDao.saveEntity(
+        LearningLog(
+          id: id,
+          userId: userId,
+          wordId: 'w_$id',
+          rating: rating,
+          stability: 1,
+          difficulty: 5,
+          elapsedDays: 0,
+          scheduledDays: 1,
+          createTime: time,
+          updateTime: time,
+        ),
+        false,
+      );
+    }
+
+    test('前一业务日 00:00~02:59 的评分不得算进今天，否则会凭空判掉百发百中', () async {
+      await createUser();
+      final fake = FakeClock(DateTime(2026, 5, 10, 10, 0, 0)); // 业务日 2026-05-10
+      AppClock.setClock(fake);
+      try {
+        // 5/10 01:00 属于业务日 5/9，不是"今天"
+        await insertRatingAt(DateTime(2026, 5, 10, 1, 0), FsrsRating.again.value, 'prev_day');
+        await insertRatingAt(DateTime(2026, 5, 10, 9, 0), FsrsRating.good.value, 'today');
+
+        expect(await db.learningLogsDao.getTodayRatings(userId), [FsrsRating.good.value],
+            reason: '业务日窗口必须排除 01:00 那条答错');
+
+        await BadgeService().checkStudyPerformance();
+        expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'PERFECT_SCORE'), isNotNull,
+            reason: '前一业务日的答错不该阻止今天的百发百中');
+      } finally {
+        AppClock.reset();
+      }
+    });
+
+    test('窗口上界是开区间：次日 03:00 的评分属于新的一天，不算今天', () async {
+      await createUser();
+      final fake = FakeClock(DateTime(2026, 5, 10, 10, 0, 0)); // 业务日 2026-05-10
+      AppClock.setClock(fake);
+      try {
+        await insertRatingAt(DateTime(2026, 5, 10, 9, 0), FsrsRating.good.value, 'today');
+        // 5/11 03:00 恰为业务日 5/10 的开区间上界 → 属于 5/11
+        await insertRatingAt(DateTime(2026, 5, 11, 3, 0), FsrsRating.again.value, 'next_start');
+        // 5/11 02:59:59 仍属于业务日 5/10
+        await insertRatingAt(DateTime(2026, 5, 11, 2, 59, 59), FsrsRating.good.value, 'today_last');
+
+        expect(await db.learningLogsDao.getTodayRatings(userId),
+            [FsrsRating.good.value, FsrsRating.good.value]);
+      } finally {
+        AppClock.reset();
+      }
     });
   });
 }

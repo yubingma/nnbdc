@@ -252,11 +252,13 @@ public class UserDbSyncBo {
      */
     @Transactional
     public int repairDakaFromUserOper(String userId) throws IllegalAccessException {
-        // 1. 从 user_oper 提取 DAKA 日期（去重到纯日期）
+        // 1. 从 user_oper 提取 DAKA 日期（业务日，凌晨 3 点切日）
         TreeSet<Date> dakaDates = new TreeSet<>();
         for (UserOperDto op : userOperBo.getUserOperDtosOfUser(userId)) {
             if ("DAKA".equals(op.getOperType()) && op.getOperTime() != null) {
-                dakaDates.add(Utils.getPureDate(op.getOperTime()));
+                // operTime 是打卡发生的真实瞬时，必须按业务日还原：直接取自然日的话，
+                // 凌晨 0~3 点打的卡会被归到后一天，与客户端写入的 for_learning_date 不一致。
+                dakaDates.add(Utils.localDate2Date(Utils.getBusinessDate(op.getOperTime())));
             }
         }
         if (dakaDates.isEmpty()) {

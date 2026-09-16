@@ -2536,8 +2536,8 @@ class WordBo {
       final wrongWordsQuery = db.select(db.userWrongWords)
         ..where((tbl) =>
             tbl.userId.equals(userId) &
-            ((tbl.createTime.isBiggerOrEqualValue(start) & tbl.createTime.isSmallerOrEqualValue(end)) |
-                (tbl.updateTime.isBiggerOrEqualValue(start) & tbl.updateTime.isSmallerOrEqualValue(end))))
+            ((tbl.createTime.isBiggerOrEqualValue(start) & tbl.createTime.isSmallerThanValue(end)) |
+                (tbl.updateTime.isBiggerOrEqualValue(start) & tbl.updateTime.isSmallerThanValue(end))))
         ..orderBy([
           (tbl) => OrderingTerm(expression: coalesce([tbl.updateTime, tbl.createTime]), mode: OrderingMode.desc)
         ]);
@@ -2689,8 +2689,8 @@ class WordBo {
       final wrongWordsQuery = db.selectOnly(db.userWrongWords)
         ..addColumns([db.userWrongWords.wordId.count(distinct: true)])
         ..where(db.userWrongWords.userId.equals(user.id))
-        ..where((db.userWrongWords.createTime.isBiggerOrEqualValue(start) & db.userWrongWords.createTime.isSmallerOrEqualValue(end)) |
-            (db.userWrongWords.updateTime.isBiggerOrEqualValue(start) & db.userWrongWords.updateTime.isSmallerOrEqualValue(end)));
+        ..where((db.userWrongWords.createTime.isBiggerOrEqualValue(start) & db.userWrongWords.createTime.isSmallerThanValue(end)) |
+            (db.userWrongWords.updateTime.isBiggerOrEqualValue(start) & db.userWrongWords.updateTime.isSmallerThanValue(end)));
       final wrongWordsCount = await wrongWordsQuery.getSingle();
       wordLists.add(WordList("今日错词", wrongWordsCount.read(db.userWrongWords.wordId.count(distinct: true)) ?? 0));
       final newWordsQuery = db.selectOnly(db.learningWords)

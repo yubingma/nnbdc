@@ -39,7 +39,9 @@ void main() {
     // 注册 7 天前的用户（打卡率分母 = 7 天）
     userId = 'daka_test_user';
     final now = AppClock.now();
-    final createTime = DateUtils.businessDate(now).subtract(const Duration(days: 6));
+    final today = DateUtils.businessDate(now);
+    // 注册日 = 6 个业务日前（用日历回退而非 Duration，避免夏令时切换日偏移）
+    final createTime = DateTime(today.year, today.month, today.day - 6);
     final user = User(
       id: userId,
       userName: 'daka_test',
@@ -93,12 +95,19 @@ void main() {
     );
   }
 
+  /// 以业务日为单位做日历回退：用 DateTime 构造器而不是 Duration 减法，
+  /// 避免在夏令时切换日算出 01:00/23:00 这类落到相邻业务日的时刻。
+  DateTime bizDaysAgo(int days) {
+    final t = AppClock.today();
+    return DateTime(t.year, t.month, t.day - days);
+  }
+
   group('打卡统计推导 (多端一致性)', () {
     test('从本机 dakas 表幂等推导：3 天打卡 → 天数=3、打卡率=3/7', () async {
       final today = DateUtils.businessDate(AppClock.now());
       await addDaka(today);
-      await addDaka(today.subtract(const Duration(days: 1)));
-      await addDaka(today.subtract(const Duration(days: 2)));
+      await addDaka(bizDaysAgo(1));
+      await addDaka(bizDaysAgo(2));
 
       await UserBo().updateAndSyncUserDakaStats(userId);
 
@@ -112,8 +121,8 @@ void main() {
     test('单调兜底：本机 dakas 只到 3 天，但不把服务端已聚合的 7 压低', () async {
       final today = DateUtils.businessDate(AppClock.now());
       await addDaka(today);
-      await addDaka(today.subtract(const Duration(days: 1)));
-      await addDaka(today.subtract(const Duration(days: 2)));
+      await addDaka(bizDaysAgo(1));
+      await addDaka(bizDaysAgo(2));
 
       // 模拟：另一台设备/服务端已聚合出正确的 7 天，并回写到了本机 user 行
       await db.usersDao.saveUser(
@@ -132,7 +141,7 @@ void main() {
     test('重复推导幂等：同样数据连续推导两次，数值不再变化', () async {
       final today = DateUtils.businessDate(AppClock.now());
       await addDaka(today);
-      await addDaka(today.subtract(const Duration(days: 1)));
+      await addDaka(bizDaysAgo(1));
 
       await UserBo().updateAndSyncUserDakaStats(userId);
       final first = await db.usersDao.getUserById(userId);
@@ -238,6 +247,73 @@ void main() {
       // 涵盖了 2025-12-31, 2026-01-01, 2026-01-02 三个业务天
       expect(user!.dakaDayCount, 3);
       expect(user.continuousDakaDayCount, 3);
+
+      AppClock.reset();
+    });
+  });
+
+  group('连续打卡的天数语义（断档 / 今天未打卡 / 未来业务日 / 跨年）', () {
+    test('中间断档：连续天数只数最近一段，累计天数仍是全部', () async {
+      await addDaka(AppClock.today());
+      await addDaka(bizDaysAgo(1));
+      // 断掉今天-2
+      await addDaka(bizDaysAgo(3));
+      await addDaka(bizDaysAgo(4));
+
+      await UserBo().updateAndSyncUserDakaStats(userId);
+
+      final user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 4);
+      expect(user.continuousDakaDayCount, 2, reason: '今天-2 断档，连续段只能是最近 2 天');
+    });
+
+    test('今天尚未打卡：连续天数从昨天起算，不清零', () async {
+      await addDaka(bizDaysAgo(1));
+      await addDaka(bizDaysAgo(2));
+      await addDaka(bizDaysAgo(3));
+
+      await UserBo().updateAndSyncUserDakaStats(userId);
+
+      final user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 3);
+      expect(user.continuousDakaDayCount, 3, reason: '今天还没打卡不该把昨天的连续记录清零');
+    });
+
+    test('久未打卡：最近一段既不挨着今天也不挨着昨天时，连续天数为 0', () async {
+      await addDaka(bizDaysAgo(3));
+      await addDaka(bizDaysAgo(4));
+
+      await UserBo().updateAndSyncUserDakaStats(userId);
+
+      final user = await db.usersDao.getUserById(userId);
+      expect(user!.continuousDakaDayCount, 0);
+    });
+
+    test('未来业务日的打卡（他机时钟超前）不破坏本机连续统计', () async {
+      await addDaka(bizDaysAgo(-1));
+      await addDaka(bizDaysAgo(1));
+      await addDaka(bizDaysAgo(2));
+
+      await UserBo().updateAndSyncUserDakaStats(userId);
+
+      final user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 3);
+      expect(user.continuousDakaDayCount, 2,
+          reason: '未来记录既不参与连续段，也不得打断本机从昨天起算的连续');
+    });
+
+    test('跨年断档：不把跨年两侧无脑连起来，只数最近一段', () async {
+      AppClock.setClock(FakeClock(DateTime(2026, 1, 3, 10)));
+      await addDaka(DateTime(2026, 1, 3, 9)); // 业务日 1/3
+      await addDaka(DateTime(2026, 1, 2, 9)); // 业务日 1/2
+      // 1/1 断档
+      await addDaka(DateTime(2025, 12, 31, 22)); // 业务日 12/31
+
+      await UserBo().updateAndSyncUserDakaStats(userId);
+
+      final user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 3);
+      expect(user.continuousDakaDayCount, 2, reason: '1/1 断档，连续段为 1/2~1/3');
 
       AppClock.reset();
     });

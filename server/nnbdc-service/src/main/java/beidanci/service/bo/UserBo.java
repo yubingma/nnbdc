@@ -930,7 +930,9 @@ public class UserBo extends BaseBo<User> {
      * @return
      */
     public boolean getHasDakaToday(String userId) {
-        DakaId id = new DakaId(userId, Utils.getPureDate(new Date()));
+        // 必须按"业务日"（凌晨 3 点切日）查询：客户端把业务日作为 daka 主键，
+        // 若这里用自然日，凌晨 0~3 点之间会与客户端判定不一致，小组"今日打卡人数"随之出错。
+        DakaId id = new DakaId(userId, Utils.localDate2Date(Utils.getBusinessDate(new Date())));
         Daka daka = dakaBo.findById(id);
         return daka != null;
     }
@@ -961,11 +963,12 @@ public class UserBo extends BaseBo<User> {
         int realCount = pureDates.size();
         Date lastDakaDate = pureDates.isEmpty() ? null : pureDates.last();
 
-        // 当前连续打卡天数：从今天（今天未打卡则从昨天）往前数连续日期
+        // 当前连续打卡天数：从今天（今天未打卡则从昨天）往前数连续日期。
+        // "今天"取业务日，与客户端 calculateContinuousDakaDays 完全同构。
         int continuous = 0;
         if (!pureDates.isEmpty()) {
             Calendar cal = Calendar.getInstance();
-            Date cursor = Utils.getPureDate(new Date());
+            Date cursor = Utils.localDate2Date(Utils.getBusinessDate(new Date()));
             if (!pureDates.contains(cursor)) {
                 cal.setTime(cursor);
                 cal.add(Calendar.DAY_OF_YEAR, -1);

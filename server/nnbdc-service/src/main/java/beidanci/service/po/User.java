@@ -1,5 +1,6 @@
 package beidanci.service.po;
 
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -663,8 +664,11 @@ public class User extends UuidPo {
         if (getCreateTime() == null) {
             return 1;
         }
-        long existTime = Utils.getPureDate(new Date()).getTime() - Utils.getPureDate(getCreateTime()).getTime();
-        int existDays = (int) (existTime / 1000 / 60 / 60 / 24) + 1;
+        // 与客户端 updateAndSyncUserDakaStats 的打卡率分母口径一致：业务日相减再 +1。
+        // 用日历天数差而不是毫秒除法，避免夏令时切换日少算/多算一天。
+        int existDays = (int) ChronoUnit.DAYS.between(
+                Utils.getBusinessDate(getCreateTime()),
+                Utils.getBusinessDate(new Date())) + 1;
 
         return existDays;
     }
@@ -850,12 +854,20 @@ public class User extends UuidPo {
 
 
     public Boolean getIsTodayLearningFinished() {
-        return learningFinished
-                && Util.isSameDay(lastLearningDate, new Date());
+        return learningFinished && isLearningToday();
     }
 
     public Boolean getIsTodayLearningStarted() {
-        return Util.isSameDay(lastLearningDate, new Date());
+        return isLearningToday();
+    }
+
+    /**
+     * lastLearningDate 存的是已归一化的**业务日**（客户端写入 AppClock.today()），
+     * 必须与"当前业务日"比较；若与自然日比较，凌晨 0~3 点会错误地得出"今天还没开始学习"。
+     */
+    private boolean isLearningToday() {
+        return lastLearningDate != null
+                && Util.isSameDay(lastLearningDate, Utils.localDate2Date(Utils.getBusinessDate(new Date())));
     }
 
     /**

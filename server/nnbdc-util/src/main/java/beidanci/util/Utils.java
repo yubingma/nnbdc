@@ -139,6 +139,21 @@ public class Utils {
     }
 
     /**
+     * 获取**业务日期**（凌晨 3 点前归属于前一天），与客户端 DateUtils.businessDate 的 3 点切日规则严格一致。
+     *
+     * 服务端默认时区在启动时被固定为 Asia/Shanghai（见 NnbdcServiceApplication#started），
+     * 因此这里基于系统默认时区做墙钟判定即可得到稳定结果。用 {@code getHour() < 3} 而不是回拨 3 小时，
+     * 是为了避免夏令时切换日把墙钟时刻算错。
+     *
+     * 注意：本方法只用于把**当前瞬时**归入业务日。已经归一化过的业务日数据（如 daka.for_learning_date）
+     * 必须继续使用 {@link #getPureDate(Date)}，否则凌晨 0 点会被整体前移一天。
+     */
+    public static LocalDate getBusinessDate(final Date date) {
+        ZonedDateTime local = date.toInstant().atZone(ZoneId.systemDefault());
+        return local.getHour() < 3 ? local.toLocalDate().minusDays(1) : local.toLocalDate();
+    }
+
+    /**
      * Criteria的list方法有可能直接返回Entity列表，也可能返回Object[]列表（Entity含在Object[]的某个元素中），
      * 此函数用于自动从list方法返回的列表中提取Entity列表。
      *

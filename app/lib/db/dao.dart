@@ -1865,7 +1865,7 @@ class UserOpersDao extends DatabaseAccessor<MyDatabase> with _$UserOpersDaoMixin
             ..where((h) =>
                 h.userId.equals(userId) &
                 h.operTime.isBiggerOrEqualValue(start) &
-                h.operTime.isSmallerOrEqualValue(end) &
+                h.operTime.isSmallerThanValue(end) &
                 h.operType.equals(operType.value))
             ..orderBy([(h) => OrderingTerm(expression: h.operTime, mode: OrderingMode.desc)]))
           .get();
@@ -2391,7 +2391,7 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
     final end = DateUtils.businessDayEnd(now);
 
     return (select(userWrongWords)
-          ..where((uw) => uw.userId.equals(userId) & uw.createTime.isBiggerOrEqualValue(start) & uw.createTime.isSmallerOrEqualValue(end))
+          ..where((uw) => uw.userId.equals(userId) & uw.createTime.isBiggerOrEqualValue(start) & uw.createTime.isSmallerThanValue(end))
           ..orderBy([(uw) => OrderingTerm(expression: uw.createTime, mode: OrderingMode.desc)]))
         .get();
   }
@@ -2513,11 +2513,18 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
         .get();
   }
 
-  /// 今日全部评分(按时间正序), 用于单次学习表现类勋章(百发百中/极速心流)的判定
+  /// 今日全部评分(按时间正序), 用于单次学习表现类勋章(百发百中/极速心流)的判定。
+  /// "今日"必须与其余今日查询同口径，取业务日窗口 [03:00, 次日03:00)，否则会把前一业务日
+  /// 00:00~02:59 的评分误算进今天，凭空判掉"百发百中"。
   Future<List<int>> getTodayRatings(String userId) async {
-    final today = AppClock.today();
+    final now = AppClock.now();
+    final start = DateUtils.businessDayStart(now);
+    final end = DateUtils.businessDayEnd(now);
     final rows = await (select(learningLogs)
-          ..where((l) => l.userId.equals(userId) & l.createTime.isBiggerOrEqualValue(today))
+          ..where((l) =>
+              l.userId.equals(userId) &
+              l.createTime.isBiggerOrEqualValue(start) &
+              l.createTime.isSmallerThanValue(end))
           ..orderBy([(l) => OrderingTerm(expression: l.createTime, mode: OrderingMode.asc)]))
         .get();
     return rows.map((r) => r.rating).toList();
