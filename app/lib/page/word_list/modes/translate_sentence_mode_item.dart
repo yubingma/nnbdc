@@ -129,7 +129,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               '加载例句中...',
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 12,
                 color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
@@ -178,7 +177,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
           children: [
             Text(
               spell,
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 11,
                 color: isDarkMode ? Colors.white38 : Colors.black38,
@@ -208,7 +206,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           '（暂无例句）',
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 12,
             color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
@@ -252,7 +249,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
           Expanded(
             child: Text(
               hasLiveAsr ? liveAsrText : '请说出例句翻译',
-              textScaler: const TextScaler.linear(1.0),
               softWrap: true,
               style: TextStyle(
                 fontSize: 13.5,
@@ -299,7 +295,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
                   const SizedBox(width: 3),
                   Text(
                     '显示答案',
-                    textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontSize: 11,
                       color: isDarkMode ? Colors.white70 : Colors.black54,
@@ -345,7 +340,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
         children: [
           Expanded(
             child: translation.isEmpty
-                ? Text('已通过', textScaler: const TextScaler.linear(1.0), style: baseStyle)
+                ? Text('已通过', style: baseStyle)
                 : _buildRichSentence(
                     translation,
                     baseStyle,
@@ -386,7 +381,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
                   const SizedBox(width: 3),
                   Text(
                     '隐藏答案',
-                    textScaler: const TextScaler.linear(1.0),
                     style: TextStyle(
                       fontSize: 11,
                       color: isDarkMode ? Colors.white70 : Colors.black54,
@@ -427,7 +421,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
           const SizedBox(width: 3.5),
           Text(
             'AI判定中...',
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -462,7 +455,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
           const SizedBox(width: 2.5),
           Text(
             'AI判定',
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -544,7 +536,6 @@ class TranslateSentenceModeItem extends StatelessWidget {
 
     return Text.rich(
       TextSpan(children: spans),
-      textScaler: const TextScaler.linear(1.0),
     );
   }
 }

@@ -131,7 +131,6 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
           const SizedBox(width: 3.5),
           Text(
             'AI判定中...',
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,

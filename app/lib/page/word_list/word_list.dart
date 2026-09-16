@@ -2315,7 +2315,6 @@ class WordListPageState extends State<WordListPage>
           const SizedBox(width: 8),
           Text(
             '第 $unit 单元',
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -3124,7 +3123,6 @@ class WordListPageState extends State<WordListPage>
                       Flexible(
                         child: Text(
                           args.appBarTitle,
-                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
@@ -3139,7 +3137,6 @@ class WordListPageState extends State<WordListPage>
                           padding: const EdgeInsets.only(left: 4),
                           child: Text(
                             '($totalWordCount)',
-                            textScaler: TextScaler.linear(1.0),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -3242,7 +3239,6 @@ class WordListPageState extends State<WordListPage>
                                   isBookMarkValid(bookMark)
                                       ? '${getBookMarkRawPosition(bookMark) + 1}'
                                       : '—',
-                                  textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -3339,7 +3335,6 @@ class WordListPageState extends State<WordListPage>
                               const SizedBox(height: 16),
                               Text(
                                 '正在整理词单...',
-                                textScaler: TextScaler.linear(1.0),
                                 style: TextStyle(
                                   color: isDarkMode
                                       ? Colors.white

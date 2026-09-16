@@ -209,7 +209,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                             const SizedBox(height: 16),
                             Text(
                               _dictionaries.isEmpty ? '暂无系统词典' : '未找到匹配的词典',
-                              textScaler: const TextScaler.linear(1.0),
                               style: TextStyle(
                                 fontSize: 18,
                                 color: textColor,
@@ -219,7 +218,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                               const SizedBox(height: 8),
                               Text(
                                 '系统词典管理功能开发中...',
-                                textScaler: const TextScaler.linear(1.0),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -285,7 +283,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                     children: [
                       Text(
                         dict.name,
-                        textScaler: const TextScaler.linear(1.0),
                         style: TextStyle(
                           fontWeight: FontWeight.w400,
                           fontSize: 16,
@@ -305,7 +302,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                   ),
                   child: Text(
                     dict.isReady ? '就绪' : '编辑中',
-                    textScaler: const TextScaler.linear(1.0),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -348,7 +344,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text(
                     '编辑',
-                    textScaler: TextScaler.linear(1.0),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppTheme.primaryColor,
@@ -360,7 +355,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                   icon: const Icon(Icons.visibility, size: 16),
                   label: const Text(
                     '详情',
-                    textScaler: TextScaler.linear(1.0),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppTheme.primaryColor,
@@ -388,7 +382,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
         const SizedBox(height: 4),
         Text(
           value,
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -398,7 +391,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
         ),
         Text(
           label,
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 12,
             color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -530,7 +522,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
             const SizedBox(width: 8),
             Text(
               '编辑词典',
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
@@ -545,7 +536,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
             onPressed: _isLoading ? null : () => Navigator.pop(context),
             child: Text(
               '取消',
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 color: textColor,
                 fontFamily: 'NotoSansSC',
@@ -570,7 +560,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                   )
                 : const Text(
                     '保存',
-                    textScaler: TextScaler.linear(1.0),
                   ),
           ),
           const SizedBox(width: 16),
@@ -617,7 +606,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                               children: [
                                 Text(
                                   '词典名称',
-                                  textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w400,
@@ -667,7 +655,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                               children: [
                                 Text(
                                   '词典设置',
-                                  textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w400,
@@ -681,7 +668,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                 SwitchListTile(
                                   title: Text(
                                     '词典就绪',
-                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       color: textColor,
                                       fontFamily: 'NotoSansSC',
@@ -689,7 +675,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                   ),
                                   subtitle: Text(
                                     _isReady ? '用户可以选择此词典' : '词典正在编辑中',
-                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                                       fontFamily: 'NotoSansSC',
@@ -709,7 +694,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                 SwitchListTile(
                                   title: Text(
                                     '词典可见',
-                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       color: textColor,
                                       fontFamily: 'NotoSansSC',
@@ -717,7 +701,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                   ),
                                   subtitle: Text(
                                     _visible ? '用户可以看到此词典' : '词典对用户隐藏',
-                                    textScaler: const TextScaler.linear(1.0),
                                     style: TextStyle(
                                       color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                                       fontFamily: 'NotoSansSC',
@@ -741,7 +724,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                     children: [
                                       Text(
                                         '流行度限制',
-                                        textScaler: const TextScaler.linear(1.0),
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w400,
@@ -752,7 +734,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                       const SizedBox(height: 8),
                                       Text(
                                         '限制通用词典释义的流行度阈值（留空表示不限制）',
-                                        textScaler: const TextScaler.linear(1.0),
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -800,7 +781,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                     children: [
                                       Text(
                                         '分类归属',
-                                        textScaler: const TextScaler.linear(1.0),
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w400,
@@ -843,7 +823,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                       // 游戏大厅选择
                                       Text(
                                         '关联游戏大厅 (受影响的分组会自动加入)',
-                                        textScaler: const TextScaler.linear(1.0),
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -902,7 +881,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
         const SnackBar(
             content: Text(
           '词典名称不能为空',
-          textScaler: TextScaler.linear(1.0),
         )),
       );
       return;
@@ -922,7 +900,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
             const SnackBar(
                 content: Text(
               '流行度限制必须是有效的数字',
-              textScaler: TextScaler.linear(1.0),
             )),
           );
           setState(() {
@@ -950,7 +927,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
             const SnackBar(
                 content: Text(
               '词典信息更新成功',
-              textScaler: TextScaler.linear(1.0),
             )),
           );
         }
@@ -960,7 +936,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
             SnackBar(
                 content: Text(
               '更新失败: ${result.msg ?? "未知错误"}',
-              textScaler: const TextScaler.linear(1.0),
             )),
           );
         }
@@ -971,7 +946,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
           SnackBar(
               content: Text(
             '更新失败: $e',
-            textScaler: const TextScaler.linear(1.0),
           )),
         );
       }
@@ -1001,7 +975,6 @@ class _DictionaryDetailsDialog extends StatelessWidget {
       backgroundColor: backgroundColor,
       title: Text(
         '词典详情',
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           color: textColor,
           fontFamily: 'NotoSansSC',
@@ -1030,7 +1003,6 @@ class _DictionaryDetailsDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
           child: const Text(
             '关闭',
-            textScaler: TextScaler.linear(1.0),
           ),
         ),
       ],
@@ -1052,7 +1024,6 @@ class _DictionaryDetailsDialog extends StatelessWidget {
                 width: 80,
                 child: Text(
                   '$label:',
-                  textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     fontWeight: FontWeight.w400,
                     color: textColor,
@@ -1063,7 +1034,6 @@ class _DictionaryDetailsDialog extends StatelessWidget {
               Expanded(
                 child: Text(
                   value,
-                  textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     color: textColor,
                     fontFamily: 'NotoSansSC',
@@ -1244,7 +1214,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
                             const SizedBox(height: 16),
                             Text(
                               _words.isEmpty ? '词典中没有单词' : '未找到匹配的单词',
-                              textScaler: const TextScaler.linear(1.0),
                               style: TextStyle(
                                 fontSize: 18,
                                 color: textColor,
@@ -1283,7 +1252,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
       ),
       child: Text(
         title,
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
@@ -1334,7 +1302,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
         ),
         title: Text(
           dictWord.word.spell,
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontWeight: FontWeight.w500,
             fontSize: 16,
@@ -1345,7 +1312,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
         subtitle: (dictWord.word.meaningItems?.isNotEmpty ?? false)
             ? Text(
                 dictWord.word.meaningItems?.first.meaning ?? '',
-                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                   fontFamily: 'NotoSansSC',
@@ -1409,14 +1375,12 @@ class _WordManagementTabState extends State<_WordManagementTab> {
       builder: (context) => AlertDialog(
         title: Text(
           '确认删除',
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'NotoSansSC',
           ),
         ),
         content: Text(
           '确定要删除单词 "${dictWord.word.spell}" 吗？\n\n此操作不可撤销。',
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontFamily: 'NotoSansSC',
           ),
@@ -1426,7 +1390,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
             onPressed: () => Navigator.pop(context),
             child: const Text(
               '取消',
-              textScaler: TextScaler.linear(1.0),
             ),
           ),
           TextButton(
@@ -1439,7 +1402,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
             ),
             child: const Text(
               '删除',
-              textScaler: TextScaler.linear(1.0),
             ),
           ),
         ],
@@ -1463,7 +1425,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
             const SnackBar(
                 content: Text(
               '单词删除成功',
-              textScaler: TextScaler.linear(1.0),
             )),
           );
         }
@@ -1473,7 +1434,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
             SnackBar(
                 content: Text(
               '删除失败: ${result.msg ?? "未知错误"}',
-              textScaler: const TextScaler.linear(1.0),
             )),
           );
         }
@@ -1484,7 +1444,6 @@ class _WordManagementTabState extends State<_WordManagementTab> {
           SnackBar(
               content: Text(
             '删除失败: $e',
-            textScaler: const TextScaler.linear(1.0),
           )),
         );
       }
@@ -1557,7 +1516,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
       backgroundColor: backgroundColor,
       title: Text(
         '编辑单词',
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           color: textColor,
           fontFamily: 'NotoSansSC',
@@ -1640,7 +1598,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
           onPressed: _isLoading ? null : () => Navigator.pop(context),
           child: const Text(
             '取消',
-            textScaler: TextScaler.linear(1.0),
           ),
         ),
         ElevatedButton(
@@ -1660,7 +1617,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
                 )
               : const Text(
                   '保存',
-                  textScaler: TextScaler.linear(1.0),
                 ),
         ),
       ],
@@ -1683,7 +1639,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
       children: [
         Text(
           '$label${isRequired ? ' *' : ''}',
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -1725,7 +1680,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
         const SnackBar(
             content: Text(
           '单词拼写不能为空',
-          textScaler: TextScaler.linear(1.0),
         )),
       );
       return;
@@ -1745,7 +1699,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
             const SnackBar(
                 content: Text(
               '流行度必须是有效的数字',
-              textScaler: TextScaler.linear(1.0),
             )),
           );
           setState(() {
@@ -1775,7 +1728,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
             const SnackBar(
                 content: Text(
               '单词修改成功',
-              textScaler: TextScaler.linear(1.0),
             )),
           );
         }
@@ -1785,7 +1737,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
             SnackBar(
                 content: Text(
               '修改失败: ${result.msg ?? "未知错误"}',
-              textScaler: const TextScaler.linear(1.0),
             )),
           );
         }
@@ -1796,7 +1747,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
           SnackBar(
               content: Text(
             '修改失败: $e',
-            textScaler: const TextScaler.linear(1.0),
           )),
         );
       }
@@ -1860,7 +1810,6 @@ class _WordSentencesDialogState extends State<_WordSentencesDialog> {
       backgroundColor: backgroundColor,
       title: Text(
         '例句管理 - ${widget.dictWord.word.spell}',
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           color: textColor,
           fontFamily: 'NotoSansSC',

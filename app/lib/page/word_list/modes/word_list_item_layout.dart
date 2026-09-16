@@ -244,7 +244,6 @@ class WordListItemLayout extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           '${baseIndex + index + 1}',
-          textScaler: const TextScaler.linear(1.0),
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: (baseIndex + index + 1) >= 1000 ? 7.5 : ((baseIndex + index + 1) >= 100 ? 8.5 : 9.5),
@@ -300,7 +299,6 @@ class WordListItemLayout extends StatelessWidget {
           // 中心序号
           Text(
             '${baseIndex + index + 1}',
-            textScaler: const TextScaler.linear(1.0),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: (baseIndex + index + 1) >= 1000 ? 7.5 : ((baseIndex + index + 1) >= 100 ? 8.5 : 9.5),

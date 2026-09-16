@@ -155,7 +155,6 @@ class _WordItemState extends State<WordItem> {
           child: Center(
             child: Text(
               '${(widget.baseIndex + widget.index + 1) > 0 ? (widget.baseIndex + widget.index + 1) : 1}',
-              textScaler: TextScaler.linear(1.0),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 13,
@@ -201,7 +200,6 @@ class _WordItemState extends State<WordItem> {
             alignment: Alignment.center,
             child: Text(
               '${widget.word.pronunciationScore}',
-              textScaler: TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 9,
                 height: 1.1,
@@ -235,7 +233,6 @@ class _WordItemState extends State<WordItem> {
                         flex: 2,
                         child: Text(
                           widget.word.word.getMeaningStr(),
-                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
@@ -278,7 +275,6 @@ class _WordItemState extends State<WordItem> {
                   )
                 : Text(
                     widget.word.word.getMeaningStr(),
-                    textScaler: TextScaler.linear(1.0),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -345,7 +341,6 @@ class _WordItemState extends State<WordItem> {
               Text(
                 widget.word.word.spell,
                 softWrap: false,
-                textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                   fontSize: 16,
@@ -364,7 +359,6 @@ class _WordItemState extends State<WordItem> {
                   ),
                   child: Text(
                     '[${widget.word.word.mergedPronounce}]',
-                    textScaler: TextScaler.linear(1.0),
                     style: TextStyle(
                       color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
                       fontSize: 12,
@@ -385,7 +379,6 @@ class _WordItemState extends State<WordItem> {
               Text(
                 widget.word.word.spell,
                 softWrap: false,
-                textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                   fontSize: 16,
@@ -405,7 +398,6 @@ class _WordItemState extends State<WordItem> {
                     ),
                     child: Text(
                       '[${widget.word.word.mergedPronounce}]',
-                      textScaler: TextScaler.linear(1.0),
                       style: TextStyle(
                         color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
                         fontSize: 12,
@@ -525,7 +517,6 @@ class _WordItemState extends State<WordItem> {
               Text(
                 widget.word.word.spell,
                 softWrap: false,
-                textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                   fontSize: 18,
@@ -543,7 +534,6 @@ class _WordItemState extends State<WordItem> {
                   ),
                   child: Text(
                     '[${widget.word.word.mergedPronounce}]',
-                    textScaler: TextScaler.linear(1.0),
                     style: TextStyle(
                       color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
                       fontSize: 12,
@@ -565,7 +555,6 @@ class _WordItemState extends State<WordItem> {
               Text(
                 widget.word.word.spell,
                 softWrap: false,
-                textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                   fontSize: 18,
@@ -586,7 +575,6 @@ class _WordItemState extends State<WordItem> {
                     ),
                     child: Text(
                       '[${widget.word.word.mergedPronounce}]',
-                      textScaler: TextScaler.linear(1.0),
                       style: TextStyle(
                         color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
                         fontSize: 12,

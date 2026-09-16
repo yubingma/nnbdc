@@ -24,7 +24,6 @@ class ModeComponents {
           child: Text(
             word.word.spell,
             softWrap: false,
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               // 今天测评答错的词标红（口径见 StudyBo.getTodayWrongWordIds）
               color: word.isWrongToday
@@ -41,7 +40,6 @@ class ModeComponents {
           const SizedBox(height: 3),
           Text(
             '[${word.word.mergedPronounce}]',
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               color: textSub,
               fontSize: 12,
@@ -77,7 +75,6 @@ class ModeComponents {
     if (matches.isEmpty) {
       content = Text(
         meaningStr.isNotEmpty ? meaningStr : "（暂无释义）",
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
@@ -128,7 +125,6 @@ class ModeComponents {
 
       content = RichText(
         text: TextSpan(children: spans),
-        textScaler: const TextScaler.linear(1.0),
       );
     }
 
@@ -161,7 +157,6 @@ class ModeComponents {
         alignment: Alignment.center,
         child: Text(
           '${word.pronunciationScore}',
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 9,
             height: 1.1,

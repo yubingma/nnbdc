@@ -17,6 +17,7 @@ import '../services/badge_service.dart';
 import '../services/level_service.dart';
 import '../services/throttled_sync_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/font_scale.dart';
 import '../util/error_handler.dart';
 import 'db.dart';
 import '../constants.dart';
@@ -171,6 +172,35 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'saveThemeStyle', showToast: false);
+      rethrow;
+    }
+  }
+
+  Future<AppFontScale> getFontScale() async {
+    try {
+      var param = await (select(localParams)..where((e) => e.name.equals('fontScale'))).getSingleOrNull();
+      return AppFontScale.fromCode(param?.value);
+    } catch (e) {
+      Global.logger.e('getFontScale 失败，使用默认值: $e');
+      return AppFontScale.medium;
+    }
+  }
+
+  Future<void> saveFontScale(AppFontScale fontScale) async {
+    try {
+      final existing = await (select(localParams)..where((e) => e.name.equals('fontScale'))).getSingleOrNull();
+      final value = fontScale.code;
+      if (existing == null) {
+        await into(localParams).insert(LocalParamsCompanion.insert(
+          name: 'fontScale',
+          value: value,
+          updateTime: Value(AppClock.now()),
+        ));
+      } else {
+        await (update(localParams)..where((e) => e.name.equals('fontScale'))).write(LocalParamsCompanion(value: Value(value), updateTime: Value(AppClock.now())));
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'saveFontScale', showToast: false);
       rethrow;
     }
   }

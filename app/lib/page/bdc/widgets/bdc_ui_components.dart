@@ -1141,7 +1141,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                 const SizedBox(width: 3.5),
                 Text(
                   label,
-                  textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
@@ -1921,7 +1920,6 @@ extension BdcPageStateUIComponents on BdcPageState {
           const SizedBox(width: 3.5),
           Text(
             'AI判定中...',
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,

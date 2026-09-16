@@ -38,6 +38,7 @@ import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/widget/font_scale_dialog.dart';
 import 'package:nnbdc/widget/pronunciation_accent_dialog.dart';
 import 'package:nnbdc/widget/theme_select_dialog.dart';
 import 'package:nnbdc/theme/app_theme.dart';
@@ -1650,6 +1651,15 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 onTap: () => ThemeSelectDialog.show(context),
               ),
               _buildMenuTile(
+                icon: Icons.format_size_rounded,
+                title: '字体大小',
+                trailingText: context.watch<DarkMode>().fontScale.label,
+                onTap: () async {
+                  await FontScaleDialog.show(context);
+                  if (mounted) setState(() {});
+                },
+              ),
+              _buildMenuTile(
                 icon: Icons.graphic_eq_rounded,
                 title: '发音口音',
                 trailingText: Prefs.pronunciationAccent == 'uk' ? '英音' : '美音',
@@ -2728,7 +2738,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
                           height: 1.0,
                           fontFamily: 'NotoSansSC',
                         ),
-                        textScaler: const TextScaler.linear(1.0),
                       ),
                     )
                   : null,

@@ -376,7 +376,6 @@ class _AdminPageState extends State<AdminPage> {
             const SizedBox(height: 6),
             Text(
               title,
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,

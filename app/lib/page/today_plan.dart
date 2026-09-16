@@ -2993,43 +2993,45 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    '今日最少新词',
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => _showMinNewWordsExplanationDialog(ctx),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Icon(
-                                        Icons.help_outline_rounded,
-                                        size: 16,
-                                        color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      '今日最少新词',
+                                      style: TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                isStarted ? '今日学习已开始，设置暂时锁定' : '优先保证每天的新词输入量',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                                    const SizedBox(width: 4),
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => _showMinNewWordsExplanationDialog(ctx),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(4.0),
+                                        child: Icon(
+                                          Icons.help_outline_rounded,
+                                          size: 16,
+                                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 3),
+                                Text(
+                                  isStarted ? '学习已开始，设置暂时锁定' : '优先保证每天的新词输入量',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           if (isStarted)
                             Container(
@@ -3149,26 +3151,28 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '每组单词数',
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '每组单词数',
+                                  style: TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                isStarted ? '今日学习已开始，设置暂时锁定' : '一组学完再进下一组，组越大打断越少',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                                const SizedBox(height: 3),
+                                Text(
+                                  isStarted ? '学习已开始，设置暂时锁定' : '一组学完再进下一组，组越大打断越少',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           if (isStarted)
                             Container(

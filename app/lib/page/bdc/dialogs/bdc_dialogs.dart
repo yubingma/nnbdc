@@ -19,7 +19,6 @@ extension BdcPageStateDialogs on BdcPageState {
           children: [
             Text(
               title,
-              textScaler: const TextScaler.linear(1.0),
               style: const TextStyle(
                 fontFamily: "NotoSansSC",
                 fontSize: 15,
@@ -31,7 +30,6 @@ extension BdcPageStateDialogs on BdcPageState {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   fontFamily: "NotoSansSC",
                   fontSize: 12,
@@ -57,7 +55,6 @@ extension BdcPageStateDialogs on BdcPageState {
       dense: true,
       title: Text(
         title,
-        textScaler: const TextScaler.linear(1.0),
         style: const TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 14,
@@ -67,7 +64,6 @@ extension BdcPageStateDialogs on BdcPageState {
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: "NotoSansSC",
                 fontSize: 12,
@@ -107,7 +103,6 @@ extension BdcPageStateDialogs on BdcPageState {
       dense: true,
       title: const Text(
         '外观主题',
-        textScaler: TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 14,
@@ -116,7 +111,6 @@ extension BdcPageStateDialogs on BdcPageState {
       ),
       subtitle: Text(
         themeStyle.label,
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 12,
@@ -143,7 +137,6 @@ extension BdcPageStateDialogs on BdcPageState {
       dense: true,
       title: const Text(
         '学习引导',
-        textScaler: TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 14,
@@ -152,7 +145,6 @@ extension BdcPageStateDialogs on BdcPageState {
       ),
       subtitle: Text(
         '再看一遍：你说，我来听',
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 12,
@@ -184,7 +176,6 @@ extension BdcPageStateDialogs on BdcPageState {
       dense: true,
       title: const Text(
         '发音口音',
-        textScaler: TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 14,
@@ -193,7 +184,6 @@ extension BdcPageStateDialogs on BdcPageState {
       ),
       subtitle: Text(
         Prefs.pronunciationAccent == 'uk' ? '英音' : '美音(默认)',
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 12,
@@ -287,7 +277,6 @@ extension BdcPageStateDialogs on BdcPageState {
       dense: true,
       title: Text(
         '混淆词取词策略',
-        textScaler: const TextScaler.linear(1.0),
         style: const TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 14,
@@ -296,7 +285,6 @@ extension BdcPageStateDialogs on BdcPageState {
       ),
       subtitle: Text(
         options[currentValue] ?? '最近学习的单词',
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 12,
@@ -339,7 +327,6 @@ extension BdcPageStateDialogs on BdcPageState {
       dense: true,
       title: Text(
         '语音识别通过规则',
-        textScaler: const TextScaler.linear(1.0),
         style: const TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 14,
@@ -348,7 +335,6 @@ extension BdcPageStateDialogs on BdcPageState {
       ),
       subtitle: Text(
         options[currentValue] ?? '说出一个意思即可',
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
           fontSize: 12,
@@ -966,7 +952,6 @@ extension BdcPageStateDialogs on BdcPageState {
                     const SizedBox(width: 8),
                     Text(
                       '问题反馈',
-                      textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
                         fontFamily: "NotoSansSC",
                         fontSize: 16,
@@ -985,7 +970,6 @@ extension BdcPageStateDialogs on BdcPageState {
                     children: [
                       Text(
                         '请输入单词(${state.word!.spell})的报错内容',
-                        textScaler: const TextScaler.linear(1.0),
                         style: const TextStyle(
                           fontFamily: "NotoSansSC",
                           fontSize: 14,
@@ -1127,7 +1111,6 @@ extension BdcPageStateDialogs on BdcPageState {
                       isSubmitting ? null : () => Navigator.pop(context, false),
                   child: const Text(
                     '取消',
-                    textScaler: TextScaler.linear(1.0),
                     style: TextStyle(fontFamily: "NotoSansSC"),
                   ),
                 ),
@@ -1148,7 +1131,6 @@ extension BdcPageStateDialogs on BdcPageState {
                         )
                       : const Text(
                           '提交',
-                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(fontFamily: "NotoSansSC"),
                         ),
                 ),

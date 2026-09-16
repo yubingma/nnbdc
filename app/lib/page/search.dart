@@ -244,7 +244,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
-      textScaler: const TextScaler.linear(1.0),
     );
   }
 
@@ -267,7 +266,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        textScaler: const TextScaler.linear(1.0),
       );
     }
 
@@ -372,7 +370,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
-                                    textScaler: const TextScaler.linear(1.0),
                                   ),
                                 ),
                               ],

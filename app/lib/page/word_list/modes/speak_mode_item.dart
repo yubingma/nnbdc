@@ -125,7 +125,6 @@ class SpeakModeItem extends StatelessWidget {
           const SizedBox(width: 3.5),
           Text(
             'AI判定中...',
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -170,7 +169,6 @@ class SpeakModeItem extends StatelessWidget {
                   : (word.hintLetterCount > 0
                       ? word.word.spell.substring(0, word.hintLetterCount)
                       : ''),
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 14,
                 color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),

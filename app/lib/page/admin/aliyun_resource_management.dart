@@ -101,7 +101,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     color: textColor,
                     fontFamily: 'NotoSansSC',
                   ),
-                  textScaler: const TextScaler.linear(1.0),
                 ),
               ],
             ),
@@ -117,7 +116,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     color: textColor.withValues(alpha: 0.6),
                     fontFamily: 'NotoSansSC',
                   ),
-                  textScaler: const TextScaler.linear(1.0),
                 ),
               )
             else
@@ -174,7 +172,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
             color: textColor.withValues(alpha: 0.8),
             fontFamily: 'NotoSansSC',
           ),
-          textScaler: const TextScaler.linear(1.0),
         ),
         Row(
           children: [
@@ -186,7 +183,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                 color: isPositive ? Colors.green : Colors.red,
                 fontFamily: 'NotoSansSC',
               ),
-              textScaler: const TextScaler.linear(1.0),
             ),
             const SizedBox(width: 4),
             Text(
@@ -197,7 +193,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                 color: textColor.withValues(alpha: 0.6),
                 fontFamily: 'NotoSansSC',
               ),
-              textScaler: const TextScaler.linear(1.0),
             ),
           ],
         ),
@@ -235,7 +230,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     color: textColor,
                     fontFamily: 'NotoSansSC',
                   ),
-                  textScaler: const TextScaler.linear(1.0),
                 ),
               ],
             ),
@@ -249,7 +243,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                   color: textColor.withValues(alpha: 0.6),
                   fontFamily: 'NotoSansSC',
                 ),
-                textScaler: const TextScaler.linear(1.0),
               )
             else if (_resourcePackages!.isEmpty)
               Text(
@@ -260,7 +253,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                   color: textColor.withValues(alpha: 0.6),
                   fontFamily: 'NotoSansSC',
                 ),
-                textScaler: const TextScaler.linear(1.0),
               )
             else
               Column(
@@ -296,7 +288,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     color: textColor,
                     fontFamily: 'NotoSansSC',
                   ),
-                  textScaler: const TextScaler.linear(1.0),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -307,7 +298,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     color: textColor.withValues(alpha: 0.6),
                     fontFamily: 'NotoSansSC',
                   ),
-                  textScaler: const TextScaler.linear(1.0),
                 ),
               ],
             ),
@@ -320,7 +310,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
               color: _getStatusColor(package['Status'] ?? ''),
               fontFamily: 'NotoSansSC',
             ),
-            textScaler: const TextScaler.linear(1.0),
           ),
         ],
       ),
@@ -367,7 +356,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     color: textColor,
                     fontFamily: 'NotoSansSC',
                   ),
-                  textScaler: const TextScaler.linear(1.0),
                 ),
               ],
             ),
@@ -384,7 +372,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                 color: textColor.withValues(alpha: 0.8),
                 fontFamily: 'NotoSansSC',
               ),
-              textScaler: const TextScaler.linear(1.0),
             ),
           ],
         ),

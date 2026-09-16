@@ -37,6 +37,7 @@ import 'config.dart';
 import 'util/performance_watchdog.dart';
 import 'local_word_cache.dart';
 import 'util/prefs.dart';
+import 'theme/font_scale.dart';
 import 'router.dart';
 
 /// Toast 出入场动画：使用 Slide + Scale 纯变换图层，
@@ -514,8 +515,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   loadData() async {
     var themeStyle = await MyDatabase.instance.localParamsDao.getThemeStyle();
+    var fontScale = await MyDatabase.instance.localParamsDao.getFontScale();
     if (mounted) {
       context.read<DarkMode>().setThemeStyle(themeStyle);
+      context.read<DarkMode>().setFontScale(fontScale);
     }
   }
 
@@ -538,15 +541,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       supportedLocales: const [Locale('zh'), Locale('en')],
       locale: const Locale('zh'),
       builder: (context, child) {
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: AppThemeBackground(
-                themeStyle: darkModeState.themeStyle,
+        // 全局字体大小：在系统字号之上叠加用户所选档位
+        final mediaQuery = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: AppFontScale.compose(mediaQuery.textScaler, darkModeState.fontScale),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: AppThemeBackground(
+                  themeStyle: darkModeState.themeStyle,
+                ),
               ),
-            ),
-            if (child != null) child,
-          ],
+              if (child != null) child,
+            ],
+          ),
         );
       },
     );

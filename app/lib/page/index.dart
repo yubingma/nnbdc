@@ -134,7 +134,6 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                   height: 1.2,
                   letterSpacing: 0.4,
                 ),
-                textScaler: const TextScaler.linear(1.0),
               ),
             ],
           ),

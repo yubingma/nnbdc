@@ -204,7 +204,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
                             const SizedBox(height: 16),
                             Text(
                               _total == 0 ? '暂无用户数据' : '未找到匹配的用户',
-                              textScaler: const TextScaler.linear(1.0),
                               style: TextStyle(
                                 fontSize: 18,
                                 color: textColor,
@@ -274,7 +273,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
         ),
         title: Text(
           user.nickName ?? user.userName ?? '未知用户',
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontWeight: FontWeight.w500,
             fontSize: 16,
@@ -288,7 +286,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             const SizedBox(height: 4),
             Text(
               '用户名: ${user.userName ?? "N/A"}',
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 12,
                 color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -298,7 +295,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             if (user.email != null && user.email!.isNotEmpty)
               Text(
                 '邮箱: ${user.email}',
-                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   fontSize: 12,
                   color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -354,7 +350,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
       ),
       child: Text(
         label,
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           color: color,
           fontSize: 11,
@@ -389,7 +384,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
         alignment: Alignment.center,
         child: Text(
           label,
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             color: isSelected ? context.primaryColor : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
             fontSize: 14,
@@ -425,7 +419,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
           ),
           Text(
             '第 $_currentPage 页 / 共 $totalPages 页',
-            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               color: isDarkMode ? Colors.white : Colors.black87,
               fontFamily: 'NotoSansSC',
@@ -474,7 +467,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
         backgroundColor: backgroundColor,
         title: Text(
           '确认删除用户',
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             color: textColor,
             fontFamily: 'NotoSansSC',
@@ -482,7 +474,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
         ),
         content: Text(
           '确定要删除用户 "${user.nickName ?? user.userName ?? "未知"}" 吗？\n\n此操作将永久删除该用户及其所有相关数据，且无法恢复！',
-          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             color: textColor,
             fontFamily: 'NotoSansSC',
@@ -493,7 +484,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             onPressed: () => Navigator.pop(context),
             child: const Text(
               '取消',
-              textScaler: TextScaler.linear(1.0),
             ),
           ),
           ElevatedButton(
@@ -504,7 +494,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             ),
             child: const Text(
               '确认删除',
-              textScaler: TextScaler.linear(1.0),
             ),
           ),
         ],
@@ -536,7 +525,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             const SnackBar(
               content: Text(
                 '用户删除成功',
-                textScaler: TextScaler.linear(1.0),
               ),
               backgroundColor: Colors.green,
             ),
@@ -550,7 +538,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             SnackBar(
               content: Text(
                 '删除失败: ${result.msg ?? "未知错误"}',
-                textScaler: const TextScaler.linear(1.0),
               ),
               backgroundColor: Colors.red,
             ),
@@ -564,7 +551,6 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
           SnackBar(
             content: Text(
               '删除失败: $e',
-              textScaler: const TextScaler.linear(1.0),
             ),
             backgroundColor: Colors.red,
           ),
@@ -629,7 +615,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
       backgroundColor: backgroundColor,
       title: Text(
         '设置用户权限',
-        textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           color: textColor,
           fontFamily: 'NotoSansSC',
@@ -642,7 +627,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
           children: [
             Text(
               '用户: ${widget.user.nickName ?? widget.user.userName ?? "未知"}',
-              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -654,11 +638,9 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
             SwitchListTile(
               title: const Text(
                 '管理员',
-                textScaler: TextScaler.linear(1.0),
               ),
               subtitle: const Text(
                 '具有管理员权限，可以管理系统',
-                textScaler: TextScaler.linear(1.0),
               ),
               value: _isAdmin,
               onChanged: (value) {
@@ -671,11 +653,9 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
             SwitchListTile(
               title: const Text(
                 '超级管理员',
-                textScaler: TextScaler.linear(1.0),
               ),
               subtitle: const Text(
                 '具有超级管理员权限',
-                textScaler: TextScaler.linear(1.0),
               ),
               value: _isSuperAdmin,
               onChanged: (value) {
@@ -688,11 +668,9 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
             SwitchListTile(
               title: const Text(
                 '录入员',
-                textScaler: TextScaler.linear(1.0),
               ),
               subtitle: const Text(
                 '具有录入员权限，可以录入数据',
-                textScaler: TextScaler.linear(1.0),
               ),
               value: _isInputor,
               onChanged: (value) {
@@ -705,11 +683,9 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
             SwitchListTile(
               title: const Text(
                 '强制会员',
-                textScaler: TextScaler.linear(1.0),
               ),
               subtitle: const Text(
                 '强制将用户视为会员，绕过订阅验证',
-                textScaler: TextScaler.linear(1.0),
               ),
               value: _isPremiumOverrideEnabled,
               onChanged: (value) {
@@ -756,7 +732,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
           onPressed: _isLoading ? null : () => Navigator.pop(context),
           child: const Text(
             '取消',
-            textScaler: TextScaler.linear(1.0),
           ),
         ),
         ElevatedButton(
@@ -776,7 +751,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
                 )
               : const Text(
                   '保存',
-                  textScaler: TextScaler.linear(1.0),
                 ),
         ),
       ],
@@ -820,7 +794,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
               const SnackBar(
                   content: Text(
                 '权限更新成功',
-                textScaler: TextScaler.linear(1.0),
               )),
             );
           } else {
@@ -830,7 +803,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
               SnackBar(
                   content: Text(
                 '权限更新成功但获取最新信息失败: ${updatedUserResult.msg ?? "未知错误"}',
-                textScaler: const TextScaler.linear(1.0),
               )),
             );
           }
@@ -847,7 +819,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
               SnackBar(
                   content: Text(
                 '强制会员状态更新失败: ${premiumResult.msg ?? "未知错误"}',
-                textScaler: const TextScaler.linear(1.0),
               )),
             );
           } else {
@@ -857,7 +828,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
               SnackBar(
                   content: Text(
                 '强制会员状态更新失败且获取最新信息失败: ${premiumResult.msg ?? "未知错误"}, ${updatedUserResult.msg ?? ""}',
-                textScaler: const TextScaler.linear(1.0),
               )),
             );
           }
@@ -868,7 +838,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
             SnackBar(
                 content: Text(
               '更新失败: ${result.msg ?? "未知错误"}',
-              textScaler: const TextScaler.linear(1.0),
             )),
           );
         }
@@ -879,7 +848,6 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
           SnackBar(
               content: Text(
             '更新失败: $e',
-            textScaler: const TextScaler.linear(1.0),
           )),
         );
       }
