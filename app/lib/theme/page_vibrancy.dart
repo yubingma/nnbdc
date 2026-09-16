@@ -122,7 +122,8 @@ class PageVibrancy {
   static const PageVibrancyConfig studyStats = PageVibrancyConfig.base;
 
   /// 记忆分布 / 复习分布
-  static const PageVibrancyConfig reviewDistribution = PageVibrancyConfig.base;
+  static const PageVibrancyConfig reviewDistribution =
+      PageVibrancyConfig(vibrancy: 1.2, topShift: 0.05, bottomShift: -0.05, cardOpacity: 0.65);
 
   /// 消息
   static const PageVibrancyConfig message = PageVibrancyConfig.base;

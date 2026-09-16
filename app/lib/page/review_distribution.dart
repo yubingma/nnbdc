@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/db/db.dart';
@@ -8,6 +10,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/page/word_list/bucket_words.dart';
 import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
+import '../widget/frosted_glass_card.dart';
 
 class ReviewDistributionPage extends StatefulWidget {
   const ReviewDistributionPage({super.key});
@@ -161,12 +164,10 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
 
-    final cardBg = context.cardBg;
     final subtleBg = themeConfig.subtleBg;
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
-    final borderColor = themeConfig.cardBorder;
 
     return AppScaffold(
       vibrancy: PageVibrancy.reviewDistribution,
@@ -317,22 +318,20 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
                   // 2. 图例说明栏
                   SliverToBoxAdapter(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildLegendItem('今日复习', accentColor, subtitleColor),
-                          _buildLegendItem('已逾期', isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), subtitleColor),
-                          _buildLegendItem('未来复习', isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), subtitleColor),
-                          _buildLegendItem('新词储备', isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6), subtitleColor),
-                        ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: FrostedGlassCard(
+                        borderRadius: 16,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildLegendItem('今日复习', accentColor, subtitleColor),
+                            _buildLegendItem('已逾期', isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), subtitleColor),
+                            _buildLegendItem('未来复习', isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), subtitleColor),
+                            _buildLegendItem('新词储备', isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6), subtitleColor),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -340,14 +339,56 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                   // 3. 待学习新词储备池卡片
                   if (_totalNewWords > 0)
                     SliverToBoxAdapter(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: cardBg,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: borderColor),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: FrostedGlassCard(
+                          borderRadius: 20,
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text('📦 ', style: TextStyle(fontSize: 13)),
+                                      Text(
+                                        '待学习 (新词储备池)',
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: textColor,
+                                          fontFamily: 'NotoSansSC',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '未开始初记',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: subtitleColor,
+                                      fontFamily: 'NotoSansSC',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildNewWordsBar(isDarkMode, subtleBg),
+                            ],
+                          ),
                         ),
+                      ),
+                    ),
+
+                  // 4. 待复习时间分布卡片
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
+                      child: FrostedGlassCard(
+                        borderRadius: 20,
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -356,9 +397,15 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                               children: [
                                 Row(
                                   children: [
-                                    const Text('📦 ', style: TextStyle(fontSize: 13)),
                                     Text(
-                                      '待学习 (新词储备池)',
+                                      '⏳ ',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: accentColor,
+                                      ),
+                                    ),
+                                    Text(
+                                      '待复习时间分布',
                                       style: TextStyle(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w800,
@@ -369,7 +416,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                                   ],
                                 ),
                                 Text(
-                                  '未开始初记',
+                                  '点击查看单词列表',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: subtitleColor,
@@ -379,72 +426,20 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            _buildNewWordsBar(isDarkMode, subtleBg),
+                            if (_barDataList.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 24),
+                                child: Center(
+                                  child: Text(
+                                    '暂无待复习任务',
+                                    style: TextStyle(color: subtitleColor, fontSize: 13),
+                                  ),
+                                ),
+                              )
+                            else
+                              ..._barDataList.map((data) => _buildBarRow(data, isDarkMode, subtleBg, textColor, subtitleColor, accentColor)),
                           ],
                         ),
-                      ),
-                    ),
-
-                  // 4. 待复习时间分布卡片
-                  SliverToBoxAdapter(
-                    child: Container(
-                      margin: const EdgeInsets.fromLTRB(16, 6, 16, 32),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    '⏳ ',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: accentColor,
-                                    ),
-                                  ),
-                                  Text(
-                                    '待复习时间分布',
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: textColor,
-                                      fontFamily: 'NotoSansSC',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                '点击查看单词列表',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: subtitleColor,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          if (_barDataList.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24),
-                              child: Center(
-                                child: Text(
-                                  '暂无待复习任务',
-                                  style: TextStyle(color: subtitleColor, fontSize: 13),
-                                ),
-                              ),
-                            )
-                          else
-                            ..._barDataList.map((data) => _buildBarRow(data, isDarkMode, subtleBg, textColor, subtitleColor, accentColor)),
-                        ],
                       ),
                     ),
                   ),
@@ -716,100 +711,188 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
 
-    final cardBg = context.cardBg;
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
 
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: cardBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Row(
-          children: [
-            const Text('🧠 ', style: TextStyle(fontSize: 18)),
-            Text(
-              'FSRS 自适应记忆算法',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: textColor,
-                fontSize: 17,
-                fontFamily: 'NotoSansSC',
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _dialogDescItem(
-              Icons.psychology_rounded,
-              '科学动态调度',
-              'FSRS（自由间隔重复算法）基于现代认知模型，根据每个单词的掌握反馈自适应预测最佳复习临界点。',
-              accentColor,
-              textColor,
-              subtitleColor,
-            ),
-            const SizedBox(height: 14),
-            _dialogDescItem(
-              Icons.auto_graph_rounded,
-              'D-S-R 记忆模型',
-              RichText(
-                text: TextSpan(
-                  style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.45),
-                  children: [
-                    TextSpan(text: '• 稳定性 (S)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-                    const TextSpan(text: '每次成功回忆，记忆稳固度成倍提升，复习间隔自动延长；\n'),
-                    TextSpan(text: '• 难度 (D)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-                    const TextSpan(text: '难词高频巩固，熟词快速通关；\n'),
-                    TextSpan(text: '• 可提取性 (R)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-                    const TextSpan(text: '始终在记忆即将遗忘的黄金临界点精准唤醒。'),
+      barrierDismissible: true,
+      barrierLabel: 'FSRS 自适应记忆算法说明',
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.20),
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (_, anim, __, child) => ScaleTransition(
+        scale: CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+        child: child,
+      ),
+      pageBuilder: (dialogCtx, _, __) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: SizedBox(
+              width: min(MediaQuery.sizeOf(dialogCtx).width - 48, 420),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.10),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
                   ],
                 ),
-              ),
-              accentColor,
-              textColor,
-              subtitleColor,
-            ),
-            const SizedBox(height: 14),
-            _dialogDescItem(
-              Icons.access_time_rounded,
-              '分布调度逻辑',
-              RichText(
-                text: TextSpan(
-                  style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.45),
-                  children: [
-                    TextSpan(text: '• 今日必复习：', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '到达最佳复习窗口，效率最高；\n'),
-                    TextSpan(text: '• 已逾期：', style: TextStyle(color: isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '错过黄金复习点，建议优先消灭；\n'),
-                    TextSpan(text: '• 未来分布：', style: TextStyle(color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '科学平滑分散复习量，避免堆积。'),
-                  ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? const Color(0xD91C2127)
+                            : const Color(0xEEFFFFFF),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: isDarkMode
+                              ? const Color(0x2EFFFFFF)
+                              : const Color(0x80FFFFFF),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // 标题行：带 Expanded 彻底修复溢出，加右上角关闭按钮
+                              Row(
+                                children: [
+                                  const Text('🧠 ', style: TextStyle(fontSize: 18)),
+                                  Expanded(
+                                    child: Text(
+                                      'FSRS 自适应记忆算法',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        color: textColor,
+                                        fontSize: 16.5,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => Navigator.pop(dialogCtx),
+                                    behavior: HitTestBehavior.opaque,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Icon(Icons.close_rounded, size: 20, color: subtitleColor),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 18),
+                              // 内容区：加 Flexible 和 SingleChildScrollView 防矮屏纵向溢出
+                              Flexible(
+                                child: SingleChildScrollView(
+                                  physics: const BouncingScrollPhysics(),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _dialogDescItem(
+                                        Icons.psychology_rounded,
+                                        '科学动态调度',
+                                        'FSRS（自由间隔重复算法）基于现代认知模型，根据每个单词的掌握反馈自适应预测最佳复习临界点。',
+                                        accentColor,
+                                        textColor,
+                                        subtitleColor,
+                                      ),
+                                      const SizedBox(height: 14),
+                                      _dialogDescItem(
+                                        Icons.auto_graph_rounded,
+                                        'D-S-R 记忆模型',
+                                        RichText(
+                                          text: TextSpan(
+                                            style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.45),
+                                            children: [
+                                              TextSpan(text: '• 稳定性 (S)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                                              const TextSpan(text: '每次成功回忆，记忆稳固度成倍提升，复习间隔自动延长；\n'),
+                                              TextSpan(text: '• 难度 (D)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                                              const TextSpan(text: '难词高频巩固，熟词快速通关；\n'),
+                                              TextSpan(text: '• 可提取性 (R)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                                              const TextSpan(text: '始终在记忆即将遗忘的黄金临界点精准唤醒。'),
+                                            ],
+                                          ),
+                                        ),
+                                        accentColor,
+                                        textColor,
+                                        subtitleColor,
+                                      ),
+                                      const SizedBox(height: 14),
+                                      _dialogDescItem(
+                                        Icons.access_time_rounded,
+                                        '分布调度逻辑',
+                                        RichText(
+                                          text: TextSpan(
+                                            style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.45),
+                                            children: [
+                                              TextSpan(text: '• 今日必复习：', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold)),
+                                              const TextSpan(text: '到达最佳复习窗口，效率最高；\n'),
+                                              TextSpan(text: '• 已逾期：', style: TextStyle(color: isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), fontWeight: FontWeight.bold)),
+                                              const TextSpan(text: '错过黄金复习点，建议优先消灭；\n'),
+                                              TextSpan(text: '• 未来分布：', style: TextStyle(color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), fontWeight: FontWeight.bold)),
+                                              const TextSpan(text: '科学平滑分散复习量，避免堆积。'),
+                                            ],
+                                          ),
+                                        ),
+                                        accentColor,
+                                        textColor,
+                                        subtitleColor,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // 底部操作区
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () => Navigator.pop(dialogCtx),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    backgroundColor: accentColor.withValues(alpha: 0.1),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '我知道了',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: accentColor,
+                                      fontSize: 13.5,
+                                      fontFamily: 'NotoSansSC',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              accentColor,
-              textColor,
-              subtitleColor,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              '我知道了',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: accentColor,
-                fontFamily: 'NotoSansSC',
               ),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
