@@ -296,6 +296,53 @@ void main() {
       expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_21'), isNotNull);
       expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_100'), isNull);
     });
+
+    test('真实连续打卡 21 天全流程仿真：逐步累加并在第 21 天精准解锁，中断后勋章不撤销', () async {
+      await createUser(streakDays: 0, maxStreakDays: 0);
+
+      // 连续推进 21 天打卡
+      for (var day = 1; day <= 21; day++) {
+        final currentUser = (await db.usersDao.getUserById(userId))!;
+        await db.usersDao.saveUser(
+          currentUser.copyWith(
+            dakaDayCount: day,
+            continuousDakaDayCount: day,
+            maxContinuousDakaDayCount: day,
+          ),
+          true,
+        );
+
+        // 每次打卡完成时触发连续勋章判定
+        await BadgeService().checkStreakDays(celebrate: false);
+
+        if (day < 3) {
+          expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_3'), isNull);
+        } else {
+          expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_3'), isNotNull);
+        }
+
+        if (day < 21) {
+          expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_21'), isNull);
+        } else {
+          expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_21'), isNotNull);
+        }
+      }
+
+      // 模拟第 22 天发生漏打断签，连续天数归为 1
+      final brokenUser = (await db.usersDao.getUserById(userId))!;
+      await db.usersDao.saveUser(
+        brokenUser.copyWith(
+          continuousDakaDayCount: 1,
+        ),
+        true,
+      );
+
+      // 再次判定或对齐补发
+      await BadgeService().checkStreakDays(celebrate: false);
+
+      // 已解锁的 21 天勋章依旧稳固存在，绝不被撤销
+      expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_21'), isNotNull);
+    });
   });
 
   group('历史峰值与掌握词数', () {
