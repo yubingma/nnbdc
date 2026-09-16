@@ -78,7 +78,7 @@ aliyun:
     api-key: ${dashscope_api_key} # 阿里云百炼 API Key，用于语音合成 (CosyVoice) 和图片 OCR (Qwen-VL)
     deepseek-api-key: ${DEEPSEEK_API_KEY} # DeepSeek 官方 API Key，用于文本处理（AI 短文生成、AI 裁判对话）
     deepseek-base-url: https://api.deepseek.com/v1 # DeepSeek 官方 API Base URL (OpenAI 兼容协议 v1)
-    text-model: deepseek-v4-flash # 文本处理模型。配置为 deepseek-v4-flash 时将路由至 DeepSeek 官方 API
+    text-model: deepseek-flash # 文本处理模型，DeepSeek 官方 V4.1 Flash。配置为 deepseek 前缀的模型时将路由至 DeepSeek 官方 API
     tts-model: cosyvoice-v3-flash # 语音合成模型，指定为阿里云百炼的 cosyvoice-v3-flash
     voice: longanyang # 语音合成发音人角色名（如 longanyang）
 
@@ -89,11 +89,7 @@ sms:
     expire-minutes: 10
     send-interval-seconds: 60 
 
-# 微信开放平台配置
-wechat:
-  app:
-    id: YOUR_APP_ID
-    secret: YOUR_APP_SECRET
+
 
 # 日志相关配置
 logging:
