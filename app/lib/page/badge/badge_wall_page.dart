@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../api/vo.dart';
@@ -207,8 +208,6 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     final themeStyle = Provider.of<DarkMode>(context, listen: false).themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
 
-    final cardBg = context.cardBg;
-    final subtleBg = themeConfig.subtleBg;
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
@@ -218,23 +217,40 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border.all(
-              color: themeConfig.cardBorder,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.15),
-                blurRadius: 30,
-                offset: const Offset(0, -6),
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? const Color(0xD9162522)
+                    : const Color(0xD9FFFFFF),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                    width: 1.2,
+                  ),
+                  left: BorderSide(
+                    color: isDarkMode ? const Color(0x1FFFFFFF) : const Color(0x4DFFFFFF),
+                    width: 0.8,
+                  ),
+                  right: BorderSide(
+                    color: isDarkMode ? const Color(0x1FFFFFFF) : const Color(0x4DFFFFFF),
+                    width: 0.8,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.12),
+                    blurRadius: 30,
+                    offset: const Offset(0, -6),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Column(
+              child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // 顶部指示条
@@ -356,8 +372,16 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: subtleBg,
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.035),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.05),
+                    width: 0.8,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,9 +515,11 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
               ],
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
+  },
+);
   }
 
   @override
