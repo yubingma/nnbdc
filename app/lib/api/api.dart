@@ -654,6 +654,12 @@ abstract class RestClient {
   @POST("/admin/deleteSentence.do")
   @FormUrlEncoded()
   Future<Result<String>> deleteAdminSentence(@Field("id") String id);
+
+  @POST("/admin/regenerateSentence.do")
+  @FormUrlEncoded()
+  Future<Result<SentenceVo>> regenerateAdminSentence(
+      @Field("sentenceId") String sentenceId,
+      @Field("wordId") String? wordId);
   
   @POST("/admin/regenerateWordPronunciation.do")
   @FormUrlEncoded()

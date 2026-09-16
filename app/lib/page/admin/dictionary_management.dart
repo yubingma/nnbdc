@@ -9,6 +9,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:provider/provider.dart';
@@ -1872,6 +1873,11 @@ class _WordSentencesDialogState extends State<_WordSentencesDialog> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton.icon(
+                  onPressed: () => _regenerateSentence(sentence),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('重新生成'),
+                ),
+                TextButton.icon(
                   onPressed: () => _editSentence(sentence),
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text('编辑'),
@@ -1885,6 +1891,43 @@ class _WordSentencesDialogState extends State<_WordSentencesDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _regenerateSentence(SentenceVo sentence) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('重新生成例句'),
+        content: const Text('确定要通过 AI 重新生成这条例句吗？系统将创作新例句并保留现有 ID，同时自动重新合成发音。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                ToastUtil.info('AI 正在重新创作例句，请稍候...');
+                final res = await Api.client.regenerateAdminSentence(
+                  sentence.id,
+                  widget.dictWord.word.id,
+                );
+                if (res.success) {
+                  ToastUtil.success('例句重新生成成功');
+                  _loadSentences();
+                } else {
+                  ToastUtil.error(res.msg ?? '重新生成失败');
+                }
+              } catch (e) {
+                ToastUtil.error('重新生成失败: $e');
+              }
+            },
+            child: const Text('重新生成'),
+          ),
+        ],
       ),
     );
   }

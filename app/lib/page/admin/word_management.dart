@@ -605,6 +605,11 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton.icon(
+                  onPressed: () => _regenerateSentence(sentence),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('重新生成'),
+                ),
+                TextButton.icon(
                   onPressed: () => _editSentence(sentence),
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text('编辑'),
@@ -618,6 +623,43 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _regenerateSentence(SentenceVo sentence) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('重新生成例句'),
+        content: const Text('确定要通过 AI 重新生成这条例句吗？系统将创作新例句并保留现有 ID，同时自动重新合成发音。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                ToastUtil.info('AI 正在重新创作例句，请稍候...');
+                final res = await Api.client.regenerateAdminSentence(
+                  sentence.id,
+                  _currentWord?.id,
+                );
+                if (res.success) {
+                  ToastUtil.success('例句重新生成成功');
+                  _loadSentences();
+                } else {
+                  ToastUtil.error(res.msg ?? '重新生成失败');
+                }
+              } catch (e) {
+                ToastUtil.error('重新生成失败: $e');
+              }
+            },
+            child: const Text('重新生成'),
+          ),
+        ],
       ),
     );
   }

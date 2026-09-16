@@ -31,6 +31,7 @@ import beidanci.service.po.User;
 import beidanci.service.util.CdnUtil;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.po.DictGroup;
+import beidanci.service.po.Sentence;
 import org.apache.commons.lang3.tuple.Pair;
 import beidanci.util.Constants;
 
