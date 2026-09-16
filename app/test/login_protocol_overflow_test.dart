@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,12 +10,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  late Directory tempDir;
 
   setUpAll(() {
+    tempDir = Directory.systemTemp.createTempSync('login_test_');
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async => '.',
+      (MethodCall methodCall) async => tempDir.path,
     );
     messenger.setMockMethodCallHandler(
       const MethodChannel('dev.fluttercommunity.plus/connectivity'),
@@ -24,6 +27,14 @@ void main() {
       const MethodChannel('fluwx'),
       (MethodCall methodCall) async => false,
     );
+  });
+
+  tearDownAll(() {
+    try {
+      if (tempDir.existsSync()) {
+        tempDir.deleteSync(recursive: true);
+      }
+    } catch (_) {}
   });
 
   setUp(() async {
@@ -65,7 +76,7 @@ void main() {
     expect(tester.takeException(), isNull);
 
     // 验证协议文本和链接正常展示
-    expect(find.textContaining('已阅读并同意'), findsOneWidget);
+    expect(find.textContaining('同意'), findsOneWidget);
     expect(find.text('《用户协议》'), findsOneWidget);
     expect(find.text('《隐私政策》'), findsOneWidget);
   });

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>用户协议与隐私政策 - 极简现代高质感原型</title>
+  <style>
+    :root {
+      --bg: #F5F1EB;
+      --bg-gradient: linear-gradient(180deg, #EAE5DE 0%, #F5F1EB 40%, #FAF8F5 100%);
+      --card-bg: rgba(255, 255, 255, 0.52);
+      --card-border: rgba(255, 255, 255, 0.15);
+      --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      --primary: #10B981;
+      --primary-light: rgba(16, 185, 129, 0.08);
+      --primary-border: rgba(16, 185, 129, 0.2);
+      --text-primary: #1E293B;
+      --text-secondary: #64748B;
+      --text-muted: #94A3B8;
+      --table-header: rgba(0, 0, 0, 0.035);
+      --table-border: rgba(0, 0, 0, 0.08);
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg: #141A24;
+      --bg-gradient: linear-gradient(180deg, #0F141D 0%, #141A24 45%, #19212E 100%);
+      --card-bg: rgba(24, 32, 47, 0.72);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      --primary: #10B981;
+      --primary-light: rgba(16, 185, 129, 0.14);
+      --primary-border: rgba(16, 185, 129, 0.28);
+      --text-primary: #F1F5F9;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --table-header: rgba(255, 255, 255, 0.05);
+      --table-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #E2E8F0;
+      font-family: var(--font-stack);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+
+    .phone-container {
+      width: 393px;
+      height: 852px;
+      background: var(--bg-gradient);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 顶部状态栏 */
+    .status-bar {
+      height: 54px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 28px 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      z-index: 10;
+    }
+
+    .dynamic-island {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 124px;
+      height: 35px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 20;
+    }
+
+    /* 沉浸式透明 AppBar */
+    .app-bar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text-primary);
+    }
+
+    .app-bar-placeholder {
+      width: 36px;
+    }
+
+    /* 页面主体卡片容器 */
+    .content-area {
+      flex: 1;
+      padding: 6px 16px 20px 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .frosted-card {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      overflow-y: auto;
+      padding: 22px 18px 32px 18px;
+    }
+
+    /* 文档排版样式 */
+    .doc-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-align: center;
+      letter-spacing: -0.3px;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      font-size: 15.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+      margin-top: 24px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 3.5px;
+      height: 14px;
+      border-radius: 2px;
+      background-color: var(--primary);
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    p {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      text-align: justify;
+      letter-spacing: 0.15px;
+    }
+
+    strong {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .callout {
+      background: var(--primary-light);
+      border: 1px solid var(--primary-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 14px 0;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    .callout p {
+      margin-bottom: 0;
+      font-size: 13.5px;
+    }
+
+    ul, ol {
+      padding-left: 20px;
+      margin: 8px 0 14px 0;
+    }
+    li {
+      font-size: 13.5px;
+      line-height: 1.68;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .modern-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--table-border);
+      margin: 16px 0;
+      font-size: 12.5px;
+    }
+    th {
+      background: var(--table-header);
+      color: var(--text-primary);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--table-border);
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--table-border);
+      color: var(--text-primary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .doc-footer {
+      margin-top: 28px;
+      padding-top: 16px;
+      border-top: 0.5px solid rgba(128, 128, 128, 0.15);
+      text-align: right;
+    }
+    .doc-footer p {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    /* 底部 Home Bar */
+    .home-bar {
+      height: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    .home-indicator {
+      width: 134px;
+      height: 5px;
+      background: var(--text-primary);
+      opacity: 0.25;
+      border-radius: 3px;
+    }
+
+    /* 极简滚动条 */
+    .frosted-card::-webkit-scrollbar {
+      width: 3.5px;
+    }
+    .frosted-card::-webkit-scrollbar-thumb {
+      background: rgba(128, 128, 128, 0.25);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="phone-container">
+    <div class="dynamic-island"></div>
+
+    <div class="status-bar">
+      <span>9:41</span>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><path d="M1 9.5h2v-8H1v8zm4 0h2v-6H5v6zm4 0h2v-4H9v4zm4 0h2v-2h-2v2z"/></svg>
+        <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor"><path d="M0 2.5C3.5-0.8 11.5-0.8 15 2.5l-7.5 8.5L0 2.5z"/></svg>
+        <svg width="24" height="11" viewBox="0 0 24 11" fill="currentColor"><rect x="0.5" y="0.5" width="20" height="10" rx="3" stroke="currentColor" fill="none"/><rect x="2" y="2" width="17" height="7" rx="1.5"/><path d="M22 3.5v4"/></svg>
+      </div>
+    </div>
+
+    <!-- 沉浸透明 AppBar -->
+    <div class="app-bar">
+      <div class="back-btn">
+        <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 1L1 9L9 17"/>
+        </svg>
+      </div>
+      <div class="app-title">隐私政策</div>
+      <div class="app-bar-placeholder"></div>
+    </div>
+
+    <!-- 内容展示区域 -->
+    <div class="content-area">
+      <div class="frosted-card">
+        <div class="doc-title">泡泡单词用户隐私政策</div>
+
+        <p>泡泡单词尊重并保护所有使用本应用用户的个人隐私权。我们将以高度的勤勉与审慎义务对待您的个人信息。</p>
+
+        <div class="callout">
+          <p>本应用支持<strong>游客模式</strong>。在游客模式下，您无需注册账号，我们不会收集您的电子邮箱等可识别个人身份的信息。</p>
+        </div>
+
+        <p>当您选择注册泡泡单词帐号并使用账号相关功能时，即表示您同意我们按照本隐私政策收集和使用相关个人信息。</p>
+
+        <div class="callout">
+          <p><strong>关于订阅服务的隐私说明：</strong>泡泡单词通过 Apple App Store 提供自动续费订阅服务。您的支付信息由 Apple Inc. 安全处理，我们仅接收订阅状态验证结果，不会访问或存储您的支付信息。</p>
+        </div>
+
+        <div class="section-title">1. 适用范围</div>
+        <p>a) 在您注册泡泡单词帐号时，您根据应用要求提供的个人信息，包括但不限于<strong>电子邮箱地址</strong>；</p>
+        <p>b) 在您使用泡泡单词服务过程中，系统可能自动收集的技术信息，如 IP 地址、设备类型等；</p>
+        <p>c) 泡泡单词通过合法途径取得的其他必要信息。</p>
+
+        <div class="section-title">2. 信息的收集与使用</div>
+        <p>我们仅在实现应用核心功能所必需的范围内收集和使用您的个人信息，包括账号注册、服务权限管理、重要通知发送与客服支持沟通。</p>
+
+        <div class="section-title">3. 第三方 SDK 说明</div>
+        <p>为保障应用的稳定运行及崩溃分析，我们集成了必要的第三方 SDK：</p>
+
+        <table class="modern-table">
+          <tr>
+            <th>SDK 名称</th>
+            <th>使用目的</th>
+            <th>隐私政策</th>
+          </tr>
+          <tr>
+            <td>友盟+（Umeng）</td>
+            <td>稳定性分析、崩溃日志上报</td>
+            <td><a href="#">友盟隐私政策</a></td>
+          </tr>
+        </table>
+
+        <div class="callout">
+          <p><strong>延迟初始化说明：</strong>我们严格遵循监管要求，仅在您阅读并点击同意本隐私政策后，才会初始化上述 SDK 并开始采集相关信息。</p>
+        </div>
+
+        <div class="doc-footer">
+          <p>成都三马捷科技有限公司</p>
+          <p>更新时间：2026年3月10日</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="home-bar">
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+</body>
+</html>

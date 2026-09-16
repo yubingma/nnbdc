@@ -1,51 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import '../theme/app_theme.dart';
-import '../global.dart';
-import '../util/platform_util.dart';
+import '../widget/legal_document_page.dart';
 
-class ProtocolPage extends StatefulWidget {
+/// 用户使用协议页面
+class ProtocolPage extends StatelessWidget {
   const ProtocolPage({super.key});
 
   @override
-  ProtocolPageState createState() {
-    return ProtocolPageState();
-  }
-}
-
-class ProtocolPageState extends State<ProtocolPage> {
-  final GlobalKey webViewKey = GlobalKey();
-  InAppWebViewController? webViewController;
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppTheme.createGradientAppBar(
-        title: '用户使用协议',
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
-      ),
-      body: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-        child: InAppWebView(
-          key: webViewKey,
-          initialUrlRequest: URLRequest(url: WebUri("about:blank")),
-          onWebViewCreated: (InAppWebViewController controller) {
-            webViewController = controller;
-            _loadHtmlFromAssets();
-          },
-        ),
-      ),
+    return const LegalDocumentPage(
+      title: '用户使用协议',
+      iosAssetPath: 'assets/protocol.html',
+      androidAssetPath: 'assets/protocol_android.html',
     );
-  }
-
-  _loadHtmlFromAssets() async {
-    String assetPath = PlatformUtils.isAndroid ? 'assets/protocol_android.html' : 'assets/protocol.html';
-    String fileText = await rootBundle.loadString(assetPath);
-    fileText = fileText.replaceAll('泡泡单词', Global.appName);
-    webViewController!.loadData(data: fileText, mimeType: 'text/html', encoding: 'utf-8');
   }
 }

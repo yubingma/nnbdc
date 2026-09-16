@@ -2639,17 +2639,26 @@ class BdcNotifier extends _$BdcNotifier {
     
     debugPrint('🕵️ [AudioDiag] playWordAndFirstSentence.enter | forcePlayWord=$forcePlayWord startAsrWhenFinish=$startAsrWhenFinish word=${state.word?.spell}');
 
-    // 强制播放标志优先级最高，不受模式限制。自动播放则依然仅限英中模式。
+    // 强制播放标志优先级最高，不受模式限制。自动播放受各模式与学习设置控制：
+    // - 单词英中模式 (En2Ch)：受 autoPlayWord 与 autoPlaySentence 联动控制
+    // - 例句英中模式 (EnSentence2Ch)：题干为英文例句，受 autoPlaySentence 控制自动播放例句发音
     bool willPlayWord = forcePlayWord || (state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlayWord);
-    bool willPlaySentence = forcePlaySentence || (state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlaySentence);
+    bool willPlaySentence = forcePlaySentence ||
+        ((state.studyStep == StudyStep.en2Ch.json ||
+          state.studyStep == StudyStep.enSentence2Ch.json) &&
+         studyConfig.autoPlaySentence);
 
     debugPrint('🕵️ [AudioDiag] playWordAndFirstSentence.decision | willPlayWord=$willPlayWord willPlaySentence=$willPlaySentence step=${state.studyStep}');
 
     if (willPlayWord || willPlaySentence) {
       if (state.word != null) {
+        final sentenceDigest = state.englishDigestOfFirstSentence ??
+            ((state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+                ? state.word!.sentences!.first.englishDigest
+                : null);
         await StudyAudioSessionController.instance.playWordAndSentence(
           state.word!,
-          sentenceDigest: state.englishDigestOfFirstSentence,
+          sentenceDigest: sentenceDigest,
           playWord: willPlayWord,
           playSentence: willPlaySentence,
           isSpeakMode: startAsrWhenFinish && _shouldShowSpeakTab && state.tabIndex == 0,

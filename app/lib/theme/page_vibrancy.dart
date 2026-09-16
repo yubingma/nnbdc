@@ -94,6 +94,9 @@ class PageVibrancyConfig {
 class PageVibrancy {
   PageVibrancy._();
 
+  /// 通用基准档
+  static const PageVibrancyConfig base = PageVibrancyConfig.base;
+
   /// 启动/欢迎页（浅色模式下整页明亮、透出主题色氛围）
   static const PageVibrancyConfig splash = PageVibrancyConfig(vibrancy: 3);
 
