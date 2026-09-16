@@ -228,19 +228,9 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                     ? const Color(0xD9162522)
                     : const Color(0xD9FFFFFF),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                border: Border(
-                  top: BorderSide(
-                    color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
-                    width: 1.2,
-                  ),
-                  left: BorderSide(
-                    color: isDarkMode ? const Color(0x1FFFFFFF) : const Color(0x4DFFFFFF),
-                    width: 0.8,
-                  ),
-                  right: BorderSide(
-                    color: isDarkMode ? const Color(0x1FFFFFFF) : const Color(0x4DFFFFFF),
-                    width: 0.8,
-                  ),
+                border: Border.all(
+                  color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                  width: 1.0,
                 ),
                 boxShadow: [
                   BoxShadow(

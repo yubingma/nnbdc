@@ -23,6 +23,7 @@ import 'package:nnbdc/page/level_path_page.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/page/review_distribution.dart';
 import 'package:nnbdc/page/badge/badge_wall_page.dart';
+import 'package:nnbdc/widget/badge_svg_assets.dart';
 
 
 import 'package:nnbdc/services/sync_log_service.dart';
@@ -95,6 +96,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
   UserVo? loggedInUser;
   PromoActivityVo? _activePromo;
+  List<UserBadge> _equippedBadges = [];
+  int _unlockedBadgeCount = 0;
   final bool _isSyncing = false;
   late Function(String event, List args) _socketEventListener;
   StreamSubscription<List<PurchaseDetails>>? _subscriptionStreamSubscription;
@@ -401,6 +404,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
       UserVo? loggedInUserVal;
       List<String>? last30DaysDakaStatusVal;
       StudyProgress? studyProgressVal;
+      List<UserBadge> equippedBadgesVal = [];
+      int unlockedBadgeCountVal = 0;
 
       if (Global.isGuest) {
         final user = Global.getLoggedInUser();
@@ -502,6 +507,17 @@ class MePageState extends State<MePage> implements RefreshableTab {
           totalLearningSeconds: user.totalLearningSeconds ?? 0,
           todayLearningSeconds: user.todayLearningSeconds ?? 0,
         );
+
+        // 6. 加载已佩戴勋章及已解锁勋章总数
+        try {
+          final allBadges = await db.userBadgesDao.getBadgesByUserId(userId);
+          final equipped = allBadges.where((b) => b.isEquipped == true).toList()
+            ..sort((a, b) => b.updateTime.compareTo(a.updateTime));
+          equippedBadgesVal = equipped;
+          unlockedBadgeCountVal = allBadges.length;
+        } catch (e) {
+          Global.logger.w("MePage: 加载佩戴勋章失败: $e");
+        }
       }
 
       var result2 = await UserBo().getDayStatuses(30);
@@ -522,6 +538,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
           }
           studyProgress = studyProgressVal;
           last30DaysDakaStatus = last30DaysDakaStatusVal;
+          _equippedBadges = equippedBadgesVal;
+          _unlockedBadgeCount = unlockedBadgeCountVal;
           _isDirty = false;
         });
       }
@@ -1197,6 +1215,29 @@ class MePageState extends State<MePage> implements RefreshableTab {
                               const SizedBox(width: 4),
                               const Icon(Icons.verified, color: Color(0xFF2196F3), size: 16),
                             ],
+                            if (_equippedBadges.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () async {
+                                  await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const BadgeWallPage()));
+                                  loadData();
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: _equippedBadges.take(3).map((ub) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 3),
+                                      child: BadgeSvgAssets.renderBadge(
+                                        code: ub.badgeCode,
+                                        size: 18,
+                                        isUnlocked: true,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ],
                             const Spacer(),
                             // 右上角等级标签（纯净轻量行内展示）
                             GestureDetector(
@@ -1263,12 +1304,22 @@ class MePageState extends State<MePage> implements RefreshableTab {
                   Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const BadgeWallPage())),
+                      onTap: () async {
+                        await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const BadgeWallPage()));
+                        loadData();
+                      },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                         child: Row(
                           children: [
-                            Icon(Icons.emoji_events_rounded, color: const Color(0xFFF59E0B), size: 22),
+                            if (_equippedBadges.isNotEmpty)
+                              BadgeSvgAssets.renderBadge(
+                                code: _equippedBadges.first.badgeCode,
+                                size: 24,
+                                isUnlocked: true,
+                              )
+                            else
+                              const Icon(Icons.emoji_events_rounded, color: Color(0xFFF59E0B), size: 22),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -1287,7 +1338,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '点亮成就图鉴',
+                                    _unlockedBadgeCount > 0
+                                        ? '已点亮 $_unlockedBadgeCount 枚勋章'
+                                        : '点亮成就图鉴',
                                     style: TextStyle(
                                       color: subtitleColor,
                                       fontSize: 11,
@@ -1299,6 +1352,23 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                 ],
                               ),
                             ),
+                            if (_equippedBadges.length > 1)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: _equippedBadges.skip(1).take(2).map((ub) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(left: 2),
+                                      child: BadgeSvgAssets.renderBadge(
+                                        code: ub.badgeCode,
+                                        size: 15,
+                                        isUnlocked: true,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
                             Icon(Icons.arrow_forward_ios_rounded, size: 10, color: subtitleColor.withValues(alpha: 0.35)),
                           ],
                         ),
