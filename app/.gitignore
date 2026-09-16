@@ -56,3 +56,10 @@ app.*.map.json
 
 # 忽略本地测试或桌面端运行产生的图片缓存数据库
 /libCachedImageData*
+
+# 忽略本地开发与测试在根目录下生成的临时 SQLite 数据库
+/db.sqlite*
+*.sqlite-shm
+*.sqlite-wal
+!/assets/db/**
+
