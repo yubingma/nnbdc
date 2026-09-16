@@ -1,5 +1,7 @@
 package beidanci.service.bo;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -1206,20 +1208,7 @@ public class UserBo extends BaseBo<User> {
     @Transactional
     public User findOrCreateUserByWechat(WechatBo.WechatUserInfo wechatUserInfo) {
         try {
-            // 1. 优先根据 unionId 查找用户 (如果微信返回了 unionId)
-            List<User> users = new ArrayList<>();
-            if (wechatUserInfo.unionId != null && !wechatUserInfo.unionId.isEmpty()) {
-                String sql = "SELECT * FROM \"user\" WHERE wechat_union_id = :unionId";
-                MapSqlParameterSource params = new MapSqlParameterSource("unionId", wechatUserInfo.unionId);
-                users = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(User.class));
-            }
-
-            // 1.5 降级：如果根据 unionId 没找到，尝试根据 openId 查找（兼容历史没有保存 unionId 的老数据）
-            if (users.isEmpty() && wechatUserInfo.openId != null && !wechatUserInfo.openId.isEmpty()) {
-                String sql = "SELECT * FROM \"user\" WHERE wechat_open_id = :openId";
-                MapSqlParameterSource params = new MapSqlParameterSource("openId", wechatUserInfo.openId);
-                users = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(User.class));
-            }
+            List<User> users = findUsersByWechat(wechatUserInfo.openId, wechatUserInfo.unionId);
 
             if (!users.isEmpty()) {
                 // 用户已存在，更新微信信息（昵称、头像和可能补充上的 unionId）
@@ -1261,6 +1250,129 @@ public class UserBo extends BaseBo<User> {
                     wechatUserInfo.openId, wechatUserInfo.nickname, e);
             // 重新抛出异常，让调用者知道操作失败
             throw new RuntimeException("查找或创建微信用户失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 按微信标识查找用户：优先 unionId（跨应用一致），找不到再降级用 openId（兼容历史没有保存 unionId 的老数据）。
+     */
+    private List<User> findUsersByWechat(String openId, String unionId) {
+        if (unionId != null && !unionId.isEmpty()) {
+            List<User> users = namedParameterJdbcTemplate.query("SELECT * FROM \"user\" WHERE wechat_union_id = :unionId",
+                    new MapSqlParameterSource("unionId", unionId), new EntityRowMapper<>(User.class));
+            if (!users.isEmpty()) {
+                return users;
+            }
+        }
+
+        if (openId != null && !openId.isEmpty()) {
+            return namedParameterJdbcTemplate.query("SELECT * FROM \"user\" WHERE wechat_open_id = :openId",
+                    new MapSqlParameterSource("openId", openId), new EntityRowMapper<>(User.class));
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
+     * 清理某个微信用户在本站的微信授权信息（微信昵称、微信头像）。
+     *
+     * 依据：用户撤回授权后，微信要求开发者主动删除用户信息（《个人信息保护法》第 15 条）。
+     * openid/unionid 作为账号标识符保留 —— 其处理必要性来自"提供登录服务所必需"（同法第 13 条第 2 项），
+     * 不是来自被撤回的授权；一并清空会让该用户再也无法微信登录，还会被当成新用户重建账号。
+     *
+     * 只清理来源于微信的资料，不碰用户自己设置的数据，见 {@link #clearWechatProfileOf(User)}。
+     *
+     * @return 实际被清理的用户数
+     */
+    @Transactional
+    public int clearWechatProfile(String openId, String unionId) {
+        List<User> matched = findUsersByWechat(openId, unionId);
+        if (matched.isEmpty()) {
+            logger.info("清理微信授权信息：未找到对应用户，openId={}, unionId={}", openId, unionId);
+            return 0;
+        }
+
+        int cleared = 0;
+        for (User matchedUser : matched) {
+            String userId = matchedUser.getId();
+
+            // 与客户端同步路径保持同一加锁顺序(user_db_version -> user)，避免死锁
+            userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, userId);
+            userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
+
+            User user = findById(userId);
+            if (user == null || !clearWechatProfileOf(user)) {
+                continue;
+            }
+
+            try {
+                updateEntity(user);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("清理微信授权信息失败: userId=" + userId, e);
+            }
+
+            // 服务端主动修改 user 后必须写同步日志，否则客户端会一直展示清空前的昵称/头像
+            logUserUpdateForSync(user);
+
+            cleared++;
+            logger.info("已清理微信授权信息: userId={}, userName={}, wechatAvatar={}", userId, user.getUserName(),
+                    user.getWechatAvatar());
+        }
+        return cleared;
+    }
+
+    /**
+     * 清空用户身上来源于微信的资料（昵称、头像），返回是否发生了变更；落库与同步由调用方负责。
+     *
+     * - wechat_nickname：微信昵称副本，一律清空；
+     * - nick_name：展示昵称，注册时由微信昵称写入，但用户也可以自己改，因此仅在仍等于微信昵称时清空；
+     * - wechat_avatar：微信头像地址，但该字段同时被用作"用户自设头像"，因此仅在仍指向微信 CDN 时清空。
+     */
+    static boolean clearWechatProfileOf(User user) {
+        boolean changed = false;
+
+        if (isNickNameCopiedFromWechat(user.getNickName(), user.getWechatNickname())) {
+            user.setNickName(null);
+            changed = true;
+        }
+        if (!Util.isStringEmpty(user.getWechatNickname())) {
+            user.setWechatNickname(null);
+            changed = true;
+        }
+        if (isWechatAvatarUrl(user.getWechatAvatar())) {
+            user.setWechatAvatar(null);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    /**
+     * 判断展示昵称是否仍是微信昵称的副本。
+     */
+    private static boolean isNickNameCopiedFromWechat(String nickName, String wechatNickname) {
+        if (Util.isStringEmpty(nickName) || Util.isStringEmpty(wechatNickname)) {
+            return false;
+        }
+        // 注册写入 nick_name 时做过 emoji 过滤，所以原始形态与过滤后的形态都要认
+        return wechatNickname.equals(nickName) || EmojiFilter.filterEmoji(wechatNickname).equals(nickName);
+    }
+
+    /**
+     * 判断头像地址是否指向微信 CDN。
+     *
+     * 微信登录下发的头像只会来自 qlogo.cn，用户自己设置的头像不会是这个域名，
+     * 因此域名是区分"微信来源"与"用户自设"的唯一可靠依据（wechat_avatar 字段同时承担两种用途）。
+     */
+    static boolean isWechatAvatarUrl(String avatarUrl) {
+        if (Util.isStringEmpty(avatarUrl)) {
+            return false;
+        }
+        try {
+            String host = new URI(avatarUrl).getHost();
+            return host != null && (host.equals("qlogo.cn") || host.endsWith(".qlogo.cn"));
+        } catch (URISyntaxException e) {
+            return false;
         }
     }
 

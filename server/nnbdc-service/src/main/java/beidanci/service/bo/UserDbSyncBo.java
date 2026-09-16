@@ -654,7 +654,10 @@ public class UserDbSyncBo {
                 userFromClient.setWechatNickname(user.getWechatNickname());
                 // 头像允许由客户端同步（仅当客户端提供了非空值，例如手动设置头像场景），
                 // 否则回填服务端的值防止老客户端误将字段写空。
-                if (userDto.getWechatAvatar() == null || userDto.getWechatAvatar().isEmpty()) {
+                // 但微信 CDN 头像只可能来自服务端微信登录：客户端上报微信 CDN 地址一律忽略，
+                // 否则用户撤回授权、服务端清空头像后，本地还留着旧值的设备会把微信头像写回来。
+                if (userDto.getWechatAvatar() == null || userDto.getWechatAvatar().isEmpty()
+                        || UserBo.isWechatAvatarUrl(userDto.getWechatAvatar())) {
                     userFromClient.setWechatAvatar(user.getWechatAvatar());
                 }
                 userFromClient.setAppleUserId(user.getAppleUserId());

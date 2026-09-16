@@ -21,15 +21,25 @@ import beidanci.service.po.WechatAuthEvent;
 import beidanci.service.util.WechatPushCrypto;
 
 /**
- * 微信开放平台「消息推送」业务逻辑: 接收「授权用户信息变更」事件（用户撤回授权 / 资料变更 / 完成注销）并落库。
+ * 微信开放平台「消息推送」业务逻辑: 接收「授权用户信息变更」事件（用户撤回授权 / 资料变更 / 完成注销）并落库，
+ * 再按事件类型执行对应的合规动作。
  *
- * 本类只负责把事件如实记录下来，不做任何用户数据清理 —— 清理规则（清昵称头像还是整个账号）尚未确定。
+ * 处理规则：清空微信来源的昵称与头像、保留 openid/unionid（见 {@link UserBo#clearWechatProfile}）。
  */
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class WechatPushBo extends BaseBo<WechatAuthEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(WechatPushBo.class);
+
+    /** 事件类型：用户撤回授权 */
+    private static final String EVENT_REVOKE = "user_authorization_revoke";
+
+    /** 事件类型：用户资料变更（微信侧清理了风险资料） */
+    private static final String EVENT_INFO_MODIFIED = "user_info_modified";
+
+    /** 事件类型：用户完成注销 */
+    private static final String EVENT_CANCELLATION = "user_authorization_cancellation";
 
     @Value("${wechat_app_id:wx42e6014d1927e5f0}")
     private String appId;
@@ -44,6 +54,9 @@ public class WechatPushBo extends BaseBo<WechatAuthEvent> {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserBo userBo;
 
     @PostConstruct
     public void init() {
@@ -83,6 +96,28 @@ public class WechatPushBo extends BaseBo<WechatAuthEvent> {
         } catch (DuplicateKeyException e) {
             logger.info("微信授权变更事件重复投递，已忽略: event={}, openId={}, eventTime={}", event.getEvent(),
                     event.getOpenId(), event.getEventTime());
+        }
+
+        applyEvent(event);
+    }
+
+    /**
+     * 事件落库后执行对应的合规动作。
+     *
+     * 撤回授权与资料变更都只清空微信来源的昵称/头像、保留 openid/unionid（理由见 UserBo.clearWechatProfile）；
+     * 用户完成注销涉及账号本身的删除，规则未定，因此只告警要求人工处理。
+     */
+    void applyEvent(WechatAuthEvent event) {
+        switch (event.getEvent()) {
+            case EVENT_REVOKE, EVENT_INFO_MODIFIED -> {
+                int cleared = userBo.clearWechatProfile(event.getOpenId(), event.getUnionId());
+                logger.info("微信授权变更事件已处理: event={}, openId={}, 清理用户数={}", event.getEvent(),
+                        event.getOpenId(), cleared);
+            }
+            case EVENT_CANCELLATION -> logger.warn("收到用户注销事件，账号数据如何处理需人工确认: openId={}, unionId={}, eventTime={}",
+                    event.getOpenId(), event.getUnionId(), event.getEventTime());
+            default -> logger.warn("收到未知的微信推送事件类型: event={}, openId={}", event.getEvent(),
+                    event.getOpenId());
         }
     }
 

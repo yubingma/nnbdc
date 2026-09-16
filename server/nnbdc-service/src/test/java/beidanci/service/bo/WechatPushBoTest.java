@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,5 +59,41 @@ public class WechatPushBoTest {
                 () -> WechatPushBo.parseEvent(objectMapper,
                         "{\"Event\":\"user_authorization_revoke\",\"AppID\":\"wx42e6014d1927e5f0\"}"));
         assertThrows(IllegalArgumentException.class, () -> WechatPushBo.parseEvent(objectMapper, "not a json"));
+    }
+
+    @Test
+    public void testApplyEventClearsProfileOnlyForRevokeAndInfoModified() throws Exception {
+        List<String> clearedOpenIds = new ArrayList<>();
+        WechatPushBo wechatPushBo = new WechatPushBo();
+
+        UserBo stubUserBo = new UserBo() {
+            @Override
+            public int clearWechatProfile(String openId, String unionId) {
+                clearedOpenIds.add(openId);
+                return 1;
+            }
+        };
+        Field userBoField = WechatPushBo.class.getDeclaredField("userBo");
+        userBoField.setAccessible(true);
+        userBoField.set(wechatPushBo, stubUserBo);
+
+        wechatPushBo.applyEvent(event("user_authorization_revoke", "openid-revoke"));
+        wechatPushBo.applyEvent(event("user_info_modified", "openid-modified"));
+        assertEquals(List.of("openid-revoke", "openid-modified"), clearedOpenIds);
+
+        // 用户完成注销涉及账号本身的删除，规则未定，不能自动清理
+        wechatPushBo.applyEvent(event("user_authorization_cancellation", "openid-cancel"));
+        // 未知事件类型也不清理
+        wechatPushBo.applyEvent(event("debug_demo", "openid-unknown"));
+        assertEquals(2, clearedOpenIds.size());
+    }
+
+    private static WechatAuthEvent event(String event, String openId) {
+        WechatAuthEvent result = new WechatAuthEvent();
+        result.setEvent(event);
+        result.setOpenId(openId);
+        result.setAppId("wx42e6014d1927e5f0");
+        result.setEventTime(new Date(1789446945L * 1000L));
+        return result;
     }
 }
