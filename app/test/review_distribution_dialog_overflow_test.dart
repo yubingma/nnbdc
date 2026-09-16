@@ -63,10 +63,13 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // 点击 AppBar 上的问号按钮打开说明弹窗
-    final helpButton = find.byIcon(Icons.help_outline_rounded);
-    expect(helpButton, findsOneWidget);
-    await tester.tap(helpButton);
+    // 验证 AppBar 上已无冗余的问号图标
+    expect(find.byIcon(Icons.help_outline_rounded), findsNothing);
+
+    // 点击卡片上的「图表说明」打开说明弹窗
+    final explainButton = find.text('图表说明');
+    expect(explainButton, findsOneWidget);
+    await tester.tap(explainButton);
     await tester.pumpAndSettle();
 
     // 验证没有发生 RenderFlex 溢出

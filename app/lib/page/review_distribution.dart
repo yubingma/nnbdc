@@ -193,7 +193,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
           if (!_isLoading)
             Center(
               child: Container(
-                margin: const EdgeInsets.only(right: 6),
+                margin: const EdgeInsets.only(right: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: subtleBg,
@@ -210,11 +210,6 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                 ),
               ),
             ),
-          IconButton(
-            icon: Icon(Icons.help_outline_rounded, color: subtitleColor, size: 22),
-            onPressed: () => _showExplainDialog(context),
-          ),
-          const SizedBox(width: 8),
         ],
       ),
       body: _isLoading
