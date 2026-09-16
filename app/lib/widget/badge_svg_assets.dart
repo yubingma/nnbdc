@@ -7,10 +7,10 @@ class BadgeSvgAssets {
   /// 当前不参与判定也不在勋章墙展示, 将来功能上线后置回 true 即可。
   static const List<Map<String, dynamic>> allBadgeDefinitions = [
     // 1. 恒心打卡
-    {'code': 'STREAK_3', 'name': '萌芽初醒', 'category': 'HABIT', 'tier': 'BRONZE', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 3, 'rewardBubbles': 50, 'description': '千里之行始于足下，连续背单词 3 天'},
-    {'code': 'STREAK_21', 'name': '习惯微光', 'category': 'HABIT', 'tier': 'SILVER', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 21, 'rewardBubbles': 150, 'description': '21天习惯养成，让自律成为你的第二天性'},
-    {'code': 'STREAK_100', 'name': '百日筑基', 'category': 'HABIT', 'tier': 'GOLD', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 100, 'rewardBubbles': 500, 'description': '风雨无阻连续打卡100天，意志如磐石'},
-    {'code': 'STREAK_365', 'name': '星火长明', 'category': 'HABIT', 'tier': 'LEGENDARY', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 365, 'rewardBubbles': 2000, 'description': '整整一年的坚持，足以重塑一个人的人生'},
+    {'code': 'STREAK_3', 'name': '萌芽初醒', 'category': 'HABIT', 'tier': 'BRONZE', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 3, 'rewardBubbles': 50, 'description': '连续打卡满 3 天，千里之行始于足下'},
+    {'code': 'STREAK_21', 'name': '习惯微光', 'category': 'HABIT', 'tier': 'SILVER', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 21, 'rewardBubbles': 150, 'description': '连续打卡满 21 天，让自律成为你的第二天性'},
+    {'code': 'STREAK_100', 'name': '百日筑基', 'category': 'HABIT', 'tier': 'GOLD', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 100, 'rewardBubbles': 500, 'description': '风雨无阻连续打卡满 100 天，意志如磐石'},
+    {'code': 'STREAK_365', 'name': '星火长明', 'category': 'HABIT', 'tier': 'LEGENDARY', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 365, 'rewardBubbles': 2000, 'description': '连续打卡满 365 天，整整一年的坚持重塑人生'},
 
     // 2. 博学词汇
     {'code': 'VOCAB_100', 'name': '破冰启航', 'category': 'VOCAB', 'tier': 'BRONZE', 'isStackable': false, 'conditionType': 'MASTERED_WORDS', 'targetValue': 100, 'rewardBubbles': 60, 'description': '成功掌握前 100 个词，跨过背词起跑线'},
