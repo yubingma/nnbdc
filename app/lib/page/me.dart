@@ -1312,14 +1312,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                         child: Row(
                           children: [
-                            if (_equippedBadges.isNotEmpty)
-                              BadgeSvgAssets.renderBadge(
-                                code: _equippedBadges.first.badgeCode,
-                                size: 24,
-                                isUnlocked: true,
-                              )
-                            else
-                              const Icon(Icons.emoji_events_rounded, color: Color(0xFFF59E0B), size: 22),
+                            Icon(Icons.emoji_events_rounded, color: const Color(0xFFF59E0B), size: 22),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -1352,23 +1345,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                 ],
                               ),
                             ),
-                            if (_equippedBadges.length > 1)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: _equippedBadges.skip(1).take(2).map((ub) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(left: 2),
-                                      child: BadgeSvgAssets.renderBadge(
-                                        code: ub.badgeCode,
-                                        size: 15,
-                                        isUnlocked: true,
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
                             Icon(Icons.arrow_forward_ios_rounded, size: 10, color: subtitleColor.withValues(alpha: 0.35)),
                           ],
                         ),
