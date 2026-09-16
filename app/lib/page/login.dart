@@ -392,38 +392,44 @@ class LoginPageState extends State<LoginPage>
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           color: Colors.transparent,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            alignment: WrapAlignment.center,
                             children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                width: 18,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _approved ? accentColor : Colors.transparent,
-                                  border: Border.all(
-                                    color: _approved
-                                        ? accentColor
-                                        : (isDarkMode ? Colors.white38 : const Color(0xFFCBD5E1)),
-                                    width: 1.5,
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _approved ? accentColor : Colors.transparent,
+                                      border: Border.all(
+                                        color: _approved
+                                            ? accentColor
+                                            : (isDarkMode ? Colors.white38 : const Color(0xFFCBD5E1)),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: _approved
+                                        ? const Center(
+                                            child: Icon(Icons.check, color: Colors.white, size: 11),
+                                          )
+                                        : null,
                                   ),
-                                ),
-                                child: _approved
-                                    ? const Center(
-                                        child: Icon(Icons.check, color: Colors.white, size: 11),
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '已阅读并同意 ',
-                                style: TextStyle(
-                                  color: textMutedColor,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.normal,
-                                  fontFamily: 'NotoSansSC',
-                                ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '已阅读并同意 ',
+                                    style: TextStyle(
+                                      color: textMutedColor,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.normal,
+                                      fontFamily: 'NotoSansSC',
+                                    ),
+                                  ),
+                                ],
                               ),
                               _buildLink('《用户协议》', showProtocolPage, textMainColor),
                               Text(
