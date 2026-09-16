@@ -421,7 +421,7 @@ class LoginPageState extends State<LoginPage>
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    '已阅读并同意 ',
+                                    '同意 ',
                                     style: TextStyle(
                                       color: textMutedColor,
                                       fontSize: 11.5,

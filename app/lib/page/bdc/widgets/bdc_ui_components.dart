@@ -1302,7 +1302,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                       playMasteredFlyAnimation(spell);
                       notifier.updateHasFinishedAnswering(true);
                       notifier.updateIsWordMastered(true);
-                      ToastUtil.info("不再学习 $spell");
                       notifier.getNextWord(true);
                     },
                   ),
