@@ -329,7 +329,7 @@ echo "证书续期完成（服务未中断）: $(date)"
 
 #### 证书使用说明
 
-虽然 `setup-https.sh` 脚本会为主域名（nnbdc.com, www.nnbdc.com）和后端域名（back.nnbdc.com）同时申请证书，但在实际部署中：
+虽然证书会为主域名（nnbdc.com, www.nnbdc.com）和后端域名（back.nnbdc.com）同时申请，但在实际部署中：
 
 - ✅ **back.nnbdc.com 证书正在使用** - 用于微信登录回调等需要 HTTPS 的场景
 - ✅ **主域名证书正在使用** - www.nnbdc.com 已在 CDN 侧启用 HTTPS（证书 SAN 覆盖 www）
@@ -541,12 +541,12 @@ docker exec nginx nginx -s reload
   - ✅ HSTS 安全头（includeSubDomains）
   
 - Nginx 前端配置: `/devops/nginx/conf.d/default.conf`
-  - ✅ `/back/` 代理到后端服务（利用 CDN 加速共享资源）
+  - ✅ 仅 `/back/res/getSysDictResById.do` 代理到后端（利用 CDN 加速系统词书资源，并剥离 Cookie 便于缓存）
   - ✅ 静态资源缓存配置
   - ✅ CORS 跨域配置
   
-- HTTPS 设置脚本: `/devops/nginx/setup-https.sh`
 - 续签脚本: `/devops/renew-cert.sh`（零停机方案，适配 Docker）
+- 首次申请 HTTPS 的 `/devops/nginx/setup-https.sh` 已删除（前端 HTTPS 由 CDN 承担、源站只有 80，续期统一走 renew-cert.sh）
 - Systemd 服务: `/devops/nginx/docker.nginx.service`
 - 前端配置: `/app/lib/config.dart`
 
@@ -598,7 +598,7 @@ add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" alway
 ## 注意事项
 
 1. 🔐 **证书申请 vs 证书使用**: 
-   - `setup-https.sh` 会为 nnbdc.com, www.nnbdc.com 和 back.nnbdc.com 三个域名申请证书
+   - 证书会为 nnbdc.com, www.nnbdc.com 和 back.nnbdc.com 三个域名一起申请
    - **back.nnbdc.com** 证书用于后端 HTTPS
    - **nnbdc.com / www.nnbdc.com** 证书用于 CDN 侧前端 HTTPS（SAN 覆盖 www）
    

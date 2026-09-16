@@ -1,5 +1,6 @@
 package beidanci.service.bo;
 
+import java.sql.Timestamp;
 import java.util.Date;
 
 import javax.annotation.PostConstruct;
@@ -9,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,6 +59,9 @@ public class WechatPushBo extends BaseBo<WechatAuthEvent> {
     private ObjectMapper objectMapper;
 
     @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
     private UserBo userBo;
 
     @PostConstruct
@@ -72,7 +78,7 @@ public class WechatPushBo extends BaseBo<WechatAuthEvent> {
     }
 
     /**
-     * 处理一次事件推送: 验签、解密、落库。重复投递的事件会被忽略。
+     * 处理一次事件推送: 验签、解密，然后落库。
      *
      * @throws InvalidSignatureException msg_signature 校验失败，请求并非来自微信（或 Token 配置与后台不一致）
      */
@@ -87,18 +93,53 @@ public class WechatPushBo extends BaseBo<WechatAuthEvent> {
             throw new InvalidSignatureException("msg_signature 校验失败");
         }
 
-        WechatAuthEvent event = parseEvent(objectMapper, WechatPushCrypto.decrypt(encodingAesKey, encrypt, appId));
-        try {
-            createEntity(event);
-            logger.info("收到微信授权变更事件: event={}, openId={}, unionId={}, revokeInfo={}, eventTime={}",
-                    event.getEvent(), event.getOpenId(), event.getUnionId(), event.getRevokeInfo(),
-                    event.getEventTime());
-        } catch (DuplicateKeyException e) {
+        recordEvent(WechatPushCrypto.decrypt(encodingAesKey, encrypt, appId));
+    }
+
+    /**
+     * 处理解密后的事件明文: 查重、落库、执行合规动作。重复投递的事件直接忽略。
+     */
+    void recordEvent(String payload) {
+        WechatAuthEvent event = parseEvent(objectMapper, payload);
+
+        if (isAlreadyRecorded(event)) {
             logger.info("微信授权变更事件重复投递，已忽略: event={}, openId={}, eventTime={}", event.getEvent(),
                     event.getOpenId(), event.getEventTime());
+            return;
         }
 
+        try {
+            createEntity(event);
+        } catch (DuplicateKeyException e) {
+            // 并发重复投递(两个请求同时通过了上面的查重)。PostgreSQL 里唯一键冲突会把整个事务标记为 aborted，
+            // 之后连 SELECT 都会失败(25P02)，因此这里必须抛出、让事务回滚；微信重试时会命中查重分支。
+            throw new IllegalStateException("并发重复投递的微信授权变更事件: openId=" + event.getOpenId(), e);
+        }
+
+        logger.info("收到微信授权变更事件: event={}, openId={}, unionId={}, revokeInfo={}, eventTime={}",
+                event.getEvent(), event.getOpenId(), event.getUnionId(), event.getRevokeInfo(), event.getEventTime());
+
         applyEvent(event);
+    }
+
+    /**
+     * 事件是否已经记录过（按微信侧的事件自然键判断）。
+     *
+     * 先查后插，而不是"插入失败再捕获唯一键冲突"：PostgreSQL 中语句一旦失败，整个事务就进入 aborted 状态，
+     * 后续任何语句（包括清理用的 SELECT）都会报 25P02，捕获异常无法恢复。
+     */
+    boolean isAlreadyRecorded(WechatAuthEvent event) {
+        String sql = "SELECT count(*) FROM wechat_auth_event WHERE app_id = :appId AND event = :event"
+                + " AND open_id IS NOT DISTINCT FROM :openId AND revoke_info IS NOT DISTINCT FROM :revokeInfo"
+                + " AND event_time = :eventTime";
+        MapSqlParameterSource params = new MapSqlParameterSource("appId", event.getAppId())
+                .addValue("event", event.getEvent())
+                .addValue("openId", event.getOpenId())
+                .addValue("revokeInfo", event.getRevokeInfo())
+                .addValue("eventTime", new Timestamp(event.getEventTime().getTime()));
+
+        Integer count = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
+        return count != null && count > 0;
     }
 
     /**
