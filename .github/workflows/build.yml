@@ -108,40 +108,6 @@ jobs:
             echo "✅ min_ver_code 校验通过: $MIN_VER_CODE"
           fi
 
-  # 业务日期逻辑对时区与夏令时高度敏感，而 Dart 无法在运行时切换时区，
-  # 因此必须在真实的夏令时时区（America/New_York）下把核心用例再跑一遍。
-  # 这些用例在无夏令时的 Asia/Shanghai 下必然全绿，却能捕获"按绝对时长回拨 3 小时"这类错误。
-  business-date-timezone-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          fetch-depth: 1
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2.18.0
-        with:
-          flutter-version: "3.38.5"
-
-      - name: Flutter Pub Get
-        run: |
-          cd app
-          flutter pub get
-
-      - name: Business Date Tests (TZ=America/New_York)
-        run: |
-          cd app
-          TZ=America/New_York flutter test \
-            test/business_day_test.dart \
-            test/daka_stats_test.dart \
-            test/badge_service_test.dart \
-            test/user_study_daily_stats_test.dart \
-            test/review_bucket_business_day_test.dart
-        shell: bash
-
   build:
     needs: validate-version
     timeout-minutes: 60
@@ -350,6 +316,22 @@ jobs:
         run: |
           cd app
           flutter test
+        shell: bash
+
+      # 业务日期逻辑对时区与夏令时高度敏感，而 Dart 无法在运行时切换时区，
+      # 必须在真实的夏令时时区（America/New_York）下把核心用例再跑一遍。
+      # 这些用例在无夏令时的 Asia/Shanghai 下必然全绿，却能捕获"按绝对时长回拨 3 小时"这类错误。
+      # 复用本 job 已完成的依赖安装与代码生成，因此不会与构建配置漂移；Windows 对 TZ 环境变量不可靠，只在 Linux 跑。
+      - name: Business Date Tests (TZ=America/New_York)
+        if: matrix.platform == 'linux'
+        run: |
+          cd app
+          TZ=America/New_York flutter test \
+            test/business_day_test.dart \
+            test/daka_stats_test.dart \
+            test/badge_service_test.dart \
+            test/user_study_daily_stats_test.dart \
+            test/review_bucket_business_day_test.dart
         shell: bash
 
       # 构建

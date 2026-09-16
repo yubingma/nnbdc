@@ -52,6 +52,9 @@ public class SentenceBo extends BaseBo<Sentence> {
     @Autowired
     private SysParamUtil sysParamUtil;
 
+    @Autowired
+    private AiBo aiBo;
+
     @PostConstruct
     public void init() {
         setDao(new BaseDao<Sentence>() {
@@ -369,5 +372,112 @@ public class SentenceBo extends BaseBo<Sentence> {
                 LoggerFactory.getLogger(SentenceBo.class).info("自动清除了不再被引用的例句发音文件: {}", soundFile.getAbsolutePath());
             }
         }
+    }
+
+    /**
+     * 调用大模型重新生成指定例句，保留并重用原例句 ID (原地 UPDATE)。
+     *
+     * @param sentenceId 例句主键 ID
+     * @param wordId 可选的单词 ID (若未关联释义项且未关联 word_sentence 时使用)
+     * @return 更新后的例句实体
+     */
+    public Sentence regenerateSentence(String sentenceId, String wordId) throws Exception {
+        Sentence sentence = findById(sentenceId);
+        Assert.notNull(sentence, "例句不存在: " + sentenceId);
+
+        String spell = null;
+        String ciXing = sentence.getPartOfSpeech();
+        String meaning = sentence.getWordMeaning();
+
+        // 1. 如果有关联释义项，尝试直接获取关联词和释义
+        if (sentence.getMeaningItem() != null && sentence.getMeaningItem().getId() != null) {
+            String sql = "SELECT mi.ci_xing, mi.meaning, w.spell FROM meaning_item mi " +
+                    "LEFT JOIN word w ON w.id = mi.word_id WHERE mi.id = :meaningItemId";
+            MapSqlParameterSource params = new MapSqlParameterSource("meaningItemId", sentence.getMeaningItem().getId());
+            List<Map<String, Object>> rows = namedParameterJdbcTemplate.queryForList(sql, params);
+            if (!rows.isEmpty()) {
+                Map<String, Object> row = rows.get(0);
+                spell = (String) row.get("spell");
+                if (ciXing == null || ciXing.isEmpty()) ciXing = (String) row.get("ci_xing");
+                if (meaning == null || meaning.isEmpty()) meaning = (String) row.get("meaning");
+            }
+        }
+
+        // 2. 如果未获取到单词拼写，从 word_sentence 关联表查找
+        if (spell == null) {
+            String targetWordId = wordId;
+            if (targetWordId == null || targetWordId.isEmpty()) {
+                String sql = "SELECT word_id FROM word_sentence WHERE sentence_id = :sentenceId LIMIT 1";
+                List<String> wordIds = namedParameterJdbcTemplate.queryForList(sql,
+                        new MapSqlParameterSource("sentenceId", sentenceId), String.class);
+                if (!wordIds.isEmpty()) {
+                    targetWordId = wordIds.get(0);
+                }
+            }
+            if (targetWordId != null && !targetWordId.isEmpty()) {
+                String sql = "SELECT spell FROM word WHERE id = :wordId";
+                List<String> spells = namedParameterJdbcTemplate.queryForList(sql,
+                        new MapSqlParameterSource("wordId", targetWordId), String.class);
+                if (!spells.isEmpty()) {
+                    spell = spells.get(0);
+                }
+            }
+        }
+
+        Assert.hasText(spell, "无法定位该例句对应的单词拼写");
+
+        // 3. 构建大模型 Prompt
+        String systemPrompt = "你是一个词典例句创作专家。请为指定的单词词义创作一个实用、自然的英文例句及中文翻译。\n"
+                + "要求：\n"
+                + "1. 例句要贴合指定的词义与词性，难度适中，长度在 8~20 个单词之间。\n"
+                + "2. 在英文例句和中文翻译中，对目标单词使用 <b>单词</b> 标签进行加粗高亮。\n"
+                + "3. 尽量避免与已有旧例句重复，提供新的例句语境。\n"
+                + "4. 严格按照以下 JSON 格式返回，不要有任何 Markdown 标注或多余说明文字：\n"
+                + "{\"sentenceEn\": \"We should <b>book</b> a table in advance.\", \"sentenceCn\": \"我们应该提前<b>预订</b>一张桌子。\"}";
+
+        Map<String, Object> userPromptMap = new LinkedHashMap<>();
+        userPromptMap.put("word", spell);
+        if (ciXing != null && !ciXing.isEmpty()) {
+            userPromptMap.put("ciXing", ciXing);
+        }
+        if (meaning != null && !meaning.isEmpty()) {
+            userPromptMap.put("meaning", meaning);
+        }
+        if (sentence.getEnglish() != null && !sentence.getEnglish().isEmpty()) {
+            userPromptMap.put("avoidOldSentence", sentence.getEnglish().replaceAll("<[^>]*>", ""));
+        }
+        String userPrompt = JsonUtils.toJson(userPromptMap);
+
+        String aiOutput = aiBo.generateText(systemPrompt, userPrompt);
+        if (aiOutput != null) {
+            aiOutput = aiOutput.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
+        }
+        Map<String, Object> aiRes = JsonUtils.parseMap(aiOutput);
+        if (aiRes == null || !aiRes.containsKey("sentenceEn") || !aiRes.containsKey("sentenceCn")) {
+            throw new RuntimeException("大模型例句生成失败或返回格式不正确: " + aiOutput);
+        }
+
+        String newEnglish = ((String) aiRes.get("sentenceEn")).trim();
+        String newChinese = ((String) aiRes.get("sentenceCn")).trim();
+
+        // 4. 记录旧音频文件摘要
+        String oldDigest = sentence.getEnglishDigest();
+
+        // 5. 原地更新例句实体（重用原 ID）
+        sentence.setEnglish(newEnglish);
+        sentence.setChinese(newChinese);
+        sentence.setEnglishDigest(Util.makeSentenceDigest(newEnglish));
+        sentence.setTheType(Sentence.WAITTING_TTS);
+        sentence.setNeedTts(true);
+        sentence.setLastDiyUpdateTime(new Date());
+        updateEntity(sentence);
+
+        // 6. 记录增量同步日志
+        sysDbLogBo.logOperation("UPDATE", "sentence", sentence.getId(), toJsonForLog(sentence));
+
+        // 7. 释放旧音频物理文件（若无其他例句共享）
+        safeDeleteSentenceAudio(sentence.getId(), oldDigest);
+
+        return sentence;
     }
 }

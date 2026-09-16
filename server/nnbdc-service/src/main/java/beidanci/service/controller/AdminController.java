@@ -488,6 +488,32 @@ public class AdminController {
         return res.isSuccess() ? Result.success("例句删除成功") : Result.fail(res.getMsg());
     }
 
+    @PostMapping("/admin/regenerateSentence.do")
+    public Result<SentenceVo> regenerateSentence(
+            @RequestParam("sentenceId") String sentenceId,
+            @RequestParam(value = "wordId", required = false) String wordId) {
+        try {
+            Sentence sentence = sentenceBo.regenerateSentence(sentenceId, wordId);
+            SentenceVo vo = new SentenceVo();
+            vo.setId(sentence.getId());
+            vo.setEnglish(sentence.getEnglish());
+            vo.setChinese(sentence.getChinese());
+            vo.setTheType(sentence.getTheType());
+            vo.setEnglishDigest(sentence.getEnglishDigest());
+            vo.setHandCount(sentence.getHandCount());
+            vo.setFootCount(sentence.getFootCount());
+            if (sentence.getAuthor() != null) {
+                UserVo author = new UserVo();
+                author.setId(sentence.getAuthor().getId());
+                vo.setAuthor(author);
+            }
+            return Result.success(vo);
+        } catch (Exception e) {
+            logger.error("重新生成例句失败: sentenceId=" + sentenceId, e);
+            return Result.fail("重新生成例句失败: " + e.getMessage());
+        }
+    }
+
     // ============================================
     // 系统参数管理API (管理员接口)
     // ============================================
