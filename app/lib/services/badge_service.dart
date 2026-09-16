@@ -265,7 +265,8 @@ class BadgeService {
     int best = 1;
     int current = 1;
     for (var i = 1; i < days.length; i++) {
-      current = days[i].difference(days[i - 1]).inDays == 1 ? current + 1 : 1;
+      final expectedNextDay = DateTime(days[i - 1].year, days[i - 1].month, days[i - 1].day + 1);
+      current = DateUtils.isSameBusinessDay(days[i], expectedNextDay) ? current + 1 : 1;
       if (current > best) best = current;
     }
     return best;
@@ -274,8 +275,9 @@ class BadgeService {
   /// 打卡时间落在破晓(6:00~7:30)或夜行(23:00~次日4:00)时段的次数
   static int _dakaCountInWindow(List<Daka> dakas, {required bool dawn}) {
     return dakas.where((daka) {
-      final hour = daka.createTime.hour;
-      final minute = daka.createTime.minute;
+      final local = daka.createTime.toLocal();
+      final hour = local.hour;
+      final minute = local.minute;
       return dawn ? (hour == 6 || (hour == 7 && minute <= 30)) : (hour >= 23 || hour < 4);
     }).length;
   }

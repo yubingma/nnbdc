@@ -6,6 +6,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/badge_service.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/date_utils.dart' as du;
 import 'package:nnbdc/util/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -525,6 +526,66 @@ void main() {
 
       expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'PERFECT_SCORE'), isNotNull);
       expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'NIGHT_LEARN'), isNotNull);
+    });
+  });
+
+  group('业务日期与真实物理打卡时间下的勋章结算', () {
+    test('夜猫子跨凌晨打卡既解锁夜行学者勋章，又按业务日期连续天数解锁萌芽初醒勋章', () async {
+      await createUser(streakDays: 0, maxStreakDays: 0);
+
+      // Day 1: 5月10日 22:00 打卡 (业务日: 5月10日)
+      final t1 = DateTime(2026, 5, 10, 22, 0, 0);
+      AppClock.setClock(FakeClock(t1));
+      await db.dakasDao.saveDaka(
+        Daka(
+          userId: userId,
+          forLearningDate: du.DateUtils.businessDate(t1),
+          textContent: '打卡1',
+          createTime: t1,
+          updateTime: t1,
+        ),
+        false,
+      );
+
+      // Day 2: 5月12日 01:30 (凌晨夜猫子打卡, 业务日归属 5月11日)
+      final t2 = DateTime(2026, 5, 12, 1, 30, 0);
+      AppClock.setClock(FakeClock(t2));
+      await db.dakasDao.saveDaka(
+        Daka(
+          userId: userId,
+          forLearningDate: du.DateUtils.businessDate(t2),
+          textContent: '打卡2',
+          createTime: t2,
+          updateTime: t2,
+        ),
+        false,
+      );
+
+      // Day 3: 5月12日 03:30 (过了凌晨3点, 业务日归属 5月12日)
+      final t3 = DateTime(2026, 5, 12, 3, 30, 0);
+      AppClock.setClock(FakeClock(t3));
+      await db.dakasDao.saveDaka(
+        Daka(
+          userId: userId,
+          forLearningDate: du.DateUtils.businessDate(t3),
+          textContent: '打卡3',
+          createTime: t3,
+          updateTime: t3,
+        ),
+        false,
+      );
+
+      // 执行事实源重放/勋章自愈
+      await BadgeService().rebuildBadgesFromFacts();
+
+      // 验证：
+      // 1. 连续 3 个业务日打卡(5月10日, 5月11日, 5月12日)，精准解锁连续 3 天勋章 STREAK_3
+      expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'STREAK_3'), isNotNull);
+
+      // 2. 在 01:30 和 03:30 打卡（落在 23:00~次日04:00 之间），精准解锁 NIGHT_LEARN
+      expect(await db.userBadgesDao.getBadgeByUserAndCode(userId, 'NIGHT_LEARN'), isNotNull);
+
+      AppClock.reset();
     });
   });
 }

@@ -376,16 +376,16 @@ class UserBo {
     int continuousDays = 0;
     DateTime checkDate = AppClock.today();
 
-    final hasDakaToday = records.any((r) => DateUtils.isSameDay(r.forLearningDate, checkDate));
+    final hasDakaToday = records.any((r) => DateUtils.isSameBusinessDay(r.forLearningDate, checkDate));
     if (!hasDakaToday) {
-      checkDate = checkDate.subtract(const Duration(days: 1));
+      checkDate = DateTime(checkDate.year, checkDate.month, checkDate.day - 1);
     }
 
     for (final record in records) {
       final recordDate = DateUtils.businessDate(record.forLearningDate);
-      if (recordDate.isAtSameMomentAs(checkDate)) {
+      if (DateUtils.isSameBusinessDay(recordDate, checkDate)) {
         continuousDays++;
-        checkDate = checkDate.subtract(const Duration(days: 1));
+        checkDate = DateTime(checkDate.year, checkDate.month, checkDate.day - 1);
       } else if (recordDate.isBefore(checkDate)) {
         break;
       }

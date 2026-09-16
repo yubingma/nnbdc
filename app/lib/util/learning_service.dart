@@ -330,7 +330,7 @@ class LearningService {
       final lastDate = DateUtils.businessDate(word.lastLearningDate!);
       final nextReviewDate = lastDate.add(Duration(days: word.scheduledDays ?? 0));
 
-      return nextReviewDate.isBefore(today) || DateUtils.isSameDay(nextReviewDate, today);
+      return nextReviewDate.isBefore(today) || DateUtils.isSameBusinessDay(nextReviewDate, today);
     }
 
     final List<LearningWord> dueWords = candidateWords.where(isDue).toList();
@@ -391,7 +391,7 @@ class LearningService {
     }
     int todayDayNumber = 1;
     if (latestWord != null) {
-      todayDayNumber = DateUtils.isSameDay(latestWord.addTime, now) ? latestWord.addDay : latestWord.addDay + 1;
+      todayDayNumber = DateUtils.isSameBusinessDay(latestWord.addTime, now) ? latestWord.addDay : latestWord.addDay + 1;
     }
 
     // 拆分到期词：新词（从未学过）与复习词（已建立进度）

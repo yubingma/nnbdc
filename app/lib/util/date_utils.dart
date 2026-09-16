@@ -33,11 +33,6 @@ class DateUtils {
     return DateTime(shifted.year, shifted.month, shifted.day);
   }
 
-  /// 判断两个日期是否是同一个业务天
-  static bool isSameDay(DateTime date1, DateTime date2) {
-    return isSameBusinessDay(date1, date2);
-  }
-
   /// 判断两个日期是否是同一个业务天（凌晨3点切换）
   static bool isSameBusinessDay(DateTime d1, DateTime d2) {
     final bd1 = businessDate(d1);

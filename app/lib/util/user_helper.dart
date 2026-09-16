@@ -1,6 +1,7 @@
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/date_utils.dart';
 
 /// 用户帮助类 - 整合用户学习状态和积分相关功能
 class UserHelper {
@@ -56,7 +57,7 @@ class UserHelper {
     }
 
     final today = AppClock.today();
-    return _isSameDay(today, lastLearningDate);
+    return DateUtils.isSameBusinessDay(today, lastLearningDate);
   }
 
   /// 判断用户今天是否已经完成学习（内部辅助方法）
@@ -74,11 +75,6 @@ class UserHelper {
 
     final today = AppClock.today();
 
-    return _isSameDay(today, lastLearningDate);
-  }
-
-  /// 检查两个日期是否是同一天
-  static bool _isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year && date1.month == date2.month && date1.day == date2.day;
+    return DateUtils.isSameBusinessDay(today, lastLearningDate);
   }
 }

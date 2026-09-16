@@ -145,4 +145,101 @@ void main() {
       expect(second.dakaRatio, first.dakaRatio);
     });
   });
+
+  group('业务日期与真实物理日期（跨凌晨/夜猫子打卡）深度完备性测试', () {
+    test('夜猫子跨凌晨打卡：物理时间跨天但凌晨3点前归属前一天，连续打卡不中断', () async {
+      // 场景：
+      // Day 1: 真实物理时间 2026-05-10 22:30 (业务日 2026-05-10)
+      // Day 2: 真实物理时间 2026-05-12 01:30 (自然日已是 12日，但由于在凌晨 3点前，业务日为 2026-05-11)
+      // Day 3: 真实物理时间 2026-05-12 03:15 (自然日 12日，且过了凌晨 3点，业务日为 2026-05-12)
+
+      final day1RealTime = DateTime(2026, 5, 10, 22, 30, 0);
+      final day2RealTime = DateTime(2026, 5, 12, 1, 30, 0);
+      final day3RealTime = DateTime(2026, 5, 12, 3, 15, 0);
+
+      // 验证业务日期映射
+      expect(DateUtils.businessDate(day1RealTime), DateTime(2026, 5, 10));
+      expect(DateUtils.businessDate(day2RealTime), DateTime(2026, 5, 11));
+      expect(DateUtils.businessDate(day3RealTime), DateTime(2026, 5, 12));
+
+      // 1. 第 1 天打卡
+      AppClock.setClock(FakeClock(day1RealTime));
+      await addDaka(day1RealTime);
+      await UserBo().updateAndSyncUserDakaStats(userId);
+      var user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 1);
+      expect(user.continuousDakaDayCount, 1);
+
+      // 2. 第 2 天凌晨打卡 (夜猫子在 5月12日 01:30 打卡，归入 5月11日业务天)
+      AppClock.setClock(FakeClock(day2RealTime));
+      await addDaka(day2RealTime);
+      await UserBo().updateAndSyncUserDakaStats(userId);
+      user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 2);
+      expect(user.continuousDakaDayCount, 2, reason: '未过凌晨3点，算作5月11日业务天，连续打卡保持为2天');
+
+      // 3. 第 3 天凌晨3点后打卡 (5月12日 03:15 打卡，归入 5月12日业务天)
+      AppClock.setClock(FakeClock(day3RealTime));
+      await addDaka(day3RealTime);
+      await UserBo().updateAndSyncUserDakaStats(userId);
+      user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 3);
+      expect(user.continuousDakaDayCount, 3, reason: '过了凌晨3点进入新业务日，连续打卡成功累进为3天');
+
+      AppClock.reset();
+    });
+
+    test('同一业务日内多次打卡（夜间 23:30 与 次日凌晨 01:30）不重计、不漏记', () async {
+      // 场景：同一业务日(2026-05-10)内，用户在 23:30 打了一次卡，又在次日 01:30 打了一次
+      final dakaTime1 = DateTime(2026, 5, 10, 23, 30, 0);
+      final dakaTime2 = DateTime(2026, 5, 11, 1, 30, 0);
+
+      expect(DateUtils.isSameBusinessDay(dakaTime1, dakaTime2), isTrue);
+
+      AppClock.setClock(FakeClock(dakaTime1));
+      await addDaka(dakaTime1);
+      await UserBo().updateAndSyncUserDakaStats(userId);
+      var user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 1);
+      expect(user.continuousDakaDayCount, 1);
+
+      // 相同业务日再打一次卡（因为主键是 userId + forLearningDate，会覆盖或更新相同业务日记录）
+      AppClock.setClock(FakeClock(dakaTime2));
+      await addDaka(dakaTime2);
+      await UserBo().updateAndSyncUserDakaStats(userId);
+      user = await db.usersDao.getUserById(userId);
+      expect(user!.dakaDayCount, 1, reason: '同一业务日多次打卡，累计打卡天数仍为1');
+      expect(user.continuousDakaDayCount, 1, reason: '同一业务日多次打卡，连续天数仍为1');
+
+      AppClock.reset();
+    });
+
+    test('跨年与跨月连续打卡：12月31日夜间到1月1日凌晨平滑衔接', () async {
+      final dec31 = DateTime(2025, 12, 31, 22, 0, 0);
+      final jan01 = DateTime(2026, 1, 1, 15, 0, 0);
+      final jan02 = DateTime(2026, 1, 2, 2, 0, 0); // 1月2日凌晨2点，归入 1月1日业务天
+      final jan03 = DateTime(2026, 1, 2, 10, 0, 0); // 1月2日业务天
+
+      AppClock.setClock(FakeClock(dec31));
+      await addDaka(dec31);
+
+      AppClock.setClock(FakeClock(jan01));
+      await addDaka(jan01);
+
+      AppClock.setClock(FakeClock(jan02));
+      await addDaka(jan02); // 1月1日业务天重复打卡
+
+      AppClock.setClock(FakeClock(jan03));
+      await addDaka(jan03); // 1月2日业务天打卡
+
+      await UserBo().updateAndSyncUserDakaStats(userId);
+      final user = await db.usersDao.getUserById(userId);
+
+      // 涵盖了 2025-12-31, 2026-01-01, 2026-01-02 三个业务天
+      expect(user!.dakaDayCount, 3);
+      expect(user.continuousDakaDayCount, 3);
+
+      AppClock.reset();
+    });
+  });
 }

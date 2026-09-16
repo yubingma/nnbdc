@@ -42,16 +42,16 @@ void main() {
       expect(bd5.day, 10);
     });
 
-    test('DateUtils.isSameDay should follow business day rules', () {
+    test('DateUtils.isSameBusinessDay should follow business day rules', () {
       final monday10PM = DateTime(2026, 5, 11, 22, 0, 0);
       final tuesday2AM = DateTime(2026, 5, 12, 2, 0, 0);
       final tuesday4AM = DateTime(2026, 5, 12, 4, 0, 0);
 
       // 晚上 10 点和凌晨 2 点是同一个业务天（周一）
-      expect(DateUtils.isSameDay(monday10PM, tuesday2AM), isTrue);
+      expect(DateUtils.isSameBusinessDay(monday10PM, tuesday2AM), isTrue);
       
       // 凌晨 2 点和凌晨 4 点不是同一个业务天（周一 vs 周二）
-      expect(DateUtils.isSameDay(tuesday2AM, tuesday4AM), isFalse);
+      expect(DateUtils.isSameBusinessDay(tuesday2AM, tuesday4AM), isFalse);
     });
 
     test('AppClock.today() should return business date', () {
@@ -94,7 +94,6 @@ void main() {
 
       // 【安全工具方法断言】验证使用 DateUtils.isSameBusinessDay 进行对比时，它们必须是同一个业务天！
       expect(DateUtils.isSameBusinessDay(dbUtcDate, localDate), isTrue);
-      expect(DateUtils.isSameDay(dbUtcDate, localDate), isTrue);
 
       // 更复杂的时差偏移场景：
       // 我们创建一个本地时间（比如下午 14:00）
