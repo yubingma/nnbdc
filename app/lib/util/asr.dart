@@ -542,9 +542,7 @@ class Asr {
 
   /// 物理启动麦克风输入流（独立纯净接口）
   Future<void> startMicrophone() async {
-    if (PlatformUtils.isWeb ||
-        PlatformUtils.isWindows ||
-        PlatformUtils.isMacOS) {
+    if (!PlatformUtils.isAsrSupported()) {
       return;
     }
     
@@ -564,9 +562,7 @@ class Asr {
 
   /// 物理关停麦克风与 ASR 引擎，不再越权配置全局音频会话
   Future<void> stopMicrophone() async {
-    if (PlatformUtils.isWeb ||
-        PlatformUtils.isWindows ||
-        PlatformUtils.isMacOS) {
+    if (!PlatformUtils.isAsrSupported()) {
       return;
     }
 
@@ -626,9 +622,7 @@ class Asr {
 
   /// 清空模型中当前的采样数据
   Future<void> reset() async {
-    if (PlatformUtils.isWeb ||
-        PlatformUtils.isWindows ||
-        PlatformUtils.isMacOS) {
+    if (!PlatformUtils.isAsrSupported()) {
       return;
     }
 
@@ -652,7 +646,7 @@ class Asr {
 
   // 为 iOS 提供上下文短语，提高目标短语的识别概率（仅提示，不强制）
   Future<void> setContextualStrings(List<String> phrases) async {
-    if (PlatformUtils.isWeb || PlatformUtils.isWindows || PlatformUtils.isMacOS) {
+    if (!PlatformUtils.isAsrSupported()) {
       return;
     }
     if (!permissionGranted) return;
