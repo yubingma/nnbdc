@@ -19,7 +19,7 @@ class BadgeSvgAssets {
     {'code': 'VOCAB_FINISH_BOOK', 'name': '全书通关斩', 'category': 'VOCAB', 'tier': 'LEGENDARY', 'isStackable': false, 'conditionType': 'FINISH_BOOK', 'targetValue': 1, 'rewardBubbles': 1500, 'description': '将一整本词书从头背到尾并全部掌握，无懈可击'},
 
     // 3. 精进学霸 (可重复累加 ×N)
-    {'code': 'PERFECT_SCORE', 'name': '百发百中', 'category': 'MASTERY', 'tier': 'BRONZE', 'isStackable': true, 'conditionType': 'PERFECT_SCORE', 'targetValue': 1, 'rewardBubbles': 20, 'description': '单次复习或测验100%全对，每次达成均可重复累加'},
+    {'code': 'PERFECT_SCORE', 'name': '百发百中', 'category': 'MASTERY', 'tier': 'BRONZE', 'isStackable': true, 'conditionType': 'PERFECT_SCORE', 'targetValue': 1, 'rewardBubbles': 20, 'description': '今日学习的所有单词全部记对（全程零失误），达成可累加进阶'},
     {'code': 'EASY_FLOW', 'name': '极速心流', 'category': 'MASTERY', 'tier': 'SILVER', 'isStackable': true, 'conditionType': 'EASY_STREAK', 'targetValue': 30, 'rewardBubbles': 30, 'description': '单次背词连续 30 词测评判定为「轻松」，行云流水'},
     {'code': 'DAWN_LEARN', 'name': '破晓之翼', 'category': 'MASTERY', 'tier': 'GOLD', 'isStackable': true, 'conditionType': 'DAWN_CHECKIN', 'targetValue': 1, 'rewardBubbles': 30, 'description': '早晨 6:00 ~ 7:30 间完成背词打卡，见证清晨自律'},
     {'code': 'NIGHT_LEARN', 'name': '夜行学者', 'category': 'MASTERY', 'tier': 'GOLD', 'isStackable': true, 'conditionType': 'NIGHT_CHECKIN', 'targetValue': 1, 'rewardBubbles': 30, 'description': '深夜 23:00 后自律复习，万籁俱寂唯有求知欲'},
