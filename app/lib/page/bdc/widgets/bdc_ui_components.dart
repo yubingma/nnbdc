@@ -525,7 +525,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     final result = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 顶部极细无缝流光进度条（现代极简，告别切块虚线）
+        // 顶部极细无缝流光进度条（紧贴状态栏底边，通栏一体化呈现，零额外空间消耗）
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
@@ -552,54 +552,48 @@ extension BdcPageStateUIComponents on BdcPageState {
             }
           },
           child: Container(
-            margin: EdgeInsets.fromLTRB(
-                0, MediaQuery.of(context).padding.top + 4, 0, 0),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-            child: SizedBox(
-              height: 2.2,
-              width: double.infinity,
-              child: state.currentGetWordResult?.progress != null
-                  ? LayoutBuilder(
-                      builder: (context, constraints) {
-                        final maxValue =
-                            state.currentGetWordResult!.progress![1].toDouble();
-                        if (maxValue <= 0) return const SizedBox.shrink();
-                        final currentProgress =
-                            state.currentGetWordResult!.progress![0].toDouble();
-                        final progressRatio =
-                            (currentProgress / maxValue).clamp(0.0, 1.0);
+            height: MediaQuery.of(context).padding.top + 2.5,
+            width: double.infinity,
+            alignment: Alignment.bottomCenter,
+            child: state.currentGetWordResult?.progress != null
+                ? LayoutBuilder(
+                    builder: (context, constraints) {
+                      final maxValue =
+                          state.currentGetWordResult!.progress![1].toDouble();
+                      if (maxValue <= 0) return const SizedBox.shrink();
+                      final currentProgress =
+                          state.currentGetWordResult!.progress![0].toDouble();
+                      final progressRatio =
+                          (currentProgress / maxValue).clamp(0.0, 1.0);
 
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(1.5),
-                          child: Stack(
-                            children: [
-                              // 极淡一体化柔光微底轨
-                              Container(
-                                width: double.infinity,
-                                height: 2.2,
-                                color: _cachedIsDarkMode
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : Colors.black.withValues(alpha: 0.04),
+                      return SizedBox(
+                        height: 2.5,
+                        width: double.infinity,
+                        child: Stack(
+                          children: [
+                            // 极淡一体化柔光微底轨（通栏无缝贯穿状态栏底边）
+                            Container(
+                              width: double.infinity,
+                              height: 2.5,
+                              color: _cachedIsDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.04),
+                            ),
+                            // 连续平滑无缝流光光带
+                            FractionallySizedBox(
+                              widthFactor: progressRatio,
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                height: 2.5,
+                                color: context.primaryColor,
                               ),
-                              // 连续平滑无缝流光光带
-                              FractionallySizedBox(
-                                widthFactor: progressRatio,
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  height: 2.2,
-                                  decoration: BoxDecoration(
-                                    color: context.primaryColor,
-                                    borderRadius: BorderRadius.circular(1.5),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    )
-                  : const SizedBox.shrink(),
-            ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                : const SizedBox.shrink(),
           ),
         ),
 
