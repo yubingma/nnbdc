@@ -430,6 +430,11 @@ class StudyAudioSessionController {
     unawaited(_playAssetSoundConcurrent('bubble-pop.wav', 1.0, 0.6));
   }
 
+  /// 播放打卡盖章音效（清脆沉实的实体印章按压敲击声）。
+  void playStampSound({double volume = 1.0}) {
+    unawaited(_playAssetSoundConcurrent('stamp.mp3', 1.0, volume));
+  }
+
   /// 阻塞式播放音效（等待播放完成，使用独立音效池）。
   Future<void> playBlockingSound(String fileName,
       {double speed = 1.0, double volume = 1.0,

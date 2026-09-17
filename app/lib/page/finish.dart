@@ -24,6 +24,7 @@ import '../util/prefs.dart';
 import '../services/user_privilege_manager.dart';
 import '../widget/daka_poster.dart';
 import '../widget/daka_poster_dialog.dart';
+import '../widget/daka_stamp_badge.dart';
 import 'index.dart';
 import 'bdc/models/bdc_page_args.dart';
 import 'subscription.dart';
@@ -273,22 +274,17 @@ class FinishPageState extends State<FinishPage> {
           Positioned(
             left: 20,
             right: 20,
-            top: 104,
+            top: 98,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 完成印章
-                Container(
-                  width: 62,
-                  height: 62,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
-                  ),
-                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 34),
+                // 完成打卡专属物理动效印章
+                DakaStampBadge(
+                  size: 76,
+                  isExtraRound: isExtraRound,
+                  color: Colors.white,
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 Text(
                   isExtraRound ? '加量完成' : '打卡成功',
                   style: const TextStyle(
