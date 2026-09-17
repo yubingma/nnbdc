@@ -147,31 +147,41 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final accentColor = context.primaryColor;
 
+    final bool isPassed = widget.isScorePassed || (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
+
     // 状态驱动反馈文字
     String statusText;
-    switch (widget.asrState) {
-      case AsrState.started:
-        statusText = "正在倾听...";
-        break;
-      case AsrState.stopping:
-      case AsrState.unknown:
-        statusText = "正在处理中...";
-        break;
-      case AsrState.initialized:
-      case AsrState.stopped:
-        if ((widget.score ?? 0) >= 85) {
-          statusText = "发音优异";
-        } else if ((widget.score ?? 0) >= 60) {
-          statusText = "发音达标";
-        } else if ((widget.score ?? 0) > 0) {
-          statusText = "发音可提升";
-        } else {
-          statusText = widget.isSentenceStep ? "请说例句英文" : "请说单词发音";
-        }
-        break;
+    if (isPassed) {
+      if ((widget.score ?? 0) >= 85) {
+        statusText = "发音优异";
+      } else if ((widget.score ?? 0) >= 60) {
+        statusText = "发音达标";
+      } else {
+        statusText = "回答正确";
+      }
+    } else {
+      switch (widget.asrState) {
+        case AsrState.started:
+          statusText = "正在倾听...";
+          break;
+        case AsrState.stopping:
+        case AsrState.unknown:
+          statusText = "正在处理中...";
+          break;
+        case AsrState.initialized:
+        case AsrState.stopped:
+          if ((widget.score ?? 0) >= 85) {
+            statusText = "发音优异";
+          } else if ((widget.score ?? 0) >= 60) {
+            statusText = "发音达标";
+          } else if ((widget.score ?? 0) > 0) {
+            statusText = "发音可提升";
+          } else {
+            statusText = widget.isSentenceStep ? "请说例句英文" : "请说单词发音";
+          }
+          break;
+      }
     }
-
-    final bool isPassed = widget.isScorePassed || (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
 
     final scoreWidget = (widget.score != null && widget.score! > 0)
         ? Tooltip(
@@ -261,9 +271,11 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
     );
 
     // 波形与状态文字同行排布：与右侧「拼写/提示/清除」处于同一行，避免波形独占一行留下大片空高
-    final statusColor = widget.isSentenceStep
-        ? (isDarkMode ? Colors.white38 : Colors.black26)
-        : (isDarkMode ? Colors.white54 : Colors.black45);
+    final statusColor = isPassed
+        ? Colors.green
+        : (widget.isSentenceStep
+            ? (isDarkMode ? Colors.white38 : Colors.black26)
+            : (isDarkMode ? Colors.white54 : Colors.black45));
 
     return RepaintBoundary(
       child: Container(

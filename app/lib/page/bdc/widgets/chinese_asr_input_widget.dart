@@ -147,9 +147,13 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final accentColor = context.primaryColor;
 
+    final bool isPassed = widget.isScorePassed || (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
+
     // 状态驱动反馈文字
     String statusText;
-    if (widget.isAiEvaluating) {
+    if (isPassed) {
+      statusText = "回答正确";
+    } else if (widget.isAiEvaluating) {
       statusText = "AI裁判裁决中...";
     } else {
       switch (widget.asrState) {
@@ -174,8 +178,6 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
           break;
       }
     }
-
-    final bool isPassed = widget.isScorePassed || (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
 
     final scoreWidget = (widget.score != null && widget.score! > 0)
         ? Tooltip(
@@ -265,9 +267,11 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     );
 
     // 波形与状态文字同行排布：与右侧「拼写/提示/清除」处于同一行，避免波形独占一行留下大片空高
-    final statusColor = widget.isSentenceStep
-        ? (isDarkMode ? Colors.white38 : Colors.black26)
-        : (isDarkMode ? Colors.white54 : Colors.black45);
+    final statusColor = isPassed
+        ? Colors.green
+        : (widget.isSentenceStep
+            ? (isDarkMode ? Colors.white38 : Colors.black26)
+            : (isDarkMode ? Colors.white54 : Colors.black45));
 
     return RepaintBoundary(
       child: Container(
