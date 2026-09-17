@@ -668,54 +668,44 @@ extension BdcPageStateDialogs on BdcPageState {
                                   ),
                                   onPressed: () async {
                                     // 保存所有设置
+                                    var studyConfigToSave =
+                                        StudyConfig.fromCurrentUser();
+                                    studyConfigToSave.autoPlayWord =
+                                        localAutoPlayWord;
+                                    studyConfigToSave.autoPlaySentence =
+                                        localAutoPlaySentence;
+                                    studyConfigToSave.showAnswersDirectly =
+                                        localShowAnswersDirectly;
+                                    studyConfigToSave.enableAllWrong =
+                                        localEnableAllWrong;
+                                    studyConfigToSave.autoJumpAfterCorrectCh2En =
+                                        localAutoJumpAfterCorrectCh2En;
+                                    studyConfigToSave.autoJumpAfterCorrectEn2Ch =
+                                        localAutoJumpAfterCorrectEn2Ch;
+                                    studyConfigToSave
+                                            .autoJumpAfterCorrectChSentence2En =
+                                        localAutoJumpAfterCorrectChSentence2En;
+                                    studyConfigToSave
+                                            .autoJumpAfterCorrectEnSentence2Ch =
+                                        localAutoJumpAfterCorrectEnSentence2Ch;
+                                    studyConfigToSave.asrPassRule =
+                                        localAsrPassRule;
+                                    studyConfigToSave.enableWordImage =
+                                        localEnableWordImage;
+                                    studyConfigToSave.distractorStrategy =
+                                        localDistractorStrategy;
+                                    studyConfigToSave.mixWithOthersForIos =
+                                        localMixWithOthersForIos;
+                                    studyConfigToSave.showWordDetailAfterCorrect =
+                                        localShowWordDetailAfterCorrect;
                                     if (currentUser != null) {
-                                      var studyConfigToSave =
-                                          StudyConfig.fromCurrentUser();
-                                      studyConfigToSave.autoPlayWord =
-                                          localAutoPlayWord;
-                                      studyConfigToSave.autoPlaySentence =
-                                          localAutoPlaySentence;
-                                      studyConfigToSave.showAnswersDirectly =
-                                          localShowAnswersDirectly;
-                                      studyConfigToSave.enableAllWrong =
-                                          localEnableAllWrong;
-                                      studyConfigToSave
-                                              .autoJumpAfterCorrectCh2En =
-                                          localAutoJumpAfterCorrectCh2En;
-                                      studyConfigToSave
-                                              .autoJumpAfterCorrectEn2Ch =
-                                          localAutoJumpAfterCorrectEn2Ch;
-                                      studyConfigToSave
-                                              .autoJumpAfterCorrectChSentence2En =
-                                          localAutoJumpAfterCorrectChSentence2En;
-                                      studyConfigToSave
-                                              .autoJumpAfterCorrectEnSentence2Ch =
-                                          localAutoJumpAfterCorrectEnSentence2Ch;
-                                      studyConfigToSave.asrPassRule =
-                                          localAsrPassRule;
-                                      studyConfigToSave.enableWordImage =
-                                          localEnableWordImage;
-                                      studyConfigToSave.distractorStrategy =
-                                          localDistractorStrategy;
-                                      studyConfigToSave.mixWithOthersForIos =
-                                          localMixWithOthersForIos;
-                                      studyConfigToSave
-                                              .showWordDetailAfterCorrect =
-                                          localShowWordDetailAfterCorrect;
                                       await studyConfigToSave
                                           .saveToCurrentUser();
                                     }
 
                                     // 在异步操作后检查context是否仍然有效
                                     if (context.mounted) {
-                                      notifier.updateAsrPassRuleCache(
-                                          localAsrPassRule);
-                                      notifier.updateAutoJumpCh2En(
-                                          localAutoJumpAfterCorrectCh2En);
-                                      notifier.updateAutoJumpEn2Ch(
-                                          localAutoJumpAfterCorrectEn2Ch);
-                                      notifier.updateShowWordDetailAfterCorrect(
-                                          localShowWordDetailAfterCorrect);
+                                      notifier.applyStudyConfig(studyConfigToSave);
                                       Navigator.pop(context, true);
                                     }
                                   },

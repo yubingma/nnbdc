@@ -347,15 +347,7 @@ class BdcNotifier extends _$BdcNotifier {
       unawaited(StudyAudioSessionController.instance.configureSession());
       
       final studyConfig = StudyConfig.fromCurrentUser();
-      
-      state = state.copyWith(
-        asrPassRuleCache: studyConfig.asrPassRule,
-        autoJumpAfterCorrectCh2En: studyConfig.autoJumpAfterCorrectCh2En,
-        autoJumpAfterCorrectEn2Ch: studyConfig.autoJumpAfterCorrectEn2Ch,
-        autoJumpAfterCorrectChSentence2En: studyConfig.autoJumpAfterCorrectChSentence2En,
-        autoJumpAfterCorrectEnSentence2Ch: studyConfig.autoJumpAfterCorrectEnSentence2Ch,
-        showWordDetailAfterCorrect: studyConfig.showWordDetailAfterCorrect,
-      );
+      applyStudyConfig(studyConfig);
 
       state = state.copyWith(loadError: null);
 
@@ -3301,6 +3293,18 @@ class BdcNotifier extends _$BdcNotifier {
 
   void updateShowSentenceTranslation(bool show) {
     state = state.copyWith(showSentenceTranslation: show);
+  }
+
+  /// 应用最新的学习设置到当前背词状态
+  void applyStudyConfig(StudyConfig studyConfig) {
+    state = state.copyWith(
+      asrPassRuleCache: studyConfig.asrPassRule,
+      autoJumpAfterCorrectCh2En: studyConfig.autoJumpAfterCorrectCh2En,
+      autoJumpAfterCorrectEn2Ch: studyConfig.autoJumpAfterCorrectEn2Ch,
+      autoJumpAfterCorrectChSentence2En: studyConfig.autoJumpAfterCorrectChSentence2En,
+      autoJumpAfterCorrectEnSentence2Ch: studyConfig.autoJumpAfterCorrectEnSentence2Ch,
+      showWordDetailAfterCorrect: studyConfig.showWordDetailAfterCorrect,
+    );
   }
 
   void updateAutoJump(bool value) {
