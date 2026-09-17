@@ -272,7 +272,8 @@ class StudyBo {
               batchWord.scheduledDays,
               batchWord.reps,
               batchWord.lapses,
-              batchWord.state);
+              batchWord.state)
+            ..isTodayNewWord = batchWord.isTodayNewWord;
 
           result.add(learningWordVo);
         } else {
@@ -495,6 +496,7 @@ class StudyBo {
         // 按该词自身轨道判断当前环节是否为 List（复习词轨道与学习词轨道不同）
         final first = firstLogs[word.wordId];
         final track = StudyTrack.trackOf(
+          isTodayNewWord: word.isTodayNewWord,
           stability: word.stability,
           state: word.state,
           lastLearningDate: word.lastLearningDate,
@@ -693,6 +695,7 @@ class StudyBo {
       List<String> trackOf(LearningWord word) {
         final first = firstLogs[word.wordId];
         return StudyTrack.trackOf(
+          isTodayNewWord: word.isTodayNewWord,
           stability: word.stability,
           state: word.state,
           lastLearningDate: word.lastLearningDate,
@@ -743,6 +746,7 @@ class StudyBo {
       if (shouldSave) {
         final currWord = todayWords[currentWordIndex];
         final bool isReviewWord = StudyTrack.isReviewTrack(
+              isTodayNewWord: currWord.isTodayNewWord,
               stability: currWord.stability,
               state: currWord.state,
               lastLearningDate: currWord.lastLearningDate,
@@ -809,7 +813,8 @@ class StudyBo {
             returnWord.scheduledDays,
             returnWord.reps,
             returnWord.lapses,
-            returnWord.state);
+            returnWord.state)
+          ..isTodayNewWord = returnWord.isTodayNewWord;
 
         final returnTrack = trackOf(returnWord);
         final listStepIndex = returnTrack.isNotEmpty ? returnTrack.length - 1 : 0;
@@ -886,7 +891,8 @@ class StudyBo {
           returnWord.scheduledDays,
           returnWord.reps,
           returnWord.lapses,
-          returnWord.state);
+          returnWord.state)
+        ..isTodayNewWord = returnWord.isTodayNewWord;
 
       final swMeaningItems = Stopwatch()..start();
       // 使用 WordBo.getWordMeaningItems 获取目标单词释义并用于生成混淆项
@@ -1331,6 +1337,7 @@ class StudyBo {
         final word = todayWords[j];
         final first = firstLogs[word.wordId];
         final trackLen = StudyTrack.trackOf(
+          isTodayNewWord: word.isTodayNewWord,
           stability: word.stability,
           state: word.state,
           lastLearningDate: word.lastLearningDate,
@@ -1469,6 +1476,7 @@ class StudyBo {
       if (word.isEffectivelyMastered(masteredWordIds)) continue;
       final first = firstLogs[word.wordId];
       final track = StudyTrack.trackOf(
+        isTodayNewWord: word.isTodayNewWord,
         stability: word.stability,
         state: word.state,
         lastLearningDate: word.lastLearningDate,
@@ -1489,6 +1497,7 @@ class StudyBo {
         wordId: word.wordId,
         track: track,
         isReview: StudyTrack.isReviewTrack(
+          isTodayNewWord: word.isTodayNewWord,
           stability: word.stability,
           state: word.state,
           lastLearningDate: word.lastLearningDate,

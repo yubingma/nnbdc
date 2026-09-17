@@ -160,7 +160,33 @@ void main() {
       );
     });
 
-    test('轨道固化：今天首条日志 elapsedDays==0 时，即使 state 已是 review 也保持学习轨道', () {
+    test('isTodayNewWord 拥有最高优先级：若为 false（旧词），即使 elapsedDays==0 依然是复习轨道', () {
+      expect(
+        StudyTrack.isReviewTrack(
+          isTodayNewWord: false,
+          stability: 2.4,
+          state: FsrsState.review.value,
+          lastLearningDate: today,
+          todayFirstLogElapsedDays: 0,
+          today: today,
+        ),
+        true,
+      );
+    });
+
+    test('isTodayNewWord 拥有最高优先级：若为 true（今日新词），始终是学习轨道', () {
+      expect(
+        StudyTrack.isReviewTrack(
+          isTodayNewWord: true,
+          stability: 2.4,
+          todayFirstLogElapsedDays: 1,
+          today: today,
+        ),
+        false,
+      );
+    });
+
+    test('无 isTodayNewWord 降级：今天首条日志 elapsedDays==0 时保持学习轨道', () {
       expect(
         StudyTrack.isReviewTrack(
           stability: 2.4,

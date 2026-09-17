@@ -921,6 +921,7 @@ class BdcNotifier extends _$BdcNotifier {
     final newCfg = await StudyStepsService().getThreeGroupConfig('new');
     final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
     final isReview = StudyTrack.isReviewTrack(
+      isTodayNewWord: lw.isTodayNewWord,
       stability: lw.stability,
       state: lw.state,
       lastLearningDate: lw.lastLearningDate,
@@ -929,6 +930,7 @@ class BdcNotifier extends _$BdcNotifier {
     );
     return (
       track: StudyTrack.trackOf(
+        isTodayNewWord: lw.isTodayNewWord,
         stability: lw.stability,
         state: lw.state,
         lastLearningDate: lw.lastLearningDate,

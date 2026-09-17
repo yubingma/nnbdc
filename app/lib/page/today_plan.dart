@@ -513,6 +513,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     int trackLenOf(LearningWord word) {
       final first = firstLogs[word.wordId];
       return StudyTrack.trackOf(
+        isTodayNewWord: word.isTodayNewWord,
         stability: word.stability,
         state: word.state,
         lastLearningDate: word.lastLearningDate,

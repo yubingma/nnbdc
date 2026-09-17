@@ -1625,6 +1625,7 @@ extension BdcPageStateDialogs on BdcPageState {
     List<String> trackOf(LearningWord w) {
       final first = firstLogs[w.wordId];
       return StudyTrack.trackOf(
+        isTodayNewWord: w.isTodayNewWord,
         stability: w.stability,
         state: w.state,
         lastLearningDate: w.lastLearningDate,
@@ -1992,14 +1993,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                 // 新词（学习轨道）/旧词（复习轨道）用拼写颜色区分，当前词保持蓝色加粗优先
                                                 final isReviewWord =
                                                     StudyTrack.isReviewTrack(
+                                                  isTodayNewWord: w.isTodayNewWord,
                                                   stability: w.stability,
-                                                  state: w.state,
-                                                  lastLearningDate:
-                                                      w.lastLearningDate,
-                                                  todayFirstLogElapsedDays:
-                                                      firstLogs[w.wordId]
-                                                          ?.elapsedDays,
-                                                  today: todayStart,
                                                 );
                                                 final Color spellColor =
                                                     isCurrentWord
@@ -2087,6 +2082,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                       final isReviewWord =
                                                           StudyTrack
                                                               .isReviewTrack(
+                                                        isTodayNewWord:
+                                                            w.isTodayNewWord,
                                                         stability: w.stability,
                                                         state: w.state,
                                                         lastLearningDate:

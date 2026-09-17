@@ -1060,6 +1060,9 @@ class LearningWordVo {
   int? lapses;
   int? state; // FSRS 状态：0: New (新词), 1: Learning (学习中), 2: Review (复习), 3: Relearning (重学)
 
+  /// 今日计划是否为新词（来自 learning_words.is_today_new_word）
+  bool isTodayNewWord = false;
+
   WordVo word;
 
   LearningWordVo(this.user, this.addTime, this.addDay, this.lastLearningDate, this.learningOrder, this.learnedTimes, this.word,

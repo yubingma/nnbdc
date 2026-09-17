@@ -8,17 +8,23 @@ import 'package:nnbdc/api/enum.dart';
 class StudyTrack {
   /// 判定该词今天是否走复习轨道。
   ///
-  /// 轨道在"今天首次评分"时固化：今天首条评分日志的 elapsedDays 决定当天轨道
-  /// （init=0 → 学习轨道；跨天 next>0 → 复习轨道），当天后续评分不再改变轨道，
-  /// 防止"新词评分后 state 转 review"导致轨道中途漂移。
+  /// 单一真理来源：如果提供了 [isTodayNewWord]，直接遵从今日计划生成时权威固化的标记（!isTodayNewWord 即为复习词），
+  /// 彻底消除同一业务日内多次学习或零间隔 FSRS relearn（elapsedDays == 0）导致旧词被误当成新词的漏洞。
+  /// 未提供 [isTodayNewWord] 时，按今天首条日志 elapsedDays 固化（init=0 → 学习轨道；跨天 next>0 → 复习轨道），
+  /// 或按进入计划时的初始 FSRS 状态判定。
   static bool isReviewTrack({
+    bool? isTodayNewWord,
     double? stability,
     int? state,
     DateTime? lastLearningDate,
     int? todayFirstLogElapsedDays,
-    required DateTime today,
+    DateTime? today,
   }) {
-    // 今天已提交过评分：以今天首条评分日志的间隔固化轨道
+    // 优先：遵从今日计划固化的权威新词标记
+    if (isTodayNewWord != null) {
+      return !isTodayNewWord;
+    }
+    // 降级：今天已提交过评分，以今天首条评分日志的间隔固化轨道
     if (todayFirstLogElapsedDays != null) {
       return todayFirstLogElapsedDays > 0;
     }
@@ -39,6 +45,7 @@ class StudyTrack {
   /// 该词今天的环节轨道：[测评, 后续组(按首条评分选择), List]。
   /// 测评尚未提交（todayFirstLogRating == null）→ 仅 [测评, List]（评分后轨道扩展）。
   static List<String> trackOf({
+    bool? isTodayNewWord,
     double? stability,
     int? state,
     DateTime? lastLearningDate,
@@ -50,9 +57,10 @@ class StudyTrack {
     required String reviewCheck,
     required List<String> reviewCorrect,
     required List<String> reviewWrong,
-    required DateTime today,
+    DateTime? today,
   }) {
     final isReview = isReviewTrack(
+      isTodayNewWord: isTodayNewWord,
       stability: stability,
       state: state,
       lastLearningDate: lastLearningDate,

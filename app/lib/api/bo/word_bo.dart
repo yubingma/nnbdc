@@ -1313,7 +1313,8 @@ class WordBo {
               lw.scheduledDays,
               lw.reps,
               lw.lapses,
-              lw.state);
+              lw.state)
+            ..isTodayNewWord = lw.isTodayNewWord;
           learningWordVos.add(learningWordVo);
         }
       }
@@ -1402,7 +1403,8 @@ class WordBo {
               lw.scheduledDays,
               lw.reps,
               lw.lapses,
-              lw.state);
+              lw.state)
+            ..isTodayNewWord = lw.isTodayNewWord;
           learningWordVos.add(learningWordVo);
         }
       }
@@ -1492,7 +1494,8 @@ class WordBo {
               lw.scheduledDays,
               lw.reps,
               lw.lapses,
-              lw.state);
+              lw.state)
+            ..isTodayNewWord = lw.isTodayNewWord;
           learningWordVos.add(learningWordVo);
         }
       }
@@ -1598,7 +1601,8 @@ class WordBo {
         }
         wordVo.meaningItems = meaningItemVos;
         final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
-            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
+            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state)
+          ..isTodayNewWord = lw.isTodayNewWord;
         learningWordVos.add(learningWordVo);
       }
     }
@@ -2851,7 +2855,8 @@ class WordBo {
               lw.scheduledDays,
               lw.reps,
               lw.lapses,
-              lw.state);
+              lw.state)
+            ..isTodayNewWord = lw.isTodayNewWord;
           learningWordVos.add(learningWordVo);
         }
       }
