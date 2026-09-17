@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>一词多义·核心意象（Cognitive Image Schema）系统落地方案 - NBDC</title>
+  <style>
+    :root {
+      --bg-body: #0d1117;
+      --bg-surface: #161b22;
+      --bg-surface-elevated: #21262d;
+      --border-color: #30363d;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-main: #c9d1d9;
+      --text-heading: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent-cyan: #00e6b8;
+      --accent-blue: #58a6ff;
+      --accent-gold: #f59e0b;
+      --accent-purple: #bc8cff;
+      --accent-red: #ff7b72;
+      --code-bg: #090d13;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      line-height: 1.7;
+      padding: 40px 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc-container {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* 顶部题头 */
+    .header-section {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 28px;
+      margin-bottom: 36px;
+    }
+
+    .doc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 230, 184, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 230, 184, 0.3);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-heading);
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 内容排版 */
+    h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-heading);
+      margin: 40px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-heading);
+      margin: 24px 0 12px;
+    }
+
+    p {
+      margin-bottom: 16px;
+      color: var(--text-main);
+    }
+
+    ul, ol {
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    strong {
+      color: var(--text-heading);
+      font-weight: 600;
+    }
+
+    /* 卡片容器 */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent-cyan);
+      background: rgba(0, 230, 184, 0.06);
+      padding: 16px 20px;
+      border-radius: 0 10px 10px 0;
+      margin: 20px 0;
+    }
+
+    .callout-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .callout-warning {
+      border-left-color: var(--accent-gold);
+      background: rgba(245, 158, 11, 0.06);
+    }
+    .callout-warning .callout-title {
+      color: var(--accent-gold);
+    }
+
+    /* 对比表格 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 13.5px;
+      background: var(--bg-surface);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: var(--bg-surface-elevated);
+      color: var(--text-heading);
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* 代码块 */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #e6edf3;
+      margin: 16px 0;
+      line-height: 1.55;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+
+    /* 视觉插图展示区 */
+    .showcase-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 24px 0;
+    }
+
+    @media (max-width: 768px) {
+      .showcase-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .showcase-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .showcase-img {
+      width: 100%;
+      max-width: 320px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      margin-bottom: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .showcase-caption {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* 链接按钮 */
+    .link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface-elevated);
+      color: var(--text-heading);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      margin-top: 8px;
+    }
+
+    .link-btn:hover {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+  </style>
+</head>
+<body>
+
+<div class="doc-container">
+
+  <!-- 顶部标题 -->
+  <header class="header-section">
+    <div class="doc-badge">💡 NBDC 核心功能架构方案</div>
+    <h1>一词多义·核心意象（Cognitive Image Schema）落地方案</h1>
+    <div class="meta-bar">
+      <div class="meta-item"><span>📅 制定时间：2026-09</span></div>
+      <div class="meta-item"><span>🛠 涉及模块：大模型 API / 服务端批处理 / Flutter 动态拓扑渲染</span></div>
+      <div class="meta-item"><span>🎯 核心目标：彻底根治多义词死记硬背痛点，构建辐射认知网络</span></div>
+    </div>
+  </header>
+
+  <!-- 1. 背景与理论底座 -->
+  <section>
+    <h2>1. 背景与认知语言学理论底座</h2>
+    <p>
+      在传统背单词应用中，“一词多义”是用户公认最痛苦的记忆深水区。传统词典往往将一个单词的七八个释义<strong>并列、孤立地死板罗列</strong>（例如 <code>spring</code>：春天、泉水、弹簧、跳跃、引爆）。用户无法在脑海中建立联系，只能死记硬背，极易产生混淆与遗忘。
+    </p>
+    <p>
+      <strong>认知语言学（Cognitive Linguistics）表明：</strong>自然语言中的绝大多数多义词并非偶然同形，而是由一个原始的<strong>核心图式（Image Schema）或物理动势</strong>，在人类漫长演进中通过<strong>隐喻（Metaphor）</strong>与<strong>转喻（Metonymy）</strong>向不同生活领域辐射延展出的概念网络（Radial Categories）。
+    </p>
+    <div class="callout">
+      <div class="callout-title">💡 案例剖析：spring 的认知统一性</div>
+      <p style="margin-bottom:0;">
+        <code>spring</code> 的核心意象是<strong>“力量蓄积后的突然向上弹涌”</strong>：<br>
+        • <strong>跳跃（v.）</strong>：身体蓄力后向上一跃的动作本身；<br>
+        • <strong>弹簧（n.）</strong>：被压缩后瞬间反弹的机械构件；<br>
+        • <strong>泉水（n.）</strong>：地下水受压后咕咚咕咚向上喷涌的水体；<br>
+        • <strong>春天（n.）</strong>：严冬过后大地复苏、生命破土迸发的爆发性季节。<br>
+        点破这一原点动势，即可帮助用户<strong>“一通百通”</strong>。
+      </p>
+    </div>
+  </section>
+
+  <!-- 2. 大模型能力边界与选型结论 -->
+  <section>
+    <h2>2. 大模型能力边界与选型评测</h2>
+
+    <h3>2.1 DeepSeek 可以生图吗？</h3>
+    <p>
+      <strong>结论：DeepSeek 自身不提供文生图（Text-to-Image）功能。</strong><br>
+      DeepSeek（包括 DeepSeek-V3 与 DeepSeek-R1）是纯文本与强逻辑推理的大语言模型，其 API 输出的是字符/结构化 JSON，无法直接生成图像像素点阵。
+    </p>
+    <p>
+      但在本项目中，大模型真正不可替代的价值是<strong>“语言认知分析大脑”</strong>，负责：
+      1. 深入印欧/日耳曼/拉丁词源，提炼物理意象原点；
+      2. 解析各释义跨越不同生活领域的隐喻演变脉络；
+      3. 输出干净轻量的结构化 JSON 供客户端驱动。
+    </p>
+
+    <h3>2.2 DeepSeek vs 阿里通义千问（实测 20 词对比）</h3>
+    <p>我们连接本地数据库，提取了 20 个极具代表性的一词多义单词（<code>charge</code>, <code>bank</code>, <code>fine</code>, <code>scale</code>, <code>court</code>, <code>sound</code> 等），对两家旗舰模型进行了实机横向对比：</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>评测维度</th>
+          <th>DeepSeek (deepseek-chat)</th>
+          <th>阿里通义千问 (qwen-max)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>意象提炼高度</strong></td>
+          <td>★★★★★（深刻触及原始词根与空间几何图式，抽象层级高）</td>
+          <td>★★★☆☆（容易以偏概全，常把某个具体子释义误当成核心意象）</td>
+        </tr>
+        <tr>
+          <td><strong>引申解释自洽性</strong></td>
+          <td>★★★★★（闭环逻辑：【动势】+【场景投影】=【释义】，透彻严密）</td>
+          <td>★★★☆☆（偏好打比方“如同……”，偶有牵强硬凑）</td>
+        </tr>
+        <tr>
+          <td><strong>同形异义鉴别</strong></td>
+          <td>★★★★★（对 <code>scale</code>-鱼鳞、<code>fine</code>-罚款 等独立词源客观指出，不瞎编）</td>
+          <td>★★★★☆（能够鉴别明显无关词源，但底层认知感知偏弱）</td>
+        </tr>
+        <tr>
+          <td><strong>API 成本与响应</strong></td>
+          <td>极低（输入 ¥1/M，输出 ¥2/M，吞吐极高）</td>
+          <td>中等（qwen-max 单价相对偏高）</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ 评测实录印证（以 charge 为例）</div>
+      <p style="margin-bottom:0;">
+        • <strong>DeepSeek</strong> 提炼意象为<strong>“往容器里装填、压入并承载负荷”</strong>（源自古法语 chargier 装载车马），完美穿透：充电（装电）、收费（向账单压入债务）、指控（向被告压入罪责）、负责（把职责装在自己身上承载）。<br>
+        • <strong>Qwen-Max</strong> 提炼为“向前冲、注入力量”，在解释收费时变成“注入资金”，解释负责时变成“注入责任”，比喻生硬，未能找到原点图式。
+      </p>
+    </div>
+  </section>
+
+  <!-- 3. 图形表达与技术选型：位图 vs 矢量拓扑 -->
+  <section>
+    <h2>3. 图像呈现路线演进与技术决断</h2>
+
+    <p>为核心意象配图，存在两条不同路径：</p>
+
+    <div class="showcase-container">
+      <div class="showcase-item">
+        <img src="assets/spring_core.jpg" class="showcase-img" alt="概念隐喻图">
+        <div class="showcase-caption">
+          <strong>形态 A：纯概念隐喻位图</strong><br>
+          （由 AI 渲染无文字的高级 3D 概念插画，熔铸弹簧、泉水、破土繁花于一炉）
+        </div>
+      </div>
+      <div class="showcase-item">
+        <img src="png/core_image_graph_preview.png" class="showcase-img" alt="辐射拓扑图真机">
+        <div class="showcase-caption">
+          <strong>形态 B：自适应辐射引申拓扑图</strong><br>
+          （中心枢纽 + 外围释义胶囊 + 贝塞尔连线 + 连线引申标签，支持点击联动）
+        </div>
+      </div>
+    </div>
+
+    <h3>为什么必须选择“结构化数据驱动 + App 原生矢量渲染”？</h3>
+    <ul>
+      <li><strong>拒绝生图模型的乱码灾难</strong>：文生图大模型在排布中文小字时极易糊字、乱码、折行错位；而代码原生绘制矢量文字，在任何屏幕倍率下都保持 100% 绝对清晰。</li>
+      <li><strong>原生交互与联动</strong>：用户点击任一释义节点，连线高亮激活，下方自动联动例句与考点；支持暗黑模式自适应。</li>
+      <li><strong>带宽与性能极佳</strong>：一张位图需 500KB~1MB，而结构化 JSON 仅需 <strong>300~500 字节</strong>，请求耗时极短，加载丝滑无感。</li>
+      <li><strong>终极黄金形态（图文合璧）</strong>：中心枢纽背景内嵌无文字的 AI 概念微缩图，外围由 Flutter 原生 Canvas/CustomPainter 绘制贝塞尔引申星轨。</li>
+    </ul>
+  </section>
+
+  <!-- 4. 数据模型与契约规范 -->
+  <section>
+    <h2>4. 数据结构与接口契约设计</h2>
+
+    <h3>4.1 服务端数据表规范（遵循项目统一规范：32位UUID主键、单数下划线命名）</h3>
+    <pre><code>CREATE TABLE `word_core_image` (
+  `id` VARCHAR(32) NOT NULL PRIMARY KEY COMMENT '主键UUID',
+  `word_id` VARCHAR(32) NOT NULL COMMENT '关联系统已有word.id',
+  `spell` VARCHAR(100) NOT NULL COMMENT '单词原形(冗余存储，加速检索与排查)',
+  `core_image` VARCHAR(128) NOT NULL COMMENT '核心动态意象短句',
+  `image_schema_desc` VARCHAR(255) NOT NULL COMMENT '核心原点图式与动势阐释',
+  `branches_json` TEXT NOT NULL COMMENT '引申网络结构化JSON数据',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-待审核 1-已发布',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_word_id` (`word_id`),
+  KEY `idx_spell` (`spell`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;</code></pre>
+
+    <h3>4.2 大模型输出与存储结构（JSON Schema 契约）</h3>
+    <pre><code>{
+  "spell": "spring",
+  "core_image": "蓄势后猛然弹跳涌出",
+  "image_schema_desc": "从压缩、蓄力状态瞬间释放，向上或向前猛烈跃出，带有爆发性动势。",
+  "branches": [
+    {
+      "pos": "n.",
+      "meaning": "春天 / 春季",
+      "angle": -145,
+      "relation": "生命破土弹跳迸发",
+      "desc": "冬天万物收缩蓄力，春天一到，植物猛然发芽，如同生命从沉寂中弹跳破土而出。",
+      "example": "Flowers spring up everywhere in March."
+    },
+    {
+      "pos": "n.",
+      "meaning": "泉水 / 泉眼",
+      "angle": -35,
+      "relation": "水受压向上咕咚喷涌",
+      "desc": "地下水在岩层受压积蓄后，突然突破地表向上涌出，完全契合向上弹涌的动势。",
+      "example": "Cold water gushed from the mountain spring."
+    }
+  ]
+}</code></pre>
+  </section>
+
+  <!-- 5. 落地推进里程碑 -->
+  <section>
+    <h2>5. 落地推进实施路线（Roadmap）</h2>
+    <div class="card">
+      <p><strong>第一阶段：离线批量处理与高质量建库（1~2天）</strong></p>
+      <ul>
+        <li>编写 Python/Node 服务端批处理脚本，筛选词库中考研、四六级、托福、雅思等高频核心多义词（约 2000~3000 个）；</li>
+        <li>调用 DeepSeek-V3 API 批量生成结构化 JSON，通过格式校验器直接清洗入库，关键重点词人工抽验；</li>
+      </ul>
+      <p><strong>第二阶段：Flutter 原生拓扑组件封装（2~3天）</strong></p>
+      <ul>
+        <li>基于现有 HTML 验证成功的贝塞尔算法，封装 Flutter 原生 <code>CoreImageRadialWidget</code> 组件；</li>
+        <li>完美接入 App 单词详情页（<code>WordDetailPage</code>），与已有的 <code>meaning_item</code> 和例句体系无缝联动；</li>
+      </ul>
+      <p><strong>第三阶段：记忆测试场景渗透（后续演进）</strong></p>
+      <ul>
+        <li>在做一词多义辨析题或复习卡片时，提供“意象纽带提示”，引导用户通过原点动势推导词义，达到深度神经突触连接。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 6. 交互原型直达 -->
+  <section>
+    <h2>6. 原型成果与本地查看入口</h2>
+    <div class="card" style="background: rgba(0, 230, 184, 0.05); border-color: rgba(0, 230, 184, 0.3);">
+      <p style="margin-bottom: 8px;"><strong>已固化的真机图与可交互 HTML 原型：</strong></p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="ui/core_image_graph_preview.html" class="link-btn" target="_blank">🌐 打开交互式 HTML 原型 (内置多词切换与主题切换)</a>
+        <a href="ui/png/core_image_graph_preview.png" class="link-btn" target="_blank">📱 查看统一模具旗舰真机高清效果图 (PNG)</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>
