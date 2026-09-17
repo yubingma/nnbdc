@@ -519,6 +519,8 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildMainContent() {
     final sw = Stopwatch()..start();
+    final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final bool isLargeFont = textScale > 1.05;
 
     final result = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -728,7 +730,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
         // 题目区和做题区之间的统一间距
         SizedBox(height: BdcPageState._questionAnswerGap),
-        // 做题区 - 答题后适度分配更多空间（flex=5）
+        // 做题区 - 保持固定匀称比例（4:5）
         Expanded(
           flex: 5,
           child: Consumer(
@@ -766,7 +768,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                               ),
                               boxShadow: [context.cardShadow],
                             ),
-                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                            padding: EdgeInsets.fromLTRB(
+                              12,
+                              isLargeFont ? 7.0 : 10.0,
+                              12,
+                              isLargeFont ? 7.0 : 10.0,
+                            ),
                             child: Column(
                               children: [
                                 if ((state.studyStep == StudyStep.en2Ch.json ||
@@ -923,7 +930,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                           ],
                                         ),
                                 ),
-                                const SizedBox(height: 8),
+                                SizedBox(height: isLargeFont ? 4.0 : 8.0),
                                 _buildFsrsResultPanel(),
                               ],
                             ),
@@ -1537,6 +1544,8 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isCh2En = state.studyStep == StudyStep.ch2En.json ||
         state.studyStep == StudyStep.chSentence2En.json;
     final isDarkMode = _cachedIsDarkMode;
+    final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final bool isLargeFont = textScale > 1.05;
 
     return Column(
       children: [
@@ -1594,7 +1603,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               }
 
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.5),
+                padding: EdgeInsets.symmetric(vertical: isLargeFont ? 1.5 : 2.5),
                 child: SizedBox(
                   width: double.infinity,
                   child: AnimatedContainer(
@@ -1617,11 +1626,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                             notifier.onAnswerClicked(index + 1, context),
                         child: Container(
                           width: double.infinity,
-                          constraints: const BoxConstraints(minHeight: 56),
+                          constraints: BoxConstraints(minHeight: isLargeFont ? 50 : 56),
                           alignment: Alignment.centerLeft,
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                             horizontal: 16,
-                            vertical: 8,
+                            vertical: isLargeFont ? 5.5 : 8,
                           ),
                           child: _buildChoiceItemContent(
                               word, isAnswered, isCh2En),

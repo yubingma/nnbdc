@@ -8,6 +8,7 @@ import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/word_util.dart';
 import 'package:provider/provider.dart' as provider;
 
 class MockBdcNotifier extends BdcNotifier {
@@ -17,6 +18,11 @@ class MockBdcNotifier extends BdcNotifier {
   @override
   BdcState build() {
     return initialState;
+  }
+
+  @override
+  void updateTabIndex(int index) {
+    super.updateTabIndex(index);
   }
 
   @override
@@ -474,6 +480,68 @@ void main() {
     expect(mockNotifier.state.hasFinishedAnswering, isFalse);
     expect(mockNotifier.state.isPracticeMode, isTrue);
     expect(find.textContaining('测评结果: 忘记'), findsOneWidget);
+  });
+
+  testWidgets('字体调大时(TextScaler=1.2)，英译汉模式下3个选项及底部测评信息完整渲染不溢出', (tester) async {
+    final (testWord, mockResult) = _createTestData();
+
+    final state = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      wordWrapper: WordWrapper(testWord, null),
+      currentGetWordResult: mockResult,
+      studyStep: StudyStep.en2Ch.json,
+      tabIndex: 0,
+      words: [
+        WordVo.c2('frigate')..setMeaningStr('n. 护卫舰；快速战舰'),
+        WordVo.c2('primate')..setMeaningStr('n. 灵长类动物；大主教 adj. 灵长类'),
+        WordVo.c2('private')..setMeaningStr('adj. 私人的 · 个人的 · 私有的 · 私下'),
+      ],
+      correctAnswerIndex: 3,
+      selectedAnswerIndex: 3,
+      hasFinishedAnswering: true,
+      lastFsrsRating: FsrsRating.easy,
+    );
+
+    final mockNotifier = MockBdcNotifier(state);
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: ProviderScope(
+          overrides: [
+            bdcNotifierProvider.overrideWith(() => mockNotifier),
+          ],
+          child: MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(
+                size: Size(390, 844),
+                textScaler: TextScaler.linear(1.2),
+              ),
+              child: const Scaffold(
+                body: BdcPage(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final selectBtn = find.text('选择题');
+    expect(selectBtn, findsOneWidget);
+    await tester.tap(selectBtn);
+    await tester.pumpAndSettle();
+
+    // 验证 3 个选项的拼写均能正常找到（Text.rich 需用 textContaining 匹配）
+    expect(find.textContaining('frigate'), findsOneWidget);
+    expect(find.textContaining('primate'), findsOneWidget);
+    expect(find.textContaining('private'), findsWidgets);
+
+    // 验证第3个选项的释义和底部的测评结果均正常展示且无溢出
+    expect(find.textContaining('私人的'), findsOneWidget);
+    expect(find.textContaining('测评结果: 轻松'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 
