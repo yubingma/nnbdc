@@ -1,0 +1,53 @@
+{
+  "spell": "spring",
+  "phonetic": "/sprɪŋ/",
+  "core_image": "向上弹涌的动势",
+  "image_schema_desc": "从压缩到释放，能量向上迸发，如泉涌、如跃起、如春生。",
+  "wanx_image_prompt": "3D concept art, ultra-modern surreal minimalism, dark background, cinematic lighting. A coiled metallic spring compressed at the bottom, releasing upward with explosive kinetic energy, transforming into a crystal-clear water fountain erupting from the ground, and further morphing into a vibrant green sprout bursting with leaves and blossoms. The upward motion is continuous, blending mechanical, fluid, and organic forms. No text, no letters, no watermark.",
+  "branches": [
+    {
+      "pos": "n.",
+      "meaning": "春天，春季",
+      "relation": "万物向上萌发",
+      "desc": "春天是植物从土壤中向上弹涌、生机勃发的季节，与核心意象中能量向上释放的动势完全吻合。",
+      "example": "Spring brings new life to the forest."
+    },
+    {
+      "pos": "n.",
+      "meaning": "泉水，泉眼",
+      "relation": "水从地下涌出",
+      "desc": "泉水是地下水在压力作用下向上喷涌而出的自然现象，直接体现了核心意象中向上弹涌的动势。",
+      "example": "We drank from a mountain spring."
+    },
+    {
+      "pos": "n.",
+      "meaning": "弹簧，发条",
+      "relation": "受压后弹起",
+      "desc": "弹簧被压缩后释放，产生向上或向外的弹跳，是核心意象在机械领域的典型体现。",
+      "example": "The spring in the clock is broken."
+    },
+    {
+      "pos": "vi.",
+      "meaning": "跳，跃，蹦",
+      "relation": "突然向上弹起",
+      "desc": "跳跃是生物体通过肌肉收缩突然向上弹起的动作，与核心意象中能量瞬间释放、向上弹涌一致。",
+      "example": "The cat sprang onto the table."
+    },
+    {
+      "pos": "vt.",
+      "meaning": "突然触发，引爆",
+      "relation": "能量突然释放",
+      "desc": "触发或引爆是使某物突然释放能量，如同弹簧弹开或泉水喷涌，强调从蓄势到爆发的瞬间。",
+      "example": "The trap was sprung by the intruder."
+    },
+    {
+      "pos": "adj.",
+      "meaning": "春天的",
+      "relation": "春天特性的",
+      "desc": "形容词用法直接描述与春天相关的事物，春天是万物向上生长的季节，延续了核心意象的生机勃发。",
+      "example": "Spring flowers are blooming everywhere."
+    }
+  ],
+  "local_image_path": "/Volumes/ssd/ppdc/design/ui/assets/spring_wanx_real.png",
+  "image_url": "https://dashscope-a717.oss-cn-beijing.aliyuncs.com/1d/bb/20260917/c70535fc/43525fa4-dcb2-4385-bde7-1f73daf20ff1-1.png?Expires=1789721908&OSSAccessKeyId=STS.NYC2Lk1xWhmEzE2GdhCpG5Ree&Signature=L6J6Sji1%2FNwJzHAxe5LzP5xs0cs%3D&security-token=CAIS0QJ1q6Ft5B2yfSjIr5r2efbf3Kd236%2BueGODo2Q9T%2F9r2pfOhzz2IHhMeXFoBO8fsf8%2Bnm9S7%2F0flrp6SJtIXleCZtF94oxN9h2gb4fb4wBnUnvn1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0SD0gall7ZO%2FNiqfcL%2FMvMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onAWwEMvEzZaLuOrYc2d1JjG68iFqhBrf7w0PJxpuHMnpWy0wxKMfGOwYkswiYwqiGtN5RKVr5RHd6TUxxG4goLvTazyEri7Sau%2BL%2Fuv371Nj4pbzJlIxqBEfSs42vhaQzYQLPO25pbv9cLiTuhk7WETwQkdBPCuU5wGoABDwaIBPV4UM2j3%2F4%2BrQjQ3DcDeV8iW0akfvlvttnQzD7iq2mTHah%2BRlH1iTipamGXe2d0mmLmcaTMH09e06vGfbjNnpxXFwyyN%2Foh2EjsXNZ%2FOlGPre7gy%2Fw3%2BG9f%2B%2FzzD%2FFicIZDSUntHn1OVjZr%2BdRD3FZ8xWsswMHj6tCBsCsgAA%3D%3D"
+}

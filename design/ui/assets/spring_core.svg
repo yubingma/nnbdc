@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="springGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#0B6E4F"/>
+      <stop offset="40%" stop-color="#12B886"/>
+      <stop offset="75%" stop-color="#38D9A9"/>
+      <stop offset="100%" stop-color="#A9E34B"/>
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#0C8599"/>
+      <stop offset="50%" stop-color="#22B8CF"/>
+      <stop offset="100%" stop-color="#66D9E8"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#2B8A3E"/>
+      <stop offset="60%" stop-color="#51CF66"/>
+      <stop offset="100%" stop-color="#A9E34B"/>
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#12B886" stop-opacity="0"/>
+      <stop offset="60%" stop-color="#38D9A9" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#A9E34B" stop-opacity="0.35"/>
+    </linearGradient>
+    <radialGradient id="burstGrad" cx="0.5" cy="0.85" r="0.6">
+      <stop offset="0%" stop-color="#38D9A9" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#38D9A9" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 背景光晕 -->
+  <ellipse cx="100" cy="170" rx="70" ry="25" fill="url(#burstGrad)"/>
+
+  <!-- 弹簧线圈 - 蓄力弹跳 -->
+  <g filter="url(#softGlow)">
+    <path d="M100 175 
+             C 70 168, 70 155, 100 148 
+             C 130 141, 130 128, 100 121 
+             C 70 114, 70 101, 100 94 
+             C 130 87, 130 74, 100 67" 
+          fill="none" stroke="url(#springGrad)" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- 弹簧顶部弹跳球 -->
+  <circle cx="100" cy="62" r="6" fill="url(#springGrad)" filter="url(#softGlow)"/>
+
+  <!-- 泉水喷涌曲线 - 向上涌出 -->
+  <g opacity="0.85">
+    <path d="M100 62 C 95 50, 88 38, 92 22" 
+          fill="none" stroke="url(#waterGrad)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M100 62 C 105 48, 112 36, 108 20" 
+          fill="none" stroke="url(#waterGrad)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+    <path d="M100 62 C 100 48, 100 34, 100 18" 
+          fill="none" stroke="url(#waterGrad)" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  </g>
+
+  <!-- 水珠飞溅 -->
+  <circle cx="88" cy="30" r="2.5" fill="#66D9E8" opacity="0.7"/>
+  <circle cx="112" cy="26" r="2" fill="#66D9E8" opacity="0.6"/>
+  <circle cx="100" cy="14" r="2.8" fill="#A9E34B" opacity="0.8"/>
+  <circle cx="94" cy="18" r="1.5" fill="#38D9A9" opacity="0.5"/>
+  <circle cx="107" cy="16" r="1.8" fill="#38D9A9" opacity="0.5"/>
+
+  <!-- 春天嫩芽 - 破土萌发 -->
+  <g>
+    <!-- 左叶 -->
+    <path d="M100 62 C 88 58, 78 48, 82 36 C 86 44, 94 52, 100 62" 
+          fill="url(#leafGrad)" opacity="0.9"/>
+    <!-- 右叶 -->
+    <path d="M100 62 C 112 58, 122 48, 118 36 C 114 44, 106 52, 100 62" 
+          fill="url(#leafGrad)" opacity="0.9"/>
+    <!-- 嫩芽中心 -->
+    <path d="M100 62 C 98 54, 98 46, 100 40 C 102 46, 102 54, 100 62" 
+          fill="#A9E34B" opacity="0.95"/>
+  </g>
+
+  <!-- 底部地面线 - 破土 -->
+  <path d="M55 178 Q 100 172, 145 178" 
+        fill="none" stroke="url(#springGrad)" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- 底部能量粒子 -->
+  <circle cx="72" cy="172" r="1.5" fill="#38D9A9" opacity="0.4"/>
+  <circle cx="128" cy="172" r="1.5" fill="#38D9A9" opacity="0.4"/>
+  <circle cx="85" cy="176" r="1" fill="#A9E34B" opacity="0.3"/>
+  <circle cx="115" cy="176" r="1" fill="#A9E34B" opacity="0.3"/>
+</svg>
