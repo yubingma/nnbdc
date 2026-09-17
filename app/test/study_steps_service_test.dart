@@ -68,6 +68,11 @@ void main() {
     Prefs.write('currentUserId', testUser.id);
   });
 
+  tearDown(() async {
+    await db.close();
+    MyDatabase.setInstanceForTesting(null);
+  });
+
   test('新词未配置时返回默认三组且不落库', () async {
     final cfg = await studyStepsService.getThreeGroupConfig('new');
     expect(cfg.check, 'En2Ch');

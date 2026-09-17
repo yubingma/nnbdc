@@ -1662,6 +1662,7 @@ void main() {
     await (db.update(db.learningWords)
           ..where((lw) => lw.userId.equals(testUser.id) & lw.wordId.equals('word_1')))
         .write(LearningWordsCompanion(
+          isTodayNewWord: const Value(false),
           stability: const Value(2.4),
           difficulty: const Value(3.05),
           elapsedDays: const Value(0),

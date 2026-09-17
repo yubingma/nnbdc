@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-palette="emerald">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>泡泡单词 · 应用商店极简海报原型（4+4 对称美学）</title>
+  <style>
+    /* ========================================================
+       基础规范与跨平台原生现代字体栈（严格遵照规范，杜绝外链字体）
+       ======================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    :root {
+      --bg-workspace: #0A0F0D;
+      --card-radius: 44px;
+      --phone-width: 324px;
+      --phone-height: 692px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      background: var(--bg-workspace);
+      color: #FFFFFF;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* 顶部控制台 */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(14, 20, 17, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #10D09E, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 17px;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(16, 208, 158, 0.35);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.2px;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: #8C9E97;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .segment-tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 500;
+      border-radius: 7px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: #9EAEA8;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: #10D09E;
+      color: #04261C;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(16, 208, 158, 0.4);
+    }
+
+    .btn-action {
+      padding: 7px 15px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.08);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    /* 主展示区 */
+    .showcase-container {
+      flex: 1;
+      padding: 24px 32px 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .gallery-row {
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      max-width: 100%;
+      padding: 12px 6px 28px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .gallery-row::-webkit-scrollbar {
+      height: 8px;
+    }
+    .gallery-row::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 4px;
+    }
+
+    /* ========================================================
+       海报卡片核心设计 —— 仿照参考图的「4+4」极简与高透亮渐变
+       ======================================================== */
+    .poster-card {
+      width: 390px;
+      min-width: 390px;
+      height: 844px;
+      border-radius: var(--card-radius);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.12);
+      scroll-snap-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .poster-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 32px 75px -12px rgba(0, 0, 0, 0.65), 0 0 0 1.5px rgba(255, 255, 255, 0.2);
+    }
+
+    /* 参考图同款：清爽通透的高级青蓝渐变（薄荷绿 -> 碧青 -> 湖蓝） */
+    html[data-palette="emerald"] .poster-card {
+      background: linear-gradient(180deg, #1CD2A4 0%, #10BC95 32%, #0E9BB6 68%, #2062C7 100%);
+    }
+
+    /* 多彩马卡龙质感配色（每张卡片不同色系，保持统一明亮调性） */
+    html[data-palette="macaron"] #card-1 {
+      background: linear-gradient(180deg, #1ED0A7 0%, #0CB694 40%, #0D8AA4 100%);
+    }
+    html[data-palette="macaron"] #card-2 {
+      background: linear-gradient(180deg, #27B9F6 0%, #0EA5E9 40%, #1D4ED8 100%);
+    }
+    html[data-palette="macaron"] #card-3 {
+      background: linear-gradient(180deg, #C084FC 0%, #A855F7 40%, #6D28D9 100%);
+    }
+    html[data-palette="macaron"] #card-4 {
+      background: linear-gradient(180deg, #FB7185 0%, #F43F5E 40%, #BE123C 100%);
+    }
+    html[data-palette="macaron"] #card-5 {
+      background: linear-gradient(180deg, #FBBF24 0%, #F59E0B 40%, #B45309 100%);
+    }
+
+    /* 顶部文案容器：严格去除花哨标签，纯正 4+4 居中结构 */
+    .poster-header {
+      padding: 44px 20px 22px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    /* 4 字主标题：纯白大字、字重 800、微展开字距、微光晕底衬 */
+    .p-title {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: 2.2px;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 8px rgba(0, 45, 35, 0.18);
+    }
+
+    /* 4 字副标题：纯白 92% 不透明度、字重 500、工整呼应 */
+    .p-subtitle {
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: 3.5px;
+      color: rgba(255, 255, 255, 0.92);
+      text-shadow: 0 1px 5px rgba(0, 40, 30, 0.15);
+    }
+
+    /* 手机展示台 */
+    .poster-phone-stage {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    /* ========================================================
+       中央直击人心大横幅 (Hero Impact Banner) —— 轻盈高透 & 强视觉冲击
+       ======================================================== */
+    .impact-banner {
+      position: absolute;
+      top: 48%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 366px;
+      max-width: 95%;
+      z-index: 150;
+      padding: 11px 18px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border: 1.5px solid rgba(16, 185, 129, 0.28);
+      box-shadow: 
+        0 14px 32px -4px rgba(15, 23, 42, 0.16),
+        0 0 20px rgba(16, 208, 158, 0.22),
+        inset 0 1px 2px rgba(255, 255, 255, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+    }
+    .poster-card:hover .impact-banner {
+      transform: translate(-50%, -54%) scale(1.02);
+      box-shadow: 
+        0 20px 42px -6px rgba(15, 23, 42, 0.22),
+        0 0 28px rgba(16, 208, 158, 0.32);
+    }
+    .banner-badge {
+      font-size: 15px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.18);
+    }
+    .banner-text {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #0F172A;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      text-shadow: none;
+      line-height: 1.2;
+    }
+    .banner-text .highlight {
+      color: #047857;
+      font-weight: 900;
+      background: linear-gradient(180deg, #059669 0%, #047857 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 隐藏横幅模式 */
+    html[data-banner="hide"] .impact-banner {
+      display: none;
+    }
+
+    /* 旗舰白玉微框手机壳（对标参考图，清爽白底与屏幕自然贴合） */
+    .device-chassis {
+      width: var(--phone-width);
+      height: var(--phone-height);
+      border-radius: 46px;
+      background: #FFFFFF;
+      border: 4px solid #FFFFFF;
+      box-shadow: 
+        0 0 0 1px rgba(0, 0, 0, 0.08),
+        0 18px 45px -8px rgba(3, 40, 30, 0.38),
+        0 8px 18px -4px rgba(0, 0, 0, 0.16);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 华为 / 鸿蒙 / 安卓通用旗舰前置居中微孔镜头 (合规无侵权) */
+    .camera-punch-hole {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 10px;
+      background: #0A0D0C;
+      border-radius: 50%;
+      z-index: 100;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), inset 0 0 2px rgba(255, 255, 255, 0.3);
+    }
+    .camera-punch-hole::after {
+      content: '';
+      position: absolute;
+      top: 2.5px;
+      left: 2.5px;
+      width: 3.5px;
+      height: 3.5px;
+      background: #1E293B;
+      border-radius: 50%;
+    }
+
+    /* 纯净全面屏模式时隐藏前摄微孔 */
+    html[data-device="pure"] .camera-punch-hole {
+      display: none;
+    }
+
+    /* 华为鸿蒙/安卓通用状态栏 */
+    .mock-status-bar {
+      height: 38px;
+      padding: 9px 18px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #1F2937;
+      z-index: 90;
+      background: #FFFFFF;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 屏幕内容区域 */
+    .screen-body {
+      flex: 1;
+      background: #FAFDFB;
+      color: #1F2937;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 安卓全面屏底部：不添加苹果专用的 Home Bar 横杠 */
+
+    /* ========================================================
+       各屏高保真真实界面
+       ======================================================== */
+
+    /* ----- 卡片 1: 记忆苍穹 / 点亮词海 ----- */
+    .sky-stage {
+      flex: 1;
+      background: radial-gradient(circle at 50% 30%, #152C28 0%, #0C1B18 60%, #06100E 100%);
+      color: #FFFFFF;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .sky-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+    }
+    .sky-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #10D09E;
+      background: rgba(16, 208, 158, 0.15);
+      border: 1px solid rgba(16, 208, 158, 0.28);
+      padding: 4px 10px;
+      border-radius: 100px;
+    }
+    .sky-canvas {
+      flex: 1;
+      position: relative;
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.2), 0 8px 24px rgba(16, 208, 158, 0.25);
+      backdrop-filter: blur(4px);
+    }
+    .bubble-main {
+      width: 148px;
+      height: 148px;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle at 35% 30%, rgba(110, 231, 183, 0.5), rgba(16, 185, 129, 0.25) 60%, rgba(6, 78, 59, 0.4) 100%);
+      border: 1.5px solid rgba(167, 243, 208, 0.6);
+      animation: float 4s ease-in-out infinite;
+    }
+    .bubble-b1 {
+      width: 82px;
+      height: 82px;
+      top: 25px;
+      left: 12px;
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.35), rgba(8, 47, 73, 0.4));
+      border: 1px solid rgba(125, 211, 252, 0.4);
+    }
+    .bubble-b2 {
+      width: 90px;
+      height: 90px;
+      top: 215px;
+      right: 16px;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.35), rgba(59, 7, 100, 0.4));
+      border: 1px solid rgba(216, 180, 254, 0.4);
+    }
+    .bubble-b3 {
+      width: 70px;
+      height: 70px;
+      bottom: 65px;
+      left: 32px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.35), rgba(69, 26, 3, 0.4));
+      border: 1px solid rgba(253, 230, 138, 0.4);
+    }
+
+    /* 参考图风格：斜切悬浮突出卡片 */
+    .pop-card {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.98);
+      color: #0F172A;
+      border-radius: 16px;
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      z-index: 50;
+      padding: 12px 14px;
+    }
+    .pop-card-sky {
+      bottom: 24px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pop-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10D09E, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      flex-shrink: 0;
+    }
+
+    /* ----- 卡片 2: 临界重温 / 精准唤醒 (FSRS 曲线 - 统一清爽白底明亮风) ----- */
+    .fsrs-stage {
+      flex: 1;
+      padding: 14px 14px 12px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: #0F172A;
+    }
+    .fsrs-core-card {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+    .fsrs-tag-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .fsrs-algo-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: #0284C7;
+      color: #FFFFFF;
+    }
+    .fsrs-params-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .param-box {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 5px 8px;
+    }
+    .param-title {
+      font-size: 9.5px;
+      color: #64748B;
+      margin-bottom: 2px;
+    }
+    .param-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+    .fsrs-curve-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 15px;
+      padding: 8px 11px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      margin-top: 146px; /* 精确平衡：距中央横幅底部 22px 安全间距，距手机底部 52px 充裕呼吸区 */
+    }
+    .curve-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #0F172A;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .curve-svg-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fsrs-ratings-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .rating-btn {
+      padding: 6px 4px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid transparent;
+    }
+    .r-grade {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .r-interval {
+      font-size: 9px;
+      color: #64748B;
+    }
+    .metric-pill {
+      flex: 1;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    /* ----- 卡片 3: 真迹默写 / 落笔生根 ----- */
+    .write-stage {
+      flex: 1;
+      padding: 14px 14px 12px;
+      background: #FAFAFA;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .write-prompt-card {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+    .write-word-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: -0.3px;
+    }
+    .handwriting-pad {
+      flex: 1;
+      background: #FFFFFF;
+      border: 2px dashed #CBD5E1;
+      border-radius: 16px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
+      margin-top: 36px; /* 完美下移，避开中央大横幅遮挡 */
+      min-height: 140px;
+      overflow: hidden;
+    }
+    .user-handwriting-stage {
+      position: relative;
+      display: inline-block;
+      width: 226px;
+      height: 130px;
+      margin-left: -20px; /* 偏左排布，为右侧手写真实手指留出自然延伸空间 */
+    }
+    .user-handwriting-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+    }
+    .finger-pointer-anchor {
+      position: absolute;
+      left: calc(88.1% - 22px); /* 像素级对齐真实手势食指指尖落笔点 */
+      top: calc(44.2% - 1px);
+      pointer-events: none;
+      z-index: 20;
+    }
+    .finger-touch-glow {
+      position: absolute;
+      top: -3px;
+      left: 13px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(0, 134, 157, 0.45);
+      filter: blur(4px);
+      animation: touchPulse 1.8s infinite ease-in-out;
+      z-index: 25;
+    }
+    .real-hand-img {
+      width: 184px;
+      height: 227px;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(-6px 12px 16px rgba(15, 23, 42, 0.22));
+    }
+    @keyframes touchPulse {
+      0%, 100% { transform: scale(0.85); opacity: 0.5; }
+      50% { transform: scale(1.35); opacity: 0.95; }
+    }
+    .live-dot {
+      width: 6.5px;
+      height: 6.5px;
+      border-radius: 50%;
+      background: #00869D;
+      display: inline-block;
+      box-shadow: 0 0 0 2.5px rgba(0, 134, 157, 0.25);
+      animation: liveBlink 1.4s infinite ease-in-out;
+    }
+    @keyframes liveBlink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+    .ocr-pass-badge {
+      position: absolute;
+      bottom: 12px;
+      left: 14px; /* 移到左下角，与右下角的手指形成完美平衡，绝不遮挡 */
+      background: #E0F2FE;
+      color: #0369A1;
+      border: 1px solid #BAE6FD;
+      border-radius: 8px;
+      padding: 3.5px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      z-index: 30;
+    }
+
+    /* ----- 卡片 4: 语音答题 / 开口成诵 ----- */
+    .asr-stage {
+      flex: 1;
+      padding: 16px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .sound-wave-box {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 20px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .wave-bars {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 48px;
+    }
+    .wave-bar {
+      width: 4px;
+      background: #10D09E;
+      border-radius: 4px;
+    }
+    .score-badge {
+      background: #059669;
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 100px;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+    }
+
+    /* ----- 卡片 5: 词单导入 / 随心定制 ----- */
+    .excel-stage {
+      flex: 1;
+      padding: 16px;
+      background: #F8FAFC;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .wechat-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+    .excel-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: #107C41;
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .import-steps {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 浮动微动画 */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* 移动端全屏响应式 */
+    @media (max-width: 600px) {
+      .poster-card {
+        width: 100%;
+        max-width: 360px;
+        height: 780px;
+      }
+      .device-chassis {
+        width: 290px;
+        height: 620px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部控制台 -->
+  <header class="top-bar">
+    <div class="brand-group">
+      <div class="brand-icon">泡</div>
+      <div>
+        <div class="brand-title">泡泡单词 · 应用商店极简「4+4」高转化海报</div>
+        <div class="brand-subtitle">对标主流高级极简审美 · 纯正四字对称工整格律</div>
+      </div>
+    </div>
+
+    <div class="controls-group">
+      <!-- 文案风格切换 -->
+      <div class="segment-tabs">
+        <button class="tab-btn active" id="btn-copy-a" onclick="switchCopyStyle('a')">方案 A：凝练典雅（推荐）</button>
+        <button class="tab-btn" id="btn-copy-b" onclick="switchCopyStyle('b')">方案 B：行动功能</button>
+      </div>
+
+      <!-- 背景色调切换 -->
+      <div class="segment-tabs">
+        <button class="tab-btn active" id="btn-pal-emerald" onclick="switchPalette('emerald')">参考图青蓝色（统一清透）</button>
+        <button class="tab-btn" id="btn-pal-macaron" onclick="switchPalette('macaron')">马卡龙五色彩阶</button>
+      </div>
+
+      <!-- 设备模具切换（解决华为等安卓市场审核问题） -->
+      <div class="segment-tabs">
+        <button class="tab-btn active" id="btn-dev-punch" onclick="switchDevice('punch')">华为/主流安卓微孔 (合规)</button>
+        <button class="tab-btn" id="btn-dev-pure" onclick="switchDevice('pure')">极简纯净全面屏</button>
+      </div>
+
+      <!-- 中央直击人心大横幅开关 -->
+      <div class="segment-tabs">
+        <button class="tab-btn active" id="btn-banner-show" onclick="switchBanner('show')">中央广告横幅 (开启)</button>
+        <button class="tab-btn" id="btn-banner-hide" onclick="switchBanner('hide')">无横幅 (纯净)</button>
+      </div>
+
+      <button class="btn-action" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+        <span>快捷保存 / 截图</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="showcase-container">
+    <!-- 5 联屏海报走廊 -->
+    <div class="gallery-row" id="galleryRow">
+
+      <!-- 海报 1: 记忆苍穹 · 点亮词海 -->
+      <div class="poster-card" id="card-1">
+        <div class="poster-header">
+          <h2 class="p-title" id="p1-title">记忆苍穹</h2>
+          <div class="p-subtitle" id="p1-sub">点亮词海</div>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="camera-punch-hole"></div>
+            <div class="mock-status-bar" style="background: #112622; color: #FFFFFF;">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-body">
+              <div class="sky-stage">
+                <div class="sky-header">
+                  <span class="sky-badge">🌌 1,840 颗词汇微光</span>
+                  <span style="font-size: 11px; color: #10D09E;">捏合远观 ›</span>
+                </div>
+
+                <div class="sky-canvas">
+                  <div class="bubble bubble-b1">
+                    <span style="font-size: 11px; font-weight: 700;">lucid</span>
+                  </div>
+                  <div class="bubble bubble-main">
+                    <span style="font-size: 19px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px;">ephemeral</span>
+                    <span style="font-size: 11px; color: #A7F3D0; margin-top: 4px;">/ɪˈfemərəl/</span>
+                    <span style="font-size: 10px; color: #6EE7B7; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 10px; margin-top: 6px;">✦ 牢固掌握</span>
+                  </div>
+                  <div class="bubble bubble-b2">
+                    <span style="font-size: 11px; font-weight: 700;">serendipity</span>
+                  </div>
+                  <div class="bubble bubble-b3">
+                    <span style="font-size: 11px; font-weight: 700;">pragmatic</span>
+                  </div>
+                </div>
+
+                <!-- 浮起高亮卡片（仿照参考图层次） -->
+                <div class="pop-card pop-card-sky">
+                  <div class="pop-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #064E3B;">掌握即化作气泡升空</div>
+                    <div style="font-size: 10.5px; color: #64748B;">漫游触碰即刻发音 · 遗忘光泽衰减唤醒</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 中央直击人心大横幅 01 -->
+          <div class="impact-banner">
+            <span class="banner-badge">✨</span>
+            <span class="banner-text">背下的每一个词，都是<span class="highlight">看得见的浩瀚星辰</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 海报 2: 临界重温 · 精准唤醒 -->
+      <div class="poster-card" id="card-2">
+        <div class="poster-header">
+          <h2 class="p-title" id="p2-title">临界重温</h2>
+          <div class="p-subtitle" id="p2-sub">精准唤醒</div>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="camera-punch-hole"></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-body">
+              <div class="fsrs-stage">
+                <!-- 核心算法卡片 -->
+                <div class="fsrs-core-card">
+                  <div class="fsrs-tag-row">
+                    <span class="fsrs-algo-badge">FSRS-4.5 认知模型</span>
+                    <span style="font-size: 10.5px; color: #0284C7; font-weight: 600;">自适应遗忘测算</span>
+                  </div>
+                  <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 3px;">
+                    ephemeral <span style="font-size: 11px; font-weight: 600; color: #64748B;">/ɪˈfemərəl/</span>
+                  </div>
+                  <div style="font-size: 11px; font-weight: 600; color: #0284C7; margin-top: 2px;">
+                    即将触碰 90% 遗忘临界点
+                  </div>
+
+                  <div class="fsrs-params-grid">
+                    <div class="param-box">
+                      <div class="param-title">记忆稳定性 (Stability)</div>
+                      <div class="param-val">14.8 <span style="font-size: 11px; font-weight: 600; color: #0284C7;">天</span></div>
+                    </div>
+                    <div class="param-box">
+                      <div class="param-title">认知难度 (Difficulty)</div>
+                      <div class="param-val">3.2 <span style="font-size: 11px; font-weight: 600; color: #0284C7;">/ 10</span></div>
+                    </div>
+                  </div>
+
+                  <!-- 临界唤醒预警状态条 -->
+                  <div style="margin-top: 8px; background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10.5px; color: #0369A1; font-weight: 700;">当前可提取概率 (R)</span>
+                    <span style="font-size: 10.5px; color: #D97706; font-weight: 800;">90.2% · 即将触发重温</span>
+                  </div>
+                </div>
+
+                <!-- 逼真的高保真遗忘衰减与临界跃迁图谱 -->
+                <div class="fsrs-curve-card">
+                  <div class="curve-header">
+                    <span style="font-size: 11px; color: #0F172A; font-weight: 700;">记忆保留率与临界重温轨迹</span>
+                    <span style="font-size: 9.5px; color: #D97706; font-weight: 700; background: #FEF3C7; border: 1px solid #FDE68A; padding: 1.5px 6px; border-radius: 4px;">R=90% 黄金唤醒点</span>
+                  </div>
+
+                  <div class="curve-svg-box">
+                    <svg width="100%" height="116" viewBox="0 0 270 118" fill="none" style="overflow: visible;">
+                      <defs>
+                        <!-- 记忆能量浅蓝渐变充填 -->
+                        <linearGradient id="fsrsAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stop-color="#0284C7" stop-opacity="0.16"/>
+                          <stop offset="60%" stop-color="#38BDF8" stop-opacity="0.06"/>
+                          <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+                        </linearGradient>
+                        <linearGradient id="curveGrad" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stop-color="#0284C7"/>
+                          <stop offset="50%" stop-color="#0EA5E9"/>
+                          <stop offset="100%" stop-color="#059669"/>
+                        </linearGradient>
+                      </defs>
+
+                      <!-- 坐标参考网格与 Y 轴标尺 -->
+                      <!-- 100% 满额记忆线 -->
+                      <line x1="26" y1="16" x2="262" y2="16" stroke="#E2E8F0" stroke-dasharray="2 3"/>
+                      <text x="3" y="19" fill="#64748B" font-size="8" font-weight="600">100%</text>
+
+                      <!-- 90% 核心遗忘临界基准线（金色明亮虚线） -->
+                      <line x1="26" y1="42" x2="262" y2="42" stroke="#F59E0B" stroke-width="1.3" stroke-dasharray="3 3"/>
+                      <text x="3" y="45" fill="#D97706" font-size="8" font-weight="800">90%</text>
+                      <!-- 右侧临界线说明小标签 -->
+                      <rect x="196" y="35" width="66" height="13" rx="3" fill="#FEF3C7" stroke="#FDE68A"/>
+                      <text x="200" y="44" fill="#B45309" font-size="7" font-weight="700">遗忘临界线 90%</text>
+
+                      <!-- 50% 模糊虚线 -->
+                      <line x1="26" y1="72" x2="262" y2="72" stroke="#F1F5F9" stroke-dasharray="2 3"/>
+                      <text x="3" y="75" fill="#94A3B8" font-size="8">50%</text>
+
+                      <!-- X 轴底线与时间刻度 -->
+                      <line x1="26" y1="98" x2="262" y2="98" stroke="#E2E8F0"/>
+                      <text x="30" y="109" fill="#64748B" font-size="7.5">0天</text>
+                      <text x="70" y="109" fill="#D97706" font-size="7.5" font-weight="700">第1天</text>
+                      <text x="132" y="109" fill="#D97706" font-size="7.5" font-weight="700">第3.5天</text>
+                      <text x="210" y="109" fill="#059669" font-size="7.5" font-weight="700">第15天+</text>
+
+                      <!-- 渐变保留率面积 -->
+                      <path d="M 32 98 L 32 16 C 45 24, 62 40, 76 42 L 76 16 C 96 22, 122 40, 142 42 L 142 16 C 170 20, 218 30, 260 34 L 260 98 Z" fill="url(#fsrsAreaGrad)"/>
+
+                      <!-- 对照组：未在临界点复习导致断崖跌落（红色警示虚线） -->
+                      <path d="M 76 42 C 88 62, 108 84, 136 94" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="3 3"/>
+                      <circle cx="136" cy="94" r="2.2" fill="#EF4444"/>
+                      <text x="142" y="96" fill="#DC2626" font-size="7" font-weight="700">未重学: 跌至 20%</text>
+
+                      <!-- 真实锯齿遗忘曲线主轨迹 -->
+                      <path d="M 32 16 C 45 24, 62 40, 76 42" stroke="url(#curveGrad)" stroke-width="2.2" stroke-linecap="round"/>
+                      <line x1="76" y1="42" x2="76" y2="16" stroke="#0284C7" stroke-width="2" stroke-linecap="round"/>
+
+                      <path d="M 76 16 C 96 22, 122 40, 142 42" stroke="url(#curveGrad)" stroke-width="2.2" stroke-linecap="round"/>
+                      <line x1="142" y1="42" x2="142" y2="16" stroke="#0284C7" stroke-width="2" stroke-linecap="round"/>
+
+                      <path d="M 142 16 C 170 20, 218 30, 260 34" stroke="url(#curveGrad)" stroke-width="2.2" stroke-linecap="round"/>
+
+                      <!-- 关键节点 1：第 1 次遗忘唤醒点 (76, 42) -->
+                      <circle cx="76" cy="42" r="7" fill="rgba(245, 158, 11, 0.2)" stroke="#F59E0B" stroke-width="1.2">
+                        <animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/>
+                      </circle>
+                      <circle cx="76" cy="42" r="3" fill="#F59E0B"/>
+                      <path d="M 73 28 L 76 22 L 79 28" stroke="#0284C7" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                      <rect x="44" y="2" width="64" height="12" rx="3" fill="#0284C7"/>
+                      <text x="48" y="11" fill="#FFFFFF" font-size="7" font-weight="800">⚡ 触发重学·回100%</text>
+
+                      <!-- 关键节点 2：第 2 次遗忘唤醒点 (142, 42) -->
+                      <circle cx="142" cy="42" r="5.5" fill="rgba(245, 158, 11, 0.2)" stroke="#F59E0B" stroke-width="1.2"/>
+                      <circle cx="142" cy="42" r="3" fill="#F59E0B"/>
+                      <path d="M 139 28 L 142 22 L 145 28" stroke="#0284C7" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                      <rect x="116" y="2" width="60" height="12" rx="3" fill="#059669"/>
+                      <text x="120" y="11" fill="#FFFFFF" font-size="7" font-weight="800">S稳定性翻倍 7.2d</text>
+
+                      <!-- 关键节点 3：进入长效稳固阶段 -->
+                      <circle cx="260" cy="34" r="3.5" fill="#059669" stroke="#FFFFFF" stroke-width="1.2"/>
+                    </svg>
+                  </div>
+
+                  <!-- 科学原理解释底条 -->
+                  <div style="background: #F0F9FF; border: 1px dashed #BAE6FD; border-radius: 7px; padding: 4px 7px; margin-top: 4px; display: flex; align-items: center; gap: 5px;">
+                    <span style="font-size: 10px;">💡</span>
+                    <span style="font-size: 9px; color: #0369A1; line-height: 1.3;">
+                      <strong>科学原理：</strong>在临界点（R=90%）重新学习，突触强化收益最高，无效复习减少 40%。
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 四级认知反馈 -->
+                <div class="fsrs-ratings-bar">
+                  <div class="rating-btn" style="border-color: #FECACA; background: #FEF2F2;">
+                    <div class="r-grade" style="color: #DC2626;">重来</div>
+                    <div class="r-interval">10m 重学</div>
+                  </div>
+                  <div class="rating-btn" style="border-color: #FDE68A; background: #FFFBEB;">
+                    <div class="r-grade" style="color: #D97706;">困难</div>
+                    <div class="r-interval">3d 临界</div>
+                  </div>
+                  <div class="rating-btn" style="border-color: #BAE6FD; background: #F0F9FF;">
+                    <div class="r-grade" style="color: #0284C7;">良好</div>
+                    <div class="r-interval">7d 临界</div>
+                  </div>
+                  <div class="rating-btn" style="border-color: #A7F3D0; background: #ECFDF5;">
+                    <div class="r-grade" style="color: #059669;">简单</div>
+                    <div class="r-interval">15d 稳固</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 中央直击人心大横幅 02 -->
+          <div class="impact-banner">
+            <span class="banner-badge">⚡</span>
+            <span class="banner-text">精准安排，<span class="highlight">时间节省 40%！</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 海报 3: 真迹默写 · 落笔生根 -->
+      <div class="poster-card" id="card-3">
+        <div class="poster-header">
+          <h2 class="p-title" id="p3-title">真迹默写</h2>
+          <div class="p-subtitle" id="p3-sub">落笔生根</div>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="camera-punch-hole"></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-body">
+              <div class="write-stage">
+                <div class="write-prompt-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">拼写默写 · 第 6 / 20 词</span>
+                    <span style="font-size: 9.5px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 1.5px 6px; border-radius: 4px;">真迹抗遗忘</span>
+                  </div>
+                  <div class="write-word-title" style="margin-top: 5px;">adj. 短暂的；转瞬即逝的</div>
+                  <div style="font-size: 11px; color: #9CA3AF; margin-top: 3px;">音标 [ɪˈfemərəl] · 考频 ★★★★☆</div>
+                </div>
+
+                <div class="handwriting-pad">
+                  <!-- 用户真实手写真迹与正在落笔的手指 -->
+                  <div class="user-handwriting-stage">
+                    <img src="img/user_handwritten_ephem_clean.png" class="user-handwriting-img" alt="手写真迹 ephem">
+
+                    <!-- 真实手写手势与指尖触控光晕（100%还原用户真实美手参考图） -->
+                    <div class="finger-pointer-anchor">
+                      <div class="finger-touch-glow"></div>
+                      <img src="img/flawless_real_hand.png" class="real-hand-img" alt="真实写实手势">
+                    </div>
+                  </div>
+
+                  <!-- 实时笔迹追踪识别徽章 -->
+                  <div class="ocr-pass-badge">
+                    <span class="live-dot"></span>
+                    <span>实时识别中 · 99% 命中</span>
+                  </div>
+                </div>
+
+                <!-- 浮起工具栏 -->
+                <div style="display: flex; gap: 8px;">
+                  <button style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid #E5E7EB; background: #FFFFFF; font-size: 12px; font-weight: 600; color: #4B5563;">清除笔迹</button>
+                  <button style="flex: 2; padding: 10px; border-radius: 12px; border: none; background: #10B981; font-size: 12px; font-weight: 700; color: #FFFFFF; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">下一个</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 中央直击人心大横幅 03 -->
+          <div class="impact-banner">
+            <span class="banner-badge">✍️</span>
+            <span class="banner-text">谁说手机<span class="highlight">不能手写？！</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 海报 4: 语音答题 · 开口成诵 -->
+      <div class="poster-card" id="card-4">
+        <div class="poster-header">
+          <h2 class="p-title" id="p4-title">语音答题</h2>
+          <div class="p-subtitle" id="p4-sub">开口成诵</div>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="camera-punch-hole"></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-body">
+              <div class="asr-stage">
+                <div>
+                  <div style="font-size: 11px; color: #059669; font-weight: 700; text-transform: uppercase;">原声跟读 · ASR 声学识别</div>
+                  <div style="font-size: 24px; font-weight: 800; color: #111827; margin-top: 6px;">resilience</div>
+                  <div style="font-size: 13px; color: #4B5563; margin-top: 4px;">/rɪˈzɪliəns/ · n. 恢复力；弹韧性</div>
+                </div>
+
+                <!-- 电影例句原声 -->
+                <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 14px; padding: 12px;">
+                  <div style="font-size: 10px; color: #9CA3AF; font-weight: 600; margin-bottom: 4px;">🎬 经典影视原声例句</div>
+                  <div style="font-size: 12.5px; color: #1F2937; line-height: 1.4;">"True <b style="color: #059669;">resilience</b> is not about never falling, but rising every time."</div>
+                </div>
+
+                <!-- 声波动画与打分 -->
+                <div class="sound-wave-box">
+                  <div class="score-badge">口语评测得分 98 · 极纯正</div>
+                  <div class="wave-bars">
+                    <div class="wave-bar" style="height: 16px;"></div>
+                    <div class="wave-bar" style="height: 32px;"></div>
+                    <div class="wave-bar" style="height: 44px; background: #059669;"></div>
+                    <div class="wave-bar" style="height: 28px;"></div>
+                    <div class="wave-bar" style="height: 48px; background: #059669;"></div>
+                    <div class="wave-bar" style="height: 20px;"></div>
+                    <div class="wave-bar" style="height: 36px;"></div>
+                  </div>
+                  <div style="font-size: 11px; color: #065F46; font-weight: 600;">开口即识别 · 告别哑巴背词</div>
+                </div>
+
+                <div style="background: #111827; color: #FFFFFF; border-radius: 14px; padding: 12px; text-align: center; font-size: 13px; font-weight: 700;">
+                  按住说话答题
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 中央直击人心大横幅 04 -->
+          <div class="impact-banner">
+            <span class="banner-badge">🎙️</span>
+            <span class="banner-text">一句话搞定，<span class="highlight">告别选择题！</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 海报 5: 词单导入 · 随心定制 -->
+      <div class="poster-card" id="card-5">
+        <div class="poster-header">
+          <h2 class="p-title" id="p5-title">词单导入</h2>
+          <div class="p-subtitle" id="p5-sub">随心定制</div>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="camera-punch-hole"></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-body">
+              <div class="excel-stage">
+                <div>
+                  <span style="font-size: 11px; color: #6B7280; font-weight: 600;">自定义题库导入</span>
+                  <div style="font-size: 20px; font-weight: 800; color: #111827; margin-top: 4px;">微信 / Excel 一键入库</div>
+                </div>
+
+                <!-- 微信文件分享卡 -->
+                <div class="wechat-card">
+                  <div class="excel-icon">XLS</div>
+                  <div style="flex: 1; overflow: hidden;">
+                    <div style="font-size: 12.5px; font-weight: 700; color: #111827; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">考研核心高频 800 词.xlsx</div>
+                    <div style="font-size: 10.5px; color: #6B7280; margin-top: 2px;">来自微信好友分享 · 142 KB</div>
+                  </div>
+                </div>
+
+                <!-- 智能列映射解析 -->
+                <div class="import-steps">
+                  <div style="font-size: 11px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 4px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    表头智能识别完成 (共 800 词)
+                  </div>
+                  <div style="font-size: 11px; color: #4B5563; line-height: 1.5;">
+                    • A列 [word] ➔ 单词<br>
+                    • B列 [meaning] ➔ 中文释义<br>
+                    • C列 [example] ➔ 真题例句
+                  </div>
+                </div>
+
+                <div style="margin-top: auto; background: #059669; color: #FFFFFF; border-radius: 14px; padding: 12px; text-align: center; font-size: 13px; font-weight: 700; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);">
+                  立即导入并生成 FSRS 计划
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 中央直击人心大横幅 05 -->
+          <div class="impact-banner">
+            <span class="banner-badge">📂</span>
+            <span class="banner-text"><span class="highlight">我的学习我做主！</span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const copyPresets = {
+      a: {
+        p1Title: '记忆苍穹', p1Sub: '点亮词海',
+        p2Title: '临界重温', p2Sub: '精准唤醒',
+        p3Title: '真迹默写', p3Sub: '落笔生根',
+        p4Title: '语音答题', p4Sub: '开口成诵',
+        p5Title: '词单导入', p5Sub: '随心定制'
+      },
+      b: {
+        p1Title: '泡泡星云', p1Sub: '过目成星',
+        p2Title: '科学复习', p2Sub: '告别遗忘',
+        p3Title: '提笔默写', p3Sub: '加深记忆',
+        p4Title: '原声跟读', p4Sub: '地道开口',
+        p5Title: '自主题库', p5Sub: '一键导入'
+      }
+    };
+
+    function switchCopyStyle(style) {
+      const data = copyPresets[style];
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById(`p${i}-title`).textContent = data[`p${i}Title`];
+        document.getElementById(`p${i}-sub`).textContent = data[`p${i}Sub`];
+      }
+      document.getElementById('btn-copy-a').classList.toggle('active', style === 'a');
+      document.getElementById('btn-copy-b').classList.toggle('active', style === 'b');
+    }
+
+    function switchPalette(pal) {
+      document.documentElement.setAttribute('data-palette', pal);
+      document.getElementById('btn-pal-emerald').classList.toggle('active', pal === 'emerald');
+      document.getElementById('btn-pal-macaron').classList.toggle('active', pal === 'macaron');
+    }
+
+    function switchDevice(mode) {
+      document.documentElement.setAttribute('data-device', mode);
+      document.getElementById('btn-dev-punch').classList.toggle('active', mode === 'punch');
+      document.getElementById('btn-dev-pure').classList.toggle('active', mode === 'pure');
+    }
+
+    function switchBanner(mode) {
+      document.documentElement.setAttribute('data-banner', mode);
+      document.getElementById('btn-banner-show').classList.toggle('active', mode === 'show');
+      document.getElementById('btn-banner-hide').classList.toggle('active', mode === 'hide');
+    }
+  </script>
+</body>
+</html>

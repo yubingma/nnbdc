@@ -381,12 +381,15 @@ void main() {
       required int todayLearnedTimes,
       required int learnedTimes,
       required DateTime lastLearningDate,
+      bool? isTodayNewWord,
       // 可选的"今天首条评分日志"（固化当天学习/复习轨道）：
       // 同一词当天已评分过的场景必须携带，模拟真实不变量"评过分必有一条今日日志"
       int? firstLogElapsedDays,
       int? firstLogRating,
     }) async {
       final lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals(wordId))).getSingle();
+      final effectiveIsTodayNew = isTodayNewWord ??
+          (state == FsrsState.review.value || state == FsrsState.relearning.value ? false : lw.isTodayNewWord);
       await db.learningWordsDao.saveEntity(lw.copyWith(
         stability: Value(stability),
         difficulty: Value(difficulty),
@@ -395,6 +398,7 @@ void main() {
         reps: Value(reps),
         lapses: Value(lapses),
         state: Value(state),
+        isTodayNewWord: effectiveIsTodayNew,
         todayLearnedTimes: todayLearnedTimes,
         learnedTimes: learnedTimes,
         lastLearningDate: Value(lastLearningDate),

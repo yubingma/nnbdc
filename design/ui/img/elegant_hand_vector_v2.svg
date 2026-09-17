@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 480" width="460" height="480" fill="none">
+  <defs>
+    <!-- 主体温润白皙粉肤渐变 -->
+    <linearGradient id="handSkinBase" x1="0.1" y1="0.05" x2="0.85" y2="0.95">
+      <stop offset="0%" stop-color="#FFF6F2"/>
+      <stop offset="18%" stop-color="#FDEEE7"/>
+      <stop offset="42%" stop-color="#F8DDD3"/>
+      <stop offset="70%" stop-color="#ECC5B2"/>
+      <stop offset="90%" stop-color="#DFAC96"/>
+      <stop offset="100%" stop-color="#CE9780"/>
+    </linearGradient>
+
+    <!-- 拇指内侧立体受光与暗部 -->
+    <linearGradient id="thumbSkinGrad" x1="0.1" y1="0.1" x2="0.8" y2="0.8">
+      <stop offset="0%" stop-color="#FFF5F0"/>
+      <stop offset="30%" stop-color="#FCECE3"/>
+      <stop offset="65%" stop-color="#F4D2C0"/>
+      <stop offset="85%" stop-color="#E5B59E"/>
+      <stop offset="100%" stop-color="#D09981"/>
+    </linearGradient>
+
+    <!-- 食指背光侧立体柔和阴影 -->
+    <linearGradient id="indexSideShadow" x1="0" y1="0" x2="1" y2="0.8">
+      <stop offset="0%" stop-color="#C7856A" stop-opacity="0.6"/>
+      <stop offset="35%" stop-color="#E3AA94" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#F8DDD3" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- 食指背侧高光（修长受光棱线） -->
+    <linearGradient id="indexSpineGleam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.7"/>
+    </linearGradient>
+
+    <!-- 虎口深层遮蔽阴影（极富空间深度的解剖层次） -->
+    <radialGradient id="purlicueShadow" cx="48%" cy="44%" r="42%">
+      <stop offset="0%" stop-color="#A65B40" stop-opacity="0.7"/>
+      <stop offset="45%" stop-color="#C77E63" stop-opacity="0.4"/>
+      <stop offset="80%" stop-color="#EABEA8" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#ECC5B2" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 手背肌腱骨节反光 -->
+    <linearGradient id="tendonLight" x1="0.1" y1="0.1" x2="0.9" y2="0.9">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.7"/>
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.6"/>
+    </linearGradient>
+
+    <!-- 水晶果冻指甲渐变 -->
+    <linearGradient id="jellyNail" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="20%" stop-color="#FFF0F2"/>
+      <stop offset="55%" stop-color="#FBCCD4"/>
+      <stop offset="85%" stop-color="#F6A5B3"/>
+      <stop offset="100%" stop-color="#EC889B"/>
+    </linearGradient>
+
+    <!-- 指尖透光微红晕 -->
+    <radialGradient id="fingertipGlow" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#F43F5E" stop-opacity="0.32"/>
+      <stop offset="65%" stop-color="#FB7185" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#FB7185" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 真实手部立体环境投影 -->
+    <filter id="handDropShadow" x="-15%" y="-10%" width="135%" height="130%">
+      <feDropShadow dx="-8" dy="12" stdDeviation="12" flood-color="#0F172A" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#handDropShadow)">
+    <!-- 1. 手背与食指主形体 (食指尖端落在 (65, 30)) -->
+    <path d="M 65 30
+             C 50 33, 44 48, 46 64
+             C 48 88, 59 126, 78 165
+             C 96 202, 120 244, 148 284
+             C 158 298, 163 315, 166 334
+             C 171 370, 176 412, 184 450
+             C 192 480, 210 505, 235 525
+             L 458 525
+             L 458 310
+             C 452 280, 442 260, 412 245
+             C 385 232, 350 230, 320 236
+             C 298 220, 265 208, 230 216
+             C 195 194, 162 140, 130 96
+             C 108 66, 88 44, 65 30 Z"
+          fill="url(#handSkinBase)"/>
+
+    <!-- 2. 大拇指自然翘起形体（从虎口优雅分出，向左上方自然翘展至 (28, 225)） -->
+    <path d="M 166 334
+             C 140 338, 108 318, 76 295
+             C 48 274, 30 248, 28 228
+             C 26 208, 38 198, 52 204
+             C 66 210, 84 225, 105 248
+             C 128 274, 150 306, 172 342
+             C 168 338, 167 335, 166 334 Z"
+          fill="url(#thumbSkinGrad)"/>
+
+    <!-- 拇指下部与大鱼际饱满弧线 -->
+    <path d="M 28 228
+             C 24 246, 32 278, 48 315
+             C 68 358, 98 408, 136 452
+             C 165 485, 195 512, 228 535
+             C 202 490, 184 440, 174 390
+             C 168 358, 166 336, 166 334
+             Z"
+          fill="url(#thumbSkinGrad)"/>
+
+    <!-- 3. 虎口立体阴影与生理凹陷 -->
+    <path d="M 166 334
+             C 148 348, 136 376, 138 410
+             C 140 442, 152 472, 168 498
+             C 158 460, 154 422, 155 385
+             C 156 358, 160 342, 166 334 Z"
+          fill="url(#purlicueShadow)"/>
+
+    <!-- 虎口折痕精细微线 -->
+    <path d="M 165 335 C 145 352, 138 375, 142 400" stroke="#A65B40" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- 4. 食指内侧修长阴影（凸显指身圆柱立体透视） -->
+    <path d="M 52 56
+             C 55 96, 74 152, 100 208
+             C 122 254, 146 295, 163 330"
+          stroke="url(#indexSideShadow)" stroke-width="8" fill="none" stroke-linecap="round"/>
+
+    <!-- 5. 食指背侧高光反射（纤长挺拔的受光感） -->
+    <path d="M 82 46
+             C 108 80, 140 136, 172 192
+             C 204 246, 235 292, 252 322"
+          stroke="url(#indexSpineGleam)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+    <!-- 6. 食指指尖透光天然粉润气色 -->
+    <ellipse cx="64" cy="50" rx="18" ry="24" transform="rotate(-28 64 50)" fill="url(#fingertipGlow)"/>
+
+    <!-- 7. 食指晶莹指甲盖（粉嫩优雅、法式白色月牙边） -->
+    <path d="M 65 32
+             C 56 34, 51 41, 52 51
+             C 53 63, 61 75, 70 75
+             C 79 75, 85 61, 83 47
+             C 81 37, 74 30, 65 32 Z"
+          fill="url(#jellyNail)" stroke="#F9A8D4" stroke-width="0.8"/>
+    <!-- 食指指甲月牙白边缘 -->
+    <path d="M 54 46 C 58 37, 71 33, 78 38" stroke="#FFFFFF" stroke-width="2.6" fill="none" stroke-linecap="round" opacity="0.95"/>
+    <!-- 食指指甲侧边弧面高光 -->
+    <path d="M 58 50 C 60 58, 66 68, 70 70" stroke="#FFFFFF" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.8"/>
+
+    <!-- 8. 拇指指甲盖（左侧翘起的修长半侧指甲） -->
+    <path d="M 29 226
+             C 28 214, 37 203, 48 206
+             C 54 208, 56 220, 50 228
+             C 44 235, 32 236, 29 226 Z"
+          fill="url(#jellyNail)" stroke="#F9A8D4" stroke-width="0.6"/>
+    <path d="M 32 220 C 37 210, 46 208, 49 212" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.9"/>
+
+    <!-- 9. 手背掌骨肌腱高光（与原图完全吻合的解剖透视） -->
+    <path d="M 230 216 C 272 272, 324 332, 355 382" stroke="url(#tendonLight)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M 280 305 C 326 352, 378 402, 412 452" stroke="url(#tendonLight)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+
+    <!-- 10. 右侧蜷握手指的饱满掌侧与关节分界阴影 -->
+    <path d="M 320 236 C 342 240, 362 252, 370 270" stroke="#C27E64" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <path d="M 412 245 C 436 250, 456 265, 462 285" stroke="#C27E64" stroke-width="2.2" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- 11. 食指关节细微自然折痕线 -->
+    <path d="M 104 150 C 114 153, 124 151, 130 146" stroke="#B66C52" stroke-width="1.2" stroke-linecap="round" opacity="0.45"/>
+    <path d="M 158 236 C 172 240, 184 236, 192 230" stroke="#B66C52" stroke-width="1.4" stroke-linecap="round" opacity="0.45"/>
+
+    <!-- 12. 墨水落笔触碰点与同色青碧扩散涟漪 -->
+    <circle cx="65" cy="30" r="9" fill="rgba(0, 134, 157, 0.25)"/>
+    <circle cx="65" cy="30" r="4.2" fill="#00869D"/>
+    <path d="M 51 40 C 58 34, 63 31, 65 30" stroke="#00869D" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+</svg>
