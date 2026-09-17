@@ -5,6 +5,26 @@ import 'package:flutter/services.dart';
 import '../util/platform_util.dart';
 import '../util/study_audio_session_controller.dart';
 
+/// 经典金石朱砂印泥色彩规范（Seal Red）
+///
+/// 遵循真实印章的朱砂印泥物理本色，不随应用主题色变化。
+class DakaSealColors {
+  /// 亮色模式印泥红（经典朱砂红，色泽沉稳浓郁，既有金石气韵，又鲜亮醒目）
+  static const Color sealRed = Color(0xFFDC2626);
+
+  /// 暗色模式印泥红（微调提亮，确保深色背景下的视觉对比度与透润感）
+  static const Color sealRedDark = Color(0xFFEF4444);
+
+  /// 根据暗色模式标志获取对应的印泥红
+  static Color forDark(bool isDark) => isDark ? sealRedDark : sealRed;
+
+  /// 根据当前 BuildContext 获取对应的印泥红
+  static Color of(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return forDark(isDark);
+  }
+}
+
 /// 打卡印章组件
 ///
 /// 具备高保真双环印泥质感，并支持极具冲击力与仪式感的“凌空盖下”物理重击动效：
@@ -25,8 +45,11 @@ class DakaStampBadge extends StatefulWidget {
   /// 动画延迟启动时间
   final Duration delay;
 
-  /// 印章主色调（默认经典朱砂红）
+  /// 印章主色调（默认经典印泥朱砂红，不随主题变色）
   final Color? color;
+
+  /// 印章衬底颜色（在渐变或彩色背景上使用白底衬底，确保印泥纯正不混色）
+  final Color? backgroundColor;
 
   /// 着陆冲击瞬间回调（可用于震动周边卡片或触发额外庆祝动效）
   final VoidCallback? onHit;
@@ -38,6 +61,7 @@ class DakaStampBadge extends StatefulWidget {
     this.animate = true,
     this.delay = const Duration(milliseconds: 150),
     this.color,
+    this.backgroundColor,
     this.onHit,
   });
 
@@ -183,7 +207,8 @@ class _DakaStampBadgeState extends State<DakaStampBadge>
 
   @override
   Widget build(BuildContext context) {
-    final stampColor = widget.color ?? const Color(0xFFEF4444);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final stampColor = widget.color ?? DakaSealColors.forDark(isDark);
 
     return AnimatedBuilder(
       animation: _controller,
@@ -243,13 +268,14 @@ class _DakaStampBadgeState extends State<DakaStampBadge>
     final size = widget.size;
     final primaryText = widget.isExtraRound ? '已加量' : '已打卡';
     final subText = widget.isExtraRound ? 'SUPER HERO' : 'VERIFIED';
+    final effectiveBg = widget.backgroundColor ?? color.withValues(alpha: 0.14);
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withValues(alpha: 0.14),
+        color: effectiveBg,
         border: Border.all(
           color: color,
           width: 2.2,

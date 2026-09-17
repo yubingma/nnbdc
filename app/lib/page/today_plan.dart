@@ -12,6 +12,7 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
+import 'package:nnbdc/widget/daka_stamp_badge.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -798,7 +799,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     height: 128,
                     child: CustomPaint(
                       painter: _DakaSealPainter(
-                        color: themeConfig.primaryColor,
+                        color: DakaSealColors.forDark(isDarkMode),
                         isDark: isDarkMode,
                       ),
                     ),
@@ -876,15 +877,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               _DakaSealText(
                                 key: const Key('today_plan_daka_seal_text'),
                                 text: '今日已打卡',
-                                color: themeConfig.primaryColor
-                                    .withValues(alpha: isDarkMode ? 0.90 : 0.80),
+                                color: DakaSealColors.forDark(isDarkMode)
+                                    .withValues(alpha: isDarkMode ? 0.90 : 0.82),
                               ),
                               const SizedBox(height: 3),
                               _DakaSealText(
                                 key: const Key('today_plan_daka_seal_date'),
                                 text: stampDate,
-                                color: themeConfig.primaryColor
-                                    .withValues(alpha: isDarkMode ? 0.62 : 0.52),
+                                color: DakaSealColors.forDark(isDarkMode)
+                                    .withValues(alpha: isDarkMode ? 0.65 : 0.56),
                                 fontSize: 9,
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 1.1,

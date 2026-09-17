@@ -278,11 +278,14 @@ class FinishPageState extends State<FinishPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 完成打卡专属物理动效印章
+                // 完成打卡专属物理动效印章（印泥朱砂红，不随主题变色）
                 DakaStampBadge(
                   size: 76,
                   isExtraRound: isExtraRound,
-                  color: Colors.white,
+                  color: DakaSealColors.forDark(themeConfig.isDark),
+                  backgroundColor: themeConfig.isDark
+                      ? const Color(0xFF1E293B)
+                      : Colors.white,
                 ),
                 const SizedBox(height: 10),
                 Text(
