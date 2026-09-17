@@ -33,6 +33,7 @@ class BdcStateUiSignature {
   final bool isSentenceSelectModePreferred;
   final int? currentScore;
   final String? asrFirstCandidate;
+  final bool isAiEvaluating;
   final int groupStepNo;
   final int groupStepPosition;
   final int groupStepTotal;
@@ -70,6 +71,7 @@ class BdcStateUiSignature {
         isSentenceSelectModePreferred = s.isSentenceSelectModePreferred,
         currentScore = s.currentScore,
         asrFirstCandidate = s.currentAsrCandidates.isNotEmpty ? s.currentAsrCandidates.first : null,
+        isAiEvaluating = s.isAiEvaluating,
         groupStepNo = s.groupStepNo,
         groupStepPosition = s.groupStepPosition,
         groupStepTotal = s.groupStepTotal,
@@ -110,6 +112,7 @@ class BdcStateUiSignature {
         isSentenceSelectModePreferred == other.isSentenceSelectModePreferred &&
         currentScore == other.currentScore &&
         asrFirstCandidate == other.asrFirstCandidate &&
+        isAiEvaluating == other.isAiEvaluating &&
         groupStepNo == other.groupStepNo &&
         groupStepPosition == other.groupStepPosition &&
         groupStepTotal == other.groupStepTotal &&
@@ -149,6 +152,7 @@ class BdcStateUiSignature {
         isSentenceSelectModePreferred,
         currentScore,
         asrFirstCandidate,
+        isAiEvaluating,
         groupStepNo,
         groupStepPosition,
         groupStepTotal,

@@ -3721,6 +3721,9 @@ class BdcNotifier extends _$BdcNotifier {
 
       // 裁判未执行（额度用尽/并发受限/超时/异常）：只提示原因，不判错、不污染失败去重集合
       if (refereeResult.unavailableReason != null) {
+        try {
+          await Api.loadingService.dismiss();
+        } catch (_) {}
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);
         ToastUtil.info(refereeResult.unavailableReason!, autoCloseDuration: const Duration(seconds: 4));
@@ -3730,6 +3733,11 @@ class BdcNotifier extends _$BdcNotifier {
       final isCorrect = refereeResult.isCorrect;
       final explanation = refereeResult.explanation;
       Global.logger.d('~~~~~[AI裁判-单词] 裁判结果: isCorrect=$isCorrect, response=${refereeResult.rawResponse}');
+
+      // 网络请求结束，立即关闭全局 loading，绝不在弹窗期间保持圈圈空转
+      try {
+        await Api.loadingService.dismiss();
+      } catch (_) {}
 
       if (isCorrect) {
         wordWrapper.isAiEvaluating = false;
@@ -3780,7 +3788,10 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } finally {
       _isWordAiRefereeJudging = false;
-      if (!_isDisposed && (state.hasFinishedAnswering || state.word?.id != checkWordId)) {
+      try {
+        await Api.loadingService.dismiss();
+      } catch (_) {}
+      if (!_isDisposed) {
         wordWrapper.isAiEvaluating = false;
         if (state.isAiEvaluating) {
           state = state.copyWith(isAiEvaluating: false);
@@ -3867,6 +3878,9 @@ class BdcNotifier extends _$BdcNotifier {
 
       // 裁判未执行（额度用尽/并发受限/超时/异常）：只提示原因，不判错、不污染失败去重集合
       if (refereeResult.unavailableReason != null) {
+        try {
+          await Api.loadingService.dismiss();
+        } catch (_) {}
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);
         ToastUtil.info(refereeResult.unavailableReason!, autoCloseDuration: const Duration(seconds: 4));
@@ -3877,6 +3891,11 @@ class BdcNotifier extends _$BdcNotifier {
       final isSynonym = refereeResult.isSynonym;
       final explanation = refereeResult.explanation;
       Global.logger.d('~~~~~[AI裁判-中英单词] 裁判结果: isCorrect=$isCorrect, isSynonym=$isSynonym, response=${refereeResult.rawResponse}');
+
+      // 网络请求结束，立即关闭全局 loading，绝不在弹窗期间保持圈圈空转
+      try {
+        await Api.loadingService.dismiss();
+      } catch (_) {}
 
       if (isCorrect) {
         wordWrapper.isAiEvaluating = false;
@@ -3926,7 +3945,10 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } finally {
       _isWordAiRefereeJudging = false;
-      if (!_isDisposed && (state.hasFinishedAnswering || state.word?.id != checkWordId)) {
+      try {
+        await Api.loadingService.dismiss();
+      } catch (_) {}
+      if (!_isDisposed) {
         wordWrapper.isAiEvaluating = false;
         if (state.isAiEvaluating) {
           state = state.copyWith(isAiEvaluating: false);
@@ -4023,6 +4045,9 @@ class BdcNotifier extends _$BdcNotifier {
 
       // 裁判未执行（额度用尽/并发受限/超时/异常）：只提示原因，不判错、不污染失败去重集合
       if (refereeResult.unavailableReason != null) {
+        try {
+          await Api.loadingService.dismiss();
+        } catch (_) {}
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);
         ToastUtil.info(refereeResult.unavailableReason!, autoCloseDuration: const Duration(seconds: 4));
@@ -4032,6 +4057,11 @@ class BdcNotifier extends _$BdcNotifier {
       final isCorrect = refereeResult.isCorrect;
       final explanation = refereeResult.explanation;
       Global.logger.d('~~~~~[AI裁判-例句] 裁判结果: isCorrect=$isCorrect, response=${refereeResult.rawResponse}');
+
+      // 网络请求结束，立即关闭全局 loading，绝不在弹窗期间保持圈圈空转
+      try {
+        await Api.loadingService.dismiss();
+      } catch (_) {}
 
       if (isCorrect) {
         wordWrapper.isAiEvaluating = false;
@@ -4080,7 +4110,10 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } finally {
       _isSentenceAiRefereeJudging = false;
-      if (!_isDisposed && (state.hasFinishedAnswering || state.word?.id != checkWordId)) {
+      try {
+        await Api.loadingService.dismiss();
+      } catch (_) {}
+      if (!_isDisposed) {
         wordWrapper.isAiEvaluating = false;
         if (state.isAiEvaluating) {
           state = state.copyWith(isAiEvaluating: false);
@@ -4165,6 +4198,9 @@ class BdcNotifier extends _$BdcNotifier {
     required bool isCorrect,
     required String explanation,
   }) async {
+    try {
+      await Api.loadingService.dismiss();
+    } catch (_) {}
     if (!context.mounted) return;
     await showDialog<void>(
       context: context,
