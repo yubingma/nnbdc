@@ -294,18 +294,6 @@ class FinishPageState extends State<FinishPage> {
                     letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  isExtraRound
-                      ? '加量已学完 · 状态好就再多背一组'
-                      : '今日学习完成 · 继续坚持每天进步一点点',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.4,
-                  ),
-                ),
               ],
             ),
           ),
