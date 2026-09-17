@@ -878,14 +878,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 key: const Key('today_plan_daka_seal_text'),
                                 text: '今日已打卡',
                                 color: DakaSealColors.forDark(isDarkMode)
-                                    .withValues(alpha: isDarkMode ? 0.90 : 0.82),
+                                    .withValues(alpha: isDarkMode ? 0.96 : 0.94),
                               ),
                               const SizedBox(height: 3),
                               _DakaSealText(
                                 key: const Key('today_plan_daka_seal_date'),
                                 text: stampDate,
                                 color: DakaSealColors.forDark(isDarkMode)
-                                    .withValues(alpha: isDarkMode ? 0.65 : 0.56),
+                                    .withValues(alpha: isDarkMode ? 0.85 : 0.80),
                                 fontSize: 9,
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 1.1,
@@ -3665,11 +3665,11 @@ class _DakaSealPainter extends CustomPainter {
   static const int _seed = 20260912;
 
   /// 章面印油（极淡，只负责"盖过"的痕迹）
-  double get _washAlpha => isDark ? 0.10 : 0.055;
-  /// 外圈粗环
-  double get _ringAlpha => isDark ? 0.34 : 0.24;
-  /// 内圈发丝线
-  double get _innerAlpha => isDark ? 0.42 : 0.32;
+  double get _washAlpha => isDark ? 0.12 : 0.08;
+  /// 外圈粗环（饱满浓郁的金石朱砂墨色）
+  double get _ringAlpha => isDark ? 0.85 : 0.88;
+  /// 内圈发丝线（清晰微润的朱红线）
+  double get _innerAlpha => isDark ? 0.75 : 0.78;
 
   @override
   void paint(Canvas canvas, Size size) {
