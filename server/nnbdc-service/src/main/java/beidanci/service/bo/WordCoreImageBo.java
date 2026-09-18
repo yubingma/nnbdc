@@ -198,7 +198,9 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     private WordCoreImage evaluateAndExtract(Word word, List<MeaningItem> meanings) {
         StringBuilder meaningText = new StringBuilder();
         for (MeaningItem m : meanings) {
-            meaningText.append("- [")
+            meaningText.append("- [释义ID: ")
+                    .append(m.getId())
+                    .append("] [")
                     .append(m.getCiXing() != null ? m.getCiXing() : "")
                     .append("] ")
                     .append(m.getMeaning())
@@ -221,14 +223,14 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
                 + "  \"schema_desc\": \"50-100字认知语言学图式深度剖析\",\n"
                 + "  \"branches\": [\n"
                 + "    {\n"
+                + "      \"meaning_id\": \"严格对应输入释义列表中的释义ID\",\n"
                 + "      \"pos\": \"词性，如 n. 或 v.\",\n"
                 + "      \"meaning\": \"释义名称\",\n"
                 + "      \"relation\": \"该释义如何脱胎于核心动势的极简纽带标签（8-14字）\",\n"
-                + "      \"desc\": \"详细引申逻辑说明\",\n"
-                + "      \"example\": \"英文典型例句\"\n"
+                + "      \"desc\": \"详细引申逻辑说明\"\n"
                 + "    }\n"
                 + "  ],\n"
-                + "  \"image_prompt\": \"英文提示词。必须基于以下准则：A clean, minimalist modern visual abstraction capturing the core dynamic essence of [core_image]. Matte dark void background with generous negative space. Base/Anchor: [compressed/stored potential energy in warm amber-gold]. Burst/Trajectory: [explosive release in vibrant emerald-green and turquoise luminescence]. Minimalist modern conceptual art, elegant few strokes, subtle glowing energy, crisp vectors. CRITICAL: Absolutely NO realistic objects, NO [word meanings like springs/water/trees], NO characters, NO faces. Only pure abstract kinetic forces, tension and momentum.\"\n"
+                + "  \"image_prompt\": \"纯中文生图提示词（80-150字）。为火山引擎/Kolors生图模型量身定制现代极简抽象视觉描述，遵循准则：1. 视觉风格：现代极简纯抽象概念艺术，纯净哑光极深纯色或深空黑背景，极简通透的充盈留白，克制优雅的微光矢量与能量线条；2. 意象动态构图：根据该词特有的[core_image]提炼其独特的空间几何图式与力学动势（由你根据该词的物理/空间本质自主构思，如牵引拉伸、发散辐射、回旋汇聚、界限隔断、穿透交织或层级堆叠等），并自主搭配2-3种契合该意象气质的高雅发光色彩；3. 绝对禁忌：严禁画出任何具体具象生活实物（绝对不得包含与该词具体释义相关的任何现实具象物体），严禁人物与面孔，严禁任何文字字母，纯粹由抽象几何形态、动力学张力与矢量光轨构成。\"\n"
                 + "}";
 
         String userPrompt = "待分析单词：" + word.getSpell() + "\n释义列表：\n" + meaningText.toString();
@@ -284,9 +286,9 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
 
         String prompt = item.getImagePrompt();
         if (prompt == null || prompt.trim().isEmpty()) {
-            prompt = "A clean, minimalist modern visual abstraction capturing the core dynamic essence of "
+            prompt = "现代极简纯抽象概念艺术，展现「"
                     + item.getCoreImage()
-                    + ". Matte dark void background with generous negative space. Base: compressed stored potential energy in warm amber-gold. Burst: explosive release in vibrant emerald-green and turquoise. Minimalist modern conceptual art, elegant few strokes, subtle glowing energy. Absolutely NO realistic objects, NO characters, NO text.";
+                    + "」的核心图式与空间动力学意象。纯净哑光深空黑背景，通透充盈留白。纯粹几何张力与微光能量轨迹，克制优雅现代流光矢量美学。绝对严禁任何具象生活实物，严禁人物面孔与任何文字，仅由纯抽象几何形态与动力学势能构成。";
         }
 
         String volcKey = System.getenv("VOLC_API_KEY");

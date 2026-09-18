@@ -656,7 +656,7 @@
       display: inline-block;
       width: 172px;
       height: 99px;
-      margin-left: -65px; /* 精巧向左偏置，保留完整字母且为右侧悬浮人手留出舞台 */
+      margin-left: -70px; /* 精巧向左偏置，保留完整字母且为右侧悬浮人手留出舞台 */
     }
     .user-handwriting-img {
       width: 100%;
@@ -671,31 +671,31 @@
       overflow: visible !important;
     }
 
-    /* 3D 屏幕上方真实人手：完全悬浮于手机屏幕与机身之上，破框遮挡虚线框与按钮 */
+    /* 3D 屏幕上方真实人手：完全悬浮于手机屏幕与机身之上，食指尖精准正中最后一笔末端 */
     .floating-hand-3d {
       position: absolute;
-      left: 158px;
-      top: 406px;
-      width: 190px;
+      left: 153px;
+      top: 368px;
+      width: 200px;
       pointer-events: none;
       z-index: 80; /* 绝对高于手机屏幕与机身，形成纯正的屏幕上方 3D 遮挡 */
     }
     .floating-hand-3d .real-hand-img {
-      width: 190px;
+      width: 200px;
       height: auto;
       display: block;
-      /* 极其逼真的双层 3D 悬浮落影：阴影投射在虚线手写框与绿色下一个按钮上 */
-      filter: drop-shadow(-16px 20px 24px rgba(15, 23, 42, 0.44)) drop-shadow(-3px 6px 9px rgba(15, 23, 42, 0.22));
+      /* 清爽深邃立体阴影，绝不发虚 */
+      filter: drop-shadow(-14px 18px 22px rgba(15, 23, 42, 0.38)) drop-shadow(-2px 4px 6px rgba(15, 23, 42, 0.18));
     }
     .floating-hand-3d .finger-touch-glow {
       position: absolute;
-      top: 1px;
-      left: 18px;
-      width: 14px;
-      height: 14px;
+      top: -5px;
+      left: 16px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
-      background: rgba(0, 134, 157, 0.65);
-      filter: blur(3.5px);
+      background: rgba(0, 134, 157, 0.55);
+      filter: blur(3px);
       animation: touchPulse 1.8s infinite ease-in-out;
       z-index: 85;
     }
