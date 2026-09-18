@@ -400,11 +400,40 @@
             </div>
           </div>
 
-          <div class="section-title">核心细节难点与解法</div>
-          <p style="font-size: 13.5px; color: var(--text-secondary);">
-            <strong>1. 曝光判定缺失：</strong>数据库目前未存展现次数（impression），不能简单以点赞为0视作未展示；解法是采用“创建时间窗口（如30天内）+ 总互动数（hand+foot ≤ 3）”作为精准冷启动池判定。<br/>
-            <strong>2. 评分成本与时机：</strong>复用现有图片/文本审核（<code>asyncReviewImage</code>）的同一异步调用管道，一次请求同步完成“合规审核 + 质量打分 + 打分理由”，边际成本为 0。<br/>
-            <strong>3. 端云架构协同：</strong>本地 SQLite 仅需为 UGC 表扩充 <code>ai_score</code> 字段，排序规则结合 <code>hand</code>、<code>ai_score</code> 与冷启动权重，天然兼容离线背词与增量同步机制。
+          <div class="section-title">六大核心细节难点与自洽解法</div>
+          <div class="feature-grid">
+            <div class="feature-item">
+              <strong>① 曝光判定缺失（冷启动池边界）</strong>
+              <p>系统无展现（impression）埋点。解法：以“创建时间 ≤ 30天 且 互动总数(hand+foot) ≤ 3”作为判定准则，超 3 次即代表已被检验自动出池。</p>
+            </div>
+            <div class="feature-item">
+              <strong>② AI 评分时机与成本控制</strong>
+              <p>复用服务端 <code>WordImageBo.asyncReviewImage</code> 既有异步队列，在单次请求内同步完成“合规审核 + 质量打分 + 评语”，边际成本为 0。</p>
+            </div>
+            <div class="feature-item">
+              <strong>③ UI 呈现与极简心流</strong>
+              <p>绝不在做题区并列多个臃肿榜单。主卡片保持单项展示并附极简微胶囊 <code>🌱 AI 甄选 8.8</code>；二级弹窗顶部保留「🌟 潜力新星」专栏。</p>
+            </div>
+            <div class="feature-item">
+              <strong>④ 流量探索与利用（Epsilon-Greedy）</strong>
+              <p>80% 稳妥展示全库净赞最高经典内容，20% 动态探索抽样 AI 高分（≥7.5）新星，防范单一依赖造成的 AI 审美幻觉与疲劳。</p>
+            </div>
+            <div class="feature-item">
+              <strong>⑤ 动态毕业与快速淘汰闭环</strong>
+              <p>新星在专属位累积获得净赞 ≥ 5 时“毕业”转正进入主榜；一旦收到 ≥ 2 个踩（foot）立即降权移出新星池，严密防刷止损。</p>
+            </div>
+            <div class="feature-item">
+              <strong>⑥ 端云同步与离线背词兼容</strong>
+              <p>本地 Drift 扩展 <code>ai_score</code> 与 <code>ai_reason</code>，通过 <code>sys_db_sync</code> 增量下发；客户端本地毫秒级执行 8:2 决策，离线背词体验完全自洽。</p>
+            </div>
+          </div>
+
+          <div class="section-title">分阶段推进规划</div>
+          <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.7;">
+            <strong>Phase 1: 策展打分链路</strong>（服务端异步审核合并质检打分 Prompt） ➔ 
+            <strong>Phase 2: 数据表与端云同步</strong>（Drift 表扩展与增量日志兼容） ➔ 
+            <strong>Phase 3: 客户端极简微标与 8:2 混排</strong>（做题区心流呈现） ➔ 
+            <strong>Phase 4: 闭环毕业与汰换验证</strong>（新星破零留存与不良内容下架校验）。
           </p>
         </div>
 

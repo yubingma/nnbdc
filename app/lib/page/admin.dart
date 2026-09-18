@@ -15,6 +15,7 @@ import 'package:nnbdc/page/admin/word_management.dart';
 import 'package:nnbdc/page/admin/dict_import_management.dart';
 import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:nnbdc/page/admin/admin_cigen_optimize_page.dart';
+import 'package:nnbdc/page/admin/admin_word_core_image_page.dart';
 import 'package:nnbdc/page/admin/admin_pronunciation_fix_page.dart';
 import 'package:nnbdc/page/admin/system_settings_page.dart';
 import 'package:nnbdc/page/admin/dict_group_management.dart';
@@ -105,6 +106,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.auto_awesome,
         color: const Color(0xFF6200EA),
         onTap: () => _navigateToAdminCigenOptimize(),
+      ),
+      _buildManagementCard(
+        title: '一词多义意象',
+        icon: Icons.hub,
+        color: const Color(0xFF00C79A),
+        onTap: () => _navigateToAdminWordCoreImage(),
       ),
       _buildManagementCard(
         title: '发音补齐',
@@ -545,6 +552,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const AdminCigenOptimizePage(),
+      ),
+    );
+  }
+
+  void _navigateToAdminWordCoreImage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AdminWordCoreImagePage(),
       ),
     );
   }

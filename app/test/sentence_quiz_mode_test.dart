@@ -21,11 +21,6 @@ class MockBdcNotifier extends BdcNotifier {
   }
 
   @override
-  void updateTabIndex(int index) {
-    super.updateTabIndex(index);
-  }
-
-  @override
   Future<void> loadData(BuildContext? context, {bool isAutoTest = false}) async {}
 }
 
