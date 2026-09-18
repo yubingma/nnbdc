@@ -337,7 +337,7 @@
       <p class="subtitle">记录随时迸发的产品闪念、动效构想与玩法实验。遵循奥卡姆剃刀原理与极简高级美学，去伪存真，持续沉淀。</p>
       
       <div class="stats-bar">
-        <div class="stat-pill">沉淀创意: <strong>1</strong></div>
+        <div class="stat-pill">沉淀创意: <strong>2</strong></div>
         <div class="stat-pill">核心哲学: <strong>如非必要 · 勿增实体</strong></div>
         <div class="stat-pill">美学基准: <strong>现代极简 · 灵动克制</strong></div>
       </div>
@@ -345,6 +345,71 @@
 
     <!-- 创意动态流水线 -->
     <div class="ideas-feed" id="ideasFeed">
+
+      <!-- 创意 #002: 对战道具·形近障眼法 -->
+      <article class="idea-card">
+        <div class="idea-header">
+          <div>
+            <div class="idea-id-date">
+              <span class="idea-id">IDEA #002</span>
+              <span>•</span>
+              <span>2026-09-17</span>
+              <span>•</span>
+              <span>对战玩法与认知博弈</span>
+            </div>
+            <h2 class="idea-title">对战进攻道具：形近障眼法（镜像迷雾 · Confusable Fog）</h2>
+          </div>
+          <span class="badge-status status-concept">概念成型 / 机制设计</span>
+        </div>
+
+        <div class="tags-container">
+          <span class="tag">#对战道具</span>
+          <span class="tag">#形近词混淆</span>
+          <span class="tag">#认知博弈</span>
+          <span class="tag">#俄罗斯方块</span>
+          <span class="tag">#心流对抗</span>
+        </div>
+
+        <div class="idea-body">
+          <div class="idea-quote">
+            “给对手施加一种特殊的干扰道具：在接下来几道题中，对手答题界面的所有混淆选项，均定向替换为该单词的‘形近词’释义，使常识排除法彻底失效，大幅拉满答题难度与心智压力。”
+          </div>
+
+          <div class="section-title">设计痛点与认知突破</div>
+          <div class="principle-box">
+            <strong>打破常规排除法：</strong>现有背单词对战中，错误选项多为词库随机抽取（如 apple 混入 destination、elephant），语义跨度大，玩家极易凭生活常识或一眼排除快速秒选。而背单词最真实的痛点是<strong>「形似意异」</strong>（如 adapt / adopt / adept、access / assess、altitude / attitude）。施加本道具后，选项全部变为形近词释义，视觉与认知双重迷惑，逼迫对手精确调动记忆，犹豫即失误。
+          </div>
+
+          <div class="section-title">核心机制与对战维度</div>
+          <div class="feature-grid">
+            <div class="feature-item">
+              <strong>① 道具定位（Debuff 进攻型）</strong>
+              <p>连对 5 题随机奖励或通过特定对决策略获取。点击释放后定向对敌方施加「形近迷雾」状态。</p>
+            </div>
+            <div class="feature-item">
+              <strong>② 影响范围（克制且致命）</strong>
+              <p>持续影响对手接下来的 2~3 道下落题目，既能有效打乱对方的方块堆叠节奏，又不会造成不可逆的挫败感。</p>
+            </div>
+            <div class="feature-item">
+              <strong>③ 混淆词库提取（高质干扰）</strong>
+              <p>题干为 adopt（采纳）时，选项出现 adapt（适应）与 adept（熟练），仅凭模糊字形记忆的玩家极易误选翻车。</p>
+            </div>
+            <div class="feature-item">
+              <strong>④ 平滑降级（无缝兜底）</strong>
+              <p>若当前生僻词库中编辑距离 ≤ 2 的形近词不足 2 个，自动补齐同词根词或高频词，保证出题 100% 自洽。</p>
+            </div>
+          </div>
+
+          <div class="section-title">技术实现与资产复用</div>
+          <p style="font-size: 13.5px; color: var(--text-secondary);">
+            项目已沉淀高效的 Levenshtein 编辑距离算法与形近词聚合方案（<code>design/confusable_words_*</code>）。在服务端 <code>GetNextWordProcessor</code> 生成干扰项时，检测玩家是否带有该 Debuff；若带有，则优先从词库形近词索引树中捞取干扰词释义。
+          </p>
+        </div>
+
+        <div class="actions-footer">
+          <span class="action-link" onclick="copyIdeaMarkdown('idea-002')">复制摘要 Markdown</span>
+        </div>
+      </article>
 
       <!-- 创意 #001: 单词泡泡天空 -->
       <article class="idea-card">
@@ -417,10 +482,18 @@
 
   <script>
     function copyIdeaMarkdown(id) {
-      const text = `### 单词泡泡天空（记忆苍穹 · Memory Aurora）
+      let text = '';
+      if (id === 'idea-001') {
+        text = `### 单词泡泡天空（记忆苍穹 · Memory Aurora）
 - **核心逻辑**：每掌握一个单词，化作一颗专属泡泡升入天空。
 - **减法原则**：剔除宠物与喂糖等低幼冗余环节，保留直连反馈与背词心流。
 - **双层视角**：远观是星云苍穹，近看可漫游轻点发音/查词；结合遗忘曲线衰减光泽。`;
+      } else if (id === 'idea-002') {
+        text = `### 对战进攻道具：形近障眼法（镜像迷雾 · Confusable Fog）
+- **核心逻辑**：对战中向对手施放，使对方接下来的答题混淆选项全部来自当前单词的「形近词」释义。
+- **认知痛点**：打破常规随机选项的简单排除法，逼出真正的精准辨析能力，大幅增加失误与犹豫率。
+- **机制与实现**：持续 2~3 题，复用编辑距离 ≤ 2 的形近词体系，支持无缝降级兜底。`;
+      }
       navigator.clipboard.writeText(text).then(() => {
         alert('已复制该创意 Markdown 摘要到剪贴板');
       });

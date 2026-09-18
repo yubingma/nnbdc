@@ -653,9 +653,9 @@
     .user-handwriting-stage {
       position: relative;
       display: inline-block;
-      width: 226px;
-      height: 130px;
-      margin-left: -20px; /* 偏左排布，为右侧手写真实手指留出自然延伸空间 */
+      width: 172px;
+      height: 99px;
+      margin-left: -65px; /* 精巧向左偏置，保留完整字母且为右侧悬浮人手留出舞台 */
     }
     .user-handwriting-img {
       width: 100%;
@@ -664,31 +664,39 @@
       display: block;
       pointer-events: none;
     }
-    .finger-pointer-anchor {
+    /* 允许海报3的手机机身与展示台溢出 3D 悬浮人手 */
+    #card-3 .device-chassis,
+    #card-3 .poster-phone-stage {
+      overflow: visible !important;
+    }
+
+    /* 3D 屏幕上方真实人手：完全悬浮于手机屏幕与机身之上，破框遮挡虚线框与按钮 */
+    .floating-hand-3d {
       position: absolute;
-      left: calc(88.1% - 22px); /* 像素级对齐真实手势食指指尖落笔点 */
-      top: calc(44.2% - 1px);
+      left: 158px;
+      top: 406px;
+      width: 190px;
       pointer-events: none;
-      z-index: 20;
+      z-index: 80; /* 绝对高于手机屏幕与机身，形成纯正的屏幕上方 3D 遮挡 */
     }
-    .finger-touch-glow {
-      position: absolute;
-      top: -3px;
-      left: 13px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: rgba(0, 134, 157, 0.45);
-      filter: blur(4px);
-      animation: touchPulse 1.8s infinite ease-in-out;
-      z-index: 25;
-    }
-    .real-hand-img {
-      width: 184px;
-      height: 227px;
-      object-fit: contain;
+    .floating-hand-3d .real-hand-img {
+      width: 190px;
+      height: auto;
       display: block;
-      filter: drop-shadow(-6px 12px 16px rgba(15, 23, 42, 0.22));
+      /* 极其逼真的双层 3D 悬浮落影：阴影投射在虚线手写框与绿色下一个按钮上 */
+      filter: drop-shadow(-16px 20px 24px rgba(15, 23, 42, 0.44)) drop-shadow(-3px 6px 9px rgba(15, 23, 42, 0.22));
+    }
+    .floating-hand-3d .finger-touch-glow {
+      position: absolute;
+      top: 1px;
+      left: 18px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(0, 134, 157, 0.65);
+      filter: blur(3.5px);
+      animation: touchPulse 1.8s infinite ease-in-out;
+      z-index: 85;
     }
     @keyframes touchPulse {
       0%, 100% { transform: scale(0.85); opacity: 0.5; }
@@ -1135,7 +1143,7 @@
               </div>
             </div>
 
-            <div class="screen-body">
+            <div class="screen-body" style="overflow: hidden; border-radius: 40px;">
               <div class="write-stage">
                 <div class="write-prompt-card">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1147,15 +1155,9 @@
                 </div>
 
                 <div class="handwriting-pad">
-                  <!-- 用户真实手写真迹与正在落笔的手指 -->
+                  <!-- 用户真实手写真迹（纯净留白，无灰色虚影） -->
                   <div class="user-handwriting-stage">
                     <img src="img/user_handwritten_ephem_clean.png" class="user-handwriting-img" alt="手写真迹 ephem">
-
-                    <!-- 真实手写手势与指尖触控光晕（100%还原用户真实美手参考图） -->
-                    <div class="finger-pointer-anchor">
-                      <div class="finger-touch-glow"></div>
-                      <img src="img/flawless_real_hand.png" class="real-hand-img" alt="真实写实手势">
-                    </div>
                   </div>
 
                   <!-- 实时笔迹追踪识别徽章 -->
@@ -1165,12 +1167,18 @@
                   </div>
                 </div>
 
-                <!-- 浮起工具栏 -->
+                <!-- 浮起工具栏（被屏幕上方的真实人手自然遮挡） -->
                 <div style="display: flex; gap: 8px;">
                   <button style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid #E5E7EB; background: #FFFFFF; font-size: 12px; font-weight: 600; color: #4B5563;">清除笔迹</button>
                   <button style="flex: 2; padding: 10px; border-radius: 12px; border: none; background: #10B981; font-size: 12px; font-weight: 700; color: #FFFFFF; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">下一个</button>
                 </div>
               </div>
+            </div>
+
+            <!-- 3D 屏幕上方真实人手：悬浮在屏幕与机身之上，食指点触笔尖，手背与大拇指自然遮挡手写板虚线与“下一个”按钮 -->
+            <div class="floating-hand-3d">
+              <div class="finger-touch-glow"></div>
+              <img src="img/flawless_real_hand_feathered.png" class="real-hand-img" alt="真实写实手势">
             </div>
 
           </div>
