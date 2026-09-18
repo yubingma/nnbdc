@@ -207,22 +207,18 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
                     .append("\n");
         }
 
-        String systemPrompt = "你是一位精通认知语言学与词源学的专家，擅长为背单词用户提取「一词多义的核心意象/动力学图式（Core Schema）」并串联看似无关的多个释义。\n"
+        String systemPrompt = "你是一位精通认知语言学与词源学的专家，善于发现一个单词的多个释义背后的那个源头(也就是词源, 也称为核心意象)，并以此串联看似无关的多个释义。\n"
                 + "【核心任务】\n"
-                + "判断给定的英语单词是否适合提取「一词多义核心意象」，若适合则构建结构化拓扑网络与现代极简动势生图提示词。\n\n"
+                + "判断给定的英语单词是否适合提取「一词多义核心意象」，若适合则构建结构化拓扑网络(json格式), 并生成一段文生图提示词, 用来驱动文生图模型生成核心意象的图片。\n\n"
                 + "【判定标准】\n"
                 + "1. 适合 (is_applicable=true)：该单词有 2 个以上看似不同但内在同源或具备明显物理/空间引申逻辑的多重释义（例如 spring: 春天/泉水/弹簧/跳跃；charge: 充电/收费/指控/冲锋；bank: 银行/河岸/倾斜转弯）。\n"
                 + "2. 不适合 (is_applicable=false)：单一具体实物名词、专有名词、无引申空间的生僻词（例如 apple, chlorine, monday, desk）。\n\n"
-                + "【image_prompt 生成铁律（极其关键）】\n"
-                + "生图提示词必须为纯英文，严格服务于生图模型的矢量物理空间渲染，严禁文学修辞，严禁任何比喻：\n"
-                + "1. 必须使用两段式纯物理力学结构：\n"
-                + "   - 第一段 [Anchor / Potential Energy]: 描述力的起源/蓄能形态与位置（例如在底部或中心，由内向外收缩的高密度几何弧线或重力压制面，带有暖色能量微光）；\n"
-                + "   - 第二段 [Release / Vector Motion]: 描述力的释放/运动轨迹（例如向垂直上方穿透迸发的动态矢量射流或扩散场，带有冷色或对比色动能微光）。\n"
-                + "2. 绝对禁忌与负向屏蔽：\n"
-                + "   - 严禁出现任何该词的具体释义实物名词（例如 spring 绝不能出现 spring, water, coil, plant；charge 绝不能出现 battery, plug, lightning, spark, money）；\n"
-                + "   - 严禁出现“xx-like / resembling / shaped like”（严禁任何比喻词带偏模型）；\n"
-                + "   - 末尾必须附带严格的负向词语句：CRITICAL NEGATIVE: Absolutely NO realistic objects, NO [列举该词所有具体释义具象名词], NO text, NO characters, NO faces.\n"
-                + "   - 画面风格基调固定为：Ultra-minimalist modern abstract conceptual art, clean matte dark void background, generous negative space, pure kinetic force vectors.\n"
+                + "【image_prompt 核心意向图提示词生成准则】\n"
+                + "1. 生图提示词必须为纯中文（约60-120字），专门引导生图模型绘制「认知语言学教科书风格的 2D 极简图式简笔画」\n"
+                + "2. 提示词必须明确画面中的元素, 不得表述不确定或者概念化. \n"
+                + "   例如 charge 这个单词的核心意象是'充填', 那么提示词就可以说: 在画面底部有一个开放 U 型容器, 上方一个朝下的粗大箭头插入容器表达向内充填装载\n"
+                + "3. 图形风格：\n"
+                + "   现代极简 2D 认知图式简笔画，纯平面扁平矢量图标风格, 画面中严禁任何文字字母, 内容要恰到好处地表达核心意象, 不要画蛇添足.\n"
                 + "JSON 字段规范：\n"
                 + "{\n"
                 + "  \"is_applicable\": true 或 false,\n"
@@ -237,7 +233,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
                 + "      \"desc\": \"详细引申逻辑说明\"\n"
                 + "    }\n"
                 + "  ],\n"
-                + "  \"image_prompt\": \"符合上述铁律的纯英文物理力学动势生图提示词\"\n"
+                + "  \"image_prompt\": \"符合上述准则的纯中文 2D 认知图式简笔画生图提示词\"\n"
                 + "}";
 
         String userPrompt = "待分析单词：" + word.getSpell() + "\n释义列表：\n" + meaningText.toString();
@@ -293,9 +289,11 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
 
         String prompt = item.getImagePrompt();
         if (prompt == null || prompt.trim().isEmpty()) {
-            prompt = "现代极简纯抽象概念艺术，展现「"
+            prompt = "现代极简 2D 认知图式简笔画，"
+                    + item.getWord()
+                    + "的核心物理动势图示。纯平面扁平矢量图标风格，深灰黑纯色背景，高对比度纯白与青蓝亮色线条，大面积留白，画面中无任何文字。以简洁 2D 几何形状与粗壮动势箭头展现「"
                     + item.getCoreImage()
-                    + "」的核心图式与空间动力学意象。纯净哑光深空黑背景，通透充盈留白。纯粹几何张力与微光能量轨迹，克制优雅现代流光矢量美学。绝对严禁任何具象生活实物，严禁人物面孔与任何文字，仅由纯抽象几何形态与动力学势能构成。";
+                    + "」的核心力学动势。";
         }
 
         String volcKey = System.getenv("VOLC_API_KEY");

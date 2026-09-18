@@ -649,7 +649,8 @@
       box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
       margin-top: 36px; /* 完美下移，避开中央大横幅遮挡 */
       min-height: 140px;
-      overflow: hidden;
+      overflow: visible !important;
+      z-index: 50;
     }
     .user-handwriting-stage {
       position: relative;
@@ -657,6 +658,7 @@
       width: 172px;
       height: 99px;
       margin-left: -70px; /* 精巧向左偏置，保留完整字母且为右侧悬浮人手留出舞台 */
+      z-index: 90; /* 保证手部及其投射在最上层，自然遮挡虚线框与下方按钮 */
     }
     .user-handwriting-img {
       width: 100%;
@@ -671,14 +673,14 @@
       overflow: visible !important;
     }
 
-    /* 3D 屏幕上方真实人手：完全悬浮于手机屏幕与机身之上，食指尖精准正中最后一笔末端 */
+    /* 3D 屏幕上方真实人手：完全悬浮于手机屏幕与机身之上，食指尖精准正中最后一笔末端 (m 上扬末梢) */
     .floating-hand-3d {
       position: absolute;
-      left: 153px;
-      top: 368px;
+      left: 121px;
+      top: 35px;
       width: 200px;
       pointer-events: none;
-      z-index: 80; /* 绝对高于手机屏幕与机身，形成纯正的屏幕上方 3D 遮挡 */
+      z-index: 100; /* 绝对高于手机屏幕与机身及底部按钮，形成纯正的屏幕上方 3D 遮挡 */
     }
     .floating-hand-3d .real-hand-img {
       width: 200px;
@@ -1144,7 +1146,7 @@
               </div>
             </div>
 
-            <div class="screen-body" style="overflow: hidden; border-radius: 40px;">
+            <div class="screen-body" style="overflow: visible; border-radius: 40px;">
               <div class="write-stage">
                 <div class="write-prompt-card">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1159,6 +1161,11 @@
                   <!-- 用户真实手写真迹（纯净留白，无灰色虚影） -->
                   <div class="user-handwriting-stage">
                     <img src="img/user_handwritten_ephem_clean.png" class="user-handwriting-img" alt="手写真迹 ephem">
+                    <!-- 3D 屏幕上方真实人手：悬浮在屏幕与机身之上，食指点触笔尖，手背与大拇指自然遮挡手写板虚线与“下一个”按钮 -->
+                    <div class="floating-hand-3d">
+                      <div class="finger-touch-glow"></div>
+                      <img src="img/flawless_real_hand_feathered.png" class="real-hand-img" alt="真实写实手势">
+                    </div>
                   </div>
 
                   <!-- 实时笔迹追踪识别徽章 -->
@@ -1174,12 +1181,6 @@
                   <button style="flex: 2; padding: 10px; border-radius: 12px; border: none; background: #10B981; font-size: 12px; font-weight: 700; color: #FFFFFF; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">下一个</button>
                 </div>
               </div>
-            </div>
-
-            <!-- 3D 屏幕上方真实人手：悬浮在屏幕与机身之上，食指点触笔尖，手背与大拇指自然遮挡手写板虚线与“下一个”按钮 -->
-            <div class="floating-hand-3d">
-              <div class="finger-touch-glow"></div>
-              <img src="img/flawless_real_hand_feathered.png" class="real-hand-img" alt="真实写实手势">
             </div>
 
           </div>
