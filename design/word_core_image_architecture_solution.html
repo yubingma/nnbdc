@@ -42,7 +42,7 @@
 
     .doc-container {
       width: 100%;
-      max-width: 960px;
+      max-width: 980px;
       margin: 0 auto;
     }
 
@@ -96,7 +96,7 @@
       font-size: 22px;
       font-weight: 600;
       color: var(--text-heading);
-      margin: 40px 0 16px;
+      margin: 44px 0 16px;
       padding-bottom: 8px;
       border-bottom: 1px solid var(--border-color);
       display: flex;
@@ -108,7 +108,7 @@
       font-size: 17px;
       font-weight: 600;
       color: var(--text-heading);
-      margin: 24px 0 12px;
+      margin: 26px 0 12px;
     }
 
     p {
@@ -157,12 +157,20 @@
       gap: 6px;
     }
 
-    .callout-warning {
+    .callout-gold {
       border-left-color: var(--accent-gold);
       background: rgba(245, 158, 11, 0.06);
     }
-    .callout-warning .callout-title {
+    .callout-gold .callout-title {
       color: var(--accent-gold);
+    }
+
+    .callout-purple {
+      border-left-color: var(--accent-purple);
+      background: rgba(188, 140, 255, 0.06);
+    }
+    .callout-purple .callout-title {
+      color: var(--accent-purple);
     }
 
     /* 对比表格 */
@@ -226,41 +234,62 @@
       color: inherit;
     }
 
-    /* 视觉插图展示区 */
-    .showcase-container {
+    /* 画廊多栏展示区 */
+    .gallery-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 20px;
       margin: 24px 0;
     }
 
-    @media (max-width: 768px) {
-      .showcase-container {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .showcase-item {
+    .gallery-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-color);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
+      transition: all 0.2s ease;
     }
 
-    .showcase-img {
+    .gallery-card:hover {
+      border-color: var(--accent-cyan);
+      transform: translateY(-2px);
+    }
+
+    .gallery-img {
       width: 100%;
-      max-width: 320px;
-      border-radius: 8px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      height: 240px;
+      object-fit: cover;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
       margin-bottom: 12px;
       border: 1px solid var(--border-subtle);
+      background: #000;
     }
 
-    .showcase-caption {
+    .gallery-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-heading);
+      margin-bottom: 4px;
+    }
+
+    .gallery-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .badge-green { background: rgba(0, 230, 184, 0.15); color: var(--accent-cyan); }
+    .badge-gold { background: rgba(245, 158, 11, 0.15); color: var(--accent-gold); }
+    .badge-blue { background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); }
+
+    .gallery-desc {
       font-size: 12.5px;
       color: var(--text-muted);
       line-height: 1.5;
@@ -280,7 +309,6 @@
       font-weight: 500;
       text-decoration: none;
       transition: all 0.2s ease;
-      margin-top: 8px;
     }
 
     .link-btn:hover {
@@ -295,203 +323,242 @@
 
   <!-- 顶部标题 -->
   <header class="header-section">
-    <div class="doc-badge">💡 NBDC 核心功能架构方案</div>
-    <h1>一词多义·核心意象（Cognitive Image Schema）落地方案</h1>
+    <div class="doc-badge">💡 NBDC 核心功能全景方案</div>
+    <h1>一词多义·核心意象（Cognitive Image Schema）系统设计与落地方案</h1>
     <div class="meta-bar">
-      <div class="meta-item"><span>📅 制定时间：2026-09</span></div>
-      <div class="meta-item"><span>🛠 涉及模块：大模型 API / 服务端批处理 / Flutter 动态拓扑渲染</span></div>
-      <div class="meta-item"><span>🎯 核心目标：彻底根治多义词死记硬背痛点，构建辐射认知网络</span></div>
+      <div class="meta-item"><span>📅 更新时间：2026-09</span></div>
+      <div class="meta-item"><span>🛠 核心技术：DeepSeek-V3 认知分析 / 火山引擎+硅基流动文生图 / Flutter 原生矢量拓扑</span></div>
+      <div class="meta-item"><span>🎯 核心目标：脱离死记硬背，构建“以动力学图式为原点”的认知引申网络</span></div>
     </div>
   </header>
 
   <!-- 1. 背景与理论底座 -->
   <section>
-    <h2>1. 背景与认知语言学理论底座</h2>
+    <h2>1. 认知语言学理论底座：为什么要有一词多义核心意象？</h2>
     <p>
-      在传统背单词应用中，“一词多义”是用户公认最痛苦的记忆深水区。传统词典往往将一个单词的七八个释义<strong>并列、孤立地死板罗列</strong>（例如 <code>spring</code>：春天、泉水、弹簧、跳跃、引爆）。用户无法在脑海中建立联系，只能死记硬背，极易产生混淆与遗忘。
+      在传统英语学习中，“一词多义”是遗忘率最高的领域。传统字典做法是<strong>将七八个看似不相关的释义机械并列</strong>（例如 <code>spring</code>：春天、泉水、弹簧、跳跃、引爆；<code>charge</code>：充电、收费、罚款、指控、负责）。学习者的大脑被迫建立多个孤立的记忆槽，背了后面忘了前面。
     </p>
     <p>
-      <strong>认知语言学（Cognitive Linguistics）表明：</strong>自然语言中的绝大多数多义词并非偶然同形，而是由一个原始的<strong>核心图式（Image Schema）或物理动势</strong>，在人类漫长演进中通过<strong>隐喻（Metaphor）</strong>与<strong>转喻（Metonymy）</strong>向不同生活领域辐射延展出的概念网络（Radial Categories）。
+      <strong>认知语言学（Cognitive Linguistics）揭示了语言演化的底层真相：</strong>自然语言的多义词绝大多数并非巧合，而是由人类身体感知与物理经验形成的<strong>核心图式（Image Schema）</strong>，通过<strong>隐喻（Metaphor）</strong>向各个生活领域投射引申形成的辐射网络（Radial Categories）。
     </p>
     <div class="callout">
-      <div class="callout-title">💡 案例剖析：spring 的认知统一性</div>
+      <div class="callout-title">💡 案例破局：spring 与 charge 的原点统一性</div>
       <p style="margin-bottom:0;">
-        <code>spring</code> 的核心意象是<strong>“力量蓄积后的突然向上弹涌”</strong>：<br>
-        • <strong>跳跃（v.）</strong>：身体蓄力后向上一跃的动作本身；<br>
-        • <strong>弹簧（n.）</strong>：被压缩后瞬间反弹的机械构件；<br>
-        • <strong>泉水（n.）</strong>：地下水受压后咕咚咕咚向上喷涌的水体；<br>
-        • <strong>春天（n.）</strong>：严冬过后大地复苏、生命破土迸发的爆发性季节。<br>
-        点破这一原点动势，即可帮助用户<strong>“一通百通”</strong>。
+        • <strong>spring 的原点动势</strong>：<strong>“力量蓄积后的突然向上弹涌”</strong>。<br>
+        &nbsp;&nbsp;身体向上一跃是动作本身（v. 跳跃）；压缩后反弹是机械构件（n. 弹簧）；地下水受压咕咚向上涌出是自然水体（n. 泉水）；严冬沉寂后万物破土爆发是时令季节（n. 春天）。<br><br>
+        • <strong>charge 的原点动势</strong>：<strong>“往载体上装填、压入并使之承载负荷”</strong>（古法语 chargier 装载车马）。<br>
+        &nbsp;&nbsp;往电池装入电能（充电）；向顾客账单压入债务（收费）；强行向被告头上压入罪名（指控）；把重任装载在自己身上（负责）。
       </p>
     </div>
   </section>
 
-  <!-- 2. 大模型能力边界与选型结论 -->
+  <!-- 2. 视觉哲学重大突破：脱胎于释义，又超脱于释义 -->
   <section>
-    <h2>2. 大模型能力边界与选型评测</h2>
+    <h2>2. 视觉哲学的重大突破：从“具象拼盘”到“纯粹动力学图式”</h2>
+    
+    <div class="callout callout-gold">
+      <div class="callout-title">🌟 核心设计原则（哲学定式）</div>
+      <p style="margin-bottom:0; font-size:14px; font-weight:500;">
+        <strong>“核心意象脱胎于多个释义，但又不应该直接表现出具体的释义。核心意象应该是抽象的、高度概括的，视觉上像素描，寥寥几笔表达出最核心的动力学动势，而不被任何具体物体所绑架。”</strong>
+      </p>
+    </div>
 
-    <h3>2.1 DeepSeek 可以生图吗？</h3>
+    <h3>2.1 早期“具象拼盘”的弊端反思</h3>
     <p>
-      <strong>结论：DeepSeek 自身不提供文生图（Text-to-Image）功能。</strong><br>
-      DeepSeek（包括 DeepSeek-V3 与 DeepSeek-R1）是纯文本与强逻辑推理的大语言模型，其 API 输出的是字符/结构化 JSON，无法直接生成图像像素点阵。
+      在早期生图探索中，我们曾尝试把各个释义的具象实物融在一张图里（如：金属弹簧 + 喷泉水流 + 绿色嫩芽），甚至尝试了“卡通小精灵/形象”。实测证明：
     </p>
+    <ul>
+      <li><strong>被具体事物带偏</strong>：画面画了一根弹簧，用户背到“春天”时，大脑仍需强行把弹簧和春天联想起来，造成了新的认知干扰；</li>
+      <li><strong>卡通形象违背认知</strong>：画一个带眼睛嘴巴的可爱吉祥物（Character），弱化了力学动能，变成了低幼化的角色设计。</li>
+    </ul>
+
+    <h3>2.2 终极解法：纯粹动力学素描（Pure Kinetic Force Schema）</h3>
     <p>
-      但在本项目中，大模型真正不可替代的价值是<strong>“语言认知分析大脑”</strong>，负责：
-      1. 深入印欧/日耳曼/拉丁词源，提炼物理意象原点；
-      2. 解析各释义跨越不同生活领域的隐喻演变脉络；
-      3. 输出干净轻量的结构化 JSON 供客户端驱动。
+      真正的核心意象，<strong>只表达能量与力的矢量关系</strong>。以 <code>spring</code> 为例：
+    </p>
+    <ul>
+      <li><strong>绝对不画具体物体</strong>：画面中<strong>没有弹簧、没有水珠、没有绿叶、没有角色</strong>；</li>
+      <li><strong>只画动势本身</strong>：
+        1. <strong>底部</strong>：向内极致压缩、层层紧绷蓄势的高密度同心力场螺旋（表现极限压制与势能蓄积）；<br>
+        2. <strong>中心向上</strong>：一道势如破竹、向上贯穿爆发的纯白飞白冲势（表现瞬间破壁喷涌）；
+      </li>
+      <li><strong>留白与素描质感</strong>：深黑磨砂背景上，仅用白炭笔/粉笔的几道大开大合线条，极度洗练、极具张力，给用户大脑留足想象与联想空间。</li>
+    </ul>
+  </section>
+
+  <!-- 3. 生图模型全景评测与实测资产画廊 -->
+  <section>
+    <h2>3. 模型生图实测对比与资产画廊</h2>
+    <p>
+      我们使用同一套 Prompt 规范，对目前主流的生图途径进行了真机实测（全部生成了真实资产保存在本地）：
     </p>
 
-    <h3>2.2 DeepSeek vs 阿里通义千问（实测 20 词对比）</h3>
-    <p>我们连接本地数据库，提取了 20 个极具代表性的一词多义单词（<code>charge</code>, <code>bank</code>, <code>fine</code>, <code>scale</code>, <code>court</code>, <code>sound</code> 等），对两家旗舰模型进行了实机横向对比：</p>
+    <!-- 画廊对比展示 -->
+    <div class="gallery-grid">
+      <!-- 1. 豆包纯动力学素描（推荐） -->
+      <div class="gallery-card" style="border-color: var(--accent-cyan);">
+        <img src="assets/spring_pure_schema.jpeg" class="gallery-img" alt="豆包纯动力学素描">
+        <div class="gallery-title">火山引擎 (豆包) · 纯动力学素描</div>
+        <div class="gallery-badge badge-green">★ 终极推荐 · 最具意象张力</div>
+        <div class="gallery-desc">
+          <strong>单张 ~0.02元 / 耗时 4s</strong><br>
+          底部同心力场极致压缩，中心瞬间向上爆发喷涌。完全剥离具体实物，直击“蓄势喷涌”灵魂。
+        </div>
+      </div>
 
+      <!-- 2. 豆包3D客观卡通风格 -->
+      <div class="gallery-card">
+        <img src="assets/spring_stylized_doubao.jpeg" class="gallery-img" alt="豆包卡通风格">
+        <div class="gallery-title">火山引擎 (豆包) · 3D客观卡通风</div>
+        <div class="gallery-badge badge-gold">卡通画风 · 无拟人形象</div>
+        <div class="gallery-desc">
+          <strong>单张 ~0.02元 / 耗时 4s</strong><br>
+          纯正卡通动量线与Q弹高光，但画的是纯客观物体，绝无卡通眼睛或嘴巴，生动活泼。
+        </div>
+      </div>
+
+      <!-- 3. 硅基流动 Kolors 免费图 -->
+      <div class="gallery-card">
+        <img src="assets/spring_zen_kolors.png" class="gallery-img" alt="硅基流动Kolors">
+        <div class="gallery-title">硅基流动 (Kolors) · 极简墨韵</div>
+        <div class="gallery-badge badge-blue">0 元免费 · 极速生成</div>
+        <div class="gallery-desc">
+          <strong>0 元免费 / 耗时 5s</strong><br>
+          快手开源可图大模型，风格偏向流体气韵与当代艺术，完全免费零成本。
+        </div>
+      </div>
+
+      <!-- 4. DeepSeek 原生 SVG 矢量图 -->
+      <div class="gallery-card">
+        <img src="png/svg_preview.png" class="gallery-img" alt="DeepSeek原生SVG">
+        <div class="gallery-title">DeepSeek · 原生纯 SVG 矢量</div>
+        <div class="gallery-badge badge-green">仅 ~0.002元 · 3.8KB</div>
+        <div class="gallery-desc">
+          <strong>单张仅 2 厘钱 / 耗时 0.8s</strong><br>
+          无任何位图模型参与，DeepSeek 直接输出矢量代码，无限高清锐利，极省流量。
+        </div>
+      </div>
+    </div>
+
+    <h3>3.1 各模型生图能力与成本核算表（以全库 2000 个核心词为例）</h3>
     <table>
       <thead>
         <tr>
-          <th>评测维度</th>
-          <th>DeepSeek (deepseek-chat)</th>
-          <th>阿里通义千问 (qwen-max)</th>
+          <th>生成方案</th>
+          <th>单张成本</th>
+          <th>2000 词全量成本</th>
+          <th>出图耗时</th>
+          <th>动力学意象理解力</th>
+          <th>推荐指数</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>意象提炼高度</strong></td>
-          <td>★★★★★（深刻触及原始词根与空间几何图式，抽象层级高）</td>
-          <td>★★★☆☆（容易以偏概全，常把某个具体子释义误当成核心意象）</td>
+          <td><strong>火山引擎 (豆包 Seedream)</strong></td>
+          <td><strong>约 0.02 ~ 0.03 元</strong></td>
+          <td><strong>约 40 ~ 50 元</strong></td>
+          <td><strong>4 ~ 5 秒</strong></td>
+          <td>★★★★★（对张力、压缩力场、爆发冲势的秩序感理解最准）</td>
+          <td>★★★★★（首选推荐）</td>
         </tr>
         <tr>
-          <td><strong>引申解释自洽性</strong></td>
-          <td>★★★★★（闭环逻辑：【动势】+【场景投影】=【释义】，透彻严密）</td>
-          <td>★★★☆☆（偏好打比方“如同……”，偶有牵强硬凑）</td>
+          <td><strong>硅基流动 (Kwai-Kolors)</strong></td>
+          <td><strong>0 元 (官方免费)</strong></td>
+          <td><strong>0 元 (完全免费)</strong></td>
+          <td><strong>5 秒</strong></td>
+          <td>★★★☆☆（偏向水墨艺术与流体气韵，动量秩序偏感性混沌）</td>
+          <td>★★★★☆（零成本首选）</td>
         </tr>
         <tr>
-          <td><strong>同形异义鉴别</strong></td>
-          <td>★★★★★（对 <code>scale</code>-鱼鳞、<code>fine</code>-罚款 等独立词源客观指出，不瞎编）</td>
-          <td>★★★★☆（能够鉴别明显无关词源，但底层认知感知偏弱）</td>
+          <td><strong>DeepSeek 直接出 SVG</strong></td>
+          <td><strong>约 0.002 元 (2厘)</strong></td>
+          <td><strong>仅约 4 元</strong></td>
+          <td><strong>0.8 秒</strong></td>
+          <td>★★★★☆（代码表达矢量线条，极轻量但视觉表现上限略低）</td>
+          <td>★★★★☆（超轻量备选）</td>
         </tr>
         <tr>
-          <td><strong>API 成本与响应</strong></td>
-          <td>极低（输入 ¥1/M，输出 ¥2/M，吞吐极高）</td>
-          <td>中等（qwen-max 单价相对偏高）</td>
+          <td><strong>阿里云通义万相 (wanx-v1)</strong></td>
+          <td>0.16 元</td>
+          <td>约 320 元</td>
+          <td>18 ~ 20 秒</td>
+          <td>★★★☆☆（偏厚重复杂位图渲染，成本与耗时均高）</td>
+          <td>★★☆☆☆（不推荐）</td>
         </tr>
       </tbody>
     </table>
+  </section>
 
-    <div class="callout callout-warning">
-      <div class="callout-title">⚠️ 评测实录印证（以 charge 为例）</div>
+  <!-- 4. 尺寸压缩与工程落地优化 -->
+  <section>
+    <h2>4. 移动端性能优化：1024 原图过大的工程解决方案</h2>
+    <p>
+      生图大模型默认生成的都是 1024×1024 的大图（体积通常在 100KB ~ 1MB）。如果直接扔给客户端，会导致列表滑动卡顿、消耗用户流量。
+    </p>
+    <div class="callout callout-purple">
+      <div class="callout-title">🛠 服务端批处理流水线最佳实践</div>
+      <p style="margin-bottom:8px;">
+        在服务端批处理拉取图片后，本地增加一步<strong>无损高质下采样处理</strong>：
+      </p>
+      <pre><code>from PIL import Image
+
+# 1. 打开 1024 原图
+img = Image.open("spring_pure_schema.jpeg")
+
+# 2. 缩放到 256x256（配合手机 Retina 2x 屏，在 120pt 圆形 Hub 里正好达到物理像素 1:1 视网膜级锐利）
+img_thumb = img.resize((256, 256), Image.Resampling.LANCZOS)
+
+# 3. 存储为现代高效 WebP 格式
+img_thumb.save("spring_core.webp", "WEBP", quality=85)</code></pre>
       <p style="margin-bottom:0;">
-        • <strong>DeepSeek</strong> 提炼意象为<strong>“往容器里装填、压入并承载负荷”</strong>（源自古法语 chargier 装载车马），完美穿透：充电（装电）、收费（向账单压入债务）、指控（向被告压入罪责）、负责（把职责装在自己身上承载）。<br>
-        • <strong>Qwen-Max</strong> 提炼为“向前冲、注入力量”，在解释收费时变成“注入资金”，解释负责时变成“注入责任”，比喻生硬，未能找到原点图式。
+        • <strong>体积暴降 90% 以上</strong>：从 150 KB 压缩至 <strong>仅 8 KB ~ 12 KB</strong>；<br>
+        • <strong>体验提升</strong>：用户在 App 查词时<strong>瞬时秒开</strong>，完全零等待、零内存压力！
       </p>
     </div>
   </section>
 
-  <!-- 3. 图形表达与技术选型：位图 vs 矢量拓扑 -->
+  <!-- 5. 抽象动力学 Prompt 工程标准模板 -->
   <section>
-    <h2>3. 图像呈现路线演进与技术决断</h2>
+    <h2>5. 纯抽象动力学 Prompt 工程标准模板</h2>
+    <p>为了让批量生成的所有多义词意象图都保持统一的“黑白极简素描、纯力学动势、无具象实物”的高级质感，统一采用以下三段式模板：</p>
+    <pre><code>Extreme minimalist abstract gestural sketch on deep matte black background.
+Pure physical force schema of "{{core_schema_concept}}".
+Composition & Motion:
+1. Base / Origin: {{compression_or_anchor_motion}} (e.g. tightly wound, dense concentrated spiral strokes of intense stored potential energy).
+2. Burst / Release: {{explosive_or_directed_motion}} (e.g. a single powerful, fierce vertical gesture exploding upward through resistance, flaring dynamically).
+Style constraint: Pure white charcoal and dry chalk strokes on pure black paper.
+CRITICAL NEGATIVE CONSTRAINTS: Absolutely NO realistic objects, NO {{word_meanings_list}}, NO characters, NO faces, NO eyes.
+Only pure abstract force, tension, momentum, and release. High contrast, generous negative space, zen-like simplicity.</code></pre>
+  </section>
 
-    <p>为核心意象配图，存在两条不同路径：</p>
-
-    <div class="showcase-container">
-      <div class="showcase-item">
-        <img src="assets/spring_core.jpg" class="showcase-img" alt="概念隐喻图">
-        <div class="showcase-caption">
-          <strong>形态 A：纯概念隐喻位图</strong><br>
-          （由 AI 渲染无文字的高级 3D 概念插画，熔铸弹簧、泉水、破土繁花于一炉）
-        </div>
-      </div>
-      <div class="showcase-item">
-        <img src="png/core_image_graph_preview.png" class="showcase-img" alt="辐射拓扑图真机">
-        <div class="showcase-caption">
-          <strong>形态 B：自适应辐射引申拓扑图</strong><br>
-          （中心枢纽 + 外围释义胶囊 + 贝塞尔连线 + 连线引申标签，支持点击联动）
-        </div>
-      </div>
+  <!-- 6. 客户端原生拓扑渲染形态 -->
+  <section>
+    <h2>6. 客户端原生自适应拓扑渲染（图文合璧）</h2>
+    <p>
+      真正的视觉体验并非纯图，而是将<strong>“中心抽象动势图”</strong>与<strong>“四周自适应贝塞尔引申网络”</strong>融为一体：
+    </p>
+    <div style="text-align: center; margin: 20px 0;">
+      <img src="png/core_image_graph_preview.png" style="width: 100%; max-width: 380px; border-radius: 20px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);" alt="拓扑真机图">
     </div>
-
-    <h3>为什么必须选择“结构化数据驱动 + App 原生矢量渲染”？</h3>
     <ul>
-      <li><strong>拒绝生图模型的乱码灾难</strong>：文生图大模型在排布中文小字时极易糊字、乱码、折行错位；而代码原生绘制矢量文字，在任何屏幕倍率下都保持 100% 绝对清晰。</li>
-      <li><strong>原生交互与联动</strong>：用户点击任一释义节点，连线高亮激活，下方自动联动例句与考点；支持暗黑模式自适应。</li>
-      <li><strong>带宽与性能极佳</strong>：一张位图需 500KB~1MB，而结构化 JSON 仅需 <strong>300~500 字节</strong>，请求耗时极短，加载丝滑无感。</li>
-      <li><strong>终极黄金形态（图文合璧）</strong>：中心枢纽背景内嵌无文字的 AI 概念微缩图，外围由 Flutter 原生 Canvas/CustomPainter 绘制贝塞尔引申星轨。</li>
+      <li><strong>中心 Hub</strong>：圆角磨砂微光圆盘，内嵌 256px 的纯动力学意象图（或 SVG 动势）；</li>
+      <li><strong>外围释义卡片</strong>：根据释义数量（3~6个）自动呈环状均布；</li>
+      <li><strong>贝塞尔连线与纽带标签</strong>：原生 CustomPainter 绘制，连线上浮现引申逻辑胶囊标签（如 *“万物向上萌发”*、*“水从地下涌出”*、*“受压后弹起”*）；</li>
+      <li><strong>点击高亮联动</strong>：点击任意节点，对应连线流光激活，下方展开深度语境剖析。</li>
     </ul>
   </section>
 
-  <!-- 4. 数据模型与契约规范 -->
+  <!-- 7. 资产链接与原型查阅 -->
   <section>
-    <h2>4. 数据结构与接口契约设计</h2>
-
-    <h3>4.1 服务端数据表规范（遵循项目统一规范：32位UUID主键、单数下划线命名）</h3>
-    <pre><code>CREATE TABLE `word_core_image` (
-  `id` VARCHAR(32) NOT NULL PRIMARY KEY COMMENT '主键UUID',
-  `word_id` VARCHAR(32) NOT NULL COMMENT '关联系统已有word.id',
-  `spell` VARCHAR(100) NOT NULL COMMENT '单词原形(冗余存储，加速检索与排查)',
-  `core_image` VARCHAR(128) NOT NULL COMMENT '核心动态意象短句',
-  `image_schema_desc` VARCHAR(255) NOT NULL COMMENT '核心原点图式与动势阐释',
-  `branches_json` TEXT NOT NULL COMMENT '引申网络结构化JSON数据',
-  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-待审核 1-已发布',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY `uk_word_id` (`word_id`),
-  KEY `idx_spell` (`spell`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;</code></pre>
-
-    <h3>4.2 大模型输出与存储结构（JSON Schema 契约）</h3>
-    <pre><code>{
-  "spell": "spring",
-  "core_image": "蓄势后猛然弹跳涌出",
-  "image_schema_desc": "从压缩、蓄力状态瞬间释放，向上或向前猛烈跃出，带有爆发性动势。",
-  "branches": [
-    {
-      "pos": "n.",
-      "meaning": "春天 / 春季",
-      "angle": -145,
-      "relation": "生命破土弹跳迸发",
-      "desc": "冬天万物收缩蓄力，春天一到，植物猛然发芽，如同生命从沉寂中弹跳破土而出。",
-      "example": "Flowers spring up everywhere in March."
-    },
-    {
-      "pos": "n.",
-      "meaning": "泉水 / 泉眼",
-      "angle": -35,
-      "relation": "水受压向上咕咚喷涌",
-      "desc": "地下水在岩层受压积蓄后，突然突破地表向上涌出，完全契合向上弹涌的动势。",
-      "example": "Cold water gushed from the mountain spring."
-    }
-  ]
-}</code></pre>
-  </section>
-
-  <!-- 5. 落地推进里程碑 -->
-  <section>
-    <h2>5. 落地推进实施路线（Roadmap）</h2>
-    <div class="card">
-      <p><strong>第一阶段：离线批量处理与高质量建库（1~2天）</strong></p>
-      <ul>
-        <li>编写 Python/Node 服务端批处理脚本，筛选词库中考研、四六级、托福、雅思等高频核心多义词（约 2000~3000 个）；</li>
-        <li>调用 DeepSeek-V3 API 批量生成结构化 JSON，通过格式校验器直接清洗入库，关键重点词人工抽验；</li>
-      </ul>
-      <p><strong>第二阶段：Flutter 原生拓扑组件封装（2~3天）</strong></p>
-      <ul>
-        <li>基于现有 HTML 验证成功的贝塞尔算法，封装 Flutter 原生 <code>CoreImageRadialWidget</code> 组件；</li>
-        <li>完美接入 App 单词详情页（<code>WordDetailPage</code>），与已有的 <code>meaning_item</code> 和例句体系无缝联动；</li>
-      </ul>
-      <p><strong>第三阶段：记忆测试场景渗透（后续演进）</strong></p>
-      <ul>
-        <li>在做一词多义辨析题或复习卡片时，提供“意象纽带提示”，引导用户通过原点动势推导词义，达到深度神经突触连接。</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- 6. 交互原型直达 -->
-  <section>
-    <h2>6. 原型成果与本地查看入口</h2>
+    <h2>7. 资产索引与本地查看直达</h2>
     <div class="card" style="background: rgba(0, 230, 184, 0.05); border-color: rgba(0, 230, 184, 0.3);">
-      <p style="margin-bottom: 8px;"><strong>已固化的真机图与可交互 HTML 原型：</strong></p>
+      <p style="margin-bottom: 12px;"><strong>所有实测产出的资产与原型文件均已沉淀在工程中：</strong></p>
       <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <a href="ui/core_image_graph_preview.html" class="link-btn" target="_blank">🌐 打开交互式 HTML 原型 (内置多词切换与主题切换)</a>
-        <a href="ui/png/core_image_graph_preview.png" class="link-btn" target="_blank">📱 查看统一模具旗舰真机高清效果图 (PNG)</a>
+        <a href="ui/core_image_graph_preview.html" class="link-btn" target="_blank">🌐 打开交互式 HTML 原型</a>
+        <a href="ui/png/core_image_graph_preview.png" class="link-btn" target="_blank">📱 旗舰真机高清效果图</a>
+        <a href="ui/svg_preview.html" class="link-btn" target="_blank">⚡️ 查看 DeepSeek 纯 SVG 预览</a>
+        <a href="assets/spring_pure_schema.jpeg" class="link-btn" target="_blank">🎨 查看豆包纯动力学素描</a>
+        <a href="assets/spring_zen_kolors.png" class="link-btn" target="_blank">🎨 查看硅基流动 Kolors 图</a>
       </div>
     </div>
   </section>
