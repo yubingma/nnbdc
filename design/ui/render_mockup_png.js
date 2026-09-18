@@ -181,7 +181,7 @@ function renderFile(fileName, shouldImportToPhotos = false) {
     targetUrl = `file://${srcPath}?transparent=1`;
   } else {
     let content = fs.readFileSync(srcPath, 'utf8');
-    content = content.replace('</head>', UNIFIED_CSS + '</head>');
+    content = content.replace('</head>', `<base href="file://${UI_DIR}/">\n` + UNIFIED_CSS + '</head>');
 
     const hasOriginalStatusBar = content.includes('status-bar');
     const containerRegex = /(<div class="(?:device-mockup|phone-container|phone-wrapper)"[^>]*>)/;

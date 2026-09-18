@@ -337,7 +337,7 @@
       <p class="subtitle">记录随时迸发的产品闪念、动效构想与玩法实验。遵循奥卡姆剃刀原理与极简高级美学，去伪存真，持续沉淀。</p>
       
       <div class="stats-bar">
-        <div class="stat-pill">沉淀创意: <strong>2</strong></div>
+        <div class="stat-pill">沉淀创意: <strong>3</strong></div>
         <div class="stat-pill">核心哲学: <strong>如非必要 · 勿增实体</strong></div>
         <div class="stat-pill">美学基准: <strong>现代极简 · 灵动克制</strong></div>
       </div>
@@ -345,6 +345,73 @@
 
     <!-- 创意动态流水线 -->
     <div class="ideas-feed" id="ideasFeed">
+
+      <!-- 创意 #003: UGC 冷启动破局 · AI 策展评分与新星展位 -->
+      <article class="idea-card">
+        <div class="idea-header">
+          <div>
+            <div class="idea-id-date">
+              <span class="idea-id">IDEA #003</span>
+              <span>•</span>
+              <span>2026-09-18</span>
+              <span>•</span>
+              <span>UGC生态与智能推荐</span>
+            </div>
+            <h2 class="idea-title">UGC 冷启动破局：AI 策展评分与动态新星展位（AI Curator & Star Slot）</h2>
+          </div>
+          <span class="badge-status status-concept">概念成型 / 机制设计</span>
+        </div>
+
+        <div class="tags-container">
+          <span class="tag">#UGC生态</span>
+          <span class="tag">#AI质量评分</span>
+          <span class="tag">#打破马太效应</span>
+          <span class="tag">#冷启动激励</span>
+          <span class="tag">#动态探索与利用</span>
+        </div>
+
+        <div class="idea-body">
+          <div class="idea-quote">
+            “现有 UGC（助记/图片/例句）纯靠点赞数排名，导致老内容垄断顶部，优质新内容永远无曝光无点赞而沉底。引入 AI 作为专业策展人对未获充分曝光的 UGC 进行多维度评分，并在 UI 上开设专属‘新星/甄选’展位直接触达用户，经用户真实投票验证后完成冷启动转正或淘汰。”
+          </div>
+
+          <div class="section-title">痛点根治：终结“马太效应死锁”</div>
+          <div class="principle-box">
+            <strong>冷启动死锁闭环：</strong>早期上传的内容哪怕粗糙，因占坑早积累了大量点赞而长年居顶；新上传的极佳助记/配图因点赞为 0 排在折叠深处，用户做题求快根本不会翻看，导致“无曝光 ➔ 无点赞 ➔ 永沉底 ➔ 创作者受挫流失”。AI 评分并非替代用户投票，而是作为<strong>「精准探照灯与起跑加速器」</strong>，把真正的好内容从底层打捞到聚光灯下。
+          </div>
+
+          <div class="section-title">核心运转逻辑与闭环设计</div>
+          <div class="feature-grid">
+            <div class="feature-item">
+              <strong>① 复合质量评分（AI 策展人）</strong>
+              <p>在内容提交/审核时，AI 评估记忆通感、趣味生动度、释义贴合度与排版排毒，给出 0~10 分质量基准。</p>
+            </div>
+            <div class="feature-item">
+              <strong>② 极简展位呈现（不增多余实体）</strong>
+              <p>不搞冗杂榜单切换，在做题主视图或弹窗置顶区保留轻量“🌱 AI 甄选 / 新星”标识，自然融入用户视线。</p>
+            </div>
+            <div class="feature-item">
+              <strong>③ 探索与利用（Epsilon-Greedy）</strong>
+              <p>高赞经典内容占 70%~80% 稳妥展示，20%~30% 流量动态轮换给 AI 评分高的冷启动新内容接受市场检验。</p>
+            </div>
+            <div class="feature-item">
+              <strong>④ 动态毕业与汰换机制</strong>
+              <p>获得足够真实好评（如净赞 ≥ 5）即“毕业”晋升为主榜；若遭用户踩（foot ≥ 2）则快速降权退出专属位。</p>
+            </div>
+          </div>
+
+          <div class="section-title">核心细节难点与解法</div>
+          <p style="font-size: 13.5px; color: var(--text-secondary);">
+            <strong>1. 曝光判定缺失：</strong>数据库目前未存展现次数（impression），不能简单以点赞为0视作未展示；解法是采用“创建时间窗口（如30天内）+ 总互动数（hand+foot ≤ 3）”作为精准冷启动池判定。<br/>
+            <strong>2. 评分成本与时机：</strong>复用现有图片/文本审核（<code>asyncReviewImage</code>）的同一异步调用管道，一次请求同步完成“合规审核 + 质量打分 + 打分理由”，边际成本为 0。<br/>
+            <strong>3. 端云架构协同：</strong>本地 SQLite 仅需为 UGC 表扩充 <code>ai_score</code> 字段，排序规则结合 <code>hand</code>、<code>ai_score</code> 与冷启动权重，天然兼容离线背词与增量同步机制。
+          </p>
+        </div>
+
+        <div class="actions-footer">
+          <span class="action-link" onclick="copyIdeaMarkdown('idea-003')">复制摘要 Markdown</span>
+        </div>
+      </article>
 
       <!-- 创意 #002: 对战道具·形近障眼法 -->
       <article class="idea-card">
@@ -493,6 +560,11 @@
 - **核心逻辑**：对战中向对手施放，使对方接下来的答题混淆选项全部来自当前单词的「形近词」释义。
 - **认知痛点**：打破常规随机选项的简单排除法，逼出真正的精准辨析能力，大幅增加失误与犹豫率。
 - **机制与实现**：持续 2~3 题，复用编辑距离 ≤ 2 的形近词体系，支持无缝降级兜底。`;
+      } else if (id === 'idea-003') {
+        text = `### UGC 冷启动破局：AI 策展评分与动态新星展位（AI Curator & Star Slot）
+- **核心逻辑**：针对因缺乏曝光而零点赞的优质新 UGC，由 AI 进行多维度质量评分并赋予专属新星展位。
+- **闭环机制**：AI 提供冷启动流量，用户投票完成闭环检验（获赞毕业成为成熟内容，被踩快速淘汰）。
+- **极简设计**：拒绝繁琐多榜单，采用平滑动态混排（探索与利用）与微标徽记，兼顾心流与生态活力。`;
       }
       navigator.clipboard.writeText(text).then(() => {
         alert('已复制该创意 Markdown 摘要到剪贴板');
