@@ -147,8 +147,10 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
                 // 不适合的词之前已经判定过了，直接返回
                 return existing;
             }
-            if ("SUCCESS".equalsIgnoreCase(existing.getImageStatus()) && existing.getImageUrl() != null) {
-                // 已经生成完毕，跳过
+            if ("SUCCESS".equalsIgnoreCase(existing.getImageStatus())
+                    && existing.getImageUrl() != null
+                    && !existing.getImageUrl().startsWith("http")) {
+                // 已经生成完毕且为本地持久化规范路径，跳过
                 return existing;
             }
             // 适合但图片尚未成功，直接驱动生图
@@ -309,6 +311,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             log.info("正在使用火山引擎豆包 Seedream 4.0 生成单词意象图: {}", item.getWord());
             imageUrl = callVolcImageApi(prompt, volcKey);
         } catch (Exception e) {
+            item.setImageUrl(null);
             item.setImageStatus("FAILED");
             item.setUpdateTime(new Date());
             saveOrUpdate(item);
@@ -316,30 +319,31 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             throw new RuntimeException("火山引擎生图失败: " + e.getMessage(), e);
         }
 
-        if (imageUrl != null) {
-            // 下载图片落盘
-            try {
-                String savedRelativePath = downloadAndSaveImage(imageUrl, item.getWord());
-                item.setImageUrl(savedRelativePath);
-                item.setImageStatus("SUCCESS");
-                item.setImageModel(modelName);
-                item.setUpdateTime(new Date());
-                saveOrUpdate(item);
-                log.info("单词 {} 意象图生成并存储成功: {}", item.getWord(), savedRelativePath);
-            } catch (Exception e) {
-                log.error("保存单词意象图本地文件失败: " + item.getWord(), e);
-                item.setImageUrl(imageUrl); // 降级为远程 URL
-                item.setImageStatus("SUCCESS");
-                item.setImageModel(modelName);
-                item.setUpdateTime(new Date());
-                saveOrUpdate(item);
-            }
-        } else {
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            item.setImageUrl(null);
             item.setImageStatus("FAILED");
             item.setUpdateTime(new Date());
             saveOrUpdate(item);
             log.error("火山引擎未返回图片 URL: {}", item.getWord());
             throw new RuntimeException("火山引擎未返回有效图片: " + item.getWord());
+        }
+
+        // 下载图片落盘：只有真正成功落盘才标记 SUCCESS，严禁在数据库留下第三方临时 URL
+        try {
+            String savedRelativePath = downloadAndSaveImage(imageUrl, item.getWord());
+            item.setImageUrl(savedRelativePath);
+            item.setImageStatus("SUCCESS");
+            item.setImageModel(modelName);
+            item.setUpdateTime(new Date());
+            saveOrUpdate(item);
+            log.info("单词 {} 意象图生成并存储成功: {}", item.getWord(), savedRelativePath);
+        } catch (Exception e) {
+            item.setImageUrl(null);
+            item.setImageStatus("FAILED");
+            item.setUpdateTime(new Date());
+            saveOrUpdate(item);
+            log.error("保存单词意象图本地文件失败: " + item.getWord(), e);
+            throw new RuntimeException("保存单词意象图本地文件失败: " + e.getMessage(), e);
         }
     }
 
@@ -457,6 +461,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     public List<WordCoreImageDto> getWordCoreImagesOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
         StringBuilder sql = new StringBuilder("SELECT wci.* FROM word_core_image wci "
                 + "WHERE wci.is_applicable = TRUE AND wci.image_status = 'SUCCESS' "
+                + "AND wci.image_url IS NOT NULL AND wci.image_url NOT LIKE 'http%' "
                 + "AND wci.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id = :dictId");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         if (fromSeq != null) {
