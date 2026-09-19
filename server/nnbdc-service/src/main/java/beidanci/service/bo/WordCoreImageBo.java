@@ -85,13 +85,13 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     }
 
     public int countApplicableWords() {
-        String sql = "SELECT COUNT(*) FROM word_core_image WHERE is_applicable = 1";
+        String sql = "SELECT COUNT(*) FROM word_core_image WHERE is_applicable = TRUE";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
         return count != null ? count : 0;
     }
 
     public int countSkippedWords() {
-        String sql = "SELECT COUNT(*) FROM word_core_image WHERE is_applicable = 0";
+        String sql = "SELECT COUNT(*) FROM word_core_image WHERE is_applicable = FALSE";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
         return count != null ? count : 0;
     }
@@ -105,9 +105,10 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     }
 
     public List<Word> findNextUnprocessedWords(int limit) {
-        String sql = "SELECT w.* FROM word w "
-                + "LEFT JOIN word_core_image wci ON w.id = wci.word_id "
+        String sql = "SELECT w.* FROM \"word\" w "
+                + "LEFT JOIN \"word_core_image\" wci ON w.id = wci.word_id "
                 + "WHERE wci.id IS NULL "
+                + "   OR (wci.is_applicable = TRUE AND wci.image_status = 'FAILED') "
                 + "ORDER BY w.popularity DESC, w.spell ASC "
                 + "LIMIT :limit";
         Map<String, Object> params = new HashMap<>();
@@ -218,34 +219,43 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         wci.setCreateTime(new Date());
         wci.setUpdateTime(new Date());
 
+        String aiResult;
         try {
-            String aiResult = aiBo.generateText(systemPrompt, userPrompt);
-            if (aiResult != null) {
-                String cleanedJson = JsonUtils.repairAiJson(aiResult);
-                Map<String, Object> map = JsonUtils.parseAiMap(cleanedJson);
-                Boolean isApplicable = (Boolean) map.get("is_applicable");
-                wci.setIsApplicable(Boolean.TRUE.equals(isApplicable));
-
-                if (!wci.getIsApplicable()) {
-                    wci.setNotApplicableReason((String) map.get("not_applicable_reason"));
-                    wci.setImageStatus("SKIPPED");
-                } else {
-                    wci.setCoreImage((String) map.get("core_image"));
-                    wci.setSchemaDesc((String) map.get("schema_desc"));
-                    wci.setImagePrompt((String) map.get("image_prompt"));
-                    wci.setTopologyJson(cleanedJson);
-                    wci.setImageStatus("PENDING");
-                }
-            } else {
-                wci.setIsApplicable(false);
-                wci.setNotApplicableReason("AI 文本生成未返回内容");
-                wci.setImageStatus("FAILED");
-            }
+            aiResult = aiBo.generateText(systemPrompt, userPrompt);
         } catch (Exception e) {
-            log.error("AI 评估提取单词核心意象失败: " + word.getSpell(), e);
-            wci.setIsApplicable(false);
-            wci.setNotApplicableReason("解析异常: " + e.getMessage());
-            wci.setImageStatus("FAILED");
+            log.error("AI 文本模型调用异常(可能欠费/网络异常): " + word.getSpell(), e);
+            throw new RuntimeException("AI 文本大模型调用异常: " + e.getMessage(), e);
+        }
+
+        if (aiResult == null || aiResult.trim().isEmpty()) {
+            throw new RuntimeException("AI 文本大模型未返回内容");
+        }
+
+        String cleanedJson = JsonUtils.repairAiJson(aiResult);
+        Map<String, Object> map;
+        try {
+            map = JsonUtils.parseAiMap(cleanedJson);
+        } catch (Exception e) {
+            log.error("AI 结果 JSON 解析失败: " + word.getSpell() + ", 内容: " + cleanedJson, e);
+            throw new RuntimeException("AI 结果 JSON 解析失败: " + e.getMessage(), e);
+        }
+
+        if (map == null || !map.containsKey("is_applicable")) {
+            throw new RuntimeException("AI 返回内容缺少 is_applicable 字段: " + cleanedJson);
+        }
+
+        Boolean isApplicable = (Boolean) map.get("is_applicable");
+        wci.setIsApplicable(Boolean.TRUE.equals(isApplicable));
+
+        if (!wci.getIsApplicable()) {
+            wci.setNotApplicableReason((String) map.get("not_applicable_reason"));
+            wci.setImageStatus("SKIPPED");
+        } else {
+            wci.setCoreImage((String) map.get("core_image"));
+            wci.setSchemaDesc((String) map.get("schema_desc"));
+            wci.setImagePrompt((String) map.get("image_prompt"));
+            wci.setTopologyJson(cleanedJson);
+            wci.setImageStatus("PENDING");
         }
 
         createEntity(wci);
@@ -320,6 +330,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             item.setUpdateTime(new Date());
             saveOrUpdate(item);
             log.error("单词 {} 意象图生成全部降级失败", item.getWord());
+            throw new RuntimeException("生图模型调用全部失败(可能生图服务欠费或额度不足): " + item.getWord());
         }
     }
 

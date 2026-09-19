@@ -61,8 +61,9 @@ public class AdminWordCoreImageController {
                     logger.info("启动一词多义核心意象批处理任务，词库总词数: {}, 已处理: {}",
                             currentTask.totalWords, currentTask.processedWords);
 
+                    int consecutiveFailures = 0;
                     while (currentTask.isRunning) {
-                        // 分批加载未处理的单词（按热门度降序排列）
+                        // 分批加载未处理的单词（按热门度降序排列，包含全新未处理和之前生图失败的）
                         List<Word> batch = wordCoreImageBo.findNextUnprocessedWords(20);
                         if (batch == null || batch.isEmpty()) {
                             currentTask.statusMsg = "全部词汇已处理完毕";
@@ -80,20 +81,21 @@ public class AdminWordCoreImageController {
 
                             try {
                                 WordCoreImage wci = wordCoreImageBo.processWord(word);
-                                currentTask.processedWords++;
+                                consecutiveFailures = 0; // 成功重置连续失败计数
+                                currentTask.processedWords = wordCoreImageBo.countProcessedWords();
+                                currentTask.applicableCount = wordCoreImageBo.countApplicableWords();
+                                currentTask.skippedCount = wordCoreImageBo.countSkippedWords();
 
                                 Map<String, Object> logEntry = new HashMap<>();
                                 logEntry.put("word", word.getSpell());
                                 logEntry.put("time", System.currentTimeMillis());
 
                                 if (Boolean.TRUE.equals(wci.getIsApplicable())) {
-                                    currentTask.applicableCount++;
                                     logEntry.put("type", "APPLICABLE");
                                     logEntry.put("coreImage", wci.getCoreImage());
                                     logEntry.put("imageUrl", wci.getImageUrl());
                                     logEntry.put("imageStatus", wci.getImageStatus());
                                 } else {
-                                    currentTask.skippedCount++;
                                     logEntry.put("type", "SKIPPED");
                                     logEntry.put("reason", wci.getNotApplicableReason());
                                 }
@@ -109,7 +111,19 @@ public class AdminWordCoreImageController {
                                 Thread.sleep(300);
                             } catch (Exception e) {
                                 currentTask.failedCount++;
-                                logger.error("处理单词异常: " + word.getSpell(), e);
+                                consecutiveFailures++;
+                                String errMsg = e.getMessage() != null ? e.getMessage() : e.toString();
+                                logger.error("处理单词异常: " + word.getSpell() + ", 当前连续失败次数: " + consecutiveFailures, e);
+
+                                boolean isQuotaOrAuth = isQuotaOrAuthError(errMsg);
+                                if (isQuotaOrAuth || consecutiveFailures >= 3) {
+                                    currentTask.isRunning = false;
+                                    String reason = isQuotaOrAuth ? "大模型欠费/配额耗尽/鉴权失败" : "连续失败已达 3 次";
+                                    currentTask.statusMsg = String.format("任务已自动暂停（%s: %s）。请充值或检查后重新启动，系统将自动从断点继续处理！",
+                                            reason, errMsg);
+                                    logger.warn("触发批处理自动暂停熔断: {}", currentTask.statusMsg);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -182,6 +196,20 @@ public class AdminWordCoreImageController {
 
         WordCoreImage wci = wordCoreImageBo.processWord(word);
         return Result.success(wci);
+    }
+
+    private static boolean isQuotaOrAuthError(String msg) {
+        if (msg == null) return false;
+        String lower = msg.toLowerCase();
+        return lower.contains("quota")
+                || lower.contains("balance")
+                || lower.contains("insufficient")
+                || lower.contains("credit")
+                || lower.contains("欠费")
+                || lower.contains("余额不足")
+                || lower.contains("402")
+                || lower.contains("401")
+                || lower.contains("429");
     }
 
     public static class WordCoreImageBatchTask {
