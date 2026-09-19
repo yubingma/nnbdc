@@ -295,6 +295,9 @@
       gap: 10px;
       transition: all 0.3s ease;
     }
+    #card-7 .impact-banner {
+      top: 36%;
+    }
     .poster-card:hover .impact-banner {
       transform: translate(-50%, -54%) scale(1.02);
       box-shadow: 
@@ -1500,69 +1503,81 @@
             </div>
 
             <div class="screen-body">
-              <div class="sentence-trans-stage">
+              <div class="sentence-trans-stage" style="padding: 14px 14px 12px; display: flex; flex-direction: column; justify-content: space-between;">
+                <!-- 顶部题型状态 -->
                 <div>
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 11px; color: #0284C7; font-weight: 700; background: #F0F9FF; border: 1px solid #BAE6FD; padding: 2px 8px; border-radius: 6px;">单词汉译英 · 主动提取</span>
                     <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 15 / 20 词</span>
                   </div>
-                  <div style="font-size: 11.5px; color: #6B7280; margin-top: 6px;">看中文释义 · 凭记忆说出英文单词</div>
                 </div>
 
-                <!-- 题目：中文释义卡片 -->
-                <div class="sentence-quiz-card" style="padding: 13px 13px 11px; background: #F8FAFC; border-color: #E2E8F0;">
-                  <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <span class="cixing-tag">adj.</span>
-                    <span style="font-size: 14px; font-weight: 700; color: #0F172A;">短暂的；转瞬即逝的</span>
-                  </div>
-                  <div style="display: flex; align-items: center;">
-                    <span class="cixing-tag" style="color: #64748B; background: #F1F5F9; border-color: #CBD5E1;">n.</span>
-                    <span style="font-size: 12px; color: #475569;">朝生暮死之物；极短暂的事物</span>
-                  </div>
-                  <div style="margin-top: 7px; padding-top: 6px; border-top: 1px dashed #E2E8F0; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #94A3B8;">
-                    <span>💡 凭记忆主动提取 · 首字母 e...</span>
-                    <span>真题核心高频词</span>
+                <!-- 题目：经典极简中文释义卡片 -->
+                <div class="sentence-quiz-card" style="padding: 10px 12px; background: #F8FAFC; border-color: #E2E8F0; margin-top: 6px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                      <span class="cixing-tag">adj.</span>
+                      <span style="font-size: 14px; font-weight: 800; color: #0F172A;">短暂的；转瞬即逝的</span>
+                    </div>
+                    <span style="font-size: 10.5px; color: #94A3B8;">💡 提示: e...</span>
                   </div>
                 </div>
+
+                <!-- 中央为悬浮横幅预留的纯净黄金视觉通道 -->
+                <div style="height: 38px;"></div>
 
                 <!-- 语音作答与智能裁判卡片 -->
-                <div class="sentence-asr-result-card" style="background: #F0F9FF; border-color: #BAE6FD;">
+                <div class="sentence-asr-result-card" style="background: #F0F9FF; border-color: #BAE6FD; padding: 8px 12px 7px;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 5px;">
                       <span class="asr-live-dot" style="background: #0284C7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);"></span>
-                      <span style="font-size: 10.5px; color: #0284C7; font-weight: 700;">AI 智能判官 · 回忆判定：</span>
+                      <span style="font-size: 10px; color: #0284C7; font-weight: 700;">AI 智能判官 · 答案判定：</span>
                     </div>
-                    <span class="score-badge" style="background: #0284C7; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3); white-space: nowrap;">🎯 准确唤醒 · 记忆达标</span>
+                    <span class="score-badge" style="background: #0284C7; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3); white-space: nowrap; font-size: 9.5px; padding: 2px 7px;">🎯 准确唤醒 · 吻合</span>
                   </div>
 
-                  <div style="margin: 6px 0 4px;">
-                    <div style="font-size: 20px; font-weight: 800; color: #0369A1; font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.2px;">
+                  <div style="margin: 4px 0 2px;">
+                    <div style="font-size: 19px; font-weight: 800; color: #0369A1; font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.2px;">
                       ephemeral
                     </div>
-                    <div style="font-size: 10.5px; color: #0284C7; font-weight: 600; font-family: ui-monospace, monospace; margin-top: 2px; white-space: nowrap;">
-                      ⚡ 瞬间主动提取 · 深度记忆已建立
+                    <div style="font-size: 10px; color: #0284C7; font-weight: 600; font-family: ui-monospace, monospace; margin-top: 1px; white-space: nowrap;">
+                      ⚡ 成功主动回忆 · 深度记忆神经元激活
                     </div>
                   </div>
 
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 7px; border-top: 1px dashed #BAE6FD;">
-                    <div class="wave-bars">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #BAE6FD;">
+                    <div class="wave-bars" style="height: 18px;">
+                      <div class="wave-bar" style="height: 8px; background: #38BDF8;"></div>
+                      <div class="wave-bar" style="height: 14px; background: #0284C7;"></div>
+                      <div class="wave-bar" style="height: 18px; background: #0369A1;"></div>
                       <div class="wave-bar" style="height: 10px; background: #38BDF8;"></div>
                       <div class="wave-bar" style="height: 18px; background: #0284C7;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #0369A1;"></div>
-                      <div class="wave-bar" style="height: 14px; background: #38BDF8;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #0284C7;"></div>
-                      <div class="wave-bar" style="height: 12px; background: #38BDF8;"></div>
-                      <div class="wave-bar" style="height: 18px; background: #0284C7;"></div>
+                      <div class="wave-bar" style="height: 9px; background: #38BDF8;"></div>
+                      <div class="wave-bar" style="height: 14px; background: #0284C7;"></div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 4px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
-                      <span style="font-size: 11px; color: #0369A1; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，你竟然直接就想起来了！</span>
+                      <img src="assets/rabbit_surprise.png" style="width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
+                      <span style="font-size: 10.5px; color: #0369A1; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，你竟然直接就想起来了！</span>
                     </div>
+                  </div>
+                </div>
+
+                <!-- 深度记忆里程碑达成庆祝卡片 -->
+                <div class="mastery-celebrate-card" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 55%, #FDE68A 100%); border: 1.5px solid #F59E0B; border-radius: 12px; padding: 7px 11px 6px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15); margin-top: 4px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <span style="font-size: 12px;">🏆</span>
+                      <span style="font-size: 11px; font-weight: 800; color: #92400E; letter-spacing: -0.2px; white-space: nowrap;">深度记忆达成 · 彻底掌握！</span>
+                    </div>
+                    <span style="font-size: 9px; font-weight: 800; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; padding: 1px 6px; border-radius: 100px; white-space: nowrap;">历经 4 轮科学复习</span>
+                  </div>
+                  <div style="font-size: 10px; color: #78350F; line-height: 1.35; font-weight: 600;">
+                    🎉 太棒了！经过 4 次主动回忆，该词已成功穿透遗忘曲线，<strong>彻底进入永久长时记忆！</strong>
                   </div>
                 </div>
 
                 <!-- 底部操作按钮：按住说英文 -->
-                <div class="speak-action-btn" style="background: #0F172A;">
+                <div class="speak-action-btn" style="background: #0F172A; margin-top: 4px;">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                   <span>按住说英文（松开即可判题）</span>
                 </div>
