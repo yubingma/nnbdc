@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-palette="emerald">
+<html lang="zh-CN" data-palette="emerald" data-device="punch" data-banner="show" data-copy="a">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1635,25 +1635,42 @@
       }
       document.getElementById('btn-copy-a').classList.toggle('active', style === 'a');
       document.getElementById('btn-copy-b').classList.toggle('active', style === 'b');
+      try { localStorage.setItem('appstore_copy_style', style); } catch (e) {}
     }
 
     function switchPalette(pal) {
       document.documentElement.setAttribute('data-palette', pal);
       document.getElementById('btn-pal-emerald').classList.toggle('active', pal === 'emerald');
       document.getElementById('btn-pal-macaron').classList.toggle('active', pal === 'macaron');
+      try { localStorage.setItem('appstore_palette', pal); } catch (e) {}
     }
 
     function switchDevice(mode) {
       document.documentElement.setAttribute('data-device', mode);
       document.getElementById('btn-dev-punch').classList.toggle('active', mode === 'punch');
       document.getElementById('btn-dev-pure').classList.toggle('active', mode === 'pure');
+      try { localStorage.setItem('appstore_device', mode); } catch (e) {}
     }
 
     function switchBanner(mode) {
       document.documentElement.setAttribute('data-banner', mode);
       document.getElementById('btn-banner-show').classList.toggle('active', mode === 'show');
       document.getElementById('btn-banner-hide').classList.toggle('active', mode === 'hide');
+      try { localStorage.setItem('appstore_banner', mode); } catch (e) {}
     }
+
+    // 固化默认选项：方案A、青蓝色、安卓微孔合规版、开启横幅
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedCopy = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_copy_style')) || 'a';
+      const savedPal = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_palette')) || 'emerald';
+      const savedDev = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_device')) || 'punch';
+      const savedBanner = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_banner')) || 'show';
+
+      switchCopyStyle(savedCopy);
+      switchPalette(savedPal);
+      switchDevice(savedDev);
+      switchBanner(savedBanner);
+    });
   </script>
 </body>
 </html>
