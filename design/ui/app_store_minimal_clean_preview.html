@@ -295,7 +295,7 @@
       gap: 10px;
       transition: all 0.3s ease;
     }
-    #card-7 .impact-banner {
+    #card-1 .impact-banner {
       top: 36%;
     }
     .poster-card:hover .impact-banner {
@@ -929,17 +929,17 @@
     <!-- 5 联屏海报走廊 -->
     <div class="gallery-row" id="galleryRow">
 
-      <!-- 海报 1: 记忆苍穹 · 点亮词海 -->
+      <!-- 海报 1: 汉译英试 · 见义忆词 -->
       <div class="poster-card" id="card-1">
         <div class="poster-header">
-          <h2 class="p-title" id="p1-title">记忆苍穹</h2>
-          <div class="p-subtitle" id="p1-sub">点亮词海</div>
+          <h2 class="p-title" id="p1-title">汉译英试</h2>
+          <div class="p-subtitle" id="p1-sub">见义忆词</div>
         </div>
 
         <div class="poster-phone-stage">
           <div class="device-chassis">
             <div class="camera-punch-hole"></div>
-            <div class="mock-status-bar" style="background: #112622; color: #FFFFFF;">
+            <div class="mock-status-bar">
               <span>9:41</span>
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
@@ -949,38 +949,89 @@
             </div>
 
             <div class="screen-body">
-              <div class="sky-stage">
-                <div class="sky-header">
-                  <span class="sky-badge">🌌 1,840 颗词汇微光</span>
-                  <span style="font-size: 11px; color: #10D09E;">捏合远观 ›</span>
-                </div>
-
-                <div class="sky-canvas">
-                  <div class="bubble bubble-b1">
-                    <span style="font-size: 11px; font-weight: 700;">lucid</span>
-                  </div>
-                  <div class="bubble bubble-main">
-                    <span style="font-size: 19px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px;">ephemeral</span>
-                    <span style="font-size: 11px; color: #A7F3D0; margin-top: 4px;">/ɪˈfemərəl/</span>
-                    <span style="font-size: 10px; color: #6EE7B7; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 10px; margin-top: 6px;">✦ 牢固掌握</span>
-                  </div>
-                  <div class="bubble bubble-b2">
-                    <span style="font-size: 11px; font-weight: 700;">serendipity</span>
-                  </div>
-                  <div class="bubble bubble-b3">
-                    <span style="font-size: 11px; font-weight: 700;">pragmatic</span>
+              <div class="sentence-trans-stage" style="padding: 14px 14px 12px; display: flex; flex-direction: column; justify-content: space-between;">
+                <!-- 顶部题型状态 -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: #0284C7; font-weight: 700; background: #F0F9FF; border: 1px solid #BAE6FD; padding: 2px 8px; border-radius: 6px;">单词汉译英 · 主动提取</span>
+                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 15 / 20 词</span>
                   </div>
                 </div>
 
-                <!-- 浮起高亮卡片（仿照参考图层次） -->
-                <div class="pop-card pop-card-sky">
-                  <div class="pop-card-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <!-- 题目：经典极简中文释义卡片 -->
+                <div class="sentence-quiz-card" style="padding: 10px 12px; background: #F8FAFC; border-color: #E2E8F0; margin-top: 6px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                      <span class="cixing-tag">adj.</span>
+                      <span style="font-size: 14px; font-weight: 800; color: #0F172A;">短暂的；转瞬即逝的</span>
+                    </div>
+                    <span style="font-size: 10.5px; color: #94A3B8;">💡 提示: e...</span>
                   </div>
-                  <div>
-                    <div style="font-size: 12.5px; font-weight: 700; color: #064E3B;">掌握即化作气泡升空</div>
-                    <div style="font-size: 10.5px; color: #64748B;">漫游触碰即刻发音 · 遗忘光泽衰减唤醒</div>
+                </div>
+
+                <!-- 中央为悬浮横幅预留的纯净黄金视觉通道 -->
+                <div style="height: 38px;"></div>
+
+                <!-- 语音作答与智能裁判卡片 -->
+                <div class="sentence-asr-result-card" style="background: #F0F9FF; border-color: #BAE6FD; padding: 8px 12px 7px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                      <span class="asr-live-dot" style="background: #0284C7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);"></span>
+                      <span style="font-size: 10px; color: #0284C7; font-weight: 700;">AI 智能判官 · 答案判定：</span>
+                    </div>
+                    <span class="score-badge" style="background: #0284C7; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3); white-space: nowrap; font-size: 9.5px; padding: 2px 7px;">🎯 准确唤醒 · 吻合</span>
                   </div>
+
+                  <div style="margin: 4px 0 2px;">
+                    <div style="font-size: 19px; font-weight: 800; color: #0369A1; font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.2px;">
+                      ephemeral
+                    </div>
+                    <div style="font-size: 10px; color: #0284C7; font-weight: 600; font-family: ui-monospace, monospace; margin-top: 1px; white-space: nowrap;">
+                      ⚡ 成功主动回忆 · 深度记忆神经元激活
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #BAE6FD;">
+                    <div class="wave-bars" style="height: 18px;">
+                      <div class="wave-bar" style="height: 8px; background: #38BDF8;"></div>
+                      <div class="wave-bar" style="height: 14px; background: #0284C7;"></div>
+                      <div class="wave-bar" style="height: 18px; background: #0369A1;"></div>
+                      <div class="wave-bar" style="height: 10px; background: #38BDF8;"></div>
+                      <div class="wave-bar" style="height: 18px; background: #0284C7;"></div>
+                      <div class="wave-bar" style="height: 9px; background: #38BDF8;"></div>
+                      <div class="wave-bar" style="height: 14px; background: #0284C7;"></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <img src="assets/rabbit_surprise.png" style="width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
+                      <span style="font-size: 10.2px; color: #0369A1; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，经过这么多天，你居然还记得！</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 深度记忆里程碑达成庆祝卡片 -->
+                <div class="mastery-celebrate-card" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 55%, #FDE68A 100%); border: 1.5px solid #F59E0B; border-radius: 12px; padding: 7px 11px 6px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15); margin-top: 4px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <span style="font-size: 12px;">🏆</span>
+                      <span style="font-size: 11px; font-weight: 800; color: #92400E; letter-spacing: -0.2px; white-space: nowrap;">深度记忆达成 · 彻底掌握！</span>
+                    </div>
+                    <span style="font-size: 9px; font-weight: 800; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; padding: 1px 6px; border-radius: 100px; white-space: nowrap;">历经 4 轮科学复习</span>
+                  </div>
+                  <div style="font-size: 9.6px; color: #78350F; line-height: 1.4; font-weight: 600;">
+                    <div>🎉 太棒了！经过 4 次主动回忆穿透遗忘曲线，彻底进入长时记忆！</div>
+                    <div style="margin-top: 3.5px; padding-top: 3.5px; border-top: 1px dashed rgba(217, 119, 6, 0.35); display: flex; align-items: center; justify-content: space-between;">
+                      <span style="color: #92400E; font-weight: 700; white-space: nowrap;">✨ 累计深度掌握</span>
+                      <span style="font-size: 9.5px; font-weight: 800; color: #92400E; background: #FEF3C7; padding: 1.5px 7px; border-radius: 6px; border: 1px solid #FCD34D; white-space: nowrap;">
+                        <strong style="font-size: 11px; font-weight: 900; color: #B45309; font-family: ui-monospace, monospace;">1,280</strong> 词 · 词汇大厦再添基石
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 底部操作按钮：按住说英文 -->
+                <div class="speak-action-btn" style="background: #0F172A; margin-top: 4px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                  <span>按住说英文（松开即可判题）</span>
                 </div>
               </div>
             </div>
@@ -989,17 +1040,265 @@
 
           <!-- 中央直击人心大横幅 01 -->
           <div class="impact-banner">
-            <span class="banner-badge">✨</span>
-            <span class="banner-text">背下的每一个词，都是<span class="highlight">看得见的浩瀚星辰</span></span>
+            <span class="banner-badge">🗣️</span>
+            <span class="banner-text">背单词，<span class="highlight">顺便把口语练了！</span></span>
           </div>
         </div>
       </div>
 
-      <!-- 海报 2: 临界重温 · 精准唤醒 -->
+      <!-- 海报 2: 英译汉试 · 即视即译 -->
       <div class="poster-card" id="card-2">
         <div class="poster-header">
-          <h2 class="p-title" id="p2-title">临界重温</h2>
-          <div class="p-subtitle" id="p2-sub">精准唤醒</div>
+          <h2 class="p-title" id="p2-title">英译汉试</h2>
+          <div class="p-subtitle" id="p2-sub">即视即译</div>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="camera-punch-hole"></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-body">
+              <div class="sentence-trans-stage">
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">单词英译汉 · 极速口试</span>
+                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 12 / 20 词</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: #6B7280; margin-top: 6px;">看英文单词 · 语音说出中文意思</div>
+                </div>
+
+                <!-- 题目：核心英文单词 -->
+                <div class="sentence-quiz-card" style="text-align: center; padding: 16px 14px 14px;">
+                  <div style="font-size: 26px; font-weight: 800; color: #111827; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+                    ephemeral
+                  </div>
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px;">
+                    <span style="font-size: 13px; color: #6B7280; font-family: ui-monospace, monospace;">[ɪ'femərəl]</span>
+                    <div style="display: inline-flex; align-items: center; gap: 3px; color: #059669; font-size: 11px; font-weight: 700; background: #ECFDF5; border: 1px solid #D1FAE5; padding: 1px 6px; border-radius: 100px;">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                      <span>美音</span>
+                    </div>
+                  </div>
+                  <div style="font-size: 11px; color: #9CA3AF; margin-top: 8px;">
+                    🎯 请说出该单词的核心中文释义
+                  </div>
+                </div>
+
+                <!-- 语音作答与识别出的中文释义 -->
+                <div class="sentence-asr-result-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                      <span class="asr-live-dot"></span>
+                      <span style="font-size: 10.5px; color: #059669; font-weight: 700;">实时识别 · 你的释义：</span>
+                    </div>
+                    <span class="score-badge">👏 哇，太准确了！</span>
+                  </div>
+
+                  <div class="user-speech-text" style="font-size: 14.5px; font-weight: 700; color: #065F46; margin: 7px 0 5px;">
+                    “短暂的，转瞬即逝的”
+                  </div>
+
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 7px; border-top: 1px dashed #A7F3D0;">
+                    <div class="wave-bars">
+                      <div class="wave-bar" style="height: 10px;"></div>
+                      <div class="wave-bar" style="height: 18px;"></div>
+                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
+                      <div class="wave-bar" style="height: 14px;"></div>
+                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
+                      <div class="wave-bar" style="height: 12px;"></div>
+                      <div class="wave-bar" style="height: 18px;"></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <img src="assets/rabbit_surprise.png" style="width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
+                      <span style="font-size: 11px; color: #047857; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，你的翻译真的是太准确了！</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 底部操作按钮：按住说中文 -->
+                <div class="speak-action-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                  <span>按住说中文（松开即可判题）</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 中央直击人心大横幅 02 -->
+          <div class="impact-banner">
+            <span class="banner-badge">🧠</span>
+            <span class="banner-text">拒绝被动选词，<span class="highlight">开口回忆真掌握！</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 海报 3: 语音答题 · 开口成诵 -->
+      <div class="poster-card" id="card-3">
+        <div class="poster-header">
+          <h2 class="p-title" id="p3-title">语音答题</h2>
+          <div class="p-subtitle" id="p3-sub">开口成诵</div>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="camera-punch-hole"></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-body">
+              <div class="sentence-trans-stage">
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">例句英译汉 · 语境口试</span>
+                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 8 / 20 句</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: #6B7280; margin-top: 6px;">看英文例句 · 语音说出中文意思</div>
+                </div>
+
+                <!-- 题目：经典英文例句 -->
+                <div class="sentence-quiz-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 10px; color: #9CA3AF; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">English Sentence</span>
+                    <div style="display: flex; align-items: center; gap: 4px; color: #059669; font-size: 10.5px; font-weight: 600;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                      <span>标准美音</span>
+                    </div>
+                  </div>
+                  <div class="sentence-en-text">
+                    "True <span class="highlight-word">resilience</span> is not about never falling, but rising every time."
+                  </div>
+                </div>
+
+                <!-- 语音作答与识别出的中文翻译结果 -->
+                <div class="sentence-asr-result-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                      <span class="asr-live-dot"></span>
+                      <span style="font-size: 10.5px; color: #059669; font-weight: 700;">实时识别 · 你的口译：</span>
+                    </div>
+                    <span class="score-badge">👏 哇，太准确了！</span>
+                  </div>
+
+                  <div class="user-speech-text">
+                    “真正的韧性不是从不跌倒，而是每次都能重新站起来。”
+                  </div>
+
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 7px; border-top: 1px dashed #A7F3D0;">
+                    <div class="wave-bars">
+                      <div class="wave-bar" style="height: 10px;"></div>
+                      <div class="wave-bar" style="height: 18px;"></div>
+                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
+                      <div class="wave-bar" style="height: 14px;"></div>
+                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
+                      <div class="wave-bar" style="height: 12px;"></div>
+                      <div class="wave-bar" style="height: 18px;"></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <img src="assets/rabbit_surprise.png" style="width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
+                      <span style="font-size: 11px; color: #047857; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，你的翻译真的是太准确了！</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 底部操作按钮：按住说中文 -->
+                <div class="speak-action-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                  <span>按住说中文（松开即可判题）</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 中央直击人心大横幅 03 -->
+          <div class="impact-banner">
+            <span class="banner-badge">⚡</span>
+            <span class="banner-text">语境整句脱口，<span class="highlight">考场职场即学即用！</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 海报 4: 真迹默写 · 落笔生根 -->
+      <div class="poster-card" id="card-4">
+        <div class="poster-header">
+          <h2 class="p-title" id="p4-title">真迹默写</h2>
+          <div class="p-subtitle" id="p4-sub">落笔生根</div>
+        </div>
+
+        <div class="poster-phone-stage">
+          <div class="device-chassis">
+            <div class="camera-punch-hole"></div>
+            <div class="mock-status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
+                <span style="font-size: 10px; font-weight: 800;">5G</span>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+
+            <div class="screen-body">
+              <div class="write-stage">
+                <div class="write-prompt-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">拼写默写 · 第 6 / 20 词</span>
+                    <span style="font-size: 9.5px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 1.5px 6px; border-radius: 4px;">真迹抗遗忘</span>
+                  </div>
+                  <div class="write-word-title" style="margin-top: 5px;">adj. 短暂的；转瞬即逝的</div>
+                  <div style="font-size: 11px; color: #9CA3AF; margin-top: 3px;">音标 [ɪˈfemərəl] · 考频 ★★★★☆</div>
+                </div>
+
+                <div class="handwriting-pad">
+                  <!-- 用户真实手写真迹（纯净留白，无灰色虚影） -->
+                  <div class="user-handwriting-stage">
+                    <img src="img/user_handwritten_ephem_clean.png" class="user-handwriting-img" alt="手写真迹 ephem">
+                    <!-- 3D 屏幕上方真实人手：悬浮在屏幕与机身之上，食指点触笔尖，手背与大拇指自然遮挡手写板虚线与“下一个”按钮 -->
+                    <div class="floating-hand-3d">
+                      <div class="finger-touch-glow"></div>
+                      <img src="img/flawless_real_hand_feathered.png" class="real-hand-img" alt="真实写实手势">
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- 浮起工具栏（被屏幕上方的真实人手自然遮挡） -->
+                <div style="display: flex; gap: 8px;">
+                  <button style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid #E5E7EB; background: #FFFFFF; font-size: 12px; font-weight: 600; color: #4B5563;">清除笔迹</button>
+                  <button style="flex: 2; padding: 10px; border-radius: 12px; border: none; background: #10B981; font-size: 12px; font-weight: 700; color: #FFFFFF; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">下一个</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 中央直击人心大横幅 04 -->
+          <div class="impact-banner">
+            <span class="banner-badge">✍️</span>
+            <span class="banner-text">动口之后动手，<span class="highlight">考场拼写万无一失！</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 海报 5: 临界重温 · 精准唤醒 -->
+      <div class="poster-card" id="card-5">
+        <div class="poster-header">
+          <h2 class="p-title" id="p5-title">临界重温</h2>
+          <div class="p-subtitle" id="p5-sub">精准唤醒</div>
         </div>
 
         <div class="poster-phone-stage">
@@ -1163,7 +1462,7 @@
             </div>
           </div>
 
-          <!-- 中央直击人心大横幅 02 -->
+          <!-- 中央直击人心大横幅 05 -->
           <div class="impact-banner">
             <span class="banner-badge">⚡</span>
             <span class="banner-text">精准安排，<span class="highlight">时间节省 40%！</span></span>
@@ -1171,164 +1470,11 @@
         </div>
       </div>
 
-      <!-- 海报 3: 真迹默写 · 落笔生根 -->
-      <div class="poster-card" id="card-3">
+      <!-- 海报 6: 词单导入 · 随心定制 -->
+      <div class="poster-card" id="card-6">
         <div class="poster-header">
-          <h2 class="p-title" id="p3-title">真迹默写</h2>
-          <div class="p-subtitle" id="p3-sub">落笔生根</div>
-        </div>
-
-        <div class="poster-phone-stage">
-          <div class="device-chassis">
-            <div class="camera-punch-hole"></div>
-            <div class="mock-status-bar">
-              <span>9:41</span>
-              <div class="status-icons">
-                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
-                <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-              </div>
-            </div>
-
-            <div class="screen-body">
-              <div class="write-stage">
-                <div class="write-prompt-card">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">拼写默写 · 第 6 / 20 词</span>
-                    <span style="font-size: 9.5px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 1.5px 6px; border-radius: 4px;">真迹抗遗忘</span>
-                  </div>
-                  <div class="write-word-title" style="margin-top: 5px;">adj. 短暂的；转瞬即逝的</div>
-                  <div style="font-size: 11px; color: #9CA3AF; margin-top: 3px;">音标 [ɪˈfemərəl] · 考频 ★★★★☆</div>
-                </div>
-
-                <div class="handwriting-pad">
-                  <!-- 用户真实手写真迹（纯净留白，无灰色虚影） -->
-                  <div class="user-handwriting-stage">
-                    <img src="img/user_handwritten_ephem_clean.png" class="user-handwriting-img" alt="手写真迹 ephem">
-                    <!-- 3D 屏幕上方真实人手：悬浮在屏幕与机身之上，食指点触笔尖，手背与大拇指自然遮挡手写板虚线与“下一个”按钮 -->
-                    <div class="floating-hand-3d">
-                      <div class="finger-touch-glow"></div>
-                      <img src="img/flawless_real_hand_feathered.png" class="real-hand-img" alt="真实写实手势">
-                    </div>
-                  </div>
-
-                </div>
-
-                <!-- 浮起工具栏（被屏幕上方的真实人手自然遮挡） -->
-                <div style="display: flex; gap: 8px;">
-                  <button style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid #E5E7EB; background: #FFFFFF; font-size: 12px; font-weight: 600; color: #4B5563;">清除笔迹</button>
-                  <button style="flex: 2; padding: 10px; border-radius: 12px; border: none; background: #10B981; font-size: 12px; font-weight: 700; color: #FFFFFF; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">下一个</button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- 中央直击人心大横幅 03 -->
-          <div class="impact-banner">
-            <span class="banner-badge">✍️</span>
-            <span class="banner-text">谁说手机<span class="highlight">不能手写？！</span></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 海报 4: 语音答题 · 开口成诵 -->
-      <div class="poster-card" id="card-4">
-        <div class="poster-header">
-          <h2 class="p-title" id="p4-title">语音答题</h2>
-          <div class="p-subtitle" id="p4-sub">开口成诵</div>
-        </div>
-
-        <div class="poster-phone-stage">
-          <div class="device-chassis">
-            <div class="camera-punch-hole"></div>
-            <div class="mock-status-bar">
-              <span>9:41</span>
-              <div class="status-icons">
-                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
-                <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-              </div>
-            </div>
-
-            <div class="screen-body">
-              <div class="sentence-trans-stage">
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">例句英译汉 · 语境口试</span>
-                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 8 / 20 句</span>
-                  </div>
-                  <div style="font-size: 11.5px; color: #6B7280; margin-top: 6px;">看英文例句 · 语音说出中文意思</div>
-                </div>
-
-                <!-- 题目：经典英文例句 -->
-                <div class="sentence-quiz-card">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-size: 10px; color: #9CA3AF; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">English Sentence</span>
-                    <div style="display: flex; align-items: center; gap: 4px; color: #059669; font-size: 10.5px; font-weight: 600;">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                      <span>标准美音</span>
-                    </div>
-                  </div>
-                  <div class="sentence-en-text">
-                    "True <span class="highlight-word">resilience</span> is not about never falling, but rising every time."
-                  </div>
-                </div>
-
-                <!-- 语音作答与识别出的中文翻译结果 -->
-                <div class="sentence-asr-result-card">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                      <span class="asr-live-dot"></span>
-                      <span style="font-size: 10.5px; color: #059669; font-weight: 700;">实时识别 · 你的口译：</span>
-                    </div>
-                    <span class="score-badge">👏 哇，太准确了！</span>
-                  </div>
-
-                  <div class="user-speech-text">
-                    “真正的韧性不是从不跌倒，而是每次都能重新站起来。”
-                  </div>
-
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 7px; border-top: 1px dashed #A7F3D0;">
-                    <div class="wave-bars">
-                      <div class="wave-bar" style="height: 10px;"></div>
-                      <div class="wave-bar" style="height: 18px;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 14px;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 12px;"></div>
-                      <div class="wave-bar" style="height: 18px;"></div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
-                      <span style="font-size: 11px; color: #047857; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，你的翻译真的是太准确了！</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 底部操作按钮：按住说中文 -->
-                <div class="speak-action-btn">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                  <span>按住说中文（松开即可判题）</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- 中央直击人心大横幅 04 -->
-          <div class="impact-banner">
-            <span class="banner-badge">🎙️</span>
-            <span class="banner-text">一句话搞定，<span class="highlight">告别选择题！</span></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 海报 5: 词单导入 · 随心定制 -->
-      <div class="poster-card" id="card-5">
-        <div class="poster-header">
-          <h2 class="p-title" id="p5-title">词单导入</h2>
-          <div class="p-subtitle" id="p5-sub">随心定制</div>
+          <h2 class="p-title" id="p6-title">词单导入</h2>
+          <div class="p-subtitle" id="p6-sub">随心定制</div>
         </div>
 
         <div class="poster-phone-stage">
@@ -1380,7 +1526,7 @@
 
           </div>
 
-          <!-- 中央直击人心大横幅 05 -->
+          <!-- 中央直击人心大横幅 06 -->
           <div class="impact-banner">
             <span class="banner-badge">📂</span>
             <span class="banner-text"><span class="highlight">我的学习我做主！</span></span>
@@ -1388,112 +1534,17 @@
         </div>
       </div>
 
-      <!-- 海报 6: 英译汉试 · 即视即译 -->
-      <div class="poster-card" id="card-6">
-        <div class="poster-header">
-          <h2 class="p-title" id="p6-title">英译汉试</h2>
-          <div class="p-subtitle" id="p6-sub">即视即译</div>
-        </div>
-
-        <div class="poster-phone-stage">
-          <div class="device-chassis">
-            <div class="camera-punch-hole"></div>
-            <div class="mock-status-bar">
-              <span>9:41</span>
-              <div class="status-icons">
-                <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
-                <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-              </div>
-            </div>
-
-            <div class="screen-body">
-              <div class="sentence-trans-stage">
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">单词英译汉 · 极速口试</span>
-                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 12 / 20 词</span>
-                  </div>
-                  <div style="font-size: 11.5px; color: #6B7280; margin-top: 6px;">看英文单词 · 语音说出中文意思</div>
-                </div>
-
-                <!-- 题目：核心英文单词 -->
-                <div class="sentence-quiz-card" style="text-align: center; padding: 16px 14px 14px;">
-                  <div style="font-size: 26px; font-weight: 800; color: #111827; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
-                    ephemeral
-                  </div>
-                  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px;">
-                    <span style="font-size: 13px; color: #6B7280; font-family: ui-monospace, monospace;">[ɪ'femərəl]</span>
-                    <div style="display: inline-flex; align-items: center; gap: 3px; color: #059669; font-size: 11px; font-weight: 700; background: #ECFDF5; border: 1px solid #D1FAE5; padding: 1px 6px; border-radius: 100px;">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                      <span>美音</span>
-                    </div>
-                  </div>
-                  <div style="font-size: 11px; color: #9CA3AF; margin-top: 8px;">
-                    🎯 请说出该单词的核心中文释义
-                  </div>
-                </div>
-
-                <!-- 语音作答与识别出的中文释义 -->
-                <div class="sentence-asr-result-card">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                      <span class="asr-live-dot"></span>
-                      <span style="font-size: 10.5px; color: #059669; font-weight: 700;">实时识别 · 你的释义：</span>
-                    </div>
-                    <span class="score-badge">👏 哇，太准确了！</span>
-                  </div>
-
-                  <div class="user-speech-text" style="font-size: 14.5px; font-weight: 700; color: #065F46; margin: 7px 0 5px;">
-                    “短暂的，转瞬即逝的”
-                  </div>
-
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 7px; border-top: 1px dashed #A7F3D0;">
-                    <div class="wave-bars">
-                      <div class="wave-bar" style="height: 10px;"></div>
-                      <div class="wave-bar" style="height: 18px;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 14px;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 12px;"></div>
-                      <div class="wave-bar" style="height: 18px;"></div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
-                      <span style="font-size: 11px; color: #047857; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，你的翻译真的是太准确了！</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 底部操作按钮：按住说中文 -->
-                <div class="speak-action-btn">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                  <span>按住说中文（松开即可判题）</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- 中央直击人心大横幅 06 -->
-          <div class="impact-banner">
-            <span class="banner-badge">🧠</span>
-            <span class="banner-text">拒绝被动选词，<span class="highlight">开口回忆真掌握！</span></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 海报 7: 汉译英试 · 见义忆词 -->
+      <!-- 海报 7: 记忆苍穹 · 点亮词海 -->
       <div class="poster-card" id="card-7">
         <div class="poster-header">
-          <h2 class="p-title" id="p7-title">汉译英试</h2>
-          <div class="p-subtitle" id="p7-sub">见义忆词</div>
+          <h2 class="p-title" id="p7-title">记忆苍穹</h2>
+          <div class="p-subtitle" id="p7-sub">点亮词海</div>
         </div>
 
         <div class="poster-phone-stage">
           <div class="device-chassis">
             <div class="camera-punch-hole"></div>
-            <div class="mock-status-bar">
+            <div class="mock-status-bar" style="background: #112622; color: #FFFFFF;">
               <span>9:41</span>
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
@@ -1503,89 +1554,38 @@
             </div>
 
             <div class="screen-body">
-              <div class="sentence-trans-stage" style="padding: 14px 14px 12px; display: flex; flex-direction: column; justify-content: space-between;">
-                <!-- 顶部题型状态 -->
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; color: #0284C7; font-weight: 700; background: #F0F9FF; border: 1px solid #BAE6FD; padding: 2px 8px; border-radius: 6px;">单词汉译英 · 主动提取</span>
-                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 15 / 20 词</span>
+              <div class="sky-stage">
+                <div class="sky-header">
+                  <span class="sky-badge">🌌 1,840 颗词汇微光</span>
+                  <span style="font-size: 11px; color: #10D09E;">捏合远观 ›</span>
+                </div>
+
+                <div class="sky-canvas">
+                  <div class="bubble bubble-b1">
+                    <span style="font-size: 11px; font-weight: 700;">lucid</span>
+                  </div>
+                  <div class="bubble bubble-main">
+                    <span style="font-size: 19px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px;">ephemeral</span>
+                    <span style="font-size: 11px; color: #A7F3D0; margin-top: 4px;">/ɪˈfemərəl/</span>
+                    <span style="font-size: 10px; color: #6EE7B7; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 10px; margin-top: 6px;">✦ 牢固掌握</span>
+                  </div>
+                  <div class="bubble bubble-b2">
+                    <span style="font-size: 11px; font-weight: 700;">serendipity</span>
+                  </div>
+                  <div class="bubble bubble-b3">
+                    <span style="font-size: 11px; font-weight: 700;">pragmatic</span>
                   </div>
                 </div>
 
-                <!-- 题目：经典极简中文释义卡片 -->
-                <div class="sentence-quiz-card" style="padding: 10px 12px; background: #F8FAFC; border-color: #E2E8F0; margin-top: 6px;">
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                      <span class="cixing-tag">adj.</span>
-                      <span style="font-size: 14px; font-weight: 800; color: #0F172A;">短暂的；转瞬即逝的</span>
-                    </div>
-                    <span style="font-size: 10.5px; color: #94A3B8;">💡 提示: e...</span>
+                <!-- 浮起高亮卡片（仿照参考图层次） -->
+                <div class="pop-card pop-card-sky">
+                  <div class="pop-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                   </div>
-                </div>
-
-                <!-- 中央为悬浮横幅预留的纯净黄金视觉通道 -->
-                <div style="height: 38px;"></div>
-
-                <!-- 语音作答与智能裁判卡片 -->
-                <div class="sentence-asr-result-card" style="background: #F0F9FF; border-color: #BAE6FD; padding: 8px 12px 7px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                      <span class="asr-live-dot" style="background: #0284C7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);"></span>
-                      <span style="font-size: 10px; color: #0284C7; font-weight: 700;">AI 智能判官 · 答案判定：</span>
-                    </div>
-                    <span class="score-badge" style="background: #0284C7; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3); white-space: nowrap; font-size: 9.5px; padding: 2px 7px;">🎯 准确唤醒 · 吻合</span>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #064E3B;">掌握即化作气泡升空</div>
+                    <div style="font-size: 10.5px; color: #64748B;">漫游触碰即刻发音 · 遗忘光泽衰减唤醒</div>
                   </div>
-
-                  <div style="margin: 4px 0 2px;">
-                    <div style="font-size: 19px; font-weight: 800; color: #0369A1; font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.2px;">
-                      ephemeral
-                    </div>
-                    <div style="font-size: 10px; color: #0284C7; font-weight: 600; font-family: ui-monospace, monospace; margin-top: 1px; white-space: nowrap;">
-                      ⚡ 成功主动回忆 · 深度记忆神经元激活
-                    </div>
-                  </div>
-
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #BAE6FD;">
-                    <div class="wave-bars" style="height: 18px;">
-                      <div class="wave-bar" style="height: 8px; background: #38BDF8;"></div>
-                      <div class="wave-bar" style="height: 14px; background: #0284C7;"></div>
-                      <div class="wave-bar" style="height: 18px; background: #0369A1;"></div>
-                      <div class="wave-bar" style="height: 10px; background: #38BDF8;"></div>
-                      <div class="wave-bar" style="height: 18px; background: #0284C7;"></div>
-                      <div class="wave-bar" style="height: 9px; background: #38BDF8;"></div>
-                      <div class="wave-bar" style="height: 14px; background: #0284C7;"></div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
-                      <span style="font-size: 10.2px; color: #0369A1; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，经过这么多天，你居然还记得！</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 深度记忆里程碑达成庆祝卡片 -->
-                <div class="mastery-celebrate-card" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 55%, #FDE68A 100%); border: 1.5px solid #F59E0B; border-radius: 12px; padding: 7px 11px 6px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15); margin-top: 4px;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                      <span style="font-size: 12px;">🏆</span>
-                      <span style="font-size: 11px; font-weight: 800; color: #92400E; letter-spacing: -0.2px; white-space: nowrap;">深度记忆达成 · 彻底掌握！</span>
-                    </div>
-                    <span style="font-size: 9px; font-weight: 800; color: #B45309; background: #FEF3C7; border: 1px solid #FCD34D; padding: 1px 6px; border-radius: 100px; white-space: nowrap;">历经 4 轮科学复习</span>
-                  </div>
-                  <div style="font-size: 9.6px; color: #78350F; line-height: 1.4; font-weight: 600;">
-                    <div>🎉 太棒了！经过 4 次主动回忆穿透遗忘曲线，彻底进入长时记忆！</div>
-                    <div style="margin-top: 3.5px; padding-top: 3.5px; border-top: 1px dashed rgba(217, 119, 6, 0.35); display: flex; align-items: center; justify-content: space-between;">
-                      <span style="color: #92400E; font-weight: 700; white-space: nowrap;">✨ 累计深度掌握</span>
-                      <span style="font-size: 9.5px; font-weight: 800; color: #92400E; background: #FEF3C7; padding: 1.5px 7px; border-radius: 6px; border: 1px solid #FCD34D; white-space: nowrap;">
-                        <strong style="font-size: 11px; font-weight: 900; color: #B45309; font-family: ui-monospace, monospace;">1,280</strong> 词 · 词汇大厦再添基石
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 底部操作按钮：按住说英文 -->
-                <div class="speak-action-btn" style="background: #0F172A; margin-top: 4px;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                  <span>按住说英文（松开即可判题）</span>
                 </div>
               </div>
             </div>
@@ -1594,8 +1594,8 @@
 
           <!-- 中央直击人心大横幅 07 -->
           <div class="impact-banner">
-            <span class="banner-badge">🗣️</span>
-            <span class="banner-text">背单词，<span class="highlight">顺便把口语练了！</span></span>
+            <span class="banner-badge">✨</span>
+            <span class="banner-text">背下的每一个词，都是<span class="highlight">看得见的浩瀚星辰</span></span>
           </div>
         </div>
       </div>
@@ -1606,22 +1606,22 @@
   <script>
     const copyPresets = {
       a: {
-        p1Title: '记忆苍穹', p1Sub: '点亮词海',
-        p2Title: '临界重温', p2Sub: '精准唤醒',
-        p3Title: '真迹默写', p3Sub: '落笔生根',
-        p4Title: '语音答题', p4Sub: '开口成诵',
-        p5Title: '词单导入', p5Sub: '随心定制',
-        p6Title: '英译汉试', p6Sub: '即视即译',
-        p7Title: '汉译英试', p7Sub: '见义忆词'
+        p1Title: "汉译英试", p1Sub: "见义忆词",
+        p2Title: "英译汉试", p2Sub: "即视即译",
+        p3Title: "语音答题", p3Sub: "开口成诵",
+        p4Title: "真迹默写", p4Sub: "落笔生根",
+        p5Title: "临界重温", p5Sub: "精准唤醒",
+        p6Title: "词单导入", p6Sub: "随心定制",
+        p7Title: "记忆苍穹", p7Sub: "点亮词海"
       },
       b: {
-        p1Title: '泡泡星云', p1Sub: '过目成星',
-        p2Title: '科学复习', p2Sub: '告别遗忘',
-        p3Title: '提笔默写', p3Sub: '加深记忆',
-        p4Title: '例句译说', p4Sub: '开口即答',
-        p5Title: '自主题库', p5Sub: '一键导入',
-        p6Title: '英译汉模', p6Sub: '说出中文',
-        p7Title: '汉译英模', p7Sub: '秒判对错'
+        p1Title: "汉译英模", p1Sub: "秒判对错",
+        p2Title: "英译汉模", p2Sub: "说出中文",
+        p3Title: "例句译说", p3Sub: "开口即答",
+        p4Title: "提笔默写", p4Sub: "加深记忆",
+        p5Title: "科学复习", p5Sub: "告别遗忘",
+        p6Title: "自主题库", p6Sub: "一键导入",
+        p7Title: "泡泡星云", p7Sub: "过目成星"
       }
     };
 
