@@ -18,6 +18,7 @@ void main() {
       expect(Util.localTableNameToRemote('dictWords'), equals('dict_word'));
       expect(Util.localTableNameToRemote('userBadges'), equals('user_badge'));
       expect(Util.localTableNameToRemote('users'), equals('user'));
+      expect(Util.localTableNameToRemote('wordCoreImages'), equals('word_core_image'));
     });
 
     test('远程表名到本地表名', () {
@@ -29,6 +30,7 @@ void main() {
       expect(Util.remoteTableNameToLocal('user_badge'), equals('userBadges'));
       expect(Util.remoteTableNameToLocal('user'), equals('users'));
       expect(Util.remoteTableNameToLocal('users'), equals('users'));
+      expect(Util.remoteTableNameToLocal('word_core_image'), equals('wordCoreImages'));
     });
   });
 

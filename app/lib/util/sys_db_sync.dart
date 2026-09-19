@@ -97,6 +97,7 @@ Future<void> syncSysDb() async {
   } catch (e, stackTrace) {
     stopwatch.stop();
     Global.logger.e("❌ 系统数据同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
+    rethrow;
   }
 }
 
