@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import beidanci.api.Result;
 import beidanci.api.model.SysDbLogDto;
 import beidanci.api.model.UserDbLogDto;
+import beidanci.service.bo.SysErrorBo;
 import beidanci.service.bo.UserDbSyncBo;
 import beidanci.service.bo.SysDbSyncBo;
 import beidanci.service.bo.UserBo;
@@ -43,6 +44,9 @@ public class SyncController {
 
     @Autowired
     private SysDbSyncBo sysDbLogBo;
+
+    @Autowired
+    private SysErrorBo sysErrorBo;
 
     /**
      * 获取系统数据版本号（静态元数据 + UGC内容）
@@ -233,6 +237,23 @@ public class SyncController {
         } catch (IllegalAccessException e) {
             log.error("🚀 [REPAIR_API] 打卡补全失败: userId=[{}], 错误={}", userId, e.getMessage(), e);
             return new Result<>("ERROR", "打卡补全失败: " + e.getMessage(), null);
+        }
+    }
+
+    /**
+     * 接收客户端上报的系统与同步异常
+     */
+    @PostMapping("/reportSysError.do")
+    public Result<Void> reportSysError(
+            @RequestParam(value = "userId", required = false) String userId,
+            @RequestParam("errorType") String errorType,
+            @RequestParam("details") String details) {
+        try {
+            sysErrorBo.recordError(userId, errorType, details);
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("记录客户端上报的 sys_error 失败: errorType=" + errorType, e);
+            return new Result<>("FAIL", "记录失败: " + e.getMessage(), null);
         }
     }
 

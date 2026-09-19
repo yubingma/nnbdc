@@ -12,7 +12,16 @@ public class AliyunEmailProperties {
     private String regionId;
     private String fromAddress;
     private String fromAlias;
+    private String adminEmail = "mmyybb3000@icloud.com";
     private TemplateIds templateIds = new TemplateIds();
+
+    public String getAdminEmail() {
+        return adminEmail;
+    }
+
+    public void setAdminEmail(String adminEmail) {
+        this.adminEmail = adminEmail;
+    }
 
     public String getAccessKeyId() {
         return accessKeyId;

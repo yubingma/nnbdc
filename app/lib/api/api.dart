@@ -583,6 +583,13 @@ abstract class RestClient {
       @Query("userId") String userId,
       @Body() List<UserDbLogDto> logs);
 
+  @POST("/reportSysError.do")
+  @FormUrlEncoded()
+  Future<Result<void>> reportSysError(
+      @Field("userId") String? userId,
+      @Field("errorType") String errorType,
+      @Field("details") String details);
+
   @GET("/getSysDbVersion.do")
   Future<Result<int>> getSysDbVersion();
 

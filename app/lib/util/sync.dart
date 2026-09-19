@@ -129,8 +129,22 @@ Future<void> completeSyncLog({bool success = true, String? errorMessage, int? db
       logId: _currentSyncLogId!,
       errorMessage: errorMessage ?? '同步失败',
     );
+    _reportSysErrorToServer(errorMessage ?? '同步失败');
   }
   clearCurrentSyncLogId();
+}
+
+/// 异步旁路向服务端上报客户端同步与系统异常（不阻断主流程，静默失败）
+void _reportSysErrorToServer(String errorMessage, [String errorType = 'CLIENT_SYNC_ERROR']) {
+  Future(() async {
+    try {
+      final user = Global.getLoggedInUser();
+      await Api.client.reportSysError(user?.id, errorType, errorMessage);
+      Global.logger.d("🚀 [SysError] 客户端同步异常已上报服务端: $errorType");
+    } catch (e) {
+      Global.logger.w("⚠️ [SysError] 上报客户端异常失败 (静默忽略): $e");
+    }
+  });
 }
 
 /// 定义表的优先级(数字越小优先级越高,越先同步)

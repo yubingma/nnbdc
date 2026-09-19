@@ -71,6 +71,7 @@ aliyun:
     region-id: cn-hangzhou
     from-address: pp@nnbdc.com
     from-alias: 泡泡单词
+    admin-email: ${ADMIN_EMAIL:mmyybb3000@icloud.com}
     template-ids:
       verification-code: 417522
       get-password: 417523

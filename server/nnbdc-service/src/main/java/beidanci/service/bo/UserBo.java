@@ -421,8 +421,8 @@ public class UserBo extends BaseBo<User> {
                 sql = "DELETE FROM user_oper WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
-                // 删除用户数据库异常记录
-                sql = "DELETE FROM user_db_issue WHERE user_id = ?";
+                // 删除用户异常记录
+                sql = "DELETE FROM sys_error WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户学习统计记录

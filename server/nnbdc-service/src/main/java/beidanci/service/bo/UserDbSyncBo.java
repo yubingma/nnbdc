@@ -97,7 +97,7 @@ public class UserDbSyncBo {
     private UserDbVersionDao userDbVersionDao;
 
     @Autowired
-    private UserDbIssueBo userDbIssueBo;
+    private SysErrorBo sysErrorBo;
 
     @Autowired
     private UserSorter userSorter;
@@ -1257,11 +1257,11 @@ public class UserDbSyncBo {
 
     /**
      * 记录词书顺序异常（在同步事务回滚之后调用，独立事务落库；
-     * 不能在同步事务内调用，否则随回滚丢失，且 user_db_issue 外键与事务内 user 行锁互斥）
+     * 不能在同步事务内调用，否则随回滚丢失，且 sys_error 外键与事务内 user 行锁互斥）
      */
     public void recordDictWordOrderIssue(String userId, String message) {
         try {
-            userDbIssueBo.recordIssue(userId, "DICT_WORD_ORDER_INVALID", message);
+            sysErrorBo.recordError(userId, "DICT_WORD_ORDER_INVALID", message);
         } catch (RuntimeException | IllegalAccessException e) {
             logger.error("记录词书顺序异常失败: userId={}, message={}", userId, message, e);
         }
