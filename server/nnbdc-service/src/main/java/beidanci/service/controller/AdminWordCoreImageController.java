@@ -198,6 +198,16 @@ public class AdminWordCoreImageController {
         return Result.success(wci);
     }
 
+    @PostMapping("/admin/wordCoreImage/syncToSysDbLog.do")
+    public Result<Integer> syncToSysDbLog(@RequestParam("userId") String userId) {
+        User user = userBo.findById(userId);
+        if (user == null || !user.getIsAdmin()) {
+            return Result.fail("无权限");
+        }
+        int count = wordCoreImageBo.syncAllExistingToSysDbLog();
+        return Result.success(count);
+    }
+
     private static boolean isQuotaOrAuthError(String msg) {
         if (msg == null) return false;
         String lower = msg.toLowerCase();

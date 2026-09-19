@@ -2827,3 +2827,24 @@ class UserBadgesDao extends DatabaseAccessor<MyDatabase> with _$UserBadgesDaoMix
   }
 }
 
+@DriftAccessor(tables: [WordCoreImages])
+class WordCoreImagesDao extends DatabaseAccessor<MyDatabase> with _$WordCoreImagesDaoMixin {
+  WordCoreImagesDao(super.db);
+
+  Future<WordCoreImage?> getCoreImageByWordId(String wordId) {
+    return (select(wordCoreImages)..where((t) => t.wordId.equals(wordId))).getSingleOrNull();
+  }
+
+  Future<WordCoreImage?> getCoreImageById(String id) {
+    return (select(wordCoreImages)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<void> saveEntity(WordCoreImage entity) async {
+    await into(wordCoreImages).insertOnConflictUpdate(entity);
+  }
+
+  Future<int> deleteById(String id) {
+    return (delete(wordCoreImages)..where((t) => t.id.equals(id))).go();
+  }
+}
+

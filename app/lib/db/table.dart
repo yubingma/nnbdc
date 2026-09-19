@@ -744,3 +744,25 @@ class UserStudyDailyStats extends Table {
   @override
   Set<Column> get primaryKey => {userId, date};
 }
+
+/// 单词一词多义核心意象表
+class WordCoreImages extends Table {
+  TextColumn get id => text()(); // 32位 UUID 主键
+  TextColumn get wordId => text()();
+  TextColumn get word => text()();
+  TextColumn get coreImage => text().nullable()();
+  TextColumn get schemaDesc => text().nullable()();
+  TextColumn get topologyJson => text().nullable()();
+  TextColumn get imagePrompt => text().nullable()();
+  TextColumn get imageUrl => text().nullable()();
+  TextColumn get imageStatus => text().nullable()();
+  BoolColumn get isApplicable => boolean().nullable()();
+  TextColumn get notApplicableReason => text().nullable()();
+  TextColumn get llmModel => text().nullable()();
+  TextColumn get imageModel => text().nullable()();
+  DateTimeColumn get createTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

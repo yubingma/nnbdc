@@ -48,6 +48,7 @@ part 'db.g.dart';
   UserStudyDailyStats,
   PcaProjectionConfigs,
   UserBadges,
+  WordCoreImages,
 ], daos: [
   UsersDao,
   LocalParamsDao,
@@ -82,6 +83,7 @@ part 'db.g.dart';
   LearningLogsDao,
   UserStudyDailyStatsDao,
   UserBadgesDao,
+  WordCoreImagesDao,
 ])
 class MyDatabase extends _$MyDatabase {
   MyDatabase(super.e);
@@ -263,7 +265,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 53;
+  int get schemaVersion => 54;
 
   @override
   MigrationStrategy get migration {
@@ -433,6 +435,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 53) {
             await _migrateFromV52ToV53AddLearningWordIsExtra(m);
+          }
+          if (from < 54) {
+            await _migrateFromV53ToV54AddWordCoreImages(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -671,6 +676,13 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV52ToV53AddLearningWordIsExtra(Migrator m) async {
     await transaction(() async {
       await m.addColumn(learningWords, learningWords.isExtra);
+    });
+  }
+
+  /// 从版本 53 升级到版本 54：添加 word_core_images 表（单词一词多义核心意象与图式）。
+  Future<void> _migrateFromV53ToV54AddWordCoreImages(Migrator m) async {
+    await transaction(() async {
+      await m.createTable(wordCoreImages);
     });
   }
 
@@ -1696,6 +1708,7 @@ class MyDatabase extends _$MyDatabase {
       cigenWordLinks, meaningItems, sentences, learningWords, bookMarks,
       dictGroups, groupAndDictLinks, userStudySteps, dakas, userOpers,
       userCowDungLogs, userWrongWords, sysDbVersion, localExceptions,
+      wordCoreImages,
     ];
 
     int fixedCount = 0;

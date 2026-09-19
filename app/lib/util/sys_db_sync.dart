@@ -244,6 +244,16 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             // 实时加载最新投影配置
             await PcaProjectionService().loadConfig();
           }
+        } else if (log.tblName == 'word_core_image') {
+          // 单词一词多义核心意象
+          if (log.operate == 'DELETE') {
+            await (db.delete(db.wordCoreImages)..where((t) => t.id.equals(log.recordId))).go();
+            Global.logger.i('🗑️ [同步删除核心意象] 收到 DELETE word_core_image 日志, recordId=${log.recordId}');
+          } else {
+            WordCoreImage entity = WordCoreImage.fromJson(entityJson);
+            await db.wordCoreImagesDao.saveEntity(entity);
+            Global.logger.i('🖼️ [同步核心意象] 成功更新: ${entity.word}');
+          }
         } else {
           Global.logger.w('未知的系统数据表: ${log.tblName}');
         }

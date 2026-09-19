@@ -59,6 +59,9 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     @Autowired
     private SysParamUtil sysParamUtil;
 
+    @Autowired
+    private SysDbSyncBo sysDbLogBo;
+
     private OkHttpClient okHttpClient;
     private RestTemplate restTemplate;
 
@@ -163,7 +166,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             wci.setImageStatus("SKIPPED");
             wci.setCreateTime(new Date());
             wci.setUpdateTime(new Date());
-            createEntity(wci);
+            createAndLog(wci);
             return wci;
         }
 
@@ -269,7 +272,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             wci.setImageStatus("PENDING");
         }
 
-        createEntity(wci);
+        createAndLog(wci);
         return wci;
     }
 
@@ -338,12 +341,37 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         }
     }
 
+    private void createAndLog(WordCoreImage wci) {
+        createEntity(wci);
+        try {
+            sysDbLogBo.logOperation("INSERT", "word_core_image", wci.getId(), JsonUtils.toJson(wci));
+        } catch (Exception e) {
+            log.error("写入 word_core_image 增量同步日志失败: " + wci.getWord(), e);
+        }
+    }
+
     private void saveOrUpdate(WordCoreImage item) {
         try {
             updateEntity(item);
+            sysDbLogBo.logOperation("UPDATE", "word_core_image", item.getId(), JsonUtils.toJson(item));
         } catch (Exception e) {
             throw new RuntimeException("更新 WordCoreImage 异常: " + item.getWord(), e);
         }
+    }
+
+    /**
+     * 将库中所有现存的 word_core_image 补录到 sys_db_log (用于增量同步初始化)
+     */
+    public int syncAllExistingToSysDbLog() {
+        String sql = "SELECT * FROM word_core_image";
+        List<WordCoreImage> list = jdbcTemplate.query(sql, new EntityRowMapper<>(WordCoreImage.class));
+        int count = 0;
+        for (WordCoreImage wci : list) {
+            sysDbLogBo.logOperation("INSERT", "word_core_image", wci.getId(), JsonUtils.toJson(wci));
+            count++;
+        }
+        log.info("已将 {} 条 word_core_image 补录到 sys_db_log", count);
+        return count;
     }
 
     private String callVolcImageApi(String prompt, String apiKey) throws Exception {

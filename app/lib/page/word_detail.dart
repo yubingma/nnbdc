@@ -31,6 +31,7 @@ import '../util/utils.dart';
 import '../widget/pronunciation_accent_badge.dart';
 import '../widget/sound_wave_icon.dart';
 import 'bdc/widgets/word_images_widget.dart';
+import 'bdc/widgets/word_core_image_card.dart';
 import 'pic_search.dart';
 
 
@@ -2812,6 +2813,22 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 一词多义·核心意象卡片（本地 SQLite 增量同步数据）
+            if (args.word.id != null)
+              FutureBuilder<WordCoreImage?>(
+                future: MyDatabase.instance.wordCoreImagesDao.getCoreImageByWordId(args.word.id!),
+                builder: (context, snapshot) {
+                  final coreImg = snapshot.data;
+                  if (coreImg != null &&
+                      coreImg.isApplicable == true &&
+                      ((coreImg.imageUrl != null && coreImg.imageUrl!.isNotEmpty) ||
+                       (coreImg.schemaDesc != null && coreImg.schemaDesc!.isNotEmpty))) {
+                    return WordCoreImageCard(item: coreImg);
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+
             // 单词深度讲解（如有）
             if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty) ...[
               Padding(
