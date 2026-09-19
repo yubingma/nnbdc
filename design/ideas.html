@@ -337,7 +337,7 @@
       <p class="subtitle">记录随时迸发的产品闪念、动效构想与玩法实验。遵循奥卡姆剃刀原理与极简高级美学，去伪存真，持续沉淀。</p>
       
       <div class="stats-bar">
-        <div class="stat-pill">沉淀创意: <strong>3</strong></div>
+        <div class="stat-pill">沉淀创意: <strong>4</strong></div>
         <div class="stat-pill">核心哲学: <strong>如非必要 · 勿增实体</strong></div>
         <div class="stat-pill">美学基准: <strong>现代极简 · 灵动克制</strong></div>
       </div>
@@ -345,6 +345,73 @@
 
     <!-- 创意动态流水线 -->
     <div class="ideas-feed" id="ideasFeed">
+
+      <!-- 创意 #004: 语境辨义与例句精义绑定 -->
+      <article class="idea-card">
+        <div class="idea-header">
+          <div>
+            <div class="idea-id-date">
+              <span class="idea-id">IDEA #004</span>
+              <span>•</span>
+              <span>2026-09-19</span>
+              <span>•</span>
+              <span>语境认知与题型创新</span>
+            </div>
+            <h2 class="idea-title">语境辨义：基于「释义-例句」严格绑定的情境答题与语音识义（Contextual Sense Match）</h2>
+          </div>
+          <span class="badge-status status-concept">概念成型 / 机制设计</span>
+        </div>
+
+        <div class="tags-container">
+          <span class="tag">#语境辨义</span>
+          <span class="tag">#释义例句严格绑定</span>
+          <span class="tag">#熟词生义突破</span>
+          <span class="tag">#一词多义</span>
+          <span class="tag">#语音说义</span>
+          <span class="tag">#高阶题型</span>
+        </div>
+
+        <div class="idea-body">
+          <div class="idea-quote">
+            “词库底层架构中，每个 MeaningItem 都精确绑定了专属的 Sentence，记录着该词在此例句中的确切含义。基于这笔高精度纯净资产，彻底打破脱离语境孤立背中文标签的弊端，推出‘给例句辨词义 / 读句说词义’的特色题型与竞技玩法。”
+          </div>
+
+          <div class="section-title">痛点根治：攻克“熟词生义”与“长考不灵”</div>
+          <div class="principle-box">
+            <strong>语境孤岛困境：</strong>传统背单词最致命的痛点是把单词抽象成一组互不相干的中文标签（如 <code>compromise</code> = 妥协 / 危害；<code>plant</code> = 植物 / 工厂；<code>address</code> = 地址 / 演说 / 着手处理）。用户孤立默背能选对，一旦放到考研、四六级或高考的长难句里，大脑无法在上下文中快速激活准确释义。而 NBDC 既有词库天然具备<strong>「具体释义 ↔ 专属例句」</strong>的 100% 严谨绑定，是开发情境答题的独家资产底座。
+          </div>
+
+          <div class="section-title">核心体验维度与玩法矩阵</div>
+          <div class="feature-grid">
+            <div class="feature-item">
+              <strong>① 语境辨义题（情境选择模式）</strong>
+              <p>呈现地道例句，目标词高亮（如 <i>The policy may <u>compromise</u> security.</i>），让用户辨识在句中是“妥协”还是“危及”，直击考研/四六级命题核心。</p>
+            </div>
+            <div class="feature-item">
+              <strong>② 语音说义挑战（口语流态交互）</strong>
+              <p>“读句说义”：屏幕显示句子，用户直接口述目标词在句中的含义，结合已有的说英文/ASR技术快速判定，动口即过，心流极度丝滑。</p>
+            </div>
+            <div class="feature-item">
+              <strong>③ 一词多义对照展台（详情页全景）</strong>
+              <p>在单词详情页中，将多重释义按“义项 ➔ 专属例句”对联卡片一屏并列展开，与核心意象（Cognitive Schema）形成语义分支的立体呼应。</p>
+            </div>
+            <div class="feature-item">
+              <strong>④ Russia 对战高阶题型（竞技进阶）</strong>
+              <p>在俄罗斯方块对战的高分/进阶大厅中，掉落带短语境的例句辨义方块，比拼瞬时语境提取速度，大幅拉开高手差距。</p>
+            </div>
+          </div>
+
+          <div class="section-title">技术实现基线（零新增外部实体 · 纯天然资产复用）</div>
+          <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.7;">
+            <strong>1. 底层数据自洽：</strong>直接复用 JPA 实体 <code>MeaningItem.sentences</code> 与本地 Drift <code>MeaningItems / Sentences</code> 既有关联，无需重新调用大模型打标签或二次标注，数据准确度 100%。<br/>
+            <strong>2. 客户端毫秒级离线出题：</strong>由于释义项与例句已完整下载到本地 SQLite，客户端可在本地毫秒级组装题目（例句题干 + 目标义项作为正确项 + 该词其他义项或同词性义项作为混淆项），离线无网状态下体验丝滑无阻。
+          </p>
+        </div>
+
+        <div class="actions-footer">
+          <span class="action-link" onclick="copyIdeaMarkdown('idea-004')">复制摘要 Markdown</span>
+        </div>
+      </article>
 
       <!-- 创意 #003: UGC 冷启动破局 · AI 策展评分与新星展位 -->
       <article class="idea-card">
@@ -594,6 +661,11 @@
 - **核心逻辑**：针对因缺乏曝光而零点赞的优质新 UGC，由 AI 进行多维度质量评分并赋予专属新星展位。
 - **闭环机制**：AI 提供冷启动流量，用户投票完成闭环检验（获赞毕业成为成熟内容，被踩快速淘汰）。
 - **极简设计**：拒绝繁琐多榜单，采用平滑动态混排（探索与利用）与微标徽记，兼顾心流与生态活力。`;
+      } else if (id === 'idea-004') {
+        text = `### 语境辨义：基于「释义-例句」严格绑定的情境答题与语音识义（Contextual Sense Match）
+- **核心逻辑**：利用词库底层 MeaningItem 与 Sentence 严格绑定的天然资产，攻克熟词生义与长考不灵痛点。
+- **特色功能**：给真实例句辨析具体词义、读句语音说义快速判定、一词多义对联对照卡、对战进阶语境方块。
+- **技术优势**：零外部冗余，直接复用既有 SQLite 与实体关系，100% 准确度且原生支持毫秒级离线出题。`;
       }
       navigator.clipboard.writeText(text).then(() => {
         alert('已复制该创意 Markdown 摘要到剪贴板');
