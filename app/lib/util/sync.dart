@@ -890,15 +890,9 @@ void printFormattedChanges(String label, List<Map<String, dynamic>> changes) {
   // 格式化输出变更记录（已移除日志）
 }
 
-/// 同步前自检：对当前用户全部词书执行 seq 连续性修复（生成 UPDATE 日志进入本次上传批次）。
-/// 仅在词书 seq 断裂时产生写入与日志；连续时零写入零日志（_reorderDictWords 内部逐词比较跳过）。
+/// 稀疏保序架构下：词书自然空洞合法，无需在同步前强行重排与产生无谓的 UPDATE 日志
 Future<void> repairDictWordSequences(String userId) async {
-  final db = MyDatabase.instance;
-  final allDicts = await db.dictsDao.select(db.dicts).get();
-  for (final dict in allDicts) {
-    if (dict.ownerId != userId) continue; // 只处理用户自己的词书，系统词书（ownerId=sysUser）跳过
-    await db.dictWordsDao.fixDictOrder(dict.id, true);
-  }
+  // 稀疏保序架构：保序由 SQL ORDER BY seq ASC 保证，不再在同步前产生全量填补日志
 }
 
 /// 同步前自检与自愈：清理历史遗留的超长书签名 (bookMarkName) 坏数据及其待同步日志。

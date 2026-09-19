@@ -718,11 +718,6 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     // 删除数据
     await delete(dictWords).delete(entry);
     if (invalidateTspCache) WordBo.clearTspCache(entry.dictId, db);
-
-    // 删除后重排剩余词的seq，保证连续（仅用户主动删除时；服务端日志回放不重排，避免日志循环）
-    if (genLog) {
-      await _reorderDictWords(entry.dictId, true);
-    }
   }
 
   /// 删除词典单词（包括后续序号调整、wordCount更新、学习进度修复）
@@ -754,14 +749,8 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     await delete(dictWords).delete(dictWord);
     if (invalidateTspCache) WordBo.clearTspCache(dictId, db);
 
-
     // 更新词书的wordCount
     if (updateWordCount) await db.dictsDao.updateWordCount(dictId, genLog);
-
-    // 删除后重排剩余词的seq，保证连续（仅用户主动删除时；服务端日志回放不重排，避免日志循环）
-    if (genLog) {
-      await _reorderDictWords(dictId, true);
-    }
 
     // 学习进度已改为基于状态计算，不再需要维护 currentWordSeq
     Global.logger.d('已删除词典单词并完成清理: dictId=$dictId, wordId=$wordId, seqNo=$seqNo');
@@ -959,33 +948,21 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     if (dictWordsList.isEmpty) return;
 
     final totalCount = dictWordsList.length;
-    final minSeq = dictWordsList.first.seq;
-    final maxSeq = dictWordsList.last.seq;
-
     bool needsFix = false;
 
-    // 检查1: 最小序号是1，最大顺序号是总单词数量
-    if (minSeq != 1 || maxSeq != totalCount) {
-      final errorMsg = '⛔ 词书($dictId)顺序号异常: 最小序号=$minSeq, 最大序号=$maxSeq, 总数量=$totalCount';
-      Global.logger.e(errorMsg);
-      needsFix = true;
-    }
-
-    if (!needsFix) {
-      // 检查2: 序号是否连续
-      for (int i = 0; i < dictWordsList.length; i++) {
-        if (dictWordsList[i].seq != i + 1) {
-          final errorMsg = '⛔ 词书($dictId)序号不连续: 期望=${i + 1}, 实际=${dictWordsList[i].seq}, 单词ID: ${dictWordsList[i].wordId}';
-          Global.logger.e(errorMsg);
-          needsFix = true;
-          break;
-        }
+    // 稀疏保序架构下：仅检查是否存在非法负数或零序号
+    for (int i = 0; i < dictWordsList.length; i++) {
+      if (dictWordsList[i].seq <= 0) {
+        final errorMsg = '⛔ 词书($dictId)序号非法: 单词ID: ${dictWordsList[i].wordId}, seq: ${dictWordsList[i].seq}';
+        Global.logger.e(errorMsg);
+        needsFix = true;
+        break;
       }
     }
 
     if (needsFix) {
       if (autoFix) {
-        Global.logger.i('🔧 检测到词书顺序异常，将静默重排(dictId=$dictId)...');
+        Global.logger.i('🔧 检测到词书存在非法序号，将重排修复(dictId=$dictId)...');
         await _reorderDictWords(dictId, false);
       }
       return;

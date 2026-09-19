@@ -408,8 +408,13 @@ public class DictWordBo extends BaseBo<DictWord> {
     }
 
     /**
-     * 校验指定用户的所有词书的单词序号是否从1开始且连续
-     * 若发现问题，返回问题描述字符串(格式为 `dictId|问题描述`)，否则返回null
+     * 校验指定用户的所有词书的单词序号是否合法
+     * 
+     * 架构升级说明（稀疏保序）：
+     * 词书单词的排序和取词依赖 SQL `ORDER BY dw.seq ASC`，书签定位依赖 `count(*)` 相对位次，
+     * 业务上天然属于“稀疏保序（Sparse Sequence）”，无需强求 1..N 密集连续。
+     * 删除单词产生的自然空洞属于合法状态，不再强制要求密集无洞，彻底避免因级联重排日志抖动导致的同步回滚。
+     * 若发现致命脏数据（如 seq <= 0），仍返回问题描述，否则返回 null。
      */
     public String validateDictWordsOrderOfUser(String userId) {
         List<Dict> dicts = dictBo.getDictsByOwnerId(userId, null);
@@ -423,34 +428,24 @@ public class DictWordBo extends BaseBo<DictWord> {
     }
 
     private String validateDictWordOrder(String dictId) {
-        // 取出词书内所有词，按seq排序
+        // 取出词书内所有词，按 seq 排序
         String sql = "SELECT dw.word_id, dw.seq FROM dict_word dw WHERE dw.dict_id = :dictId ORDER BY dw.seq";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
-        List<Object[]> list = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> 
-            new Object[]{rs.getString("word_id"), rs.getInt("seq")});
-        if (list == null || list.isEmpty()) {
+        List<Integer> list = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getInt("seq"));
+        return checkWordSeqsOrder(list);
+    }
+
+    /**
+     * 校验序号序列是否合法（稀疏保序：允许空洞，仅拦截 <= 0 的非法值）
+     */
+    static String checkWordSeqsOrder(List<Integer> seqList) {
+        if (seqList == null || seqList.isEmpty()) {
             return null;
         }
-        int expected = 1;
-        Integer firstIndex = null;
-        Integer lastIndex = null;
-        for (Object[] tuple : list) {
-            Integer indexNo = ((Number) tuple[1]).intValue();
-            if (firstIndex == null)
-                firstIndex = indexNo;
-            lastIndex = indexNo;
-            if (indexNo != expected) {
-                return String.format("序号不连续: 期望=%d, 实际=%d", expected, indexNo);
+        for (Integer indexNo : seqList) {
+            if (indexNo == null || indexNo <= 0) {
+                return String.format("序号必须大于0: 实际=%s", indexNo);
             }
-            expected++;
-        }
-        // 额外校验开头是否为1
-        if (firstIndex != null && firstIndex != 1) {
-            return String.format("不是从1开始: 第一个序号=%d", firstIndex);
-        }
-        // 校验最大值是否等于数量
-        if (lastIndex != null && lastIndex != list.size()) {
-            return String.format("最大序号异常: 最大=%d, 总数=%d", lastIndex, list.size());
         }
         return null;
     }
