@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-palette="emerald" data-device="punch" data-banner="show" data-copy="a">
+<html lang="zh-CN" data-palette="emerald" data-device="pure" data-banner="show" data-copy="a">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -906,10 +906,10 @@
         <button class="tab-btn" id="btn-pal-macaron" onclick="switchPalette('macaron')">马卡龙五色彩阶</button>
       </div>
 
-      <!-- 设备模具切换（解决华为等安卓市场审核问题） -->
+      <!-- 设备模具切换（极简纯净全面屏：全平台合规通用） -->
       <div class="segment-tabs">
-        <button class="tab-btn active" id="btn-dev-punch" onclick="switchDevice('punch')">华为/主流安卓微孔 (合规)</button>
-        <button class="tab-btn" id="btn-dev-pure" onclick="switchDevice('pure')">极简纯净全面屏</button>
+        <button class="tab-btn active" id="btn-dev-pure" onclick="switchDevice('pure')">极简纯净全面屏 (全平台默认)</button>
+        <button class="tab-btn" id="btn-dev-punch" onclick="switchDevice('punch')">华为/主流安卓微孔</button>
       </div>
 
       <!-- 中央直击人心大横幅开关 -->
@@ -1659,11 +1659,11 @@
       try { localStorage.setItem('appstore_banner', mode); } catch (e) {}
     }
 
-    // 固化默认选项：方案A、青蓝色、安卓微孔合规版、开启横幅
+    // 固化默认选项：方案A、青蓝色、极简纯净全面屏（全平台通用）、开启横幅
     window.addEventListener('DOMContentLoaded', () => {
       const savedCopy = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_copy_style')) || 'a';
       const savedPal = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_palette')) || 'emerald';
-      const savedDev = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_device')) || 'punch';
+      const savedDev = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_device')) || 'pure';
       const savedBanner = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_banner')) || 'show';
 
       switchCopyStyle(savedCopy);
