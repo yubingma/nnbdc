@@ -3,12 +3,11 @@ package beidanci.service.bo;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -21,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +34,9 @@ import beidanci.service.po.WordCoreImage;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.Util;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
@@ -56,11 +59,18 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     @Autowired
     private SysParamUtil sysParamUtil;
 
-    private RestTemplate restTemplate = new RestTemplate();
+    private OkHttpClient okHttpClient;
+    private RestTemplate restTemplate;
 
     @PostConstruct
     public void init() {
         setDao(wordCoreImageDao);
+        this.okHttpClient = new OkHttpClient.Builder()
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .build();
+        this.restTemplate = new RestTemplate(new OkHttp3ClientHttpRequestFactory(okHttpClient));
     }
 
     public WordCoreImage findByWordId(String wordId) {
@@ -263,7 +273,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     }
 
     /**
-     * 调用图像生成大模型驱动生图
+     * 调用火山引擎豆包 Seedream 4.0 生图（宁愿失败也不使用劣质模型降级）
      */
     public void generateImage(WordCoreImage item) {
         if (item == null || !Boolean.TRUE.equals(item.getIsApplicable())) {
@@ -280,31 +290,24 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         }
 
         String volcKey = System.getenv("VOLC_API_KEY");
-        String siliconKey = System.getenv("SILICONFLOW_API_KEY");
-
-        String imageUrl = null;
-        String modelName = null;
-
-        // 1. 首选火山引擎豆包 Seedream 4.0
-        if (volcKey != null && !volcKey.isEmpty()) {
-            try {
-                log.info("正在使用火山引擎豆包 Seedream 4.0 生成单词意象图: {}", item.getWord());
-                imageUrl = callVolcImageApi(prompt, volcKey);
-                modelName = "doubao-seedream-4-0-250828";
-            } catch (Exception e) {
-                log.warn("火山引擎生图失败，尝试降级: ", e);
-            }
+        if (volcKey == null || volcKey.trim().isEmpty()) {
+            item.setImageStatus("FAILED");
+            item.setUpdateTime(new Date());
+            saveOrUpdate(item);
+            throw new RuntimeException("未配置环境变量 VOLC_API_KEY，无法调用火山引擎生图");
         }
 
-        // 2. 次选硅基流动 Kolors
-        if (imageUrl == null && siliconKey != null && !siliconKey.isEmpty()) {
-            try {
-                log.info("正在使用硅基流动 Kolors 生成单词意象图: {}", item.getWord());
-                imageUrl = callSiliconflowImageApi(prompt, siliconKey);
-                modelName = "Kwai-Kolors/Kolors";
-            } catch (Exception e) {
-                log.warn("硅基流动生图失败: ", e);
-            }
+        String imageUrl;
+        String modelName = "doubao-seedream-4-0-250828";
+        try {
+            log.info("正在使用火山引擎豆包 Seedream 4.0 生成单词意象图: {}", item.getWord());
+            imageUrl = callVolcImageApi(prompt, volcKey);
+        } catch (Exception e) {
+            item.setImageStatus("FAILED");
+            item.setUpdateTime(new Date());
+            saveOrUpdate(item);
+            log.error("火山引擎生图失败: " + item.getWord(), e);
+            throw new RuntimeException("火山引擎生图失败: " + e.getMessage(), e);
         }
 
         if (imageUrl != null) {
@@ -329,8 +332,8 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             item.setImageStatus("FAILED");
             item.setUpdateTime(new Date());
             saveOrUpdate(item);
-            log.error("单词 {} 意象图生成全部降级失败", item.getWord());
-            throw new RuntimeException("生图模型调用全部失败(可能生图服务欠费或额度不足): " + item.getWord());
+            log.error("火山引擎未返回图片 URL: {}", item.getWord());
+            throw new RuntimeException("火山引擎未返回有效图片: " + item.getWord());
         }
     }
 
@@ -370,33 +373,6 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         throw new RuntimeException("火山引擎未返回有效的图片 URL: " + respBody);
     }
 
-    private String callSiliconflowImageApi(String prompt, String apiKey) throws Exception {
-        String url = "https://api.siliconflow.cn/v1/images/generations";
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + apiKey);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("model", "Kwai-Kolors/Kolors");
-        body.put("prompt", prompt);
-        body.put("image_size", "1024x1024");
-
-        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                url, HttpMethod.POST, requestEntity,
-                new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
-
-        Map<String, Object> respBody = response.getBody();
-        if (respBody != null && respBody.containsKey("images")) {
-            List<?> images = (List<?>) respBody.get("images");
-            if (images != null && !images.isEmpty()) {
-                Map<?, ?> first = (Map<?, ?>) images.get(0);
-                return (String) first.get("url");
-            }
-        }
-        throw new RuntimeException("硅基流动未返回有效的图片 URL: " + respBody);
-    }
-
     private String downloadAndSaveImage(String remoteUrl, String word) throws Exception {
         String baseDir = null;
         try {
@@ -415,17 +391,22 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         String fileName = "core_" + word.toLowerCase() + ".jpeg";
         File targetFile = new File(targetFolder, fileName);
 
-        URL u = new URL(remoteUrl);
-        HttpURLConnection conn = (HttpURLConnection) u.openConnection();
-        conn.setConnectTimeout(15000);
-        conn.setReadTimeout(30000);
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+        Request request = new Request.Builder()
+                .url(remoteUrl)
+                .header("User-Agent", "Mozilla/5.0")
+                .build();
 
-        try (InputStream in = conn.getInputStream(); FileOutputStream out = new FileOutputStream(targetFile)) {
-            byte[] buf = new byte[8192];
-            int len;
-            while ((len = in.read(buf)) != -1) {
-                out.write(buf, 0, len);
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                throw new RuntimeException("下载意象图失败, HTTP状态码: " + response.code());
+            }
+            try (InputStream in = response.body().byteStream();
+                 FileOutputStream out = new FileOutputStream(targetFile)) {
+                byte[] buf = new byte[8192];
+                int len;
+                while ((len = in.read(buf)) != -1) {
+                    out.write(buf, 0, len);
+                }
             }
         }
 
