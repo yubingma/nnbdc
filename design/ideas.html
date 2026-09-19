@@ -30,6 +30,10 @@
       padding: 0;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       background-color: var(--bg);
       color: var(--text-primary);
@@ -46,8 +50,192 @@
     }
 
     .container {
-      max-width: 920px;
+      max-width: 1220px;
       margin: 0 auto;
+    }
+
+    /* 双栏工作台架构 */
+    .hub-layout {
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      gap: 36px;
+      align-items: start;
+      position: relative;
+    }
+
+    /* 左侧常驻导航目录 */
+    .sidebar-nav {
+      position: sticky;
+      top: 32px;
+      z-index: 20;
+    }
+
+    .sidebar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 20px 14px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 8px 14px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .sidebar-title-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .sidebar-badge-count {
+      font-family: var(--mono-stack);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(110, 231, 183, 0.12);
+      color: var(--accent-aurora);
+      border: 1px solid rgba(110, 231, 183, 0.25);
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-item {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text-secondary);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.08);
+      transform: translateX(2px);
+    }
+
+    .nav-item.active {
+      background: rgba(110, 231, 183, 0.08);
+      border-color: rgba(110, 231, 183, 0.32);
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 3px;
+      background: var(--accent-aurora);
+      border-radius: 0 3px 3px 0;
+      box-shadow: 0 0 8px var(--accent-aurora);
+    }
+
+    .nav-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .nav-item-id {
+      font-family: var(--mono-stack);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+
+    .nav-item.active .nav-item-id {
+      color: var(--accent-aurora);
+    }
+
+    .nav-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .dot-purple { background: var(--accent-purple); box-shadow: 0 0 6px var(--accent-purple); }
+    .dot-blue { background: var(--accent-blue); box-shadow: 0 0 6px var(--accent-blue); }
+    .dot-amber { background: var(--accent-amber); box-shadow: 0 0 6px var(--accent-amber); }
+    .dot-aurora { background: var(--accent-aurora); box-shadow: 0 0 6px var(--accent-aurora); }
+
+    .nav-item-title {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-item-cat {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-footer-note {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* 创意卡片定位平滑间距 */
+    .idea-card {
+      scroll-margin-top: 36px;
+    }
+
+    /* 响应式适配 */
+    @media (max-width: 992px) {
+      .hub-layout {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+      .sidebar-nav {
+        position: relative;
+        top: 0;
+      }
+      .nav-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 8px;
+      }
     }
 
     /* 顶部导航与总览 */
@@ -343,11 +531,77 @@
       </div>
     </header>
 
-    <!-- 创意动态流水线 -->
-    <div class="ideas-feed" id="ideasFeed">
+    <!-- 双栏工作台布局 -->
+    <div class="hub-layout">
 
-      <!-- 创意 #004: 语境辨义与例句精义绑定 -->
-      <article class="idea-card">
+      <!-- 左侧目录导航 -->
+      <aside class="sidebar-nav">
+        <div class="sidebar-card">
+          <div class="sidebar-header">
+            <div class="sidebar-title-box">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+              <span class="sidebar-title">创意目录 · INDEX</span>
+            </div>
+            <span class="sidebar-badge-count">4</span>
+          </div>
+
+          <nav class="nav-list" id="sidebarNav">
+            <a href="#idea-004" class="nav-item active" data-id="idea-004">
+              <div class="nav-item-header">
+                <span class="nav-item-id">IDEA #004</span>
+                <span class="nav-dot dot-purple"></span>
+              </div>
+              <div class="nav-item-title">语境辨义：例句绑定答题</div>
+              <div class="nav-item-cat">语境认知与题型创新</div>
+            </a>
+
+            <a href="#idea-003" class="nav-item" data-id="idea-003">
+              <div class="nav-item-header">
+                <span class="nav-item-id">IDEA #003</span>
+                <span class="nav-dot dot-blue"></span>
+              </div>
+              <div class="nav-item-title">UGC冷启动：AI评分与新星展位</div>
+              <div class="nav-item-cat">UGC生态与智能推荐</div>
+            </a>
+
+            <a href="#idea-002" class="nav-item" data-id="idea-002">
+              <div class="nav-item-header">
+                <span class="nav-item-id">IDEA #002</span>
+                <span class="nav-dot dot-amber"></span>
+              </div>
+              <div class="nav-item-title">对战道具：形近障眼法</div>
+              <div class="nav-item-cat">对战玩法与认知博弈</div>
+            </a>
+
+            <a href="#idea-001" class="nav-item" data-id="idea-001">
+              <div class="nav-item-header">
+                <span class="nav-item-id">IDEA #001</span>
+                <span class="nav-dot dot-aurora"></span>
+              </div>
+              <div class="nav-item-title">单词泡泡天空（记忆苍穹）</div>
+              <div class="nav-item-cat">激励与交互美学</div>
+            </a>
+          </nav>
+
+          <div class="sidebar-footer-note">
+            <span>点击精准锚定 · 随屏高亮</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧主内容流 -->
+      <main class="main-content">
+        <div class="ideas-feed" id="ideasFeed">
+
+          <!-- 创意 #004: 语境辨义与例句精义绑定 -->
+          <article class="idea-card" id="idea-004">
         <div class="idea-header">
           <div>
             <div class="idea-id-date">
@@ -414,7 +668,7 @@
       </article>
 
       <!-- 创意 #003: UGC 冷启动破局 · AI 策展评分与新星展位 -->
-      <article class="idea-card">
+      <article class="idea-card" id="idea-003">
         <div class="idea-header">
           <div>
             <div class="idea-id-date">
@@ -510,7 +764,7 @@
       </article>
 
       <!-- 创意 #002: 对战道具·形近障眼法 -->
-      <article class="idea-card">
+      <article class="idea-card" id="idea-002">
         <div class="idea-header">
           <div>
             <div class="idea-id-date">
@@ -575,7 +829,7 @@
       </article>
 
       <!-- 创意 #001: 单词泡泡天空 -->
-      <article class="idea-card">
+      <article class="idea-card" id="idea-001">
         <div class="idea-header">
           <div>
             <div class="idea-id-date">
@@ -639,9 +893,12 @@
         </div>
       </article>
 
-    </div>
+        </div> <!-- /.ideas-feed -->
+      </main> <!-- /.main-content -->
 
-  </div>
+    </div> <!-- /.hub-layout -->
+
+  </div> <!-- /.container -->
 
   <script>
     function copyIdeaMarkdown(id) {
@@ -671,6 +928,43 @@
         alert('已复制该创意 Markdown 摘要到剪贴板');
       });
     }
+
+    // 目录滚动监听联动 (ScrollSpy)
+    document.addEventListener('DOMContentLoaded', () => {
+      const cards = document.querySelectorAll('.idea-card');
+      const navItems = document.querySelectorAll('#sidebarNav .nav-item');
+
+      const observerOptions = {
+        root: null,
+        rootMargin: '-20% 0px -60% 0px',
+        threshold: 0
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const currentId = entry.target.getAttribute('id');
+            navItems.forEach((item) => {
+              if (item.getAttribute('data-id') === currentId) {
+                item.classList.add('active');
+              } else {
+                item.classList.remove('active');
+              }
+            });
+          }
+        });
+      }, observerOptions);
+
+      cards.forEach((card) => observer.observe(card));
+
+      // 点击平滑定位并即时设置高亮
+      navItems.forEach((item) => {
+        item.addEventListener('click', () => {
+          navItems.forEach((n) => n.classList.remove('active'));
+          item.classList.add('active');
+        });
+      });
+    });
   </script>
 </body>
 </html>
