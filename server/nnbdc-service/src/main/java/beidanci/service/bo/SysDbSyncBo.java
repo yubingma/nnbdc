@@ -23,6 +23,7 @@ import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.SysDbLog;
 import beidanci.service.po.SysDbVersion;
 import beidanci.service.po.Dict;
+import beidanci.service.po.WordCoreImage;
 import beidanci.api.model.DictDto;
 import beidanci.api.model.Ownerable;
 import beidanci.service.util.JsonUtils;
@@ -307,9 +308,32 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         // 7. PcaProjectionConfig
         logs.addAll(generatePcaProjectionConfigLogs(currentVersion));
 
+        // 8. WordCoreImages（单词一词多义核心意象，全量同步有效成功的记录）
+        logs.addAll(generateWordCoreImageLogs(currentVersion));
+
         // sentence/word_image/word_shortdesc_chinese的数据, 不需要全量同步, 因为数据量太大,
         // 而且用户下载所需词书的时候, 已经包含所需的这些数据了
 
+        return logs;
+    }
+
+    private List<SysDbLogDto> generateWordCoreImageLogs(int version) {
+        String sql = "SELECT * FROM word_core_image WHERE is_applicable = TRUE AND image_status = 'SUCCESS'";
+        List<WordCoreImage> list = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, new EntityRowMapper<>(WordCoreImage.class));
+        List<SysDbLogDto> logs = new ArrayList<>();
+        Date now = new Date();
+        for (WordCoreImage wci : list) {
+            SysDbLogDto log = new SysDbLogDto();
+            log.setId(Util.uuid());
+            log.setVersion(version);
+            log.setOperate("INSERT");
+            log.setTblName("word_core_image");
+            log.setRecordId(wci.getId());
+            log.setRecord(JsonUtils.toJson(wci));
+            log.setCreateTime(wci.getCreateTime() != null ? wci.getCreateTime() : now);
+            log.setUpdateTime(wci.getUpdateTime() != null ? wci.getUpdateTime() : now);
+            logs.add(log);
+        }
         return logs;
     }
 

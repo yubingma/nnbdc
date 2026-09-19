@@ -1,16 +1,29 @@
 package beidanci.service.bo;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
+import javax.imageio.stream.ImageOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,7 +228,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
                 + "  \"is_applicable\": true 或 false,\n"
                 + "  \"not_applicable_reason\": \"若不适合时的简明原因，适合时留空\",\n"
                 + "  \"core_image\": \"4-10字核心意象短语（必须脱离单词的具体释义，表达底层的物理动力学或空间拓扑本质）\",\n"
-                + "  \"schema_desc\": \"50-100字认知语言学图式深度剖析\",\n"
+                + "  \"schema_desc\": \"20-100字通俗解释，面向普通用户表达要日常化，严禁出现'图式'、'动力学'、'投射'等生硬学术词，不要以'xxx的底层图式是'等套话开头，直接通俗讲透核心意象如何引申到各个释义\",\n"
                 + "  \"branches\": [\n"
                 + "    {\n"
                 + "      \"pos\": \"词性，如 n. 或 v.\",\n"
@@ -249,35 +262,85 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             throw new RuntimeException("AI 文本大模型未返回内容");
         }
 
-        String cleanedJson = JsonUtils.repairAiJson(aiResult);
         Map<String, Object> map;
         try {
-            map = JsonUtils.parseAiMap(cleanedJson);
+            // parseAiMap 内部会自动进行必要的 repairAiJson，此处避免重复处理导致正则叠加
+            map = JsonUtils.parseAiMap(aiResult);
         } catch (Exception e) {
-            log.error("AI 结果 JSON 解析失败: " + word.getSpell() + ", 内容: " + cleanedJson, e);
+            log.error("AI 结果 JSON 解析失败: " + word.getSpell() + ", 内容: " + aiResult, e);
             throw new RuntimeException("AI 结果 JSON 解析失败: " + e.getMessage(), e);
         }
 
         if (map == null || !map.containsKey("is_applicable")) {
-            throw new RuntimeException("AI 返回内容缺少 is_applicable 字段: " + cleanedJson);
+            throw new RuntimeException("AI 返回内容缺少 is_applicable 字段: " + aiResult);
         }
 
         Boolean isApplicable = (Boolean) map.get("is_applicable");
         wci.setIsApplicable(Boolean.TRUE.equals(isApplicable));
 
         if (!wci.getIsApplicable()) {
-            wci.setNotApplicableReason((String) map.get("not_applicable_reason"));
+            wci.setNotApplicableReason(cleanPunctuation((String) map.get("not_applicable_reason")));
             wci.setImageStatus("SKIPPED");
         } else {
-            wci.setCoreImage((String) map.get("core_image"));
-            wci.setSchemaDesc((String) map.get("schema_desc"));
-            wci.setImagePrompt((String) map.get("image_prompt"));
-            wci.setTopologyJson(cleanedJson);
+            String coreImage = cleanPunctuation((String) map.get("core_image"));
+            String schemaDesc = cleanPunctuation((String) map.get("schema_desc"));
+            String imagePrompt = cleanPunctuation((String) map.get("image_prompt"));
+
+            wci.setCoreImage(coreImage);
+            wci.setSchemaDesc(schemaDesc);
+            wci.setImagePrompt(imagePrompt);
+
+            // 清洗 branches 中各字段的多余标点
+            if (map.containsKey("branches") && map.get("branches") instanceof List) {
+                List<?> rawBranches = (List<?>) map.get("branches");
+                List<Map<String, Object>> cleanedBranches = new java.util.ArrayList<>();
+                for (Object item : rawBranches) {
+                    if (item instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> bMap = (Map<String, Object>) item;
+                        Map<String, Object> cleanB = new HashMap<>(bMap);
+                        if (cleanB.containsKey("pos") && cleanB.get("pos") != null) {
+                            cleanB.put("pos", cleanPunctuation(cleanB.get("pos").toString()));
+                        }
+                        if (cleanB.containsKey("meaning") && cleanB.get("meaning") != null) {
+                            cleanB.put("meaning", cleanPunctuation(cleanB.get("meaning").toString()));
+                        }
+                        if (cleanB.containsKey("relation") && cleanB.get("relation") != null) {
+                            cleanB.put("relation", cleanPunctuation(cleanB.get("relation").toString()));
+                        }
+                        if (cleanB.containsKey("desc") && cleanB.get("desc") != null) {
+                            cleanB.put("desc", cleanPunctuation(cleanB.get("desc").toString()));
+                        }
+                        cleanedBranches.add(cleanB);
+                    }
+                }
+                map.put("branches", cleanedBranches);
+            }
+            map.put("core_image", coreImage);
+            map.put("schema_desc", schemaDesc);
+            map.put("image_prompt", imagePrompt);
+
+            wci.setTopologyJson(JsonUtils.toJson(map));
             wci.setImageStatus("PENDING");
         }
 
         createAndLog(wci);
         return wci;
+    }
+
+    /**
+     * 剥离文本首尾多余的逗号、分号、顿号及空白
+     */
+    public static String cleanPunctuation(String s) {
+        if (s == null) return null;
+        s = s.trim();
+        while (s.endsWith(",") || s.endsWith("，") || s.endsWith(";") || s.endsWith("；") || s.endsWith("、") || s.endsWith(" ")) {
+            s = s.substring(0, s.length() - 1).trim();
+        }
+        while (s.startsWith(",") || s.startsWith("，") || s.startsWith(";") || s.startsWith("；") || s.startsWith("、") || s.startsWith(" ")) {
+            s = s.substring(1).trim();
+        }
+        return s;
     }
 
     /**
@@ -441,17 +504,72 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             if (!response.isSuccessful() || response.body() == null) {
                 throw new RuntimeException("下载意象图失败, HTTP状态码: " + response.code());
             }
-            try (InputStream in = response.body().byteStream();
-                 FileOutputStream out = new FileOutputStream(targetFile)) {
-                byte[] buf = new byte[8192];
-                int len;
-                while ((len = in.read(buf)) != -1) {
-                    out.write(buf, 0, len);
+            try (InputStream in = response.body().byteStream()) {
+                BufferedImage original = ImageIO.read(in);
+                if (original != null) {
+                    int origW = original.getWidth();
+                    int origH = original.getHeight();
+                    int targetMax = 512;
+                    int targetW = origW;
+                    int targetH = origH;
+
+                    if (origW > targetMax || origH > targetMax) {
+                        if (origW >= origH) {
+                            targetW = targetMax;
+                            targetH = (int) Math.round((double) origH * targetMax / origW);
+                        } else {
+                            targetH = targetMax;
+                            targetW = (int) Math.round((double) origW * targetMax / origH);
+                        }
+                    }
+
+                    // 纯白底 RGB 缓冲（防止带透明度的 PNG 转 JPEG 时背景变纯黑）
+                    BufferedImage scaled = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_RGB);
+                    Graphics2D g2d = scaled.createGraphics();
+                    try {
+                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2d.setColor(Color.WHITE);
+                        g2d.fillRect(0, 0, targetW, targetH);
+                        g2d.drawImage(original, 0, 0, targetW, targetH, null);
+                    } finally {
+                        g2d.dispose();
+                    }
+
+                    saveAsCompressedJpeg(scaled, targetFile, 0.85f);
+                } else {
+                    log.warn("无法解析图片输入流为 BufferedImage: {}, 将使用直写模式", word);
+                    try (FileOutputStream out = new FileOutputStream(targetFile)) {
+                        byte[] buf = new byte[8192];
+                        int len;
+                        while ((len = in.read(buf)) != -1) {
+                            out.write(buf, 0, len);
+                        }
+                    }
                 }
             }
         }
 
         return "core_images/" + fileName;
+    }
+
+    private void saveAsCompressedJpeg(BufferedImage image, File targetFile, float quality) throws IOException {
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpeg");
+        if (!writers.hasNext()) {
+            ImageIO.write(image, "jpeg", targetFile);
+            return;
+        }
+        ImageWriter writer = writers.next();
+        try (ImageOutputStream ios = ImageIO.createImageOutputStream(targetFile)) {
+            writer.setOutput(ios);
+            JPEGImageWriteParam param = new JPEGImageWriteParam(Locale.getDefault());
+            param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            param.setCompressionQuality(quality);
+            writer.write(null, new IIOImage(image, null, null), param);
+        } finally {
+            writer.dispose();
+        }
     }
 
     public List<WordCoreImageDto> getWordCoreImagesOfDict(String dictId) {

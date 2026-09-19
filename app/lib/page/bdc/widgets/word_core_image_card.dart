@@ -19,6 +19,18 @@ class WordCoreImageCard extends StatefulWidget {
 class _WordCoreImageCardState extends State<WordCoreImageCard> {
   bool _isExpanded = false;
 
+  String _cleanPunctuation(String? text) {
+    if (text == null) return '';
+    var s = text.trim();
+    while (s.endsWith(',') || s.endsWith('，') || s.endsWith(';') || s.endsWith('；') || s.endsWith('、') || s.endsWith(' ')) {
+      s = s.substring(0, s.length - 1).trim();
+    }
+    while (s.startsWith(',') || s.startsWith('，') || s.startsWith(';') || s.startsWith('；') || s.startsWith('、') || s.startsWith(' ')) {
+      s = s.substring(1).trim();
+    }
+    return s;
+  }
+
   String _resolveImageUrl(String? url) {
     if (url == null || url.trim().isEmpty) return '';
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -93,7 +105,7 @@ class _WordCoreImageCardState extends State<WordCoreImageCard> {
                   ),
                 ),
                 const Spacer(),
-                if (item.coreImage != null && item.coreImage!.isNotEmpty)
+                if (_cleanPunctuation(item.coreImage).isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
@@ -101,7 +113,7 @@ class _WordCoreImageCardState extends State<WordCoreImageCard> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      item.coreImage!,
+                      _cleanPunctuation(item.coreImage),
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -149,10 +161,10 @@ class _WordCoreImageCardState extends State<WordCoreImageCard> {
             ],
 
             // 3. 认知语言学图式剖析
-            if (item.schemaDesc != null && item.schemaDesc!.isNotEmpty) ...[
+            if (_cleanPunctuation(item.schemaDesc).isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
-                item.schemaDesc!,
+                _cleanPunctuation(item.schemaDesc),
                 style: TextStyle(
                   fontSize: 13.5,
                   height: 1.55,
@@ -216,10 +228,10 @@ class _WordCoreImageCardState extends State<WordCoreImageCard> {
                 _isExpanded ? branches.length : (branches.length > 2 ? 2 : branches.length),
                 (index) {
                   final b = branches[index];
-                  final pos = b['pos']?.toString() ?? '';
-                  final meaning = b['meaning']?.toString() ?? '';
-                  final relation = b['relation']?.toString() ?? '';
-                  final desc = b['desc']?.toString() ?? '';
+                  final pos = _cleanPunctuation(b['pos']?.toString());
+                  final meaning = _cleanPunctuation(b['meaning']?.toString());
+                  final relation = _cleanPunctuation(b['relation']?.toString());
+                  final desc = _cleanPunctuation(b['desc']?.toString());
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),

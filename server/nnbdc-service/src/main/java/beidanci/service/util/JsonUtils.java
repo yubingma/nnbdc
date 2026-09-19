@@ -129,11 +129,11 @@ public class JsonUtils {
 
         // 3. 修复 unquoted text 紧跟在字符串值之后的情况 (如 "meaning": "xxx", <b>...</b> "sentenceCn": ...)
         // 这种情况下，AI 往往是把一部分内容漏在了引号外面。我们将这部分内容合并进前一个引号内。
-        // 正则：查找 引号+逗号+空白 + (非引号非冒号非括号非逗号的内容) + 空白 + 引号 + (键名) + 引号 + 冒号
-        Pattern p1 = Pattern.compile("(?s)\",\\s*([^\"\\{}\\],:]+?)\\s*\"([^\"]+)\"\\s*:");
+        // 注意：首字符必须为非空白字符，防止把标准 JSON 换行缩进空白当成漏网文本误伤并错误追加逗号！
+        Pattern p1 = Pattern.compile("(?s)\",\\s*([^\\s\"\\{}\\],:][^\"\\{}\\],:]*?)\\s*\"([^\"]+)\"\\s*:");
         Matcher m1 = p1.matcher(json);
         if (m1.find()) {
-            json = m1.replaceAll("， $1\", \"$2\":");
+            json = m1.replaceAll(" $1\", \"$2\":");
         }
 
         // 4. 修复缺失逗号的情况: "field1": "val1" "field2": "val2"
