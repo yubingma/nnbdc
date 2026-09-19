@@ -1708,7 +1708,7 @@ class WordBo {
           } else if (sortAlg == 'RANDOM') {
             sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
           } else {
-            sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC LIMIT ? OFFSET ?';
+            sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC, dw.create_time ASC, dw.word_id ASC LIMIT ? OFFSET ?';
           }
           final rows = await db.customSelect(sql, variables: [
             Variable.withString(dictId),
@@ -1720,7 +1720,7 @@ class WordBo {
       } else {
         dictWordEntries = await (db.select(db.dictWords)
               ..where((dw) => dw.dictId.equals(dictId))
-              ..orderBy([(t) => OrderingTerm(expression: t.unit), (t) => OrderingTerm(expression: t.seq)])
+              ..orderBy([(t) => OrderingTerm(expression: t.unit), (t) => OrderingTerm(expression: t.seq), (t) => OrderingTerm(expression: t.createTime), (t) => OrderingTerm(expression: t.wordId)])
               ..limit(pageSize, offset: fromIndex))
             .get();
       }
@@ -1878,7 +1878,11 @@ class WordBo {
                 'WHERE dw.dict_id = ? AND w.id <= (SELECT id FROM words WHERE spell = ? LIMIT 1)';
         variables = [Variable.withString(dictId), Variable.withString(spell)];
       } else {
-        query = 'SELECT (SELECT count(*) FROM dict_words dw2 WHERE dw2.dict_id = dw1.dict_id AND (dw2.unit < dw1.unit OR (dw2.unit = dw1.unit AND dw2.seq <= dw1.seq))) as word_order '
+        query = 'SELECT (SELECT count(*) FROM dict_words dw2 WHERE dw2.dict_id = dw1.dict_id AND ('
+                'dw2.unit < dw1.unit OR (dw2.unit = dw1.unit AND ('
+                'dw2.seq < dw1.seq OR (dw2.seq = dw1.seq AND ('
+                'dw2.create_time < dw1.create_time OR (dw2.create_time = dw1.create_time AND dw2.word_id <= dw1.word_id)'
+                '))))) as word_order '
                 'FROM dict_words dw1 '
                 'JOIN words w ON dw1.word_id = w.id '
                 'WHERE dw1.dict_id = ? AND w.spell = ?';

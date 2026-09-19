@@ -900,18 +900,18 @@ public class SystemHealthCheckBo {
         try {
             List<String> userDictIds = dictBo.getUserDictIds();
             for (String dictId : userDictIds) {
-                // 修复序号
-                dictBo.fixDictWordSequence(dictId);
-                
-                // 修复数量
+                // 稀疏保序架构：用户词典自然允许稀疏空洞，严禁在服务端静默重排改写 seq（避免端云不一致）。
+                // 仅当元数据 word_count 与实际关联数不一致时才做同步修复
                 Long actualCount = dictBo.getDictWordCount(dictId);
-                dictBo.updateDictWordCount(dictId, actualCount.intValue());
-                
-                fixed.add("修复用户词典 " + dictId + " 的完整性问题");
-                fixedCount++;
+                Integer recordedCount = dictBo.getDictRecordedWordCount(dictId);
+                if (actualCount != null && (recordedCount == null || actualCount.intValue() != recordedCount)) {
+                    dictBo.updateDictWordCount(dictId, actualCount.intValue());
+                    fixed.add(String.format("修复用户词典 %s 单词数量元数据: %s -> %d", dictId, recordedCount, actualCount));
+                    fixedCount++;
+                }
             }
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复失败", e);
+            org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复用户词典失败", e);
         }
         return fixedCount;
     }

@@ -761,7 +761,7 @@ class LearningService {
             } else if (sortAlg == 'RANDOM') {
               sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
             } else {
-              sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC LIMIT ? OFFSET ?';
+              sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC, dw.create_time ASC, dw.word_id ASC LIMIT ? OFFSET ?';
             }
             final rows = await db.customSelect(sql, variables: [
               Variable.withString(learningDict.dictId),
@@ -773,7 +773,12 @@ class LearningService {
         } else {
           dictWords = await (db.select(db.dictWords)
                 ..where((dw) => dw.dictId.equals(learningDict.dictId))
-                ..orderBy([(dw) => OrderingTerm(expression: dw.unit), (dw) => OrderingTerm(expression: dw.seq)])
+                ..orderBy([
+                  (dw) => OrderingTerm(expression: dw.unit),
+                  (dw) => OrderingTerm(expression: dw.seq),
+                  (dw) => OrderingTerm(expression: dw.createTime),
+                  (dw) => OrderingTerm(expression: dw.wordId),
+                ])
                 ..limit(batchSize, offset: offset))
               .get();
         }
