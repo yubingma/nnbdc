@@ -27,3 +27,19 @@ CREATE TABLE IF NOT EXISTS word_core_image (
 );
 
 CREATE INDEX IF NOT EXISTS idx_wci_word ON word_core_image (word);
+
+COMMENT ON TABLE word_core_image IS '一词多义核心意象与AI生图拓扑表：存储DeepSeek提炼的核心意象及火山引擎生图数据';
+COMMENT ON COLUMN word_core_image.id IS '主键ID (32位UUID)';
+COMMENT ON COLUMN word_core_image.word_id IS '关联的单词ID';
+COMMENT ON COLUMN word_core_image.word IS '单词拼写';
+COMMENT ON COLUMN word_core_image.is_applicable IS '大模型判定是否适合提取核心意象 (true:多义引申 / false:单一实物名词)';
+COMMENT ON COLUMN word_core_image.not_applicable_reason IS '不适合提取核心意象时的具体原因';
+COMMENT ON COLUMN word_core_image.core_image IS '4-10字底层核心意象短语（空间拓扑/力学动势机制）';
+COMMENT ON COLUMN word_core_image.schema_desc IS '认知语言学图式演化深度剖析说明';
+COMMENT ON COLUMN word_core_image.topology_json IS '核心意象与多义分支拓扑结构JSON';
+COMMENT ON COLUMN word_core_image.image_prompt IS '驱动文生图模型生成简笔画的中文精确提示词';
+COMMENT ON COLUMN word_core_image.image_url IS '生成的2D认知图式简笔画图片持久化URL';
+COMMENT ON COLUMN word_core_image.image_status IS '生图状态 (SUCCESS/FAILED/PENDING/SKIPPED)';
+COMMENT ON COLUMN word_core_image.image_model IS '使用的生图大底座模型标识';
+COMMENT ON COLUMN word_core_image.create_time IS '记录创建时间';
+COMMENT ON COLUMN word_core_image.update_time IS '最后更新时间';

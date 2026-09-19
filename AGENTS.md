@@ -52,6 +52,9 @@
   - 大文本字段统一使用 `TEXT`。
   - 索引使用标准的 `CREATE INDEX IF NOT EXISTS ... ON table_name (column_name);`。
   - 布尔类型统一使用 `BOOLEAN`。
+- **表与字段注释铁律**：新建表或新增/修改数据库表字段时，必须使用 `COMMENT ON TABLE "table_name" IS '...';` 和 `COMMENT ON COLUMN "table_name"."column_name" IS '...';` 为所有表和字段添加清晰准确的中文业务注释，严禁字段注释裸奔，便于长期维护与理解。
+- **保留关键字转义铁律**：PostgreSQL 中包含大量系统保留关键字（最典型的如 `"user"`、`"group"`、`"order"`、`"position"`、`"date"` 等）。编写 DDL、SQL 升级脚本或原生查询时，**涉及保留关键字的表名与列名必须强制使用双引号包裹**（如 `COMMENT ON TABLE "user" IS '...';`），严禁裸写导致语法解析异常。
+
 
 
 ## Think Before Coding
