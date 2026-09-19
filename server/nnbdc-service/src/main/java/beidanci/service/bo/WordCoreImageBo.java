@@ -417,7 +417,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         } catch (Exception ignored) {
         }
         if (baseDir == null || baseDir.trim().isEmpty()) {
-            baseDir = "/Volumes/ssd/ppdc/design/ui/assets";
+            baseDir = "/var/www/html/img";
         }
 
         File targetFolder = new File(baseDir, "core_images");
@@ -447,7 +447,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             }
         }
 
-        return "assets/core_images/" + fileName;
+        return "core_images/" + fileName;
     }
 
     public List<WordCoreImageDto> getWordCoreImagesOfDict(String dictId) {
