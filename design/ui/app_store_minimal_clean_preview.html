@@ -667,11 +667,7 @@
       display: block;
       pointer-events: none;
     }
-    /* 允许海报3的手机机身与展示台溢出 3D 悬浮人手 */
-    #card-3 .device-chassis,
-    #card-3 .poster-phone-stage {
-      overflow: visible !important;
-    }
+    /* 海报3机身统一遵循 device-chassis 规范，保持 overflow: hidden 裁切圆角 */
 
     /* 3D 屏幕上方真实人手：完全悬浮于手机屏幕与机身之上，食指尖精准正中最后一笔末端 (m 上扬末梢) */
     .floating-hand-3d {
@@ -705,74 +701,100 @@
       0%, 100% { transform: scale(0.85); opacity: 0.5; }
       50% { transform: scale(1.35); opacity: 0.95; }
     }
-    .live-dot {
-      width: 6.5px;
-      height: 6.5px;
-      border-radius: 50%;
-      background: #00869D;
-      display: inline-block;
-      box-shadow: 0 0 0 2.5px rgba(0, 134, 157, 0.25);
-      animation: liveBlink 1.4s infinite ease-in-out;
-    }
-    @keyframes liveBlink {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.8); }
-    }
-    .ocr-pass-badge {
-      position: absolute;
-      bottom: 12px;
-      left: 14px; /* 移到左下角，与右下角的手指形成完美平衡，绝不遮挡 */
-      background: #E0F2FE;
-      color: #0369A1;
-      border: 1px solid #BAE6FD;
-      border-radius: 8px;
-      padding: 3.5px 9px;
-      font-size: 11px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      z-index: 30;
-    }
 
-    /* ----- 卡片 4: 语音答题 / 开口成诵 ----- */
-    .asr-stage {
+    /* ----- 卡片 4: 例句英译汉 · 语音答题模式 ----- */
+    .sentence-trans-stage {
       flex: 1;
-      padding: 16px;
+      padding: 12px 14px 14px 14px;
       background: #FFFFFF;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
-    .sound-wave-box {
+    .sentence-quiz-card {
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 14px;
+      padding: 10px 12px 8px 12px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    }
+    .sentence-en-text {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #111827;
+      line-height: 1.36;
+      letter-spacing: -0.2px;
+      margin-top: 4px;
+    }
+    .sentence-en-text .highlight-word {
+      color: #059669;
+      font-weight: 800;
+      text-decoration: underline;
+      text-decoration-color: rgba(5, 150, 105, 0.35);
+      text-underline-offset: 3px;
+    }
+    .sentence-asr-result-card {
       background: #F0FDF4;
-      border: 1px solid #BBF7D0;
-      border-radius: 20px;
-      padding: 20px 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
+      border: 1.5px solid #A7F3D0;
+      border-radius: 16px;
+      padding: 12px 13px;
+      margin-top: 38px; /* 完美避开中央大横幅遮挡 */
+      box-shadow: 0 4px 16px rgba(5, 150, 105, 0.08);
+      position: relative;
     }
-    .wave-bars {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      height: 48px;
+    .user-speech-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: #064E3B;
+      line-height: 1.5;
+      letter-spacing: -0.1px;
+      margin-top: 7px;
     }
-    .wave-bar {
-      width: 4px;
-      background: #10D09E;
-      border-radius: 4px;
+    .asr-live-dot {
+      width: 6.5px;
+      height: 6.5px;
+      border-radius: 50%;
+      background: #059669;
+      display: inline-block;
+      box-shadow: 0 0 0 2.5px rgba(5, 150, 105, 0.25);
+      animation: asrPulse 1.4s infinite ease-in-out;
+    }
+    @keyframes asrPulse {
+      0%, 100% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.25); opacity: 1; }
     }
     .score-badge {
       background: #059669;
       color: #FFFFFF;
-      font-size: 13px;
+      font-size: 10px;
       font-weight: 800;
-      padding: 4px 14px;
+      padding: 2.5px 8px;
       border-radius: 100px;
-      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3);
+    }
+    .wave-bars {
+      display: flex;
+      align-items: center;
+      gap: 3.5px;
+      height: 24px;
+    }
+    .wave-bar {
+      width: 3.5px;
+      background: #10B981;
+      border-radius: 3px;
+    }
+    .speak-action-btn {
+      background: #111827;
+      color: #FFFFFF;
+      border-radius: 14px;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 12.5px;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     }
 
     /* ----- 卡片 5: 词单导入 / 随心定制 ----- */
@@ -1146,7 +1168,7 @@
               </div>
             </div>
 
-            <div class="screen-body" style="overflow: visible; border-radius: 40px;">
+            <div class="screen-body">
               <div class="write-stage">
                 <div class="write-prompt-card">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1168,11 +1190,6 @@
                     </div>
                   </div>
 
-                  <!-- 实时笔迹追踪识别徽章 -->
-                  <div class="ocr-pass-badge">
-                    <span class="live-dot"></span>
-                    <span>实时识别中 · 99% 命中</span>
-                  </div>
                 </div>
 
                 <!-- 浮起工具栏（被屏幕上方的真实人手自然遮挡） -->
@@ -1213,36 +1230,65 @@
             </div>
 
             <div class="screen-body">
-              <div class="asr-stage">
+              <div class="sentence-trans-stage">
                 <div>
-                  <div style="font-size: 11px; color: #059669; font-weight: 700; text-transform: uppercase;">原声跟读 · ASR 声学识别</div>
-                  <div style="font-size: 24px; font-weight: 800; color: #111827; margin-top: 6px;">resilience</div>
-                  <div style="font-size: 13px; color: #4B5563; margin-top: 4px;">/rɪˈzɪliəns/ · n. 恢复力；弹韧性</div>
-                </div>
-
-                <!-- 电影例句原声 -->
-                <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 14px; padding: 12px;">
-                  <div style="font-size: 10px; color: #9CA3AF; font-weight: 600; margin-bottom: 4px;">🎬 经典影视原声例句</div>
-                  <div style="font-size: 12.5px; color: #1F2937; line-height: 1.4;">"True <b style="color: #059669;">resilience</b> is not about never falling, but rising every time."</div>
-                </div>
-
-                <!-- 声波动画与打分 -->
-                <div class="sound-wave-box">
-                  <div class="score-badge">口语评测得分 98 · 极纯正</div>
-                  <div class="wave-bars">
-                    <div class="wave-bar" style="height: 16px;"></div>
-                    <div class="wave-bar" style="height: 32px;"></div>
-                    <div class="wave-bar" style="height: 44px; background: #059669;"></div>
-                    <div class="wave-bar" style="height: 28px;"></div>
-                    <div class="wave-bar" style="height: 48px; background: #059669;"></div>
-                    <div class="wave-bar" style="height: 20px;"></div>
-                    <div class="wave-bar" style="height: 36px;"></div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">例句英译汉 · 语境口试</span>
+                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 8 / 20 句</span>
                   </div>
-                  <div style="font-size: 11px; color: #065F46; font-weight: 600;">开口即识别 · 告别哑巴背词</div>
+                  <div style="font-size: 11.5px; color: #6B7280; margin-top: 6px;">看英文例句 · 语音说出中文意思</div>
                 </div>
 
-                <div style="background: #111827; color: #FFFFFF; border-radius: 14px; padding: 12px; text-align: center; font-size: 13px; font-weight: 700;">
-                  按住说话答题
+                <!-- 题目：经典英文例句 -->
+                <div class="sentence-quiz-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 10px; color: #9CA3AF; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">English Sentence</span>
+                    <div style="display: flex; align-items: center; gap: 4px; color: #059669; font-size: 10.5px; font-weight: 600;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                      <span>标准美音</span>
+                    </div>
+                  </div>
+                  <div class="sentence-en-text">
+                    "True <span class="highlight-word">resilience</span> is not about never falling, but rising every time."
+                  </div>
+                  <div style="margin-top: 8px; font-size: 10.5px; color: #9CA3AF; border-top: 1px dashed #E5E7EB; padding-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>📖 权威真题例句</span>
+                    <span>真题考频 ★★★★☆</span>
+                  </div>
+                </div>
+
+                <!-- 语音作答与识别出的中文翻译结果 -->
+                <div class="sentence-asr-result-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                      <span class="asr-live-dot"></span>
+                      <span style="font-size: 10.5px; color: #059669; font-weight: 700;">实时识别 · 你的口译：</span>
+                    </div>
+                    <span class="score-badge">👏 哇，太准确了！</span>
+                  </div>
+
+                  <div class="user-speech-text">
+                    “真正的韧性不是从不跌倒，而是每次都能重新站起来。”
+                  </div>
+
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 7px; border-top: 1px dashed #A7F3D0;">
+                    <div class="wave-bars">
+                      <div class="wave-bar" style="height: 10px;"></div>
+                      <div class="wave-bar" style="height: 18px;"></div>
+                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
+                      <div class="wave-bar" style="height: 14px;"></div>
+                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
+                      <div class="wave-bar" style="height: 12px;"></div>
+                      <div class="wave-bar" style="height: 18px;"></div>
+                    </div>
+                    <span style="font-size: 11px; color: #047857; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">✨ 哇，你的翻译真的是太准确了！</span>
+                  </div>
+                </div>
+
+                <!-- 底部操作按钮：按住说中文 -->
+                <div class="speak-action-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                  <span>按住说中文（松开即可判题）</span>
                 </div>
               </div>
             </div>
@@ -1337,7 +1383,7 @@
         p1Title: '泡泡星云', p1Sub: '过目成星',
         p2Title: '科学复习', p2Sub: '告别遗忘',
         p3Title: '提笔默写', p3Sub: '加深记忆',
-        p4Title: '原声跟读', p4Sub: '地道开口',
+        p4Title: '例句译说', p4Sub: '开口即答',
         p5Title: '自主题库', p5Sub: '一键导入'
       }
     };
