@@ -976,21 +976,9 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     await _validateDictWordsOrder(dictId);
   }
 
-  // 通用修复方法，供同步时调用
+  // 通用修复方法，供健康检查/异常修复调用
   Future<void> fixDictOrder(String dictId, bool genLog) async {
     await _reorderDictWords(dictId, genLog);
-  }
-
-  // 通用生成本地全量日志：直接生成UPDATE日志，覆盖后端数据
-  Future<void> generateFullDictRewriteLogs(String userId, String dictId) async {
-    final words = await (select(dictWords)
-          ..where((dw) => dw.dictId.equals(dictId))
-          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
-        .get();
-
-    for (final w in words) {
-      await DbLogUtil.logOperation(userId, 'UPDATE', 'dictWords', '${w.dictId}-${w.wordId}', w);
-    }
   }
 
   /// 获取本地缓存的语义排序单词 ID 列表

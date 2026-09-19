@@ -12,7 +12,6 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 
@@ -23,13 +22,6 @@ import 'package:nnbdc/util/pca_projection_service.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 
 export 'package:nnbdc/util/sys_db_sync.dart' show syncSysDb;
-
-class DictWordOrderInvalidWarningException implements Exception {
-  final String message;
-  DictWordOrderInvalidWarningException(this.message);
-  @override
-  String toString() => message;
-}
 
 /// 同步核心业务异常基类，这类异常通常需要在 UI 上直接弹出提示
 abstract class SyncCoreException implements Exception {
@@ -402,8 +394,6 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     // 分别保存本地数据库和后端数据库(用事务保证一致性)
     // 【重要改进】拆分为两个独立事务：
     //   事务A：将服务端数据保存到本地 → 提交（即使上传失败，数据也不会丢失）
-    //   事务B：将本地数据上传到服务端 → 提交（独立于事务A）
-    DictWordOrderInvalidWarningException? warningExcept;
     var db = MyDatabase.instance;
     int successCount = 0;
     int failCount = 0;
@@ -635,46 +625,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       try {
         Result<int> result = await Api.client.syncUserDb(backendDbVersion, userId, localToBackend);
         if (!result.success) {
-          // 若是后端特殊应答，要求进行全量修改日志，由下次同步自然覆盖
-          if ((result.code).contains('DICT_WORD_ORDER_INVALID')) {
-            // message 格式可能是: DICT_WORD_ORDER_INVALID: dictId|具体错误信息
-            String dictId = '';
-            final msg = result.msg ?? '';
-            final parts = msg.split('|');
-            if (parts.length > 1) {
-              final prefixParts = parts[0].split(':');
-              if (prefixParts.length > 1) {
-                dictId = prefixParts[1].trim();
-              } else {
-                dictId = parts[0].trim();
-              }
-            }
-
-            if (dictId.isNotEmpty) {
-              Global.logger.w('⚠️ 服务端检测到词书($dictId)顺序异常，生成本地全量修改日志，等待下次同步覆盖');
-
-              // 清理掉所有关于这个字典的单词的旧同步日志，包括可能存在的过旧的 BATCH_DELETE
-              await (MyDatabase.instance.delete(MyDatabase.instance.userDbLogs)
-                    ..where((l) => l.userId.equals(userId) & l.tblName.equals('dictWords') & (l.recordId.like('$dictId-%') | l.operate.equals('BATCH_DELETE'))))
-                  .go();
-
-              await DbLogUtil.logDeleteAllTableRecords(userId, 'dictWords', filters: {'dictId': dictId});
-
-              // 休眠以确保时间戳先后顺序，避免排序时全量修改的 UPDATE 日志先于 BATCH_DELETE 执行而导致后端数据被清空
-              await Future.delayed(const Duration(milliseconds: 100));
-
-              // 修复本地词书顺序
-              await MyDatabase.instance.dictWordsDao.fixDictOrder(dictId, false);
-
-              // 生成本地词书全量修改日志, 使得在下次同步到服务端时, 能够让服务端和本地词书完全一致
-              await MyDatabase.instance.dictWordsDao.generateFullDictRewriteLogs(userId, dictId);
-            }
-
-            // 记录特定异常，数据已保存在阶段A中，下次同步会重试
-            warningExcept = DictWordOrderInvalidWarningException("下次同步时自动修复");
-          } else {
-            Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}（本地数据已保存，将在下次同步时重试）");
-          }
+          Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}（本地数据已保存，将在下次同步时重试）");
         } else {
           // 上传成功，更新本地版本号 + 清空本地日志
           backendDbVersion = result.data!;
@@ -691,10 +642,6 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     } else {
       // 没有本地变更需要上传，直接清空本地日志
       await db.userDbLogsDao.deleteUserDbLogs(userId);
-    }
-
-    if (warningExcept != null) {
-      throw warningExcept;
     }
 
     stopwatch.stop();
@@ -890,11 +837,6 @@ void printFormattedChanges(String label, List<Map<String, dynamic>> changes) {
   // 格式化输出变更记录（已移除日志）
 }
 
-/// 稀疏保序架构下：词书自然空洞合法，无需在同步前强行重排与产生无谓的 UPDATE 日志
-Future<void> repairDictWordSequences(String userId) async {
-  // 稀疏保序架构：保序由 SQL ORDER BY seq ASC 保证，不再在同步前产生全量填补日志
-}
-
 /// 同步前自检与自愈：清理历史遗留的超长书签名 (bookMarkName) 坏数据及其待同步日志。
 ///
 /// 旧版本客户端 bug 曾用 `'dict_${dict}_words_list'`（整个对象插值）生成远超服务端
@@ -946,10 +888,6 @@ Future<void> syncUserDb(String userId) async {
     // 同步前自检：清理历史遗留的超长书签名 (bookMarkName) 坏数据及对应日志，
     // 避免其超出服务端 book_mark_name 的 varchar(255) 上限而阻塞整个同步事务
     await repairInvalidBookMarkNames(userId);
-
-    // 同步前自检：对当前用户全部词书执行 seq 连续性修复，让历史遗留断裂在上传前自愈，
-    // 生成的 UPDATE 日志随本次批次上传，避免触发服务端 DICT_WORD_ORDER_INVALID 校验失败。
-    await repairDictWordSequences(userId);
 
     // 获取服务端数据库版本
     var remoteDbVersion = -1;
@@ -1082,19 +1020,6 @@ Future<void> syncDb() async {
     final sysVersionData = await MyDatabase.instance.sysDbVersionDao.getVersion();
     int? sysDbVersion = sysVersionData?.version;
     await completeSyncLog(success: true, dbVersion: dbVersion, sysDbVersion: sysDbVersion);
-  } on DictWordOrderInvalidWarningException catch (e) {
-    stopwatch.stop();
-    Global.logger.w("⚠️ 数据库同步中止(进入修复计划): $e - 耗时: ${stopwatch.elapsedMilliseconds}ms");
-    
-    int? dbVersion;
-    if (!Global.isGuest && loggedInUser?.id != null) {
-      final userDbVersion = await MyDatabase.instance.userDbVersionsDao.getUserDbVersionByUserId(loggedInUser!.id!);
-      dbVersion = userDbVersion?.version;
-    }
-    final sysVersionData = await MyDatabase.instance.sysDbVersionDao.getVersion();
-    int? sysDbVersion = sysVersionData?.version;
-    await completeSyncLog(success: false, errorMessage: e.message, dbVersion: dbVersion, sysDbVersion: sysDbVersion);
-    rethrow;
   } catch (e, stackTrace) {
     stopwatch.stop();
     Global.logger.e("❌ 数据库同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
