@@ -27,8 +27,8 @@ class StudyConfig {
   /// 用户已关闭学习页「本组环节顺序提示」，不再展示
   bool hideGroupStepHint;
 
-  /// 每组单词数的上限
-  static const int maxBatchSize = 30;
+  /// 每组单词数的上限（防异常安全兜底，实际由当日计划词数 wordsPerDay 动态约束）
+  static const int maxBatchSize = 500;
 
   StudyConfig({
     this.autoPlayWord = true,

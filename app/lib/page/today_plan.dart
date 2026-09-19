@@ -2889,13 +2889,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final wordsPerDay = user?.effectiveWordsPerDay ?? 20;
     int selected = config.minNewWordsPerDay.clamp(0, wordsPerDay);
     // 每组单词数不得超过当日计划词数，否则加量批次会被并进计划组
-    final batchSizeLimit = wordsPerDay > 0
-        ? math.min(StudyConfig.maxBatchSize, wordsPerDay)
-        : StudyConfig.maxBatchSize;
+    final batchSizeLimit = wordsPerDay > 0 ? wordsPerDay : StudyConfig.maxBatchSize;
     int selectedBatchSize =
         config.batchSize.clamp(1, batchSizeLimit);
-    final batchSizeChips =
-        [5, 10, 15, 20, 30].where((v) => v <= batchSizeLimit).toList();
+    // 常用基础档位 + 当日计划词数（全天一组），保持单行不超过 5 个药丸以确保窄屏自适应
+    final baseChips = [5, 10, 20, 30];
+    final candidateChips = <int>{...baseChips, wordsPerDay}
+        .where((v) => v > 0 && v <= batchSizeLimit)
+        .toList()
+      ..sort();
+    final batchSizeChips = candidateChips.length > 5
+        ? candidateChips.sublist(candidateChips.length - 5)
+        : candidateChips;
 
     showDialog(
       context: context,
