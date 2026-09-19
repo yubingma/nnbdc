@@ -1570,6 +1570,33 @@ class DataIntegrityChecker {
         )).toList();
         await _db.wordCoreImagesDao.insertEntities(coreImages);
       }
+
+      // 9. 词根
+      if (res.cigens != null && res.cigens!.isNotEmpty) {
+        final List<Cigen> cigens = res.cigens!.map((c) => Cigen(
+          id: c.id,
+          description: c.description,
+          spell: c.spell,
+          category: c.category,
+          meaningCn: c.meaningCn,
+          meaningEn: c.meaningEn,
+          createTime: c.createTime,
+          updateTime: c.updateTime,
+        )).toList();
+        await _db.cigensDao.insertEntities(cigens);
+      }
+
+      // 10. 词根单词关联
+      if (res.cigenWordLinks != null && res.cigenWordLinks!.isNotEmpty) {
+        final List<CigenWordLink> links = res.cigenWordLinks!.map((l) => CigenWordLink(
+          cigenId: l.cigenId,
+          wordId: l.wordId,
+          theExplain: l.theExplain,
+          createTime: l.createTime,
+          updateTime: l.updateTime,
+        )).toList();
+        await _db.cigenWordLinksDao.insertEntities(links);
+      }
     });
   }
 }

@@ -12,7 +12,6 @@ import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
-import 'package:nnbdc/util/sys_db_sync.dart';
 import 'package:nnbdc/util/data_integrity_checker.dart';
 
 class GoldenMasterToolPage extends StatefulWidget {
@@ -290,10 +289,6 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
           onComplete: () {},
         );
       }
-
-      // 3.5 强行同步系统共享静态数据，确保词根、词缀及关联数据全部写入黄金母版
-      setState(() => _statusMessage = '正在同步词根/词缀等系统元数据...');
-      await syncSysDb();
 
       // 4. 执行 VACUUM 压缩数据库
       setState(() => _statusMessage = '正在压缩数据库 (VACUUM)...');

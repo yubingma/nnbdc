@@ -97,13 +97,13 @@ public class AdminCigenOptimizeController {
                     if (currentTask.isRunning) {
                         logger.info("开始词根解析优化阶段");
                         currentTask.statusMsg = "正在获取词根关系数据进行解析优化...";
-                        List<CigenBo.CigenWordLinkDto> links = cigenBo.getAllCigenWordLinks();
+                        List<CigenBo.CigenWordLinkDetailDto> links = cigenBo.getAllCigenWordLinks();
                         currentTask.totalIndices = links.size();
                         currentTask.currentIndex = 0;
 
                         for (int i = 0; i < links.size(); i++) {
                             if (!currentTask.isRunning) break;
-                            CigenBo.CigenWordLinkDto link = links.get(i);
+                            CigenBo.CigenWordLinkDetailDto link = links.get(i);
                             currentTask.currentIndex = i + 1;
 
                             try {

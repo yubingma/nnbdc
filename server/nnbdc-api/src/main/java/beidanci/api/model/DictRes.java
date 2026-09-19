@@ -17,6 +17,8 @@ public class DictRes {
     List<SentenceDto> sentences;
     List<WordImageDto> images;
     List<WordCoreImageDto> wordCoreImages;
+    List<CigenDto> cigens;
+    List<CigenWordLinkDto> cigenWordLinks;
 
     public DictRes() {
     }
@@ -24,13 +26,20 @@ public class DictRes {
     public DictRes(DictDto dict, List<DictWordDto> dictWords, List<WordDto> words, List<MeaningItemDto> meaningItems,
             List<SimilarWordDto> similarWords,
             List<SynonymDto> synonyms, List<SentenceDto> sentences, List<WordImageDto> images) {
-        this(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images, null);
+        this(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images, null, null, null);
     }
 
     public DictRes(DictDto dict, List<DictWordDto> dictWords, List<WordDto> words, List<MeaningItemDto> meaningItems,
             List<SimilarWordDto> similarWords,
             List<SynonymDto> synonyms, List<SentenceDto> sentences, List<WordImageDto> images,
             List<WordCoreImageDto> wordCoreImages) {
+        this(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images, wordCoreImages, null, null);
+    }
+
+    public DictRes(DictDto dict, List<DictWordDto> dictWords, List<WordDto> words, List<MeaningItemDto> meaningItems,
+            List<SimilarWordDto> similarWords,
+            List<SynonymDto> synonyms, List<SentenceDto> sentences, List<WordImageDto> images,
+            List<WordCoreImageDto> wordCoreImages, List<CigenDto> cigens, List<CigenWordLinkDto> cigenWordLinks) {
         this.dict = dict;
         this.dictWords = dictWords;
         this.words = words;
@@ -40,6 +49,8 @@ public class DictRes {
         this.sentences = sentences;
         this.images = images;
         this.wordCoreImages = wordCoreImages;
+        this.cigens = cigens;
+        this.cigenWordLinks = cigenWordLinks;
     }
 
     public List<SentenceDto> getSentences() {
@@ -112,5 +123,21 @@ public class DictRes {
 
     public void setWordCoreImages(List<WordCoreImageDto> wordCoreImages) {
         this.wordCoreImages = wordCoreImages;
+    }
+
+    public List<CigenDto> getCigens() {
+        return cigens;
+    }
+
+    public void setCigens(List<CigenDto> cigens) {
+        this.cigens = cigens;
+    }
+
+    public List<CigenWordLinkDto> getCigenWordLinks() {
+        return cigenWordLinks;
+    }
+
+    public void setCigenWordLinks(List<CigenWordLinkDto> cigenWordLinks) {
+        this.cigenWordLinks = cigenWordLinks;
     }
 }

@@ -76,8 +76,15 @@ void main() {
         contains('is_extra'),
       );
 
+      // v53 → v54: 增加 word_core_images 核心意象表
+      final tables = await db.customSelect("SELECT name FROM sqlite_master WHERE type='table'").get();
+      expect(
+        tables.map((row) => row.read<String>('name')),
+        contains('word_core_images'),
+      );
+
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 53);
+      expect(version.data.values.first, 54);
     } finally {
       await db.close();
     }

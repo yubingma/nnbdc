@@ -157,6 +157,8 @@ Future<void> _runImport({
       '同义词': dictRes.synonyms?.length ?? 0,
       '例句': dictRes.sentences?.length ?? 0,
       '核心意象': dictRes.wordCoreImages?.length ?? 0,
+      '词根': dictRes.cigens?.length ?? 0,
+      '词根关联': dictRes.cigenWordLinks?.length ?? 0,
     };
     final int totalRecords = resourceCounts.values.fold(0, (a, b) => a + b);
     int processedRecords = 0;
@@ -398,6 +400,53 @@ Future<void> _runImport({
         }
         await db!.wordCoreImagesDao.insertEntities(coreImages);
         await bump(resourceCounts['核心意象']!);
+      }
+
+      // Cigens
+      final srcCigens = dictRes.cigens ?? <CigenDto>[];
+      if (srcCigens.isNotEmpty) {
+        final List<Cigen> cigens = <Cigen>[];
+        for (int i = 0; i < srcCigens.length; i++) {
+          final c = srcCigens[i];
+          cigens.add(Cigen(
+            id: c.id,
+            description: c.description,
+            spell: c.spell,
+            category: c.category,
+            meaningCn: c.meaningCn,
+            meaningEn: c.meaningEn,
+            createTime: c.createTime,
+            updateTime: c.updateTime,
+          ));
+
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
+        }
+        await db!.cigensDao.insertEntities(cigens);
+        await bump(resourceCounts['词根']!);
+      }
+
+      // CigenWordLinks
+      final srcCigenLinks = dictRes.cigenWordLinks ?? <CigenWordLinkDto>[];
+      if (srcCigenLinks.isNotEmpty) {
+        final List<CigenWordLink> links = <CigenWordLink>[];
+        for (int i = 0; i < srcCigenLinks.length; i++) {
+          final l = srcCigenLinks[i];
+          links.add(CigenWordLink(
+            cigenId: l.cigenId,
+            wordId: l.wordId,
+            theExplain: l.theExplain,
+            createTime: l.createTime,
+            updateTime: l.updateTime,
+          ));
+
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
+        }
+        await db!.cigenWordLinksDao.insertEntities(links);
+        await bump(resourceCounts['词根关联']!);
       }
     });
 

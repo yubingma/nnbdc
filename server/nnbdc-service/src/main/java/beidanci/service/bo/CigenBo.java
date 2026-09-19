@@ -12,6 +12,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import beidanci.api.model.CigenDto;
+import beidanci.api.model.CigenWordLinkDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.CigenWordLink;
 import beidanci.service.util.JsonUtils;
@@ -33,9 +35,60 @@ public class CigenBo extends BaseBo<CigenWordLink> {
     }
 
     /**
+     * 获取全部词根DTO（用于全量词典资源包）
+     */
+    public List<CigenDto> getAllCigenDtos() {
+        String sql = "SELECT id, description, spell, category, meaning_cn, meaning_en, create_time, update_time FROM cigen";
+        return namedParameterJdbcTemplate.query(sql, (rs, rowNum) -> {
+            CigenDto dto = new CigenDto();
+            dto.setId(rs.getString("id"));
+            dto.setDescription(rs.getString("description"));
+            dto.setSpell(rs.getString("spell"));
+            dto.setCategory(rs.getString("category"));
+            dto.setMeaningCn(rs.getString("meaning_cn"));
+            dto.setMeaningEn(rs.getString("meaning_en"));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
+            return dto;
+        });
+    }
+
+    /**
+     * 获取词典相关的词根关联DTO（用于全量词典资源包）
+     */
+    public List<CigenWordLinkDto> getCigenWordLinkDtosOfDict(String dictId) {
+        return getCigenWordLinkDtosOfDictBySeqRange(dictId, null, null);
+    }
+
+    public List<CigenWordLinkDto> getCigenWordLinkDtosOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        StringBuilder sql = new StringBuilder("SELECT cl.cigen_id, cl.word_id, cl.the_explain, cl.create_time, cl.update_time "
+                + "FROM cigen_word_link cl WHERE cl.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id = :dictId");
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        if (fromSeq != null) {
+            sql.append(" AND dw.seq >= :fromSeq");
+            params.addValue("fromSeq", fromSeq);
+        }
+        if (toSeq != null) {
+            sql.append(" AND dw.seq <= :toSeq");
+            params.addValue("toSeq", toSeq);
+        }
+        sql.append(")");
+
+        return namedParameterJdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
+            CigenWordLinkDto dto = new CigenWordLinkDto();
+            dto.setCigenId(rs.getString("cigen_id"));
+            dto.setWordId(rs.getString("word_id"));
+            dto.setTheExplain(rs.getString("the_explain"));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
+            return dto;
+        });
+    }
+
+    /**
      * 获取所有带有解析的词根单词关系
      */
-    public List<CigenWordLinkDto> getAllCigenWordLinks() {
+    public List<CigenWordLinkDetailDto> getAllCigenWordLinks() {
         String sql = "SELECT cl.cigen_id, cl.word_id, cl.the_explain, w.spell, " + 
                      "c.description as cigen_description, c.spell as cigen_spell, c.category, c.meaning_cn, c.meaning_en " +
                      "FROM cigen_word_link cl " +
@@ -43,7 +96,7 @@ public class CigenBo extends BaseBo<CigenWordLink> {
                      "JOIN cigen c ON cl.cigen_id = c.id";
         
         return namedParameterJdbcTemplate.query(sql, (rs, rowNum) -> {
-            CigenWordLinkDto dto = new CigenWordLinkDto();
+            CigenWordLinkDetailDto dto = new CigenWordLinkDetailDto();
             dto.setCigenId(rs.getString("cigen_id"));
             dto.setWordId(rs.getString("word_id"));
             dto.setTheExplain(rs.getString("the_explain"));
@@ -127,7 +180,7 @@ public class CigenBo extends BaseBo<CigenWordLink> {
         sysDbSyncBo.logOperation("UPDATE", "cigen", id, JsonUtils.toJson(logRecord));
     }
 
-    public static class CigenWordLinkDto {
+    public static class CigenWordLinkDetailDto {
         private String cigenId;
         private String wordId;
         private String theExplain;

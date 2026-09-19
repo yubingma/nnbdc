@@ -30,6 +30,9 @@ import beidanci.api.model.SynonymDto;
 import beidanci.api.model.WordDto;
 import beidanci.api.model.WordImageDto;
 import beidanci.api.model.WordCoreImageDto;
+import beidanci.api.model.CigenDto;
+import beidanci.api.model.CigenWordLinkDto;
+import beidanci.service.bo.CigenBo;
 import beidanci.service.bo.DictBo;
 import beidanci.service.bo.DictWordBo;
 import beidanci.service.bo.MeaningItemBo;
@@ -86,6 +89,9 @@ public class ResController {
 
     @Autowired
     WordCoreImageBo wordCoreImageBo;
+
+    @Autowired
+    CigenBo cigenBo;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -216,9 +222,16 @@ public class ResController {
             List<WordCoreImageDto> wordCoreImages = wordCoreImageBo.getWordCoreImagesOfDict(dictId);
             logger.info("单词核心意象查询完成, 数量: {}", wordCoreImages.size());
 
+            // 查询词根与词根关联
+            List<CigenDto> cigens = cigenBo.getAllCigenDtos();
+            logger.info("词根信息查询完成, 数量: {}", cigens.size());
+
+            List<CigenWordLinkDto> cigenWordLinks = cigenBo.getCigenWordLinkDtosOfDict(dictId);
+            logger.info("词根关联查询完成, 数量: {}", cigenWordLinks.size());
+
             // 构建响应对象
             // 对于通用词典，不返回 dictWords 以减少响应大小
-            DictRes dictRes = new DictRes(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images, wordCoreImages);
+            DictRes dictRes = new DictRes(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images, wordCoreImages, cigens, cigenWordLinks);
             Result<DictRes> result = Result.success(dictRes);
 
             // 使用全局 ObjectMapper（已配置正确的时区和日期格式）

@@ -1156,6 +1156,14 @@ class CigensDao extends DatabaseAccessor<MyDatabase> with _$CigensDaoMixin {
   Future<void> saveEntity(Cigen entry) async {
     await into(cigens).insertOnConflictUpdate(entry);
   }
+
+  Future<void> insertEntities(List<Cigen> entries) async {
+    if (entries.isEmpty) return;
+    await batch((batch) {
+      batch.insertAll(cigens, entries, mode: InsertMode.insertOrReplace);
+    });
+    Global.logger.d('✅ 词根批量插入完成, 总数: ${entries.length}');
+  }
 }
 
 @DriftAccessor(tables: [CigenWordLinks])
@@ -1176,6 +1184,14 @@ class CigenWordLinksDao extends DatabaseAccessor<MyDatabase> with _$CigenWordLin
 
   Future<void> saveEntity(CigenWordLink entry) async {
     await into(cigenWordLinks).insertOnConflictUpdate(entry);
+  }
+
+  Future<void> insertEntities(List<CigenWordLink> entries) async {
+    if (entries.isEmpty) return;
+    await batch((batch) {
+      batch.insertAll(cigenWordLinks, entries, mode: InsertMode.insertOrReplace);
+    });
+    Global.logger.d('✅ 词根单词关联批量插入完成, 总数: ${entries.length}');
   }
 }
 
