@@ -297,6 +297,7 @@ class DictRes {
   List<VerbTenseDto>? verbTenses;
   List<CigenDto>? cigens;
   List<CigenWordLinkDto>? cigenWordLinks;
+  List<WordCoreImageDto>? wordCoreImages;
 
   DictRes(
       {this.dict,
@@ -309,11 +310,53 @@ class DictRes {
       this.images,
       this.verbTenses,
       this.cigens,
-      this.cigenWordLinks});
+      this.cigenWordLinks,
+      this.wordCoreImages});
 
   factory DictRes.fromJson(Map<String, dynamic> json) => _$DictResFromJson(json);
 
   Map<String, dynamic> toJson() => _$DictResToJson(this);
+}
+
+@JsonSerializable()
+class WordCoreImageDto {
+  String id;
+  String wordId;
+  String word;
+  bool isApplicable;
+  String? notApplicableReason;
+  String? coreImage;
+  String? schemaDesc;
+  String? topologyJson;
+  String? imagePrompt;
+  String? imageUrl;
+  String? imageStatus;
+  String? llmModel;
+  String? imageModel;
+  DateTime? createTime;
+  DateTime? updateTime;
+
+  WordCoreImageDto({
+    required this.id,
+    required this.wordId,
+    required this.word,
+    required this.isApplicable,
+    this.notApplicableReason,
+    this.coreImage,
+    this.schemaDesc,
+    this.topologyJson,
+    this.imagePrompt,
+    this.imageUrl,
+    this.imageStatus,
+    this.llmModel,
+    this.imageModel,
+    this.createTime,
+    this.updateTime,
+  });
+
+  factory WordCoreImageDto.fromJson(Map<String, dynamic> json) => _$WordCoreImageDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$WordCoreImageDtoToJson(this);
 }
 
 // 系统数据DTO

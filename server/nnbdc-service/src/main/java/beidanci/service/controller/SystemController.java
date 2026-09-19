@@ -45,6 +45,9 @@ public class SystemController {
     @Autowired
     private SentenceBo sentenceBo;
 
+    @Autowired
+    private WordCoreImageBo wordCoreImageBo;
+
     /**
      * 获取系统词典列表及其统计信息
      * 返回所有系统词典和每个词典被用户选择的数量
@@ -113,7 +116,8 @@ public class SystemController {
             wordBo.getSimilarWordsOfDictBySeqRange(dictId, fromSeq, toSeq),
             synonymBo.getSynonymsOfDictBySeqRange(dictId, fromSeq, toSeq),
             sentenceBo.getSentencesOfDictBySeqRange(dictId, fromSeq, toSeq),
-            wordBo.getWordImagesOfDictBySeqRange(dictId, fromSeq, toSeq)
+            wordBo.getWordImagesOfDictBySeqRange(dictId, fromSeq, toSeq),
+            wordCoreImageBo.getWordCoreImagesOfDictBySeqRange(dictId, fromSeq, toSeq)
         );
         
         return Result.success(res);

@@ -1548,6 +1548,28 @@ class DataIntegrityChecker {
         )).toList();
         await _db.wordImagesDao.insertEntities(images);
       }
+
+      // 8. 核心意象
+      if (res.wordCoreImages != null && res.wordCoreImages!.isNotEmpty) {
+        final List<WordCoreImage> coreImages = res.wordCoreImages!.map((ci) => WordCoreImage(
+          id: ci.id,
+          wordId: ci.wordId,
+          word: ci.word,
+          isApplicable: ci.isApplicable,
+          notApplicableReason: ci.notApplicableReason,
+          coreImage: ci.coreImage,
+          schemaDesc: ci.schemaDesc,
+          topologyJson: ci.topologyJson,
+          imagePrompt: ci.imagePrompt,
+          imageUrl: ci.imageUrl,
+          imageStatus: ci.imageStatus,
+          llmModel: ci.llmModel,
+          imageModel: ci.imageModel,
+          createTime: ci.createTime,
+          updateTime: ci.updateTime,
+        )).toList();
+        await _db.wordCoreImagesDao.insertEntities(coreImages);
+      }
     });
   }
 }

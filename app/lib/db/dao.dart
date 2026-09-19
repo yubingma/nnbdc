@@ -2843,6 +2843,14 @@ class WordCoreImagesDao extends DatabaseAccessor<MyDatabase> with _$WordCoreImag
     await into(wordCoreImages).insertOnConflictUpdate(entity);
   }
 
+  Future<void> insertEntities(List<WordCoreImage> entries) async {
+    if (entries.isEmpty) return;
+    await batch((batch) {
+      batch.insertAll(wordCoreImages, entries, mode: InsertMode.insertOrReplace);
+    });
+    Global.logger.d('✅ 核心意象批量插入完成, 总数: ${entries.length}');
+  }
+
   Future<int> deleteById(String id) {
     return (delete(wordCoreImages)..where((t) => t.id.equals(id))).go();
   }

@@ -29,6 +29,7 @@ import beidanci.api.model.SimilarWordDto;
 import beidanci.api.model.SynonymDto;
 import beidanci.api.model.WordDto;
 import beidanci.api.model.WordImageDto;
+import beidanci.api.model.WordCoreImageDto;
 import beidanci.service.bo.DictBo;
 import beidanci.service.bo.DictWordBo;
 import beidanci.service.bo.MeaningItemBo;
@@ -36,6 +37,7 @@ import beidanci.service.bo.SentenceBo;
 import beidanci.service.bo.SynonymBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.bo.WordBo;
+import beidanci.service.bo.WordCoreImageBo;
 import beidanci.service.po.User;
 import beidanci.service.util.MyImage;
 import beidanci.service.util.SysParamUtil;
@@ -81,6 +83,9 @@ public class ResController {
 
     @Autowired
     SysParamUtil sysParamUtil;
+
+    @Autowired
+    WordCoreImageBo wordCoreImageBo;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -207,9 +212,13 @@ public class ResController {
             List<WordImageDto> images = wordBo.getWordImagesOfDict(dictId);
             logger.info("单词图片查询完成, 数量: {}", images.size());
 
+            // 查询核心意象（仅已成功生成的记录）
+            List<WordCoreImageDto> wordCoreImages = wordCoreImageBo.getWordCoreImagesOfDict(dictId);
+            logger.info("单词核心意象查询完成, 数量: {}", wordCoreImages.size());
+
             // 构建响应对象
             // 对于通用词典，不返回 dictWords 以减少响应大小
-            DictRes dictRes = new DictRes(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images);
+            DictRes dictRes = new DictRes(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images, wordCoreImages);
             Result<DictRes> result = Result.success(dictRes);
 
             // 使用全局 ObjectMapper（已配置正确的时区和日期格式）

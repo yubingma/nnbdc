@@ -156,6 +156,7 @@ Future<void> _runImport({
       '释义': dictRes.meaningItems?.length ?? 0,
       '同义词': dictRes.synonyms?.length ?? 0,
       '例句': dictRes.sentences?.length ?? 0,
+      '核心意象': dictRes.wordCoreImages?.length ?? 0,
     };
     final int totalRecords = resourceCounts.values.fold(0, (a, b) => a + b);
     int processedRecords = 0;
@@ -364,6 +365,39 @@ Future<void> _runImport({
         }
         await db!.sentencesDao.insertEntities(sentences);
         await bump(resourceCounts['例句']!);
+      }
+
+      // WordCoreImages
+      final srcCoreImages = dictRes.wordCoreImages ?? <WordCoreImageDto>[];
+      if (srcCoreImages.isNotEmpty) {
+        final List<WordCoreImage> coreImages = <WordCoreImage>[];
+        for (int i = 0; i < srcCoreImages.length; i++) {
+          final ci = srcCoreImages[i];
+          coreImages.add(WordCoreImage(
+            id: ci.id,
+            wordId: ci.wordId,
+            word: ci.word,
+            isApplicable: ci.isApplicable,
+            notApplicableReason: ci.notApplicableReason,
+            coreImage: ci.coreImage,
+            schemaDesc: ci.schemaDesc,
+            topologyJson: ci.topologyJson,
+            imagePrompt: ci.imagePrompt,
+            imageUrl: ci.imageUrl,
+            imageStatus: ci.imageStatus,
+            llmModel: ci.llmModel,
+            imageModel: ci.imageModel,
+            createTime: ci.createTime,
+            updateTime: ci.updateTime,
+          ));
+
+          // 每处理100个核心意象，yield一次，避免阻塞
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
+        }
+        await db!.wordCoreImagesDao.insertEntities(coreImages);
+        await bump(resourceCounts['核心意象']!);
       }
     });
 

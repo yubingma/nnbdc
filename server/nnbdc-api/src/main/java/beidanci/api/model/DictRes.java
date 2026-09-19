@@ -16,10 +16,21 @@ public class DictRes {
     List<SynonymDto> synonyms;
     List<SentenceDto> sentences;
     List<WordImageDto> images;
+    List<WordCoreImageDto> wordCoreImages;
+
+    public DictRes() {
+    }
 
     public DictRes(DictDto dict, List<DictWordDto> dictWords, List<WordDto> words, List<MeaningItemDto> meaningItems,
             List<SimilarWordDto> similarWords,
             List<SynonymDto> synonyms, List<SentenceDto> sentences, List<WordImageDto> images) {
+        this(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images, null);
+    }
+
+    public DictRes(DictDto dict, List<DictWordDto> dictWords, List<WordDto> words, List<MeaningItemDto> meaningItems,
+            List<SimilarWordDto> similarWords,
+            List<SynonymDto> synonyms, List<SentenceDto> sentences, List<WordImageDto> images,
+            List<WordCoreImageDto> wordCoreImages) {
         this.dict = dict;
         this.dictWords = dictWords;
         this.words = words;
@@ -28,6 +39,7 @@ public class DictRes {
         this.synonyms = synonyms;
         this.sentences = sentences;
         this.images = images;
+        this.wordCoreImages = wordCoreImages;
     }
 
     public List<SentenceDto> getSentences() {
@@ -94,5 +106,11 @@ public class DictRes {
         this.images = images;
     }
 
+    public List<WordCoreImageDto> getWordCoreImages() {
+        return wordCoreImages;
+    }
 
+    public void setWordCoreImages(List<WordCoreImageDto> wordCoreImages) {
+        this.wordCoreImages = wordCoreImages;
+    }
 }

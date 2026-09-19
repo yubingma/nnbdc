@@ -21,11 +21,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import beidanci.api.model.WordCoreImageDto;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.WordCoreImageDao;
 import beidanci.service.po.MeaningItem;
@@ -446,5 +448,45 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         }
 
         return "assets/core_images/" + fileName;
+    }
+
+    public List<WordCoreImageDto> getWordCoreImagesOfDict(String dictId) {
+        return getWordCoreImagesOfDictBySeqRange(dictId, null, null);
+    }
+
+    public List<WordCoreImageDto> getWordCoreImagesOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        StringBuilder sql = new StringBuilder("SELECT wci.* FROM word_core_image wci "
+                + "WHERE wci.is_applicable = TRUE AND wci.image_status = 'SUCCESS' "
+                + "AND wci.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id = :dictId");
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        if (fromSeq != null) {
+            sql.append(" AND dw.seq >= :fromSeq");
+            params.addValue("fromSeq", fromSeq);
+        }
+        if (toSeq != null) {
+            sql.append(" AND dw.seq <= :toSeq");
+            params.addValue("toSeq", toSeq);
+        }
+        sql.append(")");
+
+        return namedParameterJdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
+            WordCoreImageDto dto = new WordCoreImageDto();
+            dto.setId(rs.getString("id"));
+            dto.setWordId(rs.getString("word_id"));
+            dto.setWord(rs.getString("word"));
+            dto.setIsApplicable(rs.getBoolean("is_applicable"));
+            dto.setNotApplicableReason(rs.getString("not_applicable_reason"));
+            dto.setCoreImage(rs.getString("core_image"));
+            dto.setSchemaDesc(rs.getString("schema_desc"));
+            dto.setTopologyJson(rs.getString("topology_json"));
+            dto.setImagePrompt(rs.getString("image_prompt"));
+            dto.setImageUrl(rs.getString("image_url"));
+            dto.setImageStatus(rs.getString("image_status"));
+            dto.setLlmModel(rs.getString("llm_model"));
+            dto.setImageModel(rs.getString("image_model"));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
+            return dto;
+        });
     }
 }
