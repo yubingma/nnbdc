@@ -319,6 +319,7 @@ class DictRes {
 }
 
 @JsonSerializable()
+@CustomDateTimeConverter()
 class WordCoreImageDto {
   String id;
   String wordId;

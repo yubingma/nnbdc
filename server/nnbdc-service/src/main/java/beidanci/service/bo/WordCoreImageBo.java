@@ -469,7 +469,8 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         }
         sql.append(")");
 
-        return namedParameterJdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
+        String querySql = java.util.Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params, (rs, rowNum) -> {
             WordCoreImageDto dto = new WordCoreImageDto();
             dto.setId(rs.getString("id"));
             dto.setWordId(rs.getString("word_id"));

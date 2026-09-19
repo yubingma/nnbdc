@@ -74,7 +74,8 @@ public class CigenBo extends BaseBo<CigenWordLink> {
         }
         sql.append(")");
 
-        return namedParameterJdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
+        String querySql = java.util.Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params, (rs, rowNum) -> {
             CigenWordLinkDto dto = new CigenWordLinkDto();
             dto.setCigenId(rs.getString("cigen_id"));
             dto.setWordId(rs.getString("word_id"));
