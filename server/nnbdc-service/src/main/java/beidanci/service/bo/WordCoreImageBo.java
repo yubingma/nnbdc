@@ -214,6 +214,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         wci.setId(Util.uuid());
         wci.setWordId(word.getId());
         wci.setWord(word.getSpell());
+        wci.setLlmModel(aiBo.getTextModel());
         wci.setCreateTime(new Date());
         wci.setUpdateTime(new Date());
 

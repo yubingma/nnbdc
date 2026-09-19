@@ -977,7 +977,8 @@ COMMENT ON COLUMN "word_core_image"."topology_json" IS '【拓扑关系网络】
 COMMENT ON COLUMN "word_core_image"."image_prompt" IS '【文生图提示词】驱动文生图大模型生成2D极简认知图式简笔画的纯中文精确提示词（严禁包含英文字母）';
 COMMENT ON COLUMN "word_core_image"."image_url" IS '生成的2D极简认知语言学图式矢量简笔画持久化图片URL';
 COMMENT ON COLUMN "word_core_image"."image_status" IS '生图任务执行状态：SUCCESS(成功)/FAILED(失败)/PENDING(等待中)/SKIPPED(跳过不生图)';
-COMMENT ON COLUMN "word_core_image"."image_model" IS '使用的文生图大底座模型标识（如 doubao-seed-image-3.0）';
+COMMENT ON COLUMN "word_core_image"."llm_model" IS '生成拓扑网络与文生图提示词的文本大模型标识（如 deepseek-chat）';
+COMMENT ON COLUMN "word_core_image"."image_model" IS '使用的文生图大底座模型标识（如 doubao-seedream-4-0-250828）';
 COMMENT ON COLUMN "word_core_image"."create_time" IS '记录创建时间';
 COMMENT ON COLUMN "word_core_image"."update_time" IS '最后更新时间';
 

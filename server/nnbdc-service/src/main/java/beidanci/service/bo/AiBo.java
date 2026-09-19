@@ -251,6 +251,10 @@ public class AiBo {
         }
     }
 
+    public String getTextModel() {
+        return aiProperties != null ? aiProperties.getTextModel() : null;
+    }
+
     /**
      * 调用通义千问产生文本结果
      *

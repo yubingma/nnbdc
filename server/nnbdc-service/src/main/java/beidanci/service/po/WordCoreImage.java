@@ -42,6 +42,9 @@ public class WordCoreImage extends UuidPo {
     @Column(name = "image_status", length = 32)
     private String imageStatus;
 
+    @Column(name = "llm_model", length = 100)
+    private String llmModel;
+
     @Column(name = "image_model", length = 100)
     private String imageModel;
 
@@ -126,6 +129,14 @@ public class WordCoreImage extends UuidPo {
 
     public void setImageStatus(String imageStatus) {
         this.imageStatus = imageStatus;
+    }
+
+    public String getLlmModel() {
+        return llmModel;
+    }
+
+    public void setLlmModel(String llmModel) {
+        this.llmModel = llmModel;
     }
 
     public String getImageModel() {
