@@ -63,6 +63,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     private RestTemplate restTemplate;
 
     @PostConstruct
+    @SuppressWarnings("null")
     public void init() {
         setDao(wordCoreImageDao);
         this.okHttpClient = new OkHttpClient.Builder()
