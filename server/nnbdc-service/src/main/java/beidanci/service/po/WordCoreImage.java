@@ -30,7 +30,7 @@ public class WordCoreImage extends UuidPo {
     @Column(name = "schema_desc", length = 1000)
     private String schemaDesc;
 
-    @Column(name = "topology_json", columnDefinition = "MEDIUMTEXT")
+    @Column(name = "topology_json", columnDefinition = "TEXT")
     private String topologyJson;
 
     @Column(name = "image_prompt", columnDefinition = "TEXT")

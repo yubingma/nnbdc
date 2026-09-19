@@ -61,35 +61,6 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
     @PostConstruct
     public void init() {
         setDao(wordCoreImageDao);
-        ensureTableExists();
-    }
-
-    private void ensureTableExists() {
-        String sql = "CREATE TABLE IF NOT EXISTS `word_core_image` ("
-                + "`id` VARCHAR(32) NOT NULL,"
-                + "`word_id` VARCHAR(32) NOT NULL,"
-                + "`word` VARCHAR(100) NOT NULL,"
-                + "`is_applicable` TINYINT(1) NOT NULL DEFAULT 0,"
-                + "`not_applicable_reason` VARCHAR(255) DEFAULT NULL,"
-                + "`core_image` VARCHAR(255) DEFAULT NULL,"
-                + "`schema_desc` VARCHAR(1000) DEFAULT NULL,"
-                + "`topology_json` MEDIUMTEXT DEFAULT NULL,"
-                + "`image_prompt` TEXT DEFAULT NULL,"
-                + "`image_url` VARCHAR(500) DEFAULT NULL,"
-                + "`image_status` VARCHAR(32) DEFAULT NULL,"
-                + "`image_model` VARCHAR(100) DEFAULT NULL,"
-                + "`create_time` DATETIME NOT NULL,"
-                + "`update_time` DATETIME NOT NULL,"
-                + "PRIMARY KEY (`id`),"
-                + "UNIQUE KEY `idx_wci_word_id` (`word_id`),"
-                + "KEY `idx_wci_word` (`word`)"
-                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-        try {
-            jdbcTemplate.execute(sql);
-            log.info("word_core_image 数据表检查/初始化完成");
-        } catch (Exception e) {
-            log.error("初始化 word_core_image 数据表失败: ", e);
-        }
     }
 
     public WordCoreImage findByWordId(String wordId) {

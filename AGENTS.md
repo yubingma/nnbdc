@@ -45,6 +45,15 @@
 - 生产库、开发库连接方式见 ~/.zprofile
 - 严禁私自修改生产数据库。若需修改, 必须经过我的明确授权。
 
+## 数据库类型与 SQL 规范
+- 本项目后端统一使用 **PostgreSQL** 数据库。
+- 编写 SQL 升级脚本（`server/db_upgrade/`）或 JPA 注解时，必须严格遵守 **PostgreSQL** 语法：
+  - 严禁使用 MySQL 方言特性（如 `ENGINE=InnoDB`、`MEDIUMTEXT`、表内 `INDEX name (col)` 语法等）。
+  - 大文本字段统一使用 `TEXT`。
+  - 索引使用标准的 `CREATE INDEX IF NOT EXISTS ... ON table_name (column_name);`。
+  - 布尔类型统一使用 `BOOLEAN`。
+
+
 ## Think Before Coding
 
 Don't assume. Don't hide confusion. Surface tradeoffs.
