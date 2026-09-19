@@ -706,42 +706,18 @@ public class SystemHealthCheckBo {
                 ));
             }
             
-            // 检查序号是否从1开始
-            Integer firstSeq = (Integer) dictWords.get(0)[1];
-            if (firstSeq != 1) {
-                String firstWord = (String) dictWords.get(0)[2];
-                issues.add(new SystemHealthIssue(
-                    "序号不连续",
-                    String.format("词典 %s 第一个单词 '%s' 序号不是1，实际序号: %d", dictName, firstWord, firstSeq),
-                    "dict_word_sequence"
-                ));
-            }
-            
-            // 检查序号是否连续
-            for (int i = 0; i < dictWords.size(); i++) {
-                Integer actualSeq = (Integer) dictWords.get(i)[1];
-                Integer expectedSeq = i + 1;
-                if (!actualSeq.equals(expectedSeq)) {
-                    String wordSpell = (String) dictWords.get(i)[2];
+            // 稀疏保序架构：用户词典自然允许删除产生的稀疏空洞，仅检查是否存在非法非正数序号
+            for (Object[] dw : dictWords) {
+                Integer seq = (Integer) dw[1];
+                if (seq == null || seq <= 0) {
+                    String wordSpell = (String) dw[2];
                     issues.add(new SystemHealthIssue(
-                        "序号不连续",
-                        String.format("词典 %s 位置%d断开，期望序号: %d, 实际序号: %d, 单词: '%s'", 
-                            dictName, expectedSeq, expectedSeq, actualSeq, wordSpell),
+                        "序号非法",
+                        String.format("词典 %s 单词 '%s' 序号非法: %s (必须大于0)", dictName, wordSpell, seq),
                         "dict_word_sequence"
                     ));
+                    break;
                 }
-            }
-            
-            // 检查最大序号是否等于总单词数
-            Integer maxSeq = (Integer) dictWords.get(dictWords.size() - 1)[1];
-            if (!maxSeq.equals(actualWordCount)) {
-                String lastWord = (String) dictWords.get(dictWords.size() - 1)[2];
-                issues.add(new SystemHealthIssue(
-                    "序号不连续",
-                    String.format("词典 %s 最大序号不等于总单词数，最大序号: %d, 总单词数: %d, 单词: '%s'", 
-                        dictName, maxSeq, actualWordCount, lastWord),
-                    "dict_word_sequence"
-                ));
             }
             
         } catch (DataAccessException e) {

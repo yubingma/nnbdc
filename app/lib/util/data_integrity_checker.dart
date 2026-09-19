@@ -207,7 +207,7 @@ class DataIntegrityChecker {
     return result;
   }
 
-  /// 检查用户词典单词序号连续性
+  /// 检查用户词典单词序号合法性（稀疏保序：允许空洞，仅防御非法非正数序号）
   Future<void> _checkUserDictWordSequences(IntegrityCheckResult result, String userId) async {
     try {
       // 获取用户拥有的词典
@@ -220,22 +220,12 @@ class DataIntegrityChecker {
             .get();
         if (wordsList.isEmpty) continue;
 
-        // 检查序号是否从1开始
-        if (wordsList.first.seq != 1) {
-          result.addIssue('序号不连续', '词典 "${dict.name}" 第一个单词序号不是1', 'dict_word_sequence');
-        }
-
-        // 检查序号是否连续
-        for (int i = 0; i < wordsList.length; i++) {
-          if (wordsList[i].seq != i + 1) {
-            result.addIssue('序号不连续', '词典 "${dict.name}" 位置${i + 1}的单词序号不正确', 'dict_word_sequence');
+        // 稀疏保序架构下：仅检查是否存在非法负数或零序号
+        for (final dw in wordsList) {
+          if (dw.seq <= 0) {
+            result.addIssue('序号非法', '词典 "${dict.name}" 单词ID ${dw.wordId} 序号非法: ${dw.seq}', 'dict_word_sequence');
             break;
           }
-        }
-
-        // 检查最大序号是否等于总单词数
-        if (wordsList.last.seq != wordsList.length) {
-          result.addIssue('序号不连续', '词典 "${dict.name}" 最大序号不等于总单词数', 'dict_word_sequence');
         }
       }
     } catch (e, stack) {
@@ -244,7 +234,7 @@ class DataIntegrityChecker {
     }
   }
 
-  /// 检查词典单词序号连续性
+  /// 检查词典单词序号连续性与合法性
   Future<void> _checkDictWordSequences(IntegrityCheckResult result) async {
     try {
       // 获取所有词典
@@ -257,22 +247,31 @@ class DataIntegrityChecker {
             .get();
         if (wordsList.isEmpty) continue;
 
-        // 检查序号是否从1开始
-        if (wordsList.first.seq != 1) {
-          result.addIssue('序号不连续', '词典 "${dict.name}" 第一个单词序号不是1', 'dict_word_sequence');
+        // 用户自定义/个人词典：遵循稀疏保序架构，仅检查非法非正数序号
+        if (dict.ownerId != Global.sysUserId) {
+          for (final dw in wordsList) {
+            if (dw.seq <= 0) {
+              result.addIssue('序号非法', '词典 "${dict.name}" 单词ID ${dw.wordId} 序号非法: ${dw.seq}', 'dict_word_sequence');
+              break;
+            }
+          }
+          continue;
         }
 
-        // 检查序号是否连续
+        // 系统官方词典：作为标准预置母库，检查规范连续性
+        if (wordsList.first.seq != 1) {
+          result.addIssue('序号不连续', '系统词典 "${dict.name}" 第一个单词序号不是1', 'dict_word_sequence');
+        }
+
         for (int i = 0; i < wordsList.length; i++) {
           if (wordsList[i].seq != i + 1) {
-            result.addIssue('序号不连续', '词典 "${dict.name}" 位置${i + 1}的单词序号不正确', 'dict_word_sequence');
+            result.addIssue('序号不连续', '系统词典 "${dict.name}" 位置${i + 1}的单词序号不正确', 'dict_word_sequence');
             break;
           }
         }
 
-        // 检查最大序号是否等于总单词数
         if (wordsList.last.seq != wordsList.length) {
-          result.addIssue('序号不连续', '词典 "${dict.name}" 最大序号不等于总单词数', 'dict_word_sequence');
+          result.addIssue('序号不连续', '系统词典 "${dict.name}" 最大序号不等于总单词数', 'dict_word_sequence');
         }
       }
     } catch (e, stack) {
@@ -1094,21 +1093,15 @@ class DataIntegrityChecker {
             .get();
         if (wordsList.isEmpty) continue;
 
-        // 检查是否需要修复
-        bool needsFix = false;
-        for (int i = 0; i < wordsList.length; i++) {
-          if (wordsList[i].seq != i + 1) {
-            needsFix = true;
-            break;
-          }
-        }
+        // 稀疏保序架构：仅当出现非法序号（如 <= 0）时才需要修复，自然空洞合法无需重排
+        bool needsFix = wordsList.any((dw) => dw.seq <= 0);
 
         // 如果需要修复，调用重新排序方法
         if (needsFix) {
           // 判断是否为生词本
           bool genLog = dict.name == '生词本';
           await _db.dictWordsDao.fixDictOrder(dict.id, genLog);
-          fixResult.addFixed('修复词典 "${dict.name}" 单词序号');
+          fixResult.addFixed('修复词典 "${dict.name}" 异常单词序号');
         }
       }
     } catch (e, stack) {
