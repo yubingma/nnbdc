@@ -563,7 +563,7 @@ class WordListController extends ChangeNotifier {
       
       final String providerType = args.wordsProvider.runtimeType.toString();
       final bool isTodayTask = providerType == 'StageWordsProvider' ||
-          ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表'].contains(args.appBarTitle);
+          ['学习中', '今日新词', '今日旧词', '今日单词', '单词列表'].contains(args.appBarTitle);
       final bool todayStudyStarted = Global.getLoggedInUser()?.todayStudyStarted ?? false;
 
       if (todayStudyStarted && isTodayTask) {
@@ -603,7 +603,7 @@ class WordListController extends ChangeNotifier {
 
       final String providerType = args.wordsProvider.runtimeType.toString();
       final bool isTodayTask = providerType == 'StageWordsProvider' ||
-          ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表'].contains(args.appBarTitle);
+          ['学习中', '今日错词', '历史错词', '今日新词', '今日旧词', '今日单词', '单词列表'].contains(args.appBarTitle);
       final bool todayStudyStarted = Global.getLoggedInUser()?.todayStudyStarted ?? false;
 
       if ((todayStudyStarted && isTodayTask) || args.wordsProvider.keepWordsOnMaster) {

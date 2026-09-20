@@ -702,6 +702,7 @@ class _WordItemState extends State<WordItem> {
       case '学习中':
       case '单词列表':
       case '今日错词':
+      case '历史错词':
       case '今日新词':
       case '今日旧词':
       case '今日单词':
@@ -719,6 +720,7 @@ class _WordItemState extends State<WordItem> {
       case '学习中':
       case '单词列表':
       case '今日错词':
+      case '历史错词':
       case '今日新词':
       case '今日旧词':
       case '今日单词':

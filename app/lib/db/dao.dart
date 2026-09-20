@@ -2377,6 +2377,84 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
         .get();
   }
 
+  /// 获取用户的所有历史错词（按最新出错时间倒序）
+  Future<List<UserWrongWord>> getAllWrongWords(String userId) async {
+    return (select(userWrongWords)
+          ..where((uw) => uw.userId.equals(userId))
+          ..orderBy([
+            (uw) => OrderingTerm(
+                expression: coalesce([uw.updateTime, uw.createTime]),
+                mode: OrderingMode.desc)
+          ]))
+        .get();
+  }
+
+  /// 获取用户的所有历史错词总数
+  Future<int> getAllWrongWordsCount(String userId) async {
+    final query = selectOnly(userWrongWords)
+      ..addColumns([userWrongWords.wordId.count(distinct: true)])
+      ..where(userWrongWords.userId.equals(userId));
+    final row = await query.getSingle();
+    return row.read(userWrongWords.wordId.count(distinct: true)) ?? 0;
+  }
+
+  /// 从错题本中移除某个错词
+  Future<bool> removeWrongWord(String userId, String wordId, {bool genLog = true}) async {
+    final entity = await getEntity(userId, wordId);
+    if (entity != null) {
+      await deleteEntity(entity, genLog);
+      return true;
+    }
+    return false;
+  }
+
+  /// 从历史学习评级日志(learning_logs)中提取所有做错过的单词(rating == 1)，回填到 userWrongWords 表
+  Future<int> backfillFromLearningLogs(String userId) async {
+    final db = attachedDatabase;
+    try {
+      // 1. 查询 learning_logs 中该用户所有 rating == 1 的不同 wordId 以及最新做错时间
+      final wrongLogsQuery = db.selectOnly(db.learningLogs, distinct: true)
+        ..addColumns([db.learningLogs.wordId, db.learningLogs.createTime.max()])
+        ..where(db.learningLogs.userId.equals(userId) & db.learningLogs.rating.equals(1))
+        ..groupBy([db.learningLogs.wordId]);
+      final wrongLogRows = await wrongLogsQuery.get();
+      if (wrongLogRows.isEmpty) return 0;
+
+      // 2. 查出当前 userWrongWords 已有的 wordId 集合，避免重复插入
+      final existingWords = await (selectOnly(userWrongWords)
+            ..addColumns([userWrongWords.wordId])
+            ..where(userWrongWords.userId.equals(userId)))
+          .get();
+      final existingSet = existingWords.map((r) => r.read(userWrongWords.wordId)!).toSet();
+
+      int insertedCount = 0;
+      for (final row in wrongLogRows) {
+        final wordId = row.read(db.learningLogs.wordId);
+        if (wordId == null || existingSet.contains(wordId)) continue;
+        final lastWrongTime = row.read(db.learningLogs.createTime.max()) ?? AppClock.now();
+
+        final entry = UserWrongWord(
+          userId: userId,
+          wordId: wordId,
+          createTime: lastWrongTime,
+          updateTime: lastWrongTime,
+        );
+        await into(userWrongWords).insert(entry, mode: InsertMode.insertOrIgnore);
+        await DbLogUtil.logOperation(userId, 'INSERT', 'userWrongWords', '$userId-$wordId', entry);
+        insertedCount++;
+      }
+
+      if (insertedCount > 0) {
+        ThrottledDbSyncService().requestSync();
+        Global.logger.i('✅ 成功从 learning_logs 回填 $insertedCount 个历史错词到 userWrongWords');
+      }
+      return insertedCount;
+    } catch (e) {
+      Global.logger.e('从 learning_logs 回填错词失败: $e');
+      return 0;
+    }
+  }
+
   /// 删除用户的所有错词记录
   /// [userId] 用户ID
   /// [filters] 可选的过滤条件，Map<字段名, 字段值>，只删除匹配的记录

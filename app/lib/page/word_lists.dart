@@ -442,18 +442,37 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     );
   }
 
-  /// 4. 专项突破板块 (形近词)
+  /// 4. 专项突破板块 (历史错词、形近词)
   Widget _buildSpecialSection(bool isDarkMode) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
+    final historyWrongList = _findListByName('历史错词');
     final confusableList = _findListByName('形近词');
+
+    final historyWrongCount = historyWrongList?.wordCount ?? 0;
+    final hasHistoryWrong = historyWrongCount > 0;
+    final historyWrongColor = hasHistoryWrong
+        ? (isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B))
+        : themeConfig.textSecondary.withValues(alpha: 0.45);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader('专项突破', textColor),
 
+        _buildHorizontalWordListCard(
+          isDarkMode: isDarkMode,
+          icon: Icons.history_edu_rounded,
+          iconColor: historyWrongColor,
+          title: '历史错词',
+          subtitle: '历史做错词汇·专项查漏补缺',
+          countText: '$historyWrongCount 词',
+          onTap: () {
+            toHistoryWrongWordsListPage()?.then((_) => loadData());
+          },
+        ),
+        const SizedBox(height: 10),
         _buildHorizontalWordListCard(
           isDarkMode: isDarkMode,
           icon: Icons.compare_arrows_rounded,

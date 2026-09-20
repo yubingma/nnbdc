@@ -2418,9 +2418,9 @@ class WordBo {
     }
   }
 
-  Future<Result<int>> getWrongWordOrder(String spell, String userId) async {
+  Future<Result<int>> getWrongWordOrder(String spell, String userId, {bool isHistory = false}) async {
     try {
-      Global.logger.d('开始本地查询错词位置: spell=$spell, userId=$userId');
+      Global.logger.d('开始本地查询错词位置: spell=$spell, userId=$userId, isHistory=$isHistory');
       final db = MyDatabase.instance;
       final user = await db.usersDao.getUserById(userId);
       if (user == null) {
@@ -2439,9 +2439,23 @@ class WordBo {
         Global.logger.d('单词 $spell 不在错词列表中');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
+
+      final wrongTime = wrongWord.updateTime;
       final countQuery = db.selectOnly(db.userWrongWords)
-        ..addColumns([countAll()])
-        ..where(db.userWrongWords.userId.equals(userId) & db.userWrongWords.createTime.isSmallerOrEqualValue(wrongWord.createTime));
+        ..addColumns([countAll()]);
+      if (isHistory) {
+        countQuery.where(db.userWrongWords.userId.equals(userId) &
+            coalesce([db.userWrongWords.updateTime, db.userWrongWords.createTime]).isBiggerOrEqualValue(wrongTime));
+      } else {
+        final now = AppClock.now();
+        final start = DateUtils.businessDayStart(now);
+        final end = DateUtils.businessDayEnd(now);
+        countQuery.where(db.userWrongWords.userId.equals(userId) &
+            ((db.userWrongWords.createTime.isBiggerOrEqualValue(start) & db.userWrongWords.createTime.isSmallerThanValue(end)) |
+                (db.userWrongWords.updateTime.isBiggerOrEqualValue(start) & db.userWrongWords.updateTime.isSmallerThanValue(end))) &
+            coalesce([db.userWrongWords.updateTime, db.userWrongWords.createTime]).isBiggerOrEqualValue(wrongTime));
+      }
+
       final countResult = await countQuery.getSingle();
       final position = countResult.read(countAll()) ?? 0;
       Global.logger.d('查询错词位置成功: spell=$spell, position=$position');
@@ -2531,6 +2545,54 @@ class WordBo {
     }
   }
 
+  /// 将 UserWrongWord 列表批量转换为带词义的 WordVo 列表
+  Future<List<WordVo>> _convertWrongWordsToWordVos(List<UserWrongWord> wrongWords, String userId) async {
+    final db = MyDatabase.instance;
+    List<WordVo> wordVos = [];
+    Set<String> seenWordIds = {};
+    for (final wrongWord in wrongWords) {
+      if (!seenWordIds.add(wrongWord.wordId)) {
+        continue;
+      }
+      final word = await db.wordsDao.getWordById(wrongWord.wordId);
+      if (word != null) {
+        final wordVo = WordVo.c2(word.spell)
+          ..id = word.id
+          ..shortDesc = word.shortDesc
+          ..longDesc = word.longDesc
+          ..pronounce = word.pronounce
+          ..americaPronounce = word.americaPronounce
+          ..britishPronounce = word.britishPronounce
+          ..popularity = word.popularity;
+        // 使用 getWordMeaningItems 方法进行词书过滤
+        final meaningItems = await getWordMeaningItems(word.id, userId);
+        List<MeaningItemVo> meaningItemVos = [];
+        for (final mi in meaningItems) {
+          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
+        }
+        wordVo.meaningItems = meaningItemVos;
+        wordVos.add(wordVo);
+      }
+    }
+    return wordVos;
+  }
+
+  /// 检查并执行历史错词从 learning_logs 回填（仅一次）
+  Future<void> backfillWrongWordsIfNeeded(String userId) async {
+    try {
+      final db = MyDatabase.instance;
+      final backfillKey = 'backfill_wrong_words_v1_$userId';
+      final hasBackfilled = await db.localParamsDao.getValue(backfillKey) == 'true';
+      if (!hasBackfilled) {
+        await db.userWrongWordsDao.backfillFromLearningLogs(userId);
+        await db.localParamsDao.setValue(backfillKey, 'true');
+      }
+    } catch (e) {
+      Global.logger.e('历史错词回填检查异常: $e');
+    }
+  }
+
+  /// 获取今日错词
   Future<List<WordVo>> getAnswerWrongWords(String userId) async {
     try {
       final db = MyDatabase.instance;
@@ -2550,36 +2612,39 @@ class WordBo {
           (tbl) => OrderingTerm(expression: coalesce([tbl.updateTime, tbl.createTime]), mode: OrderingMode.desc)
         ]);
       final wrongWords = await wrongWordsQuery.get();
-      List<WordVo> wordVos = [];
-      Set<String> seenWordIds = {};
-      for (final wrongWord in wrongWords) {
-        if (!seenWordIds.add(wrongWord.wordId)) {
-          continue;
-        }
-        final word = await db.wordsDao.getWordById(wrongWord.wordId);
-        if (word != null) {
-          final wordVo = WordVo.c2(word.spell)
-            ..id = word.id
-            ..shortDesc = word.shortDesc
-            ..longDesc = word.longDesc
-            ..pronounce = word.pronounce
-            ..americaPronounce = word.americaPronounce
-            ..britishPronounce = word.britishPronounce
-            ..popularity = word.popularity;
-          // 使用 getWordMeaningItems 方法进行词书过滤
-          final meaningItems = await getWordMeaningItems(word.id, userId);
-          List<MeaningItemVo> meaningItemVos = [];
-          for (final mi in meaningItems) {
-            meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
-          }
-          wordVo.meaningItems = meaningItemVos;
-          wordVos.add(wordVo);
-        }
-      }
-      return wordVos;
+      return await _convertWrongWordsToWordVos(wrongWords, userId);
     } catch (e, stackTrace) {
       Global.logger.e('获取今日错词失败: $e', stackTrace: stackTrace);
       return [];
+    }
+  }
+
+  /// 获取历史所有错词（错题本）
+  Future<List<WordVo>> getHistoryWrongWords(String userId) async {
+    try {
+      await backfillWrongWordsIfNeeded(userId);
+      final db = MyDatabase.instance;
+      final user = await db.usersDao.getUserById(userId);
+      if (user == null) {
+        throw Exception('用户不存在');
+      }
+      final wrongWords = await db.userWrongWordsDao.getAllWrongWords(userId);
+      return await _convertWrongWordsToWordVos(wrongWords, userId);
+    } catch (e, stackTrace) {
+      Global.logger.e('获取历史错词失败: $e', stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  /// 从错题本中移除指定单词
+  Future<Result<bool>> removeWrongWord(String userId, String wordId) async {
+    try {
+      final db = MyDatabase.instance;
+      final success = await db.userWrongWordsDao.removeWrongWord(userId, wordId, genLog: true);
+      return Result("SUCCESS", "已移出错题本", success);
+    } catch (e) {
+      Global.logger.e('从错题本移除单词失败: $e');
+      return Result("ERROR", "移除失败: $e", false);
     }
   }
 
@@ -2701,6 +2766,9 @@ class WordBo {
             (db.userWrongWords.updateTime.isBiggerOrEqualValue(start) & db.userWrongWords.updateTime.isSmallerThanValue(end)));
       final wrongWordsCount = await wrongWordsQuery.getSingle();
       wordLists.add(WordList("今日错词", wrongWordsCount.read(db.userWrongWords.wordId.count(distinct: true)) ?? 0));
+      await backfillWrongWordsIfNeeded(user.id);
+      final historyWrongWordsCount = await db.userWrongWordsDao.getAllWrongWordsCount(user.id);
+      wordLists.add(WordList("历史错词", historyWrongWordsCount));
       final newWordsQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))

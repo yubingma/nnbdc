@@ -48,6 +48,7 @@ import '../walkman.dart';
 import '../word_detail.dart';
 import 'ai_story_page.dart';
 import 'dict_words.dart';
+import 'wrong_words.dart';
 import 'edit_meaning_dialog.dart';
 import 'modes/handwriting_mode_item.dart';
 import 'import_from_excel_page.dart';
@@ -2115,10 +2116,11 @@ class WordListPageState extends State<WordListPage>
     }
 
     // 3. 掌握/删除/重学 逻辑
-    const specialLists = ['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词'];
+    final bool isWrongList = title == '今日错词' || title == '历史错词';
+    const specialLists = ['学习中', '单词列表', '今日新词', '今日旧词', '今日单词'];
     final bool isSpecialList = specialLists.contains(title);
 
-    if (title != '已掌握' && !isSpecialList) {
+    if (title != '已掌握' && (!isSpecialList || isWrongList)) {
       actions.add(CustomSlidableAction(
         onPressed: (_) => isMastered
             ? onUnmasterBtnPressed(word, i)
@@ -2134,8 +2136,8 @@ class WordListPageState extends State<WordListPage>
       ));
     }
 
-    if (args.showDelBtn || isSpecialList) {
-      if (isMastered && isSpecialList) {
+    if (args.showDelBtn || isSpecialList || isWrongList) {
+      if (isMastered && isSpecialList && !isWrongList) {
         actions.add(CustomSlidableAction(
           onPressed: (_) => onUnmasterBtnPressed(word, i),
           backgroundColor: Colors.grey[400]!,
@@ -2156,6 +2158,10 @@ class WordListPageState extends State<WordListPage>
           buttonText = '重学';
           color = const Color(0xFF2196F3);
           icon = Icons.replay;
+        } else if (isWrongList) {
+          buttonText = '移出';
+          color = const Color(0xFFEF5350);
+          icon = Icons.delete_outline;
         } else if (isSpecialList) {
           buttonText = '掌握';
           color = const Color(0xFF26A69A);
@@ -3118,35 +3124,37 @@ class WordListPageState extends State<WordListPage>
                       )
                     : const SizedBox(width: 16),
                 Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          args.appBarTitle,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: themeConfig.textPrimary,
-                            letterSpacing: -0.2,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (dataLoaded)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: Text(
-                            '($totalWordCount)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: themeConfig.textSecondary.withValues(alpha: 0.8),
-                              letterSpacing: 0.2,
+                  child: ['今日错词', '历史错词'].contains(args.appBarTitle)
+                      ? _buildWrongWordsAppBarTitle(isDarkMode, themeConfig)
+                      : Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                args.appBarTitle,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: themeConfig.textPrimary,
+                                  letterSpacing: -0.2,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
+                            if (dataLoaded)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Text(
+                                  '($totalWordCount)',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: themeConfig.textSecondary.withValues(alpha: 0.8),
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
                 ),
 
                       /// 一体化微光快捷定位轻胶囊 [ S | 10 | E ]
@@ -4067,6 +4075,106 @@ class WordListPageState extends State<WordListPage>
       } catch (e) {
         Global.logger.e('分享 PDF 失败', error: e);
       }
+    }
+  }
+
+  Widget _buildWrongWordsAppBarTitle(bool isDarkMode, AppThemeConfig themeConfig) {
+    final bool isHistory = args.appBarTitle == '历史错词';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 30,
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: themeConfig.cardBorder,
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildWrongWordSegmentPill('今日', !isHistory, () => _switchWrongWordsMode(false), isDarkMode, themeConfig),
+              _buildWrongWordSegmentPill('全部', isHistory, () => _switchWrongWordsMode(true), isDarkMode, themeConfig),
+            ],
+          ),
+        ),
+        if (dataLoaded)
+          Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: Text(
+              '($totalWordCount)',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: themeConfig.textSecondary.withValues(alpha: 0.8),
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildWrongWordSegmentPill(String title, bool isSelected, VoidCallback onTap, bool isDarkMode, AppThemeConfig themeConfig) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDarkMode ? const Color(0xFF334155) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(13),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  )
+                ]
+              : null,
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            color: isSelected ? themeConfig.textPrimary : themeConfig.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _switchWrongWordsMode(bool toHistory) async {
+    if (isQuerying) return;
+    final currentIsHistory = args.appBarTitle == '历史错词';
+    if (currentIsHistory == toHistory) return;
+
+    setState(() {
+      args.appBarTitle = toHistory ? '历史错词' : '今日错词';
+      args.wordsProvider = WrongWordsProvider(isHistory: toHistory);
+      args.bookMarkProvider = WrongWordsBookMarkProvider(isHistory: toHistory);
+      dataLoaded = false;
+    });
+
+    await controller.loadData(
+      checkAndShowGuide: _checkAndShowGuide,
+      restoreAsrIfNeeded: (caller) {
+        _restoreAsrIfNeeded(caller);
+      },
+    );
+    if (mounted) {
+      setState(() {});
     }
   }
 }

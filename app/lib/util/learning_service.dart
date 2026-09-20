@@ -106,7 +106,7 @@ class LearningService {
           // 2. 清理相关联表 (在此处集中处理)
           await db.learningWordsDao.deleteMasteredLearningWords(user.id); // 删除已掌握的学习中单词
           await db.learningWordsDao.deleteMasteredWords(user.id); // 删除已经在 mastered_words 表中的学习单词
-          await db.userWrongWordsDao.clearUserWrongWords(user.id, true); // 清空错词
+          // 注意：不再清空用户错词(userWrongWords)，让错词在错题本中长期沉淀形成“历史错词”
           // 清空旧的阶段复习书签，防止跨天数据污染
           await db.bookmarksDao.deleteBatchWordListBookmarks(user.id);
 

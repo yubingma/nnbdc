@@ -1,3 +1,4 @@
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/router.dart';
 import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
@@ -10,14 +11,21 @@ import 'package:nnbdc/util/toast_util.dart';
 import '../../util/word_util.dart';
 
 class WrongWordsProvider with WordsProvider {
+  final bool isHistory;
+
+  WrongWordsProvider({this.isHistory = false});
+
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
-    var allWords = await WordBo().getAnswerWrongWords(Global.getLoggedInUser()!.id);
+    final userId = Global.getLoggedInUser()!.id;
+    final allWords = isHistory
+        ? await WordBo().getHistoryWrongWords(userId)
+        : await WordBo().getAnswerWrongWords(userId);
     var results = PagedResults<WordWrapper>(allWords.length);
-    
+
     if (fromIndex < 0) fromIndex = 0;
     int end = (fromIndex + pageSize) > allWords.length ? allWords.length : (fromIndex + pageSize);
-    
+
     for (var i = fromIndex; i < end; i++) {
       var word = allWords[i];
       results.rows.add(WordWrapper(word, word));
@@ -28,21 +36,28 @@ class WrongWordsProvider with WordsProvider {
   @override
   Future<bool> masterWord(WordWrapper wordWrapper) async {
     var result = await WordBo().setLearningWordAsMastered(Global.getLoggedInUser()!.id, wordWrapper.word.id!, true);
-    if (result.success) {
-    } else {
-      ToastUtil.error(result.msg!);
+    if (!result.success) {
+      ToastUtil.error(result.msg ?? '标记掌握失败');
     }
     return result.success;
   }
 
   @override
   Future<bool> deleteWord(WordWrapper wordWrapper) async {
-    return await masterWord(wordWrapper);
+    // 错题本的删除行为：移出错题本
+    final result = await WordBo().removeWrongWord(Global.getLoggedInUser()!.id, wordWrapper.word.id!);
+    if (result.success) {
+      ToastUtil.success('已移出错题本');
+      return true;
+    } else {
+      ToastUtil.error(result.msg ?? '移出失败');
+      return false;
+    }
   }
 
   @override
   Future<int> getWordIndex(String spell) async {
-    var result = await WordBo().getWrongWordOrder(spell, Global.getLoggedInUser()!.id);
+    var result = await WordBo().getWrongWordOrder(spell, Global.getLoggedInUser()!.id, isHistory: isHistory);
     if (result.success) {
       var order = result.data!;
       return order == -1 ? -1 : (order - 1);
@@ -54,8 +69,10 @@ class WrongWordsProvider with WordsProvider {
 
   @override
   Future<bool?> getWordLearningStatus(String wordId) async {
-    // "今日错词"页面的单词都是错词，学习状态应该是"学习中"
-    return false;
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return false;
+    // 检查单词是否已在 mastered_words 表中达成掌握
+    return await MyDatabase.instance.masteredWordsDao.isWordMastered(userId, wordId);
   }
 }
 
@@ -72,7 +89,11 @@ class WrongWordsProgressProvider implements WordProgressProvider {
 }
 
 class WrongWordsBookMarkProvider implements BookMarkProvider {
-  static const String bookMarkName = 'wrong_words_list';
+  final bool isHistory;
+
+  WrongWordsBookMarkProvider({this.isHistory = false});
+
+  String get bookMarkName => isHistory ? 'history_wrong_words_list' : 'wrong_words_list';
 
   @override
   Future<BookMarkVo?> getBookMark() async {
@@ -98,8 +119,20 @@ class WrongWordsBookMarkProvider implements BookMarkProvider {
   }
 }
 
-Future<dynamic>? toWrongWordsListPage() {
+Future<dynamic>? toWrongWordsListPage({bool isHistory = false}) {
+  final title = isHistory ? '历史错词' : '今日错词';
   return goRouter.push('/word_list',
-      extra:
-          WordListPageArgs('今日错词', WrongWordsProvider(), true, true, false, '掌握度', WrongWordsProgressProvider(), WrongWordsBookMarkProvider(), null));
+      extra: WordListPageArgs(
+        title,
+        WrongWordsProvider(isHistory: isHistory),
+        true,
+        true,
+        false,
+        '掌握度',
+        WrongWordsProgressProvider(),
+        WrongWordsBookMarkProvider(isHistory: isHistory),
+        null,
+      ));
 }
+
+Future<dynamic>? toHistoryWrongWordsListPage() => toWrongWordsListPage(isHistory: true);
