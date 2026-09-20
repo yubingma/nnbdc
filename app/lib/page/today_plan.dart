@@ -3216,119 +3216,93 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               width: 1,
                             ),
                           ),
-                          child: Stack(
+                          child: Row(
                             children: [
-                              // 底部极细非线性进度光轨（提示在 1~500 范围内的平滑位置）
-                              Positioned(
-                                left: 4,
-                                right: 4,
-                                bottom: 2,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(1.5),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: FractionallySizedBox(
-                                      widthFactor: _batchSizeToProgress(selectedBatchSize),
-                                      child: Container(
-                                        height: 2.5,
-                                        decoration: BoxDecoration(
-                                          color: primaryColor.withValues(alpha: isDarkMode ? 0.45 : 0.35),
-                                          borderRadius: BorderRadius.circular(1.5),
+                              _buildAdvancedStepBtn(
+                                icon: Icons.remove_rounded,
+                                enabled: selectedBatchSize > 1,
+                                onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize - 1).clamp(1, batchSizeLimit)),
+                                isDarkMode: isDarkMode,
+                                isLargeRange: true,
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () async {
+                                    final inputVal = await _showBatchSizeInputDialog(
+                                      ctx,
+                                      selectedBatchSize,
+                                      primaryColor,
+                                      isDarkMode,
+                                    );
+                                    if (inputVal != null) {
+                                      setDialogState(() => selectedBatchSize = inputVal.clamp(1, batchSizeLimit));
+                                    }
+                                  },
+                                  onHorizontalDragStart: (_) {
+                                    dragAccumulator = 0;
+                                  },
+                                  onHorizontalDragUpdate: (details) {
+                                    dragAccumulator += details.primaryDelta ?? 0;
+                                    final threshold = selectedBatchSize > 50 ? 6.0 : 8.0;
+                                    if (dragAccumulator.abs() >= threshold) {
+                                      final dir = dragAccumulator > 0 ? 1 : -1;
+                                      final step = selectedBatchSize > 100
+                                          ? dir * 5
+                                          : (selectedBatchSize > 30 ? dir * 2 : dir);
+                                      dragAccumulator = 0;
+                                      final next = (selectedBatchSize + step).clamp(1, batchSizeLimit);
+                                      if (next != selectedBatchSize) {
+                                        HapticFeedback.selectionClick();
+                                        setDialogState(() => selectedBatchSize = next);
+                                      }
+                                    }
+                                  },
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        RichText(
+                                          text: TextSpan(
+                                            children: [
+                                              TextSpan(
+                                                text: '$selectedBatchSize',
+                                                style: TextStyle(
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontFamily: 'Roboto',
+                                                  color: primaryColor,
+                                                ),
+                                              ),
+                                              TextSpan(
+                                                text: ' 词/组',
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: primaryColor.withValues(alpha: 0.8),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
+                                        const SizedBox(width: 5),
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          size: 13,
+                                          color: primaryColor.withValues(alpha: 0.40),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  _buildAdvancedStepBtn(
-                                    icon: Icons.remove_rounded,
-                                    enabled: selectedBatchSize > 1,
-                                    onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize - 1).clamp(1, batchSizeLimit)),
-                                    isDarkMode: isDarkMode,
-                                    isLargeRange: true,
-                                  ),
-                                  Expanded(
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () async {
-                                        final inputVal = await _showBatchSizeInputDialog(
-                                          ctx,
-                                          selectedBatchSize,
-                                          primaryColor,
-                                          isDarkMode,
-                                        );
-                                        if (inputVal != null) {
-                                          setDialogState(() => selectedBatchSize = inputVal.clamp(1, batchSizeLimit));
-                                        }
-                                      },
-                                      onHorizontalDragStart: (_) {
-                                        dragAccumulator = 0;
-                                      },
-                                      onHorizontalDragUpdate: (details) {
-                                        dragAccumulator += details.primaryDelta ?? 0;
-                                        final threshold = selectedBatchSize > 50 ? 6.0 : 8.0;
-                                        if (dragAccumulator.abs() >= threshold) {
-                                          final dir = dragAccumulator > 0 ? 1 : -1;
-                                          final step = selectedBatchSize > 100
-                                              ? dir * 5
-                                              : (selectedBatchSize > 30 ? dir * 2 : dir);
-                                          dragAccumulator = 0;
-                                          final next = (selectedBatchSize + step).clamp(1, batchSizeLimit);
-                                          if (next != selectedBatchSize) {
-                                            HapticFeedback.selectionClick();
-                                            setDialogState(() => selectedBatchSize = next);
-                                          }
-                                        }
-                                      },
-                                      child: Center(
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            RichText(
-                                              text: TextSpan(
-                                                children: [
-                                                  TextSpan(
-                                                    text: '$selectedBatchSize',
-                                                    style: TextStyle(
-                                                      fontSize: 22,
-                                                      fontWeight: FontWeight.w800,
-                                                      fontFamily: 'Roboto',
-                                                      color: primaryColor,
-                                                    ),
-                                                  ),
-                                                  TextSpan(
-                                                    text: ' 词/组',
-                                                    style: TextStyle(
-                                                      fontSize: 12.5,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: primaryColor.withValues(alpha: 0.8),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 5),
-                                            Icon(
-                                              Icons.edit_outlined,
-                                              size: 13,
-                                              color: primaryColor.withValues(alpha: 0.40),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  _buildAdvancedStepBtn(
-                                    icon: Icons.add_rounded,
-                                    enabled: selectedBatchSize < batchSizeLimit,
-                                    onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize + 1).clamp(1, batchSizeLimit)),
-                                    isDarkMode: isDarkMode,
-                                    isLargeRange: true,
-                                  ),
-                                ],
+                              _buildAdvancedStepBtn(
+                                icon: Icons.add_rounded,
+                                enabled: selectedBatchSize < batchSizeLimit,
+                                onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize + 1).clamp(1, batchSizeLimit)),
+                                isDarkMode: isDarkMode,
+                                isLargeRange: true,
                               ),
                             ],
                           ),
@@ -3415,17 +3389,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         },
       ),
     );
-  }
-
-  static double _batchSizeToProgress(int val) {
-    final v = val.clamp(1, StudyConfig.maxBatchSize);
-    if (v <= 30) {
-      return ((v - 1) / 29) * 0.40;
-    } else if (v <= 100) {
-      return 0.40 + ((v - 30) / 70) * 0.30;
-    } else {
-      return 0.70 + ((v - 100) / 400) * 0.30;
-    }
   }
 
   /// 弹出每组单词数精确定制输入框（支持 1 ~ 500）
