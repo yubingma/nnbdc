@@ -2896,6 +2896,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 常用经典科学心流梯度（5档），整齐对称且自适应
     const batchSizeChips = [5, 10, 20, 30, 50];
     double dragAccumulator = 0;
+    double minNewWordsDragAccumulator = 0;
 
     showGeneralDialog(
       context: context,
@@ -3100,32 +3101,75 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 enabled: selected > 0,
                                 onTap: () => setDialogState(() => selected = (selected - 1).clamp(0, wordsPerDay)),
                                 isDarkMode: isDarkMode,
+                                isLargeRange: wordsPerDay > 30,
                               ),
                               Expanded(
-                                child: Center(
-                                  child: RichText(
-                                    text: TextSpan(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () async {
+                                    final inputVal = await _showMinNewWordsInputDialog(
+                                      ctx,
+                                      selected,
+                                      wordsPerDay,
+                                      primaryColor,
+                                      isDarkMode,
+                                    );
+                                    if (inputVal != null) {
+                                      setDialogState(() => selected = inputVal.clamp(0, wordsPerDay));
+                                    }
+                                  },
+                                  onHorizontalDragStart: (_) {
+                                    minNewWordsDragAccumulator = 0;
+                                  },
+                                  onHorizontalDragUpdate: (details) {
+                                    minNewWordsDragAccumulator += details.primaryDelta ?? 0;
+                                    if (minNewWordsDragAccumulator.abs() >= 8.0) {
+                                      final dir = minNewWordsDragAccumulator > 0 ? 1 : -1;
+                                      minNewWordsDragAccumulator = 0;
+                                      final next = (selected + dir).clamp(0, wordsPerDay);
+                                      if (next != selected) {
+                                        HapticFeedback.selectionClick();
+                                        setDialogState(() => selected = next);
+                                      }
+                                    }
+                                  },
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        TextSpan(
-                                          text: selected == 0 ? '不限制' : '$selected',
-                                          style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w800,
-                                            fontFamily: selected == 0 ? null : 'Roboto',
-                                            color: selected == 0
-                                                ? (isDarkMode ? Colors.white70 : const Color(0xFF334155))
-                                                : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                                        RichText(
+                                          text: TextSpan(
+                                            children: [
+                                              TextSpan(
+                                                text: selected == 0 ? '不限制' : '$selected',
+                                                style: TextStyle(
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontFamily: selected == 0 ? null : 'Roboto',
+                                                  color: selected == 0
+                                                      ? (isDarkMode ? Colors.white70 : const Color(0xFF334155))
+                                                      : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
+                                                ),
+                                              ),
+                                              if (selected > 0)
+                                                TextSpan(
+                                                  text: ' 词',
+                                                  style: TextStyle(
+                                                    fontSize: 12.5,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
-                                        if (selected > 0)
-                                          TextSpan(
-                                            text: ' 词',
-                                            style: TextStyle(
-                                              fontSize: 12.5,
-                                              fontWeight: FontWeight.w500,
-                                              color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                            ),
-                                          ),
+                                        const SizedBox(width: 5),
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          size: 13,
+                                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -3136,6 +3180,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 enabled: selected < wordsPerDay,
                                 onTap: () => setDialogState(() => selected = (selected + 1).clamp(0, wordsPerDay)),
                                 isDarkMode: isDarkMode,
+                                isLargeRange: wordsPerDay > 30,
                               ),
                             ],
                           ),
@@ -3419,13 +3464,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 );
   }
 
-  /// 弹出每组单词数精确定制输入框（支持 1 ~ 500）
-  Future<int?> _showBatchSizeInputDialog(
-    BuildContext parentContext,
-    int currentValue,
-    Color primaryColor,
-    bool isDarkMode,
-  ) {
+  /// 弹出精确定制数字输入框（支持自定义标题、范围与单位）
+  Future<int?> _showCustomNumberInputDialog({
+    required BuildContext parentContext,
+    required String title,
+    required String unit,
+    required int min,
+    required int max,
+    required String subtitle,
+    required int currentValue,
+    required Color primaryColor,
+    required bool isDarkMode,
+  }) {
     final textController = TextEditingController(text: '$currentValue');
     textController.selection = TextSelection(
       baseOffset: 0,
@@ -3436,7 +3486,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     return showGeneralDialog<int>(
       context: parentContext,
       barrierDismissible: true,
-      barrierLabel: '自定义每组单词数',
+      barrierLabel: title,
       barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.18),
       transitionDuration: const Duration(milliseconds: 200),
       transitionBuilder: (context, anim1, anim2, child) {
@@ -3450,9 +3500,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           void submit() {
             final text = textController.text.trim();
             final val = int.tryParse(text);
-            if (val == null || val < 1 || val > StudyConfig.maxBatchSize) {
+            if (val == null || val < min || val > max) {
               setInputState(() {
-                errorText = '请输入 1 ~ ${StudyConfig.maxBatchSize} 之间的整数';
+                errorText = '请输入 $min ~ $max 之间的整数';
               });
               return;
             }
@@ -3506,7 +3556,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '自定义每组单词数',
+                          title,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -3515,7 +3565,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '范围 1 ~ ${StudyConfig.maxBatchSize} 词/组',
+                          subtitle,
                           style: TextStyle(
                             fontSize: 12,
                             color: isDarkMode ? Colors.white38 : const Color(0xFF64748B),
@@ -3532,15 +3582,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             fontFamily: 'Roboto',
-                            color: primaryColor,
+                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
                           ),
                           decoration: InputDecoration(
                             hintText: '输入数量',
-                            suffixText: '词/组',
+                            suffixText: unit,
                             suffixStyle: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: primaryColor.withValues(alpha: 0.8),
+                              color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
                             ),
                             errorText: errorText,
                             filled: true,
@@ -3605,6 +3655,47 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           );
         },
       ),
+    );
+  }
+
+  /// 弹出每组单词数精确定制输入框（支持 1 ~ 500）
+  Future<int?> _showBatchSizeInputDialog(
+    BuildContext parentContext,
+    int currentValue,
+    Color primaryColor,
+    bool isDarkMode,
+  ) {
+    return _showCustomNumberInputDialog(
+      parentContext: parentContext,
+      title: '自定义每组单词数',
+      unit: '词/组',
+      min: 1,
+      max: StudyConfig.maxBatchSize,
+      subtitle: '范围 1 ~ ${StudyConfig.maxBatchSize} 词/组',
+      currentValue: currentValue,
+      primaryColor: primaryColor,
+      isDarkMode: isDarkMode,
+    );
+  }
+
+  /// 弹出今日最少新词精确定制输入框（支持 0 ~ wordsPerDay）
+  Future<int?> _showMinNewWordsInputDialog(
+    BuildContext parentContext,
+    int currentValue,
+    int wordsPerDay,
+    Color primaryColor,
+    bool isDarkMode,
+  ) {
+    return _showCustomNumberInputDialog(
+      parentContext: parentContext,
+      title: '自定义今日最少新词',
+      unit: '词',
+      min: 0,
+      max: wordsPerDay,
+      subtitle: '范围 0 ~ $wordsPerDay 词 (0 为不限制)',
+      currentValue: currentValue,
+      primaryColor: primaryColor,
+      isDarkMode: isDarkMode,
     );
   }
 
