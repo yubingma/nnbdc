@@ -606,7 +606,7 @@ public class AiBo {
      * @return 合成后的音频信息和字节流
      */
     public TtsResult generateSpeech(String text, String preferredVoicesStr, String voiceInstruction) {
-        String[] voices = {"longxiu_v3", "longsanshu_v3", "longanyang", "longxiaoxia_v3", "longxiaochun_v3", "longanhuan"};
+        String[] voices = {"longanyang", "longanhuan", "longanya_v3", "longxiaoxia_v3", "longxiaochun_v3"};
         if (preferredVoicesStr != null && !preferredVoicesStr.trim().isEmpty()) {
             voices = preferredVoicesStr.split(",");
             for (int i = 0; i < voices.length; i++) voices[i] = voices[i].trim();
@@ -659,15 +659,17 @@ public class AiBo {
             throw new RuntimeException("AI 调用失败: 请设置 dashscope_api_key");
         }
 
-        SpeechSynthesisParam param = SpeechSynthesisParam.builder()
+        SpeechSynthesisParam.SpeechSynthesisParamBuilder<?, ?> paramBuilder = SpeechSynthesisParam.builder()
                 .apiKey(apiKey)
                 .model(aiProperties.getTtsModel())
                 .voice(voice)
-                .format(SpeechSynthesisAudioFormat.MP3_16000HZ_MONO_128KBPS)
-                .build();
+                .format(SpeechSynthesisAudioFormat.MP3_24000HZ_MONO_256KBPS);
         
-        SpeechSynthesizer synthesizer = new SpeechSynthesizer(param, null);
+        SpeechSynthesizer synthesizer = new SpeechSynthesizer(paramBuilder.build(), null);
         ByteBuffer buffer = synthesizer.call(text);
+        if (buffer == null) {
+            throw new RuntimeException("CosyVoice 语音合成未返回有效音频流");
+        }
         
         byte[] audioBytes = new byte[buffer.remaining()];
         buffer.get(audioBytes);
