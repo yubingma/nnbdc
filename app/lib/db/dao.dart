@@ -705,8 +705,8 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     });
   }
 
-  // 删除词书中的单词（用户主动删除时删除后重排剩余词 seq 并生成 UPDATE 日志；
-  // genLog=false 仅供服务端日志回放，不重排）
+  // 删除词书中的单词（稀疏保序：删除后不重排剩余词 seq，仅生成 DELETE 日志；
+  // genLog=false 仅供服务端日志回放）
   // [invalidateTspCache] 语义同 [insertEntity]：批量回放置为 false，由调用方整批失效一次。
   Future<void> deleteEntity(DictWord entry, bool genLog, {bool invalidateTspCache = true}) async {
     if (genLog) {

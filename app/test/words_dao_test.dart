@@ -158,19 +158,18 @@ void main() {
       return query.get();
     }
 
-    test('删除中间词后剩余 seq 连续，且生成前移 UPDATE 日志与 DELETE 日志', () async {
+    test('删除中间词后稀疏保序（剩余 seq 不变），且仅生成 DELETE 日志、不生成 UPDATE 日志', () async {
       await insertDict(5);
       await insertWords(['w1', 'w2', 'w3', 'w4', 'w5'], [1, 2, 3, 4, 5]);
 
       await database.dictWordsDao.deleteDictWordWithCleanup(dictId, 'w3', userId, true);
 
-      // 剩余词 seq 连续为 1..4
-      expect(await seqs(), [1, 2, 3, 4]);
+      // 稀疏保序：剩余词保持原 seq，不前移重排
+      expect(await seqs(), [1, 2, 4, 5]);
 
-      // 被前移的词 w4、w5 各生成一条 UPDATE 日志
+      // 不重排剩余词，因此不生成任何 UPDATE 日志
       final updateLogs = await dictWordLogs(operate: 'UPDATE');
-      expect(updateLogs.length, 2);
-      expect(updateLogs.map((l) => l.recordId).toSet(), {'$dictId-w4', '$dictId-w5'});
+      expect(updateLogs, isEmpty);
 
       // 同时有 1 条 DELETE 日志
       final deleteLogs = await dictWordLogs(operate: 'DELETE');
@@ -201,7 +200,7 @@ void main() {
       expect((await dictWordLogs(operate: 'DELETE')).length, 1);
     });
 
-    test('断裂词书删除后自愈为从 1 开始的连续 seq', () async {
+    test('稀疏保序下断裂词书删除后不重排自愈，不生成 UPDATE 日志', () async {
       await insertDict(3);
       // 模拟历史断裂：seq 从 3 开始
       await insertWords(['wa', 'wb', 'wc'], [3, 4, 5]);
@@ -209,8 +208,9 @@ void main() {
       final wa = await database.dictWordsDao.getById(dictId, 'wa');
       await database.dictWordsDao.deleteEntity(wa!, true);
 
-      expect(await seqs(), [1, 2]);
-      expect((await dictWordLogs(operate: 'UPDATE')).length, 2);
+      // 稀疏保序：删除后不重排自愈，保留 [4, 5]
+      expect(await seqs(), [4, 5]);
+      expect(await dictWordLogs(operate: 'UPDATE'), isEmpty);
     });
 
     test('删除后新加词续接为剩余最大 seq + 1', () async {
@@ -218,7 +218,7 @@ void main() {
       await insertWords(['w1', 'w2', 'w3', 'w4', 'w5'], [1, 2, 3, 4, 5]);
 
       await database.dictWordsDao.deleteDictWordWithCleanup(dictId, 'w3', userId, true);
-      expect(await seqs(), [1, 2, 3, 4]);
+      expect(await seqs(), [1, 2, 4, 5]);
 
       final now = DateTime.now();
       await database.dictWordsDao.insertEntity(DictWord(
@@ -230,9 +230,10 @@ void main() {
         updateTime: now,
       ), true);
 
-      expect(await seqs(), [1, 2, 3, 4, 5]);
+      // 剩余最大 seq 是 5，新加词续接为 5 + 1 = 6
+      expect(await seqs(), [1, 2, 4, 5, 6]);
       final w6 = await database.dictWordsDao.getById(dictId, 'w6');
-      expect(w6!.seq, 5);
+      expect(w6!.seq, 6);
     });
 
     test('批量回放删除时不逐条重算 wordCount，由调用方整批重算一次', () async {
