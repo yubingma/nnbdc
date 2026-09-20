@@ -4082,26 +4082,38 @@ class WordListPageState extends State<WordListPage>
     final bool isHistory = args.appBarTitle == '历史错词';
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
-        Container(
-          height: 30,
-          padding: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: themeConfig.cardBorder,
-              width: 0.8,
+        GestureDetector(
+          onTap: () => _switchWrongWordsMode(false),
+          behavior: HitTestBehavior.opaque,
+          child: Text(
+            '今日',
+            style: TextStyle(
+              fontSize: !isHistory ? 17 : 14.5,
+              fontWeight: !isHistory ? FontWeight.w600 : FontWeight.w400,
+              color: !isHistory
+                  ? themeConfig.textPrimary
+                  : themeConfig.textSecondary.withValues(alpha: 0.45),
+              letterSpacing: -0.2,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildWrongWordSegmentPill('今日', !isHistory, () => _switchWrongWordsMode(false), isDarkMode, themeConfig),
-              _buildWrongWordSegmentPill('全部', isHistory, () => _switchWrongWordsMode(true), isDarkMode, themeConfig),
-            ],
+        ),
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _switchWrongWordsMode(true),
+          behavior: HitTestBehavior.opaque,
+          child: Text(
+            '历史',
+            style: TextStyle(
+              fontSize: isHistory ? 17 : 14.5,
+              fontWeight: isHistory ? FontWeight.w600 : FontWeight.w400,
+              color: isHistory
+                  ? themeConfig.textPrimary
+                  : themeConfig.textSecondary.withValues(alpha: 0.45),
+              letterSpacing: -0.2,
+            ),
           ),
         ),
         if (dataLoaded)
@@ -4112,46 +4124,12 @@ class WordListPageState extends State<WordListPage>
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: themeConfig.textSecondary.withValues(alpha: 0.8),
+                color: themeConfig.textSecondary.withValues(alpha: 0.75),
                 letterSpacing: 0.2,
               ),
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildWrongWordSegmentPill(String title, bool isSelected, VoidCallback onTap, bool isDarkMode, AppThemeConfig themeConfig) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDarkMode ? const Color(0xFF334155) : Colors.white)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(13),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  )
-                ]
-              : null,
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? themeConfig.textPrimary : themeConfig.textSecondary,
-          ),
-        ),
-      ),
     );
   }
 
