@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import "package:go_router/go_router.dart";
 import "package:nnbdc/util/prefs.dart";
 import 'package:nnbdc/api/bo/study_bo.dart';
@@ -2888,19 +2889,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final config = StudyConfig.fromCurrentUser();
     final wordsPerDay = user?.effectiveWordsPerDay ?? 20;
     int selected = config.minNewWordsPerDay.clamp(0, wordsPerDay);
-    // 每组单词数不得超过当日计划词数，否则加量批次会被并进计划组
-    final batchSizeLimit = wordsPerDay > 0 ? wordsPerDay : StudyConfig.maxBatchSize;
+    // 每组单词数独立于每日计划词数，上限统一对齐为 500
+    const batchSizeLimit = StudyConfig.maxBatchSize;
     int selectedBatchSize =
         config.batchSize.clamp(1, batchSizeLimit);
-    // 常用基础档位 + 当日计划词数（全天一组），保持单行不超过 5 个药丸以确保窄屏自适应
-    final baseChips = [5, 10, 20, 30];
-    final candidateChips = <int>{...baseChips, wordsPerDay}
-        .where((v) => v > 0 && v <= batchSizeLimit)
-        .toList()
-      ..sort();
-    final batchSizeChips = candidateChips.length > 5
-        ? candidateChips.sublist(candidateChips.length - 5)
-        : candidateChips;
+    // 常用经典科学心流梯度（5档），整齐对称且自适应
+    const batchSizeChips = [5, 10, 20, 30, 50];
+    double dragAccumulator = 0;
 
     showDialog(
       context: context,
@@ -3209,7 +3204,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       if (!isStarted) ...[
                         const SizedBox(height: 14),
 
-                        // 步进调节条
+                        // 步进调节条（支持长按加速、横向滑动与点击精确输入）
                         Container(
                           height: 52,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -3221,46 +3216,119 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               width: 1,
                             ),
                           ),
-                          child: Row(
+                          child: Stack(
                             children: [
-                              _buildAdvancedStepBtn(
-                                icon: Icons.remove_rounded,
-                                enabled: selectedBatchSize > 1,
-                                onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize - 1).clamp(1, batchSizeLimit)),
-                                isDarkMode: isDarkMode,
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: RichText(
-                                    text: TextSpan(
-                                      children: [
-                                        TextSpan(
-                                          text: '$selectedBatchSize',
-                                          style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w800,
-                                            fontFamily: 'Roboto',
-                                            color: primaryColor,
-                                          ),
+                              // 底部极细非线性进度光轨（提示在 1~500 范围内的平滑位置）
+                              Positioned(
+                                left: 4,
+                                right: 4,
+                                bottom: 2,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(1.5),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: FractionallySizedBox(
+                                      widthFactor: _batchSizeToProgress(selectedBatchSize),
+                                      child: Container(
+                                        height: 2.5,
+                                        decoration: BoxDecoration(
+                                          color: primaryColor.withValues(alpha: isDarkMode ? 0.45 : 0.35),
+                                          borderRadius: BorderRadius.circular(1.5),
                                         ),
-                                        TextSpan(
-                                          text: ' 词/组',
-                                          style: TextStyle(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: primaryColor.withValues(alpha: 0.8),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                              _buildAdvancedStepBtn(
-                                icon: Icons.add_rounded,
-                                enabled: selectedBatchSize < batchSizeLimit,
-                                onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize + 1).clamp(1, batchSizeLimit)),
-                                isDarkMode: isDarkMode,
+                              Row(
+                                children: [
+                                  _buildAdvancedStepBtn(
+                                    icon: Icons.remove_rounded,
+                                    enabled: selectedBatchSize > 1,
+                                    onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize - 1).clamp(1, batchSizeLimit)),
+                                    isDarkMode: isDarkMode,
+                                    isLargeRange: true,
+                                  ),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () async {
+                                        final inputVal = await _showBatchSizeInputDialog(
+                                          ctx,
+                                          selectedBatchSize,
+                                          primaryColor,
+                                          isDarkMode,
+                                        );
+                                        if (inputVal != null) {
+                                          setDialogState(() => selectedBatchSize = inputVal.clamp(1, batchSizeLimit));
+                                        }
+                                      },
+                                      onHorizontalDragStart: (_) {
+                                        dragAccumulator = 0;
+                                      },
+                                      onHorizontalDragUpdate: (details) {
+                                        dragAccumulator += details.primaryDelta ?? 0;
+                                        final threshold = selectedBatchSize > 50 ? 6.0 : 8.0;
+                                        if (dragAccumulator.abs() >= threshold) {
+                                          final dir = dragAccumulator > 0 ? 1 : -1;
+                                          final step = selectedBatchSize > 100
+                                              ? dir * 5
+                                              : (selectedBatchSize > 30 ? dir * 2 : dir);
+                                          dragAccumulator = 0;
+                                          final next = (selectedBatchSize + step).clamp(1, batchSizeLimit);
+                                          if (next != selectedBatchSize) {
+                                            HapticFeedback.selectionClick();
+                                            setDialogState(() => selectedBatchSize = next);
+                                          }
+                                        }
+                                      },
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            RichText(
+                                              text: TextSpan(
+                                                children: [
+                                                  TextSpan(
+                                                    text: '$selectedBatchSize',
+                                                    style: TextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.w800,
+                                                      fontFamily: 'Roboto',
+                                                      color: primaryColor,
+                                                    ),
+                                                  ),
+                                                  TextSpan(
+                                                    text: ' 词/组',
+                                                    style: TextStyle(
+                                                      fontSize: 12.5,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: primaryColor.withValues(alpha: 0.8),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Icon(
+                                              Icons.edit_outlined,
+                                              size: 13,
+                                              color: primaryColor.withValues(alpha: 0.40),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  _buildAdvancedStepBtn(
+                                    icon: Icons.add_rounded,
+                                    enabled: selectedBatchSize < batchSizeLimit,
+                                    onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize + 1).clamp(1, batchSizeLimit)),
+                                    isDarkMode: isDarkMode,
+                                    isLargeRange: true,
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -3349,41 +3417,198 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
+  static double _batchSizeToProgress(int val) {
+    final v = val.clamp(1, StudyConfig.maxBatchSize);
+    if (v <= 30) {
+      return ((v - 1) / 29) * 0.40;
+    } else if (v <= 100) {
+      return 0.40 + ((v - 30) / 70) * 0.30;
+    } else {
+      return 0.70 + ((v - 100) / 400) * 0.30;
+    }
+  }
+
+  /// 弹出每组单词数精确定制输入框（支持 1 ~ 500）
+  Future<int?> _showBatchSizeInputDialog(
+    BuildContext parentContext,
+    int currentValue,
+    Color primaryColor,
+    bool isDarkMode,
+  ) {
+    final textController = TextEditingController(text: '$currentValue');
+    textController.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: textController.text.length,
+    );
+    String? errorText;
+
+    return showDialog<int>(
+      context: parentContext,
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.20),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setInputState) {
+          void submit() {
+            final text = textController.text.trim();
+            final val = int.tryParse(text);
+            if (val == null || val < 1 || val > StudyConfig.maxBatchSize) {
+              setInputState(() {
+                errorText = '请输入 1 ~ ${StudyConfig.maxBatchSize} 之间的整数';
+              });
+              return;
+            }
+            Navigator.of(ctx).pop(val);
+          }
+
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isDarkMode
+                          ? [
+                              const Color(0xFF1C2230).withValues(alpha: 0.94),
+                              const Color(0xFF121722).withValues(alpha: 0.90),
+                            ]
+                          : [
+                              Colors.white.withValues(alpha: 0.96),
+                              Colors.white.withValues(alpha: 0.90),
+                            ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.70),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '自定义每组单词数',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '范围 1 ~ ${StudyConfig.maxBatchSize} 词/组',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDarkMode ? Colors.white38 : const Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: textController,
+                        autofocus: true,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'Roboto',
+                          color: primaryColor,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: '输入数量',
+                          suffixText: '词/组',
+                          suffixStyle: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: primaryColor.withValues(alpha: 0.8),
+                          ),
+                          errorText: errorText,
+                          filled: true,
+                          fillColor: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : const Color(0xFFF1F5F9),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: primaryColor, width: 1.5),
+                          ),
+                        ),
+                        onSubmitted: (_) => submit(),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                style: TextButton.styleFrom(
+                                  backgroundColor: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : const Color(0xFFF1F5F9),
+                                  foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('取消', style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                onPressed: submit,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('确定', style: TextStyle(fontWeight: FontWeight.w700)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildAdvancedStepBtn({
     required IconData icon,
     required bool enabled,
     required VoidCallback onTap,
     required bool isDarkMode,
+    bool isLargeRange = false,
   }) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: enabled
-              ? (isDarkMode ? Colors.white.withValues(alpha: 0.10) : Colors.white)
-              : (isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03)),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: enabled && !isDarkMode
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
-        ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: enabled
-              ? (isDarkMode ? Colors.white : const Color(0xFF1E293B))
-              : (isDarkMode ? Colors.white24 : Colors.black26),
-        ),
-      ),
+    return _ContinuousStepButton(
+      icon: icon,
+      enabled: enabled,
+      onStep: onTap,
+      isDarkMode: isDarkMode,
+      isLargeRange: isLargeRange,
     );
   }
 
@@ -3953,3 +4178,115 @@ class _DakaSealTextPainter extends CustomPainter {
       oldDelegate.base != base ||
       oldDelegate.fontSize != fontSize;
 }
+
+/// 支持长按平滑加速连续步进的轻量按键
+class _ContinuousStepButton extends StatefulWidget {
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onStep;
+  final bool isDarkMode;
+  final bool isLargeRange;
+
+  const _ContinuousStepButton({
+    required this.icon,
+    required this.enabled,
+    required this.onStep,
+    required this.isDarkMode,
+    this.isLargeRange = false,
+  });
+
+  @override
+  State<_ContinuousStepButton> createState() => _ContinuousStepButtonState();
+}
+
+class _ContinuousStepButtonState extends State<_ContinuousStepButton> {
+  Timer? _initialTimer;
+  Timer? _periodicTimer;
+  int _ticks = 0;
+
+  void _startContinuousStep() {
+    if (!widget.enabled) return;
+    HapticFeedback.selectionClick();
+    widget.onStep();
+    _stopContinuousStep();
+
+    _initialTimer = Timer(const Duration(milliseconds: 320), () {
+      _periodicTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+        if (!mounted || !widget.enabled) {
+          _stopContinuousStep();
+          return;
+        }
+        _ticks++;
+        if (_ticks < 10) {
+          // 初始精细微调（约 100ms 触发一次）
+          if (_ticks % 2 == 0) {
+            widget.onStep();
+            HapticFeedback.selectionClick();
+          }
+        } else if (_ticks < 26) {
+          // 加速阶段（约 50ms 触发一次）
+          widget.onStep();
+          if (_ticks % 2 == 0) HapticFeedback.selectionClick();
+        } else {
+          // 高速飞跃阶段
+          final repeat = widget.isLargeRange ? (_ticks > 50 ? 5 : 2) : 1;
+          for (int i = 0; i < repeat; i++) {
+            widget.onStep();
+          }
+          if (_ticks % 3 == 0) HapticFeedback.selectionClick();
+        }
+      });
+    });
+  }
+
+  void _stopContinuousStep() {
+    _initialTimer?.cancel();
+    _initialTimer = null;
+    _periodicTimer?.cancel();
+    _periodicTimer = null;
+    _ticks = 0;
+  }
+
+  @override
+  void dispose() {
+    _stopContinuousStep();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: widget.enabled ? (_) => _startContinuousStep() : null,
+      onTapUp: (_) => _stopContinuousStep(),
+      onTapCancel: () => _stopContinuousStep(),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: widget.enabled
+              ? (widget.isDarkMode ? Colors.white.withValues(alpha: 0.10) : Colors.white)
+              : (widget.isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03)),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: widget.enabled && !widget.isDarkMode
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Icon(
+          widget.icon,
+          size: 20,
+          color: widget.enabled
+              ? (widget.isDarkMode ? Colors.white : const Color(0xFF1E293B))
+              : (widget.isDarkMode ? Colors.white24 : Colors.black26),
+        ),
+      ),
+    );
+  }
+}
+

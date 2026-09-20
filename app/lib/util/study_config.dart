@@ -74,11 +74,10 @@ class StudyConfig {
     );
   }
 
-  /// 实际生效的每组单词数：一组不得超过当日计划词数，否则加量批次会被并进计划组，
-  /// 破坏"加量不计入今日计划"的口径（组内进度指示也会把计划词算进加量的分母）。
-  /// [wordsPerDay] <= 0 表示未设置计划量，不做压缩。
-  int effectiveBatchSize(int wordsPerDay) =>
-      wordsPerDay > 0 ? batchSize.clamp(1, wordsPerDay) : batchSize;
+  /// 实际生效的每组单词数：独立于每日计划词数配置（上限 [maxBatchSize] 为 500）。
+  /// 组容量作为容器规格，当今日词数不足一组时，运行时自然学完整组词，无需强行截断配置值。
+  int effectiveBatchSize([int wordsPerDay = 0]) =>
+      batchSize.clamp(1, maxBatchSize);
 
   static bool _toBool(dynamic value, bool defaultValue) {
     if (value == null) return defaultValue;

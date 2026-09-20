@@ -497,11 +497,10 @@ void main() {
     expect(StudyConfig.fromJson({'batchSize': 0}).batchSize, 1);
 
     final configured = StudyConfig(batchSize: 50);
-    expect(configured.effectiveBatchSize(10), 10,
-        reason: '用户改小当日计划量时，生效组大小自动向下收敛，不冲毁原有偏好配置');
-    expect(configured.effectiveBatchSize(50), 50,
-        reason: '用户恢复较大计划量时，生效组大小自动恢复偏好值');
-    expect(configured.effectiveBatchSize(0), 50, reason: '未设置计划量时不压缩');
+    expect(configured.effectiveBatchSize(10), 50,
+        reason: '每组单词数与当日计划量解耦，保持用户偏好的容器大小');
+    expect(configured.effectiveBatchSize(50), 50);
+    expect(configured.effectiveBatchSize(0), 50);
   });
 
   test('每组单词数可配置：设为当日计划词数时全天同属第 1 组', () async {
