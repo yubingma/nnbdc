@@ -326,6 +326,25 @@ void main() {
       // 簇 2（dog 组）：组号全为 2
       expect(provider.groupIndexOf(3), 2);
       expect(provider.groupIndexOf(4), 2);
+
+      // 验证 groupOfWord 优先根据 WordWrapper 精准获取组号
+      expect(provider.groupOfWord(result.rows[0]), 1);
+      expect(provider.groupOfWord(result.rows[1]), 1);
+      expect(provider.groupOfWord(result.rows[2]), 1);
+      expect(provider.groupOfWord(result.rows[3]), 2);
+      expect(provider.groupOfWord(result.rows[4]), 2);
+
+      // 验证局部切片请求不截断全局组号表（防分页偏移）
+      final slicedResult = await provider.getAPageOfWords(3, 2);
+      expect(slicedResult.rows.map((w) => w.word.id).toList(), ['w_dog', 'w_fog']);
+      // 切片后，全局索引 0~2 仍能查到组 1，全局索引 3~4 仍能查到组 2
+      expect(provider.groupIndexOf(0), 1);
+      expect(provider.groupIndexOf(1), 1);
+      expect(provider.groupIndexOf(2), 1);
+      expect(provider.groupIndexOf(3), 2);
+      expect(provider.groupIndexOf(4), 2);
+      expect(provider.groupOfWord(slicedResult.rows[0]), 2);
+      expect(provider.groupOfWord(slicedResult.rows[1]), 2);
     });
 
     testWidgets('unmasterWord 返回 false 且 masteredWords 表不变（只读浏览）',

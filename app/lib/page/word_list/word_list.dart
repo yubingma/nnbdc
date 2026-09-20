@@ -133,6 +133,10 @@ mixin WordsProvider {
 
   /// 该数据源是否为"分组展示"（如易混淆词表的锚点簇），返回单词在列表中的组号
   /// （相邻同组单词连续出现；默认恒 0 = 不分组着色）。
+  /// 优先根据单词本身 [word] 查询（防切片与局部视口偏移），缺失时回退至绝对全局索引 [globalIndex]。
+  int groupOfWord(WordWrapper? word, [int globalIndex = 0]) => groupIndexOf(globalIndex);
+
+  /// 该数据源按全局绝对索引返回组号（全局索引从 0 开始直到 totalWordCount - 1）
   int groupIndexOf(int index) => 0;
 }
 
@@ -2233,9 +2237,19 @@ class WordListPageState extends State<WordListPage>
       builder: (context, activeIndex, child) {
         final isBookmarked = activeIndex == i;
 
-        final currentGroup = args.wordsProvider.groupIndexOf(i);
-        final prevGroup = i > 0 ? args.wordsProvider.groupIndexOf(i - 1) : 0;
-        final nextGroup = (i + 1 < words.length) ? args.wordsProvider.groupIndexOf(i + 1) : 0;
+        final globalIndex = (baseIndex ?? 0) + i;
+        final currentGroup = args.wordsProvider.groupOfWord(word, globalIndex);
+        final prevWord = i > 0 ? words[i - 1] : null;
+        final nextWord = (i + 1 < words.length) ? words[i + 1] : null;
+
+        final prevGroup = prevWord != null
+            ? args.wordsProvider.groupOfWord(prevWord, globalIndex - 1)
+            : (globalIndex > 0 ? args.wordsProvider.groupIndexOf(globalIndex - 1) : 0);
+        final nextGroup = nextWord != null
+            ? args.wordsProvider.groupOfWord(nextWord, globalIndex + 1)
+            : ((globalIndex + 1 < totalWordCount)
+                ? args.wordsProvider.groupIndexOf(globalIndex + 1)
+                : 0);
 
         final isGroupStart = currentGroup > 0 && currentGroup != prevGroup;
         final isGroupEnd = currentGroup > 0 && currentGroup != nextGroup;

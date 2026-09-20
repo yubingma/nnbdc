@@ -29,14 +29,27 @@ class ConfusableWordsProvider with WordsProvider {
   @override
   bool get canCustomizeSort => false;
 
-  /// 与最近一次 getAPageOfWords 返回行对应的组号表（0 = 默认底色；>0 按锚点簇交替着色）
-  List<int> _groupIds = [];
+  /// 全量有效单词对应的全局组号表（按全局绝对索引，0..totalWordCount - 1）
+  List<int> _allGroupIds = [];
 
-  /// 分组展示：簇式排序中每个锚点簇为一组（组号从 1 递增），供卡片底色区分边界
+  /// 单词 id 到组号的映射：防切片与局部视口滑动偏移
+  final Map<String, int> _wordGroupMap = {};
+
+  /// 分组展示：优先按单词实体获取组号（无视切片与局部视口滑动）
+  @override
+  int groupOfWord(WordWrapper? word, [int globalIndex = 0]) {
+    final wordId = word?.word.id;
+    if (wordId != null && _wordGroupMap.containsKey(wordId)) {
+      return _wordGroupMap[wordId]!;
+    }
+    return groupIndexOf(globalIndex);
+  }
+
+  /// 分组展示：按全局绝对索引获取组号（供边界前后词探测）
   @override
   int groupIndexOf(int index) {
-    if (index < 0 || index >= _groupIds.length) return 0;
-    return _groupIds[index];
+    if (index < 0 || index >= _allGroupIds.length) return 0;
+    return _allGroupIds[index];
   }
 
   /// 非词书数据源，无单元概念
@@ -106,17 +119,24 @@ class ConfusableWordsProvider with WordsProvider {
       final groupIds = <int>[];
       final groupRemap = <int, int>{};
       var nextGroup = 1;
+      _wordGroupMap.clear();
       for (var i = 0; i < rawResults.length; i++) {
         final g = rawGroupIds[i];
         if (validGroups.contains(g)) {
+          final mappedGroup = groupRemap.putIfAbsent(g, () => nextGroup++);
           results.rows.add(rawResults[i]);
-          groupIds.add(groupRemap.putIfAbsent(g, () => nextGroup++));
+          groupIds.add(mappedGroup);
+          final wordId = rawResults[i].word.id;
+          if (wordId != null) {
+            _wordGroupMap[wordId] = mappedGroup;
+          }
         }
       }
       results.total = results.rows.length;
+      _allGroupIds = List.unmodifiable(groupIds);
 
-      // 4. 控制器对非 DictWordsProvider 走 getAPageOfWords(0, 999999) 全量 + 内存切片路径，
-      //    此处按签名切片，保持接口语义（组号表同步切片）
+      // 5. 控制器对非 DictWordsProvider 走 getAPageOfWords(0, 999999) 全量 + 内存切片路径；
+      //    此处若请求局部切片，仅对 rows 做返回切片，不破坏全量全局组号字典与组号表
       if (fromIndex > 0 || pageSize < results.rows.length) {
         final end = (fromIndex + pageSize) > results.rows.length
             ? results.rows.length
@@ -127,14 +147,7 @@ class ConfusableWordsProvider with WordsProvider {
         results.rows
           ..clear()
           ..addAll(sliced);
-        final slicedGroups = fromIndex >= groupIds.length
-            ? <int>[]
-            : groupIds.sublist(fromIndex, fromIndex + sliced.length);
-        groupIds
-          ..clear()
-          ..addAll(slicedGroups);
       }
-      _groupIds = groupIds;
 
       Global.logger.d('ConfusableWordsProvider: getAPageOfWords(from=$fromIndex) completed in ${sw.elapsedMilliseconds}ms');
       return results;
