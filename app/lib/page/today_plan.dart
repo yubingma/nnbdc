@@ -3881,11 +3881,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 }
 
-/// 「今日已打卡」印章的画笔：不描一条平滑的圆环，而是把整枚章"盖"出来 ——
-/// 断墨的粗环、残缺的发丝圈、印油没吃上的缺口、深浅不一的墨粒。
+/// 「今日已打卡」印章的画笔：
+/// 呈现真实盖印的金石朱砂印泥质感 —— 环体浑然一体、饱满沉稳，
+/// 边缘具有天然连续的纸张受墨有机微糙（绝无径向百叶窗棱纹），
+/// 伴有自然通透的朱砂飞白微尘，兼具手工盖印温度与极简端庄。
 ///
-/// 随机数用固定种子：斑驳纹理必须每次重建都一模一样，
-/// 否则热重载/刷新会让印章"抖动"，反而不像一枚盖定的章。
+/// 随机数用固定种子：微糙纹理每次重建保持完全一致，避免刷新/热重载时晃动。
 class _DakaSealPainter extends CustomPainter {
   _DakaSealPainter({required this.color, required this.isDark});
 
@@ -3894,22 +3895,22 @@ class _DakaSealPainter extends CustomPainter {
 
   static const int _seed = 20260912;
 
-  /// 章面印油（极淡，只负责"盖过"的痕迹）
-  double get _washAlpha => isDark ? 0.12 : 0.08;
-  /// 外圈粗环（饱满浓郁的金石朱砂墨色）
-  double get _ringAlpha => isDark ? 0.85 : 0.88;
-  /// 内圈发丝线（清晰微润的朱红线）
-  double get _innerAlpha => isDark ? 0.75 : 0.78;
+  /// 章面印油底韵
+  double get _washAlpha => isDark ? 0.10 : 0.065;
+  /// 外圈粗环（饱满沉稳的金石朱砂墨色）
+  double get _ringAlpha => isDark ? 0.88 : 0.90;
+  /// 内圈发丝线（纤细温润的朱红线）
+  double get _innerAlpha => isDark ? 0.78 : 0.80;
 
   @override
   void paint(Canvas canvas, Size size) {
     final Offset center = size.center(Offset.zero);
     final math.Random random = math.Random(_seed);
 
-    // saveLayer 圈的这块"纸面"允许被 clear 挖空，缺口的下面就是卡片本身
+    // 允许通过 clear 混合模式擦出极微弱的天然印迹飞白微孔
     canvas.saveLayer(Offset.zero & size, Paint());
 
-    // 1. 印油底：中心略浓、近边缘转淡的一层薄雾
+    // 1. 印油底：中心略润、边缘渐淡的通透微雾
     canvas.drawCircle(
       center,
       size.width / 2 - 3,
@@ -3917,51 +3918,63 @@ class _DakaSealPainter extends CustomPainter {
         ..shader = RadialGradient(
           colors: [
             color.withValues(alpha: _washAlpha),
-            color.withValues(alpha: _washAlpha * 0.4),
+            color.withValues(alpha: _washAlpha * 0.3),
           ],
-          stops: const [0.7, 1],
+          stops: const [0.65, 1],
         ).createShader(Rect.fromCircle(center: center, radius: size.width / 2)),
     );
 
-    // 2. 双线边框：外粗内细，各由数百段短弧叠成，每段的半径/粗细/浓淡都抖一下
-    _strokeRoughRing(canvas, center, random,
-        radius: 60.7, width: 6.5, alpha: _ringAlpha, segments: 230, gapChance: 0.08);
-    _strokeRoughRing(canvas, center, random,
-        radius: 54, width: 1.2, alpha: _innerAlpha, segments: 150, gapChance: 0.05);
+    // 2. 双线边框：外粗内细。
+    // 采用连续有机闭合 Path 一次性填充，环体 100% 浑然一体，绝无任何径向拼接缝或百叶窗棱纹；
+    // 边缘经平滑滤波生成天然平缓的微毛羽起伏，真实还原金石印章盖在宣纸上的微糙边缘。
+    _drawOrganicRing(
+      canvas,
+      center,
+      random,
+      radius: 60.7,
+      width: 6.5,
+      alpha: _ringAlpha,
+      jitterAmount: 0.65,
+      points: 180,
+    );
 
-    // 3. 环上的沙眼：印油没吃到的地方挖掉一点点。只能是小口子 ——
-    // 挖大了就成了环被磕坏的豁口，看着硌眼（毛糙要来自墨迹不匀，不是来自破损）
+    _drawOrganicRing(
+      canvas,
+      center,
+      random,
+      radius: 54.0,
+      width: 1.2,
+      alpha: _innerAlpha,
+      jitterAmount: 0.28,
+      points: 120,
+    );
+
+    // 3. 环上自然的微飞白（极克制，仅 2 处微小沙眼，真实不破损）
     final Paint eraser = Paint()..blendMode = BlendMode.clear;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 2; i++) {
       final double angle = random.nextDouble() * 2 * math.pi;
-      final double r = 57.2 + (random.nextDouble() - 0.5) * 8;
+      final double r = 57.5 + (random.nextDouble() - 0.5) * 6.0;
       canvas.drawCircle(
         center + Offset(math.cos(angle) * r, math.sin(angle) * r),
-        0.4 + random.nextDouble() * 0.7,
+        0.35 + random.nextDouble() * 0.35,
         eraser,
       );
     }
 
-    // 4. 飞白墨粒：章面上深浅不一的小墨点，让印面不至于空得发假
+    // 4. 章面飞白朱砂墨粒：适度点缀，主要散布在留白区，核心文字区通透清爽
     final Paint grain = Paint();
-    for (int i = 0; i < 96; i++) {
+    for (int i = 0; i < 24; i++) {
       final double angle = random.nextDouble() * 2 * math.pi;
-      final double r = math.sqrt(random.nextDouble()) * (size.width / 2 - 12);
-      grain.color = color.withValues(alpha: _ringAlpha * (0.2 + random.nextDouble() * 0.55));
-      canvas.drawCircle(
-        center + Offset(math.cos(angle) * r, math.sin(angle) * r),
-        0.4 + random.nextDouble() * 1.2,
-        grain,
+      double r = math.sqrt(random.nextDouble()) * (size.width / 2 - 10);
+      if (r < 22 && random.nextDouble() < 0.75) {
+        r = 24 + random.nextDouble() * (size.width / 2 - 34);
+      }
+      grain.color = color.withValues(
+        alpha: _ringAlpha * (0.16 + random.nextDouble() * 0.38),
       );
-    }
-    // 再补几处更大更淡的油渍，模拟印油在纸上洇开的块状深浅
-    for (int i = 0; i < 4; i++) {
-      final double angle = random.nextDouble() * 2 * math.pi;
-      final double r = math.sqrt(random.nextDouble()) * (size.width / 2 - 30);
-      grain.color = color.withValues(alpha: _washAlpha * (0.35 + random.nextDouble() * 0.5));
       canvas.drawCircle(
         center + Offset(math.cos(angle) * r, math.sin(angle) * r),
-        2.5 + random.nextDouble() * 3,
+        0.35 + random.nextDouble() * 0.55,
         grain,
       );
     }
@@ -3969,39 +3982,81 @@ class _DakaSealPainter extends CustomPainter {
     canvas.restore();
   }
 
-  /// 用短弧叠一圈毛糙的环：[gapChance] 是断墨概率，半径/粗细/浓淡各带一份抖动。
-  /// 弧长刻意略微叠过一格——"毛糙"要来自墨迹自身的不匀与缺口，
-  /// 而不是让短弧彼此脱开，否则圆环会读成一条虚线/串珠。
-  void _strokeRoughRing(
+  /// 绘制连续有机的微毛糙圆环：
+  /// - 环体为完整的闭合填充面（Fill Path），彻底杜绝由短截线端点产生的径向条纹/百叶窗棱纹；
+  /// - 外缘与内缘分别采样并经过三次平滑滤波，形成连贯温润的天然手工金石微毛边。
+  void _drawOrganicRing(
     Canvas canvas,
     Offset center,
     math.Random random, {
     required double radius,
     required double width,
     required double alpha,
-    required int segments,
-    required double gapChance,
+    required double jitterAmount,
+    required int points,
   }) {
-    final Paint paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final double step = 2 * math.pi / segments;
-    for (int i = 0; i < segments; i++) {
-      if (random.nextDouble() < gapChance) continue; // 断墨
-      paint
-        ..color = color.withValues(alpha: alpha * (0.68 + random.nextDouble() * 0.32))
-        ..strokeWidth = width * (0.82 + random.nextDouble() * 0.36);
-      canvas.drawArc(
-        Rect.fromCircle(
-          center: center,
-          radius: radius + (random.nextDouble() - 0.5) * width * 0.14,
-        ),
-        i * step,
-        step * (1.08 + random.nextDouble() * 0.4),
-        false,
-        paint,
-      );
+    final List<double> rawOut = List.generate(
+      points,
+      (_) => (random.nextDouble() - 0.5) * jitterAmount,
+    );
+    final List<double> rawIn = List.generate(
+      points,
+      (_) => (random.nextDouble() - 0.5) * jitterAmount,
+    );
+
+    // 循环加权平滑滤波：消除尖锐折角，保留圆润有机的微毛糙起伏
+    final List<double> smoothOut = List<double>.filled(points, 0);
+    final List<double> smoothIn = List<double>.filled(points, 0);
+    for (int i = 0; i < points; i++) {
+      final int p1 = (i - 1 + points) % points;
+      final int n1 = (i + 1) % points;
+      final int p2 = (i - 2 + points) % points;
+      final int n2 = (i + 2) % points;
+      smoothOut[i] = 0.1 * rawOut[p2] + 0.25 * rawOut[p1] + 0.3 * rawOut[i] + 0.25 * rawOut[n1] + 0.1 * rawOut[n2];
+      smoothIn[i] = 0.1 * rawIn[p2] + 0.25 * rawIn[p1] + 0.3 * rawIn[i] + 0.25 * rawIn[n1] + 0.1 * rawIn[n2];
     }
+
+    final double halfW = width / 2;
+    final double step = 2 * math.pi / points;
+
+    // 构建外边界多边形
+    final Path outerPath = Path();
+    for (int i = 0; i < points; i++) {
+      final double angle = i * step;
+      final double r = radius + halfW + smoothOut[i];
+      final double x = center.dx + math.cos(angle) * r;
+      final double y = center.dy + math.sin(angle) * r;
+      if (i == 0) {
+        outerPath.moveTo(x, y);
+      } else {
+        outerPath.lineTo(x, y);
+      }
+    }
+    outerPath.close();
+
+    // 构建内边界多边形
+    final Path innerPath = Path();
+    for (int i = 0; i < points; i++) {
+      final double angle = i * step;
+      final double r = radius - halfW + smoothIn[i];
+      final double x = center.dx + math.cos(angle) * r;
+      final double y = center.dy + math.sin(angle) * r;
+      if (i == 0) {
+        innerPath.moveTo(x, y);
+      } else {
+        innerPath.lineTo(x, y);
+      }
+    }
+    innerPath.close();
+
+    // 镂空差集：得到完整连贯的单一面环
+    final Path ringPath = Path.combine(PathOperation.difference, outerPath, innerPath);
+
+    final Paint fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = color.withValues(alpha: alpha);
+
+    canvas.drawPath(ringPath, fillPaint);
   }
 
   @override
@@ -4009,11 +4064,10 @@ class _DakaSealPainter extends CustomPainter {
       oldDelegate.color != color || oldDelegate.isDark != isDark;
 }
 
-/// 印面文字（「今日已打卡」与日期）：不用一个 Text 写上去，而是逐字"盖"。
+/// 印面文字（「今日已打卡」与日期）：逐字生动呈现。
 ///
-/// 每个字的落点、倾角、浓淡各差一点，再补一次错开一点的落墨，最后在字面上挖掉几粒
-/// 没吃上印油的沙眼 —— 真章的字不会排得一样齐、也不会一样实。抖动幅度与沙眼都随字号
-/// 缩放：11.5 的印面文字抖 ±0.35pt，9 的日期只抖 ±0.27pt，小字不会抖得比大字还野。
+/// 保留手工盖印的自然微倾角、微位移与受墨深浅起伏，字形边缘带有细腻实墨微润，
+/// 并伴有极微细的笔画自然飞白，既清晰可读又具盖印韵味。
 class _DakaSealText extends StatelessWidget {
   const _DakaSealText({
     super.key,
@@ -4091,24 +4145,21 @@ class _DakaSealTextPainter extends CustomPainter {
   final double letterSpacing;
   final int seed;
 
-  /// 逐字抖动幅度（±）：半个字号的比例，小字自然抖得轻
-  double get _jitterX => fontSize * 0.03;
-  double get _jitterY => fontSize * 0.035;
+  /// 逐字微位移（±）：控制在极其自然生动的幅度内
+  double get _jitterX => fontSize * 0.022;
+  double get _jitterY => fontSize * 0.025;
 
-  /// 单字倾角（±，弧度）≈ ±1.4°
-  static const double _tiltRange = 0.05;
+  /// 单字微倾角（±，弧度）≈ ±1.0°，表现手工盖印的生动感
+  static const double _tiltRange = 0.036;
 
-  /// 最淡的一笔也保留 84% 的墨：要"不匀"，不要"看不清"
-  static const double _minInk = 0.84;
+  /// 最淡的一笔保留 86% 的墨：既有受墨浓淡层次，又绝对清晰
+  static const double _minInk = 0.86;
 
-  /// 沙眼半径上限（随字号缩放）
-  double get _holeRadius => fontSize * 0.038;
-
-  /// 单字排版。[alpha] 是这一笔的浓淡；极轻的 solid 模糊把字形锋利的边缘磨一下
+  /// 单字排版。[alpha] 是这一笔的浓淡；solid 模糊模拟纸张受墨边缘微润
   TextPainter _glyph(String char, double alpha) {
     final Paint ink = Paint()
       ..color = color.withValues(alpha: color.a * alpha)
-      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.solid, 0.25);
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.solid, 0.22);
     return TextPainter(
       text: TextSpan(
         text: char,
@@ -4133,7 +4184,6 @@ class _DakaSealTextPainter extends CustomPainter {
     final double totalWidth = glyphs.fold<double>(0, (sum, g) => sum + g.width) +
         letterSpacing * chars.length;
 
-    // 同样圈一块可以挖空的"纸面"，挖掉的地方露出底下的印油
     canvas.saveLayer(Offset.zero & size, Paint());
 
     double x = (size.width - totalWidth) / 2;
@@ -4150,20 +4200,17 @@ class _DakaSealTextPainter extends CustomPainter {
       canvas.translate(x + jitter.dx, size.height / 2 + jitter.dy);
       canvas.rotate(tilt);
       _glyph(chars[i], alpha).paint(canvas, Offset(0, -glyph.height / 2));
-      // 同一笔在纸上按了两下：错开一点点再落一次墨，边缘因此发毛
-      _glyph(chars[i], alpha * 0.28).paint(canvas, Offset(0.3, -glyph.height / 2 - 0.2));
       canvas.restore();
 
       x += glyph.width + letterSpacing;
     }
 
-    // 字面上的沙眼：只挖很小的一粒，不能把笔画挖断
+    // 少量自然的文字笔画微飞白（仅 2 处微小沙眼，丰富印面质感而不破坏字形）
     final Paint eraser = Paint()..blendMode = BlendMode.clear;
-    final int holes = (chars.length * 1.6).round();
-    for (int i = 0; i < holes; i++) {
+    for (int i = 0; i < 2; i++) {
       canvas.drawCircle(
         Offset(random.nextDouble() * size.width, random.nextDouble() * size.height),
-        0.2 + random.nextDouble() * _holeRadius,
+        0.2 + random.nextDouble() * 0.35,
         eraser,
       );
     }
@@ -4289,4 +4336,3 @@ class _ContinuousStepButtonState extends State<_ContinuousStepButton> {
     );
   }
 }
-
