@@ -413,8 +413,14 @@ extension BdcPageStateDialogs on BdcPageState {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: isDialogDark
-                          ? [const Color(0xB8161B26), const Color(0x9910141D)]
-                          : [const Color(0x66FFFFFF), const Color(0x4DFFFFFF)],
+                          ? [
+                              const Color(0xB8161B26),
+                              const Color(0x9E10141D),
+                            ]
+                          : [
+                              const Color(0xB8FFFFFF),
+                              const Color(0x9EFFFFFF),
+                            ],
                     ),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(

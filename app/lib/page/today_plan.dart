@@ -1401,20 +1401,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required String label,
     required VoidCallback onPressed,
   }) {
+    final buttonColor = isDarkMode ? themeConfig.primaryColor : themeConfig.primaryLightColor;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(25),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [themeConfig.primaryColor, themeConfig.primaryDarkColor],
-        ),
+        color: buttonColor,
         boxShadow: [
           BoxShadow(
-            color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.32 : 0.34),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
+            color: buttonColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1550,28 +1547,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
+    final buttonColor = isDarkMode ? themeConfig.primaryColor : themeConfig.primaryLightColor;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(25),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            themeConfig.primaryColor,
-            themeConfig.primaryDarkColor,
-          ],
-        ),
+        color: buttonColor,
         boxShadow: [
           BoxShadow(
-            color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.24),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.12 : 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: buttonColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -2880,7 +2866,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 弹出"高级设置"对话框，可配置今日最少新词数量与每组单词数
-  void _showAdvancedSettingsDialog() {
+  void _showAdvancedSettingsDialog() async {
     final darkMode = context.read<DarkMode>();
     final isDarkMode = darkMode.isDarkMode;
     final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
@@ -2898,7 +2884,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     double dragAccumulator = 0;
     double minNewWordsDragAccumulator = 0;
 
-    showGeneralDialog(
+    await showGeneralDialog(
       context: context,
       barrierDismissible: true,
       barrierLabel: '高级学习设置',
@@ -2930,7 +2916,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: BackdropFilter(
-                  filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
                     decoration: BoxDecoration(
@@ -2940,11 +2926,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         colors: isDarkMode
                             ? [
                                 const Color(0xB8161B26),
-                                const Color(0x9910141D),
+                                const Color(0x9E10141D),
                               ]
                             : [
-                                const Color(0x66FFFFFF),
-                                const Color(0x4DFFFFFF),
+                                const Color(0xB8FFFFFF),
+                                const Color(0x9EFFFFFF),
                               ],
                       ),
                       borderRadius: BorderRadius.circular(24),
@@ -3457,12 +3443,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               ),
             ),
           ),
-        );
-      },
-    );
-  },
-);
-  }
+          );
+        },
+      );
+    },
+  );
+}
 
   /// 弹出精确定制数字输入框（支持自定义标题、范围与单位）
   Future<int?> _showCustomNumberInputDialog({
@@ -3536,11 +3522,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         colors: isDarkMode
                             ? [
                                 const Color(0xB8161B26),
-                                const Color(0x9910141D),
+                                const Color(0x9E10141D),
                               ]
                             : [
-                                const Color(0x66FFFFFF),
-                                const Color(0x4DFFFFFF),
+                                const Color(0xB8FFFFFF),
+                                const Color(0x9EFFFFFF),
                               ],
                       ),
                       borderRadius: BorderRadius.circular(20),
@@ -3860,11 +3846,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     colors: isDarkMode
                         ? [
                             const Color(0xB8161B26),
-                            const Color(0x9910141D),
+                            const Color(0x9E10141D),
                           ]
                         : [
-                            const Color(0x66FFFFFF),
-                            const Color(0x4DFFFFFF),
+                            const Color(0xB8FFFFFF),
+                            const Color(0x9EFFFFFF),
                           ],
                   ),
                   borderRadius: BorderRadius.circular(22),
