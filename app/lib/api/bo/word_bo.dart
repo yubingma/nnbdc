@@ -2649,6 +2649,28 @@ class WordBo {
     }
   }
 
+  /// 获取今日错词与历史错词数量
+  Future<({int today, int history})> getWrongWordsCounts(String userId) async {
+    try {
+      final db = MyDatabase.instance;
+      final now = AppClock.now();
+      final start = DateUtils.businessDayStart(now);
+      final end = DateUtils.businessDayEnd(now);
+      final wrongWordsQuery = db.selectOnly(db.userWrongWords)
+        ..addColumns([db.userWrongWords.wordId.count(distinct: true)])
+        ..where(db.userWrongWords.userId.equals(userId))
+        ..where((db.userWrongWords.createTime.isBiggerOrEqualValue(start) & db.userWrongWords.createTime.isSmallerThanValue(end)) |
+            (db.userWrongWords.updateTime.isBiggerOrEqualValue(start) & db.userWrongWords.updateTime.isSmallerThanValue(end)));
+      final countResult = await wrongWordsQuery.getSingle();
+      final todayCount = countResult.read(db.userWrongWords.wordId.count(distinct: true)) ?? 0;
+      final historyCount = await db.userWrongWordsDao.getHistoryWrongWordsCount(userId);
+      return (today: todayCount, history: historyCount);
+    } catch (e) {
+      Global.logger.e('获取错词数量统计失败: $e');
+      return (today: 0, history: 0);
+    }
+  }
+
   Future<SentenceVo> getSentence(String sentenceId) async {
     try {
       Global.logger.d('开始本地获取句子: sentenceId=$sentenceId');

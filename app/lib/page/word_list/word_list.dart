@@ -384,6 +384,9 @@ class WordListPageState extends State<WordListPage>
   bool get isQuerying => _controllerInitialized ? controller.isQuerying : false;
   set isQuerying(bool val) { if (_controllerInitialized) controller.isQuerying = val; }
 
+  int? _todayWrongCount;
+  int? _historyWrongCount;
+
   DateTime? get lastQueryTime => _controllerInitialized ? controller.lastQueryTime : null;
   set lastQueryTime(DateTime? val) { if (_controllerInitialized) controller.lastQueryTime = val; }
 
@@ -567,6 +570,10 @@ class WordListPageState extends State<WordListPage>
       if (curIdx >= 0 && curIdx < words.length) {
         onWordPressed(words[curIdx], curIdx, true, null);
       }
+    }
+
+    if (['今日错词', '历史错词'].contains(args.appBarTitle)) {
+      _loadWrongWordsCounts();
     }
   }
 
@@ -1987,6 +1994,9 @@ class WordListPageState extends State<WordListPage>
   @override
   onDelBtnPressed(WordWrapper word, int index) {
     controller.deleteWord(word, index);
+    if (['今日错词', '历史错词'].contains(args.appBarTitle)) {
+      _loadWrongWordsCounts();
+    }
   }
 
   @override
@@ -4080,6 +4090,9 @@ class WordListPageState extends State<WordListPage>
 
   Widget _buildWrongWordsAppBarTitle(bool isDarkMode, AppThemeConfig themeConfig) {
     final bool isHistory = args.appBarTitle == '历史错词';
+    final int todayCount = (!isHistory && dataLoaded) ? totalWordCount : (_todayWrongCount ?? 0);
+    final int historyCount = (isHistory && dataLoaded) ? totalWordCount : (_historyWrongCount ?? 0);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -4088,49 +4101,92 @@ class WordListPageState extends State<WordListPage>
         GestureDetector(
           onTap: () => _switchWrongWordsMode(false),
           behavior: HitTestBehavior.opaque,
-          child: Text(
-            '今日',
-            style: TextStyle(
-              fontSize: !isHistory ? 17 : 14.5,
-              fontWeight: !isHistory ? FontWeight.w600 : FontWeight.w400,
-              color: !isHistory
-                  ? themeConfig.textPrimary
-                  : themeConfig.textSecondary.withValues(alpha: 0.45),
-              letterSpacing: -0.2,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '今日',
+                style: TextStyle(
+                  fontSize: !isHistory ? 17 : 14.5,
+                  fontWeight: !isHistory ? FontWeight.w600 : FontWeight.w400,
+                  color: !isHistory
+                      ? themeConfig.textPrimary
+                      : themeConfig.textSecondary.withValues(alpha: 0.45),
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$todayCount',
+                style: TextStyle(
+                  fontSize: !isHistory ? 13.5 : 12,
+                  fontWeight: !isHistory ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Roboto',
+                  color: !isHistory
+                      ? themeConfig.textPrimary.withValues(alpha: 0.85)
+                      : themeConfig.textSecondary.withValues(alpha: 0.4),
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 18),
         GestureDetector(
           onTap: () => _switchWrongWordsMode(true),
           behavior: HitTestBehavior.opaque,
-          child: Text(
-            '历史',
-            style: TextStyle(
-              fontSize: isHistory ? 17 : 14.5,
-              fontWeight: isHistory ? FontWeight.w600 : FontWeight.w400,
-              color: isHistory
-                  ? themeConfig.textPrimary
-                  : themeConfig.textSecondary.withValues(alpha: 0.45),
-              letterSpacing: -0.2,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '历史',
+                style: TextStyle(
+                  fontSize: isHistory ? 17 : 14.5,
+                  fontWeight: isHistory ? FontWeight.w600 : FontWeight.w400,
+                  color: isHistory
+                      ? themeConfig.textPrimary
+                      : themeConfig.textSecondary.withValues(alpha: 0.45),
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$historyCount',
+                style: TextStyle(
+                  fontSize: isHistory ? 13.5 : 12,
+                  fontWeight: isHistory ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Roboto',
+                  color: isHistory
+                      ? themeConfig.textPrimary.withValues(alpha: 0.85)
+                      : themeConfig.textSecondary.withValues(alpha: 0.4),
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
           ),
         ),
-        if (dataLoaded)
-          Padding(
-            padding: const EdgeInsets.only(left: 6),
-            child: Text(
-              '($totalWordCount)',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: themeConfig.textSecondary.withValues(alpha: 0.75),
-                letterSpacing: 0.2,
-              ),
-            ),
-          ),
       ],
     );
+  }
+
+  Future<void> _loadWrongWordsCounts() async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return;
+    try {
+      final counts = await WordBo().getWrongWordsCounts(userId);
+      if (mounted) {
+        setState(() {
+          _todayWrongCount = counts.today;
+          _historyWrongCount = counts.history;
+        });
+      }
+    } catch (e) {
+      Global.logger.w('获取错词数量统计失败: $e');
+    }
   }
 
   Future<void> _switchWrongWordsMode(bool toHistory) async {
@@ -4151,10 +4207,12 @@ class WordListPageState extends State<WordListPage>
         _restoreAsrIfNeeded(caller);
       },
     );
+    _loadWrongWordsCounts();
     if (mounted) {
       setState(() {});
     }
   }
 }
+
 
 
