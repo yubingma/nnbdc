@@ -2897,50 +2897,64 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     const batchSizeChips = [5, 10, 20, 30, 50];
     double dragAccumulator = 0;
 
-    showDialog(
+    showGeneralDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.20),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
+      barrierDismissible: true,
+      barrierLabel: '高级学习设置',
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.18),
+      transitionDuration: const Duration(milliseconds: 220),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      pageBuilder: (ctx, _, __) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
           return Dialog(
             backgroundColor: Colors.transparent,
             insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isDarkMode
-                          ? [
-                              const Color(0xFF1C2230).withValues(alpha: 0.90),
-                              const Color(0xFF121722).withValues(alpha: 0.84),
-                            ]
-                          : [
-                              Colors.white.withValues(alpha: 0.92),
-                              Colors.white.withValues(alpha: 0.84),
-                            ],
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.12)
-                          : Colors.white.withValues(alpha: 0.70),
-                      width: 1.2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.08),
-                        blurRadius: 30,
-                        offset: const Offset(0, 12),
-                      ),
-                    ],
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                    blurRadius: 28,
+                    offset: const Offset(0, 10),
                   ),
-                  child: Column(
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDarkMode
+                            ? [
+                                const Color(0xB8161B26),
+                                const Color(0x9910141D),
+                              ]
+                            : [
+                                const Color(0x66FFFFFF),
+                                const Color(0x4DFFFFFF),
+                              ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDarkMode
+                            ? const Color(0x33FFFFFF)
+                            : const Color(0x80FFFFFF),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -3068,10 +3082,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           height: 52,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+                            color: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.white.withValues(alpha: 0.35),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.white.withValues(alpha: 0.65),
                               width: 1,
                             ),
                           ),
@@ -3209,10 +3227,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           height: 52,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+                            color: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.white.withValues(alpha: 0.35),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.white.withValues(alpha: 0.65),
                               width: 1,
                             ),
                           ),
@@ -3341,8 +3363,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               child: TextButton(
                                 onPressed: () => Navigator.of(ctx).pop(),
                                 style: TextButton.styleFrom(
-                                  backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9),
-                                  foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
+                                  backgroundColor: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : Colors.white.withValues(alpha: 0.40),
+                                  foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF475569),
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
@@ -3385,10 +3409,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ),
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
+  },
+);
   }
 
   /// 弹出每组单词数精确定制输入框（支持 1 ~ 500）
@@ -3405,10 +3431,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
     String? errorText;
 
-    return showDialog<int>(
+    return showGeneralDialog<int>(
       context: parentContext,
-      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.20),
-      builder: (ctx) => StatefulBuilder(
+      barrierDismissible: true,
+      barrierLabel: '自定义每组单词数',
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.18),
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      pageBuilder: (ctx, _, __) => StatefulBuilder(
         builder: (ctx, setInputState) {
           void submit() {
             final text = textController.text.trim();
@@ -3425,130 +3460,142 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           return Dialog(
             backgroundColor: Colors.transparent,
             insetPadding: const EdgeInsets.symmetric(horizontal: 40),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isDarkMode
-                          ? [
-                              const Color(0xFF1C2230).withValues(alpha: 0.94),
-                              const Color(0xFF121722).withValues(alpha: 0.90),
-                            ]
-                          : [
-                              Colors.white.withValues(alpha: 0.96),
-                              Colors.white.withValues(alpha: 0.90),
-                            ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.12)
-                          : Colors.white.withValues(alpha: 0.70),
-                      width: 1.2,
-                    ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                    blurRadius: 28,
+                    offset: const Offset(0, 10),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '自定义每组单词数',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                        ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDarkMode
+                            ? [
+                                const Color(0xB8161B26),
+                                const Color(0x9910141D),
+                              ]
+                            : [
+                                const Color(0x66FFFFFF),
+                                const Color(0x4DFFFFFF),
+                              ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '范围 1 ~ ${StudyConfig.maxBatchSize} 词/组',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDarkMode ? Colors.white38 : const Color(0xFF64748B),
-                        ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDarkMode
+                            ? const Color(0x33FFFFFF)
+                            : const Color(0x80FFFFFF),
+                        width: 1.2,
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: textController,
-                        autofocus: true,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: 'Roboto',
-                          color: primaryColor,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: '输入数量',
-                          suffixText: '词/组',
-                          suffixStyle: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: primaryColor.withValues(alpha: 0.8),
-                          ),
-                          errorText: errorText,
-                          filled: true,
-                          fillColor: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.06)
-                              : const Color(0xFFF1F5F9),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: primaryColor, width: 1.5),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '自定义每组单词数',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
                           ),
                         ),
-                        onSubmitted: (_) => submit(),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 40,
-                              child: TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(),
-                                style: TextButton.styleFrom(
-                                  backgroundColor: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.08)
-                                      : const Color(0xFFF1F5F9),
-                                  foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                child: const Text('取消', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '范围 1 ~ ${StudyConfig.maxBatchSize} 词/组',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDarkMode ? Colors.white38 : const Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: textController,
+                          autofocus: true,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'Roboto',
+                            color: primaryColor,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '输入数量',
+                            suffixText: '词/组',
+                            suffixStyle: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor.withValues(alpha: 0.8),
+                            ),
+                            errorText: errorText,
+                            filled: true,
+                            fillColor: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.06)
+                                : Colors.white.withValues(alpha: 0.40),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: primaryColor, width: 1.5),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: SizedBox(
-                              height: 40,
-                              child: ElevatedButton(
-                                onPressed: submit,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          onSubmitted: (_) => submit(),
+                        ),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 40,
+                                child: TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : Colors.white.withValues(alpha: 0.40),
+                                    foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text('取消', style: TextStyle(fontWeight: FontWeight.w600)),
                                 ),
-                                child: const Text('确定', style: TextStyle(fontWeight: FontWeight.w700)),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: SizedBox(
+                                height: 40,
+                                child: ElevatedButton(
+                                  onPressed: submit,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text('确定', style: TextStyle(fontWeight: FontWeight.w700)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -3593,17 +3640,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: !enabled
-              ? (isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF1F5F9))
+              ? (isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.white.withValues(alpha: 0.15))
               : isSelected
-                  ? primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.10)
-                  : (isDarkMode ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8FAFC)),
+                  ? primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.12)
+                  : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.35)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: !enabled
                 ? Colors.transparent
                 : isSelected
                     ? primaryColor
-                    : (isDarkMode ? Colors.white.withValues(alpha: 0.07) : const Color(0xFFE2E8F0)),
+                    : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.60)),
             width: isSelected ? 1.2 : 1,
           ),
         ),
@@ -3630,51 +3677,64 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
     final primaryColor = themeConfig.primaryColor;
 
-    showDialog<void>(
+    showGeneralDialog<void>(
       context: parentCtx,
-      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.25),
-      builder: (ctx) => Dialog(
+      barrierDismissible: true,
+      barrierLabel: '今日最少新词规则说明',
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.18),
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      pageBuilder: (ctx, _, __) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDarkMode
-                      ? [
-                          const Color(0xFF1C2230).withValues(alpha: 0.94),
-                          const Color(0xFF121722).withValues(alpha: 0.90),
-                        ]
-                      : [
-                          Colors.white.withValues(alpha: 0.95),
-                          Colors.white.withValues(alpha: 0.90),
-                        ],
-                ),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : Colors.white.withValues(alpha: 0.80),
-                  width: 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.10),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                blurRadius: 28,
+                offset: const Offset(0, 10),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDarkMode
+                        ? [
+                            const Color(0xB8161B26),
+                            const Color(0x9910141D),
+                          ]
+                        : [
+                            const Color(0x66FFFFFF),
+                            const Color(0x4DFFFFFF),
+                          ],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: isDarkMode
+                        ? const Color(0x33FFFFFF)
+                        : const Color(0x80FFFFFF),
+                    width: 1.2,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   // 顶部标题行（含右上角关闭按钮）
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -3840,8 +3900,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 /// 「今日已打卡」印章的画笔：
@@ -4275,8 +4336,8 @@ class _ContinuousStepButtonState extends State<_ContinuousStepButton> {
         height: 38,
         decoration: BoxDecoration(
           color: widget.enabled
-              ? (widget.isDarkMode ? Colors.white.withValues(alpha: 0.10) : Colors.white)
-              : (widget.isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03)),
+              ? (widget.isDarkMode ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.70))
+              : (widget.isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white.withValues(alpha: 0.20)),
           borderRadius: BorderRadius.circular(10),
           boxShadow: widget.enabled && !widget.isDarkMode
               ? [
