@@ -3137,6 +3137,9 @@ class WordListPageState extends State<WordListPage>
                   child: ['今日错词', '历史错词'].contains(args.appBarTitle)
                       ? _buildWrongWordsAppBarTitle(isDarkMode, themeConfig)
                       : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
                           children: [
                             Flexible(
                               child: Text(
@@ -3150,19 +3153,19 @@ class WordListPageState extends State<WordListPage>
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (dataLoaded)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4),
-                                child: Text(
-                                  '($totalWordCount)',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: themeConfig.textSecondary.withValues(alpha: 0.8),
-                                    letterSpacing: 0.2,
-                                  ),
+                            if (dataLoaded) ...[
+                              const SizedBox(width: 4),
+                              Text(
+                                '$totalWordCount',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Roboto',
+                                  color: themeConfig.textPrimary.withValues(alpha: 0.85),
+                                  letterSpacing: -0.2,
                                 ),
                               ),
+                            ],
                           ],
                         ),
                 ),
