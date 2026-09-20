@@ -170,9 +170,9 @@ void main() {
     expect(find.text('高级学习设置'), findsOneWidget);
     expect(find.text('每组单词数'), findsOneWidget);
 
-    // 验证每组单词数的快捷药丸为经典 5 档：5词, 10词, 20词, 30词, 50词（即使当日词数为 20）
-    expect(find.text('50词'), findsOneWidget, reason: '50词药丸应存在，不受当日词数20的限制');
-    expect(find.text('200词'), findsNothing, reason: '绝不应出现突兀的当日词数快捷标签');
+    // 验证每组单词数的快捷药丸为经典 5 档：5, 10, 20, 30, 50（即使当日词数为 20）
+    expect(find.text('50'), findsOneWidget, reason: '50词药丸应存在，不受当日词数20的限制');
+    expect(find.text('200'), findsNothing, reason: '绝不应出现突兀的当日词数快捷标签');
 
     // 点击中间数字展示区域唤起自定义数字输入框
     final editIcon = find.byIcon(Icons.edit_outlined);

@@ -3111,8 +3111,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                           style: TextStyle(
                                             fontSize: 22,
                                             fontWeight: FontWeight.w800,
-                                            fontFamily: 'Roboto',
-                                            color: primaryColor,
+                                            fontFamily: selected == 0 ? null : 'Roboto',
+                                            color: selected == 0
+                                                ? (isDarkMode ? Colors.white70 : const Color(0xFF334155))
+                                                : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
                                           ),
                                         ),
                                         if (selected > 0)
@@ -3120,8 +3122,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                             text: ' 词',
                                             style: TextStyle(
                                               fontSize: 12.5,
-                                              fontWeight: FontWeight.w600,
-                                              color: primaryColor.withValues(alpha: 0.8),
+                                              fontWeight: FontWeight.w500,
+                                              color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
                                             ),
                                           ),
                                       ],
@@ -3294,15 +3296,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                                   fontSize: 22,
                                                   fontWeight: FontWeight.w800,
                                                   fontFamily: 'Roboto',
-                                                  color: primaryColor,
+                                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
                                                 ),
                                               ),
                                               TextSpan(
                                                 text: ' 词/组',
                                                 style: TextStyle(
                                                   fontSize: 12.5,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: primaryColor.withValues(alpha: 0.8),
+                                                  fontWeight: FontWeight.w500,
+                                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
                                                 ),
                                               ),
                                             ],
@@ -3312,7 +3314,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                         Icon(
                                           Icons.edit_outlined,
                                           size: 13,
-                                          color: primaryColor.withValues(alpha: 0.40),
+                                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
                                         ),
                                       ],
                                     ),
@@ -3632,6 +3634,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     bool enabled = true,
   }) {
     final isSelected = enabled && value == selectedValue;
+
+    // 解析是否为 "数字 + 单位" 结构（如 "5词", "10词"）
+    final match = RegExp(r'^(\d+)(.*)$').firstMatch(label);
+    final hasNumericValue = match != null;
+    final numPart = hasNumericValue ? match.group(1)! : label;
+    final unitPart = hasNumericValue ? match.group(2)! : '';
+
     return GestureDetector(
       onTap: enabled ? () => onSelect(value) : null,
       behavior: HitTestBehavior.opaque,
@@ -3642,30 +3651,74 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           color: !enabled
               ? (isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.white.withValues(alpha: 0.15))
               : isSelected
-                  ? primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.12)
+                  ? primaryColor
                   : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.35)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: !enabled
                 ? Colors.transparent
                 : isSelected
-                    ? primaryColor
-                    : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.60)),
-            width: isSelected ? 1.2 : 1,
+                    ? Colors.transparent
+                    : (isDarkMode ? const Color(0x20FFFFFF) : const Color(0x80FFFFFF)),
+            width: 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: primaryColor.withValues(alpha: 0.32),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: !enabled
-                ? (isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1))
-                : isSelected
-                    ? primaryColor
-                    : (isDarkMode ? Colors.white70 : const Color(0xFF475569)),
-          ),
-        ),
+        child: hasNumericValue
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    numPart,
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                      color: !enabled
+                          ? (isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1))
+                          : isSelected
+                              ? Colors.white
+                              : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
+                    ),
+                  ),
+                  if (unitPart.isNotEmpty) ...[
+                    const SizedBox(width: 2),
+                    Text(
+                      unitPart,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: !enabled
+                            ? (isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1))
+                            : isSelected
+                                ? Colors.white.withValues(alpha: 0.88)
+                                : (isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
+                      ),
+                    ),
+                  ],
+                ],
+              )
+            : Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: !enabled
+                      ? (isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1))
+                      : isSelected
+                          ? Colors.white
+                          : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
+                ),
+              ),
       ),
     );
   }
