@@ -1868,24 +1868,28 @@ class WordBo {
       List<Variable> variables = [];
       
       if (sortAlg == 'ALPHABETICAL') {
-        query = 'SELECT count(*) as word_order FROM dict_words dw '
+        query = 'SELECT word_order FROM ('
+                'SELECT w.spell, ROW_NUMBER() OVER (ORDER BY w.spell ASC) as word_order '
+                'FROM dict_words dw '
                 'JOIN words w ON dw.word_id = w.id '
-                'WHERE dw.dict_id = ? AND w.spell <= ?';
+                'WHERE dw.dict_id = ?'
+                ') WHERE spell = ? LIMIT 1';
         variables = [Variable.withString(dictId), Variable.withString(spell)];
       } else if (sortAlg == 'RANDOM') {
-        query = 'SELECT count(*) as word_order FROM dict_words dw '
+        query = 'SELECT word_order FROM ('
+                'SELECT w.spell, ROW_NUMBER() OVER (ORDER BY w.id ASC) as word_order '
+                'FROM dict_words dw '
                 'JOIN words w ON dw.word_id = w.id '
-                'WHERE dw.dict_id = ? AND w.id <= (SELECT id FROM words WHERE spell = ? LIMIT 1)';
+                'WHERE dw.dict_id = ?'
+                ') WHERE spell = ? LIMIT 1';
         variables = [Variable.withString(dictId), Variable.withString(spell)];
       } else {
-        query = 'SELECT (SELECT count(*) FROM dict_words dw2 WHERE dw2.dict_id = dw1.dict_id AND ('
-                'dw2.unit < dw1.unit OR (dw2.unit = dw1.unit AND ('
-                'dw2.seq < dw1.seq OR (dw2.seq = dw1.seq AND ('
-                'dw2.create_time < dw1.create_time OR (dw2.create_time = dw1.create_time AND dw2.word_id <= dw1.word_id)'
-                '))))) as word_order '
-                'FROM dict_words dw1 '
-                'JOIN words w ON dw1.word_id = w.id '
-                'WHERE dw1.dict_id = ? AND w.spell = ?';
+        query = 'SELECT word_order FROM ('
+                'SELECT w.spell, ROW_NUMBER() OVER (ORDER BY dw.unit ASC, dw.seq ASC, dw.create_time ASC, dw.word_id ASC) as word_order '
+                'FROM dict_words dw '
+                'JOIN words w ON dw.word_id = w.id '
+                'WHERE dw.dict_id = ?'
+                ') WHERE spell = ? LIMIT 1';
         variables = [Variable.withString(dictId), Variable.withString(spell)];
       }
       

@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 
 void main() {
   late MyDatabase database;
@@ -251,5 +252,32 @@ void main() {
       expect((await database.dictsDao.findById(dictId))?.wordCount, 1,
           reason: '整批结束时重算一次，wordCount 必须与实际一致');
     });
+
+    test('getDictWordOrder 在 ORIGINAL/ALPHABETICAL/RANDOM 下能正确返回单词位置且无 SQL 语法错误', () async {
+      MyDatabase.setInstanceForTesting(database);
+      await insertDict(3);
+      await database.wordsDao.insertEntities([
+        Word(id: 'w_apple', spell: 'apple', popularity: 1, createTime: DateTime.now(), updateTime: DateTime.now()),
+        Word(id: 'w_banana', spell: 'banana', popularity: 1, createTime: DateTime.now(), updateTime: DateTime.now()),
+        Word(id: 'w_pocket', spell: 'pocket', popularity: 1, createTime: DateTime.now(), updateTime: DateTime.now()),
+      ]);
+      final now = DateTime.now();
+      await database.dictWordsDao.insertEntities([
+        DictWord(dictId: dictId, wordId: 'w_banana', unit: 1, seq: 1, createTime: now, updateTime: now),
+        DictWord(dictId: dictId, wordId: 'w_pocket', unit: 1, seq: 2, createTime: now, updateTime: now),
+        DictWord(dictId: dictId, wordId: 'w_apple', unit: 2, seq: 1, createTime: now, updateTime: now),
+      ], false);
+
+      // ORIGINAL 排序: banana(unit 1, seq 1) -> 1, pocket(unit 1, seq 2) -> 2, apple(unit 2, seq 1) -> 3
+      final resOriginal = await WordBo().getDictWordOrder(dictId, 'pocket', sortAlg: 'ORIGINAL');
+      expect(resOriginal.success, true);
+      expect(resOriginal.data, 2);
+
+      // ALPHABETICAL 排序: apple -> 1, banana -> 2, pocket -> 3
+      final resAlpha = await WordBo().getDictWordOrder(dictId, 'pocket', sortAlg: 'ALPHABETICAL');
+      expect(resAlpha.success, true);
+      expect(resAlpha.data, 3);
+    });
   });
 }
+
