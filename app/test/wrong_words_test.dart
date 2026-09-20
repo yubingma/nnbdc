@@ -53,15 +53,18 @@ void main() {
       expect(todayWrongWords.length, 1);
       expect(todayWrongWords.first.wordId, 'word_today');
 
-      // 4. 验证历史错词（全量错题本）
+      // 4. 验证历史错词（方案二：严格排除今日错词，只包含昨日及更早的词）
+      final historyWrongWords = await database.userWrongWordsDao.getHistoryWrongWords(userId);
+      expect(historyWrongWords.length, 1);
+      expect(historyWrongWords.first.wordId, 'word_yesterday');
+      expect(await database.userWrongWordsDao.getHistoryWrongWordsCount(userId), 1);
+
+      // 5. 验证全量错词（全部做错记录）
       final allWrongWords = await database.userWrongWordsDao.getAllWrongWords(userId);
       expect(allWrongWords.length, 2);
       expect(allWrongWords.first.wordId, 'word_today'); // 最新在前
       expect(allWrongWords.last.wordId, 'word_yesterday');
-
-      // 5. 验证错词总数统计
-      final totalCount = await database.userWrongWordsDao.getAllWrongWordsCount(userId);
-      expect(totalCount, 2);
+      expect(await database.userWrongWordsDao.getAllWrongWordsCount(userId), 2);
     });
 
     test('removeWrongWord 能够从错题本中单独移出单词', () async {

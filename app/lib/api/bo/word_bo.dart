@@ -2443,13 +2443,14 @@ class WordBo {
       final wrongTime = wrongWord.updateTime;
       final countQuery = db.selectOnly(db.userWrongWords)
         ..addColumns([countAll()]);
+      final now = AppClock.now();
+      final start = DateUtils.businessDayStart(now);
+      final end = DateUtils.businessDayEnd(now);
       if (isHistory) {
         countQuery.where(db.userWrongWords.userId.equals(userId) &
+            coalesce([db.userWrongWords.updateTime, db.userWrongWords.createTime]).isSmallerThanValue(start) &
             coalesce([db.userWrongWords.updateTime, db.userWrongWords.createTime]).isBiggerOrEqualValue(wrongTime));
       } else {
-        final now = AppClock.now();
-        final start = DateUtils.businessDayStart(now);
-        final end = DateUtils.businessDayEnd(now);
         countQuery.where(db.userWrongWords.userId.equals(userId) &
             ((db.userWrongWords.createTime.isBiggerOrEqualValue(start) & db.userWrongWords.createTime.isSmallerThanValue(end)) |
                 (db.userWrongWords.updateTime.isBiggerOrEqualValue(start) & db.userWrongWords.updateTime.isSmallerThanValue(end))) &
@@ -2619,7 +2620,7 @@ class WordBo {
     }
   }
 
-  /// 获取历史所有错词（错题本）
+  /// 获取历史错词（排除今日做错的词，仅包含今日之前做错的词）
   Future<List<WordVo>> getHistoryWrongWords(String userId) async {
     try {
       await backfillWrongWordsIfNeeded(userId);
@@ -2628,7 +2629,7 @@ class WordBo {
       if (user == null) {
         throw Exception('用户不存在');
       }
-      final wrongWords = await db.userWrongWordsDao.getAllWrongWords(userId);
+      final wrongWords = await db.userWrongWordsDao.getHistoryWrongWords(userId);
       return await _convertWrongWordsToWordVos(wrongWords, userId);
     } catch (e, stackTrace) {
       Global.logger.e('获取历史错词失败: $e', stackTrace: stackTrace);
@@ -2767,7 +2768,7 @@ class WordBo {
       final wrongWordsCount = await wrongWordsQuery.getSingle();
       wordLists.add(WordList("今日错词", wrongWordsCount.read(db.userWrongWords.wordId.count(distinct: true)) ?? 0));
       await backfillWrongWordsIfNeeded(user.id);
-      final historyWrongWordsCount = await db.userWrongWordsDao.getAllWrongWordsCount(user.id);
+      final historyWrongWordsCount = await db.userWrongWordsDao.getHistoryWrongWordsCount(user.id);
       wordLists.add(WordList("历史错词", historyWrongWordsCount));
       final newWordsQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])

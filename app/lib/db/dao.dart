@@ -2377,7 +2377,35 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
         .get();
   }
 
-  /// 获取用户的所有历史错词（按最新出错时间倒序）
+  /// 获取用户的历史错词（不包含今日错词，仅包含今日之前做错的词，按最新出错时间倒序）
+  Future<List<UserWrongWord>> getHistoryWrongWords(String userId) async {
+    final now = AppClock.now();
+    final start = DateUtils.businessDayStart(now);
+    return (select(userWrongWords)
+          ..where((uw) =>
+              uw.userId.equals(userId) &
+              coalesce([uw.updateTime, uw.createTime]).isSmallerThanValue(start))
+          ..orderBy([
+            (uw) => OrderingTerm(
+                expression: coalesce([uw.updateTime, uw.createTime]),
+                mode: OrderingMode.desc)
+          ]))
+        .get();
+  }
+
+  /// 获取用户的历史错词总数（不包含今日错词）
+  Future<int> getHistoryWrongWordsCount(String userId) async {
+    final now = AppClock.now();
+    final start = DateUtils.businessDayStart(now);
+    final query = selectOnly(userWrongWords)
+      ..addColumns([userWrongWords.wordId.count(distinct: true)])
+      ..where(userWrongWords.userId.equals(userId) &
+          coalesce([userWrongWords.updateTime, userWrongWords.createTime]).isSmallerThanValue(start));
+    final row = await query.getSingle();
+    return row.read(userWrongWords.wordId.count(distinct: true)) ?? 0;
+  }
+
+  /// 获取用户的所有错词（全量错题本）
   Future<List<UserWrongWord>> getAllWrongWords(String userId) async {
     return (select(userWrongWords)
           ..where((uw) => uw.userId.equals(userId))
@@ -2389,7 +2417,7 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
         .get();
   }
 
-  /// 获取用户的所有历史错词总数
+  /// 获取用户的所有错词总数（全量错题本）
   Future<int> getAllWrongWordsCount(String userId) async {
     final query = selectOnly(userWrongWords)
       ..addColumns([userWrongWords.wordId.count(distinct: true)])
