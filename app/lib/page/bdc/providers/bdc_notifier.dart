@@ -2299,18 +2299,22 @@ class BdcNotifier extends _$BdcNotifier {
           canLeaveCurrWord: true,
           wordWrapper: clonedWrapper,
         );
+        // ⚡ 极速听觉反馈：在正确答案视觉点亮的同一瞬间，立即触发播放正确反馈音！
+        // 彻底消除由于后续异步关麦、FSRS 评分计算等排队造成的音效滞后感
+        _playCorrectSound();
+
         if (isMatch) {
           _isAnswerCorrectHandling = true; // 立即同步上锁，防止异步 stopSession 期间重入
           
-          // 仅在麦克风处于开启状态时才进行物理关麦，避免冗余硬件操作导致 Session 被重置为 'none' 并产生爆音
+          // 仅在麦克风处于开启状态时才进行物理关麦，通过 unawaited 异步执行，绝不阻塞 UI 主帧与答对流程
           if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-            await StudyAudioSessionController.instance.syncHardwareIntent(
+            unawaited(StudyAudioSessionController.instance.syncHardwareIntent(
               isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
               isAnsweringActive: false,
-              language: AsrLanguage.english,
+              language: AsrLanguage.chinese,
               phrases: [],
               caller: this,
-            );
+            ));
           }
           final ratingResult = _calculateRating(method);
           // 中文默写匹配成功后，退出中文字写板并重置中文默写标记
@@ -2326,8 +2330,6 @@ class BdcNotifier extends _$BdcNotifier {
             return;
           }
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-        } else {
-          _playCorrectSound();
         }
       } else if (state.isChineseDictation &&
           state.hasFinishedAnswering &&

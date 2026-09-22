@@ -1100,6 +1100,19 @@ class StudyAudioSessionController {
         debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热失败: $e');
       }
     }
+
+    if (_sfxPool.isNotEmpty) {
+      try {
+        final correctAsset = PlatformUtils.isIOS ? 'assets/audio/correct_ios.wav' : 'assets/audio/correct.wav';
+        if (_playerLoadedAsset[_sfxPool.first] != correctAsset) {
+          await _sfxPool.first.setAsset(correctAsset);
+          _playerLoadedAsset[_sfxPool.first] = correctAsset;
+          debugPrint('🔊 [SessionController] 正确音效常驻预热成功: $correctAsset');
+        }
+      } catch (e) {
+        debugPrint('🔊 [SessionController] 正确音效常驻预热失败: $e');
+      }
+    }
   }
 
   void prefetchSounds(List<String> urls) {
@@ -1109,7 +1122,8 @@ class StudyAudioSessionController {
   Future<void> _playAssetSound(
       String soundFileName, double speed, double volume, int timeoutInMilliSeconds, int sleepAfterPlayInMilliSeconds) async {
     try {
-      final player = await _getAvailableSfxPlayer();
+      final assetPath = 'assets/audio/$soundFileName';
+      final player = await _getAvailableSfxPlayer(targetAssetPath: assetPath);
       if (player == null) return;
       
       _activeCutToken.remove(player);
@@ -1118,13 +1132,16 @@ class StudyAudioSessionController {
       final busyDuration = Duration(milliseconds: sleepAfterPlayInMilliSeconds > 0 ? sleepAfterPlayInMilliSeconds : 1000);
       _playerBusyUntil[player] = now.add(busyDuration);
       
-      await player.setVolume(0.0);
-      await player.stop();
-      await player.seek(Duration.zero);
-      await player.setSpeed(speed);
-      
-      final assetPath = 'assets/audio/$soundFileName';
       final bool isSameAsset = _playerLoadedAsset[player] == assetPath;
+      if (player.playing) {
+        await player.setVolume(0.0);
+        await player.stop();
+      }
+      await player.seek(Duration.zero);
+      if (player.speed != speed) {
+        await player.setSpeed(speed);
+      }
+      
       if (!isSameAsset) {
         await player.setAsset(assetPath).timeout(Duration(milliseconds: timeoutInMilliSeconds));
         _playerLoadedAsset[player] = assetPath;
@@ -1220,7 +1237,7 @@ class StudyAudioSessionController {
     await _playAsrReadyHintSound();
   }
 
-  Future<ja.AudioPlayer?> _getAvailableSfxPlayer() {
+  Future<ja.AudioPlayer?> _getAvailableSfxPlayer({String? targetAssetPath}) {
     return _sfxLock.protect(() async {
       if (!_audioSessionConfigured) {
         await configureSession();
@@ -1233,6 +1250,17 @@ class StudyAudioSessionController {
       final now = AppClock.now();
       ja.AudioPlayer? bestPlayer;
       
+      // 1. 若指定了 targetAssetPath，优先寻找已经加载该 asset 且空闲的播放器（极速缓存命中）
+      if (targetAssetPath != null) {
+        for (var player in _sfxPool) {
+          final busyUntil = _playerBusyUntil[player];
+          if (!player.playing && (busyUntil == null || now.isAfter(busyUntil)) && _playerLoadedAsset[player] == targetAssetPath) {
+            _logSfxAlloc('Asset缓存命中优先', player);
+            return player;
+          }
+        }
+      }
+
       for (var player in _sfxPool) {
         final busyUntil = _playerBusyUntil[player];
         if (!player.playing && (busyUntil == null || now.isAfter(busyUntil))) {
