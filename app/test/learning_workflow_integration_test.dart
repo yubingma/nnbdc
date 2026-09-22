@@ -578,9 +578,11 @@ void main() {
     print('毕业单词总数: ${allMastered.length}，包含单词IDs: ${allMastered.map((e) => e.wordId).toList()}');
     expect(allMastered.length, 8); // 全书 8 个单词必须全部实现毕业
 
-    // 2. 检查错词本记录累计（由于每日重置，最终阶段错词本应已被清空）
+    // 2. 检查错词本记录沉淀（历史错词功能: 跨天重置不再清空错词本，
+    //    Day 1 答错过的 w_2 应作为历史错词长期沉淀，直至用户手动移出）
     final allWrongWords = await db.select(db.userWrongWords).get();
-    expect(allWrongWords.isEmpty, true);
+    expect(allWrongWords.length, 1, reason: '错词本应沉淀 Day1 答错过的 w_2');
+    expect(allWrongWords.first.wordId, 'w_2', reason: '沉淀下来的历史错词正是 Day1 答错的 w_2');
 
     // 3. 打卡总天数与连续打卡统计
     userInDb = await db.usersDao.getUserById(testUser.id);
