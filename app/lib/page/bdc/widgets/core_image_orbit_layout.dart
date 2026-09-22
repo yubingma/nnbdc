@@ -18,9 +18,37 @@ class CoreImageOrbitLayout {
   /// 中心图边缘与线上文字之间至少留出的距离
   static const double _hubPad = 8;
 
-  /// 连线至少要露出来的长度。中心图一味求大会把连线吃光，
-  /// 而「用连线表达引申」才是这个形态的核心，所以这里给它保底。
-  static const double _lineVisible = 26;
+  /// 画布上下边缘与最外侧标签之间的留白
+  static const double _edgePad = 8;
+
+  /// 连线至少要露出来的长度。
+  ///
+  /// 注意它和中心图大小是直接互换的：hubRadius = minGap − 本值 − 内边距，
+  /// 所以每多留 1pt 连线，中心图半径就少 1pt（直径少 2pt）。
+  /// relation 已经贴近释义框，靠中心这端不需要留太长。
+  static const double _lineVisible = 12;
+
+  /// 推荐的画布高度：**先定中心图大小，再反推高度**。
+  ///
+  /// 如果反过来（先定画布、中心图吃剩余空间），缩短连线只会让中心图变大，
+  /// 总高度一点不省 —— 这正是之前踩过的坑。
+  /// 每侧的开销从外到内依次是：
+  ///   边距 + 框高（框中心到画布边是半高，再到内侧又是半高）+ 箭头位
+  ///   + 文字高 + 内边距 + 连线可见长 + 中心图半径
+  static double recommendedCanvasHeight({
+    required double maxBoxHeight,
+    required double maxTextHeight,
+    double targetHubRadius = 58,
+  }) {
+    final perSide = _edgePad +
+        maxBoxHeight +
+        _arrowRoom +
+        maxTextHeight +
+        _hubPad +
+        _lineVisible +
+        targetHubRadius;
+    return 2 * perSide;
+  }
 
   static OrbitLayoutResult compute({
     required Size canvas,
@@ -37,7 +65,7 @@ class CoreImageOrbitLayout {
     }
 
     final rx = canvas.width / 2 - maxBoxHW - 6;
-    final ry = canvas.height / 2 - maxBoxHH - 8;
+    final ry = canvas.height / 2 - maxBoxHH - _edgePad;
 
     final alloc = _bestSectorLayout(metrics, rx, ry);
 

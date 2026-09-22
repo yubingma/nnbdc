@@ -97,6 +97,7 @@ class WordCoreImageCard extends StatelessWidget {
     // 有分支且数量在可控范围内 → 环绕形态；否则退回列表，绝不画一张糊掉的图
     final useOrbit =
         branches.length >= 2 && branches.length <= _maxOrbitBranches;
+    final titleRow = _buildTitleRow(context, coreImage, useOrbit: useOrbit);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -110,7 +111,7 @@ class WordCoreImageCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTitleRow(context, coreImage, titleColor, useOrbit: useOrbit),
+            if (titleRow != null) titleRow,
             if (useOrbit)
               _CoreImageOrbit(
                 branches: branches,
@@ -136,36 +137,26 @@ class WordCoreImageCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTitleRow(
+  /// 卡片头部。环绕形态下不再需要 ——「核心意象」已写在中心图里，
+  /// Tab 名也表明了这块内容是什么，再顶一行标题纯属重复占位。
+  /// 只有降级成竖排列表时才留下 coreImage 作为小标题。
+  Widget? _buildTitleRow(
     BuildContext context,
-    String coreImage,
-    Color titleColor, {
+    String coreImage, {
     required bool useOrbit,
   }) {
+    if (useOrbit || coreImage.isEmpty) return null;
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Icon(Icons.bubble_chart_rounded, size: 16, color: context.primaryColor),
-        const SizedBox(width: 8),
         Text(
-          '核心意象',
+          coreImage,
           style: TextStyle(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-            color: titleColor,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: context.primaryColor,
           ),
         ),
-        const Spacer(),
-        // 环绕形态下 coreImage 已经写在中心图里了，这里不再重复
-        if (!useOrbit && coreImage.isNotEmpty)
-          Text(
-            coreImage,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: context.primaryColor,
-            ),
-          ),
       ],
     );
   }
@@ -329,17 +320,6 @@ class _CoreImageOrbit extends StatelessWidget {
   final String coreImage;
   final bool isDarkMode;
 
-  /// 画布高度随分支数收缩。
-  ///
-  /// 垂直方向的高度直接换算成中心图半径，但分支少时上下只各放一组标签，
-  /// 硬撑固定高度只会留下一段空连线。这里按规模给高度，兼顾紧凑与中心图。
-  static double _canvasHeightFor(int n) {
-    if (n <= 2) return 392;
-    if (n <= 4) return 402;
-    if (n <= 6) return 414;
-    return 430;
-  }
-
   static const double _lineWidth = 1.5;
 
   // 环形标注属于「图内文字」，比正文小；relation 压到 8.5 是为了让中心图站得住
@@ -389,13 +369,17 @@ class _CoreImageOrbit extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final height = _canvasHeightFor(branches.length);
 
         // 1. 先量尺寸，再算布局：位置依赖尺寸，不能反过来
         final metrics = <OrbitNodeMetrics>[];
         final boxSizes = <Size>[];
         final textSizes = <Size>[];
         final wrapped = <String>[];
+
+        // 高度由「目标中心图 + 上下各一组标签」反推，
+        // 这样缩短连线才真的省纵向空间，而不是被更大的中心图吃掉
+        var maxBoxHeight = 0.0;
+        var maxTextHeight = 0.0;
 
         for (final b in branches) {
           final posText = b.shortPos;
@@ -411,6 +395,8 @@ class _CoreImageOrbit extends StatelessWidget {
           final wrappedText = WordCoreImageCard.wrapRelation(b.relation);
           final textSize = _measureText(wrappedText, _relationStyle(accent));
 
+          maxBoxHeight = math.max(maxBoxHeight, boxH);
+          maxTextHeight = math.max(maxTextHeight, textSize.height);
           boxSizes.add(Size(boxW, boxH));
           textSizes.add(textSize);
           wrapped.add(wrappedText);
@@ -429,6 +415,11 @@ class _CoreImageOrbit extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: accent,
             ));
+
+        final height = CoreImageOrbitLayout.recommendedCanvasHeight(
+          maxBoxHeight: maxBoxHeight,
+          maxTextHeight: maxTextHeight,
+        );
 
         final layout = CoreImageOrbitLayout.compute(
           canvas: Size(width, height),
