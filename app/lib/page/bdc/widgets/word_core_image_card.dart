@@ -256,6 +256,28 @@ class WordCoreImageCard extends StatelessWidget {
   }
 }
 
+/// 环上释义框两行之间的呼吸间隙（测量与渲染共用）
+const double _boxLineGap = 2;
+
+/// 环上释义框的内边距。测量与渲染必须共用同一份，
+/// 只在一侧生效会让文字贴着边框（曾经就是这个 bug）。
+const double _boxPadH = 11;
+const double _boxPadV = 8;
+
+/// 图内标注不跟随正文字号缩放，测量与渲染必须用同一套字度量
+Size _measureText(String text, TextStyle style) {
+  final tp = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: TextScaler.noScaling,
+  )..layout();
+  return Size(tp.width, tp.height);
+}
+
+/// 核心意象图注的留白：带底色才压得住黑色线稿配图
+const EdgeInsets _coreLabelPad =
+    EdgeInsets.symmetric(horizontal: 6, vertical: 2);
+
 /// 一条引申分支
 class CoreImageBranch {
   const CoreImageBranch(
@@ -309,18 +331,15 @@ class _CoreImageOrbit extends StatelessWidget {
 
   /// 画布高度：标签要在上下两个扇区里铺开，垂直空间是这个形态最稀缺的资源。
   /// 压低会同步压小中心图，两者是直接换算关系。
-  static const double _canvasHeight = 372;
+  static const double _canvasHeight = 430;
 
   static const double _lineWidth = 1.5;
 
   // 环形标注属于「图内文字」，比正文小；relation 压到 8.5 是为了让中心图站得住
   static const double _relationFontSize = 8.5;
-  static const double _posFontSize = 9.5;
-  static const double _meaningFontSize = 11;
+  static const double _posFontSize = 10.5;
+  static const double _meaningFontSize = 12.5;
   static const double _coreLabelFontSize = 11;
-
-  static const double _boxPadH = 7;
-  static const double _boxPadV = 4;
 
   /// 简笔画占容器的比例，其余留给骑在圆周上的箭头尖
   static const double _schematicInset = 0.92;
@@ -345,17 +364,6 @@ class _CoreImageOrbit extends StatelessWidget {
         color: c,
       );
 
-  /// 图内标注不跟随正文字号缩放（见 build 里的 MediaQuery），
-  /// 测量与渲染必须用同一套字度量，否则预留空间会小于实际文字而挤爆。
-  static Size _measure(String text, TextStyle style) {
-    final tp = TextPainter(
-      text: TextSpan(text: text, style: style),
-      textDirection: TextDirection.ltr,
-      textScaler: TextScaler.noScaling,
-    )..layout();
-    return Size(tp.width, tp.height);
-  }
-
   @override
   Widget build(BuildContext context) {
     final accent = context.primaryColor;
@@ -365,6 +373,8 @@ class _CoreImageOrbit extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.12)
         : Colors.black.withValues(alpha: 0.10);
     final nodeBg = isDarkMode ? const Color(0xFF0F172A) : Colors.white;
+    final cardBg =
+        isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
     final lineColor = accent.withValues(alpha: 0.72);
 
     // 环形图是图形化排版，跟随系统/用户字号放大会直接压垮布局：
@@ -382,19 +392,17 @@ class _CoreImageOrbit extends StatelessWidget {
 
         for (final b in branches) {
           final posText = b.shortPos;
-          final posSize = posText.isEmpty
-              ? Size.zero
-              : _measure(posText, _posStyle(accent));
-          final meaningSize =
-              _measure(b.shortMeaning, _meaningStyle(titleColor));
-          // 必须与 _EndpointBox 的两行排布一致：测量和渲染一旦错位，
-          // 位置会按错误的尺寸排，连线也接不到框上。
-          final boxW =
-              math.max(posSize.width, meaningSize.width) + _boxPadH * 2;
-          final boxH = posSize.height + meaningSize.height + _boxPadV * 2;
+          final boxSize = _EndpointBox.measure(
+            pos: posText,
+            meaning: b.shortMeaning,
+            posStyle: _posStyle(accent),
+            meaningStyle: _meaningStyle(titleColor),
+          );
+          final boxW = boxSize.width;
+          final boxH = boxSize.height;
 
           final wrappedText = WordCoreImageCard.wrapRelation(b.relation);
-          final textSize = _measure(wrappedText, _relationStyle(accent));
+          final textSize = _measureText(wrappedText, _relationStyle(accent));
 
           boxSizes.add(Size(boxW, boxH));
           textSizes.add(textSize);
@@ -407,7 +415,7 @@ class _CoreImageOrbit extends StatelessWidget {
           ));
         }
 
-        final labelSize = _measure(
+        final labelSize = _measureText(
             coreImage,
             TextStyle(
               fontSize: _coreLabelFontSize,
@@ -466,13 +474,26 @@ class _CoreImageOrbit extends StatelessWidget {
                 // 核心意象文字（写在圆心，语义上就是「被围绕的中心」）
                 _centered(
                   layout.labelCenter,
-                  Text(
-                    coreImage,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: _coreLabelFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: accent,
+                  Container(
+                    padding: _coreLabelPad,
+                    decoration: BoxDecoration(
+                      // 半透明：底下是意象图，别整个盖住
+                      color: cardBg.withValues(alpha: 0.78),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      coreImage,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: _coreLabelFontSize,
+                        fontWeight: FontWeight.w600,
+                        color: accent,
+                        // 底色透了以后靠描边把字从线稿里拎出来
+                        shadows: [
+                          Shadow(color: cardBg, blurRadius: 3),
+                          Shadow(color: cardBg, blurRadius: 3),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -540,13 +561,34 @@ class _EndpointBox extends StatelessWidget {
   final Color bg, border, accent, titleColor;
   final TextStyle posStyle, meaningStyle;
 
+  /// 框的尺寸。渲染与布局共用这一份计算 ——
+  /// 之前两处各写一份，加了内边距后只改了一处，文字就贴到了边框上。
+  static Size measure({
+    required String pos,
+    required String meaning,
+    required TextStyle posStyle,
+    required TextStyle meaningStyle,
+  }) {
+    final posSize = pos.isEmpty ? Size.zero : _measureText(pos, posStyle);
+    final meaningSize = _measureText(meaning, meaningStyle);
+    return Size(
+      math.max(posSize.width, meaningSize.width) + _boxPadH * 2,
+      posSize.height +
+          meaningSize.height +
+          (pos.isEmpty ? 0 : _boxLineGap) +
+          _boxPadV * 2,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment.center,
+      padding:
+          const EdgeInsets.symmetric(horizontal: _boxPadH, vertical: _boxPadV),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: border, width: 1),
         boxShadow: [
           BoxShadow(
@@ -561,6 +603,7 @@ class _EndpointBox extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (pos.isNotEmpty) Text(pos, style: posStyle),
+          if (pos.isNotEmpty) const SizedBox(height: _boxLineGap),
           Text(meaning, style: meaningStyle),
         ],
       ),
