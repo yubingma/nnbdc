@@ -329,9 +329,16 @@ class _CoreImageOrbit extends StatelessWidget {
   final String coreImage;
   final bool isDarkMode;
 
-  /// 画布高度：标签要在上下两个扇区里铺开，垂直空间是这个形态最稀缺的资源。
-  /// 压低会同步压小中心图，两者是直接换算关系。
-  static const double _canvasHeight = 430;
+  /// 画布高度随分支数收缩。
+  ///
+  /// 垂直方向的高度直接换算成中心图半径，但分支少时上下只各放一组标签，
+  /// 硬撑固定高度只会留下一段空连线。这里按规模给高度，兼顾紧凑与中心图。
+  static double _canvasHeightFor(int n) {
+    if (n <= 2) return 392;
+    if (n <= 4) return 402;
+    if (n <= 6) return 414;
+    return 430;
+  }
 
   static const double _lineWidth = 1.5;
 
@@ -382,7 +389,7 @@ class _CoreImageOrbit extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        const height = _canvasHeight;
+        final height = _canvasHeightFor(branches.length);
 
         // 1. 先量尺寸，再算布局：位置依赖尺寸，不能反过来
         final metrics = <OrbitNodeMetrics>[];

@@ -17,6 +17,12 @@ class CoreImageOrbitPreviewPage extends StatelessWidget {
   static const String _schema =
       'about 的核心画面是绕着某个东西的外围转。比如你围着一棵树打转，就是 about 的感觉。';
 
+  /// 真实线上形态：两三个义项的词最多，这个规模最该被验证
+  static const List<Map<String, String>> _b2 = [
+    {'pos': 'n', 'meaning': '施虐者', 'relation': '偏轨之力加于人身物'},
+    {'pos': 'n', 'meaning': '辱骂者', 'relation': '言语之力偏轨伤人'},
+  ];
+
   static const List<Map<String, String>> _b5 = [
     {'pos': 'prep', 'meaning': '关于', 'relation': '围绕主题外缘关联'},
     {'pos': 'adv', 'meaning': '大约', 'relation': '在准确值周边游移'},
@@ -69,9 +75,11 @@ class CoreImageOrbitPreviewPage extends StatelessWidget {
             child: Text(
               '线上库 word_core_image 还是空的，单词详情页里暂时看不到这张卡片，'
               '所以这里用 about 的真实释义构造三档规模，用来在真机上确认排版与字号。',
-              style: TextStyle(fontSize: 12.5, height: 1.6, color: Color(0xFF64748B)),
+              style: TextStyle(
+                  fontSize: 12.5, height: 1.6, color: Color(0xFF64748B)),
             ),
           ),
+          _section('2 条分支 · 环绕形态（线上最常见的规模）', _b2),
           _section('5 条分支 · 环绕形态', _b5),
           _section('8 条分支 · 环绕形态（中心图明显缩小）', _b8),
           _section('11 条分支 · 应自动降级为竖排列表', _b11),
