@@ -34,7 +34,6 @@ import 'bdc/widgets/word_images_widget.dart';
 import 'bdc/widgets/word_core_image_card.dart';
 import 'pic_search.dart';
 
-
 class WordDetailPageArgs {
   late WordVo word;
 
@@ -63,8 +62,13 @@ class WordDetailPageArgs {
   /// 共享的音频会话控制器
   final StudyAudioSessionController? sessionController;
 
-  WordDetailPageArgs(this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong,
-      {this.priorityDictIds, this.showNextWordButton = false, this.autoPlayWordOnEnter = true, this.onNextWord, this.sessionController});
+  WordDetailPageArgs(
+      this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong,
+      {this.priorityDictIds,
+      this.showNextWordButton = false,
+      this.autoPlayWordOnEnter = true,
+      this.onNextWord,
+      this.sessionController});
 
   @override
   String toString() {
@@ -97,7 +101,8 @@ class WordDetailPage extends StatefulWidget {
   }
 }
 
-class WordDetailPageState extends State<WordDetailPage> with TickerProviderStateMixin {
+class WordDetailPageState extends State<WordDetailPage>
+    with TickerProviderStateMixin {
   bool dataLoaded = false;
   bool _isLoadingData = false;
   bool _isLoadingNextWord = false;
@@ -106,7 +111,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   final Map<String, Future<bool>> _voteFutures = {};
 
   Future<bool> _getVoteFuture(SentenceVo sentence) {
-    return _voteFutures.putIfAbsent(sentence.id, () => sentenceHasBeenVoted(sentence));
+    return _voteFutures.putIfAbsent(
+        sentence.id, () => sentenceHasBeenVoted(sentence));
   }
 
   bool isWrongWord = false; // 是否是错词
@@ -134,6 +140,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   StreamSubscription<String>? _aiPartialSub;
   bool _aiThoughtComplete = false; // 思考内容是否生成完成
   bool _canUseAiAssistant = false;
+
+  // 一词多义·核心意象。内容占地很大，从「详情」里拎出来单独成一个 Tab；
+  // 这里持有数据是为了让 Tab 数量、TabBar 与 TabBarView 三处判断保持同步。
+  WordCoreImage? _coreImage;
 
   // Animation controllers
   late final AnimationController _wordSoundController;
@@ -173,9 +183,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   Future<void> _checkRawWordStatus() async {
     final user = Global.getLoggedInUser();
     if (user != null && args.word.id != null) {
-      final rawDict = await MyDatabase.instance.dictsDao.findUserRawDict(user.id);
+      final rawDict =
+          await MyDatabase.instance.dictsDao.findUserRawDict(user.id);
       if (rawDict != null) {
-        final dw = await MyDatabase.instance.dictWordsDao.getById(rawDict.id, args.word.id!);
+        final dw = await MyDatabase.instance.dictWordsDao
+            .getById(rawDict.id, args.word.id!);
         if (mounted) {
           setState(() {
             _isInRawWordDict = dw != null;
@@ -239,7 +251,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (index == _lastTabIndex) return;
     _lastTabIndex = index;
     // 切换到 AI 助教 Tab 时自动收起抽屉
-    if (_canUseAiAssistant && index == calcTabsCount() - 1 && _isTopDrawerExpanded) {
+    if (_canUseAiAssistant &&
+        index == calcTabsCount() - 1 &&
+        _isTopDrawerExpanded) {
       _isTopDrawerExpanded = false;
       _cumulativeScroll = 0.0;
       _lastDrawerActionTime = DateTime.now();
@@ -337,184 +351,200 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       return;
     }
     try {
-    if (args.needReQueryWord) {
-      try {
-        // 使用新的根据ID查词方法，传入用户ID进行词书过滤，并支持优先词书
-        var result = await WordBo().searchWordById(args.word.id!, Global.getLoggedInUser()?.id, priorityDictIds: args.priorityDictIds);
-        if (result.word == null) {
-          ToastUtil.error("单词 ${args.word.spell} 不存在");
-        } else {
-          args.word = result.word!;
-        }
-      } catch (e, st) {
-        ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
-        if (mounted) {
-          setState(() {
-            hasError = true;
-            errorMessage = '加载单词详情失败';
-          });
-        }
-        return;
-      }
-    }
-
-    // 如果未强制重查，但数据不完整（缺少形近词或例句），则补拉完整数据
-    if (!args.needReQueryWord) {
-      bool missingSimilar = args.word.similarWords == null;
-      bool missingMeaningItems = args.word.meaningItems == null || args.word.meaningItems!.isEmpty;
-      bool missingAnySentences = false;
-      if (!missingMeaningItems) {
-        for (final mi in args.word.meaningItems!) {
-          if (mi.sentences == null || mi.sentences!.isEmpty) {
-            missingAnySentences = true;
-            break;
-          }
-        }
-      }
-
-      if (missingSimilar || missingMeaningItems || missingAnySentences) {
+      if (args.needReQueryWord) {
         try {
           // 使用新的根据ID查词方法，传入用户ID进行词书过滤，并支持优先词书
-          var result = await WordBo().searchWordById(args.word.id!, Global.getLoggedInUser()?.id, priorityDictIds: args.priorityDictIds);
-          if (result.word != null) {
+          var result = await WordBo().searchWordById(
+              args.word.id!, Global.getLoggedInUser()?.id,
+              priorityDictIds: args.priorityDictIds);
+          if (result.word == null) {
+            ToastUtil.error("单词 ${args.word.spell} 不存在");
+          } else {
             args.word = result.word!;
           }
         } catch (e, st) {
-          // 静默处理补拉失败，保留已有数据
           ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
+          if (mounted) {
+            setState(() {
+              hasError = true;
+              errorMessage = '加载单词详情失败';
+            });
+          }
+          return;
         }
       }
-    }
 
-    // 使用传入的参数判断本次是否回答错误
-    isWrongWord = args.isThisAnswerWrong;
-
-    _sentencesFuture = args.word.getSentences();
-
-    int totalCount = 0;
-    final cigenLinks = args.word.cigenWordLinks;
-    if (cigenLinks != null && cigenLinks.isNotEmpty) {
-      final cigenIds = cigenLinks.map((l) => l.cigen.id).toList();
-      final db = MyDatabase.instance;
-      final query = db.selectOnly(db.cigenWordLinks)
-        ..addColumns([db.cigenWordLinks.wordId])
-        ..where(db.cigenWordLinks.cigenId.isIn(cigenIds));
-      final results = await query.get();
-      final uniqueWordIds = results.map((r) => r.read(db.cigenWordLinks.wordId)).toSet();
-      totalCount = uniqueWordIds.length;
-    }
-    _totalCigenWordsCount = totalCount;
-    await _checkRawWordStatus();
-
-    setState(() {
-      final newLength = calcTabsCount();
-      if (_tabController.length != newLength) {
-        _tabController.dispose();
-        _tabController = TabController(length: newLength, vsync: this);
-        _tabController.addListener(_onTabControllerChanged);
-      }
-      dataLoaded = true;
-    });
-
-    // 在第一帧秒开渲染后，以非阻塞的异步方式在后台计算相似ID、拉取单词详情及进行词库状态判断
-    if (LocalEmbeddingCache.instance.isInitialized) {
-      _isLoadingSemanticSimilar = true;
-      unawaited(() async {
-        try {
-          // 1. 异步在 Isolate 中检索相似单词 ID，不阻塞 UI 渲染 tick
-          final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 9);
-          final filteredResults = similarResults.where((res) => res.distance < 500).toList();
-          final similarIds = filteredResults.map((res) => res.wordId).toList();
-          final distanceMap = {for (var res in filteredResults) res.wordId: res.distance};
-
-          // 2. 批量拉取拓展单词拼写与释义详情
-          final tempSemanticWords = await _getSimpleWordsByIds(similarIds);
-          
-          // 3. 批量查询形近词与拓展词在词书内状态
-          final allRelatedIds = <String>[];
-          if (args.word.similarWords != null) {
-            allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
-          }
-          allRelatedIds.addAll(similarIds);
-          await _checkWordsInDict(allRelatedIds);
-
-          // 按照是否在词书内（正体字排在斜体字前面）和形近程度（原始相似度排序）排序形近词
-          _sortSimilarWords();
-
-          // 按照是否在词书内（在的排前面）和汉明距离（小的排前面）排序拓展词
-          tempSemanticWords.sort((a, b) {
-            final aInDict = _wordInDictStatus[a.id!] ?? true;
-            final bInDict = _wordInDictStatus[b.id!] ?? true;
-            if (aInDict != bInDict) {
-              return aInDict ? -1 : 1;
+      // 如果未强制重查，但数据不完整（缺少形近词或例句），则补拉完整数据
+      if (!args.needReQueryWord) {
+        bool missingSimilar = args.word.similarWords == null;
+        bool missingMeaningItems =
+            args.word.meaningItems == null || args.word.meaningItems!.isEmpty;
+        bool missingAnySentences = false;
+        if (!missingMeaningItems) {
+          for (final mi in args.word.meaningItems!) {
+            if (mi.sentences == null || mi.sentences!.isEmpty) {
+              missingAnySentences = true;
+              break;
             }
-            final aDist = distanceMap[a.id!] ?? 9999;
-            final bDist = distanceMap[b.id!] ?? 9999;
-            return aDist.compareTo(bDist);
-          });
-
-          final sortedIds = tempSemanticWords.map((w) => w.id!).toList();
-
-          if (mounted) {
-            setState(() {
-              _semanticSimilarWordIds = sortedIds;
-              _semanticSimilarWords = tempSemanticWords;
-              _isLoadingSemanticSimilar = false;
-            });
-          }
-        } catch (e, st) {
-          Global.logger.e('异步加载拓展单词失败', error: e, stackTrace: st);
-          if (mounted) {
-            setState(() {
-              _isLoadingSemanticSimilar = false;
-            });
           }
         }
-      }());
-    } else {
-      // 降级：仅批量查询形近词在词书范围状态
-      final allRelatedIds = <String>[];
-      if (args.word.similarWords != null) {
-        allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
-      }
-      if (allRelatedIds.isNotEmpty) {
-        unawaited(_checkWordsInDict(allRelatedIds).then((_) {
-          _sortSimilarWords();
-          if (mounted) setState(() {});
-        }));
-      }
-    }
 
-    final links = args.word.cigenWordLinks;
-    if (links != null) {
-      for (final link in links) {
-        final cigen = link.cigen;
-        _cigenExpandedState[cigen.id] = true;
-        _loadCigenExpandedWords(cigen.id);
-      }
-    }
-
-
-    if (_canUseAiAssistant) {
-      _prefetchAiExplanation();
-    }
-
-    // 自动播放单词发音（若进入前已播放过，如汉译英答对反馈，则跳过以避免重复）
-    if (args.autoPlayWordOnEnter && !_sessionDisposed) {
-      _playWithAnimation(() async {
-        try {
-          await sessionController.playWordAndSentence(
-            args.word,
-            sentenceDigest: null,
-            playWord: true,
-            playSentence: false,
-            isSpeakMode: false,
-          );
-        } catch (e) {
-          Global.logger.d("自动播放发音失败: $e");
+        if (missingSimilar || missingMeaningItems || missingAnySentences) {
+          try {
+            // 使用新的根据ID查词方法，传入用户ID进行词书过滤，并支持优先词书
+            var result = await WordBo().searchWordById(
+                args.word.id!, Global.getLoggedInUser()?.id,
+                priorityDictIds: args.priorityDictIds);
+            if (result.word != null) {
+              args.word = result.word!;
+            }
+          } catch (e, st) {
+            // 静默处理补拉失败，保留已有数据
+            ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
+          }
         }
-      }, 'word');
-    }
+      }
+
+      // 使用传入的参数判断本次是否回答错误
+      isWrongWord = args.isThisAnswerWrong;
+
+      _sentencesFuture = args.word.getSentences();
+
+      int totalCount = 0;
+      final cigenLinks = args.word.cigenWordLinks;
+      if (cigenLinks != null && cigenLinks.isNotEmpty) {
+        final cigenIds = cigenLinks.map((l) => l.cigen.id).toList();
+        final db = MyDatabase.instance;
+        final query = db.selectOnly(db.cigenWordLinks)
+          ..addColumns([db.cigenWordLinks.wordId])
+          ..where(db.cigenWordLinks.cigenId.isIn(cigenIds));
+        final results = await query.get();
+        final uniqueWordIds =
+            results.map((r) => r.read(db.cigenWordLinks.wordId)).toSet();
+        totalCount = uniqueWordIds.length;
+      }
+      _totalCigenWordsCount = totalCount;
+      await _checkRawWordStatus();
+
+      final wordId = args.word.id;
+      if (wordId != null) {
+        _coreImage = await MyDatabase.instance.wordCoreImagesDao
+            .getCoreImageByWordId(wordId);
+      }
+
+      setState(() {
+        final newLength = calcTabsCount();
+        if (_tabController.length != newLength) {
+          _tabController.dispose();
+          _tabController = TabController(length: newLength, vsync: this);
+          _tabController.addListener(_onTabControllerChanged);
+        }
+        dataLoaded = true;
+      });
+
+      // 在第一帧秒开渲染后，以非阻塞的异步方式在后台计算相似ID、拉取单词详情及进行词库状态判断
+      if (LocalEmbeddingCache.instance.isInitialized) {
+        _isLoadingSemanticSimilar = true;
+        unawaited(() async {
+          try {
+            // 1. 异步在 Isolate 中检索相似单词 ID，不阻塞 UI 渲染 tick
+            final similarResults = await LocalEmbeddingCache.instance
+                .findSimilarWords(args.word.id!, limit: 9);
+            final filteredResults =
+                similarResults.where((res) => res.distance < 500).toList();
+            final similarIds =
+                filteredResults.map((res) => res.wordId).toList();
+            final distanceMap = {
+              for (var res in filteredResults) res.wordId: res.distance
+            };
+
+            // 2. 批量拉取拓展单词拼写与释义详情
+            final tempSemanticWords = await _getSimpleWordsByIds(similarIds);
+
+            // 3. 批量查询形近词与拓展词在词书内状态
+            final allRelatedIds = <String>[];
+            if (args.word.similarWords != null) {
+              allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
+            }
+            allRelatedIds.addAll(similarIds);
+            await _checkWordsInDict(allRelatedIds);
+
+            // 按照是否在词书内（正体字排在斜体字前面）和形近程度（原始相似度排序）排序形近词
+            _sortSimilarWords();
+
+            // 按照是否在词书内（在的排前面）和汉明距离（小的排前面）排序拓展词
+            tempSemanticWords.sort((a, b) {
+              final aInDict = _wordInDictStatus[a.id!] ?? true;
+              final bInDict = _wordInDictStatus[b.id!] ?? true;
+              if (aInDict != bInDict) {
+                return aInDict ? -1 : 1;
+              }
+              final aDist = distanceMap[a.id!] ?? 9999;
+              final bDist = distanceMap[b.id!] ?? 9999;
+              return aDist.compareTo(bDist);
+            });
+
+            final sortedIds = tempSemanticWords.map((w) => w.id!).toList();
+
+            if (mounted) {
+              setState(() {
+                _semanticSimilarWordIds = sortedIds;
+                _semanticSimilarWords = tempSemanticWords;
+                _isLoadingSemanticSimilar = false;
+              });
+            }
+          } catch (e, st) {
+            Global.logger.e('异步加载拓展单词失败', error: e, stackTrace: st);
+            if (mounted) {
+              setState(() {
+                _isLoadingSemanticSimilar = false;
+              });
+            }
+          }
+        }());
+      } else {
+        // 降级：仅批量查询形近词在词书范围状态
+        final allRelatedIds = <String>[];
+        if (args.word.similarWords != null) {
+          allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
+        }
+        if (allRelatedIds.isNotEmpty) {
+          unawaited(_checkWordsInDict(allRelatedIds).then((_) {
+            _sortSimilarWords();
+            if (mounted) setState(() {});
+          }));
+        }
+      }
+
+      final links = args.word.cigenWordLinks;
+      if (links != null) {
+        for (final link in links) {
+          final cigen = link.cigen;
+          _cigenExpandedState[cigen.id] = true;
+          _loadCigenExpandedWords(cigen.id);
+        }
+      }
+
+      if (_canUseAiAssistant) {
+        _prefetchAiExplanation();
+      }
+
+      // 自动播放单词发音（若进入前已播放过，如汉译英答对反馈，则跳过以避免重复）
+      if (args.autoPlayWordOnEnter && !_sessionDisposed) {
+        _playWithAnimation(() async {
+          try {
+            await sessionController.playWordAndSentence(
+              args.word,
+              sentenceDigest: null,
+              playWord: true,
+              playSentence: false,
+              isSpeakMode: false,
+            );
+          } catch (e) {
+            Global.logger.d("自动播放发音失败: $e");
+          }
+        }, 'word');
+      }
     } finally {
       _isLoadingData = false;
     }
@@ -528,18 +558,24 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 进一步清理 AI 输出：移除所有特殊 token 和残留的标签
     cleaned = cleaned.replaceAll(RegExp(r'<\|im_start\|>.*?(\n|$)'), '');
     cleaned = cleaned.replaceAll(RegExp(r'<\|im_end\|>.*?(\n|$)'), '');
-    cleaned = cleaned.replaceAll(RegExp(r'<\|imgr\|.*?\|(?:imgr\|)+'), ''); // 移除任何残留的完整标签
+    cleaned = cleaned.replaceAll(
+        RegExp(r'<\|imgr\|.*?\|(?:imgr\|)+'), ''); // 移除任何残留的完整标签
     cleaned = cleaned.replaceAll(RegExp(r'(?:imgr\|)+'), ''); // 移除孤立的重复 imgr|
     cleaned = cleaned.replaceAll('<|imgr|', '');
 
     // 移除 "assistant\n" 或 "assistant: " 这种多余的开头/残留
-    cleaned = cleaned.replaceAll(RegExp(r'(assistant|user|system)\s*(:|\n)', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(
+        RegExp(r'(assistant|user|system)\s*(:|\n)', caseSensitive: false), '');
 
     // 移除旧 prompt 残留（system/user 指令内容）
-    cleaned = cleaned.replaceAll(RegExp(r'你是一个简洁的英语老师.*?解释：', dotAll: true), '');
-    cleaned = cleaned.replaceAll(RegExp(r'解释单词:.*?词汇数据:.*?\n', dotAll: true), '');
-    cleaned = cleaned.replaceAll(RegExp(r'You are a helpful.*?Chinese learners\.', dotAll: true), '');
-    cleaned = cleaned.replaceAll(RegExp(r'You explain words.*?Chinese\.', dotAll: true), '');
+    cleaned =
+        cleaned.replaceAll(RegExp(r'你是一个简洁的英语老师.*?解释：', dotAll: true), '');
+    cleaned =
+        cleaned.replaceAll(RegExp(r'解释单词:.*?词汇数据:.*?\n', dotAll: true), '');
+    cleaned = cleaned.replaceAll(
+        RegExp(r'You are a helpful.*?Chinese learners\.', dotAll: true), '');
+    cleaned = cleaned.replaceAll(
+        RegExp(r'You explain words.*?Chinese\.', dotAll: true), '');
 
     // 移除开头和结尾的空白及多余空行
     cleaned = cleaned.trim();
@@ -547,18 +583,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     // 处理大模型顽固的中英文标点混用（修复类似 "I’ m", "don’ t", "cat’ s" 的全角加空格问题）
     cleaned = cleaned.replaceAllMapped(
-      RegExp(r"[’‘”`]\s*(s|m|t|ve|re|ll|d)\b", caseSensitive: false),
-      (match) => "'${match.group(1)}"
-    );
+        RegExp(r"[’‘”`]\s*(s|m|t|ve|re|ll|d)\b", caseSensitive: false),
+        (match) => "'${match.group(1)}");
     cleaned = cleaned.replaceAllMapped(
-      RegExp(r"([a-zA-Z])\s*[’‘”`]\s*([a-zA-Z])"),
-      (match) => "${match.group(1)}'${match.group(2)}"
-    );
+        RegExp(r"([a-zA-Z])\s*[’‘”`]\s*([a-zA-Z])"),
+        (match) => "${match.group(1)}'${match.group(2)}");
 
     return cleaned;
   }
-
-
 
   /// 解析 AI 原始输出，分离思考过程 和 最终答案
   void _parseAiOutput(String raw) {
@@ -586,7 +618,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     setState(() {
       // 在对话模式下，我们将最新的输出动态更新到最后一条 assistant 消息中
-      if (_chatMessages.isNotEmpty && _chatMessages.last.role == MessageRole.assistant) {
+      if (_chatMessages.isNotEmpty &&
+          _chatMessages.last.role == MessageRole.assistant) {
         _chatMessages.last.content = _cleanAiText(answer ?? '');
         _chatMessages.last.thought = thought;
       }
@@ -602,7 +635,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       // 检查当前是否在底部（允许 50 像素误差）。
       // 注意：由于 addPostFrameCallback 还没运行，此时的 maxScrollExtent 还是旧内容的。
       // 因此 isAtBottom 表示：在加入新内容之前，用户是否已经处于当时的底部。
-      final isAtBottom = _chatScrollController.offset >= _chatScrollController.position.maxScrollExtent - 50;
+      final isAtBottom = _chatScrollController.offset >=
+          _chatScrollController.position.maxScrollExtent - 50;
 
       // 如果用户不再底部，且不是强制滚动（如发送新消息），则不执行自动滚动，让用户停留在当前位置
       if (!isAtBottom && !force) {
@@ -626,7 +660,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     setState(() {
       _chatMessages.add(ChatMessage(role: MessageRole.user, content: userText));
-      _chatMessages.add(ChatMessage(role: MessageRole.assistant, content: '', thought: ''));
+      _chatMessages.add(
+          ChatMessage(role: MessageRole.assistant, content: '', thought: ''));
       _aiLoading = true;
       _aiError = null;
       _aiRawAccum = '';
@@ -635,7 +670,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _chatInputController.clear();
     _scrollToBottom(force: true);
     FocusScope.of(context).unfocus();
-
 
     try {
       final runtime = AiService().runtime;
@@ -648,7 +682,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       });
 
       // 准备完整的待选历史 (最多 10 条)
-      final allValidMessages = _chatMessages.where((m) => m.content.isNotEmpty || (m.thought != null && m.thought!.isNotEmpty)).toList();
+      final allValidMessages = _chatMessages
+          .where((m) =>
+              m.content.isNotEmpty ||
+              (m.thought != null && m.thought!.isNotEmpty))
+          .toList();
 
       var historyPayload = allValidMessages
           .map((m) => {
@@ -697,7 +735,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     try {
       final userId = Global.getLoggedInUser()?.id;
       final words = await WordBo().getCigenExpandedWords(
-        cigenId, userId,
+        cigenId,
+        userId,
         currentWordId: args.word.id,
       );
       _expandedCigenWords[cigenId] = words;
@@ -719,13 +758,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     try {
       if (userId != null && userId.isNotEmpty) {
         final learningDicts = await (db.select(db.learningDicts)
-          ..where((tbl) => tbl.userId.equals(userId))).get();
+              ..where((tbl) => tbl.userId.equals(userId)))
+            .get();
         final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
 
         if (selectedDictIds.isNotEmpty) {
           final expandedDictIds = <String>{...selectedDictIds};
           final dbDicts = await (db.select(db.dicts)
-            ..where((d) => d.id.isIn(selectedDictIds))).get();
+                ..where((d) => d.id.isIn(selectedDictIds)))
+              .get();
           for (final d in dbDicts) {
             if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
               expandedDictIds.add(d.baseDictId!);
@@ -738,13 +779,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             ..where(db.meaningItems.dictId.isIn(expandedDictIds));
           final miResults = await miQuery.get();
 
-          inDictWordIds.addAll(miResults.map((r) => r.read(db.meaningItems.wordId)!));
+          inDictWordIds
+              .addAll(miResults.map((r) => r.read(db.meaningItems.wordId)!));
         } else {
           inDictWordIds.addAll(wordIds);
         }
 
         // 批量检查是否有学习记录
-        final learningStatusMap = await WordBo.getWordsLearningStatusBatch(userId, wordIds);
+        final learningStatusMap =
+            await WordBo.getWordsLearningStatusBatch(userId, wordIds);
         for (final id in wordIds) {
           final hasRecord = learningStatusMap[id] != null;
           _wordInDictStatus[id] = inDictWordIds.contains(id) || hasRecord;
@@ -763,7 +806,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   void _sortSimilarWords() {
-    if (args.word.similarWords == null || args.word.similarWords!.isEmpty) return;
+    if (args.word.similarWords == null || args.word.similarWords!.isEmpty)
+      return;
 
     // 记录原始索引以实现稳定排序（保持形近程度/相似度从高到低的次要顺序）
     final originalIndices = <String, int>{};
@@ -806,12 +850,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           ..groupInfo = localWord.groupInfo;
       }).toList();
 
-      final miQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
+      final miQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.isIn(wordIds));
       final allMeanings = await miQuery.get();
 
       final Map<String, List<MeaningItemVo>> meaningMap = {};
       for (final mi in allMeanings) {
-        final miVo = MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null);
+        final miVo =
+            MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null);
         meaningMap.putIfAbsent(mi.wordId, () => []).add(miVo);
       }
 
@@ -835,7 +881,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       _aiRawAccum = '';
       _chatMessages.clear();
       // 初始化第一条 assistant 消息用于流式接收
-      _chatMessages.add(ChatMessage(role: MessageRole.assistant, content: '', thought: ''));
+      _chatMessages.add(
+          ChatMessage(role: MessageRole.assistant, content: '', thought: ''));
       _aiThoughtComplete = false;
     });
 
@@ -855,7 +902,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       final mergedMeaningItems = args.word.getMergedMeaningItems();
       final meaningPayload = mergedMeaningItems
           .map((mi) => {
-                'cn': ((mi.ciXing ?? '').trim().isEmpty ? '' : '${mi.ciXing} ') + (mi.meaning ?? ''),
+                'cn':
+                    ((mi.ciXing ?? '').trim().isEmpty ? '' : '${mi.ciXing} ') +
+                        (mi.meaning ?? ''),
               })
           .toList();
 
@@ -874,7 +923,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         payload: {
           'spell': args.word.spell,
           'phonetics': args.word.mergedPronounce ?? '',
-          'partOfSpeech': mergedMeaningItems.isNotEmpty ? (mergedMeaningItems.first.ciXing ?? '') : '',
+          'partOfSpeech': mergedMeaningItems.isNotEmpty
+              ? (mergedMeaningItems.first.ciXing ?? '')
+              : '',
           'meanings': meaningPayload,
           'sentences': sentencePayload,
           'shortDesc': args.word.shortDesc,
@@ -889,7 +940,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         if (mounted) {
           setState(() {
             _parseAiOutput(response.text ?? '');
-            if (_chatMessages.last.thought != null && _chatMessages.last.thought!.isNotEmpty && !_aiThoughtComplete) {
+            if (_chatMessages.last.thought != null &&
+                _chatMessages.last.thought!.isNotEmpty &&
+                !_aiThoughtComplete) {
               _aiThoughtComplete = true;
             }
             _aiLoading = false;
@@ -916,12 +969,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
   }
 
-  Future<void> _playWithAnimation(Future<void> Function() playSound, String audioType) async {
+  Future<void> _playWithAnimation(
+      Future<void> Function() playSound, String audioType) async {
     // 启动当前动画前，先停止其他所有正在播放的动画
     _stopAllExcept(audioType);
 
     // 先获取/初始化控制器与播放状态
-    final controller = audioType == 'word' ? _wordSoundController : _getSentenceController(audioType);
+    final controller = audioType == 'word'
+        ? _wordSoundController
+        : _getSentenceController(audioType);
     _playingStates[audioType]!.value = true;
     if (!mounted) return;
     controller.repeat();
@@ -945,7 +1001,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       final state = entry.value;
       if (type != audioType && state.value) {
         state.value = false;
-        final controller = type == 'word' ? _wordSoundController : _sentenceSoundControllers[type];
+        final controller = type == 'word'
+            ? _wordSoundController
+            : _sentenceSoundControllers[type];
         if (controller != null) {
           controller.stop();
           controller.reset();
@@ -971,11 +1029,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           // 顶部单词概览大卡片（带可收起抽屉效果）
           Container(
             constraints: BoxConstraints(
-              maxHeight: (MediaQuery.of(context).size.height - MediaQuery.of(context).viewInsets.bottom) * 0.45,
+              maxHeight: (MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).viewInsets.bottom) *
+                  0.45,
             ),
             decoration: BoxDecoration(
               color: cardBg,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(20)),
               boxShadow: themeConfig.cardShadows,
               border: Border(
                 bottom: BorderSide(
@@ -1031,7 +1092,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                     child: Padding(
                                       padding: const EdgeInsets.all(4),
                                       child: Icon(
-                                        _isInRawWordDict ? Icons.star_rounded : Icons.star_outline_rounded,
+                                        _isInRawWordDict
+                                            ? Icons.star_rounded
+                                            : Icons.star_outline_rounded,
                                         size: 23,
                                         color: _isInRawWordDict
                                             ? const Color(0xFFF59E0B)
@@ -1080,10 +1143,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               const SizedBox(height: 8),
                               // 音标发音行（轻灵极简无多余胶囊，支持口音切换与声浪动效）
                               ValueListenableBuilder<String>(
-                                valueListenable: Prefs.pronunciationAccentNotifier,
+                                valueListenable:
+                                    Prefs.pronunciationAccentNotifier,
                                 builder: (context, _, __) {
-                                  if (args.word.spell.isEmpty) return const SizedBox.shrink();
-                                  final pronInfo = Util.getWordPronounceWithAccent(args.word);
+                                  if (args.word.spell.isEmpty)
+                                    return const SizedBox.shrink();
+                                  final pronInfo =
+                                      Util.getWordPronounceWithAccent(
+                                          args.word);
                                   return Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -1096,7 +1163,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                             if (!_sessionDisposed) {
                                               _playWithAnimation(() async {
                                                 try {
-                                                  await sessionController.playWordAndSentence(
+                                                  await sessionController
+                                                      .playWordAndSentence(
                                                     args.word,
                                                     sentenceDigest: null,
                                                     playWord: true,
@@ -1127,10 +1195,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       InkWell(
                                         borderRadius: BorderRadius.circular(12),
                                         onTap: () {
-                                          if (!_playingStates['word']!.value && !_sessionDisposed) {
+                                          if (!_playingStates['word']!.value &&
+                                              !_sessionDisposed) {
                                             _playWithAnimation(() async {
                                               try {
-                                                await sessionController.playWordAndSentence(
+                                                await sessionController
+                                                    .playWordAndSentence(
                                                   args.word,
                                                   sentenceDigest: null,
                                                   playWord: true,
@@ -1144,13 +1214,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                           }
                                         },
                                         child: Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 4, vertical: 2),
                                           child: AnimatedBuilder(
                                             animation: _playingStates['word']!,
                                             builder: (context, child) {
                                               return ModernSoundWaveIcon(
-                                                isPlaying: _playingStates['word']!.value,
-                                                animationController: _wordSoundController,
+                                                isPlaying:
+                                                    _playingStates['word']!
+                                                        .value,
+                                                animationController:
+                                                    _wordSoundController,
                                                 size: 16,
                                                 color: subtitleColor,
                                                 activeColor: accentColor,
@@ -1159,21 +1233,43 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                           ),
                                         ),
                                       ),
-                                      ValueListenableBuilder<AudioPlaybackStatus>(
-                                        valueListenable: StudyAudioSessionController.instance.playbackStatusNotifier,
+                                      ValueListenableBuilder<
+                                          AudioPlaybackStatus>(
+                                        valueListenable:
+                                            StudyAudioSessionController.instance
+                                                .playbackStatusNotifier,
                                         builder: (context, status, child) {
-                                          if (status.hasFallback && status.spell == args.word.spell) {
+                                          if (status.hasFallback &&
+                                              status.spell == args.word.spell) {
                                             return Container(
-                                              margin: const EdgeInsets.only(left: 6),
-                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                              margin: const EdgeInsets.only(
+                                                  left: 6),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 5,
+                                                      vertical: 1),
                                               decoration: BoxDecoration(
-                                                color: Colors.amber.withValues(alpha: 0.15),
-                                                borderRadius: BorderRadius.circular(4),
-                                                border: Border.all(color: Colors.amber.withValues(alpha: 0.35), width: 0.5),
+                                                color: Colors.amber
+                                                    .withValues(alpha: 0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                                border: Border.all(
+                                                    color: Colors.amber
+                                                        .withValues(
+                                                            alpha: 0.35),
+                                                    width: 0.5),
                                               ),
                                               child: Text(
-                                                status.fallbackType == AudioFallbackType.ttsFallback ? '系统朗读' : '备用发音',
-                                                style: const TextStyle(fontSize: 10, color: Colors.amber, fontWeight: FontWeight.bold),
+                                                status.fallbackType ==
+                                                        AudioFallbackType
+                                                            .ttsFallback
+                                                    ? '系统朗读'
+                                                    : '备用发音',
+                                                style: const TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.amber,
+                                                    fontWeight:
+                                                        FontWeight.bold),
                                               ),
                                             );
                                           }
@@ -1192,148 +1288,252 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         ),
                       ],
                     ),
-                    
                     AnimatedSize(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
                       alignment: Alignment.topCenter,
-                      child: (_isTopDrawerExpanded && MediaQuery.of(context).viewInsets.bottom <= 0) ? Column(
-                        children: [
-                          // 配图展示
-                          if (StudyConfig.fromCurrentUser().enableWordImage && args.word.images != null && args.word.images!.isNotEmpty)
-                            Builder(
-                              builder: (BuildContext context) {
-                                final screenWidth = MediaQuery.of(context).size.width;
-                                final availableWidth = screenWidth - leftPadding - rightPadding;
-                                final estimatedWidth = (availableWidth - 10) / 2.0;
-                                final imageHeight = (estimatedWidth * 0.58).clamp(88.0, 110.0);
-                                final imageBorderColor = isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.12)
-                                    : Colors.black.withValues(alpha: 0.08);
-                                final images = args.word.images!.take(2).toList();
+                      child: (_isTopDrawerExpanded &&
+                              MediaQuery.of(context).viewInsets.bottom <= 0)
+                          ? Column(
+                              children: [
+                                // 配图展示
+                                if (StudyConfig.fromCurrentUser()
+                                        .enableWordImage &&
+                                    args.word.images != null &&
+                                    args.word.images!.isNotEmpty)
+                                  Builder(
+                                    builder: (BuildContext context) {
+                                      final screenWidth =
+                                          MediaQuery.of(context).size.width;
+                                      final availableWidth = screenWidth -
+                                          leftPadding -
+                                          rightPadding;
+                                      final estimatedWidth =
+                                          (availableWidth - 10) / 2.0;
+                                      final imageHeight =
+                                          (estimatedWidth * 0.58)
+                                              .clamp(88.0, 110.0);
+                                      final imageBorderColor = isDarkMode
+                                          ? Colors.white.withValues(alpha: 0.12)
+                                          : Colors.black
+                                              .withValues(alpha: 0.08);
+                                      final images =
+                                          args.word.images!.take(2).toList();
 
-                                return Padding(
-                                  padding: const EdgeInsets.fromLTRB(leftPadding, 12, rightPadding, 4),
-                                  child: Row(
-                                    children: [
-                                      for (int i = 0; i < images.length; i++) ...[
-                                        if (i > 0) const SizedBox(width: 10),
-                                        Expanded(
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(12),
-                                            onTap: () {
-                                              showImagePreviewWithContext(
-                                                context,
-                                                images[i],
-                                                onDeleted: () => _reloadWordData(),
-                                              );
-                                            },
-                                            child: Container(
-                                              height: imageHeight,
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: imageBorderColor, width: 0.5),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
-                                                    blurRadius: 6,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius: BorderRadius.circular(11.5),
-                                                child: Stack(
-                                                  fit: StackFit.expand,
-                                                  children: [
-                                                    Builder(
-                                                      builder: (context) {
-                                                        final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${images[i].imageFile}');
-                                                        Global.logger.d('加载单词图片 [详情页]: $imageUrl');
-                                                        return Image.network(
-                                                          imageUrl,
-                                                          height: imageHeight,
-                                                          fit: BoxFit.cover,
-                                                          errorBuilder: (context, error, stackTrace) {
-                                                            Global.logger.e('图片加载失败 [详情页]: $imageUrl', error: error);
-                                                            return Container(
-                                                              color: isDarkMode ? const Color(0xFF1E293B) : Colors.grey[100],
-                                                              child: Icon(Icons.broken_image_rounded, color: subtitleColor, size: 24),
-                                                            );
-                                                          },
-                                                        );
-                                                      },
+                                      return Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            leftPadding, 12, rightPadding, 4),
+                                        child: Row(
+                                          children: [
+                                            for (int i = 0;
+                                                i < images.length;
+                                                i++) ...[
+                                              if (i > 0)
+                                                const SizedBox(width: 10),
+                                              Expanded(
+                                                child: InkWell(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  onTap: () {
+                                                    showImagePreviewWithContext(
+                                                      context,
+                                                      images[i],
+                                                      onDeleted: () =>
+                                                          _reloadWordData(),
+                                                    );
+                                                  },
+                                                  child: Container(
+                                                    height: imageHeight,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      border: Border.all(
+                                                          color:
+                                                              imageBorderColor,
+                                                          width: 0.5),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withValues(
+                                                                  alpha:
+                                                                      isDarkMode
+                                                                          ? 0.2
+                                                                          : 0.04),
+                                                          blurRadius: 6,
+                                                          offset: const Offset(
+                                                              0, 2),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    if (images[i].status == 'PENDING')
-                                                      Positioned.fill(
-                                                        child: Container(
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.black.withValues(alpha: 0.55),
+                                                    child: ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              11.5),
+                                                      child: Stack(
+                                                        fit: StackFit.expand,
+                                                        children: [
+                                                          Builder(
+                                                            builder: (context) {
+                                                              final imageUrl =
+                                                                  Uri.encodeFull(
+                                                                      '${Config.imgBaseUrl}word/${images[i].imageFile}');
+                                                              Global.logger.d(
+                                                                  '加载单词图片 [详情页]: $imageUrl');
+                                                              return Image
+                                                                  .network(
+                                                                imageUrl,
+                                                                height:
+                                                                    imageHeight,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                                errorBuilder:
+                                                                    (context,
+                                                                        error,
+                                                                        stackTrace) {
+                                                                  Global.logger.e(
+                                                                      '图片加载失败 [详情页]: $imageUrl',
+                                                                      error:
+                                                                          error);
+                                                                  return Container(
+                                                                    color: isDarkMode
+                                                                        ? const Color(
+                                                                            0xFF1E293B)
+                                                                        : Colors
+                                                                            .grey[100],
+                                                                    child: Icon(
+                                                                        Icons
+                                                                            .broken_image_rounded,
+                                                                        color:
+                                                                            subtitleColor,
+                                                                        size:
+                                                                            24),
+                                                                  );
+                                                                },
+                                                              );
+                                                            },
                                                           ),
-                                                          child: const Center(
-                                                            child: Column(
-                                                              mainAxisSize: MainAxisSize.min,
-                                                              children: [
-                                                                SizedBox(
-                                                                  width: 16,
-                                                                  height: 16,
-                                                                  child: CircularProgressIndicator(
-                                                                    strokeWidth: 2,
-                                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                          if (images[i]
+                                                                  .status ==
+                                                              'PENDING')
+                                                            Positioned.fill(
+                                                              child: Container(
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .black
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.55),
+                                                                ),
+                                                                child:
+                                                                    const Center(
+                                                                  child: Column(
+                                                                    mainAxisSize:
+                                                                        MainAxisSize
+                                                                            .min,
+                                                                    children: [
+                                                                      SizedBox(
+                                                                        width:
+                                                                            16,
+                                                                        height:
+                                                                            16,
+                                                                        child:
+                                                                            CircularProgressIndicator(
+                                                                          strokeWidth:
+                                                                              2,
+                                                                          valueColor:
+                                                                              AlwaysStoppedAnimation<Color>(Colors.white),
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              4),
+                                                                      Text(
+                                                                          'AI审核中',
+                                                                          style: TextStyle(
+                                                                              color: Colors.white,
+                                                                              fontSize: 10)),
+                                                                    ],
                                                                   ),
                                                                 ),
-                                                                SizedBox(height: 4),
-                                                                Text('AI审核中', style: TextStyle(color: Colors.white, fontSize: 10)),
-                                                              ],
+                                                              ),
                                                             ),
-                                                          ),
-                                                        ),
+                                                        ],
                                                       ),
-                                                  ],
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                      if (images.length < 2) ...[
-                                        if (images.isNotEmpty) const SizedBox(width: 10),
-                                        Expanded(
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(12),
-                                            onTap: () {
-                                              context.push('/pic_search',
-                                                      extra: PicSearchPageArgs(
-                                                          args.word.id!,
-                                                          args.word.spell))
-                                                  .then((value) => _reloadWordData());
-                                            },
-                                            child: Container(
-                                              height: imageHeight,
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: imageBorderColor, width: 0.5),
-                                                color: isDarkMode ? const Color(0xFF1E293B).withValues(alpha: 0.5) : Colors.grey[50],
+                                            ],
+                                            if (images.length < 2) ...[
+                                              if (images.isNotEmpty)
+                                                const SizedBox(width: 10),
+                                              Expanded(
+                                                child: InkWell(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  onTap: () {
+                                                    context
+                                                        .push('/pic_search',
+                                                            extra:
+                                                                PicSearchPageArgs(
+                                                                    args.word
+                                                                        .id!,
+                                                                    args.word
+                                                                        .spell))
+                                                        .then((value) =>
+                                                            _reloadWordData());
+                                                  },
+                                                  child: Container(
+                                                    height: imageHeight,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      border: Border.all(
+                                                          color:
+                                                              imageBorderColor,
+                                                          width: 0.5),
+                                                      color: isDarkMode
+                                                          ? const Color(
+                                                                  0xFF1E293B)
+                                                              .withValues(
+                                                                  alpha: 0.5)
+                                                          : Colors.grey[50],
+                                                    ),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                            Icons
+                                                                .add_photo_alternate_outlined,
+                                                            size: 22,
+                                                            color:
+                                                                subtitleColor),
+                                                        const SizedBox(
+                                                            height: 4),
+                                                        Text('添加配图',
+                                                            style: TextStyle(
+                                                                fontSize: 10.5,
+                                                                color:
+                                                                    subtitleColor)),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(Icons.add_photo_alternate_outlined, size: 22, color: subtitleColor),
-                                                  const SizedBox(height: 4),
-                                                  Text('添加配图', style: TextStyle(fontSize: 10.5, color: subtitleColor)),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
+                                            ],
+                                          ],
                                         ),
-                                      ],
-                                    ],
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
-                        ],
-                      ) : const SizedBox(width: double.infinity),
+                              ],
+                            )
+                          : const SizedBox(width: double.infinity),
                     ),
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
@@ -1352,9 +1552,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             width: 36,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? Colors.white24
-                                  : Colors.black12,
+                              color:
+                                  isDarkMode ? Colors.white24 : Colors.black12,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -1362,7 +1561,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       ),
                     ),
                   ],
-                ), 
+                ),
               ),
             ),
           ),
@@ -1370,152 +1569,171 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           // 详情/形近词等多维 Tab
           Expanded(
             child: Container(
-                key: ValueKey('detail_tabs_${calcTabsCount()}_${args.word.id}'),
-                margin: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: cardBorder,
-                    width: 1.2,
-                  ),
-                  boxShadow: themeConfig.cardShadows,
+              key: ValueKey('detail_tabs_${calcTabsCount()}_${args.word.id}'),
+              margin: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: cardBorder,
+                  width: 1.2,
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: cardBorder,
-                            width: 1,
-                          ),
+                boxShadow: themeConfig.cardShadows,
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: cardBorder,
+                          width: 1,
                         ),
                       ),
-                      child: TabBar(
-                        isScrollable: true,
-                        tabAlignment: TabAlignment.center,
-                        controller: _tabController,
-                        labelPadding: const EdgeInsets.symmetric(horizontal: 14.0),
-                        labelStyle: const TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
+                    ),
+                    child: TabBar(
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.center,
+                      controller: _tabController,
+                      labelPadding:
+                          const EdgeInsets.symmetric(horizontal: 14.0),
+                      labelStyle: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      labelColor: accentColor,
+                      unselectedLabelColor: subtitleColor,
+                      indicatorSize: TabBarIndicatorSize.label,
+                      indicator: UnderlineTabIndicator(
+                        borderRadius: BorderRadius.circular(2),
+                        borderSide: BorderSide(
+                          color: accentColor,
+                          width: 2.8,
                         ),
-                        unselectedLabelStyle: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        labelColor: accentColor,
-                        unselectedLabelColor: subtitleColor,
-                        indicatorSize: TabBarIndicatorSize.label,
-                        indicator: UnderlineTabIndicator(
-                          borderRadius: BorderRadius.circular(2),
-                          borderSide: BorderSide(
-                            color: accentColor,
-                            width: 2.8,
-                          ),
-                        ),
-                        dividerColor: Colors.transparent,
-                        tabs: [
-                          const Tab(text: '详情'),
-                          if (hasSimilarWords())
-                            _buildTabItem('形近', args.word.similarWords!.length),
-                          if (hasSynonyms())
-                            _buildTabItem('近义', calcSynonymCount()),
-                          if (hasCigen())
-                            _buildTabItem('同根', _totalCigenWordsCount),
-                          if (hasSemanticSimilarWords())
-                            _buildTabItem('拓展', _isLoadingSemanticSimilar ? 9 : _semanticSimilarWordIds.length),
-                          if (_canUseAiAssistant)
-                            const Tab(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.auto_awesome, size: 14),
-                                  SizedBox(width: 4),
-                                  Text('AI 助教'),
-                                ],
-                              ),
+                      ),
+                      dividerColor: Colors.transparent,
+                      tabs: [
+                        const Tab(text: '详情'),
+                        if (hasCoreImage()) const Tab(text: '意象'),
+                        if (hasSimilarWords())
+                          _buildTabItem('形近', args.word.similarWords!.length),
+                        if (hasSynonyms())
+                          _buildTabItem('近义', calcSynonymCount()),
+                        if (hasCigen())
+                          _buildTabItem('同根', _totalCigenWordsCount),
+                        if (hasSemanticSimilarWords())
+                          _buildTabItem(
+                              '拓展',
+                              _isLoadingSemanticSimilar
+                                  ? 9
+                                  : _semanticSimilarWordIds.length),
+                        if (_canUseAiAssistant)
+                          const Tab(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.auto_awesome, size: 14),
+                                SizedBox(width: 4),
+                                Text('AI 助教'),
+                              ],
                             ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification notification) {
+                        if (notification.metrics.axis == Axis.horizontal)
+                          return false;
+
+                        if (_lastDrawerActionTime != null &&
+                            DateTime.now()
+                                    .difference(_lastDrawerActionTime!)
+                                    .inMilliseconds <
+                                450) {
+                          return false;
+                        }
+
+                        if (notification is ScrollUpdateNotification) {
+                          final scrollDelta = notification.scrollDelta;
+                          if (scrollDelta != null) {
+                            if (scrollDelta > 0.0) {
+                              _cumulativeScroll = 0.0;
+                              if (_isTopDrawerExpanded &&
+                                  notification.metrics.pixels > 10.0) {
+                                setState(() {
+                                  _isTopDrawerExpanded = false;
+                                  _lastDrawerActionTime = DateTime.now();
+                                });
+                              }
+                            } else if (scrollDelta < 0.0) {
+                              if (notification.metrics.pixels <= 5.0 &&
+                                  !_isTopDrawerExpanded &&
+                                  notification.dragDetails != null) {
+                                _cumulativeScroll += scrollDelta.abs();
+                                if (_cumulativeScroll >= 90.0) {
+                                  setState(() {
+                                    _isTopDrawerExpanded = true;
+                                    _lastDrawerActionTime = DateTime.now();
+                                  });
+                                  _cumulativeScroll = 0.0;
+                                }
+                              } else {
+                                _cumulativeScroll = 0.0;
+                              }
+                            }
+                          }
+                        } else if (notification is OverscrollNotification) {
+                          if (notification.overscroll < 0.0 &&
+                              !_isTopDrawerExpanded &&
+                              notification.dragDetails != null) {
+                            _cumulativeScroll += notification.overscroll.abs();
+                            if (_cumulativeScroll >= 90.0) {
+                              setState(() {
+                                _isTopDrawerExpanded = true;
+                                _lastDrawerActionTime = DateTime.now();
+                              });
+                              _cumulativeScroll = 0.0;
+                            }
+                          }
+                        } else if (notification is ScrollEndNotification) {
+                          _cumulativeScroll = 0.0;
+                        }
+
+                        return false;
+                      },
+                      child: TabBarView(
+                        controller: _tabController,
+                        physics: const NeverScrollableScrollPhysics(),
+                        dragStartBehavior: DragStartBehavior.down,
+                        children: [
+                          renderDetail(),
+                          if (hasCoreImage()) renderCoreImage(),
+                          if (hasSimilarWords()) renderSimilarWords(),
+                          if (hasSynonyms()) renderSynonyms(),
+                          if (hasCigen()) renderCigenAffix(),
+                          if (hasSemanticSimilarWords())
+                            renderSemanticSimilarWords(),
+                          if (_canUseAiAssistant) renderAiExplanation(),
                         ],
                       ),
                     ),
-                    Expanded( 
-                      child: NotificationListener<ScrollNotification>(
-                        onNotification: (ScrollNotification notification) {
-                          if (notification.metrics.axis == Axis.horizontal) return false;
-                          
-                          if (_lastDrawerActionTime != null &&
-                              DateTime.now().difference(_lastDrawerActionTime!).inMilliseconds < 450) {
-                            return false;
-                          }
-                          
-                          if (notification is ScrollUpdateNotification) {
-                            final scrollDelta = notification.scrollDelta;
-                            if (scrollDelta != null) {
-                              if (scrollDelta > 0.0) {
-                                _cumulativeScroll = 0.0;
-                                if (_isTopDrawerExpanded && notification.metrics.pixels > 10.0) {
-                                  setState(() {
-                                    _isTopDrawerExpanded = false;
-                                    _lastDrawerActionTime = DateTime.now();
-                                  });
-                                }
-                              } else if (scrollDelta < 0.0) {
-                                if (notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded && notification.dragDetails != null) {
-                                  _cumulativeScroll += scrollDelta.abs();
-                                  if (_cumulativeScroll >= 90.0) {
-                                    setState(() {
-                                      _isTopDrawerExpanded = true;
-                                      _lastDrawerActionTime = DateTime.now();
-                                    });
-                                    _cumulativeScroll = 0.0;
-                                  }
-                                } else {
-                                  _cumulativeScroll = 0.0;
-                                }
-                              }
-                            }
-                          } else if (notification is OverscrollNotification) {
-                            if (notification.overscroll < 0.0 && !_isTopDrawerExpanded && notification.dragDetails != null) {
-                              _cumulativeScroll += notification.overscroll.abs();
-                              if (_cumulativeScroll >= 90.0) {
-                                setState(() {
-                                  _isTopDrawerExpanded = true;
-                                  _lastDrawerActionTime = DateTime.now();
-                                });
-                                _cumulativeScroll = 0.0;
-                              }
-                            }
-                          } else if (notification is ScrollEndNotification) {
-                            _cumulativeScroll = 0.0;
-                          }
-                          
-                          return false;
-                        },
-                        child: TabBarView( 
-                          controller: _tabController,
-                          physics: const NeverScrollableScrollPhysics(),
-                          dragStartBehavior: DragStartBehavior.down,
-                          children: [
-                            renderDetail(),
-                            if (hasSimilarWords()) renderSimilarWords(),
-                            if (hasSynonyms()) renderSynonyms(),
-                            if (hasCigen()) renderCigenAffix(),
-                            renderSemanticSimilarWords(),
-                            if (_canUseAiAssistant) renderAiExplanation(),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+          ),
 
           // 底部下一词按钮 (在 AI 抽屉激活时隐藏，以免挤占空间)
-          if (args.bottomBtn != null && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
+          if (args.bottomBtn != null &&
+              !(_canUseAiAssistant &&
+                  _tabController.index == calcTabsCount() - 1))
             SafeArea(
               top: false,
               child: Container(
@@ -1526,8 +1744,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             ),
 
           // 从背单词页面进入时，显示"下一词"按钮（参考学习页面底部极简流转按钮风格）
-          if (args.showNextWordButton && args.bottomBtn == null
-              && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
+          if (args.showNextWordButton &&
+              args.bottomBtn == null &&
+              !(_canUseAiAssistant &&
+                  _tabController.index == calcTabsCount() - 1))
             SafeArea(
               top: false,
               child: Container(
@@ -1556,13 +1776,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             }
                           },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 6),
                       child: _isLoadingNextWord
                           ? SizedBox.square(
                               dimension: 22,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(accentColor),
                               ),
                             )
                           : Column(
@@ -1587,7 +1809,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                     borderRadius: BorderRadius.circular(1.6),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.3),
+                                        color: accentColor.withValues(
+                                            alpha: isDarkMode ? 0.45 : 0.3),
                                         blurRadius: 4,
                                         offset: const Offset(0, 1),
                                       ),
@@ -1609,8 +1832,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   void _showMoreOptions(BuildContext context) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     final accentColor = context.primaryColor;
-    final textColor = isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textColor =
+        isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final subColor =
+        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     showGeneralDialog(
       context: context,
@@ -1634,7 +1859,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               child: Material(
                 color: Colors.transparent,
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(24)),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
@@ -1643,7 +1869,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         color: isDarkMode
                             ? const Color(0xC01C2127) // 75% 细腻深邃黑灰磨砂
                             : const Color(0x73FFFFFF), // 45% 通透高质感乳白磨砂
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(24)),
                         border: Border.all(
                           color: isDarkMode
                               ? const Color(0x33FFFFFF)
@@ -1652,7 +1879,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                            color: Colors.black
+                                .withValues(alpha: isDarkMode ? 0.35 : 0.08),
                             blurRadius: 28,
                             offset: const Offset(0, -6),
                           ),
@@ -1666,7 +1894,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                margin: const EdgeInsets.only(top: 4, bottom: 14),
+                                margin:
+                                    const EdgeInsets.only(top: 4, bottom: 14),
                                 width: 36,
                                 height: 4.5,
                                 decoration: BoxDecoration(
@@ -1679,15 +1908,18 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               _buildActionTile(
                                 icon: Icons.copy_rounded,
                                 title: '复制单词及释义',
-                                subtitle: '${args.word.spell} · [${Util.getWordDefaultPronounce(args.word)}]',
+                                subtitle:
+                                    '${args.word.spell} · [${Util.getWordDefaultPronounce(args.word)}]',
                                 accentColor: accentColor,
                                 textColor: textColor,
                                 subColor: subColor,
                                 isDarkMode: isDarkMode,
                                 onTap: () {
                                   Navigator.pop(dialogCtx);
-                                  final copyText = '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
-                                  Clipboard.setData(ClipboardData(text: copyText));
+                                  final copyText =
+                                      '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
+                                  Clipboard.setData(
+                                      ClipboardData(text: copyText));
                                   ToastUtil.success('已复制到剪贴板');
                                 },
                               ),
@@ -1702,10 +1934,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 isDarkMode: isDarkMode,
                                 onTap: () {
                                   Navigator.pop(dialogCtx);
-                                  context.push('/pic_search',
+                                  context
+                                      .push('/pic_search',
                                           extra: PicSearchPageArgs(
-                                              args.word.id!,
-                                              args.word.spell))
+                                              args.word.id!, args.word.spell))
                                       .then((value) => _reloadWordData());
                                 },
                               ),
@@ -1761,7 +1993,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: isDarkMode ? 0.18 : 0.09),
+                  color:
+                      accentColor.withValues(alpha: isDarkMode ? 0.18 : 0.09),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: accentColor, size: 20),
@@ -1825,9 +2058,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   Widget _buildMeaningSection(bool isDarkMode) {
     final mergedItems = args.word.getMergedMeaningItems();
     if (mergedItems.isNotEmpty) {
-      final cixingColor = isDarkMode
-          ? const Color(0xFF94A3B8)
-          : const Color(0xFF64748B);
+      final cixingColor =
+          isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
       return Table(
         defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
@@ -1866,7 +2098,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.45,
-                      color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                      color: isDarkMode
+                          ? const Color(0xFFCBD5E1)
+                          : const Color(0xFF334155),
                     ),
                   ),
                 ),
@@ -1916,8 +2150,19 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     );
   }
 
+  /// 有可用核心意象时才出「意象」Tab，避免空 Tab 白占一个位置
+  bool hasCoreImage() {
+    final ci = _coreImage;
+    if (ci == null || ci.isApplicable != true) return false;
+    return (ci.imageUrl?.isNotEmpty ?? false) ||
+        (ci.schemaDesc?.isNotEmpty ?? false);
+  }
+
   int calcTabsCount() {
     int count = 1;
+    if (hasCoreImage()) {
+      count++;
+    }
     if (hasSimilarWords()) {
       count++;
     }
@@ -1942,7 +2187,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   bool hasCigen() {
-    return args.word.cigenWordLinks != null && args.word.cigenWordLinks!.isNotEmpty;
+    return args.word.cigenWordLinks != null &&
+        args.word.cigenWordLinks!.isNotEmpty;
   }
 
   int getCigenTabIndex() {
@@ -2001,7 +2247,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.09 : 0.06),
+                color: context.primaryColor
+                    .withValues(alpha: isDarkMode ? 0.09 : 0.06),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -2017,7 +2264,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       '注：浅灰色单词不在你的学习范围内，请酌情学习。',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: isDarkMode
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
                         height: 1.35,
                       ),
                     ),
@@ -2046,19 +2295,27 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           Color tagTextColor;
           String categoryName;
           if (cigen.category == 'PREFIX') {
-            tagBgColor = isDarkMode ? const Color(0x2638BDF8) : const Color(0xFFE0F2FE);
-            tagTextColor = isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7);
+            tagBgColor =
+                isDarkMode ? const Color(0x2638BDF8) : const Color(0xFFE0F2FE);
+            tagTextColor =
+                isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7);
             categoryName = '前缀 PREFIX';
           } else if (cigen.category == 'SUFFIX') {
-            tagBgColor = isDarkMode ? const Color(0x26C084FC) : const Color(0xFFF3E8FF);
-            tagTextColor = isDarkMode ? const Color(0xFFC084FC) : const Color(0xFF7C3AED);
+            tagBgColor =
+                isDarkMode ? const Color(0x26C084FC) : const Color(0xFFF3E8FF);
+            tagTextColor =
+                isDarkMode ? const Color(0xFFC084FC) : const Color(0xFF7C3AED);
             categoryName = '后缀 SUFFIX';
           } else if (cigen.category == 'ROOT') {
-            tagBgColor = isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFEF3C7);
-            tagTextColor = isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+            tagBgColor =
+                isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFEF3C7);
+            tagTextColor =
+                isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
             categoryName = '词根 ROOT';
           } else {
-            tagBgColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9);
+            tagBgColor = isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFF1F5F9);
             tagTextColor = context.primaryColor;
             categoryName = '词缀 AFFIX';
           }
@@ -2097,7 +2354,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
   }
 
-  Widget _buildCigenExpandedWords(String cigenId, bool isDarkMode, Color tagTextColor) {
+  Widget _buildCigenExpandedWords(
+      String cigenId, bool isDarkMode, Color tagTextColor) {
     final isLoading = _cigenLoadingState[cigenId] ?? false;
     final words = _expandedCigenWords[cigenId];
 
@@ -2124,7 +2382,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           '暂无其他相同词根/词缀的单词',
           style: TextStyle(
             fontSize: 12.5,
-            color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            color:
+                isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
           ),
         ),
       );
@@ -2184,7 +2443,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
+                              color: isDarkMode
+                                  ? const Color(0xFFE2E8F0)
+                                  : const Color(0xFF334155),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -2202,15 +2463,22 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
               final Color spellColor = item.inDict
                   ? context.primaryColor
-                  : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
+                  : (isDarkMode
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B));
               final Color descColor = item.inDict
-                  ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
-                  : (isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8));
+                  ? (isDarkMode
+                      ? const Color(0xFFCBD5E1)
+                      : const Color(0xFF334155))
+                  : (isDarkMode
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8));
 
               // 解析释义部分与括号内的助记拆解公式
               String meaningPart = desc;
               String? formulaPart;
-              final parenMatch = RegExp(r'[（\(](.*?)[）\)]$').firstMatch(desc.trim());
+              final parenMatch =
+                  RegExp(r'[（\(](.*?)[）\)]$').firstMatch(desc.trim());
               if (parenMatch != null) {
                 formulaPart = parenMatch.group(1)?.trim();
                 meaningPart = desc.trim().substring(0, parenMatch.start).trim();
@@ -2219,7 +2487,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               final lowerMeaning = meaningPart.toLowerCase();
               if (lowerMeaning.startsWith(lowerSpell)) {
                 int cutLen = spell.length;
-                while (cutLen < meaningPart.length && ' :：'.contains(meaningPart[cutLen])) {
+                while (cutLen < meaningPart.length &&
+                    ' :：'.contains(meaningPart[cutLen])) {
                   cutLen++;
                 }
                 meaningPart = meaningPart.substring(cutLen).trim();
@@ -2263,7 +2532,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         formulaPart,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          color: isDarkMode
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B),
                           height: 1.35,
                         ),
                       ),
@@ -2286,7 +2557,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   );
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
                   child: Row(
                     children: [
                       Expanded(child: contentWidget),
@@ -2353,7 +2625,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             ),
             child: Row(
               children: [
-                Icon(Icons.error_outline_rounded, size: 16, color: Colors.red[400]),
+                Icon(Icons.error_outline_rounded,
+                    size: 16, color: Colors.red[400]),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -2385,12 +2658,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        color: isDarkMode
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(
                           color: _chatInputFocusNode.hasFocus
                               ? context.primaryColor
-                              : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
+                              : (isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.04)),
                           width: _chatInputFocusNode.hasFocus ? 1.2 : 0.6,
                         ),
                       ),
@@ -2404,7 +2681,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           hintText: '向 AI 助教提问关于该词的疑问...',
                           hintStyle: TextStyle(
                             fontSize: 13.5,
-                            color: isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                            color: isDarkMode
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8),
                           ),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
@@ -2414,11 +2693,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           focusedErrorBorder: InputBorder.none,
                           isDense: true,
                           filled: false,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 10),
                         ),
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                          color: isDarkMode
+                              ? const Color(0xFFF8FAFC)
+                              : const Color(0xFF0F172A),
                         ),
                       ),
                     ),
@@ -2439,7 +2721,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     margin: const EdgeInsets.only(bottom: 1),
                     decoration: BoxDecoration(
                       color: _aiLoading
-                          ? (isDarkMode ? Colors.white10 : const Color(0xFFE2E8F0))
+                          ? (isDarkMode
+                              ? Colors.white10
+                              : const Color(0xFFE2E8F0))
                           : context.primaryColor,
                       shape: BoxShape.circle,
                     ),
@@ -2450,11 +2734,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    context.primaryColor),
                               ),
                             ),
                           )
-                        : const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
+                        : const Icon(Icons.arrow_upward_rounded,
+                            color: Colors.white, size: 20),
                   ),
                 ),
               ],
@@ -2471,15 +2757,19 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: () {
-          _sendChatMessage(label.replaceAll(RegExp(r'^[^\w\s\u4e00-\u9fa5]+'), '').trim());
+          _sendChatMessage(
+              label.replaceAll(RegExp(r'^[^\w\s\u4e00-\u9fa5]+'), '').trim());
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6.5),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            color:
+                isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : const Color(0xFFE2E8F0),
               width: 0.6,
             ),
           ),
@@ -2487,7 +2777,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             label,
             style: TextStyle(
               fontSize: 12.5,
-              color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+              color: isDarkMode
+                  ? const Color(0xFFCBD5E1)
+                  : const Color(0xFF334155),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -2516,7 +2808,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
-        crossAxisAlignment: isAssistant ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        crossAxisAlignment:
+            isAssistant ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
           // 思考过程 (仅助教且有内容时显示)
           if (isAssistant && msg.thought != null && msg.thought!.isNotEmpty)
@@ -2527,11 +2820,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             width: isAssistant ? double.infinity : null,
             constraints: isAssistant
                 ? null
-                : BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+                : BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.8),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isAssistant
-                  ? (isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC))
+                  ? (isDarkMode
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF8FAFC))
                   : context.primaryColor,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
@@ -2577,8 +2873,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     ),
                   ),
 
-                if (msg.content.isEmpty && isAssistant && _aiLoading && _chatMessages.lastIndexOf(msg) == _chatMessages.length - 1)
-                  const Text('正在思考与生成...', style: TextStyle(fontSize: 13.5, fontStyle: FontStyle.italic, color: Colors.grey))
+                if (msg.content.isEmpty &&
+                    isAssistant &&
+                    _aiLoading &&
+                    _chatMessages.lastIndexOf(msg) == _chatMessages.length - 1)
+                  const Text('正在思考与生成...',
+                      style: TextStyle(
+                          fontSize: 13.5,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey))
                 else if (isAssistant) ...[
                   MarkdownBody(
                     data: mainContent,
@@ -2591,23 +2894,31 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     styleSheet: MarkdownStyleSheet(
                       p: TextStyle(
                         fontSize: 14,
-                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        color: isDarkMode
+                            ? const Color(0xFFF8FAFC)
+                            : const Color(0xFF0F172A),
                         height: 1.6,
                       ),
                       h1: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        color: isDarkMode
+                            ? const Color(0xFFF8FAFC)
+                            : const Color(0xFF0F172A),
                       ),
                       h2: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        color: isDarkMode
+                            ? const Color(0xFFF8FAFC)
+                            : const Color(0xFF0F172A),
                       ),
                       h3: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        color: isDarkMode
+                            ? const Color(0xFFF8FAFC)
+                            : const Color(0xFF0F172A),
                       ),
                       strong: TextStyle(
                         fontWeight: FontWeight.w700,
@@ -2619,16 +2930,22 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       ),
                       listBullet: TextStyle(
                         fontSize: 14,
-                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: isDarkMode
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
                       ),
                       tableBody: TextStyle(
                         fontSize: 13,
-                        color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                        color: isDarkMode
+                            ? const Color(0xFFCBD5E1)
+                            : const Color(0xFF334155),
                       ),
                       tableHead: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        color: isDarkMode
+                            ? const Color(0xFFF8FAFC)
+                            : const Color(0xFF0F172A),
                       ),
                       tableBorder: TableBorder.all(
                         color: isDarkMode ? Colors.white12 : Colors.black12,
@@ -2637,8 +2954,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       tableCellsPadding: const EdgeInsets.all(6),
                       code: TextStyle(
                         fontSize: 12.5,
-                        backgroundColor: isDarkMode ? Colors.black26 : const Color(0xFFF1F5F9),
-                        color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                        backgroundColor: isDarkMode
+                            ? Colors.black26
+                            : const Color(0xFFF1F5F9),
+                        color: isDarkMode
+                            ? const Color(0xFF38BDF8)
+                            : const Color(0xFF0284C7),
                       ),
                     ),
                   ),
@@ -2656,12 +2977,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             onTap: () => _sendChatMessage(suggest),
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                                color: context.primaryColor.withValues(
+                                    alpha: isDarkMode ? 0.15 : 0.08),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: context.primaryColor.withValues(alpha: isDarkMode ? 0.3 : 0.2),
+                                  color: context.primaryColor.withValues(
+                                      alpha: isDarkMode ? 0.3 : 0.2),
                                   width: 0.8,
                                 ),
                               ),
@@ -2680,7 +3004,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: context.isDarkMode ? context.primaryColor : context.textPrimary,
+                                        color: context.isDarkMode
+                                            ? context.primaryColor
+                                            : context.textPrimary,
                                       ),
                                     ),
                                   ),
@@ -2701,7 +3027,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 ] else
                   SelectableText(
                     msg.content,
-                    style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                    style: const TextStyle(
+                        color: Colors.white, fontSize: 14, height: 1.4),
                   ),
               ],
             ),
@@ -2747,14 +3074,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       height: 10,
                       child: CircularProgressIndicator(
                         strokeWidth: 1.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(context.primaryColor),
                       ),
                     )
                   else
                     Icon(
                       Icons.lightbulb_outline_rounded,
                       size: 13,
-                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDarkMode
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                     ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -2762,16 +3092,22 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       isThinking ? 'AI 正在深度思考...' : 'AI 的思考过程',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                        color: isDarkMode
+                            ? const Color(0xFFCBD5E1)
+                            : const Color(0xFF475569),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   if (!isThinking)
                     Icon(
-                      isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                      isExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
                       size: 15,
-                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDarkMode
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                     ),
                 ],
               ),
@@ -2785,7 +3121,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 style: TextStyle(
                   fontSize: 11.5,
                   height: 1.45,
-                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDarkMode
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                 ),
               ),
             ),
@@ -2803,9 +3141,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     );
   }
 
+  /// 「意象」Tab：核心意象图撑得起一整屏，独立成 Tab 后详情页不再被它顶长
+  Widget renderCoreImage() {
+    final ci = _coreImage;
+    if (ci == null) return const SizedBox.shrink();
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      children: [WordCoreImageCard(item: ci)],
+    );
+  }
+
   ListView renderDetail() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final subtitleColor =
+        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -2813,24 +3162,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 一词多义·核心意象卡片（本地 SQLite 增量同步数据）
-            if (args.word.id != null)
-              FutureBuilder<WordCoreImage?>(
-                future: MyDatabase.instance.wordCoreImagesDao.getCoreImageByWordId(args.word.id!),
-                builder: (context, snapshot) {
-                  final coreImg = snapshot.data;
-                  if (coreImg != null &&
-                      coreImg.isApplicable == true &&
-                      ((coreImg.imageUrl != null && coreImg.imageUrl!.isNotEmpty) ||
-                       (coreImg.schemaDesc != null && coreImg.schemaDesc!.isNotEmpty))) {
-                    return WordCoreImageCard(item: coreImg);
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-
             // 单词深度讲解（如有）
-            if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty) ...[
+            if (args.word.shortDesc != null &&
+                args.word.shortDesc!.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: Column(
@@ -2838,7 +3172,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.lightbulb_outline_rounded, size: 16, color: context.primaryColor),
+                        Icon(Icons.lightbulb_outline_rounded,
+                            size: 16, color: context.primaryColor),
                         const SizedBox(width: 6),
                         const Text(
                           '深度讲解',
@@ -2862,7 +3197,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       false,
                       FontWeight.w400,
                       fontSize: 14.5,
-                      color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                      color: isDarkMode
+                          ? const Color(0xFFCBD5E1)
+                          : const Color(0xFF334155),
                       height: 1.55,
                     ),
                   ],
@@ -2883,7 +3220,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               children: [
                 Row(
                   children: [
-                    Icon(Icons.format_quote_rounded, size: 17, color: context.primaryColor),
+                    Icon(Icons.format_quote_rounded,
+                        size: 17, color: context.primaryColor),
                     const SizedBox(width: 6),
                     const Text(
                       '短语 & 例句',
@@ -2904,22 +3242,29 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   },
                   borderRadius: BorderRadius.circular(6),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          isEditMode ? Icons.check_circle_outline_rounded : Icons.edit_note_rounded,
+                          isEditMode
+                              ? Icons.check_circle_outline_rounded
+                              : Icons.edit_note_rounded,
                           size: 16,
-                          color: isEditMode ? context.primaryColor : subtitleColor,
+                          color:
+                              isEditMode ? context.primaryColor : subtitleColor,
                         ),
                         const SizedBox(width: 3),
                         Text(
                           isEditMode ? '完成' : '编辑',
                           style: TextStyle(
                             fontSize: 12.5,
-                            fontWeight: isEditMode ? FontWeight.w600 : FontWeight.w500,
-                            color: isEditMode ? context.primaryColor : subtitleColor,
+                            fontWeight:
+                                isEditMode ? FontWeight.w600 : FontWeight.w500,
+                            color: isEditMode
+                                ? context.primaryColor
+                                : subtitleColor,
                           ),
                         ),
                       ],
@@ -2954,7 +3299,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 ? Colors.white.withValues(alpha: 0.08)
                                 : Colors.black.withValues(alpha: 0.06),
                           ),
-                        _buildSentenceItem(sentences[i], isDarkMode, subtitleColor),
+                        _buildSentenceItem(
+                            sentences[i], isDarkMode, subtitleColor),
                       ],
                     ],
                   );
@@ -2975,7 +3321,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     );
   }
 
-  Widget _buildSentenceItem(SentenceVo sent, bool isDarkMode, Color subtitleColor) {
+  Widget _buildSentenceItem(
+      SentenceVo sent, bool isDarkMode, Color subtitleColor) {
     return InkWell(
       onTap: () {
         if (!(_playingStates[sent.id]?.value ?? false)) {
@@ -3085,7 +3432,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     );
   }
 
-
   Widget renderSimilarWords() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final similarWords = args.word.similarWords;
@@ -3110,7 +3456,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.09 : 0.06),
+                color: context.primaryColor
+                    .withValues(alpha: isDarkMode ? 0.09 : 0.06),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -3126,7 +3473,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       '注：推荐了拼写相近的单词。浅灰色单词不在你的学习范围内。',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: isDarkMode
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
                         height: 1.35,
                       ),
                     ),
@@ -3153,17 +3502,22 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
           final Color spellColor = inDict
               ? context.primaryColor
-              : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
+              : (isDarkMode
+                  ? const Color(0xFF94A3B8)
+                  : const Color(0xFF64748B));
           final Color descColor = inDict
               ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
-              : (isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8));
+              : (isDarkMode
+                  ? const Color(0xFF64748B)
+                  : const Color(0xFF94A3B8));
 
           return InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () {
               context.push(
                 '/word_detail',
-                extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
+                extra: WordDetailPageArgs(word, true, null, false,
+                    priorityDictIds: args.priorityDictIds),
               );
             },
             child: Padding(
@@ -3187,7 +3541,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (Util.getWordDefaultPronounce(word).isNotEmpty) ...[
+                            if (Util.getWordDefaultPronounce(word)
+                                .isNotEmpty) ...[
                               const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
@@ -3195,7 +3550,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontFamily: 'Roboto',
-                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    color: isDarkMode
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -3254,7 +3611,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       final showTip = _showSemanticTip;
       return ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        itemCount: showTip ? _semanticSimilarWords.length + 1 : _semanticSimilarWords.length,
+        itemCount: showTip
+            ? _semanticSimilarWords.length + 1
+            : _semanticSimilarWords.length,
         separatorBuilder: (context, index) {
           if (showTip && index == 0) return const SizedBox(height: 6);
           return Divider(
@@ -3271,7 +3630,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: context.primaryColor.withValues(alpha: isDarkMode ? 0.09 : 0.06),
+                color: context.primaryColor
+                    .withValues(alpha: isDarkMode ? 0.09 : 0.06),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -3287,7 +3647,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       '注：系统推荐了在相似语境中常出现的单词。浅灰色单词不在你的学习范围内。',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: isDarkMode
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
                         height: 1.35,
                       ),
                     ),
@@ -3309,22 +3671,29 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             );
           }
 
-          final word = showTip ? _semanticSimilarWords[index - 1] : _semanticSimilarWords[index];
+          final word = showTip
+              ? _semanticSimilarWords[index - 1]
+              : _semanticSimilarWords[index];
           final inDict = _wordInDictStatus[word.id!] ?? true;
 
           final Color spellColor = inDict
               ? context.primaryColor
-              : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
+              : (isDarkMode
+                  ? const Color(0xFF94A3B8)
+                  : const Color(0xFF64748B));
           final Color descColor = inDict
               ? (isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155))
-              : (isDarkMode ? const Color(0xFF64748B) : const Color(0xFF94A3B8));
+              : (isDarkMode
+                  ? const Color(0xFF64748B)
+                  : const Color(0xFF94A3B8));
 
           return InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () {
               context.push(
                 '/word_detail',
-                extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
+                extra: WordDetailPageArgs(word, true, null, false,
+                    priorityDictIds: args.priorityDictIds),
               );
             },
             child: Padding(
@@ -3348,7 +3717,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (Util.getWordDefaultPronounce(word).isNotEmpty) ...[
+                            if (Util.getWordDefaultPronounce(word)
+                                .isNotEmpty) ...[
                               const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
@@ -3356,7 +3726,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontFamily: 'Roboto',
-                                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    color: isDarkMode
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -3441,7 +3813,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
-                            color: isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                            color: isDarkMode
+                                ? const Color(0xFFE2E8F0)
+                                : const Color(0xFF1E293B),
                           ),
                         ),
                       ),
@@ -3456,10 +3830,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: () {
-                        StudyAudioSessionController().playWordSoundBySpell(synonym.spell);
+                        StudyAudioSessionController()
+                            .playWordSoundBySpell(synonym.spell);
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 11, vertical: 6),
                         decoration: BoxDecoration(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.06)
@@ -3473,7 +3849,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               synonym.spell,
                               style: TextStyle(
                                 fontSize: 13.5,
-                                color: isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                                color: isDarkMode
+                                    ? const Color(0xFFF8FAFC)
+                                    : const Color(0xFF0F172A),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -3568,17 +3946,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     ToastUtil.error('不能重复投票');
                     return;
                   }
-                  var result = await Api.client.handSentence(sentence.id, args.word.spell, Global.getLoggedInUser()?.id ?? '');
+                  var result = await Api.client.handSentence(sentence.id,
+                      args.word.spell, Global.getLoggedInUser()?.id ?? '');
                   if (result.success) {
                     final now = AppClock.now();
-                    await MyDatabase.instance.votedSentencesDao.createEntity(VotedSentence(
-                        userId: Global.getLoggedInUser()!.id,
-                        sentenceId: sentence.id,
-                        vote: 'HAND',
-                        createTime: now,
-                        updateTime: now));
+                    await MyDatabase.instance.votedSentencesDao.createEntity(
+                        VotedSentence(
+                            userId: Global.getLoggedInUser()!.id,
+                            sentenceId: sentence.id,
+                            vote: 'HAND',
+                            createTime: now,
+                            updateTime: now));
                     sentence.handCount += 1;
-                    await MyDatabase.instance.sentencesDao.updateHandCount(sentence.id, sentence.handCount);
+                    await MyDatabase.instance.sentencesDao
+                        .updateHandCount(sentence.id, sentence.handCount);
                     _voteFutures[sentence.id] = Future.value(true);
                     setState(() {});
                   } else {
@@ -3590,10 +3971,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     Icon(
                       Icons.favorite_outline,
                       size: 14,
-                      color: snapshot.data! ? Util.voteColorDisabled(context) : Util.voteColorEnabled(context),
+                      color: snapshot.data!
+                          ? Util.voteColorDisabled(context)
+                          : Util.voteColorEnabled(context),
                     ),
                     Text(' ${sentence.handCount}',
-                        style: TextStyle(fontSize: 9, color: snapshot.data! ? Util.voteColorDisabled(context) : Util.voteColorEnabled(context))),
+                        style: TextStyle(
+                            fontSize: 9,
+                            color: snapshot.data!
+                                ? Util.voteColorDisabled(context)
+                                : Util.voteColorEnabled(context))),
                   ],
                 ),
               );
@@ -3616,17 +4003,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     ToastUtil.error('不能重复投票');
                     return;
                   }
-                  var result = await Api.client.footSentence(sentence.id, args.word.spell, Global.getLoggedInUser()?.id ?? '');
+                  var result = await Api.client.footSentence(sentence.id,
+                      args.word.spell, Global.getLoggedInUser()?.id ?? '');
                   if (result.success) {
                     final now = AppClock.now();
-                    await MyDatabase.instance.votedSentencesDao.createEntity(VotedSentence(
-                        userId: Global.getLoggedInUser()!.id,
-                        sentenceId: sentence.id,
-                        vote: 'FOOT',
-                        createTime: now,
-                        updateTime: now));
+                    await MyDatabase.instance.votedSentencesDao.createEntity(
+                        VotedSentence(
+                            userId: Global.getLoggedInUser()!.id,
+                            sentenceId: sentence.id,
+                            vote: 'FOOT',
+                            createTime: now,
+                            updateTime: now));
                     sentence.footCount += 1;
-                    await MyDatabase.instance.sentencesDao.updateFootCount(sentence.id, sentence.footCount);
+                    await MyDatabase.instance.sentencesDao
+                        .updateFootCount(sentence.id, sentence.footCount);
                     _voteFutures[sentence.id] = Future.value(true);
                     setState(() {});
                   } else {
@@ -3638,10 +4028,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     Icon(
                       Icons.heart_broken_outlined,
                       size: 14,
-                      color: snapshot.data! ? Util.voteColorDisabled(context) : Util.voteColorEnabled(context),
+                      color: snapshot.data!
+                          ? Util.voteColorDisabled(context)
+                          : Util.voteColorEnabled(context),
                     ),
                     Text(' ${sentence.footCount}',
-                        style: TextStyle(fontSize: 9, color: snapshot.data! ? Util.voteColorDisabled(context) : Util.voteColorEnabled(context)))
+                        style: TextStyle(
+                            fontSize: 9,
+                            color: snapshot.data!
+                                ? Util.voteColorDisabled(context)
+                                : Util.voteColorEnabled(context)))
                   ],
                 ),
               );
@@ -3658,7 +4054,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         margin: const EdgeInsets.fromLTRB(8, 0, 0, 0),
         child: InkWell(
           onTap: () async {
-            var result = await Api.client.deleteSentence(sentence.id, args.word.spell, Global.getLoggedInUser()?.id ?? '');
+            var result = await Api.client.deleteSentence(sentence.id,
+                args.word.spell, Global.getLoggedInUser()?.id ?? '');
             if (result.success) {
               var sentenceIndex = getSentenceIndex(sentence.id);
               if (sentenceIndex != -1) {
@@ -3687,7 +4084,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Future<bool> sentenceHasBeenVoted(var sentence) async {
-    return (await MyDatabase.instance.votedSentencesDao.getVotedSentenceById(Global.getLoggedInUser()!.id, sentence.id)) != null;
+    return (await MyDatabase.instance.votedSentencesDao
+            .getVotedSentenceById(Global.getLoggedInUser()!.id, sentence.id)) !=
+        null;
   }
 
   Widget renderSentenceChinese(String sentenceChinese, String sentenceId) {
@@ -3734,8 +4133,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return -1;
   }
 
-  Future<void> showAddChineseDlg(BuildContext dialogContext, SentenceVo sentence) async {
-    var votedSentence = await MyDatabase.instance.votedSentencesDao.getVotedSentenceById(Global.getLoggedInUser()!.id, sentence.id);
+  Future<void> showAddChineseDlg(
+      BuildContext dialogContext, SentenceVo sentence) async {
+    var votedSentence = await MyDatabase.instance.votedSentencesDao
+        .getVotedSentenceById(Global.getLoggedInUser()!.id, sentence.id);
     sentence.voted = votedSentence != null;
     sentenceChineseController.text = '';
 
@@ -3763,7 +4164,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     margin: MediaQuery.of(context).viewInsets,
                     // 当软键盘弹出时，对话框自动上移
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                    color: context.read<DarkMode>().isDarkMode ? const Color(0xff333333) : Colors.white,
+                    color: context.read<DarkMode>().isDarkMode
+                        ? const Color(0xff333333)
+                        : Colors.white,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -3774,20 +4177,32 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               Column(
                                 children: [
                                   Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 8, horizontal: 16),
                                       child: Row(
                                         children: [
                                           Flexible(
                                               child: Util.makeEnglishSpanText(
-                                                  sentence.english!, args.word.spell, true, context, false, null, false, FontWeight.w400)),
+                                                  sentence.english!,
+                                                  args.word.spell,
+                                                  true,
+                                                  context,
+                                                  false,
+                                                  null,
+                                                  false,
+                                                  FontWeight.w400)),
                                         ],
                                       )),
                                   Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 16),
                                     child: TextField(
                                       maxLines: 3,
-                                      controller: sentenceChineseController, //or null
-                                      decoration: const InputDecoration.collapsed(hintText: "输入翻译内容"),
+                                      controller:
+                                          sentenceChineseController, //or null
+                                      decoration:
+                                          const InputDecoration.collapsed(
+                                              hintText: "输入翻译内容"),
                                     ),
                                   ),
                                 ],
@@ -3817,7 +4232,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               onPressed: () async {
                                 // 保存当前的context
                                 final currentContext = context;
-                                var result = await Api.client.saveSentenceChinese(sentence.id, sentenceChineseController.text, args.word.spell);
+                                var result = await Api.client
+                                    .saveSentenceChinese(
+                                        sentence.id,
+                                        sentenceChineseController.text,
+                                        args.word.spell);
 
                                 if (result.success) {
                                   refreshSentence(sentence.id);
@@ -3866,7 +4285,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     margin: MediaQuery.of(context).viewInsets,
                     // 当软键盘弹出时，对话框自动上移
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                    color: context.read<DarkMode>().isDarkMode ? const Color(0xff333333) : Colors.white,
+                    color: context.read<DarkMode>().isDarkMode
+                        ? const Color(0xff333333)
+                        : Colors.white,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -3877,19 +4298,27 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               Column(
                                 children: [
                                   Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 16),
                                     child: TextField(
                                       maxLines: 2,
-                                      controller: sentenceEnglishController, //or null
-                                      decoration: const InputDecoration.collapsed(hintText: "输入例句英文内容"),
+                                      controller:
+                                          sentenceEnglishController, //or null
+                                      decoration:
+                                          const InputDecoration.collapsed(
+                                              hintText: "输入例句英文内容"),
                                     ),
                                   ),
                                   Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 16),
                                     child: TextField(
                                       maxLines: 2,
-                                      controller: sentenceChineseController, //or null
-                                      decoration: const InputDecoration.collapsed(hintText: "输入翻译内容"),
+                                      controller:
+                                          sentenceChineseController, //or null
+                                      decoration:
+                                          const InputDecoration.collapsed(
+                                              hintText: "输入翻译内容"),
                                     ),
                                   ),
                                 ],
@@ -3919,8 +4348,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               onPressed: () async {
                                 // 保存当前的context
                                 final currentContext = context;
-                                var result = await Api.client.saveSentence(sentenceEnglishController.text, sentenceChineseController.text,
-                                    args.word.id!, 0, args.word.spell, Global.getLoggedInUser()?.id ?? '');
+                                var result = await Api.client.saveSentence(
+                                    sentenceEnglishController.text,
+                                    sentenceChineseController.text,
+                                    args.word.id!,
+                                    0,
+                                    args.word.spell,
+                                    Global.getLoggedInUser()?.id ?? '');
 
                                 if (result.success) {
                                   addNewSentenceToCache(result.data!);
@@ -3957,7 +4391,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 先处理分号和逗号的组合
     text = text.replaceAll(RegExp(r'[,，]?[;；]'), '；');
     // 删除末尾的分号和逗号
-    while (text.endsWith(';') || text.endsWith('；') || text.endsWith(',') || text.endsWith('，')) {
+    while (text.endsWith(';') ||
+        text.endsWith('；') ||
+        text.endsWith(',') ||
+        text.endsWith('，')) {
       text = text.substring(0, text.length - 1);
     }
     // 删除连续的分号
@@ -3990,9 +4427,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+              const Icon(Icons.error_outline,
+                  size: 48, color: Colors.redAccent),
               const SizedBox(height: 12),
-              Text(errorMessage ?? '发生错误', style: const TextStyle(fontSize: 16)),
+              Text(errorMessage ?? '发生错误',
+                  style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -4027,7 +4466,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         bottom: false,
         child: Container(
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          child: (!dataLoaded) ? const Center(child: CircularProgressIndicator()) : renderPage(),
+          child: (!dataLoaded)
+              ? const Center(child: CircularProgressIndicator())
+              : renderPage(),
         ),
       ),
     );
