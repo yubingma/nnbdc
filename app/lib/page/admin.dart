@@ -16,7 +16,6 @@ import 'package:nnbdc/page/admin/dict_import_management.dart';
 import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:nnbdc/page/admin/admin_cigen_optimize_page.dart';
 import 'package:nnbdc/page/admin/admin_word_core_image_page.dart';
-import 'package:nnbdc/page/admin/core_image_orbit_preview_page.dart';
 import 'package:nnbdc/page/admin/admin_pronunciation_fix_page.dart';
 import 'package:nnbdc/page/admin/system_settings_page.dart';
 import 'package:nnbdc/page/admin/dict_group_management.dart';
@@ -25,7 +24,6 @@ import 'package:nnbdc/page/admin/batch_import_management.dart';
 import 'package:nnbdc/page/admin/word_starfield_page.dart';
 import 'package:nnbdc/page/admin/promo_activity_management.dart';
 import 'package:nnbdc/state.dart';
-
 
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -89,7 +87,6 @@ class _AdminPageState extends State<AdminPage> {
         color: Colors.deepOrangeAccent,
         onTap: () => _navigateToBatchDictImport(),
       ),
-
       _buildManagementCard(
         title: '查词功能',
         icon: Icons.search,
@@ -113,12 +110,6 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.hub,
         color: const Color(0xFF00C79A),
         onTap: () => _navigateToAdminWordCoreImage(),
-      ),
-      _buildManagementCard(
-        title: '意象布局预览',
-        icon: Icons.polyline,
-        color: const Color(0xFF7C4DFF),
-        onTap: () => _navigateToCoreImageOrbitPreview(),
       ),
       _buildManagementCard(
         title: '发音补齐',
@@ -150,7 +141,6 @@ class _AdminPageState extends State<AdminPage> {
         color: Colors.blueAccent,
         onTap: () => _navigateToPromoActivityManagement(),
       ),
-
       _buildManagementCard(
         title: '系统设置',
         icon: Icons.settings,
@@ -471,7 +461,6 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
-
   void _navigateToSystemHealthCheck() {
     Navigator.push(
       context,
@@ -507,7 +496,6 @@ class _AdminPageState extends State<AdminPage> {
       ),
     );
   }
-
 
   void _navigateToCdnManagement() {
     Navigator.push(
@@ -572,15 +560,6 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
-  void _navigateToCoreImageOrbitPreview() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const CoreImageOrbitPreviewPage(),
-      ),
-    );
-  }
-
   void _navigateToAdminPronunciationFix() {
     Navigator.push(
       context,
@@ -631,7 +610,8 @@ class _AdminPageState extends State<AdminPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('生成同步日志'),
-        content: const Text('确定要重新生成所有系统词书和词书分组的同步日志吗？这将使所有新版本客户端拉取到最新的词书和分组元数据。'),
+        content:
+            const Text('确定要重新生成所有系统词书和词书分组的同步日志吗？这将使所有新版本客户端拉取到最新的词书和分组元数据。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -694,7 +674,9 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: context.watch<DarkMode>().isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
+        backgroundColor: context.watch<DarkMode>().isDarkMode
+            ? const Color(0xFF121212)
+            : const Color(0xFFF8F9FA),
         body: const Center(
           child: CircularProgressIndicator(),
         ),

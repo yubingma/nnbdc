@@ -111,10 +111,21 @@ void main() {
       }
     });
 
-    test('核心意象文字放在圆心下方，且放得进圆内弦宽', () {
+    test('核心意象图注落在中心图右侧，不压在图上', () {
       final r = _layout(5);
-      expect(r.labelCenter.dy, greaterThan(r.center.dy));
-      expect(r.labelFits, isTrue);
+      // 放圆内会盖住配图，图越小盖得越狠，所以图注贴右侧
+      expect(r.labelCenter.dx, greaterThan(r.center.dx + r.hubRadius));
+      expect(r.labelCenter.dy, r.center.dy);
+      expect(r.labelWidth, greaterThan(0));
+    });
+
+    test('图注宽度受可用空间约束，放不下就换行而不是溢出画布', () {
+      for (final w in [280.0, 329.0, 412.0]) {
+        final r = _layout(5, canvas: Size(w, 360));
+        final right = r.labelCenter.dx + r.labelWidth / 2;
+        // labelCenter 是绝对坐标，右边缘不该越过画布
+        expect(right, lessThanOrEqualTo(w));
+      }
     });
 
     test('画布变窄时布局仍然成立（不抛出、不产生 NaN）', () {

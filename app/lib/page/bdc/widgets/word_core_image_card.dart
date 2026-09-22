@@ -265,10 +265,6 @@ Size _measureText(String text, TextStyle style) {
   return Size(tp.width, tp.height);
 }
 
-/// 核心意象图注的留白：带底色才压得住黑色线稿配图
-const EdgeInsets _coreLabelPad =
-    EdgeInsets.symmetric(horizontal: 6, vertical: 2);
-
 /// 一条引申分支
 class CoreImageBranch {
   const CoreImageBranch(
@@ -360,8 +356,6 @@ class _CoreImageOrbit extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.12)
         : Colors.black.withValues(alpha: 0.10);
     final nodeBg = isDarkMode ? const Color(0xFF0F172A) : Colors.white;
-    final cardBg =
-        isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
     final lineColor = accent.withValues(alpha: 0.72);
 
     // 环形图是图形化排版，跟随系统/用户字号放大会直接压垮布局：
@@ -472,13 +466,9 @@ class _CoreImageOrbit extends StatelessWidget {
                 // 核心意象文字（写在圆心，语义上就是「被围绕的中心」）
                 _centered(
                   layout.labelCenter,
-                  Container(
-                    padding: _coreLabelPad,
-                    decoration: BoxDecoration(
-                      // 半透明：底下是意象图，别整个盖住
-                      color: cardBg.withValues(alpha: 0.78),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                  SizedBox(
+                    // 宽度由可用空间给出，放不下时自动换行
+                    width: layout.labelWidth,
                     child: Text(
                       coreImage,
                       textAlign: TextAlign.center,
@@ -486,11 +476,6 @@ class _CoreImageOrbit extends StatelessWidget {
                         fontSize: _coreLabelFontSize,
                         fontWeight: FontWeight.w600,
                         color: accent,
-                        // 底色透了以后靠描边把字从线稿里拎出来
-                        shadows: [
-                          Shadow(color: cardBg, blurRadius: 3),
-                          Shadow(color: cardBg, blurRadius: 3),
-                        ],
                       ),
                     ),
                   ),

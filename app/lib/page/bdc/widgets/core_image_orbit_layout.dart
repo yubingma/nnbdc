@@ -21,6 +21,9 @@ class CoreImageOrbitLayout {
   /// 画布上下边缘与最外侧标签之间的留白
   static const double _edgePad = 8;
 
+  /// 核心意象图注与中心图边缘之间的间距
+  static const double _labelGap = 10;
+
   /// 连线至少要露出来的长度。
   ///
   /// 注意它和中心图大小是直接互换的：hubRadius = minGap − 本值 − 内边距，
@@ -106,9 +109,12 @@ class CoreImageOrbitLayout {
     // 不再引入任何额外缩放因子，避免「算法按大圆排、实际画小圆」这类尺度错位。
     final hubRadius = math.max(28.0, minGap - _lineVisible - _hubPad);
 
-    final labelCenter = Offset(cx, cy + hubRadius * 0.28);
-    final labelFits =
-        labelSize.width <= 2 * hubRadius * math.sqrt(1 - 0.28 * 0.28);
+    // 图注放在中心图右侧：放进圆内会盖住配图，图越小盖得越狠；
+    // 而水平方向是禁区（没有标签），正好是空的。
+    final labelMaxWidth = canvas.width / 2 - hubRadius - _labelGap - _edgePad;
+    final labelWidth = math.min(labelSize.width, math.max(0.0, labelMaxWidth));
+    final labelCenter = Offset(cx + hubRadius + _labelGap + labelWidth / 2, cy);
+    final labelFits = labelSize.width <= labelMaxWidth;
 
     final placements = <OrbitNodePlacement>[];
     for (final n in nodes) {
@@ -131,6 +137,7 @@ class CoreImageOrbitLayout {
       imageDiameter: hubRadius * 2,
       labelCenter: labelCenter,
       labelFits: labelFits,
+      labelWidth: labelWidth,
       nodes: placements,
       forbiddenDeg: alloc.forbiddenDeg,
       sectorUsage: alloc.usage,
@@ -433,6 +440,7 @@ class OrbitLayoutResult {
     required this.imageDiameter,
     required this.labelCenter,
     required this.labelFits,
+    required this.labelWidth,
     required this.nodes,
     required this.forbiddenDeg,
     required this.sectorUsage,
@@ -451,8 +459,11 @@ class OrbitLayoutResult {
   final double imageDiameter;
   final Offset labelCenter;
 
-  /// 核心意象文字是否放得进圆心弦宽
+  /// 核心意象图注是否一行放得下（放不下会换行）
   final bool labelFits;
+
+  /// 图注实际占用的宽度（受可用空间限制）
+  final double labelWidth;
   final List<OrbitNodePlacement> nodes;
   final int forbiddenDeg;
   final double sectorUsage;
