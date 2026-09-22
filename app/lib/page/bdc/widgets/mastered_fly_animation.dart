@@ -19,7 +19,8 @@ class MasteredFlyAnimation {
 
       // 获取起点坐标（当前单词中心）
       Offset startOffset;
-      final startBox = startKey?.currentContext?.findRenderObject() as RenderBox?;
+      final startBox =
+          startKey?.currentContext?.findRenderObject() as RenderBox?;
       if (startBox != null && startBox.hasSize) {
         startOffset = startBox.localToGlobal(
           Offset(startBox.size.width / 2, startBox.size.height / 2),
@@ -31,7 +32,8 @@ class MasteredFlyAnimation {
 
       // 获取终点坐标（右上角掌握按钮中心）
       Offset targetOffset;
-      final targetBox = targetKey?.currentContext?.findRenderObject() as RenderBox?;
+      final targetBox =
+          targetKey?.currentContext?.findRenderObject() as RenderBox?;
       if (targetBox != null && targetBox.hasSize) {
         targetOffset = targetBox.localToGlobal(
           Offset(targetBox.size.width / 2, targetBox.size.height / 2),
@@ -42,7 +44,8 @@ class MasteredFlyAnimation {
         targetOffset = Offset(screenSize.width - 118, statusBarHeight + 24);
       }
 
-      Global.logger.i('🕊️ [Mastered-Fly] 触发掌握飞行动效: word=$spell, start=$startOffset -> target=$targetOffset');
+      Global.logger.i(
+          '🕊️ [Mastered-Fly] 触发掌握飞行动效: word=$spell, start=$startOffset -> target=$targetOffset');
 
       late OverlayEntry entry;
       entry = OverlayEntry(
@@ -64,7 +67,8 @@ class MasteredFlyAnimation {
 
       overlay.insert(entry);
     } catch (e, stack) {
-      Global.logger.e('🕊️ [Mastered-Fly] 播放飞行动效失败: $e', error: e, stackTrace: stack);
+      Global.logger
+          .e('🕊️ [Mastered-Fly] 播放飞行动效失败: $e', error: e, stackTrace: stack);
     }
   }
 }
@@ -87,7 +91,8 @@ class _FlyTrajectory extends StatefulWidget {
   State<_FlyTrajectory> createState() => _FlyTrajectoryState();
 }
 
-class _FlyTrajectoryState extends State<_FlyTrajectory> with SingleTickerProviderStateMixin {
+class _FlyTrajectoryState extends State<_FlyTrajectory>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _animation;
 
@@ -121,7 +126,8 @@ class _FlyTrajectoryState extends State<_FlyTrajectory> with SingleTickerProvide
   static Offset computePoint(Offset start, Offset target, double t) {
     final double x = start.dx + (target.dx - start.dx) * t;
     // Y 轴带一段优雅的拱起弧线，最高点出现在飞行前半程
-    final double arcHeight = min(75.0, (target.dx - start.dx).abs() * 0.45 + 30.0);
+    final double arcHeight =
+        min(75.0, (target.dx - start.dx).abs() * 0.45 + 30.0);
     final double parabolaY = -arcHeight * sin(pi * t);
     final double y = start.dy + (target.dy - start.dy) * t + parabolaY;
     return Offset(x, y);
@@ -133,7 +139,8 @@ class _FlyTrajectoryState extends State<_FlyTrajectory> with SingleTickerProvide
       animation: _animation,
       builder: (context, child) {
         final t = _animation.value;
-        final currentPos = computePoint(widget.startOffset, widget.targetOffset, t);
+        final currentPos =
+            computePoint(widget.startOffset, widget.targetOffset, t);
 
         // 缩放：与题目区坍缩微核无缝严丝合缝 (0.02 -> 1.08 破茧绽放)，随后沿抛物线轨迹优雅聚敛融入右上角掌握按钮 (0.35)
         final double scale = t < 0.18
@@ -142,7 +149,8 @@ class _FlyTrajectoryState extends State<_FlyTrajectory> with SingleTickerProvide
 
         // 透明度：前 8% 自微核中无缝凝聚显形，最后 15% 融入掌握按钮
         final double fadeIn = (t / 0.08).clamp(0.0, 1.0);
-        final double fadeOut = t > 0.85 ? (1.0 - (t - 0.85) / 0.15).clamp(0.0, 1.0) : 1.0;
+        final double fadeOut =
+            t > 0.85 ? (1.0 - (t - 0.85) / 0.15).clamp(0.0, 1.0) : 1.0;
         final double opacity = fadeIn * fadeOut;
 
         // 微倾斜动态角度
@@ -176,7 +184,8 @@ class _FlyTrajectoryState extends State<_FlyTrajectory> with SingleTickerProvide
                         scale: scale,
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6.5),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
@@ -189,7 +198,8 @@ class _FlyTrajectoryState extends State<_FlyTrajectory> with SingleTickerProvide
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF22C55E).withValues(alpha: 0.55),
+                                  color: const Color(0xFF22C55E)
+                                      .withValues(alpha: 0.55),
                                   blurRadius: 18,
                                   spreadRadius: 2,
                                   offset: const Offset(0, 3),
@@ -279,7 +289,8 @@ class _TrajectoryPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6.0
       ..strokeCap = StrokeCap.round
-      ..color = const Color(0xFF4ADE80).withValues(alpha: (0.35 * (1.0 - progress * 0.4)).clamp(0.0, 1.0))
+      ..color = const Color(0xFF4ADE80)
+          .withValues(alpha: (0.35 * (1.0 - progress * 0.4)).clamp(0.0, 1.0))
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
     canvas.drawPath(path, glowPaint);
 
@@ -299,7 +310,8 @@ class _TrajectoryPainter extends CustomPainter {
     canvas.drawPath(path, linePaint);
 
     // 头部引导微星芒
-    final currentPos = _FlyTrajectoryState.computePoint(start, target, progress);
+    final currentPos =
+        _FlyTrajectoryState.computePoint(start, target, progress);
     final starPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.9)
       ..style = PaintingStyle.fill;

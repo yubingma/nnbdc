@@ -274,6 +274,12 @@ class CoreImageBranch {
     );
   }
 
+  /// 环上的框要窄：词性只取第一个（adv./adj → adv.），兼类写法会凭空撑宽标签
+  String get shortPos {
+    final head = pos.split('/').first.trim();
+    return head.isEmpty ? pos : head;
+  }
+
   /// 环上的框要窄，取释义的第一个义项，最多 4 字
   String get shortMeaning {
     final head = meaning.split(RegExp(r'[；;、,/]')).first.trim();
@@ -313,8 +319,11 @@ class _CoreImageOrbit extends StatelessWidget {
   static const double _meaningFontSize = 11;
   static const double _coreLabelFontSize = 11;
 
-  static const double _boxPadH = 9;
-  static const double _boxPadV = 5;
+  static const double _boxPadH = 7;
+  static const double _boxPadV = 4;
+
+  /// 简笔画占容器的比例，其余留给骑在圆周上的箭头尖
+  static const double _schematicInset = 0.92;
 
   TextStyle _relationStyle(Color c) => TextStyle(
         fontSize: _relationFontSize,
@@ -372,16 +381,17 @@ class _CoreImageOrbit extends StatelessWidget {
         final wrapped = <String>[];
 
         for (final b in branches) {
-          final posSize =
-              b.pos.isEmpty ? Size.zero : _measure(b.pos, _posStyle(accent));
+          final posText = b.shortPos;
+          final posSize = posText.isEmpty
+              ? Size.zero
+              : _measure(posText, _posStyle(accent));
           final meaningSize =
               _measure(b.shortMeaning, _meaningStyle(titleColor));
-          final boxW = posSize.width +
-              (b.pos.isEmpty ? 0 : 4) +
-              meaningSize.width +
-              _boxPadH * 2;
-          final boxH =
-              math.max(posSize.height, meaningSize.height) + _boxPadV * 2;
+          // 必须与 _EndpointBox 的两行排布一致：测量和渲染一旦错位，
+          // 位置会按错误的尺寸排，连线也接不到框上。
+          final boxW =
+              math.max(posSize.width, meaningSize.width) + _boxPadH * 2;
+          final boxH = posSize.height + meaningSize.height + _boxPadV * 2;
 
           final wrappedText = WordCoreImageCard.wrapRelation(b.relation);
           final textSize = _measure(wrappedText, _relationStyle(accent));
@@ -411,7 +421,19 @@ class _CoreImageOrbit extends StatelessWidget {
           labelSize: labelSize,
         );
 
-        final hubImageSize = layout.imageDiameter;
+        // layout 给的是可见圆周直径，容器要按简笔画占比放大回去
+        final hubImageSize = layout.imageDiameter / _schematicInset;
+
+        assert(() {
+          debugPrint(
+              '[ORBIT] n=${branches.length} canvas=${width.toStringAsFixed(0)}x$height '
+              'rx=${layout.rx.toStringAsFixed(0)} minGap=${layout.minGap.toStringAsFixed(0)} '
+              'hubR=${layout.hubRadius.toStringAsFixed(0)} hub=⌀${layout.imageDiameter.toStringAsFixed(0)} '
+              'forbid=±${layout.forbiddenDeg}° tight=${(layout.sectorUsage * 100).toStringAsFixed(0)}% '
+              'box=${boxSizes.first.width.toStringAsFixed(0)}x${boxSizes.first.height.toStringAsFixed(0)} '
+              'text=${textSizes.first.width.toStringAsFixed(0)}x${textSizes.first.height.toStringAsFixed(0)}');
+          return true;
+        }());
 
         return SizedBox(
           width: width,
@@ -431,19 +453,19 @@ class _CoreImageOrbit extends StatelessWidget {
                 // 中心意象图
                 _centered(
                   layout.center,
-                  hubImageSize,
-                  hubImageSize,
-                  _HubImage(
-                    imageUrl: imageUrl,
-                    isDarkMode: isDarkMode,
-                    accent: accent,
+                  SizedBox(
+                    width: hubImageSize,
+                    height: hubImageSize,
+                    child: _HubImage(
+                      imageUrl: imageUrl,
+                      isDarkMode: isDarkMode,
+                      accent: accent,
+                    ),
                   ),
                 ),
                 // 核心意象文字（写在圆心，语义上就是「被围绕的中心」）
                 _centered(
                   layout.labelCenter,
-                  labelSize.width + 4,
-                  labelSize.height,
                   Text(
                     coreImage,
                     textAlign: TextAlign.center,
@@ -458,10 +480,8 @@ class _CoreImageOrbit extends StatelessWidget {
                 for (var i = 0; i < branches.length; i++) ...[
                   _centered(
                     layout.nodes[i].boxCenter,
-                    boxSizes[i].width,
-                    boxSizes[i].height,
                     _EndpointBox(
-                      pos: branches[i].pos,
+                      pos: branches[i].shortPos,
                       meaning: branches[i].shortMeaning,
                       bg: nodeBg,
                       border: borderColor,
@@ -473,11 +493,10 @@ class _CoreImageOrbit extends StatelessWidget {
                   ),
                   _centered(
                     layout.nodes[i].textCenter,
-                    textSizes[i].width + 1,
-                    textSizes[i].height,
                     Text(
                       wrapped[i],
                       style: _relationStyle(accent),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
@@ -489,13 +508,16 @@ class _CoreImageOrbit extends StatelessWidget {
     );
   }
 
-  Widget _centered(Offset center, double w, double h, Widget child) {
+  /// 以 [center] 为中心落位。测量值只用来算位置，不用来强制尺寸 ——
+  /// 强制尺寸会因行高估算偏差把内容压到溢出。
+  Widget _centered(Offset center, Widget child) {
     return Positioned(
-      left: center.dx - w / 2,
-      top: center.dy - h / 2,
-      width: w,
-      height: h,
-      child: child,
+      left: center.dx,
+      top: center.dy,
+      child: FractionalTranslation(
+        translation: const Offset(-0.5, -0.5),
+        child: child,
+      ),
     );
   }
 }
@@ -534,13 +556,11 @@ class _EndpointBox extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (pos.isNotEmpty) ...[
-            Text(pos, style: posStyle),
-            const SizedBox(width: 4),
-          ],
+          if (pos.isNotEmpty) Text(pos, style: posStyle),
           Text(meaning, style: meaningStyle),
         ],
       ),
@@ -585,7 +605,8 @@ class _SchematicPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final r = math.min(size.width, size.height) / 2 * 0.72;
+    final r =
+        math.min(size.width, size.height) / 2 * _CoreImageOrbit._schematicInset;
     final c = Offset(size.width / 2, size.height / 2);
     final stroke = Paint()
       ..color = color

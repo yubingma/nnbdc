@@ -9,17 +9,18 @@ import 'dart:ui' show Offset, Size;
 /// 中间留出「禁区」，禁区越大中心图越大、扇区容量越小，
 /// 这里扫描一圈取「扇区刚好塞满」的最大禁区。
 class CoreImageOrbitLayout {
-  /// 简笔画/配图在中心容器内的占比（见 [CoreImageOrbitPainter] 的 viewBox 120、圆 r=52）
-  static const double ringFactor = 52 / 60;
-
   /// 上下扇区内部，标签之间保留的弧长间隙
-  static const double _gap = 10;
+  static const double _gap = 8;
 
   /// 线上文字与释义框边缘之间留给箭头的距离
-  static const double _arrowRoom = 22;
+  static const double _arrowRoom = 12;
 
   /// 中心图边缘与线上文字之间至少留出的距离
   static const double _hubPad = 8;
+
+  /// 连线至少要露出来的长度。中心图一味求大会把连线吃光，
+  /// 而「用连线表达引申」才是这个形态的核心，所以这里给它保底。
+  static const double _lineVisible = 26;
 
   static OrbitLayoutResult compute({
     required Size canvas,
@@ -73,17 +74,19 @@ class CoreImageOrbitLayout {
       ));
     }
 
-    // 中心图半径：圆内还要放得下「核心意象」文字（按文字高度处的弦宽校验）
-    final hubRadius = math.max(30.0, minGap - _hubPad);
+    // 中心图半径即「可见半径」：连线从它的边缘出发，容器尺寸就是 2×该值。
+    // 不再引入任何额外缩放因子，避免「算法按大圆排、实际画小圆」这类尺度错位。
+    final hubRadius = math.max(28.0, minGap - _lineVisible - _hubPad);
 
-    final ringRadius = hubRadius * ringFactor;
-    final labelCenter = Offset(cx, cy + ringRadius * 0.45);
-    final labelFits = labelSize.width <= 2 * ringRadius * math.sqrt(1 - 0.45 * 0.45);
+    final labelCenter = Offset(cx, cy + hubRadius * 0.28);
+    final labelFits =
+        labelSize.width <= 2 * hubRadius * math.sqrt(1 - 0.28 * 0.28);
 
     final placements = <OrbitNodePlacement>[];
     for (final n in nodes) {
       placements.add(n.copyWith(
-        lineStart: Offset(cx + n.direction.dx * hubRadius, cy + n.direction.dy * hubRadius),
+        lineStart: Offset(
+            cx + n.direction.dx * hubRadius, cy + n.direction.dy * hubRadius),
         lineEnd: Offset(
           n.boxCenter.dx - n.direction.dx * (n.projBox + 5),
           n.boxCenter.dy - n.direction.dy * (n.projBox + 5),
@@ -97,13 +100,15 @@ class CoreImageOrbitLayout {
       canvas: canvas,
       center: Offset(cx, cy),
       hubRadius: hubRadius,
-      imageDiameter: hubRadius * 2 * ringFactor,
+      imageDiameter: hubRadius * 2,
       labelCenter: labelCenter,
       labelFits: labelFits,
       nodes: placements,
       forbiddenDeg: alloc.forbiddenDeg,
       sectorUsage: alloc.usage,
       feasible: alloc.feasible && overlaps.isEmpty,
+      minGap: minGap,
+      rx: rx,
     );
   }
 
@@ -111,24 +116,30 @@ class CoreImageOrbitLayout {
     List<OrbitNodePlacement> nodes,
     List<OrbitNodeMetrics> metrics,
   ) {
-    bool hit(Offset a, double ahw, double ahh, Offset b, double bhw, double bhh, double slack) =>
-        (a.dx - b.dx).abs() < ahw + bhw + slack && (a.dy - b.dy).abs() < ahh + bhh + slack;
+    bool hit(Offset a, double ahw, double ahh, Offset b, double bhw, double bhh,
+            double slack) =>
+        (a.dx - b.dx).abs() < ahw + bhw + slack &&
+        (a.dy - b.dy).abs() < ahh + bhh + slack;
 
     final out = <String>[];
     for (var i = 0; i < nodes.length; i++) {
       for (var j = i + 1; j < nodes.length; j++) {
         final a = nodes[i], b = nodes[j];
         final ma = metrics[a.index], mb = metrics[b.index];
-        if (hit(a.boxCenter, ma.boxHalfW, ma.boxHalfH, b.boxCenter, mb.boxHalfW, mb.boxHalfH, 0)) {
+        if (hit(a.boxCenter, ma.boxHalfW, ma.boxHalfH, b.boxCenter, mb.boxHalfW,
+            mb.boxHalfH, 0)) {
           out.add('框${i + 1}·${j + 1}');
         }
-        if (hit(a.textCenter, ma.textHalfW, ma.textHalfH, b.textCenter, mb.textHalfW, mb.textHalfH, 0)) {
+        if (hit(a.textCenter, ma.textHalfW, ma.textHalfH, b.textCenter,
+            mb.textHalfW, mb.textHalfH, 0)) {
           out.add('文${i + 1}·${j + 1}');
         }
-        if (hit(a.boxCenter, ma.boxHalfW, ma.boxHalfH, b.textCenter, mb.textHalfW, mb.textHalfH, 0)) {
+        if (hit(a.boxCenter, ma.boxHalfW, ma.boxHalfH, b.textCenter,
+            mb.textHalfW, mb.textHalfH, 0)) {
           out.add('框${i + 1}-文${j + 1}');
         }
-        if (hit(b.boxCenter, mb.boxHalfW, mb.boxHalfH, a.textCenter, ma.textHalfW, ma.textHalfH, 0)) {
+        if (hit(b.boxCenter, mb.boxHalfW, mb.boxHalfH, a.textCenter,
+            ma.textHalfW, ma.textHalfH, 0)) {
           out.add('框${j + 1}-文${i + 1}');
         }
       }
@@ -144,7 +155,7 @@ class CoreImageOrbitLayout {
   ) {
     _SectorAlloc? best;
     _SectorAlloc? fallback;
-    for (var fb = 8; fb <= 55; fb++) {
+    for (var fb = 8; fb <= 72; fb++) {
       final a = _sectorAngles(metrics, rx, ry, fb.toDouble());
       if (a.feasible && (best == null || a.usage > best.usage)) best = a;
       if (fallback == null || a.usage < fallback.usage) fallback = a;
@@ -173,9 +184,9 @@ class CoreImageOrbitLayout {
     final upOrder = _centerFirst(up.length);
 
     final lower = _placeInSpan(
-      loOrder.map((i) => lo[i]).toList(), sF1, sF2, table, rx, ry);
+        loOrder.map((i) => lo[i]).toList(), sF1, sF2, table, rx, ry);
     final upper = _placeInSpan(
-      upOrder.map((i) => up[i]).toList(), sF3, table.total, table, rx, ry);
+        upOrder.map((i) => up[i]).toList(), sF3, table.total, table, rx, ry);
 
     // 还原回原始顺序
     final angles = List<double>.filled(metrics.length, 0);
@@ -219,7 +230,8 @@ class CoreImageOrbitLayout {
     List<double> need = const [];
     for (var it = 0; it < 6; it++) {
       need = [
-        for (var i = 0; i < list.length; i++) _tangentWidth(list[i], angles[i], rx, ry),
+        for (var i = 0; i < list.length; i++)
+          _tangentWidth(list[i], angles[i], rx, ry),
       ];
       final sum = need.fold<double>(0, (p, e) => p + e);
       final k = spanLen / sum;
@@ -235,7 +247,8 @@ class CoreImageOrbitLayout {
       ];
     }
     need = [
-      for (var i = 0; i < list.length; i++) _tangentWidth(list[i], angles[i], rx, ry),
+      for (var i = 0; i < list.length; i++)
+        _tangentWidth(list[i], angles[i], rx, ry),
     ];
     return _SpanPlacement(
       angles: angles,
@@ -245,11 +258,13 @@ class CoreImageOrbitLayout {
   }
 
   /// 标签在环上的「切向投影宽度」＝它需要的弧长预算
-  static double _tangentWidth(OrbitNodeMetrics m, double th, double rx, double ry) {
+  static double _tangentWidth(
+      OrbitNodeMetrics m, double th, double rx, double ry) {
     final tx = -rx * math.sin(th), ty = ry * math.cos(th);
     final len = math.sqrt(tx * tx + ty * ty);
     if (len == 0) return _gap;
-    return ((tx / len).abs() * m.boxHalfW + (ty / len).abs() * m.boxHalfH) * 2 + _gap;
+    return ((tx / len).abs() * m.boxHalfW + (ty / len).abs() * m.boxHalfH) * 2 +
+        _gap;
   }
 }
 
@@ -329,7 +344,8 @@ class _SectorAlloc {
 }
 
 class _SpanPlacement {
-  const _SpanPlacement({required this.angles, required this.spanLen, required this.total});
+  const _SpanPlacement(
+      {required this.angles, required this.spanLen, required this.total});
 
   final List<double> angles;
   final double spanLen;
@@ -368,7 +384,8 @@ class OrbitNodePlacement {
   final Offset lineStart;
   final Offset lineEnd;
 
-  OrbitNodePlacement copyWith({Offset? lineStart, Offset? lineEnd}) => OrbitNodePlacement(
+  OrbitNodePlacement copyWith({Offset? lineStart, Offset? lineEnd}) =>
+      OrbitNodePlacement(
         index: index,
         boxCenter: boxCenter,
         textCenter: textCenter,
@@ -392,11 +409,17 @@ class OrbitLayoutResult {
     required this.forbiddenDeg,
     required this.sectorUsage,
     required this.feasible,
+    required this.minGap,
+    required this.rx,
   });
 
   final Size canvas;
   final Offset center;
+
+  /// 中心图可见半径（连线起点所在圆）
   final double hubRadius;
+
+  /// 中心图容器直径，等于 2×[hubRadius]
   final double imageDiameter;
   final Offset labelCenter;
 
@@ -406,4 +429,10 @@ class OrbitLayoutResult {
   final int forbiddenDeg;
   final double sectorUsage;
   final bool feasible;
+
+  /// 最近的线上文字到圆心的距离；hubRadius = 它减去连线保底与内边距
+  final double minGap;
+
+  /// 画布水平半径（椭圆 rx），用于判断横向空间是否吃紧
+  final double rx;
 }

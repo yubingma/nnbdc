@@ -38,7 +38,16 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
   late AnimationController _waveController;
   StreamSubscription<double>? _meterSubscription;
   double _currentLevel = 0.0;
-  static const List<double> _weights = [0.35, 0.65, 0.9, 1.0, 1.0, 0.9, 0.65, 0.35];
+  static const List<double> _weights = [
+    0.35,
+    0.65,
+    0.9,
+    1.0,
+    1.0,
+    0.9,
+    0.65,
+    0.35
+  ];
 
   @override
   void initState() {
@@ -48,7 +57,8 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
       duration: const Duration(milliseconds: 1500),
     );
 
-    StudyAudioSessionController.instance.meterLevelNotifier.addListener(_onMeterNotifierChanged);
+    StudyAudioSessionController.instance.meterLevelNotifier
+        .addListener(_onMeterNotifierChanged);
     _meterSubscription = Asr().meterStream().listen(_onDirectLevelReceived);
     _syncWaveAnimation();
   }
@@ -98,7 +108,8 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
 
   @override
   void dispose() {
-    StudyAudioSessionController.instance.meterLevelNotifier.removeListener(_onMeterNotifierChanged);
+    StudyAudioSessionController.instance.meterLevelNotifier
+        .removeListener(_onMeterNotifierChanged);
     _meterSubscription?.cancel();
     _waveController.dispose();
     super.dispose();
@@ -147,7 +158,8 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final accentColor = context.primaryColor;
 
-    final bool isPassed = widget.isScorePassed || (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
+    final bool isPassed = widget.isScorePassed ||
+        (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
 
     // 状态驱动反馈文字
     String statusText;
@@ -205,9 +217,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: isPassed
-                          ? Colors.green
-                          : Colors.orange,
+                      color: isPassed ? Colors.green : Colors.orange,
                     ),
                   ),
                 ),
@@ -219,7 +229,10 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     final waveformWidget = SizedBox(
       height: 20,
       child: AnimatedBuilder(
-        animation: Listenable.merge([_waveController, StudyAudioSessionController.instance.meterLevelNotifier]),
+        animation: Listenable.merge([
+          _waveController,
+          StudyAudioSessionController.instance.meterLevelNotifier
+        ]),
         builder: (context, child) {
           return Row(
             mainAxisSize: MainAxisSize.min,
@@ -232,21 +245,27 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
               // 动态聆听状态：仅识别进行中(started)才波动
               if (widget.asrState == AsrState.started) {
                 final double weight = _weights[index];
-                final double phase = (_waveController.value * 2 * pi) + (index * 0.3 * pi);
+                final double phase =
+                    (_waveController.value * 2 * pi) + (index * 0.3 * pi);
                 final double idleBreath = (sin(phase) + 1.0) / 2.0; // 0.0 ~ 1.0
-                
+
                 // 基础静音呼吸高度 (2.5 ~ 4.5 像素，纤细精致)
                 final double baseHeight = 2.5 + 2.0 * idleBreath * weight;
-                
+
                 // 说话电平驱动增益 (Voice Dynamic Boost)
                 // 说话时电平驱动波形瞬间高涨跃动 (高度可达到 12 ~ 18.5 像素)，视觉反馈极为充沛
-                final double notifierVal = StudyAudioSessionController.instance.meterLevelNotifier.value;
-                final double effectiveLevel = max(_currentLevel, notifierVal).clamp(0.0, 1.0);
-                final double voiceWave = (sin(phase * 1.8 + index * 0.35) + 1.0) / 2.0;
-                final double voiceBoost = effectiveLevel * 18.0 * weight * (0.4 + 0.6 * voiceWave);
-                
+                final double notifierVal = StudyAudioSessionController
+                    .instance.meterLevelNotifier.value;
+                final double effectiveLevel =
+                    max(_currentLevel, notifierVal).clamp(0.0, 1.0);
+                final double voiceWave =
+                    (sin(phase * 1.8 + index * 0.35) + 1.0) / 2.0;
+                final double voiceBoost =
+                    effectiveLevel * 18.0 * weight * (0.4 + 0.6 * voiceWave);
+
                 height = (baseHeight + voiceBoost).clamp(2.5, 19.0);
-                alpha = (0.35 + 0.25 * idleBreath + 0.4 * effectiveLevel).clamp(0.2, 1.0);
+                alpha = (0.35 + 0.25 * idleBreath + 0.4 * effectiveLevel)
+                    .clamp(0.2, 1.0);
               }
 
               return Container(

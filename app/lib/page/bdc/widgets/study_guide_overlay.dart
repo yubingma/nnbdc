@@ -69,7 +69,8 @@ class _StudyGuideOverlayState extends State<StudyGuideOverlay> {
     final targetBox =
         widget.targetKey.currentContext?.findRenderObject() as RenderBox?;
     if (overlayBox == null || targetBox == null || !targetBox.hasSize) return;
-    final topLeft = overlayBox.globalToLocal(targetBox.localToGlobal(Offset.zero));
+    final topLeft =
+        overlayBox.globalToLocal(targetBox.localToGlobal(Offset.zero));
     setState(() {
       _hole = Rect.fromLTWH(
         topLeft.dx,
@@ -87,7 +88,8 @@ class _StudyGuideOverlayState extends State<StudyGuideOverlay> {
       builder: (context, constraints) {
         final overlaySize = Size(constraints.maxWidth, constraints.maxHeight);
         // 目标位于屏幕上半部时说明卡放其下方，否则放上方，避免遮挡被高亮的区域
-        final bool below = hole == null || hole.center.dy < overlaySize.height * 0.55;
+        final bool below =
+            hole == null || hole.center.dy < overlaySize.height * 0.55;
         final card = _buildCard(context);
 
         return GestureDetector(
@@ -117,8 +119,8 @@ class _StudyGuideOverlayState extends State<StudyGuideOverlay> {
                 Positioned(
                   left: 20,
                   right: 20,
-                  top: math.max(hole.bottom + 16,
-                      MediaQuery.of(context).padding.top + 8),
+                  top: math.max(
+                      hole.bottom + 16, MediaQuery.of(context).padding.top + 8),
                   child: card,
                 )
               else
@@ -183,7 +185,8 @@ class _StudyGuideOverlayState extends State<StudyGuideOverlay> {
                 behavior: HitTestBehavior.opaque,
                 onTap: widget.onFinish,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

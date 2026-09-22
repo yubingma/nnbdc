@@ -9,15 +9,16 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 
-/// 造一批和真机相近的尺寸：释义框约 69×28，线上文字约 43×24
+/// 造一批和真机相近的尺寸（两行框）：
+/// 释义框约 36×32，线上文字约 34×23
 List<OrbitNodeMetrics> _metrics(int n) {
   return List.generate(
     n,
     (_) => const OrbitNodeMetrics(
-      boxHalfW: 34.5,
-      boxHalfH: 14,
-      textHalfW: 21.5,
-      textHalfH: 12,
+      boxHalfW: 18,
+      boxHalfH: 16,
+      textHalfW: 17,
+      textHalfH: 11.5,
     ),
   );
 }
@@ -72,6 +73,8 @@ void main() {
 
       expect(r.nodes.length, 5);
       expect(r.feasible, isTrue, reason: '5 条不应出现叠压');
+      // 记录实际值，用于回归对比
+      debugPrint('5 条：中心图 ⌀${r.imageDiameter.toStringAsFixed(0)} 禁区 ±${r.forbiddenDeg}° 占用 ${(r.sectorUsage * 100).toStringAsFixed(0)}%');
       // 5 条是本形态的舒适区，中心图不该被压到比释义框还小
       expect(r.imageDiameter, greaterThan(100));
 
@@ -90,12 +93,13 @@ void main() {
       expect(_layout(8).feasible, isTrue);
     });
 
-    test('分支过多时判定为不可行，供上层降级', () {
-      final r = _layout(11);
+    test('分支越多中心图越小、扇区越挤（超过阈值由卡片层降级）', () {
+      final r5 = _layout(5);
+      final r11 = _layout(11);
 
-      expect(r.nodes.length, 11);
-      // 11 条时中心图已不成图，上层据此退回列表形态
-      expect(r.imageDiameter, lessThan(60));
+      expect(r11.nodes.length, 11);
+      expect(r11.imageDiameter, lessThan(r5.imageDiameter));
+      expect(r11.sectorUsage, greaterThan(r5.sectorUsage));
     });
 
     test('连线方向朝外：终点比起点更远离圆心', () {

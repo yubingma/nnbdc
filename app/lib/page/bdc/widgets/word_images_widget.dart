@@ -67,47 +67,47 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
                     width: imageWidth,
                     child: IgnorePointer(
                       ignoring: true,
-                      child: Builder(
-                        builder: (context) {
-                          final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${image.imageFile}');
-                          Global.logger.d('加载单词图片 [做题区]: $imageUrl');
-                          return Image.network(
-                            imageUrl,
-                            width: imageWidth,
-                            height: imageHeight,
-                            fit: BoxFit.contain,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                    strokeWidth: 2,
-                                    color: Colors.indigoAccent,
-                                  ),
+                      child: Builder(builder: (context) {
+                        final imageUrl = Uri.encodeFull(
+                            '${Config.imgBaseUrl}word/${image.imageFile}');
+                        Global.logger.d('加载单词图片 [做题区]: $imageUrl');
+                        return Image.network(
+                          imageUrl,
+                          width: imageWidth,
+                          height: imageHeight,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  strokeWidth: 2,
+                                  color: Colors.indigoAccent,
                                 ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              Global.logger.e('图片加载失败 [做题区]: $imageUrl', error: error);
-                              // 图片加载失败，显示错误图标，不尝试解码
-                              return const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Colors.red,
-                                  size: 24,
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            Global.logger
+                                .e('图片加载失败 [做题区]: $imageUrl', error: error);
+                            // 图片加载失败，显示错误图标，不尝试解码
+                            return const Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                color: Colors.red,
+                                size: 24,
+                              ),
+                            );
+                          },
+                        );
+                      }),
                     ),
                   ),
                 ),
@@ -150,12 +150,17 @@ void showImagePreviewWithContext(BuildContext context, WordImageVo image,
                     // 作者昵称
                     Builder(
                       builder: (context) {
-                        String authorName = Util.getNickNameOfUser(image.author);
+                        String authorName =
+                            Util.getNickNameOfUser(image.author);
                         if (authorName.isEmpty) {
                           final current = Global.getLoggedInUser();
                           final authorId = image.author.id;
-                          if (current != null && (authorId == current.id || authorId == null || authorId.isEmpty)) {
-                            authorName = (current.nickName != null && current.nickName!.trim().isNotEmpty)
+                          if (current != null &&
+                              (authorId == current.id ||
+                                  authorId == null ||
+                                  authorId.isEmpty)) {
+                            authorName = (current.nickName != null &&
+                                    current.nickName!.trim().isNotEmpty)
                                 ? current.nickName!.trim()
                                 : current.userName;
                           }
@@ -164,8 +169,8 @@ void showImagePreviewWithContext(BuildContext context, WordImageVo image,
                           authorName = '泡泡';
                         }
                         return Padding(
-                          padding:
-                              const EdgeInsets.only(left: 8, right: 40, bottom: 8),
+                          padding: const EdgeInsets.only(
+                              left: 8, right: 40, bottom: 8),
                           child: Text(
                             '上传者: $authorName',
                             style: const TextStyle(
@@ -177,31 +182,32 @@ void showImagePreviewWithContext(BuildContext context, WordImageVo image,
                       },
                     ),
                     // 大图
-                    Builder(
-                      builder: (context) {
-                        final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${image.imageFile}');
-                        Global.logger.d('加载单词图片 [预览弹窗]: $imageUrl');
-                        return Image.network(
-                          imageUrl,
-                          width: PlatformUtils.isWeb ? 720.0 : double.infinity,
-                          height: PlatformUtils.isWeb ? 480.0 : 360.0,
-                          fit: BoxFit.contain,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return const Center(
-                              child: CircularProgressIndicator(color: Colors.white),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            Global.logger.e('图片加载失败 [预览弹窗]: $imageUrl', error: error);
-                            return const Center(
-                              child: Icon(Icons.broken_image,
-                                  color: Colors.red, size: 48),
-                            );
-                          },
-                        );
-                      }
-                    ),
+                    Builder(builder: (context) {
+                      final imageUrl = Uri.encodeFull(
+                          '${Config.imgBaseUrl}word/${image.imageFile}');
+                      Global.logger.d('加载单词图片 [预览弹窗]: $imageUrl');
+                      return Image.network(
+                        imageUrl,
+                        width: PlatformUtils.isWeb ? 720.0 : double.infinity,
+                        height: PlatformUtils.isWeb ? 480.0 : 360.0,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          Global.logger
+                              .e('图片加载失败 [预览弹窗]: $imageUrl', error: error);
+                          return const Center(
+                            child: Icon(Icons.broken_image,
+                                color: Colors.red, size: 48),
+                          );
+                        },
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -236,9 +242,11 @@ void showImagePreviewWithContext(BuildContext context, WordImageVo image,
                         ToastUtil.info('删除成功');
                         // 本地同步移除 SQLite 记录
                         try {
-                          await MyDatabase.instance.wordImagesDao.deleteById(image.id);
+                          await MyDatabase.instance.wordImagesDao
+                              .deleteById(image.id);
                         } catch (e, s) {
-                          Global.logger.e('删除本地WordImages失败', error: e, stackTrace: s);
+                          Global.logger
+                              .e('删除本地WordImages失败', error: e, stackTrace: s);
                         }
                         // 触发页面即时重绘
                         if (onDeleted != null) {

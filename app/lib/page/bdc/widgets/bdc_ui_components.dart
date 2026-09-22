@@ -141,7 +141,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                               text.substring(0, text.length - 1));
                         }
                         // 键盘已接管输入框：同步清掉手写板状态，避免下次落笔时把被删掉的内容又带回来
-                        _handwritingBoardKey.currentState?.clearHandwritingPreview();
+                        _handwritingBoardKey.currentState
+                            ?.clearHandwritingPreview();
                         return true;
                       },
                       onCancel: () {
@@ -175,9 +176,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            (isDarkMode ? const Color(0xFF121212) : Colors.white)
+                            (isDarkMode
+                                    ? const Color(0xFF121212)
+                                    : Colors.white)
                                 .withValues(alpha: 0.16),
-                            (isDarkMode ? const Color(0xFF121212) : Colors.white)
+                            (isDarkMode
+                                    ? const Color(0xFF121212)
+                                    : Colors.white)
                                 .withValues(alpha: 0.0),
                           ],
                           stops: const [0.35, 1.0],
@@ -188,14 +193,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            state.isChineseDictation
-                                ? '请写出中文释义：'
-                                : '请拼写单词：',
+                            state.isChineseDictation ? '请写出中文释义：' : '请拼写单词：',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               letterSpacing: 0.3,
-                              color: context.textSecondary.withValues(alpha: 0.85),
+                              color:
+                                  context.textSecondary.withValues(alpha: 0.85),
                             ),
                           ),
                           const SizedBox(height: 3),
@@ -332,8 +336,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                             )
                           : IconButton(
                               key: const ValueKey('spelling_hint_btn'),
-                              icon: Icon(Icons.lightbulb_outline, size: 24,
-                                  color: context.primaryColor),
+                              icon: Icon(Icons.lightbulb_outline,
+                                  size: 24, color: context.primaryColor),
                               onPressed: () {
                                 notifier.giveFullHint();
                                 // 不自动提交，用户应继续手动拼写答题
@@ -656,22 +660,23 @@ extension BdcPageStateUIComponents on BdcPageState {
                 child: Consumer(
                   builder: (context, ref, child) {
                     // 物理隔离：只监听会影响卡片渲染的核心状态
-                    final wordId =
-                        ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
-                    final historyIndex =
-                        ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
+                    final wordId = ref
+                        .watch(bdcNotifierProvider.select((s) => s.word?.id));
+                    final historyIndex = ref.watch(
+                        bdcNotifierProvider.select((s) => s.historyIndex));
                     final showSentenceTranslation = ref.watch(
-                        bdcNotifierProvider.select((s) => s.showSentenceTranslation));
-                    final isEditMode =
-                        ref.watch(bdcNotifierProvider.select((s) => s.isEditMode));
+                        bdcNotifierProvider
+                            .select((s) => s.showSentenceTranslation));
+                    final isEditMode = ref
+                        .watch(bdcNotifierProvider.select((s) => s.isEditMode));
                     final wordPlaying = ref.watch(bdcNotifierProvider
                         .select((s) => s.playingStates['word'] ?? false));
                     final sentencePlaying = ref.watch(bdcNotifierProvider
                         .select((s) => s.playingStates['sentence'] ?? false));
-                    final imagesLength = ref.watch(bdcNotifierProvider
-                        .select((s) => s.currentGetWordResult?.images?.length ?? 0));
-                    final highlightedWordImg = ref.watch(
-                        bdcNotifierProvider.select((s) => s.highlightedWordImg));
+                    final imagesLength = ref.watch(bdcNotifierProvider.select(
+                        (s) => s.currentGetWordResult?.images?.length ?? 0));
+                    final highlightedWordImg = ref.watch(bdcNotifierProvider
+                        .select((s) => s.highlightedWordImg));
 
                     // 获取当前最新脱敏 state 传给卡片渲染，以确保 state 中的其他字段也是最新的，但不会被其改变触发不必要的 rebuild
                     final currentState = ref.read(bdcNotifierProvider);
@@ -685,8 +690,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       duration: const Duration(milliseconds: 400),
                       switchInCurve: Curves.easeOutCubic,
                       switchOutCurve: Curves.easeInCubic,
-                      layoutBuilder:
-                          (Widget? currentChild, List<Widget> previousChildren) {
+                      layoutBuilder: (Widget? currentChild,
+                          List<Widget> previousChildren) {
                         return Stack(
                           fit: StackFit.expand,
                           children: <Widget>[
@@ -695,7 +700,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                           ],
                         );
                       },
-                      transitionBuilder: (Widget child, Animation<double> animation) {
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
                         return FadeTransition(
                           opacity: animation,
                           child: child,
@@ -819,11 +825,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                                                       TextOverflow.ellipsis,
                                                   style: TextStyle(
                                                     fontSize: 12,
-                                                    fontWeight:
-                                                        FontWeight.w500,
+                                                    fontWeight: FontWeight.w500,
                                                     color: _cachedIsDarkMode
-                                                        ? const Color(0xFFCBD5E1)
-                                                        : const Color(0xFF475569),
+                                                        ? const Color(
+                                                            0xFFCBD5E1)
+                                                        : const Color(
+                                                            0xFF475569),
                                                     letterSpacing: -0.1,
                                                   ),
                                                 ),
@@ -859,20 +866,16 @@ extension BdcPageStateUIComponents on BdcPageState {
                                                 Icon(
                                                   Icons.edit_outlined,
                                                   size: 13.5,
-                                                  color:
-                                                      _cachedIsDarkMode
-                                                          ? const Color(
-                                                              0xFF94A3B8)
-                                                          : const Color(
-                                                              0xFF5A716E),
+                                                  color: _cachedIsDarkMode
+                                                      ? const Color(0xFF94A3B8)
+                                                      : const Color(0xFF5A716E),
                                                 ),
                                                 const SizedBox(width: 3.5),
                                                 Text(
                                                   '默写',
                                                   style: TextStyle(
                                                     fontSize: 12,
-                                                    fontWeight:
-                                                        FontWeight.w500,
+                                                    fontWeight: FontWeight.w500,
                                                     color: _cachedIsDarkMode
                                                         ? const Color(
                                                             0xFF94A3B8)
@@ -919,8 +922,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                               child:
                                                   _buildChoiceListScrollView(),
                                             ),
-                                            Expanded(
-                                                child: _buildSpeakPanel()),
+                                            Expanded(child: _buildSpeakPanel()),
                                           ],
                                         ),
                                 ),
@@ -1597,7 +1599,8 @@ extension BdcPageStateUIComponents on BdcPageState {
               }
 
               return Padding(
-                padding: EdgeInsets.symmetric(vertical: isLargeFont ? 1.5 : 2.5),
+                padding:
+                    EdgeInsets.symmetric(vertical: isLargeFont ? 1.5 : 2.5),
                 child: SizedBox(
                   width: double.infinity,
                   child: AnimatedContainer(
@@ -1620,7 +1623,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                             notifier.onAnswerClicked(index + 1, context),
                         child: Container(
                           width: double.infinity,
-                          constraints: BoxConstraints(minHeight: isLargeFont ? 50 : 56),
+                          constraints:
+                              BoxConstraints(minHeight: isLargeFont ? 50 : 56),
                           alignment: Alignment.centerLeft,
                           padding: EdgeInsets.symmetric(
                             horizontal: 16,
@@ -2102,8 +2106,8 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    final bool hasFinishedOrPractice =
-        state.hasFinishedAnswering || (state.isPracticeMode && state.lastFsrsRating != null);
+    final bool hasFinishedOrPractice = state.hasFinishedAnswering ||
+        (state.isPracticeMode && state.lastFsrsRating != null);
     if (!hasFinishedOrPractice || state.fsrsItem == null) {
       if (state.currentGetWordResult != null &&
           state.currentGetWordResult!.stepIndex > 0 &&
@@ -2340,8 +2344,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Text('·',
                     style: TextStyle(
-                        fontSize: 13,
-                        color: textColor.withValues(alpha: 0.4))),
+                        fontSize: 13, color: textColor.withValues(alpha: 0.4))),
               ),
               Text(
                 '下次复习: --天后',
@@ -2384,8 +2387,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Text('·',
                   style: TextStyle(
-                      fontSize: 13,
-                      color: textColor.withValues(alpha: 0.4))),
+                      fontSize: 13, color: textColor.withValues(alpha: 0.4))),
             ),
             Text.rich(
               TextSpan(
@@ -2707,7 +2709,9 @@ extension BdcPageStateUIComponents on BdcPageState {
             ],
           ),
           // 仅在说模式 Tab 且看答案状态下展示中文例句；选择题 Tab 不显示例句
-          if (!isChoiceTab && state.hasFinishedAnswering && sentence != null) ...[
+          if (!isChoiceTab &&
+              state.hasFinishedAnswering &&
+              sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeChineseSpanText(
               sentence.chinese ?? '',
@@ -2783,7 +2787,8 @@ extension BdcPageStateUIComponents on BdcPageState {
       );
     }
 
-    final anyHasCixing = displayItems.any((i) => (i.ciXing ?? '').trim().isNotEmpty);
+    final anyHasCixing =
+        displayItems.any((i) => (i.ciXing ?? '').trim().isNotEmpty);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
@@ -2822,7 +2827,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
+                          padding:
+                              EdgeInsets.symmetric(vertical: itemVerticalGap),
                           child: Text(
                             cleanMeaning(item.meaning),
                             textAlign: TextAlign.left,
@@ -2956,7 +2962,9 @@ extension BdcPageStateUIComponents on BdcPageState {
             ],
           ),
           // 仅在说模式 Tab 且看答案状态下展示英文例句；选择题 Tab 不显示例句
-          if (!isChoiceTab && state.hasFinishedAnswering && sentence != null) ...[
+          if (!isChoiceTab &&
+              state.hasFinishedAnswering &&
+              sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeEnglishSpanText(
               sentence.english ?? '',
