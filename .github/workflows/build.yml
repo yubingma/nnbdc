@@ -203,6 +203,36 @@ jobs:
           cd app
           flutter clean
 
+      # Android 构建的大头是 llama.cpp/ggml 的 CMake+ninja 编译与 Gradle 依赖解析。
+      # 注意 flutter clean 会删掉整个 app/build（AGP 的 CMake 暂存目录 app/build/.cxx
+      # 就在其中），所以这两个 cache 必须放在 Flutter Clean 之后再恢复才有效。
+      - name: Cache Gradle (Android)
+        if: matrix.platform == 'android'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/caches/build-cache-1
+            ~/.gradle/caches/jars-9
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('app/pubspec.lock', 'app/android/**/*.gradle*', 'app/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Android Native Build (Android)
+        if: matrix.platform == 'android'
+        uses: actions/cache@v4
+        with:
+          # app/build/.cxx 是 Flutter 构建实际使用的 CMake 暂存目录，
+          # app/android/app/.cxx 是 AGP 的默认目录，两者都缓存以覆盖不同配置。
+          path: |
+            app/build/.cxx
+            app/android/app/.cxx
+            app/build/app/intermediates/cxx
+          key: ${{ runner.os }}-native-${{ hashFiles('app/pubspec.lock', 'app/android/app/build.gradle', 'app/android/app/src/main/cpp/CMakeLists.txt', 'tools/llama.cpp/CMakeLists.txt', 'tools/llama.cpp/ggml/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-native-
+
       # 安装 Linux 构建依赖 
       - name: Install Linux Dependencies
         if: matrix.platform == 'linux'

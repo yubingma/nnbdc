@@ -1,0 +1,78 @@
+name: Restart Preempted Jobs
+
+# GitHub 托管的 runner 是可抢占 VM，随时可能被回收：日志里会出现
+#   ##[error]The runner has received a shutdown signal...
+#   Gradle task ... failed with exit code 143
+#   ##[error]The operation was canceled.
+# 长任务（android 构建 20~35 分钟）最容易撞上。整条流水线结束后检查失败 job 的
+# 注解：只有"纯抢占、没有任何真实失败"时才自动重跑失败的 job（最多重跑到第 3 次），
+# 真实失败（测试不通过、编译错误、磁盘写满等）绝不掩盖。
+on:
+  workflow_run:
+    workflows: ["Flutter Full Build"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  restart:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.run_attempt < 3
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      checks: read
+    steps:
+      - name: Restart preempted jobs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 抢占失败只剩下这两句；真实失败（如 "No space left on device"）不匹配。
+            const PREEMPTION = /The runner has received a shutdown signal|The operation was canceled/;
+            const run = context.payload.workflow_run;
+
+            const suites = await github.rest.checks.listForSuite({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_suite_id: run.check_suite_id,
+              per_page: 100,
+            });
+
+            let preempted = false;
+            let realFailure = null;
+            for (const check of suites.data.check_runs) {
+              if (check.conclusion !== 'failure' && check.conclusion !== 'cancelled') continue;
+              const annotations = await github.rest.checks.listAnnotations({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                check_run_id: check.id,
+              });
+              for (const annotation of annotations.data) {
+                if (annotation.annotation_level !== 'failure') continue;
+                if (PREEMPTION.test(annotation.message)) {
+                  core.notice(`${check.name}: 抢占 - ${annotation.message}`);
+                  preempted = true;
+                } else {
+                  core.notice(`${check.name}: 真实失败 - ${annotation.message}`);
+                  realFailure = realFailure || annotation.message;
+                }
+              }
+            }
+
+            if (!preempted) {
+              core.notice('没有发现被抢占的 job，不重跑');
+              return;
+            }
+            if (realFailure) {
+              core.notice(`既有抢占也有真实失败，不重跑，请人工处理：${realFailure}`);
+              return;
+            }
+
+            core.notice(`第 ${run.run_attempt} 次尝试被 runner 抢占，重跑失败的 job`);
+            await github.rest.actions.reRunWorkflowFailedJobs({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: run.id,
+            });
