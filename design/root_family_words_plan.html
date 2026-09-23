@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同根词词表 · 设计方案</title>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --panel: #14181e;
+    --panel-solid: #171c23;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-hairline: rgba(255, 255, 255, 0.06);
+    --text-primary: #f0f3f6;
+    --text-secondary: #9aa5b5;
+    --text-muted: #66707f;
+    --accent: #f59e0b;
+    --accent-soft: rgba(245, 158, 11, 0.14);
+    --accent-blue: #60a5fa;
+    --accent-green: #10b981;
+    --accent-red: #f87171;
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --mono-stack: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-stack);
+    line-height: 1.7;
+    padding: 44px 24px 96px;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(245, 158, 11, 0.05) 0%, transparent 42%),
+      radial-gradient(circle at 88% 14%, rgba(96, 165, 250, 0.04) 0%, transparent 46%);
+    background-attachment: fixed;
+  }
+  .layout { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px 1fr; gap: 48px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 28px; } .toc { position: static !important; } }
+
+  header { max-width: 1120px; margin: 0 auto 40px; }
+  .eyebrow { font-size: 11.5px; font-weight: 400; letter-spacing: 0.34px; color: var(--text-muted); }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin: 8px 0 6px; }
+  .lede { font-size: 12px; font-weight: 400; letter-spacing: 0.3px; color: var(--text-secondary); }
+  .meta { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-hairline); display: flex; flex-wrap: wrap; gap: 22px; font-size: 11.5px; color: var(--text-muted); }
+  .meta b { color: var(--text-secondary); font-weight: 500; }
+
+  .toc { position: sticky; top: 32px; font-size: 12.5px; }
+  .toc-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding-bottom: 10px; border-bottom: 1px solid var(--border-hairline); margin-bottom: 10px; }
+  .toc a { display: block; padding: 5px 0; color: var(--text-secondary); text-decoration: none; font-weight: 400; }
+  .toc a:hover { color: var(--accent); }
+
+  main { min-width: 0; }
+  section { margin-bottom: 52px; }
+  h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; }
+  h2 .idx { font-family: var(--mono-stack); font-size: 12px; font-weight: 600; color: var(--text-muted); margin-right: 10px; }
+  h3 { font-size: 13px; font-weight: 600; letter-spacing: -0.1px; margin: 24px 0 10px; color: var(--text-primary); }
+  p { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  p strong, li strong { color: var(--text-primary); font-weight: 600; }
+  ul, ol { margin: 0 0 12px 0; padding-left: 20px; }
+  li { font-size: 13px; color: var(--text-secondary); margin-bottom: 7px; }
+  code { font-family: var(--mono-stack); font-size: 11.5px; background: rgba(255, 255, 255, 0.05); padding: 1.5px 5px; border-radius: 5px; color: #cfd8e3; }
+  a.ref { color: var(--accent-blue); text-decoration: none; border-bottom: 1px solid rgba(96, 165, 250, 0.25); }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 18px; }
+  th { font-size: 11.5px; font-weight: 600; letter-spacing: 0.2px; color: var(--text-muted); text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+  td { font-size: 12.5px; color: var(--text-secondary); padding: 11px 12px 11px 0; border-bottom: 1px solid var(--border-hairline); vertical-align: top; }
+  td:first-child { color: var(--text-primary); font-weight: 500; white-space: nowrap; }
+  td.num { font-family: var(--mono-stack); font-size: 12px; }
+
+  hr { border: 0; border-top: 1px solid var(--border-hairline); margin: 26px 0; }
+
+  .note { border-left: 2px solid rgba(96, 165, 250, 0.55); padding: 2px 0 2px 14px; margin: 16px 0; }
+  .note p { margin: 0; font-size: 12.5px; }
+  .note.warn { border-left-color: rgba(245, 158, 11, 0.65); }
+  .note.stop { border-left-color: rgba(248, 113, 113, 0.6); }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { position: relative; padding-left: 22px; }
+  .checklist li::before { content: ''; position: absolute; left: 4px; top: 8px; width: 5px; height: 9px; border-right: 1.6px solid var(--accent-green); border-bottom: 1.6px solid var(--accent-green); transform: rotate(42deg); }
+  .crosslist { list-style: none; padding-left: 0; }
+  .crosslist li { position: relative; padding-left: 22px; }
+  .crosslist li::before { content: '×'; position: absolute; left: 6px; top: 0; color: var(--accent-red); font-size: 14px; font-weight: 600; }
+
+  /* 词表行草图 */
+  .mock-wrap { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; margin: 18px 0 8px; }
+  .mock { background: var(--panel-solid); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 12px 10px; width: 300px; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3); }
+  .grp { margin-bottom: 12px; }
+  .grp-head { display: flex; align-items: baseline; gap: 7px; padding: 7px 10px; border-radius: 9px; background: var(--accent-soft); border: 1px solid rgba(245, 158, 11, 0.24); }
+  .grp-head .tag { font-family: var(--mono-stack); font-size: 9.5px; font-weight: 700; letter-spacing: 0.4px; color: var(--accent); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 4px; padding: 0 4px; }
+  .grp-head .sp { font-size: 13.5px; font-weight: 700; color: var(--accent); }
+  .grp-head .mn { font-size: 12px; color: var(--text-secondary); }
+  .grp-head .ct { margin-left: auto; font-family: var(--mono-stack); font-size: 11px; color: var(--text-muted); }
+  .grp-body { margin-top: 2px; padding-left: 2px; border-left: 1px solid var(--border-hairline); margin-left: 10px; }
+  .wrow { display: flex; align-items: baseline; gap: 8px; padding: 6px 10px 6px 12px; }
+  .wrow .sp { font-size: 13.5px; font-weight: 500; color: var(--text-primary); }
+  .wrow .mn { font-size: 11.5px; color: var(--text-muted); }
+  .mock-cap { font-size: 11.5px; color: var(--text-muted); margin-top: 10px; }
+
+  .kpi { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0 20px; }
+  .kpi-cell { background: var(--panel-solid); border: 1px solid var(--border-subtle); border-radius: 13px; padding: 12px 16px; min-width: 132px; }
+  .kpi-cell .v { font-family: var(--mono-stack); font-size: 18px; font-weight: 600; letter-spacing: -0.5px; color: var(--text-primary); }
+  .kpi-cell .v small { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 3px; }
+  .kpi-cell .k { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .kpi-cell.amber .v { color: var(--accent); }
+  .kpi-cell.blue .v { color: var(--accent-blue); }
+  .kpi-cell.green .v { color: var(--accent-green); }
+
+  footer { max-width: 1120px; margin: 60px auto 0; padding-top: 18px; border-top: 1px solid var(--border-hairline); font-size: 11.5px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">NBDC · 产品与实现方案</div>
+  <h1>同根词词表（词根家族）</h1>
+  <div class="lede">按形近词的思路再做一个词表：以 cigen 词根词缀为骨架，把学习词书范围内共享同一词根/词缀的单词聚成一族，逐族浏览</div>
+  <div class="meta">
+    <span><b>状态</b>　已实现（待真机验收）</span>
+    <span><b>日期</b>　2026-09-24</span>
+    <span><b>数据源</b>　本地 <code>cigen</code> + <code>cigen_word_link</code>（已有，不新增表）</span>
+    <span><b>参考</b>　<a class="ref" href="confusable_words_cluster_sort_plan.md">形近词簇式排序</a></span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <a href="#bg">01　背景与结论</a>
+    <a href="#data">02　数据底盘实测</a>
+    <a href="#diff">03　与形近词的本质差异</a>
+    <a href="#design">04　方案设计</a>
+    <a href="#changes">05　改动清单</a>
+    <a href="#open">06　待确认事项</a>
+    <a href="#risk">07　风险与明确不做</a>
+    <a href="#tasks">08　Task 分解</a>
+  </nav>
+
+  <main>
+
+  <section id="bg">
+    <h2><span class="idx">01</span>背景与结论</h2>
+    <p>用户提问：既然已经有了「形近词」词表，能否照此思路再做一个「同根词」词表？</p>
+    <p><strong>结论：可以做，而且比形近词更简单，但必须换一套骨架 —— 不能照搬形近词的算法思路。</strong></p>
+    <ul>
+      <li><strong>形近词是「算出来的」</strong>：无数据依赖，靠编辑距离 + 长度分桶 + isolate 簇式排序动态生成，覆盖 100% 的词。</li>
+      <li><strong>同根词是「查出来的」</strong>：词根归属是词源事实，只能来自 <code>cigen_word_link</code> 现成数据；本地已有该表、已随系统数据同步，<strong>不需要新增表、不需要改服务端、不需要 isolate 排序</strong>。</li>
+      <li>代价是<strong>覆盖率有限</strong>：全库只有 7.5% 的词有词根关联，落到单个用户的学习词书上约 <strong>10%–12%</strong>。这是本次方案最需要正视的约束，已在下节实测。</li>
+    </ul>
+    <div class="note warn">
+      <p>形近词和同根词是<strong>互补</strong>而非重复的两个维度：形近词治「拼写像、意思不像」的混淆，同根词治「一个词根认一串词」的推演记忆。两者入口并列放在「专项突破」板块是合理的。</p>
+    </div>
+  </section>
+
+  <section id="data">
+    <h2><span class="idx">02</span>数据底盘实测</h2>
+    <p>以下数字全部来自生产库直接统计（非估算），并按三个真实活跃用户的学习词书范围完整模拟了一遍词表规模。</p>
+
+    <h3>2.1 词根资产总量</h3>
+    <div class="kpi">
+      <div class="kpi-cell"><div class="v">1,222</div><div class="k">词根词缀条目</div></div>
+      <div class="kpi-cell green"><div class="v">798</div><div class="k">关联 ≥2 个词（可成族）</div></div>
+      <div class="kpi-cell"><div class="v">5,415</div><div class="k">词根↔单词关联</div></div>
+      <div class="kpi-cell blue"><div class="v">4,626</div><div class="k">有关联的单词 / 全库 61,742</div></div>
+      <div class="kpi-cell amber"><div class="v">7.5<small>%</small></div><div class="k">全库单词覆盖率</div></div>
+      <div class="kpi-cell amber"><div class="v">17–35<small>%</small></div><div class="k">单本正式词书覆盖率</div></div>
+    </div>
+
+    <h3>2.2 真实用户学习范围模拟（整个学习词书并集）</h3>
+    <table>
+      <thead>
+        <tr><th>用户</th><th>学习范围词数</th><th>范围内有关联</th><th>成族组数<br>（≥2 词）</th><th>入表词数</th><th>孤立组<br>（1 词，剔除）</th><th>组均 / 最大组</th><th>分类构成</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>A（397 本词书）</td><td class="num">39,799</td><td class="num">4,012（10.1%）</td><td class="num">740</td><td class="num">3,897</td><td class="num">156</td><td class="num">6.2 / 45</td><td class="num">ROOT 484 · SUFFIX 161 · PREFIX 95</td></tr>
+        <tr><td>B（244 本词书）</td><td class="num">19,455</td><td class="num">2,284（11.7%）</td><td class="num">522</td><td class="num">2,124</td><td class="num">209</td><td class="num">4.7 / 30</td><td class="num">ROOT 333 · SUFFIX 122 · PREFIX 67</td></tr>
+        <tr><td>C（162 本词书）</td><td class="num">30,566</td><td class="num">3,774（12.3%）</td><td class="num">719</td><td class="num">3,657</td><td class="num">160</td><td class="num">5.9 / 46</td><td class="num">ROOT 462 · SUFFIX 163 · PREFIX 94</td></tr>
+      </tbody>
+    </table>
+    <p>结论：<strong>词表规模约 500–750 组、2,000–3,900 词</strong>，组均 5–6 词，中位 4–5 词。这是很健康、很可读的规模 —— 比形近词（组均 2–3 词）更「有料」，也不会像全量词书那样失控。</p>
+
+    <h3>2.3 数据质量抽查</h3>
+    <table>
+      <thead><tr><th>类型</th><th>样例</th><th>评价</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>ROOT（主力，907 条）</td>
+          <td><code>form</code> 形成：conform, deform, formal, formation, formula, inform, perform, reform, transform, uniform<br><code>spect</code> 看：aspect, expect, inspect, perspective, prospect, respect, spectator, speculate, suspect</td>
+          <td>质量高，是真正的语义家族，正是词表价值所在</td>
+        </tr>
+        <tr>
+          <td>PREFIX（136 条）</td>
+          <td><code>ab, ac, ad, af, ag, an, ap, ar, as, at</code>「一再等加强意」→ 31 个词混在一起；<code>com</code>「共同」→ 23 个词</td>
+          <td>合并型前缀条目会把不相干的词并到一起，是噪音来源；但条目少、只占 13%</td>
+        </tr>
+        <tr>
+          <td>SUFFIX（179 条）</td>
+          <td><code>uniform</code> 同时挂在 ROOT <code>form</code> 与 SUFFIX 下</td>
+          <td>需要归属去重（见 4.4）</td>
+        </tr>
+        <tr>
+          <td>缺数据</td>
+          <td><code>important</code> / <code>beautiful</code> / <code>provide</code> 等常见词<strong>查无词根关联</strong></td>
+          <td>词根资产本身覆盖不全，属既有数据现状，本次不补</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note warn">
+      <p><strong>必须向用户明确的心理预期</strong>：这份词表只覆盖约 10% 的学习词。用户学过的 <code>important</code> 不会出现在同根词表里（数据缺失），这是数据边界而非功能缺陷。入口卡片建议用「词根家族」这类说法，避免「同根词一览」引发「怎么才这么点」的误解。</p>
+    </div>
+  </section>
+
+  <section id="diff">
+    <h2><span class="idx">03</span>与形近词的本质差异</h2>
+    <table>
+      <thead><tr><th>维度</th><th>形近词（已上线）</th><th>同根词（本方案）</th></tr></thead>
+      <tbody>
+        <tr><td>数据来源</td><td>纯本地算法：编辑距离 ≤1 + 同长度 + ≥3 字母</td><td>本地数据表 <code>cigen_word_link</code> + <code>cigen</code></td></tr>
+        <tr><td>覆盖率</td><td>100%（任意拼写都成立）</td><td>约 10%（数据边界）</td></tr>
+        <tr><td>准入逻辑</td><td>需要 <code>selectConfusableNear</code> 过滤 + 长度分桶剪枝</td><td>一次 join 查询即可，<strong>无需算法</strong></td></tr>
+        <tr><td>排序</td><td>需要 isolate 簇式排序（贪心、归属、防接龙）</td><td><strong>不需要排序</strong> —— 天然按词根分组</td></tr>
+        <tr><td>分组语义</td><td>簇头 = 学过的锚点词，组内同长度</td><td>组头 = 词根本身（不是单词），组内长度各异</td></tr>
+        <tr><td>组的呈现</td><td>无组头，仅靠连续组号着色</td><td><strong>必须有组头行</strong>（词根拼写 + 分类 + 中文含义）</td></tr>
+        <tr><td>一词多组</td><td>不存在（每词最多一个锚点归属）</td><td>存在：739/4,626 词（16%）挂 2 个以上词根</td></tr>
+        <tr><td>需要 isolate</td><td>是（排序耗时可到秒级）</td><td><strong>否</strong> —— 数据量小，主 isolate 内直接完成</td></tr>
+      </tbody>
+    </table>
+    <p>差异集中在一处：<strong>同根词表必须自己造「组头行」</strong>。这是本次唯一需要碰 <code>word_list.dart</code> 的原因。</p>
+  </section>
+
+  <section id="design">
+    <h2><span class="idx">04</span>方案设计</h2>
+
+    <h3>4.1 词表集合构造</h3>
+    <pre style="font-family:var(--mono-stack);font-size:11.5px;color:#cfd8e3;background:rgba(255,255,255,0.04);border:1px solid var(--border-hairline);border-radius:10px;padding:14px 16px;overflow-x:auto;line-height:1.9;margin:12px 0 16px;">B = 学习范围去重单词集合            // learning_dicts → dict_words，与形近词同口径
+G = { 词根 c | c 在 B 内有 ≥2 个关联词 }   // 剔除孤立组（1 词组无对照价值）
+词表 = [ 组头(c) + c 在 B∩关联 内的全部词 ]  按 G 排列
+入口计数 = |G|（组数，与形近词「N 组」口径一致）</pre>
+    <ul>
+      <li>范围口径<strong>与形近词完全对齐</strong>（学习词书并集），便于两卡片并列理解；</li>
+      <li>孤立组（只有 1 个关联词）直接剔除：单张卡片无对照意义，正是数据里那 156–209 个；</li>
+      <li>组内不做 <code>maxCount</code> 截断（区别于详情页的 20 词上限），词表页要完整呈现一族。</li>
+    </ul>
+
+    <h3>4.2 组头行的构造（关键设计）</h3>
+    <p>复用 <code>WordListPage</code> 既有的分组渲染：<code>groupOfWord</code> 返回组号，连续同组号自动画成一张卡（<code>top/middle/bottom/single</code>），并支持按组号着色 —— 形近词已经验证过这套机制。</p>
+    <p>同根词把<strong>组头本身也作为一行数据</strong>放进列表，组头行与组内词共用同一个组号：</p>
+    <div class="mock-wrap">
+      <div>
+        <div class="mock">
+          <div class="grp">
+            <div class="grp-head"><span class="tag">ROOT</span><span class="sp">spect</span><span class="mn">看</span><span class="ct">22 词</span></div>
+            <div class="grp-body">
+              <div class="wrow"><span class="sp">expect</span><span class="mn">v. 期待；预料</span></div>
+              <div class="wrow"><span class="sp">inspect</span><span class="mn">v. 检查；视察</span></div>
+              <div class="wrow"><span class="sp">prospect</span><span class="mn">n. 前景；展望</span></div>
+              <div class="wrow"><span class="sp">respect</span><span class="mn">v./n. 尊敬；尊重</span></div>
+              <div class="wrow"><span class="sp">suspect</span><span class="mn">v. 怀疑 n. 嫌疑人</span></div>
+            </div>
+          </div>
+          <div class="grp">
+            <div class="grp-head"><span class="tag">ROOT</span><span class="sp">port</span><span class="mn">搬运</span><span class="ct">8 词</span></div>
+            <div class="grp-body">
+              <div class="wrow"><span class="sp">export</span><span class="mn">v. 出口</span></div>
+              <div class="wrow"><span class="sp">import</span><span class="mn">v. 进口</span></div>
+              <div class="wrow"><span class="sp">portable</span><span class="mn">adj. 便携的</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="mock-cap">组头带分类标签、词根拼写、中文含义与词数；成员行沿用现有单词行样式</div>
+      </div>
+    </div>
+    <p>组头行用一个带前缀标记的虚拟 <code>WordVo</code> 承载（如 <code>id = 'cigen:&lt;cigenId&gt;'</code>，<code>spell</code> = 词根拼写），这样：</p>
+    <ul>
+      <li>组头的 <code>groupOfWord</code> 返回<strong>自己的</strong>组号，天然成为该组首行，无需改分组机制；</li>
+      <li><code>word_list.dart</code> 的 <code>renderWord</code> 识别该标记后走专用组头渲染（纯展示，不进详情页）；</li>
+      <li>成员行完全复用现有 <code>WordItem</code> 渲染与进度/发音等能力。</li>
+    </ul>
+    <div class="note warn">
+      <p><strong>实现修正（真机反馈后已落地）</strong>：组头行首版把「词根 + 含义 + 词数」平铺在一行，先后暴露两个问题 ——</p>
+      <p>① <strong>溢出</strong>：真机报 <code>RenderFlex overflowed by 9.8 pixels</code>，长词根条目（如 <code>ab, ac, ad, af…</code> 这类合并前缀）下各元素最小宽度之和超过卡片宽度。</p>
+      <p>② <strong>省略号过早 + 中间留白</strong>：词根也参与弹性分配时，剩余空间被词根与释义<strong>各分一半</strong>，释义被压到 125px（375px 屏），右侧却还空着 54px —— 释义过早省略、又不靠右。</p>
+      <p>最终宽度分配规则：<strong>词根不参与弹性分配</strong>（按自身宽度完整显示，仅在超过可用宽度 40% 时才收缩省略）；<strong>其余全部空间由释义独占</strong>（放得下就完整显示、确实放不下才省略号）；<strong>词数用固定宽度列右对齐</strong>，无论词根/释义多长都贴着行尾。实测 375px 屏：词根 71px 完整、释义拿到 179px、词数右边界与内容右边界齐平。</p>
+      <p>同时把组头提取为独立组件 <code>RootFamilyHeaderItem</code> + 纯函数 <code>buildRootFamilyHeaderContent</code>，以便用窄宽约束（320 / 240px）与 <code>RenderParagraph.didExceedMaxLines</code> 直接做布局契约与溢出回归测试；卡片外壳仍复用 <code>WordListItemLayout</code>（新增 <code>headerContent</code> 入口），不重复边距/圆角/分组分割线样式。</p>
+    </div>
+
+    <h3>4.3 只读语义（与形近词保持一致）</h3>
+    <p>沿用形近词那一套已验收的只读约束，<strong>零新增设计</strong>：</p>
+    <ul>
+      <li><code>getSortAlg()</code> 固定 <code>WordSortAlg.original</code>（避免触发控制器 TSP 分支）；<code>canCustomizeSort = false</code>（隐藏排序菜单）；<code>hasUnits = false</code>；</li>
+      <li>书签用<strong>内存态</strong>（返回词表可恢复位置，但不写 <code>book_marks</code>、不产生 DbLog、不触发同步）；</li>
+      <li>覆写 <code>masterWord</code> / <code>unmasterWord</code> / <code>deleteWord</code> 为提示性 no-op；</li>
+      <li>点词进详情页正常可用（详情页本身能展示该词的词根与释义）；组头行不可点。</li>
+    </ul>
+    <div class="note">
+      <p><strong>实现修正（已落地）</strong>：原方案写的是「书签内存 no-op（恒返回 null）」。控制器在书签为空时会在首帧自动保存，恒返回 null 会导致反复保存，故实现为<strong>内存态书签</strong>——不落库的同时保持会话内位置恢复，语义与「纯浏览视图」一致。</p>
+    </div>
+
+    <h3>4.4 一词多根的归属规则</h3>
+    <p>16% 的词挂多个词根。为保持「一个词在词表里只出现一次」，需要一个确定性的唯一归属规则。拟定优先级：</p>
+    <ol>
+      <li><strong>成员数多的词根优先</strong>（大族吸收，家族感更强）；</li>
+      <li>成员数相同 → 分类优先级 <code>ROOT &gt; PREFIX &gt; SUFFIX</code>（ROOT 语义最强）；</li>
+      <li>仍相同 → 词根拼写字典序（保证确定性、可测）。</li>
+    </ol>
+    <p>单词详情页的「词根」Tab 不受影响，仍展示该词的<strong>全部</strong>词根；词表只是选一个主族呈现。</p>
+    <div class="note">
+      <p><strong>实测影响（已用生产库对照验证）</strong>：唯一归属会让少数因冲突而降为孤立的组消失。对学习范围 39,799 词的真实用户：组数 740 → <strong>657</strong>（−83），入表词数 3,897 → <strong>3,826</strong>（−71，约 <strong>−1.8%</strong>）。代价可忽略，换来的是「每个词只出现一次、列表干净」。</p>
+    </div>
+
+    <h3>4.5 缓存与计数</h3>
+    <ul>
+      <li>入口计数取<strong>组数 |G|</strong>（与形近词「N 组」一致），由 <code>getWordLists()</code> 提供；</li>
+      <li>内存缓存（key = userId）存「分组结构 + 签名」，列表与计数共用，避免 <code>getWordLists()</code> 被拖慢；</li>
+      <li>签名 = 学习词书 dictId 有序集 + 签名哈希（范围为全库性质，用 <code>关联行数 + 词根数 + 组数</code> 的哈希即可，无需把数万 wordId 拼进签名）；</li>
+      <li>轻量统计路径：关联表仅 5,415 行，直接全量取出后在内存与范围集合求交，<strong>不查 4 万行的范围词表</strong>，保证词表页刷新开销可忽略。</li>
+    </ul>
+
+    <h3>4.6 数据流与同步</h3>
+    <p>全部为本地只读查询（<code>learning_dicts</code> / <code>dict_words</code> / <code>cigen_word_link</code> / <code>cigens</code> / <code>words</code> / <code>meaning_items</code>）：<strong>不落库、不产生同步日志、不改服务端、不新增表</strong>。</p>
+  </section>
+
+  <section id="changes">
+    <h2><span class="idx">05</span>改动清单</h2>
+    <table>
+      <thead><tr><th>文件</th><th>改动</th></tr></thead>
+      <tbody>
+        <tr><td><code>app/lib/api/bo/word_bo.dart</code></td><td>新增 <code>getRootFamilyGroups(userId)</code>（范围 × 词根关联 → 分族 + 剔除孤立组 + 多根唯一归属 + 缓存）与 <code>getRootFamilyGroupCount(userId)</code>；<code>getWordLists()</code> 追加 <code>WordList('同根词', 组数)</code>；批量释义复用已有的 <code>getConfusableMeaningsInBatch</code>（口径一致，不改名）</td></tr>
+        <tr><td><code>app/lib/page/word_list/root_family_words.dart</code>（新增）</td><td><code>RootFamilyWordsProvider</code>（含组号映射、只读覆写、内存态书签、进度 provider）+ 导航助手 <code>toRootFamilyWordsListPage()</code>，复用既有 <code>/word_list</code> 路由（router.dart 不动）</td></tr>
+        <tr><td><code>app/lib/page/word_list/modes/root_family_header_item.dart</code>（新增）</td><td><code>RootFamilyHeaderItem</code>（组头行组件）+ <code>buildRootFamilyHeaderContent</code>（纯函数，便于窄宽溢出回归测试）</td></tr>
+        <tr><td><code>app/lib/page/word_list/modes/word_list_item_layout.dart</code></td><td>新增可选 <code>headerContent</code> 入口：非空时以整行自定义内容取代「序号 + 单词/释义」三段布局，卡片外观/圆角/分组分割线完全复用</td></tr>
+        <tr><td><code>app/lib/page/word_list/word_list.dart</code></td><td><code>_renderWordContent</code> 识别词根组头行 → 交给 <code>RootFamilyHeaderItem</code> 渲染（纯展示、不可点）</td></tr>
+        <tr><td><code>app/lib/page/word_lists.dart</code></td><td>「专项突破」板块在形近词卡下追加同根词入口卡（复用 <code>_buildHorizontalWordListCard</code>，图标 <code>Icons.account_tree_rounded</code>，计数 <code>N 组</code>）</td></tr>
+        <tr><td><code>app/test/</code>（新增）</td><td><code>root_family_words_bo_test.dart</code>（14 用例：分族/孤立组剔除/多根归属/范围过滤/缓存/入口计数）、<code>root_family_words_provider_test.dart</code>（11 用例：组头行序/组号/切片/释义缺失跳族/只读/内存书签）、<code>root_family_header_item_test.dart</code>（4 用例：窄宽溢出回归）</td></tr>
+      </tbody>
+    </table>
+    <p><strong>零改动</strong>：服务端、数据库 schema、同步链路、isolate 排序、router.dart、单词详情页。</p>
+  </section>
+
+  <section id="open">
+    <h2><span class="idx">06</span>待确认事项</h2>
+    <p>以下 4 项已按<strong>推荐默认</strong>落地实现（全部与形近词的既有语义保持一致）：</p>
+    <table>
+      <thead><tr><th>#</th><th>问题</th><th>已采用</th><th>备选（未采纳）</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>组头行是否可点击？</td>
+          <td><strong>纯展示不可点</strong>（词根不是单词，详情页无对应实体）</td>
+          <td>点击进独立「词根详情页」——需新页面与设计，成本明显上升</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>一词多根如何呈现？</td>
+          <td><strong>唯一归属</strong>（4.4 规则，词不重复，列表干净）</td>
+          <td>允许在多个族中重复出现 —— 总数膨胀、重复率高，不推荐</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>是否允许「掌握 / 删除」操作？</td>
+          <td><strong>仅浏览只读</strong>（与形近词完全一致）</td>
+          <td>开放掌握 —— 会引入「移出后缓存失效、组可能塌缩」等新逻辑</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>孤立组（1 词）是否剔除？</td>
+          <td><strong>剔除</strong>（无对照价值，且会占掉入口计数）</td>
+          <td>保留为「单词 + 词根注释」—— 更像详情页而非词表</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>落地时对推荐项做了两处工程修正（均为实现细节，不改变上述产品语义）：</p>
+    <ul>
+      <li><strong>书签改为内存态</strong>：控制器在书签为空时会在<strong>首帧自动保存</strong>，若照字面实现「恒返回 null 的 no-op」会反复触发保存。故实现为内存态书签——不写 <code>book_marks</code> 表、不产生 DbLog、不触发同步，会话内可恢复位置，退出不保留。（形近词当前实现会落库，此处按方案约定不落库。）</li>
+      <li><strong>组头的词数载体</strong>：词数挂在组头虚拟行的 <code>meaningStr</code> 字段（该字段在列表行渲染中本就不使用），词根含义走 <code>CigenVo.meaningCn</code> + <code>shortDesc</code>，避免为纯展示新增字段。</li>
+    </ul>
+    <p>以下两点记录为<strong>可调项</strong>（当前按默认实现）：</p>
+    <ul>
+      <li><strong>PREFIX 噪音</strong>：<code>ab, ac, ad…</code> 这类合并条目会产生 30+ 词的松散族。当前照收（占比仅 13%）；若观感差可只收 ROOT + SUFFIX，一处条件即可。</li>
+      <li><strong>组大小上限</strong>：最大族 45–46 词（<code>fac</code>）。当前不截断，完整呈现；若嫌长可后续加折叠。</li>
+    </ul>
+  </section>
+
+  <section id="risk">
+    <h2><span class="idx">07</span>风险与明确不做</h2>
+    <h3>7.1 风险</h3>
+    <ul>
+      <li><strong>覆盖率预期管理（主要风险）</strong>：约 10% 的学习词能进词表。需在产品文案上避免暗示「全量同根词」，否则用户会认为功能残缺。</li>
+      <li><strong>词根数据质量</strong>：PREFIX 合并条目与个别误挂，会呈现为「同一族里词义跳跃」。属既有数据问题，本次不修（修数据应走 <code>AdminCigenOptimizeController</code> 的 AI 清洗链路，是独立任务）。</li>
+      <li><strong>组头行对框架的影响</strong>：这是唯一需要碰 <code>word_list.dart</code> 的点。因为组头是框架内的虚拟数据行，需确认不影响既有的「单元标题仅 DictWordsProvider 渲染」「孤立组紧凑重编号」等逻辑（形近词的组号重编号逻辑可照抄）。</li>
+      <li><strong>缓存失效</strong>：范围变化（增删词书）与词根数据升级（<code>sys_db_version</code> 变化）都需触发重算；词根数据带版本，签名纳入版本号即可。</li>
+    </ul>
+    <h3>7.2 明确不做</h3>
+    <ul class="crosslist">
+      <li>不用拼写规则（<code>isSameWordFamily</code>）派生词族 —— 它是为「干扰项排除」设计的宁可漏判策略，拿来做词表会大量误并（corner/corn、mother/moth、flower/flow）。</li>
+      <li>不新增数据库表、不改服务端、不动同步链路。</li>
+      <li>不补词根数据（不给 <code>important</code> 这类词补关联）。</li>
+      <li>不做组内学习（不进学习轨道）、不做词根详情页。</li>
+      <li>不改动形近词的任何现有行为。</li>
+    </ul>
+  </section>
+
+  <section id="tasks">
+    <h2><span class="idx">08</span>Task 分解</h2>
+    <ol>
+      <li><strong>Task 1（数据层，TDD）</strong>：<code>WordBo.getRootFamilyGroups</code> / <code>getRootFamilyGroupCount</code> + <code>getWordLists()</code> 入口项；测试覆盖分族、孤立组剔除、多根唯一归属（三种优先级）、范围过滤、计数与列表一致、缓存签名失效。
+        <br>验证：针对性 <code>flutter test</code> + <code>flutter analyze</code>。</li>
+      <li><strong>Task 2（UI）</strong>：<code>root_family_words.dart</code>（provider + 组号映射 + 只读覆写 + no-op 书签）、<code>word_list.dart</code> 组头渲染、<code>word_lists.dart</code> 入口卡。
+        <br>验证：<code>flutter analyze</code> + 手动冒烟（进入 loading、组头位置正确、组内词完整、返回后计数刷新、点词进详情正常、无同步日志产生）。</li>
+      <li><strong>Task 3（集成验证）</strong>：全量 <code>flutter analyze</code>（0 issue）+ 全量 <code>flutter test</code>，修复所有编译错误与警告。</li>
+    </ol>
+    <div class="note">
+      <p>依赖关系：Task 1 → Task 2 → Task 3，无外部前置。相比形近词，本次没有 isolate 排序与算法正确性证明，实现量约为其 1/3。</p>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  NBDC 泡泡单词 · 同根词词表设计方案 · 数据统计自生产库 <code>cigen</code> / <code>cigen_word_link</code> · 状态：待确认 4 项细节
+</footer>
+
+</body>
+</html>

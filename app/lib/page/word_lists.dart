@@ -6,6 +6,7 @@ import 'package:nnbdc/page/word_list/confusable_words.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
 import 'package:nnbdc/page/word_list/learning_words.dart';
 import 'package:nnbdc/page/word_list/mastered_words.dart';
+import 'package:nnbdc/page/word_list/root_family_words.dart';
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
@@ -442,13 +443,14 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     );
   }
 
-  /// 4. 专项突破板块 (历史错词、形近词)
+  /// 4. 专项突破板块 (历史错词、形近词、同根词)
   Widget _buildSpecialSection(bool isDarkMode) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
     final historyWrongList = _findListByName('历史错词');
     final confusableList = _findListByName('形近词');
+    final rootFamilyList = _findListByName('同根词');
 
     final historyWrongCount = historyWrongList?.wordCount ?? 0;
     final hasHistoryWrong = historyWrongCount > 0;
@@ -482,6 +484,18 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           countText: '${confusableList?.wordCount ?? 0} 组',
           onTap: () {
             toConfusableWordsListPage()?.then((_) => loadData());
+          },
+        ),
+        const SizedBox(height: 10),
+        _buildHorizontalWordListCard(
+          isDarkMode: isDarkMode,
+          icon: Icons.account_tree_rounded,
+          iconColor: const Color(0xFFF59E0B),
+          title: '同根词',
+          subtitle: '一个词根认一串词',
+          countText: '${rootFamilyList?.wordCount ?? 0} 组',
+          onTap: () {
+            toRootFamilyWordsListPage()?.then((_) => loadData());
           },
         ),
       ],

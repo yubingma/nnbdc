@@ -1422,9 +1422,7 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildMeaningInline(String text, double fontSize, Color defaultColor) {
     if (text.isEmpty) return const SizedBox.shrink();
-    final isDark = _cachedIsDarkMode;
-    final cixingColor =
-        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final cixingColor = context.textNeutral;
 
     final lines = text.split('\n');
     List<Widget> widgets = [];
@@ -2754,9 +2752,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       return text;
     }
 
-    final isDark = _cachedIsDarkMode;
-    final cixingColor =
-        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final cixingColor = context.textNeutral;
 
     final count = displayItems.length;
     final double meaningFontSize = count <= 1 ? 22.0 : 18.0;
@@ -3230,9 +3226,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       return text;
     }
 
-    final isDark = _cachedIsDarkMode;
-    final cixingColor =
-        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final cixingColor = context.textNeutral;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

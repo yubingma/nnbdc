@@ -55,10 +55,12 @@ import 'modes/handwriting_mode_item.dart';
 import 'import_from_excel_page.dart';
 import 'modes/hide_mode_item.dart';
 import 'modes/list_mode_item.dart';
+import 'modes/root_family_header_item.dart';
 import 'modes/speak_mode_item.dart';
 import 'modes/translate_sentence_mode_item.dart';
 import 'modes/typing_mode_item.dart';
 import 'modes/word_list_item_layout.dart';
+import 'root_family_words.dart';
 import 'widgets/audio_level_bar.dart';
 import 'widgets/guide_overlay.dart';
 import 'widgets/handwriting_overlay.dart';
@@ -2429,6 +2431,19 @@ class WordListPageState extends State<WordListPage>
   Widget _renderWordContent(WordWrapper word, int i, bool isBookmarked,
       bool isDarkMode, bool? learningStatus,
       {GroupCardPosition groupPosition = GroupCardPosition.single}) {
+    // 同根词表的词根组头行：纯展示（词根不是单词，不可点、不进详情页、不参与各学习模式）
+    final provider = args.wordsProvider;
+    if (provider is RootFamilyWordsProvider && provider.isGroupHeader(word)) {
+      return RootFamilyHeaderItem(
+        word: word,
+        index: i,
+        baseIndex: baseIndex ?? 0,
+        isDarkMode: isDarkMode,
+        actions: this,
+        groupPosition: groupPosition,
+      );
+    }
+
     final slidableActions = _getSlidableActions(word, i, isBookmarked,
         learningStatus: learningStatus);
 

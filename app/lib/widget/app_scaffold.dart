@@ -51,6 +51,7 @@ extension AppThemeContextExtension on BuildContext {
   Color get textPrimary => themeConfig.textPrimary;
   Color get textSecondary => themeConfig.textSecondary;
   Color get textMuted => themeConfig.textMuted;
+  Color get textNeutral => themeConfig.textNeutral;
   Color get dakaStudiedColor => themeConfig.dakaStudiedColor;
   Color get warmAccentColor => themeConfig.warmAccentColor;
   List<BoxShadow> get cardShadows => themeConfig.cardShadows;

@@ -224,6 +224,21 @@ class WordBo {
     _confusableInflight.clear();
   }
 
+  // 同根词词表缓存：key = userId；value 记录分族结果与数据签名
+  static final Map<String, _RootFamilyCacheEntry> _rootFamilyCache = {};
+
+  /// 供测试清理：清空同根词词表缓存
+  @visibleForTesting
+  static void clearRootFamilyCache() => _rootFamilyCache.clear();
+
+  /// 数据签名：学习词书 dictId 有序集 + 全库词根资产规模（关联行数、词根数）。
+  /// 学习词书增删 → 范围内单词集合变化 → 分族结果变化；
+  /// 词根资产随系统数据整体重同步，规模分量可捕获其版本变化。
+  static String _rootFamilySignature(List<String> dictIds, int linkCount, int cigenCount) {
+    final sortedDictIds = [...dictIds]..sort();
+    return 'v1;d:${sortedDictIds.join(',')};l:$linkCount;c:$cigenCount';
+  }
+
   /// 数据签名：学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序 +
   /// 锚点最近学习时间的哈希；学习词书增删（dictIds）、词书单词增删（B，即使锚点不变 C 应变）、
   /// 学习记录/已掌握变化（A）或锚点学习时间变化（排序权重）任一变化都会改变签名。
@@ -2964,6 +2979,8 @@ class WordBo {
       wordLists.add(WordList("已掌握", masteredWordIds.length));
       // 形近词：词表组数（每一组包含至少 2 个一字之差形近词）
       wordLists.add(WordList("形近词", await getConfusableGroupCount(user.id)));
+      // 同根词：词表组数（每一组为一个共享词根/词缀且范围内至少 2 个词的族）
+      wordLists.add(WordList("同根词", await getRootFamilyGroupCount(user.id)));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
     } catch (e, stackTrace) {
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);
@@ -3493,6 +3510,140 @@ class WordBo {
     return result;
   }
 
+  // ---------- 同根词词表：cigen 词根词缀分族 ----------
+
+  /// 同根词词表的分族结果（键为用户学习词书范围）：
+  /// - [groups]：成族的词根及其范围内关联词（按规模/分类优先级/拼写排序）；
+  /// - [spellOf]：范围内有词根关联的 wordId → spell（UI 组装词表行时复用）。
+  static Future<({List<RootFamilyGroup> groups, Map<String, String> spellOf})>
+      _loadRootFamilies(List<String> dictIds) async {
+    final db = MyDatabase.instance;
+    if (dictIds.isEmpty) {
+      return (groups: const <RootFamilyGroup>[], spellOf: const <String, String>{});
+    }
+
+    // 1. 学习范围内的词根关联（在 SQL 内用 dict_word 子查询过滤，避免把全部关联行拉回内存）
+    final inScope = db.selectOnly(db.dictWords)
+      ..addColumns([db.dictWords.wordId])
+      ..where(db.dictWords.dictId.isIn(dictIds));
+    final links = await (db.select(db.cigenWordLinks)
+          ..where((l) => l.wordId.isInQuery(inScope)))
+        .get();
+    if (links.isEmpty) {
+      return (groups: const <RootFamilyGroup>[], spellOf: const <String, String>{});
+    }
+
+    // 2. 词根元数据 + 每个词根的范围内成员
+    final wordIds = {for (final l in links) l.wordId};
+    final cigenIds = {for (final l in links) l.cigenId};
+    final cigenRows =
+        await (db.select(db.cigens)..where((c) => c.id.isIn(cigenIds))).get();
+    final meta = <String, ({String label, String category, String meaning})>{
+      for (final c in cigenRows)
+        c.id: (
+          label: (c.spell?.isNotEmpty ?? false) ? c.spell! : c.description,
+          category: c.category ?? '',
+          meaning: c.meaningCn ?? '',
+        ),
+    };
+    final membersByCigen = <String, Set<String>>{};
+    for (final l in links) {
+      if (!meta.containsKey(l.cigenId)) continue; // 词根元数据缺失的关联跳过
+      membersByCigen.putIfAbsent(l.cigenId, () => <String>{}).add(l.wordId);
+    }
+
+    // 3. 词根优先级：ROOT(0) < PREFIX(1) < SUFFIX(2)；未知分类排最后。
+    //    成员多的词根优先（大族吸收），组与成员归属由此保持自洽。
+    int priority(String cigenId) => switch (meta[cigenId]!.category) {
+          'ROOT' => 0,
+          'PREFIX' => 1,
+          'SUFFIX' => 2,
+          _ => 3,
+        };
+    final orderedCigens = membersByCigen.keys.toList()
+      ..sort((a, b) {
+        final byMembers = membersByCigen[b]!.length.compareTo(membersByCigen[a]!.length);
+        if (byMembers != 0) return byMembers;
+        final byCategory = priority(a).compareTo(priority(b));
+        if (byCategory != 0) return byCategory;
+        return meta[a]!.label.compareTo(meta[b]!.label);
+      });
+
+    // 4. 一词多根：每个词只归属优先级最高的词根（词在词表中不重复出现）
+    final claimed = <String>{};
+    final assignedByCigen = <String, List<String>>{};
+    for (final cigenId in orderedCigens) {
+      final mine = [
+        for (final w in membersByCigen[cigenId]!)
+          if (claimed.add(w)) w,
+      ];
+      if (mine.isNotEmpty) assignedByCigen[cigenId] = mine;
+    }
+
+    // 5. 查拼写；组内按拼写排序；剔除只剩 1 个词的组（孤立词无对照价值）
+    final wordRows = await (db.select(db.words)..where((w) => w.id.isIn(wordIds))).get();
+    final spellOf = {for (final w in wordRows) w.id: w.spell};
+    final groups = <RootFamilyGroup>[];
+    for (final entry in assignedByCigen.entries) {
+      final ids = entry.value
+        ..sort((a, b) => (spellOf[a] ?? a).compareTo(spellOf[b] ?? b));
+      if (ids.length < 2) continue;
+      groups.add(RootFamilyGroup(
+        cigenId: entry.key,
+        spell: meta[entry.key]!.label,
+        category: meta[entry.key]!.category,
+        meaning: meta[entry.key]!.meaning,
+        wordIds: List.unmodifiable(ids),
+      ));
+    }
+    // 组序与词根优先级一致（成员多的族在前；同规模按分类、拼写）
+    final groupOrder = {for (var i = 0; i < groups.length; i++) groups[i].cigenId: i};
+    groups.sort((a, b) {
+      final byOrder = groupOrder[a.cigenId]!.compareTo(groupOrder[b.cigenId]!);
+      return byOrder;
+    });
+    return (groups: groups, spellOf: spellOf);
+  }
+
+  /// 同根词词表：学习词书范围内共享同一词根/词缀（cigen）的单词分族，
+  /// 每族至少 2 个词；一词多根时只归属优先级最高的词根（词不重复出现）。
+  /// 仅浏览视图：不落库、不产生同步日志、不涉及服务端。
+  /// 内存缓存带签名校验（学习词书 dictId 有序集 + 词根资产规模），计数与列表共用。
+  Future<List<RootFamilyGroup>> getRootFamilyGroups(String userId) async {
+    final db = MyDatabase.instance;
+    final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
+    final dictIds = [for (final d in learningDicts) d.dictId];
+    final linkCount = (await (db.selectOnly(db.cigenWordLinks)
+              ..addColumns([countAll()]))
+            .getSingle())
+        .read(countAll()) ??
+        0;
+    final cigenCount =
+        (await (db.selectOnly(db.cigens)..addColumns([countAll()])).getSingle())
+                .read(countAll()) ??
+            0;
+    final signature = _rootFamilySignature(dictIds, linkCount, cigenCount);
+
+    final cached = _rootFamilyCache[userId];
+    if (cached != null && cached.signature == signature) return cached.groups;
+
+    final loaded = await _loadRootFamilies(dictIds);
+    _rootFamilyCache[userId] = _RootFamilyCacheEntry(signature, loaded.groups, loaded.spellOf);
+    return loaded.groups;
+  }
+
+  /// 同根词词表入口计数：成族的词根组数（与列表展示的组数一致，共用缓存）
+  Future<int> getRootFamilyGroupCount(String userId) async {
+    final groups = await getRootFamilyGroups(userId);
+    return groups.length;
+  }
+
+  /// 当前同根词词表范围内有词根关联的 wordId → spell（确保缓存就绪后返回）
+  Future<Map<String, String>> getRootFamilySpellMap(String userId) async {
+    await getRootFamilyGroups(userId);
+    return _rootFamilyCache[userId]?.spellOf ?? const {};
+  }
+
   Future<Result<int>> getLearningWordInBucketOrder(String spell, int bucketKey, String userId) async {
     final results = await getLearningWordsByBucketForAPage(bucketKey, 0, 100000, userId);
     for (int i = 0; i < results.rows.length; i++) {
@@ -3666,4 +3817,37 @@ class _ConfusableCacheEntry {
   final String signature;
   final Set<String> anchorIds;
   _ConfusableCacheEntry(this.sortedIds, this.signature, this.anchorIds);
+}
+
+/// 同根词词表缓存条目：分族结果 + 数据签名 + 范围内 wordId→spell
+class _RootFamilyCacheEntry {
+  final String signature;
+  final List<RootFamilyGroup> groups;
+  final Map<String, String> spellOf;
+  _RootFamilyCacheEntry(this.signature, this.groups, this.spellOf);
+}
+
+/// 同根词词表的一个词根族：词根本身（组头）+ 其学习范围内的关联词。
+/// 组头行由 UI 用 [groupId] 作为虚拟 WordVo 的 id（带 [groupIdPrefix] 前缀），
+/// 与族内单词共用同一组号，从而复用词表页既有的分组卡片渲染。
+class RootFamilyGroup {
+  /// 组头虚拟行的 id 前缀：词根不是单词，词表页据此识别并特殊渲染
+  static const String groupIdPrefix = 'cigen:';
+
+  final String cigenId;
+  final String spell;
+  final String category; // ROOT / PREFIX / SUFFIX / 其他
+  final String meaning;
+  final List<String> wordIds;
+
+  RootFamilyGroup({
+    required this.cigenId,
+    required this.spell,
+    required this.category,
+    required this.meaning,
+    required this.wordIds,
+  });
+
+  /// 组头虚拟行的 id
+  String get groupId => '$groupIdPrefix$cigenId';
 }

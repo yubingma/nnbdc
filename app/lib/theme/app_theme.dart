@@ -94,6 +94,10 @@ class AppThemeConfig {
   /// 未打卡（学习中）状态色：跟随当前主题已打卡主色，但明显浅淡（同色系层级）
   Color get dakaStudiedColor => primaryColor.withValues(alpha: isDark ? 0.45 : 0.36);
 
+  /// 中性标注灰（词性、音标等附属标注）：固定 slate 中性，不随主题色偏色，
+  /// 全 App 的附属标注统一取这一档，与背单词页词性完全一致
+  Color get textNeutral => isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
   const AppThemeConfig({
     required this.style,
     required this.primaryColor,

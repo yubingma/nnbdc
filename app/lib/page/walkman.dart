@@ -859,6 +859,11 @@ class WalkmanPageState extends State<WalkmanPage> {
     }
   }
 
+  /// 音标与词性共用的中性标注灰：两者都是释义的附属标注，与背单词页词性同色
+  Color mutedLabelColor(bool hasScene) => hasScene
+      ? Colors.white.withValues(alpha: 0.7)
+      : context.textNeutral;
+
   Widget renderWord(WordWrapper word) {
     final themeConfig = context.themeConfig;
     final hasScene = currentScene != WalkmanScene.none;
@@ -903,7 +908,7 @@ class WalkmanPageState extends State<WalkmanPage> {
               style: TextStyle(
                 fontFamily: 'NotoSans',
                 fontSize: isLandscape ? 14.0 : 16.0,
-                color: secondaryTextColor,
+                color: mutedLabelColor(hasScene),
               ),
               textAlign: TextAlign.center,
             ),
@@ -996,21 +1001,12 @@ class WalkmanPageState extends State<WalkmanPage> {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   if (meaningItem.ciXing != null && meaningItem.ciXing!.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: hasScene
-                            ? Colors.white.withValues(alpha: 0.16)
-                            : themeConfig.primaryColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        meaningItem.ciXing!,
-                        style: TextStyle(
-                          fontSize: fontSize * 0.82,
-                          fontWeight: FontWeight.w600,
-                          color: hasScene ? Colors.white : themeConfig.primaryColor,
-                        ),
+                    Text(
+                      meaningItem.ciXing!,
+                      style: TextStyle(
+                        fontSize: fontSize * 0.82,
+                        fontWeight: FontWeight.w500,
+                        color: mutedLabelColor(hasScene),
                       ),
                     ),
                     const SizedBox(width: 6),

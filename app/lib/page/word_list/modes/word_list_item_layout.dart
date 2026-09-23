@@ -29,6 +29,10 @@ class WordListItemLayout extends StatelessWidget {
   final Widget? centerContent;
   final Widget? rightContent;
   final Widget? audioIndicator;
+
+  /// 整行自定义内容（如词根组头行）：非空时取代「序号 + 单词/释义」三段布局，
+  /// 仍复用同一套卡片外观、分组圆角与组间分割线。
+  final Widget? headerContent;
   final List<Widget> slidableActions;
   final GroupCardPosition groupPosition;
 
@@ -46,6 +50,7 @@ class WordListItemLayout extends StatelessWidget {
     this.centerContent,
     this.rightContent,
     this.audioIndicator,
+    this.headerContent,
     required this.slidableActions,
     this.groupPosition = GroupCardPosition.single,
   });
@@ -143,32 +148,35 @@ class WordListItemLayout extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  /// 1. 左侧序号与环形掌握度光环徽章
-                  _buildLeftColumn(themeConfig),
-
-              /// 2. 中间和右侧单词释义与交互内容
-              Expanded(
+            if (headerContent != null)
+              headerContent!
+            else
+              IntrinsicHeight(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (centerContent != null && rightContent != null) ...[
-                      Expanded(flex: 2, child: centerContent!),
-                      Expanded(flex: 3, child: rightContent!),
-                    ] else if (centerContent != null) ...[
-                      Expanded(child: centerContent!),
-                    ] else if (rightContent != null) ...[
-                      Expanded(child: rightContent!),
-                    ],
+                    /// 1. 左侧序号与环形掌握度光环徽章
+                    _buildLeftColumn(themeConfig),
+
+                    /// 2. 中间和右侧单词释义与交互内容
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (centerContent != null && rightContent != null) ...[
+                            Expanded(flex: 2, child: centerContent!),
+                            Expanded(flex: 3, child: rightContent!),
+                          ] else if (centerContent != null) ...[
+                            Expanded(child: centerContent!),
+                          ] else if (rightContent != null) ...[
+                            Expanded(child: rightContent!),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
             if (groupPosition == GroupCardPosition.top || groupPosition == GroupCardPosition.middle)
               Container(
                 height: 0.8,
