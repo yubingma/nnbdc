@@ -138,8 +138,9 @@ jobs:
           token: ${{ github.token }}
           fetch-depth: 1
 
-      # Android 构建（NDK + Gradle + APK）磁盘峰值已顶到 ubuntu 运行器上限，
-      # 构建前回收镜像里与本次构建无关的大目录，避免 Gradle 写盘失败。
+      # Android 构建（NDK + Gradle + 原生编译 + 385MB APK）磁盘峰值已顶到
+      # ubuntu 运行器上限（镜像自身就占掉 54G，初始仅剩 11G），构建前回收
+      # 镜像里与本次构建无关的大目录。实测可回收约 10G，构建期间另见磁盘监控输出。
       - name: Free Disk Space (Android)
         if: matrix.platform == 'android'
         run: |
@@ -151,9 +152,19 @@ jobs:
             /opt/hostedtoolcache/CodeQL \
             /usr/local/share/boost \
             /usr/local/share/chromium \
+            /usr/share/swift \
+            /usr/local/.ghcup \
+            /usr/local/share/powershell \
+            /opt/microsoft \
+            /opt/az \
+            /opt/google \
+            /usr/lib/firefox \
+            /usr/share/miniconda \
             /usr/local/lib/android/sdk/emulator \
             /usr/local/lib/android/sdk/system-images \
             /usr/local/lib/android/sdk/ndk/2[0-6].*
+          sudo apt-get clean
+          sudo docker image prune -af || true
           echo "=== 回收后 ==="
           df -h /
         shell: bash
@@ -359,6 +370,9 @@ jobs:
         run: |
           cd app
           if [ "${{ matrix.platform }}" == "android" ]; then
+            # 构建期间每 60s 打印一次磁盘占用：上一次是 runner 在原生编译阶段
+            # 静默数分钟后收到 shutdown signal，用于确认是否写满磁盘所致。
+            ( while true; do sleep 60; echo "[disk] $(date -u +%H:%M:%S) $(df -h / | tail -1)"; done ) &
             flutter build apk --release
           elif [ "${{ matrix.platform }}" == "windows" ]; then
             flutter build windows --release
