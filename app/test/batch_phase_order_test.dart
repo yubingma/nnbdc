@@ -524,7 +524,7 @@ void main() {
         reason: '组内进度分母 = 用户设置的每组单词数');
   });
 
-  test('calculateBatches: 严格按 batchId 边界对齐分块，禁止跨批次合并', () {
+  test('calculateBatches: 以计划词/加量词分段，加量词绝不与计划词拼组', () {
     final now = AppClock.now();
     // 模拟 15 个计划词 (batchId = 1) + 10 个加量词 (batchId = 2)
     final words = <LearningWord>[
@@ -571,10 +571,39 @@ void main() {
     expect(batches[1].length, 5);
     expect(batches[1].groupNo, 2);
 
-    // 重点：加量词自成一组，绝对不能把前一组的 5 词跨 batchId 拼成 10 词
+    // 重点：加量词自成一组，绝对不能与计划段的 5 词拼成 10 词
     expect(batches[2].startIndex, 15);
     expect(batches[2].length, 10);
     expect(batches[2].groupNo, 3);
+  });
+
+  test('calculateBatches: 同日计划词跨批次连续成组，不被历史短批次割裂', () {
+    final now = AppClock.now();
+    // 复现线上问题：先按 20 词生成计划 (batchId = 1)，中途把每日计划调到 150，
+    // 追加的 130 个计划词落在 batchId = 2；它们同属一个学习池，应连续切成 55/55/40
+    final words = <LearningWord>[
+      for (int i = 0; i < 150; i++)
+        LearningWord(
+          userId: 'test_user_id',
+          wordId: 'w_$i',
+          batchId: i < 20 ? 1 : 2,
+          learningOrder: i + 1,
+          learnedTimes: 0,
+          addTime: now,
+          addDay: 1,
+          todayLearnedTimes: 0,
+          isTodayNewWord: false,
+          isExtra: false,
+          createTime: now,
+          updateTime: now,
+        ),
+    ];
+
+    final batches = StudyBo.calculateBatches(words, 55);
+    expect(batches.map((b) => b.length).toList(), [55, 55, 40],
+        reason: '150 个计划词应连续切为 55/55/40，而不是 20/55/55/20');
+    expect(batches.map((b) => b.groupNo).toList(), [1, 2, 3]);
+    expect(batches[1].startIndex, 55, reason: '第 2 组紧接第 1 组，跨 batchId 不重开组');
   });
 
   test('非整除计划打卡后加量：getCurrentBatchCache 仅返回加量词且学完后无多余批次', () async {

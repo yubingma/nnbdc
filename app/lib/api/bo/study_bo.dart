@@ -1283,8 +1283,13 @@ class StudyBo {
     return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
   }
 
-  /// 计算所有学习批次：严格按 batchId 边界对齐分块，并在同 batchId 内部按 batchSize 切片。
-  /// 绝对禁止跨越 batchId 合并批次（防止计划词与加量词混合或短批次后移导致多出碎片批次）。
+  /// 计算所有学习批次：以「计划词 / 加量词」为分段边界，段内按 batchSize 连续切片。
+  ///
+  /// 分段只认 [LearningWord.isExtra]，不认 batchId：同一天的计划词即使由多次取词拼成
+  /// （如中途把每日计划从 20 调到 150，会追加出新的 batchId），它们仍属同一个学习池、
+  /// 顺序由 learningOrder 连续决定，必须连续成组；否则残留的短批次会顶掉一整组名额
+  /// （20 词残留 + 130 词追加会被切成 20/55/55/20，而不是用户设置的 55/55/40）。
+  /// 加量词是打卡后额外追加的一批，自成一段，绝不与计划词混组。
   static List<BatchRange> calculateBatches(List<LearningWord> todayWords, int batchSize) {
     if (todayWords.isEmpty) return const [];
     if (batchSize <= 0) batchSize = StudyBo.batchSize;
@@ -1294,16 +1299,17 @@ class StudyBo {
     int i = 0;
 
     while (i < todayWords.length) {
-      final currentBatchId = todayWords[i].batchId;
-      // 找到同 batchId 的连续块终点
-      int chunkEnd = i + 1;
-      while (chunkEnd < todayWords.length && todayWords[chunkEnd].batchId == currentBatchId) {
-        chunkEnd++;
+      final bool isExtraSegment = todayWords[i].isExtra;
+      // 找到同段的连续块终点（计划词段 / 加量词段）
+      int segmentEnd = i + 1;
+      while (segmentEnd < todayWords.length &&
+          todayWords[segmentEnd].isExtra == isExtraSegment) {
+        segmentEnd++;
       }
 
-      // 在该 chunk 内部按 batchSize 切片
-      for (int subStart = i; subStart < chunkEnd; subStart += batchSize) {
-        final subLength = min(batchSize, chunkEnd - subStart);
+      // 在该段内部按 batchSize 切片
+      for (int subStart = i; subStart < segmentEnd; subStart += batchSize) {
+        final subLength = min(batchSize, segmentEnd - subStart);
         batches.add(BatchRange(
           startIndex: subStart,
           length: subLength,
@@ -1311,7 +1317,7 @@ class StudyBo {
         ));
       }
 
-      i = chunkEnd;
+      i = segmentEnd;
     }
 
     return batches;

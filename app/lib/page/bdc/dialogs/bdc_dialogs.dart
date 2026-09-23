@@ -1679,14 +1679,11 @@ extension BdcPageStateDialogs on BdcPageState {
       return a.learningOrder.compareTo(b.learningOrder);
     });
 
-    // 分组：与调度层同一口径，按用户设置的每组单词数切分（也就是一个 Batch）
-    final int batchSize = StudyBo.batchSize;
+    // 分组：与调度层同一口径（StudyBo.calculateBatches）——
+    // 计划词连续成组，加量词自成一段，绝不与计划词混组
     final Map<int, List<dynamic>> batches = {};
-    for (int i = 0; i < words.length; i++) {
-      final w = words[i];
-      // 计算其实际属于第几个调度轮次 (从 1 开始)
-      final chunkId = (i ~/ batchSize) + 1;
-      batches.putIfAbsent(chunkId, () => []).add(w);
+    for (final range in StudyBo.calculateBatches(words, StudyBo.batchSize)) {
+      batches[range.groupNo] = words.sublist(range.startIndex, range.endIndex);
     }
 
     // 计算即将到来的待办单元格 sequence（按批次内调度实际优先级：普通练习题优先，List在后）
