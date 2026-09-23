@@ -284,7 +284,13 @@ G = { 词根 c | c 在 B 内有 ≥2 个关联词 }   // 剔除孤立组（1 词
       <p>同时把组头提取为独立组件 <code>RootFamilyHeaderItem</code> + 纯函数 <code>buildRootFamilyHeaderContent</code>，以便用窄宽约束（320 / 240px）与 <code>RenderParagraph.didExceedMaxLines</code> 直接做布局契约与溢出回归测试；卡片外壳仍复用 <code>WordListItemLayout</code>（新增 <code>headerContent</code> 入口），不重复边距/圆角/分组分割线样式。</p>
     </div>
 
-    <h3>4.3 只读语义（与形近词保持一致）</h3>
+    <div class="note warn">
+      <p><strong>实现修正（真机反馈后已落地）</strong>：最初把组头做成「列表里的一行虚拟 WordWrapper」，结果它被当成数据行 —— <strong>随身听按索引取词时会播放词根行</strong>，序号也把它算了进去。</p>
+      <p>根本修正：<strong>组头不再是数据行</strong>。provider 只返回真实单词，组头改由渲染层在「每族首词前」插入（<code>groupPosition: top</code>，首词改 <code>bottom</code> 保持卡片连通）。于是序号 = 纯单词序号、随身听播放序列 = 纯单词序列、书签索引 = 纯单词索引，全部自然正确，无需在各消费侧加 skip 逻辑。</p>
+      <p>回归防线：测试断言 <code>result.rows</code> 中<strong>不得出现任何 <code>cigen:</code> 前缀行</strong>，组头一旦回到数据行立即失败。</p>
+    </div>
+
+<h3>4.3 只读语义（与形近词保持一致）</h3>
     <p>沿用形近词那一套已验收的只读约束，<strong>零新增设计</strong>：</p>
     <ul>
       <li><code>getSortAlg()</code> 固定 <code>WordSortAlg.original</code>（避免触发控制器 TSP 分支）；<code>canCustomizeSort = false</code>（隐藏排序菜单）；<code>hasUnits = false</code>；</li>

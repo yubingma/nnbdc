@@ -47,7 +47,9 @@ class RootFamilyHeaderItem extends StatelessWidget {
       actions: actions,
       slidableActions: const [],
       groupPosition: groupPosition,
-      headerContent: buildRootFamilyHeaderContent(
+      // 组头是「组头 + 族首词」这张卡的上半部分：底部不留边距，与首词无缝相接
+      cardMarginOverride:
+          const EdgeInsets.only(left: 10, right: 10, top: 4, bottom: 0),      headerContent: buildRootFamilyHeaderContent(
         cigen: cigen,
         spell: word.word.spell,
         count: word.word.meaningStr,

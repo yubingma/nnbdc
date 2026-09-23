@@ -33,6 +33,11 @@ class WordListItemLayout extends StatelessWidget {
   /// 整行自定义内容（如词根组头行）：非空时取代「序号 + 单词/释义」三段布局，
   /// 仍复用同一套卡片外观、分组圆角与组间分割线。
   final Widget? headerContent;
+
+  /// 覆盖卡片外边距（null = 按 [groupPosition] 推导）。
+  /// 用于「组头 + 族首词共处一张卡」：组头需要 bottom:0 才能与首词无缝相接。
+  final EdgeInsets? cardMarginOverride;
+
   final List<Widget> slidableActions;
   final GroupCardPosition groupPosition;
 
@@ -51,6 +56,7 @@ class WordListItemLayout extends StatelessWidget {
     this.rightContent,
     this.audioIndicator,
     this.headerContent,
+    this.cardMarginOverride,
     required this.slidableActions,
     this.groupPosition = GroupCardPosition.single,
   });
@@ -75,17 +81,21 @@ class WordListItemLayout extends StatelessWidget {
         ? accentColor.withValues(alpha: isDarkMode ? 0.6 : 0.45)
         : themeConfig.cardBorder;
 
+    // 组头（headerContent）与族首词共处一张卡，自身不投影 —— 否则两者接缝处
+    // 两道阴影叠加，视觉上就是「两张卡被切开」，即使外边距已经相接。
     // 选中收藏：保留精致半透主题微光投影；未选中：统一卡片阴影(随透明度联动, 深色不拖黑影)
-    final cardShadow = isBookmarked
-        ? [
-            BoxShadow(
-              color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 3),
-            ),
-            context.cardShadow,
-          ]
-        : [context.cardShadow];
+    final cardShadow = headerContent != null
+        ? const <BoxShadow>[]
+        : isBookmarked
+            ? [
+                BoxShadow(
+                  color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 3),
+                ),
+                context.cardShadow,
+              ]
+            : [context.cardShadow];
 
     final borderRadius = switch (groupPosition) {
       GroupCardPosition.single => BorderRadius.circular(16),
@@ -101,12 +111,13 @@ class WordListItemLayout extends StatelessWidget {
       GroupCardPosition.bottom => const BorderRadius.vertical(bottom: Radius.circular(15)),
     };
 
-    final margin = switch (groupPosition) {
-      GroupCardPosition.single => const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      GroupCardPosition.top => const EdgeInsets.only(left: 10, right: 10, top: 4, bottom: 0),
-      GroupCardPosition.middle => const EdgeInsets.symmetric(horizontal: 10),
-      GroupCardPosition.bottom => const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 4),
-    };
+    final cardMargin = cardMarginOverride ??
+        switch (groupPosition) {
+          GroupCardPosition.single => const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          GroupCardPosition.top => const EdgeInsets.only(left: 10, right: 10, top: 4, bottom: 0),
+          GroupCardPosition.middle => const EdgeInsets.symmetric(horizontal: 10),
+          GroupCardPosition.bottom => const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 4),
+        };
 
     final borderSide = BorderSide(
       color: borderColor,
@@ -136,7 +147,7 @@ class WordListItemLayout extends StatelessWidget {
     };
 
     Widget itemContent = Container(
-      margin: margin,
+      margin: cardMargin,
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: borderRadius,
@@ -177,7 +188,11 @@ class WordListItemLayout extends StatelessWidget {
                   ],
                 ),
               ),
-            if (groupPosition == GroupCardPosition.top || groupPosition == GroupCardPosition.middle)
+            // 组内分隔线只画在「词与词之间」。
+            // 组头（headerContent != null）传的正是 top 位置，若按位置画线会画在
+            // 组头下缘，把「组头 + 族首词」这张卡切成两半。
+            // 首词用 bottom 位置（紧随组头），它下面若还有词也不需要线。
+            if (headerContent == null && groupPosition != GroupCardPosition.bottom)
               Container(
                 height: 0.8,
                 margin: const EdgeInsets.only(left: 44, right: 14),

@@ -173,71 +173,80 @@ void main() {
     }
   }
 
-  group('RootFamilyWordsProvider - 组头行与族内词组装', () {
-    test('返回 组头+族内词 的行序，组头携带词根/含义/分类/词数，族内词带释义', () async {
+  group('RootFamilyWordsProvider - 组头与族内词组装', () {
+    test('数据行只含真实单词（组头不占行），组头经 groupHeaderOf 取得', () async {
       await seedTwoFamilies();
 
-      final result = await RootFamilyWordsProvider().getAPageOfWords(0, 999999);
+      final provider = RootFamilyWordsProvider();
+      final result = await provider.getAPageOfWords(0, 999999);
 
-      expect(result.total, 7); // 2 组头 + 5 词
-      expect(result.rows.map((w) => w.word.id).toList(), [
-        'cigen:c_spect', 'w_expect', 'w_inspect', 'w_respect',
-        'cigen:c_port', 'w_export', 'w_import',
-      ]);
+      // 组头不是数据行：5 个真实单词，无 cigen: 前缀的伪行
+      expect(result.total, 5);
+      expect(result.rows.map((w) => w.word.id).toList(),
+          ['w_expect', 'w_inspect', 'w_respect', 'w_export', 'w_import']);
+      expect(result.rows.any((w) => w.word.id!.startsWith('cigen:')), false,
+          reason: '组头绝不能作为数据行出现（否则会被随身听当单词播放）');
 
-      final header = result.rows.first;
-      expect(header.word.spell, 'spect');
+      // 首词处取到组头，且携带词根/分类/含义/词数
+      final header = provider.groupHeaderOf(result.rows.first);
+      expect(header, isNotNull);
+      expect(header!.word.spell, 'spect');
       expect(header.word.meaningStr, '3 词');
       expect(header.word.shortDesc, '看');
       final cigen = header.tag as CigenVo;
-      expect(cigen.id, 'c_spect');
       expect(cigen.category, 'ROOT');
       expect(cigen.meaningCn, '看');
 
-      final member = result.rows[1];
+      // 非族首词也能取到所属组头（渲染层只在 isGroupStart 时用，但语义应成立）
+      expect(provider.groupHeaderOf(result.rows[1])!.word.spell, 'spect');
+      expect(provider.groupHeaderOf(result.rows[3])!.word.spell, 'port');
+      expect(provider.groupHeaderOf(null), isNull);
+
+      final member = result.rows.first;
       expect(member.word.meaningItems!.single.meaning, '含义mi_w_expect');
     });
 
-    test('组号：组头与其族内词同组号，组间递增（1 基）', () async {
+    test('组号按纯单词序列分配（组头不占位）', () async {
       await seedTwoFamilies();
       final provider = RootFamilyWordsProvider();
       final result = await provider.getAPageOfWords(0, 999999);
 
-      expect(provider.groupIndexOf(0), 1); // spect 组头
+      // 索引 0..2 = spect 族；3..4 = port 族
+      expect(provider.groupIndexOf(0), 1);
       expect(provider.groupIndexOf(1), 1);
       expect(provider.groupIndexOf(2), 1);
-      expect(provider.groupIndexOf(3), 1);
-      expect(provider.groupIndexOf(4), 2); // port 组头
-      expect(provider.groupIndexOf(5), 2);
-      expect(provider.groupIndexOf(6), 2);
+      expect(provider.groupIndexOf(3), 2);
+      expect(provider.groupIndexOf(4), 2);
 
-      // 按行实体取组号（防切片偏移）
       expect(provider.groupOfWord(result.rows[0]), 1);
-      expect(provider.groupOfWord(result.rows[6]), 2);
+      expect(provider.groupOfWord(result.rows[4]), 2);
     });
 
-    test('isGroupHeader 只对词根组头行为真', () async {
+    test('词根组头行不可被当作数据行消费', () async {
       await seedTwoFamilies();
       final provider = RootFamilyWordsProvider();
       final result = await provider.getAPageOfWords(0, 999999);
 
-      expect(provider.isGroupHeader(result.rows[0]), true); // 组头
-      expect(provider.isGroupHeader(result.rows[1]), false); // 普通单词
-      expect(provider.isGroupHeader(null), false);
+      expect(provider.groupHeaderOf(result.rows[0]), isNotNull); // 是族首词
+      expect(
+        result.rows.map((w) => w.word.id).where((id) => id!.startsWith('cigen:')),
+        isEmpty,
+        reason: '随身听按索引取词时不应取到组头',
+      );
     });
 
     test('切片请求：total 为全量，rows 按区间返回', () async {
       await seedTwoFamilies();
       final provider = RootFamilyWordsProvider();
 
-      final result = await provider.getAPageOfWords(4, 2);
+      final result = await provider.getAPageOfWords(3, 2);
 
-      expect(result.total, 7);
+      expect(result.total, 5);
       expect(result.rows.map((w) => w.word.id).toList(),
-          ['cigen:c_port', 'w_export']);
+          ['w_export', 'w_import']);
       // 切片不影响全局组号表
       expect(provider.groupIndexOf(1), 1);
-      expect(provider.groupIndexOf(6), 2);
+      expect(provider.groupIndexOf(4), 2);
     });
 
     test('无学习词书 → 空结果', () async {
@@ -258,9 +267,9 @@ void main() {
       final result = await provider.getAPageOfWords(0, 999999);
 
       expect(result.rows.map((w) => w.word.id).toList(),
-          ['cigen:c_port', 'w_export', 'w_import']);
+          ['w_export', 'w_import']);
       expect(provider.groupIndexOf(0), 1); // port 组重编号为 1
-      expect(provider.groupIndexOf(2), 1);
+      expect(provider.groupIndexOf(1), 1);
     });
   });
 
@@ -272,14 +281,14 @@ void main() {
       expect(await provider.hasUnits, false);
     });
 
-    test('getWordIndex 按含组头行的全局位置定位，未收录返回 -1', () async {
+    test('getWordIndex 按纯单词序列定位（组头不占索引），未收录返回 -1', () async {
       await seedTwoFamilies();
       final provider = RootFamilyWordsProvider();
 
-      expect(await provider.getWordIndex('expect'), 1);
-      expect(await provider.getWordIndex('respect'), 3);
-      expect(await provider.getWordIndex('export'), 5);
-      expect(await provider.getWordIndex('import'), 6);
+      expect(await provider.getWordIndex('expect'), 0);
+      expect(await provider.getWordIndex('respect'), 2);
+      expect(await provider.getWordIndex('export'), 3);
+      expect(await provider.getWordIndex('import'), 4);
       expect(await provider.getWordIndex('not_exists'), -1);
     });
 

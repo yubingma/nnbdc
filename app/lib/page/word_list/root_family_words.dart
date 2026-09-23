@@ -36,9 +36,26 @@ class RootFamilyWordsProvider with WordsProvider {
   /// 行 id 到组号的映射：防切片与局部视口滑动偏移
   final Map<String, int> _rowGroupMap = {};
 
-  /// 该行是否为词根组头（词根不是单词，组头行不可点、不进详情页）
-  bool isGroupHeader(WordWrapper? word) =>
-      word?.word.id?.startsWith(groupIdPrefix) ?? false;
+  /// 词 id -> 所属词根族（用于渲染组头；组头本身不是数据行）
+  final Map<String, _RootFamilyInfo> _rootFamilyOf = {};
+
+  /// 取该词所属词根族的**组头行**（虚拟 WordWrapper，仅供渲染）。
+  /// 组头不是数据行：不占序号、不进随身听播放序列、不可点。
+  /// 传入的 word 必须是该族**首词**（渲染层据 groupPosition==top 调用）。
+  WordWrapper? groupHeaderOf(WordWrapper? word) {
+    final id = word?.word.id;
+    if (id == null) return null;
+    final info = _rootFamilyOf[id];
+    if (info == null) return null;
+    return WordWrapper(
+      WordVo.c2(info.spell)
+        ..id = 'cigen:${info.spell}'
+        ..shortDesc = info.meaning
+        ..meaningStr = '${info.wordCount} 词',
+      CigenVo(info.spell, info.spell,
+          spell: info.spell, category: info.category, meaningCn: info.meaning),
+    );
+  }
 
   /// 分组展示：优先按行实体获取组号（无视切片与局部视口滑动）
   @override
@@ -88,6 +105,7 @@ class RootFamilyWordsProvider with WordsProvider {
       final rows = <WordWrapper>[];
       final rowGroupIds = <int>[];
       _rowGroupMap.clear();
+      _rootFamilyOf.clear();
       var group = 0;
       for (final g in groups) {
         // 族内单词（详情/释义缺失的异常词跳过）
@@ -99,20 +117,35 @@ class RootFamilyWordsProvider with WordsProvider {
             Global.logger.w('跳过同根词（详情或释义缺失）: wordId=$id');
             continue;
           }
-          memberRows.add(WordWrapper(_buildWordVo(entry, mItems), entry));
+          final wrapper = WordWrapper(_buildWordVo(entry, mItems), entry);
+          memberRows.add(wrapper);
+          _rootFamilyOf[id] = _RootFamilyInfo(
+            spell: g.spell,
+            category: g.category,
+            meaning: g.meaning,
+            wordCount: 0, // 填充于下方（有效成员数为准）
+          );
         }
-        // 有效成员不足 2 个的族整体跳过：组头不单独出现，也不占组号
-        if (memberRows.length < 2) continue;
+        // 有效成员不足 2 个的族整体跳过：该族不进列表
+        if (memberRows.length < 2) {
+          for (final r in memberRows) {
+            final id = r.word.id;
+            if (id != null) _rootFamilyOf.remove(id);
+          }
+          continue;
+        }
         group++;
-        rows.add(WordWrapper(
-          WordVo.c2(g.spell)
-            ..id = g.groupId
-            ..shortDesc = g.meaning
-            ..meaningStr = '${memberRows.length} 词',
-          CigenVo(g.cigenId, g.spell,
-              spell: g.spell, category: g.category, meaningCn: g.meaning),
-        ));
-        rowGroupIds.add(group);
+        for (final r in memberRows) {
+          final id = r.word.id;
+          if (id != null) {
+            _rootFamilyOf[id] = _RootFamilyInfo(
+              spell: g.spell,
+              category: g.category,
+              meaning: g.meaning,
+              wordCount: memberRows.length,
+            );
+          }
+        }
         rows.addAll(memberRows);
         rowGroupIds.addAll(List.filled(memberRows.length, group));
       }
@@ -191,9 +224,9 @@ class RootFamilyWordsProvider with WordsProvider {
     final wordBo = WordBo();
     final groups = await wordBo.getRootFamilyGroups(userId);
     final spellOf = await wordBo.getRootFamilySpellMap(userId);
+    // 组头不是数据行，不占索引；索引 = 纯单词序列中的位置
     var index = 0;
     for (final g in groups) {
-      index++; // 组头行
       for (final id in g.wordIds) {
         if ((spellOf[id] ?? id) == spell) return index;
         index++;
@@ -262,4 +295,18 @@ Future<dynamic>? toRootFamilyWordsListPage() {
           RootFamilyWordsProgressProvider(),
           RootFamilyWordsBookMarkProvider(),
           null));
+}
+
+/// 某词所属词根族的信息（渲染组头用；组头不占数据行）
+class _RootFamilyInfo {
+  final String spell;
+  final String category;
+  final String meaning;
+  final int wordCount;
+  _RootFamilyInfo({
+    required this.spell,
+    required this.category,
+    required this.meaning,
+    required this.wordCount,
+  });
 }

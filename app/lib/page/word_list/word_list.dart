@@ -2325,9 +2325,21 @@ class WordListPageState extends State<WordListPage>
         final isGroupStart = currentGroup > 0 && currentGroup != prevGroup;
         final isGroupEnd = currentGroup > 0 && currentGroup != nextGroup;
 
+        // 同根词表：词根组头不占数据行，只在每族首词前插入一次
+        // （不参与序号 / 随身听播放序列 / 书签索引，仅作视觉分组）。
+        // 组头占卡片上圆角、首词改下圆角，使「组头 + 族内词」仍是一张连通卡片。
+        final wordsProvider = args.wordsProvider;
+        final groupHeader = (wordsProvider is RootFamilyWordsProvider && isGroupStart)
+            ? wordsProvider.groupHeaderOf(word)
+            : null;
+
         final GroupCardPosition groupPosition;
         if (currentGroup <= 0) {
           groupPosition = GroupCardPosition.single;
+        } else if (groupHeader != null) {
+          // 首词接在组头之下：用 middle —— 上方无圆角（紧贴组头）、
+          // 且保留底部分隔线（与组内下一个词之间仍要有线）
+          groupPosition = GroupCardPosition.middle;
         } else if (isGroupStart && isGroupEnd) {
           groupPosition = GroupCardPosition.single;
         } else if (isGroupStart) {
@@ -2352,6 +2364,23 @@ class WordListPageState extends State<WordListPage>
           content = Padding(
             padding: const EdgeInsets.only(top: 14),
             child: content,
+          );
+        }
+
+        if (groupHeader != null) {
+          content = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              RootFamilyHeaderItem(
+                word: groupHeader,
+                index: 0,
+                baseIndex: 0,
+                isDarkMode: isDarkMode,
+                actions: this,
+                groupPosition: GroupCardPosition.top,
+              ),
+              content,
+            ],
           );
         }
 
@@ -2431,19 +2460,6 @@ class WordListPageState extends State<WordListPage>
   Widget _renderWordContent(WordWrapper word, int i, bool isBookmarked,
       bool isDarkMode, bool? learningStatus,
       {GroupCardPosition groupPosition = GroupCardPosition.single}) {
-    // 同根词表的词根组头行：纯展示（词根不是单词，不可点、不进详情页、不参与各学习模式）
-    final provider = args.wordsProvider;
-    if (provider is RootFamilyWordsProvider && provider.isGroupHeader(word)) {
-      return RootFamilyHeaderItem(
-        word: word,
-        index: i,
-        baseIndex: baseIndex ?? 0,
-        isDarkMode: isDarkMode,
-        actions: this,
-        groupPosition: groupPosition,
-      );
-    }
-
     final slidableActions = _getSlidableActions(word, i, isBookmarked,
         learningStatus: learningStatus);
 
