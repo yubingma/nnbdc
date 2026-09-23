@@ -2666,12 +2666,14 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
       }).toList();
     }
 
+    // 注意：SQL 中 'unixepoch' / 'localtime' 是修饰符字符串字面量，必须用单引号；
+    // 写成双引号会被 SQLite 当作列名解析，导致 "no such column: unixepoch"。
     final query = customSelect(
-      'SELECT COALESCE(date(create_time, "unixepoch", "localtime"), date(create_time)) as day, count(*) as count '
-      'FROM learning_logs '
-      'WHERE user_id = ? AND (create_time >= ? OR create_time >= date(?, "unixepoch")) '
-      'GROUP BY day '
-      'ORDER BY day ASC',
+      "SELECT COALESCE(date(create_time, 'unixepoch', 'localtime'), date(create_time)) as day, count(*) as count "
+      "FROM learning_logs "
+      "WHERE user_id = ? AND (create_time >= ? OR create_time >= date(?, 'unixepoch')) "
+      "GROUP BY day "
+      "ORDER BY day ASC",
       variables: [Variable.withString(userId), Variable.withInt(startTimestamp), Variable.withInt(startTimestamp)],
       readsFrom: {learningLogs},
     );
@@ -2689,12 +2691,13 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
     final startDate = endDate.subtract(Duration(days: days - 1));
     final startTimestamp = startDate.millisecondsSinceEpoch ~/ 1000;
 
+    // 注意：'unixepoch' / 'localtime' 必须用单引号（同上，双引号会被当作列名）
     final query = customSelect(
-      'SELECT date(create_time, "unixepoch", "localtime") as day, count(distinct word_id) as count '
-      'FROM learning_logs '
-      'WHERE user_id = ? AND create_time >= ? '
-      'GROUP BY day '
-      'ORDER BY day ASC',
+      "SELECT date(create_time, 'unixepoch', 'localtime') as day, count(distinct word_id) as count "
+      "FROM learning_logs "
+      "WHERE user_id = ? AND create_time >= ? "
+      "GROUP BY day "
+      "ORDER BY day ASC",
       variables: [Variable.withString(userId), Variable.withInt(startTimestamp)],
       readsFrom: {learningLogs},
     );

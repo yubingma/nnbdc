@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>词表学习状态筛选 · 产品方案</title>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --panel: #14181e;
+    --panel-solid: #171c23;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-hairline: rgba(255, 255, 255, 0.06);
+    --text-primary: #f0f3f6;
+    --text-secondary: #9aa5b5;
+    --text-muted: #66707f;
+    --accent: #10b981;
+    --accent-soft: rgba(16, 185, 129, 0.14);
+    --accent-blue: #60a5fa;
+    --accent-amber: #fbbf24;
+    --ring-track: rgba(255, 255, 255, 0.16);
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --mono-stack: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-stack);
+    line-height: 1.7;
+    padding: 44px 24px 96px;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.05) 0%, transparent 42%),
+      radial-gradient(circle at 88% 14%, rgba(96, 165, 250, 0.045) 0%, transparent 46%);
+    background-attachment: fixed;
+  }
+  .layout { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px 1fr; gap: 48px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 28px; } .toc { position: static !important; } }
+
+  /* 页眉 */
+  header { max-width: 1120px; margin: 0 auto 40px; }
+  .eyebrow { font-size: 11.5px; font-weight: 400; letter-spacing: 0.34px; color: var(--text-muted); }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin: 8px 0 6px; }
+  .lede { font-size: 12px; font-weight: 400; letter-spacing: 0.3px; color: var(--text-secondary); }
+  .meta { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-hairline); display: flex; flex-wrap: wrap; gap: 22px; font-size: 11.5px; color: var(--text-muted); }
+  .meta b { color: var(--text-secondary); font-weight: 500; }
+
+  /* 目录 */
+  .toc { position: sticky; top: 32px; font-size: 12.5px; }
+  .toc-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding-bottom: 10px; border-bottom: 1px solid var(--border-hairline); margin-bottom: 10px; }
+  .toc a { display: block; padding: 5px 0; color: var(--text-secondary); text-decoration: none; font-weight: 400; }
+  .toc a:hover { color: var(--accent); }
+
+  /* 正文 */
+  main { min-width: 0; }
+  section { margin-bottom: 52px; }
+  h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; }
+  h2 .idx { font-family: var(--mono-stack); font-size: 12px; font-weight: 600; color: var(--text-muted); margin-right: 10px; }
+  h3 { font-size: 13px; font-weight: 600; letter-spacing: -0.1px; margin: 24px 0 10px; color: var(--text-primary); }
+  p { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  p strong, li strong { color: var(--text-primary); font-weight: 600; }
+  ul, ol { margin: 0 0 12px 0; padding-left: 20px; }
+  li { font-size: 13px; color: var(--text-secondary); margin-bottom: 7px; }
+  code { font-family: var(--mono-stack); font-size: 11.5px; background: rgba(255, 255, 255, 0.05); padding: 1.5px 5px; border-radius: 5px; color: #cfd8e3; }
+  a.ref { color: var(--accent-blue); text-decoration: none; border-bottom: 1px solid rgba(96, 165, 250, 0.25); }
+  .loc { font-family: var(--mono-stack); font-size: 11px; color: var(--text-muted); }
+
+  /* 表格 */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 18px; }
+  th { font-size: 11.5px; font-weight: 600; letter-spacing: 0.2px; color: var(--text-muted); text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+  td { font-size: 12.5px; color: var(--text-secondary); padding: 11px 12px 11px 0; border-bottom: 1px solid var(--border-hairline); vertical-align: top; }
+  td:first-child { color: var(--text-primary); font-weight: 500; white-space: nowrap; }
+
+  /* 发丝分割 */
+  hr { border: 0; border-top: 1px solid var(--border-hairline); margin: 26px 0; }
+
+  /* 环状态演示 */
+  .rings { display: flex; gap: 34px; align-items: flex-start; margin: 18px 0 6px; }
+  .ring-cell { text-align: center; }
+  .ring { position: relative; width: 25px; height: 25px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto; }
+  .ring b { position: relative; z-index: 2; font-family: var(--mono-stack); font-size: 9.5px; font-weight: 700; color: var(--text-secondary); }
+  .ring.empty { border: 1.5px solid var(--ring-track); }
+  .ring.half, .ring.full { background: var(--accent); }
+  .ring.half { background: conic-gradient(var(--accent) 0deg 180deg, var(--ring-track) 180deg 360deg); }
+  .ring.full { background: conic-gradient(var(--accent) 0deg 360deg); }
+  .ring.half::before, .ring.full::before { content: ''; position: absolute; inset: 2.2px; border-radius: 50%; background: var(--panel-solid); }
+  .ring-cell span { display: block; margin-top: 9px; font-size: 11.5px; color: var(--text-muted); }
+
+  /* 弹窗草图 */
+  .mock-wrap { display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; margin: 16px 0 8px; }
+  .mock { background: var(--panel-solid); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 14px 6px; width: 236px; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3); }
+  .mock-row { display: flex; align-items: center; padding: 7px 10px; border-radius: 10px; }
+  .mock-row.on { background: var(--accent-soft); border: 1px solid rgba(16, 185, 129, 0.28); }
+  .mock-row .box { width: 16px; height: 16px; border-radius: 5px; border: 1.4px solid var(--ring-track); margin-right: 10px; flex: none; position: relative; }
+  .mock-row.on .box { border-color: rgba(16, 185, 129, 0.75); }
+  .mock-row.on .box::after { content: ''; position: absolute; left: 4.6px; top: 1.6px; width: 4px; height: 8px; border-right: 1.6px solid var(--accent); border-bottom: 1.6px solid var(--accent); transform: rotate(42deg); }
+  .mock-row .name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .mock-row .num { margin-left: auto; font-family: var(--mono-stack); font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+  .mock-sep { height: 1px; background: var(--border-hairline); margin: 5px 10px; }
+  .mock-row.reset .name { color: var(--text-muted); font-weight: 400; font-size: 12.5px; }
+  .mock-cap { font-size: 11.5px; color: var(--text-muted); margin-top: 10px; width: 236px; }
+
+  /* 标题行草图 */
+  .bar { display: flex; align-items: baseline; gap: 8px; background: var(--panel-solid); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 12px 16px; width: 260px; }
+  .bar .t { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+  .bar .c { font-family: var(--mono-stack); font-size: 13px; font-weight: 600; color: var(--text-secondary); letter-spacing: -0.2px; }
+  .bar .c i { font-style: normal; color: var(--text-muted); }
+
+  /* 提示条 */
+  .note { border-left: 2px solid rgba(96, 165, 250, 0.55); padding: 2px 0 2px 14px; margin: 16px 0; }
+  .note p { margin: 0; font-size: 12.5px; }
+  .note.warn { border-left-color: rgba(251, 191, 36, 0.6); }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { position: relative; padding-left: 22px; }
+  .checklist li::before { content: ''; position: absolute; left: 4px; top: 8px; width: 5px; height: 9px; border-right: 1.6px solid var(--accent); border-bottom: 1.6px solid var(--accent); transform: rotate(42deg); }
+  footer { max-width: 1120px; margin: 60px auto 0; padding-top: 18px; border-top: 1px solid var(--border-hairline); font-size: 11.5px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">NBDC · 产品方案</div>
+  <h1>词表学习状态筛选</h1>
+  <div class="lede">让「这本书还剩什么、我拿下了什么」一次说清 —— 未学习 / 学习中 / 已掌握 三态可勾选视图</div>
+  <div class="meta">
+    <span><b>状态</b>　决策已定，待落地</span>
+    <span><b>日期</b>　2026-09-23</span>
+    <span><b>层面</b>　产品与交互（不含实现）</span>
+    <span><b>适用</b>　词书词表（系统 / 自定义词书）</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <nav class="toc">
+    <div class="toc-title">目录</div>
+    <a href="#bg">一、为什么需要</a>
+    <a href="#states">二、三态定义</a>
+    <a href="#ux">三、交互形态</a>
+    <a href="#rules">四、与既有机制的关系</a>
+    <a href="#empty">五、空态</a>
+    <a href="#visual">六、视觉锚点</a>
+    <a href="#accept">七、验收口径</a>
+    <a href="#known">八、不改动的既有边界</a>
+    <a href="#out">九、不在本次范围</a>
+    <a href="#decisions">十、决策记录</a>
+  </nav>
+
+  <main>
+
+    <section id="bg">
+      <h2><span class="idx">01</span>为什么需要</h2>
+      <p>词表是「全量视图」：一本词书有多少词，列表就有多少条。但用户在这本书里的真实处境是三种状态混合的，而现在界面只给了一个总数。</p>
+      <ul>
+        <li><strong>已掌握的词不会离开列表。</strong>词书词表明确保持"掌握后不移除"（<span class="loc">dict_words.dart:92</span>），用户点完"掌握"，那条词还留在原地。</li>
+        <li><strong>列表只回答"有多少"，不回答"是什么"。</strong>标题右侧只有一个总词数（<span class="loc">word_list.dart:3171-3182</span>）；书桌卡片也只给到"已掌握 N · 已取词 M / 总 T"（<span class="loc">desk_section.dart:595</span>），那 N 个具体是哪些，用户翻不出来。</li>
+        <li><strong>学习取词早就跳过已掌握的词</strong>（<span class="loc">learning_service.dart:805-808</span>），于是用户"肉眼扫一遍还剩多少"的直觉和系统"实际还会取多少"的行为是脱节的。</li>
+        <li><strong>三态信息其实已经在词表里可视</strong>（左侧环形徽章，见第六节），只是从来没被当作可筛选的维度。</li>
+      </ul>
+      <p>因此这个功能是<strong>视图层的裁剪</strong>，不是学习策略的变更。它服务三类动作：<strong>刷书</strong>（只看未学习，看还剩多少生词）、<strong>复盘</strong>（只看学习中，盯正在消化的那批）、<strong>清点</strong>（只看已掌握，看我拿下了什么）。</p>
+    </section>
+
+    <section id="states">
+      <h2><span class="idx">02</span>三态定义</h2>
+      <p>三态沿用现有的批量学习状态判定（<span class="loc">word_bo.dart:633-660</span>），<strong>本次不改判定口径</strong>：</p>
+      <table>
+        <thead>
+          <tr><th>状态</th><th>判定</th><th>用户视角</th><th>环</th><th>典型动作</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>未学习</td><td>词书收录，但用户无学习记录</td><td>还没排进学习计划的储备词</td><td>空环</td><td>刷书看剩余量</td></tr>
+          <tr><td>学习中</td><td>有学习记录，且不在「已掌握」词书</td><td>已取词、正在按 FSRS 推进</td><td>半环</td><td>复盘当前那批</td></tr>
+          <tr><td>已掌握</td><td>在用户的「已掌握」词书里</td><td>已经拿下的词</td><td>满环</td><td>清点、导出</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <p>判定只有这一个事实源。筛选层不另写判定，保证"筛选结果的条数"与书桌卡片上的"已掌握 N"永远对得上。</p>
+      </div>
+    </section>
+
+    <section id="ux">
+      <h2><span class="idx">03</span>交互形态：三勾选 + 每行带数量</h2>
+
+      <h3>入口</h3>
+      <p>与「排序」同级，放在「更多」菜单里（该菜单已按语义分组，排序行位于"设置与输出"组，<span class="loc">word_list.dart:2857-2858</span>）。行内直接显示当前态，与排序行完全对称（排序行现状为 <span class="loc">word_list.dart:3047-3048</span>）：</p>
+      <ul>
+        <li><code>排序: 字母序</code></li>
+        <li><code>筛选: 未学习+学习中</code>（三项全勾时显示 <code>筛选: 全部</code>）</li>
+      </ul>
+      <p>不做顶栏常驻筛选胶囊：切换筛选是低频意图，顶栏已有「S | 位置 | E」定位胶囊，再插一个会挤掉极简感。</p>
+
+      <h3>弹窗形态</h3>
+      <div class="mock-wrap">
+        <div>
+          <div class="mock">
+            <div class="mock-row on"><span class="box"></span><span class="name">未学习</span><span class="num">1200</span></div>
+            <div class="mock-row on"><span class="box"></span><span class="name">学习中</span><span class="num">320</span></div>
+            <div class="mock-row on"><span class="box"></span><span class="name">已掌握</span><span class="num">980</span></div>
+            <div class="mock-sep"></div>
+            <div class="mock-row reset"><span class="name">全部</span></div>
+          </div>
+          <div class="mock-cap">默认三项全勾 = 全部。数量为纯文本裸露，不加药丸底色。</div>
+        </div>
+        <div>
+          <div class="bar"><span class="t">高考 3500</span><span class="c">2345<i> / 3500</i></span></div>
+          <div class="mock-cap">筛选生效后，标题计数显示"可见 / 总数"。</div>
+        </div>
+      </div>
+
+      <h3>规则</h3>
+      <ul>
+        <li><strong>默认全勾</strong>，与现状完全一致，不惊吓已有用户。</li>
+        <li><strong>每行带数量</strong>（未学习 1200 / 学习中 320 / 已掌握 980）。这是本方案最大的附加价值：即使一个字都不勾，用户一眼就读到了这本书的结构；三数之和恒等于全书词数。</li>
+        <li><strong>至少保留一项</strong>：取消最后一项勾选时自动回落到"全部"，不弹报错。</li>
+        <li><strong>菜单摘要</strong>：一项显示该项名，两项显示 <code>A+B</code>，三项显示<code>全部</code>（避免行内文字过长）。</li>
+      </ul>
+
+      <h3>为什么是多选，而不是"全部 / 某一态"四选一</h3>
+      <p>三态是三个互斥集合，而用户最常用的意图之一是<strong>"未学习 + 学习中"（= 我还没掌握的）</strong>。单选要枚举 7 种非空组合，既不自然也放不下；多选天然覆盖，且与环的三态语义一一对应。</p>
+    </section>
+
+    <section id="rules">
+      <h2><span class="idx">04</span>与既有机制的关系</h2>
+      <table>
+        <thead><tr><th>维度</th><th>规则</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>学习取词</td><td>完全不受影响</td><td>筛选只作用于"看"，不改"学"；已掌握的词本来就取不到</td></tr>
+          <tr><td>各浏览模式</td><td>浏览 / 遮挡中文 / 遮挡英文 / 说中文 / 说英文 / 翻译例句 / 拼写（打字、手写）/ 随身听 全部生效</td><td>否则一页藏了、另一页还在念，状态自相矛盾</td></tr>
+          <tr><td>导出 PDF、AI 短文</td><td>按当前筛选结果</td><td>所见即所得，否则导完还要手动删</td></tr>
+          <tr><td>标题计数</td><td>显示"可见 / 总数"</td><td>让"还剩多少"直接可读</td></tr>
+          <tr><td>书签位次 S | n | E</td><td>书签仍记全书坐标，筛选不改写；书签词被隐藏时中段显示"—"，取消筛选即回原位</td><td>筛选是临时视图，不能"筛一下就丢位置"</td></tr>
+          <tr><td>状态变化</td><td>词被掌握 / 取消掌握后，若不再属于勾选集合，条目立即移出（复用现有掌握飞行动画），并给 1.5s「撤销」</td><td>否则用户会怀疑操作没生效</td></tr>
+          <tr><td>记忆</td><td>按词书分别记住勾选组合，与排序偏好同源持久化</td><td>"这本书只看未学习"的意图应当被记住，换书不串味</td></tr>
+          <tr><td>适用范围</td><td>仅"可能含多种状态"的词表显示：词书词表显示；「已掌握」「生词本」「学习中」「今日词」「错词」等虚拟/单一态词表不显示</td><td>在这些表里筛选是恒等或恒空，只会制造困惑</td></tr>
+          <tr><td>访客 / 未登录</td><td>不显示筛选</td><td>没有学习状态可言</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="empty">
+      <h2><span class="idx">05</span>空态</h2>
+      <ul>
+        <li><strong>只看未学习 → 空</strong>：<code>这本词书的生词都已排进学习计划</code> ＋ 主"去学习" / 次"看学习中"</li>
+        <li><strong>只看学习中 → 空</strong>：<code>暂时没有正在学习的词</code> ＋ 主"看未学习"</li>
+        <li><strong>只看已掌握 → 空</strong>：<code>还没有已掌握的词</code> ＋ 主"看未学习"</li>
+      </ul>
+      <p>空态一律提供一步出口（改筛选或直接去学习），不留死胡同。</p>
+    </section>
+
+    <section id="visual">
+      <h2><span class="idx">06</span>视觉锚点：环即状态</h2>
+      <p>词书词表传的是"不显示词内进度、只显示学习状态"的配置（<span class="loc">dict_words.dart:483</span>），因此左侧环形徽章正好按三态渲染（<span class="loc">word_list_item_layout.dart:263-269</span>）：</p>
+      <div class="rings">
+        <div class="ring-cell"><div class="ring empty"><b>12</b></div><span>未学习</span></div>
+        <div class="ring-cell"><div class="ring half"><b>13</b></div><span>学习中</span></div>
+        <div class="ring-cell"><div class="ring full"><b>14</b></div><span>已掌握</span></div>
+      </div>
+      <p>这意味着筛选<strong>不需要新建任何视觉语言</strong>：勾什么状态，列表里就是哪些颜色的环。它同时给出一条可直接机测的验收口径——可见词的环颜色集合必须严格等于勾选集合。</p>
+      <p>顺带记录一个一致的产品逻辑：<strong>词书词表的环表达"学没学过"（状态），学习类词表（学习中 / 今日词 / 已掌握）的环表达"熟练到哪了"（掌握度）</strong>。同一元件在两类页面承担两种语义，各自都成立，本次不动。</p>
+      <div class="note warn">
+        <p><strong>已知例外</strong>：被书签的单词渲染为实心主题色圆盘，会盖掉状态环（<span class="loc">word_list_item_layout.dart:229-257</span>）。即"既被书签、又是未学习"的词，看不到它的空心环。这不是筛选缺陷，验收时需按"书签词以盘代环、不计入环颜色比对"处理。</p>
+      </div>
+    </section>
+
+    <section id="accept">
+      <h2><span class="idx">07</span>验收口径</h2>
+      <ul class="checklist">
+        <li>三态数量之和<strong>严格恒等于</strong>全书词数，任何时刻（含刚掌握 / 刚取消掌握的瞬间）都成立。</li>
+        <li>可见词的状态集合<strong>严格等于</strong>勾选集合（书签词以盘代环，按例外处理）。</li>
+        <li>切换浏览模式（说 / 拼写 / 随身听等）后，可见词集合与浏览模式完全一致。</li>
+        <li>在"未学习"视图下标记掌握，该词立即移出列表，1.5s 内「撤销」可恢复；在"已掌握"视图下取消掌握同理。</li>
+        <li>重进页面、跨设备同步后，筛选态与可见集合保持一致；书签位置不发生漂移。</li>
+        <li>导出 PDF / AI 短文的结果与当前可见集合一致。</li>
+      </ul>
+    </section>
+
+    <section id="known">
+      <h2><span class="idx">08</span>不改动的既有边界（记录在案）</h2>
+      <ul>
+        <li><strong>取消掌握当天的状态错位</strong>：取消掌握只把词移出「已掌握」词书并丢进生词本，<strong>不重置</strong>该词学习记录里的稳定性（<span class="loc">dao.dart:1998-2030</span>）。于是当天它的稳定性仍 ≥ 毕业阈值，被判定为"未学习"；但它同时因"已有学习记录"而不会被取词。跨天清理会删除这类记录（<span class="loc">dao.dart:1429-1437</span>，调用点 <span class="loc">learning_service.dart:107</span>），次日它真正回到"未学习"并重新可被取词。<br><strong>本次决策：不改判定口径</strong>，该错位最多持续当天，且能自愈；此条作为已知现象长期记录，不做前端托底掩盖。</li>
+        <li><strong>书签盘覆盖状态环</strong>：既有设计，本次不动。</li>
+        <li><strong>词书词表传入的进度提供者与"掌握度"标签是走不到的死参数</strong>（<span class="loc">dict_words.dart:255-265</span>、<span class="loc">dict_words.dart:483</span>）：仅记录，不在本次清理。</li>
+      </ul>
+    </section>
+
+    <section id="out">
+      <h2><span class="idx">09</span>不在本次范围</h2>
+      <ul>
+        <li><strong>批量"把筛选结果标记为已掌握"</strong>（扫一眼全认识，一键清空）—— 价值明确，但属于独立动作，留待下一版。</li>
+        <li><strong>按熟练度分档筛选</strong>（生 / 熟 / 忘）。</li>
+        <li><strong>其他筛选维度</strong>（错词、收藏、单元、词频）。本次只把"学习状态"这一个维度做透。</li>
+        <li><strong>学习取词策略的任何变更</strong>（现已自动跳过已掌握的词，足够）。</li>
+      </ul>
+    </section>
+
+    <section id="decisions">
+      <h2><span class="idx">10</span>决策记录</h2>
+      <table>
+        <thead><tr><th>议题</th><th>结论</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>筛选维度</td><td>三态（未学习 / 学习中 / 已掌握）</td><td>不止"已掌握 / 未掌握"二分，未学习必须独立可筛</td></tr>
+          <tr><td>三态判定口径</td><td>不动，沿用现有实现</td><td>含稳定性阈值，已知的当天错位接受并记录（见第八节）</td></tr>
+          <tr><td>交互形态</td><td>三勾选 + 每行带数量</td><td>多选覆盖"未学习+学习中"等组合意图</td></tr>
+          <tr><td>默认态</td><td>三项全勾（= 全部）</td><td>与现状一致</td></tr>
+          <tr><td>入口位置</td><td>「更多」菜单内，与"排序"同级对称</td><td>不做顶栏常驻胶囊</td></tr>
+          <tr><td>适用范围</td><td>仅词书词表</td><td>单一态/虚拟词表不显示</td></tr>
+        </tbody>
+      </table>
+      <h3>落地涉及面（不含实现细节）</h3>
+      <ul>
+        <li>「更多」菜单新增"筛选"行与当前态摘要。</li>
+        <li>新增筛选弹窗（三勾选 + 数量 + 全部重置）。</li>
+        <li>词表数据源按勾选集合裁剪取词，并统计三态数量。</li>
+        <li>标题计数改为"可见 / 总数"。</li>
+        <li>筛选态按词书持久化。</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  词表学习状态筛选 · 产品方案　|　2026-09-23　|　三态口径沿用现有实现，本次只做视图层裁剪
+</footer>
+
+</body>
+</html>

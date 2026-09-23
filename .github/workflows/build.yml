@@ -138,6 +138,26 @@ jobs:
           token: ${{ github.token }}
           fetch-depth: 1
 
+      # Android 构建（NDK + Gradle + APK）磁盘峰值已顶到 ubuntu 运行器上限，
+      # 构建前回收镜像里与本次构建无关的大目录，避免 Gradle 写盘失败。
+      - name: Free Disk Space (Android)
+        if: matrix.platform == 'android'
+        run: |
+          echo "=== 回收前 ==="
+          df -h /
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /usr/local/share/boost \
+            /usr/local/share/chromium \
+            /usr/local/lib/android/sdk/emulator \
+            /usr/local/lib/android/sdk/system-images \
+            /usr/local/lib/android/sdk/ndk/2[0-6].*
+          echo "=== 回收后 ==="
+          df -h /
+        shell: bash
+
       - name: Compute pubspec.lock hash
         id: pubspec-hash
         run: |
