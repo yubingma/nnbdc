@@ -206,6 +206,24 @@ void main() {
       expect(member.word.meaningItems!.single.meaning, '含义mi_w_expect');
     });
 
+    test('每个族的首词都能取到组头（不止第一个族）', () async {
+      await seedTwoFamilies();
+      final provider = RootFamilyWordsProvider();
+      final result = await provider.getAPageOfWords(0, 999999);
+
+      // spect 族首词
+      final h1 = provider.groupHeaderOf(result.rows[0]);
+      expect(h1?.word.spell, 'spect');
+      // port 族首词（第 4 个词，索引 3）—— 这一条此前缺失，正是「从第二个组开始割裂」的根因所在
+      final h2 = provider.groupHeaderOf(result.rows[3]);
+      expect(h2, isNotNull, reason: '第二个族的首词也必须能取到组头');
+      expect(h2?.word.spell, 'port');
+      expect(h2?.word.meaningStr, '2 词');
+
+      // 组内非首词也应能回溯到自己的组头（port 族第二个词，索引 4）
+      expect(provider.groupHeaderOf(result.rows[4])?.word.spell, 'port');
+    });
+
     test('组号按纯单词序列分配（组头不占位）', () async {
       await seedTwoFamilies();
       final provider = RootFamilyWordsProvider();

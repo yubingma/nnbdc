@@ -2360,27 +2360,33 @@ class WordListPageState extends State<WordListPage>
               groupPosition: groupPosition),
         );
 
-        if (isGroupStart && i > 0) {
+        // 组首词的 14px 组间距：
+        // - 有组头时由组头承担（padding 加在「组头外面」），首词自身绝不再加 ——
+        //   否则会在“组头与首词”之间形成缺口；而第一组 i==0 不触发、从第二组起才触发，
+        //   症状正是「第一个组正常、从第二个组开始割裂」。
+        // - 无组头时（其他词表）仍由组首词承担，保持原有组间距。
+        if (groupHeader != null) {
+          content = Padding(
+            padding: EdgeInsets.only(top: i > 0 ? 14 : 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                RootFamilyHeaderItem(
+                  word: groupHeader,
+                  index: 0,
+                  baseIndex: 0,
+                  isDarkMode: isDarkMode,
+                  actions: this,
+                  groupPosition: GroupCardPosition.top,
+                ),
+                content,
+              ],
+            ),
+          );
+        } else if (isGroupStart && i > 0) {
           content = Padding(
             padding: const EdgeInsets.only(top: 14),
             child: content,
-          );
-        }
-
-        if (groupHeader != null) {
-          content = Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              RootFamilyHeaderItem(
-                word: groupHeader,
-                index: 0,
-                baseIndex: 0,
-                isDarkMode: isDarkMode,
-                actions: this,
-                groupPosition: GroupCardPosition.top,
-              ),
-              content,
-            ],
           );
         }
 
