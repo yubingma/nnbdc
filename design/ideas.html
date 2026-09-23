@@ -18,6 +18,7 @@
       --accent-blue: #60a5fa;
       --accent-purple: #c084fc;
       --accent-amber: #fbbf24;
+      --accent-rose: #fb7185;
       --tag-bg: rgba(255, 255, 255, 0.05);
       --code-bg: rgba(0, 0, 0, 0.35);
       --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -184,6 +185,23 @@
     .dot-blue { background: var(--accent-blue); box-shadow: 0 0 6px var(--accent-blue); }
     .dot-amber { background: var(--accent-amber); box-shadow: 0 0 6px var(--accent-amber); }
     .dot-aurora { background: var(--accent-aurora); box-shadow: 0 0 6px var(--accent-aurora); }
+    .dot-rose { background: var(--accent-rose); box-shadow: 0 0 6px var(--accent-rose); }
+
+    .nav-group {
+      margin-bottom: 10px;
+    }
+
+    .nav-group-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 6px 10px 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
     .nav-item-title {
       font-size: 13px;
@@ -309,6 +327,41 @@
 
 
 
+    /* 内容区大分节标头 */
+    .feed-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      margin-top: 32px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .feed-section-header:first-child {
+      margin-top: 0;
+    }
+
+    .feed-section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    .feed-section-tag {
+      font-family: var(--mono-stack);
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
     /* 创意卡片列表 */
     .ideas-feed {
       display: flex;
@@ -382,6 +435,12 @@
       background: rgba(251, 191, 36, 0.12);
       color: var(--accent-amber);
       border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+
+    .status-strategy {
+      background: rgba(251, 113, 133, 0.12);
+      color: var(--accent-rose);
+      border: 1px solid rgba(251, 113, 133, 0.2);
     }
 
     .tags-container {
@@ -525,7 +584,7 @@
       <p class="subtitle">记录随时迸发的产品闪念、动效构想与玩法实验。遵循奥卡姆剃刀原理与极简高级美学，去伪存真，持续沉淀。</p>
       
       <div class="stats-bar">
-        <div class="stat-pill">沉淀创意: <strong>4</strong></div>
+        <div class="stat-pill">沉淀创意: <strong>5 (4 产品 + 1 营销)</strong></div>
         <div class="stat-pill">核心哲学: <strong>如非必要 · 勿增实体</strong></div>
         <div class="stat-pill">美学基准: <strong>现代极简 · 灵动克制</strong></div>
       </div>
@@ -549,45 +608,73 @@
               </svg>
               <span class="sidebar-title">创意目录 · INDEX</span>
             </div>
-            <span class="sidebar-badge-count">4</span>
+            <span class="sidebar-badge-count">5</span>
           </div>
 
           <nav class="nav-list" id="sidebarNav">
-            <a href="#idea-004" class="nav-item active" data-id="idea-004">
-              <div class="nav-item-header">
-                <span class="nav-item-id">IDEA #004</span>
-                <span class="nav-dot dot-purple"></span>
+            <div class="nav-group">
+              <div class="nav-group-title">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>产品玩法与体验</span>
               </div>
-              <div class="nav-item-title">语境辨义：例句绑定答题</div>
-              <div class="nav-item-cat">语境认知与题型创新</div>
-            </a>
+              <a href="#idea-004" class="nav-item active" data-id="idea-004">
+                <div class="nav-item-header">
+                  <span class="nav-item-id">IDEA #004</span>
+                  <span class="nav-dot dot-purple"></span>
+                </div>
+                <div class="nav-item-title">语境辨义：例句绑定答题</div>
+                <div class="nav-item-cat">语境认知与题型创新</div>
+              </a>
 
-            <a href="#idea-003" class="nav-item" data-id="idea-003">
-              <div class="nav-item-header">
-                <span class="nav-item-id">IDEA #003</span>
-                <span class="nav-dot dot-blue"></span>
-              </div>
-              <div class="nav-item-title">UGC冷启动：AI评分与新星展位</div>
-              <div class="nav-item-cat">UGC生态与智能推荐</div>
-            </a>
+              <a href="#idea-003" class="nav-item" data-id="idea-003">
+                <div class="nav-item-header">
+                  <span class="nav-item-id">IDEA #003</span>
+                  <span class="nav-dot dot-blue"></span>
+                </div>
+                <div class="nav-item-title">UGC冷启动：AI评分与新星展位</div>
+                <div class="nav-item-cat">UGC生态与智能推荐</div>
+              </a>
 
-            <a href="#idea-002" class="nav-item" data-id="idea-002">
-              <div class="nav-item-header">
-                <span class="nav-item-id">IDEA #002</span>
-                <span class="nav-dot dot-amber"></span>
-              </div>
-              <div class="nav-item-title">对战道具：形近障眼法</div>
-              <div class="nav-item-cat">对战玩法与认知博弈</div>
-            </a>
+              <a href="#idea-002" class="nav-item" data-id="idea-002">
+                <div class="nav-item-header">
+                  <span class="nav-item-id">IDEA #002</span>
+                  <span class="nav-dot dot-amber"></span>
+                </div>
+                <div class="nav-item-title">对战道具：形近障眼法</div>
+                <div class="nav-item-cat">对战玩法与认知博弈</div>
+              </a>
 
-            <a href="#idea-001" class="nav-item" data-id="idea-001">
-              <div class="nav-item-header">
-                <span class="nav-item-id">IDEA #001</span>
-                <span class="nav-dot dot-aurora"></span>
+              <a href="#idea-001" class="nav-item" data-id="idea-001">
+                <div class="nav-item-header">
+                  <span class="nav-item-id">IDEA #001</span>
+                  <span class="nav-dot dot-aurora"></span>
+                </div>
+                <div class="nav-item-title">单词泡泡天空（记忆苍穹）</div>
+                <div class="nav-item-cat">激励与交互美学</div>
+              </a>
+            </div>
+
+            <div class="nav-group" style="margin-top: 6px;">
+              <div class="nav-group-title">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="2"></circle>
+                  <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
+                </svg>
+                <span>营销推广与增长雷达</span>
               </div>
-              <div class="nav-item-title">单词泡泡天空（记忆苍穹）</div>
-              <div class="nav-item-cat">激励与交互美学</div>
-            </a>
+              <a href="#idea-mkt-001" class="nav-item" data-id="idea-mkt-001">
+                <div class="nav-item-header">
+                  <span class="nav-item-id" style="color: var(--accent-rose);">MKT #001</span>
+                  <span class="nav-dot dot-rose"></span>
+                </div>
+                <div class="nav-item-title">全网趋势雷达与精准选题</div>
+                <div class="nav-item-cat">TrendRadar 增长飞轮</div>
+              </a>
+            </div>
           </nav>
 
           <div class="sidebar-footer-note">
@@ -599,6 +686,19 @@
       <!-- 右侧主内容流 -->
       <main class="main-content">
         <div class="ideas-feed" id="ideasFeed">
+
+          <!-- 第一节 · 产品功能与玩法构想 -->
+          <div class="feed-section-header">
+            <div class="feed-section-title">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+              <span>第一节 · 产品功能与玩法构想（Product & Gameplay）</span>
+            </div>
+            <span class="feed-section-tag">4 IDEAS</span>
+          </div>
 
           <!-- 创意 #004: 语境辨义与例句精义绑定 -->
           <article class="idea-card" id="idea-004">
