@@ -24,6 +24,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
   bool _isLoading = true;
   List<String> _last30DaysDakaStatus = [];
   List<Map<String, dynamic>> _dailyReviewCounts = [];
+  List<Map<String, dynamic>> _dailyWordCounts = [];
   HeatmapDisplayMode _displayMode = HeatmapDisplayMode.date;
 
   @override
@@ -44,8 +45,10 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
         _last30DaysDakaStatus = result.data!;
       }
 
-      // 2. 获取每日复习数
+      // 2. 获取每日复习数（评分次数，供"时长"模式估算学习分钟数）
       _dailyReviewCounts = await MyDatabase.instance.learningLogsDao.getDailyReviewCounts(userId, 30);
+      // 3. 获取每日去重单词数（供"单词"模式展示真实背词量）
+      _dailyWordCounts = await MyDatabase.instance.learningLogsDao.getDailyWordCounts(userId, 30);
     } catch (e) {
       Global.logger.e('加载学习统计失败: $e');
     } finally {
@@ -170,9 +173,14 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
       builder: (context, constraints) {
         final boxSize = (constraints.maxWidth - 30) / 7;
         
-        // 映射复习数
-        final Map<String, int> countMap = {
+        // 映射复习数（评分次数，供"时长"模式估算学习分钟数）
+        final Map<String, int> reviewCountMap = {
           for (var item in _dailyReviewCounts) item['day'] as String: item['count'] as int
+        };
+
+        // 映射去重单词数（供"单词"模式展示真实背词量）
+        final Map<String, int> wordCountMap = {
+          for (var item in _dailyWordCounts) item['day'] as String: item['count'] as int
         };
 
         return Wrap(
@@ -184,16 +192,18 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
             final status = _last30DaysDakaStatus.length > index ? _last30DaysDakaStatus[index] : UserDayStatus.notLogin.json;
             final isNotLearned = status != UserDayStatus.dakaed.json && status != UserDayStatus.studied.json;
             final color = _dakaStatus2Color(status, isDarkMode, themeConfig);
-            final count = countMap[dateStr] ?? 0;
+            final reviewCount = reviewCountMap[dateStr] ?? 0;
+            final wordCount = wordCountMap[dateStr] ?? 0;
             
             String displayText = '';
             if (_displayMode == HeatmapDisplayMode.date) {
               displayText = '${date.month}/${date.day}';
             } else if (_displayMode == HeatmapDisplayMode.count) {
-              displayText = count > 0 ? count.toString() : '';
+              // 展示当天实际背过（已评分）的不同单词数
+              displayText = wordCount > 0 ? wordCount.toString() : '';
             } else {
-              // 估算时长：每个词 15 秒 (0.25 分钟)
-              final minutes = (count * 15 / 60).ceil();
+              // 估算时长：每次评分约 15 秒 (0.25 分钟)
+              final minutes = (reviewCount * 15 / 60).ceil();
               displayText = minutes > 0 ? '${minutes}m' : '';
             }
             

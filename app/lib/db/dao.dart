@@ -2679,6 +2679,29 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
     final rows = await query.get();
     return rows.map((r) => r.data).toList();
   }
+
+  /// 获取最近 [days] 天每日去重单词数（按自然日对 learning_logs 的 word_id 去重计数）。
+  ///
+  /// 与 `getDailyReviewCounts` 的区别：后者统计的是评分次数（一个词当天可能有多次评分），
+  /// 前者统计的是当天实际学过的不同单词数，供热力图"单词"模式展示。
+  Future<List<Map<String, dynamic>>> getDailyWordCounts(String userId, int days) async {
+    final endDate = AppClock.today();
+    final startDate = endDate.subtract(Duration(days: days - 1));
+    final startTimestamp = startDate.millisecondsSinceEpoch ~/ 1000;
+
+    final query = customSelect(
+      'SELECT date(create_time, "unixepoch", "localtime") as day, count(distinct word_id) as count '
+      'FROM learning_logs '
+      'WHERE user_id = ? AND create_time >= ? '
+      'GROUP BY day '
+      'ORDER BY day ASC',
+      variables: [Variable.withString(userId), Variable.withInt(startTimestamp)],
+      readsFrom: {learningLogs},
+    );
+
+    final rows = await query.get();
+    return rows.map((r) => r.data).toList();
+  }
 }
 
 @DriftAccessor(tables: [UserStudyDailyStats])
