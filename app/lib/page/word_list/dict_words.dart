@@ -5,6 +5,7 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/word_status_filter.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
@@ -28,7 +29,43 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
   MyDatabase get _db => MyDatabase.instance;
 
+  /// 当前学习状态筛选（全选 = 不裁剪），首次读取后缓存
+  WordStatusFilter _statusFilter = WordStatusFilter.all;
+  bool _statusFilterLoaded = false;
+
+  /// 筛选偏好按词书记忆：视图偏好属于设备本地状态，与主题/字号同源存放在 localParams
+  String get _statusFilterParam => 'dict_${dict.id}_status_filter';
+
   DictWordsProvider(this.dict);
+
+  @override
+  bool get canFilterStatus => true;
+
+  @override
+  Future<WordStatusFilter> getStatusFilter() async {
+    if (!_statusFilterLoaded) {
+      _statusFilter = WordStatusFilter.fromCode(await _db.localParamsDao.getValue(_statusFilterParam));
+      _statusFilterLoaded = true;
+    }
+    return _statusFilter;
+  }
+
+  @override
+  Future<void> saveStatusFilter(WordStatusFilter filter) async {
+    await _db.localParamsDao.setValue(_statusFilterParam, filter.code);
+    _statusFilter = filter;
+    _statusFilterLoaded = true;
+  }
+
+  @override
+  bool isStatusVisible(bool? learningStatus) => _statusFilter.allows(learningStatus);
+
+  @override
+  Future<WordStatusCounts> getStatusCounts() async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return const WordStatusCounts(unlearned: 0, learning: 0, mastered: 0);
+    return WordBo().getDictWordStatusCounts(dict.id, userId);
+  }
 
   @override
   Future<WordSortAlg> getSortAlg() async {
@@ -139,7 +176,10 @@ class DictWordsProvider with WordsProvider implements WordModifier {
     final sw = Stopwatch()..start();
     try {
       final sortAlg = await getSortAlg();
-      final results = await WordBo().getDictWordsForAPage(dict.id, fromIndex, pageSize, sortAlg: sortAlg.code);
+      final statusFilter = await getStatusFilter();
+      final userId = Global.getLoggedInUser()?.id;
+      final results = await WordBo().getDictWordsForAPage(dict.id, fromIndex, pageSize,
+          sortAlg: sortAlg.code, statusFilter: statusFilter, userId: userId);
       final wrappedResults = PagedResults<WordWrapper>(results.total);
 
       for (var dictWordVo in results.rows) {
@@ -210,7 +250,10 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   Future<int> getWordIndex(String spell) async {
     final sw = Stopwatch()..start();
     final sortAlg = await getSortAlg();
-    var result = await WordBo().getDictWordOrder(dict.id, spell, sortAlg: sortAlg.code);
+    final statusFilter = await getStatusFilter();
+    final userId = Global.getLoggedInUser()?.id;
+    var result = await WordBo().getDictWordOrder(dict.id, spell,
+        sortAlg: sortAlg.code, statusFilter: statusFilter, userId: userId);
     Global.logger.d('DictWordsProvider: getWordIndex($spell) completed in ${sw.elapsedMilliseconds}ms');
     if (result.success) {
       var order = result.data!;

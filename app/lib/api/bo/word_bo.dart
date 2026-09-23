@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/word_status_filter.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -144,6 +145,9 @@ class DictImportStats {
 
   const DictImportStats({this.inserted = 0, this.updated = 0});
 }
+
+/// "学习状态筛选"下推 SQL 的片段：JOIN 子句、三态条件与对应变量
+typedef _StatusFilterSql = ({String joins, String condition, List<Variable> vars});
 
 class WordBo {
   static final WordBo _instance = WordBo._internal();
@@ -1670,24 +1674,42 @@ class WordBo {
     }
   }
 
-  Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize, {bool loadSentences = false, String? sortAlg}) async {
+  Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize,
+      {bool loadSentences = false, String? sortAlg, WordStatusFilter? statusFilter, String? userId}) async {
     final sw = Stopwatch()..start();
     try {
       final results = PagedResults<DictWordVo>(0);
       final db = MyDatabase.instance;
 
+      // 学习状态筛选（下推到 SQL，避免把成千上万个 wordId 塞进 IN 列表）；
+      // 未启用或全选时为 null，后续查询路径与历史行为完全一致。
+      final statusSql = await _buildStatusFilterSql(statusFilter, userId);
+
       // 1) 获取总数
-      final countResult = await (db.selectOnly(db.dictWords)
-            ..addColumns([countAll()])
-            ..where(db.dictWords.dictId.equals(dictId)))
-          .getSingle();
-      results.total = countResult.read(countAll()) ?? 0;
+      if (statusSql == null) {
+        final countResult = await (db.selectOnly(db.dictWords)
+              ..addColumns([countAll()])
+              ..where(db.dictWords.dictId.equals(dictId)))
+            .getSingle();
+        results.total = countResult.read(countAll()) ?? 0;
+      } else {
+        final countRow = await db.customSelect(
+          'SELECT COUNT(*) AS total FROM dict_words dw ${statusSql.joins} '
+          'WHERE dw.dict_id = ? AND ${statusSql.condition}',
+          variables: [...statusSql.vars, Variable.withString(dictId)],
+        ).getSingle();
+        results.total = countRow.read<int>('total');
+      }
 
       // 2) 获取分页条目
       final List<DictWord> dictWordEntries;
       if (sortAlg != null && sortAlg != 'UNIT') {
         if (sortAlg == 'SEMANTIC') {
-          final sortedIds = await _getTspSortedWordIds(dictId);
+          var sortedIds = await _getTspSortedWordIds(dictId);
+          if (statusSql != null) {
+            final visibleIds = await _getVisibleWordIdSet(dictId, statusSql);
+            sortedIds = sortedIds.where(visibleIds.contains).toList();
+          }
           final pageIds = sortedIds.skip(fromIndex).take(pageSize).toList();
           if (pageIds.isEmpty) {
             dictWordEntries = [];
@@ -1702,27 +1724,38 @@ class WordBo {
             dictWordEntries = pageIds.map((id) => entryMap[id]).whereType<DictWord>().toList();
           }
         } else {
+          final String statusJoins = statusSql?.joins ?? '';
+          final String statusWhere = statusSql == null ? '' : 'AND ${statusSql.condition}';
           String sql;
           if (sortAlg == 'ALPHABETICAL') {
-            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.spell ASC LIMIT ? OFFSET ?';
+            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id $statusJoins WHERE dw.dict_id = ? $statusWhere ORDER BY w.spell ASC LIMIT ? OFFSET ?';
           } else if (sortAlg == 'RANDOM') {
-            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
+            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id $statusJoins WHERE dw.dict_id = ? $statusWhere ORDER BY w.id ASC LIMIT ? OFFSET ?';
           } else {
-            sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC, dw.create_time ASC, dw.word_id ASC LIMIT ? OFFSET ?';
+            sql = 'SELECT dw.* FROM dict_words dw $statusJoins WHERE dw.dict_id = ? $statusWhere ORDER BY dw.unit ASC, dw.seq ASC, dw.create_time ASC, dw.word_id ASC LIMIT ? OFFSET ?';
           }
           final rows = await db.customSelect(sql, variables: [
+            ...?statusSql?.vars,
             Variable.withString(dictId),
             Variable.withInt(pageSize),
             Variable.withInt(fromIndex),
           ]).get();
           dictWordEntries = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
         }
-      } else {
+      } else if (statusSql == null) {
         dictWordEntries = await (db.select(db.dictWords)
               ..where((dw) => dw.dictId.equals(dictId))
               ..orderBy([(t) => OrderingTerm(expression: t.unit), (t) => OrderingTerm(expression: t.seq), (t) => OrderingTerm(expression: t.createTime), (t) => OrderingTerm(expression: t.wordId)])
               ..limit(pageSize, offset: fromIndex))
             .get();
+      } else {
+        final rows = await db.customSelect(
+          'SELECT dw.* FROM dict_words dw ${statusSql.joins} '
+          'WHERE dw.dict_id = ? AND ${statusSql.condition} '
+          'ORDER BY dw.unit ASC, dw.seq ASC, dw.create_time ASC, dw.word_id ASC LIMIT ? OFFSET ?',
+          variables: [...statusSql.vars, Variable.withString(dictId), Variable.withInt(pageSize), Variable.withInt(fromIndex)],
+        ).get();
+        dictWordEntries = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
       }
 
       if (dictWordEntries.isEmpty) {
@@ -1838,24 +1871,108 @@ class WordBo {
     }
   }
 
+  /// 构造"学习状态筛选"的下推 SQL 片段（三态判定所需的两个 LEFT JOIN + 条件 + 变量）。
+  ///
+  /// 三态判定与 [getWordsLearningStatusBatch] 完全同源：
+  /// - 已掌握：在用户的「已掌握」词书内（m 命中）；
+  /// - 学习中：不在已掌握词书，但有未毕业的学习记录（l 命中）；
+  /// - 未学习：其余。
+  ///
+  /// 返回 null 表示无需裁剪（未启用筛选、全选或未登录），调用方走原有查询路径。
+  Future<_StatusFilterSql?> _buildStatusFilterSql(WordStatusFilter? statusFilter, String? userId) async {
+    if (statusFilter == null || statusFilter.isAll || userId == null) return null;
+    final masteredDict = await MyDatabase.instance.dictsDao.findUserMasteredDict(userId);
+    return (
+      joins: 'LEFT JOIN dict_words m ON m.dict_id = ? AND m.word_id = dw.word_id '
+          'LEFT JOIN learning_words l ON l.user_id = ? AND l.word_id = dw.word_id '
+          'AND (l.stability IS NULL OR l.stability < ?)',
+      condition: _buildStatusCondition(statusFilter),
+      vars: [
+        // 没有「已掌握」词书时用不可能命中的空 id，保证 mastered 恒为 0 而不是漏判
+        Variable.withString(masteredDict?.id ?? ''),
+        Variable.withString(userId),
+        Variable.withReal(Constants.graduationStability),
+      ],
+    );
+  }
+
+  /// 三态条件：三种状态互斥，按勾选组合取并集
+  String _buildStatusCondition(WordStatusFilter filter) {
+    final parts = <String>[];
+    if (filter.contains(WordLearningStatus.unlearned)) {
+      parts.add('(m.word_id IS NULL AND l.word_id IS NULL)');
+    }
+    if (filter.contains(WordLearningStatus.learning)) {
+      parts.add('(m.word_id IS NULL AND l.word_id IS NOT NULL)');
+    }
+    if (filter.contains(WordLearningStatus.mastered)) {
+      parts.add('m.word_id IS NOT NULL');
+    }
+    return '(${parts.join(' OR ')})';
+  }
+
+  /// 某词书在当前筛选下可见的全部 wordId（用于语境排序等内存排序路径）
+  Future<Set<String>> _getVisibleWordIdSet(String dictId, _StatusFilterSql statusSql) async {
+    final rows = await MyDatabase.instance.customSelect(
+      'SELECT dw.word_id FROM dict_words dw ${statusSql.joins} WHERE dw.dict_id = ? AND ${statusSql.condition}',
+      variables: [...statusSql.vars, Variable.withString(dictId)],
+    ).get();
+    return rows.map((row) => row.read<String>('word_id')).toSet();
+  }
+
+  /// 统计某词书的三态数量（总数 = 未学习 + 学习中 + 已掌握）
+  Future<WordStatusCounts> getDictWordStatusCounts(String dictId, String userId) async {
+    final masteredDict = await MyDatabase.instance.dictsDao.findUserMasteredDict(userId);
+    final row = await MyDatabase.instance.customSelect(
+      'SELECT COUNT(*) AS total, '
+      'SUM(CASE WHEN m.word_id IS NOT NULL THEN 1 ELSE 0 END) AS mastered, '
+      'SUM(CASE WHEN m.word_id IS NULL AND l.word_id IS NOT NULL THEN 1 ELSE 0 END) AS learning '
+      'FROM dict_words dw '
+      'LEFT JOIN dict_words m ON m.dict_id = ? AND m.word_id = dw.word_id '
+      'LEFT JOIN learning_words l ON l.user_id = ? AND l.word_id = dw.word_id '
+      'AND (l.stability IS NULL OR l.stability < ?) '
+      'WHERE dw.dict_id = ?',
+      variables: [
+        Variable.withString(masteredDict?.id ?? ''),
+        Variable.withString(userId),
+        Variable.withReal(Constants.graduationStability),
+        Variable.withString(dictId),
+      ],
+    ).getSingle();
+    final total = row.read<int>('total');
+    final mastered = row.read<int?>('mastered') ?? 0;
+    final learning = row.read<int?>('learning') ?? 0;
+    return WordStatusCounts(unlearned: total - mastered - learning, learning: learning, mastered: mastered);
+  }
+
   Future<Result> deleteMasteredWord(String userId, String wordId) async {
     await MyDatabase.instance.masteredWordsDao.deleteMasteredWord(userId, wordId, true, true);
     final result = Result<dynamic>('200', null, true);
     return result;
   }
 
-  Future<Result<int>> getDictWordOrder(String dictId, String spell, {String? sortAlg}) async {
+  Future<Result<int>> getDictWordOrder(String dictId, String spell,
+      {String? sortAlg, WordStatusFilter? statusFilter, String? userId}) async {
     try {
       Global.logger.d('开始本地查询词典单词位置: dictId=$dictId, spell=$spell, sortAlg=$sortAlg');
       final db = MyDatabase.instance;
-      
+
+      // 学习状态筛选：被筛掉的单词返回 -1（等价于"在当前视图中不存在"）
+      final statusSql = await _buildStatusFilterSql(statusFilter, userId);
+
       if (sortAlg == 'SEMANTIC') {
         final sortedIds = await _getTspSortedWordIds(dictId);
         final wordRow = await db.customSelect('SELECT id FROM words WHERE spell = ? LIMIT 1', variables: [Variable.withString(spell)]).getSingleOrNull();
         int order = -1;
         if (wordRow != null) {
           final wordId = wordRow.read<String>('id');
-          final index = sortedIds.indexOf(wordId);
+          var index = sortedIds.indexOf(wordId);
+          if (index != -1 && statusSql != null) {
+            final visibleIds = await _getVisibleWordIdSet(dictId, statusSql);
+            if (!visibleIds.contains(wordId)) {
+              index = -1;
+            }
+          }
           if (index != -1) {
             order = index + 1;
           }
@@ -1863,6 +1980,10 @@ class WordBo {
         Global.logger.d('找到单词 $spell 在词典 $dictId 中的位置 (SEMANTIC): $order');
         return Result("SUCCESS", "获取成功", true)..data = order;
       }
+
+      final String statusJoins = statusSql?.joins ?? '';
+      final String statusWhere = statusSql == null ? '' : 'AND ${statusSql.condition}';
+      final List<Variable> statusVars = statusSql?.vars ?? const [];
 
       String query;
       List<Variable> variables = [];
@@ -1872,25 +1993,28 @@ class WordBo {
                 'SELECT w.spell, ROW_NUMBER() OVER (ORDER BY w.spell ASC) as word_order '
                 'FROM dict_words dw '
                 'JOIN words w ON dw.word_id = w.id '
-                'WHERE dw.dict_id = ?'
+                '$statusJoins '
+                'WHERE dw.dict_id = ? $statusWhere'
                 ') WHERE spell = ? LIMIT 1';
-        variables = [Variable.withString(dictId), Variable.withString(spell)];
+        variables = [...statusVars, Variable.withString(dictId), Variable.withString(spell)];
       } else if (sortAlg == 'RANDOM') {
         query = 'SELECT word_order FROM ('
                 'SELECT w.spell, ROW_NUMBER() OVER (ORDER BY w.id ASC) as word_order '
                 'FROM dict_words dw '
                 'JOIN words w ON dw.word_id = w.id '
-                'WHERE dw.dict_id = ?'
+                '$statusJoins '
+                'WHERE dw.dict_id = ? $statusWhere'
                 ') WHERE spell = ? LIMIT 1';
-        variables = [Variable.withString(dictId), Variable.withString(spell)];
+        variables = [...statusVars, Variable.withString(dictId), Variable.withString(spell)];
       } else {
         query = 'SELECT word_order FROM ('
                 'SELECT w.spell, ROW_NUMBER() OVER (ORDER BY dw.unit ASC, dw.seq ASC, dw.create_time ASC, dw.word_id ASC) as word_order '
                 'FROM dict_words dw '
                 'JOIN words w ON dw.word_id = w.id '
-                'WHERE dw.dict_id = ?'
+                '$statusJoins '
+                'WHERE dw.dict_id = ? $statusWhere'
                 ') WHERE spell = ? LIMIT 1';
-        variables = [Variable.withString(dictId), Variable.withString(spell)];
+        variables = [...statusVars, Variable.withString(dictId), Variable.withString(spell)];
       }
       
       final row = await db.customSelect(query, variables: variables).getSingleOrNull();

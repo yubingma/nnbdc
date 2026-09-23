@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/word_status_filter.dart';
 import 'package:nnbdc/api/sort_alg.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
@@ -39,6 +40,12 @@ class WordListController extends ChangeNotifier {
   AiStoryVo? aiStory;
   int? initialScrollIndex;
   double lastExtentAfter = double.infinity;
+
+  /// 当前学习状态筛选（仅支持筛选的数据源会更新它，默认全选）
+  WordStatusFilter currentStatusFilter = WordStatusFilter.all;
+
+  /// 当前词书三态数量（仅支持筛选的数据源会更新它）
+  WordStatusCounts? statusCounts;
 
   bool _disposed = false;
 
@@ -128,6 +135,24 @@ class WordListController extends ChangeNotifier {
     return bookMark != null;
   }
 
+  /// 书签单词在当前筛选视图下不可见（位置记为 -1；书签本身保留，取消筛选即回原位）
+  bool get isBookMarkHidden => bookMark != null && bookMark!.position < 0;
+
+  /// 标题右侧计数：筛选生效时显示"可见 / 总数"
+  String get titleCountLabel {
+    final counts = statusCounts;
+    if (currentStatusFilter.isAll || counts == null || counts.total == totalWordCount) {
+      return '$totalWordCount';
+    }
+    return '$totalWordCount / ${counts.total}';
+  }
+
+  /// 刷新词书三态数量（不支持筛选的数据源跳过）
+  Future<void> refreshStatusCounts() async {
+    if (!args.wordsProvider.canFilterStatus) return;
+    statusCounts = await args.wordsProvider.getStatusCounts();
+  }
+
   int getBookMarkRawPosition(BookMarkVo? bookMark) {
     return bookMark == null ? -1 : bookMark.position;
   }
@@ -146,7 +171,11 @@ class WordListController extends ChangeNotifier {
     required Function(String caller) restoreAsrIfNeeded,
   }) async {
     final swTotal = Stopwatch()..start();
-    
+
+    // 0. 学习状态筛选（仅词书词表支持；不支持筛选的数据源恒为全选）
+    currentStatusFilter = await args.wordsProvider.getStatusFilter();
+    await refreshStatusCounts();
+
     // 1. 获取书签
     bookMark = await args.bookMarkProvider.getBookMark();
     checkAndShowGuide();
@@ -155,7 +184,7 @@ class WordListController extends ChangeNotifier {
         ? WordSortAlg.fromCode(bookMark!.sortAlg)
         : await getCurrentSortAlg();
 
-    if (isBookMarkValid(bookMark)) {
+    if (isBookMarkValid(bookMark) && !isBookMarkHidden) {
       // --- 预测并行加载优化 ---
       int predWordIndex = bookMark!.position;
       int predCalculatedBase = (predWordIndex ~/ pageSize) * pageSize;
@@ -302,6 +331,34 @@ class WordListController extends ChangeNotifier {
     );
   }
 
+  /// 切换学习状态筛选。
+  ///
+  /// 筛选改变的是"视图空间"，所以以当前书签单词为锚点重新定位：
+  /// 该词在新视图下可见则定位到它的新序号，被筛掉则记为 -1（书签保留原单词，取消筛选即回原位）。
+  Future<void> changeStatusFilter(WordStatusFilter newFilter) async {
+    if (newFilter == currentStatusFilter) return;
+
+    final currentSpell = bookMark?.spell ?? (words.isNotEmpty ? words[0].word.spell : null);
+
+    // 立刻重置页面加载状态，使界面立即转为 Loading 态，避免耗时查询期间显示旧列表
+    dataLoaded = false;
+    clearQueryResult();
+
+    await args.wordsProvider.saveStatusFilter(newFilter);
+    currentStatusFilter = newFilter;
+
+    if (isBookMarkValid(bookMark) && currentSpell != null && currentSpell.isNotEmpty) {
+      final newPosition = await args.wordsProvider.getWordIndex(currentSpell);
+      bookMark = BookMarkVo(newPosition, currentSpell, bookMark!.sortAlg);
+      await args.bookMarkProvider.saveBookMark(bookMark!);
+    }
+
+    await loadData(
+      checkAndShowGuide: () {},
+      restoreAsrIfNeeded: (_) {},
+    );
+  }
+
   Future<void> doQuery(bool clearCurrent, int fromIndex, final int queryPageSize, bool jumpToTailWhenReady, {bool force = false}) async {
     fromIndex = fromIndex < 0 ? 0 : fromIndex;
 
@@ -329,6 +386,10 @@ class WordListController extends ChangeNotifier {
     }
 
     await loadAPageOfWords(fromIndex, queryPageSize, jumpToTailWhenReady);
+    if (clearCurrent) {
+      // 视图整体重载（进入页面/切筛选/切排序/导入刷新）时同步三态数量
+      await refreshStatusCounts();
+    }
     isQuerying = false;
     notifyListeners();
   }
@@ -590,6 +651,8 @@ class WordListController extends ChangeNotifier {
       if (words.length < minWordCount) {
         await doQuery(false, baseIndex! + words.length, pageSize, false);
       }
+      // 词书总词数减少，刷新三态数量
+      await refreshStatusCounts();
       notifyListeners();
     }
   }
@@ -606,7 +669,8 @@ class WordListController extends ChangeNotifier {
           ['学习中', '今日错词', '历史错词', '今日新词', '今日旧词', '今日单词', '单词列表'].contains(args.appBarTitle);
       final bool todayStudyStarted = Global.getLoggedInUser()?.todayStudyStarted ?? false;
 
-      if ((todayStudyStarted && isTodayTask) || args.wordsProvider.keepWordsOnMaster) {
+      if (((todayStudyStarted && isTodayTask) || args.wordsProvider.keepWordsOnMaster) &&
+          args.wordsProvider.isStatusVisible(true)) {
         word.currentLearningStatus = true;
         if (word.tag is LearningWordVo) {
           (word.tag as LearningWordVo).stability = 180.0;
@@ -642,13 +706,22 @@ class WordListController extends ChangeNotifier {
 
   Future<void> unmasterWord(WordWrapper word, int index) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    final initialStatus = word.initialLearningStatus;
     final value = await args.wordsProvider.unmasterWord(word);
 
     if (value) {
       EventBus.publishWordUnMastered(WordUnMasteredEvent(wordId: word.word.id.toString()));
 
-      if (initialStatus == true && !args.wordsProvider.keepWordsOnMaster) {
+      // 取消掌握后真实状态可能是"学习中"或"未学习"，以数据为准刷新，再决定它是否还属于当前视图
+      final newStatus = await args.wordsProvider.getWordLearningStatus(word.word.id!);
+      final bool keepInView =
+          args.wordsProvider.keepWordsOnMaster && args.wordsProvider.isStatusVisible(newStatus);
+
+      if (!keepInView) {
+        if (word.tag is LearningWordVo) {
+          (word.tag as LearningWordVo).stability = 0.0;
+        }
+        word.currentLearningStatus = newStatus;
+        word.currentProgress = 0.0;
         words.remove(word);
         totalWordCount--;
 
@@ -664,7 +737,7 @@ class WordListController extends ChangeNotifier {
           await doQuery(false, baseIndex! + words.length, pageSize, false);
         }
       } else {
-        word.currentLearningStatus = initialStatus;
+        word.currentLearningStatus = newStatus;
         if (word.tag is LearningWordVo) {
           (word.tag as LearningWordVo).stability = 0.0;
         }

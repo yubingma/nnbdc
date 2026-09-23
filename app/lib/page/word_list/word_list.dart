@@ -13,6 +13,7 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/sort_alg.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/word_status_filter.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/asr.dart';
@@ -80,6 +81,7 @@ const String menuSettings = '学习设置';
 const String menuHideChinese = '遮挡中文';
 const String menuHideEnglish = '遮挡英文';
 const String menuSortSettings = '排序设置';
+const String menuStatusFilter = '状态筛选';
 const String menuTheme = '外观主题';
 const String menuExportPdf = '导出为 PDF';
 
@@ -116,6 +118,21 @@ mixin WordsProvider {
 
   /// 当单词被标记为“掌握”时，是否保留在当前UI列表中（不自动移除）
   bool get keepWordsOnMaster => false;
+
+  /// 该数据源是否支持"学习状态筛选"（目前仅词书词表支持）
+  bool get canFilterStatus => false;
+
+  /// 当前学习状态筛选（不支持筛选的数据源恒为全选）
+  Future<WordStatusFilter> getStatusFilter() async => WordStatusFilter.all;
+
+  /// 保存学习状态筛选
+  Future<void> saveStatusFilter(WordStatusFilter filter) async {}
+
+  /// 该学习状态在当前筛选下是否应该出现在列表里（掌握/取消掌握后即时移出用）
+  bool isStatusVisible(bool? learningStatus) => true;
+
+  /// 词书三态数量（不支持筛选的数据源返回 null）
+  Future<WordStatusCounts?> getStatusCounts() async => null;
 
   /// 获取当前词表数据源的排序规则
   Future<WordSortAlg> getSortAlg() async {
@@ -382,6 +399,12 @@ class WordListPageState extends State<WordListPage>
 
   BookMarkVo? get bookMark => _controllerInitialized ? controller.bookMark : null;
   set bookMark(BookMarkVo? val) { if (_controllerInitialized) controller.bookMark = val; }
+
+  /// 当前学习状态筛选（不支持筛选的数据源恒为全选）
+  WordStatusFilter get statusFilter => _controllerInitialized ? controller.currentStatusFilter : WordStatusFilter.all;
+
+  /// 标题右侧计数：筛选生效时显示"可见 / 总数"
+  String get titleCountLabel => _controllerInitialized ? controller.titleCountLabel : '$totalWordCount';
 
   set _lastExtentAfter(double val) { if (_controllerInitialized) controller.lastExtentAfter = val; }
 
@@ -1058,6 +1081,58 @@ class WordListPageState extends State<WordListPage>
 
 
 
+  /// 列表空态：筛选导致的空列表要说明原因，并给一步出口
+  Widget _buildEmptyState(bool isDarkMode) {
+    final filter = statusFilter;
+    final textColor = isDarkMode ? Colors.white70 : const Color(0xFF7F8C8D);
+
+    if (!args.wordsProvider.canFilterStatus || filter.isAll) {
+      return Center(
+        child: Text('词单暂无单词', style: TextStyle(color: textColor, fontSize: 16)),
+      );
+    }
+
+    final message = switch (filter.singleStatus) {
+      WordLearningStatus.unlearned => '这本词书的生词都已排进学习计划',
+      WordLearningStatus.learning => '暂时没有正在学习的词',
+      WordLearningStatus.mastered => '还没有已掌握的词',
+      null => '当前筛选下没有单词',
+    };
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message, style: TextStyle(color: textColor, fontSize: 15)),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () async {
+              setState(() {
+                _isSwitchingMode = true;
+                _switchingMessage = '正在筛选词表...';
+              });
+              try {
+                await controller.changeStatusFilter(WordStatusFilter.all);
+              } catch (e) {
+                ToastUtil.error('筛选失败: $e');
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    _isSwitchingMode = false;
+                  });
+                }
+              }
+            },
+            child: const Text(
+              '显示全部',
+              style: TextStyle(color: Color(0xFF0097A7), fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget renderPage(bool isDarkMode) {
     return Stack(
       children: [
@@ -1127,17 +1202,7 @@ class WordListPageState extends State<WordListPage>
               // _buildLegend(isDarkMode), // 已移动到更多菜单中
               Expanded(
                 child: words.isEmpty
-                    ? Center(
-                        child: Text(
-                          '词单暂无单词',
-                          style: TextStyle(
-                            color: isDarkMode
-                                ? Colors.white70
-                                : const Color(0xFF7F8C8D),
-                            fontSize: 16,
-                          ),
-                        ),
-                      )
+                    ? _buildEmptyState(isDarkMode)
                     : ScrollablePositionedList.builder(
                         key: const ValueKey('word_list_scrollable_positioned_list'),
                         itemCount: words.length,
@@ -2798,6 +2863,9 @@ class WordListPageState extends State<WordListPage>
         await _showSortSettingsDialog();
         await _updateCurrentSortAlg();
         break;
+        case menuStatusFilter:
+        await _showStatusFilterDialog();
+        break;
         case menuTheme:
         if (!context.mounted) return;
         ThemeSelectDialog.show(context);
@@ -2856,6 +2924,7 @@ class WordListPageState extends State<WordListPage>
       // 设置与输出
       [
         if (args.wordsProvider.canCustomizeSort) menuSortSettings,
+        if (args.wordsProvider.canFilterStatus) menuStatusFilter,
         menuTheme,
         menuExportPdf,
         if (studyMode == WordListStudyMode.speakChinese) menuSettings,
@@ -2980,6 +3049,9 @@ class WordListPageState extends State<WordListPage>
                                   case menuSortSettings:
                                     icon = Icons.sort_rounded;
                                     break;
+                                  case menuStatusFilter:
+                                    icon = Icons.filter_alt_outlined;
+                                    break;
                                   case menuTheme:
                                     icon = Icons.palette_outlined;
                                     break;
@@ -3046,7 +3118,9 @@ class WordListPageState extends State<WordListPage>
                                               child: Text(
                                                 choice == menuSortSettings
                                                     ? '排序: ${_currentSortAlg.label}'
-                                                    : choice,
+                                                    : choice == menuStatusFilter
+                                                        ? '筛选: ${statusFilter.label}'
+                                                        : choice,
                                                 style: TextStyle(
                                                   fontSize: 13,
                                                   color: isSelected
@@ -3170,7 +3244,7 @@ class WordListPageState extends State<WordListPage>
                             if (dataLoaded) ...[
                               const SizedBox(width: 4),
                               Text(
-                                '$totalWordCount',
+                                titleCountLabel,
                                 style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w600,
@@ -3241,10 +3315,10 @@ class WordListPageState extends State<WordListPage>
                                   : Colors.black.withValues(alpha: 0.06),
                             ),
 
-                            // 中段：当前书签位置
+                            // 中段：当前书签位置（书签单词被筛掉时显示"—"，书签本身保留）
                             InkWell(
                               onTap: () {
-                                if (isBookMarkValid(bookMark)) {
+                                if (isBookMarkValid(bookMark) && getBookMarkRawPosition(bookMark) >= 0) {
                                   final bookMarkUiPos = getBookMarkUiPosition();
                                   if (bookMarkUiPos >= 0 && bookMarkUiPos < words.length) {
                                     jumpToBookMark();
@@ -3271,7 +3345,7 @@ class WordListPageState extends State<WordListPage>
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 child: Text(
-                                  isBookMarkValid(bookMark)
+                                  isBookMarkValid(bookMark) && getBookMarkRawPosition(bookMark) >= 0
                                       ? '${getBookMarkRawPosition(bookMark) + 1}'
                                       : '—',
                                   style: TextStyle(
@@ -3812,6 +3886,162 @@ class WordListPageState extends State<WordListPage>
     } finally {
       isMenuOpen = false;
     }
+  }
+
+  /// 学习状态筛选弹窗：三态多选 + 每态数量，默认全选（= 全部）
+  Future<void> _showStatusFilterDialog() async {
+    if (!args.wordsProvider.canFilterStatus) return;
+
+    isMenuOpen = true;
+    try {
+      FocusScope.of(context).unfocus();
+      final bool wasAnimating = _asrModelLoadingController.isAnimating;
+      if (wasAnimating) {
+        _asrModelLoadingController.stop();
+      }
+      final capturedContext = context;
+      await Future.delayed(const Duration(milliseconds: 350));
+      if (!capturedContext.mounted) return;
+
+      final isDarkMode = capturedContext.read<DarkMode>().isDarkMode;
+      final counts = await args.wordsProvider.getStatusCounts();
+      if (!mounted) return;
+
+      var selection = statusFilter;
+      final result = await showDialog<WordStatusFilter>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setDialogState) {
+              return AlertDialog(
+                backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Text(
+                  '词表筛选',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: WordLearningStatus.values.map((status) {
+                    return _buildStatusFilterRow(
+                      status: status,
+                      counts: counts,
+                      selected: selection.contains(status),
+                      isDarkMode: isDarkMode,
+                      onTap: () => setDialogState(() => selection = selection.toggle(status)),
+                    );
+                  }).toList(),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => setDialogState(() => selection = WordStatusFilter.all),
+                    child: const Text(
+                      '全部',
+                      style: TextStyle(color: Color(0xFF4A90E2), fontSize: 13),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text(
+                      '取消',
+                      style: TextStyle(color: Color(0xFF4A90E2), fontSize: 13),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(selection),
+                    child: const Text(
+                      '完成',
+                      style: TextStyle(color: Color(0xFF4A90E2), fontSize: 13),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (!mounted || result == null || result == statusFilter) return;
+
+      setState(() {
+        _isSwitchingMode = true;
+        _switchingMessage = '正在筛选词表...';
+      });
+      try {
+        await controller.changeStatusFilter(result);
+      } catch (e) {
+        ToastUtil.error('筛选失败: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSwitchingMode = false;
+          });
+        }
+      }
+    } finally {
+      isMenuOpen = false;
+    }
+  }
+
+  /// 筛选弹窗中的单个状态行：勾选态描边 + 纯文本数量（不加药丸底色）
+  Widget _buildStatusFilterRow({
+    required WordLearningStatus status,
+    required WordStatusCounts? counts,
+    required bool selected,
+    required bool isDarkMode,
+    required VoidCallback onTap,
+  }) {
+    const accentColor = Color(0xFF0097A7);
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: selected ? accentColor.withValues(alpha: 0.1) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: selected ? accentColor : (isDarkMode ? Colors.white12 : Colors.black12),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          title: Text(
+            status.label,
+            style: TextStyle(
+              color: selected ? accentColor : (isDarkMode ? Colors.white : Colors.black87),
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${counts?.countOf(status) ?? 0}',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode ? Colors.white70 : Colors.black54,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(
+                selected ? Icons.check_circle : Icons.circle_outlined,
+                color: selected ? accentColor : Colors.grey,
+              ),
+            ],
+          ),
+          onTap: onTap,
+        ),
+      ),
+    );
   }
 
   String _getSortAlgDesc(WordSortAlg alg) {
