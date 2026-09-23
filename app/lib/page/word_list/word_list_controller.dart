@@ -318,9 +318,10 @@ class WordListController extends ChangeNotifier {
     } else {
       newPosition = await args.wordsProvider.getWordIndex(currentSpell);
     }
-    final finalPos = newPosition == -1 ? 0 : newPosition;
-
     // 3. 构建新的书签快照
+    // 在当前视图下定位不到时：支持筛选的数据源说明该词被筛掉了，记 -1 并保留书签单词（取消筛选即回原位）；
+    // 其余数据源沿用历史行为（回到首位）。
+    final finalPos = newPosition == -1 ? (args.wordsProvider.canFilterStatus ? -1 : 0) : newPosition;
     bookMark = BookMarkVo(finalPos, currentSpell, newAlg.code);
     await args.bookMarkProvider.saveBookMark(bookMark!);
 

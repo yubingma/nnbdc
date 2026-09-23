@@ -406,6 +406,9 @@ class WordListPageState extends State<WordListPage>
   /// 标题右侧计数：筛选生效时显示"可见 / 总数"
   String get titleCountLabel => _controllerInitialized ? controller.titleCountLabel : '$totalWordCount';
 
+  /// 当前词书三态数量（不支持筛选的数据源为 null）
+  WordStatusCounts? get statusCounts => _controllerInitialized ? controller.statusCounts : null;
+
   set _lastExtentAfter(double val) { if (_controllerInitialized) controller.lastExtentAfter = val; }
 
   bool get isQuerying => _controllerInitialized ? controller.isQuerying : false;
@@ -1086,7 +1089,8 @@ class WordListPageState extends State<WordListPage>
     final filter = statusFilter;
     final textColor = isDarkMode ? Colors.white70 : const Color(0xFF7F8C8D);
 
-    if (!args.wordsProvider.canFilterStatus || filter.isAll) {
+    // 词书本身就是空的（三态总数为 0）时不算"被筛没了"，照旧提示词单为空
+    if (!args.wordsProvider.canFilterStatus || filter.isAll || (statusCounts?.total ?? 0) == 0) {
       return Center(
         child: Text('词单暂无单词', style: TextStyle(color: textColor, fontSize: 16)),
       );

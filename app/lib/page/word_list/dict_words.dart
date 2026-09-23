@@ -33,8 +33,9 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   WordStatusFilter _statusFilter = WordStatusFilter.all;
   bool _statusFilterLoaded = false;
 
-  /// 筛选偏好按词书记忆：视图偏好属于设备本地状态，与主题/字号同源存放在 localParams
-  String get _statusFilterParam => 'dict_${dict.id}_status_filter';
+  /// 筛选偏好按"用户 + 词书"记忆：视图偏好属于设备本地状态，与主题/字号/引导标记同源存放在 localParams
+  String get _statusFilterParam =>
+      'dict_${Global.getLoggedInUser()?.id ?? ''}_${dict.id}_status_filter';
 
   DictWordsProvider(this.dict);
 
