@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-palette="emerald" data-device="pure" data-banner="show" data-copy="a">
+<html lang="zh-CN" data-palette="emerald" data-device="pure" data-banner="show" data-copy="a" data-aspect="apple">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -209,6 +209,26 @@
     }
     html[data-palette="macaron"] #card-7 {
       background: linear-gradient(180deg, #38BDF8 0%, #0284C7 40%, #0369A1 100%);
+    }
+
+    /* ========================================================
+       画布比例：App Store 9:19.5 与 华为应用市场 9:16
+       华为版画布 450×800（9:16）比苹果版更「宽扁」，整机等比缩至 94%
+       即可完整可见，底部留白与苹果版一致（约 11px）。
+       注意：缩放必须落在 .device-chassis 自身 —— 若落在 .poster-phone-stage
+       上，会连同它的 overflow:hidden 裁切框一起缩小，把机身底部裁掉。
+       中央横幅是舞台的兄弟节点且不参与缩放，舞台高度收缩比（660/704≈0.9375）
+       与机身缩放比一致，因此百分比定位依然对齐，无需单独校准。
+       ======================================================== */
+    html[data-aspect="huawei"] .poster-card {
+      width: 450px;
+      min-width: 450px;
+      height: 800px;
+    }
+
+    html[data-aspect="huawei"] .device-chassis {
+      transform: scale(0.94);
+      transform-origin: top center;
     }
 
     /* 词性胶囊与评测高亮 */
@@ -870,14 +890,14 @@
       50% { transform: translateY(-8px); }
     }
 
-    /* 移动端全屏响应式 */
+    /* 移动端全屏响应式（9:16 华为版画布已按 450×800 固定，不参与缩放） */
     @media (max-width: 600px) {
-      .poster-card {
+      html:not([data-aspect="huawei"]) .poster-card {
         width: 100%;
         max-width: 360px;
         height: 780px;
       }
-      .device-chassis {
+      html:not([data-aspect="huawei"]) .device-chassis {
         width: 290px;
         height: 620px;
       }
@@ -907,6 +927,12 @@
       <div class="segment-tabs">
         <button class="tab-btn active" id="btn-pal-emerald" onclick="switchPalette('emerald')">参考图青蓝色（统一清透）</button>
         <button class="tab-btn" id="btn-pal-macaron" onclick="switchPalette('macaron')">马卡龙五色彩阶</button>
+      </div>
+
+      <!-- 画布比例切换（App Store 9:19.5 / 华为应用市场 9:16） -->
+      <div class="segment-tabs">
+        <button class="tab-btn active" id="btn-asp-apple" onclick="switchAspect('apple')">比例 9:19.5 (App Store)</button>
+        <button class="tab-btn" id="btn-asp-huawei" onclick="switchAspect('huawei')">比例 9:16 (华为应用市场)</button>
       </div>
 
       <!-- 设备模具切换（极简纯净全面屏：全平台合规通用） -->
@@ -1671,15 +1697,24 @@
       try { localStorage.setItem('appstore_banner', mode); } catch (e) {}
     }
 
-    // 固化默认选项：方案A、青蓝色、极简纯净全面屏（全平台通用）、开启横幅
+    function switchAspect(mode) {
+      document.documentElement.setAttribute('data-aspect', mode);
+      document.getElementById('btn-asp-apple').classList.toggle('active', mode === 'apple');
+      document.getElementById('btn-asp-huawei').classList.toggle('active', mode === 'huawei');
+      try { localStorage.setItem('appstore_aspect', mode); } catch (e) {}
+    }
+
+    // 固化默认选项：方案A、青蓝色、9:19.5 苹果比例、极简纯净全面屏（全平台通用）、开启横幅
     window.addEventListener('DOMContentLoaded', () => {
       const savedCopy = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_copy_style')) || 'a';
       const savedPal = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_palette')) || 'emerald';
+      const savedAsp = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_aspect')) || 'apple';
       const savedDev = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_device')) || 'pure';
       const savedBanner = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_banner')) || 'show';
 
       switchCopyStyle(savedCopy);
       switchPalette(savedPal);
+      switchAspect(savedAsp);
       switchDevice(savedDev);
       switchBanner(savedBanner);
     });
