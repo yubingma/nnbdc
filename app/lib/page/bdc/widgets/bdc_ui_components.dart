@@ -357,7 +357,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 // 中文默写：只读展示"距离通过还差几个释义"。
                 // 判题时机仍由「提交」触发，进度仅作展示，不接管任何手势或输入行为。
                 if (state.dictationRequiredCount > 0)
-                  _buildDictationProgressText(state)
+                  _buildMeaningProgressText(state.dictationMatchedCount,
+                      state.dictationRequiredCount, '写')
                 else
                   Text(
                     '支持键盘输入与手写混合使用',
@@ -376,11 +377,9 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-  /// 中文默写的通过进度（只读）：尚未命中任何释义时提示通过门槛，已有命中时提示还差几个。
-  /// 与静态提示保持同字号同字距，仅数字改用主色 + 半粗，确保出现进度时底部面板不跳动。
-  Widget _buildDictationProgressText(BdcState state) {
-    final int matched = state.dictationMatchedCount;
-    final int required = state.dictationRequiredCount;
+  /// 释义通过进度（只读）：说模式与中文默写面板共用同一文案与同一通过口径，
+  /// 仅"尚未命中任何释义"时的动词不同（说 / 写），避免两处门槛表述漂移。
+  Widget _buildMeaningProgressText(int matched, int required, String verb) {
     final int remaining = required - matched > 0 ? required - matched : 0;
     final TextStyle baseStyle = TextStyle(
       color: context.textMuted.withValues(alpha: 0.8),
@@ -397,7 +396,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       TextSpan(
         children: matched == 0
             ? [
-                const TextSpan(text: '写对 '),
+                TextSpan(text: '$verb对 '),
                 TextSpan(text: '$required', style: numberStyle),
                 const TextSpan(text: ' 个释义即可通过'),
               ]
@@ -1788,12 +1787,21 @@ extension BdcPageStateUIComponents on BdcPageState {
                       } else if (step == StudyStep.chSentence2En.json) {
                         return _buildSentenceAnswerArea();
                       } else if (step == StudyStep.en2Ch.json) {
+                        // 已说对部分释义但未达通过线：给出"还差几个"的进度，
+                        // 让用户明白题目尚未答完（答案未揭晓，底部不渲染「下一词」）
+                        final progress = notifier.meaningMatchProgress;
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             ...renderAsrMeaningItems(state.wordWrapper!,
                                 isDarkMode:
                                     context.read<DarkMode>().isDarkMode),
+                            if (progress != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: _buildMeaningProgressText(
+                                    progress.matched, progress.required, '说'),
+                              ),
                           ],
                         );
                       } else {

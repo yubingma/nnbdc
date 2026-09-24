@@ -723,6 +723,60 @@ void main() {
     expect(state.hasFinishedAnswering, true, reason: '答对 2/3 达到半数门槛，应通过');
   });
 
+  test('BdcNotifier - 通过条件已满足时重复说出已命中释义也应判通过（不依赖本次新增命中）', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 3 个释义子项 + 通过线为"答对一半"（需答对 2 个）
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('a.', '竞争的;竞争激烈的;好胜的'),
+    ];
+    notifier.updateAsrPassRuleCache('HALF');
+
+    // 只说对 1/2：未通过，但应给出"还差 1 个"的进度（说模式释义下方的提示来源）
+    await notifier.onAsrResult(jsonEncode({
+      'best': '竞争性的',
+      'candidates': ['竞争性的'],
+      'isFinal': true,
+    }));
+    var state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false, reason: '只答对 1/2，不应通过');
+    expect(notifier.meaningMatchProgress, (matched: 1, required: 2),
+        reason: '未达通过线时应给出"还差几个释义即可通过"的进度');
+
+    // 通过规则放宽为"说出一个意思即可"：已命中 1 个，通过条件此刻已经满足
+    notifier.updateAsrPassRuleCache('ONE');
+
+    // 本次输入没有命中任何释义：不能把已达标的题蒙过去
+    await notifier.onAsrResult(jsonEncode({
+      'best': '香蕉',
+      'candidates': ['香蕉'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false,
+        reason: '本次输入未命中任何释义，不应判通过');
+
+    // 重复说出已命中的释义：本次没有"新增"命中，但通过条件已满足，必须判通过。
+    // 同一词重新进入环节时会继承上一环节已命中的释义，若只认"新增命中"，用户怎么答都过不去。
+    await notifier.onAsrResult(jsonEncode({
+      'best': '竞争性的',
+      'candidates': ['竞争性的'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true,
+        reason: '重复命中已命中释义时通过条件已满足，应判通过');
+    expect(notifier.hasSeenAnswer, true, reason: '通过后答案揭晓，底部渲染「下一词」');
+    expect(notifier.meaningMatchProgress, null, reason: '通过后不再展示"还差几个"的进度');
+  });
+
   test('BdcNotifier - 自动 AI 裁判在等待期间本地已命中释义时结果应被丢弃（不得整词放行）', () async {
     final mockAsr = MockAsr();
     final container = ProviderContainer(

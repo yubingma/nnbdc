@@ -983,6 +983,22 @@ class BdcNotifier extends _$BdcNotifier {
   /// 杜绝"未达通过线却直接跳到下一词、既不显示详情也不产生任何评分"。
   bool get hasSeenAnswer => state.hasFinishedAnswering || _isPracticeMode;
 
+  /// 当前词「说对几个释义才算通过」的进度：已命中数 / 通过所需数。
+  /// 仅在"已有命中但尚未达线"（此时答案未揭晓、底部不渲染「下一词」）时非空，
+  /// 说模式据此在释义下方提示"还差几个即可通过"，与中文默写面板共用同一通过口径，
+  /// 让用户看到题目尚未答完，而不是以为「下一词」按钮丢了。
+  ({int matched, int required})? get meaningMatchProgress {
+    final word = state.word;
+    final wrapper = state.wordWrapper;
+    if (word == null || wrapper == null || state.hasFinishedAnswering) {
+      return null;
+    }
+    final int matched = wrapper.asrMatchedMeaningItemParts.length;
+    final int required = _requiredMatchCount(countMeaningParts(word));
+    if (matched == 0 || matched >= required) return null;
+    return (matched: matched, required: required);
+  }
+
   void revealAnswerAndMarkWrong(BuildContext context) {
     // 用户显式点击"看答案"是强意图,即使 _isAnswerCorrectHandling 残留也执行
     _isAnswerCorrectHandling = false;
@@ -2288,6 +2304,17 @@ class BdcNotifier extends _$BdcNotifier {
         );
       }
 
+      // 通过条件按"当前已命中总数"评估，而不是只认"本次新增命中"：同一词重新进入环节时
+      // 会继承上一环节已命中的释义（见 handleWord），此时把已命中的释义重新说出，
+      // 通过条件同样已满足；若只在新增命中时才判定，用户怎么答都过不去——既不判通过、
+      // 也不揭晓答案、也没有任何反馈。仍要求本次输入确实命中某个释义（重复命中已命中项也算），
+      // 避免无关语句把"已达标的题"蒙过去。
+      final bool reachedPassLine = isMatch &&
+          (result.newMatchCount > 0 ||
+              inputs.any((input) => chineseInputMatchesAnyMeaning(
+                  state.word!, input,
+                  strict: state.isChineseDictation)));
+
       if (result.newMatchCount > 0) {
         _wordAiRefereeDebounceTimer?.cancel(); // 本地匹配命中，取消待触发的AI裁判
         _wordAccumulatedAsrText = "";
@@ -2302,36 +2329,39 @@ class BdcNotifier extends _$BdcNotifier {
         // ⚡ 极速听觉反馈：在正确答案视觉点亮的同一瞬间，立即触发播放正确反馈音！
         // 彻底消除由于后续异步关麦、FSRS 评分计算等排队造成的音效滞后感
         _playCorrectSound();
+      }
 
-        if (isMatch) {
-          _isAnswerCorrectHandling = true; // 立即同步上锁，防止异步 stopSession 期间重入
-          
-          // 仅在麦克风处于开启状态时才进行物理关麦，通过 unawaited 异步执行，绝不阻塞 UI 主帧与答对流程
-          if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-            unawaited(StudyAudioSessionController.instance.syncHardwareIntent(
-              isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
-              isAnsweringActive: false,
-              language: AsrLanguage.chinese,
-              phrases: [],
-              caller: this,
-            ));
-          }
-          final ratingResult = _calculateRating(method);
-          // 中文默写匹配成功后，退出中文字写板并重置中文默写标记
-          if (state.isChineseDictation) {
-            await _handleSpellingSuccessTransition(onComplete: () async {
-              state = state.copyWith(
-                isChineseDictation: false,
-                dictationMatchedCount: 0,
-                dictationRequiredCount: 0,
-              );
-              _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-            });
-            return;
-          }
-          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+      if (reachedPassLine &&
+          !state.hasFinishedAnswering &&
+          !_isAnswerCorrectHandling) {
+        _isAnswerCorrectHandling = true; // 立即同步上锁，防止异步 stopSession 期间重入
+
+        // 仅在麦克风处于开启状态时才进行物理关麦，通过 unawaited 异步执行，绝不阻塞 UI 主帧与答对流程
+        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+          unawaited(StudyAudioSessionController.instance.syncHardwareIntent(
+            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isAnsweringActive: false,
+            language: AsrLanguage.chinese,
+            phrases: [],
+            caller: this,
+          ));
         }
-      } else if (state.isChineseDictation &&
+        final ratingResult = _calculateRating(method);
+        // 中文默写匹配成功后，退出中文字写板并重置中文默写标记
+        if (state.isChineseDictation) {
+          await _handleSpellingSuccessTransition(onComplete: () async {
+            state = state.copyWith(
+              isChineseDictation: false,
+              dictationMatchedCount: 0,
+              dictationRequiredCount: 0,
+            );
+            _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+          });
+          return;
+        }
+        _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+      } else if (result.newMatchCount == 0 &&
+          state.isChineseDictation &&
           state.hasFinishedAnswering &&
           !_isAnswerCorrectHandling) {
         // 单词已答对后，再次打开默写把释义重写一遍并提交：
@@ -2354,7 +2384,9 @@ class BdcNotifier extends _$BdcNotifier {
         } else {
           ToastUtil.error('答案不正确，请重写');
         }
-      } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
+      } else if (result.newMatchCount == 0 &&
+          !state.hasFinishedAnswering &&
+          !_isAnswerCorrectHandling) {
         if (state.isChineseDictation) {
           // 中文默写（手写）判错：保持手写板打开，提示用户答案不正确/未写完整、可重写。
           // 不退出手写板、不触发 AI 裁判——默写要求完整写出释义，走严格匹配，

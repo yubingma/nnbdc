@@ -19,6 +19,7 @@ class BdcStateUiSignature {
   final bool isSpellingSuccess;
   final int dictationMatchedCount;
   final int dictationRequiredCount;
+  final int meaningMatchedCount;
   final int hintLetterCount;
   final bool buttonsEnabled;
   final bool isKeyboardVisible;
@@ -57,6 +58,8 @@ class BdcStateUiSignature {
         isSpellingSuccess = s.isSpellingSuccess,
         dictationMatchedCount = s.dictationMatchedCount,
         dictationRequiredCount = s.dictationRequiredCount,
+        meaningMatchedCount =
+            s.wordWrapper?.asrMatchedMeaningItemParts.length ?? 0,
         hintLetterCount = s.wordWrapper?.hintLetterCount ?? 0,
         buttonsEnabled = s.buttonsEnabled,
         isKeyboardVisible = s.isKeyboardVisible,
@@ -98,6 +101,7 @@ class BdcStateUiSignature {
         isSpellingSuccess == other.isSpellingSuccess &&
         dictationMatchedCount == other.dictationMatchedCount &&
         dictationRequiredCount == other.dictationRequiredCount &&
+        meaningMatchedCount == other.meaningMatchedCount &&
         hintLetterCount == other.hintLetterCount &&
         buttonsEnabled == other.buttonsEnabled &&
         isKeyboardVisible == other.isKeyboardVisible &&
@@ -138,6 +142,7 @@ class BdcStateUiSignature {
         isSpellingSuccess,
         dictationMatchedCount,
         dictationRequiredCount,
+        meaningMatchedCount,
         hintLetterCount,
         buttonsEnabled,
         isKeyboardVisible,
