@@ -110,6 +110,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
   SyncStatus _syncStatus = SyncStatus.idle;
   bool _isLastSyncFailed = false;
 
+  /// 设置与工具卡片是否展开（默认收起，保持页面第一感极简透气）
+  bool _isSettingsExpanded = false;
+
   /// 是否正在检查并下载词书（用于防止 loadData 循环触发）
   bool _isCheckingDicts = false;
 
@@ -1729,10 +1732,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
         // 3.5 功能收纳区卡片 (当底栏有按钮被隐藏时自动呈现)
         const StashedFeaturesCard(),
 
-        // 4. 设置与工具卡片
+        // 4. 设置与工具卡片 (二级折叠展开，第一感更加简洁通透)
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(20),
@@ -1747,20 +1749,106 @@ class MePageState extends State<MePage> implements RefreshableTab {
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '设置与工具',
-                style: TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.2,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildMenuTile(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOutCubic,
+              alignment: Alignment.topCenter,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isSettingsExpanded = !_isSettingsExpanded;
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.tune_rounded,
+                                size: 19,
+                                color: textColor.withValues(alpha: isDarkModeEnabled ? 0.70 : 0.55),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                '设置与工具',
+                                style: TextStyle(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: -0.2,
+                                  color: textColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!_isSettingsExpanded && unreadMsgCount > 0) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFA6E59),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    unreadMsgCount.toString(),
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                              Text(
+                                _isSettingsExpanded ? '收起' : '展开',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w400,
+                                  color: subtitleColor.withValues(alpha: 0.65),
+                                  fontFamily: 'NotoSansSC',
+                                  fontFamilyFallback: AppTheme.sansSerifFallback,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              AnimatedRotation(
+                                turns: _isSettingsExpanded ? 0.25 : 0.0,
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeInOutCubic,
+                                child: Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 12,
+                                  color: subtitleColor.withValues(alpha: 0.45),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_isSettingsExpanded) ...[
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      indent: 18,
+                      endIndent: 18,
+                      color: isDarkModeEnabled
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 4, 18, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMenuTile(
                 icon: Icons.tune_rounded,
                 title: '底栏导航管理',
                 trailingText: Prefs.hiddenBottomNavKeys.isEmpty
@@ -2057,13 +2145,19 @@ class MePageState extends State<MePage> implements RefreshableTab {
                   if (mounted) context.go('/login');
                 },
               ),
-              _buildMenuTile(
-                icon: Icons.no_accounts_outlined,
-                title: '注销账号',
-                onTap: () => showUnRegisterDlg(),
-                showDivider: false,
+                          _buildMenuTile(
+                            icon: Icons.no_accounts_outlined,
+                            title: '注销账号',
+                            onTap: () => showUnRegisterDlg(),
+                            showDivider: false,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
           ),
         ),
 
