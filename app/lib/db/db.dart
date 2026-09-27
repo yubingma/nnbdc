@@ -265,7 +265,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 54;
+  int get schemaVersion => 55;
 
   @override
   MigrationStrategy get migration {
@@ -438,6 +438,10 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 54) {
             await _migrateFromV53ToV54AddWordCoreImages(m);
+          }
+          // 从版本 54 升级到版本 55：cigen 增加词根拼写变形字段（词根卡片表头提示）
+          if (from < 55) {
+            await m.addColumn(cigens, cigens.spellVariants);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志

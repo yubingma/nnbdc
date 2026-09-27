@@ -21,6 +21,13 @@ const String _v51LearningWordsDdl = r'''
 CREATE TABLE IF NOT EXISTS "learning_words" ("user_id" TEXT NOT NULL, "word_id" TEXT NOT NULL, "add_day" INTEGER NOT NULL, "add_time" INTEGER NOT NULL, "last_learning_date" INTEGER NULL, "learning_order" INTEGER NOT NULL, "batch_id" INTEGER NULL, "stability" REAL NULL, "difficulty" REAL NULL, "elapsed_days" INTEGER NULL, "scheduled_days" INTEGER NULL, "reps" INTEGER NULL, "lapses" INTEGER NULL, "state" INTEGER NULL DEFAULT 0, "is_today_new_word" INTEGER NOT NULL CHECK ("is_today_new_word" IN (0, 1)), "learned_times" INTEGER NOT NULL, "today_learned_times" INTEGER NOT NULL DEFAULT 0, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("user_id", "word_id"));
 ''';
 
+/// v51 的 cigens 建表语句, 同样取自随包发布的母版库。
+/// v54 → v55 迁移要给这张表补 spell_variants 列, 因此夹具必须包含它,
+/// 否则迁移会因缺表失败并触发删库重建(用户数据丢失)。
+const String _v51CigensDdl = r'''
+CREATE TABLE "cigens" ("id" TEXT NOT NULL, "description" TEXT NOT NULL, "spell" TEXT NULL, "category" TEXT NULL, "meaning_cn" TEXT NULL, "meaning_en" TEXT NULL, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"))
+''';
+
 void main() {
   late Directory tempDir;
   late File dbFile;
@@ -39,6 +46,7 @@ void main() {
     final raw = sqlite3.open(dbFile.path);
     raw.execute(_v51UsersDdl);
     raw.execute(_v51LearningWordsDdl);
+    raw.execute(_v51CigensDdl);
     raw.execute(
       'INSERT INTO users (id, user_name, game_score, daka_score, learned_days, words_per_day, '
       'daka_day_count, mastered_words_count, cow_dung, throw_dice_chance, '
@@ -83,8 +91,15 @@ void main() {
         contains('word_core_images'),
       );
 
+      // v54 → v55: cigens 补上词根拼写变形列（词根卡片表头提示）
+      final cigenColumns = await db.customSelect("PRAGMA table_info('cigens')").get();
+      expect(
+        cigenColumns.map((row) => row.read<String>('name')),
+        contains('spell_variants'),
+      );
+
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 54);
+      expect(version.data.values.first, 55);
     } finally {
       await db.close();
     }

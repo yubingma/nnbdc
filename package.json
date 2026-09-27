@@ -2,7 +2,7 @@
   "scripts": {
     "render-ui": "node design/ui/render_mockup_png.js",
     "render-ui:photos": "node design/ui/render_mockup_png.js --all --import-photos",
-    "render-huawei": "node design/ui/render_huawei_screens.js"
+    "render-store": "node design/ui/render_app_store_screens.js"
   },
   "dependencies": {
     "pdf-parse": "^1.1.1"

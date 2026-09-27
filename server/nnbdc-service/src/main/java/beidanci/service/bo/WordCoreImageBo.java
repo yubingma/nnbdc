@@ -393,7 +393,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
 
         // 下载图片落盘：只有真正成功落盘才标记 SUCCESS，严禁在数据库留下第三方临时 URL
         try {
-            String savedRelativePath = downloadAndSaveImage(imageUrl, item.getWord());
+            String savedRelativePath = downloadAndSaveImage(imageUrl, item);
             item.setImageUrl(savedRelativePath);
             item.setImageStatus("SUCCESS");
             item.setImageModel(modelName);
@@ -477,7 +477,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         throw new RuntimeException("火山引擎未返回有效的图片 URL: " + respBody);
     }
 
-    private String downloadAndSaveImage(String remoteUrl, String word) throws Exception {
+    private String downloadAndSaveImage(String remoteUrl, WordCoreImage item) throws Exception {
         String baseDir = null;
         try {
             baseDir = sysParamUtil.getImageBaseDir();
@@ -492,7 +492,8 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
             targetFolder.mkdirs();
         }
 
-        String fileName = "core_" + word.toLowerCase() + ".jpeg";
+        // 文件名只能取稳定的唯一标识 wordId：单词拼写含 "/"、"?"、空格等字符，直接作文件名会写到不存在的子目录或生成非法 URL
+        String fileName = "core_" + item.getWordId() + ".jpeg";
         File targetFile = new File(targetFolder, fileName);
 
         Request request = new Request.Builder()
@@ -539,7 +540,7 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
 
                     saveAsCompressedJpeg(scaled, targetFile, 0.85f);
                 } else {
-                    log.warn("无法解析图片输入流为 BufferedImage: {}, 将使用直写模式", word);
+                    log.warn("无法解析图片输入流为 BufferedImage: {}, 将使用直写模式", item.getWord());
                     try (FileOutputStream out = new FileOutputStream(targetFile)) {
                         byte[] buf = new byte[8192];
                         int len;
@@ -562,6 +563,10 @@ public class WordCoreImageBo extends BaseBo<WordCoreImage> {
         }
         ImageWriter writer = writers.next();
         try (ImageOutputStream ios = ImageIO.createImageOutputStream(targetFile)) {
+            // ImageIO 在无法创建输出流时(如目录不存在/无写权限)会静默返回 null，必须当场暴露，否则写入时才报晦涩的 "Output has not been set!"
+            if (ios == null) {
+                throw new IOException("无法创建图片输出流: " + targetFile.getAbsolutePath());
+            }
             writer.setOutput(ios);
             JPEGImageWriteParam param = new JPEGImageWriteParam(Locale.getDefault());
             param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);

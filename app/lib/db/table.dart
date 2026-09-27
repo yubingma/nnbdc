@@ -444,6 +444,9 @@ class Cigens extends Table {
 
   TextColumn get meaningEn => text().nullable()();
 
+  /// 词根在英语单词中的拼写变形（如 stat/stabl），用于词根卡片表头提示
+  TextColumn get spellVariants => text().nullable()();
+
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();

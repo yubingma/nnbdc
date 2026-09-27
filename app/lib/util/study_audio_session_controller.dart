@@ -106,6 +106,17 @@ class StudyAudioSessionController {
   final _SessionMutex _queueLock = _SessionMutex();
   Timer? _idleTimer;
 
+  /// 最近一次登记的「清理」任务（页面跳转时的音频/ASR 清理）。
+  /// 转场本身不再等待它，但**任何新播放建立会话前必须先等它落地**，
+  /// 否则旧音频的 stop/seek 会与本次发音并发操作同一个 player，导致发音被掐断。
+  Future<void> _pendingCleanup = Future.value();
+
+  /// 登记一个「下一次播放前必须完成」的清理任务。
+  /// 调用方无需 await，转场可立即进行；播放侧会在 [transitTo] 前自动串行等待。
+  void scheduleCleanupBeforeNextPlayback(Future<void> cleanup) {
+    _pendingCleanup = cleanup;
+  }
+
   @visibleForTesting
   Timer? get idleTimerForTesting => _idleTimer;
 
@@ -592,6 +603,8 @@ class StudyAudioSessionController {
   /// 全局唯一的音频工作状态机转换网关（原子化、串行化、硬件防撞车）
   Future<void> transitTo(AudioMode targetMode) {
     return _stateTransitionLock.protect(() async {
+      // 建立新音频会话前，先等上一次登记的清理任务落地（见 _pendingCleanup）。
+      await _pendingCleanup;
       var finalTargetMode = targetMode;
       if (targetMode == AudioMode.record && !PlatformUtils.isAsrSupported()) {
         finalTargetMode = AudioMode.playback;

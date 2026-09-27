@@ -53,7 +53,10 @@ class RootFamilyWordsProvider with WordsProvider {
         ..shortDesc = info.meaning
         ..meaningStr = '${info.wordCount} 词',
       CigenVo(info.spell, info.spell,
-          spell: info.spell, category: info.category, meaningCn: info.meaning),
+          spell: info.spell,
+          category: info.category,
+          meaningCn: info.meaning,
+          spellVariants: info.spellVariants),
     );
   }
 
@@ -123,6 +126,7 @@ class RootFamilyWordsProvider with WordsProvider {
             spell: g.spell,
             category: g.category,
             meaning: g.meaning,
+            spellVariants: g.spellVariants,
             wordCount: 0, // 填充于下方（有效成员数为准）
           );
         }
@@ -142,6 +146,7 @@ class RootFamilyWordsProvider with WordsProvider {
               spell: g.spell,
               category: g.category,
               meaning: g.meaning,
+              spellVariants: g.spellVariants,
               wordCount: memberRows.length,
             );
           }
@@ -302,11 +307,13 @@ class _RootFamilyInfo {
   final String spell;
   final String category;
   final String meaning;
+  final String spellVariants;
   final int wordCount;
   _RootFamilyInfo({
     required this.spell,
     required this.category,
     required this.meaning,
+    this.spellVariants = '',
     required this.wordCount,
   });
 }

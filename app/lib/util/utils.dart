@@ -547,6 +547,8 @@ class Util {
     words = words.trim();
 
     // 获得所有高亮(加粗)单词的下标
+    // 分词只做一次：原先 else 分支与下方各跑了一遍 splitEnglishText
+    var tokens = splitEnglishText(words);
     var boldWordIndices = []; // 高亮单词的下标
     if (highlightWordHasBeenTaged && words.contains("<b>")) {
       // 根据句子里的html加粗标签，获得高亮单词的下标
@@ -554,19 +556,21 @@ class Util {
 
       // 去掉句子中的加粗标签
       words = words.replaceAll("<b>", "").replaceAll("</b>", "");
+      tokens = splitEnglishText(words);
     } else {
       // 根据单词的拼写，在居中匹配单词，匹配上的单词即为要高亮的单词
-      var tokens = splitEnglishText(words);
+      // 词形变化只取决于 highlightWord，循环外算一次即可（原先每个 token 都重算一遍）
+      final highlightForms =
+          Util.getAllPossibleFormsOfWord(highlightWord.toLowerCase());
       for (var i = 0; i < tokens.length; i++) {
         if (!('.,!?;:"()[]{}\''.contains(tokens[i])) && // 不是标点符号
-            Util.getAllPossibleFormsOfWord(highlightWord.toLowerCase()).contains(Util.purifySpell(tokens[i].toLowerCase()))) {
+            highlightForms.contains(Util.purifySpell(tokens[i].toLowerCase()))) {
           boldWordIndices.add(i);
         }
       }
     }
 
     // 分词并生成对应的widget
-    var tokens = splitEnglishText(words);
     List<InlineSpan> spans = [];
 
     for (var i = 0; i < tokens.length; i++) {

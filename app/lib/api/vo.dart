@@ -506,7 +506,11 @@ class CigenVo {
 
   String? meaningEn;
 
-  CigenVo(this.id, this.description, {this.spell, this.category, this.meaningCn, this.meaningEn});
+  /// 词根在英语单词中的拼写变形（如 stat/stabl）
+  String? spellVariants;
+
+  CigenVo(this.id, this.description,
+      {this.spell, this.category, this.meaningCn, this.meaningEn, this.spellVariants});
 
   factory CigenVo.fromJson(Map<String, dynamic> json) => _$CigenVoFromJson(json);
 

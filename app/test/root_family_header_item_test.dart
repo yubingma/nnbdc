@@ -23,6 +23,7 @@ void main() {
     required String spell,
     String? meaning,
     String? count,
+    String? variants,
   }) async {
     tester.view.physicalSize = Size(width, 260);
     tester.view.devicePixelRatio = 1.0;
@@ -43,7 +44,10 @@ void main() {
                 child: Builder(
                   builder: (context) => buildRootFamilyHeaderContent(
                     cigen: CigenVo('c1', spell,
-                        spell: spell, category: 'ROOT', meaningCn: meaning),
+                        spell: spell,
+                        category: 'ROOT',
+                        meaningCn: meaning,
+                        spellVariants: variants),
                     spell: spell,
                     count: count,
                     isDarkMode: false,
@@ -167,5 +171,16 @@ void main() {
     expect(find.text('词根'), findsOneWidget);
     expect(find.text('spect'), findsOneWidget);
     expect(isEllipsized(tester, '看，观察，审视，展望'), false);
+  });
+
+  testWidgets('表头显示词根拼写变形（说明这些词为何同根）', (tester) async {
+    await pumpHeader(tester, spell: 'stare', meaning: '站立', count: '27 词',
+        variants: 'stat/stabl');
+    expect(find.text('· stat/stabl'), findsOneWidget);
+  });
+
+  testWidgets('无变形数据时不显示多余的分隔符', (tester) async {
+    await pumpHeader(tester, spell: 'stare', meaning: '站立', count: '27 词');
+    expect(find.textContaining('· '), findsNothing);
   });
 }

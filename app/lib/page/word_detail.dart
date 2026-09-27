@@ -105,6 +105,11 @@ class WordDetailPageState extends State<WordDetailPage>
     with TickerProviderStateMixin {
   bool dataLoaded = false;
   bool _isLoadingData = false;
+
+  /// 扩展数据（例句 / 形近 / 同根 / 意象图）是否已从数据库补齐。
+  /// 与 [dataLoaded] 分离：学习流程随参数带入了单词基础数据时，
+  /// 首帧即可渲染真实内容，不必等数据库查询完。
+  bool _extraDataLoaded = false;
   bool _isLoadingNextWord = false;
   bool hasError = false;
   String? errorMessage;
@@ -304,9 +309,16 @@ class WordDetailPageState extends State<WordDetailPage>
       }
     }
 
-    // 只有在数据未加载时才加载
-    if (!dataLoaded) {
-      loadData();
+    // 学习流程已把单词基础数据（拼写 / 音标 / 释义）随参数传入：
+    // 这种情况首帧直接渲染真实内容，扩展数据（例句 / 形近 / 同根 / 意象）随后台补齐，
+    // 避免转场动画期间只显示一个转圈、转场结束内容才跳出来。
+    // 只有明确要求重查的入口（needReQueryWord）才继续等待查询结果。
+    if (!_extraDataLoaded) {
+      dataLoaded = GoRouterState.of(context).extra != null && !args.needReQueryWord;
+    }
+
+    if (!_isLoadingData && !_extraDataLoaded) {
+      unawaited(loadData());
     }
   }
 
@@ -341,7 +353,7 @@ class WordDetailPageState extends State<WordDetailPage>
   }
 
   Future<void> loadData() async {
-    if (_isLoadingData || dataLoaded) {
+    if (_isLoadingData || _extraDataLoaded) {
       return;
     }
     _isLoadingData = true;
@@ -440,6 +452,7 @@ class WordDetailPageState extends State<WordDetailPage>
           _tabController.addListener(_onTabControllerChanged);
         }
         dataLoaded = true;
+        _extraDataLoaded = true;
       });
 
       // 在第一帧秒开渲染后，以非阻塞的异步方式在后台计算相似ID、拉取单词详情及进行词库状态判断
@@ -3306,11 +3319,11 @@ class WordDetailPageState extends State<WordDetailPage>
                   );
                 } else {
                   // 没有例句时显示空状态提示
-                  return _buildTabEmptyState(
-                    isDarkMode: isDarkMode,
+                  return _buildEmptyStateCard(
                     icon: Icons.library_books_rounded,
                     title: '暂无例句',
                     subtitle: '该单词目前没有收录例句内容',
+                    verticalPadding: 28,
                   );
                 }
               },
@@ -3880,52 +3893,66 @@ class WordDetailPageState extends State<WordDetailPage>
     }
   }
 
+  Widget _buildEmptyStateCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    double verticalPadding = 36,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 20),
+      decoration: BoxDecoration(
+        color: context.subtleBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: context.cardBorder,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            size: 44,
+            color: context.textMuted,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 15.5,
+              color: context.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 13,
+              color: context.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTabEmptyState({
-    required bool isDarkMode,
+    bool? isDarkMode,
     required IconData icon,
     required String title,
     required String subtitle,
   }) {
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-          decoration: BoxDecoration(
-            color: context.subtleBg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: context.cardBorder,
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 48,
-                color: context.textMuted,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15.5,
-                  color: context.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: context.textSecondary,
-                ),
-              ),
-            ],
-          ),
+        _buildEmptyStateCard(
+          icon: icon,
+          title: title,
+          subtitle: subtitle,
         ),
       ],
     );
@@ -4447,6 +4474,7 @@ class WordDetailPageState extends State<WordDetailPage>
                         hasError = false;
                         errorMessage = null;
                         dataLoaded = false;
+                        _extraDataLoaded = false;
                       });
                       loadData();
                     },

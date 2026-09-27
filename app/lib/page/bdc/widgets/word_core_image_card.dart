@@ -120,7 +120,7 @@ class WordCoreImageCard extends StatelessWidget {
                 isDarkMode: isDarkMode,
               )
             else ...[
-              if (imageUrl.isNotEmpty) _buildPlainImage(imageUrl, isDarkMode),
+              if (imageUrl.isNotEmpty) _buildPlainImage(context, imageUrl, isDarkMode),
               _buildBranchList(branches, isDarkMode, titleColor, subtitleColor),
             ],
             if (schemaDesc.isNotEmpty) ...[
@@ -161,17 +161,25 @@ class WordCoreImageCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlainImage(String imageUrl, bool isDarkMode) {
+  Widget _buildPlainImage(BuildContext context, String imageUrl, bool isDarkMode) {
+    // 意象图原图实测为 1024×1024（167KB），而这里最高只显示 220dp：
+    // 不限制解码尺寸会按 1024² 解码并上传纹理，白占约 2.3MB 内存与一次多余的纹理上传。
+    // 按显示区尺寸 × 设备像素比解码即可（上限取原图边长，避免把小于目标尺寸的图放大）。
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final decodeWidth = (MediaQuery.sizeOf(context).width * dpr).round().clamp(1, 1024);
+    const double maxDisplayHeight = 220;
     return Padding(
       padding: const EdgeInsets.only(top: 14),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
           width: double.infinity,
-          constraints: const BoxConstraints(maxHeight: 220),
+          constraints: const BoxConstraints(maxHeight: maxDisplayHeight),
           color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
           child: Image.network(imageUrl,
               fit: BoxFit.contain,
+              cacheWidth: decodeWidth,
+              cacheHeight: (maxDisplayHeight * dpr).round().clamp(1, 1024),
               errorBuilder: (_, __, ___) => const SizedBox.shrink()),
         ),
       ),
@@ -612,12 +620,22 @@ class _HubImage extends StatelessWidget {
         child: imageUrl.isEmpty
             ? CustomPaint(
                 painter: _SchematicPainter(color: const Color(0xFF334155)))
-            : Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => CustomPaint(
-                    painter: _SchematicPainter(color: const Color(0xFF334155))),
-              ),
+            : LayoutBuilder(builder: (context, constraints) {
+                // 中心意象图同样按实际显示尺寸解码（原图实测 1024²），
+                // 避免为几十 dp 的圆图解码整张 1024² 再上传纹理。
+                final dpr = MediaQuery.devicePixelRatioOf(context);
+                int? side(double extent) => extent.isFinite
+                    ? (extent * dpr).round().clamp(1, 1024)
+                    : null;
+                return Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  cacheWidth: side(constraints.maxWidth),
+                  cacheHeight: side(constraints.maxHeight),
+                  errorBuilder: (_, __, ___) => CustomPaint(
+                      painter: _SchematicPainter(color: const Color(0xFF334155))),
+                );
+              }),
       ),
     );
   }

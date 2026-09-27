@@ -901,10 +901,40 @@ class WordBo {
         ..orderBy([(sw) => OrderingTerm(expression: sw.distance)]);
       final similarWords = await similarWordsQuery.get();
 
+      // 批量取出形近词的 word 行：原先在循环里逐词 getSingleOrNull，
+      // 每个形近词一次单查（9 个词就是 9 次），是 searchWordById 耗时的主要来源。
+      final similarWordIds = similarWords.map((sw) => sw.similarWordId).toList();
+      final similarWordRows = <Word>[];
+      if (similarWordIds.isNotEmpty) {
+        similarWordRows.addAll(await (db.select(db.words)
+              ..where((w) => w.id.isIn(similarWordIds)))
+            .get());
+      }
+      final similarWordRowById = {for (final w in similarWordRows) w.id: w};
+
+      // 批量取形近词的释义项：原先在循环里逐词调用 getWordMeaningItems，
+      // 每次都要重查学习词书、展开父级词书、计算 popularity 上限（含逐词书 findById），
+      // 形近词 9 个时这几十次重复查询就是 searchWordById 的主要耗时。
+      final similarWordIdList = similarWords
+          .map((sw) => sw.similarWordId)
+          .where(similarWordRowById.containsKey)
+          .toList();
+      final Map<String, List<MeaningItem>> similarMeaningMap;
+      if ((userId != null && userId.isNotEmpty) ||
+          (priorityDictIds != null && priorityDictIds.isNotEmpty)) {
+        similarMeaningMap = await getWordMeaningItemsBatch(
+            similarWordIdList, userId,
+            priorityDictIds: priorityDictIds);
+      } else {
+        similarMeaningMap = {
+          for (final id in similarWordIdList)
+            id: await _getCommonDictMeaningItems(id)
+        };
+      }
+
       final similarWordVos = <WordVo>[];
       for (final sw in similarWords) {
-        final similarWordQuery = db.select(db.words)..where((w) => w.id.equals(sw.similarWordId));
-        final similarWord = await similarWordQuery.getSingleOrNull();
+        final similarWord = similarWordRowById[sw.similarWordId];
 
         if (similarWord != null) {
           final similarWordVo = WordVo.c2(similarWord.spell)
@@ -917,14 +947,9 @@ class WordBo {
             ..popularity = similarWord.popularity
             ..groupInfo = similarWord.groupInfo;
 
-          // 为形近词查询释义项，根据用户ID决定是否进行词书过滤
-          List<MeaningItem> similarMeaningItems;
-          if ((userId != null && userId.isNotEmpty) || (priorityDictIds != null && priorityDictIds.isNotEmpty)) {
-            similarMeaningItems = await getWordMeaningItems(similarWord.id, userId, priorityDictIds: priorityDictIds);
-          } else {
-            // 无用户信息和优先词书信息，直接查询通用词典
-            similarMeaningItems = await _getCommonDictMeaningItems(similarWord.id);
-          }
+          // 释义项来自循环外的批量查询
+          final similarMeaningItems =
+              similarMeaningMap[similarWord.id] ?? const <MeaningItem>[];
 
           final similarMeaningItemVos = <MeaningItemVo>[];
           for (final mi in similarMeaningItems) {
@@ -3244,6 +3269,130 @@ class WordBo {
     return _applyPopularityLimit(commonMeaningItems, maxPopularityLimit);
   }
 
+  /// 批量取多个单词的释义项，供形近词列表使用（避免逐词调用 [getWordMeaningItems] 产生 N+1 查询）。
+  ///
+  /// 语义与 [getWordMeaningItems] 完全一致：优先词书（严格排他，含父级展开）→ 学习词书（含父级展开）
+  /// → 通用词典（按 popularity 上限过滤、已掌握/在学则不限制）。
+  /// 区别只在于把"仅依赖 user、与具体单词无关"的查询提到循环外只算一次，
+  /// 并用 `id.isIn(...)` 批量取释义、批量判断已掌握/在学。
+  Future<Map<String, List<MeaningItem>>> getWordMeaningItemsBatch(
+      List<String> wordIds, String? userId,
+      {List<String>? priorityDictIds}) async {
+    final result = <String, List<MeaningItem>>{};
+    if (wordIds.isEmpty) return result;
+    final db = MyDatabase.instance;
+
+    // 优先词书：严格排他性查询（若优先词库内有内容，则不再合并父级/通用词库资源）
+    List<String> priorityIds = [];
+    if (priorityDictIds != null && priorityDictIds.isNotEmpty) {
+      priorityIds = await _expandDictIdsWithBase(priorityDictIds);
+      final rows = await (db.select(db.meaningItems)
+            ..where((mi) =>
+                mi.wordId.isIn(wordIds) & mi.dictId.isIn(priorityIds))
+            ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]))
+          .get();
+      final grouped = _groupMeaningItemsByWord(rows);
+      for (final wordId in wordIds) {
+        final items = grouped[wordId];
+        if (items != null && items.isNotEmpty) result[wordId] = items;
+      }
+    }
+
+    // 学习词书：先算一次（只依赖 user），再批量取释义
+    List<String> selectedDictIds = [];
+    if (userId != null && userId.isNotEmpty) {
+      final learningDicts = await (db.select(db.learningDicts)
+            ..where((tbl) => tbl.userId.equals(userId)))
+          .get();
+      if (learningDicts.isNotEmpty) {
+        selectedDictIds = await _expandDictIdsWithBase(
+            learningDicts.map((d) => d.dictId).toList());
+        final rows = await (db.select(db.meaningItems)
+              ..where((mi) =>
+                  mi.wordId.isIn(wordIds) & mi.dictId.isIn(selectedDictIds))
+              ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]))
+            .get();
+        final grouped = _groupMeaningItemsByWord(rows);
+        for (final wordId in wordIds) {
+          if (result.containsKey(wordId)) continue;
+          final items = grouped[wordId];
+          if (items != null && items.isNotEmpty) result[wordId] = items;
+        }
+      }
+    }
+
+    // 仍未命中的词走通用词典：批量取回后逐词按 popularity 上限过滤
+    final pending = wordIds.where((id) => !result.containsKey(id)).toList();
+    if (pending.isNotEmpty) {
+      final commonRows = await (db.select(db.meaningItems)
+            ..where((mi) =>
+                mi.wordId.isIn(pending) &
+                mi.dictId.equals(Global.commonDictId))
+            ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]))
+          .get();
+      final commonGrouped = _groupMeaningItemsByWord(commonRows);
+
+      // popularity 上限的基础值只依赖 user：取所有学习词书中最宽松的一个
+      int? baseLimit;
+      if (selectedDictIds.isNotEmpty) {
+        final dicts = await (db.select(db.dicts)
+              ..where((d) => d.id.isIn(selectedDictIds)))
+            .get();
+        for (final dict in dicts) {
+          final limit = dict.popularityLimit;
+          if (limit == null) {
+            baseLimit = null;
+            break;
+          }
+          if (baseLimit == null || limit > baseLimit) baseLimit = limit;
+        }
+      }
+
+      // 已掌握 / 已在学的词不受 popularity 上限约束（批量判断）
+      final unrestricted = <String>{};
+      if (baseLimit != null && userId != null && userId.isNotEmpty) {
+        // 已掌握不是独立表（v20 起改为"已掌握"词书），DAO 已有批量版本
+        unrestricted.addAll(await db.masteredWordsDao
+            .getMasteredWordIdSetForWords(userId, pending));
+        final learning = await (db.select(db.learningWords)
+              ..where((tbl) =>
+                  tbl.userId.equals(userId) & tbl.wordId.isIn(pending)))
+            .get();
+        unrestricted.addAll(learning.map((l) => l.wordId));
+      }
+
+      for (final wordId in pending) {
+        final common = commonGrouped[wordId] ?? const <MeaningItem>[];
+        final limit = unrestricted.contains(wordId) ? null : baseLimit;
+        result[wordId] = _applyPopularityLimit(common, limit);
+      }
+    }
+
+    return result;
+  }
+
+  /// 把词书 ID 列表展开为"含各自父级词书"的集合（去重）。
+  Future<List<String>> _expandDictIdsWithBase(List<String> dictIds) async {
+    final expanded = <String>{...dictIds};
+    final db = MyDatabase.instance;
+    final dicts = await (db.select(db.dicts)..where((d) => d.id.isIn(dictIds))).get();
+    for (final d in dicts) {
+      if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
+        expanded.add(d.baseDictId!);
+      }
+    }
+    return expanded.toList();
+  }
+
+  static Map<String, List<MeaningItem>> _groupMeaningItemsByWord(
+      List<MeaningItem> rows) {
+    final grouped = <String, List<MeaningItem>>{};
+    for (final mi in rows) {
+      grouped.putIfAbsent(mi.wordId, () => []).add(mi);
+    }
+    return grouped;
+  }
+
   /// 按 maxPopularityLimit 过滤通用释义；若过滤后不足 min-3 保底取常用度最靠前 3 条，
   /// 防止出现"暂无释义"（common 需已按 popularity 升序排列；limit 为 null 表示不限制）。
   static List<MeaningItem> _applyPopularityLimit(List<MeaningItem> common, int? maxPopularityLimit) {
@@ -3538,12 +3687,13 @@ class WordBo {
     final cigenIds = {for (final l in links) l.cigenId};
     final cigenRows =
         await (db.select(db.cigens)..where((c) => c.id.isIn(cigenIds))).get();
-    final meta = <String, ({String label, String category, String meaning})>{
+    final meta = <String, ({String label, String category, String meaning, String variants})>{
       for (final c in cigenRows)
         c.id: (
           label: (c.spell?.isNotEmpty ?? false) ? c.spell! : c.description,
           category: c.category ?? '',
           meaning: c.meaningCn ?? '',
+          variants: c.spellVariants ?? '',
         ),
     };
     final membersByCigen = <String, Set<String>>{};
@@ -3593,6 +3743,7 @@ class WordBo {
         spell: meta[entry.key]!.label,
         category: meta[entry.key]!.category,
         meaning: meta[entry.key]!.meaning,
+        spellVariants: meta[entry.key]!.variants,
         wordIds: List.unmodifiable(ids),
       ));
     }
@@ -3838,6 +3989,10 @@ class RootFamilyGroup {
   final String spell;
   final String category; // ROOT / PREFIX / SUFFIX / 其他
   final String meaning;
+
+  /// 词根在英语单词中的拼写变形（如 stat/stabl），用于卡片表头提示；可为空
+  final String spellVariants;
+
   final List<String> wordIds;
 
   RootFamilyGroup({
@@ -3845,6 +4000,7 @@ class RootFamilyGroup {
     required this.spell,
     required this.category,
     required this.meaning,
+    this.spellVariants = '',
     required this.wordIds,
   });
 

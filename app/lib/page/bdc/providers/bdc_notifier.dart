@@ -87,6 +87,10 @@ class BdcNotifier extends _$BdcNotifier {
   /// 播放取消令牌：每次换词或用户手动操作时递增，使旧延迟 callback 失效。
   int _playToken = 0;
 
+  /// 当前词的详情页完整数据（由 [_prefetchWordDetail] 在答题期间后台预取）。
+  /// 详情页首帧直接用它渲染，避免打开后再补拉数据、进而整体重建一次。
+  WordVo? _prefetchedDetailWord;
+
   void _cancelPendingWordTimers() {
     _autoJumpTimer?.cancel();
     _autoJumpTimer = null;
@@ -812,7 +816,32 @@ class BdcNotifier extends _$BdcNotifier {
     
     Global.logger.i('[PERF] Total handleWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
     unawaited(_refreshGroupStepProgress());
+    // 用户读题通常有几秒，利用这段时间预取单词详情页所需的完整数据
+    // （形近词及其释义等，实测查询约 80ms）。这样用户点开详情页时首帧就是完整内容，
+    // 不会在 200ms 后再整体重建一次（那次重建实测占满一帧 36ms）。
+    unawaited(_prefetchWordDetail());
     return true;
+  }
+
+  /// 后台预取当前词的详情页数据，供 [showWordDetail] 直接使用。
+  /// 失败静默：预取只是优化，详情页仍有自己的补拉兜底。
+  Future<void> _prefetchWordDetail() async {
+    final word = state.word;
+    final wordId = word?.id;
+    if (wordId == null) return;
+    try {
+      final result = await WordBo().searchWordById(
+        wordId,
+        Global.getLoggedInUser()?.id,
+      );
+      final full = result.word;
+      // 只在预取结果仍然对应当前词时才留用，避免串词
+      if (full != null && full.id == state.word?.id) {
+        _prefetchedDetailWord = full;
+      }
+    } catch (e, st) {
+      Global.logger.d('预取单词详情失败（忽略）', error: e, stackTrace: st);
+    }
   }
 
   /// 本组环节推进到"汉译英"时的一次性顺序提示：把"整组横向推进"讲清楚，
@@ -1086,42 +1115,64 @@ class BdcNotifier extends _$BdcNotifier {
           canLeaveCurrWord: true,
         );
       } else {
-        showWordDetail(state.word!, true, context,
-            fsrsRating: FsrsRating.again,
-            reason: "选错了答案");
+        // 把转场推到下一帧：本帧只留给"学习页重建（选项红绿描边 + 底部按钮 + FSRS 面板）"，
+        // 让详情页首帧独占下一帧。原先两者挤在同一帧，实测该帧 UI 90.5ms / LAYOUT 56.6ms；
+        // 而选对路径的状态更新与弹窗之间天然隔了 500ms Timer，只有 39.2ms。
+        final wrongWord = state.word!;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_isDisposed || !context.mounted) return;
+          showWordDetail(wrongWord, true, context,
+              fsrsRating: FsrsRating.again, reason: "选错了答案");
+        });
       }
     }
   }
 
   Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext? context,
       {FsrsRating? fsrsRating, String? reason, bool autoPlayWordOnEnter = true}) async {
+    // 若答题期间已预取到同一个词的完整数据，就用它替换传入的（可能缺少形近词/例句的）word，
+    // 详情页首帧即为完整内容，不会再因为补拉数据而整体重建一次。
+    final prefetched = _prefetchedDetailWord;
+    if (prefetched != null && prefetched.id == word.id) {
+      word = prefetched;
+      _prefetchedDetailWord = null; // 用完即弃，避免跨词误用
+    }
     _cancelPendingWordTimers();
     debugPrint('🕵️ [AudioDiag] showWordDetail.enter | word=${word.spell} isAnswerWrong=$isAnswerWrong');
-    // 强制并平滑地关闭正在播放的音频与清理 ASR。通过 Future.wait 并行执行，并设置 1.5s 的硬超时，
-    // 防止底层系统音频驱动卡死阻塞跳转页面。
-    try {
-      await Future.wait([
-        StudyAudioSessionController.instance.cancelPlayback(),
-        asr.stopAsr(),
-        asr.reset(),
-      ]).timeout(const Duration(milliseconds: 1500));
-    } catch (e) {
-      Global.logger.w('showWordDetail: clean up ASR/playback failed or timed out: $e');
-    }
+    // 音频与 ASR 清理不再阻塞页面转场：把清理登记为「下一次播放前必须完成」，
+    // 转场立即开始，而详情页入场发音会自动排在清理之后，避免发音被旧的 stop/seek 掐断。
+    // 1.5s 硬超时保留，防止底层系统音频驱动卡死拖住后续每一次播放。
+    StudyAudioSessionController.instance.scheduleCleanupBeforeNextPlayback(
+      _cleanupAudioAndAsrBeforeLeaving(),
+    );
 
     _playToken++; // 取消任何待执行的自动播放延迟 callback，防止详情页与主页延迟自动播放并发撞车
 
     if (fsrsRating != null) {
-      if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
-        state.wordWrapper!.revealAllRemainingMeanings();
-      }
+      // 只同步写"详情页后续流程要用、且不进入顶层 UI 签名"的字段：
+      // lastFsrsRating 供详情页「下一词」读取、fsrsItem 供 FSRS 预览显示，
+      // 两者都不在 BdcStateUiSignature 里，因此不会让学习页重建。
       state = state.copyWith(
         lastFsrsRating: fsrsRating,
         lastFsrsRatingReason: reason,
-        hasFinishedAnswering: true,
-        canLeaveCurrWord: true,
       );
       _updateFsrsPreview(fsrsRating);
+
+      // 会触发学习页整页重建的部分（释义展开 + 答题完成标记）延后到转场首帧之后。
+      // 原先它与详情页转场首帧挤在同一帧，实测选错路径该帧 UI 90.5ms / LAYOUT 56.6ms，
+      // 而选对路径因为状态更新与弹窗之间隔了 500ms Timer，只有 39.2ms。
+      // 转场期间学习页已被详情页完全覆盖，用户看不到这次刷新。
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_isDisposed) return;
+        if (state.studyStep == StudyStep.en2Ch.json &&
+            state.wordWrapper != null) {
+          state.wordWrapper!.revealAllRemainingMeanings();
+        }
+        state = state.copyWith(
+          hasFinishedAnswering: true,
+          canLeaveCurrWord: true,
+        );
+      });
     }
     
     final barrier = Completer<void>();
@@ -1145,6 +1196,21 @@ class BdcNotifier extends _$BdcNotifier {
       barrier.complete();
       _pageTransitionBarrier = null;
       _handleTabChangeForAsr();
+    }
+  }
+
+  /// 跳转单词详情前的音频/ASR 清理。
+  /// 由 [showWordDetail] 登记给音频会话控制器，在详情页首次发声前串行完成：
+  /// 既不阻塞页面转场，也不会让旧音频的 stop/seek 掐断详情页的入场发音。
+  Future<void> _cleanupAudioAndAsrBeforeLeaving() async {
+    try {
+      await Future.wait([
+        StudyAudioSessionController.instance.cancelPlayback(),
+        asr.stopAsr(),
+        asr.reset(),
+      ]).timeout(const Duration(milliseconds: 1500));
+    } catch (e) {
+      Global.logger.w('showWordDetail: clean up ASR/playback failed or timed out: $e');
     }
   }
 

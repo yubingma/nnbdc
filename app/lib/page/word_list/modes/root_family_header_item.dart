@@ -122,23 +122,43 @@ Widget buildRootFamilyHeaderContent({
               ),
             ),
           ),
-          if (cigen?.meaningCn?.isNotEmpty ?? false) ...[
-            const SizedBox(width: 7),
-            // 其余空间全部给释义：放得下就完整显示，确实放不下才省略号
-            Expanded(
-              child: Text(
-                cigen!.meaningCn!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: bodyColor,
-                ),
-              ),
+          // 含义 + 拼写变形：同处弹性空间（正常宽度下各按自身宽度显示，放不下才省略）
+          Expanded(
+            child: Row(
+              children: [
+                if (cigen?.meaningCn?.isNotEmpty ?? false)
+                  Flexible(
+                    child: Text(
+                      cigen!.meaningCn!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: bodyColor,
+                      ),
+                    ),
+                  ),
+                // 词根在英语单词中的拼写变形（如 · stat/stabl），提示"这些词为何同根"
+                if (cigen?.spellVariants?.isNotEmpty ?? false) ...[
+                  if (cigen?.meaningCn?.isNotEmpty ?? false) const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      '· ${cigen!.spellVariants}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.1,
+                        color: bodyColor.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ] else
-            const Spacer(),
+          ),
           if (count != null && count.isNotEmpty) ...[
             const SizedBox(width: 8),
             // 词数固定右对齐：无论词根/释义多长都贴着行尾
