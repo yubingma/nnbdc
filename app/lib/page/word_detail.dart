@@ -485,10 +485,15 @@ class WordDetailPageState extends State<WordDetailPage>
             // 按照是否在词书内（正体字排在斜体字前面）和形近程度（原始相似度排序）排序形近词
             _sortSimilarWords();
 
-            // 按照是否在词书内（在的排前面）和汉明距离（小的排前面）排序拓展词
+            // 按照是否在词书内（在的排前面，当前词优先）和汉明距离（小的排前面）排序拓展词
             tempSemanticWords.sort((a, b) {
-              final aInDict = _wordInDictStatus[a.id!] ?? true;
-              final bInDict = _wordInDictStatus[b.id!] ?? true;
+              final aIsCurrent = _isCurrentWord(a.id, a.spell);
+              final bIsCurrent = _isCurrentWord(b.id, b.spell);
+              if (aIsCurrent != bIsCurrent) {
+                return aIsCurrent ? -1 : 1;
+              }
+              final aInDict = aIsCurrent || (_wordInDictStatus[a.id!] ?? true);
+              final bInDict = bIsCurrent || (_wordInDictStatus[b.id!] ?? true);
               if (aInDict != bInDict) {
                 return aInDict ? -1 : 1;
               }
@@ -810,12 +815,23 @@ class WordDetailPageState extends State<WordDetailPage>
           _wordInDictStatus[id] = true;
         }
       }
+      if (args.word.id != null) {
+        _wordInDictStatus[args.word.id!] = true;
+      }
     } catch (e) {
       Global.logger.e('批量检查单词在词书状态失败: $e');
       for (final id in wordIds) {
         _wordInDictStatus[id] = true;
       }
+      if (args.word.id != null) {
+        _wordInDictStatus[args.word.id!] = true;
+      }
     }
+  }
+
+  bool _isCurrentWord(String? wordId, String spell) {
+    if (wordId != null && wordId == args.word.id) return true;
+    return spell.toLowerCase().trim() == args.word.spell.toLowerCase().trim();
   }
 
   void _sortSimilarWords() {
@@ -832,8 +848,13 @@ class WordDetailPageState extends State<WordDetailPage>
     }
 
     args.word.similarWords!.sort((a, b) {
-      final aInDict = _wordInDictStatus[a.id!] ?? true;
-      final bInDict = _wordInDictStatus[b.id!] ?? true;
+      final aIsCurrent = _isCurrentWord(a.id, a.spell);
+      final bIsCurrent = _isCurrentWord(b.id, b.spell);
+      if (aIsCurrent != bIsCurrent) {
+        return aIsCurrent ? -1 : 1;
+      }
+      final aInDict = aIsCurrent || (_wordInDictStatus[a.id!] ?? true);
+      final bInDict = bIsCurrent || (_wordInDictStatus[b.id!] ?? true);
       if (aInDict != bInDict) {
         return aInDict ? -1 : 1;
       }
@@ -2475,12 +2496,15 @@ class WordDetailPageState extends State<WordDetailPage>
               final desc = item.word.shortDesc ?? '';
               final lowerSpell = spell.toLowerCase().trim();
 
-              final Color spellColor = item.inDict
+              final isCurrent = _isCurrentWord(item.word.id, spell);
+              final isHighlight = item.inDict || isCurrent;
+
+              final Color spellColor = isHighlight
                   ? context.primaryColor
                   : (isDarkMode
                       ? const Color(0xFF94A3B8)
                       : const Color(0xFF64748B));
-              final Color descColor = item.inDict
+              final Color descColor = isHighlight
                   ? (isDarkMode
                       ? const Color(0xFFCBD5E1)
                       : const Color(0xFF334155))
@@ -3512,7 +3536,8 @@ class WordDetailPageState extends State<WordDetailPage>
           }
 
           final word = showTip ? similarWords[index - 1] : similarWords[index];
-          final inDict = _wordInDictStatus[word.id!] ?? true;
+          final isCurrent = _isCurrentWord(word.id, word.spell);
+          final inDict = isCurrent || (_wordInDictStatus[word.id!] ?? true);
 
           final Color spellColor = inDict
               ? context.primaryColor
@@ -3688,7 +3713,8 @@ class WordDetailPageState extends State<WordDetailPage>
           final word = showTip
               ? _semanticSimilarWords[index - 1]
               : _semanticSimilarWords[index];
-          final inDict = _wordInDictStatus[word.id!] ?? true;
+          final isCurrent = _isCurrentWord(word.id, word.spell);
+          final inDict = isCurrent || (_wordInDictStatus[word.id!] ?? true);
 
           final Color spellColor = inDict
               ? context.primaryColor

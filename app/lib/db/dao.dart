@@ -2792,6 +2792,23 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         .get();
   }
 
+  Future<List<UserStudyDailyStat>> getAllStats(String userId) async {
+    return (select(userStudyDailyStats)
+          ..where((t) => t.userId.equals(userId))
+          ..orderBy([(t) => OrderingTerm.asc(t.date)]))
+        .get();
+  }
+
+  Future<List<UserStudyDailyStat>> getStatsBetween(String userId, DateTime startDate, DateTime endDate) async {
+    return (select(userStudyDailyStats)
+          ..where((t) =>
+              t.userId.equals(userId) &
+              t.date.isBiggerOrEqualValue(startDate) &
+              t.date.isSmallerOrEqualValue(endDate))
+          ..orderBy([(t) => OrderingTerm.asc(t.date)]))
+        .get();
+  }
+
   Future<void> updateDayStatus(String userId, DateTime date, UserDayStatus newStatus) async {
     final pureDate = DateUtils.businessDate(date);
     final existing = await (select(userStudyDailyStats)

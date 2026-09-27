@@ -1590,6 +1590,63 @@ class MePageState extends State<MePage> implements RefreshableTab {
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+
+              // 3.1.1 「专注时光」轻量入口微条
+              GestureDetector(
+                onTap: () => context.push('/study_stats'),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: isDarkModeEnabled
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.black.withValues(alpha: 0.025),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDarkModeEnabled
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
+                      width: 0.6,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.access_time_filled_rounded,
+                        size: 14,
+                        color: themeConfig.primaryColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '专注时光',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                          fontFamily: 'NotoSansSC',
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '今日 ${_formatLearningDuration(studyProgress!.todayLearningSeconds)} · 累计 ${_formatLearningDuration(studyProgress!.totalLearningSeconds)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'NotoSansSC',
+                          fontWeight: FontWeight.w500,
+                          color: subtitleColor,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 10,
+                        color: subtitleColor.withValues(alpha: 0.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Container(
@@ -2832,6 +2889,19 @@ class MePageState extends State<MePage> implements RefreshableTab {
         );
       },
     );
+  }
+
+  String _formatLearningDuration(int totalSeconds) {
+    if (totalSeconds <= 0) return '0m';
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    if (hours == 0) {
+      return '${minutes}m';
+    } else if (minutes == 0) {
+      return '${hours}h';
+    } else {
+      return '${hours}h ${minutes}m';
+    }
   }
 
   String getShortName(String name) {

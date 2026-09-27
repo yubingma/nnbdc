@@ -79,5 +79,49 @@ void main() {
 
       expect(similarWords.map((w) => w.id).toList(), ['id_1', 'id_2', 'id_3']);
     });
+
+    test('Current word should always be treated as highlighted and sorted first, even if out of dict', () {
+      final wCurrent = WordVo.c2('target')..id = 'current_id';
+      final wInDict = WordVo.c2('indict')..id = 'indict_id';
+      final wOutOfDict = WordVo.c2('other')..id = 'other_id';
+
+      final similarWords = [wOutOfDict, wInDict, wCurrent];
+      final wordInDictStatus = {
+        'current_id': false, // 模拟当前词不在学习词书内
+        'indict_id': true,
+        'other_id': false,
+      };
+
+      bool isCurrentWord(String? id, String spell) {
+        return id == 'current_id' || spell.toLowerCase().trim() == 'target';
+      }
+
+      final originalIndices = <String, int>{};
+      for (int i = 0; i < similarWords.length; i++) {
+        final id = similarWords[i].id;
+        if (id != null) {
+          originalIndices[id] = i;
+        }
+      }
+
+      similarWords.sort((a, b) {
+        final aIsCurrent = isCurrentWord(a.id, a.spell);
+        final bIsCurrent = isCurrentWord(b.id, b.spell);
+        if (aIsCurrent != bIsCurrent) {
+          return aIsCurrent ? -1 : 1;
+        }
+        final aInDict = aIsCurrent || (wordInDictStatus[a.id!] ?? true);
+        final bInDict = bIsCurrent || (wordInDictStatus[b.id!] ?? true);
+        if (aInDict != bInDict) {
+          return aInDict ? -1 : 1;
+        }
+        final aIndex = originalIndices[a.id!] ?? 0;
+        final bIndex = originalIndices[b.id!] ?? 0;
+        return aIndex.compareTo(bIndex);
+      });
+
+      // 当前单词必须排在最前，其次是在词书内的单词，最后是词书外单词
+      expect(similarWords.map((w) => w.id).toList(), ['current_id', 'indict_id', 'other_id']);
+    });
   });
 }

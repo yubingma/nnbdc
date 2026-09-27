@@ -3940,8 +3940,9 @@ class WordBo {
         ..id = w.id
         ..shortDesc = (explain != null && explain.isNotEmpty) ? explain : (meaningStr.isNotEmpty ? meaningStr : w.shortDesc)
         ..popularity = w.popularity;
+      final isCurrent = (currentWordId != null && w.id == currentWordId);
       final hasRecord = learningStatusMap[w.id] != null;
-      final inDict = inDictWordIds.contains(w.id) || hasRecord;
+      final inDict = inDictWordIds.contains(w.id) || hasRecord || isCurrent;
       return CigenExpandedWord(
         wordVo, 
         learningStatusMap[w.id], 
