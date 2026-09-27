@@ -131,7 +131,10 @@
       scroll-snap-align: center;
       padding: 64px 40px 0;
       box-sizing: border-box;
-      background: linear-gradient(180deg, #1CD2A4 0%, #10BC95 32%, #0E9BB6 68%, #2062C7 100%);
+      /* 与 iPhone / 华为两套同一基调：整张只有「墨底 + 纯白 + 一档品牌青绿」 */
+      background:
+        radial-gradient(118% 44% at 50% 41%, rgba(16, 208, 158, 0.22) 0%, rgba(16, 208, 158, 0) 70%),
+        linear-gradient(180deg, #0C1A17 0%, #08120F 58%, #050B0A 100%);
     }
 
     /* 顶部文案容器：纯正 4+4 居中结构 */
@@ -146,22 +149,20 @@
     }
 
     .p-title {
-      font-size: 52px;
-      font-weight: 900;
-      line-height: 1.15;
-      letter-spacing: 3.5px;
+      font-size: 50px;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: 1px;
       color: #FFFFFF;
-      margin-bottom: 12px;
-      text-shadow: 0 3px 12px rgba(0, 45, 35, 0.22);
+      margin-bottom: 14px;
     }
 
     .p-subtitle {
-      font-size: 26px;
-      font-weight: 600;
-      line-height: 1.25;
-      letter-spacing: 6px;
-      color: rgba(255, 255, 255, 0.94);
-      text-shadow: 0 2px 8px rgba(0, 40, 30, 0.18);
+      font-size: 23px;
+      font-weight: 400;
+      line-height: 1.35;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.5);
     }
 
     /* iPad 专属平板舞台 */
@@ -185,9 +186,9 @@
       background: #FFFFFF;
       border: 8px solid #FFFFFF;
       box-shadow: 
-        0 0 0 1px rgba(0, 0, 0, 0.1),
-        0 24px 60px -10px rgba(2, 36, 26, 0.35),
-        0 8px 24px -4px rgba(0, 0, 0, 0.15);
+        0 0 0 1px rgba(255, 255, 255, 0.10),
+        0 46px 90px -34px rgba(0, 0, 0, 0.92),
+        0 0 74px -6px rgba(16, 208, 158, 0.26);
       position: relative;
       overflow: hidden;
       display: flex;
@@ -245,58 +246,38 @@
       top: 45%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 600px;
+      width: 620px;
       max-width: 90%;
       z-index: 150;
-      padding: 14px 26px;
+      padding: 19px 36px;
       border-radius: 100px;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(24px) saturate(190%);
-      -webkit-backdrop-filter: blur(24px) saturate(190%);
-      border: 2px solid rgba(16, 185, 129, 0.32);
+      background: #FFFFFF;
+      /* 白药丸在墨底上本就是最亮的一块，加一圈品牌青绿细环与贴边光晕把它钉住；
+         光晕只给 26px 紧贴边缘，糊太开会透过屏幕把白底染绿。 */
       box-shadow: 
-        0 18px 40px -4px rgba(15, 23, 42, 0.18),
-        0 0 24px rgba(16, 208, 158, 0.25),
-        inset 0 1px 2px rgba(255, 255, 255, 1);
+        0 0 0 2.5px rgba(16, 208, 158, 0.85),
+        0 0 26px rgba(16, 208, 158, 0.45),
+        0 20px 44px -16px rgba(0, 0, 0, 0.55);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
     }
-    #card-1 .impact-banner {
-      top: 36%;
+    /* 七张统一走同一条基准线；7 号结构不同（中心意象图占正中），单独下移避开画面中心 */
+    #card-7 .impact-banner {
+      top: 76%;
     }
-    #card-2 .impact-banner {
-      top: 35.5%;
-    }
-    .banner-badge {
-      font-size: 20px;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: #ECFDF5;
-      border: 1.5px solid #A7F3D0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-    }
+    /* 零多余容器：不再给这句话套 emoji 圆徽章 */
     .banner-text {
-      font-size: 20px;
-      font-weight: 800;
+      font-size: 22px;
+      font-weight: 700;
       color: #0F172A;
       letter-spacing: 0.3px;
       white-space: nowrap;
       line-height: 1.2;
     }
     .banner-text .highlight {
-      color: #047857;
-      font-weight: 900;
-      background: linear-gradient(180deg, #059669 0%, #047857 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #059669;
+      font-weight: 700;
     }
 
     /* 浮起赞叹卡片 */
@@ -343,12 +324,151 @@
       padding: 20px 24px;
     }
 
+    /* 屏内容纵向分布：末块压到屏底，中间自然让出一条横幅通道。
+       只给「上段内容 + 收束块」这种三段的卡片用；4/5/6 号屏内本来就是单块或
+       两段（内容块会自己 flex 撑开），一律下压反而会把内容顶到底部、中间空一大片。 */
+    #card-1 .ipad-screen-body > *:last-child,
+    #card-2 .ipad-screen-body > *:last-child,
+    #card-7 .ipad-screen-body > *:last-child {
+      margin-top: auto;
+    }
+
     .ipad-box {
       background: #FFFFFF;
       border-radius: 18px;
       border: 1px solid #E5E7EB;
       padding: 20px;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    }
+
+    /* ========================================================
+       卡片 7: 核心意象 —— 中心是那一个动势的简笔画，四周释义由引线牵出
+       全屏只有中心意象图一处彩色（它就是主角），其余一律中性灰。
+       简笔画而非实拍图：图式本身是抽象的「动势」，写实照片会把它拉回「配图」。
+       ======================================================== */
+    .ci-word-row {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 22px 40px 18px;
+      border-bottom: 1px solid #EDF1F0;
+    }
+    .ci-word {
+      font-size: 46px;
+      font-weight: 700;
+      color: #111827;
+      letter-spacing: -0.8px;
+    }
+    .ci-phonetic {
+      font-size: 20px;
+      color: #94A3B8;
+      font-family: var(--font-mono);
+    }
+    .ci-tag {
+      margin-left: auto;
+      font-size: 15px;
+      font-weight: 600;
+      color: #047857;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      padding: 5px 14px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+    .ci-orbit {
+      position: relative;
+      width: 760px;
+      height: 600px;
+      margin: 26px auto 0;
+      flex-shrink: 0;
+    }
+    .ci-links {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .ci-hub {
+      position: absolute;
+      left: 50%;
+      top: 292px;
+      transform: translate(-50%, -50%);
+      width: 210px;
+      height: 210px;
+      background: radial-gradient(circle at 50% 55%, rgba(16, 208, 158, 0.10) 0%, rgba(16, 208, 158, 0) 68%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ci-figure {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .ci-hub-caption {
+      position: absolute;
+      left: 50%;
+      bottom: -4px;
+      transform: translateX(-50%);
+      font-size: 15px;
+      font-weight: 700;
+      color: #047857;
+      background: #FFFFFF;
+      border: 1px solid #A7F3D0;
+      padding: 4px 14px;
+      border-radius: 100px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.22);
+    }
+    .ci-node {
+      position: absolute;
+      width: 210px;
+      z-index: 5;
+    }
+    .ci-node-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 9px 14px;
+      white-space: nowrap;
+    }
+    .ci-pos {
+      font-size: 14px;
+      font-weight: 700;
+      color: #047857;
+    }
+    .ci-meaning {
+      font-size: 17px;
+      font-weight: 600;
+      color: #0F172A;
+      letter-spacing: -0.2px;
+    }
+    .ci-relation {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #94A3B8;
+      line-height: 1.3;
+      text-align: center;
+    }
+    .ci-n1 { left: 10px;  top: 8px; }
+    .ci-n2 { right: 10px; top: 8px; }
+    .ci-n3 { left: 10px;  bottom: 8px; }
+    .ci-n4 { right: 10px; bottom: 8px; }
+    .ci-footer {
+      margin-top: auto;
+      padding: 22px 80px 28px;
+      border-top: 1px solid #EDF1F0;
+      font-size: 16px;
+      color: #64748B;
+      line-height: 1.6;
+      text-align: center;
+    }
+    .ci-footer b {
+      color: #047857;
+      font-weight: 700;
     }
   </style>
 </head>
@@ -369,12 +489,12 @@
     <div class="gallery-row">
 
       <!-- ========================================================
-           海报 1: 脱口而出 · 成就拉满
+           海报 1: 脱口而出 · 说得出才算记住
            ======================================================== -->
       <div class="poster-card" id="card-1">
         <div class="poster-header">
           <h2 class="p-title" id="p1-title">脱口而出</h2>
-          <div class="p-subtitle" id="p1-sub">成就拉满</div>
+          <div class="p-subtitle" id="p1-sub">说得出，才算真的记住</div>
         </div>
 
         <div class="poster-ipad-stage">
@@ -447,7 +567,7 @@
 
               <!-- 底部真题例句 -->
               <div style="margin: 0 24px 20px; padding: 16px 20px; border-radius: 16px; background: #FFFFFF; border: 1px solid #E5E7EB;">
-                <div style="font-size: 12px; font-weight: 800; color: #6366F1; margin-bottom: 6px;">📖 考研英语一 · 真实真题语境</div>
+                <div style="font-size: 12px; font-weight: 800; color: #059669; margin-bottom: 6px;">📖 考研英语一 · 真实真题语境</div>
                 <div style="font-size: 14px; font-weight: 600; color: #1F2937; line-height: 1.5;">
                   The students were able to <strong style="color: #059669; text-decoration: underline;">accomplish</strong> their research goals through systematic study.
                 </div>
@@ -459,19 +579,18 @@
 
           <!-- 中央直击人心大横幅 01 -->
           <div class="impact-banner">
-            <span class="banner-badge">🔥</span>
-            <span class="banner-text">脱口而出，<span class="highlight">记得又快又牢成就拉满！</span></span>
+            <span class="banner-text">背单词，<span class="highlight">顺便把口语练了</span></span>
           </div>
         </div>
       </div>
 
       <!-- ========================================================
-           海报 2: 一词多义 · 一网打尽
+           海报 2: 一词多义 · 读懂它的全部
            ======================================================== -->
       <div class="poster-card" id="card-2">
         <div class="poster-header">
           <h2 class="p-title" id="p2-title">一词多义</h2>
-          <div class="p-subtitle" id="p2-sub">一网打尽</div>
+          <div class="p-subtitle" id="p2-sub">一个词，读懂它的全部</div>
         </div>
 
         <div class="poster-ipad-stage">
@@ -492,11 +611,11 @@
                     <span style="font-size: 38px; font-weight: 900; color: #0F172A; letter-spacing: -0.5px;">spring</span>
                     <span style="font-size: 16px; color: #64748B; font-family: var(--font-mono);">/sprɪŋ/</span>
                   </div>
-                  <div style="font-size: 13.5px; font-weight: 700; color: #0284C7; margin-top: 4px;">
+                  <div style="font-size: 13.5px; font-weight: 700; color: #059669; margin-top: 4px;">
                     💡 考纲高频考点：掌握 4 种核心延伸意象，完形与阅读迎刃而解
                   </div>
                 </div>
-                <div style="background: #E0F2FE; color: #0369A1; font-size: 13px; font-weight: 800; padding: 6px 14px; border-radius: 20px; border: 1px solid #BAE6FD;">
+                <div style="background: #ECFDF5; color: #047857; font-size: 13px; font-weight: 800; padding: 6px 14px; border-radius: 20px; border: 1px solid #A7F3D0;">
                   4 意全解析
                 </div>
               </div>
@@ -516,38 +635,38 @@
                 </div>
 
                 <!-- 意象 2: 泉水 -->
-                <div class="ipad-box" style="border-left: 5px solid #0EA5E9;">
+                <div class="ipad-box" style="border-left: 5px solid #059669;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11.5px; font-weight: 800; color: #0284C7; background: #F0F9FF; padding: 3px 8px; border-radius: 5px;">释义 ② · n.名词</span>
+                    <span style="font-size: 11.5px; font-weight: 800; color: #047857; background: #ECFDF5; padding: 3px 8px; border-radius: 5px;">释义 ② · n.名词</span>
                     <span style="font-size: 20px;">💧</span>
                   </div>
                   <div style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 8px;">泉水；温泉</div>
                   <div style="font-size: 12.5px; color: #4B5563; margin-top: 6px; line-height: 1.4;">
-                    真题：A clear mineral <strong style="color: #0284C7;">spring</strong>.
+                    真题：A clear mineral <strong style="color: #047857;">spring</strong>.
                   </div>
                 </div>
 
                 <!-- 意象 3: 弹簧 -->
-                <div class="ipad-box" style="border-left: 5px solid #F59E0B;">
+                <div class="ipad-box" style="border-left: 5px solid #059669;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11.5px; font-weight: 800; color: #D97706; background: #FFFBEB; padding: 3px 8px; border-radius: 5px;">释义 ③ · n.名词</span>
+                    <span style="font-size: 11.5px; font-weight: 800; color: #047857; background: #ECFDF5; padding: 3px 8px; border-radius: 5px;">释义 ③ · n.名词</span>
                     <span style="font-size: 20px;">🌀</span>
                   </div>
                   <div style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 8px;">弹簧；弹性</div>
                   <div style="font-size: 12.5px; color: #4B5563; margin-top: 6px; line-height: 1.4;">
-                    真题：Steel <strong style="color: #D97706;">spring</strong> inside the machine.
+                    真题：Steel <strong style="color: #047857;">spring</strong> inside the machine.
                   </div>
                 </div>
 
                 <!-- 意象 4: 跳跃 -->
-                <div class="ipad-box" style="border-left: 5px solid #8B5CF6;">
+                <div class="ipad-box" style="border-left: 5px solid #059669;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11.5px; font-weight: 800; color: #7C3AED; background: #F5F3FF; padding: 3px 8px; border-radius: 5px;">释义 ④ · v.动词</span>
+                    <span style="font-size: 11.5px; font-weight: 800; color: #047857; background: #ECFDF5; padding: 3px 8px; border-radius: 5px;">释义 ④ · v.动词</span>
                     <span style="font-size: 20px;">🦘</span>
                   </div>
                   <div style="font-size: 18px; font-weight: 800; color: #111827; margin-top: 8px;">跳跃；突然跳起</div>
                   <div style="font-size: 12.5px; color: #4B5563; margin-top: 6px; line-height: 1.4;">
-                    真题：He <strong style="color: #7C3AED;">sprang</strong> to his feet.
+                    真题：He <strong style="color: #047857;">sprang</strong> to his feet.
                   </div>
                 </div>
               </div>
@@ -565,19 +684,18 @@
 
           <!-- 中央直击人心大横幅 02 -->
           <div class="impact-banner">
-            <span class="banner-badge">🎯</span>
-            <span class="banner-text">一词多义，<span class="highlight">核心考点一网打尽！</span></span>
+            <span class="banner-text">一个词的全部意思，<span class="highlight">都说得出</span></span>
           </div>
         </div>
       </div>
 
       <!-- ========================================================
-           海报 3: 语音答题 · 开口成诵
+           海报 3: 语音答题 · 说出口才算读懂
            ======================================================== -->
       <div class="poster-card" id="card-3">
         <div class="poster-header">
           <h2 class="p-title" id="p3-title">语音答题</h2>
-          <div class="p-subtitle" id="p3-sub">开口成诵</div>
+          <div class="p-subtitle" id="p3-sub">说出口，才算真的读懂</div>
         </div>
 
         <div class="poster-ipad-stage">
@@ -632,7 +750,7 @@
               <!-- 底部语音作答波浪 -->
               <div style="margin: auto 32px 30px; text-align: center;">
                 <div style="display: inline-flex; align-items: center; gap: 10px; background: #FFFFFF; padding: 12px 28px; border-radius: 100px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); border: 1px solid #E5E7EB;">
-                  <span style="width: 12px; height: 12px; border-radius: 50%; background: #EF4444; animation: pulse 1.5s infinite;"></span>
+                  <span style="width: 12px; height: 12px; border-radius: 50%; background: #059669; animation: pulse 1.5s infinite;"></span>
                   <span style="font-size: 14.5px; font-weight: 700; color: #1F2937;">听到你说：“A” 或 “非凡的” 即刻进入下一词</span>
                 </div>
               </div>
@@ -643,19 +761,18 @@
 
           <!-- 中央直击人心大横幅 03 -->
           <div class="impact-banner">
-            <span class="banner-badge">🗣️</span>
-            <span class="banner-text">开口即记，<span class="highlight">告别默读效率翻倍！</span></span>
+            <span class="banner-text">开口说一句，<span class="highlight">胜过默看十遍</span></span>
           </div>
         </div>
       </div>
 
       <!-- ========================================================
-           海报 4: 真迹默写 · 落笔生根 (iPad 手写专属亮点)
+           海报 4: 真迹默写 · 手写一遍属于你 (iPad 手写专属亮点)
            ======================================================== -->
       <div class="poster-card" id="card-4">
         <div class="poster-header">
           <h2 class="p-title" id="p4-title">真迹默写</h2>
-          <div class="p-subtitle" id="p4-sub">落笔生根</div>
+          <div class="p-subtitle" id="p4-sub">手写一遍，词就属于你</div>
         </div>
 
         <div class="poster-ipad-stage">
@@ -714,19 +831,18 @@
 
           <!-- 中央直击人心大横幅 04 -->
           <div class="impact-banner">
-            <span class="banner-badge">✍️</span>
-            <span class="banner-text">手写默写，<span class="highlight">考场拼写万无一失！</span></span>
+            <span class="banner-text">落笔的手感，<span class="highlight">就是记忆的锚点</span></span>
           </div>
         </div>
       </div>
 
       <!-- ========================================================
-           海报 5: 临界重温 · 精准唤醒
+           海报 5: 临界重温 · 快遗忘时提醒
            ======================================================== -->
       <div class="poster-card" id="card-5">
         <div class="poster-header">
           <h2 class="p-title" id="p5-title">临界重温</h2>
-          <div class="p-subtitle" id="p5-sub">精准唤醒</div>
+          <div class="p-subtitle" id="p5-sub">只在你快遗忘时提醒</div>
         </div>
 
         <div class="poster-ipad-stage">
@@ -806,19 +922,18 @@
 
           <!-- 中央直击人心大横幅 05 -->
           <div class="impact-banner">
-            <span class="banner-badge">⏱️</span>
-            <span class="banner-text">临界重温，<span class="highlight">科学唤醒永不再忘！</span></span>
+            <span class="banner-text">把复习安排在<span class="highlight">遗忘之前</span></span>
           </div>
         </div>
       </div>
 
       <!-- ========================================================
-           海报 6: 词单导入 · 随心定制
+           海报 6: 词单导入 · 一分钟安顿好
            ======================================================== -->
       <div class="poster-card" id="card-6">
         <div class="poster-header">
           <h2 class="p-title" id="p6-title">词单导入</h2>
-          <div class="p-subtitle" id="p6-sub">随心定制</div>
+          <div class="p-subtitle" id="p6-sub">你的词单，一分钟安顿好</div>
         </div>
 
         <div class="poster-ipad-stage">
@@ -866,7 +981,7 @@
                   <div style="font-size: 32px;">📷</div>
                   <div style="font-size: 16px; font-weight: 800; color: #1E293B; margin-top: 8px;">拍照/文档导入</div>
                   <div style="font-size: 12px; color: #64748B; margin-top: 4px;">试卷生词秒变词单</div>
-                  <div style="margin-top: 10px; font-size: 11px; font-weight: 700; color: #3B82F6; background: #EFF6FF; padding: 3px 8px; border-radius: 6px; display: inline-block;">
+                  <div style="margin-top: 10px; font-size: 11px; font-weight: 700; color: #047857; background: #ECFDF5; padding: 3px 8px; border-radius: 6px; display: inline-block;">
                     智能提取
                   </div>
                 </div>
@@ -878,24 +993,23 @@
 
           <!-- 中央直击人心大横幅 06 -->
           <div class="impact-banner">
-            <span class="banner-badge">📚</span>
-            <span class="banner-text">随心定制，<span class="highlight">你考什么就背什么！</span></span>
+            <span class="banner-text">你的词单，<span class="highlight">也能在这里学</span></span>
           </div>
         </div>
       </div>
 
       <!-- ========================================================
-           海报 7: 记忆苍穹 · 点亮词海
+           海报 7: 核心意象 · 串起所有释义
            ======================================================== -->
       <div class="poster-card" id="card-7">
         <div class="poster-header">
-          <h2 class="p-title" id="p7-title">记忆苍穹</h2>
-          <div class="p-subtitle" id="p7-sub">点亮词海</div>
+          <h2 class="p-title" id="p7-title">核心意象</h2>
+          <div class="p-subtitle" id="p7-sub">一个意象，串起所有释义</div>
         </div>
 
         <div class="poster-ipad-stage">
           <div class="ipad-chassis">
-            <div class="ipad-status-bar" style="background: #0C1B18; color: #FFFFFF;">
+            <div class="ipad-status-bar">
               <span>09:41</span>
               <div class="ipad-status-icons">
                 <span>5G</span>
@@ -903,52 +1017,84 @@
               </div>
             </div>
 
-            <!-- iPad 宽屏全景记忆苍穹星空 -->
-            <div class="ipad-screen-body" style="background: radial-gradient(circle at 50% 35%, #152C28 0%, #0C1B18 55%, #050D0C 100%); color: #FFFFFF; display: flex; flex-direction: column;">
-              <div style="padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                <div style="font-size: 13px; font-weight: 700; color: #10D09E; background: rgba(16, 208, 158, 0.15); padding: 5px 12px; border-radius: 100px; border: 1px solid rgba(16, 208, 158, 0.3);">
-                  ✨ 已点亮 3,280 颗词汇恒星
+            <div class="ipad-screen-body" style="background: #FFFFFF;">
+              <div class="ci-word-row">
+                <span class="ci-word">spring</span>
+                <span class="ci-phonetic">/sprɪŋ/</span>
+                <span class="ci-tag">一词多义 · 核心意象</span>
+              </div>
+
+              <div class="ci-orbit">
+                <!-- 引线：箭头指向中心。释义是从意象推出来的，方向不能反 -->
+                <svg class="ci-links" viewBox="0 0 760 600" fill="none">
+                  <defs>
+                    <marker id="ci-arrow-ipad" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                      <path d="M1.4 1.4 L6 4 L1.4 6.6" stroke="#94A3B8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </marker>
+                  </defs>
+                  <path d="M220 70 C250 120, 275 165, 300 205" stroke="#CBD5E1" stroke-width="1.6" marker-end="url(#ci-arrow-ipad)"/>
+                  <path d="M540 70 C510 120, 485 165, 460 205" stroke="#CBD5E1" stroke-width="1.6" marker-end="url(#ci-arrow-ipad)"/>
+                  <path d="M220 530 C250 480, 275 435, 300 380" stroke="#CBD5E1" stroke-width="1.6" marker-end="url(#ci-arrow-ipad)"/>
+                  <path d="M540 530 C510 480, 485 435, 460 380" stroke="#CBD5E1" stroke-width="1.6" marker-end="url(#ci-arrow-ipad)"/>
+                </svg>
+
+                <div class="ci-hub">
+                  <svg class="ci-figure" viewBox="0 0 120 120" fill="none">
+                    <!-- 蓄势：被压紧的弹簧。中间那圈淡下去，三圈才读成一条螺旋而不是三个环 -->
+                    <g stroke="#047857" stroke-width="2.4" stroke-linecap="round">
+                      <ellipse cx="60" cy="91" rx="18" ry="6.6"/>
+                      <ellipse cx="60" cy="80" rx="18" ry="6.6" stroke-opacity="0.42"/>
+                      <ellipse cx="60" cy="69" rx="18" ry="6.6"/>
+                    </g>
+                    <!-- 释放：从弹簧顶端向上弹涌 -->
+                    <g stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M60 59 V24"/>
+                      <path d="M51 34 L60 23 L69 34"/>
+                    </g>
+                    <!-- 迸发：两侧溢出的余势 -->
+                    <g stroke="#6EE7B7" stroke-width="2.2" stroke-linecap="round">
+                      <path d="M41 58 L30 47"/>
+                      <path d="M79 58 L90 47"/>
+                    </g>
+                    <g fill="#6EE7B7">
+                      <circle cx="27" cy="38" r="2.4"/>
+                      <circle cx="93" cy="38" r="2.4"/>
+                    </g>
+                    <path d="M41 100 H79" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <span class="ci-hub-caption">向上弹涌的动势</span>
                 </div>
-                <div style="font-size: 13px; color: #94A3B8; font-weight: 600;">
-                  掌握度：82%
+
+                <div class="ci-node ci-n1">
+                  <div class="ci-node-head"><span class="ci-pos">n.</span><span class="ci-meaning">春天 / 春季</span></div>
+                  <div class="ci-relation">万物向上萌发</div>
+                </div>
+                <div class="ci-node ci-n2">
+                  <div class="ci-node-head"><span class="ci-pos">n.</span><span class="ci-meaning">泉水 / 泉眼</span></div>
+                  <div class="ci-relation">水从地下涌出</div>
+                </div>
+                <div class="ci-node ci-n3">
+                  <div class="ci-node-head"><span class="ci-pos">n.</span><span class="ci-meaning">弹簧 / 发条</span></div>
+                  <div class="ci-relation">受压后弹起</div>
+                </div>
+                <div class="ci-node ci-n4">
+                  <div class="ci-node-head"><span class="ci-pos">vi.</span><span class="ci-meaning">跳 / 跃起</span></div>
+                  <div class="ci-relation">突然向上弹起</div>
                 </div>
               </div>
 
-              <!-- 星空画布与悬浮泡泡 -->
-              <div style="flex: 1; position: relative; overflow: hidden; padding: 20px;">
-                <!-- 几颗大星 -->
-                <div style="position: absolute; top: 15%; left: 18%; width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle, rgba(16, 208, 158, 0.3) 0%, rgba(16, 208, 158, 0.05) 70%, transparent 100%); border: 1.5px solid rgba(16, 208, 158, 0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(16, 208, 158, 0.4);">
-                  <span style="font-size: 12px; font-weight: 800; color: #FFFFFF;">spring</span>
-                  <span style="font-size: 9px; color: #10D09E;">永久牢记</span>
-                </div>
-
-                <div style="position: absolute; top: 22%; right: 20%; width: 105px; height: 105px; border-radius: 50%; background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(56, 189, 248, 0.05) 70%, transparent 100%); border: 1.5px solid rgba(56, 189, 248, 0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);">
-                  <span style="font-size: 12px; font-weight: 800; color: #FFFFFF;">accomplish</span>
-                  <span style="font-size: 9px; color: #38BDF8;">考研核心</span>
-                </div>
-
-                <div style="position: absolute; bottom: 25%; left: 35%; width: 115px; height: 115px; border-radius: 50%; background: radial-gradient(circle, rgba(192, 132, 252, 0.3) 0%, rgba(192, 132, 252, 0.05) 70%, transparent 100%); border: 1.5px solid rgba(192, 132, 252, 0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(192, 132, 252, 0.4);">
-                  <span style="font-size: 13px; font-weight: 800; color: #FFFFFF;">comprehensive</span>
-                  <span style="font-size: 9px; color: #C084FC;">真迹默写</span>
-                </div>
-
-                <div style="position: absolute; top: 48%; left: 10%; width: 75px; height: 75px; border-radius: 50%; background: radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, transparent 70%); border: 1px solid rgba(251, 191, 36, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                  <span style="font-size: 11px; font-weight: 700; color: #FFFFFF;">inevitable</span>
-                </div>
-
-                <div style="position: absolute; bottom: 18%; right: 15%; width: 85px; height: 85px; border-radius: 50%; background: radial-gradient(circle, rgba(244, 63, 94, 0.25) 0%, transparent 70%); border: 1px solid rgba(244, 63, 94, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                  <span style="font-size: 11px; font-weight: 700; color: #FFFFFF;">simultaneous</span>
-                </div>
+              <div class="ci-footer">
+                弹簧、泉眼、春天、跃起 —— 释义不是四件事，<br>
+                是<b>同一个动势</b>在机械、自然、生命里的四次显影。
               </div>
             </div>
 
-            <div class="ipad-home-bar" style="background: rgba(255,255,255,0.4);"></div>
+            <div class="ipad-home-bar"></div>
           </div>
 
           <!-- 中央直击人心大横幅 07 -->
           <div class="impact-banner">
-            <span class="banner-badge">✨</span>
-            <span class="banner-text">点亮星空，<span class="highlight">可视化见证词汇蜕变！</span></span>
+            <span class="banner-text">所有释义，都是同一个<span class="highlight">核心意象</span></span>
           </div>
         </div>
       </div>

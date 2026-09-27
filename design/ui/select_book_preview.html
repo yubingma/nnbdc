@@ -3,707 +3,441 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>选词书 - 泡泡单词极致美学原型</title>
+  <title>选词书 - 原型效果预览</title>
   <style>
-    :root {
-      /* 扇贝单词经典护眼温润绿体系 */
-      --bg: #F5F9F7;
-      --card-bg: #FFFFFF;
-      --card-subtle: #EDF5F2;
-      --card-hover: #E3F2EC;
-      --divider: rgba(24, 186, 124, 0.08);
-      
-      --text-primary: #152724;
-      --text-secondary: #425B57;
-      --text-muted: #789691;
-      --text-faint: #B2CDC8;
-
-      /* 扇贝绿主品牌色 */
-      --primary: #18BA7C;
-      --primary-hover: #15A56E;
-      --primary-soft: #E8F8F1;
-      --primary-text: #FFFFFF;
-
-      --active-card-bg: #EDF8F3;
-      --active-card-border: #18BA7C;
-
-      --cover-book-1: linear-gradient(135deg, #18BA7C 0%, #0D8255 100%);
-      --cover-book-2: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-      --cover-book-3: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-      --cover-book-4: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
-      --cover-book-5: linear-gradient(135deg, #EC4899 0%, #BE185D 100%);
-
-      --shadow-card: 0 4px 16px rgba(24, 186, 124, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
-      --shadow-float: 0 10px 28px -4px rgba(24, 186, 124, 0.35);
-    }
-
-    [data-theme="dark"] {
-      --bg: #0C1312;
-      --card-bg: #131E1C;
-      --card-subtle: #1A2826;
-      --card-hover: #223532;
-      --divider: rgba(255, 255, 255, 0.06);
-      
-      --text-primary: #EAF7F4;
-      --text-secondary: #8EA8A3;
-      --text-muted: #5B7A75;
-      --text-faint: #344B48;
-
-      --primary: #2CD88F;
-      --primary-hover: #26C07F;
-      --primary-soft: rgba(44, 216, 143, 0.12);
-      --primary-text: #0A1613;
-
-      --active-card-bg: #152B24;
-      --active-card-border: #2CD88F;
-
-      --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.4);
-      --shadow-float: 0 10px 28px -4px rgba(0, 0, 0, 0.6);
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
-
     body {
-      background-color: #DFE7E4;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
-      padding: 16px 12px;
-      color: var(--text-primary);
-      transition: background-color 0.3s;
+      justify-content: center;
+      gap: 14px;
+      padding: 24px 20px;
+      background: #0B0E0D;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
     }
 
-    /* 顶部控制栏 */
+    /* ===== 青碧湖蓝主题（AppThemeStyle.emerald）===== */
+    :root {
+      --primary: #0B7C9E;
+      --text-primary: #17262D;
+      --text-secondary: #3E4A52;
+      --text-muted: #5A646C;
+      --card-bg: rgba(255, 255, 255, 0.5);
+      --card-border: rgba(0, 0, 0, 0.15);
+      --divider: rgba(0, 0, 0, 0.055);
+      --row-tint: rgba(11, 124, 158, 0.07);
+      --action-tint: rgba(11, 124, 158, 0.07);
+      --circle-border: rgba(62, 74, 82, 0.3);
+      --page-bg: linear-gradient(180deg, #F1F7F8 0%, #E4EEEF 45%, #E7F0ED 100%);
+      --bar-bg: rgba(255, 255, 255, 0.72);
+      --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.03);
+      --shadow-bar: 0 -4px 18px rgba(0, 0, 0, 0.06);
+      --danger: #EF4444;
+    }
+    [data-theme="dark"] {
+      --primary: #2CD88F;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --card-bg: rgba(24, 32, 47, 0.72);
+      --card-border: rgba(255, 255, 255, 0.06);
+      --divider: rgba(255, 255, 255, 0.08);
+      --row-tint: rgba(44, 216, 143, 0.16);
+      --action-tint: rgba(44, 216, 143, 0.14);
+      --circle-border: rgba(148, 163, 184, 0.45);
+      --page-bg: linear-gradient(180deg, #10201F 0%, #0A1414 60%, #0C1716 100%);
+      --bar-bg: rgba(24, 32, 47, 0.9);
+      --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.14);
+      --shadow-bar: 0 -4px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    /* 设计器控制栏（渲染真机图时由统一模具隐藏） */
     .designer-toolbar {
-      width: 100%;
-      max-width: 412px;
-      margin-bottom: 12px;
+      width: 393px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(16px);
+      justify-content: space-between;
       padding: 8px 14px;
       border-radius: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    }
-    .designer-toolbar button {
-      background: #F1F5F9;
-      border: 1px solid #E2E8F0;
-      padding: 6px 12px;
-      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(16px);
+      color: #334155;
       font-size: 12px;
       font-weight: 600;
-      color: #334155;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.2s;
     }
-    .designer-toolbar button:hover {
-      background: #E2E8F0;
+    .designer-toolbar button {
+      border: 1px solid #E2E8F0;
+      background: #F1F5F9;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 8px;
+      cursor: pointer;
     }
 
-    /* 手机外壳容器 */
-    .device-mockup {
-      width: 100%;
-      max-width: 412px;
-      height: 844px;
-      background: var(--bg);
-      border-radius: 42px;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
-      overflow: hidden;
+    /* 手机画布（真机外壳由 design/ui/render_mockup_png.js 统一注入） */
+    .phone-container {
+      width: 393px;
+      height: 852px;
       display: flex;
       flex-direction: column;
       position: relative;
-      transition: background-color 0.3s ease;
-    }
-
-    /* 状态栏 */
-    .status-bar {
-      height: 38px;
-      padding: 0 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      font-weight: 700;
+      overflow: hidden;
+      background: var(--page-bg);
       color: var(--text-primary);
-      z-index: 10;
     }
 
-    /* 1. 顶部导航栏（集成搜索框与保存完成按钮） */
-    .app-top-nav {
-      padding: 6px 16px 10px 16px;
+    /* ===== 顶部搜索导航（顶部留出真机状态栏安全区） ===== */
+    .app-nav {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--divider);
+      padding: 50px 16px 10px;
     }
-    .btn-nav-back {
-      font-size: 18px;
-      color: var(--text-primary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      padding: 4px;
-    }
-    
-    /* 轻盈搜索输入框 */
-    .nav-search-box {
-      flex: 1;
-      height: 38px;
-      background: var(--card-subtle);
-      border: 1px solid var(--divider);
-      border-radius: 20px;
-      padding: 0 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .search-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      font-size: 13px;
-      color: var(--text-primary);
-      font-family: inherit;
-    }
-    .search-input::placeholder {
-      color: var(--text-muted);
-    }
-    .btn-clear-search {
-      width: 16px;
-      height: 16px;
+    .btn-back {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
       border-radius: 50%;
-      background: var(--text-muted);
-      color: var(--card-bg);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
-      cursor: pointer;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-primary);
     }
-
-    .btn-nav-action {
-      background: transparent;
-      border: none;
-      color: var(--primary);
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      padding: 4px 6px;
-    }
-
-    /* 2. 一级分类滚动 TabBar */
-    .primary-category-tabs {
+    .search-field {
+      flex: 1;
+      height: 38px;
       display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border-radius: 19px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 13.5px;
+    }
+
+    /* ===== 一级分类 TabBar ===== */
+    .primary-tabs {
+      display: flex;
+      align-items: stretch;
+      height: 44px;
+      padding: 0 16px;
       overflow-x: auto;
       scrollbar-width: none;
-      background: var(--card-bg);
-      padding: 0 16px;
-      border-bottom: 1px solid var(--divider);
+      border-bottom: 0.5px solid var(--divider);
     }
-    .cat-tab-item {
-      padding: 12px 14px;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-muted);
-      cursor: pointer;
-      white-space: nowrap;
+    .primary-tabs::-webkit-scrollbar { display: none; }
+    .primary-tab {
       position: relative;
-      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font-size: 14.5px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      white-space: nowrap;
     }
-    .cat-tab-item.active {
+    .primary-tab.active {
       color: var(--primary);
+      font-weight: 600;
     }
-    .cat-tab-item.active::after {
+    .primary-tab.active::after {
       content: '';
       position: absolute;
-      bottom: 0;
       left: 14px;
       right: 14px;
-      height: 3px;
-      background: var(--primary);
-      border-radius: 3px 3px 0 0;
-    }
-
-    /* 3. 二级分类胶囊选择行 */
-    .subcategory-capsules-bar {
-      padding: 10px 16px 6px 16px;
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .sub-capsule {
-      padding: 6px 14px;
-      border-radius: 18px;
-      background: var(--card-bg);
-      border: 1px solid var(--divider);
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .sub-capsule.active {
-      background: var(--primary);
-      color: var(--primary-text);
-      border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(24, 186, 124, 0.25);
-    }
-
-    /* 4. 词书列表滚动区域 */
-    .book-list-scroll-view {
-      flex: 1;
-      padding: 10px 16px 85px 16px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    /* 5. 词书卡片（书香质感微封面 + 详细信息 + 选中框） */
-    .book-card-item {
-      background: var(--card-bg);
-      border-radius: 18px;
-      padding: 14px;
-      border: 1.5px solid var(--divider);
-      box-shadow: var(--shadow-card);
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .book-card-item:hover {
-      border-color: var(--primary);
-      transform: translateY(-1px);
-    }
-    .book-card-item:active {
-      transform: scale(0.99);
-    }
-
-    /* 选中激活态 */
-    .book-card-item.selected {
-      background: var(--active-card-bg);
-      border-color: var(--active-card-border);
-      border-width: 2px;
-    }
-
-    /* 词书立体微封面 */
-    .book-cover-badge {
-      width: 48px;
-      height: 64px;
-      border-radius: 8px;
-      background: var(--cover-book-1);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 6px 5px;
-      color: #FFFFFF;
-      box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.15), inset 3px 0 0 rgba(255, 255, 255, 0.25);
-      flex-shrink: 0;
-      position: relative;
-    }
-    .cover-top-tag {
-      font-size: 8px;
-      font-weight: 800;
-      text-transform: uppercase;
-      opacity: 0.85;
-      letter-spacing: 0.5px;
-    }
-    .cover-title-text {
-      font-size: 10px;
-      font-weight: 900;
-      line-height: 1.1;
-      text-align: center;
-    }
-    .cover-bottom-bar {
+      bottom: 0;
       height: 2px;
-      background: rgba(255, 255, 255, 0.4);
-      border-radius: 1px;
+      border-radius: 2px 2px 0 0;
+      background: var(--primary);
     }
 
-    /* 中间：词书名称与词数标签 */
-    .book-info-col {
+    /* ===== 内容区 ===== */
+    .page-body {
       flex: 1;
+      padding: 12px 16px 0;
+      overflow: hidden;
+    }
+
+    /* 新建单词书：轻薄雾行动条 */
+    .create-action {
+      height: 46px;
+      border-radius: 14px;
+      background: var(--action-tint);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
+      color: var(--text-primary);
+    }
+    .create-action svg { color: var(--primary); }
+
+    /* 一体化聚合大卡 */
+    .book-card {
+      margin-top: 12px;
+      border-radius: 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    /* 单行词书 */
+    .book-row {
+      display: flex;
+      align-items: center;
+      padding: 11px 12px 11px 14px;
+    }
+    .book-row.selected { background: var(--row-tint); }
+    .book-icon { flex-shrink: 0; }
+    .book-info {
+      flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      min-width: 0;
+      gap: 3px;
+      padding-left: 12px;
     }
-    .book-title-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .book-name-text {
-      font-size: 16px;
-      font-weight: 800;
+    .book-title {
+      font-size: 14.5px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
       color: var(--text-primary);
-      letter-spacing: -0.01em;
-    }
-    .book-selected-tag {
-      font-size: 10px;
-      font-weight: 800;
-      color: var(--primary);
-      background: var(--primary-soft);
-      padding: 1px 6px;
-      border-radius: 6px;
-    }
-    .book-meta-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .book-count-badge {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      background: var(--card-subtle);
-      padding: 2px 8px;
-      border-radius: 6px;
-    }
-    .book-desc-text {
-      font-size: 12px;
-      color: var(--text-muted);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
-    /* 右侧：勾选状态圆形微按钮 */
-    .book-check-circle {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid var(--divider);
-      background: transparent;
+    .book-subtitle {
+      font-size: 11.5px;
+      font-weight: 400;
+      letter-spacing: 0.1px;
+      color: var(--text-secondary);
+    }
+    .book-action {
+      flex-shrink: 0;
+      width: 31px;
+      height: 31px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s;
-      flex-shrink: 0;
+      color: var(--primary);
     }
-    .book-card-item.selected .book-check-circle {
-      border-color: var(--primary);
-      background: var(--primary);
-      color: #FFFFFF;
-      box-shadow: 0 2px 8px rgba(24, 186, 124, 0.4);
-    }
+    .book-action.danger { color: var(--danger); }
 
-    /* 6. 底部悬浮智能保存舱 */
-    .floating-save-bar {
-      position: absolute;
-      bottom: 18px;
-      left: 16px;
-      right: 16px;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(16px);
-      border-radius: 24px;
-      padding: 8px 12px 8px 18px;
-      box-shadow: var(--shadow-float);
-      border: 1px solid var(--divider);
+    /* 勾选指示圆 */
+    .check-circle {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      margin-left: 6px;
+      border-radius: 50%;
+      border: 1.5px solid var(--circle-border);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      justify-content: center;
+      color: #FFFFFF;
     }
-    [data-theme="dark"] .floating-save-bar {
-      background: rgba(19, 30, 28, 0.92);
+    .book-row.selected .check-circle {
+      background: var(--primary);
+      border-color: var(--primary);
     }
-    .save-summary-col {
+
+    /* 行间发丝分割线（内缩对齐文字左缘） */
+    .row-divider {
+      height: 1px;
+      margin-left: 48px;
+      margin-right: 14px;
+      background: var(--divider);
+    }
+
+    /* ===== 底部保存栏 ===== */
+    .save-bar {
+      flex-shrink: 0;
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      padding: 10px 16px 24px 18px;
+      border-radius: 20px 20px 0 0;
+      background: var(--bar-bg);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow-bar);
     }
-    .save-count-text {
+    .save-summary {
+      flex: 1;
       font-size: 14px;
-      font-weight: 800;
+      font-weight: 600;
+      letter-spacing: -0.1px;
       color: var(--text-primary);
     }
-    .save-sub-text {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-    .btn-main-save {
-      height: 44px;
-      padding: 0 24px;
-      border-radius: 18px;
-      background: var(--primary);
-      border: none;
-      color: var(--primary-text);
-      font-size: 14px;
-      font-weight: 800;
+    .btn-save {
       display: flex;
       align-items: center;
       gap: 6px;
+      height: 42px;
+      padding: 0 22px;
+      border: none;
+      border-radius: 22px;
+      background: var(--primary);
+      color: #FFFFFF;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(24, 186, 124, 0.35);
-      transition: all 0.15s;
-    }
-    .btn-main-save:active {
-      transform: scale(0.98);
+      box-shadow: 0 4px 12px rgba(11, 124, 158, 0.22);
     }
   </style>
 </head>
 <body>
 
-  <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
-    <span>🌿 选词书 · 扇贝温润书香美学原型</span>
+    <span>🌿 选词书 · 一体化大卡极简原型</span>
     <button onclick="toggleTheme()">
       <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
     </button>
   </div>
 
-  <div class="device-mockup">
-    <!-- 状态栏 -->
-    <div class="status-bar">
-      <span>09:41</span>
-      <div style="display: flex; gap: 6px; align-items: center;">
-        <span>5G</span>
-        <span>100%</span>
-      </div>
-    </div>
-
-    <!-- 1. 顶部导航与搜索栏 -->
-    <div class="app-top-nav">
-      <div class="btn-nav-back" onclick="alert('返回')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <div class="phone-container">
+    <!-- 顶部搜索导航 -->
+    <div class="app-nav">
+      <div class="btn-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </div>
-
-      <div class="nav-search-box">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      <div class="search-field">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7.5"></circle>
+          <line x1="20.5" y1="20.5" x2="16.2" y2="16.2"></line>
         </svg>
-        <input type="text" class="search-input" id="search-input" placeholder="搜索词库 (如: 考研、CET-4)..." oninput="handleSearch(this.value)">
-        <div class="btn-clear-search" id="btn-clear" style="display: none;" onclick="clearSearch()">✕</div>
+        <span>搜索词库 / 词书名称...</span>
+      </div>
+    </div>
+
+    <!-- 一级分类 TabBar -->
+    <div class="primary-tabs">
+      <div class="primary-tab active">自定义</div>
+      <div class="primary-tab">四六级</div>
+      <div class="primary-tab">英语专业</div>
+      <div class="primary-tab">雅思</div>
+      <div class="primary-tab">CERF</div>
+      <div class="primary-tab">GRE</div>
+      <div class="primary-tab">考研</div>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="page-body">
+      <div class="create-action">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>新建单词书</span>
       </div>
 
-      <button class="btn-nav-action" onclick="saveSelection()">完成</button>
-    </div>
-
-    <!-- 2. 一级分类滚动 TabBar -->
-    <div class="primary-category-tabs">
-      <div class="cat-tab-item active" onclick="switchCategory(this, 'kaoyan')">考研英语</div>
-      <div class="cat-tab-item" onclick="switchCategory(this, 'cet')">四六级</div>
-      <div class="cat-tab-item" onclick="switchCategory(this, 'ielts')">雅思/托福</div>
-      <div class="cat-tab-item" onclick="switchCategory(this, 'highschool')">高考/高中</div>
-      <div class="cat-tab-item" onclick="switchCategory(this, 'custom')">自定义词书</div>
-    </div>
-
-    <!-- 3. 二级分类胶囊选择行 -->
-    <div class="subcategory-capsules-bar">
-      <div class="sub-capsule active" onclick="switchSub(this, 'all')">全部</div>
-      <div class="sub-capsule" onclick="switchSub(this, 'core')">核心高频词</div>
-      <div class="sub-capsule" onclick="switchSub(this, 'zhenti')">历年真题</div>
-      <div class="sub-capsule" onclick="switchSub(this, 'dagang')">5500 完整考纲</div>
-      <div class="sub-capsule" onclick="switchSub(this, 'luanxu')">乱序速记版</div>
-    </div>
-
-    <!-- 4. 词书列表滚动区域 -->
-    <div class="book-list-scroll-view" id="book-list-container">
-      
-      <!-- 词书 1：考研必背核心词（已选） -->
-      <div class="book-card-item selected" onclick="toggleSelect(this, 1500)">
-        <div class="book-cover-badge" style="background: var(--cover-book-1);">
-          <span class="cover-top-tag">CORE</span>
-          <span class="cover-title-text">考研<br>核心词</span>
-          <div class="cover-bottom-bar"></div>
-        </div>
-        <div class="book-info-col">
-          <div class="book-title-row">
-            <span class="book-name-text">考研英语必背核心词</span>
-            <span class="book-selected-tag">正在学习</span>
-          </div>
-          <div class="book-meta-row">
-            <span class="book-count-badge">1,500 词</span>
-            <span class="book-desc-text">十年真题考频精析 · 冲刺必背</span>
-          </div>
-        </div>
-        <div class="book-check-circle">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
+      <!-- 一体化聚合大卡：同类词书聚拢，行间发丝分割线 -->
+      <div class="book-card">
+        <!-- 生词本（暖金书签） -->
+        <div class="book-row selected">
+          <svg class="book-icon" width="22" height="22" viewBox="0 0 24 24">
+            <rect x="4.5" y="3.5" width="15" height="17" rx="3" fill="var(--primary)"></rect>
+            <path d="M4.5 6.5 A3 3 0 0 1 7.5 3.5 L7.5 20.5 L4.5 20.5 Z" fill="rgba(0,0,0,0.20)"></path>
+            <path d="M13 2 L16.5 2 L16.5 10.5 L14.75 9 L13 10.5 Z" fill="#F59E0B"></path>
+            <line x1="10.5" y1="14" x2="14.5" y2="14" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"></line>
           </svg>
+          <div class="book-info">
+            <div class="book-title">生词本</div>
+            <div class="book-subtitle">48 词</div>
+          </div>
+          <div class="book-action">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6h16M4 12h9M4 18h9"></path>
+              <path d="M16.5 16.5l4-4-2-2-4 4v2h2z"></path>
+            </svg>
+          </div>
+          <div class="book-action danger">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 7h16M9.5 7V5h5v2M6.5 7l1 13h9l1-13"></path>
+            </svg>
+          </div>
+          <div class="check-circle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
         </div>
-      </div>
 
-      <!-- 词书 2：考研英语大纲 5500 词（已选） -->
-      <div class="book-card-item selected" onclick="toggleSelect(this, 5500)">
-        <div class="book-cover-badge" style="background: var(--cover-book-2);">
-          <span class="cover-top-tag">FULL</span>
-          <span class="cover-title-text">考研<br>大纲词</span>
-          <div class="cover-bottom-bar"></div>
-        </div>
-        <div class="book-info-col">
-          <div class="book-title-row">
-            <span class="book-name-text">考研英语大纲 5500 完整词</span>
-            <span class="book-selected-tag">正在学习</span>
-          </div>
-          <div class="book-meta-row">
-            <span class="book-count-badge">5,500 词</span>
-            <span class="book-desc-text">考研英语一/二全面覆盖</span>
-          </div>
-        </div>
-        <div class="book-check-circle">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
+        <div class="row-divider"></div>
+
+        <!-- test（自建词书：右下角手写笔） -->
+        <div class="book-row selected">
+          <svg class="book-icon" width="22" height="22" viewBox="0 0 24 24">
+            <rect x="4.5" y="3.5" width="15" height="17" rx="3" fill="var(--primary)"></rect>
+            <path d="M4.5 6.5 A3 3 0 0 1 7.5 3.5 L7.5 20.5 L4.5 20.5 Z" fill="rgba(0,0,0,0.20)"></path>
+            <line x1="11" y1="8" x2="15" y2="8" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"></line>
+            <path d="M18.8 14.2 L14.2 18.8 L14.2 20.5 L15.9 20.5 L20.5 15.9 Z" fill="#FFFFFF"></path>
+            <path d="M21.2 15.2 L20.5 15.9 L18.8 14.2 L19.5 13.5 A1.2 1.2 0 0 1 21.2 15.2 Z" fill="#38BDF8"></path>
           </svg>
+          <div class="book-info">
+            <div class="book-title">test</div>
+            <div class="book-subtitle">1 词</div>
+          </div>
+          <div class="book-action">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6h16M4 12h9M4 18h9"></path>
+              <path d="M16.5 16.5l4-4-2-2-4 4v2h2z"></path>
+            </svg>
+          </div>
+          <div class="book-action danger">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 7h16M9.5 7V5h5v2M6.5 7l1 13h9l1-13"></path>
+            </svg>
+          </div>
+          <div class="check-circle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
         </div>
       </div>
-
-      <!-- 词书 3：考研高分冲刺词（未选） -->
-      <div class="book-card-item" onclick="toggleSelect(this, 800)">
-        <div class="book-cover-badge" style="background: var(--cover-book-3);">
-          <span class="cover-top-tag">ADV</span>
-          <span class="cover-title-text">冲刺<br>高分词</span>
-          <div class="cover-bottom-bar"></div>
-        </div>
-        <div class="book-info-col">
-          <div class="book-title-row">
-            <span class="book-name-text">考研高分冲刺进阶词</span>
-          </div>
-          <div class="book-meta-row">
-            <span class="book-count-badge">800 词</span>
-            <span class="book-desc-text">专攻阅读理解超纲拔高难词</span>
-          </div>
-        </div>
-        <div class="book-check-circle"></div>
-      </div>
-
-      <!-- 词书 4：历年真题熟词生义（未选） -->
-      <div class="book-card-item" onclick="toggleSelect(this, 600)">
-        <div class="book-cover-badge" style="background: var(--cover-book-4);">
-          <span class="cover-top-tag">TRAP</span>
-          <span class="cover-title-text">熟词<br>生义</span>
-          <div class="cover-bottom-bar"></div>
-        </div>
-        <div class="book-info-col">
-          <div class="book-title-row">
-            <span class="book-name-text">历年真题高频熟词生义</span>
-          </div>
-          <div class="book-meta-row">
-            <span class="book-count-badge">600 词</span>
-            <span class="book-desc-text">避开考研出题陷阱必刷</span>
-          </div>
-        </div>
-        <div class="book-check-circle"></div>
-      </div>
-
-      <!-- 词书 5：考研高频词组搭配（未选） -->
-      <div class="book-card-item" onclick="toggleSelect(this, 900)">
-        <div class="book-cover-badge" style="background: var(--cover-book-5);">
-          <span class="cover-top-tag">IDIOM</span>
-          <span class="cover-title-text">高频<br>短语</span>
-          <div class="cover-bottom-bar"></div>
-        </div>
-        <div class="book-info-col">
-          <div class="book-title-row">
-            <span class="book-name-text">考研高频词组搭配与习语</span>
-          </div>
-          <div class="book-meta-row">
-            <span class="book-count-badge">900 词组</span>
-            <span class="book-desc-text">翻译与写作提分利器</span>
-          </div>
-        </div>
-        <div class="book-check-circle"></div>
-      </div>
-
     </div>
 
-    <!-- 5. 底部悬浮智能保存舱 -->
-    <div class="floating-save-bar">
-      <div class="save-summary-col">
-        <div class="save-count-text" id="selected-summary">已选择 2 本词书</div>
-        <div class="save-sub-text" id="selected-words">共计 7,000 单词</div>
-      </div>
-      <button class="btn-main-save" onclick="saveSelection()">
-        <span>✓</span> <span>保存并同步</span>
+    <!-- 底部保存栏 -->
+    <div class="save-bar">
+      <div class="save-summary">已选择 5 本词书</div>
+      <button class="btn-save">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>保存</span>
       </button>
     </div>
-
   </div>
 
   <script>
-    let selectedBooksCount = 2;
-    let totalWordsCount = 7000;
-
-    function toggleSelect(el, wordCount) {
-      const isSel = el.classList.toggle('selected');
-      const checkCircle = el.querySelector('.book-check-circle');
-      
-      if (isSel) {
-        selectedBooksCount += 1;
-        totalWordsCount += wordCount;
-        checkCircle.innerHTML = `
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        `;
-      } else {
-        selectedBooksCount -= 1;
-        totalWordsCount -= wordCount;
-        checkCircle.innerHTML = '';
-      }
-      
-      updateSummary();
-    }
-
-    function updateSummary() {
-      document.getElementById('selected-summary').textContent = `已选择 ${selectedBooksCount} 本词书`;
-      document.getElementById('selected-words').textContent = `共计 ${totalWordsCount.toLocaleString()} 单词`;
-    }
-
-    function switchCategory(el, cat) {
-      document.querySelectorAll('.cat-tab-item').forEach(t => t.classList.remove('active'));
-      el.classList.add('active');
-    }
-
-    function switchSub(el, sub) {
-      document.querySelectorAll('.sub-capsule').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
-    }
-
-    function handleSearch(val) {
-      const clearBtn = document.getElementById('btn-clear');
-      clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
-    }
-
-    function clearSearch() {
-      const input = document.getElementById('search-input');
-      input.value = '';
-      document.getElementById('btn-clear').style.display = 'none';
-    }
-
-    function saveSelection() {
-      alert(`保存成功！已选 ${selectedBooksCount} 本词书（共 ${totalWordsCount.toLocaleString()} 词），已自动同步到学习计划中。`);
-    }
-
     function toggleTheme() {
-      const current = document.documentElement.getAttribute('data-theme');
-      if (current === 'dark') {
-        document.documentElement.removeAttribute('data-theme');
+      const root = document.documentElement;
+      const isDark = root.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        root.removeAttribute('data-theme');
         document.getElementById('theme-icon').textContent = '🌙';
         document.getElementById('theme-text').textContent = '暗黑模式';
       } else {
-        document.documentElement.setAttribute('data-theme', 'dark');
+        root.setAttribute('data-theme', 'dark');
         document.getElementById('theme-icon').textContent = '☀️';
         document.getElementById('theme-text').textContent = '明亮模式';
       }

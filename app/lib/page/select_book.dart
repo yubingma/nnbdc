@@ -19,6 +19,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/analytics_util.dart';
+import 'package:nnbdc/widget/dict_book_icon.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as p;
@@ -367,12 +368,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
 
   Widget _buildPrimaryTabContent(DictGroupVo parentVo, bool isDarkMode) {
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F8F8);
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
-
     if (parentVo.name == '自定义') {
-      return _buildCustomTabContent(isDarkMode, backgroundColor, textColor, subtitleColor);
+      return _buildCustomTabContent(isDarkMode);
     }
 
     final searchLower = _searchText.trim().toLowerCase();
@@ -384,7 +381,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       ) ?? false;
     }).toList();
 
-    if (subGroups.isEmpty) return const Center(child: Text('没有匹配的词书'));
+    if (subGroups.isEmpty) {
+      return _buildEmptyState(icon: Icons.search_off_rounded, text: '没有找到匹配的词书');
+    }
 
     // 如果只有一个二级分类，直接显示列表
     if (subGroups.length == 1) {
@@ -408,16 +407,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     );
   }
 
-  static final List<List<Color>> _bookGradients = [
-    [const Color(0xFF18BA7C), const Color(0xFF0D8255)], // 翡翠绿
-    [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)], // 深海蓝
-    [const Color(0xFFF59E0B), const Color(0xFFD97706)], // 琥珀金
-    [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)], // 紫罗兰
-    [const Color(0xFFEC4899), const Color(0xFFBE185D)], // 玫瑰粉
-    [const Color(0xFF06B6D4), const Color(0xFF0E7490)], // 天青蓝
-    [const Color(0xFF10B981), const Color(0xFF047857)], // 薄荷绿
-  ];
-
   String _formatNumber(int num) {
     return num.toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -425,152 +414,48 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     );
   }
 
-  Widget _buildBookCover(String title, int index, {bool isCustom = false}) {
-    final gradient = isCustom
-        ? [const Color(0xFF64748B), const Color(0xFF334155)]
-        : _bookGradients[index.abs() % _bookGradients.length];
-    final initial = Util.getInitial(title).toUpperCase();
-
-    return Container(
-      width: 44,
-      height: 58,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradient,
-        ),
-        borderRadius: BorderRadius.circular(6),
-        boxShadow: [
-          BoxShadow(
-            color: gradient[0].withValues(alpha: 0.35),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // 书脊暗影效果
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 4,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.18),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(6),
-                  bottomLeft: Radius.circular(6),
-                ),
-              ),
-            ),
-          ),
-          // 书脊内侧压线
-          Positioned(
-            left: 4,
-            top: 0,
-            bottom: 0,
-            width: 1,
-            child: Container(
-              color: Colors.white.withValues(alpha: 0.15),
-            ),
-          ),
-          // 封面中央字母与小标
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(top: 2),
-                  width: 14,
-                  height: 1.5,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(1),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  /// 二级分类胶囊：无边框的轻薄雾选中态，靠「底色 + 字重」表达选中，
+  /// 不用实心高饱和底 + 描边 + 外发光那套厚重表达。
   Widget _buildSubCategoryCapsules(DictGroupVo parentVo, List<DictGroupVo> subGroups, int selectedIndex, bool isDarkMode) {
-    return Container(
-      height: 38,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+    final themeConfig = context.themeConfig;
+    final accentColor = themeConfig.primaryColor;
+    final radius = BorderRadius.circular(16);
+
+    return SizedBox(
+      height: 46,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
         itemCount: subGroups.length,
         itemBuilder: (context, index) {
-          final group = subGroups[index];
           final isSelected = index == selectedIndex;
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Material(
-              color: Colors.transparent,
+              color: isSelected
+                  ? accentColor.withValues(alpha: isDarkMode ? 0.16 : 0.08)
+                  : Colors.transparent,
+              borderRadius: radius,
               child: InkWell(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: radius,
                 onTap: () {
                   setState(() {
                     _selectedSubGroupIndex[parentVo.name] = index;
                   });
                 },
-                child: Builder(builder: (context) {
-                  final themeStyle = context.watch<DarkMode>().themeStyle;
-                  final themeConfig = AppThemeConfig.of(themeStyle);
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? themeConfig.primaryColor
-                          : context.cardBg,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: isSelected
-                            ? themeConfig.primaryColor
-                            : themeConfig.cardBorder,
-                        width: 1,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: themeConfig.primaryColor.withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+                  child: Text(
+                    subGroups[index].name,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected ? themeConfig.textPrimary : themeConfig.textSecondary,
+                      letterSpacing: 0.1,
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      group.name,
-                      style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : themeConfig.textSecondary,
-                        fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      ),
-                    ),
-                  );
-                }),
+                  ),
+                ),
               ),
             ),
           );
@@ -579,398 +464,293 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     );
   }
 
-  Widget _buildBookList(List<DictVo> books, bool isDarkMode) {
+  /// 词书选择列表（系统词书与自定义词书共用）：
+  /// 同类词书聚合在一体化大卡内，行间以内缩发丝分割线区隔，
+  /// 杜绝「一物一卡」的碎片化堆叠，靠排版与字重建立层级。
+  Widget _buildBookList(List<DictVo> books, bool isDarkMode, {bool isCustom = false}) {
     final searchLower = _searchText.trim().toLowerCase();
-    final visibleBooks = books.where((b) => 
-      b.visible == true && 
+    final visibleBooks = books.where((b) =>
+      (isCustom || b.visible == true) &&
       (_searchText.isEmpty || _fuzzyMatch(b.name, searchLower) || _fuzzyMatch(b.shortName, searchLower))
     ).toList();
 
     if (visibleBooks.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off_rounded, size: 48, color: isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
-            const SizedBox(height: 12),
-            Text(
-              '没有找到匹配的词书',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
-              ),
-            ),
-          ],
-        ),
+      final isSearching = _searchText.trim().isNotEmpty;
+      final showCreateHint = isCustom && !isSearching;
+      return _buildEmptyState(
+        icon: showCreateHint ? Icons.menu_book_rounded : Icons.search_off_rounded,
+        text: showCreateHint
+            ? '点击上方按钮创建词书'
+            : (isCustom ? '没有匹配的自定义词书' : '没有找到匹配的词书'),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-      itemCount: visibleBooks.length,
-      itemBuilder: (context, index) {
-        final dict = visibleBooks[index];
-        final isSelected = isDictSelected(dict);
-        final bookTitle = dict.shortName ?? dict.name ?? '';
+    final dividerColor = isDarkMode
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.055);
+    final radius = BorderRadius.circular(16);
 
-        return Builder(builder: (context) {
-          final themeStyle = context.watch<DarkMode>().themeStyle;
-          final themeConfig = AppThemeConfig.of(themeStyle);
-          final primaryColor = themeConfig.primaryColor;
-          final subtleBg = themeConfig.subtleBg;
-          final cardBg = context.cardBg;
-          final cardBorder = themeConfig.cardBorder;
-
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            margin: const EdgeInsets.only(bottom: 12),
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+          // 与 FrostedGlassCard 同一套卡面/描边/阴影规格；用 sliver 级装饰承载背景，
+          // 才能在保持一体化大卡的同时让长列表按需构建。
+          sliver: DecoratedSliver(
             decoration: BoxDecoration(
-              color: isSelected
-                  ? (isDarkMode ? primaryColor.withValues(alpha: 0.18) : subtleBg)
-                  : cardBg,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isSelected
-                    ? primaryColor
-                    : cardBorder,
-                width: isSelected ? 1.5 : 1,
-              ),
-              boxShadow: themeConfig.cardShadows,
+              color: context.cardBg,
+              borderRadius: radius,
+              border: Border.all(color: context.cardBorder, width: 1),
+              boxShadow: [context.cardShadow],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => toggleDictSelectedStatus(dict),
-                borderRadius: BorderRadius.circular(14),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      // 立体精致封面
-                      _buildBookCover(bookTitle, index),
-                      const SizedBox(width: 14),
-                      // 词书信息
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              bookTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: themeConfig.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: 'NotoSansSC',
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: subtleBg,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    '${_formatNumber(dict.wordCount ?? 0)} 词',
-                                    style: TextStyle(
-                                      color: context.isDarkMode ? primaryColor : context.textPrimary,
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                if (dict.domain != null && dict.domain!.isNotEmpty) ...[
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    dict.domain!,
-                                    style: TextStyle(
-                                      color: themeConfig.textSecondary,
-                                      fontSize: 11.5,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // 勾选圆形指示器
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isSelected
-                              ? primaryColor
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: isSelected
-                                ? primaryColor
-                                : (isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: isSelected
-                            ? const Center(
-                                child: Icon(Icons.check_rounded, size: 14, color: Colors.white),
-                              )
-                            : null,
-                      ),
-                    ],
-                  ),
-                ),
+            sliver: SliverList.separated(
+              itemCount: visibleBooks.length,
+              separatorBuilder: (_, __) => Padding(
+                padding: const EdgeInsets.only(left: 48, right: 14),
+                child: Divider(height: 1, thickness: 0.5, color: dividerColor),
+              ),
+              itemBuilder: (context, index) => _buildBookRow(
+                dict: visibleBooks[index],
+                isDarkMode: isDarkMode,
+                isCustom: isCustom,
+                isFirst: index == 0,
+                isLast: index == visibleBooks.length - 1,
               ),
             ),
-          );
-        });
-      },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildCustomTabContent(bool isDarkMode, Color backgroundColor, Color textColor, Color? subtitleColor) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Builder(builder: (context) {
-            final restricted = !UserPrivilegeManager.canManageCustomDict;
-            final themeStyle = context.watch<DarkMode>().themeStyle;
-            final themeConfig = AppThemeConfig.of(themeStyle);
-            final primaryColor = themeConfig.primaryColor;
-            final subtleBg = themeConfig.subtleBg;
+  /// 单行词书：全站统一精装小册图标 + 标题/词数 + 勾选态
+  Widget _buildBookRow({
+    required DictVo dict,
+    required bool isDarkMode,
+    required bool isCustom,
+    required bool isFirst,
+    required bool isLast,
+  }) {
+    final themeConfig = context.themeConfig;
+    final accentColor = themeConfig.primaryColor;
+    final isSelected = isDictSelected(dict);
+    final isLocked = isCustom && !UserPrivilegeManager.canManageCustomDict && dict.name != '生词本';
 
-            return Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: _showCreateDictDialog,
-                child: Container(
-                  width: double.infinity,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: restricted
-                        ? (isDarkMode ? const Color(0xFF1F2A28) : const Color(0xFFE2E8F0))
-                        : (isDarkMode ? primaryColor.withValues(alpha: 0.15) : subtleBg),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: restricted
-                          ? Colors.grey
-                          : primaryColor,
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        restricted ? Icons.lock_outline_rounded : Icons.add_rounded,
-                        size: 20,
-                        color: restricted
-                            ? Colors.grey
-                            : primaryColor,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '新建单词书',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: restricted
-                              ? Colors.grey
-                              : (isDarkMode ? primaryColor : context.textPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+    final bookTitle = isCustom ? (dict.name ?? '未命名') : (dict.shortName ?? dict.name ?? '');
+    final wordCountText = '${_formatNumber(dict.wordCount ?? 0)} 词';
+    final subtitle = (dict.domain?.isNotEmpty ?? false) ? '$wordCountText · ${dict.domain}' : wordCountText;
+
+    // 选中薄雾与大卡圆角对齐：首/末行随大卡收角，中间行平铺
+    final rowRadius = BorderRadius.vertical(
+      top: isFirst ? const Radius.circular(16) : Radius.zero,
+      bottom: isLast ? const Radius.circular(16) : Radius.zero,
+    );
+
+    return Material(
+      color: isSelected ? accentColor.withValues(alpha: isDarkMode ? 0.16 : 0.07) : Colors.transparent,
+      borderRadius: rowRadius,
+      child: InkWell(
+        borderRadius: rowRadius,
+        onTap: () {
+          if (isLocked && !isSelected) {
+            _showPremiumPrompt();
+            return;
+          }
+          toggleDictSelectedStatus(dict);
+        },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 11, 12, 11),
+          child: Row(
+            children: [
+              DictBookIcon.fromDict(
+                editable: dict.editable,
+                ownerId: dict.owner?.id,
+                name: dict.name ?? '',
+                size: 22,
+                color: isLocked ? themeConfig.textSecondary.withValues(alpha: 0.45) : null,
               ),
-            );
-          }),
-        ),
-        Expanded(
-          child: Builder(builder: (context) {
-            final searchLower = _searchText.trim().toLowerCase();
-            final filteredCustomDicts = customDicts!.where((d) => 
-              _searchText.isEmpty || _fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower)
-            ).toList();
-
-            if (filteredCustomDicts.isEmpty) {
-              return Center(
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.menu_book_rounded, size: 48, color: isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
-                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            bookTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
+                              color: themeConfig.textPrimary,
+                              letterSpacing: -0.1,
+                            ),
+                          ),
+                        ),
+                        if (isLocked) ...[
+                          const SizedBox(width: 5),
+                          Icon(Icons.lock_outline_rounded, size: 13, color: themeConfig.textMuted),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
                     Text(
-                      _searchText.isEmpty ? '点击上方按钮创建词书' : '没有匹配的自定义词书',
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
-                        fontSize: 14,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w400,
+                        color: themeConfig.textSecondary,
+                        letterSpacing: 0.1,
                       ),
                     ),
                   ],
                 ),
-              );
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
-              itemCount: filteredCustomDicts.length,
-              itemBuilder: (context, index) {
-                final dict = filteredCustomDicts[index];
-                final isSelected = isDictSelected(dict);
-                final bookTitle = dict.name ?? '未命名';
-
-                final themeStyle = context.watch<DarkMode>().themeStyle;
-                final themeConfig = AppThemeConfig.of(themeStyle);
-                final primaryColor = themeConfig.primaryColor;
-                final subtleBg = themeConfig.subtleBg;
-                final cardBg = context.cardBg;
-                final cardBorder = themeConfig.cardBorder;
-
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? (isDarkMode ? primaryColor.withValues(alpha: 0.18) : subtleBg)
-                        : cardBg,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: isSelected
-                          ? primaryColor
-                          : cardBorder,
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                    boxShadow: themeConfig.cardShadows,
+              ),
+              if (isCustom) ...[
+                _buildRowActionButton(
+                  icon: Icons.edit_note_rounded,
+                  color: isLocked ? themeConfig.textMuted : accentColor,
+                  tooltip: '管理单词',
+                  onPressed: () async {
+                    if (isLocked) {
+                      _showPremiumPrompt();
+                      return;
+                    }
+                    await toDictWordsListPage(dict, true);
+                    loadData(keepSelection: true);
+                  },
+                ),
+                if (dict.canDelete != false)
+                  _buildRowActionButton(
+                    icon: Icons.delete_outline_rounded,
+                    color: const Color(0xFFEF4444),
+                    tooltip: '删除词书',
+                    onPressed: () => _confirmDeleteDict(dict),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () {
-                        if (!UserPrivilegeManager.canManageCustomDict && dict.name != '生词本' && !isSelected) {
-                          _showPremiumPrompt();
-                          return;
-                        }
-                        toggleDictSelectedStatus(dict);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            _buildBookCover(bookTitle, index, isCustom: true),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          bookTitle,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: themeConfig.textPrimary,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            fontFamily: 'NotoSansSC',
-                                          ),
-                                        ),
-                                      ),
-                                      if (!UserPrivilegeManager.canManageCustomDict && dict.name != '生词本') ...[
-                                        const SizedBox(width: 4),
-                                        const Icon(Icons.lock_outline_rounded, size: 14, color: Colors.grey),
-                                      ],
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: subtleBg,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      '${_formatNumber(dict.wordCount ?? 0)} 词',
-                                      style: TextStyle(
-                                        color: context.isDarkMode ? primaryColor : context.textPrimary,
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // 操作按钮
-                            IconButton(
-                              icon: Icon(
-                                Icons.edit_note_rounded,
-                                size: 22,
-                                color: (!UserPrivilegeManager.canManageCustomDict && dict.name != '生词本')
-                                    ? Colors.grey
-                                    : primaryColor,
-                              ),
-                              onPressed: () async {
-                                if (!UserPrivilegeManager.canManageCustomDict && dict.name != '生词本') {
-                                  _showPremiumPrompt();
-                                  return;
-                                }
-                                await toDictWordsListPage(dict, true);
-                                loadData(keepSelection: true);
-                              },
-                              tooltip: '管理单词',
-                            ),
-                            if (dict.canDelete != false)
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Color(0xFFEF4444)),
-                                onPressed: () => _confirmDeleteDict(dict),
-                                tooltip: '删除词书',
-                              ),
-                            const SizedBox(width: 4),
-                            // 勾选指示器
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSelected
-                                    ? primaryColor
-                                    : Colors.transparent,
-                                border: Border.all(
-                                  color: isSelected
-                                      ? primaryColor
-                                      : (isDarkMode ? Colors.white24 : themeConfig.cardBorder),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: isSelected
-                                  ? const Center(
-                                      child: Icon(Icons.check_rounded, size: 14, color: Colors.white),
-                                    )
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          }),
+              ],
+              const SizedBox(width: 6),
+              _buildSelectCircle(isSelected: isSelected, isDarkMode: isDarkMode),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 行内轻量操作按钮：不套 IconButton 的 48 触点框，避免把行高撑胖
+  Widget _buildRowActionButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icon, size: 19, color: color),
+        ),
+      ),
+    );
+  }
+
+  /// 勾选指示圆：选中即实心主题色 + 白勾
+  Widget _buildSelectCircle({required bool isSelected, required bool isDarkMode}) {
+    final themeConfig = context.themeConfig;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isSelected ? themeConfig.primaryColor : Colors.transparent,
+        border: Border.all(
+          color: isSelected
+              ? themeConfig.primaryColor
+              : themeConfig.textSecondary.withValues(alpha: isDarkMode ? 0.45 : 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: isSelected
+          ? const Center(child: Icon(Icons.check_rounded, size: 14, color: Colors.white))
+          : null,
+    );
+  }
+
+  Widget _buildEmptyState({required IconData icon, required String text}) {
+    final themeConfig = context.themeConfig;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 44, color: themeConfig.textSecondary.withValues(alpha: 0.3)),
+          const SizedBox(height: 10),
+          Text(text, style: TextStyle(fontSize: 13, color: themeConfig.textSecondary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomTabContent(bool isDarkMode) {
+    return Column(
+      children: [
+        _buildCreateDictAction(isDarkMode),
+        Expanded(
+          child: _buildBookList(customDicts ?? const <DictVo>[], isDarkMode, isCustom: true),
         ),
       ],
+    );
+  }
+
+  /// 新建单词书：轻薄雾行动条（图标承主题色，文字保持可读深色）
+  Widget _buildCreateDictAction(bool isDarkMode) {
+    final themeConfig = context.themeConfig;
+    final accentColor = themeConfig.primaryColor;
+    final isRestricted = !UserPrivilegeManager.canManageCustomDict;
+    final radius = BorderRadius.circular(14);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Material(
+        color: isRestricted
+            ? (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.035))
+            : accentColor.withValues(alpha: isDarkMode ? 0.14 : 0.07),
+        borderRadius: radius,
+        child: InkWell(
+          borderRadius: radius,
+          onTap: _showCreateDictDialog,
+          child: SizedBox(
+            height: 46,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isRestricted ? Icons.lock_outline_rounded : Icons.add_rounded,
+                  size: 19,
+                  color: isRestricted ? themeConfig.textMuted : accentColor,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  '新建单词书',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isRestricted ? themeConfig.textMuted : themeConfig.textPrimary,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1779,41 +1559,38 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
   Widget _buildFloatingSaveBar(bool isDarkMode) {
     final selectedCount = selectedDictVos?.length ?? 0;
-    final themeStyle = context.watch<DarkMode>().themeStyle;
-    final themeConfig = AppThemeConfig.of(themeStyle);
+    final themeConfig = context.themeConfig;
     final accentColor = themeConfig.primaryColor;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
-        16, 12, 16,
+        18, 12, 16,
         (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 6 : 12),
       ),
       decoration: BoxDecoration(
         color: context.cardBg,
+        // 底栏靠柔和上投影与内容区分离，不再压一条硬描边
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, -3),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
           ),
         ],
-        border: Border(
-          top: BorderSide(
-            color: themeConfig.cardBorder,
-            width: 1,
-          ),
-        ),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               selectedCount > 0 ? '已选择 $selectedCount 本词书' : '请勾选要学习的词书',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: themeConfig.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.1,
+                color: selectedCount > 0 ? themeConfig.textPrimary : themeConfig.textSecondary,
               ),
             ),
           ),
@@ -1826,9 +1603,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
               backgroundColor: accentColor,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-              textStyle: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+              textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -1910,11 +1687,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           child: (tabController != null && filteredCategories.isNotEmpty)
               ? Container(
                   decoration: BoxDecoration(
-                    color: Colors.transparent,
                     border: Border(
                       bottom: BorderSide(
-                        color: themeConfig.cardBorder,
-                        width: 1,
+                        color: isDarkMode
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.055),
+                        width: 0.5,
                       ),
                     ),
                   ),
@@ -1925,9 +1703,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                     unselectedLabelColor: themeConfig.textSecondary,
                     indicatorColor: themeConfig.primaryColor,
                     indicatorSize: TabBarIndicatorSize.label,
-                    indicatorWeight: 2.5,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
-                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14.5),
+                    indicatorWeight: 2,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400, fontSize: 14.5),
                     dividerColor: Colors.transparent,
                     tabAlignment: TabAlignment.start,
                     tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),

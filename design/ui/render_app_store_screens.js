@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * 应用商店截图生成器（App Store 6.5" / 华为应用市场 / 横排概览图）
+ * 应用商店截图生成器（App Store iPhone 6.5" / App Store iPad 13" / 华为应用市场 / 横排概览图）
  *
- * 三种产物，同一套海报原型（app_store_minimal_clean_preview.html）：
+ * 四路产物，共用同一套深墨视觉语言（苹果与华为同一份原型，iPad 是宽屏版原型）：
  *   apple    1242×2688（9:19.5）→ design/ui/png/app_store_iphone_6.5/
+ *   ipad     2048×2732（3:4）   → design/ui/png/app_store_ipad_13/
  *   huawei   450×800（9:16）   → devops/应用上架资源/huawei/
  *   overview 7 张横排概览图     → design/ui/png/app_store_minimal_clean_overview.png
  *
@@ -16,8 +17,9 @@
  * 4. Chrome 截完图不会自行退出，按进程组整体回收，避免残留进程拖慢机器。
  *
  * 用法：
- *   node design/ui/render_app_store_screens.js            # apple + huawei 全部 7 张
+ *   node design/ui/render_app_store_screens.js            # apple + ipad + huawei 全部
  *   node design/ui/render_app_store_screens.js apple
+ *   node design/ui/render_app_store_screens.js ipad
  *   node design/ui/render_app_store_screens.js huawei
  *   node design/ui/render_app_store_screens.js overview
  */
@@ -28,7 +30,8 @@ const { execSync, spawn } = require('child_process');
 
 const UI_DIR = __dirname;
 const ROOT = path.resolve(__dirname, '..', '..');
-const SRC_HTML = 'app_store_minimal_clean_preview.html';
+const SRC_PHONE_HTML = 'app_store_minimal_clean_preview.html';
+const SRC_IPAD_HTML = 'app_store_ipad_preview.html';
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const HUAWEI_SUPERSAMPLE = 3;
@@ -45,6 +48,7 @@ const POSTER_ATTRS = `
 
 const TARGETS = {
   apple: {
+    srcHtml: SRC_PHONE_HTML,
     width: 1242,
     height: 2688,
     // 海报原型在 9:19.5 下的版面尺寸就是 390×844，放大 3.18 倍正好是 App Store 交付尺寸
@@ -54,7 +58,19 @@ const TARGETS = {
     device: 'pure',
     outDir: path.join(UI_DIR, 'png', 'app_store_iphone_6.5'),
   },
+  ipad: {
+    srcHtml: SRC_IPAD_HTML,
+    width: 2048,
+    height: 2732,
+    // iPad 13" 版面就是 1024×1366，正好 2 倍交付
+    canvasWidth: 1024,
+    canvasHeight: 1366,
+    aspect: 'ipad',
+    device: 'ipad',
+    outDir: path.join(UI_DIR, 'png', 'app_store_ipad_13'),
+  },
   huawei: {
+    srcHtml: SRC_PHONE_HTML,
     width: 450,
     height: 800,
     canvasWidth: 450,
@@ -79,15 +95,18 @@ const CARDS = [
 /// base 必须插在 <head> 之后、海报自身 <style> 之前 —— 行内样式表的相对 URL 是按
 /// 「解析到该 <style> 时的 base」解析的；插到 </head> 前会让样式表里的
 /// url('assets/...') 落到临时文件所在目录（曾经因此静默渲染出一张空白圆心）。
-function readStrippedHtml() {
-  const src = fs.readFileSync(path.join(UI_DIR, SRC_HTML), 'utf8');
+function readStrippedHtml(srcHtml) {
+  const src = fs.readFileSync(path.join(UI_DIR, srcHtml), 'utf8');
   const stripped = src.replace(/<script>[\s\S]*<\/script>\s*<\/body>/, '</body>');
-  if (stripped === src) throw new Error('未能剥离原型控制台脚本，页面结构可能已变更');
+  // iPad 原型本来就没有控制台脚本；有脚本却剥不掉，才是页面结构变了
+  if (stripped === src && src.includes('<script')) {
+    throw new Error(`未能剥离 ${srcHtml} 的控制台脚本，页面结构可能已变更`);
+  }
   return stripped.replace('<head>', `<head><base href="file://${UI_DIR}/">`);
 }
 
-function writeTempHtml(tag, exportCss, bootScript) {
-  const html = readStrippedHtml()
+function writeTempHtml(srcHtml, tag, exportCss, bootScript) {
+  const html = readStrippedHtml(srcHtml)
     .replace('</head>', `<style id="export-style">${exportCss}</style></head>`)
     .replace('</body>', `<script>${bootScript}</script></body>`);
   const tmpPath = path.join('/tmp', `appstore_${tag}.html`);
@@ -191,7 +210,7 @@ function renderCard(target, card, scale) {
     ${POSTER_ATTRS}
     document.getElementById('${card.id}').classList.add('export-target');
   `;
-  const htmlPath = writeTempHtml(`${aspect}_${card.id}`, cardExportCss(canvasWidth, canvasHeight), bootScript);
+  const htmlPath = writeTempHtml(target.srcHtml, `${aspect}_${card.id}`, cardExportCss(canvasWidth, canvasHeight), bootScript);
   const rawPng = path.join('/tmp', `appstore_${aspect}_${card.id}_raw.png`);
   shoot(htmlPath, rawPng, canvasWidth, canvasHeight, scale, false);
 
@@ -227,7 +246,7 @@ function renderOverview() {
   const width = CARDS.length * 390 + (CARDS.length - 1) * OVERVIEW_GAP + OVERVIEW_MARGIN * 2;
   const height = 844 + OVERVIEW_MARGIN * 2;
   const outPng = path.join(UI_DIR, 'png', 'app_store_minimal_clean_overview.png');
-  const htmlPath = writeTempHtml('overview', overviewExportCss(width, height), POSTER_ATTRS);
+  const htmlPath = writeTempHtml(SRC_PHONE_HTML, 'overview', overviewExportCss(width, height), POSTER_ATTRS);
   shoot(htmlPath, outPng, width, height, scale, true);
   console.log(`✅ 概览图 app_store_minimal_clean_overview.png  ${width * scale}×${height * scale}  ${Math.round(fs.statSync(outPng).size / 1024)} KB`);
 }
@@ -236,6 +255,7 @@ function main() {
   const what = (process.argv[2] || 'all').toLowerCase();
   const jobs = {
     apple: () => renderTarget(TARGETS.apple, TARGETS.apple.width / TARGETS.apple.canvasWidth),
+    ipad: () => renderTarget(TARGETS.ipad, TARGETS.ipad.width / TARGETS.ipad.canvasWidth),
     huawei: () => renderTarget(TARGETS.huawei, HUAWEI_SUPERSAMPLE),
     overview: renderOverview,
   };
@@ -244,7 +264,7 @@ function main() {
   } else if (jobs[what]) {
     jobs[what]();
   } else {
-    console.error(`❌ 未知目标「${what}」，可选：all / apple / huawei / overview`);
+    console.error(`❌ 未知目标「${what}」，可选：all / apple / ipad / huawei / overview`);
     process.exit(1);
   }
   console.log('\n🎉 完成。');
