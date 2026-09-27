@@ -173,7 +173,8 @@
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      overflow: hidden;
+      /* 不裁切：药丸要越过平板左右轮廓（正是它好看的地方），裁切会把外发光切出硬边 */
+      overflow: visible;
     }
 
     /* ========================================================
@@ -246,10 +247,10 @@
       top: 45%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 620px;
-      max-width: 90%;
+      width: 940px;
+      max-width: none;
       z-index: 150;
-      padding: 19px 36px;
+      padding: 20px 40px;
       border-radius: 100px;
       background: #FFFFFF;
       /* 白药丸在墨底上本就是最亮的一块，加一圈品牌青绿细环与贴边光晕把它钉住；
@@ -268,7 +269,7 @@
     }
     /* 零多余容器：不再给这句话套 emoji 圆徽章 */
     .banner-text {
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 700;
       color: #0F172A;
       letter-spacing: 0.3px;
