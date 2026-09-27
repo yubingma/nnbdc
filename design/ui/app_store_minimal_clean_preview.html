@@ -280,23 +280,22 @@
       width: 366px;
       max-width: 95%;
       z-index: 150;
-      padding: 11px 22px;
+      padding: 15px 28px;
       border-radius: 100px;
-      background: rgba(255, 255, 255, 0.97);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.6);
+      background: #FFFFFF;
+      /* 白药丸在墨底上本就是最亮的一块，再加一圈品牌青绿细环与贴边光晕把它钉住；
+         光晕只给 18px 紧贴边缘，糊到 50px 会透过屏幕把整块白底染绿。 */
+      box-shadow: 
+        0 0 0 2px rgba(16, 208, 158, 0.85),
+        0 0 18px rgba(16, 208, 158, 0.45),
+        0 14px 30px -12px rgba(0, 0, 0, 0.55);
       display: flex;
       align-items: center;
       justify-content: center;
       transition: transform 0.3s ease;
     }
-    #card-1 .impact-banner {
-      top: 36%;
-    }
-    #card-2 .impact-banner {
-      top: 35.5%;
-    }
+    /* 7 张统一走同一条基准线，横排看过去才是一条水平带；
+       7 号的结构不同（中心意象图占正中），单独下移避开画面中心。 */
     #card-7 .impact-banner {
       top: 78%;
     }
@@ -305,15 +304,15 @@
     }
     /* 零多余容器：不再给这句话套 emoji 圆徽章，纯文字自成一句 */
     .banner-text {
-      font-size: 14.5px;
-      font-weight: 600;
+      font-size: 17px;
+      font-weight: 700;
       color: #0F172A;
       letter-spacing: 0.2px;
       white-space: nowrap;
       line-height: 1.2;
     }
     .banner-text .highlight {
-      color: #047857;
+      color: #059669;
       font-weight: 700;
     }
 
@@ -458,27 +457,31 @@
       width: 100%;
       height: 100%;
     }
+    /* 中心意象图：简笔画而非实拍图。图式本身是抽象的「动势」，
+       一张写实照片会把它拉回「配图」；几笔线条才说得清「被压缩 → 向上弹涌」。
+       不套圆形容器，只垫一层极淡的品牌青绿光晕，让它有分量而不成块。 */
     .ci-hub {
       position: absolute;
       left: 50%;
-      top: 170px;
+      top: 166px;
       transform: translate(-50%, -50%);
-      width: 108px;
-      height: 108px;
-      border-radius: 50%;
-      background-image: url('assets/spring_wanx_real.png');
-      background-size: cover;
-      background-position: 50% 50%;
-      background-repeat: no-repeat;
-      box-shadow: 
-        0 0 0 1px rgba(5, 150, 105, 0.16),
-        0 12px 26px -10px rgba(15, 23, 42, 0.28);
+      width: 126px;
+      height: 126px;
+      background: radial-gradient(circle at 50% 55%, rgba(16, 208, 158, 0.10) 0%, rgba(16, 208, 158, 0) 68%);
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
     }
+    .ci-figure {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
     .ci-hub-caption {
-      margin-bottom: -9px;
+      position: absolute;
+      left: 50%;
+      bottom: -5px;
+      transform: translateX(-50%);
       font-size: 10px;
       font-weight: 700;
       color: #047857;
@@ -986,8 +989,8 @@
                   </div>
                 </div>
 
-                <!-- 中央为悬浮横幅预留的纯净黄金视觉通道 -->
-                <div style="height: 38px;"></div>
+                <!-- 中央为悬浮横幅预留的纯净视觉通道（高度按横幅实际占位校准） -->
+                <div style="height: 91px;"></div>
 
                 <!-- 语音作答与智能裁判卡片 -->
                 <div class="sentence-asr-result-card" style="background: #ECFDF5; border-color: #A7F3D0; padding: 8px 12px 7px;">
@@ -1212,7 +1215,7 @@
                       <span class="asr-live-dot"></span>
                       <span style="font-size: 10.5px; color: #059669; font-weight: 700;">实时识别 · 你的口译：</span>
                     </div>
-                    <span class="score-badge">👏 哇，太准确了！</span>
+                    <span class="score-badge">👏 太准确了！</span>
                   </div>
 
                   <div class="user-speech-text">
@@ -1581,13 +1584,42 @@
                 <div class="ci-orbit">
                   <!-- 引线：从中心意象图牵向四周释义，四条弧线各自独立、互不交叉 -->
                   <svg class="ci-links" viewBox="0 0 288 340" fill="none">
-                    <path d="M116 118 C108 90, 100 66, 92 44" stroke="#CBD5E1" stroke-width="1.2"/>
-                    <path d="M172 118 C180 90, 188 66, 196 44" stroke="#CBD5E1" stroke-width="1.2"/>
-                    <path d="M116 202 C108 230, 100 254, 92 276" stroke="#CBD5E1" stroke-width="1.2"/>
-                    <path d="M172 202 C180 230, 188 254, 196 276" stroke="#CBD5E1" stroke-width="1.2"/>
+                    <defs>
+                      <marker id="ci-arrow" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto">
+                        <path d="M1.4 1.4 L6 4 L1.4 6.6" stroke="#94A3B8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                      </marker>
+                    </defs>
+                    <path d="M92 40 C104 68, 112 96, 116 124" stroke="#CBD5E1" stroke-width="1.2" marker-end="url(#ci-arrow)"/>
+                    <path d="M196 40 C184 68, 176 96, 172 124" stroke="#CBD5E1" stroke-width="1.2" marker-end="url(#ci-arrow)"/>
+                    <path d="M92 300 C104 272, 112 244, 116 218" stroke="#CBD5E1" stroke-width="1.2" marker-end="url(#ci-arrow)"/>
+                    <path d="M196 300 C184 272, 176 244, 172 218" stroke="#CBD5E1" stroke-width="1.2" marker-end="url(#ci-arrow)"/>
                   </svg>
 
                   <div class="ci-hub">
+                    <svg class="ci-figure" viewBox="0 0 120 120" fill="none">
+                      <!-- 蓄势：被压紧的弹簧。中间那圈淡下去，三圈才读成一条螺旋而不是三个环 -->
+                      <g stroke="#047857" stroke-width="2.4" stroke-linecap="round">
+                        <ellipse cx="60" cy="91" rx="18" ry="6.6"/>
+                        <ellipse cx="60" cy="80" rx="18" ry="6.6" stroke-opacity="0.42"/>
+                        <ellipse cx="60" cy="69" rx="18" ry="6.6"/>
+                      </g>
+                      <!-- 释放：从弹簧顶端向上弹涌 -->
+                      <g stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M60 59 V24"/>
+                        <path d="M51 34 L60 23 L69 34"/>
+                      </g>
+                      <!-- 迸发：两侧溢出的余势 -->
+                      <g stroke="#6EE7B7" stroke-width="2.2" stroke-linecap="round">
+                        <path d="M41 58 L30 47"/>
+                        <path d="M79 58 L90 47"/>
+                      </g>
+                      <g fill="#6EE7B7">
+                        <circle cx="27" cy="38" r="2.4"/>
+                        <circle cx="93" cy="38" r="2.4"/>
+                      </g>
+                      <!-- 地面 -->
+                      <path d="M41 100 H79" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
                     <span class="ci-hub-caption">向上弹涌的动势</span>
                   </div>
 
