@@ -1476,6 +1476,7 @@ class _EditWordDialog extends StatefulWidget {
 class _EditWordDialogState extends State<_EditWordDialog> {
   late TextEditingController _spellController;
   late TextEditingController _shortDescController;
+  late TextEditingController _shortDescCnController;
   late TextEditingController _longDescController;
   late TextEditingController _pronounceController;
   late TextEditingController _americaPronounceController;
@@ -1488,6 +1489,8 @@ class _EditWordDialogState extends State<_EditWordDialog> {
     super.initState();
     _spellController = TextEditingController(text: widget.dictWord.word.spell);
     _shortDescController = TextEditingController(text: widget.dictWord.word.shortDesc ?? '');
+    _shortDescCnController =
+        TextEditingController(text: widget.dictWord.word.shortDescCn ?? '');
     _longDescController = TextEditingController(text: widget.dictWord.word.longDesc ?? '');
     _pronounceController = TextEditingController(text: widget.dictWord.word.pronounce ?? '');
     _americaPronounceController = TextEditingController(text: widget.dictWord.word.americaPronounce ?? '');
@@ -1499,6 +1502,7 @@ class _EditWordDialogState extends State<_EditWordDialog> {
   void dispose() {
     _spellController.dispose();
     _shortDescController.dispose();
+    _shortDescCnController.dispose();
     _longDescController.dispose();
     _pronounceController.dispose();
     _americaPronounceController.dispose();
@@ -1542,6 +1546,16 @@ class _EditWordDialogState extends State<_EditWordDialog> {
               controller: _shortDescController,
               label: '简短描述',
               hint: '请输入简短描述',
+              maxLines: 2,
+            ),
+
+            const SizedBox(height: 16),
+
+            // 简短描述的中文译文（App「深度讲解」下方展示）
+            _buildTextField(
+              controller: _shortDescCnController,
+              label: '简短描述中文',
+              hint: '请输入简短描述的中文译文',
               maxLines: 2,
             ),
 
@@ -1714,6 +1728,7 @@ class _EditWordDialogState extends State<_EditWordDialog> {
         widget.dictWord.word.id ?? '',
         _spellController.text.trim(),
         _shortDescController.text.trim().isEmpty ? null : _shortDescController.text.trim(),
+        _shortDescCnController.text.trim().isEmpty ? null : _shortDescCnController.text.trim(),
         _longDescController.text.trim().isEmpty ? null : _longDescController.text.trim(),
         _pronounceController.text.trim().isEmpty ? null : _pronounceController.text.trim(),
         _americaPronounceController.text.trim().isEmpty ? null : _americaPronounceController.text.trim(),

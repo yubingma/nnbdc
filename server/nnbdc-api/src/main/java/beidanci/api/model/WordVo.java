@@ -22,6 +22,7 @@ public class WordVo extends UuidVo {
     private Integer popularity;
     private String groupInfo;
     private String shortDesc;
+    private String shortDescCn;
     private String longDesc;
     private String meaningStr;
     private byte[] embedding1bit;
@@ -206,6 +207,14 @@ public class WordVo extends UuidVo {
 
     public void setShortDesc(String shortDesc) {
         this.shortDesc = shortDesc;
+    }
+
+    public String getShortDescCn() {
+        return shortDescCn;
+    }
+
+    public void setShortDescCn(String shortDescCn) {
+        this.shortDescCn = shortDescCn;
     }
 
     public String getSound() {

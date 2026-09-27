@@ -146,6 +146,21 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
     }
   }
 
+  static String _getGrowthLabel(TimeDimension dim) {
+    switch (dim) {
+      case TimeDimension.today:
+        return '较昨日';
+      case TimeDimension.week:
+        return '较上周';
+      case TimeDimension.month:
+        return '较上月';
+      case TimeDimension.year:
+        return '较去年';
+      case TimeDimension.allTime:
+        return '坚持走势';
+    }
+  }
+
   Map<String, int> _buildDailySecondsMap() {
     final map = <String, int>{};
     for (final stat in _recentYearDailyStats) {
@@ -479,7 +494,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
                 _buildSubStatCol('专注天数', '$activeDays 天', textColor, subtitleColor),
                 _buildDivider(isDarkMode),
                 _buildSubStatCol(
-                  '环比波动',
+                  _getGrowthLabel(_selectedDimension),
                   growthPercent == null
                       ? '-'
                       : '${growthPercent >= 0 ? '+' : ''}${growthPercent.toStringAsFixed(0)}%',

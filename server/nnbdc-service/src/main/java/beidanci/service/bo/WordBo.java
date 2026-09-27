@@ -128,6 +128,7 @@ public class WordBo extends BaseBo<Word> {
         vo.setAmericaPronounce(word.getAmericaPronounce());
         vo.setPronounce(word.getPronounce());
         vo.setShortDesc(word.getShortDesc());
+        vo.setShortDescCn(word.getShortDescCn());
 
         List<MeaningItemDto> dtos = meaningItemBo.findMeaningsByWord(word.getId());
         List<MeaningItemVo> itemVos = new ArrayList<>();
@@ -390,7 +391,7 @@ public class WordBo extends BaseBo<Word> {
     }
 
     public List<WordDto> getWordsOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
-        StringBuilder sql = new StringBuilder("SELECT id, america_pronounce, british_pronounce, group_info, long_desc, short_desc, popularity, pronounce, spell, embedding_1bit, create_time, update_time FROM word w WHERE w.id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
+        StringBuilder sql = new StringBuilder("SELECT id, america_pronounce, british_pronounce, group_info, long_desc, short_desc, short_desc_cn, popularity, pronounce, spell, embedding_1bit, create_time, update_time FROM word w WHERE w.id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         if (fromSeq != null) {
             sql.append(" AND dw.seq >= :fromSeq");
@@ -413,6 +414,7 @@ public class WordBo extends BaseBo<Word> {
             wordDto.setGroupInfo(rs.getString("group_info"));
             wordDto.setLongDesc(rs.getString("long_desc"));
             wordDto.setShortDesc(rs.getString("short_desc"));
+            wordDto.setShortDescCn(rs.getString("short_desc_cn"));
             wordDto.setPopularity(rs.getObject("popularity", Integer.class));
             wordDto.setPronounce(rs.getString("pronounce"));
             wordDto.setSpell(rs.getString("spell"));
@@ -634,6 +636,7 @@ public class WordBo extends BaseBo<Word> {
         dto.setPopularity(word.getPopularity());
         dto.setGroupInfo(word.getGroupInfo());
         dto.setShortDesc(word.getShortDesc());
+        dto.setShortDescCn(word.getShortDescCn());
         dto.setLongDesc(word.getLongDesc());
         dto.setEmbedding1bit(word.getEmbedding1bit());
         dto.setCreateTime(word.getCreateTime());
@@ -650,5 +653,22 @@ public class WordBo extends BaseBo<Word> {
             updateEntity(word);
             sysDbSyncBo.logOperation(word, "UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(toDto(word)));
         }
+    }
+
+    /**
+     * 更新「深度讲解」的中文译文，并在同一事务内落系统同步日志。
+     *
+     * 日志必须是完整的 WordDto（含 embedding1bit）：客户端按整行覆盖本地 words 表。
+     */
+    @Transactional(rollbackFor = Throwable.class)
+    public void updateShortDescCn(String wordId, String shortDescCn) throws IllegalAccessException {
+        Word word = findById(wordId);
+        if (word == null) {
+            throw new RuntimeException("单词不存在: " + wordId);
+        }
+        word.setShortDescCn(shortDescCn);
+        word.setUpdateTime(new Date());
+        updateEntity(word);
+        sysDbSyncBo.logOperation(word, "UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(toDto(word)));
     }
 }

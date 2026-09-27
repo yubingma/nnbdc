@@ -1444,6 +1444,7 @@ class DataIntegrityChecker {
           britishPronounce: w.britishPronounce,
           popularity: w.popularity,
           shortDesc: w.shortDesc,
+          shortDescCn: w.shortDescCn,
           longDesc: w.longDesc,
           groupInfo: w.groupInfo,
           createTime: w.createTime,

@@ -28,6 +28,13 @@ const String _v51CigensDdl = r'''
 CREATE TABLE "cigens" ("id" TEXT NOT NULL, "description" TEXT NOT NULL, "spell" TEXT NULL, "category" TEXT NULL, "meaning_cn" TEXT NULL, "meaning_en" TEXT NULL, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"))
 ''';
 
+/// v51 的 words 建表语句（此时 embedding_1bit 已存在，3D 向量列已在 v46 删除）。
+/// v55 → v56 迁移要给它补 short_desc_cn 列，夹具必须包含这张表，
+/// 否则迁移会因缺表失败并触发删库重建(用户数据丢失)。
+const String _v51WordsDdl = r'''
+CREATE TABLE "words" ("id" TEXT NOT NULL, "america_pronounce" TEXT NULL, "british_pronounce" TEXT NULL, "group_info" TEXT NULL, "long_desc" TEXT NULL, "popularity" INTEGER NOT NULL, "pronounce" TEXT NULL, "short_desc" TEXT NULL, "spell" TEXT NOT NULL, "embedding_1bit" BLOB NULL, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"))
+''';
+
 void main() {
   late Directory tempDir;
   late File dbFile;
@@ -47,6 +54,11 @@ void main() {
     raw.execute(_v51UsersDdl);
     raw.execute(_v51LearningWordsDdl);
     raw.execute(_v51CigensDdl);
+    raw.execute(_v51WordsDdl);
+    raw.execute(
+      "INSERT INTO words (id, spell, popularity, short_desc, create_time, update_time) "
+      "VALUES ('w1', 'defect', 5, 'A flaw in something is a defect.', 1, 1)",
+    );
     raw.execute(
       'INSERT INTO users (id, user_name, game_score, daka_score, learned_days, words_per_day, '
       'daka_day_count, mastered_words_count, cow_dung, throw_dice_chance, '
@@ -98,8 +110,19 @@ void main() {
         contains('spell_variants'),
       );
 
+      // v55 → v56: words 补上「深度讲解」中文译文列，且老单词数据仍在
+      final wordColumns = await db.customSelect("PRAGMA table_info('words')").get();
+      expect(
+        wordColumns.map((row) => row.read<String>('name')),
+        contains('short_desc_cn'),
+      );
+      final word = await (db.select(db.words)..where((w) => w.id.equals('w1'))).getSingleOrNull();
+      expect(word, isNotNull, reason: '迁移不得丢失已有单词行');
+      expect(word!.shortDesc, 'A flaw in something is a defect.');
+      expect(word.shortDescCn, isNull, reason: '新列对老数据应为空，等待服务端下发译文');
+
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 55);
+      expect(version.data.values.first, 56);
     } finally {
       await db.close();
     }

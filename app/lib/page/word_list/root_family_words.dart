@@ -193,6 +193,7 @@ class RootFamilyWordsProvider with WordsProvider {
       ..popularity = entry.popularity
       ..pronounce = entry.pronounce
       ..shortDesc = entry.shortDesc
+      ..shortDescCn = entry.shortDescCn
       ..longDesc = entry.longDesc
       ..groupInfo = entry.groupInfo;
     wordVo.meaningItems =

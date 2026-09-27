@@ -16,6 +16,7 @@ public class WordDto extends Dto implements Ownerable {
     private Integer popularity;
     private String groupInfo;
     private String shortDesc;
+    private String shortDescCn;
     private String longDesc;
     private byte[] embedding1bit;
 
@@ -104,6 +105,14 @@ public class WordDto extends Dto implements Ownerable {
 
     public void setShortDesc(String shortDesc) {
         this.shortDesc = shortDesc;
+    }
+
+    public String getShortDescCn() {
+        return shortDescCn;
+    }
+
+    public void setShortDescCn(String shortDescCn) {
+        this.shortDescCn = shortDescCn;
     }
 
     public String getSound() {

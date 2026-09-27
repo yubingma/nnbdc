@@ -22,17 +22,20 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   bool _isPopularitySanitizing = false;
   bool _isMeaningSanitizing = false;
   bool _isAbbreviationSoundRegenerating = false;
+  bool _isShortDescCnTranslating = false;
   SystemHealthFixResult? _fixResult;
   SystemHealthCheckResult? _checkResult;
   SystemHealthFixResult? _popularityFixResult;
   SystemHealthFixResult? _imageFixResult;
   SystemHealthFixResult? _meaningFixResult;
   SystemHealthFixResult? _abbreviationSoundResult;
+  SystemHealthFixResult? _shortDescCnResult;
   Timer? _statusTimer;
   Timer? _imageStatusTimer;
   Timer? _meaningStatusTimer;
   Timer? _dataStatusTimer;
   Timer? _abbreviationSoundStatusTimer;
+  Timer? _shortDescCnStatusTimer;
 
   @override
   void initState() {
@@ -42,6 +45,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     _checkInitialMeaningSanitizeStatus();
     _checkInitialDataSanitizeStatus();
     _checkInitialAbbreviationSoundStatus();
+    _checkInitialShortDescCnStatus();
   }
 
   @override
@@ -51,6 +55,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     _meaningStatusTimer?.cancel();
     _dataStatusTimer?.cancel();
     _abbreviationSoundStatusTimer?.cancel();
+    _shortDescCnStatusTimer?.cancel();
     super.dispose();
   }
 
@@ -592,6 +597,124 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     }
   }
 
+  Future<void> _runShortDescCnTranslating() async {
+    if (_isShortDescCnTranslating ||
+        _isSanitizing ||
+        _isChecking ||
+        _isMeaningSanitizing ||
+        _isPopularitySanitizing ||
+        _isImageSanitizing ||
+        _isAbbreviationSoundRegenerating) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('生成深度讲解中文译文'),
+        content: const Text('将为「单词详情 → 深度讲解」的英文讲解逐条生成简体中文译文，'
+            '译文会随单词行一起同步到 App，展示在英文讲解下方。\n\n'
+            '1. 只处理「有英文讲解、还没有中文译文」的单词，可反复触发、断点续跑。\n'
+            '2. 每批 15 条交给大模型翻译，涉及上万条单词，耗时约 1~2 小时。\n'
+            '3. 任务在服务端后台运行，中途失败或重启后重新触发即可继续。\n\n'
+            '是否立即开始？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700]),
+            child: const Text('开始生成', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    setState(() {
+      _isShortDescCnTranslating = true;
+      _shortDescCnResult = null;
+    });
+
+    try {
+      final res = await LoadingUtils.withApiLoading(operation: () async {
+        return await Api.client.translateShortDescCn();
+      });
+
+      if (!mounted) return;
+
+      if (res.success) {
+        setState(() {
+          _shortDescCnResult = res.data;
+        });
+        ToastUtil.success('深度讲解中文翻译任务已在后台启动');
+        _startPollingShortDescCnStatus();
+      } else {
+        ToastUtil.error('启动失败: ${res.msg}');
+        setState(() {
+          _isShortDescCnTranslating = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastUtil.error('发生错误: $e');
+        setState(() {
+          _isShortDescCnTranslating = false;
+        });
+      }
+    }
+  }
+
+  void _startPollingShortDescCnStatus() {
+    _shortDescCnStatusTimer?.cancel();
+    _shortDescCnStatusTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      try {
+        final res = await Api.client.getShortDescCnTranslateStatus();
+        if (!mounted) return;
+        if (res.success && res.data != null) {
+          final isRunning = res.data!.fixedCount == 1;
+          setState(() {
+            _shortDescCnResult = res.data;
+            _isShortDescCnTranslating = isRunning;
+          });
+          if (!isRunning) {
+            timer.cancel();
+            ToastUtil.success('深度讲解中文翻译完成');
+          }
+        }
+      } catch (e) {
+        // Ignore background errors
+      }
+    });
+  }
+
+  Future<void> _checkInitialShortDescCnStatus() async {
+    try {
+      final res = await Api.client.getShortDescCnTranslateStatus();
+      if (!mounted) return;
+      if (res.success && res.data != null) {
+        final isRunning = res.data!.fixedCount == 1;
+        if (isRunning) {
+          setState(() {
+            _isShortDescCnTranslating = true;
+            _shortDescCnResult = res.data;
+          });
+          _startPollingShortDescCnStatus();
+        }
+      }
+    } catch (e) {
+      // Ignore initial check error
+    }
+  }
+
   Future<void> _runWordImageSanitizing() async {
     if (_isSanitizing || _isChecking || _isPopularitySanitizing || _isImageSanitizing) return;
 
@@ -681,6 +804,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             if (_popularityFixResult != null) _buildPopularityFixResultCard(isDarkMode),
             if (_meaningFixResult != null) _buildMeaningFixResultCard(isDarkMode),
             if (_abbreviationSoundResult != null) _buildAbbreviationSoundResultCard(isDarkMode),
+            if (_shortDescCnResult != null) _buildShortDescCnResultCard(isDarkMode),
             const SizedBox(height: 30),
             _buildActionButtons(),
           ],
@@ -690,7 +814,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Widget _buildActionButtons() {
-    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isPopularitySanitizing || _isMeaningSanitizing || _isAbbreviationSoundRegenerating;
+    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isPopularitySanitizing || _isMeaningSanitizing || _isAbbreviationSoundRegenerating || _isShortDescCnTranslating;
     return Center(
       child: Column(
         children: [
@@ -779,6 +903,21 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.deepPurple[700],
                 side: BorderSide(color: Colors.deepPurple[700]!),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: 220,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: isAnyRunning ? null : _runShortDescCnTranslating,
+              icon: Icon(_isShortDescCnTranslating ? Icons.hourglass_empty : Icons.translate),
+              label: Text(_isShortDescCnTranslating ? '正在生成译文...' : '生成深度讲解中文'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.green[800],
+                side: BorderSide(color: Colors.green[800]!),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               ),
             ),
@@ -1109,6 +1248,53 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               const SizedBox(height: 15),
               const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
               ..._abbreviationSoundResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShortDescCnResultCard(bool isDarkMode) {
+    if (_shortDescCnResult == null) return const SizedBox.shrink();
+
+    return Card(
+      elevation: 2,
+      color: isDarkMode ? Colors.green.withValues(alpha: 0.1) : Colors.green[50],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _isShortDescCnTranslating ? Icons.hourglass_top : Icons.done_all,
+                  color: Colors.green[800],
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _isShortDescCnTranslating ? '深度讲解中文翻译执行中' : '深度讲解中文翻译完成报告',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green[900]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            ..._shortDescCnResult!.fixed.map((msg) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                _isShortDescCnTranslating ? msg : '✓ $msg',
+                style: const TextStyle(fontSize: 14),
+              ),
+            )),
+            if (_shortDescCnResult!.errors.isNotEmpty) ...[
+              const SizedBox(height: 15),
+              const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ..._shortDescCnResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
             ],
           ],
         ),

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -69,6 +68,9 @@ public class DictBo extends BaseBo<Dict> {
 
     @Autowired
     WordCache wordCache;
+
+    @Autowired
+    WordBo wordBo;
 
     @Autowired
     SysDbSyncBo sysDbLogBo;
@@ -685,47 +687,32 @@ public class DictBo extends BaseBo<Dict> {
 
     /**
      * 更新词典中的单词信息
+     *
+     * 通过 WordBo 的正常实体路径更新并整行落同步日志：客户端按整行覆盖本地 words 表，
+     * 因此日志 record 必须是完整的 WordDto（含向量 embedding1bit），否则会把客户端本地字段刷空。
      */
-    public void updateDictWord(String wordId, String spell, String shortDesc, String longDesc,
+    public void updateDictWord(String wordId, String spell, String shortDesc, String shortDescCn, String longDesc,
             String pronounce, String americaPronounce, String britishPronounce,
-            Integer popularity) {
+            Integer popularity) throws IllegalAccessException {
         try {
-            // 更新word表
-            String updateWordSql = "UPDATE word SET " +
-                    "spell = :spell, " +
-                    "shortDesc = :shortDesc, " +
-                    "longDesc = :longDesc, " +
-                    "pronounce = :pronounce, " +
-                    "americaPronounce = :americaPronounce, " +
-                    "britishPronounce = :britishPronounce, " +
-                    "popularity = :popularity, " +
-                    "updateTime = NOW() " +
-                    "WHERE id = :wordId";
+            Word word = wordBo.findById(wordId);
+            if (word == null) {
+                throw new RuntimeException("单词不存在: " + wordId);
+            }
 
-            MapSqlParameterSource updateParams = new MapSqlParameterSource();
-            updateParams.addValue("spell", spell.trim());
-            updateParams.addValue("shortDesc", Util.sanitizeAiString(shortDesc));
-            updateParams.addValue("longDesc", Util.sanitizeAiString(longDesc));
-            updateParams.addValue("pronounce", Util.sanitizePhonetic(pronounce));
-            updateParams.addValue("americaPronounce", Util.sanitizePhonetic(americaPronounce));
-            updateParams.addValue("britishPronounce", Util.sanitizePhonetic(britishPronounce));
-            updateParams.addValue("popularity", popularity);
-            updateParams.addValue("wordId", wordId);
-            namedParameterJdbcTemplate.update(updateWordSql, updateParams);
+            word.setSpell(spell.trim());
+            word.setShortDesc(Util.sanitizeAiString(shortDesc));
+            word.setShortDescCn(Util.sanitizeAiString(shortDescCn));
+            word.setLongDesc(Util.sanitizeAiString(longDesc));
+            word.setPronounce(Util.sanitizePhonetic(pronounce));
+            word.setAmericaPronounce(Util.sanitizePhonetic(americaPronounce));
+            word.setBritishPronounce(Util.sanitizePhonetic(britishPronounce));
+            word.setPopularity(popularity);
+            word.setUpdateTime(new Date());
 
-            // 记录系统数据同步日志
-            Map<String, Object> record = new HashMap<>();
-            record.put("id", wordId);
-            record.put("spell", spell.trim());
-            record.put("shortDesc", Util.sanitizeAiString(shortDesc));
-            record.put("longDesc", Util.sanitizeAiString(longDesc));
-            record.put("pronounce", Util.sanitizePhonetic(pronounce));
-            record.put("americaPronounce", Util.sanitizePhonetic(americaPronounce));
-            record.put("britishPronounce", Util.sanitizePhonetic(britishPronounce));
-            record.put("popularity", popularity);
-            record.put("updateTime", new java.sql.Timestamp(System.currentTimeMillis()));
+            wordBo.updateEntity(word);
 
-            sysDbLogBo.logOperation("UPDATE", "word", wordId, JsonUtils.toJson(record));
+            sysDbLogBo.logOperation(word, "UPDATE", "word", wordId, JsonUtils.toJson(wordBo.toDto(word)));
         } catch (DataAccessException e) {
             throw new RuntimeException("更新单词失败: " + e.getMessage(), e);
         }

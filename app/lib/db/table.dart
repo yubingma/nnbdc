@@ -292,6 +292,9 @@ class Words extends Table {
 
   TextColumn get shortDesc => text().nullable()();
 
+  /// 「深度讲解」的中文译文（服务端 word.short_desc_cn 同步而来）
+  TextColumn get shortDescCn => text().nullable()();
+
   TextColumn get spell => text()();
 
   BlobColumn get embedding1bit => blob().nullable()();

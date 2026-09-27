@@ -213,6 +213,7 @@ Future<void> _runImport({
               popularity: w.popularity,
               pronounce: w.pronounce,
               shortDesc: w.shortDesc,
+              shortDescCn: w.shortDescCn,
               spell: w.spell,
               embedding1bit: w.embedding1bit != null ? base64Decode(w.embedding1bit!) : null,
               createTime: w.createTime,

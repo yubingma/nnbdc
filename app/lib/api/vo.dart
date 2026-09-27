@@ -563,6 +563,9 @@ class WordVo {
   String? groupInfo;
   String? longDesc;
   String? shortDesc;
+
+  /// 「深度讲解」的中文译文（与 images 一样不走构造函数，避免改动全部构造点）
+  String? shortDescCn;
   String? meaningStr;
   DateTime? createTime;
   DateTime? updateTime;

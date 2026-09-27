@@ -1349,6 +1349,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             longDesc: word.longDesc,
             pronounce: word.pronounce,
             shortDesc: word.shortDesc,
+            shortDescCn: word.shortDescCn,
             popularity: word.popularity,
             spell: word.spell,
             embedding1bit: word.embedding1bit != null ? base64Decode(word.embedding1bit!) : null,

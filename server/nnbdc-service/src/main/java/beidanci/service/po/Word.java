@@ -58,6 +58,12 @@ public class Word extends UuidPo implements Ownerable {
     private String shortDesc;
 
     /**
+     * 单词简要描述（深度讲解）的中文译文
+     */
+    @Column(name = "short_desc_cn", columnDefinition = "TEXT")
+    private String shortDescCn;
+
+    /**
      * 单词的详细描述
      */
     @Column(name = "long_desc", length = 1000)
@@ -209,6 +215,14 @@ public class Word extends UuidPo implements Ownerable {
 
     public void setShortDesc(String shortDesc) {
         this.shortDesc = shortDesc;
+    }
+
+    public String getShortDescCn() {
+        return shortDescCn;
+    }
+
+    public void setShortDescCn(String shortDescCn) {
+        this.shortDescCn = shortDescCn;
     }
 
     public String getLongDesc() {

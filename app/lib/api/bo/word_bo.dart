@@ -859,6 +859,7 @@ class WordBo {
       final wordVo = WordVo.c2(localWord.spell)
         ..id = localWord.id
         ..shortDesc = localWord.shortDesc
+        ..shortDescCn = localWord.shortDescCn
         ..longDesc = localWord.longDesc
         ..pronounce = localWord.pronounce
         ..americaPronounce = localWord.americaPronounce
@@ -940,6 +941,7 @@ class WordBo {
           final similarWordVo = WordVo.c2(similarWord.spell)
             ..id = similarWord.id
             ..shortDesc = similarWord.shortDesc
+            ..shortDescCn = similarWord.shortDescCn
             ..longDesc = similarWord.longDesc
             ..pronounce = similarWord.pronounce
             ..americaPronounce = similarWord.americaPronounce
@@ -1108,6 +1110,7 @@ class WordBo {
       final wordVo = WordVo.c2(localWord.spell)
         ..id = localWord.id
         ..shortDesc = localWord.shortDesc
+        ..shortDescCn = localWord.shortDescCn
         ..longDesc = localWord.longDesc
         ..pronounce = localWord.pronounce
         ..americaPronounce = localWord.americaPronounce
@@ -1331,6 +1334,8 @@ class WordBo {
           final wordVo = WordVo.c2(word.spell)
             ..id = word.id
             ..shortDesc = word.shortDesc
+          ..shortDescCn = word.shortDescCn
+            ..shortDescCn = word.shortDescCn
             ..longDesc = word.longDesc
             ..pronounce = word.pronounce
             ..americaPronounce = word.americaPronounce
@@ -1421,6 +1426,8 @@ class WordBo {
           final wordVo = WordVo.c2(word.spell)
             ..id = word.id
             ..shortDesc = word.shortDesc
+          ..shortDescCn = word.shortDescCn
+            ..shortDescCn = word.shortDescCn
             ..longDesc = word.longDesc
             ..pronounce = word.pronounce
             ..americaPronounce = word.americaPronounce
@@ -1512,6 +1519,8 @@ class WordBo {
           final wordVo = WordVo.c2(word.spell)
             ..id = word.id
             ..shortDesc = word.shortDesc
+          ..shortDescCn = word.shortDescCn
+            ..shortDescCn = word.shortDescCn
             ..longDesc = word.longDesc
             ..pronounce = word.pronounce
             ..americaPronounce = word.americaPronounce
@@ -1632,6 +1641,7 @@ class WordBo {
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
           ..shortDesc = word.shortDesc
+          ..shortDescCn = word.shortDescCn
           ..longDesc = word.longDesc
           ..pronounce = word.pronounce
           ..americaPronounce = word.americaPronounce
@@ -1691,6 +1701,7 @@ class WordBo {
           final wordVo = WordVo.c2(wordEntry.spell)
             ..id = wordEntry.id
             ..shortDesc = wordEntry.shortDesc
+            ..shortDescCn = wordEntry.shortDescCn
             ..longDesc = wordEntry.longDesc
             ..pronounce = wordEntry.pronounce
             ..americaPronounce = wordEntry.americaPronounce
@@ -1877,6 +1888,7 @@ class WordBo {
             ..popularity = wordEntry.popularity
             ..pronounce = wordEntry.pronounce
             ..shortDesc = wordEntry.shortDesc
+            ..shortDescCn = wordEntry.shortDescCn
             ..longDesc = wordEntry.longDesc
             ..groupInfo = wordEntry.groupInfo;
           List<MeaningItemVo> meaningItemVos = [];
@@ -2728,6 +2740,7 @@ class WordBo {
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
           ..shortDesc = word.shortDesc
+          ..shortDescCn = word.shortDescCn
           ..longDesc = word.longDesc
           ..pronounce = word.pronounce
           ..americaPronounce = word.americaPronounce
@@ -3091,6 +3104,8 @@ class WordBo {
           final wordVo = WordVo.c2(word.spell)
             ..id = word.id
             ..shortDesc = word.shortDesc
+          ..shortDescCn = word.shortDescCn
+            ..shortDescCn = word.shortDescCn
             ..longDesc = word.longDesc
             ..pronounce = word.pronounce
             ..americaPronounce = word.americaPronounce

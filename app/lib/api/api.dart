@@ -632,6 +632,7 @@ abstract class RestClient {
       @Field("wordId") String wordId,
       @Field("spell") String spell,
       @Field("shortDesc") String? shortDesc,
+      @Field("shortDescCn") String? shortDescCn,
       @Field("longDesc") String? longDesc,
       @Field("pronounce") String? pronounce,
       @Field("americaPronounce") String? americaPronounce,
@@ -745,6 +746,13 @@ abstract class RestClient {
 
   @GET("/admin/getAbbreviationSoundRegenerateStatus.do")
   Future<Result<SystemHealthFixResult>> getAbbreviationSoundRegenerateStatus();
+
+  /// 为「深度讲解」批量生成中文译文；limit 为空表示不限量（分批灰度时传条数）
+  @POST("/admin/translateShortDescCn.do")
+  Future<Result<SystemHealthFixResult>> translateShortDescCn({@Query("limit") int? limit});
+
+  @GET("/admin/getShortDescCnTranslateStatus.do")
+  Future<Result<SystemHealthFixResult>> getShortDescCnTranslateStatus();
 
   @POST("/admin/checkDataSanitization.do")
   Future<Result<SystemHealthCheckResult>> checkDataSanitization();

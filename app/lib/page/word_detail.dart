@@ -178,8 +178,6 @@ class WordDetailPageState extends State<WordDetailPage>
   bool _showSemanticTip = true;
   bool _showSimilarTip = true;
   final Map<String, bool> _wordInDictStatus = {};
-  bool _isLoadingSemanticSimilar = false;
-  List<String> _semanticSimilarWordIds = [];
 
   // 生词本收藏状态
   bool _isInRawWordDict = false;
@@ -444,48 +442,50 @@ class WordDetailPageState extends State<WordDetailPage>
             .getCoreImageByWordId(wordId);
       }
 
+      // 批量查询形近词在词书内状态并稳定排序
+      final similarWordsIds =
+          args.word.similarWords?.map((w) => w.id!).toList() ?? [];
+      if (similarWordsIds.isNotEmpty) {
+        await _checkWordsInDict(similarWordsIds);
+        _sortSimilarWords();
+      }
+
       setState(() {
         final newLength = calcTabsCount();
         if (_tabController.length != newLength) {
+          final oldIndex = _tabController.index;
           _tabController.dispose();
-          _tabController = TabController(length: newLength, vsync: this);
+          _tabController = TabController(
+            length: newLength,
+            initialIndex: oldIndex.clamp(0, newLength - 1),
+            vsync: this,
+          );
           _tabController.addListener(_onTabControllerChanged);
         }
         dataLoaded = true;
         _extraDataLoaded = true;
       });
 
-      // 在第一帧秒开渲染后，以非阻塞的异步方式在后台计算相似ID、拉取单词详情及进行词库状态判断
-      if (LocalEmbeddingCache.instance.isInitialized) {
-        _isLoadingSemanticSimilar = true;
+      // 语境拓展词完全在后台异步检索，绝对不阻塞首屏与详情数据就绪
+      if (LocalEmbeddingCache.instance.isInitialized && wordId != null) {
         unawaited(() async {
           try {
-            // 1. 异步在 Isolate 中检索相似单词 ID，不阻塞 UI 渲染 tick
             final similarResults = await LocalEmbeddingCache.instance
-                .findSimilarWords(args.word.id!, limit: 9);
+                .findSimilarWords(wordId, limit: 9);
             final filteredResults =
                 similarResults.where((res) => res.distance < 500).toList();
             final similarIds =
                 filteredResults.map((res) => res.wordId).toList();
+            if (similarIds.isEmpty) return;
+
             final distanceMap = {
               for (var res in filteredResults) res.wordId: res.distance
             };
-
-            // 2. 批量拉取拓展单词拼写与释义详情
             final tempSemanticWords = await _getSimpleWordsByIds(similarIds);
+            if (tempSemanticWords.isEmpty) return;
 
-            // 3. 批量查询形近词与拓展词在词书内状态
-            final allRelatedIds = <String>[];
-            if (args.word.similarWords != null) {
-              allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
-            }
-            allRelatedIds.addAll(similarIds);
-            await _checkWordsInDict(allRelatedIds);
+            await _checkWordsInDict(similarIds);
 
-            // 按照是否在词书内（正体字排在斜体字前面）和形近程度（原始相似度排序）排序形近词
-            _sortSimilarWords();
-
-            // 按照是否在词书内（在的排前面，当前词优先）和汉明距离（小的排前面）排序拓展词
             tempSemanticWords.sort((a, b) {
               final aIsCurrent = _isCurrentWord(a.id, a.spell);
               final bIsCurrent = _isCurrentWord(b.id, b.spell);
@@ -502,36 +502,26 @@ class WordDetailPageState extends State<WordDetailPage>
               return aDist.compareTo(bDist);
             });
 
-            final sortedIds = tempSemanticWords.map((w) => w.id!).toList();
-
             if (mounted) {
               setState(() {
-                _semanticSimilarWordIds = sortedIds;
                 _semanticSimilarWords = tempSemanticWords;
-                _isLoadingSemanticSimilar = false;
+                final newLength = calcTabsCount();
+                if (_tabController.length != newLength) {
+                  final oldIndex = _tabController.index;
+                  _tabController.dispose();
+                  _tabController = TabController(
+                    length: newLength,
+                    initialIndex: oldIndex.clamp(0, newLength - 1),
+                    vsync: this,
+                  );
+                  _tabController.addListener(_onTabControllerChanged);
+                }
               });
             }
           } catch (e, st) {
             Global.logger.e('异步加载拓展单词失败', error: e, stackTrace: st);
-            if (mounted) {
-              setState(() {
-                _isLoadingSemanticSimilar = false;
-              });
-            }
           }
         }());
-      } else {
-        // 降级：仅批量查询形近词在词书范围状态
-        final allRelatedIds = <String>[];
-        if (args.word.similarWords != null) {
-          allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
-        }
-        if (allRelatedIds.isNotEmpty) {
-          unawaited(_checkWordsInDict(allRelatedIds).then((_) {
-            _sortSimilarWords();
-            if (mounted) setState(() {});
-          }));
-        }
       }
 
       final links = args.word.cigenWordLinks;
@@ -835,8 +825,9 @@ class WordDetailPageState extends State<WordDetailPage>
   }
 
   void _sortSimilarWords() {
-    if (args.word.similarWords == null || args.word.similarWords!.isEmpty)
+    if (args.word.similarWords == null || args.word.similarWords!.isEmpty) {
       return;
+    }
 
     // 记录原始索引以实现稳定排序（保持形近程度/相似度从高到低的次要顺序）
     final originalIndices = <String, int>{};
@@ -876,6 +867,7 @@ class WordDetailPageState extends State<WordDetailPage>
         return WordVo.c2(localWord.spell)
           ..id = localWord.id
           ..shortDesc = localWord.shortDesc
+          ..shortDescCn = localWord.shortDescCn
           ..longDesc = localWord.longDesc
           ..pronounce = localWord.pronounce
           ..americaPronounce = localWord.americaPronounce
@@ -1180,8 +1172,9 @@ class WordDetailPageState extends State<WordDetailPage>
                                 valueListenable:
                                     Prefs.pronunciationAccentNotifier,
                                 builder: (context, _, __) {
-                                  if (args.word.spell.isEmpty)
+                                  if (args.word.spell.isEmpty) {
                                     return const SizedBox.shrink();
+                                  }
                                   final pronInfo =
                                       Util.getWordPronounceWithAccent(
                                           args.word);
@@ -1661,11 +1654,7 @@ class WordDetailPageState extends State<WordDetailPage>
                         if (hasCigen())
                           _buildTabItem('同根', _totalCigenWordsCount),
                         if (hasSemanticSimilarWords())
-                          _buildTabItem(
-                              '拓展',
-                              _isLoadingSemanticSimilar
-                                  ? 9
-                                  : _semanticSimilarWordIds.length),
+                          _buildTabItem('拓展', _semanticSimilarWords.length),
                         if (_canUseAiAssistant)
                           const Tab(
                             child: Row(
@@ -1683,8 +1672,9 @@ class WordDetailPageState extends State<WordDetailPage>
                   Expanded(
                     child: NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification notification) {
-                        if (notification.metrics.axis == Axis.horizontal)
+                        if (notification.metrics.axis == Axis.horizontal) {
                           return false;
+                        }
 
                         if (_lastDrawerActionTime != null &&
                             DateTime.now()
@@ -1747,14 +1737,20 @@ class WordDetailPageState extends State<WordDetailPage>
                         physics: const NeverScrollableScrollPhysics(),
                         dragStartBehavior: DragStartBehavior.down,
                         children: [
-                          renderDetail(),
-                          if (hasCoreImage()) renderCoreImage(),
-                          if (hasSimilarWords()) renderSimilarWords(),
-                          if (hasSynonyms()) renderSynonyms(),
-                          if (hasCigen()) renderCigenAffix(),
+                          _KeepAliveWrapper(child: renderDetail()),
+                          if (hasCoreImage())
+                            _KeepAliveWrapper(child: renderCoreImage()),
+                          if (hasSimilarWords())
+                            _KeepAliveWrapper(child: renderSimilarWords()),
+                          if (hasSynonyms())
+                            _KeepAliveWrapper(child: renderSynonyms()),
+                          if (hasCigen())
+                            _KeepAliveWrapper(child: renderCigenAffix()),
                           if (hasSemanticSimilarWords())
-                            renderSemanticSimilarWords(),
-                          if (_canUseAiAssistant) renderAiExplanation(),
+                            _KeepAliveWrapper(
+                                child: renderSemanticSimilarWords()),
+                          if (_canUseAiAssistant)
+                            _KeepAliveWrapper(child: renderAiExplanation()),
                         ],
                       ),
                     ),
@@ -2217,7 +2213,7 @@ class WordDetailPageState extends State<WordDetailPage>
   }
 
   bool hasSemanticSimilarWords() {
-    return LocalEmbeddingCache.instance.isInitialized;
+    return _semanticSimilarWords.isNotEmpty;
   }
 
   bool hasCigen() {
@@ -2261,121 +2257,35 @@ class WordDetailPageState extends State<WordDetailPage>
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final links = args.word.cigenWordLinks;
     if (links != null && links.isNotEmpty) {
-      final showTip = _showCigenTip;
-      return ListView.separated(
+      final entries =
+          _buildFlattenedCigenEntries(links, _showCigenTip, isDarkMode);
+      return ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        itemCount: showTip ? links.length + 1 : links.length,
-        separatorBuilder: (context, index) {
-          if (showTip && index == 0) return const SizedBox(height: 6);
-          return Divider(
-            height: 24,
-            thickness: 0.5,
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06),
-          );
-        },
+        itemCount: entries.length,
         itemBuilder: (context, index) {
-          if (showTip && index == 0) {
-            return Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-              margin: const EdgeInsets.only(bottom: 6),
-              decoration: BoxDecoration(
-                color: context.primaryColor
-                    .withValues(alpha: isDarkMode ? 0.09 : 0.06),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.account_tree_outlined,
-                    size: 14,
-                    color: context.primaryColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '注：浅灰色单词不在你的学习范围内，请酌情学习。',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDarkMode
-                            ? const Color(0xFF94A3B8)
-                            : const Color(0xFF64748B),
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 15),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    color: isDarkMode ? Colors.white38 : Colors.black38,
-                    onPressed: () async {
-                      setState(() {
-                        _showCigenTip = false;
-                      });
-                      await Prefs.write('show_cigen_tip', false);
-                    },
-                  ),
-                ],
-              ),
+          final entry = entries[index];
+          if (entry is _CigenWordEntry) {
+            return _buildCigenWordRow(entry, isDarkMode);
+          } else if (entry is _CigenGroupHeaderEntry) {
+            return _buildCigenGroupHeader(entry, isDarkMode);
+          } else if (entry is _CigenCategoryHeaderEntry) {
+            return _buildCigenCategoryHeader(entry);
+          } else if (entry is _CigenTipEntry) {
+            return _buildCigenTip(isDarkMode);
+          } else if (entry is _CigenDividerEntry) {
+            return Divider(
+              height: 24,
+              thickness: 0.5,
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.06),
             );
+          } else if (entry is _CigenLoadingEntry) {
+            return _buildCigenLoading(entry.tagTextColor);
+          } else if (entry is _CigenEmptyEntry) {
+            return _buildCigenEmpty(isDarkMode);
           }
-
-          final link = showTip ? links[index - 1] : links[index];
-          final cigen = link.cigen;
-
-          Color tagBgColor;
-          Color tagTextColor;
-          String categoryName;
-          if (cigen.category == 'PREFIX') {
-            tagBgColor =
-                isDarkMode ? const Color(0x2638BDF8) : const Color(0xFFE0F2FE);
-            tagTextColor =
-                isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7);
-            categoryName = '前缀 PREFIX';
-          } else if (cigen.category == 'SUFFIX') {
-            tagBgColor =
-                isDarkMode ? const Color(0x26C084FC) : const Color(0xFFF3E8FF);
-            tagTextColor =
-                isDarkMode ? const Color(0xFFC084FC) : const Color(0xFF7C3AED);
-            categoryName = '后缀 SUFFIX';
-          } else if (cigen.category == 'ROOT') {
-            tagBgColor =
-                isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFEF3C7);
-            tagTextColor =
-                isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
-            categoryName = '词根 ROOT';
-          } else {
-            tagBgColor = isDarkMode
-                ? Colors.white.withValues(alpha: 0.08)
-                : const Color(0xFFF1F5F9);
-            tagTextColor = context.primaryColor;
-            categoryName = '词缀 AFFIX';
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: tagBgColor,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  categoryName,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: tagTextColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              _buildCigenExpandedWords(cigen.id, isDarkMode, tagTextColor),
-            ],
-          );
+          return const SizedBox.shrink();
         },
       );
     } else {
@@ -2388,230 +2298,370 @@ class WordDetailPageState extends State<WordDetailPage>
     }
   }
 
-  Widget _buildCigenExpandedWords(
-      String cigenId, bool isDarkMode, Color tagTextColor) {
-    final isLoading = _cigenLoadingState[cigenId] ?? false;
-    final words = _expandedCigenWords[cigenId];
+  List<_CigenEntry> _buildFlattenedCigenEntries(
+      List<CigenWordLinkVo> links, bool showTip, bool isDarkMode) {
+    final List<_CigenEntry> entries = [];
+    if (showTip) {
+      entries.add(_CigenTipEntry());
+    }
 
-    if (isLoading) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Center(
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(tagTextColor),
+    for (int i = 0; i < links.length; i++) {
+      if (i > 0) {
+        entries.add(_CigenDividerEntry());
+      }
+      final link = links[i];
+      final cigen = link.cigen;
+
+      Color tagBgColor;
+      Color tagTextColor;
+      String categoryName;
+      if (cigen.category == 'PREFIX') {
+        tagBgColor =
+            isDarkMode ? const Color(0x2638BDF8) : const Color(0xFFE0F2FE);
+        tagTextColor =
+            isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7);
+        categoryName = '前缀 PREFIX';
+      } else if (cigen.category == 'SUFFIX') {
+        tagBgColor =
+            isDarkMode ? const Color(0x26C084FC) : const Color(0xFFF3E8FF);
+        tagTextColor =
+            isDarkMode ? const Color(0xFFC084FC) : const Color(0xFF7C3AED);
+        categoryName = '后缀 SUFFIX';
+      } else if (cigen.category == 'ROOT') {
+        tagBgColor =
+            isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFEF3C7);
+        tagTextColor =
+            isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+        categoryName = '词根 ROOT';
+      } else {
+        tagBgColor = isDarkMode
+            ? Colors.white.withValues(alpha: 0.08)
+            : const Color(0xFFF1F5F9);
+        tagTextColor = context.primaryColor;
+        categoryName = '词缀 AFFIX';
+      }
+
+      entries.add(_CigenCategoryHeaderEntry(
+        tagBgColor: tagBgColor,
+        tagTextColor: tagTextColor,
+        categoryName: categoryName,
+      ));
+
+      final isLoading = _cigenLoadingState[cigen.id] ?? false;
+      final words = _expandedCigenWords[cigen.id];
+
+      if (isLoading) {
+        entries.add(_CigenLoadingEntry(tagTextColor: tagTextColor));
+        continue;
+      }
+
+      if (words == null || words.isEmpty) {
+        entries.add(_CigenEmptyEntry());
+        continue;
+      }
+
+      // 按具体的词根/词缀拼写分组
+      final Map<String, List<CigenExpandedWord>> groupedWords = {};
+      for (final item in words) {
+        final cat = item.category;
+        groupedWords.putIfAbsent(cat, () => []).add(item);
+      }
+      final categoriesOrder = groupedWords.keys.toList()..sort();
+
+      for (final cat in categoriesOrder) {
+        final groupList = groupedWords[cat];
+        if (groupList == null || groupList.isEmpty) continue;
+
+        final firstItem = groupList.first;
+        final cigenMeaning = firstItem.cigenMeaning;
+
+        entries.add(_CigenGroupHeaderEntry(
+          cat: cat,
+          cigenMeaning: cigenMeaning,
+          tagTextColor: tagTextColor,
+        ));
+
+        for (final item in groupList) {
+          final spell = item.word.spell;
+          final desc = item.word.shortDesc ?? '';
+          final lowerSpell = spell.toLowerCase().trim();
+
+          final isCurrent = _isCurrentWord(item.word.id, spell);
+          final isHighlight = item.inDict || isCurrent;
+
+          // 解析释义部分与括号内的助记拆解公式
+          String meaningPart = desc;
+          String? formulaPart;
+          final parenMatch =
+              RegExp(r'[（\(](.*?)[）\)]$').firstMatch(desc.trim());
+          if (parenMatch != null) {
+            formulaPart = parenMatch.group(1)?.trim();
+            meaningPart = desc.trim().substring(0, parenMatch.start).trim();
+          }
+
+          final lowerMeaning = meaningPart.toLowerCase();
+          if (lowerMeaning.startsWith(lowerSpell)) {
+            int cutLen = spell.length;
+            while (cutLen < meaningPart.length &&
+                ' :：'.contains(meaningPart[cutLen])) {
+              cutLen++;
+            }
+            meaningPart = meaningPart.substring(cutLen).trim();
+          }
+
+          entries.add(_CigenWordEntry(
+            item: item,
+            spell: spell,
+            meaningPart: meaningPart,
+            formulaPart: formulaPart,
+            isHighlight: isHighlight,
+          ));
+        }
+      }
+    }
+
+    return entries;
+  }
+
+  Widget _buildCigenTip(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: context.primaryColor
+            .withValues(alpha: isDarkMode ? 0.09 : 0.06),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.account_tree_outlined,
+            size: 14,
+            color: context.primaryColor,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '注：浅灰色单词不在你的学习范围内，请酌情学习。',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDarkMode
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
+                height: 1.35,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 15),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            color: isDarkMode ? Colors.white38 : Colors.black38,
+            onPressed: () async {
+              setState(() {
+                _showCigenTip = false;
+              });
+              await Prefs.write('show_cigen_tip', false);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCigenCategoryHeader(_CigenCategoryHeaderEntry entry) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: entry.tagBgColor,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Text(
+            entry.categoryName,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: entry.tagTextColor,
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    if (words == null || words.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 6),
-        child: Text(
-          '暂无其他相同词根/词缀的单词',
-          style: TextStyle(
-            fontSize: 12.5,
-            color:
-                isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+  Widget _buildCigenGroupHeader(
+      _CigenGroupHeaderEntry entry, bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 12,
+            decoration: BoxDecoration(
+              color: entry.tagTextColor,
+              borderRadius: BorderRadius.circular(1.5),
+            ),
           ),
-        ),
-      );
-    }
+          const SizedBox(width: 6),
+          Text(
+            entry.cat,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: entry.tagTextColor,
+            ),
+          ),
+          if (entry.cigenMeaning != null && entry.cigenMeaning!.isNotEmpty) ...[
+            Text(
+              ' : ',
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: entry.tagTextColor,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                entry.cigenMeaning!,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode
+                      ? const Color(0xFFE2E8F0)
+                      : const Color(0xFF334155),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
-    // 按具体的词根/词缀拼写分组
-    final Map<String, List<CigenExpandedWord>> groupedWords = {};
-    for (final item in words) {
-      final cat = item.category;
-      groupedWords.putIfAbsent(cat, () => []).add(item);
-    }
-    final categoriesOrder = groupedWords.keys.toList()..sort();
+  Widget _buildCigenWordRow(_CigenWordEntry entry, bool isDarkMode) {
+    final Color spellColor = entry.isHighlight
+        ? context.primaryColor
+        : (isDarkMode
+            ? const Color(0xFF94A3B8)
+            : const Color(0xFF64748B));
+    final Color descColor = entry.isHighlight
+        ? (isDarkMode
+            ? const Color(0xFFCBD5E1)
+            : const Color(0xFF334155))
+        : (isDarkMode
+            ? const Color(0xFF64748B)
+            : const Color(0xFF94A3B8));
 
-    return Column(
+    final contentWidget = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final cat in categoriesOrder)
-          if (groupedWords.containsKey(cat)) ...[
-            Builder(
-              builder: (context) {
-                final firstItem = groupedWords[cat]!.first;
-                final cigenMeaning = firstItem.cigenMeaning;
-
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 6),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 3,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: tagTextColor,
-                          borderRadius: BorderRadius.circular(1.5),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        cat,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: tagTextColor,
-                        ),
-                      ),
-                      if (cigenMeaning != null && cigenMeaning.isNotEmpty) ...[
-                        Text(
-                          ' : ',
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: tagTextColor,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            cigenMeaning,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isDarkMode
-                                  ? const Color(0xFFE2E8F0)
-                                  : const Color(0xFF334155),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              },
-            ),
-            // 不截断：tab 计数取自族内全部词，此处限量会造成「计数 N、只列出 20 个」
-            ...groupedWords[cat]!.map((item) {
-              final spell = item.word.spell;
-              final desc = item.word.shortDesc ?? '';
-              final lowerSpell = spell.toLowerCase().trim();
-
-              final isCurrent = _isCurrentWord(item.word.id, spell);
-              final isHighlight = item.inDict || isCurrent;
-
-              final Color spellColor = isHighlight
-                  ? context.primaryColor
-                  : (isDarkMode
-                      ? const Color(0xFF94A3B8)
-                      : const Color(0xFF64748B));
-              final Color descColor = isHighlight
-                  ? (isDarkMode
-                      ? const Color(0xFFCBD5E1)
-                      : const Color(0xFF334155))
-                  : (isDarkMode
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFF94A3B8));
-
-              // 解析释义部分与括号内的助记拆解公式
-              String meaningPart = desc;
-              String? formulaPart;
-              final parenMatch =
-                  RegExp(r'[（\(](.*?)[）\)]$').firstMatch(desc.trim());
-              if (parenMatch != null) {
-                formulaPart = parenMatch.group(1)?.trim();
-                meaningPart = desc.trim().substring(0, parenMatch.start).trim();
-              }
-
-              final lowerMeaning = meaningPart.toLowerCase();
-              if (lowerMeaning.startsWith(lowerSpell)) {
-                int cutLen = spell.length;
-                while (cutLen < meaningPart.length &&
-                    ' :：'.contains(meaningPart[cutLen])) {
-                  cutLen++;
-                }
-                meaningPart = meaningPart.substring(cutLen).trim();
-              }
-
-              final contentWidget = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          spell,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: spellColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (meaningPart.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            meaningPart,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: descColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (formulaPart != null && formulaPart.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Text(
-                        formulaPart,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDarkMode
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFF64748B),
-                          height: 1.35,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-
-              return InkWell(
-                borderRadius: BorderRadius.circular(6),
-                onTap: () {
-                  context.push(
-                    '/word_detail',
-                    extra: WordDetailPageArgs(
-                      item.word,
-                      true,
-                      null,
-                      false,
-                      priorityDictIds: args.priorityDictIds,
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
-                  child: Row(
-                    children: [
-                      Expanded(child: contentWidget),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 12,
-                        color: isDarkMode ? Colors.white24 : Colors.black26,
-                      ),
-                    ],
-                  ),
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                entry.spell,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: spellColor,
                 ),
-              );
-            }),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (entry.meaningPart.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  entry.meaningPart,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: descColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ],
+        ),
+        if (entry.formulaPart != null && entry.formulaPart!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Text(
+              entry.formulaPart!,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDarkMode
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
+                height: 1.35,
+              ),
+            ),
+          ),
       ],
+    );
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: () {
+        context.push(
+          '/word_detail',
+          extra: WordDetailPageArgs(
+            entry.item.word,
+            true,
+            null,
+            false,
+            priorityDictIds: args.priorityDictIds,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+        child: Row(
+          children: [
+            Expanded(child: contentWidget),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 12,
+              color: isDarkMode ? Colors.white24 : Colors.black26,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCigenLoading(Color tagTextColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(tagTextColor),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCigenEmpty(bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Text(
+        '暂无其他相同词根/词缀的单词',
+        style: TextStyle(
+          fontSize: 12.5,
+          color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+        ),
+      ),
     );
   }
 
@@ -3240,6 +3290,21 @@ class WordDetailPageState extends State<WordDetailPage>
                           : const Color(0xFF334155),
                       height: 1.55,
                     ),
+                    // 深度讲解的中文译文（如有），与例句的中英对照排版保持一致
+                    if (args.word.shortDescCn != null &&
+                        args.word.shortDescCn!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Util.makeChineseSpanText(
+                        args.word.shortDescCn!,
+                        context,
+                        style: TextStyle(
+                          fontFamily: 'NotoSansSC',
+                          fontSize: 13.5,
+                          height: 1.45,
+                          color: subtitleColor,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -3634,19 +3699,9 @@ class WordDetailPageState extends State<WordDetailPage>
 
   Widget renderSemanticSimilarWords() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    if (_isLoadingSemanticSimilar && _semanticSimilarWords.isEmpty) {
-      return Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
-          ),
-        ),
-      );
+    if (_semanticSimilarWords.isEmpty) {
+      return const SizedBox.shrink();
     }
-    if (_semanticSimilarWords.isNotEmpty) {
       final showTip = _showSemanticTip;
       return ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -3799,14 +3854,6 @@ class WordDetailPageState extends State<WordDetailPage>
           );
         },
       );
-    } else {
-      return _buildTabEmptyState(
-        isDarkMode: isDarkMode,
-        icon: Icons.explore_off_rounded,
-        title: '暂无语境拓展词',
-        subtitle: '未找到与该单词语义相关的拓展词',
-      );
-    }
   }
 
   Widget renderSynonyms() {
@@ -4529,3 +4576,76 @@ class WordDetailPageState extends State<WordDetailPage>
     );
   }
 }
+
+/// 保持 TabBarView 子页面存活，避免切 Tab 时反复销毁重建
+class _KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+  const _KeepAliveWrapper({required this.child});
+
+  @override
+  State<_KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<_KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}
+
+/// 同根词列表扁平条目，供 ListView.builder 真正懒加载渲染
+abstract class _CigenEntry {}
+
+class _CigenTipEntry extends _CigenEntry {}
+
+class _CigenCategoryHeaderEntry extends _CigenEntry {
+  final Color tagBgColor;
+  final Color tagTextColor;
+  final String categoryName;
+  _CigenCategoryHeaderEntry({
+    required this.tagBgColor,
+    required this.tagTextColor,
+    required this.categoryName,
+  });
+}
+
+class _CigenGroupHeaderEntry extends _CigenEntry {
+  final String cat;
+  final String? cigenMeaning;
+  final Color tagTextColor;
+  _CigenGroupHeaderEntry({
+    required this.cat,
+    this.cigenMeaning,
+    required this.tagTextColor,
+  });
+}
+
+class _CigenWordEntry extends _CigenEntry {
+  final CigenExpandedWord item;
+  final String spell;
+  final String meaningPart;
+  final String? formulaPart;
+  final bool isHighlight;
+  _CigenWordEntry({
+    required this.item,
+    required this.spell,
+    required this.meaningPart,
+    this.formulaPart,
+    required this.isHighlight,
+  });
+}
+
+class _CigenDividerEntry extends _CigenEntry {}
+
+class _CigenLoadingEntry extends _CigenEntry {
+  final Color tagTextColor;
+  _CigenLoadingEntry({required this.tagTextColor});
+}
+
+class _CigenEmptyEntry extends _CigenEntry {}
+

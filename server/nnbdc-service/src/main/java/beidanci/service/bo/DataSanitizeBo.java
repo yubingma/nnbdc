@@ -1393,4 +1393,239 @@ public class DataSanitizeBo {
         }
         return null;
     }
+
+    /** 深度讲解中文翻译：每次交给大模型的条目数 */
+    private static final int SHORT_DESC_CN_BATCH_SIZE = 15;
+
+    private static volatile boolean isShortDescCnTranslating = false;
+    private static volatile int shortDescCnTranslateTotal = 0;
+    private static volatile int shortDescCnTranslateProcessed = 0;
+    private static volatile int shortDescCnTranslateSaved = 0;
+    private static volatile String shortDescCnTranslateLog = "";
+
+    /**
+     * 为「深度讲解」(word.short_desc) 批量生成中文译文（由管理员点击触发，后台异步线程执行）。
+     *
+     * 只处理 short_desc 非空且 short_desc_cn 为空的单词，因此可反复触发、断点续跑。
+     *
+     * @param limit 本次最多翻译多少条（分批灰度用）；null 或非正数表示不限量
+     */
+    public SystemHealthFixResult translateShortDescCn(Integer limit) {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isShortDescCnTranslating) {
+            errors.add("深度讲解翻译任务正在后台运行中，请勿重复触发。");
+            fixed.add(describeShortDescCnProgress());
+            return new SystemHealthFixResult(0, errors, fixed);
+        }
+
+        isShortDescCnTranslating = true;
+        shortDescCnTranslateTotal = 0;
+        shortDescCnTranslateProcessed = 0;
+        shortDescCnTranslateSaved = 0;
+        shortDescCnTranslateLog = "准备扫描待翻译的深度讲解...";
+
+        new Thread(() -> {
+            try {
+                executeShortDescCnTranslation(limit);
+            } finally {
+                isShortDescCnTranslating = false;
+            }
+        }).start();
+
+        fixed.add(limit != null && limit > 0
+                ? String.format("深度讲解中文翻译任务已成功在后台启动（本次最多 %d 条）。", limit)
+                : "深度讲解中文翻译任务已成功在后台启动。");
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    /**
+     * 获取深度讲解中文翻译任务的状态及进度
+     */
+    public SystemHealthFixResult getShortDescCnTranslateStatus() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isShortDescCnTranslating) {
+            fixed.add(describeShortDescCnProgress());
+            return new SystemHealthFixResult(1, errors, fixed);
+        }
+        fixed.add(shortDescCnTranslateTotal > 0 ? shortDescCnTranslateLog : "任务未运行。");
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    private String describeShortDescCnProgress() {
+        return String.format("%s (%d/%d)", shortDescCnTranslateLog,
+                shortDescCnTranslateProcessed, shortDescCnTranslateTotal);
+    }
+
+    private void executeShortDescCnTranslation(Integer limit) {
+        try {
+            shortDescCnTranslateLog = "正在查询缺少中文译文的深度讲解...";
+            String sql = "SELECT id, spell, short_desc FROM word "
+                    + "WHERE short_desc IS NOT NULL AND btrim(short_desc) <> '' "
+                    + "  AND (short_desc_cn IS NULL OR btrim(short_desc_cn) = '') "
+                    + "ORDER BY spell";
+            MapSqlParameterSource params = new MapSqlParameterSource();
+            if (limit != null && limit > 0) {
+                sql += " LIMIT :limit";
+                params.addValue("limit", limit);
+            }
+            List<Map<String, Object>> rows = namedParameterJdbcTemplate.queryForList(sql, params);
+
+            shortDescCnTranslateTotal = rows.size();
+            shortDescCnTranslateProcessed = 0;
+            shortDescCnTranslateSaved = 0;
+            if (rows.isEmpty()) {
+                shortDescCnTranslateLog = "没有待翻译的深度讲解。";
+                return;
+            }
+            shortDescCnTranslateLog = String.format("查询完成，共 %d 条待翻译。", rows.size());
+            logger.info("开始为深度讲解生成中文译文，待翻译 {} 条", rows.size());
+
+            List<String> failed = new ArrayList<>();
+            for (int from = 0; from < rows.size(); from += SHORT_DESC_CN_BATCH_SIZE) {
+                if (Thread.currentThread().isInterrupted()) {
+                    shortDescCnTranslateLog = "任务已被系统强行中断。";
+                    break;
+                }
+                List<Map<String, Object>> batch = rows.subList(from,
+                        Math.min(from + SHORT_DESC_CN_BATCH_SIZE, rows.size()));
+                Map<String, String> translations;
+                try {
+                    translations = translateShortDescCnBatch(batch);
+                } catch (Exception e) {
+                    logger.error("深度讲解批量翻译失败: " + spellsOf(batch), e);
+                    failed.addAll(spellsOf(batch));
+                    shortDescCnTranslateProcessed = Math.min(from + SHORT_DESC_CN_BATCH_SIZE, rows.size());
+                    shortDescCnTranslateLog = String.format("已处理 %d/%d 条，成功写入 %d 条。",
+                            shortDescCnTranslateProcessed, shortDescCnTranslateTotal, shortDescCnTranslateSaved);
+                    continue;
+                }
+
+                // 模型偶尔会用单词拼写而不是 id 作为 key（整批匹配不上会让这批全部落空），两种都接受
+                Map<String, String> byKey = new HashMap<>();
+                for (Map.Entry<String, String> entry : translations.entrySet()) {
+                    if (entry.getKey() != null && entry.getValue() != null) {
+                        byKey.put(entry.getKey().trim(), entry.getValue());
+                    }
+                }
+
+                int matched = 0;
+                for (Map<String, Object> row : batch) {
+                    String id = (String) row.get("id");
+                    String cn = pickShortDescCn(byKey, id, String.valueOf(row.get("spell")));
+                    if (cn == null) {
+                        failed.add((String) row.get("spell"));
+                        continue;
+                    }
+                    matched++;
+                    try {
+                        // 逐条独立事务：单词写入与同步日志原子提交，单条失败不影响同批其他单词
+                        wordBo.updateShortDescCn(id, cn);
+                        shortDescCnTranslateSaved++;
+                    } catch (Exception e) {
+                        logger.error("保存深度讲解译文失败: " + row.get("spell"), e);
+                        failed.add((String) row.get("spell"));
+                    }
+                }
+                if (matched == 0) {
+                    // 不静默跳过：把模型返回的 key 打出来，便于定位是 key 格式还是内容问题
+                    logger.warn("深度讲解批量翻译无任何命中，本批 {} 条全部记为失败。模型返回 key: {}",
+                            batch.size(), translations.keySet());
+                }
+                shortDescCnTranslateProcessed = Math.min(from + SHORT_DESC_CN_BATCH_SIZE, rows.size());
+                shortDescCnTranslateLog = String.format("已处理 %d/%d 条，成功写入 %d 条。",
+                        shortDescCnTranslateProcessed, shortDescCnTranslateTotal, shortDescCnTranslateSaved);
+            }
+
+            shortDescCnTranslateLog = String.format("完成。共 %d 条，成功写入 %d 条，失败 %d 条。",
+                    shortDescCnTranslateTotal, shortDescCnTranslateSaved, failed.size());
+            if (!failed.isEmpty()) {
+                // 失败的单词不静默跳过：记录清单，重新触发任务即可继续翻译
+                logger.warn("深度讲解翻译失败清单({} 条): {}", failed.size(), failed);
+            }
+            logger.info("深度讲解中文翻译完成: 总数={}, 成功={}, 失败={}",
+                    shortDescCnTranslateTotal, shortDescCnTranslateSaved, failed.size());
+        } catch (Exception e) {
+            logger.error("执行深度讲解中文翻译任务失败", e);
+            shortDescCnTranslateLog = "执行任务失败: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 调用大模型翻译一批深度讲解，返回 id -> 中文译文
+     */
+    private Map<String, String> translateShortDescCnBatch(List<Map<String, Object>> batch) {
+        StringBuilder items = new StringBuilder();
+        for (Map<String, Object> row : batch) {
+            items.append("{\"id\": \"").append(row.get("id"))
+                    .append("\", \"word\": \"").append(row.get("spell"))
+                    .append("\", \"text\": \"")
+                    .append(String.valueOf(row.get("short_desc")).replace("\\", "\\\\").replace("\"", "\\\"").replaceAll("\\s+", " "))
+                    .append("\"}\n");
+        }
+
+        String systemPrompt = "你是一位资深的英汉学习词典编辑，负责把英语词典中的英文「深度讲解」翻译成简体中文。\n"
+                + "【翻译准则】\n"
+                + "1. 忠实原文：不增删信息，不做解释性扩写，保持原文的语气、举例与句式层次。\n"
+                + "2. 被讲解的单词本身保留英文原形，必要时可在其后用括号补一个最简中文词义，例如：A flaw in something is a defect. → 某物上的瑕疵就是 defect（缺陷）。\n"
+                + "3. 译文必须是简体中文：严禁整句照抄英文原文，更严禁把原文原样当成译文返回；被讲解的单词本身可保留英文原形，需要时用括号补一个最简中文词义。\n"
+                + "4. 用词准确、译文自然通顺，符合中文词典的表达习惯；不要出现翻译腔。\n"
+                + "5. 只输出 JSON，不要输出任何解释性文字或 Markdown 代码块标记。\n"
+                + "【输出格式】以输入条目的 id 为 key、译文为 value 的 JSON 对象，例如：{\"<id>\": \"<译文>\"}";
+
+        String userPrompt = "请翻译以下 " + batch.size() + " 条深度讲解，逐条对应输出：\n" + items;
+
+        String aiResult = aiBo.generateText(systemPrompt, userPrompt);
+        if (aiResult == null || aiResult.trim().isEmpty()) {
+            throw new RuntimeException("AI 文本大模型未返回内容");
+        }
+
+        Map<String, Object> parsed = JsonUtils.parseAiMap(aiResult);
+        Map<String, String> translations = new HashMap<>();
+        for (Map.Entry<String, Object> entry : parsed.entrySet()) {
+            if (entry.getValue() != null) {
+                translations.put(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+        }
+        return translations;
+    }
+
+    /**
+     * 从模型返回结果里取某条深度讲解的译文：优先按 id 取，其次按单词拼写取
+     * （模型偶尔用拼写而不是 id 作为 key，整批会因此全部落空）。
+     *
+     * 结果必须含中文：线上出现过模型把英文原文原样返回的情况，那种"译文"必须当失败处理，
+     * 让它保留为空、下次触发时重译，而不是当成译文写进库。
+     *
+     * @return 去空白后的中文译文；缺失、空白或不含中文时返回 null
+     */
+    static String pickShortDescCn(Map<String, String> translations, String id, String spell) {
+        String cn = translations.get(id);
+        if (cn == null) {
+            cn = translations.get(spell);
+        }
+        if (cn == null) {
+            return null;
+        }
+        cn = cn.trim();
+        if (cn.isEmpty() || cn.codePoints().noneMatch(DataSanitizeBo::isChinese)) {
+            return null;
+        }
+        return cn;
+    }
+
+    private static boolean isChinese(int codePoint) {
+        return codePoint >= 0x4E00 && codePoint <= 0x9FA5;
+    }
+
+    private static List<String> spellsOf(List<Map<String, Object>> rows) {
+        List<String> spells = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            spells.add(String.valueOf(row.get("spell")));
+        }
+        return spells;
+    }
 }

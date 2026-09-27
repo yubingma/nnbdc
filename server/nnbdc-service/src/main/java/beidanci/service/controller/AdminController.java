@@ -114,13 +114,14 @@ public class AdminController {
             @RequestParam("wordId") String wordId,
             @RequestParam("spell") String spell,
             @RequestParam(value = "shortDesc", required = false) String shortDesc,
+            @RequestParam(value = "shortDescCn", required = false) String shortDescCn,
             @RequestParam(value = "longDesc", required = false) String longDesc,
             @RequestParam(value = "pronounce", required = false) String pronounce,
             @RequestParam(value = "americaPronounce", required = false) String americaPronounce,
             @RequestParam(value = "britishPronounce", required = false) String britishPronounce,
             @RequestParam(value = "popularity", required = false) Integer popularity
-    ) {
-        dictBo.updateDictWord(wordId, spell, shortDesc, longDesc, pronounce, 
+    ) throws IllegalAccessException {
+        dictBo.updateDictWord(wordId, spell, shortDesc, shortDescCn, longDesc, pronounce,
                             americaPronounce, britishPronounce, popularity);
         return Result.success("单词信息更新成功");
     }
@@ -286,6 +287,17 @@ public class AdminController {
     @GetMapping("/admin/getWordPopularitySanitizeStatus.do")
     public Result<SystemHealthFixResult> getWordPopularitySanitizeStatus() {
         return Result.success(dataSanitizeBo.getWordPopularitySanitizeStatus());
+    }
+
+    @PostMapping("/admin/translateShortDescCn.do")
+    public Result<SystemHealthFixResult> translateShortDescCn(
+            @RequestParam(value = "limit", required = false) Integer limit) {
+        return Result.success(dataSanitizeBo.translateShortDescCn(limit));
+    }
+
+    @GetMapping("/admin/getShortDescCnTranslateStatus.do")
+    public Result<SystemHealthFixResult> getShortDescCnTranslateStatus() {
+        return Result.success(dataSanitizeBo.getShortDescCnTranslateStatus());
     }
 
     @PostMapping("/admin/sanitizeMeaningSeparators.do")
