@@ -3808,12 +3808,13 @@ class WordBo {
   /// 获取指定 cigen (词根/词缀) 下的单词列表。
   /// 优先展示在用户词书范围内的单词，之后展示词书范围外的单词。
   /// [currentWordId] 当前学习的单词 ID，强制排序到最首位。
-  /// [maxCount] 最大返回数量，默认 20，按 inDict 优先、popularity 升序取词。
+  /// 返回该词根下的**全部**派生词（按 inDict 优先、popularity 升序）。
+  /// 不再截断：详情页「同根」tab 的计数取自族内全部词，若此处限量会导致
+  /// 「显示 87 个、实际只列出 20 个」的不一致。
   Future<List<CigenExpandedWord>> getCigenExpandedWords(
     String cigenId,
     String? userId, {
     String? currentWordId,
-    int maxCount = 20,
   }) async {
     final db = MyDatabase.instance;
 
@@ -3884,7 +3885,7 @@ class WordBo {
       return a.popularity.compareTo(b.popularity);
     });
 
-    final targetWords = sortedWords.take(maxCount).toList();
+    final targetWords = sortedWords;
 
     // 6. 批量获取这些 targetWords 的中文释义 (从 meaning_items 表中批量查询)
     final targetWordIds = targetWords.map((w) => w.id).toList();
