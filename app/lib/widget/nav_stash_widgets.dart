@@ -418,36 +418,14 @@ class _NavBarCustomizationSheetState extends State<NavBarCustomizationSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              tab.label,
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w600,
-                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                fontFamily: 'NotoSansSC',
-                              ),
-                            ),
-                            if (isLocked) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode ? Colors.white12 : const Color(0xFFE2E8F0),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '核心常驻',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
-                                    fontFamily: 'NotoSansSC',
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
+                        Text(
+                          tab.label,
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                            color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                            fontFamily: 'NotoSansSC',
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -461,12 +439,23 @@ class _NavBarCustomizationSheetState extends State<NavBarCustomizationSheet> {
                       ],
                     ),
                   ),
-                  Switch.adaptive(
-                    value: isVisible,
-                    activeTrackColor: primaryColor,
-                    inactiveThumbColor: isDarkMode ? const Color(0xFF94A3B8) : Colors.white,
-                    inactiveTrackColor: isDarkMode ? Colors.white12 : const Color(0xFFE2E8F0),
-                    onChanged: isLocked ? null : (val) => _toggleTab(tab, val),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: isLocked
+                        ? () => ToastUtil.info('「${tab.label}」为核心功能，固定在底栏常驻')
+                        : null,
+                    child: Opacity(
+                      opacity: isLocked ? 0.35 : 1.0,
+                      child: Switch.adaptive(
+                        value: isVisible,
+                        activeTrackColor: isLocked
+                            ? (isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8))
+                            : primaryColor,
+                        inactiveThumbColor: isDarkMode ? const Color(0xFF94A3B8) : Colors.white,
+                        inactiveTrackColor: isDarkMode ? Colors.white12 : const Color(0xFFE2E8F0),
+                        onChanged: isLocked ? null : (val) => _toggleTab(tab, val),
+                      ),
+                    ),
                   ),
                 ],
               ),
