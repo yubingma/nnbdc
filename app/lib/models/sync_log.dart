@@ -138,6 +138,12 @@ class SyncLog {
     );
   }
 
+  /// 是否正在同步中（尚未结束）
+  bool get isInProgress => endTime == null;
+
+  /// 是否已经同步结束
+  bool get isFinished => endTime != null;
+
   bool get isWarning => !success && errorMessage != null && errorMessage!.contains('下次同步时自动修复');
 
   @override

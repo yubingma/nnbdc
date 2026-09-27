@@ -25,6 +25,19 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
   void initState() {
     super.initState();
     _loadLogs();
+    SyncLogService().syncStatusNotifier.addListener(_onSyncStatusChanged);
+  }
+
+  @override
+  void dispose() {
+    SyncLogService().syncStatusNotifier.removeListener(_onSyncStatusChanged);
+    super.dispose();
+  }
+
+  void _onSyncStatusChanged() {
+    if (mounted) {
+      _loadLogs();
+    }
   }
 
   Future<void> _loadLogs() async {
@@ -903,6 +916,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
     final theme = context.themeConfig;
     final isDark = context.isDarkMode;
     final lastLog = _logs.isNotEmpty ? _logs.first : null;
+    final isSyncInProgress = _isSyncing || SyncLogService().isSyncing || (lastLog != null && lastLog.isInProgress);
 
     return AppScaffold(
       appBar: AppBar(
@@ -971,7 +985,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: _isSyncing
+                                  color: isSyncInProgress
                                       ? theme.primaryColor.withValues(alpha: 0.12)
                                       : (lastLog?.success == true
                                           ? const Color(0xFF10B981).withValues(alpha: 0.12)
@@ -981,7 +995,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                   borderRadius: BorderRadius.circular(13),
                                 ),
                                 child: Center(
-                                  child: _isSyncing
+                                  child: isSyncInProgress
                                       ? SizedBox(
                                           width: 20,
                                           height: 20,
@@ -1007,7 +1021,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      _isSyncing
+                                      isSyncInProgress
                                           ? '正在同步数据...'
                                           : (lastLog?.success == true
                                               ? '数据已是最新'
@@ -1193,15 +1207,22 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
   }
 
   Widget _buildLogCard(SyncLog log, AppThemeConfig theme, bool isDark) {
-    final statusColor = log.success
-        ? const Color(0xFF10B981)
-        : (log.isWarning ? const Color(0xFFF59E0B) : const Color(0xFFEF4444));
+    final bool inProgress = log.isInProgress;
+    final statusColor = inProgress
+        ? theme.primaryColor
+        : (log.success
+            ? const Color(0xFF10B981)
+            : (log.isWarning ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)));
 
-    final statusIcon = log.success
-        ? Icons.cloud_done_rounded
-        : (log.isWarning ? Icons.warning_amber_rounded : Icons.cloud_off_rounded);
+    final statusIcon = inProgress
+        ? Icons.sync_rounded
+        : (log.success
+            ? Icons.cloud_done_rounded
+            : (log.isWarning ? Icons.warning_amber_rounded : Icons.cloud_off_rounded));
 
-    final statusText = log.success ? '同步成功' : (log.isWarning ? '同步异常' : '同步失败');
+    final statusText = inProgress
+        ? '同步中...'
+        : (log.success ? '同步成功' : (log.isWarning ? '同步异常' : '同步失败'));
 
     return Dismissible(
       key: Key(log.id),

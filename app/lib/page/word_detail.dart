@@ -2469,7 +2469,8 @@ class WordDetailPageState extends State<WordDetailPage>
                 );
               },
             ),
-            ...groupedWords[cat]!.take(20).map((item) {
+            // 不截断：tab 计数取自族内全部词，此处限量会造成「计数 N、只列出 20 个」
+            ...groupedWords[cat]!.map((item) {
               final spell = item.word.spell;
               final desc = item.word.shortDesc ?? '';
               final lowerSpell = spell.toLowerCase().trim();

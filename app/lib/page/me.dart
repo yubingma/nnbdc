@@ -105,7 +105,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
   StreamSubscription<LearningDictChangedEvent>? _learningDictChangedSub;
   StreamSubscription<DictWordsChangedEvent>? _dictWordsChangedSub;
 
-  /// 最近一次同步是否失败
+  /// 云同步状态
+  SyncStatus _syncStatus = SyncStatus.idle;
   bool _isLastSyncFailed = false;
 
   /// 是否正在检查并下载词书（用于防止 loadData 循环触发）
@@ -361,6 +362,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
       }
     });
 
+    // 监听云同步状态变化（同步中、同步完成、同步失败响应式联动）
+    SyncLogService().syncStatusNotifier.addListener(_onSyncStatusChanged);
+
     // 异步执行loadData，避免阻塞UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
       loadData();
@@ -390,6 +394,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
     // 取消词表单词数变化事件监听
     _dictWordsChangedSub?.cancel();
 
+    // 取消云同步状态监听
+    SyncLogService().syncStatusNotifier.removeListener(_onSyncStatusChanged);
+
     super.dispose();
   }
 
@@ -399,7 +406,8 @@ class MePageState extends State<MePage> implements RefreshableTab {
 
     try {
       final isDarkModeVal = await MyDatabase.instance.localParamsDao.getIsDarkMode();
-      final isLastSyncFailedVal = await SyncLogService().isLastSyncFailed();
+      final syncStatusVal = await SyncLogService().refreshSyncStatus();
+      final isLastSyncFailedVal = syncStatusVal == SyncStatus.failed;
 
       UserVo? loggedInUserVal;
       List<String>? last30DaysDakaStatusVal;
@@ -530,6 +538,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
       if (mounted) {
         setState(() {
           isDarkMode = isDarkModeVal;
+          _syncStatus = syncStatusVal;
           _isLastSyncFailed = isLastSyncFailedVal;
           loggedInUser = loggedInUserVal;
           if (loggedInUser != null) {
@@ -1892,8 +1901,12 @@ class MePageState extends State<MePage> implements RefreshableTab {
               _buildMenuTile(
                 icon: Icons.cloud_sync_outlined,
                 title: '云同步状态',
-                trailingText: _isLastSyncFailed ? '同步失败' : '已是最新',
-                trailingTextColor: _isLastSyncFailed ? const Color(0xFFFA6E59) : accentColor,
+                trailingText: _syncStatus == SyncStatus.syncing
+                    ? '同步中...'
+                    : (_syncStatus == SyncStatus.failed ? '同步失败' : '已是最新'),
+                trailingTextColor: _syncStatus == SyncStatus.failed
+                    ? const Color(0xFFFA6E59)
+                    : accentColor,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -2977,12 +2990,25 @@ class MePageState extends State<MePage> implements RefreshableTab {
     );
   }
 
+  void _onSyncStatusChanged() {
+    if (mounted) {
+      final newStatus = SyncLogService().syncStatusNotifier.value;
+      if (_syncStatus != newStatus || _isLastSyncFailed != (newStatus == SyncStatus.failed)) {
+        setState(() {
+          _syncStatus = newStatus;
+          _isLastSyncFailed = newStatus == SyncStatus.failed;
+        });
+      }
+    }
+  }
+
   /// 检查同步状态
   Future<void> _checkSyncStatus() async {
-    final isFailed = await SyncLogService().isLastSyncFailed();
-    if (mounted && _isLastSyncFailed != isFailed) {
+    final status = await SyncLogService().refreshSyncStatus();
+    if (mounted && (_syncStatus != status || _isLastSyncFailed != (status == SyncStatus.failed))) {
       setState(() {
-        _isLastSyncFailed = isFailed;
+        _syncStatus = status;
+        _isLastSyncFailed = status == SyncStatus.failed;
       });
     }
   }
