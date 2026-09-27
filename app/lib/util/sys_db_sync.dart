@@ -78,7 +78,7 @@ Future<void> syncSysDb() async {
 
     // 5. 应用日志到本地数据库（应用前按表依赖优先级排序）
     _sortSysLogs(remoteLogs);
-    await _applySysDbLogs(remoteLogs);
+    await applySysDbLogs(remoteLogs);
 
     // 6. 更新本地版本
     await db.sysDbVersionDao.saveVersion(
@@ -101,8 +101,12 @@ Future<void> syncSysDb() async {
   }
 }
 
-/// 应用系统数据日志到本地数据库
-Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
+/// 应用系统数据日志到本地数据库。
+///
+/// 公开以便单测直接注入日志（与用户数据同步的 [doSyncUserDb] 同一思路）——
+/// 该函数此前无任何测试覆盖，导致「DELETE 日志 record 为空时解析失败、
+/// 整条删除被静默跳过」的线上问题未被发现。
+Future<void> applySysDbLogs(List<SysDbLogDto> logs) async {
   final db = MyDatabase.instance;
   Set<String> affectedBaseDictIds = {};
   // 本批有单词被删除的词书：删除会改变单词数，需要在本批结束时重算一次 wordCount。
@@ -112,7 +116,11 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
   await db.transaction(() async {
     for (var log in logs) {
       try {
-        Map<String, dynamic> entityJson = jsonDecode(log.record);
+        // DELETE 日志只靠 recordId 定位删除目标，record 为空（服务端历史日志曾写入空串），
+        // 此时解析 record 会抛 FormatException 导致该条删除被整体跳过。
+        Map<String, dynamic> entityJson = log.operate == 'DELETE'
+            ? <String, dynamic>{}
+            : jsonDecode(log.record);
 
         // === 静态元数据表 ===
         // 统一修复日期格式
@@ -206,11 +214,14 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
         } else if (log.tblName == 'cigen_word_link') {
           // 词根单词关联
           if (log.operate == 'DELETE') {
-            var parts = log.recordId.split('_');
-            if (parts.length == 2) {
+            // recordId 形如 "{cigenId}_{wordId}"，而 cigenId 自身可能含下划线
+            // （如 facere_facio、stare_sto），故必须按**最后一个**下划线切分；
+            // 用 split('_') 判 length==2 会把这些记录整条漏删。
+            final sep = log.recordId.lastIndexOf('_');
+            if (sep > 0) {
               await (db.delete(db.cigenWordLinks)
-                    ..where((t) => t.cigenId.equals(parts[0]))
-                    ..where((t) => t.wordId.equals(parts[1])))
+                    ..where((t) => t.cigenId.equals(log.recordId.substring(0, sep)))
+                    ..where((t) => t.wordId.equals(log.recordId.substring(sep + 1))))
                   .go();
             }
           } else {

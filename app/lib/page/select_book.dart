@@ -465,8 +465,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   }
 
   /// 词书选择列表（系统词书与自定义词书共用）：
-  /// 同类词书聚合在一体化大卡内，行间以内缩发丝分割线区隔，
-  /// 杜绝「一物一卡」的碎片化堆叠，靠排版与字重建立层级。
+  /// 词书直接铺在页面背景上，仅以发丝分割线区隔，
+  /// 不在列表外再套一层卡框，保持通透简洁。
   Widget _buildBookList(List<DictVo> books, bool isDarkMode, {bool isCustom = false}) {
     final searchLower = _searchText.trim().toLowerCase();
     final visibleBooks = books.where((b) =>
@@ -488,38 +488,19 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     final dividerColor = isDarkMode
         ? Colors.white.withValues(alpha: 0.08)
         : Colors.black.withValues(alpha: 0.055);
-    final radius = BorderRadius.circular(16);
 
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-          // 与 FrostedGlassCard 同一套卡面/描边/阴影规格；用 sliver 级装饰承载背景，
-          // 才能在保持一体化大卡的同时让长列表按需构建。
-          sliver: DecoratedSliver(
-            decoration: BoxDecoration(
-              color: context.cardBg,
-              borderRadius: radius,
-              border: Border.all(color: context.cardBorder, width: 1),
-              boxShadow: [context.cardShadow],
-            ),
-            sliver: SliverList.separated(
-              itemCount: visibleBooks.length,
-              separatorBuilder: (_, __) => Padding(
-                padding: const EdgeInsets.only(left: 48, right: 14),
-                child: Divider(height: 1, thickness: 0.5, color: dividerColor),
-              ),
-              itemBuilder: (context, index) => _buildBookRow(
-                dict: visibleBooks[index],
-                isDarkMode: isDarkMode,
-                isCustom: isCustom,
-                isFirst: index == 0,
-                isLast: index == visibleBooks.length - 1,
-              ),
-            ),
-          ),
-        ),
-      ],
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+      itemCount: visibleBooks.length,
+      separatorBuilder: (_, __) => Padding(
+        padding: const EdgeInsets.only(left: 44),
+        child: Divider(height: 1, thickness: 0.5, color: dividerColor),
+      ),
+      itemBuilder: (context, index) => _buildBookRow(
+        dict: visibleBooks[index],
+        isDarkMode: isDarkMode,
+        isCustom: isCustom,
+      ),
     );
   }
 
@@ -528,8 +509,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     required DictVo dict,
     required bool isDarkMode,
     required bool isCustom,
-    required bool isFirst,
-    required bool isLast,
   }) {
     final themeConfig = context.themeConfig;
     final accentColor = themeConfig.primaryColor;
@@ -540,11 +519,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     final wordCountText = '${_formatNumber(dict.wordCount ?? 0)} 词';
     final subtitle = (dict.domain?.isNotEmpty ?? false) ? '$wordCountText · ${dict.domain}' : wordCountText;
 
-    // 选中薄雾与大卡圆角对齐：首/末行随大卡收角，中间行平铺
-    final rowRadius = BorderRadius.vertical(
-      top: isFirst ? const Radius.circular(16) : Radius.zero,
-      bottom: isLast ? const Radius.circular(16) : Radius.zero,
-    );
+    final rowRadius = BorderRadius.circular(12);
 
     return Material(
       color: isSelected ? accentColor.withValues(alpha: isDarkMode ? 0.16 : 0.07) : Colors.transparent,
@@ -559,7 +534,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           toggleDictSelectedStatus(dict);
         },
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 11, 12, 11),
+          padding: const EdgeInsets.fromLTRB(10, 11, 8, 11),
           child: Row(
             children: [
               DictBookIcon.fromDict(
@@ -709,7 +684,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     );
   }
 
-  /// 新建单词书：轻薄雾行动条（图标承主题色，文字保持可读深色）
+  /// 新建单词书：中性轻薄底行动条（不与选中行的主题色薄雾混淆，图标承主题色）
   Widget _buildCreateDictAction(bool isDarkMode) {
     final themeConfig = context.themeConfig;
     final accentColor = themeConfig.primaryColor;
@@ -719,9 +694,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Material(
-        color: isRestricted
-            ? (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.035))
-            : accentColor.withValues(alpha: isDarkMode ? 0.14 : 0.07),
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
         borderRadius: radius,
         child: InkWell(
           borderRadius: radius,
@@ -1569,8 +1542,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       ),
       decoration: BoxDecoration(
         color: context.cardBg,
-        // 底栏靠柔和上投影与内容区分离，不再压一条硬描边
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        // 整条平直贴合屏底（不留上方圆角缺口），仅以柔和上投影与内容区分隔
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.06),

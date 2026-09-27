@@ -35,6 +35,9 @@ const SRC_IPAD_HTML = 'app_store_ipad_preview.html';
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const HUAWEI_SUPERSAMPLE = 3;
+// 原型 --phone-width/--phone-height 的固化值，导出时要按回设计尺寸
+const PHONE_WIDTH = 324;
+const PHONE_HEIGHT = 692;
 const CHROME_TIMEOUT_MS = 60000;
 const OVERVIEW_GAP = 22;
 const OVERVIEW_MARGIN = 24;
@@ -133,6 +136,18 @@ function cardExportCss(width, height) {
     box-shadow: none !important;
   }
   .poster-card:hover { transform: none !important; }
+  /* 导出画布是固定尺寸的海报，不是手机视口。390 宽的窗口会命中原型里的
+     @media (max-width:600px) 移动端兜底，把卡片压成 780 高、机身缩到 290×620，
+     成品因此底部露出 64px 页面底色、机身还小一圈 —— 必须在这里按掉。 */
+  .poster-card.export-target {
+    width: ${width}px !important;
+    max-width: none !important;
+    height: ${height}px !important;
+  }
+  html:not([data-aspect="huawei"]) .device-chassis {
+    width: ${PHONE_WIDTH}px !important;
+    height: ${PHONE_HEIGHT}px !important;
+  }
 `;
 }
 
@@ -241,14 +256,21 @@ function renderTarget(target, scale) {
   for (const card of CARDS) renderCard(target, card, scale);
 }
 
+/// 横排概览图：手机与 iPad 各出一张，供人工审阅整体观感
 function renderOverview() {
-  const scale = 2;
-  const width = CARDS.length * 390 + (CARDS.length - 1) * OVERVIEW_GAP + OVERVIEW_MARGIN * 2;
-  const height = 844 + OVERVIEW_MARGIN * 2;
-  const outPng = path.join(UI_DIR, 'png', 'app_store_minimal_clean_overview.png');
-  const htmlPath = writeTempHtml(SRC_PHONE_HTML, 'overview', overviewExportCss(width, height), POSTER_ATTRS);
-  shoot(htmlPath, outPng, width, height, scale, true);
-  console.log(`✅ 概览图 app_store_minimal_clean_overview.png  ${width * scale}×${height * scale}  ${Math.round(fs.statSync(outPng).size / 1024)} KB`);
+  const jobs = [
+    { srcHtml: SRC_PHONE_HTML, cardW: 390, cardH: 844, out: 'app_store_minimal_clean_overview.png' },
+    { srcHtml: SRC_IPAD_HTML, cardW: 1024, cardH: 1366, out: 'app_store_ipad_overview.png' },
+  ];
+  for (const job of jobs) {
+    const scale = 2;
+    const width = CARDS.length * job.cardW + (CARDS.length - 1) * OVERVIEW_GAP + OVERVIEW_MARGIN * 2;
+    const height = job.cardH + OVERVIEW_MARGIN * 2;
+    const outPng = path.join(UI_DIR, 'png', job.out);
+    const htmlPath = writeTempHtml(job.srcHtml, `overview_${job.cardW}`, overviewExportCss(width, height), POSTER_ATTRS);
+    shoot(htmlPath, outPng, width, height, scale, true);
+    console.log(`✅ 概览图 ${job.out}  ${width * scale}×${height * scale}  ${Math.round(fs.statSync(outPng).size / 1024)} KB`);
+  }
 }
 
 function main() {

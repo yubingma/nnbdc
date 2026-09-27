@@ -34,7 +34,7 @@
       --card-border: rgba(0, 0, 0, 0.15);
       --divider: rgba(0, 0, 0, 0.055);
       --row-tint: rgba(11, 124, 158, 0.07);
-      --action-tint: rgba(11, 124, 158, 0.07);
+      --action-bg: rgba(0, 0, 0, 0.04);
       --circle-border: rgba(62, 74, 82, 0.3);
       --page-bg: linear-gradient(180deg, #F1F7F8 0%, #E4EEEF 45%, #E7F0ED 100%);
       --bar-bg: rgba(255, 255, 255, 0.72);
@@ -51,7 +51,7 @@
       --card-border: rgba(255, 255, 255, 0.06);
       --divider: rgba(255, 255, 255, 0.08);
       --row-tint: rgba(44, 216, 143, 0.16);
-      --action-tint: rgba(44, 216, 143, 0.14);
+      --action-bg: rgba(255, 255, 255, 0.05);
       --circle-border: rgba(148, 163, 184, 0.45);
       --page-bg: linear-gradient(180deg, #10201F 0%, #0A1414 60%, #0C1716 100%);
       --bar-bg: rgba(24, 32, 47, 0.9);
@@ -176,7 +176,7 @@
     .create-action {
       height: 46px;
       border-radius: 14px;
-      background: var(--action-tint);
+      background: var(--action-bg);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -188,21 +188,17 @@
     }
     .create-action svg { color: var(--primary); }
 
-    /* 一体化聚合大卡 */
+    /* 词书列表：直接铺在页面背景上，不套外层卡框 */
     .book-card {
-      margin-top: 12px;
-      border-radius: 16px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      box-shadow: var(--shadow-card);
-      overflow: hidden;
+      margin-top: 6px;
     }
 
     /* 单行词书 */
     .book-row {
       display: flex;
       align-items: center;
-      padding: 11px 12px 11px 14px;
+      padding: 11px 8px 11px 10px;
+      border-radius: 12px;
     }
     .book-row.selected { background: var(--row-tint); }
     .book-icon { flex-shrink: 0; }
@@ -261,18 +257,16 @@
     /* 行间发丝分割线（内缩对齐文字左缘） */
     .row-divider {
       height: 1px;
-      margin-left: 48px;
-      margin-right: 14px;
+      margin-left: 44px;
       background: var(--divider);
     }
 
-    /* ===== 底部保存栏 ===== */
+    /* ===== 底部保存栏（平直贴合屏底，不留上方圆角缺口） ===== */
     .save-bar {
       flex-shrink: 0;
       display: flex;
       align-items: center;
       padding: 10px 16px 24px 18px;
-      border-radius: 20px 20px 0 0;
       background: var(--bar-bg);
       backdrop-filter: blur(18px);
       box-shadow: var(--shadow-bar);
