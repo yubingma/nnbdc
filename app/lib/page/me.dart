@@ -46,6 +46,7 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
+import 'package:nnbdc/widget/nav_stash_widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:nnbdc/util/notification_util.dart';
@@ -1668,6 +1669,9 @@ class MePageState extends State<MePage> implements RefreshableTab {
           ),
         ),
 
+        // 3.5 功能收纳区卡片 (当底栏有按钮被隐藏时自动呈现)
+        const StashedFeaturesCard(),
+
         // 4. 设置与工具卡片
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -1699,6 +1703,17 @@ class MePageState extends State<MePage> implements RefreshableTab {
                 ),
               ),
               const SizedBox(height: 12),
+              _buildMenuTile(
+                icon: Icons.tune_rounded,
+                title: '底栏导航管理',
+                trailingText: Prefs.hiddenBottomNavKeys.isEmpty
+                    ? '全部常驻'
+                    : '已收纳 ${Prefs.hiddenBottomNavKeys.length} 项',
+                onTap: () async {
+                  await NavBarCustomizationSheet.show(context);
+                  if (mounted) setState(() {});
+                },
+              ),
               _buildMenuTile(
                 icon: Icons.palette_outlined,
                 title: '外观主题',

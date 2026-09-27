@@ -11,6 +11,7 @@ class Prefs {
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     pronunciationAccentNotifier.value = pronunciationAccent;
+    hiddenBottomNavKeysNotifier.value = hiddenBottomNavKeys;
     await _migrateFromGetStorage();
   }
 
@@ -115,5 +116,25 @@ class Prefs {
     final next = pronunciationAccent == 'uk' ? 'us' : 'uk';
     await setPronunciationAccent(next);
     return next;
+  }
+
+  /// 底栏隐藏按键偏好键
+  static const String hiddenBottomNavKeysPref = 'hidden_bottom_nav_keys';
+
+  /// 底栏隐藏按键响应式通知器
+  static final ValueNotifier<List<String>> hiddenBottomNavKeysNotifier =
+      ValueNotifier<List<String>>(hiddenBottomNavKeys);
+
+  /// 读取底栏隐藏按键列表
+  static List<String> get hiddenBottomNavKeys {
+    if (_prefs == null) return [];
+    return _prefs!.getStringList(hiddenBottomNavKeysPref) ?? [];
+  }
+
+  /// 保存底栏隐藏按键列表
+  static Future<bool> setHiddenBottomNavKeys(List<String> keys) async {
+    final ok = await write(hiddenBottomNavKeysPref, keys);
+    hiddenBottomNavKeysNotifier.value = List<String>.unmodifiable(keys);
+    return ok;
   }
 }

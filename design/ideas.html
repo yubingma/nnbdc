@@ -584,7 +584,7 @@
       <p class="subtitle">记录随时迸发的产品闪念、动效构想与玩法实验。遵循奥卡姆剃刀原理与极简高级美学，去伪存真，持续沉淀。</p>
       
       <div class="stats-bar">
-        <div class="stat-pill">沉淀创意: <strong>5 (4 产品 + 1 营销)</strong></div>
+        <div class="stat-pill">沉淀创意: <strong>6 (5 产品/架构 + 1 营销)</strong></div>
         <div class="stat-pill">核心哲学: <strong>如非必要 · 勿增实体</strong></div>
         <div class="stat-pill">美学基准: <strong>现代极简 · 灵动克制</strong></div>
       </div>
@@ -608,7 +608,7 @@
               </svg>
               <span class="sidebar-title">创意目录 · INDEX</span>
             </div>
-            <span class="sidebar-badge-count">5</span>
+            <span class="sidebar-badge-count">6</span>
           </div>
 
           <nav class="nav-list" id="sidebarNav">
@@ -655,6 +655,15 @@
                 </div>
                 <div class="nav-item-title">单词泡泡天空（记忆苍穹）</div>
                 <div class="nav-item-cat">激励与交互美学</div>
+              </a>
+
+              <a href="#idea-nav-001" class="nav-item" data-id="idea-nav-001">
+                <div class="nav-item-header">
+                  <span class="nav-item-id" style="color: var(--accent-aurora);">NAV #001</span>
+                  <span class="nav-dot dot-aurora"></span>
+                </div>
+                <div class="nav-item-title">底栏定制与功能收纳系统</div>
+                <div class="nav-item-cat">我页面收纳区 · 长按快捷气泡</div>
               </a>
             </div>
 
@@ -1120,6 +1129,68 @@
             </div>
           </article>
 
+          <!-- 交互与架构定制 #001: 底栏按钮定制收纳系统 -->
+          <article class="idea-card" id="idea-nav-001">
+            <div class="idea-header">
+              <div>
+                <div class="idea-id-date">
+                  <span class="idea-id" style="color: var(--accent-aurora);">NAV #001</span>
+                  <span>•</span>
+                  <span>2026-09-27</span>
+                  <span>•</span>
+                  <span>架构与交互定制</span>
+                </div>
+                <h2 class="idea-title">底栏按钮定制收纳系统（我页面统一收纳区 + 底栏长按快捷气泡）</h2>
+              </div>
+              <span class="badge-status status-completed" style="background: rgba(110, 231, 183, 0.12); color: var(--accent-aurora); border: 1px solid rgba(110, 231, 183, 0.25);">已落地实装 / 体验就绪</span>
+            </div>
+
+            <div class="tags-container">
+              <span class="tag" style="color: var(--accent-aurora); border-color: rgba(110, 231, 183, 0.2);">#底栏定制</span>
+              <span class="tag">#单一认知锚点</span>
+              <span class="tag">#我页面统一收纳区</span>
+              <span class="tag">#底栏长按快捷呼出</span>
+              <span class="tag">#毛玻璃气泡弹层</span>
+              <span class="tag">#奥卡姆剃刀</span>
+              <span class="tag">#Flutter已实装</span>
+            </div>
+
+            <div class="idea-body">
+              <div class="idea-quote" style="border-left-color: var(--accent-aurora); background: rgba(110, 231, 183, 0.05);">
+                “严肃背词用户需要纯粹无打扰的心流，不喜欢在底部常驻看到带有竞技或娱乐色彩的‘比赛’按钮。但隐藏不等于抹杀——将 Tier-1（底栏常驻）降级收纳为 Tier-2（二级按需入口），并在「我」页面设立专属统一收纳区，配合底栏长按快捷气泡菜单，实现‘所见即所得兜底 + 0秒随手即达捷径’的双通道体验。”
+              </div>
+
+              <div class="section-title">核心痛点与认知模型设计</div>
+              <div class="principle-box">
+                <strong>单一认知锚点（Single Storage Anchor）：</strong>如果不同被隐藏的功能散落放置（例如比赛在卡片A、查词在搜索栏、词表在设置），用户极易产生‘找不到入口’的迷失感。本方案采用统一固定收纳逻辑：<strong>“只要底栏没有的，一律去「我」页面的【功能收纳】区找”</strong>，用户心智模型极简自洽。
+              </div>
+
+              <div class="section-title">双通道交互系统架构</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 普通通道：我页面专属【功能收纳】卡片（兜底可见）</strong>
+                  <p>当用户移出 1~3 个底栏按钮（如比赛）时，「我」页面在成就统计卡片下方自动呈现毛玻璃收纳卡片；无收纳项时卡片零占位隐去，保持纯净；右上角直通「定制」，随点随改。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 极客通道：底栏长按快捷呼出（0 秒即达）</strong>
+                  <p>在任意主页面长按底栏按钮或空白处，触发轻微触感震动（HapticFeedback），底部弹起局部高斯模糊毛玻璃气泡菜单，一键唤起被收纳功能，不中断主流程。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>③ 动态 Tab 架构重构（根治硬编码数字偏移）</strong>
+                  <p>将原代码中脆弱的 0..4 整数下标和游客模式硬偏移彻底解耦为 <code>NavTabKey</code> 语义模型，底栏项受 <code>Prefs.hiddenBottomNavKeysNotifier</code> 响应式驱动，支持独立路由平滑降级。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>④ 防呆安全与向后兼容保障</strong>
+                  <p>强制限制底栏至少保留 2 个核心项（学习+我不可隐藏）；对外部遗留的 <code>IndexPageArgs(buttonIndex)</code> 做智能枚举映射，防止任何深链跳错或越界。</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions-footer">
+              <span class="action-link" onclick="copyIdeaMarkdown('idea-nav-001')">复制摘要 Markdown</span>
+            </div>
+          </article>
+
         </div> <!-- /.ideas-feed -->
       </main> <!-- /.main-content -->
 
@@ -1160,6 +1231,13 @@
   4. 备考群资源置换：以高频词单 Excel 免费分享为诱饵，换取内测提 Bug 用户；
   5. 独立周刊自荐：真诚自荐信投稿少数派、小众软件、竹新社等大 V 撬动高权重下载。
 - **阶段执行**：首周从小红书反向发帖、酷安开发者词条到差评定向截流逐步推进。`;
+      } else if (id === 'idea-nav-001') {
+        text = `### 底栏按钮定制收纳系统（我页面统一收纳区 + 底栏长按快捷气泡）
+- **核心设计**：严肃背词去噪，将 Tier-1（底栏常驻）降级收纳为 Tier-2（二级按需入口）。
+- **双通道体验**：
+  1. 普通通道：在「我」页面设立专属【功能收纳】毛玻璃卡片，统一收纳所有被隐藏按钮，单一认知锚点不迷路；
+  2. 极客通道：任意页面长按底栏按钮或空白处，高斯模糊气泡菜单 0 秒呼出；
+- **底层架构**：重构为 NavTabKey 语义模型与 Prefs 响应式通知，彻底解耦硬编码数字偏移，全套单元测试通过。`;
       }
       navigator.clipboard.writeText(text).then(() => {
         alert('已复制该创意 Markdown 摘要到剪贴板');
