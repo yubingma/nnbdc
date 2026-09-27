@@ -9,11 +9,6 @@ set -e
 # 记录脚本开始时间
 START_TIME=$(date +%s)
 
-# 解析参数支持非交互模式
-AUTO_CONFIRM=false
-if [ "$1" = "-y" ] || [ "$1" = "--yes" ]; then
-    AUTO_CONFIRM=true
-fi
 
 # 本地数据库配置（读取环境变量，若无则使用默认值）
 LOCAL_DB_HOST="${db_host:-127.0.0.1}"
@@ -73,34 +68,23 @@ fi
 
 echo "✅ 备份下载成功，临时文件: $TEMP_BACKUP_FILE"
 
-# 第二步：提示用户是否清空本地数据库再导入
+# 第二步：重建本地数据库
 echo "---------------------------------------------"
-if [ "$AUTO_CONFIRM" = "true" ]; then
-    CONFIRM="y"
-else
-    read -p "⚠️ 是否【重建】本地数据库 '$LOCAL_DB_NAME' (清空所有本地数据)？ (y/n): " CONFIRM
-fi
-
+echo "2️⃣ 正在重建本地数据库..."
 export PGPASSWORD="$LOCAL_DB_PASSWORD"
 
-if [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
-    echo "2️⃣ 正在重建本地数据库..."
-    
-    # 终止现有的连接以防止删除数据库失败
-    # 使用 dropdb --force 可以强行删除被占用的数据库，如果 pg 版本较低不支持 --force，则使用 SQL 强杀连接作为备用
-    if dropdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" --if-exists --force "$LOCAL_DB_NAME" 2>/dev/null; then
-        echo "✅ 本地数据库 '$LOCAL_DB_NAME' 已强行重置(使用 --force)。"
-    else
-        # 降级备用方案：先杀连接，再普通删除
-        psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d postgres -c \
-            "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$LOCAL_DB_NAME' AND pid <> pg_backend_pid();" >/dev/null 2>&1 || true
-        dropdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" --if-exists "$LOCAL_DB_NAME"
-        echo "✅ 本地数据库 '$LOCAL_DB_NAME' 已重置。"
-    fi
-    createdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" "$LOCAL_DB_NAME"
+# 终止现有的连接以防止删除数据库失败
+# 使用 dropdb --force 可以强行删除被占用的数据库，如果 pg 版本较低不支持 --force，则使用 SQL 强杀连接作为备用
+if dropdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" --if-exists --force "$LOCAL_DB_NAME" 2>/dev/null; then
+    echo "✅ 本地数据库 '$LOCAL_DB_NAME' 已强行重置(使用 --force)。"
 else
-    echo "2️⃣ 跳过数据库重建，将直接进行覆盖导入..."
+    # 降级备用方案：先杀连接，再普通删除
+    psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d postgres -c \
+        "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$LOCAL_DB_NAME' AND pid <> pg_backend_pid();" >/dev/null 2>&1 || true
+    dropdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" --if-exists "$LOCAL_DB_NAME"
+    echo "✅ 本地数据库 '$LOCAL_DB_NAME' 已重置。"
 fi
+createdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" "$LOCAL_DB_NAME"
 
 # 第三步：导入备份数据到本地
 echo "3️⃣ 正在导入数据到本地数据库..."
