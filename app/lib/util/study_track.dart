@@ -84,4 +84,19 @@ class StudyTrack {
     }
     return false;
   }
+
+  /// 本环节是否首次作答（据此决定是否计分）。
+  ///
+  /// 每个评分环节只在首次作答时写一条评分日志，答错的词留在本环节循环重练、
+  /// 重练不再计分，因此 "今天该词的评分日志条数" 与 "已走完的环节数" 的关系为：
+  /// - 日志条数 == 已走完环节数 → 当前环节尚未作答，本次是首次作答（计分）
+  /// - 日志条数 >  已走完环节数 → 当前环节已首答过，本次是重练（不计分）
+  ///
+  /// 日志条数少于进度属异常（如日志被清理），此时按首次作答处理：
+  /// 宁可重复计分，也不静默丢分。
+  static bool isFirstAttemptOfStep({
+    required int todayLogCount,
+    required int todayLearnedTimes,
+  }) =>
+      todayLogCount <= todayLearnedTimes;
 }

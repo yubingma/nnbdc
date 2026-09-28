@@ -1762,6 +1762,17 @@ class BdcNotifier extends _$BdcNotifier {
       
       if (result.success && result.data != null) {
         state = state.copyWith(loadError: null, learningGetWordResult: result.data);
+        // 答错的词会在本环节循环重练（BO 不推进环节索引，会再次返回同一词同一环节）。
+        // 必须作废它的答题状态缓存，否则 handleWord 会恢复上一轮的"已答完"状态
+        //（选项高亮、答案已揭晓），重练就没法重新作答。
+        if (fsrsRating == FsrsRating.again) {
+          final retryWordId = result.data!.learningWord?.word.id;
+          if (retryWordId != null && state.wordUIStates.containsKey(retryWordId)) {
+            final cleared = Map<String, WordUIState>.from(state.wordUIStates)
+              ..remove(retryWordId);
+            state = state.copyWith(wordUIStates: cleared);
+          }
+        }
         final handleStopwatch = Stopwatch()..start();
         final success = await handleWord(result.data, isFromBatchWordList: isFromBatchWordList);
         Global.logger.d('[PERF] getNextWord -> handleWord cost: ${handleStopwatch.elapsedMilliseconds}ms');

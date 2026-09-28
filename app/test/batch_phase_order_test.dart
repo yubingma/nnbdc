@@ -198,6 +198,8 @@ void main() {
       String trackName
     })>[];
     int guard = 0;
+    // 指定词在指定环节只错第一次：重练必须答对，否则会一直卡在本环节
+    final wrongDone = <String>{};
     while (guard++ < 300) {
       final res = await studyBo.getWord(false, false);
       expect(res.success, true);
@@ -235,8 +237,10 @@ void main() {
         trackName: group?.trackName ?? '',
       ));
 
-      final rating = (wordId == wrongOnceWordId && step == 'En2Ch') ||
-              (wordId == wrongAtCh2EnWordId && step == 'Ch2En')
+      final wrongKey = '$wordId@$step';
+      final wantWrong = (wordId == wrongOnceWordId && step == 'En2Ch') ||
+          (wordId == wrongAtCh2EnWordId && step == 'Ch2En');
+      final rating = wantWrong && wrongDone.add(wrongKey)
           ? FsrsRating.again
           : FsrsRating.good;
       await studyBo.getWord(false, true, fsrsRating: rating);
@@ -254,13 +258,18 @@ void main() {
     final seq = await playWholeDay(wrongOnceWordId: 'w_1');
     print(seq.map((e) => e.wordId.isEmpty ? '<本组小结>' : '${e.wordId}@${e.step}').join(' -> '));
 
-    // 1. 顺序：每组内先整组 En2Ch，再整组 Ch2En，最后 List；组间先后推进
+    // 1. 顺序：每组内先整组 En2Ch，再整组 Ch2En，最后 List；组间先后推进。
+    //    第 1 组的 w_1 在 En2Ch 答错 → 留在本环节重练，且必须排到本环节队尾
+    //    （等其余 9 个词都过完 En2Ch 才回来），重练通过后紧接进入答错组 Ch2En。
     final expected = <String>[
-      for (final batchStart in [1, 11]) ...[
-        ...List.generate(batchSize, (i) => 'w_${batchStart + i}@En2Ch'),
-        ...List.generate(batchSize, (i) => 'w_${batchStart + i}@Ch2En'),
-        '<本组小结>',
-      ],
+      ...List.generate(batchSize, (i) => 'w_${1 + i}@En2Ch'),
+      'w_1@En2Ch', // 错词重练：排在本环节队尾，而非紧接着原地重来
+      'w_1@Ch2En',
+      ...List.generate(batchSize - 1, (i) => 'w_${2 + i}@Ch2En'),
+      '<本组小结>',
+      ...List.generate(batchSize, (i) => 'w_${11 + i}@En2Ch'),
+      ...List.generate(batchSize, (i) => 'w_${11 + i}@Ch2En'),
+      '<本组小结>',
     ];
     expect(seq.map((e) => e.wordId.isEmpty ? '<本组小结>' : '${e.wordId}@${e.step}').toList(),
         expected);
@@ -315,6 +324,8 @@ void main() {
 
     final seq = <({String wordId, int groupNo, int stepIndex, String step, String trackName, int position, int total})>[];
     var guard = 0;
+    // 只有 w_1 在测评环节的首次作答答错；随后的重练必须答对，否则会卡在本环节
+    final wrongDone = <String>{};
     while (guard++ < 100) {
       final res = await studyBo.getWord(false, false);
       final data = res.data!;
@@ -338,10 +349,13 @@ void main() {
         position: progress.position,
         total: progress.total,
       ));
-      await studyBo.getWord(false, true,
-          fsrsRating: wordId == wrongWordId && data.stepIndex == 0
-              ? FsrsRating.again
-              : FsrsRating.good);
+      // 只有 w_1 在测评环节首次作答答错；重练时改为答对
+      final rating = wordId == wrongWordId &&
+              data.stepIndex == 0 &&
+              wrongDone.add(wordId)
+          ? FsrsRating.again
+          : FsrsRating.good;
+      await studyBo.getWord(false, true, fsrsRating: rating);
     }
 
     // 只看第 1 组（本文件今日共 20 词，第 2 组无人答错）
@@ -351,11 +365,17 @@ void main() {
     final second = group1.where((e) => e.stepIndex == 1).toList();
     expect(second.first.wordId, wrongWordId);
 
-    // 测评环节：整组同轨道，顺位 1..10
+    // 测评环节：整组同轨道，顺位 1..10。
+    // w_1 首答答错后并未走完本环节，其重练排到整组队尾 —— 而 x 的口径是
+    // "该轨道内已走完本环节的词数 + 1"，故 w_1 首答为 1、其余 9 个词依次为 1..9，
+    // 最后的 w_1 重练（补完本环节）为 10。
     final assess = group1.where((e) => e.stepIndex == 0).toList();
     expect(assess.map((e) => e.trackName).toSet(), {'新词测评'});
+    expect(assess.map((e) => e.wordId).toList(), [
+      'w_1', 'w_2', 'w_3', 'w_4', 'w_5', 'w_6', 'w_7', 'w_8', 'w_9', 'w_10', 'w_1',
+    ], reason: '答错的词排在整组之后重练');
     expect(assess.map((e) => e.position).toList(),
-        List.generate(batchSize, (i) => i + 1));
+        [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(assess.every((e) => e.total == batchSize), true);
 
     // 第二环节：两条轨道各走各的环节、各数各的词数
@@ -420,11 +440,15 @@ void main() {
 
     final seq = await playWholeDay(wrongOnceWordId: 'w_1');
 
-    // 测评环节：整组同属一条轨道，顺位恰好 1..10
+    // 测评环节：整组同属一条轨道。w_1 首答答错后重练排到队尾，
+    // 而 x = 已走完本环节的词数 + 1，故序列为 1, 1..9, 10（最后一位是补完的 w_1）。
     final en2Ch1 = seq.where((e) => e.step == 'En2Ch' && e.groupNo == 1).toList();
     expect(en2Ch1.map((e) => e.trackName).toSet(), {'新词测评'});
+    expect(en2Ch1.map((e) => e.wordId).toList(), [
+      'w_1', 'w_2', 'w_3', 'w_4', 'w_5', 'w_6', 'w_7', 'w_8', 'w_9', 'w_10', 'w_1',
+    ], reason: '答错的 w_1 在整组之后重练');
     expect(en2Ch1.map((e) => e.groupPosition).toList(),
-        List.generate(batchSize, (i) => i + 1));
+        [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(en2Ch1.every((e) => e.groupTotal == batchSize), true);
 
     // 汉译英：两条轨道各自从 1 数到自己那条轨道的词数（不是共用整组队列）

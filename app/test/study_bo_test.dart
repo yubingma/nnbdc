@@ -559,7 +559,7 @@ void main() {
       expect(w.lapses, 3);
     });
 
-    test('复习词测评答错不跳过恢复（todayLearnedTimes +1）', () async {
+    test('复习词测评答错不跳过：留在测评环节重练，答对才进入恢复环节', () async {
       await setupThreeSteps();
       await finishOtherWords('word_1');
       final yesterday = AppClock.today().subtract(const Duration(days: 1));
@@ -570,9 +570,14 @@ void main() {
 
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
       expect(result.success, true);
-      final w = await wordOf('word_1');
+      var w = await wordOf('word_1');
       expect(w.state, FsrsState.relearning.value);
-      expect(w.todayLearnedTimes, 1); // 不跳过：还需走恢复环节
+      expect(w.todayLearnedTimes, 0); // 答错不推进：留在本环节重练，不被跳过
+
+      // 重练答对后才进入答错组（恢复环节）
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      w = await wordOf('word_1');
+      expect(w.todayLearnedTimes, 1);
     });
 
     test('复习轨道答错走答错组后 completeListStepForCurrentBatch 按轨道推进 List', () async {
@@ -584,13 +589,18 @@ void main() {
         reps: 1, lapses: 0, state: FsrsState.review.value,
         todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
 
-      // 测评答错 → 默认答错组 [反向互补=Ch2En] 非空 → +1 进入答错组环节
+      // 测评答错 → 留在测评环节重练（进度不推进）
       await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
       var w = await wordOf('word_1');
-      expect(w.todayLearnedTimes, 1);
+      expect(w.todayLearnedTimes, 0);
       expect(w.state, FsrsState.relearning.value);
 
-      // 答错组环节答对 → +1 → 轨道 [En2Ch, Ch2En, List] 的 List 位置
+      // 重练测评答对 → 进入默认答错组 [反向互补=Ch2En]
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      w = await wordOf('word_1');
+      expect(w.todayLearnedTimes, 1);
+
+      // 答错组环节答对 → 推进到轨道 [En2Ch, Ch2En, List] 的 List 位置
       await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
       w = await wordOf('word_1');
       expect(w.todayLearnedTimes, 2);
@@ -690,19 +700,23 @@ void main() {
         expect(w.todayLearnedTimes, 1);
       }
 
-      // word_5 测评答错 (Again)，进入错题分支 [En2Ch, Ch2En, List]
+      // word_5 测评答错 (Again)：留在测评环节重练，轨道为错题分支 [En2Ch, Ch2En, List]
       final wrongRes = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
       expect(wrongRes.success, true);
       final w5 = await wordOf('word_5');
-      expect(w5.todayLearnedTimes, 1);
+      expect(w5.todayLearnedTimes, 0);
 
       // 此时 word_1~4 处于 List 等待（todayTimes=1, track=[En2Ch, List]），
-      // word_5 处于 Ch2En 错题练习（todayTimes=1, track=[En2Ch, Ch2En, List]）。
-      // 关键验证：调度必须优先选择 word_5 的 Ch2En 练习题，不能提前进入 List！
+      // word_5 处于测评环节重练（todayTimes=0, track=[En2Ch, Ch2En, List]）。
+      // 关键验证：调度必须优先选择 word_5 的普通练习题，不能提前进入 List！
       final nextPracticeRes = await studyBo.getWord(false, false);
       expect(nextPracticeRes.success, true);
       expect(nextPracticeRes.data!.learningWord!.word.id, 'word_5');
-      expect(nextPracticeRes.data!.stepIndex, 1); // 指向 Ch2En，不是 List 环节
+      expect(nextPracticeRes.data!.stepIndex, 0); // 仍在测评环节，不是 List 环节
+
+      // 重练测评答对 → 进入答错组 Ch2En
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      expect((await wordOf('word_5')).todayLearnedTimes, 1);
 
       // 完成 word_5 的 Ch2En 练习题 (Good)
       final finishWrongStepRes = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);

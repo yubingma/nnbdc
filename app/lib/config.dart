@@ -84,9 +84,12 @@ class Config {
 
   // App Review Configuration & Switches (各应用市场好评引导开关)
   static const String appStoreId = '6756229006';
+  // 华为应用市场 App ID：AGC「我的应用 → 应用信息」中的 APP ID 加前缀 C，
+  // 用于 applink 方式直达应用详情页（对应 AGC App ID 117150707）
+  static const String huaweiAppId = 'C117150707';
   static String get appDownloadUrl => '$serviceUrl/app'; // 后端智能分发落地页（直达 Java AppDownloadController）
   static const bool enableAppStoreReview = true;   // Apple App Store (iOS / macOS)
-  static const bool enableHuaweiReview = true;     // 华为应用市场 (Huawei AppGallery)
+  static const bool enableHuaweiReview = true;     // 华为应用市场 (Huawei AppGallery) / 荣耀应用市场 (HONOR App Market)
   static const bool enableXiaomiReview = false;    // 小米应用商店 (Xiaomi Mi Market)
   static const bool enableOppoReview = false;      // OPPO应用商店 (OPPO / HeyTap Market)
   static const bool enableVivoReview = false;      // vivo应用商店 (vivo App Store)

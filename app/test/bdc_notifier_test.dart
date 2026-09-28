@@ -1752,13 +1752,24 @@ void main() {
     // 测评答错 → 应进入恢复环节
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
     state = container.read(bdcNotifierProvider);
-    expect(state.currentGetWordResult!.stepIndex, 1,
-        reason: '答错后应进入复习轨道恢复环节(stepIndex=1)');
+    expect(state.currentGetWordResult!.stepIndex, 0,
+        reason: '答错不推进：留在测评环节重练，答对后才进入恢复环节');
     expect(state.currentGetWordResult!.learningWord!.state, FsrsState.relearning.value,
-        reason: '恢复环节词状态应为 relearning');
+        reason: '首答答错仍需计分，词状态应为 relearning');
     expect(state.isReviewWord, true,
-        reason: '恢复环节仍属复习轨道,应标记为新词/旧词中的[旧词]');
-    // 组进度异步刷新落定后再断言（该值只能由本次刷新生出）
+        reason: '重练期间仍属复习轨道,应标记为新词/旧词中的[旧词]');
+    // 组进度异步刷新落定后再断言：仍停在测评环节，轨道名保持"旧词测评"
+    await _waitUntil(container, (s) => s.groupStepTrackName != null);
+    state = container.read(bdcNotifierProvider);
+    expect(state.groupStepTrackName, '旧词测评',
+        reason: '答错后仍留在测评环节，环节名不变');
+
+    // 重练测评答对 → 才进入恢复环节(stepIndex=1)，环节名切换为"旧词答错"
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
+    state = container.read(bdcNotifierProvider);
+    expect(state.currentGetWordResult!.stepIndex, 1,
+        reason: '重练答对后才进入复习轨道恢复环节');
+    expect(state.isReviewWord, true, reason: '恢复环节仍属复习轨道');
     await _waitUntil(container, (s) => s.groupStepTrackName == '旧词答错');
     state = container.read(bdcNotifierProvider);
     expect(state.groupStepTrackName, '旧词答错',

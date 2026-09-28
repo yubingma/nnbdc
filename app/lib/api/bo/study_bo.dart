@@ -712,6 +712,10 @@ class StudyBo {
         );
       }
 
+      // 本环节已作答但答错（待重练）的词：调度时排到同环节队尾，与尚未作答的词拉开间隔
+      bool isRetryStep(LearningWord word) =>
+          (firstLogs[word.wordId]?.logCount ?? 0) > word.todayLearnedTimes;
+
       // 添加批次状态日志
       Global.logger.d('~~~~~BDC_BATCH: startIdx=${currentBatch.startIndex}, batchSize=${batchWords.length}');
       for (var w in batchWords) {
@@ -727,6 +731,7 @@ class StudyBo {
             b,
             masteredWordIds: masteredWordIds,
             trackOf: trackOf,
+            isRetryStep: isRetryStep,
           ));
 
       final currentWordForPos = sortedBatchWords.first;
@@ -754,11 +759,14 @@ class StudyBo {
               todayFirstLogElapsedDays: firstLogs[currWord.wordId]?.elapsedDays,
               today: today,
             );
-        // 本次评分后接续的组：测评环节（首条评分）时按答对/答错选组；
-        // 其余环节轨道已完整（首条评分后轨道扩展），无接续组
+        // 接续的组：测评环节按「当天首条评分」选组，与轨道固化口径一致。
+        // 测评答错后重练到答对时首条评分仍是 again，仍走答错组 —— 重练不改轨道。
+        // 其余环节轨道已完整（首条评分后轨道扩展），无接续组。
         List<String>? groupAfterRating;
         if (currentStepIndex == 0 && fsrsRating != null) {
-          groupAfterRating = fsrsRating == FsrsRating.again
+          final int ratingForGroup =
+              firstLogs[currWord.wordId]?.rating ?? fsrsRating.value;
+          groupAfterRating = ratingForGroup == FsrsRating.again.value
               ? (isReviewWord ? reviewCfg.wrong : newCfg.wrong)
               : (isReviewWord ? reviewCfg.correct : newCfg.correct);
         }
@@ -768,6 +776,12 @@ class StudyBo {
         final bool allStepsCompletedForWord = groupAfterRating != null
             ? groupAfterRating.isEmpty
             : !StudyTrack.hasMoreGradedSteps(currentTrack, currentStepIndex);
+        // 本环节是否首次作答：今天该词的评分日志条数超出已走完环节数即为重练（重练不计分）
+        final bool isFirstAttempt = fsrsRating != null &&
+            StudyTrack.isFirstAttemptOfStep(
+              todayLogCount: firstLogs[currWord.wordId]?.logCount ?? 0,
+              todayLearnedTimes: currWord.todayLearnedTimes,
+            );
         final nextFsrsItem = await updateCurrWord(
           isWordMastered: isWordMastered,
           currWord: currWord,
@@ -775,12 +789,18 @@ class StudyBo {
           now: now,
           db: db,
           allStepsCompletedForWord: allStepsCompletedForWord,
+          isFirstAttempt: isFirstAttempt,
           fsrsRating: fsrsRating,
         );
-        // 刚写入的今日首条评分日志立即固化进轨道判定 Map（当日轨道不漂移）
+        // 刚写入的今日首条评分日志立即固化进轨道判定 Map（当日轨道不漂移），
+        // 并递增今天的日志条数 —— 本批次内后续调度据此把"答错待重练"的词排到本环节队尾
         if (nextFsrsItem != null && fsrsRating != null) {
-          firstLogs.putIfAbsent(currWord.wordId,
-              () => (elapsedDays: nextFsrsItem.elapsedDays, rating: fsrsRating.value));
+          final prev = firstLogs[currWord.wordId];
+          firstLogs[currWord.wordId] = (
+            elapsedDays: prev?.elapsedDays ?? nextFsrsItem.elapsedDays,
+            rating: prev?.rating ?? fsrsRating.value,
+            logCount: (prev?.logCount ?? 0) + 1,
+          );
         }
 
         // 同步内存状态
@@ -860,6 +880,7 @@ class StudyBo {
             b,
             masteredWordIds: masteredWordIds,
             trackOf: trackOf,
+            isRetryStep: isRetryStep,
           ));
 
       final nextWordForPos = nextBatchWords.first;
@@ -956,6 +977,7 @@ class StudyBo {
     required DateTime now,
     required MyDatabase db,
     required bool allStepsCompletedForWord,
+    required bool isFirstAttempt,
     FsrsRating? fsrsRating,
   }) async {
     // 停止使用 dateOnlyNow，保留完整时间戳以支持状态驱动定位
@@ -971,7 +993,13 @@ class StudyBo {
       return null;
     }
 
-    if (fsrsRating == FsrsRating.again) {
+    // 答错的词留在本环节循环重练，答对才推进环节索引；
+    // 无评分的历史切词路径（fsrsRating == null）照旧推进，保持原有行为不变
+    final bool advanceStep = fsrsRating != FsrsRating.again;
+    // 仅首次作答计分：重练只判对错，不再算 FSRS、不写日志、不计数
+    final bool isGraded = isFirstAttempt && fsrsRating != null;
+
+    if (isGraded && fsrsRating == FsrsRating.again) {
       // 若评分是 Again (答错), 则保存错词
       await saveWrongWord(currWord, db, user, now);
     }
@@ -981,7 +1009,7 @@ class StudyBo {
     // - 当天非首次评分（学习轨道巩固 / 复习轨道重测）：relearn 重设（可升可降）
     // - 跨天首次评分（复习词测评 / 学一半词次日检验）：next 复习公式
     FSRSItem? nextFsrs;
-    if (fsrsRating != null) {
+    if (isGraded) {
       final fsrs = FSRS();
       if (currWord.stability == null || currWord.stability == 0.0) {
         if (currWord.stability == 0.0) {
@@ -1048,8 +1076,8 @@ class StudyBo {
     // 更新学习状态
     Global.logger.d('Word ${currWord.wordId}. Updating FSRS and learnedTimes.');
 
-    // 保存学习记录
-    if (fsrsRating != null && nextFsrs != null) {
+    // 保存学习记录（仅首次作答计分；重练不计分也不写日志）
+    if (isGraded && nextFsrs != null) {
       await db.learningLogsDao.saveEntity(
         LearningLog(
           id: Util.uuid(),
@@ -1072,10 +1100,16 @@ class StudyBo {
       await db.userStudyDailyStatsDao.updateDayStatus(user.id, now, UserDayStatus.studied);
     }
 
+    // 答错且非首次作答（纯重练答错）：所有字段均无变化，不必写库与同步
+    if (!advanceStep && !isGraded) {
+      return null;
+    }
+
     final updatedWord = currWord.copyWith(
       lastLearningDate: Value(AppClock.today()),
-      learnedTimes: (currWord.learnedTimes) + 1,
-      todayLearnedTimes: (currWord.todayLearnedTimes) + 1,
+      learnedTimes: advanceStep ? currWord.learnedTimes + 1 : currWord.learnedTimes,
+      todayLearnedTimes:
+          advanceStep ? currWord.todayLearnedTimes + 1 : currWord.todayLearnedTimes,
       stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
       difficulty: nextFsrs != null ? Value(nextFsrs.difficulty) : const Value.absent(),
       elapsedDays: nextFsrs != null ? Value(nextFsrs.elapsedDays) : const Value.absent(),
@@ -1104,16 +1138,16 @@ class StudyBo {
     };
   }
 
-  /// 查询今日单词在今天的首条评分日志的 elapsedDays（用于固化当天学习/复习轨道）
-  Future<Map<String, ({int elapsedDays, int rating})>> _loadTodayFirstLogs(
-          String userId, List<LearningWord> words) =>
-      _loadTodayFirstLogsOfIds(userId, words.map((w) => w.wordId));
+  /// 查询今日单词在今天的首条评分日志（elapsedDays/rating，用于固化当天学习/复习轨道），
+  /// 以及今天该词的评分日志条数（用于判定本环节是首次作答还是重练）。
+  Future<Map<String, ({int elapsedDays, int rating, int logCount})>>
+      _loadTodayFirstLogs(String userId, List<LearningWord> words) =>
+          _loadTodayFirstLogsOfIds(userId, words.map((w) => w.wordId));
 
-  Future<Map<String, ({int elapsedDays, int rating})>> _loadTodayFirstLogsOfIds(
-      String userId, Iterable<String> wordIds) async {
-    final result = <String, ({int elapsedDays, int rating})>{};
+  Future<Map<String, ({int elapsedDays, int rating, int logCount})>>
+      _loadTodayFirstLogsOfIds(String userId, Iterable<String> wordIds) async {
     final ids = wordIds.toList();
-    if (ids.isEmpty) return result;
+    if (ids.isEmpty) return {};
     final db = MyDatabase.instance;
     final todayStart = AppClock.today();
     final rows = await (db.select(db.learningLogs)
@@ -1122,16 +1156,26 @@ class StudyBo {
               l.wordId.isIn(ids) &
               l.createTime.isBiggerOrEqualValue(todayStart)))
         .get();
-    // 每词取最早一条日志（今天首条评分）的 elapsedDays 与 rating（用于固化轨道与扩展复习轨道）
-    final earliestTime = <String, DateTime>{};
+    // 每词取最早一条日志（今天首条评分）的 elapsedDays 与 rating（用于固化轨道与扩展复习轨道），
+    // 并统计今天该词的日志条数：每个评分环节只在首次作答时写一条日志（重练不计分），
+    // 故条数配合今日进度即可判定"本环节是首次作答还是重练"（见 StudyTrack.isFirstAttemptOfStep）。
+    final earliest = <String, LearningLog>{};
+    final logCounts = <String, int>{};
     for (final row in rows) {
-      final prev = earliestTime[row.wordId];
-      if (prev == null || row.createTime.isBefore(prev)) {
-        earliestTime[row.wordId] = row.createTime;
-        result[row.wordId] = (elapsedDays: row.elapsedDays, rating: row.rating);
+      logCounts[row.wordId] = (logCounts[row.wordId] ?? 0) + 1;
+      final prev = earliest[row.wordId];
+      if (prev == null || row.createTime.isBefore(prev.createTime)) {
+        earliest[row.wordId] = row;
       }
     }
-    return result;
+    return {
+      for (final e in earliest.entries)
+        e.key: (
+          elapsedDays: e.value.elapsedDays,
+          rating: e.value.rating,
+          logCount: logCounts[e.key] ?? 0,
+        ),
+    };
   }
 
   Future<void> saveHistoryFSRSUpdate({
@@ -1329,7 +1373,7 @@ class StudyBo {
   static BatchRange? calculateCurrentBatch(
     List<LearningWord> todayWords,
     Set<String> masteredWordIds, {
-    required Map<String, ({int elapsedDays, int rating})> firstLogs,
+    required Map<String, ({int elapsedDays, int rating, int logCount})> firstLogs,
     required ThreeGroupSteps newCfg,
     required ThreeGroupSteps reviewCfg,
     required int batchSize,
@@ -1375,7 +1419,7 @@ class StudyBo {
   static int calculateBatchStartIndex(
     List<LearningWord> todayWords,
     Set<String> masteredWordIds, {
-    required Map<String, ({int elapsedDays, int rating})> firstLogs,
+    required Map<String, ({int elapsedDays, int rating, int logCount})> firstLogs,
     required ThreeGroupSteps newCfg,
     required ThreeGroupSteps reviewCfg,
     required int batchSize,
@@ -1395,12 +1439,15 @@ class StudyBo {
   /// 1. 已掌握或已完成所有轨道的单词排在最后；
   /// 2. 处于普通练习题（currentStep != 'List'）的单词严格优先于已到达 List 等待状态的单词；
   /// 3. 同处于普通练习题（或均处于 List）：按 todayLearnedTimes 升序（保证横向轮流推进）；
-  /// 4. 步数相同时按批次内既定序号 learningOrder 升序（从左到右）。
+  /// 4. 步数相同时，本环节答错待重练的词排到队尾，优先让尚未作答的词先过一遍
+  ///    （错词答错时刚看过答案，紧接着复述测的是短时记忆，必须拉开间隔）；
+  /// 5. 其余按批次内既定序号 learningOrder 升序（从左到右）。
   static int _compareBatchWords(
     LearningWord a,
     LearningWord b, {
     required Set<String> masteredWordIds,
     required List<String> Function(LearningWord) trackOf,
+    required bool Function(LearningWord) isRetryStep,
   }) {
     final trackA = trackOf(a);
     final trackB = trackOf(b);
@@ -1428,6 +1475,12 @@ class StudyBo {
 
     if (a.todayLearnedTimes != b.todayLearnedTimes) {
       return a.todayLearnedTimes.compareTo(b.todayLearnedTimes);
+    }
+    // 同一环节内：答错待重练的词排到队尾
+    final bool isARetry = isRetryStep(a);
+    final bool isBRetry = isRetryStep(b);
+    if (isARetry != isBRetry) {
+      return isARetry ? 1 : -1;
     }
     return a.learningOrder.compareTo(b.learningOrder);
   }

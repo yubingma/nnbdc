@@ -435,17 +435,24 @@ void main() {
     final isW3Mastered = await db.masteredWordsDao.isWordMastered(testUser.id, 'w_3');
     expect(isW3Mastered, true);
 
-    // 回到 w_1（今日次数最少），巩固环节 Ch2En 答对 → 进入 List 位置
+    // 回到 w_2：测评答错后留在本环节重练（todayLearnedTimes 仍为 0），故它最优先
+    getWordRes = await studyBo.getWord(false, false);
+    expect(getWordRes.data!.learningWord!.word.id, 'w_2');
+    expect(getWordRes.data!.stepIndex, 0); // 仍在测评环节，必须重练到答对
+    await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+
+    // 回到 w_1（同环节内按 learningOrder），巩固环节 Ch2En 答对 → 进入 List 位置
     getWordRes = await studyBo.getWord(false, false);
     expect(getWordRes.data!.learningWord!.word.id, 'w_1');
     expect(getWordRes.data!.stepIndex, 1); // 步骤 1: Ch2En
     await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
 
-    // 回到 w_2，答错组 Ch2En 再答错 → 明日重现（复习词）
+    // 回到 w_2，答错组 Ch2En 首答再答错 → 明日重现（复习词）；随后重练答对才放行
     getWordRes = await studyBo.getWord(false, false);
     expect(getWordRes.data!.learningWord!.word.id, 'w_2');
     expect(getWordRes.data!.stepIndex, 1); // 步骤 1: Ch2En
     await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
+    await studyBo.getWord(false, true, fsrsRating: FsrsRating.good); // 重练答对
 
     // w_1、w_2 均走完评分环节，下一步进入 List(步骤2)
     getWordRes = await studyBo.getWord(false, false);

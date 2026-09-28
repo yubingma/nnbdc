@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>错词循环重练（全对才通关）· 设计方案</title>
+<style>
+  :root {
+    --ink: #1c1c1e;
+    --ink-2: #3a3a3c;
+    --ink-3: #6e6e73;
+    --ink-4: #8e8e93;
+    --line: #e5e5ea;
+    --line-2: #f0f0f2;
+    --bg: #ffffff;
+    --bg-2: #fafafa;
+    --accent: #0a6cff;
+    --accent-soft: #eef4ff;
+    --warn: #b25000;
+    --warn-soft: #fff6ec;
+    --good: #14794c;
+    --good-soft: #eefaf3;
+    --bad: #b3261e;
+    --bad-soft: #fdf0ef;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg-2);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    letter-spacing: 0.01em;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 56px 28px 96px; }
+
+  header { padding-bottom: 26px; border-bottom: 1px solid var(--line); }
+  .eyebrow { font-size: 12px; font-weight: 600; color: var(--accent); letter-spacing: 0.14em; text-transform: uppercase; }
+  h1 { margin: 10px 0 8px; font-size: 30px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; }
+  .sub { margin: 0; color: var(--ink-3); font-size: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 11px; border-radius: 999px;
+    background: #fff; border: 1px solid var(--line);
+    font-size: 12px; color: var(--ink-3);
+  }
+  .tag b { font-weight: 600; color: var(--ink-2); }
+  .tag.pending { background: var(--warn-soft); border-color: #f2ddc7; color: var(--warn); }
+
+  section { margin-top: 44px; }
+  h2 {
+    margin: 0 0 14px; font-size: 19px; font-weight: 650; letter-spacing: -0.005em;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  h2 .n {
+    flex: 0 0 auto; font-size: 12px; font-weight: 700; color: var(--accent);
+    font-variant-numeric: tabular-nums; padding-top: 2px;
+  }
+  h3 { margin: 26px 0 10px; font-size: 15px; font-weight: 650; color: var(--ink); }
+  p { margin: 10px 0; color: var(--ink-2); }
+  ul, ol { margin: 10px 0; padding-left: 22px; color: var(--ink-2); }
+  li { margin: 6px 0; }
+  li > ul, li > ol { margin: 4px 0; }
+  strong { font-weight: 650; color: var(--ink); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; background: #f4f4f6; border: 1px solid var(--line-2);
+    border-radius: 5px; padding: 1px 5px; color: var(--ink-2);
+    white-space: nowrap;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 14px 0; }
+  .card > :first-child { margin-top: 0; }
+  .card > :last-child { margin-bottom: 0; }
+
+  .quote {
+    background: #fff; border: 1px solid var(--line); border-left: 3px solid var(--ink-4);
+    border-radius: 4px 12px 12px 4px; padding: 16px 20px; margin: 14px 0;
+    color: var(--ink-2); font-size: 14px;
+  }
+  .quote .who { display: block; margin-top: 10px; font-size: 12px; color: var(--ink-4); }
+
+  .callout { border-radius: 12px; padding: 14px 18px; margin: 14px 0; font-size: 14px; }
+  .callout p { margin: 6px 0; }
+  .callout.fix { background: var(--bad-soft); border: 1px solid #f3d5d2; }
+  .callout.fix .h { font-weight: 650; color: var(--bad); font-size: 13px; letter-spacing: 0.02em; }
+  .callout.note { background: var(--accent-soft); border: 1px solid #d6e4ff; }
+  .callout.note .h { font-weight: 650; color: var(--accent); font-size: 13px; letter-spacing: 0.02em; }
+  .callout.ok { background: var(--good-soft); border: 1px solid #cfeadd; }
+  .callout.ok .h { font-weight: 650; color: var(--good); font-size: 13px; letter-spacing: 0.02em; }
+  .callout.warn { background: var(--warn-soft); border: 1px solid #f2ddc7; }
+  .callout.warn .h { font-weight: 650; color: var(--warn); font-size: 13px; letter-spacing: 0.02em; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; background: #fff; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+  thead th { background: var(--bg-2); border-bottom: 1px solid var(--line); font-weight: 650; font-size: 12.5px; color: var(--ink-3); letter-spacing: 0.02em; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .rule { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line-2); }
+  .rule:last-child { border-bottom: none; }
+  .rule .idx {
+    flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--ink); color: #fff; font-size: 12px; font-weight: 650;
+    display: flex; align-items: center; justify-content: center; margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .rule .body { flex: 1; }
+  .rule .body b { display: block; font-weight: 650; margin-bottom: 2px; }
+  .rule .body span { color: var(--ink-2); font-size: 14px; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0; font-size: 13px; }
+  .flow .node { padding: 7px 13px; border-radius: 8px; background: #fff; border: 1px solid var(--line); white-space: nowrap; }
+  .flow .node.check { background: var(--bg-2); color: var(--ink-3); }
+  .flow .node.train { background: var(--accent-soft); border-color: #d6e4ff; color: #0847a8; font-weight: 600; }
+  .flow .node.done { background: var(--good-soft); border-color: #cfeadd; color: var(--good); font-weight: 600; }
+  .flow .arrow { color: var(--ink-4); }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  @media (max-width: 680px) { .split { grid-template-columns: 1fr; } }
+  .opt { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .opt.rec { border-color: #bcd6ff; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .opt h4 { margin: 0 0 4px; font-size: 14px; font-weight: 650; }
+  .opt .lh { font-size: 12px; color: var(--ink-4); margin-bottom: 10px; }
+  .opt ul { padding-left: 18px; margin: 8px 0; font-size: 13.5px; }
+  .opt .verdict { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-2); font-size: 13px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 650; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .pill.rec { background: var(--accent); color: #fff; }
+  .pill.alt { background: #ececf0; color: var(--ink-3); }
+
+  footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-4); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Design Proposal</div>
+  <h1>错词循环重练（全对才通关）</h1>
+  <p class="sub">单词学习训练环节内，答错的词留在本环节循环重练，直至本组全部答对才推进到下一环节</p>
+  <div class="meta">
+    <span class="tag" style="background:#eefaf3;border-color:#cfeadd;color:#14794c">● 已实施</span>
+    <span class="tag">版本 <b>v1</b></span>
+    <span class="tag">2026-09-28</span>
+    <span class="tag">涉及 <b>study_bo / bdc_notifier</b></span>
+    <span class="tag">来源 <b>用户反馈</b></span>
+  </div>
+</header>
+
+<!-- 1 -->
+<section>
+  <h2><span class="n">01</span>反馈与诉求</h2>
+  <div class="quote">
+    我现在一组 10 个词，练完英译中/中译英后，如果答错了，系统就直接结束进入下一个模块（比如选择的英语例句翻译成中文），错词没被重练。希望能改成：答错的词继续添加在中译英英译中的训练之后，直到全部答对，才进入下一个模块。也就是"错词循环重练，全对才通关"。
+    <span class="who">—— 用户反馈（原文）</span>
+  </div>
+  <p>补充确认：<strong>不设逃逸条件</strong>（即不因"错太多次"而放行），严格答对才通关。</p>
+</section>
+
+<!-- 2 -->
+<section>
+  <h2><span class="n">02</span>现状：代码事实</h2>
+  <p>先把当前真实行为摆清楚，再谈改动。以下均已核对源码。</p>
+  <table>
+    <thead>
+      <tr><th>机制</th><th>位置</th><th>当前行为</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>轨道模型</td>
+        <td><code>study_track.dart:47-77</code></td>
+        <td>每词一条固定轨道 <code>[测评, 答对组/答错组, List]</code>，长度固定</td>
+      </tr>
+      <tr>
+        <td>分轨依据</td>
+        <td><code>study_track.dart:73-75</code></td>
+        <td>按<strong>今天首条评分日志</strong>（<code>todayFirstLogRating</code>）决定走答对组还是答错组，当日不再变化</td>
+      </tr>
+      <tr>
+        <td>默认配置</td>
+        <td><code>study_steps_service.dart:42-45</code></td>
+        <td>新词：测评 <code>En2Ch</code>，答对组 <code>[Ch2En]</code>，答错组 <code>[Ch2En]</code> —— <strong>两组完全相同</strong></td>
+      </tr>
+      <tr>
+        <td>旧词默认</td>
+        <td><code>study_steps_service.dart:46-52</code></td>
+        <td>答对组 <code>[]</code>（直接结束），答错组 <code>[Ch2En]</code> —— 旧词才有差异</td>
+      </tr>
+      <tr>
+        <td>进度推进</td>
+        <td><code>study_bo.dart:1078</code></td>
+        <td>每次评分无条件 <code>todayLearnedTimes + 1</code>，<strong>答错也推进</strong></td>
+      </tr>
+      <tr>
+        <td>组内调度</td>
+        <td><code>study_bo.dart:1429-1432</code></td>
+        <td>批次内按 <code>todayLearnedTimes</code> 升序横向轮流（10 个词交错推进，非逐个走完）</td>
+      </tr>
+      <tr>
+        <td>完成判定</td>
+        <td><code>learning_word_extensions.dart:26-28</code></td>
+        <td><code>todayLearnedTimes &gt;= 轨道长度</code> 即视为该词今日完成</td>
+      </tr>
+      <tr>
+        <td>答错副作用</td>
+        <td><code>study_bo.dart:975-976、1225-1261</code></td>
+        <td>记入错词本（今日错词/历史错词）+ FSRS 降级；<strong>组内无任何重练</strong></td>
+      </tr>
+      <tr>
+        <td>答案泄露</td>
+        <td><code>bdc_notifier.dart:1109-1128</code></td>
+        <td>选择题答错立即弹单词详情页，正确答案被揭晓</td>
+      </tr>
+      <tr>
+        <td>例句翻译模块</td>
+        <td><code>word_util.dart:112</code></td>
+        <td>已有 <code>sentenceTranslatedPassed</code> 逐词"通过"语义（过了才走）</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 3 -->
+<section>
+  <h2><span class="n">03</span>缺口定位</h2>
+  <div class="callout fix">
+    <div class="h">缺口一 · 三组机制开了半截</div>
+    <p>轨道层已经实现了"答对走 correct 组 / 答错走 wrong 组"的分叉，但新词默认把两组配成完全相同的 <code>[Ch2En]</code>。结果是<strong>答对与答错在流程上没有任何区别</strong>，分叉形同虚设。</p>
+  </div>
+  <div class="callout fix">
+    <div class="h">缺口二 · 环节内答错无补救</div>
+    <p>答错只是把词记进错词本、交给未来复习，本环节走完就放行。用户当下那个"我还没会"的信号，被推迟到了明天甚至更久。</p>
+  </div>
+  <div class="callout fix">
+    <div class="h">缺口三 · 两个模块的过关语义不一致</div>
+    <p>例句翻译模块是"过了才走"，单词训练模块是"走完就走"。同一 App 内两套标准，用户感知到的割裂是真实的。</p>
+  </div>
+  <p>本次改动只补<strong>缺口一与缺口二</strong>（都在单词学习模块内）。缺口三涉及的例句翻译模块已有自己的通过机制，不在本次范围内。</p>
+</section>
+
+<!-- 4 -->
+<section>
+  <h2><span class="n">04</span>目标语义</h2>
+  <p>核心问题：<strong>答错后的重练，发生在哪里？</strong> 定义为——<strong>本环节内、同题型、排到队尾</strong>。不是换环节重练，不是整组重来，也不是丢给错词本。</p>
+
+  <div class="card">
+    <div class="rule">
+      <div class="idx">1</div>
+      <div class="body">
+        <b>题型不变</b>
+        <span>中译英答错就再中译英，不换成英译中。换了题型，"这个环节我过了没有"就失去意义——答对可能只是因为题型变简单了。</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="idx">2</div>
+      <div class="body">
+        <b>排到队尾，不是立刻原地重来</b>
+        <span>错词追加到本环节队列末尾，中间隔着其他词。刚看完正确答案就复述，测的是短时记忆，几乎没有价值。</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="idx">3</div>
+      <div class="body">
+        <b>答对一次即过</b>
+        <span>该词在本环节答对，立即推进到下一环节；答错则继续留在本环节队列。</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="idx">4</div>
+      <div class="body">
+        <b>本组全过才推进</b>
+        <span>本批次内该环节的所有词都答对了，整个批次才进入下一环节/下一模块。这正是用户说的"追加在本环节训练之后，全对才进入下一个模块"。</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>行为示例</h3>
+  <p>一组 10 个词，当前处于<strong>中译英</strong>环节：</p>
+  <table>
+    <thead>
+      <tr><th>轮次</th><th>出题</th><th>结果</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>第 1 轮</td><td class="num">词1 – 词10 各答一次</td><td>词3、词7 答错</td></tr>
+      <tr><td>第 2 轮</td><td>只出词3、词7</td><td>词3 答对 → 进入下一环节；词7 又错</td></tr>
+      <tr><td>第 3 轮</td><td>只出词7</td><td>答对</td></tr>
+      <tr><td>—</td><td>本组 10 词在中译英全部答对</td><td><strong>整个批次才进入下一环节（例句翻译）</strong></td></tr>
+    </tbody>
+  </table>
+  <p><strong>实现修正（v2，已落地）</strong>：这里曾设想"答错的词索引不动就会自动排到队尾"，这是错的 —— 现有调度按
+  <code>todayLearnedTimes</code> <strong>升序</strong>横向轮流，索引最小的词反而被<strong>优先</strong>抽中，错词会立刻原地重来
+  （等于刚看完答案就复述）。因此 v2 在 <code>_compareBatchWords</code> 中显式增加一条排序规则：<strong>同一环节内，答错待重练的词
+  排在尚未作答的词之后</strong>。间隔由这条规则保证。第 2 轮里词3 与词7 之间的间隔即来源于此。</p>
+
+  <h3>环节分类：哪些环节参与循环</h3>
+  <div class="flow">
+    <span class="node check">测评 check（En2Ch）</span>
+    <span class="arrow">→</span>
+    <span class="node train">训练环节（Ch2En 等）</span>
+    <span class="arrow">→</span>
+    <span class="node done">List（不评分）</span>
+  </div>
+  <ul>
+    <li><strong>测评环节</strong>：既承担"分轨"职责（答对走答对组、答错走答错组），<strong>也参与循环重练</strong> —— v2 决策为纳入：答错留在测评环节重练到答对才放行。分轨仍按当天首条评分固化，重练答对不会改变轨道。</li>
+    <li><strong>训练环节</strong>：答对组、答错组内的每个评分环节，全部参与"答对才推进"。<strong>不区分答对组还是答错组</strong>——测评答对但中译英拼错的词，同样留在中译英里重练。</li>
+    <li><strong>List</strong>：不评分，不参与。</li>
+  </ul>
+
+  <h3>状态表达：零新增字段</h3>
+  <div class="callout ok">
+    <div class="h">进度即状态，无需新字段</div>
+    <p>规则可收敛为一句话：<strong>测评环节无条件推进；训练环节仅在答对时推进。</strong></p>
+    <p>因为 <code>todayLearnedTimes</code> 既是"已走完的环节数"也是"当前环节索引"，所以"该词是否已在本环节答对"天然由 <code>todayLearnedTimes == 当前环节索引</code> 表达。答错的词索引不动，就自然停在本环节。</p>
+    <p>结论：<strong>不新增数据库字段、不新增错词队列结构、不产生端云同步的表结构变更</strong>。中途退出学习页再进入，该词仍停在原环节，状态自洽。</p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section>
+  <h2><span class="n">05</span>决策点 D1：测评环节是否纳入循环</h2>
+  <div class="callout note">
+    <div class="h">先纠正一个错误论断</div>
+    <p>曾提出"测评若也循环重练，答对组/答错组分组会失效"——<strong>此论断错误</strong>。分轨依据是<strong>首条评分日志</strong>（<code>study_track.dart:73-75</code>），测评答错后即使重练到答对，首条日志仍是 <code>again</code>，照样走答错组。<strong>分组不会失效。</strong></p>
+    <p>真正的判断依据是下面两条代价，而非可行性。</p>
+  </div>
+
+  <div class="split">
+    <div class="opt rec">
+      <h4>案 A · 测评不纳入<span class="pill rec">推荐</span></h4>
+      <div class="lh">测评答一次即定轨，答错 → 走答错组，在答错组的训练环节里循环到答对</div>
+      <ul>
+        <li>改动最小：测评只答一次，"本次评分"恒等于"首条评分"，选组逻辑无需调整</li>
+        <li>纠错落在<strong>拼写类题型</strong>上，用户必须自己产出答案，纠错质量高</li>
+        <li>符合现有分轨语义：测评的职责就是"测出会不会"，不是"练到会"</li>
+      </ul>
+      <div class="verdict">代价：选择题答错那一刻没有当场纠正；但用户紧接着就会在答错组（默认中译英拼写）里被要求练对。</div>
+    </div>
+    <div class="opt">
+      <h4>案 B · 测评也纳入<span class="pill alt">备选</span></h4>
+      <div class="lh">测评答错 → 留在测评环节重选，直到选对 → 再走答错组</div>
+      <ul>
+        <li>分组机制<strong>不受影响</strong>（首答固化轨道）</li>
+        <li><strong>技术代价</strong>：<code>groupAfterRating</code>（<code>study_bo.dart:760-764</code>）按"本次评分"选组，必须改为按"首条评分"选组；否则重练答对时推进逻辑按答对组算、轨道却按 <code>again</code> 走答错组，两者分叉</li>
+        <li><strong>教学代价</strong>：测评是 4 选 1 选择题，答错即弹详情页揭晓答案（<code>bdc_notifier.dart:1109-1128</code>）。重选测的是"刚才高亮那个选项"的位置记忆，不是词义记忆，几乎必然答对，属于仪式性重练</li>
+      </ul>
+      <div class="verdict">代价：多一步低信息量的确认，反而拖慢节奏；并额外引入一处易出错的一致性耦合。</div>
+    </div>
+  </div>
+  <p><strong>最终决策：采用案 B —— 测评也纳入循环重练</strong>。理由是一致性优先：任何评分环节答错都应当场练对，
+  不因为"它叫测评"就网开一面。案 A 指出的"选择题答案已泄露、重练接近送分"被接受为已知代价。</p>
+  <p>采用案 B 后必须同步消除其一致性代价：<code>groupAfterRating</code> 的选组依据已由"本次评分"改为
+  <strong>当天首条评分</strong>，与 <code>trackOf</code> 的轨道固化口径完全统一，杜绝"推进逻辑按答对组算、轨道按答错组走"的分叉。</p>
+</section>
+
+<!-- 6 -->
+<section>
+  <h2><span class="n">06</span>决策点 D2：计分口径</h2>
+  <p>重练次数不设上限，因此<strong>绝不能每次重练都走一遍完整评分流程</strong>。现状 <code>updateCurrWord</code> 每次评分都会：写学习日志、<code>incrementReviewCount</code>、更新日状态、推进 <code>todayLearnedTimes</code>（<code>study_bo.dart:1052-1078</code>）。</p>
+  <div class="callout ok">
+    <div class="h">口径：一个词在一个环节内，只以首次作答计分</div>
+    <ul>
+      <li><strong>首次作答</strong>：正常计算 FSRS、写 <code>LearningLog</code>、更新每日统计、推进环节索引（仅当答对，或该环节是测评）。</li>
+      <li><strong>后续重练</strong>：只给对错反馈；不算 FSRS、不写日志、不重复计数；答对则推进索引，答错则索引不动。</li>
+    </ul>
+    <p>理由：否则 <code>lapses</code>、每日复习计数、答对率都会被重复作答灌水，"今日无答错"等统计与勋章口径失真。此口径与现有"每个环节各自计分"的粒度一致，不引入新概念。</p>
+  </div>
+  <p>该口径与 D1 的选择无关，两案都需要。</p>
+</section>
+
+<!-- 7 -->
+<section>
+  <h2><span class="n">07</span>实现要点</h2>
+  <p>改动集中在进度推进的判定上，不触碰轨道模型本身。</p>
+  <table>
+    <thead>
+      <tr><th>#</th><th>改动点</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="num">1</td>
+        <td><code>updateCurrWord</code> 推进条件</td>
+        <td>由"无条件 +1"改为：<strong>仅 <code>again</code>（答错）不推进</strong>；答对与"无评分的历史切词路径"照旧推进。判定在方法内部独立完成，不依赖 <code>shouldSave</code></td>
+      </tr>
+      <tr>
+        <td class="num">2</td>
+        <td><code>updateCurrWord</code> 计分分支</td>
+        <td>仅在"本环节首次作答"时算 FSRS、写 <code>LearningLog</code>、更新每日统计、记入错词本；重练全部跳过。<strong>推进与计分已解耦</strong>：首答答错照样计分，但不推进</td>
+      </tr>
+      <tr>
+        <td class="num">3</td>
+        <td><code>getWord</code> 选组依据</td>
+        <td>案 B 必需：<code>groupAfterRating</code> 改为按<strong>当天首条评分</strong>选组，与 <code>trackOf</code> 的轨道固化口径统一，杜绝推进逻辑与轨道分叉</td>
+      </tr>
+      <tr>
+        <td class="num">4</td>
+        <td><code>_compareBatchWords</code> 调度排序</td>
+        <td><strong>新增"错词排到同环节队尾"规则</strong>：同一环节内，已作答但答错的词排在尚未作答的词之后。这是"拉开间隔"的唯一保证（原以为会自动发生，实测不会）</td>
+      </tr>
+      <tr>
+        <td class="num">5</td>
+        <td>首答判定的数据来源</td>
+        <td>复用既有的一次日志查询：<code>_loadTodayFirstLogs</code> 返回首条评分的同时附带<strong>今日日志条数</strong>，零额外查询</td>
+      </tr>
+      <tr>
+        <td class="num">6</td>
+        <td><code>learning_service.dart</code> 新词标记</td>
+        <td>今日计划重排时，<code>isTodayNewWord</code> 的重算门控由 <code>todayLearnedTimes == 0</code> 改为<strong>"今天是否已学过这个词"</strong>；否则答错卡住的词进度仍是 0，会被误判成复习词、令当天轨道中途漂移</td>
+      </tr>
+      <tr>
+        <td class="num">7</td>
+        <td><code>bdc_notifier.dart</code> 答题态复位</td>
+        <td>答错后作废该词的 <code>wordUIStates</code> 缓存，使重练重新出题，而不是恢复上一轮的"已答完"状态（选项高亮、答案已揭晓、无法作答）</td>
+      </tr>
+      <tr>
+        <td class="num">8</td>
+        <td>批次完成判定</td>
+        <td>复用 <code>isTodayFinished</code>：因索引只在答对时推进，"本环节全过"自动等价于"没有词卡在该索引上"，无需新增判定</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout note">
+    <div class="h">实现落点（v2 已落地）</div>
+    <p>错词"排到队尾"不是自动发生的，而是在 <code>_compareBatchWords</code> 中新增了一条排序规则：同一环节内，
+    本环节已作答但答错（待重练）的词排在尚未作答的词之后。判定依据是 <code>今日日志条数 &gt; todayLearnedTimes</code>。</p>
+    <p>这条判定所需的数据已经由既有的一次日志查询顺带得到（该查询本身就加载了批次内每词今天的日志），
+    因此<strong>不需要新建错词队列、不需要额外状态字段、也不增加查询次数</strong>。</p>
+  </div>
+
+  <h3>todayLearnedTimes 的语义与不变式</h3>
+  <p>评审提出："答错会不会被加过多次，导致提前学完？"核查全部写入点后的结论如下。</p>
+  <p><strong>该字段的语义是"今天已走完（消费掉）的环节数"，不是"作答次数"。</strong>除 L1078 外，所有写入点都严格遵循此语义：</p>
+  <table>
+    <thead>
+      <tr><th>写入点</th><th>写入值</th><th>语义</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>learning_service.dart:96,831</code></td><td><code>0</code></td><td>跨天重置</td></tr>
+      <tr><td><code>study_bo.dart:1078</code></td><td><code>+1</code>（每次评分）</td><td><strong>唯一冲突点</strong>：答错也 +1</td></tr>
+      <tr><td><code>study_bo.dart:518</code></td><td><code>+1</code></td><td>List 环节走完</td></tr>
+      <tr><td><code>study_bo.dart:1623</code> / <code>dao.dart:2072</code></td><td>饱和为 <code>stepCount</code></td><td>标记已掌握 = 直接完成</td></tr>
+    </tbody>
+  </table>
+  <div class="callout fix">
+    <div class="h">现状的"提前学完"，根因不是加多了</div>
+    <p>现状不存在溢出：每个环节只出一次题，<code>+1</code> 次数恰好等于环节数。它能提前完成，是因为<strong>答错也被算作"这个环节走完了"</strong>——测评答错 +1、练错 +1，<code>todayLearnedTimes</code> 照样爬到 <code>trackLength</code>，<code>isTodayFinished</code>（<code>learning_word_extensions.dart:26-28</code>）立即为真。</p>
+    <p>这既是用户抱怨"错词没被重练、直接进下一模块"的机制根因，也正是本次要改的那一处：把 <code>+1</code> 的条件从"出过题"改成"答对过"。</p>
+  </div>
+  <div class="callout ok">
+    <div class="h">改动后的不变式</div>
+    <p><code>todayLearnedTimes == 已完成的环节数</code>，且恒有 <code>todayLearnedTimes &lt;= 轨道长度</code>。</p>
+    <ul>
+      <li>测评环节：作答一次即 +1（无论对错）</li>
+      <li>训练环节：<strong>答对 +1，答错不动</strong></li>
+      <li>List：走完 +1</li>
+    </ul>
+    <p>于是 <code>+1</code> 的次数恒等于环节数，既不可能溢出，也不可能提前判定完成。建议在 <code>app/test/</code> 用单测锁住这条不变式。</p>
+  </div>
+
+  <h3>三个必须避开的实现陷阱</h3>
+  <div class="card">
+    <div class="rule">
+      <div class="idx">1</div>
+      <div class="body">
+        <b>推进判定不能挂在 shouldSave 上</b>
+        <span><code>shouldSave = gotoNext || fsrsRating != null || isWordMastered</code>（<code>study_bo.dart:746</code>），而答错时客户端提交的正是 <code>gotoNext=true</code>（<code>bdc_notifier.dart:1760</code>），照样会走进 <code>updateCurrWord</code>。因此"是否推进索引"必须在方法内部独立判定。</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="idx">2</div>
+      <div class="body">
+        <b>推进与计分必须解耦</b>
+        <span>首答答错 → 计分但<strong>不推进</strong>；重练 → 不计分不推进；答对 → 计分且推进。若实现成"答错就整个跳过 <code>updateCurrWord</code>"，会连带丢掉 FSRS 与日志，违反 06 的计分口径。</span>
+      </div>
+    </div>
+    <div class="rule">
+      <div class="idx">3</div>
+      <div class="body">
+        <b>learnedTimes 与 todayLearnedTimes 必须同条件递增</b>
+        <span>两者在同一个 <code>copyWith</code> 中（<code>study_bo.dart:1077-1078</code>）。若只按新条件跳过其中一个，累计学习次数与今日进度会脱节。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="h">顺带发现的既有情况（非本次改动引入）</div>
+    <p><code>_saveMasteredWord</code>（<code>study_bo.dart:1619-1624</code>）在"学习中标记为已掌握"时，把进度<strong>饱和填成"答对组长度 + 2"</strong>，而该词实际可能走答错组；两组长度不同时饱和值会大于真实轨道长度（取值处的 clamp 兜住了，不会出错）。同时它意味着"用户主动标记已掌握"是一条事实性的出口，与"不设逃逸条件"的决定相关，备案待议。</p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section>
+  <h2><span class="n">08</span>影响面与风险</h2>
+  <table>
+    <thead>
+      <tr><th>项</th><th>影响</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>FSRS 与统计</td><td>按 D2 口径，首答计分，参数与每日统计口径不变</td></tr>
+      <tr><td>端云同步</td><td>无字段与表结构变更，同步协议不受影响</td></tr>
+      <tr><td>本组小结 / 错词标红</td><td>沿用 <code>getTodayWrongWordIds</code> 的"首条评分为 again"判据（<code>study_bo.dart:1094-1105</code>），口径自然对齐</td></tr>
+      <tr><td>学习时长</td><td>单组时长上升，尤其是难词较多的组。<strong>已确认不设逃逸条件</strong></td></tr>
+      <tr><td>无解情形</td><td>若某词用户始终拼不对，会一直留在该环节，只能退出整个学习流程。这是已接受的产品取舍</td></tr>
+      <tr><td>跨天</td><td>当日未通关的进度随跨天重置清零，次日按新计划重新开始，不做跨天强制补齐</td></tr>
+      <tr><td>答错组为空的配置</td><td>若用户把答错组配成空（表示"答错不加练"），测评答错后直接进 List，本次机制无落点。属配置语义，不做兜底</td></tr>
+      <tr><td>掌握/毕业判定</td><td>答错的词不推进索引，不会误判为已掌握；<code>isEffectivelyMastered</code> 只看 <code>stability</code> 与掌握集合，不受影响</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 9 -->
+<section>
+  <h2><span class="n">09</span>验收标准</h2>
+  <ol>
+    <li>一组 10 个词，在中译英环节答错 2 个，能在<strong>中译英环节内</strong>被重新出题，不需要等到下一模块。</li>
+    <li>本组该环节未全部答对时，<strong>不推进</strong>到下一环节；全部答对后立即推进。</li>
+    <li>重练轮次不写入新的 <code>LearningLog</code>，每日复习计数不因重练而增加。</li>
+    <li>同一词在同一环节只产生一条当日评分日志（首答）。</li>
+    <li><strong>不会提前完成</strong>：在同一环节连续答错任意多次，<code>todayLearnedTimes</code> 不增长，该词不被判定为今日已完成，也不推进到下一环节；且恒有 <code>todayLearnedTimes &lt;= 轨道长度</code>。</li>
+    <li>测评环节答错的词，仍然走答错组（分轨不因本改动漂移）。</li>
+    <li>中途退出学习页再进入，答错未通关的词仍停在原环节继续重练。</li>
+    <li>旧词（复习轨道）行为与规则一致：答错则在训练环节循环到答对。</li>
+  </ol>
+  <p>对应单测：在 <code>app/test/</code> 下新增用例，覆盖"错词循环到全对才推进"与"重练不重复计分"两条主链。</p>
+</section>
+
+<!-- 10 -->
+<section>
+  <h2><span class="n">10</span>决策与实施记录</h2>
+  <table>
+    <thead>
+      <tr><th>项</th><th>结论</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>D1</strong> 测评环节是否纳入循环</td>
+        <td><strong>纳入（案 B）</strong>：任何评分环节答错都当场练对，不因"它叫测评"而例外；分轨仍按当天首条评分固化</td>
+      </tr>
+      <tr>
+        <td><strong>D2</strong> 计分口径</td>
+        <td><strong>一个词在一个环节内只以首次作答计分</strong>，重练不写日志、不算 FSRS、不重复计数</td>
+      </tr>
+      <tr>
+        <td>逃逸条件</td>
+        <td><strong>不设</strong>。严格答对才通关；某词始终答不对时会一直留在该环节，只能退出整个学习流程</td>
+      </tr>
+      <tr>
+        <td>实施范围</td>
+        <td><code>study_bo.dart</code>（推进/计分/选组/调度）、<code>study_track.dart</code>（首答判定）、<code>learning_service.dart</code>（新词标记门控）、<code>bdc_notifier.dart</code>（答题态复位）</td>
+      </tr>
+      <tr>
+        <td>测试</td>
+        <td>新增 <code>app/test/wrong_word_loop_retry_test.dart</code>（8 例）；同步更新 <code>study_bo_test</code>、<code>batch_phase_order_test</code>、<code>bdc_notifier_test</code>、<code>learning_workflow_integration_test</code> 中基于旧行为（答错也推进）的断言</td>
+      </tr>
+      <tr>
+        <td>未新增字段</td>
+        <td>不需要错词队列、不需要新表字段，也不产生端云同步的表结构变更</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>
+  错词循环重练设计方案 · v2 · 2026-09-28 · 已实施
+</footer>
+
+</div>
+</body>
+</html>

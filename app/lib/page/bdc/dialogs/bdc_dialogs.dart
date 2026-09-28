@@ -1713,6 +1713,15 @@ extension BdcPageStateDialogs on BdcPageState {
           return (a.todayLearnedTimes as int)
               .compareTo(b.todayLearnedTimes as int);
         }
+        // 同一环节内：答错待重练的词排到队尾（与 StudyBo._compareBatchWords 口径一致，
+        // 否则小结提示的"下一个待办"会与学习页实际出题顺序不符）
+        final bool isARetry = (todayLogCounts[a.wordId as String] ?? 0) >
+            (a.todayLearnedTimes as int);
+        final bool isBRetry = (todayLogCounts[b.wordId as String] ?? 0) >
+            (b.todayLearnedTimes as int);
+        if (isARetry != isBRetry) {
+          return isARetry ? 1 : -1;
+        }
         return (a.learningOrder as int).compareTo(b.learningOrder as int);
       });
 

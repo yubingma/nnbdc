@@ -81,7 +81,12 @@ class FinishPageState extends State<FinishPage> {
       try {
         final appCheck = AppCheck();
         if (Config.enableHuaweiReview && await appCheck.isAppInstalled('com.huawei.appmarket')) {
-          marketAppUrl = "appmarket://details?id=com.nn.nnbdc.android";
+          // appmarket://details?id= 在新版华为应用市场只会拉起市场首页、丢弃 details 参数，
+          // 改用官方 applink 形式：market://com.huawei.appmarket.applink?appId=xxx 直达应用详情页
+          marketAppUrl = "market://com.huawei.appmarket.applink?appId=${Config.huaweiAppId}";
+        } else if (Config.enableHuaweiReview && await appCheck.isAppInstalled('com.hihonor.appmarket')) {
+          // 荣耀应用市场由华为应用市场分拆独立：包名独立，详情页使用通用 market:// scheme
+          marketAppUrl = "market://details?id=com.nn.nnbdc.android";
         } else if (Config.enableXiaomiReview && await appCheck.isAppInstalled('com.xiaomi.market')) {
           marketAppUrl = "mimarket://details?id=com.nn.nnbdc.android";
         } else if (Config.enableOppoReview && (await appCheck.isAppInstalled('com.heytap.market') || await appCheck.isAppInstalled('com.oppo.market'))) {

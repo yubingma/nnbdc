@@ -530,8 +530,14 @@ class LearningService {
     final planWords = todayWords.where((w) => !w.isExtra).toList();
 
     // 1. 甄别哪些单词是可以被移除的（今天还没开始学的计划词）
-    List<LearningWord> untaughtWords = planWords.where((w) => w.todayLearnedTimes == 0).toList();
-    List<LearningWord> learnedWords = planWords.where((w) => w.todayLearnedTimes > 0).toList();
+    //    注意：答错的词今日进度可能仍为 0（本环节要重练到答对才推进），但它今天确实已经
+    //    学过，不能当作"未学"移出今日计划 —— 否则用户正卡着重练的词会突然消失。
+    bool learnedToday(LearningWord w) =>
+        w.todayLearnedTimes > 0 ||
+        (w.lastLearningDate != null &&
+            DateUtils.isSameBusinessDay(w.lastLearningDate!, AppClock.today()));
+    List<LearningWord> untaughtWords = planWords.where((w) => !learnedToday(w)).toList();
+    List<LearningWord> learnedWords = planWords.where(learnedToday).toList();
 
     // 如果即便把还没学的词全删了，剩下的词依然超过目标（说明用户今天已经学了很多了），那我们也无法强行删除已学的词
     if (learnedWords.length >= targetCount) {
@@ -648,7 +654,13 @@ class LearningService {
           // 不再预更新 lastLearningDate，保留其原始值用于 FSRS 间隔计算
           // 只有当单词今天还没产生学习记录时，才修正 isTodayNewWord 标记。
           // 否则如果白天学过了一次，learnedTimes 变为了 1，这里会导致标记被重置为 false，导致进度统计错误。
-          if (learningWord.todayLearnedTimes == 0) {
+          // 只有"今天还没学过这个词"时才重算 isTodayNewWord：答错的词今日进度可能仍为 0
+          //（本环节要循环重练到答对才推进），但它今天确实已经学过，绝不能据此把新词
+          // 误判成复习词，导致当天轨道中途漂移。
+          final bool learnedToday = learningWord.lastLearningDate != null &&
+              DateUtils.isSameBusinessDay(
+                  learningWord.lastLearningDate!, AppClock.today());
+          if (!learnedToday) {
             // 判断是否为今日新词：从未学习过（learnedTimes == 0）且没有 FSRS 进度 (lastLearningDate == null)
             bool shouldBeNewWord = learningWord.learnedTimes == 0 && learningWord.lastLearningDate == null;
             if (learningWord.isTodayNewWord != shouldBeNewWord) {

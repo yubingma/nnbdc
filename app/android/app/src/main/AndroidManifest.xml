@@ -4,6 +4,10 @@
 
     <queries>
         <package android:name="com.tencent.mm" />
+        <!-- Android 11+ 包可见性：未声明的包对 PackageManager.getPackageInfo 不可见（抛 NameNotFoundException），
+             会让完成页的「给个好评」入口被静默判定为「市场未安装」而永不显示 -->
+        <package android:name="com.huawei.appmarket" />
+        <package android:name="com.hihonor.appmarket" />
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
