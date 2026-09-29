@@ -45,7 +45,11 @@ class Constants {
 
   // ========== FSRS 相关常量 ==========
 
-  /// 稳定性毕业阈值 (天)
-  /// 当稳定性达到此数值时，认为单词已掌握，移出学习中库
-  static const double graduationStability = 180.0;
+  /// 掌握（毕业）判定线：stability ≥ 此值即认为已掌握，移出学习中库。
+  ///
+  /// 口径 = “四个月不忘”：FSRS 的 stability 定义为「回忆概率降到 90% 所对应的间隔(天)」，
+  /// 因此 120 天 ≈ 4 个月后仍有 90% 概率记得。此值同时用作毕业词的 stability 哨兵值
+  /// （见 StudyBo._saveMasteredWord），因此**只允许下调**：上调会让存量毕业词
+  /// （stability 恰为旧哨兵值）瞬间不满足判定线而掉回“学习中”，必须配套数据迁移。
+  static const double graduationStability = 120.0;
 }

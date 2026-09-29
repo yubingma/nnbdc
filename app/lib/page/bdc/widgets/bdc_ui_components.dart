@@ -666,6 +666,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                     final showSentenceTranslation = ref.watch(
                         bdcNotifierProvider
                             .select((s) => s.showSentenceTranslation));
+                    final showSentenceWordMeaning = ref.watch(
+                        bdcNotifierProvider
+                            .select((s) => s.showSentenceWordMeaning));
                     final isEditMode = ref
                         .watch(bdcNotifierProvider.select((s) => s.isEditMode));
                     final wordPlaying = ref.watch(bdcNotifierProvider
@@ -712,6 +715,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         height: double.infinity,
                         child: _buildQuestionContent(currentState.copyWith(
                           showSentenceTranslation: showSentenceTranslation,
+                          showSentenceWordMeaning: showSentenceWordMeaning,
                           isEditMode: isEditMode,
                           playingStates: {
                             'word': wordPlaying,
@@ -3180,6 +3184,17 @@ extension BdcPageStateUIComponents on BdcPageState {
                             fontSize: 13.5,
                             color: secondaryTextColor,
                           ),
+                          maskHighlightWord: state.studyStep ==
+                                  StudyStep.en2Ch.json &&
+                              !state.hasFinishedAnswering &&
+                              !state.showSentenceWordMeaning,
+                          onToggleMask: () {
+                            updateUI(() {
+                              notifier.toggleShowSentenceWordMeaning();
+                            }, tag: 'sentence-word-meaning');
+                          },
+                          fallbackHighlightWord:
+                              state.word?.sentences?[0].wordMeaning,
                         ),
                       ),
                   ],

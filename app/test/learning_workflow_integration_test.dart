@@ -612,15 +612,15 @@ void main() {
     //   新词: 测评 En2Ch + 答对组 [Ch2En] + List
     //         → 新词当天 2 次评分（init + 1 次同日巩固）；
     //   复习词: 测评答对跳过恢复环节直接完成（+2）。
-    // 全 good 理论值（FSRS-5 默认权重）：init(3.173, 3天) → 当天巩固(4.47, 4天)
-    // → 复习1(14.22, 14天) → 复习2(43.73, 44天) → 复习3(124.80, 125天)
-    // → 复习4(328.47 ≥ 180) 自然毕业，累计约 191 天
-    // = 每词总评分 2(当天) + 4(跨天) = 6 次（毕业那次复习不写日志 → LearningLog 5 条）。
+    // 全 good 理论值（FSRS-5 默认权重 + 掌握线 120 天 ≈ 4 个月不忘）：init(3.173, 3天)
+    // → 当天巩固(4.47, 4天) → 复习1(14.22, 14天) → 复习2(43.73, 44天)
+    // → 复习3(124.80 ≥ 120) 自然毕业，累计约 62 天
+    // = 每词总评分 2(当天) + 3(跨天) = 5 次（毕业那次复习不写日志 → LearningLog 4 条）。
     await db.delete(db.userStudySteps).go();
 
     int loopCount = 0;
     while (loopCount < 320) {
-      // 防死循环上限（FSRS-5 全 good 路径约 191 天毕业）
+      // 防死循环上限（掌握线 120 天下，FSRS-5 全 good 路径约 62 天毕业）
       loopCount++;
       fakeClock.advanceDays(1);
 
@@ -651,22 +651,22 @@ void main() {
         await db.masteredWordsDao.getMasteredWordsForUser(testUser.id);
     expect(allMastered.length, 8, reason: '8 个词必须全部自然毕业');
 
-    // 断言 2：每词评分日志条数 == 5（init + 1 次当天巩固 + 3 次未毕业复习；
-    // 毕业那次复习不写日志）。FSRS-5 全 good 路径：
-    // 3.173 →(当天巩固)→ 4.47 →(4天)→ 14.22 →(14天)→ 43.73 →(44天)→ 124.80 →(125天)→ ≥180 毕业
+    // 断言 2：每词评分日志条数 == 4（init + 1 次当天巩固 + 2 次未毕业复习；
+    // 毕业那次复习不写日志）。掌握线 120 天下 FSRS-5 全 good 路径：
+    // 3.173 →(当天巩固)→ 4.47 →(4天)→ 14.22 →(14天)→ 43.73 →(44天)→ 124.80 ≥ 120 毕业
     for (int i = 1; i <= 8; i++) {
       final logs =
           await db.learningLogsDao.getHistory(testUser.id, 'w_$i');
       expect(
         logs.length,
-        5,
-        reason: 'w_$i 应经历 init + 1 次当天巩固 + 3 次复习后自然毕业（总评分 6 次，毕业复习不写日志）',
+        4,
+        reason: 'w_$i 应经历 init + 1 次当天巩固 + 2 次复习后自然毕业（总评分 5 次，毕业复习不写日志）',
       );
     }
 
-    // 断言 3：总天数在 FSRS-5 理论区间（4→14→44→125 天间隔，累计约 191 天）
-    expect(loopCount, greaterThanOrEqualTo(170));
-    expect(loopCount, lessThanOrEqualTo(230));
+    // 断言 3：总天数在理论区间（4→14→44 天间隔，累计约 62 天）
+    expect(loopCount, greaterThanOrEqualTo(55));
+    expect(loopCount, lessThanOrEqualTo(80));
 
     // 等待后台 unawaited 任务执行完毕
     await Future.delayed(const Duration(milliseconds: 100));

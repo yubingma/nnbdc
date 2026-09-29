@@ -12,6 +12,7 @@ class BdcStateUiSignature {
   final int? selectedAnswerIndex;
   final int? correctAnswerIndex;
   final bool showSentenceTranslation;
+  final bool showSentenceWordMeaning;
   final int tabIndex;
   final int historyIndex;
   final int historyLength;
@@ -51,6 +52,7 @@ class BdcStateUiSignature {
         selectedAnswerIndex = s.selectedAnswerIndex,
         correctAnswerIndex = s.correctAnswerIndex,
         showSentenceTranslation = s.showSentenceTranslation,
+        showSentenceWordMeaning = s.showSentenceWordMeaning,
         tabIndex = s.tabIndex,
         historyIndex = s.historyIndex,
         historyLength = s.history.length,
@@ -94,6 +96,7 @@ class BdcStateUiSignature {
         selectedAnswerIndex == other.selectedAnswerIndex &&
         correctAnswerIndex == other.correctAnswerIndex &&
         showSentenceTranslation == other.showSentenceTranslation &&
+        showSentenceWordMeaning == other.showSentenceWordMeaning &&
         tabIndex == other.tabIndex &&
         historyIndex == other.historyIndex &&
         historyLength == other.historyLength &&
@@ -135,6 +138,7 @@ class BdcStateUiSignature {
         selectedAnswerIndex,
         correctAnswerIndex,
         showSentenceTranslation,
+        showSentenceWordMeaning,
         tabIndex,
         historyIndex,
         historyLength,

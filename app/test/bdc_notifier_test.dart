@@ -570,6 +570,8 @@ void main() {
     final answeredWordId = container.read(bdcNotifierProvider).word!.id!;
 
     // 测评答错（等价于选错、看完详情页后点「下一词」）
+    // 先受理这次作答（与线上判题链路一致），再提交流转
+    notifier.acceptAnswerForTesting(FsrsRating.again);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
     final state = container.read(bdcNotifierProvider);
 
@@ -601,6 +603,8 @@ void main() {
     expect(container.read(bdcNotifierProvider).assessmentRating, isNull);
 
     // 测评答错 → 留在测评环节循环重练
+    // 先受理这次作答（与线上判题链路一致），再提交流转
+    notifier.acceptAnswerForTesting(FsrsRating.again);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
     final state = container.read(bdcNotifierProvider);
 
@@ -1808,6 +1812,8 @@ void main() {
         reason: '测评环节尚未评分，当前词轨道名为"旧词测评"');
 
     // 测评答错 → 应进入恢复环节
+    // 先受理这次作答（与线上判题链路一致），再提交流转
+    notifier.acceptAnswerForTesting(FsrsRating.again);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
     state = container.read(bdcNotifierProvider);
     expect(state.currentGetWordResult!.stepIndex, 0,
@@ -1823,6 +1829,8 @@ void main() {
         reason: '答错后仍留在测评环节，环节名不变');
 
     // 重练测评答对 → 才进入恢复环节(stepIndex=1)，环节名切换为"旧词答错"
+    // 先受理这次作答（与线上判题链路一致），再提交流转
+    notifier.acceptAnswerForTesting(FsrsRating.good);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
     state = container.read(bdcNotifierProvider);
     expect(state.currentGetWordResult!.stepIndex, 1,
@@ -1834,6 +1842,8 @@ void main() {
         reason: '恢复环节当前词轨道名为"旧词答错"');
 
     // 恢复环节答对 → 复习轨道今日完成，进入 List 环节（列表页）
+    // 先受理这次作答（与线上判题链路一致），再提交流转
+    notifier.acceptAnswerForTesting(FsrsRating.good);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
     state = container.read(bdcNotifierProvider);
     expect(state.loadError, '正在跳转到单词列表...',
@@ -1880,6 +1890,8 @@ void main() {
         reason: '测评环节尚未评分，当前词轨道名为"新词测评"');
 
     // 测评答对 → 本组进入汉译英环节：首词给出"整组推进"的顺序提示
+    // 先受理这次作答（与线上判题链路一致），再提交流转
+    notifier.acceptAnswerForTesting(FsrsRating.good);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
     await _waitUntil(container, (s) => s.groupStepHint != null);
     state = container.read(bdcNotifierProvider);
@@ -1916,6 +1928,8 @@ void main() {
     container2.dispose();
 
     // 进入 List（本组小结）环节后指示与提示一并清空
+    // 先受理这次作答（与线上判题链路一致），再提交流转
+    notifier.acceptAnswerForTesting(FsrsRating.good);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
     state = container.read(bdcNotifierProvider);
     expect(state.groupStepPosition, 0);
@@ -2394,6 +2408,103 @@ void main() {
     expect(notifier.hasPendingWordAiReferee, true,
         reason: '关板后应回到正常语音判题链路（可回落 AI 裁判），而不是中文默写分支');
   });
+
+  test('英译汉环节例句释义遮盖状态控制与评分判定', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 1. 验证默认初始化状态
+    expect(container.read(bdcNotifierProvider).showSentenceWordMeaning, isFalse);
+
+    // 2. 验证 toggle 与 update
+    notifier.toggleShowSentenceWordMeaning();
+    expect(container.read(bdcNotifierProvider).showSentenceWordMeaning, isTrue);
+
+    notifier.updateShowSentenceWordMeaning(false);
+    expect(container.read(bdcNotifierProvider).showSentenceWordMeaning, isFalse);
+
+    // 3. 验证 hideAnswer 重置 showSentenceWordMeaning
+    notifier.revealAnswerAndMarkWrong(FakeBuildContext());
+    notifier.updateShowSentenceWordMeaning(true);
+    notifier.hideAnswer();
+    expect(container.read(bdcNotifierProvider).showSentenceWordMeaning, isFalse);
+  });
+  // ===== 回归护栏：同一次作答被多条链路重复提交，只能计一次分，且不得吞掉下一个学习环节 =====
+
+  test('BdcNotifier - 重复提交同一作答只计一次分且不吞掉下一个环节', () async {
+    // 线上活跃用户配置：新词答对组 = [Ch2En]（第二个评分环节）
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
+          studyStep: 'Ch2En',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 真实作答：中文默写识别答对（受理一次作答）
+    notifier.openChineseDictation();
+    await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
+    final rating = container.read(bdcNotifierProvider).lastFsrsRating;
+    expect(rating, isA<FsrsRating>(), reason: '答对后应有评分');
+
+    // 同一次作答被两条链路各触发一次流转（autoJump 定时器 + 下一词按钮）
+    await notifier.getNextWord(true, fsrsRating: rating);
+    await notifier.getNextWord(true, fsrsRating: rating);
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1,
+        reason: '同一次作答被重复提交只应写一条评分日志，实际 ${logs.length} 条');
+
+    final w = await (db.select(db.learningWords)..where((t) => t.wordId.equals('word_1'))).getSingle();
+    expect(w.todayLearnedTimes, 1,
+        reason: '第二个学习环节不应被重复提交顶掉（todayLearnedTimes 应为 1）');
+  });
+
+  test('BdcNotifier - 手写板打开期间再次判题不得二次受理同一次作答', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 先"看答案"（受理一次 again），再打开手写板重复判题：
+    // 旧实现在手写板打开时会跳过守卫，从而把这次作答二次受理成 easy
+    notifier.revealAnswerAndMarkWrong(FakeBuildContext());
+    notifier.openChineseDictation();
+    await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
+    expect(container.read(bdcNotifierProvider).lastFsrsRating, FsrsRating.again,
+        reason: '已受理的作答不得被第二次判题覆盖成其它评分');
+
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1, reason: '一次呈现只应产生一条评分日志');
+    expect(logs.first.rating, FsrsRating.again.value,
+        reason: '落库评分应是受理时的 again，而不是后来判题算出的 easy');
+  });
+
 }
 
 

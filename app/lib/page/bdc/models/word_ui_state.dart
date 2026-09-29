@@ -8,6 +8,7 @@ class WordUIState {
   final bool hasFinishedAnswering;
   final bool canLeaveCurrWord;
   final bool showSentenceTranslation;
+  final bool showSentenceWordMeaning;
   final int? selectedAnswerIndex;
   final int tabIndex;
   final int? currentScore;
@@ -28,6 +29,7 @@ class WordUIState {
     required this.hasFinishedAnswering,
     required this.canLeaveCurrWord,
     required this.showSentenceTranslation,
+    this.showSentenceWordMeaning = false,
     this.selectedAnswerIndex,
     required this.tabIndex,
     this.currentScore,

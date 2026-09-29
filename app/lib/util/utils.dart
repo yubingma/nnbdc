@@ -493,18 +493,18 @@ class Util {
     return indices;
   }
 
-  /// 把中文句子中的高亮文字(已用html标签加粗)转换为相应的widget，形成一个RichText
-  static Widget makeChineseSpanText(String chinese, BuildContext context,
-      {TextStyle? style, TextAlign textAlign = TextAlign.start}) {
-    // 根据句子里的html加粗标签，获得高亮文字的下标
-    var boldWordIndices = Util.getBoldCharIndices(chinese);
-
-    // 去掉句子中的加粗标签
-    chinese = chinese.replaceAll("<b>", "").replaceAll("</b>", "");
-
-    // 迭代句子里的每个字符，为每个字符生成相应的widget
-    var parts = chinese.split('');
-
+  /// 把中文句子中的高亮文字(已用html标签加粗)转换为相应的widget，形成一个RichText。
+  /// 支持 [maskHighlightWord]（遮盖高亮词效果），点击可触发 [onToggleMask] 揭开/显示释义。
+  static Widget makeChineseSpanText(
+    String chinese,
+    BuildContext context, {
+    TextStyle? style,
+    TextAlign textAlign = TextAlign.start,
+    bool maskHighlightWord = false,
+    VoidCallback? onToggleMask,
+    String? fallbackHighlightWord,
+  }) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final baseStyle = (style ??
             const TextStyle(
               fontSize: 14,
@@ -512,19 +512,133 @@ class Util {
             ))
         .copyWith(
       fontFamily: 'NotoSansSC',
-      color: style?.color ?? (context.watch<DarkMode>().isDarkMode ? Colors.grey[300] : Colors.grey[700]),
+      color: style?.color ?? (isDarkMode ? Colors.grey[300] : Colors.grey[700]),
     );
 
-    return Text.rich(
-      TextSpan(children: <InlineSpan>[
-        for (var i = 0; i < parts.length; i++)
+    // 解析出文本片段：每个片段包含 text 与 isBold 标记
+    final segments = <({String text, bool isBold})>[];
+
+    if (chinese.contains('<b>')) {
+      final boldRegExp = RegExp(r'<b>(.*?)</b>', caseSensitive: false);
+      int lastIndex = 0;
+      for (final match in boldRegExp.allMatches(chinese)) {
+        if (match.start > lastIndex) {
+          segments.add((
+            text: chinese.substring(lastIndex, match.start),
+            isBold: false,
+          ));
+        }
+        final boldContent = match.group(1) ?? '';
+        if (boldContent.isNotEmpty) {
+          segments.add((
+            text: boldContent,
+            isBold: true,
+          ));
+        }
+        lastIndex = match.end;
+      }
+      if (lastIndex < chinese.length) {
+        segments.add((
+          text: chinese.substring(lastIndex),
+          isBold: false,
+        ));
+      }
+    } else if (fallbackHighlightWord != null &&
+        fallbackHighlightWord.trim().isNotEmpty &&
+        chinese.contains(fallbackHighlightWord.trim())) {
+      final kw = fallbackHighlightWord.trim();
+      final idx = chinese.indexOf(kw);
+      if (idx > 0) {
+        segments.add((text: chinese.substring(0, idx), isBold: false));
+      }
+      segments.add((text: kw, isBold: true));
+      if (idx + kw.length < chinese.length) {
+        segments.add((text: chinese.substring(idx + kw.length), isBold: false));
+      }
+    } else {
+      // 无任何加粗与后备词，直接整句作为普通文本
+      segments.add((text: chinese, isBold: false));
+    }
+
+    final spans = <InlineSpan>[];
+    for (final seg in segments) {
+      if (seg.isBold) {
+        if (maskHighlightWord) {
+          // 盖住的效果：精致圆角遮罩胶囊，点击有触觉反馈并揭开显示
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    onToggleMask?.call();
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : Colors.black.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: isDarkMode
+                            ? Colors.white.withValues(alpha: 0.18)
+                            : Colors.black.withValues(alpha: 0.12),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      List.filled(seg.text.length.clamp(1, 4), '•').join(' '),
+                      style: TextStyle(
+                        fontFamily: 'NotoSansSC',
+                        fontSize: (baseStyle.fontSize ?? 14) * 0.9,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                        letterSpacing: 1.0,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        } else {
+          spans.add(
+            TextSpan(
+              text: seg.text,
+              style: baseStyle.copyWith(
+                color: context.primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+              recognizer: onToggleMask != null
+                  ? (TapGestureRecognizer()
+                    ..onTap = () {
+                      HapticFeedback.lightImpact();
+                      onToggleMask();
+                    })
+                  : null,
+            ),
+          );
+        }
+      } else {
+        spans.add(
           TextSpan(
-            text: parts[i],
-            style: boldWordIndices.contains(i)
-                ? baseStyle.copyWith(color: context.primaryColor, fontWeight: FontWeight.bold)
-                : baseStyle,
-          )
-      ]),
+            text: seg.text,
+            style: baseStyle,
+          ),
+        );
+      }
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
       textAlign: textAlign,
     );
   }

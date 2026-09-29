@@ -28,6 +28,7 @@ class BdcState extends Equatable {
   final int? currentScore;
   final bool isScorePassed;
   final bool showSentenceTranslation;
+  final bool showSentenceWordMeaning;
   final int tabIndex;
   
   final List<GetWordResult> history;
@@ -132,6 +133,7 @@ class BdcState extends Equatable {
     this.currentScore,
     this.isScorePassed = false,
     this.showSentenceTranslation = false,
+    this.showSentenceWordMeaning = false,
     this.tabIndex = 0,
     this.history = const [],
     this.historyIndex = -1,
@@ -218,6 +220,7 @@ class BdcState extends Equatable {
     Object? currentScore = _sentinel,
     bool? isScorePassed,
     bool? showSentenceTranslation,
+    bool? showSentenceWordMeaning,
     int? tabIndex,
     List<GetWordResult>? history,
     int? historyIndex,
@@ -296,6 +299,7 @@ class BdcState extends Equatable {
       currentScore: currentScore == _sentinel ? this.currentScore : (currentScore as int?),
       isScorePassed: isScorePassed ?? this.isScorePassed,
       showSentenceTranslation: showSentenceTranslation ?? this.showSentenceTranslation,
+      showSentenceWordMeaning: showSentenceWordMeaning ?? this.showSentenceWordMeaning,
       tabIndex: tabIndex ?? this.tabIndex,
       history: history ?? this.history,
       historyIndex: historyIndex ?? this.historyIndex,
@@ -387,6 +391,7 @@ class BdcState extends Equatable {
     currentScore,
     isScorePassed,
     showSentenceTranslation,
+    showSentenceWordMeaning,
     tabIndex,
     history,
     historyIndex,

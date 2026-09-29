@@ -1,8 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -119,6 +123,76 @@ void main() {
 
     test('WordListStudyMode includes translateSentence', () {
       expect(WordListStudyMode.values.contains(WordListStudyMode.translateSentence), isTrue);
+    });
+  });
+
+  group('Translate Sentence - Util.makeChineseSpanText Masked Word', () {
+    testWidgets('Renders WidgetSpan with dots when maskHighlightWord is true, and clicks to reveal', (tester) async {
+      bool toggled = false;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => DarkMode()),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return Util.makeChineseSpanText(
+                    '我吃了一个<b>苹果</b>。',
+                    context,
+                    maskHighlightWord: true,
+                    onToggleMask: () {
+                      toggled = true;
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // 验证未揭开前显示圆点遮罩而非明文“苹果”
+      expect(find.text('• •'), findsOneWidget);
+      expect(find.text('苹果'), findsNothing);
+
+      // 点击遮罩
+      await tester.tap(find.text('• •'));
+      await tester.pumpAndSettle();
+      expect(toggled, isTrue);
+    });
+
+    testWidgets('Renders TextSpan with bold style when maskHighlightWord is false', (tester) async {
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => DarkMode()),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return Util.makeChineseSpanText(
+                    '我吃了一个<b>苹果</b>。',
+                    context,
+                    maskHighlightWord: false,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // 验证揭开后显示富文本中的加粗高亮释义“苹果”
+      final richTextFinder = find.byType(RichText);
+      expect(richTextFinder, findsOneWidget);
+      final richText = tester.widget<RichText>(richTextFinder);
+      final textSpan = richText.text as TextSpan;
+      final plainText = textSpan.toPlainText();
+      expect(plainText, equals('我吃了一个苹果。'));
+      expect(find.text('• •'), findsNothing);
     });
   });
 }

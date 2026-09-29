@@ -58,6 +58,33 @@ class BdcNotifier extends _$BdcNotifier {
   bool _isAnswerCorrectHandling = false;
   DateTime? _lastCorrectSoundTime;
 
+  /// 本次“呈现”的作答是否已被受理：一次呈现只受理一次作答。
+  /// 只在 [handleWord] 呈现新词/重练（以及练习模式重开）时复位；
+  /// 绝不能在 getNextWord 开头复位 —— 那正是“同一次作答被两条链路重复受理”的入口。
+  bool _answerAccepted = false;
+
+  /// 待计分作答凭据：受理作答时登记，被 [getNextWord] 消费一次后置空。
+  /// [alreadyPersisted] 供“修改今日评分”使用：该路径已自行落库，后续流转只导航不再计分。
+  ({String? wordId, FsrsRating rating, bool alreadyPersisted})? _pendingGrade;
+
+  /// 受理一次作答（幂等）：同一呈现内的重复受理直接忽略，从结构上杜绝重复计分。
+  /// [refresh] 用于“修改今日评分”这类需要重新登记凭据的场景（原凭据已被消费）。
+  void _acceptAnswer(FsrsRating rating, {bool alreadyPersisted = false, bool refresh = false}) {
+    if (_answerAccepted && !refresh) return;
+    _answerAccepted = true;
+    _pendingGrade = (
+      wordId: state.word?.id,
+      rating: rating,
+      alreadyPersisted: alreadyPersisted,
+    );
+  }
+
+  /// 仅供测试：登记一次待计分作答（生产链路由 [_onAnswerCorrect]、[showWordDetail]、
+  /// [revealAnswerAndMarkWrong] 受理）。测试若直接调 getNextWord(fsrsRating:) 模拟提交流转，
+  /// 必须先经过这里，否则会被计分闸门当作“重复/迟到提交”丢弃。
+  @visibleForTesting
+  void acceptAnswerForTesting(FsrsRating rating) => _acceptAnswer(rating);
+
   void _updateState(BdcState newState, {String tag = ''}) {
     _stateChangeCount++;
     state = newState;
@@ -482,6 +509,7 @@ class BdcNotifier extends _$BdcNotifier {
           hasFinishedAnswering: stateJson['hasFinishedAnswering'] ?? false,
           canLeaveCurrWord: stateJson['canLeaveCurrWord'] ?? false,
           showSentenceTranslation: stateJson['showSentenceTranslation'] ?? false,
+          showSentenceWordMeaning: stateJson['showSentenceWordMeaning'] ?? false,
           selectedAnswerIndex: stateJson['selectedAnswerIndex'],
           tabIndex: stateJson['tabIndex'] ?? 0,
           currentScore: stateJson['currentScore'],
@@ -691,6 +719,10 @@ class BdcNotifier extends _$BdcNotifier {
     final int? followUpAssessmentDays =
         todayFirstRating == null ? null : trackResult.todayFirstLogScheduledDays;
 
+    // 每次呈现（新词、下一环节、重练）都会走到这里：受理状态与待计分凭据随呈现复位
+    _answerAccepted = false;
+    _pendingGrade = null;
+
     state = state.copyWith(
       currentGetWordResult: getWordResult,
       word: word,
@@ -706,6 +738,7 @@ class BdcNotifier extends _$BdcNotifier {
       words: null,
       showAnswerButtons: false,
       showSentenceTranslation: false,
+      showSentenceWordMeaning: false,
       currentScore: null,
       englishDigestOfFirstSentence: null,
       wordStartTime: AppClock.now(),
@@ -1047,6 +1080,10 @@ class BdcNotifier extends _$BdcNotifier {
     // 设置已完成回答状态，评分为 FsrsRating.again，显示正确答案
     // 练习模式(看答案后隐藏答案再练习)中再次看答案:不改今日评分
     final bool keepRating = _isPracticeMode;
+    if (!keepRating) {
+      // “看答案”也是一次正式作答（again），同样登记受理凭据，避免后续流转重复计分
+      _acceptAnswer(FsrsRating.again);
+    }
     state = state.copyWith(
       hasFinishedAnswering: true,
       canLeaveCurrWord: true,
@@ -1063,6 +1100,8 @@ class BdcNotifier extends _$BdcNotifier {
     if (!state.hasFinishedAnswering) return;
     _isPracticeMode = true;
     _isAnswerCorrectHandling = false; // 重置答对锁,否则练习模式 checkAsrResult 被 L1555 拦截,评分不更新
+    _answerAccepted = false; // 练习模式重新开始作答，恢复受理资格（但练习不计分）
+    _pendingGrade = null;
     state = state.copyWith(
       hasFinishedAnswering: false,
       isPracticeMode: true,
@@ -1070,6 +1109,7 @@ class BdcNotifier extends _$BdcNotifier {
       // 练习模式允许点"下一词"离开(canLeaveCurrWord=true 使底部按钮可见)
       canLeaveCurrWord: true,
       showSentenceTranslation: false,
+      showSentenceWordMeaning: false,
       currentScore: null,
       currentAsrCandidates: [],
     );
@@ -1149,6 +1189,8 @@ class BdcNotifier extends _$BdcNotifier {
     _playToken++; // 取消任何待执行的自动播放延迟 callback，防止详情页与主页延迟自动播放并发撞车
 
     if (fsrsRating != null) {
+      // 受理本次作答（幂等）：详情页「下一词」与 autoJump 定时器谁先触发都只会计分一次
+      _acceptAnswer(fsrsRating);
       // 只同步写"详情页后续流程要用、且不进入顶层 UI 签名"的字段：
       // lastFsrsRating 供详情页「下一词」读取、fsrsItem 供 FSRS 预览显示，
       // 两者都不在 BdcStateUiSignature 里，因此不会让学习页重建。
@@ -1264,6 +1306,9 @@ class BdcNotifier extends _$BdcNotifier {
         );
       }
       await _persistRatingModification(rating);
+      // 修改评分已自行落库：登记一份“已落库”的受理凭据，
+      // 后续「下一词」只导航、不再重复计分（也避免被计分闸门当作重复提交而卡住）
+      _acceptAnswer(rating, alreadyPersisted: true, refresh: true);
     } catch (e, s) {
       Global.logger.e('修改今日评分失败', error: e, stackTrace: s);
     }
@@ -1431,6 +1476,14 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(showSentenceTranslation: !state.showSentenceTranslation);
   }
 
+  void toggleShowSentenceWordMeaning() {
+    state = state.copyWith(showSentenceWordMeaning: !state.showSentenceWordMeaning);
+  }
+
+  void updateShowSentenceWordMeaning(bool show) {
+    state = state.copyWith(showSentenceWordMeaning: show);
+  }
+
   void toggleHandwritingBoard() {
     state = state.copyWith(showHandwritingBoard: !state.showHandwritingBoard);
     _handleTabChangeForAsr();
@@ -1502,6 +1555,7 @@ class BdcNotifier extends _$BdcNotifier {
           'hasFinishedAnswering': uiState.hasFinishedAnswering,
           'canLeaveCurrWord': uiState.canLeaveCurrWord,
           'showSentenceTranslation': uiState.showSentenceTranslation,
+          'showSentenceWordMeaning': uiState.showSentenceWordMeaning,
           'selectedAnswerIndex': uiState.selectedAnswerIndex,
           'tabIndex': uiState.tabIndex,
           'currentScore': uiState.currentScore,
@@ -1543,6 +1597,7 @@ class BdcNotifier extends _$BdcNotifier {
             'hasFinishedAnswering': uiState.hasFinishedAnswering,
             'canLeaveCurrWord': uiState.canLeaveCurrWord,
             'showSentenceTranslation': uiState.showSentenceTranslation,
+            'showSentenceWordMeaning': uiState.showSentenceWordMeaning,
             'selectedAnswerIndex': uiState.selectedAnswerIndex,
             'tabIndex': uiState.tabIndex,
             'currentScore': uiState.currentScore,
@@ -1590,6 +1645,7 @@ class BdcNotifier extends _$BdcNotifier {
           hasFinishedAnswering: uiState.hasFinishedAnswering,
           canLeaveCurrWord: uiState.canLeaveCurrWord,
           showSentenceTranslation: uiState.showSentenceTranslation,
+          showSentenceWordMeaning: uiState.showSentenceWordMeaning,
           selectedAnswerIndex: uiState.selectedAnswerIndex,
           tabIndex: uiState.tabIndex,
           currentScore: uiState.currentScore,
@@ -1632,6 +1688,25 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating, bool fastPath = false}) async {
     if (_isGettingNextWordLock || state.isGettingNextWord) return false;
+
+    // 计分闸门：带评分的调用视为“提交一次作答”，必须消费一次受理凭据，且只消费一次。
+    // 迟到/重复的提交（同一次作答被 autoJump 定时器、详情页、下一词按钮等多条链路触发）
+    // 在这里被整体丢弃 —— 既不重复写日志，也不会把下一个学习环节顶掉。
+    FsrsRating? gradeRating = fsrsRating;
+    if (fsrsRating != null) {
+      final pending = _pendingGrade;
+      _pendingGrade = null; // 凭据一次性
+      final bool matched = pending != null &&
+          pending.wordId == state.word?.id &&
+          pending.rating == fsrsRating;
+      if (!matched) {
+        Global.logger.w('getNextWord: 丢弃重复/迟到的作答提交 '
+            '(word=${state.word?.spell}, rating=$fsrsRating)');
+        return false;
+      }
+      gradeRating = pending.alreadyPersisted ? null : pending.rating;
+    }
+
     _isGettingNextWordLock = true;
     _cancelPendingWordTimers();
     final totalStopwatch = Stopwatch()..start();
@@ -1775,7 +1850,7 @@ class BdcNotifier extends _$BdcNotifier {
       }
 
       final apiStopwatch = Stopwatch()..start();
-      final result = await StudyBo().getWord(state.isWordMastered, gotoNext, fsrsRating: fsrsRating);
+      final result = await StudyBo().getWord(state.isWordMastered, gotoNext, fsrsRating: gradeRating);
       Global.logger.d('[PERF] getNextWord -> StudyBo().getWord API cost: ${apiStopwatch.elapsedMilliseconds}ms');
       
       if (result.success && result.data != null) {
@@ -1815,6 +1890,7 @@ class BdcNotifier extends _$BdcNotifier {
         hasFinishedAnswering: state.hasFinishedAnswering,
         canLeaveCurrWord: state.canLeaveCurrWord,
         showSentenceTranslation: state.showSentenceTranslation,
+        showSentenceWordMeaning: state.showSentenceWordMeaning,
         selectedAnswerIndex: state.selectedAnswerIndex,
         tabIndex: state.tabIndex,
         currentScore: state.currentScore,
@@ -2586,11 +2662,14 @@ class BdcNotifier extends _$BdcNotifier {
       reason = "$method，响应时间: ${responseTime}s，判定为${rating.label}";
     }
     
-    if (state.hintTapCount >= 2 || state.showSentenceTranslation) {
+    final bool viewedWordAnswer = state.studyStep == StudyStep.en2Ch.json
+        ? state.showSentenceWordMeaning
+        : state.showSentenceTranslation;
+    if (state.hintTapCount >= 2 || viewedWordAnswer) {
       rating = FsrsRating.again;
-      reason = "$method，由于使用了大量提示或查看了翻译，评分: ${rating.label}";
-    } else if (state.hintTapCount == 1) {
-      reason += "，由于使用了一次提示，评分下调一级";
+      reason = "$method，由于使用了大量提示或查看了翻译答案，评分: ${rating.label}";
+    } else if (state.hintTapCount == 1 || state.showSentenceTranslation) {
+      reason += "，由于使用了一次提示或查看了例句辅助，评分下调一级";
       if (rating == FsrsRating.easy) {
         rating = FsrsRating.good;
       } else if (rating == FsrsRating.good) {
@@ -2604,11 +2683,13 @@ class BdcNotifier extends _$BdcNotifier {
 
   void _onAnswerCorrect(FsrsRating rating, {String? reason}) async {
     final stopwatch = Stopwatch()..start();
-    if (state.hasFinishedAnswering) {
+    if (_answerAccepted || state.hasFinishedAnswering) {
       state = state.copyWith(showHandwritingBoard: false);
       _handleTabChangeForAsr();
       return;
     }
+    // 受理本次作答（幂等）：同一次作答被 ASR/手写/键盘等多条链路重复判定时，只受理第一条
+    _acceptAnswer(rating);
 
     _cancelPendingWordTimers();
     _isWordAiRefereeJudging = false;
