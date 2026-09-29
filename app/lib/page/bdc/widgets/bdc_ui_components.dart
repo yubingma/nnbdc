@@ -1303,11 +1303,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                     key: _masteredButtonKey,
                     icon: Icons.check_circle_outline_rounded,
                     label: '掌握',
-                    onTap: () {
+                    onTap: () async {
                       final spell = state.word?.spell ?? '';
-                      playMasteredFlyAnimation(spell);
                       notifier.updateHasFinishedAnswering(true);
                       notifier.updateIsWordMastered(true);
+                      await playMasteredFlyAnimation(spell);
                       notifier.getNextWord(true);
                     },
                   ),

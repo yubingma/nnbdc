@@ -19,7 +19,6 @@ import '../../api/sort_alg.dart';
 import '../../global.dart';
 import '../../util/app_clock.dart';
 import '../../util/word_util.dart';
-import '../../constants.dart';
 
 class DictWordsProvider with WordsProvider implements WordModifier {
   DictVo dict;
@@ -276,12 +275,9 @@ class DictWordsProvider with WordsProvider implements WordModifier {
     final isMastered = await db.masteredWordsDao.isWordMastered(user.id, wordId);
     if (isMastered) return true; // 已掌握
 
-    // 检查是否在学习中
+    // 检查是否在学习中（有学习记录且未掌握；掌握判定已在上面按「已掌握」词书完成）
     final learningQuery = db.select(db.learningWords)
-      ..where((lw) =>
-          lw.userId.equals(user.id) &
-          lw.wordId.equals(wordId) &
-          (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability)));
+      ..where((lw) => lw.userId.equals(user.id) & lw.wordId.equals(wordId));
     final learning = await learningQuery.getSingleOrNull();
     if (learning != null) return false; // 学习中
 

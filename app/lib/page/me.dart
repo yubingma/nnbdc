@@ -57,7 +57,6 @@ import 'package:provider/provider.dart';
 import '../global.dart';
 import '../state.dart';
 import '../util/level_util.dart';
-import '../constants.dart';
 import '../config.dart';
 import '../util/asr.dart';
 
@@ -464,14 +463,16 @@ class MePageState extends State<MePage> implements RefreshableTab {
         var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(userId);
         final learningDictIds = learningDicts.map((d) => d.dictId).toList();
 
-        // [性能优化] 使用 SQL 直接在数据库内完成聚合与去重，避免在 Flutter 主线程进行巨大的 Set 操作（尤其是单词量大的时候）
         // 1. 全局正在学习的单词总数
-        var globalLearningWordsCount = await (db.selectOnly(db.learningWords)
-              ..addColumns([db.learningWords.wordId.count()])
-              ..where(db.learningWords.userId.equals(userId))
-              ..where(db.learningWords.stability.isNull() | db.learningWords.stability.isSmallerThanValue(Constants.graduationStability)))
-            .getSingle()
-            .then((r) => r.read(db.learningWords.wordId.count()) ?? 0);
+        // 口径：有学习记录且不在「已掌握」词书中（不再用 stability 阈值作代理判定，
+        // 否则 S 已过线但未入词书的词会从"学习中"消失 = 隐身）
+        final learningWordIds = await (db.selectOnly(db.learningWords)
+              ..addColumns([db.learningWords.wordId])
+              ..where(db.learningWords.userId.equals(userId)))
+            .get()
+            .then((rows) => rows.map((r) => r.read(db.learningWords.wordId)!).toSet());
+        final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
+        var globalLearningWordsCount = learningWordIds.difference(masteredWordIds).length;
 
         // 2. 当前选中的词书中的去重单词总数
         var rawWordCount = await db.dictWordsDao.getUniqueWordCountInDicts(learningDictIds);

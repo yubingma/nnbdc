@@ -1647,16 +1647,9 @@ extension BdcPageStateDialogs on BdcPageState {
       );
     }
 
-    // 助手函数：判断单词是否已掌握 (调度层的一致性逻辑)
+    // 助手函数：判断单词是否已掌握 (调度层的一致性逻辑：掌握口径 = 用户「已掌握」词书成员)
     bool isEffectivelyMastered(dynamic word) {
-      if (masteredWordIds.contains(word.wordId)) {
-        return true;
-      }
-      if (word.stability != null &&
-          (word.stability ?? 0.0) >= Constants.graduationStability) {
-        return true;
-      }
-      return false;
+      return masteredWordIds.contains(word.wordId);
     }
 
     // 获取单词的拼写

@@ -1398,52 +1398,29 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
     await query.go();
   }
 
-  /// 删除用户已经掌握的单词（从"已掌握"词书推导）
-  Future<void> deleteMasteredWords(String userId) async {
-    final db = attachedDatabase;
-    // 获取用户已掌握的所有单词ID
-    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
-
-    if (masteredWordIds.isNotEmpty) {
-      // 从 learning_words 表中批量删除这些已掌握的词
-      await (delete(learningWords)
-            ..where((lw) => lw.userId.equals(userId) & lw.wordId.isIn(masteredWordIds.toList())))
-          .go();
-      Global.logger.d('已从 learningWords 中删除 ${masteredWordIds.length} 个已掌握单词');
-    }
-  }
-
   /// 批量获取单词的学习状态（在学习中）
+  /// 掌握口径：只排除「已掌握」词书成员，不再用 stability 阈值作代理判定
   Future<Set<String>> getLearningWordIdSet(String userId, List<String> wordIds) async {
     if (wordIds.isEmpty) return {};
     final rows = await (selectOnly(learningWords)
           ..addColumns([learningWords.wordId])
-          ..where(learningWords.userId.equals(userId) &
-              learningWords.wordId.isIn(wordIds) &
-              (learningWords.stability.isNull() | learningWords.stability.isSmallerThanValue(Constants.graduationStability))))
+          ..where(learningWords.userId.equals(userId) & learningWords.wordId.isIn(wordIds)))
         .get();
-    return rows.map((row) => row.read(learningWords.wordId)!).toSet();
-  }
-
-  /// 删除已掌握的学习中单词（掌握度为5）
-  Future<int> deleteMasteredLearningWords(String userId) async {
-    final query = delete(learningWords)
-      ..where((lw) => lw.userId.equals(userId) & lw.stability.isBiggerOrEqualValue(Constants.graduationStability));
-    final deletedCount = await query.go();
-    if (deletedCount > 0) {
-      Global.logger.d('已从 learningWords 中删除 $deletedCount 个已掌握（掌握度为5）的单词');
-    }
-    return deletedCount;
+    final learningIds = rows.map((row) => row.read(learningWords.wordId)!).toSet();
+    if (learningIds.isEmpty) return {};
+    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSetForWords(userId, wordIds);
+    return learningIds.difference(masteredWordIds);
   }
 
   /// 获取用于记忆云图展示的数据
+  /// 掌握口径：本查询不再用 stability 阈值裁剪，调用方按「已掌握」记录集排除（见 review_distribution）
   Future<List<Map<String, dynamic>>> getLearningWordsForCloud(String userId) async {
     final query = select(learningWords).join([
       innerJoin(db.words, db.words.id.equalsExp(learningWords.wordId)),
       leftOuterJoin(db.cigenWordLinks, db.cigenWordLinks.wordId.equalsExp(learningWords.wordId)),
       leftOuterJoin(db.cigens, db.cigens.id.equalsExp(db.cigenWordLinks.cigenId)),
     ])
-      ..where(learningWords.userId.equals(userId) & (learningWords.stability.isNull() | learningWords.stability.isSmallerThanValue(Constants.graduationStability)));
+      ..where(learningWords.userId.equals(userId));
 
     final results = await query.get();
     return results.map((row) {
@@ -1468,13 +1445,17 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
   }
 
   /// 获取一组词书中包含的“正在学习”单词去重总数
+  /// 掌握口径：只排除「已掌握」词书成员，不再用 stability 阈值作代理判定
   Future<int> getLearningWordsCountInDicts(String userId, List<String> dictIds) async {
     if (dictIds.isEmpty) return 0;
+    final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
     final countQuery = customSelect(
       'SELECT count(DISTINCT word_id) as c FROM learning_words '
-      'WHERE user_id = ? AND (stability IS NULL OR stability < ?) '
-      'AND word_id IN (SELECT word_id FROM dict_words WHERE dict_id IN (${dictIds.map((id) => "'$id'").join(',')}))',
-      variables: [Variable.withString(userId), Variable.withReal(Constants.graduationStability)],
+      'WHERE user_id = ? '
+      'AND word_id IN (SELECT word_id FROM dict_words WHERE dict_id IN (${dictIds.map((id) => "'$id'").join(',')})) '
+      'AND word_id NOT IN (SELECT word_id FROM dict_words WHERE dict_id = ?)',
+      // 没有「已掌握」词书时用不可能命中的空 id，保证不误排除任何单词
+      variables: [Variable.withString(userId), Variable.withString(masteredDict?.id ?? '')],
       readsFrom: {learningWords, db.dictWords},
     );
     final row = await countQuery.getSingle();

@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:nnbdc/api/api.dart';
-import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/global.dart';
@@ -714,10 +713,13 @@ class _DictCardState extends State<DictCard> {
     final dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(currentLearningDict.dictId))).get();
     final wordIdsInDict = dictWords.map((dw) => dw.wordId).toSet();
 
-    // 2. 查询用户所有学习中的单词（stability < graduationStability）
-    final learningWords = await (db.select(db.learningWords)
-          ..where((lw) => lw.userId.equals(user.id) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability))))
-        .get();
+    // 2. 查询用户所有学习中的单词（有学习记录且不在「已掌握」词书中，不再用 stability 阈值作代理判定）
+    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+    final learningWords = (await (db.select(db.learningWords)
+              ..where((lw) => lw.userId.equals(user.id)))
+          .get())
+        .where((lw) => !masteredWordIds.contains(lw.wordId))
+        .toList();
 
     if (!mounted) return;
 

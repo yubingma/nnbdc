@@ -28,7 +28,6 @@ import 'package:provider/provider.dart' hide Consumer;
 import '../../api/enum.dart';
 import '../../api/vo.dart';
 import '../../config.dart';
-import '../../constants.dart';
 import '../../db/db.dart';
 import '../../global.dart';
 import '../../state.dart';
@@ -365,7 +364,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   }
 
   /// 播放单词掌握动画：题目区先向中心坍缩凝聚成微核，随后从凝聚中心破茧凝结出掌握胶囊飞向右上角掌握按钮
-  void playMasteredFlyAnimation(String spell) async {
+  Future<void> playMasteredFlyAnimation(String spell) async {
     if (!mounted || spell.isEmpty) return;
 
     // 第一阶段：题目区向中心深度坍缩凝聚为微核 (200ms)
@@ -376,6 +375,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     StudyBo.playMasteredBubbleSound();
 
     // 第二阶段：在凝聚中心破茧生成掌握胶囊，带流光轨迹飞向右上角掌握按钮
+    final completer = Completer<void>();
     MasteredFlyAnimation.play(
       context: context,
       spell: spell,
@@ -384,6 +384,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       onArrived: () {
         if (!mounted) return;
         _masteredButtonScaleController.forward(from: 0.0);
+        if (!completer.isCompleted) completer.complete();
       },
     );
 
@@ -392,6 +393,8 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     if (mounted) {
       _questionCollapseController.reset();
     }
+    // 等待飞行动效抵达目标完成吸收（超时安全保护兜底）
+    await completer.future.timeout(const Duration(milliseconds: 400), onTimeout: () {});
   }
 
   /// 首次进入学习页时展示新手引导：只讲「你说，我来听」这一件事，
