@@ -1649,6 +1649,10 @@ class BdcNotifier extends _$BdcNotifier {
           ..remove(answeredWordId);
         state = state.copyWith(wordUIStates: cleared);
       }
+      // 一并作废"上一个词"的持久化快照：Prefs 里可能正留着这个词更早一次的
+      // "已答完"状态（例如测评答对时存过、随后在本环节答错），重新进入学习页时
+      // _restoreLastWordHistory 会把它回灌进 wordUIStates，重练又变成直接显示答案。
+      Prefs.remove('last_word_history_item');
     } else {
       _saveCurrentWordState();
     }

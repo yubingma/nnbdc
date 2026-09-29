@@ -587,6 +587,26 @@
         <td>回归测试有效性</td>
         <td>新增 <code>BdcNotifier - 答错的词不缓存答题态</code>；并已用"临时回退到旧行为"实测确认该用例<strong>会失败</strong>，不是假绿</td>
       </tr>
+      <tr>
+        <td><code>stepIndex</code> 判据全量排查</td>
+        <td>本项目依赖"环节序号"的判断共 <strong>4 处</strong>，已逐一核对：<br>
+        ① <code>bdc_notifier</code> 测评参考值判据 → 已改为"今天是否已测过"；<br>
+        ② <code>bdc_ui_components</code> "测评结果"栏显示条件 → 已同步放开；<br>
+        ③ 本组顺序轻提示（<code>stepIndex &gt; 0</code>）→ <strong>无需改</strong>，其语义本就是"进入后续环节"，重练时仍在测评环节，本就不该提示；<br>
+        ④ <code>_restoreLastWordHistory</code> 提取测评得分 → 运行期该分支不触发（重练时 stepIndex 为 0），且其所在函数会把持久化快照回灌进 <code>wordUIStates</code>，这条残留路径已一并堵掉（答错时清除 Prefs 快照）</td>
+      </tr>
+      <tr>
+        <td>残留路径：Prefs 历史快照</td>
+        <td><code>_executePersistLastWordHistoryItem</code> 从 <code>wordUIStates</code> 取值，答错的词不再被写入；但 Prefs 里可能留有该词<strong>更早一次</strong>的"已答完"快照（如测评答对时存过、随后在本环节答错），重新进入学习页会被回灌。已在答错时同时清除该快照</td>
+      </tr>
+      <tr>
+        <td><strong>实施后修正</strong>：错词重练时看不到"测评结果"</td>
+        <td>用户反馈"错词出现时下面的测评得分信息没有了"。根因：该信息的显示条件是
+        <code>stepIndex &gt; 0</code>（巩固/加测环节），而测评答错的词现在<strong>留在测评环节循环重练（stepIndex 仍为 0）</strong>，
+        整块信息被直接跳过 —— 但它今天其实已经测过一次，数据本就存在。已把判据从"环节序号"改为
+        <strong>"今天是否已测过"</strong>（<code>todayFirstLogRating != null</code>），UI 条件同步放开。
+        测评首次作答前仍不显示（还没测），重练时显示（已测过）</td>
+      </tr>
     </tbody>
   </table>
 </section>
