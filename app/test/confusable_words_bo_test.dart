@@ -212,8 +212,8 @@ void main() {
 
     test('已毕业 learning_word(stability≥180) 仍是锚点（内联查询无 stability 过滤）', () async {
       await seedHouseHorse();
-      // 已毕业：stability = 180（既有 getLearningWordIdSet 过滤 stability<180 会排除已毕业，
-      // 内联查询必须包含它，否则词表为空）
+      // 已毕业：stability = 180，但不在「已掌握」词书中；锚点查询不含 stability 过滤，
+      // 必须仍算锚点，否则词表为空
       await insertLearningWord('w_house', stability: Constants.graduationStability);
 
       final ids = await WordBo().getConfusableWordIds(userId);

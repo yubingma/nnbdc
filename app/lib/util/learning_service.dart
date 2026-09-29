@@ -104,11 +104,10 @@ class LearningService {
           }
 
           // 2. 清理相关联表
-          // 【已移除】原来这里按 stability >= 掌握线 删除 learning_words 记录
-          //   （deleteMasteredLearningWords / deleteMasteredWords）。掌握口径已统一为
-          //   「已掌握词书」成员后，越线但未入词书的词属于正常学习中，按阈值删除会在
-          //   每夜静默抹掉它们的记忆历史（正好拆掉"回到学习中"的修复）。已掌握词的排除
-          //   由候选池按已掌握记录集完成，不再需要这个清理。
+          // 【已移除】原来这里按 stability >= 掌握线 删除 learning_words 记录。
+          //   掌握口径已统一为「已掌握词书」成员后，越线但未入词书的词属于正常学习中，
+          //   按阈值删除会在每夜静默抹掉它们的记忆历史（正好拆掉"回到学习中"的修复）。
+          //   已掌握词的排除由候选池按已掌握记录集完成，不再需要这个清理。
           // 注意：不再清空用户错词(userWrongWords)，让错词在错题本中长期沉淀形成“历史错词”
           // 清空旧的阶段复习书签，防止跨天数据污染
           await db.bookmarksDao.deleteBatchWordListBookmarks(user.id);
@@ -141,14 +140,12 @@ class LearningService {
 
       // 清理：学习未开始时，移除批次中已掌握的单词
       // 场景：同日更新 app 后，旧版生成的批次可能包含已掌握单词，需要在此清理
-      // 判断"已掌握"包括：在 masteredWords 表中，或 stability 已达毕业阈值
+      // 掌握口径 = 用户「已掌握」词书成员，不再用 stability 阈值作代理判定
       if (planWords.isNotEmpty) {
         final freshUser = Global.getLoggedInUser();
         if (freshUser?.todayStudyStarted != true) {
           final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
-          final toClean = planWords.where((w) =>
-              masteredWordIds.contains(w.wordId) ||
-              (w.stability != null && w.stability! >= Constants.graduationStability)).toList();
+          final toClean = planWords.where((w) => masteredWordIds.contains(w.wordId)).toList();
           if (toClean.isNotEmpty) {
             Global.logger.w('[FETCH-WORD] [prepareTodayStudy] 学习未开始，清理批次中 ${toClean.length} 个已掌握单词');
             for (var word in toClean) {
@@ -160,9 +157,7 @@ class LearningService {
                   ),
                   true);
             }
-            planWords.removeWhere((w) =>
-                masteredWordIds.contains(w.wordId) ||
-                (w.stability != null && w.stability! >= Constants.graduationStability));
+            planWords.removeWhere((w) => masteredWordIds.contains(w.wordId));
           }
         }
       }
@@ -735,13 +730,12 @@ class LearningService {
     final masteredWordIdsSet = await db.masteredWordsDao.getMasteredWordIdSet(userId);
 
     // 获取用户已学习的单词 ID（作为排除项，只排除有学习记录的单词，未学习的“幽灵新词”不计入排除集以便重新提取）
-    // 【双重防御】同时排除本地 learningWords 表中已毕业的单词 ID
+    // 已掌握的词由上面的 masteredWordIdsSet 排除，这里不再用 stability 阈值作代理判定
     final rows = await (db.selectOnly(db.learningWords)
           ..addColumns([db.learningWords.wordId])
           ..where(db.learningWords.userId.equals(userId) &
               (db.learningWords.learnedTimes.isBiggerThanValue(0) | 
-               db.learningWords.lastLearningDate.isNotNull() |
-               db.learningWords.stability.isBiggerOrEqualValue(Constants.graduationStability))))
+               db.learningWords.lastLearningDate.isNotNull())))
         .get();
     final existingWordIdsSet = rows.map((row) => row.read(db.learningWords.wordId)!).toSet();
     if (excludeWordIds != null) {

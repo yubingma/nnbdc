@@ -680,6 +680,49 @@ void main() {
           reason: '未掌握的普通新词应正常被选入今日计划，修复不应误杀正常单词');
     });
 
+    test('【掌握口径回归】stability 已过掌握线但不在「已掌握」词书中的词，仍必须排进今日计划', () async {
+      // 1. 用户有「已掌握」词书（掌握口径的唯一依据），但下面这个词并未进入该词书
+      await db.into(db.dicts).insert(Dict(
+        id: 'mock_dict_mastered_regression',
+        name: '已掌握',
+        wordCount: 0,
+        isShared: false,
+        isReady: true,
+        ownerId: testUser.id,
+        visible: true,
+        editable: false,
+        deletable: false,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 2. word_1：stability=150 已过掌握线（120），但不在「已掌握」词书里 → 属正常到期复习词
+      await db.into(db.learningWords).insert(LearningWord(
+        userId: testUser.id,
+        wordId: 'word_1',
+        addTime: now,
+        addDay: 1,
+        stability: 150,
+        isTodayNewWord: false,
+        learnedTimes: 3,
+        todayLearnedTimes: 0,
+        batchId: 0,
+        learningOrder: 0,
+        lastLearningDate: AppClock.today().subtract(const Duration(days: 3)),
+        createTime: now,
+        updateTime: now,
+        isExtra: false,
+      ));
+
+      // 3. 执行今日计划生成
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.any((w) => w.wordId == 'word_1'), true,
+          reason: '掌握只认「已掌握」词书成员；用 stability 阈值当代理会让"越线未入词书"的词从学习中消失 = 隐身');
+    });
+
     test('genTodayWords 过滤逻辑：同日非跨天场景下排除已在mastered_words中的单词', () async {
       // 此测试验证：即使没有触发跨天清理，genTodayWords 自身也能过滤掉已掌握的单词
 
@@ -699,7 +742,7 @@ void main() {
         updateTime: now,
       ));
 
-      // 2. 将 lastLearningDate 设为今天，避免触发跨天重置（这样 deleteMasteredWords 不会先清理）
+      // 2. 将 lastLearningDate 设为今天，避免触发跨天重置
       testUser = testUser.copyWith(lastLearningDate: Value(AppClock.today()));
       Global.updateUserCache(testUser);
 

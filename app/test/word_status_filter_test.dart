@@ -263,6 +263,11 @@ void main() {
           reason: '掌握只认已掌握词书成员；再用 stability>=掌握线 当代理会让这类词隐身');
       expect(lw.isEffectivelyMastered(<String>{'w4'}), isTrue,
           reason: '进了已掌握词书才算掌握');
+
+      // SQL 下推的三态筛选同样不得用 stability 阈值裁剪：该词必须出现在"学习中"视图
+      expect(await pageSpells(WordStatusFilter.fromCode(WordLearningStatus.learning.code)),
+          contains('ant'),
+          reason: 'S=150 且未进「已掌握」词书的词必须出现在"学习中"视图，而不是消失');
     });
 
   });
