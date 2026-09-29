@@ -421,6 +421,8 @@ void main() {
           updateTime: AppClock.now(),
         ), false);
       }
+      // 直接改库必须丢弃缓存，否则 getWord 会读到旧记忆状态（FSRS 结果依赖输入 S/D）
+      StudyCacheManager().clear();
     }
 
     Future<LearningWord> wordOf(String wordId) async {
@@ -434,12 +436,12 @@ void main() {
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
       expect(result.success, true);
       final w = await wordOf('word_1');
-      expect(w.stability, 2.4);
+      expect(w.stability, 3.173);
       expect(w.reps, 1);
       expect(w.state, FsrsState.learning.value);
     });
 
-    test('当天第二次评分（巩固环节）走 relearn 重设：hard 降级', () async {
+    test('当天第二次评分（巩固环节）走同日短期公式：hard 降级', () async {
       await setupThreeSteps();
       await finishOtherWords('word_1');
       await setWordFsrs('word_1',
@@ -451,7 +453,8 @@ void main() {
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.hard);
       expect(result.success, true);
       final w = await wordOf('word_1');
-      expect(w.stability, 0.6); // 重设，不再是"hard 被吞保持 2.4"
+      // FSRS-5 短期公式 S' = S*e^(w17*(G-3+w18))：hard 按比例降级，不再是"hard 被吞保持 2.4"
+      expect(w.stability, closeTo(2.0156192985142365, 1e-9));
       expect(w.reps, 2);
       expect(w.lapses, 0);
       // Ch2En 是 3 步序列的最后一个评分环节 → 提交后无剩余评分环节 → review
@@ -459,7 +462,7 @@ void main() {
       expect(w.todayLearnedTimes, 2);
     });
 
-    test('当天巩固环节答对维持/恢复：again 后可 relearn good 恢复 2.4', () async {
+    test('当天巩固环节答对维持/恢复：again 后可短期公式 good 回升', () async {
       await setupThreeSteps();
       await finishOtherWords('word_1');
       await setWordFsrs('word_1',
@@ -471,7 +474,7 @@ void main() {
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
       expect(result.success, true);
       final w = await wordOf('word_1');
-      expect(w.stability, 2.4); // 当天答对可恢复（不再卡死在 0.4）
+      expect(w.stability, closeTo(0.5631084858950165, 1e-9)); // 当天答对可按比例回升
       expect(w.state, FsrsState.review.value);
     });
 
@@ -487,7 +490,7 @@ void main() {
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
       expect(result.success, true);
       final w = await wordOf('word_1');
-      expect(w.stability, 0.4); // 重设 0.4，而非清零 0.1
+      expect(w.stability, closeTo(1.2024684580644198, 1e-9)); // 短期公式降级，而非清零 0.1
       expect(w.lapses, 1);
       expect(w.state, FsrsState.relearning.value);
       expect(w.scheduledDays, 1); // 明日重现
@@ -541,7 +544,7 @@ void main() {
       var result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
       expect(result.success, true);
       var w = await wordOf('word_1');
-      expect(w.stability, 2.4);
+      expect(w.stability, closeTo(0.5631084858950165, 1e-9));
       expect(w.state, FsrsState.review.value); // 恢复成功，今日完成
       expect(w.lapses, 2); // good 不新增 lapse
 
@@ -554,7 +557,7 @@ void main() {
       result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
       expect(result.success, true);
       w = await wordOf('word_1');
-      expect(w.stability, 0.4);
+      expect(w.stability, closeTo(0.20041140967740334, 1e-9));
       expect(w.state, FsrsState.relearning.value); // 明日重现
       expect(w.lapses, 3);
     });

@@ -1,13 +1,25 @@
 import 'dart:math';
 import '../api/enum.dart';
 
-/// FSRS (Free Spaced Repetition Scheduler) 算法实现 (v4.5)
-/// 核心逻辑参考: https://github.com/open-spaced-repetition/fsrs4anki
+/// FSRS-5 (Free Spaced Repetition Scheduler) 算法实现
+///
+/// 规范: https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm
+/// 参考实现: https://github.com/open-spaced-repetition/py-fsrs (v4.x = FSRS-5)
+/// 权重与公式逐项对齐官方默认参数，黄金向量见 test/fsrs_test.dart。
 class FSRS {
-  /// 默认权重参数 (w)
+  /// FSRS-5 默认权重 (w0..w18，共 19 个参数)
   static const List<double> defaultWeights = [
-    0.4, 0.6, 2.4, 5.8, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.29, 2.61
+    0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.54575,
+    0.1192, 1.01925, 1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621
   ];
+
+  /// 遗忘曲线 R(t,S) = (1 + FACTOR * t / S)^DECAY
+  /// 固定 DECAY = -0.5、FACTOR = 0.9^(1/DECAY) - 1 = 19/81，保证 R(S,S) = 0.9
+  static const double _decay = -0.5;
+  static const double _factor = 19 / 81;
+
+  /// 稳定性下限：保证 stability 恒为正（既有断言与间隔计算的前提）
+  static const double _minStability = 0.1;
 
   /// 目标保留率 (Request Retention)
   final double requestRetention;
@@ -15,23 +27,20 @@ class FSRS {
   /// 权重参数
   final List<double> w;
 
-  FSRS({this.requestRetention = 0.9, this.w = defaultWeights});
+  FSRS({this.requestRetention = 0.9, this.w = defaultWeights})
+      : assert(w.length >= 19, 'FSRS-5 需要 19 个权重参数(w0..w18)');
 
-  /// 初始状态转换 (New -> Learning/Review)
+  /// 首次评分（新词 → Learning/Review）
   /// @param rating FsrsRating.again, FsrsRating.hard, FsrsRating.good, FsrsRating.easy
   /// @param nextState 学习步骤全部完成后由调用方指定（默认 learning：
   ///   若该评分已是当天最后一个评分环节，调用方应传 review/relearning，
   ///   避免学完的词次日被"学一半"判定误抓）
   FSRSItem init(FsrsRating rating, {FsrsState nextState = FsrsState.learning}) {
-    int ratingValue = rating.value;
-    
-    double stability = w[ratingValue - 1];
-    double difficulty = w[4] - (ratingValue - 1) * w[5];
-    difficulty = difficulty.clamp(1.0, 10.0);
+    final double stability = max(w[rating.value - 1], _minStability);
 
     return FSRSItem(
       stability: stability,
-      difficulty: difficulty,
+      difficulty: _initialDifficulty(rating),
       elapsedDays: 0,
       scheduledDays: _calculateInterval(stability),
       reps: 1,
@@ -40,11 +49,15 @@ class FSRS {
     );
   }
 
-  /// 复习状态转换
+  /// 记忆状态更新
   /// @param lastItem 当前单词的状态
   /// @param rating FsrsRating.again, FsrsRating.hard, FsrsRating.good, FsrsRating.easy
-  /// @param elapsedDays 自上次复习以来经过的天数
-  FSRSItem next(FSRSItem lastItem, FsrsRating rating, int elapsedDays) {
+  /// @param elapsedDays 自上次评分以来经过的天数：
+  ///   0 表示当天重复评分（FSRS-5 短期记忆公式，S 按评分等比缩放）；
+  ///   ≥ 1 表示跨天复习信号（长期记忆公式，以可提取性 R(t,S) 为输入）。
+  /// @param nextState 缺省由评分推断：again → relearning，其余 → review
+  FSRSItem next(FSRSItem lastItem, FsrsRating rating, int elapsedDays,
+      {FsrsState? nextState}) {
     // 根因定位辅助断言
     assert(lastItem.stability > 0 && lastItem.stability.isFinite, 'FSRS next: 输入的 stability 异常: ${lastItem.stability}');
     assert(lastItem.difficulty >= 1 && lastItem.difficulty <= 10 && lastItem.difficulty.isFinite, 'FSRS next: 输入的 difficulty 异常: ${lastItem.difficulty}');
@@ -52,73 +65,84 @@ class FSRS {
 
     double s = lastItem.stability;
     double d = lastItem.difficulty;
-    double r = pow(0.9, elapsedDays / s).toDouble(); // Retrievability
 
-    // 更新难度
-    double nextD = d - w[6] * (rating.value - 3);
-    nextD = _meanReversion(w[4], nextD);
-    nextD = nextD.clamp(1.0, 10.0);
+    double nextS = elapsedDays < 1
+        ? _shortTermStability(s, rating)
+        : _nextStability(s, d, _retrievability(s, elapsedDays), rating);
 
-    // 更新稳定性
-    double nextS;
-    if (rating == FsrsRating.again) {
-      // 遗忘
-      nextS = w[7] * pow(nextD, -w[8]) * (pow(s + 1, w[9]) - 1) * exp(w[10] * (1 - r));
-    } else {
-      // 记忆（FSRS-4.5 原版公式：与遗忘分支共用 w[8]/w[9]/w[10] 三元组，
-      // 此前误用 w[11]/w[12]/w[13]（FSRS-5 索引位置），与 4.5 默认权重不匹配）
-      double hardPenalty = (rating == FsrsRating.hard) ? w[15] : 1.0;
-      double easyBonus = (rating == FsrsRating.easy) ? w[16] : 1.0;
-      nextS = s * (1 + exp(w[8]) * (11 - nextD) * pow(s, -w[9]) * (exp((1 - r) * w[10]) - 1) * hardPenalty * easyBonus);
-    }
-    
     // 稳定性下限保护
-    nextS = max(nextS, 0.1);
+    nextS = max(nextS, _minStability);
 
     return FSRSItem(
       stability: nextS,
-      difficulty: nextD,
+      difficulty: _nextDifficulty(d, rating),
       elapsedDays: elapsedDays,
       scheduledDays: _calculateInterval(nextS),
       reps: lastItem.reps + 1,
       lapses: (rating == FsrsRating.again) ? lastItem.lapses + 1 : lastItem.lapses,
-      state: (rating == FsrsRating.again) ? FsrsState.relearning : FsrsState.review,
+      state: nextState ??
+          ((rating == FsrsRating.again) ? FsrsState.relearning : FsrsState.review),
     );
   }
 
-  /// 学习/恢复事件：当天同一词的非首次评分（学习轨道巩固环节、复习轨道恢复环节）
-  ///
-  /// FSRS 学习步骤语义：直接重设稳定性与难度（可升可降，最后一次评分决定当天结果），
-  /// 与复习公式 [next]（每天一次的复习信号）严格区分。
-  FSRSItem relearn(FSRSItem last, FsrsRating rating, {required FsrsState nextState}) {
-    int ratingValue = rating.value;
+  /// 长期记忆稳定性：按评分分流为遗忘 / 记忆两条分支
+  double _nextStability(double s, double d, double r, FsrsRating rating) =>
+      (rating == FsrsRating.again)
+          ? _forgetStability(s, d, r)
+          : _recallStability(s, d, r, rating);
 
-    double stability = w[ratingValue - 1];
-    double difficulty = (w[4] - (ratingValue - 1) * w[5]).clamp(1.0, 10.0);
-
-    return FSRSItem(
-      stability: stability,
-      difficulty: difficulty,
-      elapsedDays: 0,
-      scheduledDays: _calculateInterval(stability),
-      reps: last.reps + 1,
-      lapses: (rating == FsrsRating.again) ? last.lapses + 1 : last.lapses,
-      state: nextState,
-    );
+  /// 遗忘后稳定性 S'_f = w11 * D^-w12 * ((S+1)^w13 - 1) * e^(w14*(1-R))
+  /// 并以短期上限 S / e^(w17*w18) 封顶：一次遗忘不应比"当天连续答错"保留更多稳定性
+  double _forgetStability(double s, double d, double r) {
+    final double longTerm =
+        w[11] * pow(d, -w[12]) * (pow(s + 1, w[13]) - 1) * exp((1 - r) * w[14]);
+    return min(longTerm, s / exp(w[17] * w[18]));
   }
 
+  /// 记忆后稳定性 S'_r = S * (1 + e^w8 * (11-D) * S^-w9 * (e^((1-R)*w10) - 1) * 硬性惩罚 * 简单奖励)
+  double _recallStability(double s, double d, double r, FsrsRating rating) {
+    final double hardPenalty = (rating == FsrsRating.hard) ? w[15] : 1.0;
+    final double easyBonus = (rating == FsrsRating.easy) ? w[16] : 1.0;
+
+    return s *
+        (1 +
+            exp(w[8]) *
+                (11 - d) *
+                pow(s, -w[9]) *
+                (exp((1 - r) * w[10]) - 1) *
+                hardPenalty *
+                easyBonus);
+  }
+
+  /// 当天重复评分（FSRS-5 新增）S' = S * e^(w17 * (G - 3 + w18))
+  /// G=3 与 G=4 稳定上升、G=1 与 G=2 稳定下降，取代了旧版"重设回初始稳定性"的做法
+  double _shortTermStability(double s, FsrsRating rating) =>
+      s * exp(w[17] * (rating.value - 3 + w[18]));
+
+  /// 难度更新（FSRS-5）：线性阻尼 ΔD*(10-D)/9，再向 D0(4) 均值回归，系数 w7
+  double _nextDifficulty(double d, FsrsRating rating) {
+    final double delta = -w[6] * (rating.value - 3);
+    final double damped = d + (10 - d) * delta / 9;
+    final double meanReversion =
+        w[7] * _initialDifficulty(FsrsRating.easy) + (1 - w[7]) * damped;
+    return meanReversion.clamp(1.0, 10.0);
+  }
+
+  /// 首次评分难度（FSRS-5）D0(G) = w4 - e^(w5*(G-1)) + 1，w4 即 D0(1)
+  double _initialDifficulty(FsrsRating rating) =>
+      (w[4] - exp(w[5] * (rating.value - 1)) + 1).clamp(1.0, 10.0);
+
+  /// 可提取性 R(t,S) = (1 + FACTOR * t / S)^DECAY
+  double _retrievability(double s, int elapsedDays) =>
+      pow(1 + _factor * elapsedDays / s, _decay).toDouble();
+
+  /// 下次复习间隔：反解 R(t,S) = requestRetention
   int _calculateInterval(double stability) {
-    assert(stability.isFinite, 'FSRS _calculateInterval: stability 为无穷大或 NaN');
+    assert(stability.isFinite && stability > 0, 'FSRS _calculateInterval: stability 异常: $stability');
     assert(requestRetention > 0 && requestRetention < 1, 'FSRS: requestRetention 必须在 (0, 1) 之间');
-    
-    // interval = S * (ln(retention) / ln(0.9))
-    // 对于默认 retention=0.9, interval = S
-    double interval = stability * (log(requestRetention) / log(0.9));
-    return max(1, interval.round());
-  }
 
-  double _meanReversion(double init, double current) {
-    return 0.05 * init + 0.95 * current;
+    double interval = stability / _factor * (pow(requestRetention, 1 / _decay) - 1);
+    return max(1, interval.round());
   }
 }
 

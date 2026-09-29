@@ -1004,10 +1004,10 @@ class StudyBo {
       await saveWrongWord(currWord, db, user, now);
     }
 
-    // FSRS 逻辑：学习事件（当天重设）与复习事件（跨天单次信号）区分
+    // FSRS 逻辑：当天重复评分（短期记忆）与跨天复习（长期记忆）区分
     // - 新词首次评分（stability 空/0）：init
-    // - 当天非首次评分（学习轨道巩固 / 复习轨道重测）：relearn 重设（可升可降）
-    // - 跨天首次评分（复习词测评 / 学一半词次日检验）：next 复习公式
+    // - 当天非首次评分（学习轨道巩固 / 复习轨道重测）：next(..., 0) 短期公式（可升可降）
+    // - 跨天首次评分（复习词测评 / 学一半词次日检验）：next(..., elapsedDays) 长期公式
     FSRSItem? nextFsrs;
     if (isGraded) {
       final fsrs = FSRS();
@@ -1016,7 +1016,7 @@ class StudyBo {
            Global.logger.w('发现存量数据 stability 为 0.0, wordId: ${currWord.wordId}, 将视同新词执行 init');
         }
         // 新词首次评分；若已是当天最后一个评分环节，直接转 review/relearning，
-        // 与 relearn 分支的 state 判据对称（防止学完的词次日被"学一半"判定误抓）
+        // 与同日评分分支的 state 判据对称（防止学完的词次日被"学一半"判定误抓）
         nextFsrs = fsrs.init(fsrsRating,
             nextState: allStepsCompletedForWord
                 ? (fsrsRating == FsrsRating.again ? FsrsState.relearning : FsrsState.review)
@@ -1035,15 +1035,16 @@ class StudyBo {
         final bool isSameDayToday = currWord.lastLearningDate != null &&
             DateUtils.isSameBusinessDay(currWord.lastLearningDate!, AppClock.today());
         if (isSameDayToday) {
-          // 学习/重测事件：重设稳定性与难度。state 判据：本次提交后是否还有评分环节
+          // 当天重复评分：elapsedDays = 0 → FSRS-5 短期记忆公式。
+          // state 判据：本次提交后是否还有评分环节
           //（评分环节 = 轨道中 List 之外的环节；List 恒为末位且不评分，
           //  故 allStepsCompletedForWord 语义为"最后一个评分环节已提交"，见 getWord）。
-          nextFsrs = fsrs.relearn(currentFsrs, fsrsRating,
+          nextFsrs = fsrs.next(currentFsrs, fsrsRating, 0,
               nextState: allStepsCompletedForWord
                   ? (fsrsRating == FsrsRating.again ? FsrsState.relearning : FsrsState.review)
                   : FsrsState.learning);
         } else {
-          // 复习事件：每天一次的复习信号
+          // 跨天复习事件：每天一次的复习信号
           int elapsedDays = 0;
           if (currWord.lastLearningDate != null) {
             final lastDate = DateUtils.businessDate(currWord.lastLearningDate!);
