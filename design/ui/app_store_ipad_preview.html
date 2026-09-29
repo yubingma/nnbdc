@@ -487,10 +487,12 @@
     }
     .ios-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: auto; }
     .ios-push { margin-top: auto; }
+    /* 主操作：品牌橙实心 + 暖色漫射微影，替代压在浅屏上的黑色重块 */
     .ios-btn {
-      margin-top: 22px; background: #0F172A; color: #FFFFFF; border-radius: 20px;
+      margin-top: 22px; background: #EA580C; color: #FFFFFF; border-radius: 20px;
       padding: 22px; display: flex; align-items: center; justify-content: center;
-      gap: 12px; font-size: 19px; font-weight: 700;
+      gap: 12px; font-size: 19px; font-weight: 600;
+      box-shadow: 0 18px 36px -22px rgba(194, 65, 12, 0.95);
     }
     .ios-wave { display: flex; align-items: center; gap: 7px; height: 46px; }
     .ios-wave i { width: 6px; border-radius: 4px; background: #F97316; }
@@ -503,8 +505,8 @@
       background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px;
     }
     .ios-icon-btn.primary {
-      background: #0F172A; border-color: #0F172A; color: #FFFFFF; flex: 2;
-      box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.35);
+      background: #EA580C; border-color: #EA580C; color: #FFFFFF; flex: 2;
+      box-shadow: 0 14px 28px -16px rgba(194, 65, 12, 0.95);
     }
     .ios-pad {
       margin-top: 22px; flex: 1; background: #FFFFFF;
@@ -1000,7 +1002,7 @@
                   </div>
                 </div>
 
-                <div class="ios-btn" style="background: #0F172A; box-shadow: 0 10px 24px -8px rgba(15, 23, 42, 0.4);">
+                <div class="ios-btn">
                   <span>立即导入并生成 FSRS 计划</span>
                 </div>
               </div>
