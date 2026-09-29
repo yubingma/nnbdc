@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -549,6 +549,64 @@ void main() {
     expect(state.isWordMastered, false); // 核心保护性断言
 
     await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('BdcNotifier - 答错的词不缓存答题态：重练时不得直接显示上一轮的答案', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    final answeredWordId = container.read(bdcNotifierProvider).word!.id!;
+
+    // 测评答错（等价于选错、看完详情页后点「下一词」）
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+    final state = container.read(bdcNotifierProvider);
+
+    expect(state.wordUIStates.containsKey(answeredWordId), false,
+        reason: '答错的词会留在本环节重练，不得留下"已答完"的 UI 状态缓存，'
+            '否则重练时 _restoreWordState 会把上一轮揭晓的答案原样恢复出来');
+    expect(state.hasFinishedAnswering, false,
+        reason: '重练应重新开始作答，而不是显示上一轮揭晓的答案');
+    expect(state.selectedAnswerIndex, null);
+  });
+
+  test('BdcNotifier - 测评答错重练时仍提供测评结果参考（不因 stepIndex 仍为 0 而丢失）', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 测评首次作答前：今天还没测过，无参考值
+    expect(container.read(bdcNotifierProvider).assessmentRating, isNull);
+
+    // 测评答错 → 留在测评环节循环重练
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+    final state = container.read(bdcNotifierProvider);
+
+    expect(state.currentGetWordResult!.stepIndex, 0, reason: '仍在测评环节重练');
+    expect(state.assessmentRating, FsrsRating.again,
+        reason: '该词今天已经测过一次（首答答错），重练时应当能看到测评结果');
   });
 
   test('BdcNotifier - 英中模式说出半数/全部意思，部分说对播放正确提示音但未通过', () async {

@@ -575,6 +575,18 @@
         <td>未新增字段</td>
         <td>不需要错词队列、不需要新表字段，也不产生端云同步的表结构变更</td>
       </tr>
+      <tr>
+        <td><strong>实施后修正</strong>：重练时直接显示答案</td>
+        <td>用户实测反馈"答错的词再次出现时直接显示了答案，我点下一词后才隐藏起来开始做题"。根因有两层：
+        ① 答错时把该词"已答完"的 UI 状态（选项高亮、答案已揭晓、<code>hasFinishedAnswering</code>）写进了
+        <code>wordUIStates</code>；② 初版清除逻辑清的是<strong>本次返回的下一个词</strong> —— 而错词已排到本环节队尾，
+        两者根本不是同一个词，等于没清。已改为：答错的词<strong>从源头就不缓存</strong>，并清掉它此前留下的条目。
+        这同时切断了 <code>handleWord</code> 里从 <code>wordUIStates</code> 回灌"已揭示释义"的第二条恢复路径</td>
+      </tr>
+      <tr>
+        <td>回归测试有效性</td>
+        <td>新增 <code>BdcNotifier - 答错的词不缓存答题态</code>；并已用"临时回退到旧行为"实测确认该用例<strong>会失败</strong>，不是假绿</td>
+      </tr>
     </tbody>
   </table>
 </section>

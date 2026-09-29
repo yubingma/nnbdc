@@ -681,15 +681,15 @@ class BdcNotifier extends _$BdcNotifier {
     sentenceAnswerController.text = ""; // 新单词重置例句答案区
     _isPracticeMode = false; // 新单词/新环节重置练习模式
 
-    // 测评后的加测/巩固环节，以"当天测评首条评分"作为评分修正对话框的参考值；
-    // 首环节（stepIndex 0）本次作答即测评，参考值暂空。
-    final bool isFollowUpStep =
-        getWordResult.stepIndex > 0 && trackResult.todayFirstLogRating != null;
-    final FsrsRating? followUpAssessment = isFollowUpStep
-        ? FsrsRatingExt.fromInt(trackResult.todayFirstLogRating!)
-        : null;
+    // 以"当天测评首条评分"作为测评结果参考值（评分修正对话框也用它）。
+    // 判据是"今天是否已经测过这个词"，而不是 stepIndex > 0 —— 测评答错的词会留在
+    // 测评环节循环重练（stepIndex 仍为 0），但它今天确实已经测过一次，
+    // 用户应当能看到测评结果，而不是信息凭空消失。
+    final int? todayFirstRating = trackResult.todayFirstLogRating;
+    final FsrsRating? followUpAssessment =
+        todayFirstRating == null ? null : FsrsRatingExt.fromInt(todayFirstRating);
     final int? followUpAssessmentDays =
-        isFollowUpStep ? trackResult.todayFirstLogScheduledDays : null;
+        todayFirstRating == null ? null : trackResult.todayFirstLogScheduledDays;
 
     state = state.copyWith(
       currentGetWordResult: getWordResult,
@@ -1637,7 +1637,21 @@ class BdcNotifier extends _$BdcNotifier {
     final totalStopwatch = Stopwatch()..start();
     debugPrint('🕵️ [AudioDiag] getNextWord.enter | gotoNext=$gotoNext fastPath=$fastPath word=${state.word?.spell}');
 
-    _saveCurrentWordState();
+    if (fsrsRating == FsrsRating.again) {
+      // 答错的词会留在本环节循环重练（BO 不推进环节索引，它会在本环节队尾再次出现）。
+      // 它此刻"已答完"的 UI 状态若被缓存下来，等它重练时 _restoreWordState 会原样恢复
+      //（选项高亮、答案已揭晓、hasFinishedAnswering=true），用户得再点一次「下一词」
+      // 才能真正开始作答。因此在源头就不缓存，并清掉它此前留下的条目。
+      // 注意清的是**刚答错的这个词**，不是本次返回的下一个词 —— 错词已排到队尾，两者不同。
+      final answeredWordId = state.word?.id;
+      if (answeredWordId != null && state.wordUIStates.containsKey(answeredWordId)) {
+        final cleared = Map<String, WordUIState>.from(state.wordUIStates)
+          ..remove(answeredWordId);
+        state = state.copyWith(wordUIStates: cleared);
+      }
+    } else {
+      _saveCurrentWordState();
+    }
     _playToken++; // 取消任何待执行的自动播放延迟 callback
 
     // 同步立即置位状态与锁，UI 按钮立即禁用，在任何 await 前彻底阻断后续并发与重复触发
@@ -1762,17 +1776,6 @@ class BdcNotifier extends _$BdcNotifier {
       
       if (result.success && result.data != null) {
         state = state.copyWith(loadError: null, learningGetWordResult: result.data);
-        // 答错的词会在本环节循环重练（BO 不推进环节索引，会再次返回同一词同一环节）。
-        // 必须作废它的答题状态缓存，否则 handleWord 会恢复上一轮的"已答完"状态
-        //（选项高亮、答案已揭晓），重练就没法重新作答。
-        if (fsrsRating == FsrsRating.again) {
-          final retryWordId = result.data!.learningWord?.word.id;
-          if (retryWordId != null && state.wordUIStates.containsKey(retryWordId)) {
-            final cleared = Map<String, WordUIState>.from(state.wordUIStates)
-              ..remove(retryWordId);
-            state = state.copyWith(wordUIStates: cleared);
-          }
-        }
         final handleStopwatch = Stopwatch()..start();
         final success = await handleWord(result.data, isFromBatchWordList: isFromBatchWordList);
         Global.logger.d('[PERF] getNextWord -> handleWord cost: ${handleStopwatch.elapsedMilliseconds}ms');

@@ -2115,8 +2115,11 @@ extension BdcPageStateUIComponents on BdcPageState {
     final bool hasFinishedOrPractice = state.hasFinishedAnswering ||
         (state.isPracticeMode && state.lastFsrsRating != null);
     if (!hasFinishedOrPractice || state.fsrsItem == null) {
+      // stepIndex > 0 为巩固/加测环节；测评环节答错重练时 stepIndex 仍为 0，
+      // 但该词今天已经测过（assessmentRating 有值），同样要展示测评结果。
       if (state.currentGetWordResult != null &&
-          state.currentGetWordResult!.stepIndex > 0 &&
+          (state.currentGetWordResult!.stepIndex > 0 ||
+              state.assessmentRating != null) &&
           state.wordWrapper?.word.id != null) {
         return FutureBuilder<List<LearningLog>>(
           future: notifier.learningHistoryFuture,
