@@ -422,6 +422,16 @@
         <td>批次完成判定</td>
         <td>复用 <code>isTodayFinished</code>：因索引只在答对时推进，"本环节全过"自动等价于"没有词卡在该索引上"，无需新增判定</td>
       </tr>
+      <tr>
+        <td class="num">9</td>
+        <td><code>bdc_dialogs.dart</code> 小结待办排序</td>
+        <td>第二轮核查发现：小结对话框另有一份<strong>独立的批次排序比较器</strong>，需同步"错词队尾"规则，否则小节提示的"下一个待办"与学习页实际出题顺序不符</td>
+      </tr>
+      <tr>
+        <td class="num">10</td>
+        <td><code>learning_service.dart</code> "今天是否学过"判据</td>
+        <td>计划削减（<code>shrinkTodayWords</code>）与计划重排（<code>updateTodayLearningWords</code>）统一改用<strong>今天的评分日志</strong>判定；<code>todayLearnedTimes</code> 与 <code>lastLearningDate</code> 都不可靠（前者对答错的词仍为 0，后者可能被历史版本预写）。否则答错卡住的词会被当成"未学"移出今日计划</td>
+      </tr>
     </tbody>
   </table>
   <div class="callout note">
@@ -551,11 +561,15 @@
       </tr>
       <tr>
         <td>实施范围</td>
-        <td><code>study_bo.dart</code>（推进/计分/选组/调度）、<code>study_track.dart</code>（首答判定）、<code>learning_service.dart</code>（新词标记门控）、<code>bdc_notifier.dart</code>（答题态复位）</td>
+        <td><code>study_bo.dart</code>（推进/计分/选组/调度）、<code>study_track.dart</code>（首答判定）、<code>learning_service.dart</code>（新词标记门控、计划削减判据）、<code>bdc_notifier.dart</code>（答题态复位）、<code>bdc_dialogs.dart</code>（小结待办排序）</td>
       </tr>
       <tr>
         <td>测试</td>
-        <td>新增 <code>app/test/wrong_word_loop_retry_test.dart</code>（8 例）；同步更新 <code>study_bo_test</code>、<code>batch_phase_order_test</code>、<code>bdc_notifier_test</code>、<code>learning_workflow_integration_test</code> 中基于旧行为（答错也推进）的断言</td>
+        <td>新增 <code>app/test/wrong_word_loop_retry_test.dart</code>（9 例）；同步更新 <code>study_bo_test</code>、<code>batch_phase_order_test</code>、<code>bdc_notifier_test</code>、<code>learning_workflow_integration_test</code> 中基于旧行为（答错也推进）的断言。全量 897 通过 / 0 失败</td>
+      </tr>
+      <tr>
+        <td>旁路逻辑核查结论</td>
+        <td>跨天残留检测（<code>hasTodayProgressBefore</code>）有日期判据兜底、跨天重置按 <code>batchId &gt; 0</code> 命中，均不受影响；历史模式改评分是<strong>替换</strong>最近一条日志而非新增，不影响日志条数口径；小节格子的"已走过"绿色判定在新行为下反而更准确</td>
       </tr>
       <tr>
         <td>未新增字段</td>

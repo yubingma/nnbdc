@@ -278,6 +278,25 @@ void main() {
     expect(res.data!.learningWord!.word.id, 'word_2');
   });
 
+  test('答错卡住的词不会被削减计划当作"未学"移出今日列表', () async {
+    await addWord('word_2', 2);
+    await addWord('word_3', 3);
+    StudyCacheManager().clear();
+
+    // word_1 测评答错 → 留在本环节重练，今日进度仍为 0
+    await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
+    expect((await wordOf('word_1')).todayLearnedTimes, 0);
+
+    // 把计划量从 3 削减到 2：只该剔掉真正没学过的 word_3
+    final words = await (db.select(db.learningWords)
+          ..where((w) => w.userId.equals(testUser.id)))
+        .get();
+    final shrunk = await LearningService.shrinkTodayWords(testUser.id, words, 2);
+
+    expect(shrunk.map((w) => w.wordId).toList(), ['word_1', 'word_2'],
+        reason: '今天已作答过的词（含答错待重练、进度仍为 0）不得被当作未学移除');
+  });
+
   test('初始状态：环节索引 0 为测评 En2Ch', () async {
     final result = await studyBo.getWord(false, false);
     expect(result.success, true);

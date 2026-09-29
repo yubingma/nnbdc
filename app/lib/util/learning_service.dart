@@ -522,6 +522,21 @@ class LearningService {
   }
 
   /// 削减今日学习单词（当用户调低每日单词量时）
+  /// 今天已产生评分日志的单词 id 集合（= 今天真正作答过的词，含答错后待重练的）。
+  ///
+  /// 判定"今天是否学过这个词"不能用 todayLearnedTimes —— 答错的词今日进度可能仍为 0
+  /// （要留在本环节重练到答对才推进）；也不宜用 lastLearningDate —— 它可能被历史版本
+  /// 在分配计划时预写过。以评分日志为准最可靠。
+  static Future<Set<String>> _todayRatedWordIds(String userId) async {
+    final db = MyDatabase.instance;
+    final rows = await (db.selectOnly(db.learningLogs)
+          ..addColumns([db.learningLogs.wordId])
+          ..where(db.learningLogs.userId.equals(userId) &
+              db.learningLogs.createTime.isBiggerOrEqualValue(AppClock.today())))
+        .get();
+    return rows.map((r) => r.read(db.learningLogs.wordId)!).toSet();
+  }
+
   static Future<List<LearningWord>> shrinkTodayWords(String userId, List<LearningWord> todayWords, int targetCount) async {
     final db = MyDatabase.instance;
 
@@ -529,13 +544,12 @@ class LearningService {
     final extraWords = todayWords.where((w) => w.isExtra).toList();
     final planWords = todayWords.where((w) => !w.isExtra).toList();
 
-    // 1. 甄别哪些单词是可以被移除的（今天还没开始学的计划词）
-    //    注意：答错的词今日进度可能仍为 0（本环节要重练到答对才推进），但它今天确实已经
-    //    学过，不能当作"未学"移出今日计划 —— 否则用户正卡着重练的词会突然消失。
+    // 1. 甄别哪些单词是可以被移除的（今天还没开始学的计划词）。
+    //    今天已作答过的词（含答错待重练、今日进度仍为 0 的）不能被当作"未学"移除，
+    //    否则用户正卡着重练的词会突然从今日计划里消失。
+    final ratedWordIds = await _todayRatedWordIds(userId);
     bool learnedToday(LearningWord w) =>
-        w.todayLearnedTimes > 0 ||
-        (w.lastLearningDate != null &&
-            DateUtils.isSameBusinessDay(w.lastLearningDate!, AppClock.today()));
+        w.todayLearnedTimes > 0 || ratedWordIds.contains(w.wordId);
     List<LearningWord> untaughtWords = planWords.where((w) => !learnedToday(w)).toList();
     List<LearningWord> learnedWords = planWords.where(learnedToday).toList();
 
@@ -600,6 +614,10 @@ class LearningService {
     final db = MyDatabase.instance;
     if (todayLearningWords.isEmpty) return;
 
+    final userId = Global.getLoggedInUser()?.id;
+    final ratedWordIds =
+        userId == null ? <String>{} : await _todayRatedWordIds(userId);
+
     // 断言：如果今日尚未开始学习，虽然有了计划，但每个计划中单词的今日学习次数必为零
     if (Global.getLoggedInUser()?.todayStudyStarted == false) {
       for (var word in todayLearningWords) {
@@ -656,11 +674,8 @@ class LearningService {
           // 否则如果白天学过了一次，learnedTimes 变为了 1，这里会导致标记被重置为 false，导致进度统计错误。
           // 只有"今天还没学过这个词"时才重算 isTodayNewWord：答错的词今日进度可能仍为 0
           //（本环节要循环重练到答对才推进），但它今天确实已经学过，绝不能据此把新词
-          // 误判成复习词，导致当天轨道中途漂移。
-          final bool learnedToday = learningWord.lastLearningDate != null &&
-              DateUtils.isSameBusinessDay(
-                  learningWord.lastLearningDate!, AppClock.today());
-          if (!learnedToday) {
+          // 误判成复习词，导致当天轨道中途漂移。以评分日志为准（见 _todayRatedWordIds）。
+          if (!ratedWordIds.contains(learningWord.wordId)) {
             // 判断是否为今日新词：从未学习过（learnedTimes == 0）且没有 FSRS 进度 (lastLearningDate == null)
             bool shouldBeNewWord = learningWord.learnedTimes == 0 && learningWord.lastLearningDate == null;
             if (learningWord.isTodayNewWord != shouldBeNewWord) {
