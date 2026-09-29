@@ -17,7 +17,6 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/level_util.dart';
 
 import 'package:nnbdc/util/utils.dart';
-import 'package:nnbdc/constants.dart';
 
 import '../../services/throttled_sync_service.dart';
 import 'package:nnbdc/util/local_embedding_cache.dart';
@@ -1573,8 +1572,10 @@ class WordBo {
     final nowDate = DateUtils.businessDate(now);
 
     // 获取所有正在学习中的单词 (即：尚未毕业的候选人)
+    // 掌握口径单一真理来源 = 已掌握词书成员（见下方 masteredWordIds 过滤）；
+    // 不再用 stability < 掌握线 作代理，否则「取消掌握」或刚下调掌握线的词会被排除出候选 = 隐身
     var allLearningWords = await (db.select(db.learningWords)
-          ..where((lw) => lw.userId.equals(userId) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability))))
+          ..where((lw) => lw.userId.equals(userId)))
         .get();
 
     // 排除已掌握的单词（防御：防止已掌握单词的学习记录残留导致在阶段复习列表中反复出现）
@@ -1937,13 +1938,13 @@ class WordBo {
     return (
       joins: 'LEFT JOIN dict_words m ON m.dict_id = ? AND m.word_id = dw.word_id '
           'LEFT JOIN learning_words l ON l.user_id = ? AND l.word_id = dw.word_id '
-          'AND (l.stability IS NULL OR l.stability < ?)',
+          'AND NOT EXISTS (SELECT 1 FROM dict_words mw WHERE mw.dict_id = ? AND mw.word_id = l.word_id)',
       condition: _buildStatusCondition(statusFilter),
       vars: [
         // 没有「已掌握」词书时用不可能命中的空 id，保证 mastered 恒为 0 而不是漏判
         Variable.withString(masteredDict?.id ?? ''),
         Variable.withString(userId),
-        Variable.withReal(Constants.graduationStability),
+        Variable.withString(masteredDict?.id ?? ''),
       ],
     );
   }
@@ -1982,12 +1983,12 @@ class WordBo {
       'FROM dict_words dw '
       'LEFT JOIN dict_words m ON m.dict_id = ? AND m.word_id = dw.word_id '
       'LEFT JOIN learning_words l ON l.user_id = ? AND l.word_id = dw.word_id '
-      'AND (l.stability IS NULL OR l.stability < ?) '
+      'AND NOT EXISTS (SELECT 1 FROM dict_words mw WHERE mw.dict_id = ? AND mw.word_id = l.word_id) '
       'WHERE dw.dict_id = ?',
       variables: [
         Variable.withString(masteredDict?.id ?? ''),
         Variable.withString(userId),
-        Variable.withReal(Constants.graduationStability),
+        Variable.withString(masteredDict?.id ?? ''),
         Variable.withString(dictId),
       ],
     ).getSingle();
@@ -1997,10 +1998,37 @@ class WordBo {
     return WordStatusCounts(unlearned: total - mastered - learning, learning: learning, mastered: mastered);
   }
 
+  /// 取消掌握（选项②：真正从零重学）
+  ///
+  /// 除了移出「已掌握」词书（DAO 内还会把词放进生词本），必须同时把 learning_words
+  /// 的记忆状态重置为“新词”——否则用户以为在重学，FSRS 仍带着毕业时的 stability
+  /// 按稀疏节奏排期，属于假学习。重置后 stability/difficulty 为 null，
+  /// 今日计划会走 init 路径从头开始，毕业线也重新爬。
   Future<Result> deleteMasteredWord(String userId, String wordId) async {
-    await MyDatabase.instance.masteredWordsDao.deleteMasteredWord(userId, wordId, true, true);
-    final result = Result<dynamic>('200', null, true);
-    return result;
+    final db = MyDatabase.instance;
+    await db.masteredWordsDao.deleteMasteredWord(userId, wordId, true, true);
+
+    final lw = await (db.select(db.learningWords)
+          ..where((t) => t.userId.equals(userId) & t.wordId.equals(wordId)))
+        .getSingleOrNull();
+    if (lw != null) {
+      await db.learningWordsDao.saveEntity(
+        lw.copyWith(
+          stability: const Value(null),
+          difficulty: const Value(null),
+          elapsedDays: const Value(null),
+          scheduledDays: const Value(null),
+          reps: const Value(0),
+          lapses: const Value(0),
+          state: const Value(0), // 0 = New
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          lastLearningDate: const Value(null),
+        ),
+        true, // 生成同步日志，端云一致
+      );
+    }
+    return Result<dynamic>('200', null, true);
   }
 
   Future<Result<int>> getDictWordOrder(String dictId, String spell,

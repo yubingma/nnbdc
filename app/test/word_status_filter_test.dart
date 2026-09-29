@@ -103,7 +103,7 @@ void main() {
   group('词书三态筛选（SQL 下推）', () {
     /// 五个单词覆盖三态与边界：
     /// w1 未学习 / w2 学习中(有记录) / w3 已掌握(在「已掌握」词书) /
-    /// w4 有学习记录但稳定性已过毕业阈值且不在已掌握词书 → 按现有口径算"未学习" /
+    /// w4 有学习记录但不在已掌握词书 → 新口径算"学习中"（掌握只认已掌握词书） /
     /// w5 学习中(记录存在但未评分)
     Future<void> seed() async {
       await db.into(db.users).insert(User(
@@ -165,10 +165,10 @@ void main() {
       return page.total;
     }
 
-    test('三态数量与判定口径一致（稳定性过阈值但未入已掌握词书算未学习）', () async {
+    test('三态数量与判定口径一致（掌握=已掌握词书成员；有学习记录即学习中）', () async {
       final counts = await WordBo().getDictWordStatusCounts('dict_main', userId);
-      expect(counts.unlearned, 2, reason: 'w1 无记录；w4 记录已毕业但不在已掌握词书');
-      expect(counts.learning, 2, reason: 'w2 有记录；w5 已取词未评分');
+      expect(counts.unlearned, 1, reason: 'w1 无学习记录');
+      expect(counts.learning, 3, reason: 'w2/w4/w5 均有学习记录（有记录即学习中，不看 stability）');
       expect(counts.mastered, 1, reason: 'w3 在「已掌握」词书内');
       expect(counts.total, 5, reason: '三态之和必须等于词书总词数');
     });
@@ -177,11 +177,11 @@ void main() {
       WordStatusFilter only(WordLearningStatus status) =>
           WordStatusFilter.fromCode(status.code);
 
-      expect(await pageSpells(only(WordLearningStatus.unlearned)), ['zebra', 'ant']);
-      expect(await totalOf(only(WordLearningStatus.unlearned)), 2);
+      expect(await pageSpells(only(WordLearningStatus.unlearned)), ['zebra']);
+      expect(await totalOf(only(WordLearningStatus.unlearned)), 1);
 
-      expect(await pageSpells(only(WordLearningStatus.learning)), ['bear', 'dog']);
-      expect(await totalOf(only(WordLearningStatus.learning)), 2);
+      expect(await pageSpells(only(WordLearningStatus.learning)), ['bear', 'ant', 'dog']);
+      expect(await totalOf(only(WordLearningStatus.learning)), 3);
 
       expect(await pageSpells(only(WordLearningStatus.mastered)), ['cat']);
       expect(await totalOf(only(WordLearningStatus.mastered)), 1);
@@ -194,7 +194,7 @@ void main() {
       expect(await totalOf(unlearnedAndLearning), 4);
 
       final masteredAndUnlearned = WordStatusFilter.fromCode('UNLEARNED,MASTERED');
-      expect(await pageSpells(masteredAndUnlearned), ['zebra', 'cat', 'ant']);
+      expect(await pageSpells(masteredAndUnlearned), ['zebra', 'cat']);
 
       expect(await pageSpells(WordStatusFilter.all), ['zebra', 'bear', 'cat', 'ant', 'dog']);
       expect(await totalOf(WordStatusFilter.all), 5);
@@ -210,7 +210,7 @@ void main() {
 
     test('字母序分支同样按筛选结果编号排序', () async {
       final filter = WordStatusFilter.fromCode('UNLEARNED');
-      expect(await pageSpells(filter, sortAlg: 'ALPHABETICAL'), ['ant', 'zebra']);
+      expect(await pageSpells(filter, sortAlg: 'ALPHABETICAL'), ['zebra']);
     });
 
     test('getDictWordOrder 返回筛选视图内的序号（0 基），被筛掉返回 -1', () async {
@@ -225,7 +225,8 @@ void main() {
 
       final unlearned = WordStatusFilter.fromCode('UNLEARNED');
       expect(await orderOf('zebra', unlearned), 0);
-      expect(await orderOf('ant', unlearned), 1);
+      expect(await orderOf('ant', unlearned), -1,
+          reason: 'w4 有学习记录 → 新口径属"学习中"，在"只看未学习"视图内不可见');
       expect(await orderOf('ant', WordStatusFilter.all), 3);
       expect(await orderOf('cat', unlearned), -1, reason: '已掌握的词在"只看未学习"下不可见');
 

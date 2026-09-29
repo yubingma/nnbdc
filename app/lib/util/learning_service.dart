@@ -103,9 +103,12 @@ class LearningService {
                 );
           }
 
-          // 2. 清理相关联表 (在此处集中处理)
-          await db.learningWordsDao.deleteMasteredLearningWords(user.id); // 删除已掌握的学习中单词
-          await db.learningWordsDao.deleteMasteredWords(user.id); // 删除已经在 mastered_words 表中的学习单词
+          // 2. 清理相关联表
+          // 【已移除】原来这里按 stability >= 掌握线 删除 learning_words 记录
+          //   （deleteMasteredLearningWords / deleteMasteredWords）。掌握口径已统一为
+          //   「已掌握词书」成员后，越线但未入词书的词属于正常学习中，按阈值删除会在
+          //   每夜静默抹掉它们的记忆历史（正好拆掉"回到学习中"的修复）。已掌握词的排除
+          //   由候选池按已掌握记录集完成，不再需要这个清理。
           // 注意：不再清空用户错词(userWrongWords)，让错词在错题本中长期沉淀形成“历史错词”
           // 清空旧的阶段复习书签，防止跨天数据污染
           await db.bookmarksDao.deleteBatchWordListBookmarks(user.id);
@@ -288,8 +291,12 @@ class LearningService {
     final int targetTotal = targetTotalWords ?? user.effectiveWordsPerDay;
 
     // 获取所有正在学习中的单词 (即：尚未毕业的候选人)
+    // 掌握口径单一真理来源 = 用户已掌握记录：这里只按 userId 取全部学习记录，
+    // 是否已掌握交给下方 masteredWordIds 过滤。绝不再用 stability < 掌握线 作代理，
+    // 否则 S 高于线但无掌握记录的词（如刚下调掌握线后的存量、或用户点过「取消掌握」）
+    // 会被排除出候选池，永远排不进今日计划 = 永久隐身。
     final allLearningWords = await (db.select(db.learningWords)
-          ..where((lw) => lw.userId.equals(userId) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability))))
+          ..where((lw) => lw.userId.equals(userId)))
         .get();
 
     // 排除今天已经选取要学的单词 AND 已掌握的单词（防御：防止已掌握单词的学习记录残留导致每日重复出现）

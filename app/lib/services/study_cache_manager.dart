@@ -1,5 +1,4 @@
 import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/constants.dart';
 import 'package:drift/drift.dart';
 
 class StudyCacheManager {
@@ -75,7 +74,8 @@ class StudyCacheManager {
     }
 
     // 3. 同步维护 ID 集合缓存
-    final isGraduated = updatedWord.stability != null && updatedWord.stability! >= Constants.graduationStability;
+    // 掌握口径单一真理来源 = 已掌握词书成员集合，不再拿 stability 阈值当代理
+    final isGraduated = _cachedMasteredWordIds?.contains(updatedWord.wordId) ?? false;
     if (isGraduated) {
       _cachedMasteredWordIds?.add(updatedWord.wordId);
       _cachedLearningWordIds?.remove(updatedWord.wordId);

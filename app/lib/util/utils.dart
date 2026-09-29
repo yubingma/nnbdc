@@ -564,44 +564,39 @@ class Util {
     for (final seg in segments) {
       if (seg.isBold) {
         if (maskHighlightWord) {
-          // 盖住的效果：精致圆角遮罩胶囊，点击有触觉反馈并揭开显示
+          final fontSize = baseStyle.fontSize ?? 13.5;
+          final charCount = seg.text.length.clamp(1, 8);
+          final maskWidth = fontSize * charCount + 10.0;
+          final maskHeight = fontSize * 1.35;
+
+          // 盖住的效果：精致倾斜斑马线（Diagonal Stripes）遮罩，点击有触觉反馈并揭开显示
           spans.add(
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: GestureDetector(
+                  key: const Key('masked_sentence_word_zebra'),
                   onTap: () {
                     HapticFeedback.lightImpact();
                     onToggleMask?.call();
                   },
                   behavior: HitTestBehavior.opaque,
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.12)
-                          : Colors.black.withValues(alpha: 0.07),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: isDarkMode
-                            ? Colors.white.withValues(alpha: 0.18)
-                            : Colors.black.withValues(alpha: 0.12),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Text(
-                      List.filled(seg.text.length.clamp(1, 4), '•').join(' '),
-                      style: TextStyle(
-                        fontFamily: 'NotoSansSC',
-                        fontSize: (baseStyle.fontSize ?? 14) * 0.9,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode
-                            ? const Color(0xFF94A3B8)
-                            : const Color(0xFF64748B),
-                        letterSpacing: 1.0,
-                        height: 1.1,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: maskWidth,
+                    height: maskHeight,
+                    child: CustomPaint(
+                      painter: _ZebraStripesPainter(
+                        backgroundColor: isDarkMode
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFFF1F5F9),
+                        stripeColor: isDarkMode
+                            ? const Color(0xFF475569)
+                            : const Color(0xFFCBD5E1),
+                        borderColor: isDarkMode
+                            ? const Color(0xFF64748B).withValues(alpha: 0.5)
+                            : const Color(0xFF94A3B8).withValues(alpha: 0.5),
                       ),
                     ),
                   ),

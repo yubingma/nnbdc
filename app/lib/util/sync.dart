@@ -152,7 +152,8 @@ int getTableSyncPriority(String tableName) {
       return 4; // learningDicts依赖dicts
     case 'learningWords':
       return 5;
-    case 'masteredWords': // 已废弃，但保留case以避免unknown table warning
+    case 'masteredWords': // 历史遗留：mastered_words 表已删，掌握记录现在存放在「已掌握」词书(dicts+dict_words)；
+                        // 保留此 case 仅为吞掉老客户端同步日志、避免 unknown table warning
       return 5;
     case 'userWrongWords':
       return 5;

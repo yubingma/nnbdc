@@ -764,7 +764,8 @@ class MyDatabase extends _$MyDatabase {
   }
 
   /// 从版本 12 升级到版本 13：删除 learning_dicts 表中的 current_word_id 和 current_word_seq 字段
-  /// 这两个字段已废弃，进度改为基于 learning_words 和 mastered_words 表动态计算
+  /// 这两个字段已废弃：进度以 learning_words 与「已掌握」词书（dicts + dict_words）为准
+  /// 注意：mastered_words 表已在 v19→v20 迁移中删除，不要再用它做判定
   Future<void> _migrateFromV12ToV13RemoveLearningPositionFields() async {
     await transaction(() async {
       try {

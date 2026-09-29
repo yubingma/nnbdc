@@ -1,14 +1,14 @@
 import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/date_utils.dart';
 
 /// LearningWord 实体类的扩展方法，封装全部关于已掌握和进度判定细节的逻辑推导。
 extension LearningWordProgressExtension on LearningWord {
   /// 1. 判定单词是否已经有效掌握 / 已毕业
   bool isEffectivelyMastered(Set<String> masteredWordIds) {
-    if (masteredWordIds.contains(wordId)) return true;
-    if (stability != null && stability! >= Constants.graduationStability) return true;
-    return false;
+    // 掌握口径单一真理来源 = 用户已掌握记录（可增可删的用户词书）。
+    // 不再用 stability >= 掌握线作代理判定：否则「取消掌握」后 S 仍高于线，
+    // 词会既不在学习中库也不在已掌握列表，永久隐身。
+    return masteredWordIds.contains(wordId);
   }
 
   /// 2. 获取单词在今日贡献的已完成步骤数
