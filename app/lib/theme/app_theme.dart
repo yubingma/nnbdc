@@ -497,6 +497,15 @@ class AppTheme {
         selectedItemColor: cfg.primaryColor,
         unselectedItemColor: cfg.isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
       ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: SnappyPageTransitionsBuilder(),
+          TargetPlatform.iOS: SnappyPageTransitionsBuilder(),
+          TargetPlatform.macOS: SnappyPageTransitionsBuilder(),
+          TargetPlatform.windows: SnappyPageTransitionsBuilder(),
+          TargetPlatform.linux: SnappyPageTransitionsBuilder(),
+        },
+      ),
     );
   }
 

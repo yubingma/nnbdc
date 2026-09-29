@@ -65,7 +65,11 @@ void main() {
   });
 
   /// 造一个停在 v51、且已有一条用户数据的库
-  void seedV51Fixture() {
+  ///
+  /// [duplicateMasteredDicts] 为 true 时额外插两本同名「已掌握」词书：
+  /// DictsDao.findUserMasteredDict 撞到这种核心数据异常会直接抛错，
+  /// 用于验证 56→57 的修复抛异常时不会把整个迁移推进"删库重建"。
+  void seedV51Fixture({bool duplicateMasteredDicts = false}) {
     final raw = sqlite3.open(dbFile.path);
     raw.execute(_v51UsersDdl);
     raw.execute(_v51LearningWordsDdl);
@@ -102,6 +106,15 @@ void main() {
       'create_time, update_time) '
       "VALUES ('u1', 'dupw', 1, 1767225600, 1, 1, 1, 5.8, 2.4, 0, 0, 1767225600, 1767225600)",
     );
+    if (duplicateMasteredDicts) {
+      for (final id in ['dict-mastered-1', 'dict-mastered-2']) {
+        raw.execute(
+          'INSERT INTO dicts (id, is_ready, is_shared, name, word_count, owner_id, visible, '
+          'editable, deletable, create_time, update_time) '
+          "VALUES ('$id', 1, 0, '已掌握', 0, 'u1', 1, 0, 1, 1, 1)",
+        );
+      }
+    }
     raw.execute('PRAGMA user_version = 51');
     raw.dispose();
   }
@@ -181,6 +194,38 @@ void main() {
         containsAll(['DELETE|learningLogs|log-dup', 'UPDATE|learningWords|u1-dupw']),
       );
 
+      final version = await db.customSelect('PRAGMA user_version').getSingle();
+      expect(version.data.values.first, 57);
+    } finally {
+      await db.close();
+      MyDatabase.setInstanceForTesting(null);
+    }
+  });
+
+  test('v56 → v57: 修复自身抛异常时不得删库重建, 且版本照常推进到 57', () async {
+    // 同一用户两本同名「已掌握」词书 → DictsDao.findUserMasteredDict 抛「核心数据异常」，
+    // 而该查询正好发生在修复删掉重复日志之后。若异常冒泡到外层 catch，
+    // 整库会被删光重建 —— 一次纯清理把用户本地数据全部抹掉，这个代价不可接受。
+    seedV51Fixture(duplicateMasteredDicts: true);
+
+    final db = MyDatabase(NativeDatabase(dbFile));
+    MyDatabase.setInstanceForTesting(db);
+    try {
+      final user = await db.usersDao.getUserById('u1');
+      expect(user, isNotNull, reason: '修复失败绝不能触发删库重建');
+      expect(user!.masteredWordsCount, 1000);
+
+      // 两本「已掌握」词书还在（删库重建会连它们一起清掉）
+      expect((await db.select(db.dicts).get()).length, 2);
+
+      // 修复在删完重复日志之后才失败 → 整个修复事务回滚：日志、记忆字段、同步日志都原样保留
+      final logs = await (db.select(db.learningLogs)..where((l) => l.wordId.equals('dupw'))).get();
+      expect(logs.map((l) => l.id), containsAll(['log-real', 'log-dup']));
+      final word = await db.learningWordsDao.getById('u1', 'dupw');
+      expect(word!.stability, 5.8, reason: '回填必须随事务一起回滚');
+      expect(await db.select(db.userDbLogs).get(), isEmpty, reason: '同步日志必须随事务一起回滚');
+
+      // 修复失败也要推进版本，否则每次启动都会重跑同一个必失败的迁移
       final version = await db.customSelect('PRAGMA user_version').getSingle();
       expect(version.data.values.first, 57);
     } finally {

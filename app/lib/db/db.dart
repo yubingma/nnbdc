@@ -450,8 +450,21 @@ class MyDatabase extends _$MyDatabase {
           }
           // 从版本 56 升级到版本 57：一次性清理"同一次作答被重复计分"的历史脏数据
           // （learning_logs 去重 + learning_words 记忆字段回填，幂等；迁移天然每台设备只跑一次）
+          //
+          // 这里必须单独吃掉异常：外层 catch 的兜底是"删库重建"，而本步只是清理历史脏数据，
+          // 修复失败最多损失这一次清理，绝不能让它把用户的本地数据整个抹掉。
+          // 取舍：失败也要把版本推进到 57（版本由 schemaVersion 统一推进），避免每次启动
+          // 重复执行同一个必失败的迁移；该修复是幂等纯清理，漏做不影响数据完整性。
           if (from < 57) {
-            await LearningLogRepair.repairDuplicateLearningLogs(this);
+            try {
+              await LearningLogRepair.repairDuplicateLearningLogs(this);
+            } catch (e, stackTrace) {
+              Global.logger.e(
+                '⚠️ [迁移 56→57] 重复计分修复失败，跳过本次清理并继续迁移: $e',
+                error: e,
+                stackTrace: stackTrace,
+              );
+            }
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
