@@ -464,6 +464,11 @@ class MyDatabase extends _$MyDatabase {
                 error: e,
                 stackTrace: stackTrace,
               );
+              // 失败会静默跳过清理，必须上报，否则线上无从知道有多少设备没修上
+              AnalyticsUtil.trackEvent('learning_log_repair_failed', {
+                'stage': 'migration_56_57',
+                'error': '$e',
+              });
             }
           }
         } catch (e, stackTrace) {

@@ -2790,10 +2790,10 @@ class BdcNotifier extends _$BdcNotifier {
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
-      // 若触发了毕业掌握动效，留出适当时间(550ms)让用户欣赏胶囊破茧飞入掌握按钮并吸收；
+      // 若触发了毕业掌握动效，留出适当时间(350ms)让用户欣赏胶囊破茧飞入掌握按钮并吸收；
       // 普通答对时，中英模式发音已播完直接跳转(0ms)，其他模式保留原有延迟(1000ms)。
       final jumpDelayMs = isMasteredGraduated
-          ? 550
+          ? 350
           : ((state.studyStep == StudyStep.ch2En.json ||
                   state.studyStep == StudyStep.chSentence2En.json)
               ? 0

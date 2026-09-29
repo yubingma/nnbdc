@@ -100,13 +100,13 @@ class _FlyTrajectoryState extends State<_FlyTrajectory>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 620),
+      duration: const Duration(milliseconds: 380),
       vsync: this,
     );
 
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOutCubic,
+      curve: Curves.easeOutCubic,
     );
 
     _controller.forward().then((_) {

@@ -593,3 +593,55 @@ class AppTheme {
     );
   }
 }
+
+/// 现代极简快转场构建器：
+/// 告别原生 Material 大幅度慢速深推长拉与厚重缩放，
+/// 采用微幅位移（4% 水平偏置）结合轻量优雅淡入，
+/// 配合强爆发力曲线在 180~200ms 内瞬间到位，营造极致轻快与高端贴手质感。
+class SnappyPageTransitionsBuilder extends PageTransitionsBuilder {
+  const SnappyPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    // 进场动画：前 65% 的进度（约 195ms）就已彻底完成淡入和位移，极其爽利
+    final entryCurved = CurvedAnimation(
+      parent: animation,
+      curve: const Interval(0.0, 0.65, curve: Curves.easeOutCubic),
+      reverseCurve: const Interval(0.35, 1.0, curve: Curves.easeInCubic),
+    );
+
+    // 次级出场动画（当前页面被新页面盖住时的微弱退后与微暗淡出，避免突兀）
+    final exitCurved = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: const Interval(0.0, 0.65, curve: Curves.easeOutCubic),
+      reverseCurve: const Interval(0.35, 1.0, curve: Curves.easeInCubic),
+    );
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: Offset.zero,
+        end: const Offset(-0.03, 0.0), // 被覆盖时微退 3%
+      ).animate(exitCurved),
+      child: FadeTransition(
+        opacity: Tween<double>(begin: 1.0, end: 0.85).animate(exitCurved),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.04, 0.0), // 新页面从右微偏 4% 极速滑入
+            end: Offset.zero,
+          ).animate(entryCurved),
+          child: FadeTransition(
+            opacity: entryCurved,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+

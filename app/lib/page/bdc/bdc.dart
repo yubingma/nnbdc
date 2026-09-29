@@ -301,7 +301,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     );
 
     _questionCollapseController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 120),
       vsync: this,
     );
     _questionCollapseScaleAnimation = Tween<double>(begin: 1.0, end: 0.02).animate(
@@ -318,7 +318,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     );
 
     _masteredButtonScaleController = AnimationController(
-      duration: const Duration(milliseconds: 260),
+      duration: const Duration(milliseconds: 180),
       vsync: this,
     );
     _masteredButtonScaleAnimation = TweenSequence<double>([
@@ -388,13 +388,13 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       },
     );
 
-    // 第三阶段：等待胶囊飞离中心一段距离后（260ms），平滑复原题目区以迎接新内容
-    await Future.delayed(const Duration(milliseconds: 260));
+    // 第三阶段：等待胶囊飞离中心一段距离后（150ms），平滑复原题目区以迎接新内容
+    await Future.delayed(const Duration(milliseconds: 150));
     if (mounted) {
       _questionCollapseController.reset();
     }
     // 等待飞行动效抵达目标完成吸收（超时安全保护兜底）
-    await completer.future.timeout(const Duration(milliseconds: 400), onTimeout: () {});
+    await completer.future.timeout(const Duration(milliseconds: 280), onTimeout: () {});
   }
 
   /// 首次进入学习页时展示新手引导：只讲「你说，我来听」这一件事，
