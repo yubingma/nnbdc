@@ -41,6 +41,15 @@
             "flutterMode": "debug"
         },
         {
+            "name": "App-android-honor",
+            "request": "launch",
+            "type": "dart",
+            "program": "${workspaceFolder}/app/lib/main.dart",
+            "deviceId": "A4RY023A27009413",
+            "args": [],
+            "flutterMode": "debug"
+        },
+        {
             "name": "App-iphone-simulator",
             "request": "launch",
             "type": "dart",
