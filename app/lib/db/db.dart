@@ -10,6 +10,7 @@ import 'package:nnbdc/db/dao.dart';
 import 'package:nnbdc/db/table.dart';
 import 'package:nnbdc/db/shared.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/learning_log_repair.dart';
 import 'package:nnbdc/util/toast_util.dart';
 
 part 'db.g.dart';
@@ -265,7 +266,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 56;
+  int get schemaVersion => 57;
 
   @override
   MigrationStrategy get migration {
@@ -446,6 +447,11 @@ class MyDatabase extends _$MyDatabase {
           // 从版本 55 升级到版本 56：words 增加「深度讲解」的中文译文列
           if (from < 56) {
             await m.addColumn(words, words.shortDescCn);
+          }
+          // 从版本 56 升级到版本 57：一次性清理"同一次作答被重复计分"的历史脏数据
+          // （learning_logs 去重 + learning_words 记忆字段回填，幂等；迁移天然每台设备只跑一次）
+          if (from < 57) {
+            await LearningLogRepair.repairDuplicateLearningLogs(this);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志

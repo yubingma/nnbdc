@@ -35,6 +35,22 @@ const String _v51WordsDdl = r'''
 CREATE TABLE "words" ("id" TEXT NOT NULL, "america_pronounce" TEXT NULL, "british_pronounce" TEXT NULL, "group_info" TEXT NULL, "long_desc" TEXT NULL, "popularity" INTEGER NOT NULL, "pronounce" TEXT NULL, "short_desc" TEXT NULL, "spell" TEXT NOT NULL, "embedding_1bit" BLOB NULL, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"))
 ''';
 
+/// v51 的 learning_logs / user_db_logs / dicts 建表语句，同样取自随包发布的母版库
+/// （这三张表自 v51 起未被任何迁移改动）。
+/// v56 → v57 迁移要跨用户扫 learning_logs 去重、回填 learning_words，
+/// 并为删除/回填写同步日志（user_db_logs）、查「已掌握」词书（dicts），缺任一张都会触发删库重建。
+const String _v51LearningLogsDdl = r'''
+CREATE TABLE IF NOT EXISTS "learning_logs" ("id" TEXT NOT NULL, "user_id" TEXT NOT NULL, "word_id" TEXT NOT NULL, "rating" INTEGER NOT NULL, "stability" REAL NOT NULL, "difficulty" REAL NOT NULL, "elapsed_days" INTEGER NOT NULL, "scheduled_days" INTEGER NOT NULL, "create_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"))
+''';
+
+const String _v51UserDbLogsDdl = r'''
+CREATE TABLE IF NOT EXISTS "user_db_logs" ("id" TEXT NOT NULL, "operate" TEXT NOT NULL, "record_id" TEXT NOT NULL, "record" TEXT NOT NULL, "tbl_name" TEXT NOT NULL, "user_id" TEXT NOT NULL, "version" INTEGER NOT NULL, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"))
+''';
+
+const String _v51DictsDdl = r'''
+CREATE TABLE IF NOT EXISTS "dicts" ("id" TEXT NOT NULL, "is_ready" INTEGER NOT NULL CHECK ("is_ready" IN (0, 1)), "is_shared" INTEGER NOT NULL CHECK ("is_shared" IN (0, 1)), "name" TEXT NOT NULL, "word_count" INTEGER NOT NULL, "owner_id" TEXT NOT NULL DEFAULT '15118', "visible" INTEGER NOT NULL CHECK ("visible" IN (0, 1)), "editable" INTEGER NOT NULL DEFAULT 0 CHECK ("editable" IN (0, 1)), "deletable" INTEGER NOT NULL DEFAULT 1 CHECK ("deletable" IN (0, 1)), "popularity_limit" INTEGER NULL, "domain" TEXT NULL, "base_dict_id" TEXT NULL, "cover_url" TEXT NULL, "sort_alg" TEXT NULL, "description" TEXT NULL, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"))
+''';
+
 void main() {
   late Directory tempDir;
   late File dbFile;
@@ -55,6 +71,9 @@ void main() {
     raw.execute(_v51LearningWordsDdl);
     raw.execute(_v51CigensDdl);
     raw.execute(_v51WordsDdl);
+    raw.execute(_v51LearningLogsDdl);
+    raw.execute(_v51UserDbLogsDdl);
+    raw.execute(_v51DictsDdl);
     raw.execute(
       "INSERT INTO words (id, spell, popularity, short_desc, create_time, update_time) "
       "VALUES ('w1', 'defect', 5, 'A flaw in something is a defect.', 1, 1)",
@@ -65,6 +84,24 @@ void main() {
       'continuous_daka_day_count, max_continuous_daka_day_count, create_time, update_time) '
       "VALUES ('u1', 'tester', 0, 0, 10, 20, 5, 1000, 0, 0, 3, 21, 1, 1)",
     );
+    // v56 → v57 修复夹具：真实首次作答（stability 57.0）+ 30ms 后的重复日志（同一秒），
+    // learning_words 已被重复那条污染成 5.8/2.4/0/0
+    raw.execute(
+      'INSERT INTO learning_logs (id, user_id, word_id, rating, stability, difficulty, '
+      'elapsed_days, scheduled_days, create_time, update_time) '
+      "VALUES ('log-real', 'u1', 'dupw', 3, 57.0, 7.0, 3, 15, 1767225600, 1767225600)",
+    );
+    raw.execute(
+      'INSERT INTO learning_logs (id, user_id, word_id, rating, stability, difficulty, '
+      'elapsed_days, scheduled_days, create_time, update_time) '
+      "VALUES ('log-dup', 'u1', 'dupw', 3, 5.8, 2.4, 0, 0, 1767225600, 1767225600)",
+    );
+    raw.execute(
+      'INSERT INTO learning_words (user_id, word_id, add_day, add_time, learning_order, '
+      'is_today_new_word, learned_times, stability, difficulty, elapsed_days, scheduled_days, '
+      'create_time, update_time) '
+      "VALUES ('u1', 'dupw', 1, 1767225600, 1, 1, 1, 5.8, 2.4, 0, 0, 1767225600, 1767225600)",
+    );
     raw.execute('PRAGMA user_version = 51');
     raw.dispose();
   }
@@ -73,6 +110,8 @@ void main() {
     seedV51Fixture();
 
     final db = MyDatabase(NativeDatabase(dbFile));
+    // v56 → v57 的修复要用 DbLogUtil 写同步日志，而它依赖 MyDatabase.instance 单例
+    MyDatabase.setInstanceForTesting(db);
     try {
       // 用 drift 生成的 DAO 读取: 若迁移未执行, 这里会因缺列直接抛错
       final user = await db.usersDao.getUserById('u1');
@@ -121,10 +160,32 @@ void main() {
       expect(word!.shortDesc, 'A flaw in something is a defect.');
       expect(word.shortDescCn, isNull, reason: '新列对老数据应为空，等待服务端下发译文');
 
+      // v56 → v57: 同秒的重复日志被删除（只留最早那条），被污染的记忆字段按日志真值回填
+      final repairedLogs = await (db.select(db.learningLogs)
+            ..where((l) => l.userId.equals('u1'))
+            ..where((l) => l.wordId.equals('dupw')))
+          .get();
+      expect(repairedLogs.map((l) => l.id), ['log-real']);
+      expect(repairedLogs.single.stability, 57.0);
+      final repairedWord = await db.learningWordsDao.getById('u1', 'dupw');
+      expect(repairedWord, isNotNull);
+      expect(repairedWord!.stability, 57.0);
+      expect(repairedWord.difficulty, 7.0);
+      expect(repairedWord.elapsedDays, 3);
+      expect(repairedWord.scheduledDays, 15);
+
+      // 删除/回填都要留下待同步日志，服务端据此自动收敛
+      final syncLogs = await db.select(db.userDbLogs).get();
+      expect(
+        syncLogs.map((l) => '${l.operate}|${l.tblName}|${l.recordId}'),
+        containsAll(['DELETE|learningLogs|log-dup', 'UPDATE|learningWords|u1-dupw']),
+      );
+
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 56);
+      expect(version.data.values.first, 57);
     } finally {
       await db.close();
+      MyDatabase.setInstanceForTesting(null);
     }
   });
 }
