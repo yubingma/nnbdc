@@ -153,12 +153,12 @@ void main() {
         ),
       );
 
-      // 验证未揭开前显示圆点遮罩而非明文“苹果”
-      expect(find.text('• •'), findsOneWidget);
+      // 验证未揭开前显示倾斜斑马线遮罩而非明文“苹果”
+      expect(find.byKey(const Key('masked_sentence_word_zebra')), findsOneWidget);
       expect(find.text('苹果'), findsNothing);
 
       // 点击遮罩
-      await tester.tap(find.text('• •'));
+      await tester.tap(find.byKey(const Key('masked_sentence_word_zebra')));
       await tester.pumpAndSettle();
       expect(toggled, isTrue);
     });

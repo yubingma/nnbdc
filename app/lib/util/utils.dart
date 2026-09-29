@@ -1462,3 +1462,62 @@ class _WordSearchBottomSheetContentState extends State<_WordSearchBottomSheetCon
     );
   }
 }
+
+/// 倾斜斑马线（Diagonal Stripes）绘制器，用于例句释义遮盖等微交互场景。
+class _ZebraStripesPainter extends CustomPainter {
+  static const double stripeWidth = 3.5;
+  static const double stripeSpacing = 4.0;
+
+  final Color backgroundColor;
+  final Color stripeColor;
+  final Color borderColor;
+
+  const _ZebraStripesPainter({
+    required this.backgroundColor,
+    required this.stripeColor,
+    required this.borderColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(3.5));
+
+    // 1. 绘制底色
+    final bgPaint = Paint()..color = backgroundColor;
+    canvas.drawRRect(rrect, bgPaint);
+
+    // 2. 剪裁圆角矩形区域，绘制 45 度斜斑马线
+    canvas.save();
+    canvas.clipRRect(rrect);
+
+    final stripePaint = Paint()
+      ..color = stripeColor
+      ..strokeWidth = stripeWidth
+      ..style = PaintingStyle.stroke;
+
+    final step = stripeWidth + stripeSpacing;
+    for (double x = -size.height; x < size.width + size.height; x += step) {
+      canvas.drawLine(
+        Offset(x, size.height),
+        Offset(x + size.height, 0),
+        stripePaint,
+      );
+    }
+    canvas.restore();
+
+    // 3. 绘制细腻微边框
+    final borderPaint = Paint()
+      ..color = borderColor
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
+    canvas.drawRRect(rrect, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ZebraStripesPainter oldDelegate) {
+    return oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.stripeColor != stripeColor ||
+        oldDelegate.borderColor != borderColor;
+  }
+}

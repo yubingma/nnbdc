@@ -232,7 +232,8 @@ void main() {
 
       final alphabetical = await WordBo().getDictWordOrder('dict_main', 'zebra',
           sortAlg: 'ALPHABETICAL', statusFilter: unlearned, userId: userId);
-      expect(alphabetical.data! - 1, 1);
+      // 新口径下"只看未学习"仅剩 zebra（w4 属学习中），字母序首位 = 0 基 0
+      expect(alphabetical.data! - 1, 0);
     });
   });
 }
