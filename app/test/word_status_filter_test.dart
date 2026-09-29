@@ -4,6 +4,7 @@ import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/word_status_filter.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -234,6 +235,34 @@ void main() {
           sortAlg: 'ALPHABETICAL', statusFilter: unlearned, userId: userId);
       // 新口径下"只看未学习"仅剩 zebra（w4 属学习中），字母序首位 = 0 基 0
       expect(alphabetical.data! - 1, 0);
+    });
+
+    test('取消掌握（选项②）后 learning_words 被重置为新词，而非带着旧强度装样子', () async {
+      // w3 本来就在「已掌握」词书里；再给它补一条"已毕业"的学习记录（哨兵 stability=120）
+      await _insertLearningWord(db, now, userId, 'w3', stability: 120);
+
+      await WordBo().deleteMasteredWord(userId, 'w3');
+
+      final after = await (db.select(db.learningWords)
+            ..where((t) => t.userId.equals(userId))
+            ..where((t) => t.wordId.equals('w3')))
+          .getSingleOrNull();
+      expect(after == null, isTrue,
+          reason: '取消掌握必须清掉毕业留下的学习记录；否则带着 stability=120 装样子 = 假重学');
+    });
+
+    test('isEffectivelyMastered 只认已掌握记录：S=150 但无记录 ⇒ 仍算学习中', () async {
+      // w4 有学习记录且 stability=150（超过掌握线 120），但不在「已掌握」词书里
+      await _insertLearningWord(db, now, userId, 'w4', stability: 150);
+      final lw = await (db.select(db.learningWords)
+            ..where((t) => t.userId.equals(userId))
+            ..where((t) => t.wordId.equals('w4')))
+          .getSingle();
+
+      expect(lw.isEffectivelyMastered(<String>{}), isFalse,
+          reason: '掌握只认已掌握词书成员；再用 stability>=掌握线 当代理会让这类词隐身');
+      expect(lw.isEffectivelyMastered(<String>{'w4'}), isTrue,
+          reason: '进了已掌握词书才算掌握');
     });
 
   });

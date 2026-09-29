@@ -2012,21 +2012,12 @@ class WordBo {
           ..where((t) => t.userId.equals(userId) & t.wordId.equals(wordId)))
         .getSingleOrNull();
     if (lw != null) {
-      await db.learningWordsDao.saveEntity(
-        lw.copyWith(
-          stability: const Value(null),
-          difficulty: const Value(null),
-          elapsedDays: const Value(null),
-          scheduledDays: const Value(null),
-          reps: const Value(0),
-          lapses: const Value(0),
-          state: const Value(0), // 0 = New
-          learnedTimes: 0,
-          todayLearnedTimes: 0,
-          lastLearningDate: const Value(null),
-        ),
-        true, // 生成同步日志，端云一致
-      );
+      // 直接删除毕业留下的学习记录：
+      // 1) drift 的 saveEntity(entity) 走 nullToAbsent，Value(null) 会被当作"不修改"静默丢弃，
+      //    所以"把字段置 null"根本无效（上一版就是这么失效的）；
+      // 2) 删除即"未学习"，词已在生词本里，重新学习时会走 init 从零开始 —— 与 _saveMasteredWord
+      //    在规划期删除记录的行为对称。
+      await db.learningWordsDao.deleteEntity(lw, true); // true = 生成同步日志，端云一致
     }
     return Result<dynamic>('200', null, true);
   }
