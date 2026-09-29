@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-palette="ink" data-device="pure" data-banner="show" data-copy="a" data-aspect="apple">
+<html lang="zh-CN" data-device="pure" data-banner="show" data-copy="a" data-aspect="apple">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>泡泡单词 · 应用商店极简海报原型（深墨基调）</title>
+  <title>泡泡单词 · 应用商店极简海报原型（暖橙基调）</title>
   <style>
     /* ========================================================
        基础规范与跨平台原生现代字体栈（严格遵照规范，杜绝外链字体）
@@ -17,7 +17,7 @@
     }
 
     :root {
-      --bg-workspace: #0A0F0D;
+      --bg-workspace: #12100E;
       --card-radius: 44px;
       --phone-width: 324px;
       --phone-height: 692px;
@@ -38,7 +38,7 @@
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: rgba(14, 20, 17, 0.92);
+      background: rgba(26, 20, 15, 0.92);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -60,14 +60,14 @@
       width: 36px;
       height: 36px;
       border-radius: 11px;
-      background: linear-gradient(135deg, #10D09E, #059669);
+      background: linear-gradient(135deg, #FF8A3D, #EA580C);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 800;
       font-size: 17px;
       color: #FFFFFF;
-      box-shadow: 0 4px 14px rgba(16, 208, 158, 0.35);
+      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
     }
 
     .brand-title {
@@ -110,10 +110,10 @@
     }
 
     .tab-btn.active {
-      background: #10D09E;
-      color: #04261C;
+      background: #F97316;
+      color: #FFFFFF;
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(16, 208, 158, 0.4);
+      box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
     }
 
     .btn-action {
@@ -183,14 +183,14 @@
       box-shadow: 0 32px 75px -12px rgba(0, 0, 0, 0.65), 0 0 0 1.5px rgba(255, 255, 255, 0.2);
     }
 
-    /* 深墨基调：整张海报只有「墨底 + 纯白 + 一档品牌青绿」三色。
-       底色不再做双色相大跨度渐变（那会让 7 张海报一眼看去就是「商店模板」），
-       只在机身上方留一束品牌青绿微光，把屏幕从墨底里托起来。
-       屏幕是画面上唯一的亮面，彩色只允许出现在屏幕内部。 */
-    html[data-palette="ink"] .poster-card {
+    /* 暖橙基调：整张海报只有「日落橙底 + 纯白 + 一档品牌橙」三色。
+       底色取自「不背单词」那套商店图：左上偏亮、右下压深，只留两团极柔的光斑，
+       机身靠一圈白色细边与暖色投影从橙底里浮起来，屏幕是画面上唯一的冷色亮面。 */
+    .poster-card {
       background:
-        radial-gradient(118% 44% at 50% 41%, rgba(16, 208, 158, 0.22) 0%, rgba(16, 208, 158, 0) 70%),
-        linear-gradient(180deg, #0C1A17 0%, #08120F 58%, #050B0A 100%);
+        radial-gradient(96% 54% at 84% 6%, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 66%),
+        radial-gradient(86% 50% at 6% 96%, rgba(176, 60, 0, 0.26) 0%, rgba(176, 60, 0, 0) 62%),
+        linear-gradient(164deg, #FFB05F 0%, #FF9743 44%, #F4781F 100%);
     }
 
     /* ========================================================
@@ -215,15 +215,11 @@
 
     /* 词性胶囊与评测高亮 */
     .cixing-tag {
-      font-size: 10px;
-      font-weight: 800;
-      color: #059669;
-      background: #ECFDF5;
-      border: 1px solid #A7F3D0;
-      padding: 1.5px 6px;
-      border-radius: 4px;
-      margin-right: 5px;
-      display: inline-block;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #EA580C;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
     }
 
     /* 顶部文案容器：严格去除花哨标签，纯正 4+4 居中结构 */
@@ -237,7 +233,7 @@
       flex-shrink: 0;
     }
 
-    /* 主标题：纯白 w700。深墨底上不需要 w800 的算法描边，也不需要 2px+ 的字距，
+    /* 主标题：纯白 w700。橙底上不需要 w800 的算法描边，也不需要 2px+ 的字距，
        字距一旦拉开就变成「广告语」，收回来才是排版语言。 */
     .p-title {
       font-size: 31px;
@@ -254,7 +250,7 @@
       font-weight: 400;
       line-height: 1.35;
       letter-spacing: 0.4px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.86);
     }
 
     /* 手机展示台 */
@@ -283,12 +279,11 @@
       padding: 15px 28px;
       border-radius: 100px;
       background: #FFFFFF;
-      /* 白药丸在墨底上本就是最亮的一块，再加一圈品牌青绿细环与贴边光晕把它钉住；
-         光晕只给 18px 紧贴边缘，糊到 50px 会透过屏幕把整块白底染绿。 */
-      box-shadow: 
-        0 0 0 2px rgba(16, 208, 158, 0.85),
-        0 0 18px rgba(16, 208, 158, 0.45),
-        0 14px 30px -12px rgba(0, 0, 0, 0.55);
+      /* 白药丸是画面上唯一的纯白块。橙底上不需要任何彩色描边，
+         一圈贴边的暖褐柔影就够把它从机身与橙底之间托起来。 */
+      box-shadow:
+        0 14px 30px -14px rgba(124, 45, 18, 0.55),
+        0 2px 8px rgba(124, 45, 18, 0.10);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -312,7 +307,7 @@
       line-height: 1.2;
     }
     .banner-text .highlight {
-      color: #059669;
+      color: #EA580C;
       font-weight: 700;
     }
 
@@ -321,17 +316,16 @@
       display: none;
     }
 
-    /* 旗舰微框机身：深墨底上白机身是唯一的硬边亮面，靠柔影与品牌青绿微光浮起 */
+    /* 旗舰微框机身：橙底上白机身是唯一的硬边亮面，靠白色细边与暖色柔影浮起 */
     .device-chassis {
       width: var(--phone-width);
       height: var(--phone-height);
       border-radius: 46px;
       background: #FFFFFF;
       border: 4px solid #FFFFFF;
-      box-shadow: 
-        0 0 0 1px rgba(255, 255, 255, 0.10),
-        0 46px 90px -34px rgba(0, 0, 0, 0.92),
-        0 0 74px -6px rgba(16, 208, 158, 0.26);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.34),
+        0 40px 80px -34px rgba(124, 45, 18, 0.55);
       position: relative;
       overflow: hidden;
       display: flex;
@@ -389,7 +383,7 @@
     /* 屏幕内容区域 */
     .screen-body {
       flex: 1;
-      background: #FAFDFB;
+      background: #EDF4FA;
       color: #1F2937;
       display: flex;
       flex-direction: column;
@@ -408,7 +402,7 @@
        全屏只有中心意象图一处彩色（它就是主角），其余一律中性灰，避免与它抢色。 */
     .core-image-stage {
       flex: 1;
-      background: #FFFFFF;
+      background: #EDF4FA;
       padding: 14px 14px 12px;
       display: flex;
       flex-direction: column;
@@ -418,7 +412,7 @@
       align-items: baseline;
       gap: 6px;
       padding-bottom: 12px;
-      border-bottom: 1px solid #EDF1F0;
+      border-bottom: 1px solid #E6EDF4;
     }
     .ci-word {
       font-size: 23px;
@@ -433,13 +427,9 @@
     }
     .ci-tag {
       margin-left: auto;
-      font-size: 10px;
-      font-weight: 600;
-      color: #047857;
-      background: #ECFDF5;
-      border: 1px solid #A7F3D0;
-      padding: 2px 7px;
-      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: #EA580C;
       white-space: nowrap;
     }
 
@@ -459,7 +449,7 @@
     }
     /* 中心意象图：简笔画而非实拍图。图式本身是抽象的「动势」，
        一张写实照片会把它拉回「配图」；几笔线条才说得清「被压缩 → 向上弹涌」。
-       不套圆形容器，只垫一层极淡的品牌青绿光晕，让它有分量而不成块。 */
+       不套圆形容器，只垫一层极淡的品牌橙光晕，让它有分量而不成块。 */
     .ci-hub {
       position: absolute;
       left: 50%;
@@ -467,7 +457,7 @@
       transform: translate(-50%, -50%);
       width: 126px;
       height: 126px;
-      background: radial-gradient(circle at 50% 55%, rgba(16, 208, 158, 0.10) 0%, rgba(16, 208, 158, 0) 68%);
+      background: radial-gradient(circle at 50% 55%, rgba(249, 115, 22, 0.10) 0%, rgba(249, 115, 22, 0) 68%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -482,15 +472,13 @@
       left: 50%;
       bottom: -5px;
       transform: translateX(-50%);
-      font-size: 10px;
-      font-weight: 700;
-      color: #047857;
-      background: #FFFFFF;
-      border: 1px solid #A7F3D0;
-      padding: 2px 8px;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: #EA580C;
+      background: rgba(255, 255, 255, 0.86);
+      padding: 3px 9px;
       border-radius: 100px;
       white-space: nowrap;
-      box-shadow: 0 3px 8px -3px rgba(15, 23, 42, 0.22);
     }
 
     /* 释义节点：一词性 + 释义，下面一行灰字说明它由哪个动势引申而来 */
@@ -502,17 +490,17 @@
     .ci-node-head {
       display: flex;
       align-items: center;
-      gap: 3px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      border-radius: 8px;
-      padding: 4px 7px;
+      gap: 4px;
+      background: #FFFFFF;
+      border: 1px solid #E9EFF6;
+      border-radius: 9px;
+      padding: 5px 8px;
       white-space: nowrap;
     }
     .ci-pos {
       font-size: 9px;
       font-weight: 700;
-      color: #047857;
+      color: #C2410C;
     }
     .ci-meaning {
       font-size: 10.5px;
@@ -536,14 +524,14 @@
     .ci-footer {
       margin-top: auto;
       padding-top: 12px;
-      border-top: 1px solid #EDF1F0;
+      border-top: 1px solid #E6EDF4;
       font-size: 10.5px;
       color: #64748B;
       line-height: 1.5;
       text-align: center;
     }
     .ci-footer b {
-      color: #047857;
+      color: #C2410C;
       font-weight: 700;
     }
 
@@ -551,14 +539,14 @@
     .fsrs-stage {
       flex: 1;
       padding: 14px 14px 12px;
-      background: #FFFFFF;
+      background: #EDF4FA;
       display: flex;
       flex-direction: column;
       gap: 10px;
       color: #0F172A;
     }
     .fsrs-core-card {
-      background: #F8FAFC;
+      background: #FFFFFF;
       border: 1px solid #E2E8F0;
       border-radius: 14px;
       padding: 10px 12px;
@@ -571,35 +559,27 @@
       margin-bottom: 5px;
     }
     .fsrs-algo-badge {
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      padding: 2px 7px;
-      border-radius: 5px;
-      background: #059669;
-      color: #FFFFFF;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
+      color: #0F172A;
     }
     .fsrs-params-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .param-box {
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
-      border-radius: 8px;
-      padding: 5px 8px;
+      gap: 10px;
+      margin-top: 13px;
     }
     .param-title {
       font-size: 9.5px;
-      color: #64748B;
-      margin-bottom: 2px;
+      color: #94A3B8;
+      margin-bottom: 3px;
     }
     .param-val {
-      font-size: 16px;
-      font-weight: 800;
+      font-size: 17px;
+      font-weight: 700;
       color: #0F172A;
+      letter-spacing: -0.3px;
     }
     .fsrs-curve-card {
       background: #FFFFFF;
@@ -630,18 +610,17 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
-      margin-top: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #E6EDF4;
     }
     .rating-btn {
-      padding: 6px 4px;
-      border-radius: 8px;
       text-align: center;
-      border: 1px solid transparent;
     }
     .r-grade {
-      font-size: 11px;
-      font-weight: 700;
-      margin-bottom: 2px;
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-bottom: 3px;
     }
     .r-interval {
       font-size: 9px;
@@ -660,7 +639,7 @@
     .write-stage {
       flex: 1;
       padding: 14px 14px 12px;
-      background: #FAFAFA;
+      background: #EDF4FA;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -673,15 +652,15 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
     }
     .write-word-title {
-      font-size: 20px;
-      font-weight: 800;
+      font-size: 19px;
+      font-weight: 700;
       color: #111827;
-      letter-spacing: -0.3px;
+      letter-spacing: -0.4px;
     }
     .handwriting-pad {
       flex: 1;
       background: #FFFFFF;
-      border: 2px dashed #CBD5E1;
+      border: 1.5px dashed #DCE5EE;
       border-radius: 16px;
       position: relative;
       display: flex;
@@ -734,7 +713,7 @@
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: rgba(5, 150, 105, 0.55);
+      background: rgba(234, 88, 12, 0.55);
       filter: blur(3px);
       animation: touchPulse 1.8s infinite ease-in-out;
       z-index: 85;
@@ -748,17 +727,16 @@
     .sentence-trans-stage {
       flex: 1;
       padding: 12px 14px 14px 14px;
-      background: #FFFFFF;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
     .sentence-quiz-card {
-      background: #F9FAFB;
-      border: 1px solid #E5E7EB;
+      background: #FFFFFF;
+      border: 1px solid #E9EFF6;
       border-radius: 14px;
-      padding: 11px 12px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+      padding: 12px 14px;
+      box-shadow: 0 6px 18px -12px rgba(15, 23, 42, 0.28);
     }
     .sentence-en-text {
       font-size: 13.5px;
@@ -769,50 +747,28 @@
       margin-top: 4px;
     }
     .sentence-en-text .highlight-word {
-      color: #059669;
+      color: #EA580C;
       font-weight: 800;
       text-decoration: underline;
-      text-decoration-color: rgba(5, 150, 105, 0.35);
+      text-decoration-color: rgba(234, 88, 12, 0.35);
       text-underline-offset: 3px;
     }
     .sentence-asr-result-card {
-      background: #F0FDF4;
-      border: 1.5px solid #A7F3D0;
+      background: #FFFFFF;
+      border: 1px solid #E9EFF6;
       border-radius: 16px;
-      padding: 12px 13px;
+      padding: 13px 14px;
       margin-top: 38px; /* 完美避开中央大横幅遮挡 */
-      box-shadow: 0 4px 16px rgba(5, 150, 105, 0.08);
+      box-shadow: 0 6px 18px -12px rgba(15, 23, 42, 0.28);
       position: relative;
     }
     .user-speech-text {
       font-size: 13px;
-      font-weight: 700;
-      color: #064E3B;
+      font-weight: 600;
+      color: #0F172A;
       line-height: 1.5;
       letter-spacing: -0.1px;
-      margin-top: 7px;
-    }
-    .asr-live-dot {
-      width: 6.5px;
-      height: 6.5px;
-      border-radius: 50%;
-      background: #059669;
-      display: inline-block;
-      box-shadow: 0 0 0 2.5px rgba(5, 150, 105, 0.25);
-      animation: asrPulse 1.4s infinite ease-in-out;
-    }
-    @keyframes asrPulse {
-      0%, 100% { transform: scale(0.9); opacity: 0.6; }
-      50% { transform: scale(1.25); opacity: 1; }
-    }
-    .score-badge {
-      background: #059669;
-      color: #FFFFFF;
-      font-size: 10px;
-      font-weight: 800;
-      padding: 2.5px 8px;
-      border-radius: 100px;
-      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3);
+      margin-top: 8px;
     }
     .wave-bars {
       display: flex;
@@ -822,7 +778,7 @@
     }
     .wave-bar {
       width: 3.5px;
-      background: #10B981;
+      background: #F97316;
       border-radius: 3px;
     }
     .speak-action-btn {
@@ -843,7 +799,7 @@
     .excel-stage {
       flex: 1;
       padding: 16px;
-      background: #F8FAFC;
+      background: #EDF4FA;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -909,7 +865,7 @@
       <div class="brand-icon">泡</div>
       <div>
         <div class="brand-title">泡泡单词 · 应用商店极简海报</div>
-        <div class="brand-subtitle">深墨底 · 纯白屏 · 一档品牌青绿</div>
+        <div class="brand-subtitle">暖橙底 · 冰蓝屏 · 一档品牌橙</div>
       </div>
     </div>
 
@@ -964,83 +920,64 @@
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
                 <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#1F2937"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
               </div>
             </div>
 
             <div class="screen-body">
               <div class="sentence-trans-stage" style="padding: 14px 14px 12px; display: flex; flex-direction: column; justify-content: space-between;">
-                <!-- 顶部题型状态 -->
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">单词汉译英 · 主动提取</span>
-                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 15 / 20 词</span>
-                  </div>
+                <!-- 顶部题型状态：纯文字，不套药丸 -->
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <span style="font-size: 11.5px; color: #64748B; font-weight: 500; letter-spacing: 0.2px;">单词汉译英 · 主动提取</span>
+                  <span style="font-size: 10.5px; color: #94A3B8;">第 15 / 20 词</span>
                 </div>
 
                 <!-- 题目：经典极简中文释义卡片 -->
-                <div class="sentence-quiz-card" style="padding: 10px 12px; background: #F8FAFC; border-color: #E2E8F0; margin-top: 6px;">
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
+                <div class="sentence-quiz-card" style="margin-top: 12px;">
+                  <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                    <div style="display: flex; align-items: baseline; gap: 6px;">
                       <span class="cixing-tag">adj.</span>
-                      <span style="font-size: 14px; font-weight: 800; color: #0F172A;">短暂的；转瞬即逝的</span>
+                      <span style="font-size: 15px; font-weight: 600; color: #0F172A; letter-spacing: -0.2px;">短暂的；转瞬即逝的</span>
                     </div>
-                    <span style="font-size: 10.5px; color: #94A3B8;">💡 提示: e...</span>
+                    <span style="font-size: 10.5px; color: #94A3B8;">提示 e…</span>
                   </div>
                 </div>
 
                 <!-- 中央为悬浮横幅预留的纯净视觉通道（高度按横幅实际占位校准） -->
                 <div style="height: 91px;"></div>
 
-                <!-- 语音作答与智能裁判卡片 -->
-                <div class="sentence-asr-result-card" style="background: #ECFDF5; border-color: #A7F3D0; padding: 8px 12px 7px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                      <span class="asr-live-dot" style="background: #059669; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);"></span>
-                      <span style="font-size: 10px; color: #059669; font-weight: 700;">AI 智能判官 · 答案判定：</span>
-                    </div>
-                    <span class="score-badge" style="background: #059669; box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3); white-space: nowrap; font-size: 9.5px; padding: 2px 7px;">🎯 准确唤醒 · 吻合</span>
+                <!-- 判定结论与掌握里程碑合并成一张卡：一张面上只有一条发丝分割线 -->
+                <div class="sentence-asr-result-card">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <span style="font-size: 10.5px; color: #64748B; font-weight: 500;">AI 智能判官</span>
+                    <span style="font-size: 11px; color: #EA580C; font-weight: 600;">准确唤醒 · 吻合</span>
                   </div>
 
-                  <div style="margin: 4px 0 2px;">
-                    <div style="font-size: 19px; font-weight: 800; color: #047857; font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.2px;">
-                      ephemeral
+                  <div style="font-size: 21px; font-weight: 700; color: #0F172A; letter-spacing: -0.4px; margin-top: 8px;">ephemeral</div>
+                  <div style="font-size: 10.5px; color: #94A3B8; margin-top: 3px;">成功主动回忆 · 深度记忆神经元激活</div>
+
+                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px;">
+                    <div class="wave-bars" style="height: 16px;">
+                      <div class="wave-bar" style="height: 8px; background: #FB923C;"></div>
+                      <div class="wave-bar" style="height: 14px; background: #EA580C;"></div>
+                      <div class="wave-bar" style="height: 16px; background: #C2410C;"></div>
+                      <div class="wave-bar" style="height: 9px; background: #FB923C;"></div>
+                      <div class="wave-bar" style="height: 16px; background: #EA580C;"></div>
+                      <div class="wave-bar" style="height: 8px; background: #FB923C;"></div>
+                      <div class="wave-bar" style="height: 13px; background: #EA580C;"></div>
                     </div>
-                    <div style="font-size: 10px; color: #059669; font-weight: 600; font-family: ui-monospace, monospace; margin-top: 1px; white-space: nowrap;">
-                      ⚡ 成功主动回忆 · 深度记忆神经元激活
-                    </div>
+                    <span style="font-size: 10.5px; color: #64748B; white-space: nowrap;">哇，经过这么多天，你居然还记得！</span>
                   </div>
 
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #A7F3D0;">
-                    <div class="wave-bars" style="height: 18px;">
-                      <div class="wave-bar" style="height: 8px; background: #34D399;"></div>
-                      <div class="wave-bar" style="height: 14px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 18px; background: #047857;"></div>
-                      <div class="wave-bar" style="height: 10px; background: #34D399;"></div>
-                      <div class="wave-bar" style="height: 18px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 9px; background: #34D399;"></div>
-                      <div class="wave-bar" style="height: 14px; background: #059669;"></div>
+                  <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #E6EDF4;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                      <span style="font-size: 11.5px; color: #0F172A; font-weight: 600;">彻底掌握 · 进入长时记忆</span>
+                      <span style="font-size: 10px; color: #94A3B8;">历经 4 轮复习</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
-                      <span style="font-size: 10.2px; color: #047857; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，经过这么多天，你居然还记得！</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 深度记忆里程碑：正向成就归入品牌青绿，不再另起一个琥珀色相 -->
-                <div class="mastery-celebrate-card" style="background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 55%, #D1FAE5 100%); border: 1.5px solid #6EE7B7; border-radius: 12px; padding: 8px 11px 7px; margin-top: 4px;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
-                    <span style="font-size: 11px; font-weight: 700; color: #065F46; letter-spacing: -0.2px; white-space: nowrap;">彻底掌握 · 进入长时记忆</span>
-                    <span style="font-size: 9px; font-weight: 600; color: #047857; white-space: nowrap;">历经 4 轮复习</span>
-                  </div>
-                  <div style="font-size: 9.6px; color: #047857; line-height: 1.4;">
-                    <div>4 次主动回忆穿透遗忘曲线，这个词不会再忘了。</div>
-                    <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(5, 150, 105, 0.28); display: flex; align-items: baseline; justify-content: space-between;">
-                      <span style="font-weight: 600; white-space: nowrap;">累计深度掌握</span>
-                      <span style="font-weight: 600; white-space: nowrap;">
-                        <strong style="font-size: 11.5px; font-weight: 700; color: #065F46; font-family: ui-monospace, monospace;">1,280</strong> 词
-                      </span>
+                    <div style="font-size: 10px; color: #94A3B8; line-height: 1.5; margin-top: 5px;">4 次主动回忆穿透遗忘曲线，这个词不会再忘了。</div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px;">
+                      <span style="font-size: 10.5px; color: #64748B;">累计深度掌握</span>
+                      <span style="font-size: 10.5px; color: #64748B;"><strong style="font-size: 13.5px; font-weight: 700; color: #EA580C; font-family: ui-monospace, monospace;">1,280</strong> 词</span>
                     </div>
                   </div>
                 </div>
@@ -1077,74 +1014,61 @@
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
                 <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#1F2937"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
               </div>
             </div>
 
             <div class="screen-body">
               <div class="sentence-trans-stage">
                 <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">一词多义 · 语音速测</span>
-                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 12 / 20 词</span>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <span style="font-size: 11.5px; color: #64748B; font-weight: 500; letter-spacing: 0.2px;">一词多义 · 语音速测</span>
+                    <span style="font-size: 10.5px; color: #94A3B8;">第 12 / 20 词</span>
                   </div>
-                  <div style="font-size: 11.5px; color: #6B7280; margin-top: 6px;">看英文单词 · 语音说出多重释义</div>
+                  <div style="font-size: 11px; color: #94A3B8; margin-top: 6px;">看英文单词 · 语音说出多重释义</div>
                 </div>
 
                 <!-- 题目：核心英文单词（一词多义经典词 spring） -->
-                <div class="sentence-quiz-card" style="text-align: center; padding: 14px 14px 12px;">
-                  <div style="font-size: 28px; font-weight: 800; color: #111827; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
-                    spring
-                  </div>
-                  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 5px;">
-                    <span style="font-size: 13px; color: #6B7280; font-family: ui-monospace, monospace;">[sprɪŋ]</span>
-                    <div style="display: inline-flex; align-items: center; gap: 3px; color: #059669; font-size: 11px; font-weight: 700; background: #ECFDF5; border: 1px solid #D1FAE5; padding: 1px 6px; border-radius: 100px;">
+                <div class="sentence-quiz-card" style="text-align: center; padding: 20px 14px 18px;">
+                  <div style="font-size: 30px; font-weight: 700; color: #111827; letter-spacing: -0.8px;">spring</div>
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 7px;">
+                    <span style="font-size: 13px; color: #94A3B8; font-family: ui-monospace, monospace;">[sprɪŋ]</span>
+                    <span style="display: inline-flex; align-items: center; gap: 3px; color: #EA580C; font-size: 11px; font-weight: 500;">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
                       <span>美音</span>
-                    </div>
+                    </span>
                   </div>
-                  <div style="font-size: 11px; color: #6B7280; margin-top: 7px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                    <span style="color: #059669; font-weight: 700;">🎯 考纲 4 重核心释义：</span>
-                    <span style="color: #9CA3AF;">请说出该词所有含义</span>
+                  <div style="font-size: 11px; color: #94A3B8; margin-top: 11px;">
+                    考纲 <span style="color: #EA580C; font-weight: 600;">4 重核心释义</span> · 请说出该词所有含义
                   </div>
                 </div>
 
-                <!-- 语音作答与识别出的中文释义 -->
-                <div class="sentence-asr-result-card" style="padding: 10px 12px 9px; margin-top: 34px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                      <span class="asr-live-dot"></span>
-                      <span style="font-size: 10.5px; color: #059669; font-weight: 700;">实时语音识别：</span>
-                    </div>
-                    <span class="score-badge" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; font-weight: 800; white-space: nowrap; font-size: 10px; padding: 2px 8px;">🎯 4重释义全部命中</span>
+                <!-- 语音识别结果：一行灰字 + 一处橙字，含义改为一行纯文字，不再逐个套药丸 -->
+                <div class="sentence-asr-result-card" style="margin-top: 34px;">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <span style="font-size: 10.5px; color: #64748B; font-weight: 500;">实时语音识别</span>
+                    <span style="font-size: 11px; color: #EA580C; font-weight: 600;">4 重释义全部命中</span>
                   </div>
 
-                  <div class="user-speech-text" style="font-size: 13.5px; font-weight: 700; color: #065F46; margin: 6px 0 5px;">
+                  <div class="user-speech-text" style="font-size: 15px; font-weight: 600; margin-top: 9px;">
                     “春天、泉水、弹簧、跳跃”
                   </div>
 
-                  <!-- 4重释义一网打尽点亮标签 -->
-                  <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px;">
-                    <span style="font-size: 10px; font-weight: 700; color: #047857; background: #D1FAE5; border: 1px solid #6EE7B7; padding: 2px 6px; border-radius: 5px;">✓ n. 春天</span>
-                    <span style="font-size: 10px; font-weight: 700; color: #047857; background: #D1FAE5; border: 1px solid #6EE7B7; padding: 2px 6px; border-radius: 5px;">✓ n. 泉水</span>
-                    <span style="font-size: 10px; font-weight: 700; color: #047857; background: #D1FAE5; border: 1px solid #6EE7B7; padding: 2px 6px; border-radius: 5px;">✓ n. 弹簧</span>
-                    <span style="font-size: 10px; font-weight: 700; color: #047857; background: #D1FAE5; border: 1px solid #6EE7B7; padding: 2px 6px; border-radius: 5px;">✓ v. 跃起/跳跃</span>
+                  <div style="font-size: 11px; color: #EA580C; font-weight: 500; margin-top: 6px; letter-spacing: 0.1px;">
+                    n. 春天 · n. 泉水 · n. 弹簧 · v. 跃起 / 跳跃
                   </div>
 
-                  <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 6px; border-top: 1px dashed #A7F3D0;">
-                    <div class="wave-bars">
-                      <div class="wave-bar" style="height: 10px;"></div>
-                      <div class="wave-bar" style="height: 18px;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 14px;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 12px;"></div>
-                      <div class="wave-bar" style="height: 18px;"></div>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 13px;">
+                    <div class="wave-bars" style="height: 16px;">
+                      <div class="wave-bar" style="height: 9px;"></div>
+                      <div class="wave-bar" style="height: 16px;"></div>
+                      <div class="wave-bar" style="height: 10px; background: #EA580C;"></div>
+                      <div class="wave-bar" style="height: 16px;"></div>
+                      <div class="wave-bar" style="height: 12px; background: #EA580C;"></div>
+                      <div class="wave-bar" style="height: 8px;"></div>
+                      <div class="wave-bar" style="height: 13px;"></div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
-                      <span style="font-size: 10px; color: #047857; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，记得这么清楚，你是怎么做到的？</span>
-                    </div>
+                    <span style="font-size: 10.5px; color: #64748B; white-space: nowrap;">哇，记得这么清楚，你是怎么做到的？</span>
                   </div>
                 </div>
 
@@ -1180,25 +1104,25 @@
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
                 <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#1F2937"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
               </div>
             </div>
 
             <div class="screen-body">
               <div class="sentence-trans-stage">
                 <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 2px 8px; border-radius: 6px;">例句英译汉 · 语境口试</span>
-                    <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">第 8 / 20 句</span>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <span style="font-size: 11.5px; color: #64748B; font-weight: 500; letter-spacing: 0.2px;">例句英译汉 · 语境口试</span>
+                    <span style="font-size: 10.5px; color: #94A3B8;">第 8 / 20 句</span>
                   </div>
-                  <div style="font-size: 11.5px; color: #6B7280; margin-top: 6px;">看英文例句 · 语音说出中文意思</div>
+                  <div style="font-size: 11px; color: #94A3B8; margin-top: 6px;">看英文例句 · 语音说出中文意思</div>
                 </div>
 
                 <!-- 题目：经典英文例句 -->
                 <div class="sentence-quiz-card">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-size: 10px; color: #9CA3AF; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">English Sentence</span>
-                    <div style="display: flex; align-items: center; gap: 4px; color: #059669; font-size: 10.5px; font-weight: 600;">
+                    <span style="font-size: 10px; color: #B6C2CF; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">English Sentence</span>
+                    <div style="display: flex; align-items: center; gap: 4px; color: #EA580C; font-size: 10.5px; font-weight: 600;">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                       <span>标准美音</span>
                     </div>
@@ -1210,32 +1134,26 @@
 
                 <!-- 语音作答与识别出的中文翻译结果 -->
                 <div class="sentence-asr-result-card">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                      <span class="asr-live-dot"></span>
-                      <span style="font-size: 10.5px; color: #059669; font-weight: 700;">实时识别 · 你的口译：</span>
-                    </div>
-                    <span class="score-badge">👏 太准确了！</span>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <span style="font-size: 10.5px; color: #64748B; font-weight: 500;">实时识别 · 你的口译</span>
+                    <span style="font-size: 11px; color: #EA580C; font-weight: 600;">太准确了</span>
                   </div>
 
                   <div class="user-speech-text">
                     “真正的韧性不是从不跌倒，而是每次都能重新站起来。”
                   </div>
 
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 7px; border-top: 1px dashed #A7F3D0;">
-                    <div class="wave-bars">
-                      <div class="wave-bar" style="height: 10px;"></div>
-                      <div class="wave-bar" style="height: 18px;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 14px;"></div>
-                      <div class="wave-bar" style="height: 24px; background: #059669;"></div>
-                      <div class="wave-bar" style="height: 12px;"></div>
-                      <div class="wave-bar" style="height: 18px;"></div>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 13px;">
+                    <div class="wave-bars" style="height: 16px;">
+                      <div class="wave-bar" style="height: 9px;"></div>
+                      <div class="wave-bar" style="height: 16px;"></div>
+                      <div class="wave-bar" style="height: 10px; background: #EA580C;"></div>
+                      <div class="wave-bar" style="height: 16px;"></div>
+                      <div class="wave-bar" style="height: 12px; background: #EA580C;"></div>
+                      <div class="wave-bar" style="height: 8px;"></div>
+                      <div class="wave-bar" style="height: 13px;"></div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.06));" alt="惊喜" />
-                      <span style="font-size: 11px; color: #047857; font-weight: 800; letter-spacing: -0.2px; white-space: nowrap;">哇，你的翻译真的是太准确了！</span>
-                    </div>
+                    <span style="font-size: 10.5px; color: #64748B; white-space: nowrap;">哇，你的翻译真的是太准确了！</span>
                   </div>
                 </div>
 
@@ -1271,7 +1189,7 @@
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
                 <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#1F2937"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
               </div>
             </div>
 
@@ -1280,7 +1198,7 @@
                 <div class="write-prompt-card">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 10.5px; color: #6B7280; font-weight: 600;">拼写默写 · 第 6 / 20 词</span>
-                    <span style="font-size: 9.5px; color: #059669; font-weight: 700; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 1.5px 6px; border-radius: 4px;">真迹抗遗忘</span>
+                    <span style="font-size: 10.5px; color: #EA580C; font-weight: 500;">真迹抗遗忘</span>
                   </div>
                   <div class="write-word-title" style="margin-top: 5px;">adj. 短暂的；转瞬即逝的</div>
                   <div style="font-size: 11px; color: #9CA3AF; margin-top: 3px;">音标 [ɪˈfemərəl] · 考频 ★★★★☆</div>
@@ -1302,7 +1220,7 @@
                 <!-- 浮起工具栏（被屏幕上方的真实人手自然遮挡） -->
                 <div style="display: flex; gap: 8px;">
                   <button style="flex: 1; padding: 10px; border-radius: 12px; border: 1px solid #E5E7EB; background: #FFFFFF; font-size: 12px; font-weight: 600; color: #4B5563;">清除笔迹</button>
-                  <button style="flex: 2; padding: 10px; border-radius: 12px; border: none; background: #10B981; font-size: 12px; font-weight: 700; color: #FFFFFF; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">下一个</button>
+                  <button style="flex: 2; padding: 10px; border-radius: 12px; border: none; background: #0F172A; font-size: 12px; font-weight: 700; color: #FFFFFF; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.28);">下一个</button>
                 </div>
               </div>
             </div>
@@ -1331,7 +1249,7 @@
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
                 <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#1F2937"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
               </div>
             </div>
 
@@ -1341,38 +1259,38 @@
                 <div class="fsrs-core-card">
                   <div class="fsrs-tag-row">
                     <span class="fsrs-algo-badge">FSRS-4.5 认知模型</span>
-                    <span style="font-size: 10.5px; color: #059669; font-weight: 600;">自适应遗忘测算</span>
+                    <span style="font-size: 10.5px; color: #94A3B8;">自适应遗忘测算</span>
                   </div>
-                  <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 3px;">
-                    ephemeral <span style="font-size: 11px; font-weight: 600; color: #64748B;">/ɪˈfemərəl/</span>
+                  <div style="font-size: 17px; font-weight: 700; color: #0F172A; letter-spacing: -0.3px; margin-top: 6px;">
+                    ephemeral <span style="font-size: 11px; font-weight: 500; color: #94A3B8;">/ɪˈfemərəl/</span>
                   </div>
-                  <div style="font-size: 11px; font-weight: 600; color: #059669; margin-top: 2px;">
+                  <div style="font-size: 10.5px; color: #EA580C; font-weight: 500; margin-top: 3px;">
                     即将触碰 90% 遗忘临界点
                   </div>
 
                   <div class="fsrs-params-grid">
-                    <div class="param-box">
+                    <div>
                       <div class="param-title">记忆稳定性 (Stability)</div>
-                      <div class="param-val">14.8 <span style="font-size: 11px; font-weight: 600; color: #059669;">天</span></div>
+                      <div class="param-val">14.8 <span style="font-size: 11px; font-weight: 500; color: #94A3B8;">天</span></div>
                     </div>
-                    <div class="param-box">
+                    <div>
                       <div class="param-title">认知难度 (Difficulty)</div>
-                      <div class="param-val">3.2 <span style="font-size: 11px; font-weight: 600; color: #059669;">/ 10</span></div>
+                      <div class="param-val">3.2 <span style="font-size: 11px; font-weight: 500; color: #94A3B8;">/ 10</span></div>
                     </div>
                   </div>
 
-                  <!-- 临界唤醒预警状态条 -->
-                  <div style="margin-top: 8px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 10.5px; color: #047857; font-weight: 700;">当前可提取概率 (R)</span>
-                    <span style="font-size: 10.5px; color: #D97706; font-weight: 800;">90.2% · 即将触发重温</span>
+                  <!-- 临界唤醒预警：一行纯文字，不再套状态条 -->
+                  <div style="margin-top: 13px; padding-top: 11px; border-top: 1px solid #E6EDF4; display: flex; justify-content: space-between; align-items: baseline;">
+                    <span style="font-size: 10.5px; color: #64748B;">当前可提取概率 (R)</span>
+                    <span style="font-size: 11px; color: #D97706; font-weight: 600;">90.2% · 即将触发重温</span>
                   </div>
                 </div>
 
                 <!-- 逼真的高保真遗忘衰减与临界跃迁图谱 -->
                 <div class="fsrs-curve-card">
                   <div class="curve-header">
-                    <span style="font-size: 11px; color: #0F172A; font-weight: 700;">记忆保留率与临界重温轨迹</span>
-                    <span style="font-size: 9.5px; color: #D97706; font-weight: 700; background: #FEF3C7; border: 1px solid #FDE68A; padding: 1.5px 6px; border-radius: 4px;">R=90% 黄金唤醒点</span>
+                    <span style="font-size: 11px; color: #0F172A; font-weight: 600;">记忆保留率与临界重温轨迹</span>
+                    <span style="font-size: 10px; color: #D97706; font-weight: 600;">R=90% 黄金唤醒点</span>
                   </div>
 
                   <div class="curve-svg-box">
@@ -1380,14 +1298,14 @@
                       <defs>
                         <!-- 记忆能量浅蓝渐变充填 -->
                         <linearGradient id="fsrsAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stop-color="#059669" stop-opacity="0.16"/>
-                          <stop offset="60%" stop-color="#34D399" stop-opacity="0.06"/>
+                          <stop offset="0%" stop-color="#EA580C" stop-opacity="0.16"/>
+                          <stop offset="60%" stop-color="#FB923C" stop-opacity="0.06"/>
                           <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0"/>
                         </linearGradient>
                         <linearGradient id="curveGrad" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stop-color="#059669"/>
-                          <stop offset="50%" stop-color="#10B981"/>
-                          <stop offset="100%" stop-color="#059669"/>
+                          <stop offset="0%" stop-color="#EA580C"/>
+                          <stop offset="50%" stop-color="#F97316"/>
+                          <stop offset="100%" stop-color="#EA580C"/>
                         </linearGradient>
                       </defs>
 
@@ -1412,7 +1330,7 @@
                       <text x="30" y="109" fill="#64748B" font-size="7.5">0天</text>
                       <text x="70" y="109" fill="#64748B" font-size="7.5" font-weight="700">第1天</text>
                       <text x="132" y="109" fill="#64748B" font-size="7.5" font-weight="700">第3.5天</text>
-                      <text x="210" y="109" fill="#059669" font-size="7.5" font-weight="700">第15天+</text>
+                      <text x="210" y="109" fill="#EA580C" font-size="7.5" font-weight="700">第15天+</text>
 
                       <!-- 渐变保留率面积 -->
                       <path d="M 32 98 L 32 16 C 45 24, 62 40, 76 42 L 76 16 C 96 22, 122 40, 142 42 L 142 16 C 170 20, 218 30, 260 34 L 260 98 Z" fill="url(#fsrsAreaGrad)"/>
@@ -1424,10 +1342,10 @@
 
                       <!-- 真实锯齿遗忘曲线主轨迹 -->
                       <path d="M 32 16 C 45 24, 62 40, 76 42" stroke="url(#curveGrad)" stroke-width="2.2" stroke-linecap="round"/>
-                      <line x1="76" y1="42" x2="76" y2="16" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+                      <line x1="76" y1="42" x2="76" y2="16" stroke="#EA580C" stroke-width="2" stroke-linecap="round"/>
 
                       <path d="M 76 16 C 96 22, 122 40, 142 42" stroke="url(#curveGrad)" stroke-width="2.2" stroke-linecap="round"/>
-                      <line x1="142" y1="42" x2="142" y2="16" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+                      <line x1="142" y1="42" x2="142" y2="16" stroke="#EA580C" stroke-width="2" stroke-linecap="round"/>
 
                       <path d="M 142 16 C 170 20, 218 30, 260 34" stroke="url(#curveGrad)" stroke-width="2.2" stroke-linecap="round"/>
 
@@ -1436,47 +1354,44 @@
                         <animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/>
                       </circle>
                       <circle cx="76" cy="42" r="3" fill="#F59E0B"/>
-                      <path d="M 73 28 L 76 22 L 79 28" stroke="#059669" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                      <rect x="44" y="2" width="64" height="12" rx="3" fill="#059669"/>
-                      <text x="48" y="11" fill="#FFFFFF" font-size="7" font-weight="800">⚡ 触发重学·回100%</text>
+                      <path d="M 73 28 L 76 22 L 79 28" stroke="#EA580C" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                      <rect x="44" y="2" width="64" height="12" rx="3" fill="#EA580C"/>
+                      <text x="52" y="11" fill="#FFFFFF" font-size="7" font-weight="700">触发重学·回100%</text>
 
                       <!-- 关键节点 2：第 2 次遗忘唤醒点 (142, 42) -->
                       <circle cx="142" cy="42" r="5.5" fill="rgba(245, 158, 11, 0.2)" stroke="#F59E0B" stroke-width="1.2"/>
                       <circle cx="142" cy="42" r="3" fill="#F59E0B"/>
-                      <path d="M 139 28 L 142 22 L 145 28" stroke="#059669" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                      <rect x="116" y="2" width="60" height="12" rx="3" fill="#059669"/>
+                      <path d="M 139 28 L 142 22 L 145 28" stroke="#EA580C" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                      <rect x="116" y="2" width="60" height="12" rx="3" fill="#EA580C"/>
                       <text x="120" y="11" fill="#FFFFFF" font-size="7" font-weight="800">S稳定性翻倍 7.2d</text>
 
                       <!-- 关键节点 3：进入长效稳固阶段 -->
-                      <circle cx="260" cy="34" r="3.5" fill="#059669" stroke="#FFFFFF" stroke-width="1.2"/>
+                      <circle cx="260" cy="34" r="3.5" fill="#EA580C" stroke="#FFFFFF" stroke-width="1.2"/>
                     </svg>
                   </div>
 
-                  <!-- 科学原理解释底条 -->
-                  <div style="background: #ECFDF5; border: 1px dashed #A7F3D0; border-radius: 7px; padding: 4px 7px; margin-top: 4px; display: flex; align-items: center; gap: 5px;">
-                    <span style="font-size: 10px;">💡</span>
-                    <span style="font-size: 9px; color: #047857; line-height: 1.3;">
-                      <strong>科学原理：</strong>在临界点（R=90%）重新学习，突触强化收益最高，无效复习减少 40%。
-                    </span>
+                  <!-- 科学原理解释：一行浅灰小字，不再套虚线底条 -->
+                  <div style="font-size: 9.5px; color: #94A3B8; line-height: 1.45; margin-top: 6px;">
+                    <strong style="color: #64748B; font-weight: 600;">科学原理：</strong>在临界点（R=90%）重新学习，突触强化收益最高，无效复习减少 40%。
                   </div>
                 </div>
 
-                <!-- 四级认知反馈 -->
+                <!-- 四级认知反馈：四列纯文字，语义色只落在两个字上 -->
                 <div class="fsrs-ratings-bar">
-                  <div class="rating-btn" style="border-color: #FECACA; background: #FEF2F2;">
+                  <div class="rating-btn">
                     <div class="r-grade" style="color: #DC2626;">重来</div>
                     <div class="r-interval">10m 重学</div>
                   </div>
-                  <div class="rating-btn" style="border-color: #FDE68A; background: #FFFBEB;">
+                  <div class="rating-btn">
                     <div class="r-grade" style="color: #D97706;">困难</div>
                     <div class="r-interval">3d 临界</div>
                   </div>
-                  <div class="rating-btn" style="border-color: #A7F3D0; background: #ECFDF5;">
-                    <div class="r-grade" style="color: #059669;">良好</div>
+                  <div class="rating-btn">
+                    <div class="r-grade" style="color: #EA580C;">良好</div>
                     <div class="r-interval">7d 临界</div>
                   </div>
-                  <div class="rating-btn" style="border-color: #A7F3D0; background: #ECFDF5;">
-                    <div class="r-grade" style="color: #059669;">简单</div>
+                  <div class="rating-btn">
+                    <div class="r-grade" style="color: #EA580C;">简单</div>
                     <div class="r-interval">15d 稳固</div>
                   </div>
                 </div>
@@ -1506,15 +1421,15 @@
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
                 <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#1F2937"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
               </div>
             </div>
 
             <div class="screen-body">
               <div class="excel-stage">
                 <div>
-                  <span style="font-size: 11px; color: #6B7280; font-weight: 600;">自定义题库导入</span>
-                  <div style="font-size: 20px; font-weight: 800; color: #111827; margin-top: 4px;">表格 / 文档 一键入库</div>
+                  <span style="font-size: 11px; color: #94A3B8; font-weight: 500;">自定义题库导入</span>
+                  <div style="font-size: 19px; font-weight: 700; color: #111827; letter-spacing: -0.4px; margin-top: 6px;">表格 / 文档 一键入库</div>
                 </div>
 
                 <!-- 文件导入卡片 -->
@@ -1528,18 +1443,18 @@
 
                 <!-- 智能列映射解析 -->
                 <div class="import-steps">
-                  <div style="font-size: 11px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 4px;">
+                  <div style="font-size: 11px; font-weight: 600; color: #EA580C; display: flex; align-items: center; gap: 4px;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                     表头智能识别完成 (共 800 词)
                   </div>
-                  <div style="font-size: 11px; color: #4B5563; line-height: 1.5;">
+                  <div style="font-size: 11px; color: #64748B; line-height: 1.6;">
                     • A列 [word] ➔ 单词<br>
                     • B列 [meaning] ➔ 中文释义<br>
                     • C列 [example] ➔ 真题例句
                   </div>
                 </div>
 
-                <div style="margin-top: auto; background: #059669; color: #FFFFFF; border-radius: 14px; padding: 12px; text-align: center; font-size: 13px; font-weight: 700; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);">
+                <div style="margin-top: auto; background: #0F172A; color: #FFFFFF; border-radius: 14px; padding: 12px; text-align: center; font-size: 13px; font-weight: 700; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.28);">
                   立即导入并生成 FSRS 计划
                 </div>
               </div>
@@ -1569,7 +1484,7 @@
               <div class="status-icons">
                 <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx="0.6"/><rect x="4.2" y="5.5" width="2.5" height="6.5" rx="0.6"/><rect x="8.4" y="3" width="2.5" height="9" rx="0.6"/><rect x="12.6" y="0" width="2.5" height="12" rx="0.6"/></svg>
                 <span style="font-size: 10px; font-weight: 800;">5G</span>
-                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#10B981"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <svg width="20" height="10" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="#1F2937"/><path d="M20 3.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
               </div>
             </div>
 
@@ -1598,22 +1513,22 @@
                   <div class="ci-hub">
                     <svg class="ci-figure" viewBox="0 0 120 120" fill="none">
                       <!-- 蓄势：被压紧的弹簧。中间那圈淡下去，三圈才读成一条螺旋而不是三个环 -->
-                      <g stroke="#047857" stroke-width="2.4" stroke-linecap="round">
+                      <g stroke="#C2410C" stroke-width="2.4" stroke-linecap="round">
                         <ellipse cx="60" cy="91" rx="18" ry="6.6"/>
                         <ellipse cx="60" cy="80" rx="18" ry="6.6" stroke-opacity="0.42"/>
                         <ellipse cx="60" cy="69" rx="18" ry="6.6"/>
                       </g>
                       <!-- 释放：从弹簧顶端向上弹涌 -->
-                      <g stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <g stroke="#EA580C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M60 59 V24"/>
                         <path d="M51 34 L60 23 L69 34"/>
                       </g>
                       <!-- 迸发：两侧溢出的余势 -->
-                      <g stroke="#6EE7B7" stroke-width="2.2" stroke-linecap="round">
+                      <g stroke="#FDBA74" stroke-width="2.2" stroke-linecap="round">
                         <path d="M41 58 L30 47"/>
                         <path d="M79 58 L90 47"/>
                       </g>
-                      <g fill="#6EE7B7">
+                      <g fill="#FDBA74">
                         <circle cx="27" cy="38" r="2.4"/>
                         <circle cx="93" cy="38" r="2.4"/>
                       </g>
@@ -1716,7 +1631,7 @@
       try { localStorage.setItem('appstore_aspect', mode); } catch (e) {}
     }
 
-    // 固化默认选项：文案A、深墨基调、9:19.5 苹果比例、极简纯净全面屏（全平台通用）、开启横幅
+    // 固化默认选项：文案A、暖橙基调、9:19.5 苹果比例、极简纯净全面屏（全平台通用）、开启横幅
     window.addEventListener('DOMContentLoaded', () => {
       const savedCopy = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_copy_style')) || 'a';
       const savedAsp = (typeof localStorage !== 'undefined' && localStorage.getItem('appstore_aspect')) || 'apple';

@@ -3,7 +3,7 @@
 /**
  * 应用商店截图生成器（App Store iPhone 6.5" / App Store iPad 13" / 华为应用市场 / 横排概览图）
  *
- * 四路产物，共用同一套深墨视觉语言（苹果与华为同一份原型，iPad 是宽屏版原型）：
+ * 四路产物，共用同一套暖橙视觉语言（苹果与华为同一份原型，iPad 是宽屏版原型）：
  *   apple    1242×2688（9:19.5）→ design/ui/png/app_store_iphone_6.5/
  *   ipad     2048×2732（3:4）   → design/ui/png/app_store_ipad_13/
  *   huawei   450×800（9:16）   → devops/应用上架资源/huawei/
@@ -42,9 +42,8 @@ const CHROME_TIMEOUT_MS = 60000;
 const OVERVIEW_GAP = 22;
 const OVERVIEW_MARGIN = 24;
 
-// 海报面（文案/配色/横幅）固定为商店交付态，与原型控制台的默认值一致
+// 海报面（文案/横幅）固定为商店交付态，与原型控制台的默认值一致
 const POSTER_ATTRS = `
-  document.documentElement.setAttribute('data-palette', 'ink');
   document.documentElement.setAttribute('data-copy', 'a');
   document.documentElement.setAttribute('data-banner', 'show');
 `;
@@ -123,7 +122,7 @@ function cardExportCss(width, height) {
   html, body {
     margin: 0 !important; padding: 0 !important;
     width: ${width}px !important; height: ${height}px !important;
-    background: #0A0F0D !important; overflow: hidden !important;
+    background: #12100E !important; overflow: hidden !important;
   }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .top-bar { display: none !important; }

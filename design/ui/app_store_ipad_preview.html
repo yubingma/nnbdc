@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-palette="emerald" data-device="ipad">
+<html lang="zh-CN" data-device="ipad">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,7 +30,7 @@
 
     body {
       font-family: var(--font-family);
-      background: #0A1110;
+      background: #12100E;
       color: #E2E8F0;
       min-height: 100vh;
       display: flex;
@@ -68,7 +68,7 @@
       font-size: 11px;
       padding: 3px 8px;
       border-radius: 6px;
-      background: #059669;
+      background: #F97316;
       color: #FFFFFF;
       font-weight: 700;
     }
@@ -92,8 +92,8 @@
     }
 
     .tab-btn.active {
-      background: #10D09E;
-      color: #04261C;
+      background: #F97316;
+      color: #FFFFFF;
       font-weight: 800;
     }
 
@@ -131,10 +131,11 @@
       scroll-snap-align: center;
       padding: 64px 40px 0;
       box-sizing: border-box;
-      /* 与 iPhone / 华为两套同一基调：整张只有「墨底 + 纯白 + 一档品牌青绿」 */
+      /* 与 iPhone / 华为两套同一基调：整张只有「日落橙底 + 纯白 + 一档品牌橙」 */
       background:
-        radial-gradient(118% 44% at 50% 41%, rgba(16, 208, 158, 0.22) 0%, rgba(16, 208, 158, 0) 70%),
-        linear-gradient(180deg, #0C1A17 0%, #08120F 58%, #050B0A 100%);
+        radial-gradient(96% 54% at 84% 6%, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 66%),
+        radial-gradient(86% 50% at 6% 96%, rgba(176, 60, 0, 0.26) 0%, rgba(176, 60, 0, 0) 62%),
+        linear-gradient(164deg, #FFB05F 0%, #FF9743 44%, #F4781F 100%);
     }
 
     /* 顶部文案容器：纯正 4+4 居中结构 */
@@ -162,7 +163,7 @@
       font-weight: 400;
       line-height: 1.35;
       letter-spacing: 1px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.86);
     }
 
     /* iPad 专属平板舞台 */
@@ -186,10 +187,9 @@
       border-radius: var(--ipad-radius);
       background: #FFFFFF;
       border: 8px solid #FFFFFF;
-      box-shadow: 
-        0 0 0 1px rgba(255, 255, 255, 0.10),
-        0 46px 90px -34px rgba(0, 0, 0, 0.92),
-        0 0 74px -6px rgba(16, 208, 158, 0.26);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.34),
+        0 40px 80px -34px rgba(124, 45, 18, 0.55);
       position: relative;
       overflow: hidden;
       display: flex;
@@ -218,7 +218,7 @@
     /* iPad 屏幕内容体 */
     .ipad-screen-body {
       flex: 1;
-      background: #FAFDFB;
+      background: #EDF4FA;
       color: #1F2937;
       display: flex;
       flex-direction: column;
@@ -253,12 +253,11 @@
       padding: 20px 40px;
       border-radius: 100px;
       background: #FFFFFF;
-      /* 白药丸在墨底上本就是最亮的一块，加一圈品牌青绿细环与贴边光晕把它钉住；
-         光晕只给 26px 紧贴边缘，糊太开会透过屏幕把白底染绿。 */
-      box-shadow: 
-        0 0 0 2.5px rgba(16, 208, 158, 0.85),
-        0 0 26px rgba(16, 208, 158, 0.45),
-        0 20px 44px -16px rgba(0, 0, 0, 0.55);
+      /* 白药丸是画面上唯一的纯白块。橙底上不需要任何彩色描边，
+         一圈贴边的暖褐柔影就够把它从机身与橙底之间托起来。 */
+      box-shadow:
+        0 18px 44px -18px rgba(124, 45, 18, 0.55),
+        0 3px 10px rgba(124, 45, 18, 0.10);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -277,7 +276,7 @@
       line-height: 1.2;
     }
     .banner-text .highlight {
-      color: #059669;
+      color: #EA580C;
       font-weight: 700;
     }
 
@@ -287,8 +286,8 @@
       padding: 16px 20px;
       border-radius: 16px;
       background: #FFFFFF;
-      border: 1px solid #D1FAE5;
-      box-shadow: 0 10px 25px -4px rgba(16, 185, 129, 0.15);
+      border: 1px solid #FFEDD5;
+      box-shadow: 0 10px 25px -4px rgba(234, 88, 12, 0.15);
       display: flex;
       align-items: center;
       gap: 16px;
@@ -297,7 +296,7 @@
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #10B981, #059669);
+      background: linear-gradient(135deg, #F97316, #EA580C);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -308,7 +307,7 @@
     .praise-title {
       font-size: 16.5px;
       font-weight: 800;
-      color: #065F46;
+      color: #9A3412;
       margin-bottom: 3px;
     }
     .praise-desc {
@@ -343,7 +342,7 @@
       align-items: baseline;
       gap: 14px;
       padding: 22px 40px 18px;
-      border-bottom: 1px solid #EDF1F0;
+      border-bottom: 1px solid #E6EDF4;
     }
     .ci-word {
       font-size: 46px;
@@ -358,13 +357,9 @@
     }
     .ci-tag {
       margin-left: auto;
-      font-size: 15px;
-      font-weight: 600;
-      color: #047857;
-      background: #ECFDF5;
-      border: 1px solid #A7F3D0;
-      padding: 5px 14px;
-      border-radius: 8px;
+      font-size: 15.5px;
+      font-weight: 500;
+      color: #EA580C;
       white-space: nowrap;
     }
     .ci-orbit {
@@ -387,7 +382,7 @@
       transform: translate(-50%, -50%);
       width: 210px;
       height: 210px;
-      background: radial-gradient(circle at 50% 55%, rgba(16, 208, 158, 0.10) 0%, rgba(16, 208, 158, 0) 68%);
+      background: radial-gradient(circle at 50% 55%, rgba(249, 115, 22, 0.10) 0%, rgba(249, 115, 22, 0) 68%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -402,15 +397,13 @@
       left: 50%;
       bottom: -4px;
       transform: translateX(-50%);
-      font-size: 15px;
-      font-weight: 700;
-      color: #047857;
-      background: #FFFFFF;
-      border: 1px solid #A7F3D0;
-      padding: 4px 14px;
+      font-size: 15.5px;
+      font-weight: 500;
+      color: #EA580C;
+      background: rgba(255, 255, 255, 0.86);
+      padding: 5px 15px;
       border-radius: 100px;
       white-space: nowrap;
-      box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.22);
     }
     .ci-node {
       position: absolute;
@@ -421,16 +414,16 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
+      background: #FFFFFF;
+      border: 1px solid #E9EFF6;
       border-radius: 12px;
-      padding: 9px 14px;
+      padding: 10px 15px;
       white-space: nowrap;
     }
     .ci-pos {
       font-size: 14px;
       font-weight: 700;
-      color: #047857;
+      color: #C2410C;
     }
     .ci-meaning {
       font-size: 17px;
@@ -452,14 +445,14 @@
     .ci-footer {
       margin-top: auto;
       padding: 22px 80px 28px;
-      border-top: 1px solid #EDF1F0;
+      border-top: 1px solid #E6EDF4;
       font-size: 16px;
       color: #64748B;
       line-height: 1.6;
       text-align: center;
     }
     .ci-footer b {
-      color: #047857;
+      color: #C2410C;
       font-weight: 700;
     }
 
@@ -471,31 +464,26 @@
        ======================================================== */
     .ios-stage {
       flex: 1;
-      background: #FFFFFF;
       display: flex;
       flex-direction: column;
       padding: 26px 36px 22px;
     }
     .ios-row { display: flex; justify-content: space-between; align-items: center; }
-    .ios-chip {
-      font-size: 16px; font-weight: 700; color: #059669;
-      background: #ECFDF5; border: 1px solid #A7F3D0;
-      padding: 6px 16px; border-radius: 9px; white-space: nowrap;
-    }
-    .ios-note { font-size: 15.5px; color: #6B7280; font-weight: 600; white-space: nowrap; }
-    .ios-sub { font-size: 15.5px; color: #6B7280; font-weight: 500; margin-top: 12px; }
+    .ios-chip { font-size: 16px; font-weight: 500; color: #64748B; letter-spacing: 0.3px; white-space: nowrap; }
+    .ios-note { font-size: 15.5px; color: #94A3B8; font-weight: 400; white-space: nowrap; }
+    .ios-sub { font-size: 15px; color: #94A3B8; font-weight: 400; margin-top: 12px; }
     .ios-hero {
-      margin-top: 24px; background: #F8FAFC; border: 1px solid #E2E8F0;
+      margin-top: 24px; background: #FFFFFF; border: 1px solid #E9EFF6;
       border-radius: 22px; padding: 42px 36px; text-align: center;
     }
     .ios-card {
-      background: #F8FAFC; border: 1px solid #E2E8F0;
+      background: #FFFFFF; border: 1px solid #E9EFF6;
       border-radius: 20px; padding: 24px 26px;
     }
     .ios-result {
-      background: #ECFDF5; border: 1.5px solid #A7F3D0;
-      border-radius: 22px; padding: 22px 26px;
-      box-shadow: 0 8px 26px rgba(5, 150, 105, 0.08);
+      background: #FFFFFF; border: 1px solid #E9EFF6;
+      border-radius: 22px; padding: 24px 28px;
+      box-shadow: 0 10px 30px -20px rgba(15, 23, 42, 0.35);
     }
     .ios-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: auto; }
     .ios-push { margin-top: auto; }
@@ -505,16 +493,9 @@
       gap: 12px; font-size: 19px; font-weight: 700;
     }
     .ios-wave { display: flex; align-items: center; gap: 7px; height: 46px; }
-    .ios-wave i { width: 6px; border-radius: 4px; background: #10B981; }
-    .ios-tag {
-      font-size: 15px; font-weight: 700; color: #047857;
-      background: #D1FAE5; border: 1px solid #6EE7B7;
-      padding: 5px 12px; border-radius: 8px; white-space: nowrap;
-    }
+    .ios-wave i { width: 6px; border-radius: 4px; background: #F97316; }
     .ios-pos {
-      font-size: 15px; font-weight: 700; color: #047857;
-      background: #ECFDF5; border: 1px solid #A7F3D0;
-      padding: 3px 10px; border-radius: 6px; white-space: nowrap;
+      font-size: 16px; font-weight: 600; color: #EA580C; letter-spacing: 0.3px; white-space: nowrap;
     }
     .ios-icon-btn {
       display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -522,12 +503,12 @@
       background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px;
     }
     .ios-icon-btn.primary {
-      background: #059669; border-color: #059669; color: #FFFFFF; flex: 2;
-      box-shadow: 0 8px 20px -6px rgba(5, 150, 105, 0.5);
+      background: #0F172A; border-color: #0F172A; color: #FFFFFF; flex: 2;
+      box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.35);
     }
     .ios-pad {
       margin-top: 22px; flex: 1; background: #FFFFFF;
-      border: 2px dashed #CBD5E1; border-radius: 24px;
+      border: 1.5px dashed #DCE5EE; border-radius: 24px;
       position: relative;
     }
     /* 手写真迹压在板面下半部：横幅只落在板面上半部的空白处，不会盖住任何东西 */
@@ -587,41 +568,37 @@
                     <span class="ios-pos">adj.</span>
                     <span style="font-size: 31px; font-weight: 700; color: #0F172A; letter-spacing: -0.4px;">短暂的；转瞬即逝的</span>
                   </div>
-                  <div style="font-size: 16px; color: #94A3B8; margin-top: 18px;">💡 提示: e...</div>
+                  <div style="font-size: 16px; color: #94A3B8; margin-top: 18px;">提示 e…</div>
                 </div>
 
                 <div class="ios-push"></div>
 
-                <!-- AI 智能判官：与 iOS 同一张判定卡，宽屏下单栏铺满（两栏会把文案挤到折行） -->
-                <div class="ios-result" style="padding: 22px 30px;">
+                <!-- 判定结论与掌握里程碑合并成一张卡，宽屏下单栏铺满 -->
+                <div class="ios-result">
                   <div class="ios-row">
-                    <span style="font-size: 16px; color: #059669; font-weight: 700; white-space: nowrap;">● AI 智能判官 · 答案判定：</span>
-                    <span style="font-size: 14px; font-weight: 700; color: #FFFFFF; background: #059669; padding: 5px 14px; border-radius: 100px; white-space: nowrap;">🎯 准确唤醒 · 吻合</span>
+                    <span style="font-size: 15px; color: #64748B; font-weight: 500;">AI 智能判官</span>
+                    <span style="font-size: 15px; color: #EA580C; font-weight: 600;">准确唤醒 · 吻合</span>
                   </div>
-                  <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 12px;">
-                    <span style="font-size: 34px; font-weight: 700; color: #047857; letter-spacing: -0.4px;">ephemeral</span>
-                    <span style="font-size: 16px; color: #059669; font-weight: 600;">⚡ 成功主动回忆 · 深度记忆神经元激活</span>
+                  <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 16px;">
+                    <span style="font-size: 34px; font-weight: 700; color: #0F172A; letter-spacing: -0.6px;">ephemeral</span>
+                    <span style="font-size: 15px; color: #94A3B8;">成功主动回忆 · 深度记忆神经元激活</span>
                   </div>
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #A7F3D0;">
-                    <div class="ios-wave"><i style="height:14px"></i><i style="height:28px"></i><i style="height:46px"></i><i style="height:22px"></i><i style="height:36px"></i><i style="height:18px"></i><i style="height:30px"></i></div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 30px; height: 30px; object-fit: contain;" alt="惊喜" />
-                      <span style="font-size: 16px; color: #047857; font-weight: 700;">哇，经过这么多天，你居然还记得！</span>
-                    </div>
+                  <div style="display: flex; align-items: center; gap: 18px; margin-top: 18px;">
+                    <div class="ios-wave"><i style="height:14px"></i><i style="height:28px"></i><i style="height:44px"></i><i style="height:22px"></i><i style="height:34px"></i><i style="height:18px"></i><i style="height:28px"></i></div>
+                    <span style="font-size: 15px; color: #64748B;">哇，经过这么多天，你居然还记得！</span>
                   </div>
-                </div>
 
-                <!-- 深度记忆里程碑：正向成就归入品牌青绿 -->
-                <div class="ios-card" style="margin-top: 18px; padding: 20px 30px; background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 55%, #D1FAE5 100%); border: 1.5px solid #6EE7B7;">
-                  <div class="ios-row">
-                    <span style="font-size: 17px; font-weight: 700; color: #065F46;">彻底掌握 · 进入长时记忆</span>
-                    <span style="font-size: 14px; font-weight: 600; color: #047857;">历经 4 轮复习</span>
-                  </div>
-                  <div class="ios-row" style="margin-top: 10px;">
-                    <span style="font-size: 15px; color: #047857;">4 次主动回忆穿透遗忘曲线，这个词不会再忘了。</span>
-                    <span style="font-size: 15px; font-weight: 600; color: #047857; white-space: nowrap;">
-                      累计深度掌握 <strong style="font-size: 20px; font-weight: 700; color: #065F46; font-family: var(--font-mono);">1,280</strong> 词
-                    </span>
+                  <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #E6EDF4;">
+                    <div class="ios-row">
+                      <span style="font-size: 16px; font-weight: 600; color: #0F172A;">彻底掌握 · 进入长时记忆</span>
+                      <span style="font-size: 14px; color: #94A3B8;">历经 4 轮复习</span>
+                    </div>
+                    <div class="ios-row" style="margin-top: 10px;">
+                      <span style="font-size: 15px; color: #94A3B8;">4 次主动回忆穿透遗忘曲线，这个词不会再忘了。</span>
+                      <span style="font-size: 15px; color: #64748B; white-space: nowrap;">
+                        累计深度掌握 <strong style="font-size: 20px; font-weight: 700; color: #EA580C; font-family: var(--font-mono);">1,280</strong> 词
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -675,38 +652,29 @@
                   <div style="font-size: 52px; font-weight: 700; color: #111827; letter-spacing: -1px;">spring</div>
                   <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px;">
                     <span style="font-size: 20px; color: #6B7280; font-family: var(--font-mono);">[sprɪŋ]</span>
-                    <span style="display: inline-flex; align-items: center; gap: 6px; color: #059669; font-size: 15px; font-weight: 700; background: #ECFDF5; border: 1px solid #D1FAE5; padding: 4px 12px; border-radius: 100px;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; color: #EA580C; font-size: 15px; font-weight: 500;">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
                       <span>美音</span>
                     </span>
                   </div>
-                  <div style="font-size: 16px; color: #6B7280; margin-top: 18px;">
-                    <span style="color: #059669; font-weight: 700;">🎯 考纲 4 重核心释义：</span>
-                    <span style="color: #9CA3AF;">请说出该词所有含义</span>
+                  <div style="font-size: 16px; color: #94A3B8; margin-top: 20px;">
+                    考纲 <span style="color: #EA580C; font-weight: 600;">4 重核心释义</span> · 请说出该词所有含义
                   </div>
                 </div>
 
                 <div class="ios-push"></div>
 
                 <!-- 语音作答与识别出的中文释义 -->
-                <div class="ios-result" style="padding: 24px 28px;">
+                <div class="ios-result">
                   <div class="ios-row">
-                    <span style="font-size: 15px; color: #059669; font-weight: 700;">● 实时语音识别：</span>
-                    <span style="font-size: 14px; font-weight: 700; color: #047857; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 5px 14px; border-radius: 100px; white-space: nowrap;">🎯 4 重释义全部命中</span>
+                    <span style="font-size: 15px; color: #64748B; font-weight: 500;">实时语音识别</span>
+                    <span style="font-size: 15px; color: #EA580C; font-weight: 600;">4 重释义全部命中</span>
                   </div>
-                  <div style="font-size: 24px; font-weight: 700; color: #065F46; margin: 16px 0 14px;">“春天、泉水、弹簧、跳跃”</div>
-                  <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    <span class="ios-tag">✓ n. 春天</span>
-                    <span class="ios-tag">✓ n. 泉水</span>
-                    <span class="ios-tag">✓ n. 弹簧</span>
-                    <span class="ios-tag">✓ v. 跃起/跳跃</span>
-                  </div>
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 16px; border-top: 1px dashed #A7F3D0;">
+                  <div style="font-size: 26px; font-weight: 600; color: #0F172A; margin: 20px 0 12px;">“春天、泉水、弹簧、跳跃”</div>
+                  <div style="font-size: 16px; color: #EA580C; font-weight: 500;">n. 春天 · n. 泉水 · n. 弹簧 · v. 跃起 / 跳跃</div>
+                  <div style="display: flex; align-items: center; gap: 18px; margin-top: 22px;">
                     <div class="ios-wave"><i style="height:18px"></i><i style="height:40px"></i><i style="height:26px"></i><i style="height:34px"></i><i style="height:22px"></i><i style="height:30px"></i><i style="height:16px"></i></div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 30px; height: 30px; object-fit: contain;" alt="惊喜" />
-                      <span style="font-size: 15px; color: #047857; font-weight: 700;">哇，记得这么清楚，你是怎么做到的？</span>
-                    </div>
+                    <span style="font-size: 15px; color: #64748B;">哇，记得这么清楚，你是怎么做到的？</span>
                   </div>
                 </div>
 
@@ -759,33 +727,30 @@
                 <div class="ios-hero" style="text-align: left; padding: 40px 36px;">
                   <div class="ios-row">
                     <span style="font-size: 14px; font-weight: 700; color: #6B7280; letter-spacing: 0.6px;">ENGLISH SENTENCE</span>
-                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: #059669;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: #EA580C;">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
                       标准美音
                     </span>
                   </div>
                   <div style="font-size: 27px; font-weight: 600; color: #111827; line-height: 1.5; margin-top: 16px; letter-spacing: -0.3px;">
-                    "True <span style="color: #059669; font-weight: 700; text-decoration: underline; text-decoration-color: rgba(5, 150, 105, 0.35); text-underline-offset: 5px;">resilience</span> is not about never falling, but rising every time."
+                    "True <span style="color: #EA580C; font-weight: 700; text-decoration: underline; text-decoration-color: rgba(234, 88, 12, 0.35); text-underline-offset: 5px;">resilience</span> is not about never falling, but rising every time."
                   </div>
                 </div>
 
                 <div class="ios-push"></div>
 
                 <!-- 实时口译判定 -->
-                <div class="ios-result" style="padding: 24px 28px;">
+                <div class="ios-result">
                   <div class="ios-row">
-                    <span style="font-size: 15px; color: #059669; font-weight: 700;">● 实时识别 · 你的口译：</span>
-                    <span style="font-size: 14px; font-weight: 700; color: #FFFFFF; background: #059669; padding: 5px 14px; border-radius: 100px; white-space: nowrap;">👏 太准确了！</span>
+                    <span style="font-size: 15px; color: #64748B; font-weight: 500;">实时识别 · 你的口译</span>
+                    <span style="font-size: 15px; color: #EA580C; font-weight: 600;">太准确了</span>
                   </div>
-                  <div style="font-size: 23px; font-weight: 700; color: #065F46; line-height: 1.6; margin-top: 16px;">
+                  <div style="font-size: 24px; font-weight: 600; color: #0F172A; line-height: 1.6; margin-top: 20px;">
                     “真正的韧性不是从不跌倒，而是每次都能重新站起来。”
                   </div>
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 16px; border-top: 1px dashed #A7F3D0;">
+                  <div style="display: flex; align-items: center; gap: 18px; margin-top: 22px;">
                     <div class="ios-wave"><i style="height:18px"></i><i style="height:40px"></i><i style="height:26px"></i><i style="height:34px"></i><i style="height:22px"></i><i style="height:30px"></i><i style="height:16px"></i></div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <img src="assets/rabbit_surprise.png" style="width: 30px; height: 30px; object-fit: contain;" alt="惊喜" />
-                      <span style="font-size: 15px; color: #047857; font-weight: 700;">哇，你的翻译真的是太准确了！</span>
-                    </div>
+                    <span style="font-size: 15px; color: #64748B;">哇，你的翻译真的是太准确了！</span>
                   </div>
                 </div>
 
@@ -826,12 +791,12 @@
               </div>
             </div>
 
-            <div class="ipad-screen-body" style="background: #FAF9F6;">
+            <div class="ipad-screen-body">
               <div class="ios-stage">
                 <div class="ios-card" style="padding: 26px 30px;">
                   <div class="ios-row">
                     <span style="font-size: 15px; font-weight: 700; color: #6B7280;">拼写默写 · 第 6 / 20 词</span>
-                    <span style="font-size: 14px; font-weight: 700; color: #047857; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 5px 14px; border-radius: 8px; white-space: nowrap;">真迹抗遗忘</span>
+                    <span style="font-size: 15px; font-weight: 500; color: #EA580C; white-space: nowrap;">真迹抗遗忘</span>
                   </div>
                   <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 18px;">
                     <span class="ios-pos">adj.</span>
@@ -890,29 +855,29 @@
                 <!-- FSRS 认知模型卡（与 iOS 同一张） -->
                 <div class="ios-card" style="padding: 26px 30px;">
                   <div class="ios-row">
-                    <span style="font-size: 14px; font-weight: 700; color: #FFFFFF; background: #059669; padding: 5px 14px; border-radius: 7px; letter-spacing: 0.4px;">FSRS-4.5 认知模型</span>
-                    <span style="font-size: 15px; font-weight: 700; color: #059669;">自适应遗忘测算</span>
+                    <span style="font-size: 17px; font-weight: 600; color: #0F172A;">FSRS-4.5 认知模型</span>
+                    <span style="font-size: 15px; color: #94A3B8;">自适应遗忘测算</span>
                   </div>
-                  <div style="display: flex; align-items: baseline; gap: 12px; margin-top: 18px;">
+                  <div style="display: flex; align-items: baseline; gap: 12px; margin-top: 20px;">
                     <span style="font-size: 32px; font-weight: 700; color: #111827; letter-spacing: -0.5px;">ephemeral</span>
-                    <span style="font-size: 18px; color: #64748B; font-family: var(--font-mono);">/ɪˈfemərəl/</span>
+                    <span style="font-size: 18px; color: #94A3B8; font-family: var(--font-mono);">/ɪˈfemərəl/</span>
                   </div>
-                  <div style="font-size: 17px; font-weight: 700; color: #059669; margin-top: 8px;">即将触碰 90% 遗忘临界点</div>
+                  <div style="font-size: 15px; font-weight: 500; color: #EA580C; margin-top: 10px;">即将触碰 90% 遗忘临界点</div>
 
-                  <div class="ios-cols" style="margin-top: 20px; gap: 18px;">
-                    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 16px 20px;">
-                      <div style="font-size: 14px; color: #64748B;">记忆稳定性（Stability）</div>
-                      <div style="font-size: 30px; font-weight: 700; color: #0F172A; margin-top: 6px; font-family: var(--font-mono);">14.8 <span style="font-size: 16px; font-weight: 500;">天</span></div>
+                  <div class="ios-cols" style="margin-top: 26px; gap: 40px;">
+                    <div>
+                      <div style="font-size: 14px; color: #94A3B8;">记忆稳定性（Stability）</div>
+                      <div style="font-size: 30px; font-weight: 700; color: #0F172A; margin-top: 8px; font-family: var(--font-mono);">14.8 <span style="font-size: 16px; font-weight: 500; color: #94A3B8;">天</span></div>
                     </div>
-                    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 16px 20px;">
-                      <div style="font-size: 14px; color: #64748B;">认知难度（Difficulty）</div>
-                      <div style="font-size: 30px; font-weight: 700; color: #0F172A; margin-top: 6px; font-family: var(--font-mono);">3.2 <span style="font-size: 16px; font-weight: 500;">/ 10</span></div>
+                    <div>
+                      <div style="font-size: 14px; color: #94A3B8;">认知难度（Difficulty）</div>
+                      <div style="font-size: 30px; font-weight: 700; color: #0F172A; margin-top: 8px; font-family: var(--font-mono);">3.2 <span style="font-size: 16px; font-weight: 500; color: #94A3B8;">/ 10</span></div>
                     </div>
                   </div>
 
-                  <div class="ios-row" style="margin-top: 18px; padding: 14px 20px; background: #FFFFFF; border: 1px solid #A7F3D0; border-radius: 14px;">
-                    <span style="font-size: 15px; font-weight: 600; color: #047857;">当前可提取概率 (R)</span>
-                    <span style="font-size: 16px; font-weight: 700; color: #D97706;">90.2% · 即将触发重温</span>
+                  <div class="ios-row" style="margin-top: 26px; padding-top: 20px; border-top: 1px solid #E6EDF4;">
+                    <span style="font-size: 15px; color: #64748B;">当前可提取概率 (R)</span>
+                    <span style="font-size: 16px; font-weight: 600; color: #D97706;">90.2% · 即将触发重温</span>
                   </div>
                 </div>
 
@@ -921,20 +886,20 @@
                 <!-- 遗忘衰减与临界跃迁图谱 -->
                 <div class="ios-card" style="padding: 22px 26px;">
                   <div class="ios-row">
-                    <span style="font-size: 17px; font-weight: 700; color: #0F172A;">记忆保留率与临界重温轨迹</span>
-                    <span style="font-size: 14px; font-weight: 700; color: #D97706; background: #FEF3C7; border: 1px solid #FDE68A; padding: 4px 12px; border-radius: 6px; white-space: nowrap;">R=90% 黄金唤醒点</span>
+                    <span style="font-size: 17px; font-weight: 600; color: #0F172A;">记忆保留率与临界重温轨迹</span>
+                    <span style="font-size: 14px; font-weight: 600; color: #D97706; white-space: nowrap;">R=90% 黄金唤醒点</span>
                   </div>
                   <svg width="100%" height="200" viewBox="0 0 270 118" fill="none" style="margin-top: 12px; overflow: visible;">
                     <defs>
                       <linearGradient id="ipadAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#059669" stop-opacity="0.16"/>
-                        <stop offset="60%" stop-color="#34D399" stop-opacity="0.06"/>
+                        <stop offset="0%" stop-color="#EA580C" stop-opacity="0.16"/>
+                        <stop offset="60%" stop-color="#FB923C" stop-opacity="0.06"/>
                         <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0"/>
                       </linearGradient>
                       <linearGradient id="ipadCurveGrad" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stop-color="#059669"/>
-                        <stop offset="50%" stop-color="#10B981"/>
-                        <stop offset="100%" stop-color="#059669"/>
+                        <stop offset="0%" stop-color="#EA580C"/>
+                        <stop offset="50%" stop-color="#F97316"/>
+                        <stop offset="100%" stop-color="#EA580C"/>
                       </linearGradient>
                     </defs>
                     <line x1="26" y1="16" x2="262" y2="16" stroke="#E2E8F0" stroke-dasharray="2 3"/>
@@ -949,23 +914,23 @@
                     <text x="30" y="109" fill="#64748B" font-size="7.5">0天</text>
                     <text x="70" y="109" fill="#64748B" font-size="7.5" font-weight="700">第1天</text>
                     <text x="132" y="109" fill="#64748B" font-size="7.5" font-weight="700">第3.5天</text>
-                    <text x="210" y="109" fill="#059669" font-size="7.5" font-weight="700">第15天+</text>
+                    <text x="210" y="109" fill="#EA580C" font-size="7.5" font-weight="700">第15天+</text>
                     <path d="M 32 98 L 32 16 C 45 24, 62 40, 76 42 L 76 16 C 96 22, 122 40, 142 42 L 142 16 C 170 20, 218 30, 260 34 L 260 98 Z" fill="url(#ipadAreaGrad)"/>
                     <path d="M 76 42 C 88 62, 108 84, 136 94" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="3 3"/>
                     <circle cx="136" cy="94" r="2.2" fill="#EF4444"/>
                     <text x="142" y="96" fill="#DC2626" font-size="7" font-weight="700">未重学: 跌至 20%</text>
                     <path d="M 32 16 C 45 24, 62 40, 76 42" stroke="url(#ipadCurveGrad)" stroke-width="2.2" stroke-linecap="round"/>
-                    <line x1="76" y1="42" x2="76" y2="16" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="76" y1="42" x2="76" y2="16" stroke="#EA580C" stroke-width="2" stroke-linecap="round"/>
                     <path d="M 76 16 C 96 22, 122 40, 142 42" stroke="url(#ipadCurveGrad)" stroke-width="2.2" stroke-linecap="round"/>
-                    <line x1="142" y1="42" x2="142" y2="16" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="142" y1="42" x2="142" y2="16" stroke="#EA580C" stroke-width="2" stroke-linecap="round"/>
                     <path d="M 142 16 C 170 20, 218 30, 260 34" stroke="url(#ipadCurveGrad)" stroke-width="2.2" stroke-linecap="round"/>
                     <circle cx="76" cy="42" r="7" fill="rgba(245, 158, 11, 0.2)" stroke="#F59E0B" stroke-width="1.2"/>
                     <circle cx="76" cy="42" r="3" fill="#F59E0B"/>
                     <circle cx="142" cy="42" r="5.5" fill="rgba(245, 158, 11, 0.2)" stroke="#F59E0B" stroke-width="1.2"/>
                     <circle cx="142" cy="42" r="3" fill="#F59E0B"/>
-                    <circle cx="260" cy="34" r="3" fill="#059669"/>
-                    <text x="34" y="12" fill="#059669" font-size="7" font-weight="700">⚡ 触发重学·回100%</text>
-                    <text x="104" y="12" fill="#059669" font-size="7" font-weight="700">S稳定性翻倍 7.2d</text>
+                    <circle cx="260" cy="34" r="3" fill="#EA580C"/>
+                    <text x="38" y="12" fill="#EA580C" font-size="7" font-weight="700">触发重学·回100%</text>
+                    <text x="104" y="12" fill="#EA580C" font-size="7" font-weight="700">S稳定性翻倍 7.2d</text>
                   </svg>
                 </div>
               </div>
@@ -1023,19 +988,19 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
                   <div class="ios-card" style="padding: 22px 24px;">
                     <div style="font-size: 15px; color: #64748B;">A 列 [word]</div>
-                    <div style="font-size: 19px; font-weight: 700; color: #047857; margin-top: 8px;">➔ 单词</div>
+                    <div style="font-size: 19px; font-weight: 700; color: #C2410C; margin-top: 8px;">➔ 单词</div>
                   </div>
                   <div class="ios-card" style="padding: 22px 24px;">
                     <div style="font-size: 15px; color: #64748B;">B 列 [meaning]</div>
-                    <div style="font-size: 19px; font-weight: 700; color: #047857; margin-top: 8px;">➔ 中文释义</div>
+                    <div style="font-size: 19px; font-weight: 700; color: #C2410C; margin-top: 8px;">➔ 中文释义</div>
                   </div>
                   <div class="ios-card" style="padding: 22px 24px;">
                     <div style="font-size: 15px; color: #64748B;">C 列 [example]</div>
-                    <div style="font-size: 19px; font-weight: 700; color: #047857; margin-top: 8px;">➔ 真题例句</div>
+                    <div style="font-size: 19px; font-weight: 700; color: #C2410C; margin-top: 8px;">➔ 真题例句</div>
                   </div>
                 </div>
 
-                <div class="ios-btn" style="background: #059669; box-shadow: 0 10px 24px -8px rgba(5, 150, 105, 0.55);">
+                <div class="ios-btn" style="background: #0F172A; box-shadow: 0 10px 24px -8px rgba(15, 23, 42, 0.4);">
                   <span>立即导入并生成 FSRS 计划</span>
                 </div>
               </div>
@@ -1071,7 +1036,7 @@
               </div>
             </div>
 
-            <div class="ipad-screen-body" style="background: #FFFFFF;">
+            <div class="ipad-screen-body">
               <div class="ci-word-row">
                 <span class="ci-word">spring</span>
                 <span class="ci-phonetic">/sprɪŋ/</span>
@@ -1095,22 +1060,22 @@
                 <div class="ci-hub">
                   <svg class="ci-figure" viewBox="0 0 120 120" fill="none">
                     <!-- 蓄势：被压紧的弹簧。中间那圈淡下去，三圈才读成一条螺旋而不是三个环 -->
-                    <g stroke="#047857" stroke-width="2.4" stroke-linecap="round">
+                    <g stroke="#C2410C" stroke-width="2.4" stroke-linecap="round">
                       <ellipse cx="60" cy="91" rx="18" ry="6.6"/>
                       <ellipse cx="60" cy="80" rx="18" ry="6.6" stroke-opacity="0.42"/>
                       <ellipse cx="60" cy="69" rx="18" ry="6.6"/>
                     </g>
                     <!-- 释放：从弹簧顶端向上弹涌 -->
-                    <g stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <g stroke="#EA580C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M60 59 V24"/>
                       <path d="M51 34 L60 23 L69 34"/>
                     </g>
                     <!-- 迸发：两侧溢出的余势 -->
-                    <g stroke="#6EE7B7" stroke-width="2.2" stroke-linecap="round">
+                    <g stroke="#FDBA74" stroke-width="2.2" stroke-linecap="round">
                       <path d="M41 58 L30 47"/>
                       <path d="M79 58 L90 47"/>
                     </g>
-                    <g fill="#6EE7B7">
+                    <g fill="#FDBA74">
                       <circle cx="27" cy="38" r="2.4"/>
                       <circle cx="93" cy="38" r="2.4"/>
                     </g>
