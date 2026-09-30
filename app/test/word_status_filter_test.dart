@@ -237,18 +237,31 @@ void main() {
       expect(alphabetical.data! - 1, 0);
     });
 
-    test('取消掌握（选项②）后 learning_words 被重置为新词，而非带着旧强度装样子', () async {
-      // w3 本来就在「已掌握」词书里；再给它补一条"已毕业"的学习记录（哨兵 stability=120）
+    test('取消掌握：移出「已掌握」词书、学习进度记录不存在、列表按「未学习」呈现', () async {
+      // w3 本来就在「已掌握」词书里；再给它补一条"已毕业"的学习进度记录（哨兵 stability=120）
       await _insertLearningWord(db, now, userId, 'w3', stability: 120);
 
       await WordBo().deleteMasteredWord(userId, 'w3');
 
+      // ① 不再属于「已掌握」词书
+      expect(await db.masteredWordsDao.isWordMastered(userId, 'w3'), isFalse,
+          reason: '取消掌握必须把词移出「已掌握」词书');
+
+      // ② 学习进度记录不存在（断言"没有记录"，而不是"记录还在、稳定度 0.0"）
       final after = await (db.select(db.learningWords)
             ..where((t) => t.userId.equals(userId))
             ..where((t) => t.wordId.equals('w3')))
           .getSingleOrNull();
       expect(after == null, isTrue,
-          reason: '取消掌握必须清掉毕业留下的学习记录；否则带着 stability=120 装样子 = 假重学');
+          reason: '取消掌握必须删掉学习进度记录，而不是留一条 stability = 0.0 的假记录；'
+              '否则该词会带着一条本不该存在的记录复活成"学习中"');
+
+      // ③ 列表呈现口径：真实状态是「未学习」（null），不是"学习中 0%"
+      final listStatus = await DictWordsProvider(_dictVo('dict_main')).getWordLearningStatus('w3');
+      expect(listStatus == null, isTrue,
+          reason: '取消掌握 = 从零重学，词书列表必须按「未学习」呈现');
+      expect(listStatus == false, isFalse,
+          reason: '不能因为写了 0.0 就把该词算成"学习中"');
     });
 
     test('isEffectivelyMastered 只认已掌握记录：S=150 但无记录 ⇒ 仍算学习中', () async {

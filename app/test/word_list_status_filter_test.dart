@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/word_status_filter.dart';
+import 'package:nnbdc/page/word_list/learning_words.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/page/word_list/word_list_controller.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
@@ -15,6 +16,9 @@ class FakeFilterableProvider with WordsProvider {
   final Map<String, bool?> statuses;
   WordStatusFilter filter = WordStatusFilter.all;
 
+  /// 掌握/取消掌握后是否把词留在当前列表里（词书词表为 true，今日任务等为 false）
+  bool keepOnMaster = true;
+
   FakeFilterableProvider(this.allWords, this.statuses);
 
   List<WordWrapper> get _visible =>
@@ -24,7 +28,7 @@ class FakeFilterableProvider with WordsProvider {
   bool get canFilterStatus => true;
 
   @override
-  bool get keepWordsOnMaster => true;
+  bool get keepWordsOnMaster => keepOnMaster;
 
   @override
   Future<WordStatusFilter> getStatusFilter() async => filter;
@@ -85,7 +89,9 @@ class FakeFilterableProvider with WordsProvider {
 
   @override
   Future<bool> unmasterWord(WordWrapper wordWrapper) async {
-    statuses[wordWrapper.word.id!] = false;
+    // 真实语义（WordBo.deleteMasteredWord）：移出「已掌握」词书 + 删除学习进度记录
+    // → 该词没有任何学习进度记录，学习状态回到「未学习」（null）
+    statuses[wordWrapper.word.id!] = null;
     return true;
   }
 
@@ -213,5 +219,64 @@ void main() {
     expect(controller.words.any((w) => w.word.spell == 'word_0'), isFalse,
         reason: '"只看未学习+学习中"下掌握该词后应立刻移出');
     expect(provider.statuses['id_0'], isTrue);
+  });
+
+  test('取消掌握：呈现「未学习」且掌握度归零，稳定度置"无"而不是伪值 0.0', () async {
+    // 今日任务列表里的已掌握词：带着毕业时的哨兵稳定度 120.0 进入列表
+    final mastered = LearningWordVo(
+      UserVo.c2('u1'),
+      DateTime.now(),
+      1,
+      DateTime.now(),
+      1,
+      3,
+      WordVo.c2('cat')..id = 'id_0',
+      null,
+      120.0,
+      5.0,
+      0,
+      30,
+      3,
+      0,
+      2,
+    );
+    final wrapper = WordWrapper(mastered.word, mastered);
+    final provider = FakeFilterableProvider([wrapper], {'id_0': true})..keepOnMaster = false;
+    final controller = WordListController(
+      args: WordListPageArgs(
+        '今日单词',
+        provider,
+        true,
+        false,
+        true,
+        '掌握度',
+        LearningWordsProgressProvider(),
+        FakeBookMarkProvider(null),
+        null,
+      ),
+      itemScrollController: ItemScrollController(),
+      itemPositionsListener: ItemPositionsListener.create(),
+      sessionController: StudyAudioSessionController(),
+    );
+    addTearDown(controller.dispose);
+
+    await controller.loadData(checkAndShowGuide: () {}, restoreAsrIfNeeded: (_) {});
+    expect(controller.words.length, 1);
+
+    await controller.unmasterWord(wrapper, 0);
+
+    expect(provider.statuses['id_0'] == null, isTrue,
+        reason: '假数据源按真实语义把状态改成「未学习」（学习进度记录已被删除）');
+    expect(wrapper.currentLearningStatus == null, isTrue,
+        reason: '取消掌握 = 从零重学，列表必须按「未学习」呈现，不能是"学习中 0%"');
+    expect(wrapper.currentProgress, 0.0,
+        reason: '没有学习进度记录 → 掌握度进度为 0');
+    expect(LearningWordsProgressProvider().getWordProgress(wrapper.tag), 0.0,
+        reason: '渲染时按稳定度推导掌握度：没有学习进度记录就必须是 0，'
+            '不能被展示模型里残留的毕业哨兵值 120.0 顶成满环');
+    // 没有学习进度记录就没有记忆强度：稳定度必须是"无"（null），不能是伪值 0.0
+    // 反向验证：把 `stability = null` 改回 `stability = 0.0`，本断言即失败
+    expect(mastered.stability == null, isTrue,
+        reason: '取消掌握后该词没有任何记忆强度可言，不能臆造 0.0 这个伪值');
   });
 }

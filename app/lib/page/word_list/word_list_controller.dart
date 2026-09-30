@@ -710,11 +710,7 @@ class WordListController extends ChangeNotifier {
           args.wordsProvider.keepWordsOnMaster && args.wordsProvider.isStatusVisible(newStatus);
 
       if (!keepInView) {
-        if (word.tag is LearningWordVo) {
-          (word.tag as LearningWordVo).stability = 0.0;
-        }
-        word.currentLearningStatus = newStatus;
-        word.currentProgress = 0.0;
+        _applyCancelledMasteryDisplay(word, newStatus);
         words.remove(word);
         totalWordCount--;
 
@@ -730,13 +726,24 @@ class WordListController extends ChangeNotifier {
           await doQuery(false, baseIndex! + words.length, pageSize, false);
         }
       } else {
-        word.currentLearningStatus = newStatus;
-        if (word.tag is LearningWordVo) {
-          (word.tag as LearningWordVo).stability = 0.0;
-        }
-        word.currentProgress = 0.0;
+        _applyCancelledMasteryDisplay(word, newStatus);
       }
       notifyListeners();
+    }
+  }
+
+  /// 取消掌握后，按数据库里的真实数据刷新展示模型。
+  ///
+  /// 取消掌握的语义是：把词移出「已掌握」词书，并删除它的学习进度记录，让词从零重新学
+  /// （入口 `WordBo().deleteMasteredWord`）。学习进度记录既已删除，这个词就没有记忆强度了，
+  /// 于是呈现「未学习」（[newStatus] 为 null）、掌握度进度为 0、稳定度为"无"（null）。
+  /// 不能写 `stability = 0.0`：0.0 是伪值，既不是真实记忆强度，也不参与任何判定，
+  /// 还会让列表显示出"学习中 0%"这种不存在的状态。
+  void _applyCancelledMasteryDisplay(WordWrapper word, bool? newStatus) {
+    word.currentLearningStatus = newStatus;
+    word.currentProgress = 0.0;
+    if (word.tag is LearningWordVo) {
+      (word.tag as LearningWordVo).stability = null;
     }
   }
 
