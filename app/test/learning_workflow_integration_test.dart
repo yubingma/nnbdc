@@ -6,12 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
+import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -615,7 +617,8 @@ void main() {
     // 全 good 理论值（FSRS-5 默认权重 + 掌握线 120 天 ≈ 4 个月不忘）：init(3.173, 3天)
     // → 当天巩固(4.47, 4天) → 复习1(14.22, 14天) → 复习2(43.73, 44天)
     // → 复习3(124.80 ≥ 120) 自然毕业，累计约 62 天
-    // = 每词总评分 2(当天) + 3(跨天) = 5 次（毕业那次复习不写日志 → LearningLog 4 条）。
+    // = 每词总评分 2(当天) + 3(跨天) = 5 次，每次评分都写学习记录 → LearningLog 5 条
+    // （含触发毕业的那一次复习）。
     await db.delete(db.userStudySteps).go();
 
     int loopCount = 0;
@@ -651,16 +654,16 @@ void main() {
         await db.masteredWordsDao.getMasteredWordsForUser(testUser.id);
     expect(allMastered.length, 8, reason: '8 个词必须全部自然毕业');
 
-    // 断言 2：每词评分日志条数 == 4（init + 1 次当天巩固 + 2 次未毕业复习；
-    // 毕业那次复习不写日志）。掌握线 120 天下 FSRS-5 全 good 路径：
+    // 断言 2：每词评分日志条数 == 5（init + 1 次当天巩固 + 3 次复习，触发毕业的那次复习也写日志）。
+    // 掌握线 120 天下 FSRS-5 全 good 路径：
     // 3.173 →(当天巩固)→ 4.47 →(4天)→ 14.22 →(14天)→ 43.73 →(44天)→ 124.80 ≥ 120 毕业
     for (int i = 1; i <= 8; i++) {
       final logs =
           await db.learningLogsDao.getHistory(testUser.id, 'w_$i');
       expect(
         logs.length,
-        4,
-        reason: 'w_$i 应经历 init + 1 次当天巩固 + 2 次复习后自然毕业（总评分 5 次，毕业复习不写日志）',
+        5,
+        reason: 'w_$i 应经历 init + 1 次当天巩固 + 3 次复习后自然毕业（总评分 5 次，每次评分都写日志）',
       );
     }
 
@@ -670,6 +673,99 @@ void main() {
 
     // 等待后台 unawaited 任务执行完毕
     await Future.delayed(const Duration(milliseconds: 100));
-    print('🎉 自然毕业验证通过：全书 8 词、每词总评分 6 次（日志 5 条）、总天数 $loopCount');
+    print('🎉 自然毕业验证通过：全书 8 词、每词总评分 5 次（日志 5 条）、总天数 $loopCount');
+  });
+
+  test('触发毕业的那次评分照常写学习记录：稳定度记这次评分结果，词进已掌握词书并计入当日统计', () async {
+    final now = AppClock.now();
+    // 一个同日巩固过的复习词，只差这次评分就够到掌握线：
+    // stability 100.0 同日 good 走 FSRS-5 短期公式 ×e^(w17*w18) ≈ ×1.4078 → 约 140.78 ≥ 120.0
+    final currWord = LearningWord(
+      userId: testUser.id,
+      wordId: 'w_1',
+      addDay: 1,
+      addTime: now,
+      lastLearningDate: now,
+      learningOrder: 1,
+      batchId: 1,
+      isExtra: false,
+      stability: 100.0,
+      difficulty: 5.0,
+      elapsedDays: 0,
+      scheduledDays: 3,
+      reps: 4,
+      lapses: 0,
+      state: FsrsState.review.value,
+      isTodayNewWord: false,
+      learnedTimes: 4,
+      todayLearnedTimes: 0,
+      createTime: now,
+      updateTime: now,
+    );
+    await db.learningWordsDao.saveEntity(currWord, false);
+
+    final fsrs = FSRS();
+    final expected = fsrs.next(
+      FSRSItem(
+        stability: 100.0,
+        difficulty: 5.0,
+        elapsedDays: 0,
+        scheduledDays: 3,
+        reps: 4,
+        lapses: 0,
+        state: FsrsState.review,
+      ),
+      FsrsRating.good,
+      0,
+      nextState: FsrsState.review,
+    );
+    expect(expected.stability >= Constants.graduationStability, true,
+        reason: '前置条件：这次评分必须越过掌握线，才会走毕业分支');
+
+    final nextFsrs = await studyBo.updateCurrWord(
+      isWordMastered: false,
+      currWord: currWord,
+      user: testUser,
+      now: now,
+      db: db,
+      allStepsCompletedForWord: true,
+      isFirstAttempt: true,
+      fsrsRating: FsrsRating.good,
+    );
+
+    // 返回值：毕业同样返回这次评分的记忆状态（调用方据此把这次评分计入当天首条日志信息与日志条数）
+    expect(nextFsrs, isNotNull, reason: '毕业时必须返回这次评分的 FSRSItem，不再返回 null');
+    expect(nextFsrs!.stability, closeTo(expected.stability, 1e-9));
+
+    // ① 触发毕业的这次评分有学习记录，且记的是这次评分之后的稳定度，不是毕业哨兵值
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'w_1');
+    expect(logs.length, 1, reason: '触发毕业的那次评分必须写入学习记录');
+    expect(logs.first.rating, FsrsRating.good.value);
+    expect(logs.first.stability, closeTo(expected.stability, 1e-9),
+        reason: '学习记录记的是这次评分算出的稳定度');
+    expect(logs.first.stability, isNot(Constants.graduationStability),
+        reason: '学习记录不得被毕业哨兵值 120.0 污染');
+
+    // ② 该词已进入「已掌握」词书
+    expect(await db.masteredWordsDao.isWordMastered(testUser.id, 'w_1'), true);
+
+    // ③ 当日复习次数 +1、「已学习」状态被更新
+    final stats = await (db.select(db.userStudyDailyStats)
+          ..where((t) => t.userId.equals(testUser.id)))
+        .get();
+    expect(stats.length, 1);
+    expect(stats.first.reviewCount, 1, reason: '触发毕业的评分计入当日复习次数');
+    expect(stats.first.dayStatus, UserDayStatus.studied.json,
+        reason: '触发毕业的评分把当日状态更新为已学习');
+
+    // ④ 学习进度仍保留（执行阶段不删除），稳定度写毕业哨兵值，记忆字段与学习记录保持一致
+    final lw = await db.learningWordsDao.getById(testUser.id, 'w_1');
+    expect(lw, isNotNull);
+    final lwRow = lw!;
+    expect(lwRow.stability, Constants.graduationStability);
+    expect(lwRow.reps, expected.reps, reason: '毕业这次评分同样推进 reps，否则日志重放回推基准会少一条');
+    expect(lwRow.lapses, expected.lapses);
+
+    await Future.delayed(const Duration(milliseconds: 100));
   });
 }

@@ -1605,25 +1605,19 @@ extension BdcPageStateDialogs on BdcPageState {
         .getMasteredWordsForUser(user.id);
     final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
 
-    // 今天评分日志：固化每词轨道（与 StudyBo 一致）
-    final todayStart = AppClock.today();
-    final logRows =
-        await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
-              ..where((l) =>
-                  l.userId.equals(user.id) &
-                  l.createTime.isBiggerOrEqualValue(todayStart)))
-            .get();
+    // 今天评分日志：固化每词轨道（与 StudyBo 一致）。
+    // 业务日窗口 [03:00, 次日03:00) 由 LearningLogsDao.getInBusinessDay 统一给出，
+    // 不能用 AppClock.today()（业务日的当地 00:00）当下界；返回结果按 createTime 正序，
+    // 故每词首次出现即今天首条评分，条数即今天的评分日志条数。
+    final today = AppClock.today(); // 业务日（当地 00:00），供 StudyTrack 判定轨道
+    final logRows = await MyDatabase.instance.learningLogsDao
+        .getInBusinessDay(user.id);
     final firstLogs = <String, ({int elapsedDays, int rating})>{};
-    final earliestTime = <String, DateTime>{};
     // 当天评分日志条数：后续组环节"真走过"= 当天有 ≥2 条评分日志（测评 + 组内评分）
     final todayLogCounts = <String, int>{};
     for (final row in logRows) {
-      final prev = earliestTime[row.wordId];
-      if (prev == null || row.createTime.isBefore(prev)) {
-        earliestTime[row.wordId] = row.createTime;
-        firstLogs[row.wordId] =
-            (elapsedDays: row.elapsedDays, rating: row.rating);
-      }
+      firstLogs.putIfAbsent(row.wordId,
+          () => (elapsedDays: row.elapsedDays, rating: row.rating));
       todayLogCounts[row.wordId] = (todayLogCounts[row.wordId] ?? 0) + 1;
     }
 
@@ -1643,7 +1637,7 @@ extension BdcPageStateDialogs on BdcPageState {
         reviewCheck: reviewCfg.check,
         reviewCorrect: reviewCfg.correct,
         reviewWrong: reviewCfg.wrong,
-        today: todayStart,
+        today: today,
       );
     }
 
@@ -2096,7 +2090,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                         todayFirstLogElapsedDays:
                                                             firstLogs[w.wordId]
                                                                 ?.elapsedDays,
-                                                        today: todayStart,
+                                                        today: today,
                                                       );
                                                       final wordTrack =
                                                           trackOf(w);

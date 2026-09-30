@@ -17,6 +17,7 @@ import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
@@ -150,6 +151,20 @@ Future<void> _waitUntil(
   for (int i = 0; i < 100; i++) {
     if (predicate(container.read(bdcNotifierProvider))) return;
     await Future.delayed(const Duration(milliseconds: 20));
+  }
+}
+
+/// 执行 [action]，只放行"测试环境没有 ToastificationWrapper"导致的提示条断言错误。
+///
+/// 取词失败分支会弹提示条（ErrorHandler.handleError → ToastUtil.error），
+/// 而纯单元测试没有 Toastification 覆盖层，弹提示条必然抛断言错误。
+/// 该断言不影响失败分支对"已受理凭据 / 受理资格"的处理，故这里显式接住它；
+/// 其它任何异常照旧抛出，不得被吞掉。
+Future<void> _ignoreToastUnavailable(Future<void> Function() action) async {
+  try {
+    await action();
+  } on AssertionError catch (e) {
+    if (!'$e'.contains('Toastification is not initialized')) rethrow;
   }
 }
 
@@ -1470,12 +1485,12 @@ void main() {
       if (logs.isNotEmpty && logs.first.rating == FsrsRating.easy.value) break;
     }
 
-    // LearningLog 最新一条已持久化更新为 easy
+    // LearningLog 当天首条日志已持久化更新为 easy（本用例今天只有这一条）
     expect(logs, isNotEmpty, reason: '应有 LearningLog 记录');
     expect(logs.first.rating, FsrsRating.easy.value,
-        reason: '修改评分后 LearningLog 最新一条应为新评分,实际为 ${logs.first.rating}');
+        reason: '修改评分后 LearningLog 当天首条日志应为新评分,实际为 ${logs.first.rating}');
 
-    // learningHistoryFuture 已刷新:解析后最新一条为新评分
+    // learningHistoryFuture 已刷新:解析后当天首条日志为新评分
     final futureLogs = await notifier.learningHistoryFuture;
     expect(futureLogs, isNot(null));
     expect(futureLogs!.first.rating, FsrsRating.easy.value,
@@ -1885,6 +1900,146 @@ void main() {
     }
     expect(state.fsrsItem!.scheduledDays, 16,
         reason: '改回 easy 应稳定回到 16 天,实际 ${state.fsrsItem!.scheduledDays}');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 修改今日评分:连续改 good→easy→hard→easy 不漂移,只改当天首条日志', () async {
+    // 复习词：昨天学过（测评前基准 15.69105），今天测评 easy（当天首条）+ 巩固 good（当天第二条）。
+    // 巩固日志的存在正是旧的"替换最新一条"口径会踩的坑：改评分落到了巩固日志上，
+    // 当天首条仍是旧评分，反复修改互相污染（实测 good→easy→hard→easy 天数 4→22→3→13）。
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    final yesterday = today.subtract(const Duration(days: 1));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(
+          stability: const Value(35.21175712420889),
+          difficulty: const Value(2.135155608561961),
+          reps: const Value(2),
+          lapses: const Value(0),
+          scheduledDays: const Value(35),
+          state: const Value(2), // Review
+          addTime: Value(yesterday),
+          addDay: const Value(2),
+          isTodayNewWord: const Value(false),
+          lastLearningDate: Value(yesterday),
+          // 学习步骤次数：修改评分全程不得改动（todayLearnedTimes 保持 0，
+          // 否则会被 getWord 的"跨天残留进度"防线拦下）
+          learnedTimes: const Value(3),
+          todayLearnedTimes: const Value(0),
+        ));
+    // 昨天(测评前)的日志 → 重放基准
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_drift_yesterday',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 15.69105,
+      difficulty: 3.2245015893713678,
+      elapsedDays: 5,
+      scheduledDays: 16,
+      createTime: yesterday,
+      updateTime: yesterday,
+    ), false);
+    // 今天测评(当天首条,评分修正对话框改的就是它)：next(15.69105, easy, 1) ≈ 25.0124 → 25 天
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_drift_assess',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 25.012414485811277,
+      difficulty: 2.1301214599670124,
+      elapsedDays: 1,
+      scheduledDays: 25,
+      createTime: testNow,
+      updateTime: testNow,
+    ), false);
+    // 今天巩固(当天第二条)：next(25.0124, good, 0) ≈ 35.2118 → 35 天
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_drift_consolidate',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.good.value,
+      stability: 35.21175712420889,
+      difficulty: 2.135155608561961,
+      elapsedDays: 0,
+      scheduledDays: 35,
+      createTime: testNow.add(const Duration(seconds: 30)),
+      updateTime: testNow.add(const Duration(seconds: 30)),
+    ), false);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+
+    Future<LearningLog> logById(String id) async {
+      final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+      return logs.firstWhere((l) => l.id == id);
+    }
+
+    // 连续改评分：每次都只能落在"当天首条日志"上，巩固日志的评分与状态纹丝不动
+    for (final rating in [
+      FsrsRating.good,
+      FsrsRating.easy,
+      FsrsRating.hard,
+      FsrsRating.easy
+    ]) {
+      notifier.updateFsrsRating(rating);
+      for (int i = 0; i < 50; i++) {
+        await Future.delayed(const Duration(milliseconds: 20));
+        if ((await logById('log_drift_assess')).rating == rating.value) break;
+      }
+      final assessLog = await logById('log_drift_assess');
+      expect(assessLog.rating, rating.value,
+          reason: '当天首条日志的评分应更新为 ${rating.label},实际 ${assessLog.rating}');
+      expect(assessLog.elapsedDays, 1,
+          reason: '首条日志只能写重放首步态：跨天测评的 elapsedDays 应保留原间隔 1；'
+              '若写成末态会得到 0，下次重放就会误走同日短期公式');
+      final consolidateLog = await logById('log_drift_consolidate');
+      expect(consolidateLog.rating, FsrsRating.good.value,
+          reason: '巩固日志的评分必须保持原值,不能被新评分污染');
+      expect(consolidateLog.stability, closeTo(35.21175712420889, 1e-9));
+      expect(consolidateLog.scheduledDays, 35);
+    }
+
+    // 当天首条日志 = 首步态：next(15.69105, easy, 1) ≈ 25.0124 → 25 天（不是末态的 35.2118/35）
+    final assessLog = await logById('log_drift_assess');
+    expect(assessLog.stability, closeTo(25.012414485811277, 1e-9));
+    expect(assessLog.scheduledDays, 25);
+
+    // learning_words = 末态，且与"一次性改成 easy"完全一致（重放：首条 easy + 巩固 good）
+    state = container.read(bdcNotifierProvider);
+    expect(state.fsrsItem!.stability, closeTo(35.21175712420889, 1e-9),
+        reason: '连续修改后不得漂移');
+    expect(state.fsrsItem!.scheduledDays, 35);
+    expect(state.fsrsItem!.reps, 2);
+    expect(state.fsrsItem!.lapses, 0);
+
+    final lw = await (db.select(db.learningWords)
+          ..where((t) => t.userId.equals(testUser.id) & t.wordId.equals('word_1')))
+        .getSingle();
+    expect(lw.stability, closeTo(35.21175712420889, 1e-9));
+    expect(lw.scheduledDays, 35);
+    expect(lw.reps, 2);
+    expect(lw.lapses, 0);
+    expect(lw.learnedTimes, 3, reason: '修改评分不得改动学习步骤次数');
+    expect(lw.todayLearnedTimes, 0, reason: '修改评分不得改动今日学习步骤次数');
+    expect((await db.learningLogsDao.getHistory(testUser.id, 'word_1')).length, 3,
+        reason: '连续修改只应原地替换当天首条日志,不得新增或丢失日志');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
@@ -2669,6 +2824,390 @@ void main() {
         reason: '落库评分应是受理时的 again，而不是后来判题算出的 easy');
   });
 
+  // ===== 无评分的"作答后流转"不得推进环节计数（无凭据即丢弃） =====
+  test('BdcNotifier - 无评分的作答后流转必须丢弃：不得推进今日环节计数', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    expect(container.read(bdcNotifierProvider).word!.spell, 'apple');
+
+    // 答案已揭晓（作答后），但没有任何"已受理凭据"：例如练习模式只揭晓答案、
+    // 或凭据已被丢弃后 UI 状态残留。此时若继续流转，StudyBo 会把 fsrsRating == null
+    // 当成正常推进（advanceStep = 评分 != again 对 null 为 true），
+    // 于是环节被跳过、今日进度虚高，却既没有学习记录也没有 FSRS 更新。
+    notifier.updateHasFinishedAnswering(true);
+
+    await notifier.getNextWord(true);
+
+    final lw = await (db.select(db.learningWords)
+          ..where((t) =>
+              t.userId.equals(testUser.id) & t.wordId.equals('word_1')))
+        .getSingle();
+    expect(lw.todayLearnedTimes, 0, reason: '不得推进今日学习环节计数');
+    expect(lw.learnedTimes, 0, reason: '不得推进累计学习次数');
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs, isEmpty, reason: '无评分流转不得凭空推进进度，也不该留下学习记录');
+    expect(container.read(bdcNotifierProvider).word!.spell, 'apple',
+        reason: '当前词不得被换走');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  // ===== 练习模式（看答案 → 隐藏答案 → 练习答对）不得把「下一词」锁死 =====
+  test('BdcNotifier - 练习模式：看答案→隐藏答案→练习答对后「下一词」仍能正常流转', () async {
+    // 例句环节 setup：轨道 [En2Ch, EnSentence2Ch, List]，stepIndex=1 即例句环节
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
+          studyStep: 'EnSentence2Ch',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    // 今天首条评分日志（elapsedDays=0, good）：轨道按答对组扩展
+    await db.learningLogsDao.saveEntity(LearningLog(
+          id: 'first_log_word_1',
+          userId: testUser.id,
+          wordId: 'word_1',
+          rating: FsrsRating.good.value,
+          stability: 2.4,
+          difficulty: 3.05,
+          elapsedDays: 0,
+          scheduledDays: 2,
+          createTime: now,
+          updateTime: now,
+        ), false);
+    await db.into(db.sentences).insert(Sentence(
+          id: 'snt_practice',
+          english: 'I eat an apple every morning.',
+          chinese: '我每天早上吃一个苹果。',
+          englishDigest: 'I eat an apple every morning.',
+          partOfSpeech: '',
+          theType: 'tts',
+          handCount: 0,
+          footCount: 0,
+          authorId: 'sys',
+          ownerId: 'sys',
+          meaningItemId: 'mim_1',
+          wordMeaning: '苹果',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+    PlatformUtils.asrSupportedOverride = true;
+    addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+    expect(container.read(bdcNotifierProvider).studyStep, 'EnSentence2Ch');
+
+    // 1. 看答案：受理一条 again 凭据，今日测评就此定案
+    notifier.revealAnswerAndMarkWrong(context);
+    var state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true);
+    expect(state.lastFsrsRating, FsrsRating.again);
+
+    // 2. 隐藏答案继续练习
+    notifier.hideAnswer();
+    state = container.read(bdcNotifierProvider);
+    expect(state.isPracticeMode, true);
+    expect(state.hasFinishedAnswering, false);
+
+    // 3. 练习答对：只反馈、只揭晓答案，不登记新凭据、不改今日评分
+    notifier.startPttAsr();
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 1; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    await notifier.onAsrResult(jsonEncode({
+      'best': '我每天早上吃一个苹果',
+      'candidates': ['我每天早上吃一个苹果'],
+      'isFinal': true,
+    }));
+    await notifier.stopPttAsr();
+    await Future.delayed(const Duration(milliseconds: 100));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true, reason: '练习答对也要揭晓答案，用户才能比对');
+    expect(state.lastFsrsRating, FsrsRating.again, reason: '练习答对不得改写今日评分');
+
+    // 4. 「下一词」：必须凭"看答案"那次已受理的 again 凭据真正流转。
+    //    旧实现 hideAnswer 把待计分凭据清空，这里会被判成"重复/迟到提交"直接丢弃，
+    //    表现为按钮点了没反应（既不换词也不落评分）。
+    final advanced =
+        await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+    await Future.delayed(const Duration(milliseconds: 200));
+    expect(advanced, true, reason: '练习模式离开必须能流转，不得静默丢弃');
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 2, reason: '看答案的 again 必须在离开时落一条学习记录');
+    expect(logs.first.rating, FsrsRating.again.value,
+        reason: '落库评分应是看答案时的 again，而不是练习后的得分');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  // ===== 流转失败不得吞掉已受理凭据（否则当前词被永久锁死） =====
+  test('BdcNotifier - 取词失败后凭据保留：原样重试「下一词」仍能计分', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 受理一次作答（good）
+    notifier.acceptAnswerForTesting(FsrsRating.good);
+
+    // 让这次流转失败：未登录时 StudyBo.getWord 直接返回失败
+    // （失败分支会弹提示条，纯单元测试没有 ToastificationWrapper，故接住该断言错误）
+    await Prefs.remove('currentUserId');
+    await Global.loadUserFromDb();
+    await _ignoreToastUnavailable(
+        () => notifier.getNextWord(true, fsrsRating: FsrsRating.good));
+
+    // 失败后凭据必须还在：用户恢复登录后原样重试「下一词」要能真正计分。
+    // 旧实现先清凭据再取词，失败后 _answerAccepted 仍为真、凭据却已为空，
+    // 于是之后所有「下一词 / 不认识 / 再学学」都被判成"重复/迟到提交"而静默失效。
+    Global.updateUserCache(testUser);
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1, reason: '重试成功后才落库，且只落一条评分日志');
+    expect(logs.first.rating, FsrsRating.good.value);
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 取词失败后改用别的评分（再学学）仍能受理', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    notifier.acceptAnswerForTesting(FsrsRating.good);
+    await Prefs.remove('currentUserId');
+    await Global.loadUserFromDb();
+    await _ignoreToastUnavailable(
+        () => notifier.getNextWord(true, fsrsRating: FsrsRating.good));
+
+    // 用户改主意点「再学学」（again）：失败分支必须复位"已受理"标记，
+    // 否则 _acceptAnswer 会把它当成同一呈现的重复受理而直接忽略。
+    Global.updateUserCache(testUser);
+    notifier.acceptAnswerForTesting(FsrsRating.again);
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1, reason: '新意图应登记成新凭据并落库一条日志');
+    expect(logs.first.rating, FsrsRating.again.value,
+        reason: '落库评分应是用户最后选定的 again');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 修改今日评分:业务日窗口内的「昨天23:50测评+今天01:00巩固」必须同属一天', () async {
+    // 改评分发生在 6/16 01:30 → 业务日 6/15，窗口 [6/15 03:00, 6/16 03:00)。
+    // 「6/15 23:50 测评」与「6/16 01:00 巩固」都落在窗口内，是同一个业务日的两条日志；
+    // 6/15 02:00 那条属前一业务日 6/14，只能当重放基准，绝不能被当成"当天首条日志"替换。
+    AppClock.setClock(FakeClock(DateTime(2026, 6, 16, 1, 30)));
+    addTearDown(AppClock.reset);
+
+    final baselineTime = DateTime(2026, 6, 15, 2, 0); // 业务日 6/14
+    final assessTime = DateTime(2026, 6, 15, 23, 50); // 业务日 6/15 首条
+    final consolidateTime = DateTime(2026, 6, 16, 1, 0); // 业务日 6/15 第二条
+
+    // 用户与当前词都归到业务日 6/15
+    final bdUser = testUser.copyWith(
+      lastLearningDate: Value(DateTime(2026, 6, 15)),
+      todayStudyStarted: true,
+    );
+    await db.usersDao.saveUser(bdUser, false);
+    Global.updateUserCache(bdUser);
+    testUser = bdUser;
+
+    await (db.update(db.learningWords)
+          ..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(
+      stability: const Value(35.21175712420889),
+      difficulty: const Value(2.135155608561961),
+      reps: const Value(2),
+      lapses: const Value(0),
+      scheduledDays: const Value(35),
+      state: const Value(2), // Review
+      addTime: Value(DateTime(2026, 6, 14)),
+      addDay: const Value(1),
+      isTodayNewWord: const Value(false),
+      lastLearningDate: Value(DateTime(2026, 6, 14)),
+      learnedTimes: const Value(3),
+      todayLearnedTimes: const Value(0),
+    ));
+
+    // 重放基准 = 前一业务日的最后一条
+    await db.learningLogsDao.saveEntity(
+        LearningLog(
+          id: 'log_bd_baseline',
+          userId: testUser.id,
+          wordId: 'word_1',
+          rating: FsrsRating.easy.value,
+          stability: 15.69105,
+          difficulty: 3.2245015893713678,
+          elapsedDays: 5,
+          scheduledDays: 16,
+          createTime: baselineTime,
+          updateTime: baselineTime,
+        ),
+        false);
+    // 当天首条 = 6/15 23:50 测评
+    await db.learningLogsDao.saveEntity(
+        LearningLog(
+          id: 'log_bd_assess',
+          userId: testUser.id,
+          wordId: 'word_1',
+          rating: FsrsRating.easy.value,
+          stability: 25.012414485811277,
+          difficulty: 2.1301214599670124,
+          elapsedDays: 1,
+          scheduledDays: 25,
+          createTime: assessTime,
+          updateTime: assessTime,
+        ),
+        false);
+    // 当天第二条 = 6/16 01:00 巩固
+    await db.learningLogsDao.saveEntity(
+        LearningLog(
+          id: 'log_bd_consolidate',
+          userId: testUser.id,
+          wordId: 'word_1',
+          rating: FsrsRating.good.value,
+          stability: 35.21175712420889,
+          difficulty: 2.135155608561961,
+          elapsedDays: 0,
+          scheduledDays: 35,
+          createTime: consolidateTime,
+          updateTime: consolidateTime,
+        ),
+        false);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    expect(container.read(bdcNotifierProvider).word!.spell, 'apple');
+
+    Future<LearningLog> logById(String id) async {
+      final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+      return logs.firstWhere((l) => l.id == id);
+    }
+
+    // 把「当天首条」改成 good
+    notifier.updateFsrsRating(FsrsRating.good);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      if ((await logById('log_bd_assess')).rating == FsrsRating.good.value) break;
+    }
+
+    final baselineLog = await logById('log_bd_baseline');
+    final assessLog = await logById('log_bd_assess');
+    final consolidateLog = await logById('log_bd_consolidate');
+
+    expect(baselineLog.rating, FsrsRating.easy.value,
+        reason: '前一业务日的日志只能当重放基准，不得被当成"当天首条"替换');
+    expect(baselineLog.stability, 15.69105);
+    expect(baselineLog.scheduledDays, 16);
+    expect(consolidateLog.rating, FsrsRating.good.value,
+        reason: '巩固日志必须保持原评分，不得被新评分污染');
+    expect(consolidateLog.stability, closeTo(35.21175712420889, 1e-9));
+
+    // 首条日志只写"重放首步态"：next(基准, good, 1)，跨天间隔 1 天必须保留
+    final fsrs = FSRS();
+    final baseItem = FSRSItem(
+      stability: 15.69105,
+      difficulty: 3.2245015893713678,
+      elapsedDays: 0,
+      scheduledDays: 16,
+      reps: 0,
+      lapses: 0,
+      state: FsrsState.review,
+    );
+    final expectedFirstStep = fsrs.next(baseItem, FsrsRating.good, 1);
+    final expectedReplayed = fsrs.next(expectedFirstStep, FsrsRating.good, 0);
+
+    expect(assessLog.elapsedDays, 1,
+        reason: '若把 6/15 02:00 那条误当"当天首条"，这里会变成它的间隔 5 天');
+    expect(assessLog.stability, closeTo(expectedFirstStep.stability, 1e-9));
+    expect(assessLog.scheduledDays, expectedFirstStep.scheduledDays);
+
+    final lw = await (db.select(db.learningWords)
+          ..where((t) =>
+              t.userId.equals(testUser.id) & t.wordId.equals('word_1')))
+        .getSingle();
+    expect(lw.stability, closeTo(expectedReplayed.stability, 1e-9),
+        reason: 'learning_words 写重放末态：首条 good + 巩固 good');
+    expect(lw.scheduledDays, expectedReplayed.scheduledDays);
+    expect(lw.reps, expectedReplayed.reps);
+    expect(lw.todayLearnedTimes, 0, reason: '修改评分不得改动今日环节次数');
+    expect(lw.learnedTimes, 3);
+    expect((await db.learningLogsDao.getHistory(testUser.id, 'word_1')).length, 3,
+        reason: '只允许原地替换当天首条日志');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
 }
 
 

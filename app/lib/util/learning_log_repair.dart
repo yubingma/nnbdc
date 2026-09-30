@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/date_utils.dart';
@@ -185,11 +184,11 @@ class LearningLogRepair {
         continue;
       }
 
-      // 已掌握词（掌握线 stability >= 120，或已进入「已掌握」词书）不回填：
-      // 掌握是用户可见、可编辑的事实，其 stability 是毕业哨兵值，不能按日志改回去
-      final stability = learningWord.stability;
-      final isMastered = (stability != null && stability >= Constants.graduationStability) ||
-          masteredWordIds.contains(learningWord.wordId);
+      // 已掌握词不回填：掌握 = 该词已进入「已掌握」词书（唯一口径），
+      // 掌握是用户可见、可编辑的事实，其 stability 是毕业哨兵值，不能按日志改回去。
+      // 不拿 stability >= 掌握线当判据：那是代理判据，会把"稳定度恰好越过掌握线、
+      // 但并未进入已掌握词书"的词误判成已掌握而漏回填。
+      final isMastered = masteredWordIds.contains(learningWord.wordId);
 
       final removed = deletedPerWord[entry.key] ?? 0;
       var restored = learningWord;

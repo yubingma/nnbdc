@@ -7,7 +7,6 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/user_extensions.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
@@ -18,9 +17,6 @@ class LearningService {
   static void debugLog(String msg) {
     Global.logger.d(msg);
   }
-
-  static const double initialStability = 0.0;
-  static double get masteredStability => Constants.graduationStability;
 
   /// 准备今日学习单词
   static Future<Result<List<int>>> prepareTodayStudy(bool addNewWordsIfNotEnough) async {
@@ -530,13 +526,11 @@ class LearningService {
   /// （要留在本环节重练到答对才推进）；也不宜用 lastLearningDate —— 它可能被历史版本
   /// 在分配计划时预写过。以评分日志为准最可靠。
   static Future<Set<String>> _todayRatedWordIds(String userId) async {
-    final db = MyDatabase.instance;
-    final rows = await (db.selectOnly(db.learningLogs)
-          ..addColumns([db.learningLogs.wordId])
-          ..where(db.learningLogs.userId.equals(userId) &
-              db.learningLogs.createTime.isBiggerOrEqualValue(AppClock.today())))
-        .get();
-    return rows.map((r) => r.read(db.learningLogs.wordId)!).toSet();
+    // 业务日窗口 [03:00, 次日03:00) 由 LearningLogsDao.getInBusinessDay 统一给出，
+    // 不能用 AppClock.today() 当下界：它是业务日的当地 00:00，会把前一业务日 00:00~02:59
+    // 的评分算成"今天学过"
+    final rows = await MyDatabase.instance.learningLogsDao.getInBusinessDay(userId);
+    return rows.map((r) => r.wordId).toSet();
   }
 
   static Future<List<LearningWord>> shrinkTodayWords(String userId, List<LearningWord> todayWords, int targetCount) async {

@@ -969,7 +969,8 @@ class StudyBo {
     }
   }
 
-  /// 更新当前单词的学习进度与 FSRS 状态；返回本次计算出的 FSRSItem（无评分时 null）
+  /// 更新当前单词的学习进度与 FSRS 状态；返回本次计算出的 FSRSItem（无评分时 null）。
+  /// 触发毕业时同样返回它：这次评分已照常写入学习记录并计数，调用方需据此计数。
   Future<FSRSItem?> updateCurrWord({
     required bool isWordMastered,
     required LearningWord currWord,
@@ -993,8 +994,9 @@ class StudyBo {
       return null;
     }
 
-    // 答错的词留在本环节循环重练，答对才推进环节索引；
-    // 无评分的历史切词路径（fsrsRating == null）照旧推进，保持原有行为不变
+    // 答错的词留在本环节循环重练，答对才推进环节索引。
+    // fsrsRating == null（无评分）照旧推进：合法的无评分流转（未作答就跳过、掌握、回看）
+    // 由调用方 BdcNotifier.getNextWord 负责甄别，缺少已受理凭据的"作答后流转"在到达这里之前就被丢弃。
     final bool advanceStep = fsrsRating != FsrsRating.again;
     // 仅首次作答计分：重练只判对错，不再算 FSRS、不写日志、不计数
     final bool isGraded = isFirstAttempt && fsrsRating != null;
@@ -1063,21 +1065,10 @@ class StudyBo {
     // 判定是否毕业（进入已掌握单词表）
     bool shouldGraduate = isWordMastered || (nextFsrs != null && nextFsrs.stability >= Constants.graduationStability);
 
-    if (shouldGraduate) {
-      // 保存已掌握单词
-      await _saveMasteredWord(
-        learningWord: currWord,
-        user: user,
-        now: now,
-        db: db,
-      );
-      return null;
-    }
-
-    // 更新学习状态
-    Global.logger.d('Word ${currWord.wordId}. Updating FSRS and learnedTimes.');
-
     // 保存学习记录（仅首次作答计分；重练不计分也不写日志）
+    // 触发毕业的这次评分同样是真实作答，必须先照常写流水并计数：流水记录的是这次评分之后的
+    // 记忆状态 nextFsrs，绝不会被随后的毕业哨兵值污染；规划阶段毕业要删除学习进度记录时，
+    // 流水也照旧保留（流水与学习进度是两张表）。故本段必须排在毕业动作之前。
     if (isGraded && nextFsrs != null) {
       await db.learningLogsDao.saveEntity(
         LearningLog(
@@ -1094,12 +1085,28 @@ class StudyBo {
         ),
         true,
       );
-      
+
       // 更新历史每日统计 (单词数)
       await db.userStudyDailyStatsDao.incrementReviewCount(user.id, now);
       // 更新每日状态为“已学习”
       await db.userStudyDailyStatsDao.updateDayStatus(user.id, now, UserDayStatus.studied);
     }
+
+    if (shouldGraduate) {
+      // 保存已掌握单词（会把学习进度的稳定度改写成毕业哨兵值，规划阶段甚至删除整条学习进度记录）
+      await _saveMasteredWord(
+        learningWord: currWord,
+        user: user,
+        now: now,
+        db: db,
+        fsrs: nextFsrs,
+      );
+      // 毕业时同样返回本次评分的记忆状态：调用方据此把这次评分计入当天首条日志信息与日志条数
+      return nextFsrs;
+    }
+
+    // 更新学习状态
+    Global.logger.d('Word ${currWord.wordId}. Updating FSRS and learnedTimes.');
 
     // 答错且非首次作答（纯重练答错）：所有字段均无变化，不必写库与同步
     if (!advanceStep && !isGraded) {
@@ -1149,14 +1156,9 @@ class StudyBo {
       _loadTodayFirstLogsOfIds(String userId, Iterable<String> wordIds) async {
     final ids = wordIds.toList();
     if (ids.isEmpty) return {};
-    final db = MyDatabase.instance;
-    final todayStart = AppClock.today();
-    final rows = await (db.select(db.learningLogs)
-          ..where((l) =>
-              l.userId.equals(userId) &
-              l.wordId.isIn(ids) &
-              l.createTime.isBiggerOrEqualValue(todayStart)))
-        .get();
+    // 业务日窗口 [03:00, 次日03:00) 由 LearningLogsDao.getInBusinessDay 统一给出
+    final rows = await MyDatabase.instance.learningLogsDao
+        .getInBusinessDay(userId, wordIds: ids);
     // 每词取最早一条日志（今天首条评分）的 elapsedDays 与 rating（用于固化轨道与扩展复习轨道），
     // 并统计今天该词的日志条数：每个评分环节只在首次作答时写一条日志（重练不计分），
     // 故条数配合今日进度即可判定"本环节是首次作答还是重练"（见 StudyTrack.isFirstAttemptOfStep）。
@@ -1179,9 +1181,19 @@ class StudyBo {
     };
   }
 
+  /// 把"修改今日评分"的结果落库：
+  /// - [nextFsrs] 重放末态 → learning_words；
+  /// - [firstStepFsrs] 重放首步态 → **当天首条日志**（即被修改的那条今日测评）。
+  /// - [newRating] 用户新选的评分，同样只写进当天首条日志。
+  ///
+  /// 替换的必须是当天首条日志而不是最新一条：当天若有巩固环节，最新一条是巩固日志，
+  /// 改它会让反复修改评分互相污染（首条仍是旧评分，重放基准错位 → 结果漂移）。
+  /// 又因每条 learning_logs 记录的是"该次评分之后"的状态，首条日志只能写首步态，
+  /// 写末态等于把巩固环节的量变提前记到首条上，日志序列会说谎。
   Future<void> saveHistoryFSRSUpdate({
     required LearningWordVo currWord,
     required FSRSItem nextFsrs,
+    required FSRSItem firstStepFsrs,
     required FsrsRating newRating,
   }) async {
     final db = MyDatabase.instance;
@@ -1200,26 +1212,23 @@ class StudyBo {
       await saveWrongWord(dbLw, db, user, now);
     }
 
-    // 2. 覆盖替换最近的一条学习日志
+    // 2. 覆盖替换「当天首条日志」（业务日窗口 [03:00, 次日03:00)，与 _loadTodayFirstLogsOfIds 同源）
     try {
-      final logQuery = db.select(db.learningLogs)
-        ..where((tbl) => tbl.wordId.equals(currWord.word.id!) & tbl.userId.equals(user.id))
-        ..orderBy([(tbl) => OrderingTerm(expression: tbl.createTime, mode: OrderingMode.desc)])
-        ..limit(1);
-      final lastLogList = await logQuery.get();
-      if (lastLogList.isNotEmpty) {
-        final lastLog = lastLogList.first;
-        await db.update(db.learningLogs).replace(lastLog.copyWith(
+      final firstLogList = await db.learningLogsDao
+          .getInBusinessDay(user.id, wordIds: [currWord.word.id!]);
+      if (firstLogList.isNotEmpty) {
+        final firstLog = firstLogList.first;
+        await db.update(db.learningLogs).replace(firstLog.copyWith(
           rating: newRating.value,
-          stability: nextFsrs.stability,
-          difficulty: nextFsrs.difficulty,
-          elapsedDays: nextFsrs.elapsedDays,
-          scheduledDays: nextFsrs.scheduledDays,
+          stability: firstStepFsrs.stability,
+          difficulty: firstStepFsrs.difficulty,
+          elapsedDays: firstStepFsrs.elapsedDays,
+          scheduledDays: firstStepFsrs.scheduledDays,
           updateTime: now,
         ));
       }
     } catch (e, s) {
-      Global.logger.e('历史模式下修改 FSRS，更新最近一条 LearningLog 失败', error: e, stackTrace: s);
+      Global.logger.e('历史模式下修改 FSRS，更新当天首条 LearningLog 失败', error: e, stackTrace: s);
     }
 
     // 3. 更新当前单词的 FSRS 字段，但不改动学习步骤次数
@@ -1657,11 +1666,17 @@ class StudyBo {
   }
 
 
+  /// [fsrs] 触发毕业的这次评分的记忆状态；回看模式手动标记掌握时没有本次评分，传 null。
+  ///
+  /// 稳定度仍写毕业哨兵值（毕业标记，不取 [fsrs]），但其余记忆字段必须与已写入的流水一致：
+  /// 流水记的就是这次评分之后的状态，学习进度若停在评分之前的 reps/lapses，
+  /// "按当天全部日志真实重放"回推基准时就会少算这一条（见 BdcNotifier._recalcFsrsForRating）。
   Future<void> _saveMasteredWord({
     required LearningWord learningWord,
     required User user,
     required DateTime now,
     required MyDatabase db,
+    FSRSItem? fsrs,
   }) async {
     // 学习轨道长度（三组结构：测评 + 答对组 + List）用于饱和填充今日环节数
     final newCfg = await _studyStepsService.getThreeGroupConfig('new');
@@ -1672,6 +1687,12 @@ class StudyBo {
       // 这样进度条的分母保持不变，分子增加，体验更平滑
       final updatedWord = learningWord.copyWith(
         stability: Value(Constants.graduationStability),
+        difficulty: fsrs != null ? Value(fsrs.difficulty) : const Value.absent(),
+        elapsedDays: fsrs != null ? Value(fsrs.elapsedDays) : const Value.absent(),
+        scheduledDays: fsrs != null ? Value(fsrs.scheduledDays) : const Value.absent(),
+        reps: fsrs != null ? Value(fsrs.reps) : const Value.absent(),
+        lapses: fsrs != null ? Value(fsrs.lapses) : const Value.absent(),
+        state: fsrs != null ? Value(fsrs.state.value) : const Value.absent(),
         lastLearningDate: Value(AppClock.today()),
         learnedTimes: learningWord.learnedTimes + 1,
         todayLearnedTimes: stepCount, // 饱和今天的所有环节

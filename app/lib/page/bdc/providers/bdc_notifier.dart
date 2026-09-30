@@ -59,11 +59,13 @@ class BdcNotifier extends _$BdcNotifier {
   DateTime? _lastCorrectSoundTime;
 
   /// 本次“呈现”的作答是否已被受理：一次呈现只受理一次作答。
-  /// 只在 [handleWord] 呈现新词/重练（以及练习模式重开）时复位；
-  /// 绝不能在 getNextWord 开头复位 —— 那正是“同一次作答被两条链路重复受理”的入口。
+  /// 在 [handleWord] 呈现新词/重练（以及练习模式重开）时复位；
+  /// 流转失败时也复位（否则用户改用别的评分会登记不上凭据）。
+  /// 绝不能在 getNextWord 开头复位 —— 那正是“同一次作答被多处重复受理”的入口。
   bool _answerAccepted = false;
 
-  /// 待计分作答凭据：受理作答时登记，被 [getNextWord] 消费一次后置空。
+  /// 待计分作答凭据：受理作答时登记，被 [getNextWord] 取用、并在流转成功（[handleWord] 呈现新词）后置空。
+  /// 流转失败时保留，用户可原样重试。
   /// [alreadyPersisted] 供“修改今日评分”使用：该路径已自行落库，后续流转只导航不再计分。
   ({String? wordId, FsrsRating rating, bool alreadyPersisted})? _pendingGrade;
 
@@ -81,7 +83,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   /// 仅供测试：登记一次待计分作答（生产链路由 [_onAnswerCorrect]、[showWordDetail]、
   /// [revealAnswerAndMarkWrong] 受理）。测试若直接调 getNextWord(fsrsRating:) 模拟提交流转，
-  /// 必须先经过这里，否则会被计分闸门当作“重复/迟到提交”丢弃。
+  /// 必须先经过这里，否则会被计分判断条件当作“重复/迟到提交”丢弃。
   @visibleForTesting
   void acceptAnswerForTesting(FsrsRating rating) => _acceptAnswer(rating);
 
@@ -971,14 +973,11 @@ class BdcNotifier extends _$BdcNotifier {
     int? firstLogRating;
     int? firstLogScheduledDays;
     if (userId != null && wordId != null) {
-      final row = await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
-            ..where((l) =>
-                l.userId.equals(userId) &
-                l.wordId.equals(wordId) &
-                l.createTime.isBiggerOrEqualValue(AppClock.today()))
-            ..orderBy([(l) => drift.OrderingTerm(expression: l.createTime)])
-            ..limit(1))
-          .getSingleOrNull();
+      // 业务日窗口 [03:00, 次日03:00) 由 LearningLogsDao.getInBusinessDay 统一给出，
+      // 不能用 AppClock.today() 当下界：00:00~02:59 属于前一业务日
+      final rows = await MyDatabase.instance.learningLogsDao
+          .getInBusinessDay(userId, wordIds: [wordId]);
+      final row = rows.isEmpty ? null : rows.first;
       firstLogElapsedDays = row?.elapsedDays;
       firstLogRating = row?.rating;
       firstLogScheduledDays = row?.scheduledDays;
@@ -1099,12 +1098,17 @@ class BdcNotifier extends _$BdcNotifier {
 
   /// 例句环节:看答案后隐藏答案,回到可练习状态(PTT 可用、可语音识别),
   /// 但进入练习模式——识别答对不改今日测评结果(不写 LearningLog/不更新 FSRS)。
+  ///
+  /// 保留 [_pendingGrade]：练习只是重来一遍，同一呈现里"看答案/答对"那次正式作答的
+  /// 凭据仍然有效，离开时底部「下一词」要凭它计分。若在这里清空，练习模式答对又不登记
+  /// 新凭据，就会让「下一词」拿残留评分去匹配空凭据、被判成"重复/迟到提交"而点了没反应。
+  /// 只复位 [_answerAccepted]（恢复受理资格），使用户在练习中改点「不认识 / 再学学」时
+  /// 能登记新凭据并覆盖原评分。
   void hideAnswer() {
     if (!state.hasFinishedAnswering) return;
     _isPracticeMode = true;
     _isAnswerCorrectHandling = false; // 重置答对锁,否则练习模式 checkAsrResult 被 L1555 拦截,评分不更新
     _answerAccepted = false; // 练习模式重新开始作答，恢复受理资格（但练习不计分）
-    _pendingGrade = null;
     state = state.copyWith(
       hasFinishedAnswering: false,
       isPracticeMode: true,
@@ -1366,17 +1370,15 @@ class BdcNotifier extends _$BdcNotifier {
       return (replayed: item, firstStep: item);
     }
 
-    final today = AppClock.today();
-    // 当天日志按 createTime 正序，供逐条重放；首条即"今日测评"
-    final todayLogs = logs
-        .where((l) => !l.createTime.isBefore(today))
-        .toList()
-        .reversed
-        .toList();
-    // 今天之前的最后一条日志 = 测评前基准状态
+    final windowStart = app_date.DateUtils.businessDayStart(AppClock.now());
+    // 当天日志与"覆盖替换当天首条日志"（StudyBo.saveHistoryFSRSUpdate）同源同窗口，
+    // 由 LearningLogsDao.getInBusinessDay 按 createTime 正序给出；首条即"今日测评"
+    final todayLogs = await MyDatabase.instance.learningLogsDao
+        .getInBusinessDay(userId, wordIds: [wordId]);
+    // 今天之前的最后一条日志 = 测评前基准状态（窗口下界之前，即早于本业务日 03:00）
     LearningLog? prevLog;
     for (final log in logs) {
-      if (log.createTime.isBefore(today)) {
+      if (log.createTime.isBefore(windowStart)) {
         prevLog = log;
         break;
       }
@@ -1731,13 +1733,28 @@ class BdcNotifier extends _$BdcNotifier {
   Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating, bool fastPath = false}) async {
     if (_isGettingNextWordLock || state.isGettingNextWord) return false;
 
-    // 计分闸门：带评分的调用视为“提交一次作答”，必须消费一次受理凭据，且只消费一次。
-    // 迟到/重复的提交（同一次作答被 autoJump 定时器、详情页、下一词按钮等多条链路触发）
-    // 在这里被整体丢弃 —— 既不重复写日志，也不会把下一个学习环节顶掉。
+    // 无评分的"作答后流转"必须丢弃：答案已揭晓（或作答已受理）却拿不到评分，说明已受理凭据
+    // 根本不存在、或已被丢弃。此时若继续流转，StudyBo 会把 fsrsRating == null 当成正常推进
+    // （advanceStep = 评分 != again，对 null 为 true），于是环节被跳过、今日进度虚高，
+    // 却既没有学习记录也没有 FSRS 更新。合法的无评分流转都是用户主动入口，在此显式放行：
+    //   - 未作答就跳过：hasFinishedAnswering 与 _answerAccepted 都为假；
+    //   - 掌握：isWordMastered 由界面置位，StudyBo 只记已掌握、不推进环节计数；
+    //   - 回看 / 刷新：historyIndex != -1（走历史栈）或 gotoNext == false（只刷新当前词）。
+    if (fsrsRating == null &&
+        gotoNext &&
+        state.historyIndex == -1 &&
+        !state.isWordMastered &&
+        (state.hasFinishedAnswering || _answerAccepted)) {
+      Global.logger.w('getNextWord: 丢弃无评分的作答后流转 (word=${state.word?.spell})');
+      return false;
+    }
+
+    // 计分判断条件：带评分的调用视为"提交一次作答"，必须消费一张已受理凭据，且只消费一次。
+    // 迟到/重复的提交（同一次作答被 autoJump 定时器、详情页、下一词按钮等多处触发）
+    // 在这里被整体丢弃 —— 既不重复写学习记录，也不会把下一个学习环节顶掉。
     FsrsRating? gradeRating = fsrsRating;
     if (fsrsRating != null) {
       final pending = _pendingGrade;
-      _pendingGrade = null; // 凭据一次性
       final bool matched = pending != null &&
           pending.wordId == state.word?.id &&
           pending.rating == fsrsRating;
@@ -1746,6 +1763,8 @@ class BdcNotifier extends _$BdcNotifier {
             '(word=${state.word?.spell}, rating=$fsrsRating)');
         return false;
       }
+      // 凭据不在读取时就作废，改由流转成功后的 handleWord 复位：取词抛异常或返回失败时
+      // 凭据保留，用户可以原样重试「下一词」，不会因凭据凭空消失而卡死在当前词上。
       gradeRating = pending.alreadyPersisted ? null : pending.rating;
     }
 
@@ -1898,6 +1917,9 @@ class BdcNotifier extends _$BdcNotifier {
         return success;
       } else {
         Global.logger.w('getNextWord: 获取单词失败: code=${result.code}, msg=${result.msg}');
+        // 流转失败：已受理凭据保留，用户可以原样重试「下一词」；同时恢复"可再次受理作答"，
+        // 否则用户改用「不认识 / 再学学」登记新评分时，会被 _acceptAnswer 当成同一呈现的重复受理而静默忽略。
+        _answerAccepted = false;
         if (result.code == "NEW_DAY") {
           ToastUtil.info('已进入新的一天，请重新开始学习');
           goRouter.go('/index'); // Redirect back to plan page
@@ -1909,6 +1931,8 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } catch (e, st) {
       state = state.copyWith(loadError: e.toString());
+      // 同上：流转失败时保留凭据并恢复受理资格，避免当前词被锁死
+      _answerAccepted = false;
       ErrorHandler.handleError(e, st, logPrefix: 'getNextWord');
       return false;
     } finally {

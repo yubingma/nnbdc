@@ -14,7 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// 回归测试：客户端一次性修复"同一次作答被重复计分"的存量脏数据。
 ///
 /// 覆盖：词 A（重复日志 + 被污染的记忆字段回填 + 派生计数回滚）、词 B（已掌握不回填记忆
-/// 字段但计数仍回滚，含 stability 哨兵值与「已掌握」词书两种口径）、词 C（跨天正常日志
+/// 字段但计数仍回滚，判据统一为「已进入已掌握词书」，毕业哨兵值只是被动保留）、词 B2（同为
+/// 已掌握词书成员、stability 未达掌握线）、词 C（跨天正常日志
 /// 不受影响）、幂等（重复执行结果不变）、限流续跑（单次上限 + 待续跑标记）。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -211,7 +212,8 @@ void main() {
     expect((await dailyStat())!.reviewCount, 0);
   });
 
-  test('词B：已掌握词（stability 达掌握线）只去重日志+回滚计数，不回填记忆字段', () async {
+  test('词B：已掌握词（毕业哨兵值 + 已进入「已掌握」词书）只去重日志+回滚计数，不回填记忆字段', () async {
+    await markAsMasteredInDict('wordB');
     await insertLearningWord('wordB',
         stability: Constants.graduationStability, difficulty: 6.0,
         learnedTimes: 3, todayLearnedTimes: 3);
@@ -247,6 +249,20 @@ void main() {
     expect(updateLogs.map((l) => l.recordId), ['$userId-wordB2']);
     final record = jsonDecode(updateLogs.single.record) as Map<String, dynamic>;
     expect(record['stability'], 20.0, reason: '已掌握词书记忆字段不回填');
+  });
+
+  test('词B3：stability 越过掌握线但不在「已掌握」词书里的词，记忆字段仍要回填', () async {
+    await insertLearningWord('wordB3', stability: 150.0, difficulty: 6.0);
+    await insertLog('wordB3', base, stability: 57.0, difficulty: 7.0, elapsedDays: 3, scheduledDays: 15);
+    await insertLog('wordB3', base.add(duplicateGap), stability: 150.0, difficulty: 6.0);
+
+    await LearningLogRepair.repairDuplicateLearningLogs(db);
+
+    expect((await logsOf('wordB3')).length, 1);
+    final word = await db.learningWordsDao.getById(userId, 'wordB3');
+    expect(word!.stability, 57.0,
+        reason: '掌握的唯一口径是「已进入已掌握词书」；若拿 stability >= 掌握线当代理判据，'
+            '这个只是稳定度越线的词会被漏回填');
   });
 
   test('词C：跨天正常日志不受影响', () async {

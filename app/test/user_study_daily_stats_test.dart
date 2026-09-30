@@ -98,7 +98,7 @@ void main() {
     expect(list[1].dayStatus, UserDayStatus.studied.json);
   });
 
-  test('getDailyWordCounts 按自然日对 word_id 去重，同一词多次评分只计一次', () async {
+  test('getDailyWordCounts 按业务日对 word_id 去重，同一词多次评分只计一次', () async {
     AppClock.setClock(FakeClock(DateTime(2026, 5, 12, 12)));
 
     LearningLog log(String id, String wordId, DateTime createTime) => LearningLog(
@@ -136,5 +136,44 @@ void main() {
     };
     expect(reviewCountMap['2026-05-10'], 3, reason: '5/10 共 3 次评分');
     expect(reviewCountMap['2026-05-11'], 1, reason: '5/11 共 1 次评分');
+  });
+
+  test('热力图分桶按业务日：凌晨 01:00 的评分算前一业务日（当地 03:00 日切）', () async {
+    AppClock.setClock(FakeClock(DateTime(2026, 5, 12, 12)));
+
+    LearningLog log(String id, String wordId, DateTime createTime) => LearningLog(
+          id: id,
+          userId: userId,
+          wordId: wordId,
+          rating: 3,
+          stability: 1,
+          difficulty: 5,
+          elapsedDays: 0,
+          scheduledDays: 1,
+          createTime: createTime,
+          updateTime: createTime,
+        );
+
+    // 业务日 5/10 = [5/10 03:00, 5/11 03:00)：23:30 与次日 01:00 都落在里面
+    await db.learningLogsDao.saveEntity(log('w_1', 'word_a', DateTime(2026, 5, 10, 23, 30)), false);
+    await db.learningLogsDao.saveEntity(log('w_2', 'word_b', DateTime(2026, 5, 11, 1, 0)), false);
+    // 5/11 03:00 起才是业务日 5/11
+    await db.learningLogsDao.saveEntity(log('w_3', 'word_c', DateTime(2026, 5, 11, 3, 0)), false);
+
+    final reviewCounts = await db.learningLogsDao.getDailyReviewCounts(userId, 30);
+    final reviewCountMap = {
+      for (var item in reviewCounts) item['day'] as String: item['count'] as int
+    };
+    expect(reviewCountMap['2026-05-10'], 2,
+        reason: '23:30 与次日 01:00 同属业务日 5/10；若按自然日分组，01:00 会被记到 5/11');
+    expect(reviewCountMap['2026-05-11'], 1, reason: '5/11 03:00 起才是业务日 5/11');
+    expect(reviewCountMap.length, 2, reason: '不应出现其他日期的数据');
+
+    final wordCounts = await db.learningLogsDao.getDailyWordCounts(userId, 30);
+    final wordCountMap = {
+      for (var item in wordCounts) item['day'] as String: item['count'] as int
+    };
+    expect(wordCountMap['2026-05-10'], 2, reason: '业务日 5/10 学过 word_a 与 word_b 两个词');
+    expect(wordCountMap['2026-05-11'], 1, reason: '业务日 5/11 只有 word_c');
   });
 }

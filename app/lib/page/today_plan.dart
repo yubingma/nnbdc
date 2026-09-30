@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import "package:go_router/go_router.dart";
@@ -486,26 +485,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
 
     // 每词按其自身轨道（学习轨道/复习轨道）的环节数贡献进度；
-    // 轨道由今天首条评分日志的间隔固化（与 StudyBo 一致）
+    // 轨道由今天首条评分日志的间隔固化（与 StudyBo 一致）。
+    // 业务日窗口 [03:00, 次日03:00) 由 LearningLogsDao.getInBusinessDay 统一给出，
+    // 不能用 AppClock.today()（业务日的当地 00:00）当下界，否则前一业务日 00:00~02:59
+    // 的评分会被算成今天首条；返回结果按 createTime 正序，故每词首次出现即今天首条。
     final user = Global.getLoggedInUser();
-    final today = AppClock.today();
+    final today = AppClock.today(); // 业务日（当地 00:00），供 StudyTrack 判定轨道
     Map<String, ({int elapsedDays, int rating})> firstLogs = {};
     if (user != null && _todayWords!.isNotEmpty) {
-      final db = MyDatabase.instance;
-      final rows = await (db.select(db.learningLogs)
-            ..where((l) =>
-                l.userId.equals(user.id) &
-                l.wordId.isIn(_todayWords!.map((w) => w.wordId)) &
-                l.createTime.isBiggerOrEqualValue(today)))
-          .get();
-      final earliestTime = <String, DateTime>{};
+      final rows = await MyDatabase.instance.learningLogsDao.getInBusinessDay(
+          user.id,
+          wordIds: _todayWords!.map((w) => w.wordId));
       for (final row in rows) {
-        final prev = earliestTime[row.wordId];
-        if (prev == null || row.createTime.isBefore(prev)) {
-          earliestTime[row.wordId] = row.createTime;
-          firstLogs[row.wordId] =
-              (elapsedDays: row.elapsedDays, rating: row.rating);
-        }
+        firstLogs.putIfAbsent(row.wordId,
+            () => (elapsedDays: row.elapsedDays, rating: row.rating));
       }
     }
     final newCfg = await StudyStepsService().getThreeGroupConfig('new');

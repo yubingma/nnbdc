@@ -96,6 +96,31 @@ void main() {
     }
   });
 
+  group('FSRS-5 遗忘分支的短期上限', () {
+    // 官方 py-fsrs 4.1.2 的 `_next_forget_stability` 会取小：
+    //   min(长期值, S / e^(w17·w18))，w17=0.51655、w18=0.6621 ⇒ S / e^(0.342008…) = S / 1.4078…
+    // 既有黄金向量里 (S=2.4, D=5.0, elapsed=30, again) 的 1.7048224703525037 就是被这个上限截出来的，
+    // 但那条用例只断言数值，看不出走的是哪条分支。这里用一条官方向量把它钉死。
+    test('遗忘的短期上限真的会取小：S 被封顶到 S/e^(w17·w18)，小于未封顶的长期值', () {
+      // 与官方对照用例同一入口：init(again) 给出 S0=0.40255、D0=7.1949
+      final initAgain = fsrs.init(FsrsRating.again);
+      expect(initAgain.stability, closeTo(0.40255, eps));
+      expect(initAgain.difficulty, closeTo(7.1949, eps));
+
+      final result = fsrs.next(initAgain, FsrsRating.again, 30);
+
+      // 官方 py-fsrs 4.1.2：取小后的 stability = 0.2859484522668335、difficulty = 8.082797017759107
+      expect(result.stability, closeTo(0.2859484522668335, eps));
+      expect(result.difficulty, closeTo(8.082797017759107, eps));
+      // 官方同一分支里"未取小"的长期公式值 = 0.9385616153751637（是上限 0.2859… 的 3.28 倍）
+      expect(
+        result.stability,
+        lessThan(0.9385616153751637),
+        reason: '若 min(长期值, S/e^(w17·w18)) 的取小分支被删掉，这里会拿到未封顶的 0.9385…',
+      );
+    });
+  });
+
   group('FSRS-5 当天重复评分（短期记忆）', () {
     // (S_in, D_in, rating, S_out, D_out, 间隔天数)
     const cases = <(double, double, FsrsRating, double, double, int)>[
@@ -212,6 +237,80 @@ void main() {
       final normal = FSRS(requestRetention: 0.9).init(FsrsRating.good);
       final strict = FSRS(requestRetention: 0.95).init(FsrsRating.good);
       expect(strict.scheduledDays, lessThan(normal.scheduledDays));
+    });
+  });
+
+  group('FSRS-5 稳定度下限（本地自加口径，非官方行为）', () {
+    // app/lib/util/fsrs.dart:22 的 _minStability = 0.1 是本项目自己加的：
+    // 官方 py-fsrs 4.1.2 的 `_next_stability` 与 `_short_term_stability` 都没有这个下限，
+    // 因此下面这些输入本地值会严格大于官方值。此处断言的是"当前本地口径"，并记录官方数值便于日后核对。
+    test('同日 again：官方 0.050102852419350835，本地抬到 0.1', () {
+      final result = fsrs.next(item(0.1, 5.0), FsrsRating.again, 0);
+      expect(result.stability, 0.1,
+          reason: '官方 py-fsrs 4.1.2 同输入给 0.050102852419350835；本地下限把它抬到 0.1');
+    });
+
+    test('跨天 1 天 again：官方 0.07103426959802099，本地抬到 0.1', () {
+      final result = fsrs.next(item(0.1, 5.0), FsrsRating.again, 1);
+      expect(result.stability, 0.1,
+          reason: '官方 py-fsrs 4.1.2 同输入给 0.07103426959802099（遗忘短期上限 min(长期值, S/1.4078)）；本地抬到 0.1');
+    });
+
+    test('init 也吃这个下限：官方 w0=0.05 会给出 0.05，本地抬到 0.1', () {
+      final customFsrs = FSRS(w: [
+        0.05, // w0：again 档初始稳定度，官方会用 0.05
+        1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.54575,
+        0.1192, 1.01925, 1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621
+      ]);
+      expect(customFsrs.init(FsrsRating.again).stability, 0.1,
+          reason: '官方 py-fsrs 4.1.2 无下限，同权重会给 0.05；本地取下限 0.1');
+    });
+  });
+
+  group('下次复习间隔反解（_calculateInterval）', () {
+    // 官方 py-fsrs 4.1.2 `Scheduler._next_interval`：
+    //   round(S / FACTOR * (desired_retention^(1/DECAY) - 1))，再 max(1)、min(maximum_interval)
+    // 目标保留率 = 0.9 时 (0.9^-2 - 1) / FACTOR = 1，间隔恰好等于稳定度。
+    test('目标保留率 0.9：间隔等于稳定度（官方同值）', () {
+      expect(FSRS(requestRetention: 0.9).init(FsrsRating.good).scheduledDays, 3); // S=3.173
+    });
+
+    test('目标保留率 ≠ 0.9：0.8 → 8 天、0.95 → 1 天（官方 _next_interval 对照）', () {
+      expect(FSRS(requestRetention: 0.8).init(FsrsRating.good).scheduledDays, 8,
+          reason: '官方 py-fsrs 4.1.2 同输入为 8 天');
+      expect(FSRS(requestRetention: 0.95).init(FsrsRating.good).scheduledDays, 1,
+          reason: '官方 py-fsrs 4.1.2 同输入为 1 天（严格档位把间隔压到最短）');
+    });
+  });
+
+  group('退化输入与守卫断言', () {
+    test('stability 为 0 / 负数 / 非有限值时立即暴露', () {
+      for (final bad in [0.0, -1.0, double.nan, double.infinity]) {
+        expect(() => fsrs.next(item(bad, 5.0), FsrsRating.good, 1),
+            throwsA(isA<AssertionError>()),
+            reason: 'stability=$bad 必须在守卫处报错，而不是算出脏的记忆参数');
+      }
+    });
+
+    test('difficulty 越界（<1 或 >10）或非有限值时立即暴露', () {
+      for (final bad in [0.999, 10.001, double.nan]) {
+        expect(() => fsrs.next(item(2.4, bad), FsrsRating.good, 1),
+            throwsA(isA<AssertionError>()), reason: 'difficulty=$bad 必须在守卫处报错');
+      }
+    });
+
+    test('elapsedDays 为负时立即暴露', () {
+      expect(() => fsrs.next(item(2.4, 5.0), FsrsRating.good, -1),
+          throwsA(isA<AssertionError>()));
+    });
+
+    test('目标保留率越界或权重不足 19 个时立即暴露', () {
+      expect(() => FSRS(requestRetention: 1.0).init(FsrsRating.good),
+          throwsA(isA<AssertionError>()));
+      expect(() => FSRS(requestRetention: 0.0).init(FsrsRating.good),
+          throwsA(isA<AssertionError>()));
+      expect(() => FSRS(w: List<double>.filled(18, 0.1)),
+          throwsA(isA<AssertionError>()));
     });
   });
 }

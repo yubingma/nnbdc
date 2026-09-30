@@ -103,6 +103,37 @@ void main() {
           reason: '本业务日的开区间上界必须恰为下一业务日的起点，窗口无缝且不重叠');
     });
 
+    test('业务日窗口 [03:00, 次日03:00)：前晚 23:00 与凌晨 01:00、02:59 同窗，03:00 起换新窗', () {
+      final prevNight = DateTime(2026, 5, 10, 23, 0);
+      final afterMidnight = DateTime(2026, 5, 11, 1, 0);
+      final beforeThree = DateTime(2026, 5, 11, 2, 59);
+
+      final start = DateUtils.businessDayStart(afterMidnight);
+      final end = DateUtils.businessDayEnd(afterMidnight);
+      expect(start, DateTime(2026, 5, 10, 3));
+      expect(end, DateTime(2026, 5, 11, 3));
+
+      for (final t in [prevNight, afterMidnight, beforeThree]) {
+        expect(!t.isBefore(start) && t.isBefore(end), isTrue,
+            reason: '$t 必须落在业务日窗口 [$start, $end) 内，与前晚 23:00 同属一个业务日');
+        expect(DateUtils.isSameBusinessDay(t, prevNight), isTrue,
+            reason: '$t 与前晚 23:00 必须算同一个业务日');
+        expect(DateUtils.businessDate(t), DateTime(2026, 5, 10));
+      }
+
+      // 03:00 起属于新业务日，窗口整体右移
+      final afterThree = DateTime(2026, 5, 11, 3, 0);
+      expect(DateUtils.isSameBusinessDay(afterThree, prevNight), isFalse);
+      expect(DateUtils.businessDate(afterThree), DateTime(2026, 5, 11));
+      expect(DateUtils.businessDayStart(afterThree), DateTime(2026, 5, 11, 3));
+
+      // AppClock.today() 的取值正是业务日的当地 00:00，比窗口下界早整 3 小时：
+      // 拿它当时间戳下界筛选学习记录，会把前一业务日 00:00~02:59 的记录算进今天。
+      final businessDayMidnight = DateUtils.businessDate(afterMidnight);
+      expect(businessDayMidnight, DateTime(2026, 5, 10));
+      expect(start.difference(businessDayMidnight), const Duration(hours: 3));
+    });
+
     test('不变式：任意瞬时恰好落在其业务日窗口 [start, end) 内（跨时区/夏令时均成立）', () {
       // 采样覆盖普通日、跨月、跨年，以及夏令时切换的高发日期。
       // 该不变式不依赖运行时区；但在夏令时时区下，旧实现（按绝对时长回拨 3 小时）会失败。

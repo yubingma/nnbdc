@@ -2581,6 +2581,30 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
         .get();
   }
 
+  /// 业务日窗口内的评分日志（按 createTime 正序）。
+  ///
+  /// 窗口恒为 [businessDayStart(instant), businessDayEnd(instant))（当地 03:00 → 次日 03:00），
+  /// [instant] 缺省取当前时刻，因此本方法是"某业务日的学习记录"的唯一查询口径：
+  /// "今天首条评分""当天全部评分"都必须走它，绝不能用 AppClock.today()（业务日的当地 00:00）
+  /// 当下界，否则前一业务日 00:00~02:59 的日志会被算进今天。
+  Future<List<LearningLog>> getInBusinessDay(String userId,
+      {Iterable<String>? wordIds, DateTime? instant}) async {
+    final ids = wordIds?.toList();
+    if (ids != null && ids.isEmpty) return const [];
+    final at = instant ?? AppClock.now();
+    final start = DateUtils.businessDayStart(at);
+    final end = DateUtils.businessDayEnd(at);
+    // 拆成两次 where：部分文件没有 drift 的 `&` 运算符，保持同样的写法以免歧义
+    final query = select(learningLogs)
+      ..where((l) => l.userId.equals(userId))
+      ..where((l) => l.createTime.isBiggerOrEqualValue(start) & l.createTime.isSmallerThanValue(end))
+      ..orderBy([(l) => OrderingTerm(expression: l.createTime, mode: OrderingMode.asc)]);
+    if (ids != null) {
+      query.where((l) => l.wordId.isIn(ids));
+    }
+    return query.get();
+  }
+
   /// 今日全部评分(按时间正序), 用于单次学习表现类勋章(百发百中/极速心流)的判定。
   /// "今日"必须与其余今日查询同口径，取业务日窗口 [03:00, 次日03:00)，否则会把前一业务日
   /// 00:00~02:59 的评分误算进今天，凭空判掉"百发百中"。
@@ -2632,11 +2656,14 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
     await query.go();
   }
 
+  /// 获取最近 [days] 天每日评分次数（按业务日分组，供热力图读取）。
+  ///
+  /// 分组口径与全项目一致：业务日 = [当地 03:00, 次日 03:00)，00:00~02:59 归前一业务日。
+  /// 热力图每个色块的打卡状态本来就按业务日给出（user_bo.getDayStatuses），
+  /// 这里若按自然日分组，凌晨 00:00~02:59 的评分会被记到第二天的格子里，
+  /// 与格子颜色对不上。分组在 Dart 侧用 [DateUtils.businessDate] 完成（与
+  /// getRatingsGroupedByDay 一致），不用 SQL 的 '-3 hours' 位移，避免夏令时切换日错分。
   Future<List<Map<String, dynamic>>> getDailyReviewCounts(String userId, int days) async {
-    final endDate = AppClock.today();
-    final startDate = endDate.subtract(Duration(days: days - 1));
-    final startTimestamp = startDate.millisecondsSinceEpoch ~/ 1000;
-
     // 优先从新表查询，如果没有数据则从旧表（learning_logs）查询
     final stats = await db.userStudyDailyStatsDao.getRecentStats(userId, days);
     if (stats.isNotEmpty) {
@@ -2647,44 +2674,49 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
       }).toList();
     }
 
-    // 注意：SQL 中 'unixepoch' / 'localtime' 是修饰符字符串字面量，必须用单引号；
-    // 写成双引号会被 SQLite 当作列名解析，导致 "no such column: unixepoch"。
-    final query = customSelect(
-      "SELECT COALESCE(date(create_time, 'unixepoch', 'localtime'), date(create_time)) as day, count(*) as count "
-      "FROM learning_logs "
-      "WHERE user_id = ? AND (create_time >= ? OR create_time >= date(?, 'unixepoch')) "
-      "GROUP BY day "
-      "ORDER BY day ASC",
-      variables: [Variable.withString(userId), Variable.withInt(startTimestamp), Variable.withInt(startTimestamp)],
-      readsFrom: {learningLogs},
-    );
-
-    final rows = await query.get();
-    return rows.map((r) => r.data).toList();
+    final start = DateUtils.businessDayStart(_heatmapWindowStart(days));
+    final rows = await (select(learningLogs)
+          ..where((l) =>
+              l.userId.equals(userId) & l.createTime.isBiggerOrEqualValue(start)))
+        .get();
+    final counts = <DateTime, int>{};
+    for (final row in rows) {
+      final day = DateUtils.businessDate(row.createTime);
+      counts[day] = (counts[day] ?? 0) + 1;
+    }
+    return _dailyCountRows(counts);
   }
 
-  /// 获取最近 [days] 天每日去重单词数（按自然日对 learning_logs 的 word_id 去重计数）。
+  /// 获取最近 [days] 天每日去重单词数（按业务日对 learning_logs 的 word_id 去重计数）。
   ///
   /// 与 `getDailyReviewCounts` 的区别：后者统计的是评分次数（一个词当天可能有多次评分），
-  /// 前者统计的是当天实际学过的不同单词数，供热力图"单词"模式展示。
+  /// 前者统计的是当天实际学过的不同单词数，供热力图"单词"模式展示。分组口径同上。
   Future<List<Map<String, dynamic>>> getDailyWordCounts(String userId, int days) async {
-    final endDate = AppClock.today();
-    final startDate = endDate.subtract(Duration(days: days - 1));
-    final startTimestamp = startDate.millisecondsSinceEpoch ~/ 1000;
+    final start = DateUtils.businessDayStart(_heatmapWindowStart(days));
+    final rows = await (select(learningLogs)
+          ..where((l) =>
+              l.userId.equals(userId) & l.createTime.isBiggerOrEqualValue(start)))
+        .get();
+    final wordsPerDay = <DateTime, Set<String>>{};
+    for (final row in rows) {
+      final day = DateUtils.businessDate(row.createTime);
+      wordsPerDay.putIfAbsent(day, () => <String>{}).add(row.wordId);
+    }
+    return _dailyCountRows(
+        wordsPerDay.map((day, words) => MapEntry(day, words.length)));
+  }
 
-    // 注意：'unixepoch' / 'localtime' 必须用单引号（同上，双引号会被当作列名）
-    final query = customSelect(
-      "SELECT date(create_time, 'unixepoch', 'localtime') as day, count(distinct word_id) as count "
-      "FROM learning_logs "
-      "WHERE user_id = ? AND create_time >= ? "
-      "GROUP BY day "
-      "ORDER BY day ASC",
-      variables: [Variable.withString(userId), Variable.withInt(startTimestamp)],
-      readsFrom: {learningLogs},
-    );
+  /// 热力图窗口下界：最近 [days] 个业务日里最早那天的当地 00:00（再交给 businessDayStart 取 03:00）。
+  DateTime _heatmapWindowStart(int days) =>
+      AppClock.today().subtract(Duration(days: days - 1));
 
-    final rows = await query.get();
-    return rows.map((r) => r.data).toList();
+  /// 把「业务日 → 计数」整理成热力图读取的 {day, count} 列表（按日期升序）。
+  List<Map<String, dynamic>> _dailyCountRows(Map<DateTime, int> counts) {
+    final days = counts.keys.toList()..sort();
+    return [
+      for (final day in days)
+        {'day': DateFormat('yyyy-MM-dd').format(day), 'count': counts[day]}
+    ];
   }
 }
 

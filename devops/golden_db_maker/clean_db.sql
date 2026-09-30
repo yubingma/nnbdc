@@ -10,8 +10,10 @@ DELETE FROM local_exceptions;
 -- 2. 清理用户学习记录 (Learning Progress)
 DELETE FROM learning_dicts;
 DELETE FROM learning_words;
+DELETE FROM learning_logs; -- 学习记录：不清会把真实用户的评分流水带进黄金母版
 DELETE FROM mastered_words;
 DELETE FROM user_study_steps;
+DELETE FROM user_study_daily_stats; -- 每日学习统计（新词数/复习数/学习秒数）
 DELETE FROM user_wrong_words;
 DELETE FROM user_cow_dung_logs;
 DELETE FROM book_marks;
@@ -19,6 +21,7 @@ DELETE FROM book_marks;
 -- 3. 清理用户行为/互动记录 (Interactions)
 DELETE FROM dakas; -- 打卡
 DELETE FROM user_opers; -- 操作日志
+DELETE FROM user_badges; -- 勋章
 DELETE FROM voted_sentences;
 DELETE FROM voted_word_images;
 

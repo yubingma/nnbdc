@@ -249,4 +249,24 @@ void main() {
       expect(StudyTrack.hasMoreGradedSteps(track, 2), false);
     });
   });
+
+  group('StudyTrack.isFirstAttemptOfStep 首答计分闸门', () {
+    // 判据：今天该词的评分日志条数 <= 已走完环节数 ⇒ 本环节尚未首答过，本次计分。
+    test('日志条数 == 已走完环节数 → 首次作答（计分）', () {
+      expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 0, todayLearnedTimes: 0), true);
+      expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 1, todayLearnedTimes: 1), true);
+      expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 3, todayLearnedTimes: 3), true);
+    });
+
+    test('日志条数 > 已走完环节数 → 本环节重练（不计分）', () {
+      expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 1, todayLearnedTimes: 0), false);
+      expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 2, todayLearnedTimes: 1), false);
+      expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 3, todayLearnedTimes: 2), false);
+    });
+
+    test('日志条数 < 已走完环节数（日志缺失异常）→ 仍按首次作答，宁可重复计分也不静默丢分', () {
+      expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 0, todayLearnedTimes: 3), true);
+      expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 2, todayLearnedTimes: 3), true);
+    });
+  });
 }

@@ -47,18 +47,23 @@ class DateUtils {
     return bd1.year == bd2.year && bd1.month == bd2.month && bd1.day == bd2.day;
   }
 
-  /// 获取业务天的开始时间（当地时区 03:00:00，闭区间下界）
-  static DateTime businessDayStart(DateTime date) {
-    final bd = businessDate(date);
+  /// 获取业务日的开始时间：传入任意时刻，返回该时刻所属业务日的当地 03:00:00（闭区间下界）。
+  ///
+  /// 业务日窗口恒为 [businessDayStart(瞬时), businessDayEnd(瞬时))，这是全项目筛选
+  /// "某业务日的数据"的唯一口径（学习记录、打卡记录、每日统计都按它取窗口）。
+  /// 绝不能用 AppClock.today() 当时间戳下界：它是业务日的当地 00:00，比窗口下界早 3 小时，
+  /// 会把前一业务日 00:00~02:59 的数据算进今天。
+  static DateTime businessDayStart(DateTime instant) {
+    final bd = businessDate(instant);
     return DateTime(bd.year, bd.month, bd.day, 3);
   }
 
-  /// 获取业务天的结束时间（当地时区**次日 03:00:00，开区间上界**）。
+  /// 获取业务日的结束时间（当地时区**次日 03:00:00，开区间上界**）。
   ///
-  /// 业务日区间恒为 [businessDayStart(date), businessDayEnd(date))，既无缝也不重叠。
+  /// 业务日区间恒为 [businessDayStart(instant), businessDayEnd(instant))，既无缝也不重叠。
   /// 查询必须写成 `>= start & < end`：写成 `<= end` 会把次日 03:00:00 这一个瞬间算进当天。
-  static DateTime businessDayEnd(DateTime date) {
-    final start = businessDayStart(date);
+  static DateTime businessDayEnd(DateTime instant) {
+    final start = businessDayStart(instant);
     return DateTime(start.year, start.month, start.day + 1, 3);
   }
 }
