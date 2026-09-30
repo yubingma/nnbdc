@@ -20,7 +20,6 @@ import '../theme/app_theme.dart';
 import '../theme/font_scale.dart';
 import '../util/error_handler.dart';
 import 'db.dart';
-import '../constants.dart';
 
 part 'dao.g.dart';
 
@@ -1978,36 +1977,51 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
   // 删除掌握的单词（从"已掌握"词书中移除，并移动到生词本）
   Future<void> deleteMasteredWord(String userId, String wordId, bool genLog, bool updateUser) async {
     try {
-      final dictId = await _getMasteredDictId(userId);
-      if (dictId == null) return;
+      // 1-3. 移出「已掌握」词书并更新词书词数、用户已掌握计数
+      final removed = await removeFromMasteredDict(userId, wordId, genLog, updateUser);
+      if (!removed) return;
 
-      final existing = await (select(db.dictWords)
-            ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId)))
-          .getSingleOrNull();
-      if (existing == null) {
-        Global.logger.w('要删除的已掌握单词不在词书中: userId=$userId, wordId=$wordId');
-        return;
-      }
-
-      // 1. 从已掌握词书中删除
-      await db.dictWordsDao.deleteEntity(existing, genLog);
-
-      // 2. 更新词书wordCount
-      await db.dictsDao.updateWordCount(dictId, genLog);
-
-      // 3. 将单词添加到生词本
+      // 4. 用户主动取消掌握 = 从零重学：把词加进生词本
       await _addWordToRawWordDict(userId, wordId, genLog);
-
-      // 4. 更新用户已掌握单词数量
-      if (updateUser) {
-        await updateUserMasteredWordCount(userId);
-      }
 
       Global.logger.d('已掌握单词删除成功并移动到生词本: userId=$userId, wordId=$wordId');
     } catch (e) {
       Global.logger.e('删除已掌握单词失败: userId=$userId, wordId=$wordId, error=$e');
       rethrow;
     }
+  }
+
+  /// 仅将单词移出「已掌握」词书：删除词书里的词条行、更新词书词数、更新用户的已掌握计数，并生成同步日志。
+  ///
+  /// 与 [deleteMasteredWord] 的区别：不加生词本标记、不删学习进度记录。
+  /// 语义 = "这个词回到学习中"（改评分后重算稳定度跌破掌握线，见 StudyBo.saveHistoryFSRSUpdate），
+  /// 而不是「用户主动取消掌握、从零重学」。
+  /// 返回是否真的移出了（词本来就不在词书中时返回 false）。
+  Future<bool> removeFromMasteredDict(String userId, String wordId, bool genLog, bool updateUser) async {
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) return false;
+
+    final existing = await (select(db.dictWords)
+          ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId)))
+        .getSingleOrNull();
+    if (existing == null) {
+      Global.logger.w('要移出的已掌握单词不在词书中: userId=$userId, wordId=$wordId');
+      return false;
+    }
+
+    // 1. 从已掌握词书中删除
+    await db.dictWordsDao.deleteEntity(existing, genLog);
+
+    // 2. 更新词书wordCount
+    await db.dictsDao.updateWordCount(dictId, genLog);
+
+    // 3. 更新用户已掌握单词数量
+    if (updateUser) {
+      await updateUserMasteredWordCount(userId);
+    }
+
+    Global.logger.d('已掌握单词已移出已掌握词书: userId=$userId, wordId=$wordId');
+    return true;
   }
 
   // 将单词添加到生词本的私有方法
@@ -2045,20 +2059,18 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
       if (user?.todayStudyStarted ?? false) {
         // 学习轨道长度（三组结构：测评 + 答对组 + List）用于饱和今日环节数
         final correctSteps = await db.userStudyStepsDao.getGroupSteps(userId, 'new', 'correct');
+        // 稳定度保持学习进度里现有的值（为空就保持为空）：掌握与否只由「已掌握」词书成员体现，
+        // 不写掌握线当哨兵值——那会让学习进度记着一个从未算出来的数
         await db.learningWordsDao.saveEntity(
             learningWord.copyWith(
-              stability: Value(Constants.graduationStability),
               lastLearningDate: Value(now),
               learnedTimes: learningWord.learnedTimes + 1,
               todayLearnedTimes: correctSteps.length + 2,
             ),
             true);
-      } else {
-        if (deleteLearningWord) {
-          await db.learningWordsDao.deleteEntity(learningWord, true);
-        } else {
-          await db.learningWordsDao.saveEntity(learningWord.copyWith(stability: Value(Constants.graduationStability)), true);
-        }
+      } else if (deleteLearningWord) {
+        // 还在规划阶段：直接删除该学习记录
+        await db.learningWordsDao.deleteEntity(learningWord, true);
       }
     }
   }

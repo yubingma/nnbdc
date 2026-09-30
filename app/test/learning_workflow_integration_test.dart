@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
@@ -676,7 +677,7 @@ void main() {
     print('🎉 自然毕业验证通过：全书 8 词、每词总评分 5 次（日志 5 条）、总天数 $loopCount');
   });
 
-  test('触发毕业的那次评分照常写学习记录：稳定度记这次评分结果，词进已掌握词书并计入当日统计', () async {
+  test('触发毕业的那次评分：学习记录与学习进度的稳定度都写这次评分算出的真实值，词进已掌握词书并计入当日统计', () async {
     final now = AppClock.now();
     // 一个同日巩固过的复习词，只差这次评分就够到掌握线：
     // stability 100.0 同日 good 走 FSRS-5 短期公式 ×e^(w17*w18) ≈ ×1.4078 → 约 140.78 ≥ 120.0
@@ -758,13 +759,123 @@ void main() {
     expect(stats.first.dayStatus, UserDayStatus.studied.json,
         reason: '触发毕业的评分把当日状态更新为已学习');
 
-    // ④ 学习进度仍保留（执行阶段不删除），稳定度写毕业哨兵值，记忆字段与学习记录保持一致
+    // ④ 学习进度仍保留（执行阶段不删除），稳定度写这次评分算出的真实值，记忆字段与学习记录一致
     final lw = await db.learningWordsDao.getById(testUser.id, 'w_1');
     expect(lw, isNotNull);
     final lwRow = lw!;
-    expect(lwRow.stability, Constants.graduationStability);
+    expect(lwRow.stability, closeTo(expected.stability, 1e-9),
+        reason: '学习记录的稳定度 == 学习进度的稳定度 == 这次评分算出的真实值 ${expected.stability}');
+    expect(lwRow.stability, isNot(Constants.graduationStability),
+        reason: '学习进度不得再写毕业哨兵值 120.0，除非真实算出来就是 120.0');
     expect(lwRow.reps, expected.reps, reason: '毕业这次评分同样推进 reps，否则日志重放回推基准会少一条');
     expect(lwRow.lapses, expected.lapses);
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  // 手动标记掌握 = 没有本次评分：稳定度必须保留学习进度里现有的值，不再写掌握线当哨兵值。
+  // 两条入口都要覆盖：回看模式（StudyBo.markWordAsMastered）与词表页「标记已掌握」
+  // （MasteredWordsDao.setLearningWordAsMastered）。
+  test('手动标记掌握不写毕业哨兵值：稳定度 30.0 原样保留，词进「已掌握」词书', () async {
+    final now = AppClock.now();
+    for (final wordId in ['w_1', 'w_2']) {
+      await db.learningWordsDao.saveEntity(
+        LearningWord(
+          userId: testUser.id,
+          wordId: wordId,
+          addTime: now,
+          addDay: 1,
+          learningOrder: 1,
+          batchId: 1,
+          isExtra: false,
+          isTodayNewWord: false,
+          stability: 30.0,
+          difficulty: 5.0,
+          elapsedDays: 0,
+          scheduledDays: 3,
+          reps: 3,
+          lapses: 0,
+          state: FsrsState.review.value,
+          learnedTimes: 3,
+          todayLearnedTimes: 0,
+          createTime: now,
+          updateTime: now,
+        ),
+        false,
+      );
+    }
+
+    await studyBo.markWordAsMastered(LearningWordVo(
+      null,
+      now,
+      1,
+      now,
+      1,
+      3,
+      (WordVo.c2('apple')..id = 'w_1'),
+      1,
+      30.0,
+      5.0,
+      0,
+      3,
+      3,
+      0,
+      FsrsState.review.value,
+    ));
+    await db.masteredWordsDao.setLearningWordAsMastered(testUser.id, 'w_2', true);
+
+    for (final wordId in ['w_1', 'w_2']) {
+      final lw = await db.learningWordsDao.getById(testUser.id, wordId);
+      expect(lw != null, isTrue);
+      expect(lw!.stability, 30.0, reason: '手动标记掌握必须保留学习进度里现有的稳定度 30.0，不得改写成掌握线');
+      expect(lw.stability, isNot(Constants.graduationStability), reason: '手动标记掌握不得再写毕业哨兵值 120.0');
+      expect(await db.masteredWordsDao.isWordMastered(testUser.id, wordId), true,
+          reason: '掌握的唯一口径 = 该词在「已掌握」词书里');
+    }
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('手动标记掌握时稳定度为空：保持为空、不凭空造值，词照样进「已掌握」词书', () async {
+    final now = AppClock.now();
+    for (final wordId in ['w_3', 'w_4']) {
+      await db.learningWordsDao.saveEntity(
+        LearningWord(
+          userId: testUser.id,
+          wordId: wordId,
+          addTime: now,
+          addDay: 1,
+          learningOrder: 1,
+          batchId: 1,
+          isExtra: false,
+          isTodayNewWord: false,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          createTime: now,
+          updateTime: now,
+        ),
+        false,
+      );
+    }
+
+    await studyBo.markWordAsMastered(LearningWordVo(
+      null,
+      now,
+      1,
+      now,
+      1,
+      0,
+      (WordVo.c2('cherry')..id = 'w_3'),
+    ));
+    await db.masteredWordsDao.setLearningWordAsMastered(testUser.id, 'w_4', true);
+
+    for (final wordId in ['w_3', 'w_4']) {
+      final lw = await db.learningWordsDao.getById(testUser.id, wordId);
+      expect(lw != null, isTrue);
+      expect(lw!.stability == null, isTrue, reason: '稳定度为空就保持为空，不得凭空写入掌握线');
+      expect(await db.masteredWordsDao.isWordMastered(testUser.id, wordId), true,
+          reason: '稳定度为空不影响掌握：唯一口径 = 该词在「已掌握」词书里');
+    }
 
     await Future.delayed(const Duration(milliseconds: 100));
   });

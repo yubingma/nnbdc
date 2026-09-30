@@ -98,6 +98,17 @@ class StudyCacheManager {
     _cachedLearningWordIds?.remove(wordId);
   }
 
+  /// 仅移出「已掌握」词书并同步缓存（改评分把词打回"学习中"）：
+  /// 不加生词本标记、不删学习进度记录，只把词还回学习中的 ID 集合。
+  Future<void> removeFromMasteredDictAndSync(MyDatabase db, String userId, String wordId) async {
+    _checkUser(db, userId);
+
+    await db.masteredWordsDao.removeFromMasteredDict(userId, wordId, true, true);
+
+    _cachedMasteredWordIds?.remove(wordId);
+    _cachedLearningWordIds?.add(wordId);
+  }
+
   /// 移除今日单词并同步缓存
   Future<void> deleteAndSyncWordState(MyDatabase db, LearningWord learningWord) async {
     _checkUser(db, learningWord.userId);

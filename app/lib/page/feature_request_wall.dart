@@ -10,7 +10,35 @@ import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
-import 'package:nnbdc/widget/app_scaffold.dart';
+
+/// 需求分类项定义
+class _CategoryItem {
+  final String key;
+  final String label;
+  const _CategoryItem(this.key, this.label);
+}
+
+const List<_CategoryItem> _kCategories = [
+  _CategoryItem('ALL', '全部'),
+  _CategoryItem('VOCABULARY', '背词复习'),
+  _CategoryItem('DICTIONARY', '词典查词'),
+  _CategoryItem('INTERACTION', '游戏互动'),
+  _CategoryItem('EXPERIENCE', '界面体验'),
+  _CategoryItem('OTHER', '其他建议'),
+];
+
+String _getCategoryLabel(String? categoryKey) {
+  for (final item in _kCategories) {
+    if (item.key == categoryKey) return item.label;
+  }
+  return '其他建议';
+}
+
+/// 需求墙排序模式
+enum FeatureRequestSortMode {
+  hot,    // 最热（得票最多）
+  newest, // 最新（最近发布）
+}
 
 class FeatureRequestWallPage extends StatefulWidget {
   const FeatureRequestWallPage({super.key});
@@ -25,6 +53,8 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
   final Map<String, bool> _votedStatus = {};
   late TabController _tabController;
   int _currentTabIndex = 0;
+  String _selectedCategory = 'ALL';
+  FeatureRequestSortMode _sortMode = FeatureRequestSortMode.hot;
 
   String? _getVotedPrefsKey() {
     final user = Global.getLoggedInUser();
@@ -384,6 +414,9 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
     final contentController = TextEditingController();
     final theme = context.themeConfig;
     final isDark = context.isDarkMode;
+    String selectedCategory = 'VOCABULARY';
+
+    final createCategories = _kCategories.where((c) => c.key != 'ALL').toList();
 
     showGeneralDialog(
       context: context,
@@ -398,7 +431,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         );
       },
       pageBuilder: (dialogContext, anim1, anim2) => StatefulBuilder(
-        builder: (builderContext, setState) => Dialog(
+        builder: (builderContext, setModalState) => Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
           insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -473,7 +506,59 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
+                      // 分类单选胶囊组
+                      Text(
+                        '需求分类',
+                        style: TextStyle(
+                          color: theme.textMuted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: createCategories.map((cat) {
+                          final isSelected = selectedCategory == cat.key;
+                          return InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                selectedCategory = cat.key;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(100),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? theme.primaryColor.withValues(alpha: isDark ? 0.25 : 0.14)
+                                    : (isDark ? const Color(0x18FFFFFF) : const Color(0x40FFFFFF)),
+                                borderRadius: BorderRadius.circular(100),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? theme.primaryColor.withValues(alpha: isDark ? 0.8 : 0.6)
+                                      : (isDark ? const Color(0x1EFFFFFF) : const Color(0x4D000000)),
+                                  width: isSelected ? 1.0 : 0.7,
+                                ),
+                              ),
+                              child: Text(
+                                cat.label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected
+                                      ? theme.primaryColor
+                                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 14),
                       // 需求标题输入框
                       Container(
                         decoration: BoxDecoration(
@@ -573,11 +658,20 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                                   }
 
                                   try {
-                                    final result = await Api.client.createFeatureRequest(title, content, user.id);
+                                    final result = await Api.client.createFeatureRequest(
+                                      title,
+                                      content,
+                                      selectedCategory,
+                                      user.id,
+                                    );
                                     if (!context.mounted) return;
                                     if (result.success) {
                                       ToastUtil.success('提交成功，感谢你的建议！');
                                       Navigator.pop(dialogContext);
+                                      setState(() {
+                                        _sortMode = FeatureRequestSortMode.newest; // 自动切至最新，确保新需求立刻可见
+                                        _selectedCategory = 'ALL';
+                                      });
                                       _loadRequests();
                                     } else {
                                       ToastUtil.error(result.msg ?? '提交失败');
@@ -628,9 +722,145 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         targetStatus = 'COMPLETED';
         break;
       default:
-        return _requests;
+        targetStatus = 'VOTING';
     }
-    return _requests.where((req) => req.status == targetStatus).toList();
+
+    // 1. 状态筛选
+    var list = _requests.where((req) => req.status == targetStatus).toList();
+
+    // 2. 需求分类筛选
+    if (_selectedCategory != 'ALL') {
+      list = list.where((req) {
+        final cat = req.category ?? 'OTHER';
+        return cat == _selectedCategory;
+      }).toList();
+    }
+
+    // 3. 排序模式切换：最热 / 最新
+    list.sort((a, b) {
+      if (_sortMode == FeatureRequestSortMode.newest) {
+        // 最新排序：发布时间倒序
+        return b.createTime.compareTo(a.createTime);
+      } else {
+        // 最热排序：票数倒序，相同时按时间倒序
+        final countCompare = (b.voteCount ?? 0).compareTo(a.voteCount ?? 0);
+        if (countCompare != 0) return countCompare;
+        return b.createTime.compareTo(a.createTime);
+      }
+    });
+
+    return list;
+  }
+
+  Widget _buildSubFilterBar(AppThemeConfig theme, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      child: Row(
+        children: [
+          // 左侧：横向滚动分类胶囊列表
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: _kCategories.map((cat) {
+                  final isSelected = _selectedCategory == cat.key;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedCategory = cat.key;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(100),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? theme.primaryColor.withValues(alpha: isDark ? 0.22 : 0.12)
+                              : (isDark ? const Color(0x18FFFFFF) : const Color(0x66FFFFFF)),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(
+                            color: isSelected
+                                ? theme.primaryColor.withValues(alpha: isDark ? 0.70 : 0.45)
+                                : (isDark ? const Color(0x22FFFFFF) : const Color(0x33000000)),
+                            width: isSelected ? 1.0 : 0.7,
+                          ),
+                        ),
+                        child: Text(
+                          cat.label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? theme.primaryColor
+                                : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // 右侧：排序模式切换胶囊（最热 / 最新）
+          InkWell(
+            onTap: () {
+              setState(() {
+                _sortMode = _sortMode == FeatureRequestSortMode.hot
+                    ? FeatureRequestSortMode.newest
+                    : FeatureRequestSortMode.hot;
+              });
+            },
+            borderRadius: BorderRadius.circular(100),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0x22FFFFFF) : const Color(0x80FFFFFF),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(
+                  color: isDark ? const Color(0x2BFFFFFF) : const Color(0x40000000),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _sortMode == FeatureRequestSortMode.hot
+                        ? Icons.local_fire_department_rounded
+                        : Icons.schedule_rounded,
+                    size: 14,
+                    color: _sortMode == FeatureRequestSortMode.hot
+                        ? const Color(0xFFF97316)
+                        : theme.primaryColor,
+                  ),
+                  const SizedBox(width: 3.5),
+                  Text(
+                    _sortMode == FeatureRequestSortMode.hot ? '最热' : '最新',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.swap_vert_rounded,
+                    size: 13,
+                    color: theme.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -781,52 +1011,59 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         ),
       ),
       body: SelectionArea(
-        child: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: theme.primaryColor,
-                ),
-              )
-            : filteredRequests.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: theme.subtleBg.withValues(alpha: isDark ? 0.3 : 0.5),
-                            shape: BoxShape.circle,
+        child: Column(
+          children: [
+            _buildSubFilterBar(theme, isDark),
+            Expanded(
+              child: _isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: theme.primaryColor,
+                      ),
+                    )
+                  : filteredRequests.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: theme.subtleBg.withValues(alpha: isDark ? 0.3 : 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.rate_review_outlined,
+                                  size: 32,
+                                  color: theme.textMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                '暂无相关需求',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: theme.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Icon(
-                            Icons.rate_review_outlined,
-                            size: 32,
-                            color: theme.textMuted,
-                          ),
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 96),
+                          itemCount: filteredRequests.length,
+                          itemBuilder: (context, index) {
+                            final request = filteredRequests[index];
+                            return _buildRequestCard(request);
+                          },
                         ),
-                        const SizedBox(height: 14),
-                        Text(
-                          '当前分类暂无需求',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-                    itemCount: filteredRequests.length,
-                    itemBuilder: (context, index) {
-                      final request = filteredRequests[index];
-                      return _buildRequestCard(request);
-                    },
-                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -876,21 +1113,29 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 分类标签与状态徽章行
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: isDark ? 0.16 : 0.08),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: theme.primaryColor.withValues(alpha: isDark ? 0.32 : 0.18),
+                      width: 0.6,
+                    ),
+                  ),
                   child: Text(
-                    request.title ?? '',
+                    _getCategoryLabel(request.category),
                     style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16.5,
-                      color: theme.textPrimary,
-                      letterSpacing: -0.2,
+                      fontSize: 10.5,
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 3),
                   decoration: BoxDecoration(
@@ -918,6 +1163,16 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              request.title ?? '',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 16.5,
+                color: theme.textPrimary,
+                letterSpacing: -0.2,
+              ),
             ),
             if (request.content != null && request.content!.isNotEmpty) ...[
               const SizedBox(height: 8),

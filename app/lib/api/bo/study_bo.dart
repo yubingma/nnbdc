@@ -1093,7 +1093,7 @@ class StudyBo {
     }
 
     if (shouldGraduate) {
-      // 保存已掌握单词（会把学习进度的稳定度改写成毕业哨兵值，规划阶段甚至删除整条学习进度记录）
+      // 保存已掌握单词（学习进度的记忆字段写这次评分算出的真实值，规划阶段甚至删除整条学习进度记录）
       await _saveMasteredWord(
         learningWord: currWord,
         user: user,
@@ -1185,6 +1185,7 @@ class StudyBo {
   /// - [nextFsrs] 重放末态 → learning_words；
   /// - [firstStepFsrs] 重放首步态 → **当天首条日志**（即被修改的那条今日测评）。
   /// - [newRating] 用户新选的评分，同样只写进当天首条日志。
+  /// - 重算稳定度跌破掌握线时，把词移出「已掌握」词书（保留学习进度记录）。
   ///
   /// 替换的必须是当天首条日志而不是最新一条：当天若有巩固环节，最新一条是巩固日志，
   /// 改它会让反复修改评分互相污染（首条仍是旧评分，重放基准错位 → 结果漂移）。
@@ -1243,8 +1244,25 @@ class StudyBo {
     );
     await _saveAndSyncWordState(updatedWord: updatedWord, db: db);
 
-    // 4. 触发数据同步
+    // 4. 改评分把稳定度改回掌握线以下 ⇒ 词不该再算"已掌握"：移出「已掌握」词书。
+    //    学习进度记录原样保留（词回到"学习中"，会重新进入今日计划候选池）；
+    //    与用户主动「取消掌握」不同 —— 那条走 MasteredWordsDao.deleteMasteredWord，
+    //    会删掉学习进度、把词加进生词本，从零重学。
+    await _revokeMasteredIfBelowGraduation(db, user, dbLw.wordId, nextFsrs.stability);
+
+    // 5. 触发数据同步
     ThrottledDbSyncService().requestSync();
+  }
+
+  /// 改评分后重算稳定度跌破掌握线：把词移出「已掌握」词书，保留学习进度记录。
+  /// 只认「已掌握」词书成员这一个口径：词本来就不在词书里时什么都不做。
+  Future<void> _revokeMasteredIfBelowGraduation(
+      MyDatabase db, User user, String wordId, double stability) async {
+    if (stability >= Constants.graduationStability) return;
+    if (!await db.masteredWordsDao.isWordMastered(user.id, wordId)) return;
+
+    await StudyCacheManager().removeFromMasteredDictAndSync(db, user.id, wordId);
+    AnalyticsUtil.trackMasteredRevokedByRating(stability);
   }
 
   Result<GetWordResult> _buildTodayStudyFinishedResult() {
@@ -1668,9 +1686,16 @@ class StudyBo {
 
   /// [fsrs] 触发毕业的这次评分的记忆状态；回看模式手动标记掌握时没有本次评分，传 null。
   ///
-  /// 稳定度仍写毕业哨兵值（毕业标记，不取 [fsrs]），但其余记忆字段必须与已写入的流水一致：
-  /// 流水记的就是这次评分之后的状态，学习进度若停在评分之前的 reps/lapses，
-  /// "按当天全部日志真实重放"回推基准时就会少算这一条（见 BdcNotifier._recalcFsrsForRating）。
+  /// 有 [fsrs] 时（评分自然毕业）：整条记忆状态写这次评分算出的真实值，稳定度写 [FSRSItem.stability]，
+  /// 不再覆写成毕业哨兵值（掌握线 120.0）——哨兵值会让学习进度记着一个从未算出来的数，
+  /// 回看里改评分按日志重放时基准就跟着撒谎。存量毕业词混着 180.0 与 120.0 两个哨兵值，
+  /// 真实值当年已被丢弃无法回填，本次改动只影响新毕业的词。
+  /// 没有 [fsrs] 时（回看模式手动标记掌握）：没有本次评分可写，稳定度保持学习进度里现有的值，
+  /// 为空就保持为空——掌握与否只由「已掌握」词书成员体现，不需要哨兵值。
+  ///
+  /// 其余记忆字段必须与已写入的流水一致：流水记的就是这次评分之后的状态，
+  /// 学习进度若停在评分之前的 reps/lapses，"按当天全部日志真实重放"回推基准时就会少算这一条
+  /// （见 BdcNotifier._recalcFsrsForRating）。
   Future<void> _saveMasteredWord({
     required LearningWord learningWord,
     required User user,
@@ -1686,7 +1711,8 @@ class StudyBo {
       // 已经进入学习执行阶段：不删除记录，而是将状态“填满”
       // 这样进度条的分母保持不变，分子增加，体验更平滑
       final updatedWord = learningWord.copyWith(
-        stability: Value(Constants.graduationStability),
+        // 没有本次评分（手动标记掌握）时不动稳定度：保留学习进度里现有的值，为空就保持为空
+        stability: fsrs != null ? Value(fsrs.stability) : const Value.absent(),
         difficulty: fsrs != null ? Value(fsrs.difficulty) : const Value.absent(),
         elapsedDays: fsrs != null ? Value(fsrs.elapsedDays) : const Value.absent(),
         scheduledDays: fsrs != null ? Value(fsrs.scheduledDays) : const Value.absent(),

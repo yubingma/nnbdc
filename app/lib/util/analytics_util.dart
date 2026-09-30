@@ -100,4 +100,13 @@ class AnalyticsUtil {
       }
     }
   }
+
+  /// 8. 改评分导致退出「已掌握」：修改今日评分后重算稳定度跌破掌握线，
+  /// 词被移出「已掌握」词书、回到学习中（学习进度记录保留）。
+  /// 用于观察"改评分把已掌握词打回学习中"的发生频次与跌破时的稳定度。
+  static void trackMasteredRevokedByRating(double stability) {
+    trackEvent('mastered_revoked_by_rating', {
+      'stability': stability.toString(),
+    });
+  }
 }

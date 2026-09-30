@@ -263,8 +263,8 @@
 | 记忆参数 | `learning_word.stability` / `difficulty` / `elapsed_days` / `scheduled_days` / `reps` / `lapses` | 记忆稳定度、难度、间隔天数、复习次数、遗忘次数 | |
 | FSRS 状态 | `learning_word.state` | 0 New 新词 / 1 Learning 学习中 / 2 Review 复习 / 3 Relearning 重学 | |
 | 掌握 / 已掌握 | mastered | 单词记忆稳定到不用再复习，移入「已掌握」词书 | |
-| 掌握线 / 毕业线 | 客户端 `app/lib/constants.dart:54` 的 `graduationStability = 120.0` | 唯一真正生效的判定线：单词 `stability ≥ 120` 即认为已掌握，移出学习中库 | 口径是"四个月不忘"。此值同时是毕业词的 stability 哨兵值，**只允许下调**，上调必须配套数据迁移 |
-| 毕业哨兵值 | — | 单词毕业时其 `stability` 被写成掌握线那个值，作为"已毕业"的标记 | 与掌握线是同一个数，所以改掌握线会波及存量数据 |
+| 掌握线 / 毕业线 | 客户端 `app/lib/constants.dart:57` 的 `graduationStability = 120.0` | 唯一真正生效的判定线：单词 `stability ≥ 120` 即认为已掌握，移出学习中库 | 口径是"四个月不忘"。存量毕业词的 stability 可能是历史哨兵值（180.0 或 120.0），不代表真实记忆强度，因此此值**只允许下调**，上调必须配套数据迁移 |
+| 毕业哨兵值 | — | **历史遗留**：早期单词毕业时其 `stability` 被写成当年的掌握线（180.0 或 120.0），当作"已毕业"的标记 | 与掌握线曾是同一个数，所以改掌握线会波及存量数据。掌握与否现在只看「已掌握」词书成员，新毕业与手动标记掌握都不再写哨兵值 |
 | 错题本 | `user_wrong_word` | 做错的单词及错误次数 | 与"生词本"不是一回事 |
 | 生词本 | `book_mark` / 模板词书 | 用户手动收藏的单词 | |
 | 评分档位 | `FsrsRating` | 每次作答给出的记忆评价，四档：again 忘记 / hard 困难 / good 良好 / easy 简单 | 代码里 `FsrsRating.again.value = 1`…`easy.value = 4`，下标与 FSRS 权重 w0~w3 一一对应 |

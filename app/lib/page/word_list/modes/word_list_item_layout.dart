@@ -283,10 +283,13 @@ class WordListItemLayout extends StatelessWidget {
     final double max = word.maxProgress ?? 100;
     double progressRatio = 0.0;
 
-    if (showWordProgress && max > 0) {
-      progressRatio = (current / max).clamp(0.0, 1.0);
-    } else if (learningStatus == true) {
+    // 已掌握（在「已掌握」词书里）就是满分：进度只由「已掌握」状态决定，
+    // 不靠稳定度数值推断，否则「手动标记掌握、稳定度为空或低于掌握线」的词会显示成没背完
+    if (learningStatus == true) {
       progressRatio = 1.0;
+    } else if (showWordProgress && max > 0) {
+      // 未掌握时按 当前稳定度 ÷ 满分（调用方传入的掌握线）展示
+      progressRatio = (current / max).clamp(0.0, 1.0);
     } else if (learningStatus == false) {
       progressRatio = 0.5;
     }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.apache.commons.lang3.tuple.Pair;
 
 import beidanci.api.Result;
+import beidanci.api.model.FeatureRequestCategory;
 import beidanci.api.model.FeatureRequestStatus;
 import beidanci.api.model.FeatureRequestVo;
 import beidanci.service.bo.FeatureRequestBo;
@@ -51,6 +52,7 @@ public class FeatureRequestController {
     @ResponseBody
     public Result<FeatureRequestVo> createFeatureRequest(@RequestParam(name = "title") String title,
                                                          @RequestParam(name = "content") String content,
+                                                         @RequestParam(name = "category", required = false) String categoryStr,
                                                          @RequestParam(name = "userId") String userId) 
             throws IllegalAccessException {
         if (StringUtils.isEmpty(title.trim())) {
@@ -64,8 +66,17 @@ public class FeatureRequestController {
         if (user == null) {
             return Result.fail("用户未登录");
         }
+
+        FeatureRequestCategory category = FeatureRequestCategory.OTHER;
+        if (StringUtils.isNotEmpty(categoryStr)) {
+            try {
+                category = FeatureRequestCategory.valueOf(categoryStr.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                category = FeatureRequestCategory.OTHER;
+            }
+        }
         
-        FeatureRequest request = featureRequestBo.createFeatureRequest(title, content, user);
+        FeatureRequest request = featureRequestBo.createFeatureRequest(title, content, category, user);
         FeatureRequestVo vo = PoVoUtils.makeVo(request, FeatureRequestVo.class,
                 new String[]{"creator.password", "creator.invitedBy", "creator.StudyGroupVo.creator",
                         "creator.StudyGroupVo.users", "creator.StudyGroupVo.managers", 

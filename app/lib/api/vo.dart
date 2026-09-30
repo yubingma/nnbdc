@@ -1651,11 +1651,12 @@ class FeatureRequestVo {
   String? title;
   String? content;
   String? status;
+  String? category;
   int? voteCount;
   UserVo? creator;
   DateTime createTime;
 
-  FeatureRequestVo(this.id, this.title, this.content, this.status, this.voteCount, this.creator, this.createTime);
+  FeatureRequestVo(this.id, this.title, this.content, this.status, this.category, this.voteCount, this.creator, this.createTime);
 
   FeatureRequestVo.c2(this.id, this.createTime);
 

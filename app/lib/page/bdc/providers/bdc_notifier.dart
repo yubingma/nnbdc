@@ -1336,7 +1336,10 @@ class BdcNotifier extends _$BdcNotifier {
   /// 会漏掉后续环节的量变，实测偏差可达 29%。正确口径是**按当天全部日志真实重放**：
   ///
   /// - 基准 = "今天之前的最后一条日志"的记忆状态（无则视为新词）；reps/lapses 由
-  ///   `lw` 当前总值回推掉当天已重放的条数（again 计 lapse）得到；
+  ///   learning_words 的**当前行**总值回推掉当天已重放的条数（again 计 lapse）得到。
+  ///   计数必须现读数据库，绝不能取界面快照 [lw]：快照可能停在"今天这次评分提交之前"，
+  ///   用它回推会把基准少算一条，重放末态的 reps 比库里已推进的次数还小一位（数据倒退）。
+  ///   读不到该行（词已被移出学习库等）时视为新词，保持函数原语义；
   /// - 当天首条（即被修改的那条）用用户新选的 [rating]：
   ///   `elapsedDays == 0 ? init(rating) : next(基准, rating, elapsedDays)`；
   /// - 其余同日日志按 createTime 正序 `next(前一条结果, 该日志原评分, 0)`。
@@ -1345,8 +1348,10 @@ class BdcNotifier extends _$BdcNotifier {
   /// 现有 learning_words 状态（stability/scheduledDays/reps/lapses 都不变）。
   ///
   /// 不能用 addTime 判断"新词"：计划内单词可能 addTime 很早但 stability 从未初始化
-  /// （今天才真正学习），测评仍走 init；也不能用 lw.stability 当基准——它已被当天
+  /// （今天才真正学习），测评仍走 init；也不能用当前行的 stability 当基准——它已被当天
   /// 全部环节推进过，用它再 next 一次会重复放大。
+  ///
+  /// [lw] 只用来取词身份（wordId）；所有记忆数值一律现读 learning_words 当前行。
   ///
   /// 返回一对状态，二者不可混用（每条 learning_logs 记录的是"该次评分之后"的状态）：
   /// - [replayed] 末态：当天全部日志重放完的结果 → 写 learning_words；
@@ -1358,6 +1363,15 @@ class BdcNotifier extends _$BdcNotifier {
     final userId = Global.getLoggedInUser()?.id;
     final wordId = lw.word.id;
     if (userId == null || wordId == null) {
+      final item = fsrs.init(rating);
+      return (replayed: item, firstStep: item);
+    }
+
+    // 计数基准现读 learning_words 当前行，不取界面快照（见上方说明）
+    final currentRow =
+        await MyDatabase.instance.learningWordsDao.getById(userId, wordId);
+    if (currentRow == null) {
+      // 读不到当前行（词已被移出学习库等）：视为新词，保持原语义
       final item = fsrs.init(rating);
       return (replayed: item, firstStep: item);
     }
@@ -1384,7 +1398,7 @@ class BdcNotifier extends _$BdcNotifier {
       }
     }
 
-    // 基准记忆状态：reps/lapses 从当前总值里减掉当天将重放的条数
+    // 基准记忆状态：reps/lapses 从当前行总值里减掉当天将重放的条数
     final int todayAgainCount =
         todayLogs.where((l) => l.rating == FsrsRating.again.value).length;
     final FSRSItem? baseItem = prevLog == null
@@ -1394,8 +1408,8 @@ class BdcNotifier extends _$BdcNotifier {
             difficulty: prevLog.difficulty,
             elapsedDays: 0,
             scheduledDays: prevLog.scheduledDays,
-            reps: max(0, (lw.reps ?? 0) - todayLogs.length),
-            lapses: max(0, (lw.lapses ?? 0) - todayAgainCount),
+            reps: max(0, (currentRow.reps ?? 0) - todayLogs.length),
+            lapses: max(0, (currentRow.lapses ?? 0) - todayAgainCount),
             // 日志表无 state 字段：基准 state 由其评分推断（again → relearning，否则 review）
             state: prevLog.rating == FsrsRating.again.value
                 ? FsrsState.relearning

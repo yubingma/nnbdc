@@ -823,6 +823,7 @@ abstract class RestClient {
   Future<Result<FeatureRequestVo>> createFeatureRequest(
       @Field("title") String title,
       @Field("content") String content,
+      @Field("category") String category,
       @Field("userId") String userId);
 
   @POST("/voteFeatureRequest.do")

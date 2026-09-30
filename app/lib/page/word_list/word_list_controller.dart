@@ -629,10 +629,8 @@ class WordListController extends ChangeNotifier {
       final bool todayStudyStarted = Global.getLoggedInUser()?.todayStudyStarted ?? false;
 
       if (todayStudyStarted && isTodayTask) {
+        // 词已进「已掌握」词书：界面按已掌握展示满分，不伪造稳定度数值
         word.currentLearningStatus = true;
-        if (word.tag is LearningWordVo) {
-          (word.tag as LearningWordVo).stability = 180.0;
-        }
         notifyListeners();
         return;
       }
@@ -673,18 +671,12 @@ class WordListController extends ChangeNotifier {
       if (((todayStudyStarted && isTodayTask) || args.wordsProvider.keepWordsOnMaster) &&
           args.wordsProvider.isStatusVisible(true)) {
         word.currentLearningStatus = true;
-        if (word.tag is LearningWordVo) {
-          (word.tag as LearningWordVo).stability = 180.0;
-        }
         word.currentProgress = word.maxProgress;
         notifyListeners();
         return;
       }
 
       word.currentLearningStatus = true;
-      if (word.tag is LearningWordVo) {
-        (word.tag as LearningWordVo).stability = 180.0;
-      }
       word.currentProgress = word.maxProgress;
       words.remove(word);
       totalWordCount--;

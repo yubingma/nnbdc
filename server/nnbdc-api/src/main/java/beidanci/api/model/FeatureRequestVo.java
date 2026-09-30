@@ -4,8 +4,17 @@ public class FeatureRequestVo extends UuidVo {
     private String title;
     private String content;
     private FeatureRequestStatus status;
+    private FeatureRequestCategory category;
     private Integer voteCount;
     private UserVo creator;
+
+    public FeatureRequestCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(FeatureRequestCategory category) {
+        this.category = category;
+    }
 
     public String getTitle() {
         return title;

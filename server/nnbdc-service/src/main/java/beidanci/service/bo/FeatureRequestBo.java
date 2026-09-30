@@ -16,6 +16,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import beidanci.api.model.FeatureRequestCategory;
 import beidanci.api.model.FeatureRequestStatus;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.FeatureRequestDao;
@@ -100,15 +101,20 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
     /**
      * 创建需求
      */
-    public FeatureRequest createFeatureRequest(String title, String content, User creator) {
+    public FeatureRequest createFeatureRequest(String title, String content, FeatureRequestCategory category, User creator) {
         FeatureRequest request = new FeatureRequest();
         request.setTitle(title);
         request.setContent(content);
+        request.setCategory(category != null ? category : FeatureRequestCategory.OTHER);
         request.setCreator(creator);
         request.setStatus(FeatureRequestStatus.VOTING);
         request.setVoteCount(0);
         createEntity(request);
         return request;
+    }
+
+    public FeatureRequest createFeatureRequest(String title, String content, User creator) {
+        return createFeatureRequest(title, content, FeatureRequestCategory.OTHER, creator);
     }
     
     /**

@@ -10,7 +10,9 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
@@ -1726,6 +1728,284 @@ void main() {
     expect(state.fsrsItem, isNot(null));
     expect(state.fsrsItem!.scheduledDays, 26,
         reason: '复习词改评分必须重放测评+巩固全部当天环节,预期 26 天,实际 ${state.fsrsItem!.scheduledDays}');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 修改今日评分:计数基准取 learning_words 当前行,不取陈旧的界面快照', () async {
+    // 复习词：昨天学过（日志记着测评前的记忆状态），今天这次测评的评分刚刚提交
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    final yesterday = today.subtract(const Duration(days: 1));
+    final fsrs = FSRS();
+
+    // 今天之前的记忆状态（学习进度行与昨天的日志同源）：reps=2
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(
+          stability: const Value(15.69105),
+          difficulty: const Value(3.2245015893713678),
+          reps: const Value(2),
+          scheduledDays: const Value(16),
+          state: const Value(2), // Review
+          addTime: Value(yesterday),
+          addDay: const Value(2),
+          isTodayNewWord: const Value(false),
+          lastLearningDate: Value(yesterday),
+          learnedTimes: const Value(1),
+          todayLearnedTimes: const Value(0),
+        ));
+    // 昨天(测评前)的日志：重放基准的来源
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_stale_yesterday',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 15.69105,
+      difficulty: 3.2245015893713678,
+      elapsedDays: 5,
+      scheduledDays: 16,
+      createTime: yesterday,
+      updateTime: yesterday,
+    ), false);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+    // 界面快照停在"今天这次评分提交之前"：reps=2
+    expect(state.currentGetWordResult!.learningWord!.reps, 2,
+        reason: '前置条件：界面快照必须是提交前的状态');
+
+    // 模拟"今天这次测评已经提交"：库里的行前进到评分之后的状态（reps 2 → 3），并写下当天首条日志
+    final beforeToday = FSRSItem(
+      stability: 15.69105,
+      difficulty: 3.2245015893713678,
+      elapsedDays: 0,
+      scheduledDays: 16,
+      reps: 2,
+      lapses: 0,
+      state: FsrsState.review,
+    );
+    final submitted = fsrs.next(beforeToday, FsrsRating.easy, 2);
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(
+          stability: Value(submitted.stability),
+          difficulty: Value(submitted.difficulty),
+          reps: Value(submitted.reps),
+          scheduledDays: Value(submitted.scheduledDays),
+          state: Value(submitted.state.value),
+          lastLearningDate: Value(today),
+          learnedTimes: const Value(2),
+          todayLearnedTimes: const Value(1),
+        ));
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_stale_today_assess',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: submitted.stability,
+      difficulty: submitted.difficulty,
+      elapsedDays: 2,
+      scheduledDays: submitted.scheduledDays,
+      createTime: testNow,
+      updateTime: testNow,
+    ), false);
+    expect(submitted.reps, 3, reason: '前置条件：库里的行已推进到 reps=3');
+
+    // 把测评的 easy 改成 good：基准必须用数据库当前行（reps=3）回推，而不是陈旧的快照（reps=2）
+    // 正确：基准 reps = 3 - 1 = 2 → 末态 reps = 3（与库里当前行一致）
+    // 错误：基准 reps = 2 - 1 = 1 → 末态 reps = 2，把库里已推进的次数写回去倒退一位
+    final expected = fsrs.next(beforeToday, FsrsRating.good, 2);
+    notifier.updateFsrsRating(FsrsRating.good);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.reps == expected.reps) break;
+    }
+    expect(state.fsrsItem, isNot(null));
+    expect(state.fsrsItem!.stability, closeTo(expected.stability, 1e-9));
+    expect(state.fsrsItem!.difficulty, closeTo(expected.difficulty, 1e-9));
+    expect(state.fsrsItem!.scheduledDays, expected.scheduledDays);
+    expect(state.fsrsItem!.lapses, expected.lapses);
+    expect(state.fsrsItem!.reps, 3,
+        reason: '重放末态的 reps 必须等于"从数据库当前行重放"的结果；写成 2 就是取了陈旧界面快照');
+
+    // 落库的学习进度同样是"从数据库当前行重放"的结果
+    final lw = await db.learningWordsDao.getById(testUser.id, 'word_1');
+    expect(lw!.reps, 3, reason: 'learning_words 的 reps 不得被写回 2');
+    expect(lw.stability, closeTo(expected.stability, 1e-9));
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 修改今日评分:重算稳定度跌破掌握线,词被移出「已掌握」词书并回到学习中', () async {
+    // 该词学习进度记着真实的毕业稳定度 150.0；模拟它今天刚毕业进入「已掌握」词书，
+    // 用户在回看里打开它并把今天的测评评分改低
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    final yesterday = today.subtract(const Duration(days: 1));
+    final fsrs = FSRS();
+
+    const masteredDictId = 'mock_dict_mastered';
+    await db.into(db.dicts).insert(Dict(
+          id: masteredDictId,
+          name: '已掌握',
+          wordCount: 0,
+          isShared: false,
+          isReady: true,
+          ownerId: testUser.id,
+          visible: true,
+          editable: false,
+          deletable: false,
+          createTime: now,
+          updateTime: now,
+        ));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(
+          stability: const Value(150.0),
+          difficulty: const Value(5.0),
+          reps: const Value(4),
+          scheduledDays: const Value(150),
+          state: const Value(2), // Review
+          addTime: Value(yesterday),
+          addDay: const Value(2),
+          isTodayNewWord: const Value(false),
+          lastLearningDate: Value(today),
+          learnedTimes: const Value(5),
+          todayLearnedTimes: const Value(0),
+        ));
+    // 昨天(测评前)的日志 + 今天已提交的测评日志（当天首条，改评分改的就是它）
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_revoke_yesterday',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 140.0,
+      difficulty: 5.0,
+      elapsedDays: 3,
+      scheduledDays: 140,
+      createTime: yesterday,
+      updateTime: yesterday,
+    ), false);
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_revoke_today',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 150.0,
+      difficulty: 5.0,
+      elapsedDays: 2,
+      scheduledDays: 150,
+      createTime: testNow,
+      updateTime: testNow,
+    ), false);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    // 进入回看：拿到这个词的界面快照（此时词还没进「已掌握」词书，否则今日计划不会出题）
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    final state0 = container.read(bdcNotifierProvider);
+    expect(state0.word!.spell, 'apple');
+    expect(state0.currentGetWordResult!.learningWord!.stability, 150.0);
+
+    // 它在今天毕业：走真实的毕业入口写「已掌握」词书并同步缓存
+    await StudyCacheManager().saveMasteredWordAndSync(db, testUser.id, 'word_1');
+    final masteredIdsBefore = await StudyCacheManager().getMasteredWordIds(db, testUser.id);
+    expect(masteredIdsBefore.contains('word_1'), true,
+        reason: '前置条件：这个词现在算已掌握，已从今日计划候选池排除');
+    final todayWordsBefore = await StudyCacheManager().getTodayWords(db, testUser.id);
+    expect(
+        todayWordsBefore
+            .where((w) => !w.isEffectivelyMastered(masteredIdsBefore))
+            .map((w) => w.wordId)
+            .toList(),
+        isNot(contains('word_1')),
+        reason: '前置条件：已掌握的词不出现在今日计划候选池里');
+
+    // 前置条件：把今天的测评从 easy 改成 again，重放稳定度必须跌破掌握线
+    final expectedReplayed = fsrs.next(
+      FSRSItem(
+        stability: 140.0,
+        difficulty: 5.0,
+        elapsedDays: 0,
+        scheduledDays: 140,
+        reps: 3, // 当前行 reps 4 − 当天 1 条日志
+        lapses: 0,
+        state: FsrsState.review,
+      ),
+      FsrsRating.again,
+      2,
+    );
+    expect(expectedReplayed.stability, lessThan(Constants.graduationStability),
+        reason: '前置条件：重算稳定度必须低于掌握线才会退出已掌握');
+
+    notifier.updateFsrsRating(FsrsRating.again);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      if (!await db.masteredWordsDao.isWordMastered(testUser.id, 'word_1')) break;
+    }
+    final state = container.read(bdcNotifierProvider);
+
+    // ① 词已不在「已掌握」词书：词条行、词书词数、用户已掌握计数一并更新
+    expect(await db.masteredWordsDao.isWordMastered(testUser.id, 'word_1'), false,
+        reason: '重算稳定度跌破掌握线后，词必须移出「已掌握」词书');
+    expect(await db.dictWordsDao.getDictWordCount(masteredDictId), 0,
+        reason: '「已掌握」词书的词数要同步减一');
+    final user = await db.usersDao.getUserById(testUser.id);
+    expect(user!.masteredWordsCount, 0, reason: '用户的已掌握计数要同步更新');
+
+    // ② 学习进度记录仍在，且稳定度是真实重算值（低于掌握线）
+    final lw = await db.learningWordsDao.getById(testUser.id, 'word_1');
+    expect(lw, isNot(null), reason: '改评分打回"学习中"必须保留学习进度记录');
+    expect(lw!.stability, closeTo(expectedReplayed.stability, 1e-9),
+        reason: '学习进度写的是重放算出的真实稳定度，不是掌握线哨兵值');
+    expect(lw.stability, lessThan(Constants.graduationStability));
+    expect(state.fsrsItem!.stability, closeTo(expectedReplayed.stability, 1e-9));
+
+    // ③ 词重新回到今日计划候选池（口径 = 用户全部学习进度记录 − 「已掌握」词书成员）
+    final todayWords = await StudyCacheManager().getTodayWords(db, testUser.id);
+    final masteredIds = await StudyCacheManager().getMasteredWordIds(db, testUser.id);
+    expect(masteredIds.contains('word_1'), false, reason: '已掌握 ID 缓存也要同步移除该词');
+    expect(
+        todayWords
+            .where((w) => !w.isEffectivelyMastered(masteredIds))
+            .map((w) => w.wordId)
+            .toList(),
+        contains('word_1'),
+        reason: '移出已掌握后该词必须重新进入今日计划候选池');
+    expect(await db.learningWordsDao.getLearningWordIdSet(testUser.id, ['word_1']),
+        contains('word_1'),
+        reason: 'DAO 口径同样把这个词算作"学习中"（学习进度行仍在且已不在已掌握词书）');
+
+    // ④ 埋点 AnalyticsUtil.trackMasteredRevokedByRating 在本用例中无法观测：
+    //    AnalyticsUtil 是纯静态类，trackEvent 先看隐私授权 _canTrack，且只在 Android/iOS 上
+    //    真正上报（见 lib/util/analytics_util.dart:15-35），项目没有可注入的埋点替身或事件队列，
+    //    故这里只断言上面三条，埋点由代码路径保证（lib/api/bo/study_bo.dart 的 _revokeMasteredIfBelowGraduation）。
 
     await Future.delayed(const Duration(milliseconds: 50));
   });

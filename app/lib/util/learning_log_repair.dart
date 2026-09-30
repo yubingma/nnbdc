@@ -185,7 +185,8 @@ class LearningLogRepair {
       }
 
       // 已掌握词不回填：掌握 = 该词已进入「已掌握」词书（唯一口径），
-      // 掌握是用户可见、可编辑的事实，其 stability 是毕业哨兵值，不能按日志改回去。
+      // 掌握是用户可见、可编辑的事实，其 stability 历史上可能是毕业哨兵值（180.0 或 120.0），
+      // 不代表真实记忆强度，不能按日志改回去。
       // 不拿 stability >= 掌握线当判据：那是代理判据，会把"稳定度恰好越过掌握线、
       // 但并未进入已掌握词书"的词误判成已掌握而漏回填。
       final isMastered = masteredWordIds.contains(learningWord.wordId);
