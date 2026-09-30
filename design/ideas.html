@@ -572,6 +572,14 @@
       display: block;
     }
 
+    .pet-stage img {
+      width: 96px;
+      height: 108px;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 6px 14px rgba(110, 231, 183, 0.25));
+    }
+
     .pet-mood {
       display: grid;
       grid-template-columns: repeat(2, auto);
@@ -941,29 +949,7 @@
               <div class="section-title">宠物形象示意（纯 CSS 绘制，最终以 UI 矢量为准）</div>
               <div class="pet-panel">
                 <div class="pet-stage">
-                  <svg viewBox="0 0 200 200" role="img" aria-label="记忆守护兽形象示意">
-                    <defs>
-                      <radialGradient id="guardianBody" cx="35%" cy="28%" r="78%">
-                        <stop offset="0%" stop-color="#a7f3d0" stop-opacity="0.95"></stop>
-                        <stop offset="55%" stop-color="#6ee7b7" stop-opacity="0.45"></stop>
-                        <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.18"></stop>
-                      </radialGradient>
-                    </defs>
-                    <circle cx="100" cy="112" r="82" fill="none" stroke="rgba(110,231,183,0.18)" stroke-dasharray="2 7"></circle>
-                    <ellipse cx="100" cy="118" rx="60" ry="62" fill="url(#guardianBody)" stroke="rgba(167,243,208,0.5)" stroke-width="1.5"></ellipse>
-                    <circle cx="78" cy="110" r="9" fill="#0d0f12"></circle>
-                    <circle cx="122" cy="110" r="9" fill="#0d0f12"></circle>
-                    <circle cx="81" cy="106" r="3.2" fill="#6ee7b7"></circle>
-                    <circle cx="125" cy="106" r="3.2" fill="#6ee7b7"></circle>
-                    <ellipse cx="84" cy="150" rx="8" ry="4.5" fill="rgba(13,15,18,0.55)"></ellipse>
-                    <ellipse cx="116" cy="150" rx="8" ry="4.5" fill="rgba(13,15,18,0.55)"></ellipse>
-                    <ellipse cx="72" cy="80" rx="15" ry="9" fill="#ffffff" opacity="0.28"></ellipse>
-                    <circle cx="36" cy="76" r="6.5" fill="none" stroke="rgba(110,231,183,0.75)" stroke-width="1.5"></circle>
-                    <circle cx="168" cy="88" r="4.5" fill="none" stroke="rgba(96,165,250,0.75)" stroke-width="1.5"></circle>
-                    <circle cx="152" cy="158" r="9" fill="none" stroke="rgba(251,191,36,0.65)" stroke-width="1.5"></circle>
-                    <circle cx="52" cy="160" r="3.5" fill="rgba(192,132,252,0.7)"></circle>
-                    <ellipse cx="100" cy="188" rx="44" ry="6" fill="rgba(0,0,0,0.35)"></ellipse>
-                  </svg>
+                  <img src="../assets/images/pet/guardian_gel_正面.png" alt="记忆守护兽定稿形象（纯凝胶精灵 · 正面）">
                   <div class="pet-mood">
                     <span class="mood-chip now">今日 · 精神饱满</span>
                     <span class="mood-chip">饥饿</span>
@@ -972,6 +958,7 @@
                   </div>
                 </div>
                 <div class="pet-lines">
+                  <div class="pet-line"><b>定稿形象 · 圆头尖耳凝胶小兽（透明底 PNG）</b>放大版与三视图在 <code>assets/images/pet/</code>，抠图与归一化脚本在 <code>tools/pet_assets/</code>。</div>
                   <div class="pet-line"><b>饱食状态 · 吃到今天的词</b>“Crisp! Worth remembering.”</div>
                   <div class="pet-line"><b>情绪低谷 · 断更一天</b>“I'm getting dim… feed me a word?”</div>
                   <div class="pet-line"><b>进化瞬间 · 首次升阶</b>“You've grown a Guardian.”</div>
@@ -1094,8 +1081,8 @@
               <div class="section-title">第四环 · 进化与技能：养的不是皮肤，是学习能力</div>
               <div class="feature-grid">
                 <div class="feature-item">
-                  <strong>形态进化树</strong>
-                  <p>累计投喂量 + 连续打卡推进五个形态：<strong>泡芽 → 幼兽 → 灵兽 → 守护兽 → 记忆巨兽</strong>。进化方向由主背词库决定：考研/四六级 → 学者系；雅思/托福 → 英伦系；口语/听力 → 环球系；中小学 → 学院系。</p>
+                  <strong>形态进化树（五阶形象已出图）</strong>
+                  <p>累计投喂量 + 连续打卡推进五个形态：<strong>泡芽 → 幼兽 → 灵兽 → 守护兽 → 记忆巨兽</strong>。进化方向由主背词库决定：考研/四六级 → 学者系；雅思/托福 → 英伦系；口语/听力 → 环球系；中小学 → 学院系。五阶正面形象见 <code>assets/images/pet/guardian_gel_五阶进化总览.png</code>，逐阶透明底单图在 <code>assets/images/pet/stages/</code>。</p>
                 </div>
                 <div class="feature-item">
                   <strong>伴生技能（真能力）</strong>
@@ -1131,6 +1118,22 @@
               </div>
               <div class="principle-box">
                 <strong>行为设计的诚实判断：</strong>模仿会起作用（看到小组成员的学者系宠物好看，自己想养一只，这是真实动力）；地位竞争会反噬（排名只会让前 5% 更有劲，剩下 95% 更焦虑）。因此乐园里全部是「互访 + 互助」动作，没有一处是「比较 + 排名」。所有数据都来自用户已有的学习记录（打卡、学习记录、同桌学习小组），不新增学习行为要求，也不破坏背词心流。隐私默认最保守：只有同组成员能看到，用户随时可以退出参展。
+              </div>
+
+              <div class="section-title">宠物形象方向：为什么不是猫狗，而是凝胶小兽（已定稿，见上方面板）</div>
+              <div class="principle-box">
+                <strong>猫狗赢在前三秒，原创精灵赢在第三十天。</strong>人类对哺乳动物幼体有先天的照顾本能（圆头、大眼睛、短吻），小猫小狗能让大脑在几百毫秒内认出并产生情绪反应，这是虚构生物给不了的即时亲和力。但「这是我的」只能来自独一无二的形象：猫永远是猫，用户会想到自己家那只，也容易和大厂吉祥物撞脸；而半透明的凝胶身体能把抽象概念直接画出来——半透明 = 记忆、内部发光核 = 知识点亮、形态变化 = 掌握程度，猫狗做不到这一点。<br/>
+                <strong>动效成本也支持这个选择：</strong>毛发在矢量动效里最难做，容易渲染成塑料感；凝胶体的表面形变、弹性缩放、内部发光用 Rive / Lottie 骨骼动画成本最低、最出效果。<br/>
+                <strong>已定稿形态：圆头 + 小尖耳 + 凝胶身体 + 鳍状尾巴</strong>（定稿 PNG 在 <code>assets/images/pet/guardian_gel_*.png</code>）。这个形态保留了哺乳动物的幼体比例以拿到「三秒亲和力」，同时用半透明凝胶和内部发光核保住「记忆」这个品牌识别，两侧与头顶不带角、不带鳞。<br/>
+                <strong>中间试错记录：</strong>① 第一版做过圆润无耳的果冻团子，被否——不可爱；② 也试过「猫的头部比例 + 凝胶身体」的完整猫形，三视图一致性反而不如本品（猫耳在侧视与背视之间容易漂移）；③ 最终在「圆头尖耳」这一形态上定稿，它同时满足可爱度、识别度与三视图一致性。
+              </div>
+
+              <div class="section-title">五阶形象与「延续性」规则（已出图）</div>
+              <div class="principle-box">
+                <strong>跨阶只做加法，不做减法。</strong>每一阶必须完整保留上一阶已经长出来的特征，再往上加东西，绝不能把已有的特征砍掉换成别的——这是第 5 阶返工两次的根本原因。<br/>
+                <strong>允许的成长维度：</strong>① 体型等比放大（相对第 2 阶幼兽：泡芽 0.62、幼兽 1.00、灵兽 1.06、守护兽 1.22、记忆巨兽 1.40）；② 耳朵逐阶加长，耳下那一排深青色半透明棱状鳍刺保留并略微增多；③ 头顶记忆泡泡由单个芽点 → 小角冠 → 完整冠冕；④ 皮肤上的深青色斑点保留并逐阶更密；⑤ 身体两侧的翼状小鳍、宽大的鳍状尾巴保留；⑥ 胸前发光核逐阶更亮，最终形态多出一圈发光纹路。<br/>
+                <strong>特别记一笔：</strong>曾被误判为「跑偏」而砍掉的斑点纹理与耳下棱刺，其实是第 4 阶最好看的部分，已明令禁止再删。真正会断档的是「体型跳档 + 换成另一种生物结构」，不是这些细节。<br/>
+                <strong>落地文件：</strong>五阶总览 <code>assets/images/pet/guardian_gel_五阶进化总览.png</code>，逐阶透明底单图在 <code>assets/images/pet/stages/</code>；两个被否的旧最终形态留在 <code>assets/images/_unused/</code> 备查。
               </div>
 
               <div class="section-title">桌面与唤醒</div>
@@ -1863,6 +1866,7 @@
 - **喂养反馈**：宠物情绪由今日表现驱动（饱满/饥饿/消沉/昏睡），English 弹幕台词复用用户今天背过的词；喂养统一放在一天结束后的「开饭」，不打断答题心流。
 - **进化与技能**：泡芽到记忆巨兽五阶，进化方向由主背词库决定；高阶解锁真能力（必考词标记、写作替换词、连读拆解、生词免死金牌）。
 - **社交与唤醒**：难词求助卡双方各得双倍泡泡、双人共养、未领取泡泡互踩；主屏小组件显示饥饿状态与今日剩余词量，昏睡宠物靠一次小复习唤醒。
+- **形象方向（已定稿）**：圆头 + 小尖耳 + 半透明凝胶身体 + 鳍状尾巴的原创小兽，不做小猫小狗。猫狗赢在前三秒（先天照顾本能），原创精灵赢在第三十天（「这是我的」只能来自独一无二的形象，且半透明凝胶能把记忆、点亮、掌握这些抽象概念直接画出来）；毛发在矢量动效里最贵最难，凝胶体的形变与发光用 Rive/Lottie 成本最低。试错记录：无耳果冻团子被否（不可爱），完整猫形三视图一致性差，最终在圆头尖耳形态定稿。定稿透明底 PNG 在 assets/images/pet/。
 - **宠物乐园（已定）**：只在学习小组内部互访，不做全站广场。能激发学习热情的前提有三个——熟人可见、只展示努力值不展示等级、看的人能对宠物做点什么（打气／送小食／摸摸头）。同组可见是唯一一档，默认参展、可随时退出，规模小换来零审核成本、零运营成本与最低的新手劝退风险。
 - **明确不做**：全站排行榜、等级战力值、真实姓名与学习数据明细展示、全站等级混排、不在小组内给宠物排序。排名只会让前 5% 更有劲，剩下 95% 更焦虑，看到满屏满级宠物的新手会直接放弃。
 - **风险处理**：不把喂养做成必修作业（漏喂不扣历史进度）、抽卡只做惊喜不做核心、不用负罪文案、与 IDEA #001 单词泡泡天空分工互不干扰（即时反馈归天空，养成仪式归守护兽）。
