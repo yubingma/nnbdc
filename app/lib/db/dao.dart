@@ -2270,6 +2270,30 @@ class BookmarksDao extends DatabaseAccessor<MyDatabase> with _$BookmarksDaoMixin
   }
 }
 
+@DriftAccessor(tables: [UserPetStates])
+class UserPetStatesDao extends DatabaseAccessor<MyDatabase> with _$UserPetStatesDaoMixin {
+  UserPetStatesDao(super.db);
+
+  /// 读取用户的守护兽养成状态；从未投喂过时返回 null，由调用方按初始状态处理。
+  Future<UserPetState?> getEntity(String userId) {
+    return (select(userPetStates)..where((p) => p.userId.equals(userId))).getSingleOrNull();
+  }
+
+  Future<void> saveEntity(UserPetState entry, bool genLog) async {
+    final existing = await getEntity(entry.userId);
+    final operate = existing == null ? 'INSERT' : 'UPDATE';
+    await into(userPetStates).insertOnConflictUpdate(entry);
+    if (genLog) {
+      await DbLogUtil.logOperation(entry.userId, operate, 'userPetStates', entry.id, entry);
+      ThrottledDbSyncService().requestSync();
+    }
+  }
+
+  Future<void> batchDeleteUserRecords(String userId, {Map<String, dynamic>? filters}) async {
+    await (delete(userPetStates)..where((p) => p.userId.equals(userId))).go();
+  }
+}
+
 @DriftAccessor(tables: [UserCowDungLogs])
 class UserCowDungLogsDao extends DatabaseAccessor<MyDatabase> with _$UserCowDungLogsDaoMixin {
   UserCowDungLogsDao(super.db);

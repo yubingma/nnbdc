@@ -177,6 +177,12 @@ void main() {
         contains('spell_variants'),
       );
 
+      // v57 → v58: 新建记忆守护兽养成状态表（每个用户一行）
+      expect(
+        tables.map((row) => row.read<String>('name')),
+        contains('user_pet_states'),
+      );
+
       // v55 → v56: words 补上「深度讲解」中文译文列，且老单词数据仍在
       final wordColumns = await db.customSelect("PRAGMA table_info('words')").get();
       expect(
@@ -220,14 +226,14 @@ void main() {
       );
 
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 57);
+      expect(version.data.values.first, 58);
     } finally {
       await db.close();
       MyDatabase.setInstanceForTesting(null);
     }
   });
 
-  test('v56 → v57: 修复自身抛异常时不得删库重建, 且版本照常推进到 57', () async {
+  test('v56 → v57: 修复自身抛异常时不得删库重建, 且版本照常推进到最新版', () async {
     // 同一用户两本同名「已掌握」词书 → DictsDao.findUserMasteredDict 抛「核心数据异常」，
     // 而该查询正好发生在修复删掉重复日志之后。若异常冒泡到外层 catch，
     // 整库会被删光重建 —— 一次纯清理把用户本地数据全部抹掉，这个代价不可接受。
@@ -252,7 +258,7 @@ void main() {
 
       // 修复失败也要推进版本，否则每次启动都会重跑同一个必失败的迁移
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 57);
+      expect(version.data.values.first, 58);
     } finally {
       await db.close();
       MyDatabase.setInstanceForTesting(null);

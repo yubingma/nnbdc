@@ -241,6 +241,83 @@
       align-items: center;
       justify-content: space-between;
     }
+
+    /* 记忆守护兽卡片：宠物在左，情绪文案在右（与 Flutter 端 _buildPetCard 对应） */
+    .pet-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 22px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-card);
+      padding: 14px 18px 14px 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: transform 0.18s ease;
+    }
+    .pet-card:active { transform: scale(0.985); }
+    .pet-card-pet {
+      width: 62px;
+      height: 116px;
+      flex: none;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .pet-card-pet img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform-origin: 50% 92%;
+      animation: petBreathe 2.6s ease-in-out infinite;
+      filter: drop-shadow(0 6px 14px rgba(110, 231, 183, 0.22));
+    }
+    @keyframes petBreathe {
+      0%, 100% { transform: translateY(2.2px) scale(1); }
+      50%      { transform: translateY(-2.2px) scale(0.992); }
+    }
+    .pet-card-lines { flex: 1; min-width: 0; }
+    .pet-card-line b { color: var(--accent-aurora); font-weight: 700; }
+    .pet-card-sub {
+      font-size: 11.5px;
+      line-height: 1.35;
+      color: var(--text-secondary);
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+    .pet-feed-btn {
+      flex: none;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-aurora);
+      background: rgba(110, 231, 183, 0.12);
+      border: none;
+      border-radius: 10px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+    .pet-feed-btn:active { transform: scale(0.96); }
+    .pet-card-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+    }
+    .pet-card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+      margin-bottom: 5px;
+    }
+    .pet-card-line {
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--text-secondary);
+    }
     .card-title {
       font-size: 15px;
       font-weight: 600;
@@ -441,6 +518,20 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- 记忆守护兽卡片（打卡后投喂守护兽，攒够次数进化） -->
+      <div class="pet-card">
+        <div class="pet-card-pet">
+          <img src="../../app/assets/images/pet/moods/mood_excited.png" alt="记忆守护兽">
+        </div>
+        <div class="pet-card-lines">
+          <div class="pet-card-label">记忆守护兽 · 幼兽</div>
+          <div class="pet-card-title">精神饱满</div>
+          <div class="pet-card-line">再投喂 <b>22</b> 次就能进化</div>
+          <div class="pet-card-sub">Crisp! Worth remembering.</div>
+        </div>
+        <button class="pet-feed-btn">投喂 1</button>
       </div>
 
       <!-- 操作入口分组内聚卡片 -->

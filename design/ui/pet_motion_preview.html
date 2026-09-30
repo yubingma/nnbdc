@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆守护兽 · 轻动效原型（Pet Motion Lab）</title>
+<style>
+  :root {
+    --pet-base: "../../assets/images/pet/";
+    --bg: #0d0f12;
+    --bg-card: rgba(26, 29, 36, 0.72);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-highlight: rgba(255, 255, 255, 0.16);
+    --text-primary: #f0f3f6;
+    --text-secondary: #9aa5b5;
+    --text-muted: #5e6878;
+    --accent-aurora: #6ee7b7;
+    --accent-blue: #60a5fa;
+    --accent-amber: #fbbf24;
+    --accent-rose: #fb7185;
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --mono-stack: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --breath-duration: 2.6s;
+    --breath-amp: 1;
+    --core-duration: 2.6s;
+    --blink-duration: 140ms;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-stack);
+    line-height: 1.6;
+    padding: 36px 24px 72px;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(110, 231, 183, 0.06) 0%, transparent 42%),
+      radial-gradient(circle at 84% 24%, rgba(96, 165, 250, 0.05) 0%, transparent 46%);
+    background-attachment: fixed;
+  }
+
+  .container { max-width: 1180px; margin: 0 auto; }
+
+  header { margin-bottom: 30px; }
+  .header-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent-aurora); background: rgba(110, 231, 183, 0.1);
+    border: 1px solid rgba(110, 231, 183, 0.2); padding: 4px 12px;
+    border-radius: 999px; margin-bottom: 12px;
+  }
+  .header-badge::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-aurora); box-shadow: 0 0 8px var(--accent-aurora);
+  }
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .subtitle { font-size: 15px; color: var(--text-secondary); max-width: 720px; }
+
+  .layout { display: grid; grid-template-columns: 1.05fr 1fr; gap: 28px; align-items: start; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    padding: 22px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  /* ── 宠物舞台 ───────────────────────────────── */
+  .stage-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .stage {
+    position: relative;
+    width: 260px; height: 500px;
+    display: flex; align-items: flex-end; justify-content: center;
+    background:
+      radial-gradient(circle at 50% 68%, rgba(110, 231, 183, 0.14) 0%, transparent 62%);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .pet { position: relative; width: 100%; height: 100%; }
+
+  .pet-layer {
+    position: absolute;
+    left: 50%; bottom: 26px;
+    height: 84%;
+    transform: translateX(-50%);
+    will-change: transform;
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  /* 身体层与情绪层共用同一块画布，保证像素级重合 */
+  .pet-canvas { position: absolute; left: 50%; bottom: 26px; height: 84%; transform: translateX(-50%); aspect-ratio: 581 / 1116; }
+  .pet-canvas img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .pet-lift { position: absolute; inset: 0; animation: breathe var(--breath-duration) ease-in-out infinite; transform-origin: 50% 92%; }
+  .pet-lift.paused, .paused * { animation-play-state: paused !important; }
+
+  .mood-layer { opacity: 0; transition: opacity 300ms ease; }
+  .mood-layer.active { opacity: 1; }
+  .blinking .mood-layer.active { animation: blink var(--blink-duration) steps(1, end) 1; }
+
+  .core-glow {
+    position: absolute; left: 50%; bottom: 30%;
+    width: 52%; aspect-ratio: 1 / 1;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(220, 255, 210, 0.95) 0%, rgba(150, 240, 170, 0.55) 42%, transparent 72%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    animation: corePulse var(--core-duration) ease-in-out infinite;
+  }
+
+  .particle {
+    position: absolute; bottom: 32%;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(226, 255, 226, 0.95), rgba(110, 231, 183, 0.25));
+    opacity: 0;
+    animation: floatUp 4.2s ease-out infinite;
+    pointer-events: none;
+  }
+
+  .pet.jelly { animation: jelly 380ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  /* ── 动效关键帧（参数即代码实现规格）────────── */
+  @keyframes breathe {
+    0%, 100% { transform: translateY(calc(2.2px * var(--breath-amp))) scale(1.0); }
+    50%      { transform: translateY(calc(-2.2px * var(--breath-amp))) scale(calc(1 - 0.008 * var(--breath-amp))); }
+  }
+  @keyframes blink {
+    0%   { opacity: 1; }
+    1%   { opacity: 0; }
+    99%  { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes corePulse {
+    0%, 100% { opacity: 0.45; transform: translateX(-50%) scale(0.94); }
+    50%      { opacity: 0.9;  transform: translateX(-50%) scale(1.06); }
+  }
+  @keyframes floatUp {
+    0%   { opacity: 0; transform: translateY(0) scale(0.7); }
+    18%  { opacity: 0.85; }
+    100% { opacity: 0; transform: translateY(-120px) scale(1.05); }
+  }
+  @keyframes jelly {
+    0%   { transform: scale(1, 1); }
+    28%  { transform: scale(1.07, 0.94) translateY(2px); }
+    55%  { transform: scale(0.96, 1.05) translateY(-3px); }
+    78%  { transform: scale(1.02, 0.99); }
+    100% { transform: scale(1, 1); }
+  }
+
+  /* ── 情绪皮肤 ──────────────────────────────── */
+  .stage[data-mood="happy"]  .core-glow { --core-duration: 2.0s; }
+  .stage[data-mood="hungry"] .core-glow { animation-duration: 3.6s; opacity: 0.72; }
+  .stage[data-mood="sad"]    .pet { filter: saturate(0.62) brightness(0.92); }
+  .stage[data-mood="sad"]    .core-glow { animation-duration: 4.4s; opacity: 0.6; }
+  .stage[data-mood="sleepy"] .pet-lift { animation-duration: 6s; }
+  .stage[data-mood="sleepy"] .pet { filter: saturate(0.5) brightness(0.86); }
+  .stage[data-mood="sleepy"] .core-glow { animation-duration: 6s; opacity: 0.55; }
+
+  /* ── 控制面板 ───────────────────────────────── */
+  .panel-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-muted); margin: 18px 0 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .panel-title:first-child { margin-top: 0; }
+  .panel-title::before { content: ""; width: 3px; height: 12px; background: var(--accent-aurora); border-radius: 2px; }
+
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  button {
+    font-family: inherit; font-size: 13px; color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
+    padding: 7px 14px; border-radius: 9px; cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  button:hover { color: var(--text-primary); border-color: var(--border-highlight); background: rgba(255, 255, 255, 0.07); }
+  button.on {
+    color: #06231a; background: var(--accent-aurora);
+    border-color: var(--accent-aurora); font-weight: 600;
+  }
+
+  .slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 13px; color: var(--text-secondary); }
+  .slider-row label { min-width: 104px; }
+  .slider-row input[type="range"] { flex: 1; accent-color: var(--accent-aurora); }
+  .slider-row output { font-family: var(--mono-stack); font-size: 12px; color: var(--accent-aurora); min-width: 62px; text-align: right; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; font-size: 12.5px; }
+  thead th { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
+  tbody tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--text-primary); font-weight: 500; white-space: nowrap; }
+  code { font-family: var(--mono-stack); font-size: 12px; color: var(--accent-blue); }
+
+  .note {
+    margin-top: 14px; font-size: 12.5px; color: var(--text-secondary);
+    background: rgba(110, 231, 183, 0.05);
+    border: 1px solid rgba(110, 231, 183, 0.16);
+    border-radius: 10px; padding: 10px 14px;
+  }
+  .note strong { color: var(--accent-aurora); }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-badge">Pet Motion Lab · 轻动效原型</div>
+    <h1>记忆守护兽 · 六件轻动效</h1>
+    <p class="subtitle">
+      用分层素材在浏览器里跑的手感原型：身体层负责呼吸与挤压，眼睛层负责眨眼与情绪，光核层负责发光脉冲。
+      左侧每个按钮都能单独触发，右侧参数就是交给 Flutter 实现的规格。
+    </p>
+  </header>
+
+  <div class="layout">
+    <!-- 宠物舞台 -->
+    <div class="card">
+      <div class="stage-wrap">
+        <div class="stage" id="stage" data-mood="excited">
+          <div class="pet" id="pet">
+            <div class="pet-lift" id="lift">
+              <div class="pet-canvas">
+                <img src="../../app/assets/images/pet/layers/guardian_gel_正面_身体层.png" alt="身体层">
+                <img class="mood-layer active" data-mood="excited" src="../../app/assets/images/pet/moods/mood_excited.png" alt="精神饱满">
+                <img class="mood-layer" data-mood="happy" src="../../app/assets/images/pet/moods/mood_happy.png" alt="开心">
+                <img class="mood-layer" data-mood="hungry" src="../../app/assets/images/pet/moods/mood_hungry.png" alt="饥饿">
+                <img class="mood-layer" data-mood="sad" src="../../app/assets/images/pet/moods/mood_sad.png" alt="委屈消沉">
+                <img class="mood-layer" data-mood="sleepy" src="../../app/assets/images/pet/moods/mood_sleepy.png" alt="昏睡">
+              </div>
+            </div>
+            <div class="core-glow"></div>
+            <span class="particle" style="left: 34%; animation-delay: 0s;"></span>
+            <span class="particle" style="left: 58%; animation-delay: 1.4s;"></span>
+            <span class="particle" style="left: 46%; animation-delay: 2.6s;"></span>
+            <span class="particle" style="left: 66%; animation-delay: 3.4s;"></span>
+          </div>
+        </div>
+        <div class="btn-row" style="justify-content: center;">
+          <button id="poke">戳一下 / 喂食</button>
+          <button id="toggleBreath" class="on">呼吸</button>
+          <button id="toggleCore" class="on">光核脉冲</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 控制台 -->
+    <div class="card">
+      <div class="panel-title">情绪切换（图层交叉淡入 300ms）</div>
+      <div class="btn-row" id="moodRow">
+        <button data-mood="excited" class="on">精神饱满</button>
+        <button data-mood="happy">开心</button>
+        <button data-mood="hungry">饥饿</button>
+        <button data-mood="sad">委屈消沉</button>
+        <button data-mood="sleepy">昏睡</button>
+      </div>
+
+      <div class="panel-title">实时调参（手感就靠这两个）</div>
+      <div class="slider-row">
+        <label>呼吸周期</label>
+        <input type="range" id="breathDuration" min="1.6" max="4.4" step="0.2" value="2.6">
+        <output id="breathDurationOut">2.6s</output>
+      </div>
+      <div class="slider-row">
+        <label>呼吸幅度</label>
+        <input type="range" id="breathAmp" min="0" max="2.5" step="0.1" value="1">
+        <output id="breathAmpOut">1.0×</output>
+      </div>
+      <div class="slider-row">
+        <label>眨眼间隔</label>
+        <input type="range" id="blinkGap" min="1" max="8" step="0.5" value="4">
+        <output id="blinkGapOut">4.0s</output>
+      </div>
+
+      <div class="panel-title">动效规格（Flutter 按此实现）</div>
+      <table>
+        <thead>
+          <tr><th>动效</th><th>时长</th><th>幅度 / 曲线</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>呼吸</td><td>2.6s 循环</td><td>位移 ±2.2px、缩放 1→0.992，<code>easeInOut</code></td></tr>
+          <tr><td>眨眼</td><td>140ms</td><td>眼睛层透明度 1→0→1，间隔 3~6s 随机</td></tr>
+          <tr><td>戳一下</td><td>380ms</td><td>缩放 1.07/0.94 → 0.96/1.05 → 1，<code>easeOutBack</code></td></tr>
+          <tr><td>情绪切换</td><td>300ms</td><td>两图层交叉淡入，<code>easeInOut</code></td></tr>
+          <tr><td>光核脉冲</td><td>2.6s 循环</td><td>透明度 0.45→0.9、缩放 0.94→1.06，与呼吸同相位</td></tr>
+          <tr><td>睡姿</td><td>6s 循环</td><td>周期放慢 + 饱和度 0.5 + 亮度 0.86</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>为什么分层：</strong>整张 PNG 做缩放会像贴在屏幕上的贴纸；分层后耳朵、光核各有自己的节奏，才有「活着」的感觉。
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const stage = document.getElementById('stage');
+  const pet = document.getElementById('pet');
+  const lift = document.getElementById('lift');
+  const root = document.documentElement;
+  let blinkTimer = null;
+
+  // 情绪切换：只切图层透明度
+  document.getElementById('moodRow').addEventListener('click', (event) => {
+    const target = event.target.closest('button[data-mood]');
+    if (!target) return;
+    const mood = target.dataset.mood;
+    stage.dataset.mood = mood;
+    document.querySelectorAll('#moodRow button').forEach((button) => {
+      button.classList.toggle('on', button === target);
+    });
+    document.querySelectorAll('.mood-layer').forEach((layer) => {
+      layer.classList.toggle('active', layer.dataset.mood === mood);
+    });
+    if (mood === 'sleepy') stopBlink(); else scheduleBlink();
+  });
+
+  // 眨眼：随机间隔，避免机械感
+  function blinkOnce() {
+    pet.classList.add('blinking');
+    setTimeout(() => pet.classList.remove('blinking'), 160);
+  }
+  function scheduleBlink() {
+    stopBlink();
+    const gap = parseFloat(document.getElementById('blinkGap').value) * 1000;
+    const jitter = gap * (0.6 + Math.random() * 0.8);
+    blinkTimer = setTimeout(() => { blinkOnce(); scheduleBlink(); }, jitter);
+  }
+  function stopBlink() { if (blinkTimer) clearTimeout(blinkTimer); blinkTimer = null; }
+
+  // 戳一下：挤压拉伸
+  document.getElementById('poke').addEventListener('click', () => {
+    pet.classList.remove('jelly');
+    void pet.offsetWidth;
+    pet.classList.add('jelly');
+    setTimeout(() => pet.classList.remove('jelly'), 400);
+  });
+
+  // 开关
+  document.getElementById('toggleBreath').addEventListener('click', (event) => {
+    lift.classList.toggle('paused');
+    event.target.classList.toggle('on', !lift.classList.contains('paused'));
+  });
+  document.getElementById('toggleCore').addEventListener('click', (event) => {
+    const glow = document.querySelector('.core-glow');
+    const paused = glow.style.animationPlayState === 'paused';
+    glow.style.animationPlayState = paused ? 'running' : 'paused';
+    event.target.classList.toggle('on', paused);
+  });
+
+  // 实时调参
+  document.getElementById('breathDuration').addEventListener('input', (event) => {
+    root.style.setProperty('--breath-duration', event.target.value + 's');
+    root.style.setProperty('--core-duration', event.target.value + 's');
+    document.getElementById('breathDurationOut').value = event.target.value + 's';
+  });
+  document.getElementById('breathAmp').addEventListener('input', (event) => {
+    root.style.setProperty('--breath-amp', event.target.value);
+    document.getElementById('breathAmpOut').value = parseFloat(event.target.value).toFixed(1) + '×';
+  });
+  document.getElementById('blinkGap').addEventListener('input', (event) => {
+    document.getElementById('blinkGapOut').value = parseFloat(event.target.value).toFixed(1) + 's';
+  });
+
+  scheduleBlink();
+</script>
+</body>
+</html>

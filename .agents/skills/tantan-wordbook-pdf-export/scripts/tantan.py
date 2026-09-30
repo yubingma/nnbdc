@@ -66,11 +66,24 @@ def ensure_changebook():
     ui.tap_text("更换词书", 2.5)
 
 
-def _find(text, ymin=0, ymax=99999, visible=False):
+def _find(text, ymin=None, ymax=None, visible=False):
+    """按文本找节点。
+
+    visible=False：按给定 y 区间找（默认全屏），用于 tab 行等非列表元素。
+    visible=True ：要求落在可点选区间内，区间默认 Y_SAFE_TOP..Y_SAFE_BOTTOM；
+                    调用方显式给边界即表示它有意放宽（例如目标行是列表末行、
+                    恒在 Y_SAFE_BOTTOM 之下）。
+    """
+    if visible:
+        lo = Y_SAFE_TOP if ymin is None else ymin
+        hi = Y_SAFE_BOTTOM if ymax is None else ymax
+    else:                       # 非点选查询（如 tab 行）默认全屏
+        lo = 0 if ymin is None else ymin
+        hi = 99999 if ymax is None else ymax
     for n in ui.dump():
-        if n["text"].strip() != text or not (ymin <= n["cy"] <= ymax):
+        if n["text"].strip() != text or not (lo <= n["cy"] <= hi):
             continue
-        if visible and not (Y_SAFE_TOP < n["cy"] < Y_SAFE_BOTTOM and n["x2"] > 0):
+        if visible and not (lo < n["cy"] < hi and n["x2"] > 0):
             continue
         return n
     return None
@@ -232,8 +245,17 @@ def make_current(name, tab, chip):
         return
     tap_tab(tab)
     tap_chip(chip)
+    prev = None
     for _ in range(80):
         n = _find(name, ymin=Y_SAFE_TOP, ymax=Y_SAFE_BOTTOM, visible=True)
+        if not n:
+            # 目标行是列表末行时，列表滚到底后它恒在安全带下沿之外，
+            # 而 Y_SAFE_BOTTOM 之上又永远等不到它。此时只向下放宽下沿，
+            # 且必须是「已经滚不动了」才放宽，避免为中途的行付出代价。
+            cur = _rows()
+            if cur == prev:
+                n = _find(name, ymin=Y_SAFE_TOP, ymax=2300, visible=True)
+            prev = cur
         if n:
             ui.tap(n["cx"], n["cy"], 2.5)
             break

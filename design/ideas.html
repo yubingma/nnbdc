@@ -1140,7 +1140,7 @@
               <div class="section-title">四个情绪状态图（本地合成，躯干像素级一致）</div>
               <div class="principle-box" style="background: rgba(96, 165, 250, 0.04); border-color: rgba(96, 165, 250, 0.18); color: #dbeafe;">
                 <strong style="color: var(--accent-blue);">做法与理由：</strong>直接让生图模型改表情会把宠物的耳朵、斑纹一起改掉（实测耳朵下垂、身上长出斑点），所以四个状态图改为<strong>在锁定的第 2 阶定稿底图上本地改表情</strong>——把眼睛与嘴的区域盖掉后重画，身体、轮廓、发光核一个像素都不动。四张图的躯干因此完全对齐，可以直接做动画帧。<br/>
-                <strong>文件：</strong>总览 <code>assets/images/pet/guardian_gel_情绪状态总览_深色底预览.png</code>，逐张透明底在 <code>assets/images/pet/moods/</code>（<code>mood_excited / happy / hungry / sad / sleepy</code>）；合成脚本 <code>tools/pet_assets/make_moods.py</code>，五官坐标由像素扫描定位而非目测。
+                <strong>文件：</strong>总览 <code>assets/images/pet/guardian_gel_情绪状态总览_深色底预览.png</code>，逐张透明底在 <code>app/assets/images/pet/moods/</code>（<code>mood_excited / happy / hungry / sad / sleepy</code>）；合成脚本 <code>tools/pet_assets/make_moods.py</code>，五官坐标由像素扫描定位而非目测。
               </div>
 
               <div class="section-title">六张食物道具（512×512 透明底图标）</div>
@@ -1148,6 +1148,27 @@
                 <strong>已出图：</strong>能量泡泡（内含发光书本）、词汇罐头（玻璃罐装薄荷珍珠）、四级巧克力（书本浮雕巧克力块）、雅思马卡龙、记忆软糖、盲盒泡泡（内含发光问号）。<br/>
                 <strong>文件：</strong>总览 <code>assets/images/pet/guardian_gel_食物道具_深色底预览.png</code>，逐张图标在 <code>assets/images/pet/props/</code>，统一 512×512 透明底、主体占画布 82%。<br/>
                 <strong>踩坑记录：</strong>生图模型会在罐身、包装上自动生成伪文字（实测出现过「GPERT WUCH」「GRATBE」这类乱码字母），道具一律要求「画面中不要出现任何文字与字母」，出图后必须逐张目检。
+              </div>
+
+              <div class="section-title">轻动效方案（分层驱动，原型已跑通）</div>
+              <div class="principle-box" style="background: rgba(110, 231, 183, 0.05); border-color: rgba(110, 231, 183, 0.18);">
+                <strong>结论：走代码驱动，不引入 Lottie / Rive。</strong>项目已在用 <code>simple_animations</code>，且全项目没有任何 <code>.riv</code> 或 Lottie JSON 资源；代码驱动零新增依赖、改参数即时生效，而 Rive 需要人工绑骨骼、Lottie 需要手工在 AE 重画矢量，都无法自动生成。<br/>
+                <strong>手感原型：</strong><code>design/ui/pet_motion_preview.html</code>——六个动效都能单独触发，右侧表格里的时长与幅度就是实现规格（可实时拖动滑块调呼吸周期与幅度）。<br/>
+                <strong>Flutter 实现：</strong><code>app/lib/widget/guardian_pet.dart</code>，组件名 <code>GuardianPet</code>，<code>flutter analyze</code> 零问题；情绪枚举 <code>PetMood</code> 同时决定光核脉冲周期与整体饱和/亮度。<br/>
+                <strong>分层素材（动画的前提）：</strong>运行时素材在 <code>app/assets/images/pet/</code> 下的 <code>layers/</code>（<code>身体层</code> 呼吸与挤压、<code>眼睛层</code> 眨眼与情绪、<code>光核层</code> 发光脉冲）与 <code>moods/</code>（五张情绪图），由 <code>tools/pet_assets/export_layers.py</code> 拆分，并带「叠层 = 原图」的像素级校验（实测通道差 0）。<br/>
+                <strong>⚠️ 素材必须分两处放：</strong>Flutter 只打包 <code>app/assets/</code>（<code>app/pubspec.yaml</code> 声明的是 <code>assets/images/</code>），而设计稿、三视图、五阶总览等源图留在项目根的 <code>assets/images/pet/</code>。运行时用到的图放到根 <code>assets/</code> 会在真机上显示成「资源缺失」的破图——这个坑已经踩过一次。<br/>
+                <strong>⚠️ 同一类坑还有两处：</strong>① 情绪图在 <code>app/assets/images/pet/moods/</code> 子目录下，代码若按 <code>assets/images/pet/mood_xxx.png</code> 去取会全部加载失败，且编译期毫无提示，只有真机跑到这一屏才报错；② 新增资源必须在<strong>完全重新构建</strong>（或热重启）后才会进包，热重载不扫资源清单。现已加测试 <code>app/test/guardian_pet_assets_test.dart</code> 把「代码引用的资源是否存在」「情绪图与枚举是否一一对应」钉死在测试阶段。<br/>
+                <strong>六件动效参数：</strong>呼吸 2.6s（位移 ±2.2px、缩放 1→0.992，<code>easeInOut</code>）；眨眼 140ms（眼睛层透明度 1→0→1，间隔 3~6s 随机，固定间隔会显机械）；戳一下 380ms（1.07/0.94 → 0.96/1.05 → 1，<code>easeOutBack</code>）；情绪切换 300ms 交叉淡入；光核脉冲 2.6s（透明度 0.45→0.9、缩放 0.94→1.06，与呼吸同相位）；睡姿 6s 循环 + 饱和度 0.5 + 亮度 0.86。<br/>
+                <strong>为什么要分层：</strong>整张 PNG 做缩放会像贴在屏幕上的贴纸；分层后身体、眼睛、光核各有自己的节奏，才有「活着」的感觉。
+              </div>
+
+              <div class="section-title">真实链路：打卡送泡泡 → 投喂 → 进化（已落地）</div>
+              <div class="principle-box" style="background: rgba(96, 165, 250, 0.04); border-color: rgba(96, 165, 250, 0.18); color: #dbeafe;">
+                <strong style="color: var(--accent-blue);">已实现的部分：</strong>打卡掷骰子发魔法泡泡（原有能力，未改动）→ 完成页投喂一次消耗 1 个魔法泡泡、累计投喂次数 +1 → 达到阈值自动升阶。<br/>
+                <strong>进化阈值：</strong>累计投喂 8 / 30 / 70 / 140 次分别进入幼兽 / 灵兽 / 守护兽 / 记忆巨兽。按每天打卡得 1~5 个泡泡算，约 9 天第一次进化、4~5 个月满阶。<br/>
+                <strong>实现位置：</strong>规则与投喂动作 <code>app/lib/api/bo/pet_game_bo.dart</code>；完成页卡片与投喂交互 <code>app/lib/page/finish.dart</code>；养成状态表 <code>app/lib/db/table.dart</code> 的 <code>UserPetStates</code>。<br/>
+                <strong>端云同步：</strong>新增本地表 <code>userPetStates</code> ↔ 服务端表 <code>user_pet_state</code>，四处登记点都已补（表名双向映射 <code>app/lib/util/utils.dart</code>、同步分发与批量删除 <code>app/lib/util/sync.dart</code> 四处、服务端 <code>UserDbSyncBo</code> 的 <code>switch</code>）；建表脚本 <code>server/db_upgrade/v69_add_user_pet_state.sql</code>。<br/>
+                <strong>设计取舍：</strong>养成状态<strong>每个用户一行</strong>、只存「累计投喂次数 + 阶段下标」，不记每一次投喂的流水——投喂的价值全在「次数 → 阶段」这个映射上，而泡泡的收支流水已由 <code>user_cow_dung_log</code> 完整记录，再记一份只会让同步体积膨胀。另外，投喂<strong>不写 <code>user_oper</code></strong>：服务端 <code>oper_type</code> 是 <code>VARCHAR(20)</code> 的受控取值，新增类型要两端同时改，而这件事并不需要第二份流水。
               </div>
 
               <div class="section-title">桌面与唤醒</div>

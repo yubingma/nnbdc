@@ -85,6 +85,9 @@ public class UserDbSyncBo {
     private UserCowDungLogBo userCowDungLogBo;
 
     @Autowired
+    private UserPetStateBo userPetStateBo;
+
+    @Autowired
     private UserDbLogBo userDbLogBo;
 
     @Autowired
@@ -513,6 +516,7 @@ public class UserDbSyncBo {
                 logger.info("忽略已废弃的 mastered_word 同步日志: operation={}", operation);
             }
             case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
+            case "user_pet_state" -> processUserPetStateSync(userId, recordJson, operation);
             case "meaning_item" -> processMeaningItemSync(userId, recordJson, operation);
             case "learning_log" -> processLearningLogSync(userId, recordJson, operation);
             case "user_study_daily_stat" -> processUserStudyDailyStatSync(userId, recordJson, operation);
@@ -1189,6 +1193,54 @@ public class UserDbSyncBo {
     }
 
     /**
+     * 处理记忆守护兽养成状态同步。
+     *
+     * 每个用户至多一行，因此按 user_id 判存：客户端换设备重装后可能带着新的行 id 上来，
+     * 若只按主键判存会插出第二行，历史投喂进度就分叉了。
+     */
+    private void processUserPetStateSync(String userId, String recordJson, String operation)
+            throws IllegalAccessException {
+        if ("BATCH_DELETE".equals(operation)) {
+            userPetStateBo.batchDeleteUserRecords(userId, recordJson);
+            return;
+        }
+
+        UserPetStateDto dto = JsonUtils.makeObject(recordJson, UserPetStateDto.class);
+        dto.setUserId(userId);
+        User user = userBo.findById(userId);
+        if (user == null) {
+            String errorMsg = "记忆守护兽养成状态关联的用户不存在";
+            logger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
+
+        UserPetState incoming = UserPetState.fromDto(dto);
+        incoming.setUser(user);
+        UserPetState existing = userPetStateBo.findByUserId(userId);
+
+        switch (operation) {
+            case "INSERT", "UPDATE" -> {
+                if (existing == null) {
+                    userPetStateBo.createEntity(incoming);
+                } else {
+                    incoming.setId(existing.getId());
+                    userPetStateBo.updateEntity(incoming);
+                }
+            }
+            case "DELETE" -> {
+                if (existing != null) {
+                    userPetStateBo.deleteEntity(existing);
+                }
+            }
+            default -> {
+                String errorMsg = String.format("不支持的养成状态表操作: %s", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+        }
+    }
+
+    /**
      * 处理记忆历史日志同步
      */
     private void processLearningLogSync(String userId, String recordJson, String operation) throws IllegalAccessException {
@@ -1626,6 +1678,23 @@ public class UserDbSyncBo {
                         JsonUtils.toJson(dto),
                         dto.getCreateTime(),
                         dto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 生成守护兽养成状态全量日志（每个用户至多一行）
+            // 增量同步只覆盖"变更"，新设备首次全量拉取必须带上它，否则换设备后投喂进度会丢
+            UserPetStateDto petStateDto = userPetStateBo.toDtoOfUser(userId);
+            if (petStateDto != null) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_pet_state",
+                        petStateDto.getId(),
+                        JsonUtils.toJson(petStateDto),
+                        petStateDto.getCreateTime(),
+                        petStateDto.getUpdateTime());
                 logs.add(log);
             }
 

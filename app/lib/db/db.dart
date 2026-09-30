@@ -42,6 +42,7 @@ part 'db.g.dart';
   Dakas,
   UserOpers,
   UserCowDungLogs,
+  UserPetStates,
   UserWrongWords,
   SysDbVersion,
   LocalExceptions,
@@ -78,6 +79,7 @@ part 'db.g.dart';
   MasteredWordsDao,
   BookmarksDao,
   UserCowDungLogsDao,
+  UserPetStatesDao,
   UserWrongWordsDao,
   SysDbVersionDao,
   LocalExceptionsDao,
@@ -266,7 +268,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 57;
+  int get schemaVersion => 58;
 
   @override
   MigrationStrategy get migration {
@@ -473,6 +475,10 @@ class MyDatabase extends _$MyDatabase {
                 'error': '$e',
               });
             }
+          }
+          // 从版本 57 升级到版本 58：新建记忆守护兽养成状态表
+          if (from < 58) {
+            await m.createTable(userPetStates);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志

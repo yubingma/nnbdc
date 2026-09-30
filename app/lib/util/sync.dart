@@ -167,6 +167,8 @@ int getTableSyncPriority(String tableName) {
       return 5;
     case 'userCowDungLogs':
       return 5;
+    case 'userPetStates':
+      return 5;
     case 'meaningItems':
       return 5;
     case 'learningLogs':
@@ -521,6 +523,11 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
             if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
               await db.userCowDungLogsDao.insertEntity(entity, false);
             }
+          } else if (log.tblName == 'userPetStates') {
+            UserPetState entity = UserPetState.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.userPetStatesDao.saveEntity(entity, false);
+            }
           } else if (log.tblName == 'meaningItems') {
             MeaningItem entity = MeaningItem.fromJson(entityJson);
             if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
@@ -576,6 +583,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               log.tblName != 'bookMarks' &&
               log.tblName != 'userStudySteps' &&
               log.tblName != 'userCowDungLogs' &&
+              log.tblName != 'userPetStates' &&
               log.tblName != 'meaningItems' &&
               log.tblName != 'learningLogs' &&
               log.tblName != 'userStudyDailyStats' &&
@@ -714,6 +722,9 @@ Future<void> _handleBatchDeleteUserRecords(UserDbLog log, String userId) async {
         break;
       case 'userCowDungLogs':
         await db.userCowDungLogsDao.batchDeleteUserRecords(userId, filters: filters);
+        break;
+      case 'userPetStates':
+        await db.userPetStatesDao.batchDeleteUserRecords(userId, filters: filters);
         break;
       case 'learningLogs':
         await db.learningLogsDao.batchDeleteUserRecords(userId, filters: filters);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:appcheck/appcheck.dart';
@@ -5,11 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/services/badge_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../api/bo/pet_game_bo.dart';
 import '../api/result.dart';
 import '../config.dart';
 import '../global.dart';
@@ -25,6 +28,7 @@ import '../services/user_privilege_manager.dart';
 import '../widget/daka_poster.dart';
 import '../widget/daka_poster_dialog.dart';
 import '../widget/daka_stamp_badge.dart';
+import '../widget/guardian_pet.dart';
 import 'index.dart';
 import 'bdc/models/bdc_page_args.dart';
 import 'subscription.dart';
@@ -55,9 +59,72 @@ class FinishPageState extends State<FinishPage> {
 
   String? marketAppUrl; // 应用市场的对应Url
 
+  /// 记忆守护兽当前情绪。打卡完成本身就是"今天喂饱了"，所以默认是精神饱满；
+  /// 用户戳一下或投喂时临时切到开心，两秒后回到常态。
+  PetMood petMood = PetMood.excited;
+  Timer? _petMoodTimer;
+
+  /// 守护兽养成状态（累计投喂次数与进化阶段），加载失败时保持 null 并按初始态展示。
+  UserPetState? petState;
+  bool petFeeding = false;
+
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _petMoodTimer?.cancel();
+    super.dispose();
+  }
+
+  /// 触发一次守护兽的开心反馈（呼吸、眨眼、光核脉冲都由组件自己驱动）。
+  void _cheerPet() {
+    _petMoodTimer?.cancel();
+    if (petMood != PetMood.happy) {
+      setState(() => petMood = PetMood.happy);
+    }
+    _petMoodTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => petMood = PetMood.excited);
+    });
+  }
+
+  /// 投喂一次守护兽：消耗 1 个魔法泡泡，累计投喂次数 +1，达到阈值时升阶。
+  Future<void> _feedPet() async {
+    if (petFeeding) return;
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+    if (user.cowDung < PetGameBo.feedCost) {
+      ToastUtil.info('魔法泡泡不够了，明天打卡再来喂它');
+      return;
+    }
+
+    setState(() => petFeeding = true);
+    try {
+      final result = await PetGameBo().feed();
+      if (!mounted) return;
+      if (result == null) {
+        ToastUtil.info('魔法泡泡不够了，明天打卡再来喂它');
+        return;
+      }
+      setState(() {
+        petState = result.state;
+        cowDung = Global.getLoggedInUser()?.cowDung ?? cowDung;
+      });
+      final stage = PetGameBo.stages[result.state.stageIndex];
+      if (result.leveledUp) {
+        ToastUtil.success('守护兽进化成了「${stage.name}」');
+      } else {
+        ToastUtil.success('已投喂 1 个魔法泡泡');
+      }
+      _cheerPet();
+    } catch (e, stackTrace) {
+      Global.logger.e('投喂守护兽失败: $e', error: e, stackTrace: stackTrace);
+      ToastUtil.error('投喂失败，请稍后再试');
+    } finally {
+      if (mounted) setState(() => petFeeding = false);
+    }
   }
 
   @override
@@ -175,6 +242,17 @@ class FinishPageState extends State<FinishPage> {
     }
 
     if (!mounted) return;
+    // 守护兽养成状态：只读，加载失败不阻塞完成页其余内容
+    try {
+      final user = Global.getLoggedInUser();
+      if (user != null) {
+        petState = await PetGameBo().loadState(user.id);
+      }
+    } catch (e, stackTrace) {
+      Global.logger.w('读取守护兽养成状态失败: $e', error: e, stackTrace: stackTrace);
+    }
+
+    if (!mounted) return;
     setState(() {
       dataLoaded = true;
     });
@@ -225,6 +303,8 @@ class FinishPageState extends State<FinishPage> {
             _buildMetricsCard(themeConfig),
             const SizedBox(height: 14),
           ],
+          _buildPetCard(themeConfig),
+          const SizedBox(height: 14),
           _buildActionGroup(themeConfig),
         ],
       ),
@@ -411,6 +491,125 @@ class FinishPageState extends State<FinishPage> {
       width: 0.5,
       height: 46,
       color: themeConfig.textSecondary.withValues(alpha: 0.16),
+    );
+  }
+
+  // 构建记忆守护兽卡片：宠物在左，进化进度与投喂动作在右
+  Widget _buildPetCard(AppThemeConfig themeConfig) {
+    final (moodTitle, line) = switch (petMood) {
+      PetMood.happy => ('吃得开心', 'Yummy! You mastered ${StudyBo.batchSize} words today.'),
+      PetMood.hungry => ('肚子饿了', "I'm hungry, let's learn!"),
+      PetMood.sad => ('有点消沉', 'Feed me a word?'),
+      PetMood.sleepy => ('睡着了', 'Zzz… wake me with a review.'),
+      PetMood.excited => ('精神饱满', 'Crisp! Worth remembering.'),
+    };
+
+    final totalFeedings = petState?.totalFeedings ?? 0;
+    final stage = PetGameBo.stages[PetGameBo.stageIndexOf(totalFeedings)];
+    final toNext = PetGameBo.feedingsToNextStage(totalFeedings);
+    final canFeed = (Global.getLoggedInUser()?.cowDung ?? 0) >= PetGameBo.feedCost;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: themeConfig.cardShadows,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: context.cardBg,
+          child: InkWell(
+            onTap: _cheerPet,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 18, 14),
+              child: Row(
+                children: [
+                  GuardianPet(mood: petMood, height: 116),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '记忆守护兽 · ${stage.name}',
+                          style: TextStyle(
+                            color: themeConfig.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          moodTitle,
+                          style: TextStyle(
+                            color: themeConfig.textPrimary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          toNext == null ? '已经长到最终形态了' : '再投喂 $toNext 次就能进化',
+                          style: TextStyle(
+                            color: themeConfig.textSecondary,
+                            fontSize: 12.5,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          line,
+                          style: TextStyle(
+                            color: themeConfig.textSecondary.withValues(alpha: 0.75),
+                            fontSize: 11.5,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFeedButton(themeConfig, canFeed),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 投喂按钮：泡泡不足时置灰但保留可点，点了给一句明确提示，避免用户不知道为什么没反应。
+  Widget _buildFeedButton(AppThemeConfig themeConfig, bool canFeed) {
+    final enabled = canFeed && !petFeeding;
+    return TextButton(
+      key: const Key('finish_feed_pet_btn'),
+      onPressed: enabled ? _feedPet : null,
+      style: TextButton.styleFrom(
+        backgroundColor: enabled
+            ? themeConfig.primaryColor.withValues(alpha: 0.12)
+            : themeConfig.textSecondary.withValues(alpha: 0.08),
+        foregroundColor: enabled ? themeConfig.primaryColor : themeConfig.textSecondary,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      child: petFeeding
+          ? SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: themeConfig.primaryColor,
+              ),
+            )
+          : Text(
+              '投喂 ${PetGameBo.feedCost}',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
     );
   }
 

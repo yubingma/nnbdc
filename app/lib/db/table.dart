@@ -650,6 +650,32 @@ class UserWrongWords extends Table {
   Set<Column>? get primaryKey => {userId, wordId};
 }
 
+/// 记忆守护兽养成状态表（每个用户一行）
+///
+/// 设计取舍：**不记录每一次投喂的流水**，一行汇总即可。理由是投喂的价值全在
+/// 「累计次数 → 进化阶段」这一个映射上，逐次流水除了让同步体积膨胀以外没有
+/// 任何读取场景；泡泡的收支流水已经由 user_cow_dung_log 完整记录。
+class UserPetStates extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+
+  /// 进化阶段下标，0=泡芽 1=幼兽 2=灵兽 3=守护兽 4=记忆巨兽。
+  /// 存下标而不是"当前形态名"，是为了让阶段规则集中在客户端一处，改动不必迁数据。
+  IntColumn get stageIndex => integer().withDefault(const Constant(0))();
+
+  /// 累计投喂次数，只增不减；进化阶段由它按阈值换算得出。
+  IntColumn get totalFeedings => integer().withDefault(const Constant(0))();
+
+  /// 进化系别：neutral=通用；学者系/英伦系/环球系/学院系由主背词库派生。
+  TextColumn get form => text().withDefault(const Constant('neutral'))();
+
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column>? get primaryKey => {id};
+}
+
 /// 用户勋章表 (本地缓存与离线优先)
 class UserBadges extends Table {
   TextColumn get id => text()();

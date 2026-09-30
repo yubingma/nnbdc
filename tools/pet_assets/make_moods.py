@@ -8,7 +8,7 @@
 
 用法：
   .venv/bin/python tools/pet_assets/make_moods.py \
-      --base assets/images/pet/guardian_gel_正面.png --out-dir assets/images/pet/moods
+      --base assets/images/pet/guardian_gel_正面.png --out-dir app/assets/images/pet/moods
 """
 
 import argparse
