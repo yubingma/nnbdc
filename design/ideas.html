@@ -949,7 +949,7 @@
               <div class="section-title">宠物形象示意（纯 CSS 绘制，最终以 UI 矢量为准）</div>
               <div class="pet-panel">
                 <div class="pet-stage">
-                  <img src="../assets/images/pet/guardian_gel_正面.png" alt="记忆守护兽定稿形象（纯凝胶精灵 · 正面）">
+                  <img src="../assets/images/pet/guardian_gel_正面.png" alt="记忆守护兽定稿形象（圆头尖耳凝胶小兽 · 正面）">
                   <div class="pet-mood">
                     <span class="mood-chip now">今日 · 精神饱满</span>
                     <span class="mood-chip">饥饿</span>
@@ -1082,7 +1082,7 @@
               <div class="feature-grid">
                 <div class="feature-item">
                   <strong>形态进化树（五阶形象已出图）</strong>
-                  <p>累计投喂量 + 连续打卡推进五个形态：<strong>泡芽 → 幼兽 → 灵兽 → 守护兽 → 记忆巨兽</strong>。进化方向由主背词库决定：考研/四六级 → 学者系；雅思/托福 → 英伦系；口语/听力 → 环球系；中小学 → 学院系。五阶正面形象见 <code>assets/images/pet/guardian_gel_五阶进化总览.png</code>，逐阶透明底单图在 <code>assets/images/pet/stages/</code>。</p>
+                  <p>累计投喂量 + 连续打卡推进五个形态：<strong>泡芽 → 幼兽 → 灵兽 → 守护兽 → 记忆巨兽</strong>。进化方向由主背词库决定：考研/四六级 → 学者系；雅思/托福 → 英伦系；口语/听力 → 环球系；中小学 → 学院系。五阶总览见 <code>assets/images/pet/guardian_gel_五阶进化总览.png</code>，每阶的正/侧/背三视图与透明底单图在 <code>assets/images/pet/stages/</code>。</p>
                 </div>
                 <div class="feature-item">
                   <strong>伴生技能（真能力）</strong>
@@ -1133,7 +1133,21 @@
                 <strong>跨阶只做加法，不做减法。</strong>每一阶必须完整保留上一阶已经长出来的特征，再往上加东西，绝不能把已有的特征砍掉换成别的——这是第 5 阶返工两次的根本原因。<br/>
                 <strong>允许的成长维度：</strong>① 体型等比放大（相对第 2 阶幼兽：泡芽 0.62、幼兽 1.00、灵兽 1.06、守护兽 1.22、记忆巨兽 1.40）；② 耳朵逐阶加长，耳下那一排深青色半透明棱状鳍刺保留并略微增多；③ 头顶记忆泡泡由单个芽点 → 小角冠 → 完整冠冕；④ 皮肤上的深青色斑点保留并逐阶更密；⑤ 身体两侧的翼状小鳍、宽大的鳍状尾巴保留；⑥ 胸前发光核逐阶更亮，最终形态多出一圈发光纹路。<br/>
                 <strong>特别记一笔：</strong>曾被误判为「跑偏」而砍掉的斑点纹理与耳下棱刺，其实是第 4 阶最好看的部分，已明令禁止再删。真正会断档的是「体型跳档 + 换成另一种生物结构」，不是这些细节。<br/>
-                <strong>落地文件：</strong>五阶总览 <code>assets/images/pet/guardian_gel_五阶进化总览.png</code>，逐阶透明底单图在 <code>assets/images/pet/stages/</code>；两个被否的旧最终形态留在 <code>assets/images/_unused/</code> 备查。
+                <strong>落地文件：</strong>五阶总览 <code>assets/images/pet/guardian_gel_五阶进化总览.png</code>，每阶的正/侧/背三视图在 <code>assets/images/pet/stages/</code>（如 <code>stage4_shouhushou_守护兽_三视图.png</code>）；两个被否的旧最终形态留在 <code>assets/images/_unused/</code> 备查。<br/>
+                <strong>已知待补：</strong>各阶的侧面与背面比正面多了背鳍与棱刺（正面出图时细节偏少），第 1、3、4、5 阶的正面需要按侧面/背面的丰富度重出一版才能完全对齐；第 2 阶幼兽的正/侧/背已齐且一致。
+              </div>
+
+              <div class="section-title">四个情绪状态图（本地合成，躯干像素级一致）</div>
+              <div class="principle-box" style="background: rgba(96, 165, 250, 0.04); border-color: rgba(96, 165, 250, 0.18); color: #dbeafe;">
+                <strong style="color: var(--accent-blue);">做法与理由：</strong>直接让生图模型改表情会把宠物的耳朵、斑纹一起改掉（实测耳朵下垂、身上长出斑点），所以四个状态图改为<strong>在锁定的第 2 阶定稿底图上本地改表情</strong>——把眼睛与嘴的区域盖掉后重画，身体、轮廓、发光核一个像素都不动。四张图的躯干因此完全对齐，可以直接做动画帧。<br/>
+                <strong>文件：</strong>总览 <code>assets/images/pet/guardian_gel_情绪状态总览_深色底预览.png</code>，逐张透明底在 <code>assets/images/pet/moods/</code>（<code>mood_excited / happy / hungry / sad / sleepy</code>）；合成脚本 <code>tools/pet_assets/make_moods.py</code>，五官坐标由像素扫描定位而非目测。
+              </div>
+
+              <div class="section-title">六张食物道具（512×512 透明底图标）</div>
+              <div class="principle-box">
+                <strong>已出图：</strong>能量泡泡（内含发光书本）、词汇罐头（玻璃罐装薄荷珍珠）、四级巧克力（书本浮雕巧克力块）、雅思马卡龙、记忆软糖、盲盒泡泡（内含发光问号）。<br/>
+                <strong>文件：</strong>总览 <code>assets/images/pet/guardian_gel_食物道具_深色底预览.png</code>，逐张图标在 <code>assets/images/pet/props/</code>，统一 512×512 透明底、主体占画布 82%。<br/>
+                <strong>踩坑记录：</strong>生图模型会在罐身、包装上自动生成伪文字（实测出现过「GPERT WUCH」「GRATBE」这类乱码字母），道具一律要求「画面中不要出现任何文字与字母」，出图后必须逐张目检。
               </div>
 
               <div class="section-title">桌面与唤醒</div>

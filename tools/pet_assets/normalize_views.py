@@ -49,6 +49,7 @@ def main():
     parser.add_argument("--out-dir", required=True, help="输出目录")
     parser.add_argument("--name", required=True, help="输出文件名前缀")
     parser.add_argument("--height", type=int, default=900, help="统一高度（像素）")
+    parser.add_argument("--icon-size", type=int, default=0, help="改为方形图标模式：输出 N×N 居中透明图标")
     args = parser.parse_args()
 
     views = []
@@ -64,6 +65,18 @@ def main():
 
     placed, (canvas_w, canvas_h) = normalize(views, args.height)
     os.makedirs(args.out_dir, exist_ok=True)
+
+    if args.icon_size:
+        side = args.icon_size
+        for name, image, _ in placed:
+            ratio = (side * 0.82) / image.height
+            resized = image.resize((max(1, round(image.width * ratio)), round(image.height * ratio)), Image.LANCZOS)
+            icon = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+            icon.paste(resized, ((side - resized.width) // 2, (side - resized.height) // 2), resized)
+            path = os.path.join(args.out_dir, f"{name}.png")
+            icon.save(path)
+            print(f"已保存 {path} ({icon.width}x{icon.height})")
+        return 0
 
     for name, image, x in placed:
         single = Image.new("RGBA", (image.width, canvas_h), (0, 0, 0, 0))
