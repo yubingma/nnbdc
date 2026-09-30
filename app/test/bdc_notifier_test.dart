@@ -1547,16 +1547,17 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
-  test('BdcNotifier - 修改今日评分:多环节后新词(reps>1)改评分仍应重新 init 计算下次复习天数', () async {
-    // 模拟今天的新词已完成测评+巩固多个环节提交(easy):
-    // stability=init(easy) 的结果 15.69105,但 reps 已因多环节递增为 4
+  test('BdcNotifier - 修改今日评分:多环节后新词改评分应重放全部当天环节', () async {
+    // 模拟今天的新词已完成测评(easy)+巩固(good)两个环节提交：
+    // 真实状态是 init(easy)=15.69105 再走同日短期公式 next(good,0) ≈ 22.09
     final testNow = AppClock.now();
+    const consolidateStability = 22.089408519007495; // 15.69105 * e^(w17*(3-3+w18))
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
-          stability: const Value(15.69105),
-          difficulty: const Value(3.2245015893713678),
-          reps: const Value(4),
-          scheduledDays: const Value(16),
+          stability: const Value(consolidateStability),
+          difficulty: const Value(3.2245015893713673),
+          reps: const Value(2),
+          scheduledDays: const Value(22),
           state: const Value(2), // Review(已过巩固)
         ));
     await db.learningLogsDao.saveEntity(LearningLog(
@@ -1570,6 +1571,19 @@ void main() {
       scheduledDays: 16,
       createTime: testNow,
       updateTime: testNow,
+    ), false);
+    // 巩固环节：同日第二次评分，elapsedDays=0 走短期公式
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_easy_multi_2',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.good.value,
+      stability: consolidateStability,
+      difficulty: 3.2245015893713673,
+      elapsedDays: 0,
+      scheduledDays: 22,
+      createTime: testNow.add(const Duration(seconds: 30)),
+      updateTime: testNow.add(const Duration(seconds: 30)),
     ), false);
     // 该词今天之前无任何学习记录(纯新词,仅今天学习)
     StudyCacheManager().clear();
@@ -1591,31 +1605,32 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.word!.spell, 'apple');
 
-    // 把 easy 改成 good:即使多环节 reps>1,新词仍应重新 init(good) → 3 天
+    // 把测评的 easy 改成 good：新词重新 init(good)，再由巩固环节的 good 走同日短期公式
+    // init(good)=3.173 → ×e^(w17*(3-3+w18)) ≈ 4.467 → 4 天（旧口径只看首条，会给 3 天）
     notifier.updateFsrsRating(FsrsRating.good);
     for (int i = 0; i < 50; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
       state = container.read(bdcNotifierProvider);
-      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 3) break;
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 4) break;
     }
     expect(state.fsrsItem, isNot(null));
-    expect(state.fsrsItem!.scheduledDays, 3,
-        reason: '多环节后新词改评分仍应重新 init 计算,预期 3 天,实际 ${state.fsrsItem!.scheduledDays}');
+    expect(state.fsrsItem!.scheduledDays, 4,
+        reason: '多环节后新词改评分必须重放全部当天环节,预期 4 天,实际 ${state.fsrsItem!.scheduledDays}');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
-  test('BdcNotifier - 修改今日评分:复习词(今天之前加入)改评分应基于测评前状态重算', () async {
+  test('BdcNotifier - 修改今日评分:复习词改评分应重放测评+巩固全部当天环节', () async {
     // 模拟复习词:昨天加入(addTime=昨天)、昨天学过(stability=15.69105, scheduledDays=16)
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
     final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
-          stability: const Value(15.69105),
-          difficulty: const Value(3.2245015893713678),
+          stability: const Value(35.21175712420889), // 测评 easy 后再巩固 good 的真实状态
+          difficulty: const Value(2.135155608561961),
           reps: const Value(2),
-          scheduledDays: const Value(16),
+          scheduledDays: const Value(35),
           state: const Value(2), // Review
           addTime: Value(yesterday),
           addDay: const Value(2),
@@ -1637,7 +1652,7 @@ void main() {
       createTime: yesterday,
       updateTime: yesterday,
     ), false);
-    // 今天测评提交的记录(最新一条,用户看到的"轻松")
+    // 今天测评提交的记录(当天首条,评分修正对话框改的就是它)
     // 注意:测评 easy 是 next(测评前状态=15.69105, easy, elapsedDays=1) 的结果,
     // 真实 FSRS 计算 stability≈25.01, scheduledDays=25
     await db.learningLogsDao.saveEntity(LearningLog(
@@ -1651,6 +1666,19 @@ void main() {
       scheduledDays: 25,
       createTime: testNow,
       updateTime: testNow,
+    ), false);
+    // 今天的巩固环节(当天第二条,elapsedDays=0 走 FSRS-5 短期公式):S 从 25.01 抬到 35.21
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_today_consolidate',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.good.value,
+      stability: 35.21175712420889,
+      difficulty: 2.135155608561961,
+      elapsedDays: 0,
+      scheduledDays: 35,
+      createTime: testNow.add(const Duration(seconds: 30)),
+      updateTime: testNow.add(const Duration(seconds: 30)),
     ), false);
     StudyCacheManager().clear();
 
@@ -1671,18 +1699,107 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.word!.spell, 'apple');
 
-    // 把 easy 改成 good:复习词应基于"测评前状态"(昨天 stability=15.69105, elapsedDays=1)重算
+    // 把测评的 easy 改成 good：先按测评前状态 next(15.69105, good, elapsedDays=1) ≈ 18.81，
+    // 再把当天巩固环节的 good 按同日短期公式抬升 ×e^(w17*(3-3+w18)) ≈ 26.48 → 26 天。
+    // 旧口径只重放当天首条（停在 19 天），漏掉了巩固环节的真实推进。
     notifier.updateFsrsRating(FsrsRating.good);
     for (int i = 0; i < 50; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
       state = container.read(bdcNotifierProvider);
-      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 19) break;
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 26) break;
     }
     expect(state.fsrsItem, isNot(null));
-    // 基于测评前状态(stability=15.69105, elapsedDays=1) next(good):
-    // 真实 FSRS 计算结果 ≈ 19 天(不是停留在测评后的 25 天)
-    expect(state.fsrsItem!.scheduledDays, 19,
-        reason: '复习词改评分应基于测评前状态(15.69105)重算,预期 19 天,实际 ${state.fsrsItem!.scheduledDays}');
+    expect(state.fsrsItem!.scheduledDays, 26,
+        reason: '复习词改评分必须重放测评+巩固全部当天环节,预期 26 天,实际 ${state.fsrsItem!.scheduledDays}');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 修改今日评分:重选当前评分幂等(不改 stability/reps/lapses)', () async {
+    // 复习词：昨天学过 → 今天测评 easy（当天首条）+ 巩固 good（当天第二条）
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    final yesterday = today.subtract(const Duration(days: 1));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(
+          stability: const Value(35.21175712420889),
+          difficulty: const Value(2.135155608561961),
+          reps: const Value(2),
+          lapses: const Value(0),
+          scheduledDays: const Value(35),
+          state: const Value(2),
+          addTime: Value(yesterday),
+          addDay: const Value(2),
+          isTodayNewWord: const Value(false),
+          lastLearningDate: Value(yesterday),
+        ));
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_idem_yesterday',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 15.69105,
+      difficulty: 3.2245015893713678,
+      elapsedDays: 5,
+      scheduledDays: 16,
+      createTime: yesterday,
+      updateTime: yesterday,
+    ), false);
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_idem_assess',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 25.012414485811277,
+      difficulty: 2.1301214599670124,
+      elapsedDays: 1,
+      scheduledDays: 25,
+      createTime: testNow,
+      updateTime: testNow,
+    ), false);
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_idem_consolidate',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.good.value,
+      stability: 35.21175712420889,
+      difficulty: 2.135155608561961,
+      elapsedDays: 0,
+      scheduledDays: 35,
+      createTime: testNow.add(const Duration(seconds: 30)),
+      updateTime: testNow.add(const Duration(seconds: 30)),
+    ), false);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+
+    // 重选与"今日测评"完全相同的 easy：重放必须精确复现现有状态，不产生任何漂移
+    notifier.updateFsrsRating(FsrsRating.easy);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 35) break;
+    }
+    expect(state.fsrsItem, isNot(null));
+    expect(state.fsrsItem!.scheduledDays, 35);
+    expect(state.fsrsItem!.stability, closeTo(35.21175712420889, 1e-9));
+    expect(state.fsrsItem!.reps, 2, reason: '重放条数与基准 reps 回推后应等于现状');
+    expect(state.fsrsItem!.lapses, 0);
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
@@ -1768,6 +1885,53 @@ void main() {
     }
     expect(state.fsrsItem!.scheduledDays, 16,
         reason: '改回 easy 应稳定回到 16 天,实际 ${state.fsrsItem!.scheduledDays}');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 详情页 FSRS 预览按当前词现算天数，不残留上一个词', () async {
+    // word_1 是昨天学过的复习词。若预览沿用 state.daysSinceLastReview（默认 null→0），
+    // 会把跨天复习误当同日评分走短期公式，S 被错误缩放（15.69→22.09 而不是 18.81）
+    final today = AppClock.today();
+    final yesterday = today.subtract(const Duration(days: 1));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(
+          stability: const Value(15.69105),
+          difficulty: const Value(3.2245015893713678),
+          reps: const Value(1),
+          scheduledDays: const Value(16),
+          state: const Value(2), // Review
+          isTodayNewWord: const Value(false),
+          lastLearningDate: Value(yesterday),
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    final loaded = container.read(bdcNotifierProvider);
+    expect(loaded.word!.spell, 'apple');
+    expect(loaded.daysSinceLastReview == null, isTrue,
+        reason: 'handleWord 必须把 daysSinceLastReview 重置为 null，避免跨词残留');
+
+    // 触发详情页预览（预览在跳转路由前同步写入 fsrsItem，无需等待路由返回）
+    unawaited(notifier.showWordDetail(loaded.word!, false, null,
+        fsrsRating: FsrsRating.good));
+    final preview = container.read(bdcNotifierProvider).fsrsItem;
+    expect(preview, isNot(null));
+    expect(preview!.scheduledDays, 19,
+        reason: '跨天复习预览应按 elapsedDays=1 走长期公式(19 天)，而非同日短期公式(22 天)');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });

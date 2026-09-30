@@ -449,7 +449,10 @@ class MyDatabase extends _$MyDatabase {
             await m.addColumn(words, words.shortDescCn);
           }
           // 从版本 56 升级到版本 57：一次性清理"同一次作答被重复计分"的历史脏数据
-          // （learning_logs 去重 + learning_words 记忆字段回填，幂等；迁移天然每台设备只跑一次）
+          // （learning_logs 去重 + 派生计数回滚 + learning_words 记忆字段回填，幂等）
+          //
+          // 单次删除量有上限（避免 DELETE 同步日志把 5MB 的同步请求撑爆）；未清完时由本方法
+          // 内部置 Prefs 待续跑标记，App 启动钩子 LearningLogRepair.resumePendingIfNeeded 续跑。
           //
           // 这里必须单独吃掉异常：外层 catch 的兜底是"删库重建"，而本步只是清理历史脏数据，
           // 修复失败最多损失这一次清理，绝不能让它把用户的本地数据整个抹掉。

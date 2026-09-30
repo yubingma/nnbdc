@@ -529,8 +529,17 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               await db.meaningItemsDao.deleteEntity(entity.id, false);
             }
           } else if (log.tblName == 'learningLogs') {
-            LearningLog entity = LearningLog.fromJson(entityJson);
-            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+            if (log.operate == 'DELETE') {
+              // DELETE 日志的 record 只带 id（见 LearningLogRepair 的缩体约定），
+              // 不能整体反序列化；按 id 直接删本地行，不写同步日志（false）避免回声
+              final deletedId = entityJson['id'];
+              if (deletedId != null) {
+                await (db.delete(db.learningLogs)
+                      ..where((l) => l.id.equals(deletedId.toString())))
+                    .go();
+              }
+            } else {
+              final entity = LearningLog.fromJson(entityJson);
               await db.learningLogsDao.saveEntity(entity, false);
             }
           } else if (log.tblName == 'userStudyDailyStats') {
@@ -770,6 +779,15 @@ Pair<List<Map<String, dynamic>>, List<Map<String, dynamic>>> mergeChanges(
           localToBackend.add(localLog); // A -> B
         }
       } else if (backLog['operate'] == 'INSERT' && localLog!['operate'] == 'DELETE') {
+        if ((backLog['updateTime'] as DateTime).isAfter(localLog['updateTime'] as DateTime)) {
+          backToLocalLogs.add(backLog); // B -> A
+        } else {
+          localToBackend.add(localLog); // A -> B
+        }
+      } else if (backLog['operate'] == 'DELETE' && localLog!['operate'] == 'INSERT') {
+        // 镜像分支见下方 localLog INSERT × backLog DELETE：
+        // 服务端已删、本地又新插入同一条，必须按 updateTime 决胜；
+        // 否则本地这条会被当作"本地新增"推回服务端，把已删除的日志复活
         if ((backLog['updateTime'] as DateTime).isAfter(localLog['updateTime'] as DateTime)) {
           backToLocalLogs.add(backLog); // B -> A
         } else {

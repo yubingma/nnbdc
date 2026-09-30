@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/util/date_utils.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 /// v51 的 users 建表语句, 直接取自随包发布的 v51 母版库 (assets/db/initial.sqlite.gz),
@@ -51,6 +52,12 @@ const String _v51DictsDdl = r'''
 CREATE TABLE IF NOT EXISTS "dicts" ("id" TEXT NOT NULL, "is_ready" INTEGER NOT NULL CHECK ("is_ready" IN (0, 1)), "is_shared" INTEGER NOT NULL CHECK ("is_shared" IN (0, 1)), "name" TEXT NOT NULL, "word_count" INTEGER NOT NULL, "owner_id" TEXT NOT NULL DEFAULT '15118', "visible" INTEGER NOT NULL CHECK ("visible" IN (0, 1)), "editable" INTEGER NOT NULL DEFAULT 0 CHECK ("editable" IN (0, 1)), "deletable" INTEGER NOT NULL DEFAULT 1 CHECK ("deletable" IN (0, 1)), "popularity_limit" INTEGER NULL, "domain" TEXT NULL, "base_dict_id" TEXT NULL, "cover_url" TEXT NULL, "sort_alg" TEXT NULL, "description" TEXT NULL, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("id"))
 ''';
 
+/// v51 的 user_study_daily_stats 建表语句（v39 → v40 创建，此后未被改动）。
+/// v56 → v57 的修复删除重复日志时要回滚当日的 review_count，夹具必须包含它。
+const String _v51UserStudyDailyStatsDdl = r'''
+CREATE TABLE IF NOT EXISTS "user_study_daily_stats" ("user_id" TEXT NOT NULL, "date" INTEGER NOT NULL, "study_seconds" INTEGER NOT NULL DEFAULT 0, "review_count" INTEGER NOT NULL DEFAULT 0, "day_status" TEXT NULL, "create_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("user_id", "date"))
+''';
+
 void main() {
   late Directory tempDir;
   late File dbFile;
@@ -78,6 +85,7 @@ void main() {
     raw.execute(_v51LearningLogsDdl);
     raw.execute(_v51UserDbLogsDdl);
     raw.execute(_v51DictsDdl);
+    raw.execute(_v51UserStudyDailyStatsDdl);
     raw.execute(
       "INSERT INTO words (id, spell, popularity, short_desc, create_time, update_time) "
       "VALUES ('w1', 'defect', 5, 'A flaw in something is a defect.', 1, 1)",
@@ -115,6 +123,13 @@ void main() {
         );
       }
     }
+    // 与两条日志同一业务日的统计行：重复作答把 review_count 多加了 1（2 → 修复后应为 1）
+    final logBusinessDay =
+        DateUtils.businessDate(DateTime.fromMillisecondsSinceEpoch(1767225600 * 1000));
+    raw.execute(
+      'INSERT INTO user_study_daily_stats (user_id, date, study_seconds, review_count, create_time, update_time) '
+      "VALUES ('u1', ${logBusinessDay.millisecondsSinceEpoch ~/ 1000}, 0, 2, 1, 1)",
+    );
     raw.execute('PRAGMA user_version = 51');
     raw.dispose();
   }
@@ -192,6 +207,16 @@ void main() {
       expect(
         syncLogs.map((l) => '${l.operate}|${l.tblName}|${l.recordId}'),
         containsAll(['DELETE|learningLogs|log-dup', 'UPDATE|learningWords|u1-dupw']),
+      );
+
+      // 重复作答派生的当日评分次数也要回滚（2 → 1），并留下待同步日志
+      final stat = await (db.select(db.userStudyDailyStats)
+            ..where((t) => t.userId.equals('u1')))
+          .getSingle();
+      expect(stat.reviewCount, 1, reason: '删掉 1 条重复日志，当日 review_count 必须回滚 1');
+      expect(
+        syncLogs.map((l) => '${l.operate}|${l.tblName}'),
+        contains('UPDATE|userStudyDailyStats'),
       );
 
       final version = await db.customSelect('PRAGMA user_version').getSingle();

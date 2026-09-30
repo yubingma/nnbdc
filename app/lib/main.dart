@@ -29,6 +29,7 @@ import 'package:nnbdc/util/notification_util.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/local_embedding_cache.dart';
+import 'package:nnbdc/util/learning_log_repair.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/services/external_file_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -230,6 +231,9 @@ void main() async {
           MyDatabase.instance;
           await MyDatabase.ensureDatabaseIntegrity();
           logMark('ensureDatabaseIntegrity');
+
+          // 续跑上一次因限流未清完的重复计分修复（幂等分批，断点续传）
+          unawaited(LearningLogRepair.resumePendingIfNeeded());
 
           // 静默后台初始化本地高维向量缓存
           unawaited(LocalEmbeddingCache.instance.initialize(MyDatabase.instance).catchError((e) {

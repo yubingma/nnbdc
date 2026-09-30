@@ -307,6 +307,11 @@ class WordDetailPageState extends State<WordDetailPage>
       }
     }
 
+    // 提早启动例句异步流，保证首帧 FutureBuilder 立即接管，杜绝空白等待与二次跳帧
+    if (_sentencesFuture == null && GoRouterState.of(context).extra != null) {
+      _sentencesFuture = args.word.getSentences();
+    }
+
     // 学习流程已把单词基础数据（拼写 / 音标 / 释义）随参数传入：
     // 这种情况首帧直接渲染真实内容，扩展数据（例句 / 形近 / 同根 / 意象）随后台补齐，
     // 避免转场动画期间只显示一个转圈、转场结束内容才跳出来。
@@ -420,35 +425,41 @@ class WordDetailPageState extends State<WordDetailPage>
 
       _sentencesFuture = args.word.getSentences();
 
-      int totalCount = 0;
-      final cigenLinks = args.word.cigenWordLinks;
-      if (cigenLinks != null && cigenLinks.isNotEmpty) {
-        final cigenIds = cigenLinks.map((l) => l.cigen.id).toList();
-        final db = MyDatabase.instance;
-        final query = db.selectOnly(db.cigenWordLinks)
-          ..addColumns([db.cigenWordLinks.wordId])
-          ..where(db.cigenWordLinks.cigenId.isIn(cigenIds));
-        final results = await query.get();
-        final uniqueWordIds =
-            results.map((r) => r.read(db.cigenWordLinks.wordId)).toSet();
-        totalCount = uniqueWordIds.length;
-      }
-      _totalCigenWordsCount = totalCount;
-      await _checkRawWordStatus();
-
       final wordId = args.word.id;
-      if (wordId != null) {
-        _coreImage = await MyDatabase.instance.wordCoreImagesDao
-            .getCoreImageByWordId(wordId);
-      }
-
-      // 批量查询形近词在词书内状态并稳定排序
+      final cigenLinks = args.word.cigenWordLinks;
       final similarWordsIds =
           args.word.similarWords?.map((w) => w.id!).toList() ?? [];
-      if (similarWordsIds.isNotEmpty) {
-        await _checkWordsInDict(similarWordsIds);
-        _sortSimilarWords();
-      }
+
+      // 并发并行拉取次级元数据，消除多重数据库串行等待
+      await Future.wait([
+        // 1. 词根衍生词总数
+        if (cigenLinks != null && cigenLinks.isNotEmpty) () async {
+          final cigenIds = cigenLinks.map((l) => l.cigen.id).toList();
+          final db = MyDatabase.instance;
+          final query = db.selectOnly(db.cigenWordLinks)
+            ..addColumns([db.cigenWordLinks.wordId])
+            ..where(db.cigenWordLinks.cigenId.isIn(cigenIds));
+          final results = await query.get();
+          final uniqueWordIds =
+              results.map((r) => r.read(db.cigenWordLinks.wordId)).toSet();
+          _totalCigenWordsCount = uniqueWordIds.length;
+        }() else Future.value(),
+
+        // 2. 生词本收藏状态
+        _checkRawWordStatus(),
+
+        // 3. 核心意象图
+        if (wordId != null) () async {
+          _coreImage = await MyDatabase.instance.wordCoreImagesDao
+              .getCoreImageByWordId(wordId);
+        }() else Future.value(),
+
+        // 4. 批量查询形近词在词书内状态并排序
+        if (similarWordsIds.isNotEmpty) () async {
+          await _checkWordsInDict(similarWordsIds);
+          _sortSimilarWords();
+        }() else Future.value(),
+      ]);
 
       setState(() {
         final newLength = calcTabsCount();
@@ -1790,19 +1801,13 @@ class WordDetailPageState extends State<WordDetailPage>
                     borderRadius: BorderRadius.circular(8),
                     onTap: _isLoadingNextWord
                         ? null
-                        : () async {
+                        : () {
+                            _isLoadingNextWord = true;
+                            // 立即退出详情页，零秒等待
+                            context.pop(true);
+                            // 并行在后台流转下一词
                             if (args.onNextWord != null) {
-                              setState(() => _isLoadingNextWord = true);
-                              try {
-                                await args.onNextWord!();
-                              } finally {
-                                if (mounted) {
-                                  setState(() => _isLoadingNextWord = false);
-                                  context.pop(true);
-                                }
-                              }
-                            } else {
-                              context.pop(true);
+                              unawaited(args.onNextWord!());
                             }
                           },
                     child: Padding(

@@ -2765,6 +2765,21 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
     }
   }
 
+  /// 回滚当日评分次数（修复"同一次作答被重复计分"删日志时使用），下限 0。
+  Future<void> decrementReviewCount(String userId, DateTime date, {int count = 1}) async {
+    if (count <= 0) return;
+    final pureDate = DateUtils.businessDate(date);
+    final existing = await (select(userStudyDailyStats)
+          ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
+        .getSingleOrNull();
+    if (existing == null) return;
+
+    final newCount = existing.reviewCount - count;
+    await saveEntity(existing.copyWith(
+      reviewCount: newCount < 0 ? 0 : newCount,
+    ), true);
+  }
+
   Future<List<UserStudyDailyStat>> getRecentStats(String userId, int days) async {
     final startDate = AppClock.today().subtract(Duration(days: days - 1));
     return (select(userStudyDailyStats)

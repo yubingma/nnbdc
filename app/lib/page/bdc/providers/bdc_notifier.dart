@@ -754,6 +754,9 @@ class BdcNotifier extends _$BdcNotifier {
       isWordMastered: false,
       isPttPressed: false,
       isPracticeMode: false,
+      // 跨词残留防护：该字段只由 _onAnswerCorrect 刷新，新词呈现时必须清空，
+      // 否则预览会把上一个词的间隔套到当前词上（跨天复习误判为同日评分）
+      daysSinceLastReview: null,
     );
 
     final wordId = word.id;
@@ -1223,19 +1226,18 @@ class BdcNotifier extends _$BdcNotifier {
         showNextWordButton: true,
         autoPlayWordOnEnter: autoPlayWordOnEnter,
         sessionController: StudyAudioSessionController.instance,
-        onNextWord: () => getNextWord(true, fsrsRating: state.lastFsrsRating, fastPath: false)));
+        onNextWord: () => getNextWord(true, fsrsRating: state.lastFsrsRating, fastPath: true)));
     
     if (_isDisposed) return;
 
     if (result == true) {
-      // onNextWord 已在弹窗前执行了 getNextWord，此时 handleWord 的延时 callback
-      // 正等待 _pageTransitionBarrier。延迟 300ms 让 pop 动画完全结束再放行。
-      Future.delayed(const Duration(milliseconds: 300), () {
-        barrier.complete();
+      // 详情页已立即 Pop，退场动画轻微顺滑，放行发音屏障（80ms 极速过渡缓冲）
+      Future.delayed(const Duration(milliseconds: 80), () {
+        if (!barrier.isCompleted) barrier.complete();
         if (!_isDisposed) _pageTransitionBarrier = null;
       });
     } else {
-      barrier.complete();
+      if (!barrier.isCompleted) barrier.complete();
       _pageTransitionBarrier = null;
       _handleTabChangeForAsr();
     }
@@ -1260,7 +1262,15 @@ class BdcNotifier extends _$BdcNotifier {
     final lw = state.currentGetWordResult?.learningWord;
     if (lw != null) {
       final fsrs = FSRS();
-      int days = state.daysSinceLastReview ?? 0;
+      // 天数必须按「当前词」现算，不能复用 state.daysSinceLastReview：后者只在
+      // _onAnswerCorrect 里刷新，「不认识/再学学/选择题答错」等入口不经过它，
+      // handleWord 也不重置，会把上一个词的值残留下来，导致跨天复习被当成
+      // 同日评分走短期公式（S 被错误等比缩放），历史模式下还会把错误值落库。
+      final int days = lw.lastLearningDate == null
+          ? 0
+          : AppClock.today()
+              .difference(app_date.DateUtils.businessDate(lw.lastLearningDate!))
+              .inDays;
       FSRSItem nextItem;
       if (lw.stability == null || lw.stability == 0.0) {
         // 新词：init 预览
@@ -1297,15 +1307,15 @@ class BdcNotifier extends _$BdcNotifier {
     final lw = state.currentGetWordResult?.learningWord;
     if (lw == null) return;
     try {
-      final nextItem = await _recalcFsrsForRating(lw, rating);
-      state = state.copyWith(fsrsItem: nextItem);
+      final recalc = await _recalcFsrsForRating(lw, rating);
+      state = state.copyWith(fsrsItem: recalc.replayed);
       // 同步巩固阶段的测评参考显示,使"今日测评"标签立即反映新评分
       if (state.assessmentRating != null) {
         state = state.copyWith(
           assessmentScheduledDays: state.fsrsItem?.scheduledDays,
         );
       }
-      await _persistRatingModification(rating);
+      await _persistRatingModification(rating, recalc.firstStep);
       // 修改评分已自行落库：登记一份“已落库”的受理凭据，
       // 后续「下一词」只导航、不再重复计分（也避免被计分闸门当作重复提交而卡住）
       _acceptAnswer(rating, alreadyPersisted: true, refresh: true);
@@ -1314,85 +1324,117 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  /// 按新评分重新计算 FSRS 结果。
-  ///
-  /// 修改"今日测评"评分的语义是修正测评环节的评分。判断测评环节
-  /// 是 init(新词)还是 next(复习词)的依据是 LearningLog 最新一条
-  /// (即本次测评提交结果)的 elapsedDays:
-  /// - elapsedDays == 0 → 测评是 init(今日新词)→ 重新 init(rating)
-  /// - elapsedDays > 0 → 测评是 next(复习词)→ next(测评前状态, rating, elapsedDays)
-  ///
-  /// 不能用 addTime 判断:计划内单词可能 addTime 很早但 stability 从未
-  /// 初始化(今天才真正学习),测评仍走 init;反之也不能用巩固环节的
-  /// lw.stability——它已被测评提交推进(init 后非 0),用它做 next 会
-  /// 产生"测评后状态再推进一次"的重复放大。复习词的测评前状态应取
-  /// LearningLog 中"今天之前最后一条"记录(该记录即测评前最后一次学习结果)。
   /// 按新评分重新计算 FSRS 结果（修改"今日评分"时调用）。
   ///
-  /// 幂等规则：以"今天首条评分日志的前一条"（测评前状态）为基准重算：
-  /// - 今天首条日志 elapsedDays == 0 → 当天是 init（新词学习日）→ 重新 init(rating)；
-  /// - 今天首条日志 elapsedDays > 0 → 当天是 next（复习日）→ next(测评前状态, rating, 该间隔)；
-  /// - 今天之前无日志 → 新词 → init(rating)。
-  /// reps/lapses 回推：测评前 reps = lw.reps − 当天日志条数；lapses 同理减去当天 again 条数。
-  Future<FSRSItem> _recalcFsrsForRating(
+  /// 修改的是"今日测评"评分（当天首条评分），但**当天后续环节（巩固/恢复）也真实
+  /// 推进过状态**：FSRS-5 起，同日重复评分走短期公式 S'=S·e^(w17(G-3+w18))（good
+  /// ≈×1.4078、again ≈×0.5010），不再像旧版那样把 S 打回初始值。因此只重放首条
+  /// 会漏掉后续环节的量变，实测偏差可达 29%。正确口径是**按当天全部日志真实重放**：
+  ///
+  /// - 基准 = "今天之前的最后一条日志"的记忆状态（无则视为新词）；reps/lapses 由
+  ///   `lw` 当前总值回推掉当天已重放的条数（again 计 lapse）得到；
+  /// - 当天首条（即被修改的那条）用用户新选的 [rating]：
+  ///   `elapsedDays == 0 ? init(rating) : next(基准, rating, elapsedDays)`；
+  /// - 其余同日日志按 createTime 正序 `next(前一条结果, 该日志原评分, 0)`。
+  ///
+  /// 幂等：重选与当前相同的评分时，重放与真实提交链路逐环节同序同参，结果精确复现
+  /// 现有 learning_words 状态（stability/scheduledDays/reps/lapses 都不变）。
+  ///
+  /// 不能用 addTime 判断"新词"：计划内单词可能 addTime 很早但 stability 从未初始化
+  /// （今天才真正学习），测评仍走 init；也不能用 lw.stability 当基准——它已被当天
+  /// 全部环节推进过，用它再 next 一次会重复放大。
+  ///
+  /// 返回一对状态，二者不可混用（每条 learning_logs 记录的是"该次评分之后"的状态）：
+  /// - [replayed] 末态：当天全部日志重放完的结果 → 写 learning_words；
+  /// - [firstStep] 首步态：仅"用新评分做完当天首条评分"的结果 → 写被替换的今日测评日志。
+  /// 把末态塞进首条日志会让日志序列撒谎（后续巩固环节的量变被提前记到首条上）。
+  Future<({FSRSItem replayed, FSRSItem firstStep})> _recalcFsrsForRating(
       LearningWordVo lw, FsrsRating rating) async {
     final fsrs = FSRS();
     final userId = Global.getLoggedInUser()?.id;
     final wordId = lw.word.id;
-    if (userId == null || wordId == null) return fsrs.init(rating);
+    if (userId == null || wordId == null) {
+      final item = fsrs.init(rating);
+      return (replayed: item, firstStep: item);
+    }
 
+    // getHistory 返回 createTime 倒序
     final logs =
         await MyDatabase.instance.learningLogsDao.getHistory(userId, wordId);
-    if (logs.isEmpty) return fsrs.init(rating);
+    if (logs.isEmpty) {
+      final item = fsrs.init(rating);
+      return (replayed: item, firstStep: item);
+    }
 
     final today = AppClock.today();
-    // 今天之前的最后一条日志 = 测评前状态
+    // 当天日志按 createTime 正序，供逐条重放；首条即"今日测评"
+    final todayLogs = logs
+        .where((l) => !l.createTime.isBefore(today))
+        .toList()
+        .reversed
+        .toList();
+    // 今天之前的最后一条日志 = 测评前基准状态
     LearningLog? prevLog;
-    int todayLogCount = 0;
-    int todayAgainCount = 0;
     for (final log in logs) {
       if (log.createTime.isBefore(today)) {
         prevLog = log;
         break;
       }
-      todayLogCount++;
-      if (log.rating == FsrsRating.again.value) todayAgainCount++;
-    }
-    // 新词（今天之前无日志）：修改评分 = 重新 init
-    if (prevLog == null) return fsrs.init(rating);
-
-    // 当天首条日志（createTime 最早）的 elapsedDays 决定当天事件类型：
-    // 不能用最新一条（巩固/重测的 relearn 日志 elapsedDays 恒为 0，会误判为新词 init）
-    final todayLogs =
-        logs.where((l) => !l.createTime.isBefore(today)).toList(); // 倒序
-    final firstTodayLog = todayLogs.last; // 当天最早一条
-    if (firstTodayLog.elapsedDays == 0) {
-      // 当天是学习日（init 起手），巩固环节评分已按 relearn 重设过
-      return fsrs.init(rating);
     }
 
-    final prevItem = FSRSItem(
-      stability: prevLog.stability,
-      difficulty: prevLog.difficulty,
-      elapsedDays: firstTodayLog.elapsedDays,
-      scheduledDays: prevLog.scheduledDays,
-      reps: (lw.reps ?? 0) - todayLogCount,
-      lapses: (lw.lapses ?? 0) - todayAgainCount,
-      // 日志表无 state 字段：测评前 state 由其评分推断（again → relearning，否则 review）
-      state: prevLog.rating == FsrsRating.again.value
-          ? FsrsState.relearning
-          : FsrsState.review,
-    );
-    return fsrs.next(prevItem, rating, firstTodayLog.elapsedDays);
+    // 基准记忆状态：reps/lapses 从当前总值里减掉当天将重放的条数
+    final int todayAgainCount =
+        todayLogs.where((l) => l.rating == FsrsRating.again.value).length;
+    final FSRSItem? baseItem = prevLog == null
+        ? null
+        : FSRSItem(
+            stability: prevLog.stability,
+            difficulty: prevLog.difficulty,
+            elapsedDays: 0,
+            scheduledDays: prevLog.scheduledDays,
+            reps: max(0, (lw.reps ?? 0) - todayLogs.length),
+            lapses: max(0, (lw.lapses ?? 0) - todayAgainCount),
+            // 日志表无 state 字段：基准 state 由其评分推断（again → relearning，否则 review）
+            state: prevLog.rating == FsrsRating.again.value
+                ? FsrsState.relearning
+                : FsrsState.review,
+          );
+
+    // 当天无日志（无"今日测评"可改）：保持基准状态即可
+    if (todayLogs.isEmpty) {
+      final item = baseItem ?? fsrs.init(rating);
+      return (replayed: item, firstStep: item);
+    }
+
+    // 首条用新评分：新词（无基准）或当天 init 起手 → init；跨天复习 → next(基准, 新评分, 间隔)
+    final firstTodayLog = todayLogs.first;
+    final firstStep = (baseItem == null || firstTodayLog.elapsedDays == 0)
+        ? fsrs.init(rating)
+        : fsrs.next(baseItem, rating, firstTodayLog.elapsedDays);
+
+    // 其余同日日志按原评分走 FSRS-5 短期公式逐条重放
+    var replayed = firstStep;
+    for (var i = 1; i < todayLogs.length; i++) {
+      replayed = fsrs.next(
+        replayed,
+        FsrsRatingExt.fromInt(todayLogs[i].rating),
+        0,
+      );
+    }
+    return (replayed: replayed, firstStep: firstStep);
   }
 
-  Future<void> _persistRatingModification(FsrsRating rating) async {
+  /// [firstStepFsrs] 为"用新评分做完当天首条评分"的状态，只用于回写那条今日测评日志
+  /// （见 [StudyBo.saveHistoryFSRSUpdate]）；learning_words 仍写重放末态。
+  Future<void> _persistRatingModification(
+      FsrsRating rating, FSRSItem firstStepFsrs) async {
     final lw = state.currentGetWordResult?.learningWord;
     if (lw == null || state.fsrsItem == null) return;
     try {
       await StudyBo().saveHistoryFSRSUpdate(
         currWord: lw,
         nextFsrs: state.fsrsItem!,
+        firstStepFsrs: firstStepFsrs,
         newRating: rating,
       );
       if (_isDisposed) return;
@@ -1791,13 +1833,8 @@ class BdcNotifier extends _$BdcNotifier {
             didMaster = true;
           }
 
-          if (lw != null && state.fsrsItem != null && state.lastFsrsRating != null) {
-            StudyBo().saveHistoryFSRSUpdate(
-              currWord: lw,
-              nextFsrs: state.fsrsItem!,
-              newRating: state.lastFsrsRating!,
-            );
-          }
+          // 回看模式离开时不再重复落库 FSRS：评分修正已由 _applyRatingModification
+          // 立即持久化，此处再写一次只会把"当天首条日志"覆盖成重放末态（见 saveHistoryFSRSUpdate）。
 
           // 若本次掌握了当前词，该词已从 history 中移除，后续词前移一位，nextIndex 不 +1
           int nextIndex = didMaster ? state.historyIndex : state.historyIndex + 1;
