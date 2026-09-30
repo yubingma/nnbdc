@@ -527,6 +527,11 @@
       line-height: 1.5;
     }
 
+    /* 单行剩余一个卡片时占满整行，避免半行留白 */
+    .feature-item.wide {
+      grid-column: 1 / -1;
+    }
+
     .principle-box {
       background: rgba(110, 231, 183, 0.04);
       border: 1px solid rgba(110, 231, 183, 0.15);
@@ -539,6 +544,149 @@
 
     .principle-box strong {
       color: var(--accent-aurora);
+    }
+
+    /* 宠物形象示意（纯 CSS 绘制，不引入任何外部图片与字体） */
+    .pet-panel {
+      display: grid;
+      grid-template-columns: 236px 1fr;
+      gap: 20px;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-top: 6px;
+    }
+
+    .pet-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pet-stage svg {
+      width: 148px;
+      height: 148px;
+      display: block;
+    }
+
+    .pet-mood {
+      display: grid;
+      grid-template-columns: repeat(2, auto);
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .mood-chip {
+      font-size: 11px;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 3px 9px;
+      border-radius: 999px;
+    }
+
+    .mood-chip.now {
+      color: var(--accent-aurora);
+      border-color: rgba(110, 231, 183, 0.3);
+      background: rgba(110, 231, 183, 0.08);
+    }
+
+    .pet-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pet-line {
+      font-size: 13px;
+      color: #e2e8f0;
+      background: rgba(96, 165, 250, 0.07);
+      border-left: 2px solid var(--accent-blue);
+      border-radius: 0 8px 8px 0;
+      padding: 8px 12px;
+    }
+
+    .pet-line b {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    /* 玩法对照表 */
+    .idea-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 13px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .idea-body th,
+    .idea-body td {
+      text-align: left;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: top;
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    .idea-body thead th {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.03);
+      white-space: nowrap;
+    }
+
+    .idea-body tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .idea-body td:first-child {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    @media (max-width: 720px) {
+      .pet-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .idea-body thead {
+        display: none;
+      }
+
+      .idea-body tr,
+      .idea-body td {
+        display: block;
+        width: 100%;
+      }
+
+      .idea-body tr {
+        padding: 6px 0;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .idea-body td {
+        border-bottom: none;
+        padding: 3px 12px;
+      }
+
+      .idea-body td::before {
+        content: attr(data-label) "：";
+        color: var(--text-muted);
+      }
     }
 
     .actions-footer {
@@ -584,7 +732,7 @@
       <p class="subtitle">记录随时迸发的产品闪念、动效构想与玩法实验。遵循奥卡姆剃刀原理与极简高级美学，去伪存真，持续沉淀。</p>
       
       <div class="stats-bar">
-        <div class="stat-pill">沉淀创意: <strong>8 (7 产品/架构 + 1 营销)</strong></div>
+        <div class="stat-pill">沉淀创意: <strong>9 (7 产品/架构 + 1 营销 + 1 激励体系)</strong></div>
         <div class="stat-pill">核心哲学: <strong>如非必要 · 勿增实体</strong></div>
         <div class="stat-pill">美学基准: <strong>现代极简 · 灵动克制</strong></div>
       </div>
@@ -608,7 +756,7 @@
               </svg>
               <span class="sidebar-title">创意目录 · INDEX</span>
             </div>
-            <span class="sidebar-badge-count">8</span>
+            <span class="sidebar-badge-count">9</span>
           </div>
 
           <nav class="nav-list" id="sidebarNav">
@@ -621,7 +769,16 @@
                 </svg>
                 <span>产品玩法与体验</span>
               </div>
-              <a href="#idea-006" class="nav-item active" data-id="idea-006">
+              <a href="#idea-007" class="nav-item active" data-id="idea-007">
+                <div class="nav-item-header">
+                  <span class="nav-item-id">IDEA #007</span>
+                  <span class="nav-dot dot-amber"></span>
+                </div>
+                <div class="nav-item-title">记忆守护兽 · 泡泡喂养与裂变</div>
+                <div class="nav-item-cat">生命感反馈 · 进化解锁技能 · 社交裂变</div>
+              </a>
+
+              <a href="#idea-006" class="nav-item" data-id="idea-006">
                 <div class="nav-item-header">
                   <span class="nav-item-id">IDEA #006</span>
                   <span class="nav-dot dot-purple"></span>
@@ -724,8 +881,295 @@
               </svg>
               <span>第一节 · 产品功能与玩法构想（Product & Gameplay）</span>
             </div>
-            <span class="feed-section-tag">6 IDEAS</span>
+            <span class="feed-section-tag">7 IDEAS</span>
           </div>
+
+          <!-- 创意 #007: 记忆守护兽 · 打卡泡泡喂养与裂变 -->
+          <article class="idea-card" id="idea-007">
+            <div class="idea-header">
+              <div>
+                <div class="idea-id-date">
+                  <span class="idea-id" style="color: var(--accent-amber);">IDEA #007</span>
+                  <span>•</span>
+                  <span>2026-09-30</span>
+                  <span>•</span>
+                  <span>激励体系与养成玩法</span>
+                </div>
+                <h2 class="idea-title">记忆守护兽：打卡泡泡 · 裂变喂养 · 进化解锁技能</h2>
+              </div>
+              <span class="badge-status status-evaluating">玩法方案 / 待拍板</span>
+            </div>
+
+            <div class="tags-container">
+              <span class="tag" style="color: var(--accent-amber); border-color: rgba(251, 191, 36, 0.2);">#宠物养成</span>
+              <span class="tag">#打卡激励</span>
+              <span class="tag">#泡泡裂变</span>
+              <span class="tag">#情感羁绊</span>
+              <span class="tag">#社交裂变拉新</span>
+              <span class="tag">#进化树与技能</span>
+              <span class="tag">#桌面小组件</span>
+              <span class="tag">#不打断背词心流</span>
+            </div>
+
+            <div class="idea-body">
+              <div class="idea-quote" style="border-left-color: var(--accent-amber); background: rgba(251, 191, 36, 0.05);">
+                “把‘今天背了 40 个词’这种冷冰冰的数字，换成一只会饿、会撑、会消沉、会因为你回来而发光的活物。用户舍不得的不是连续打卡天数，而是自己亲手喂大的那只兽。”
+              </div>
+
+              <div class="section-title">原始设想与风险</div>
+              <div class="principle-box" style="background: rgba(251, 191, 36, 0.04); border-color: rgba(251, 191, 36, 0.16); color: #fde68a;">
+                <strong style="color: var(--accent-amber);">原始设想：</strong>每天打卡完成背词目标 → 送「灵光泡泡（记忆能量泡泡）」 → 泡泡裂变为小食品 → 喂给宠物。<br/>
+                <strong style="color: var(--accent-amber);">两周魔咒：</strong>「1 泡泡换 1 食物、喂一次涨一格」如果只是重复动作，节奏固定、反馈可预测、宠物没有脾气，第 14 天就变成每天多按两次的机械负担。下面三处升级专治这个：<strong>泡泡有等级</strong>（背词的认真程度决定产出）、<strong>食物有身份</strong>（吃进去的是你今天背的词）、<strong>宠物有反应</strong>（它会饿、会闹、会因为你回来而进化）。
+              </div>
+
+              <div class="section-title">三个设计支点（吸引力从哪来）</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 把「记录」变成「生命」</strong>
+                  <p>打卡天数从数字变成宠物的体态、情绪与形态。用户看到的不是进度条，而是自己养出来的东西。这比数字更有黏性，因为它随时可能失去。宠物有四种状态：<strong>精神饱满 / 好奇饥饿 / 委屈消沉 / 昏睡</strong>。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 把「打卡」变成「开盲盒」</strong>
+                  <p>泡泡不是等价代币：连击产出闪耀泡泡、攻克顽固词产出解毒泡泡、合成盲盒泡泡可能开出稀有食物或装扮。每次打卡的产出不确定，用户会想知道「今天能开出什么」。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>③ 宠物给的是真能力，不是皮肤</strong>
+                  <p>进化到高阶后，宠物会解锁<strong>真实的学习辅助</strong>：必考词标记、写作替换词推荐、发音连读拆解点。让「养宠物」和「背得更快」是同一件事——这也是唯一能让用户长期留下来的理由。</p>
+                </div>
+              </div>
+
+              <div class="section-title">宠物形象示意（纯 CSS 绘制，最终以 UI 矢量为准）</div>
+              <div class="pet-panel">
+                <div class="pet-stage">
+                  <svg viewBox="0 0 200 200" role="img" aria-label="记忆守护兽形象示意">
+                    <defs>
+                      <radialGradient id="guardianBody" cx="35%" cy="28%" r="78%">
+                        <stop offset="0%" stop-color="#a7f3d0" stop-opacity="0.95"></stop>
+                        <stop offset="55%" stop-color="#6ee7b7" stop-opacity="0.45"></stop>
+                        <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.18"></stop>
+                      </radialGradient>
+                    </defs>
+                    <circle cx="100" cy="112" r="82" fill="none" stroke="rgba(110,231,183,0.18)" stroke-dasharray="2 7"></circle>
+                    <ellipse cx="100" cy="118" rx="60" ry="62" fill="url(#guardianBody)" stroke="rgba(167,243,208,0.5)" stroke-width="1.5"></ellipse>
+                    <circle cx="78" cy="110" r="9" fill="#0d0f12"></circle>
+                    <circle cx="122" cy="110" r="9" fill="#0d0f12"></circle>
+                    <circle cx="81" cy="106" r="3.2" fill="#6ee7b7"></circle>
+                    <circle cx="125" cy="106" r="3.2" fill="#6ee7b7"></circle>
+                    <ellipse cx="84" cy="150" rx="8" ry="4.5" fill="rgba(13,15,18,0.55)"></ellipse>
+                    <ellipse cx="116" cy="150" rx="8" ry="4.5" fill="rgba(13,15,18,0.55)"></ellipse>
+                    <ellipse cx="72" cy="80" rx="15" ry="9" fill="#ffffff" opacity="0.28"></ellipse>
+                    <circle cx="36" cy="76" r="6.5" fill="none" stroke="rgba(110,231,183,0.75)" stroke-width="1.5"></circle>
+                    <circle cx="168" cy="88" r="4.5" fill="none" stroke="rgba(96,165,250,0.75)" stroke-width="1.5"></circle>
+                    <circle cx="152" cy="158" r="9" fill="none" stroke="rgba(251,191,36,0.65)" stroke-width="1.5"></circle>
+                    <circle cx="52" cy="160" r="3.5" fill="rgba(192,132,252,0.7)"></circle>
+                    <ellipse cx="100" cy="188" rx="44" ry="6" fill="rgba(0,0,0,0.35)"></ellipse>
+                  </svg>
+                  <div class="pet-mood">
+                    <span class="mood-chip now">今日 · 精神饱满</span>
+                    <span class="mood-chip">饥饿</span>
+                    <span class="mood-chip">消沉</span>
+                    <span class="mood-chip">昏睡</span>
+                  </div>
+                </div>
+                <div class="pet-lines">
+                  <div class="pet-line"><b>饱食状态 · 吃到今天的词</b>“Crisp! Worth remembering.”</div>
+                  <div class="pet-line"><b>情绪低谷 · 断更一天</b>“I'm getting dim… feed me a word?”</div>
+                  <div class="pet-line"><b>进化瞬间 · 首次升阶</b>“You've grown a Guardian.”</div>
+                  <div class="pet-line"><b>宠物台词直接复用用户今天背过的词</b>：宠物吃的词越高级，台词使用的词越高级。台词本身就是一次轻度语境复习，不额外占用用户时间。</div>
+                </div>
+              </div>
+
+              <div class="section-title">第一环 · 泡泡获取：打卡是唯一入口，答得好才有惊喜</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>基础泡泡</strong>
+                  <p>完成当日背词目标即得；连续打卡每天递增 1 枚，<strong>上限 5 枚</strong>封顶。断更一天只影响当天倍率，不清零历史累积。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>暴击泡泡（连击出闪耀）</strong>
+                  <p>整个学习环节全对、或连续答对达到阈值（建议 5 连对）时额外掉落；闪耀泡泡可直接换稀有食物。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>解毒泡泡（专治顽固词）</strong>
+                  <p>当天攻克了反复答错的高频错词、或清空了错题本里的一批词，额外赠送。奖励「把短板补上」这件最难的事。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>补卡泡泡</strong>
+                  <p>断更后补做<strong>双倍复习量</strong>可得；仅恢复宠物状态，<strong>不恢复连续天数</strong>。保持公平感，避免「买补签」损伤公信力。</p>
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>泡泡 / 食物</th>
+                    <th>怎么得到</th>
+                    <th>在体系里的作用</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td data-label="泡泡 / 食物">灵光泡泡</td>
+                    <td data-label="怎么得到">当日完成背词目标</td>
+                    <td data-label="作用">基础产出，裂变为口粮</td>
+                  </tr>
+                  <tr>
+                    <td data-label="泡泡 / 食物">闪耀泡泡</td>
+                    <td data-label="怎么得到">全对通过 / 连击达标</td>
+                    <td data-label="作用">可换稀有食物与装扮</td>
+                  </tr>
+                  <tr>
+                    <td data-label="泡泡 / 食物">解毒泡泡</td>
+                    <td data-label="怎么得到">攻克顽固错词</td>
+                    <td data-label="作用">可换恢复类食品</td>
+                  </tr>
+                  <tr>
+                    <td data-label="泡泡 / 食物">盲盒泡泡</td>
+                    <td data-label="怎么得到">10 枚普通泡泡在泡泡实验室合成</td>
+                    <td data-label="作用">概率掉落稀有食物、成套装扮</td>
+                  </tr>
+                  <tr>
+                    <td data-label="泡泡 / 食物">词汇罐头</td>
+                    <td data-label="怎么得到">泡泡直接裂变</td>
+                    <td data-label="作用">普通口粮，涨饱食度</td>
+                  </tr>
+                  <tr>
+                    <td data-label="泡泡 / 食物">四级巧克力 / 六级能量胶</td>
+                    <td data-label="怎么得到">盲盒中概率开出</td>
+                    <td data-label="作用">额外涨进化值</td>
+                  </tr>
+                  <tr>
+                    <td data-label="泡泡 / 食物">雅思马卡龙 / 考研浓缩咖啡</td>
+                    <td data-label="怎么得到">盲盒稀有产出</td>
+                    <td data-label="作用">高阶进化材料</td>
+                  </tr>
+                  <tr>
+                    <td data-label="泡泡 / 食物">记忆软糖</td>
+                    <td data-label="怎么得到">打卡后有概率掉落</td>
+                    <td data-label="作用">当天复习效率加成</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="section-title">第二环 · 裂变与合成：把「兑换」变成「实验室」</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>泡泡实验室（收纳所有气泡，集中处置）</strong>
+                  <p>学习主流程里泡泡只飘走、不处理；攒下的气泡统一到小窝里的「泡泡实验室」处置，三个按钮解决全部操作：<strong>戳破、合成盲盒、直接兑换</strong>。节奏可预期，又不无聊。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>盲盒与保底</strong>
+                  <p>10 枚普通泡泡合成盲盒泡泡，戳破有概率出稀有食物或装扮；<strong>累计 10 次必出一次稀有</strong>，并且允许「不要随机、直接兑换指定食物」，把选择权还给用户。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>社交裂变 · 求助卡</strong>
+                  <p>背不下来的难词可生成一张分享卡给朋友或群聊，好友点开帮你打气，<strong>双方各得一份双倍泡泡</strong>。裂变动作被包装成「帮朋友打气」，而不是发广告。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>社交裂变 · 双人共养与互踩</strong>
+                  <p>邀请 1 位好友共养一只守护兽，双方打卡共同喂养、共同进化（避免多人共养造成的责任分散）；未领取的泡泡可在好友间互踩互动，只出不进，不涉及金钱兑换。</p>
+                </div>
+              </div>
+
+              <div class="section-title">第三环 · 喂养反馈：宠物有脾气，台词在复习</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>情绪状态由今日表现驱动</strong>
+                  <p>当天完成复习 → 精神饱满、吐彩虹泡泡；两天未上线 → 褪色发瘪；连续断更 3 天以上 → 昏睡（唤醒需完成一次复习挑战）。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>English 弹幕台词</strong>
+                  <p>吃对了会蹦台词：“Yummy! You mastered 20 words today.”；饿了会催：“I'm hungry, let's learn!”。台词按宠物当前词库等级切换，本身就是一次极轻量的语境复习。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>喂养节奏不打断心流</strong>
+                  <p>学习过程中即时冒泡泡（约 300 毫秒、不阻塞下题）；<strong>喂养集中到当日学习结束后的「开饭」一次</strong>，不打断答题节奏。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>小窝与装扮</strong>
+                  <p>喂养掉落的硬币用于购买壁纸、摆件、宠物配饰；考试季限时主题（四六级冲刺季、考研冬训季），制造短期冲刺理由。</p>
+                </div>
+              </div>
+
+              <div class="section-title">第四环 · 进化与技能：养的不是皮肤，是学习能力</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>形态进化树</strong>
+                  <p>累计投喂量 + 连续打卡推进五个形态：<strong>泡芽 → 幼兽 → 灵兽 → 守护兽 → 记忆巨兽</strong>。进化方向由主背词库决定：考研/四六级 → 学者系；雅思/托福 → 英伦系；口语/听力 → 环球系；中小学 → 学院系。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>伴生技能（真能力）</strong>
+                  <p>学者的洞察：每日标出 10 个必考易错词；英伦的优雅：写作替换词与搭配推荐；环球的口音：连读与弱读拆解点；学院的守护：生词免死金牌（答错不计入今日错误）。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>技能挂在宠物身上</strong>
+                  <p>不新增一套设置项，技能随形态自动生效并在小窝里展示。用户看到的是「我的兽能帮我什么」，而不是「我买到了什么功能」。</p>
+                </div>
+              </div>
+
+              <div class="section-title">桌面与唤醒</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>主屏小组件</strong>
+                  <p>宠物直接显示在手机主屏：饥饿状态 + 今日剩余词量。不打开 App 也能看到它在等你，提升每日打开率。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>唤醒机制</strong>
+                  <p>宠物昏睡时，一次小复习即可唤醒，并给一个可观的奖励包——把「流失用户回来」这件事，做成一次有仪式感的救援。</p>
+                </div>
+              </div>
+
+              <div class="section-title">五个陷阱与对应处理</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 喂养变成每日必修作业</strong>
+                  <p>连续 3 天喂养才算进化一档；漏喂只降低当日产出倍率，<strong>不扣历史进度</strong>。宠物不会因为一次断更永久衰败。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 抽卡概率变成核心吸引力</strong>
+                  <p>概率只是「惊喜感」：十连必出 + 允许直接兑换指定食物，避免用户刷概率而不是背词。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>③ 情感绑架引发反感</strong>
+                  <p>不写「你的宠物快饿死了」这类负罪文案；宠物允许休眠，回来一次即可唤醒。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>④ 两个泡泡概念打架</strong>
+                  <p>「单词泡泡天空」（IDEA #001）是即时反馈，「灵光泡泡」是养成货币。建议在 UI 上把后者统一叫「能量泡泡」并配独立图标，避免用户混淆两套泡泡。</p>
+                </div>
+                <div class="feature-item wide">
+                  <strong>⑤ 第 60 天数词膨胀、新手追不上</strong>
+                  <p>形态与技能线有限且前置门槛低（不作无上限成长）；赛季主题定期重置，给新用户一个「并入当前赛季即可玩」的入口。</p>
+                </div>
+              </div>
+
+              <div class="section-title">与已有创意 IDEA #001 的关系（必须说清）</div>
+              <div class="principle-box">
+                <strong>IDEA #001 否决的是「背词过程中插入宠物动画」，不是「宠物养成」本身。</strong>当时被砍掉的是「宠物嚼糖吐泡」这种夹在答题中间、阻塞快节奏复习的两步操作。<br/>
+                本方案的定位是<strong>背词之外的仪式感小窝</strong>：即时反馈归「单词泡泡天空」（掌握单词 → 泡泡直接升空），养成仪式归「记忆守护兽」，两者共享同一份背词数据，但当天新增操作次数为零——学习界面里泡泡只负责飘过，喂养统一发生在一天结束后的「开饭」时刻。
+              </div>
+
+              <div class="section-title">待拍板（未定项 · 已给建议）</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 是否需要真实支付通道</strong>
+                  <p>建议：暂时不做。付费点只做「加速」不做「解锁」：装扮、赛季皮肤、加速道具。补卡一律用分享或双倍复习换取，绝不出售补签。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 社交玩法范围</strong>
+                  <p>建议：先限定「同桌/学习小组」内可用（共用现有 study_group），暂不开全站泡泡广场，避免内容审核与运营成本失控。</p>
+                </div>
+                <div class="feature-item wide">
+                  <strong>③ 宠物形象与命名</strong>
+                  <p>建议：统一名称用「记忆守护兽」，个体形态由系统生成、昵称由用户自定义。现有形象库里有泡泡龙、词霸怪、语感狐，若定名需先补进项目术语表再使用。</p>
+                </div>
+              </div>
+
+              <div class="actions-footer">
+                <span class="action-link" onclick="copyIdeaMarkdown('idea-007')">复制摘要 Markdown</span>
+              </div>
+            </div>
+          </article>
 
           <!-- 创意 #006: 沉浸式 AI 角色对话 · 强制输出目标词 -->
           <article class="idea-card" id="idea-006">
@@ -1380,6 +1824,16 @@
 - **核心逻辑**：对战中向对手施放，使对方接下来的答题混淆选项全部来自当前单词的「形近词」释义。
 - **认知痛点**：打破常规随机选项的简单排除法，逼出真正的精准辨析能力，大幅增加失误与犹豫率。
 - **机制与实现**：持续 2~3 题，复用编辑距离 ≤ 2 的形近词体系，支持无缝降级兜底。`;
+      if (id === 'idea-007') {
+        text = `### 记忆守护兽：打卡泡泡 · 裂变喂养 · 进化解锁技能
+- **核心逻辑**：把打卡天数这种冷数字，换成一只会饿、会闹、会因为你回来而进化的活物。
+- **泡泡获取**：基础泡泡（完成当日目标，连续打卡递增封顶 5 枚）、暴击泡泡（全对/连击）、解毒泡泡（攻克顽固错词）、补卡泡泡（双倍复习量，只恢复状态不恢复连续天数）。
+- **裂变合成**：灵光泡泡攒着，集中到泡泡实验室戳破、合成盲盒、直接兑换；10 枚合成盲盒泡泡，累计 10 次必出稀有，并保留直接兑换指定的选择权。
+- **喂养反馈**：宠物情绪由今日表现驱动（饱满/饥饿/消沉/昏睡），English 弹幕台词复用用户今天背过的词；喂养统一放在一天结束后的「开饭」，不打断答题心流。
+- **进化与技能**：泡芽到记忆巨兽五阶，进化方向由主背词库决定；高阶解锁真能力（必考词标记、写作替换词、连读拆解、生词免死金牌）。
+- **社交与唤醒**：难词求助卡双方各得双倍泡泡、双人共养、未领取泡泡互踩；主屏小组件显示饥饿状态与今日剩余词量，昏睡宠物靠一次小复习唤醒。
+- **风险处理**：不把喂养做成必修作业（漏喂不扣历史进度）、抽卡只做惊喜不做核心、不用负罪文案、与 IDEA #001 单词泡泡天空分工互不干扰（即时反馈归天空，养成仪式归守护兽）。
+- **待拍板**：暂不做真实支付（付费只做加速不做解锁）、社交先限定同桌学习小组、形象统一叫「记忆守护兽」并补进项目术语表。`;
       } else if (id === 'idea-003') {
         text = `### UGC 冷启动破局：AI 策展评分与动态新星展位（AI Curator & Star Slot）
 - **核心逻辑**：针对因缺乏曝光而零点赞的优质新 UGC，由 AI 进行多维度质量评分并赋予专属新星展位。
