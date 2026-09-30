@@ -55,19 +55,12 @@ class LearningWordsProvider with WordsProvider {
 
   @override
   Future<bool?> getWordLearningStatus(String wordId) async {
-    // "学习中"页面的所有单词都是学习中的，所以直接返回 false
-    // 如果需要更精确的状态（检查是否已掌握），可以查询 masteredWords 表
-    final user = Global.getLoggedInUser();
-    if (user == null) return null;
-
-    final db = MyDatabase.instance;
-
-    // 检查是否已掌握（可能从学习中升级为已掌握）
-    final isMastered = await db.masteredWordsDao.isWordMastered(user.id, wordId);
-    if (isMastered) return true; // 已掌握 
-
-    // 页面中的单词本身就是学习中的，返回 false 
-    return false;
+    // 口径按真实数据：在「已掌握」词书 → 已掌握；有学习进度记录 → 学习中；其余 → 未学习。
+    // 不能按"本页面的词都是学习中的"直接返回 false：取消掌握会删掉该词的学习进度记录，
+    // 此时再返回 false 就会把它显示成"学习中 0%"，而不是既定的「未学习」。
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return null;
+    return (await WordBo.getWordsLearningStatusBatch(userId, [wordId]))[wordId];
   }
 
   @override

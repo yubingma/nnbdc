@@ -1,4 +1,3 @@
-import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/router.dart';
 import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
@@ -69,10 +68,12 @@ class WrongWordsProvider with WordsProvider {
 
   @override
   Future<bool?> getWordLearningStatus(String wordId) async {
+    // 口径按真实数据：在「已掌握」词书 → 已掌握；有学习进度记录 → 学习中；其余 → 未学习。
+    // 不能只看是否已掌握：取消掌握会删掉该词的学习进度记录，
+    // 此时若一律返回 false 就会把它显示成"学习中 0%"，而不是既定的「未学习」。
     final userId = Global.getLoggedInUser()?.id;
-    if (userId == null) return false;
-    // 检查单词是否已在 mastered_words 表中达成掌握
-    return await MyDatabase.instance.masteredWordsDao.isWordMastered(userId, wordId);
+    if (userId == null) return null;
+    return (await WordBo.getWordsLearningStatusBatch(userId, [wordId]))[wordId];
   }
 }
 

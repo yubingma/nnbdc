@@ -6,7 +6,13 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/page/word_list/bucket_words.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
+import 'package:nnbdc/page/word_list/learning_words.dart';
+import 'package:nnbdc/page/word_list/today_new_words.dart';
+import 'package:nnbdc/page/word_list/today_old_words.dart';
+import 'package:nnbdc/page/word_list/word_list.dart';
+import 'package:nnbdc/page/word_list/wrong_words.dart';
 import 'package:nnbdc/util/app_clock.dart';
 
 void main() {
@@ -135,6 +141,9 @@ void main() {
             updateTime: now,
           ));
       Global.currentUserId = userId;
+      // 词表数据源的状态查询读的是 Global.getLoggedInUser()，这里把用户放进内存缓存，
+      // 否则它们一律返回 null（等同于未登录），断言会变成空跑
+      Global.updateUserCache((await db.usersDao.getUserById(userId))!);
 
       await _insertDict(db, now, 'dict_main', '主词书', userId);
       await _insertDict(db, now, 'dict_mastered', '已掌握', userId);
@@ -262,6 +271,25 @@ void main() {
           reason: '取消掌握 = 从零重学，词书列表必须按「未学习」呈现');
       expect(listStatus == false, isFalse,
           reason: '不能因为写了 0.0 就把该词算成"学习中"');
+    });
+
+    test('今日新词/今日旧词/学习中/小桶/错题本的单一状态查询与词书列表同口径', () async {
+      final providers = <WordsProvider>[
+        TodayNewWordsProvider(),
+        TodayOldWordsProvider(),
+        LearningWordsProvider(),
+        BucketWordsProvider(1),
+        WrongWordsProvider(),
+      ];
+      for (final provider in providers) {
+        final name = provider.runtimeType.toString();
+        expect(await provider.getWordLearningStatus('w1') == null, isTrue,
+            reason: '$name: w1 没有学习进度记录 → 未学习（不能按页面假设硬编码成"学习中"）');
+        expect(await provider.getWordLearningStatus('w2') == false, isTrue,
+            reason: '$name: w2 有学习进度记录 → 学习中');
+        expect(await provider.getWordLearningStatus('w3') == true, isTrue,
+            reason: '$name: w3 在「已掌握」词书 → 已掌握');
+      }
     });
 
     test('isEffectivelyMastered 只认已掌握记录：S=150 但无记录 ⇒ 仍算学习中', () async {

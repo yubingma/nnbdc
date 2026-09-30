@@ -62,7 +62,12 @@ class BucketWordsProvider with WordsProvider {
 
   @override
   Future<bool?> getWordLearningStatus(String wordId) async {
-    return false; // Still learning
+    // 口径按真实数据：在「已掌握」词书 → 已掌握；有学习进度记录 → 学习中；其余 → 未学习。
+    // 不能按"本页面的词都是学习中的"直接返回 false：取消掌握会删掉该词的学习进度记录，
+    // 此时再返回 false 就会把它显示成"学习中 0%"，而不是既定的「未学习」。
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return null;
+    return (await WordBo.getWordsLearningStatusBatch(userId, [wordId]))[wordId];
   }
 }
 
