@@ -1170,6 +1170,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     final trackName = state.groupStepTrackName;
     final position = state.groupStepPosition;
     final total = state.groupStepTotal;
+    final isRetry = state.isGroupStepRetry;
     final hint = state.groupStepHint;
     final stepDesc = StudyStepExt.fromString(state.studyStep ?? '').description;
     return SizedBox(
@@ -1198,6 +1199,17 @@ extension BdcPageStateUIComponents on BdcPageState {
                             fontFamily: 'Roboto',
                           ),
                         ),
+                        // 本环节的重测：答错后回到队尾再答一遍。明确标出来，
+                        // 用户不会把它当成"新词怎么又出现一次"，排查时也一眼能认出这是重测。
+                        if (isRetry)
+                          const TextSpan(
+                            text: ' · 本环节重测',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFE65100),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -2999,6 +3011,11 @@ extension BdcPageStateUIComponents on BdcPageState {
   Widget _buildWordStepCard(BdcState state) {
     final primaryTextColor = context.textPrimary;
     final secondaryTextColor = context.textSecondary;
+    // 今天最近一次作答答错的词：拼写显示为红色，提醒"这个词你刚答错过"。
+    // 只染这个词本身，不改音标/例句等其他元素，避免整屏发红。
+    final spellColor = state.isLatestAnswerWrongToday
+        ? const Color(0xFFE53935)
+        : primaryTextColor;
 
     return Container(
       decoration: const BoxDecoration(
@@ -3022,7 +3039,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 44,
-                      color: primaryTextColor,
+                      color: spellColor,
                       fontFamily: 'Roboto',
                       letterSpacing: -0.6,
                     ),

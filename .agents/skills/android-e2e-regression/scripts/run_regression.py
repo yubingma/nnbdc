@@ -58,13 +58,14 @@ class PureE2ERegressionRunner:
             duration = round(time.time() - self.step_timer, 2)
         # 重置计时器，为下一步操作准备
         self.step_timer = time.time()
+        abs_path = os.path.abspath(screenshot) if screenshot else None
         res = {
             "step": step_name,
             "status": status,
             "details": details,
             "duration": duration,
             "screenshot": os.path.relpath(screenshot, REPORT_DIR) if screenshot else None,
-            "abs_screenshot": screenshot,
+            "abs_screenshot": abs_path,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         self.results.append(res)
@@ -231,12 +232,15 @@ class PureE2ERegressionRunner:
         time.sleep(0.5)
         self.device.clear_text_input(10)
         self.device.input_text("okay")
-        time.sleep(0.5)
-        self.device.press_key(4)  # 隐藏软键盘
-        time.sleep(1)
+        time.sleep(0.8)
 
-        # 5. 点击「确认注销」
-        confirm_btn = self.device.find_element(text="确认注销")
+        # 5. 点击「确认注销」或「确定」
+        confirm_btn = self.device.find_element(text="确认注销") or self.device.find_element(text="确定")
+        if not confirm_btn:
+            self.device.press_key(4)  # 隐藏软键盘
+            time.sleep(1)
+            confirm_btn = self.device.find_element(text="确认注销") or self.device.find_element(text="确定")
+
         if not confirm_btn:
             print("[!] 未找到「确认注销」按钮")
             return False
@@ -605,13 +609,13 @@ class PureE2ERegressionRunner:
             if any(k in all_text_joined for k in ("学习完成", "打卡成功", "已打卡", "打卡成果", "今日已打卡", "再来一组", "生成打卡海报", "前往词表")):
                 in_finish_page = True
                 print(f"[*] 第 {turn} 步：检测到已完成当日全部计划，成功进入完成打卡页！")
+                time.sleep(3.0)
                 break
 
-            # 2. 弹窗拦截（若意外弹出「记忆历史」或包含「关闭」按钮，主动点击关闭，防止阻断主流程）
-            close_btn = self.device.find_element(text="关闭", nodes=nodes)
-            if close_btn and any(k in all_text_joined for k in ("记忆历史", "历史", "测评结果", "关闭")):
-                print(f"[*] 第 {turn} 步：检测到页面存在弹窗蒙层（如记忆历史），点击「关闭」恢复流转...")
-                self.device.click_element(close_btn)
+            # 2. 如果检测到意外弹出的「记忆历史」等对话框遮罩，按返回键优雅收起
+            if any(n.get("text") == "记忆历史" for n in nodes) or "记忆历史" in all_text_joined and "下次复习:" in all_text_joined:
+                print(f"[*] 第 {turn} 步：检测到「记忆历史」对话框，按返回键收起...")
+                self.device.press_key(4)
                 time.sleep(0.5)
                 continue
 
@@ -630,19 +634,29 @@ class PureE2ERegressionRunner:
                 time.sleep(0.3)
                 continue
 
-            # 5. 专项交互测试：手动改变评分测试（在第 2~6 轮中，当底部展示「测评结果: 忘记」时触发一次）
-            if not rating_modify_tested and (2 <= turn <= 8):
-                rating_panel = (self.device.find_element(text="测评结果: 忘记", exact=False, nodes=nodes) or 
-                                self.device.find_element(text="测评结果:", exact=False, nodes=nodes))
-                if rating_panel:
-                    print(f"[*] [专项测试] 触发手动改变评分测试：点击底栏「{rating_panel.get('text')}」...")
-                    shot_before = self.capture("before_manual_rating_modify")
+            # 5. 专项交互测试：手动改变评分测试（只要底栏出现测评结果且未测试过时触发）
+            if not rating_modify_tested and (3 <= turn <= 30) and ("测评结果" in all_text_joined):
+                print(f"[*] [专项测试] 触发手动改变评分测试：点击底栏测评结果...")
+                shot_before = self.capture("before_manual_rating_modify")
+                # 寻找包含「测评结果」的节点
+                rating_panel = None
+                for n in nodes:
+                    txt = (n.get("text") or "") + " " + (n.get("label") or "")
+                    if "测评结果" in txt and n.get("center") and n["center"][1] > 1500:
+                        rating_panel = n
+                        break
+
+                if rating_panel and rating_panel.get("center"):
                     self.device.click_element(rating_panel)
-                    time.sleep(0.8)
+                else:
+                    # 屏幕物理兜底坐标：底栏「测评结果: 忘记」居于 X=310, Y=2000
+                    self.device.click(310, 2000)
+                time.sleep(1.2)
 
-                    dialog_nodes = self.device.dump_ui_hierarchy()
+                dialog_nodes = self.device.dump_ui_hierarchy()
+                dialog_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in dialog_nodes)
+                if "修改今日评分" in dialog_text or "良好" in dialog_text:
                     shot_dialog = self.capture("manual_rating_modify_dialog")
-
                     good_opt = self.device.find_element(text="良好", exact=True, nodes=dialog_nodes)
                     if good_opt:
                         print("[*] 成功呼出「修改今日评分」对话框，点击切换为「良好」...")
@@ -659,12 +673,17 @@ class PureE2ERegressionRunner:
                         else:
                             self.log("手动修改评分交互测试", "PASSED", 
                                      "成功唤起「修改今日评分」对话框并成功提交「良好」评分", shot_after)
-                        rating_modify_tested = True
-                        continue
                     else:
-                        print("[!] 未在对话框中检索到「良好」选项，按返回键关闭对话框...")
+                        print("[!] 对话框中未定位到「良好」选项，按返回键收起对话框...")
                         self.device.press_key(4)
                         time.sleep(0.5)
+                else:
+                    print("[!] 点击测评结果未弹出修改今日评分对话框，跳过本专项测试...")
+
+                # 关键保障：单次测试立即置为 True，绝不重试阻塞后续正常做题！
+                rating_modify_tested = True
+                time.sleep(0.5)
+                continue
 
             # 6. 抽样测试「掌握」按钮（在第 8~18 步之间触发一次）
             if not mastered_tested and (8 <= turn <= 18):
@@ -702,11 +721,12 @@ class PureE2ERegressionRunner:
                     time.sleep(0.3)
                     continue
 
-            # 8. 选择题模式处理（纯内存加权查找，彻底排除底栏状态与测评结果文本）
+            # 8. 选择题模式处理（限定在卡片选项区域 1250~1800，且严禁匹配纯数字与底栏状态）
             choice_candidates = [
                 n for n in nodes
                 if n.get("clickable") and n.get("bounds")
-                and 1350 <= n.get("center", (0, 0))[1] <= 2000
+                and 1250 <= n.get("center", (0, 0))[1] <= 1800
+                and not (n.get("text") or "").strip().isdigit()
                 and n.get("label") not in ("不认识", "再学学", "说释义", "说发音", "显示翻译", "默写", "掌握", "报错", "回看")
                 and not any(k in (n.get("text") or "") or k in (n.get("label") or "") for k in ("测评结果", "下次复习", "记忆历史", "关闭"))
             ]
@@ -732,6 +752,7 @@ class PureE2ERegressionRunner:
                 if nxt:
                     self.device.click_element(nxt)
                     time.sleep(0.3)
+                continue
             elif study_again_btn:
                 self.device.click_element(study_again_btn)
                 time.sleep(0.4)
@@ -739,6 +760,7 @@ class PureE2ERegressionRunner:
                 if nxt:
                     self.device.click_element(nxt)
                     time.sleep(0.3)
+                continue
             else:
                 time.sleep(0.3)
 
@@ -851,12 +873,8 @@ class PureE2ERegressionRunner:
                 nodes = self.device.dump_ui_hierarchy()
                 all_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in nodes)
                 if any(k in all_text for k in ("学习完成", "打卡成功", "已打卡", "今日已打卡", "再来一组", "生成打卡海报", "前往词表")):
+                    time.sleep(3)
                     break
-                close_btn = self.device.find_element(text="关闭", nodes=nodes)
-                if close_btn:
-                    self.device.click_element(close_btn)
-                    time.sleep(0.4)
-                    continue
                 nxt = self.device.find_element(text="下一词", nodes=nodes) or self.device.find_element(text="下一组", nodes=nodes)
                 if nxt:
                     self.device.click_element(nxt)

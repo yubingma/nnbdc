@@ -40,6 +40,8 @@ class BdcStateUiSignature {
   final int groupStepPosition;
   final int groupStepTotal;
   final String? groupStepTrackName;
+  final bool isGroupStepRetry;
+  final bool isLatestAnswerWrongToday;
   final String? groupStepHint;
 
   BdcStateUiSignature(BdcState s)
@@ -81,6 +83,8 @@ class BdcStateUiSignature {
         groupStepPosition = s.groupStepPosition,
         groupStepTotal = s.groupStepTotal,
         groupStepTrackName = s.groupStepTrackName,
+        isGroupStepRetry = s.isGroupStepRetry,
+        isLatestAnswerWrongToday = s.isLatestAnswerWrongToday,
         groupStepHint = s.groupStepHint;
 
   @override
@@ -124,6 +128,8 @@ class BdcStateUiSignature {
         groupStepPosition == other.groupStepPosition &&
         groupStepTotal == other.groupStepTotal &&
         groupStepTrackName == other.groupStepTrackName &&
+        isGroupStepRetry == other.isGroupStepRetry &&
+        isLatestAnswerWrongToday == other.isLatestAnswerWrongToday &&
         groupStepHint == other.groupStepHint;
   }
 
@@ -166,6 +172,8 @@ class BdcStateUiSignature {
         groupStepPosition,
         groupStepTotal,
         groupStepTrackName,
+        isGroupStepRetry,
+        isLatestAnswerWrongToday,
         groupStepHint,
       ]);
 }

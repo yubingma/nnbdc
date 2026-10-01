@@ -34,6 +34,7 @@ import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/phase_presentation_tracker.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/study_consistency_checker.dart';
 import 'package:nnbdc/util/sync.dart';
@@ -583,6 +584,9 @@ class BdcNotifier extends _$BdcNotifier {
         loadError: '学习已完成',
         word: null,
         wordWrapper: null,
+        // 已经没有当前词了：标红提示必须跟着消失，否则会留给下一个"词"（其实已无词）
+        isLatestAnswerWrongToday: false,
+        isGroupStepRetry: false,
       );
       // 今日学习列表已全部走完（含加量批次）。必须显式广播这个业务事实：
       // 紧随其后的 pushReplacement 会让计划页 push('/bdc') 的 future 永不完成，
@@ -595,6 +599,8 @@ class BdcNotifier extends _$BdcNotifier {
         loadError: '当前书本没有正在学习的单词',
         word: null,
         wordWrapper: null,
+        isLatestAnswerWrongToday: false,
+        isGroupStepRetry: false,
       );
       goRouter.push("/select_book");
       return false;
@@ -619,6 +625,8 @@ class BdcNotifier extends _$BdcNotifier {
         groupStepPosition: 0,
         groupStepTotal: 0,
         groupStepTrackName: null,
+        isGroupStepRetry: false,
+        isLatestAnswerWrongToday: false,
         groupStepHint: null,
       );
       
@@ -672,6 +680,12 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     if (oldStudyStep != newStudyStep || isFromBatchWordList) {
+      // 换环节（含从本组小结回来）时清掉"本环节已出过题"的记录：
+      // 那份记录只服务于当前环节的 x/y 指示，留着会让下一个环节的分子偏大
+      //（脏数据也只是显示问题：分子会被夹在 [1, 分母] 内）
+      if (oldStudyStep != newStudyStep) {
+        unawaited(PhasePresentationTracker.clear());
+      }
       final asrInitStopwatch = Stopwatch()..start();
       await asr.initAsr(onAsrResult);
       Global.logger.d('[PERF] handleWord -> asr.initAsr cost: ${asrInitStopwatch.elapsedMilliseconds}ms');
@@ -758,6 +772,11 @@ class BdcNotifier extends _$BdcNotifier {
       isWordMastered: false,
       isPttPressed: false,
       isPracticeMode: false,
+      // 跨词残留防护：重测标记只对"当前词"成立，换词先清掉，等 _refreshGroupStepProgress 写回真实值
+      isGroupStepRetry: false,
+      // 今天最近一次作答答错的词：拼写显示为红色（数据来自本词的今日评分流水，随呈现刷新）
+      isLatestAnswerWrongToday:
+          trackResult.todayLatestLogRating == FsrsRating.again.value,
       // 跨词残留防护：该字段只由 _onAnswerCorrect 刷新，新词呈现时必须清空，
       // 否则预览会把上一个词的间隔套到当前词上（跨天复习误判为同日评分）
       daysSinceLastReview: null,
@@ -779,18 +798,6 @@ class BdcNotifier extends _$BdcNotifier {
       learningHistoryFuture = MyDatabase.instance.learningLogsDao.getHistory(currentUserId, wordId);
     } else {
       learningHistoryFuture = null;
-    }
-
-    if (state.wordWrapper != null) {
-      final previousUIState = state.wordUIStates[word.id];
-      if (previousUIState != null) {
-        if (previousUIState.asrMatchedMeaningItemParts != null) {
-          state.wordWrapper!.asrMatchedMeaningItemParts.addAll(previousUIState.asrMatchedMeaningItemParts!);
-        }
-        if (previousUIState.asrRevealedMeaningItemParts != null) {
-          state.wordWrapper!.asrRevealedMeaningItemParts.addAll(previousUIState.asrRevealedMeaningItemParts!);
-        }
-      }
     }
 
     String? englishDigest;
@@ -942,12 +949,18 @@ class BdcNotifier extends _$BdcNotifier {
         groupStepPosition: 0,
         groupStepTotal: 0,
         groupStepTrackName: null,
+        isGroupStepRetry: false,
         groupStepHint: null,
       );
       return;
     }
-    final progress =
-        await StudyBo().getBatchPhaseProgress(wordId: wordId, step: step);
+    final progress = await StudyBo().getBatchPhaseProgress(
+      wordId: wordId,
+      step: step,
+      // 本次调用就发生在"刚刚呈现这个词"之后：让指示器把本词记为已出题，
+      // 分子立刻包含它，用户才能看到 1/10 → 2/10 的前进
+      markPresentedWord: true,
+    );
     if (_isDisposed) return;
     // 计算期间已切到别的词/环节：这次结果作废，避免旧位置覆盖新词
     if (state.word?.id != wordId || state.studyStep != step) return;
@@ -965,6 +978,7 @@ class BdcNotifier extends _$BdcNotifier {
       groupStepPosition: progress?.position ?? 0,
       groupStepTotal: progress?.total ?? 0,
       groupStepTrackName: progress?.trackName,
+      isGroupStepRetry: progress?.isRetry ?? false,
       groupStepHint: hint,
     );
   }
@@ -999,25 +1013,41 @@ class BdcNotifier extends _$BdcNotifier {
 
   /// 当前取词结果所属单词的环节轨道（学习轨道/复习轨道）与是否复习轨道，用于把 stepIndex 映射为具体环节名。
   /// 轨道由今天首条评分日志的间隔固化（与 StudyBo 一致），防止当天轨道漂移。
-  Future<({List<String> track, bool isReview, int? todayFirstLogRating, int? todayFirstLogScheduledDays})> _trackOfCurrentWord(GetWordResult getWordResult) async {
+  Future<
+      ({
+        List<String> track,
+        bool isReview,
+        int? todayFirstLogRating,
+        int? todayFirstLogScheduledDays,
+        int? todayLatestLogRating,
+      })> _trackOfCurrentWord(GetWordResult getWordResult) async {
     final lw = getWordResult.learningWord;
     if (lw == null) {
-      return (track: const <String>[], isReview: false, todayFirstLogRating: null, todayFirstLogScheduledDays: null);
+      return (
+        track: const <String>[],
+        isReview: false,
+        todayFirstLogRating: null,
+        todayFirstLogScheduledDays: null,
+        todayLatestLogRating: null,
+      );
     }
     final userId = Global.getLoggedInUser()?.id;
     final wordId = lw.word.id;
     int? firstLogElapsedDays;
     int? firstLogRating;
     int? firstLogScheduledDays;
+    int? latestLogRating;
     if (userId != null && wordId != null) {
       // 业务日窗口 [03:00, 次日03:00) 由 LearningLogsDao.getInBusinessDay 统一给出，
       // 不能用 AppClock.today() 当下界：00:00~02:59 属于前一业务日
+      // 该查询按 createTime 正序返回：first = 今天首条（分轨依据），last = 今天最近一次（决定标不标红）
       final rows = await MyDatabase.instance.learningLogsDao
           .getInBusinessDay(userId, wordIds: [wordId]);
       final row = rows.isEmpty ? null : rows.first;
       firstLogElapsedDays = row?.elapsedDays;
       firstLogRating = row?.rating;
       firstLogScheduledDays = row?.scheduledDays;
+      latestLogRating = rows.isEmpty ? null : rows.last.rating;
     }
     final newCfg = await StudyStepsService().getThreeGroupConfig('new');
     final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
@@ -1048,6 +1078,7 @@ class BdcNotifier extends _$BdcNotifier {
       isReview: isReview,
       todayFirstLogRating: firstLogRating,
       todayFirstLogScheduledDays: firstLogScheduledDays,
+      todayLatestLogRating: latestLogRating,
     );
   }
 
@@ -1129,6 +1160,9 @@ class BdcNotifier extends _$BdcNotifier {
       lastFsrsRating: keepRating ? state.lastFsrsRating : FsrsRating.again,
       lastFsrsRatingReason: keepRating ? state.lastFsrsRatingReason : "手动查看答案",
       currentScore: 0, // 分数设为 0 代表未读对
+      // 看答案即记一次 again：这次评分已成为"今天最近一次"，拼写随即标红
+      // （练习模式不改今日评分，因此也不改标红状态）
+      isLatestAnswerWrongToday: keepRating ? state.isLatestAnswerWrongToday : true,
     );
     _handleTabChangeForAsr();
   }
@@ -1736,6 +1770,28 @@ class BdcNotifier extends _$BdcNotifier {
       // 按环节索引比较：相同 stepIndex 视为同环节，恢复完整答题状态
       // 不同 stepIndex（如测评→巩固）只恢复选项，重置答题状态，并将旧评分提取为测评参考
       if (uiState.stepIndex == result.stepIndex) {
+        // 同环节重新出题（本环节答错后回到队尾重练）：把上一轮已命中的释义带过来，
+        // 用户只需补上还没答出的那几个。
+        //
+        // 必须放在这个分支里、按 stepIndex 判定：换环节时不能继承 ——
+        // 否则上一环节答对过的释义会在新环节一开局就渲染成绿色，看起来像"答案被提前揭晓"。
+        final wrapper = state.wordWrapper;
+        if (wrapper != null) {
+          if (uiState.asrMatchedMeaningItemParts != null) {
+            for (final part in uiState.asrMatchedMeaningItemParts!) {
+              if (!wrapper.asrMatchedMeaningItemParts.contains(part)) {
+                wrapper.asrMatchedMeaningItemParts.add(part);
+              }
+            }
+          }
+          if (uiState.asrRevealedMeaningItemParts != null) {
+            for (final part in uiState.asrRevealedMeaningItemParts!) {
+              if (!wrapper.asrRevealedMeaningItemParts.contains(part)) {
+                wrapper.asrRevealedMeaningItemParts.add(part);
+              }
+            }
+          }
+        }
         state = state.copyWith(
           hasFinishedAnswering: uiState.hasFinishedAnswering,
           canLeaveCurrWord: uiState.canLeaveCurrWord,
@@ -2817,6 +2873,8 @@ class BdcNotifier extends _$BdcNotifier {
       lastFsrsRating: rating,
       lastFsrsRatingReason: reason,
       showHandwritingBoard: false,
+      // 这次答对：红色提示随即撤掉（本次评分已成为"今天最近一次"）
+      isLatestAnswerWrongToday: false,
     );
     _handleTabChangeForAsr();
     

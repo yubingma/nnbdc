@@ -11,6 +11,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/learning_service.dart';
+import 'package:nnbdc/util/phase_presentation_tracker.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/services/user_privilege_manager.dart';
@@ -92,6 +93,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Prefs.init();
     Prefs.write('currentUserId', testUser.id);
+    // 环节进度指示依赖"本环节已出过题"的本地记录；用例之间必须清干净
+    await PhasePresentationTracker.clear();
 
     // 不写 userStudySteps：走"未配置"默认三组（新词 En2Ch + 答对/答错 [Ch2En]），
     // 与今日学习计划页"学习轨道"展示的默认值一致
@@ -227,6 +230,7 @@ void main() {
       final group = await studyBo.getBatchPhaseProgress(
         wordId: wordId,
         step: step,
+        markPresentedWord: true, // 与学习页真实调用一致：呈现即记为已出题
       );
       seq.add((
         wordId: wordId,
@@ -338,8 +342,11 @@ void main() {
       // 只有 w_1 在测评环节答错；用各自轨道取真实环节名（同一个 stepIndex 可能是不同环节）
       final track = wordId == wrongWordId ? wrongTrack : rightTrack;
       final step = track[data.stepIndex];
-      final progress =
-          await studyBo.getBatchPhaseProgress(wordId: wordId, step: step);
+      final progress = await studyBo.getBatchPhaseProgress(
+        wordId: wordId,
+        step: step,
+        markPresentedWord: true, // 与学习页真实调用一致：呈现即记为已出题
+      );
       seq.add((
         wordId: wordId,
         groupNo: progress!.groupNo,
@@ -366,16 +373,16 @@ void main() {
     expect(second.first.wordId, wrongWordId);
 
     // 测评环节：整组同轨道，顺位 1..10。
-    // w_1 首答答错后并未走完本环节，其重练排到整组队尾 —— 而 x 的口径是
-    // "该轨道内已走完本环节的词数 + 1"，故 w_1 首答为 1、其余 9 个词依次为 1..9，
-    // 最后的 w_1 重练（补完本环节）为 10。
+    // x 的口径是"本环节已出过题的词数"（含答错待重练的词）：
+    // w_1 首答为 1，其余 9 个词依次为 2..10；最后的 w_1 回来重练时已记过，
+    // 仍占它那一格（10），既不加倍也不留空。
     final assess = group1.where((e) => e.stepIndex == 0).toList();
     expect(assess.map((e) => e.trackName).toSet(), {'新词测评'});
     expect(assess.map((e) => e.wordId).toList(), [
       'w_1', 'w_2', 'w_3', 'w_4', 'w_5', 'w_6', 'w_7', 'w_8', 'w_9', 'w_10', 'w_1',
     ], reason: '答错的词排在整组之后重练');
     expect(assess.map((e) => e.position).toList(),
-        [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10]);
     expect(assess.every((e) => e.total == batchSize), true);
 
     // 第二环节：两条轨道各走各的环节、各数各的词数
@@ -441,14 +448,14 @@ void main() {
     final seq = await playWholeDay(wrongOnceWordId: 'w_1');
 
     // 测评环节：整组同属一条轨道。w_1 首答答错后重练排到队尾，
-    // 而 x = 已走完本环节的词数 + 1，故序列为 1, 1..9, 10（最后一位是补完的 w_1）。
+    // 而 x = 本环节已出过题的词数，故序列为 1..10、最后的 w_1 重练仍是 10（不重复计数）。
     final en2Ch1 = seq.where((e) => e.step == 'En2Ch' && e.groupNo == 1).toList();
     expect(en2Ch1.map((e) => e.trackName).toSet(), {'新词测评'});
     expect(en2Ch1.map((e) => e.wordId).toList(), [
       'w_1', 'w_2', 'w_3', 'w_4', 'w_5', 'w_6', 'w_7', 'w_8', 'w_9', 'w_10', 'w_1',
     ], reason: '答错的 w_1 在整组之后重练');
     expect(en2Ch1.map((e) => e.groupPosition).toList(),
-        [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10]);
     expect(en2Ch1.every((e) => e.groupTotal == batchSize), true);
 
     // 汉译英：两条轨道各自从 1 数到自己那条轨道的词数（不是共用整组队列）

@@ -87,6 +87,14 @@ class BdcState extends Equatable {
   /// 见 StudyBo.getBatchPhaseProgress。
   final String? groupStepTrackName;
 
+  /// 当前词是否本环节的**重测**（本环节答错后回到队尾再答一次）。
+  /// 用于在进度指示里额外交代一句"本环节重测"，让用户与排查的人都看得出来这是重测而不是新词。
+  final bool isGroupStepRetry;
+
+  /// 当前词今天**最近一次作答**是否答错。
+  /// 为真时页面把单词拼写显示为红色，提醒"这个词你刚答错过"。
+  final bool isLatestAnswerWrongToday;
+
   /// 本组环节切换时的一次性轻提示（只在切换后第一个词上展示，切词即清空）
   final String? groupStepHint;
   
@@ -171,6 +179,8 @@ class BdcState extends Equatable {
     this.groupStepPosition = 0,
     this.groupStepTotal = 0,
     this.groupStepTrackName,
+    this.isGroupStepRetry = false,
+    this.isLatestAnswerWrongToday = false,
     this.groupStepHint,
     this.wordStartTime,
     this.firstMatchTime,
@@ -258,6 +268,8 @@ class BdcState extends Equatable {
     int? groupStepPosition,
     int? groupStepTotal,
     Object? groupStepTrackName = _sentinel,
+    bool? isGroupStepRetry,
+    bool? isLatestAnswerWrongToday,
     Object? groupStepHint = _sentinel,
     Object? wordStartTime = _sentinel,
     Object? firstMatchTime = _sentinel,
@@ -343,6 +355,8 @@ class BdcState extends Equatable {
       groupStepPosition: groupStepPosition ?? this.groupStepPosition,
       groupStepTotal: groupStepTotal ?? this.groupStepTotal,
       groupStepTrackName: groupStepTrackName == _sentinel ? this.groupStepTrackName : (groupStepTrackName as String?),
+      isGroupStepRetry: isGroupStepRetry ?? this.isGroupStepRetry,
+      isLatestAnswerWrongToday: isLatestAnswerWrongToday ?? this.isLatestAnswerWrongToday,
       groupStepHint: groupStepHint == _sentinel ? this.groupStepHint : (groupStepHint as String?),
       wordStartTime: wordStartTime == _sentinel ? this.wordStartTime : (wordStartTime as DateTime?),
       firstMatchTime: firstMatchTime == _sentinel ? this.firstMatchTime : (firstMatchTime as DateTime?),
@@ -428,6 +442,8 @@ class BdcState extends Equatable {
     groupStepPosition,
     groupStepTotal,
     groupStepTrackName,
+    isGroupStepRetry,
+    isLatestAnswerWrongToday,
     groupStepHint,
     wordStartTime,
     firstMatchTime,

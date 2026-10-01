@@ -28,6 +28,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/phase_presentation_tracker.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 
 /// 学习批次区间模型
@@ -1523,11 +1524,15 @@ class StudyBo {
   /// 注意：这只影响指示器的显示口径，不参与任何调度 —— 出题顺序仍由
   /// _calculateBatchStartIndex / _compareBatchWords 决定（整组横向混排）。
   ///
+  /// [isRetry] 为真表示当前词是**本环节的重测**：它本环节已经出过一次题（答错），
+  /// 这次是回到队尾再答一遍。学习页据此在指示里额外交代"本环节重测"。
+  ///
   /// 无法定位（当前词不在本组、或该词今天不走这个环节）时返回 null。
-  Future<({int position, int total, int groupNo, String trackName})?>
+  Future<({int position, int total, int groupNo, String trackName, bool isRetry})?>
       getBatchPhaseProgress({
     required String wordId,
     required String step,
+    bool markPresentedWord = false,
   }) async {
     final user = Global.getLoggedInUser();
     if (user == null) return null;
@@ -1621,14 +1626,44 @@ class StudyBo {
         );
     final currentTrackName = trackNameOf(current);
     final sameTrack = entries.where((e) => trackNameOf(e) == currentTrackName);
-    final done =
-        sameTrack.where((e) => e.learnedTimes > stepIndexInTrack).length;
-
-    return (
-      position: done + 1,
-      total: sameTrack.length,
+    // x = 本环节"已出过题"的词数（含答错待重练的词），由 PhasePresentationTracker 记录。
+    //
+    // 为什么不用"已走完本环节的词数 + 1"：本环节第一个词点「不认识」时它没走完本环节、
+    // 不计入完成，于是下一个词上来仍是 1/10，用户看着就是"序号不往前走"。
+    // 为什么必须单独记一份：同一环节里"答错待重练的词"与"还没轮到的词"在 learning_word 上
+    // 完全同态（todayLearnedTimes 都等于当前环节序号），评分流水里也没有"第几次出题"。
+    final alreadyPresented = PhasePresentationTracker.presentedWordIds(
       groupNo: currentBatch.groupNo,
       trackName: currentTrackName,
+      stepIndex: stepIndexInTrack,
+    );
+    // 重测 = 本环节已经出过一次题（在记录里），但该词还没走完本环节（learnedTimes 仍停在本环节）。
+    // 必须在 markPresented 之前算，否则刚呈现的自己会被算成"已出过题"。
+    final bool isRetry =
+        alreadyPresented.contains(wordId) && current.learnedTimes <= stepIndexInTrack;
+
+    if (markPresentedWord) {
+      await PhasePresentationTracker.markPresented(
+        groupNo: currentBatch.groupNo,
+        trackName: currentTrackName,
+        stepIndex: stepIndexInTrack,
+        wordId: wordId,
+      );
+    }
+    // 不变量：分子夹在 [1, 分母] —— 错词答对后会离开本环节、分母变小，分子必须跟着收敛，
+    // 绝不能出现 11/10 这种明显越界的显示。
+    final int presented = alreadyPresented.contains(wordId)
+        ? alreadyPresented.length
+        : alreadyPresented.length + 1;
+    final int total = sameTrack.length;
+    final int position = presented.clamp(1, total);
+
+    return (
+      position: position,
+      total: total,
+      groupNo: currentBatch.groupNo,
+      trackName: currentTrackName,
+      isRetry: isRetry,
     );
   }
 

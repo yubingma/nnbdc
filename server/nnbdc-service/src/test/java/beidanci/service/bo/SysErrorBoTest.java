@@ -6,8 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -17,8 +18,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import beidanci.api.model.SysErrorVo;
 
@@ -151,12 +154,13 @@ public class SysErrorBoTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     public void testListRecentErrorsMapsClientInfoColumns() throws Exception {
         SysErrorBo sysErrorBo = new SysErrorBo();
 
         // 造一行"带客户端平台与版本"的上报记录：这两列是本次新增，最容易出现取错列/取不到
-        java.sql.Timestamp createdAt = java.sql.Timestamp.valueOf("2026-10-01 09:42:31");
-        java.sql.ResultSet rs = Mockito.mock(java.sql.ResultSet.class);
+        Timestamp createdAt = Timestamp.valueOf("2026-10-01 09:42:31");
+        ResultSet rs = Mockito.mock(ResultSet.class);
         Mockito.when(rs.getString("id")).thenReturn("err-1");
         Mockito.when(rs.getString("user_id")).thenReturn("user-1");
         Mockito.when(rs.getString("nick_name")).thenReturn("纪白");
@@ -167,11 +171,10 @@ public class SysErrorBoTest {
         Mockito.when(rs.getTimestamp("create_time")).thenReturn(createdAt);
 
         NamedParameterJdbcTemplate jdbcTemplate = Mockito.mock(NamedParameterJdbcTemplate.class);
-        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(MapSqlParameterSource.class),
-                Mockito.any(org.springframework.jdbc.core.RowMapper.class)))
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(SqlParameterSource.class),
+                Mockito.<RowMapper<SysErrorVo>>any()))
                 .thenAnswer(invocation -> {
-                    @SuppressWarnings("unchecked")
-                    org.springframework.jdbc.core.RowMapper<SysErrorVo> mapper = invocation.getArgument(2);
+                    RowMapper<SysErrorVo> mapper = invocation.getArgument(2);
                     return List.of(mapper.mapRow(rs, 0));
                 });
 
@@ -194,12 +197,13 @@ public class SysErrorBoTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     public void testListRecentErrorsReturnsEmptyOnQueryFailure() throws Exception {
         SysErrorBo sysErrorBo = new SysErrorBo();
         NamedParameterJdbcTemplate jdbcTemplate = Mockito.mock(NamedParameterJdbcTemplate.class);
-        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(MapSqlParameterSource.class),
-                Mockito.any(org.springframework.jdbc.core.RowMapper.class)))
-                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("db down"));
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(SqlParameterSource.class),
+                Mockito.<RowMapper<SysErrorVo>>any()))
+                .thenThrow(new DataAccessResourceFailureException("db down"));
 
         Field jdbcField = SysErrorBo.class.getDeclaredField("namedParameterJdbcTemplate");
         jdbcField.setAccessible(true);

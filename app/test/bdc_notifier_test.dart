@@ -1442,7 +1442,10 @@ void main() {
 
   test('BdcNotifier - updateFsrsRating 修改评分后:同步 assessmentRating、持久化 LearningLog 并刷新 learningHistoryFuture', () async {
     // 准备:插入一条已有 LearningLog(模拟测评环节已提交评分 good)
-    final testNow = AppClock.now();
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     await db.learningLogsDao.saveEntity(LearningLog(
       id: 'log_1',
       userId: testUser.id,
@@ -1503,7 +1506,10 @@ void main() {
 
   test('BdcNotifier - 修改今日评分:新词(仅测评一次)改评分应重新 init 计算下次复习天数', () async {
     // 模拟新词已完成测评提交(easy):stability=init(easy)的结果 15.69105,reps=1
-    final testNow = AppClock.now();
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
           stability: const Value(15.69105),
@@ -1567,7 +1573,10 @@ void main() {
   test('BdcNotifier - 修改今日评分:多环节后新词改评分应重放全部当天环节', () async {
     // 模拟今天的新词已完成测评(easy)+巩固(good)两个环节提交：
     // 真实状态是 init(easy)=15.69105 再走同日短期公式 next(good,0) ≈ 22.09
-    final testNow = AppClock.now();
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     const consolidateStability = 22.089408519007495; // 15.69105 * e^(w17*(3-3+w18))
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
@@ -1641,6 +1650,8 @@ void main() {
     // 模拟复习词:昨天加入(addTime=昨天)、昨天学过(stability=15.69105, scheduledDays=16)
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
@@ -1736,6 +1747,8 @@ void main() {
     // 复习词：昨天学过（日志记着测评前的记忆状态），今天这次测评的评分刚刚提交
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     final yesterday = today.subtract(const Duration(days: 1));
     final fsrs = FSRS();
 
@@ -1856,6 +1869,8 @@ void main() {
     // 用户在回看里打开它并把今天的测评评分改低
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     final yesterday = today.subtract(const Duration(days: 1));
     final fsrs = FSRS();
 
@@ -2014,6 +2029,8 @@ void main() {
     // 复习词：昨天学过 → 今天测评 easy（当天首条）+ 巩固 good（当天第二条）
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
@@ -2101,7 +2118,10 @@ void main() {
 
   test('BdcNotifier - 修改今日评分:连续修改(good->easy->hard)结果稳定不漂移', () async {
     // 今日新词(addTime=今天), 模拟测评 easy 提交
-    final testNow = AppClock.now();
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
           stability: const Value(15.69105),
@@ -2190,6 +2210,8 @@ void main() {
     // 当天首条仍是旧评分，反复修改互相污染（实测 good→easy→hard→easy 天数 4→22→3→13）。
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
     final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
@@ -3488,6 +3510,68 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
+
+  test('今天最近一次答错的词：呈现时标记为"最近答错"，答对后立刻撤掉', () async {
+    // 今天两条评分：先 good、后 again —— 最近一次是答错
+    final now2 = AppClock.now();
+    await db.learningLogsDao.saveEntity(
+      LearningLog(
+        id: 'log_first_good',
+        userId: testUser.id,
+        wordId: 'word_1',
+        rating: FsrsRating.good.value,
+        stability: 2.4,
+        difficulty: 3.05,
+        elapsedDays: 0,
+        scheduledDays: 2,
+        createTime: now2.subtract(const Duration(minutes: 5)),
+        updateTime: now2.subtract(const Duration(minutes: 5)),
+      ),
+      false,
+    );
+    await db.learningLogsDao.saveEntity(
+      LearningLog(
+        id: 'log_latest_again',
+        userId: testUser.id,
+        wordId: 'word_1',
+        rating: FsrsRating.again.value,
+        stability: 0.4,
+        difficulty: 3.05,
+        elapsedDays: 0,
+        scheduledDays: 1,
+        createTime: now2,
+        updateTime: now2,
+      ),
+      false,
+    );
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(overrides: [
+      asrProvider.overrideWithValue(mockAsr),
+    ]);
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.id, 'word_1');
+    expect(state.isLatestAnswerWrongToday, isTrue,
+        reason: '今天最近一次评分是 again，拼写应标红');
+
+    // 这次答对：红色提示应立即撤掉
+    notifier.acceptAnswerForTesting(FsrsRating.good);
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.isLatestAnswerWrongToday, isFalse,
+        reason: '本词已答对，或已换到别的词，红色提示都必须消失');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
 }
-
-
