@@ -45,21 +45,19 @@ def head(n=3):
 # --- 页面定位 --------------------------------------------------------------
 def ensure_study():
     """确保在主学习页（标题是「Day N」）。已在则零开销返回。"""
-    texts = ui.texts()
-    if any(t.startswith("Day") for t in texts[:5]):
-        return
-    # 如果在更换词书或其他页面，尝试按 BACK 返回主页
-    for _ in range(3):
-        if any(t.startswith("Day") for t in ui.texts()[:5]):
+    for _ in range(4):
+        texts = ui.texts()
+        if any(t.startswith("Day") for t in texts[:5]):
             return
-        ui.back(wait=1.0)
+        ui.back(wait=1.2)
     sh("am", "start", "-n", SPLASH)
     time.sleep(3.0)
     for _ in range(5):
-        if any(t.startswith("Day") for t in ui.texts()[:5]):
+        texts = ui.texts()
+        if any(t.startswith("Day") for t in texts[:5]):
             return
-        if "更换词书" in ui.texts()[:5]:
-            ui.back(wait=1.5)
+        if "更换词书" in texts[:5] or "我的内容" in texts:
+            ui.back(wait=1.2)
             if any(t.startswith("Day") for t in ui.texts()[:5]):
                 return
         time.sleep(1.5)
@@ -68,7 +66,12 @@ def ensure_study():
 
 def ensure_changebook():
     """确保在「更换词书」页。"""
-    if "更换词书" in ui.texts()[:5]:
+    texts = ui.texts()
+    if "更换词书" in texts[:5]:
+        return
+    if "我的内容" in texts or "装备解锁" in texts:
+        ui.tap(*XY_GEAR, wait=2.0)
+        ui.tap_text("更换词书", 2.5)
         return
     ensure_study()
     ui.tap(*XY_DRAWER, wait=1.5)
@@ -338,7 +341,7 @@ def verify(path, expect):
     import pypdf
     r = pypdf.PdfReader(path)
     t = "\n".join((p.extract_text() or "") for p in r.pages)
-    got = max((int(x) for x in re.findall(r"(?m)^\s*(\d{1,3})\s*$", t)), default=0)
+    got = max((int(x) for x in re.findall(r"(?m)^\s*(\d{1,5})\s*$", t)), default=0)
     return len(r.pages), got, got == expect
 
 
