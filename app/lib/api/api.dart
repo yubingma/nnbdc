@@ -722,6 +722,14 @@ abstract class RestClient {
   @GET("/admin/getSysErrors.do")
   Future<Result<List<SysErrorVo>>> getSysErrors();
 
+  /// 管理后台：单点修复某个词的「今日环节进度」（会写下行同步日志并递增用户数据版本号）
+  @POST("/admin/repairLearningProgress.do")
+  @FormUrlEncoded()
+  Future<Result<LearningProgressRepairItemVo>> repairLearningProgress(
+      @Field("userId") String userId,
+      @Field("wordId") String wordId,
+      @Field("operatorUserId") String? operatorUserId);
+
   @POST("/admin/autoFixSystemIssues.do")
   @FormUrlEncoded()
   Future<Result<SystemHealthFixResult>> autoFixSystemIssues(

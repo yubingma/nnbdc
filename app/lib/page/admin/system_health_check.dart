@@ -3,6 +3,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/network_util.dart';
+import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/api/api.dart';
@@ -22,6 +23,9 @@ class SystemHealthCheckPage extends StatefulWidget {
 class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   bool _isRunning = false;
   SystemHealthResult? _checkResult;
+
+  /// 「学习进度与学习记录一致性」体检导出的逐词明细（含是否可修），供详情弹窗展示与修复
+  List<LearningProgressRepairItemVo> _learningProgressRepairs = const [];
 
   // 每项检查的状态：null=未开始, false=进行中, true=通过, 'failed'=失败
   final Map<int, dynamic> _checkStates = {};
@@ -64,10 +68,12 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     },
     {
       'id': 14,
-      'title': '学习进度与学习记录一致性（只读）',
+      'title': '学习进度与学习记录一致性',
       'step': 14,
       'category': 'learning_progress_inconsistent',
-      // 只读体检：只列出不一致的明细，不在管理后台改任何用户数据
+      // 服务端这一项是只读的：只列出不一致的明细，不在服务端批量改用户数据。
+      // 数据的修复入口在**用户自己的**体检页（"数据健康检查" → 一键自动修复），
+      // 由用户显式确认后只下调"今日进度"，并会把修复结果上报服务端。
       'readonly': true
     },
     {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
@@ -305,6 +311,110 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     );
   }
 
+  /// 逐词明细：每个词一行，可修的给"修复"按钮，不可修的说明原因。
+  ///
+  /// 刻意不做"全部修复"：这类数据的可修性取决于该词是否真的卡住、是否还在被学习，
+  /// 只能逐个判断，批量修会误伤正在学的用户。
+  Widget _buildLearningProgressRepairList(bool isDarkMode) {
+    final repairable =
+        _learningProgressRepairs.where((item) => item.canRepair == true).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 4),
+        Text(
+          '逐词明细（共 ${_learningProgressRepairs.length} 条，其中可修复 ${repairable.length} 条）',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '只对"进度已超过轨道长度"且"进度行已凉下来"的词开放修复；修复会写下行同步日志'
+          '并递增用户数据版本号，用户下次同步自动生效。',
+          style: TextStyle(
+            fontSize: 12,
+            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 10),
+        ..._learningProgressRepairs.map((item) {
+          final wordLabel =
+              (item.spell == null || item.spell!.isEmpty) ? item.wordId : item.spell!;
+          final canRepair = item.canRepair == true;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: canRepair
+                    ? Colors.green.withValues(alpha: 0.5)
+                    : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$wordLabel (${item.wordId})',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: isDarkMode ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '用户 ${item.nickName ?? item.userId} · '
+                        '今日进度 ${item.progress} · 今日记录 ${item.todayLogCount} 条 · '
+                        '轨道长度 ${item.trackLenMax}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                      if (!canRepair && item.repairBlockReason != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          item.repairBlockReason!,
+                          style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (canRepair)
+                  TextButton(
+                    onPressed: () => _repairLearningProgress(item),
+                    style: TextButton.styleFrom(foregroundColor: Colors.green),
+                    child: const Text('修复'),
+                  )
+                else
+                  Text(
+                    '不可修',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDarkMode ? Colors.grey[500] : Colors.grey[500],
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   // 显示问题详情对话框
   void _showIssueDetails(String category, String title) {
     if (_checkResult == null) return;
@@ -384,8 +494,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: relatedIssues.map((issue) {
-                        return Container(
+                      children: [
+                        ...relatedIssues.map((issue) {
+                          return Container(
                           margin: const EdgeInsets.only(bottom: 20),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -576,7 +687,12 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                             ],
                           ),
                         );
-                      }).toList(),
+                        }),
+                        // 「学习进度与学习记录一致性」逐词明细：可修的给出修复按钮
+                        if (category == 'learning_progress_inconsistent' &&
+                            _learningProgressRepairs.isNotEmpty)
+                          _buildLearningProgressRepairList(isDarkMode),
+                      ],
                     ),
                   ),
                 ),
@@ -701,7 +817,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 13. 检查例句发音完整性
       await _checkSentenceAudioIntegrity(result, 13);
 
-      // 14. 检查学习进度与学习记录一致性（只读）
+      // 14. 检查学习进度与学习记录一致性（服务端只读，修复入口在用户端体检页）
       await _checkLearningProgressConsistency(result, 14);
 
       // 8. 检查网络连接
@@ -1074,9 +1190,10 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  /// 只读检查：学习进度与学习记录是否自洽。
+  /// 只读检查 + 逐词修复入口：学习进度与学习记录是否自洽。
   /// 判定口径由服务端给出：某业务日内某词的学习记录条数 ≤ 该词记录的今日环节进度 ≤ 当前轨道长度。
-  /// 这里只列出明细供排查，不提供修复入口——本项目禁止在客户端静默修数据。
+  /// 服务端只读导出明细与"是否可修"，修复动作由管理员在明细里逐个确认后发起
+  /// （会写下行同步日志并递增用户数据版本号，用户下次同步自动生效）。
   Future<void> _checkLearningProgressConsistency(
       SystemHealthResult result, int step) async {
     setState(() {
@@ -1088,6 +1205,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
 
       if (apiResult.success && apiResult.data != null) {
         final data = apiResult.data!;
+        // 明细供详情弹窗逐词修复用；没有这一项时清空，避免展示上一次体检的残留
+        _learningProgressRepairs = data.repairs ?? const [];
 
         if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
@@ -1103,6 +1222,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           });
         }
       } else {
+        _learningProgressRepairs = const [];
         result.addIssue('学习进度与学习记录一致性', 'API调用失败: ${apiResult.msg}',
             'learning_progress_inconsistent');
         setState(() {
@@ -1110,6 +1230,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         });
       }
     } catch (e, stackTrace) {
+      _learningProgressRepairs = const [];
       Global.logger.e('检查学习进度与学习记录一致性时出错: $e',
           error: e, stackTrace: stackTrace);
       result.addIssue(
@@ -1122,6 +1243,58 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       setState(() {
         _checkStates[step] = 'failed';
       });
+    }
+  }
+
+  /// 修复某个词的「今日环节进度」：确认 → 调服务端单点修复 → 重跑体检
+  Future<void> _repairLearningProgress(LearningProgressRepairItemVo item) async {
+    final wordLabel = (item.spell == null || item.spell!.isEmpty)
+        ? item.wordId
+        : item.spell!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认修复学习进度'),
+        content: Text(
+          '将把「$wordLabel」今天的环节进度从 ${item.progress} 改为 ${item.todayLogCount}'
+          '（等于今天的评分流水条数）。\n\n'
+          '· 只调整"今天走到第几个环节"，不删除、不修改任何学习记录；\n'
+          '· 会写入一条下行同步日志并递增该用户的数据版本号，'
+          '他下次同步（打开 App）时自动生效；\n'
+          '· 若他本地还有未同步的旧值，下次上行可能把它覆盖回来——'
+          '本次修复的现场会写进 sys_error 留痕，事后可查。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.green),
+            child: const Text('确认修复'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final operatorId = Global.getLoggedInUser()?.id;
+      final apiResult = await Api.client.repairLearningProgress(
+          item.userId, item.wordId, operatorId);
+      if (!mounted) return;
+
+      if (apiResult.success) {
+        ToastUtil.success('已修复「$wordLabel」：'
+            '${item.progress} → ${apiResult.data?.todayLogCount ?? item.todayLogCount}');
+        Navigator.pop(context); // 关闭详情弹窗
+        await _runSystemDiagnostic(); // 重跑体检，让明细里不再显示这一条
+      } else {
+        ToastUtil.error('修复未执行：${apiResult.msg}');
+      }
+    } catch (e) {
+      ToastUtil.error('修复失败: $e');
     }
   }
 

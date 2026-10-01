@@ -262,6 +262,31 @@ public class AdminController {
         return Result.success(sysErrorBo.listRecentErrors());
     }
 
+    /**
+     * 管理后台：单点修复某个词的"今日环节进度"（把它改回今天的评分流水条数）。
+     *
+     * <p>会写 learning_word 的下行同步日志并递增用户数据版本号，用户下次同步自动生效；
+     * 同时把修复现场写进 sys_error 留痕。护栏见
+     * {@link SystemHealthCheckBo#repairLearningProgress}。
+     *
+     * @param operatorUserId 执行修复的管理员，只用于审计留痕
+     */
+    @PostMapping("/admin/repairLearningProgress.do")
+    public Result<LearningProgressRepairItem> repairLearningProgress(
+            @RequestParam("userId") String userId,
+            @RequestParam("wordId") String wordId,
+            @RequestParam(value = "operatorUserId", required = false) String operatorUserId) {
+        LearningProgressRepairItem item =
+                systemHealthCheckBo.repairLearningProgress(userId, wordId, operatorUserId);
+        if (item == null) {
+            return new Result<>("FAIL", "参数不完整：userId 与 wordId 必填", null);
+        }
+        if (!item.getCanRepair()) {
+            return new Result<>("BLOCKED", item.getRepairBlockReason(), item);
+        }
+        return Result.success(item);
+    }
+
     @PostMapping("/admin/autoFixSystemIssues.do")
     public Result<SystemHealthFixResult> autoFixSystemIssues(
             @RequestParam("issueTypes") List<String> issueTypes

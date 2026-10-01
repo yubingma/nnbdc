@@ -138,7 +138,14 @@ def purge_e2e_user_db_only():
     DELETE FROM daka WHERE user_id = '{uid}';
     DELETE FROM user_oper WHERE user_id = '{uid}';
     DELETE FROM user_study_daily_stat WHERE user_id = '{uid}';
+    DELETE FROM learning_word WHERE user_id = '{uid}';
+    DELETE FROM learning_log WHERE user_id = '{uid}';
     DELETE FROM user_study_record WHERE user_id = '{uid}';
+    DELETE FROM user_wrong_word WHERE user_id = '{uid}';
+    DELETE FROM user_score_log WHERE user_id = '{uid}';
+    DELETE FROM user_game WHERE user_id = '{uid}';
+    DELETE FROM user_snapshot_daily WHERE user_id = '{uid}';
+    DELETE FROM login_log WHERE user_id = '{uid}';
     DELETE FROM dict_word WHERE dict_id IN (SELECT id FROM dict WHERE owner_id = '{uid}');
     DELETE FROM dict WHERE owner_id = '{uid}';
     DELETE FROM "user" WHERE id = '{uid}';
@@ -146,6 +153,133 @@ def purge_e2e_user_db_only():
     """
     run_psql(sql)
     print(f"✅ 生产库已彻底清除 {E2E_EMAIL} 遗留数据。")
+
+def get_user_learning_logs(user_id: str = None) -> list:
+    """获取指定用户在云端的所有评分流水日志（用于审计评分与下次复习天数）"""
+    if not user_id:
+        user = check_user()
+        if not user:
+            return []
+        user_id = user["id"]
+
+    sql = f"""
+    SELECT l.id, l.word_id, COALESCE(w.spell, 'unknown'), l.rating, l.stability, l.difficulty, l.scheduled_days, l.create_time
+    FROM learning_log l
+    LEFT JOIN word w ON l.word_id = w.id
+    WHERE l.user_id = '{user_id}'
+    ORDER BY l.create_time ASC;
+    """
+    out = run_psql(sql)
+    if not out:
+        return []
+
+    logs = []
+    for line in out.splitlines():
+        parts = line.split("|")
+        if len(parts) >= 8:
+            logs.append({
+                "id": parts[0],
+                "word_id": parts[1],
+                "spell": parts[2],
+                "rating": int(parts[3]) if parts[3].isdigit() else 0,
+                "stability": float(parts[4]) if parts[4] else 0.0,
+                "difficulty": float(parts[5]) if parts[5] else 0.0,
+                "scheduled_days": int(parts[6]) if parts[6].isdigit() else 0,
+                "create_time": parts[7]
+            })
+    return logs
+
+def get_user_learning_words(user_id: str = None) -> list:
+    """获取指定用户在云端的单词记忆状态表（用于核验 state、reps、scheduled_days）"""
+    if not user_id:
+        user = check_user()
+        if not user:
+            return []
+        user_id = user["id"]
+
+    sql = f"""
+    SELECT lw.word_id, COALESCE(w.spell, 'unknown'), lw.stability, lw.difficulty, lw.scheduled_days, lw.state, lw.learned_times
+    FROM learning_word lw
+    LEFT JOIN word w ON lw.word_id = w.id
+    WHERE lw.user_id = '{user_id}';
+    """
+    out = run_psql(sql)
+    if not out:
+        return []
+
+    words = []
+    for line in out.splitlines():
+        parts = line.split("|")
+        if len(parts) >= 7:
+            words.append({
+                "word_id": parts[0],
+                "spell": parts[1],
+                "stability": float(parts[2]) if parts[2] else 0.0,
+                "difficulty": float(parts[3]) if parts[3] else 0.0,
+                "scheduled_days": int(parts[4]) if parts[4].isdigit() else 0,
+                "state": int(parts[5]) if parts[5].isdigit() else 0,
+                "learned_times": int(parts[6]) if parts[6].isdigit() else 0
+            })
+    return words
+
+def get_user_mastered_words(user_id: str = None) -> list:
+    """获取指定用户在云端「已掌握」词书中的单词列表"""
+    if not user_id:
+        user = check_user()
+        if not user:
+            return []
+        user_id = user["id"]
+
+    sql = f"""
+    SELECT dw.word_id, w.spell, dw.create_time
+    FROM dict_word dw
+    JOIN dict d ON dw.dict_id = d.id
+    JOIN word w ON dw.word_id = w.id
+    WHERE d.owner_id = '{user_id}' AND d.name = '已掌握'
+    ORDER BY dw.create_time DESC;
+    """
+    out = run_psql(sql)
+    if not out:
+        return []
+    words = []
+    for line in out.splitlines():
+        parts = line.split("|")
+        if len(parts) >= 3:
+            words.append({
+                "word_id": parts[0],
+                "spell": parts[1],
+                "create_time": parts[2]
+            })
+    return words
+
+def time_travel_yesterday(user_id: str = None):
+    """
+    【跨天时间旅行】：将指定测试账号的今日打卡与单词学习日期前推 1 天（至昨日）。
+    用于模拟用户跨天：前一天的打卡已封存，前一天的单词根据 scheduled_days=1 今日恰好到期待复习。
+    """
+    if not user_id:
+        user = check_user()
+        if not user:
+            return
+        user_id = user["id"]
+
+    sql = f"""
+    BEGIN;
+    UPDATE daka 
+    SET for_learning_date = for_learning_date - INTERVAL '1 day',
+        create_time = create_time - INTERVAL '1 day'
+    WHERE user_id = '{user_id}';
+
+    UPDATE learning_word 
+    SET last_learning_date = last_learning_date - INTERVAL '1 day'
+    WHERE user_id = '{user_id}';
+
+    UPDATE user_study_daily_stat
+    SET "date" = "date" - INTERVAL '1 day'
+    WHERE user_id = '{user_id}';
+    COMMIT;
+    """
+    run_psql(sql)
 
 def main():
     parser = argparse.ArgumentParser(description="E2E 回归测试生产数据库辅助工具")

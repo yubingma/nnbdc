@@ -1632,15 +1632,58 @@ class SystemHealthCheckResult {
   final List<SystemHealthIssue> issues;
   final List<String> errors;
 
+  /// 可逐词修复的明细（目前只有「学习进度与学习记录一致性」体检会填，其余为空）
+  final List<LearningProgressRepairItemVo>? repairs;
+
   SystemHealthCheckResult({
     this.isHealthy,
     required this.issues,
     required this.errors,
+    this.repairs,
   });
 
   factory SystemHealthCheckResult.fromJson(Map<String, dynamic> json) => _$SystemHealthCheckResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$SystemHealthCheckResultToJson(this);
+}
+
+/// 「学习进度与学习记录一致性」体检里，单个词的明细与可修性判定
+@JsonSerializable()
+class LearningProgressRepairItemVo {
+  final String userId;
+  final String? nickName;
+  final String wordId;
+  final String? spell;
+
+  /// 记录的今日环节进度
+  final int? progress;
+
+  /// 今天的评分流水条数（可修时即为修复后的目标值）
+  final int? todayLogCount;
+
+  /// 当前配置下轨道长度上限
+  final int? trackLenMax;
+
+  /// 是否允许在管理端修复；false 时 [repairBlockReason] 说明原因
+  final bool? canRepair;
+  final String? repairBlockReason;
+
+  LearningProgressRepairItemVo({
+    required this.userId,
+    this.nickName,
+    required this.wordId,
+    this.spell,
+    this.progress,
+    this.todayLogCount,
+    this.trackLenMax,
+    this.canRepair,
+    this.repairBlockReason,
+  });
+
+  factory LearningProgressRepairItemVo.fromJson(Map<String, dynamic> json) =>
+      _$LearningProgressRepairItemVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LearningProgressRepairItemVoToJson(this);
 }
 
 // 系统健康问题VO

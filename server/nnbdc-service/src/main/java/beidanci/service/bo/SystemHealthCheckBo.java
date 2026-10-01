@@ -8,6 +8,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.*;
 import beidanci.service.dao.UserDbVersionDao;
@@ -64,6 +65,12 @@ public class SystemHealthCheckBo {
 
     @Autowired
     private SysParamUtil sysParamUtil;
+
+    @Autowired
+    private LearningWordBo learningWordBo;
+
+    @Autowired
+    private SysErrorBo sysErrorBo;
 
     /**
      * 检查系统词典完整性
@@ -173,7 +180,7 @@ public class SystemHealthCheckBo {
 
         try {
             String sql = "SELECT l.user_id, u.nick_name, l.word_id, w.spell, "
-                    + "       count(*) AS today_log_count, lw.today_learned_times, "
+                    + "       count(*) AS today_log_count, lw.today_learned_times, lw.update_time, "
                     + "       GREATEST(COALESCE(nullif(new_max.max_len, 0), 0), "
                     + "                COALESCE(nullif(rev_max.max_len, 0), 0)) AS track_len_max "
                     + "FROM learning_log l "
@@ -209,7 +216,7 @@ public class SystemHealthCheckBo {
                     + "WHERE l.create_time >= a.anchor - make_interval(hours => 24) "
                     + "  AND l.create_time >= now() - make_interval(hours => :maxLookbackHours) "
                     + "GROUP BY l.user_id, u.nick_name, l.word_id, w.spell, lw.today_learned_times, "
-                    + "         new_max.max_len, rev_max.max_len "
+                    + "         lw.update_time, new_max.max_len, rev_max.max_len "
                     + "HAVING lw.today_learned_times > 0 AND (count(*) > lw.today_learned_times "
                     + "    OR lw.today_learned_times > "
                     + "       GREATEST(COALESCE(new_max.max_len, 0), COALESCE(rev_max.max_len, 0))) "
@@ -220,22 +227,178 @@ public class SystemHealthCheckBo {
                     .addValue("maxLookbackHours", LEARNING_PROGRESS_AUDIT_MAX_LOOKBACK_HOURS)
                     .addValue("auditLimit", LEARNING_PROGRESS_AUDIT_LIMIT);
 
-            List<SystemHealthIssue> found = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) ->
-                    buildLearningProgressIssue(
-                            rs.getString("user_id"),
-                            rs.getString("nick_name"),
-                            rs.getString("word_id"),
-                            rs.getString("spell"),
-                            rs.getInt("today_log_count"),
-                            rs.getInt("today_learned_times"),
-                            rs.getInt("track_len_max")));
+            // 一次扫描同时产出"给人看的说明"与"给界面用的可修性明细"：
+            // 后者让管理后台能逐词修复，不用为同一件事再扫一遍全量
+            List<SystemHealthIssue> found = new ArrayList<>();
+            List<LearningProgressRepairItem> repairs = new ArrayList<>();
+            namedParameterJdbcTemplate.query(sql, params, rs -> {
+                String userId = rs.getString("user_id");
+                String nickName = rs.getString("nick_name");
+                String wordId = rs.getString("word_id");
+                String spell = rs.getString("spell");
+                int todayLogCount = rs.getInt("today_log_count");
+                int todayLearnedTimes = rs.getInt("today_learned_times");
+                int trackLenMax = rs.getInt("track_len_max");
+                found.add(buildLearningProgressIssue(userId, nickName, wordId, spell,
+                        todayLogCount, todayLearnedTimes, trackLenMax));
+                repairs.add(buildLearningProgressRepairItem(userId, nickName, wordId, spell,
+                        todayLearnedTimes, todayLogCount, trackLenMax, rs.getTimestamp("update_time")));
+            });
 
             issues.addAll(found);
+            return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors, repairs);
         } catch (DataAccessException e) {
             errors.add("检查学习进度与学习记录一致性时出错: " + e.getMessage());
         }
 
         return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
+    /** 进度行"多久没被更新过"才允许服务端改动：这段时间内用户显然没有在学这个词 */
+    static final int REPAIR_MIN_STALE_HOURS = 6;
+
+    /** 服务端修复"今日环节进度"后，写入 sys_error 的审计分类 */
+    static final String ADMIN_REPAIRED_PROGRESS_ERROR_TYPE = "ADMIN_REPAIRED_PROGRESS";
+
+    /**
+     * 管理端单点修复：把某个词"今天的环节进度"改回今天的评分流水条数。
+     *
+     * <p>这是**服务端主动改用户数据**，走的是与打卡补全同一套下行机制
+     * （{@link UserDbSyncBo#logUserOperation} 写 user_db_log 并递增 user_db_version），
+     * 因此用户下次同步时能自动拿到修正值。注意：同步是"客户端权威"，
+     * 若他本地还有未上行的旧值，下次上行会把它覆盖回来，修复因此可能失效——
+     * 所以这里会先把现场写进 sys_error 留痕，即便后来被覆盖也查得到发生过什么。
+     *
+     * @param operatorUserId 执行修复的管理员，只用于审计留痕，可为空
+     */
+    @Transactional(rollbackFor = Throwable.class)
+    public LearningProgressRepairItem repairLearningProgress(String userId, String wordId, String operatorUserId) {
+        if (userId == null || userId.trim().isEmpty() || wordId == null || wordId.trim().isEmpty()) {
+            return null;
+        }
+        LearningWord learningWord = learningWordBo.findById(new LearningWordId(userId, wordId));
+        if (learningWord == null) {
+            return new LearningProgressRepairItem(userId, null, wordId, wordId, null, null, null,
+                    false, LearningProgressRepairItem.BLOCK_NOT_FOUND);
+        }
+
+        final int progress = learningWord.getTodayLearnedTimes() == null ? 0 : learningWord.getTodayLearnedTimes();
+        // 目标值 = 今天真实的评分流水条数（复用体检里那把"业务日窗口"，避免此处另造一套口径）
+        final int target = countTodayLogs(userId, wordId);
+
+        LearningProgressRepairItem judgement = buildLearningProgressRepairItem(userId, null, wordId,
+                wordId, progress, target, trackLenMaxOf(userId), learningWord.getUpdateTime());
+        if (!judgement.getCanRepair()) {
+            return judgement;
+        }
+
+        learningWord.setTodayLearnedTimes(target);
+        try {
+            learningWordBo.updateEntity(learningWord);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("更新学习进度失败: userId=" + userId + ", wordId=" + wordId, e);
+        }
+
+        // 写下行日志并递增用户数据版本号，用户下次同步即可自动拉到这次修正
+        String operator = operatorUserId;
+        User operatorUser = operatorUserId == null ? null : userBo.findById(operatorUserId);
+        if (operatorUser != null) {
+            operator = (operatorUser.getNickName() == null || operatorUser.getNickName().isEmpty())
+                    ? operatorUser.getUserName()
+                    : operatorUser.getNickName();
+        }
+        String recordJson = JsonUtils.toJson(learningWord.swallowToDto());
+        userDbSyncBo.logUserOperation(userId, "learning_word", "UPDATE",
+                userId + "-" + wordId, recordJson);
+
+        // 审计留痕：谁、在什么时候、把哪个词从多少改成了多少
+        try {
+            sysErrorBo.recordError(operatorUserId, ADMIN_REPAIRED_PROGRESS_ERROR_TYPE,
+                    "管理员「" + (operator == null ? "未知" : operator) + "」修复了学习进度：\n"
+                            + "用户=" + userId + "\n"
+                            + "单词=" + wordId + "\n"
+                            + "今日环节进度: " + progress + " -> " + target + "\n"
+                            + "今日评分流水条数=" + target + "\n"
+                            + "说明: 服务端单点修复（只下调进度、未改动任何学习记录），"
+                            + "已写入 learning_word 下行同步日志并递增用户数据版本号",
+                    null, null);
+            logger.info("🛠️ [ADMIN_REPAIR] 修复学习进度: userId={}, wordId={}, progress {} -> {}, operator={}",
+                    userId, wordId, progress, target, operatorUserId);
+        } catch (IllegalAccessException e) {
+            // 审计失败不影响修复本身：修复已完成且日志已下发，只记服务端日志
+            logger.error("写入学习进度修复审计失败: userId=" + userId + ", wordId=" + wordId, e);
+        }
+
+        return new LearningProgressRepairItem(userId, null, wordId, wordId,
+                progress, target, judgement.getTrackLenMax(), true, null);
+    }
+
+    /** 某词今天（当地业务日窗口）的评分流水条数；与客户端、体检页用的是同一把窗口 */
+    private int countTodayLogs(String userId, String wordId) {
+        String sql = "SELECT count(*) FROM learning_log l "
+                + "JOIN (SELECT MAX(create_time) AS anchor FROM learning_log WHERE user_id = :userId) a ON 1=1 "
+                + "WHERE l.user_id = :userId AND l.word_id = :wordId "
+                + "  AND l.create_time >= a.anchor - make_interval(hours => 24) "
+                + "  AND l.create_time >= now() - make_interval(hours => :maxLookbackHours)";
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("userId", userId)
+                .addValue("wordId", wordId)
+                .addValue("maxLookbackHours", LEARNING_PROGRESS_AUDIT_MAX_LOOKBACK_HOURS);
+        Integer count = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    /** 该用户当前配置下轨道长度上限（新词/复习取更长的一条） */
+    private int trackLenMaxOf(String userId) {
+        String sql = "SELECT GREATEST("
+                + "  COALESCE((SELECT MAX(check_len + correct_len + wrong_len) FROM ("
+                + "      SELECT MAX(CASE WHEN group_name = 'check' THEN 1 ELSE 0 END) AS check_len,"
+                + "             SUM(CASE WHEN group_name = 'correct' THEN 1 ELSE 0 END) AS correct_len,"
+                + "             SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len"
+                + "      FROM user_study_step WHERE user_id = :userId AND scope = 'new' AND state = 'Active'"
+                + "      GROUP BY user_id) t), 0),"
+                + "  COALESCE((SELECT MAX(check_len + correct_len + wrong_len) FROM ("
+                + "      SELECT MAX(CASE WHEN group_name = 'check' THEN 1 ELSE 0 END) AS check_len,"
+                + "             SUM(CASE WHEN group_name = 'correct' THEN 1 ELSE 0 END) AS correct_len,"
+                + "             SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len"
+                + "      FROM user_study_step WHERE user_id = :userId AND scope = 'review' AND state = 'Active'"
+                + "      GROUP BY user_id) t), 0)"
+                + ")";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        Integer maxLen = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
+        return maxLen == null ? 0 : maxLen;
+    }
+
+    /**
+     * 判定某个词是否可以在服务端单点修复，并给出原因。
+     *
+     * <p>四条护栏缺一不可：
+     * <ol>
+     * <li>进度必须真的超过轨道长度 —— 说明该词今天已经把整条轨道走完、多出来的那一格是重复推进。
+     * 只"比流水多一条"但没超轨道长度的，很可能是同步滞后，不动。</li>
+     * <li>今天必须有评分流水 —— 否则没有可靠依据判断该整成几。</li>
+     * <li>目标值必须小于当前值 —— 只下调，绝不把进度往上补。</li>
+     * <li>进度行必须已经"凉"了（{@value #REPAIR_MIN_STALE_HOURS} 小时内没被更新过）——
+     * 用户可能正在学这个词，改它会倒退他刚走完的进度。</li>
+     * </ol>
+     */
+    static LearningProgressRepairItem buildLearningProgressRepairItem(String userId, String nickName,
+            String wordId, String spell, int progress, int todayLogCount, int trackLenMax, Date lastProgressUpdate) {
+        String target = (spell == null || spell.isEmpty()) ? wordId : spell;
+        String blockReason = null;
+        if (progress <= trackLenMax) {
+            blockReason = LearningProgressRepairItem.BLOCK_NOT_OVER_TRACK;
+        } else if (todayLogCount <= 0) {
+            blockReason = LearningProgressRepairItem.BLOCK_NO_LOG_TODAY;
+        } else if (progress <= todayLogCount) {
+            blockReason = LearningProgressRepairItem.BLOCK_NOT_OVER_TRACK;
+        } else if (lastProgressUpdate != null
+                && lastProgressUpdate.after(new Date(System.currentTimeMillis()
+                        - REPAIR_MIN_STALE_HOURS * 3600_000L))) {
+            blockReason = LearningProgressRepairItem.BLOCK_UPDATED_TODAY;
+        }
+        return new LearningProgressRepairItem(userId, nickName, wordId, target,
+                progress, todayLogCount, trackLenMax, blockReason == null, blockReason);
     }
 
     /**

@@ -92,15 +92,50 @@ class AndroidDeviceController:
         self.swipe(w // 2, int(h * 0.8), w // 2, int(h * 0.2), 300)
         time.sleep(0.5)
 
+    def grant_runtime_permissions(self):
+        """通过 ADB 自动为 App 预先授予所有必要运行时权限（录音/麦克风、通知等），彻底杜绝系统弹窗阻断自动化流程"""
+        permissions = [
+            "android.permission.RECORD_AUDIO",
+            "android.permission.POST_NOTIFICATIONS",
+            "android.permission.READ_PHONE_STATE",
+        ]
+        for perm in permissions:
+            try:
+                self._run_adb(["shell", "pm", "grant", APP_PACKAGE, perm])
+            except Exception:
+                pass
+
+    def dismiss_system_dialogs(self) -> bool:
+        """主动检测并点击系统权限弹窗（如麦克风权限请求「仅在使用中允许」「使用应用时允许」「允许」等）"""
+        target_texts = [
+            "仅在使用中允许", "使用应用时允许", "仅本次允许", "允许",
+            "While using the app", "Only this time", "Allow"
+        ]
+        nodes = self.dump_ui_hierarchy()
+        for n in nodes:
+            txt = (n.get("text") or n.get("label") or "").strip()
+            if any(t in txt for t in target_texts) and n.get("clickable"):
+                print(f"[*] 检测到系统权限弹窗按钮「{txt}」，正在自动授权点击...")
+                self.click_element(n)
+                time.sleep(1.0)
+                return True
+        return False
+
     def launch_app(self, stop_first: bool = False):
-        """启动泡泡单词 App"""
+        """启动泡泡单词 App 并预先授权必要权限"""
         if stop_first:
             self.stop_app()
             time.sleep(1)
         
+        # 预先授予录音麦克风等运行时权限
+        self.grant_runtime_permissions()
+
         print(f"[*] 启动 App: {APP_PACKAGE}...")
         self._run_adb(["shell", "monkey", "-p", APP_PACKAGE, "-c", "android.intent.category.LAUNCHER", "1"])
         time.sleep(3)
+
+        # 尝试消除任何系统启动弹窗
+        self.dismiss_system_dialogs()
 
     def stop_app(self):
         """停止 App"""
@@ -178,13 +213,13 @@ class AndroidDeviceController:
 
         return elements
 
-    def find_element(self, text: Optional[str] = None, desc: Optional[str] = None, exact: bool = False, only_clickable: bool = False) -> Optional[Dict]:
-        """查找满足条件的元素（自动贯通 text 与 desc，精准加权匹配：精确匹配优先，可点击优先）"""
+    def find_element(self, text: Optional[str] = None, desc: Optional[str] = None, exact: bool = False, only_clickable: bool = False, nodes: Optional[List[Dict]] = None) -> Optional[Dict]:
+        """查找满足条件的元素（支持传入 nodes 进行零延迟纯内存检索，避免反复 dump_ui_hierarchy）"""
         target = text or desc
         if not target:
             return None
 
-        elements = self.dump_ui_hierarchy()
+        elements = nodes if nodes is not None else self.dump_ui_hierarchy()
         target_clean = target.strip()
 
         exact_clickable = []

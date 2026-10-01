@@ -2,6 +2,7 @@ package beidanci.service.bo;
 
 import org.junit.jupiter.api.Test;
 
+import beidanci.api.model.LearningProgressRepairItem;
 import beidanci.api.model.SystemHealthIssue;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -98,5 +99,67 @@ public class SystemHealthCheckBoTest {
                 "user_1", "纪白", "15407", null, 3, 5, 3);
         assertTrue(noSpell.getDescription().contains("15407 ("),
                 "拼写缺失时应退回单词 ID: " + noSpell.getDescription());
+    }
+
+    // ---------- 管理端单点修复的可修性判定（四条护栏） ----------
+
+    /** 一个"已经凉下来"的进度行：7 小时前更新过，用户显然没在学这个词 */
+    private static java.util.Date staleProgressUpdate() {
+        return new java.util.Date(System.currentTimeMillis() - 7 * 3600_000L);
+    }
+
+    private static java.util.Date freshProgressUpdate() {
+        return new java.util.Date(System.currentTimeMillis() - 60_000L);
+    }
+
+    @Test
+    public void 可修性判定_进度超轨道且流水足够且已凉下来时才允许修复() {
+        LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
+                "user_1", "纪白", "15407", "electronic", 4, 3, 3, staleProgressUpdate());
+
+        assertTrue(item.getCanRepair(), "四条护栏都满足时应允许修复");
+        assertNull(item.getRepairBlockReason());
+        assertEquals(4, item.getProgress());
+        assertEquals(3, item.getTodayLogCount(), "修复目标值应为今天的流水条数");
+        assertEquals("electronic", item.getSpell());
+    }
+
+    @Test
+    public void 可修性判定_进度未超轨道长度时不修() {
+        // 只是"比流水多一条"，可能是同步滞后；没超轨道长度说明该词还没走完整条轨道
+        LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
+                "user_1", "纪白", "15407", "electronic", 2, 1, 3, staleProgressUpdate());
+
+        assertFalse(item.getCanRepair(), "进度未超过轨道长度时不得在服务端改动");
+        assertEquals(LearningProgressRepairItem.BLOCK_NOT_OVER_TRACK, item.getRepairBlockReason());
+    }
+
+    @Test
+    public void 可修性判定_今天没有流水时不修() {
+        LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
+                "user_1", "纪白", "15407", "electronic", 4, 0, 3, staleProgressUpdate());
+
+        assertFalse(item.getCanRepair(), "没有流水就没有可靠依据判断该整成几");
+        assertEquals(LearningProgressRepairItem.BLOCK_NO_LOG_TODAY, item.getRepairBlockReason());
+    }
+
+    @Test
+    public void 可修性判定_进度行最近还在更新时不修() {
+        // 用户可能正在学这个词：此刻改它会把他刚走完的进度倒退回去
+        LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
+                "user_1", "纪白", "15407", "electronic", 4, 3, 3, freshProgressUpdate());
+
+        assertFalse(item.getCanRepair(), "进度行还在更新时不得改动，避免倒退用户正在学的进度");
+        assertEquals(LearningProgressRepairItem.BLOCK_UPDATED_TODAY, item.getRepairBlockReason());
+    }
+
+    @Test
+    public void 可修性判定_目标值不得大于等于当前值() {
+        // 只降不升：进度已经等于流水条数时没有可下调的空间
+        LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
+                "user_1", "纪白", "15407", "electronic", 3, 3, 3, staleProgressUpdate());
+
+        assertFalse(item.getCanRepair());
+        assertEquals(LearningProgressRepairItem.BLOCK_NOT_OVER_TRACK, item.getRepairBlockReason());
     }
 }

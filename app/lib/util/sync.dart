@@ -172,7 +172,8 @@ const String kClientDataInconsistentErrorType = 'CLIENT_DATA_INCONSISTENT';
 const String kClientDuplicateGradeErrorType = 'CLIENT_DUPLICATE_GRADE';
 
 /// 每个业务日最多上报多少条这类客户端数据问题，避免一个批量问题把服务端刷屏
-const int _maxConsistencyReportsPerDay = 10;
+@visibleForTesting
+const int maxConsistencyReportsPerDay = 10;
 
 /// 本次会话内已上报过的"规则|业务日|单词"，同一条问题只报一次
 final Set<String> _reportedConsistencyKeys = {};
@@ -183,7 +184,11 @@ String? _consistencyReportBusinessDay;
 
 /// 领取一次上报额度：按"规则|业务日|单词"去重、每个业务日有总量上限。
 /// 返回 null 表示这次不该报（重复或已达上限）。
-String? _takeConsistencyReportSlot(String ruleId, String wordId) {
+///
+/// 这类问题一旦出现就是成批的（纪白那次 17 毫秒里命中 18 个词），
+/// 没有这个闸门会瞬间把服务端刷屏、把真正要处理的告警淹掉，所以它本身也要有测试兜着。
+@visibleForTesting
+String? claimConsistencyReportSlot(String ruleId, String wordId) {
   final businessDay = DateUtils.businessDayStart(AppClock.now()).toIso8601String();
   if (_consistencyReportBusinessDay != businessDay) {
     _consistencyReportBusinessDay = businessDay;
@@ -193,7 +198,7 @@ String? _takeConsistencyReportSlot(String ruleId, String wordId) {
 
   final dedupeKey = '$ruleId|$businessDay|$wordId';
   if (_reportedConsistencyKeys.contains(dedupeKey)) return null;
-  if (_consistencyReportsToday >= _maxConsistencyReportsPerDay) {
+  if (_consistencyReportsToday >= maxConsistencyReportsPerDay) {
     Global.logger.d('📊 [Consistency] 本业务日客户端数据问题上报已达上限，跳过: $dedupeKey');
     return null;
   }
@@ -209,7 +214,7 @@ String? _takeConsistencyReportSlot(String ruleId, String wordId) {
 Future<void> reportStudyConsistency(StudyConsistencyViolation violation) async {
   final user = Global.getLoggedInUser();
   if (user == null) return;
-  if (_takeConsistencyReportSlot(violation.rule.ruleId, violation.wordId) == null) {
+  if (claimConsistencyReportSlot(violation.rule.ruleId, violation.wordId) == null) {
     return;
   }
 
@@ -227,7 +232,7 @@ Future<void> reportStudyConsistency(StudyConsistencyViolation violation) async {
 Future<void> reportDuplicateGrade(DuplicateGradeViolation violation) async {
   final user = Global.getLoggedInUser();
   if (user == null) return;
-  if (_takeConsistencyReportSlot('duplicate_grade', violation.wordId) == null) {
+  if (claimConsistencyReportSlot('duplicate_grade', violation.wordId) == null) {
     return;
   }
 
