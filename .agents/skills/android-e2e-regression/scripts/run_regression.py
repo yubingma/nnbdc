@@ -304,16 +304,59 @@ class RegressionRunner:
         self.device.wait_and_click(text="学习", timeout=2)
         time.sleep(1)
 
+        # 检查是否需要先选择词书
+        select_dict_btn = self.device.find_element(text="选择词书")
+        if select_dict_btn:
+            print("[*] 检测到首页提示选择词书，开始自动配置词书...")
+            self.device.click_element(select_dict_btn)
+            time.sleep(2)
+            # 点击「四六级」标签
+            cet_tab = self.device.find_element(text="四六级")
+            if cet_tab:
+                self.device.click_element(cet_tab)
+                time.sleep(1.5)
+            # 勾选一本词书
+            target_book = self.device.find_element(text="四级高频词汇") or self.device.find_element(text="六级")
+            if target_book:
+                self.device.click_element(target_book)
+                time.sleep(1)
+            # 点击「保存」
+            save_btn = self.device.find_element(text="保存")
+            if save_btn:
+                self.device.click_element(save_btn)
+                time.sleep(3)
+            # 关闭弹窗或返回
+            if not self.device.find_element(text="学习"):
+                self.device.press_key(4)
+                time.sleep(1.5)
+            shot = self.capture("dict_selected")
+            self.log("学习词书配置", "PASSED", "已自动进入词库选定四级词书并保存", shot)
+
         # 点击「开始学习」或「继续学习」
         start_btn = self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习")
         if not start_btn:
             shot = self.capture("start_learn_not_found")
-            self.log("进入学习流程", "SKIPPED", "主页未展示「开始学习/继续学习」按钮", shot)
+            self.log("进入学习流程", "FAILED", "主页未展示「开始学习/继续学习」按钮", shot)
             return
 
         print("[*] 点击「开始学习」按钮...")
         self.device.click_element(start_btn)
-        time.sleep(3)
+        time.sleep(2)
+
+        # 处理「开启今日学习旅程」弹窗
+        confirm_start_btn = self.device.find_element(text="马上开始")
+        if confirm_start_btn:
+            print("[*] 点击「马上开始」确认今日学习...")
+            self.device.click_element(confirm_start_btn)
+            time.sleep(2)
+
+        # 处理新手语音引导蒙层「你说，我来听」
+        guide_btn = self.device.find_element(text="开始学习")
+        if guide_btn:
+            print("[*] 点击新手引导蒙层「开始学习」...")
+            self.device.click_element(guide_btn)
+            time.sleep(2)
+
         shot = self.capture("in_study_page")
         self.log("进入单词学习页面", "PASSED", "已成功唤起背单词交互流转界面", shot)
 
@@ -330,6 +373,12 @@ class RegressionRunner:
                 time.sleep(1.5)
                 shot = self.capture(f"study_action_round_{round_idx}")
                 self.log(f"单词交互: 轮次{round_idx}", "PASSED", f"点击了「{btn_text}」按钮推进学习步骤", shot)
+                # 如果点击不认识后进入单词详情，通常会展示「下一词」
+                next_btn = self.device.find_element(text="下一词")
+                if next_btn:
+                    print("[*] 单词详情页点击「下一词」进入下一环节...")
+                    self.device.click_element(next_btn)
+                    time.sleep(1.5)
             else:
                 shot = self.capture(f"study_btn_missing_round_{round_idx}")
                 self.log(f"单词交互: 轮次{round_idx}", "SKIPPED", "未能在当前页面匹配到常规流转按钮", shot)

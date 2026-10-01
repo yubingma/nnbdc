@@ -8,8 +8,11 @@ import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/study_consistency_checker.dart';
+import 'package:nnbdc/util/sync.dart';
 import 'package:nnbdc/util/tts.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/socket_io.dart';
@@ -194,9 +197,19 @@ class DataIntegrityChecker {
       onProgress?.call(13, '检查词书重复单词...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
+      // 14. 检查今天的学习进度与学习记录是否自洽（只读：只列出问题，不自动修复）
+      onProgress?.call(14, '检查学习进度与学习记录是否自洽...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer14 = Stopwatch()..start();
+      await _checkStudyProgressConsistency(result, userId);
+      timer14.stop();
+      Global.logger.d('✓ 检查学习进度与学习记录一致性: ${timer14.elapsedMilliseconds}ms');
+      onProgress?.call(14, '检查学习进度与学习记录是否自洽...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(13, '检查完成！', result: result);
+      onProgress?.call(14, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
     } catch (e, stackTrace) {
       stopwatch.stop();
@@ -831,12 +844,82 @@ class DataIntegrityChecker {
       if (checkResult.hasIssue('local_tts')) {
         fixResult.addFixed('请检查您的系统设置 -> 辅助功能/语言与输入 -> 文字转语音输出，确保已下载对应的中文/英文语音包。');
       }
+
+      // 修复"学习进度多于学习记录"（用户显式点确认后才会走到这里）
+      if (checkResult.hasIssue('study_progress_inconsistent')) {
+        try {
+          await _fixStudyProgressConsistency(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复学习进度与学习记录不一致时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复学习进度与学习记录不一致失败: $e');
+        }
+      }
     } catch (e, stack) {
       Global.logger.e('自动修复过程中出现未捕获的全局错误', error: e, stackTrace: stack);
       fixResult.addError('自动修复过程中出现全局错误：$e');
     }
 
     return fixResult;
+  }
+
+  /// 修复"学习进度多于学习记录"（用户在体检页显式确认后才会执行）。
+  ///
+  /// 与体检页其他修复项的区别：这一项只做**下调**（把进度改回今天的记录条数），
+  /// 而且修复前必须先把现场上报服务端，修复结果也写日志——
+  /// 这样数据即使被改小，服务端仍然留有"谁、哪个词、改前改后是多少"的可追溯记录，
+  /// 不会因为本地修好了就查不到。
+  Future<void> _fixStudyProgressConsistency(IntegrityFixResult fixResult, String userId) async {
+    final violations = await scanTodayStudyConsistency(
+      userId: userId,
+      now: AppClock.now(),
+    );
+    if (violations.isEmpty) {
+      fixResult.addError('修复时复查发现已经没有需要修复的词（数据可能已自行恢复）');
+      return;
+    }
+
+    for (final violation in violations) {
+      // 先上报现场：服务端据此保留问题证据，避免"修好了就查不到根因"
+      await reportStudyConsistency(violation);
+
+      final repair = await repairStudyConsistency(
+        userId: userId,
+        violation: violation,
+        expectedProgress: violation.progress,
+        now: AppClock.now(),
+      );
+      if (repair == null) {
+        fixResult.addError('"${violation.spell}" 的修复前提已变化，已跳过（下次体检会重新核对）');
+        continue;
+      }
+      if (!repair.changed) {
+        fixResult.addFixed('"${repair.spell}" 无需修复：今日进度 ${repair.progressAfter} 与学习记录条数一致');
+        continue;
+      }
+      fixResult.addFixed('已修复 "${repair.spell}" 的今日进度：'
+          '${repair.progressBefore} → ${repair.progressAfter}（对齐今日 ${repair.logCount} 条学习记录）');
+      // 修复结果也上报一次：让服务端知道这条不一致已经被处理掉，便于核对告警与终态
+      _reportStudyProgressRepair(userId, repair);
+    }
+  }
+
+  /// 把一次显式修复的结果上报服务端（旁路、静默失败）
+  void _reportStudyProgressRepair(String userId, StudyConsistencyRepairResult repair) {
+    Api.client
+        .reportSysError(
+          userId,
+          'CLIENT_DATA_INCONSISTENT_REPAIRED',
+          '规则=progress_gt_logs（今日环节进度 大于 今日评分流水条数）\n'
+              '单词=${repair.spell} (${repair.wordId})\n'
+              '修复前 progress=${repair.progressBefore}\n'
+              '修复后 progress=${repair.progressAfter}\n'
+              '今日评分流水条数=${repair.logCount}\n'
+              '说明: 用户在学习页/体检页确认后执行的显式修复，仅下调进度，未改动任何学习记录',
+        )
+        .then((_) => Global.logger.d('🚀 [Consistency] 修复结果已上报服务端'))
+        .catchError((Object e) {
+      Global.logger.w('⚠️ [Consistency] 修复结果上报失败（静默忽略）: $e');
+    });
   }
 
   /// 通过非全局大喇叭的“点对点私房补件”策略，向后端索取缺失的基础托底数据，直接静默入库
@@ -922,6 +1005,50 @@ class DataIntegrityChecker {
     } catch (e, stack) {
       Global.logger.e('靶向修复底层字典托底碎片时出错', error: e, stackTrace: stack);
       fixResult.addError('靶向修复底层字典托底碎片时出错: $e');
+    }
+  }
+
+  /// 检查今天的学习进度与学习记录是否自洽。
+  ///
+  /// 判定口径与服务端只读体检、客户端上报探针同源：
+  /// 某词「今日环节进度」不得大于它今天的评分流水条数。
+  /// 进度多出来说明同一次作答被重复推进了环节，该词会被夹在最后一个环节反复出题，
+  /// 用户看到的画面是答案已揭晓却没有可前进的出口。
+  ///
+  /// 这一项**可以修复**，但只走用户显式确认那条路径（见 `_fixStudyProgressConsistency`）：
+  /// 修复仅把"今日进度"下调到今天的学习记录条数，不动学习记录、不动记忆参数。
+  Future<void> _checkStudyProgressConsistency(IntegrityCheckResult result, String userId) async {
+    try {
+      final violations = await scanTodayStudyConsistency(
+        userId: userId,
+        now: AppClock.now(),
+      );
+      if (violations.isEmpty) return;
+
+      final details = violations
+          .take(10)
+          .map((v) => '"${v.spell}" (ID: ${v.wordId})：今日进度 ${v.progress}，'
+              '今日学习记录 ${v.actualLogCount} 条')
+          .join('\n');
+      var description = '今天有 ${violations.length} 个单词的学习进度与学习记录对不上'
+          '（进度多于记录，同一次作答被重复推进了环节，这些词可能被反复出题）。';
+      if (details.isNotEmpty) {
+        description += '\n示例：\n$details';
+        if (violations.length > 10) {
+          description += '\n... 等共 ${violations.length} 个单词';
+        }
+      }
+      description += '\n该问题明天会自动复位，也可以点"一键自动修复"立即修好：'
+          '修复只把"今天的环节进度"改回与记录条数一致，不删除任何学习记录、不影响记忆进度与复习安排。';
+
+      result.addIssue(
+        '学习进度与学习记录不一致',
+        description,
+        'study_progress_inconsistent',
+      );
+    } catch (e, stack) {
+      Global.logger.e('检查学习进度与学习记录一致性时出错', error: e, stackTrace: stack);
+      result.addError('检查学习进度与学习记录一致性时出错: $e');
     }
   }
 

@@ -41,6 +41,33 @@ void main() {
     });
   });
 
+  group('judgeTodayWord', () {
+    test('自洽时返回 null', () {
+      expect(
+        judgeTodayWord(progress: 2, actualLogCount: 2, wordId: '15407'),
+        isNull,
+      );
+    });
+
+    test('不自洽时带出单词与数值', () {
+      final violation =
+          judgeTodayWord(progress: 4, actualLogCount: 3, wordId: '15407', spell: 'electronic');
+
+      expect(violation, isNotNull);
+      expect(violation!.wordId, '15407');
+      expect(violation.spell, 'electronic');
+      expect(violation.progress, 4);
+      expect(violation.actualLogCount, 3);
+      expect(violation.rule, StudyConsistencyRule.progressExceedsLogs);
+    });
+
+    test('拿不到拼写时退回词 ID，不产生空标签', () {
+      final violation = judgeTodayWord(progress: 1, actualLogCount: 0, wordId: '15407');
+
+      expect(violation!.spell, '15407');
+    });
+  });
+
   group('StudyConsistencyViolation.toMessage', () {
     test('上报文本带规则标识、实体、实际值、期望值与客户端版本', () {
       const violation = StudyConsistencyViolation(

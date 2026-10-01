@@ -2,12 +2,16 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/util/learning_service.dart';
 
 /// 数据自洽规则：客户端本地观察到的"数据自相矛盾"。
 ///
-/// 判定口径必须与服务端保持一致，客户端只负责测量，不负责判定"该怎么修"。
+/// 判定口径必须与服务端保持一致，客户端只负责测量。
 /// 命中的事实会经 `reportSysError` 上报服务端（分类 CLIENT_DATA_INCONSISTENT），
-/// 供服务端尽早发现成片的坏数据；**客户端不做任何静默修复**。
+/// 供服务端尽早发现成片的坏数据。
+/// 修复只走"用户在体检页显式确认"这一条路径（见 [repairStudyConsistency]），
+/// 不做任何自动修复。
 enum StudyConsistencyRule {
   /// 今日环节进度大于今天的评分流水条数 —— 说明同一次作答被重复推进了环节。
   /// 表现就是该词被夹在最后一个环节反复出题、答案已揭晓却没有可前进的出口。
@@ -82,25 +86,151 @@ Future<StudyConsistencyViolation?> checkWordStudyConsistency({
   final logs = await db.learningLogsDao
       .getInBusinessDay(userId, wordIds: [wordId], instant: now);
 
-  final rule = judgeStudyConsistency(
+  return judgeTodayWord(
     progress: learningWord.todayLearnedTimes,
     actualLogCount: logs.length,
-  );
-  if (rule == null) return null;
-
-  final word = await db.wordsDao.getWordById(wordId);
-
-  return StudyConsistencyViolation(
-    rule: rule,
     wordId: wordId,
-    spell: word != null && word.spell.isNotEmpty ? word.spell : wordId,
-    progress: learningWord.todayLearnedTimes,
-    actualLogCount: logs.length,
   );
 }
 
-/// 上报文本里带的客户端版本号：优先取安装包的 buildNumber（与 ver.json 的 verCode 同源），
-/// 取不到时退回 pubspec 里的版本名，保证报告里一定有版本信息——这次那个问题就是集中在单一版本上的。
+/// 用"今天已查到的流水条数"判定某个词是否不自洽（纯判定，不查库）。
+StudyConsistencyViolation? judgeTodayWord({
+  required int progress,
+  required int actualLogCount,
+  required String wordId,
+  String? spell,
+}) {
+  final rule = judgeStudyConsistency(progress: progress, actualLogCount: actualLogCount);
+  if (rule == null) return null;
+  return StudyConsistencyViolation(
+    rule: rule,
+    wordId: wordId,
+    spell: (spell == null || spell.isEmpty) ? wordId : spell,
+    progress: progress,
+    actualLogCount: actualLogCount,
+  );
+}
+
+/// 扫描"今天已经进入学习队列的词"（batch_id > 0），列出所有不自洽的词。
+///
+/// 供用户可见的"数据健康检查"页面体检使用：这些词才是用户当下会遇到的那一批，
+/// 只查它们既够用又便宜，不需要扫全库。只读，不改任何数据。
+Future<List<StudyConsistencyViolation>> scanTodayStudyConsistency({
+  required String userId,
+  required DateTime now,
+}) async {
+  final words = await LearningService.getTodayLearningWordsFromDb(userId);
+  final candidates =
+      words.where((w) => w.todayLearnedTimes > 0).toList(growable: false);
+  if (candidates.isEmpty) return const [];
+
+  // 一次查完这批词今天的学习记录，按词统计条数，避免逐个词查库
+  final logs = await MyDatabase.instance.learningLogsDao.getInBusinessDay(
+    userId,
+    wordIds: candidates.map((w) => w.wordId),
+    instant: now,
+  );
+  final logCounts = <String, int>{};
+  for (final log in logs) {
+    logCounts[log.wordId] = (logCounts[log.wordId] ?? 0) + 1;
+  }
+
+  final violations = <StudyConsistencyViolation>[];
+  for (final word in candidates) {
+    final violation = judgeTodayWord(
+      progress: word.todayLearnedTimes,
+      actualLogCount: logCounts[word.wordId] ?? 0,
+      wordId: word.wordId,
+    );
+    if (violation != null) violations.add(violation);
+  }
+  return violations;
+}
+
+/// 修复结果
+class StudyConsistencyRepairResult {
+  const StudyConsistencyRepairResult({
+    required this.wordId,
+    required this.spell,
+    required this.progressBefore,
+    required this.progressAfter,
+    required this.logCount,
+  });
+
+  final String wordId;
+  final String spell;
+  final int progressBefore;
+  final int progressAfter;
+  final int logCount;
+
+  /// 本次是否真的改了数据
+  bool get changed => progressBefore != progressAfter;
+}
+
+/// 把某个词今天的环节进度改回"今天的评分流水条数"。
+///
+/// 只做**下调**（`progress > logs` 才动作）：
+/// - 往下改对应的是"同一次作答被重复推进了环节"，不会凭空抹掉用户真实走完的环节；
+/// - 往上补齐（`progress < logs`）没有依据，而且会把用户没在本机做过的环节直接放行，一律不做。
+///
+/// 这是用户在体检页**显式点确认**后才会走的路径，不是自动修复：
+/// 调用方必须先把问题上报服务端（见 [reportStudyConsistency]），并把修复前后的数值写进日志，
+/// 这样数据即使被改小，服务端仍然留有可追溯的现场记录。
+///
+/// [expectedProgress] 是用户在体检页看到、并据此确认的那个进度值：
+/// 修复前会重新读一遍，若与它不一致（比如期间换了设备或跨了天），说明前提已变，直接放弃修复。
+Future<StudyConsistencyRepairResult?> repairStudyConsistency({
+  required String userId,
+  required StudyConsistencyViolation violation,
+  required int expectedProgress,
+  required DateTime now,
+}) async {
+  final db = MyDatabase.instance;
+  final learningWord = await db.learningWordsDao.getById(userId, violation.wordId);
+  if (learningWord == null) return null;
+
+  final progressBefore = learningWord.todayLearnedTimes;
+  // 前提校验：用户确认时看到的状态必须仍然成立，否则宁可不修
+  if (progressBefore != expectedProgress) {
+    Global.logger.w('⚠️ [Consistency] 修复前提已变化（当前进度 $progressBefore，'
+        '确认时为 $expectedProgress），放弃修复: ${violation.wordId}');
+    return null;
+  }
+
+  final logs = await db.learningLogsDao
+      .getInBusinessDay(userId, wordIds: [violation.wordId], instant: now);
+  final logCount = logs.length;
+  // 只在"进度多于记录"时下调；今天一条记录都没有时不改（没有可靠依据）
+  if (progressBefore <= logCount) {
+    return StudyConsistencyRepairResult(
+      wordId: violation.wordId,
+      spell: violation.spell,
+      progressBefore: progressBefore,
+      progressAfter: progressBefore,
+      logCount: logCount,
+    );
+  }
+
+  await db.learningWordsDao.saveEntity(
+    learningWord.copyWith(todayLearnedTimes: logCount),
+    true, // 生成同步日志，让这次显式修复同步到云端与用户的其他设备
+  );
+  ThrottledDbSyncService().requestSync();
+
+  Global.logger.i('🔧 [Consistency] 已修复学习进度与学习记录不一致: '
+      'word=${violation.wordId}, progress $progressBefore -> $logCount, 今日记录 $logCount 条');
+
+  return StudyConsistencyRepairResult(
+    wordId: violation.wordId,
+    spell: violation.spell,
+    progressBefore: progressBefore,
+    progressAfter: logCount,
+    logCount: logCount,
+  );
+}
+
+/// 上报/日志文本里带的客户端版本号：优先取安装包的 buildNumber（与 ver.json 的 verCode 同源），
+/// 取不到时退回版本名，保证记录里一定有版本信息——这类坏数据往往是集中在单一版本上的。
 Future<String> resolveClientVersion() async {
   final cached = _clientVersion;
   if (cached != null) return cached;

@@ -12,6 +12,7 @@ import uuid
 import argparse
 import subprocess
 from datetime import datetime
+import time
 
 # 生产环境配置（支持读取环境变量或 ~/.zprofile）
 PROD_HOST = "47.108.27.205"
@@ -38,24 +39,33 @@ def get_server_pwd():
     return pwd
 
 def run_psql(sql: str) -> str:
-    """通过 SSH 隧道/命令在生产 docker pg 容器中执行 SQL"""
+    """通过 SSH 隧道/命令在生产 docker pg 容器中执行 SQL (带重试机制)"""
     pwd = get_server_pwd()
     if not pwd:
         raise RuntimeError("未检测到环境变量 nnbdc_server_pwd，请在环境或 ~/.zprofile 中配置。")
     
-    # 转义双引号
     escaped_sql = sql.replace('"', '\\"')
     cmd = [
         "sshpass", "-p", pwd,
         "ssh", "-o", "StrictHostKeyChecking=no",
+        "-o", "ConnectTimeout=10",
         "-p", PROD_PORT,
         f"{PROD_USER}@{PROD_HOST}",
         f'docker exec -i pg psql -U{PROD_DB_USER} -d {PROD_DB_NAME} -A -t -c "{escaped_sql}"'
     ]
-    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if res.returncode != 0:
-        raise RuntimeError(f"SQL 执行失败: {res.stderr.strip() or res.stdout.strip()}")
-    return res.stdout.strip()
+    
+    last_err = None
+    for attempt in range(3):
+        try:
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=20)
+            if res.returncode == 0:
+                return res.stdout.strip()
+            last_err = res.stderr.strip() or res.stdout.strip()
+        except Exception as e:
+            last_err = str(e)
+        time.sleep(1)
+
+    raise RuntimeError(f"SQL 执行失败: {last_err}")
 
 def check_user():
     """检查 e2etest 用户是否存在"""

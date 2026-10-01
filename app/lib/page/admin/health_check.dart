@@ -75,6 +75,15 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       'step': 13,
       'category': 'duplicate_dict_word'
     },
+    {
+      'id': 14,
+      'title': '学习进度与学习记录一致性',
+      'step': 14,
+      'category': 'study_progress_inconsistent',
+      // 可修复，但只在用户主动点"一键自动修复"并确认后执行：
+      // 修复动作仅把"今日进度"下调到今天的学习记录条数（不动学习记录、不动记忆参数），
+      // 且修复前会先把现场上报服务端，便于事后追根因。
+    },
   ];
 
   @override
@@ -906,7 +915,41 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     });
 
     try {
-      // 使用本地数据完整性检查器进行自动修复
+      // "学习进度与学习记录不一致"是唯一会改写用户学习数据的一项：
+      // 它只把"今日进度"下调到今天的学习记录条数，必要且安全，但必须先让用户明确知道。
+      final hasProgressRepair =
+          _checkResult!.hasIssue('study_progress_inconsistent');
+      if (hasProgressRepair) {
+        if (mounted) setState(() => _isRunning = false);
+        final agreed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('确认修复学习进度'),
+            content: const Text(
+              '本次修复会调整"今天的环节进度"，把它改回与今天的学习记录条数一致：\n\n'
+              '· 只调整"今天走到第几个环节"，不删除、不修改任何学习记录；\n'
+              '· 不影响记忆进度与之后的复习安排，明天本来也会自动复位；\n'
+              '· 修复前会先把问题现场上报服务端，便于我们追查根因。',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.green),
+                child: const Text('确认修复'),
+              ),
+            ],
+          ),
+        );
+        if (agreed != true || !mounted) return;
+        setState(() {
+          _isRunning = true;
+        });
+      }
+
       final checker = DataIntegrityChecker();
       final fixResult = await checker.autoFix(_checkResult!, currentUser.id);
 
