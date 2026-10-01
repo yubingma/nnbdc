@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/data_integrity_checker.dart';
+import 'package:nnbdc/util/sys_db_sync.dart';
 
 class GoldenMasterToolPage extends StatefulWidget {
   const GoldenMasterToolPage({super.key});
@@ -30,6 +31,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
   List<String> _healthIssuesList = [];
   // 数据库概要信息
   int? _dbVersion;
+  int? _sysDbVersion;
   String? _dbPath;
   int? _totalTables;
   int? _nonEmptyTables;
@@ -78,7 +80,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
                       '1. 清空并重建本地数据库（所有本地数据将丢失）\n'
                       '2. 切换至生产环境 API\n'
                       '3. 下载最新的通用词典\n'
-                      '4. 查看数据库概要信息\n\n'
+                      '4. 同步最新系统数据与版本号 (sys_db_version)\n'
+                      '5. 执行压缩与健康自检\n\n'
                       '制作完成后，请自行将黄金母版文件拷贝到app项目的assets/db目录下。',
                       style: TextStyle(
                         fontSize: 16,
@@ -154,7 +157,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
               ),
             ),
             const Divider(height: 24),
-            _buildInfoRow('数据库版本', '$_dbVersion', textColor),
+            _buildInfoRow('数据库版本 (schemaVersion)', '$_dbVersion', textColor),
+            _buildInfoRow('系统数据版本 (sys_db_version)', '$_sysDbVersion', textColor),
             _buildInfoRow('数据库路径', _dbPath ?? '未知', textColor),
             _buildInfoRow('SHA-256', _dbSha256 ?? '计算中...', textColor),
             if (_compressedDbPath != null) ...[
@@ -290,6 +294,10 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
         );
       }
 
+      // 3.5 同步最新系统数据与版本号 (sys_db_version)，避免新设备首次启动从版本0全量拉取系统同步日志
+      setState(() => _statusMessage = '正在同步最新系统数据与版本号 (sys_db_version)...');
+      await syncSysDb();
+
       // 4. 执行 VACUUM 压缩数据库
       setState(() => _statusMessage = '正在压缩数据库 (VACUUM)...');
       await MyDatabase.instance.customStatement('VACUUM');
@@ -367,6 +375,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
   Future<void> _getDbSummary() async {
     final db = MyDatabase.instance;
     _dbVersion = db.schemaVersion;
+    final sysVer = await db.sysDbVersionDao.getVersion();
+    _sysDbVersion = sysVer?.version ?? 0;
     _dbPath = await MyDatabase.getDbFilePath();
 
     // 计算 SHA-256

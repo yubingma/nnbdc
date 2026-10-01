@@ -49,6 +49,9 @@ class DataIntegrityChecker {
 
       // 5. 检查通用词典完整性
       await _checkCommonDictIntegrity(result);
+
+      // 6. 检查系统数据库版本一致性
+      await _checkSysDbVersion(result);
     } catch (e, stackTrace) {
       Global.logger.e('完整性检查过程中出现错误', error: e, stackTrace: stackTrace);
       result.addError('完整性检查过程中出现错误: $e');
@@ -571,6 +574,23 @@ class DataIntegrityChecker {
     } catch (e, stack) {
       Global.logger.e('检查用户数据库版本时出错', error: e, stackTrace: stack);
       result.addError('检查用户数据库版本时出错: $e');
+    }
+  }
+
+  /// 检查系统数据库版本 (sys_db_version) 完整性
+  Future<void> _checkSysDbVersion(IntegrityCheckResult result) async {
+    try {
+      final sysVer = await _db.sysDbVersionDao.getVersion();
+      if (sysVer == null || sysVer.version <= 0) {
+        result.addIssue(
+          '系统数据版本未初始化',
+          'sys_db_version 为空或版本 <= 0，会导致客户端全量拉取系统同步日志并重复更新',
+          'sys_db_version_integrity',
+        );
+      }
+    } catch (e, stack) {
+      Global.logger.e('检查系统数据版本时出错', error: e, stackTrace: stack);
+      result.addError('检查系统数据版本时出错: $e');
     }
   }
 
