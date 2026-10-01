@@ -12,6 +12,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 
@@ -19,6 +20,7 @@ import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/pca_projection_service.dart';
+import 'package:nnbdc/util/study_consistency_checker.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 
 export 'package:nnbdc/util/sys_db_sync.dart' show syncSysDb;
@@ -102,7 +104,11 @@ void addDownloadDetails(Map<String, dynamic> details) {
 }
 
 /// 完成同步日志记录
-Future<void> completeSyncLog({bool success = true, String? errorMessage, int? dbVersion, int? sysDbVersion}) async {
+///
+/// [error] 传同步失败时的原始异常：用于区分"纯网络抖动"与"真问题"的上报分类，
+/// 前者不发告警邮件、后者发。不传时按真问题归类。
+Future<void> completeSyncLog(
+    {bool success = true, String? errorMessage, Object? error, int? dbVersion, int? sysDbVersion}) async {
   if (_currentSyncLogId == null) return;
 
   final service = SyncLogService();
@@ -121,9 +127,21 @@ Future<void> completeSyncLog({bool success = true, String? errorMessage, int? db
       logId: _currentSyncLogId!,
       errorMessage: errorMessage ?? '同步失败',
     );
-    _reportSysErrorToServer(errorMessage ?? '同步失败');
+    _reportSysErrorToServer(errorMessage ?? '同步失败', _syncErrorTypeOf(error));
   }
   clearCurrentSyncLogId();
+}
+
+/// 同步失败的上报分类。
+///
+/// 纯网络抖动（连接/响应超时、连接被中断、DNS 失败等）单独归类：
+/// 服务端对这类只落库、不发告警邮件——它多半是用户设备网络问题，下一轮同步会自动重试成功，
+/// 而量大，混在真问题里发信会把真正需要处理的告警淹掉。
+/// 其余同步失败（解析失败、服务端 5xx 等）仍按 CLIENT_SYNC_ERROR 告警。
+String _syncErrorTypeOf(Object? error) {
+  return ErrorHandler.isNetworkError(error)
+      ? 'CLIENT_SYNC_NETWORK_JITTER'
+      : 'CLIENT_SYNC_ERROR';
 }
 
 /// 异步旁路向服务端上报客户端同步与系统异常（不阻断主流程，静默失败）
@@ -137,6 +155,51 @@ void _reportSysErrorToServer(String errorMessage, [String errorType = 'CLIENT_SY
       Global.logger.w("⚠️ [SysError] 上报客户端异常失败 (静默忽略): $e");
     }
   });
+}
+
+/// 客户端数据不自洽的上报分类。服务端按分类独立告警，避免被同步失败等噪音压制。
+const String kClientDataInconsistentErrorType = 'CLIENT_DATA_INCONSISTENT';
+
+/// 每个业务日最多上报多少条数据不自洽，避免一个批量问题把服务端刷屏
+const int _maxConsistencyReportsPerDay = 10;
+
+/// 本次会话内已上报过的"规则|业务日|单词"，同一条不自洽只报一次
+final Set<String> _reportedConsistencyKeys = {};
+
+/// 今天已上报的条数与所属业务日（跨天自动重置）
+int _consistencyReportsToday = 0;
+String? _consistencyReportBusinessDay;
+
+/// 把一个业务日内同一个词的数据不自洽上报服务端（只上报，绝不修数据）。
+///
+/// 同一会话内同一条不自洽只报一次，且每个业务日有总量上限：
+/// 这类问题一旦出现就是成批的，不做去重与限流会把真正要处理的告警淹没。
+Future<void> reportStudyConsistency(StudyConsistencyViolation violation) async {
+  final user = Global.getLoggedInUser();
+  if (user == null) return;
+
+  final now = AppClock.now();
+  final businessDay = DateUtils.businessDayStart(now).toIso8601String();
+  if (_consistencyReportBusinessDay != businessDay) {
+    _consistencyReportBusinessDay = businessDay;
+    _consistencyReportsToday = 0;
+    _reportedConsistencyKeys.clear();
+  }
+
+  final dedupeKey = '${violation.rule.ruleId}|$businessDay|${violation.wordId}';
+  if (_reportedConsistencyKeys.contains(dedupeKey)) return;
+  if (_consistencyReportsToday >= _maxConsistencyReportsPerDay) {
+    Global.logger.d('📊 [Consistency] 本业务日数据不自洽上报已达上限，跳过: $dedupeKey');
+    return;
+  }
+  _reportedConsistencyKeys.add(dedupeKey);
+  _consistencyReportsToday++;
+
+  final version = await resolveClientVersion();
+  _reportSysErrorToServer(
+    violation.toMessage(version),
+    kClientDataInconsistentErrorType,
+  );
 }
 
 /// 定义表的优先级(数字越小优先级越高,越先同步)
@@ -1055,7 +1118,7 @@ Future<void> syncDb() async {
     Global.logger.e("❌ 数据库同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
 
     // 记录同步失败，不再弹出错误提示
-    await completeSyncLog(success: false, errorMessage: e.toString());
+    await completeSyncLog(success: false, errorMessage: e.toString(), error: e);
 
     // 不再调用 ErrorHandler 显示错误提示
     // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncDb', showToast: true);

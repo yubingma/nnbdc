@@ -2117,11 +2117,6 @@ class MePageState extends State<MePage> implements RefreshableTab {
                   },
                 ),
                 _buildMenuTile(
-                  icon: Icons.admin_panel_settings_outlined,
-                  title: '系统管理后台',
-                  onTap: () => context.push('/admin'),
-                ),
-                _buildMenuTile(
                   icon: Icons.pageview_outlined,
                   title: '页面查看器',
                   onTap: () => context.push('/page_viewer'),
@@ -2146,12 +2141,19 @@ class MePageState extends State<MePage> implements RefreshableTab {
                   if (mounted) context.go('/login');
                 },
               ),
-                          _buildMenuTile(
-                            icon: Icons.no_accounts_outlined,
-                            title: '注销账号',
-                            onTap: () => showUnRegisterDlg(),
-                            showDivider: false,
-                          ),
+              _buildMenuTile(
+                icon: Icons.no_accounts_outlined,
+                title: '注销账号',
+                onTap: () => showUnRegisterDlg(),
+                showDivider: loggedInUser?.isAdmin == true,
+              ),
+              if (loggedInUser?.isAdmin == true)
+                _buildMenuTile(
+                  icon: Icons.admin_panel_settings_outlined,
+                  title: '系统管理后台',
+                  onTap: () => context.push('/admin'),
+                  showDivider: false,
+                ),
                         ],
                       ),
                     ),

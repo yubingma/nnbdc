@@ -2,7 +2,9 @@ package beidanci.service.bo;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.PostConstruct;
@@ -27,14 +29,48 @@ public class SysErrorBo extends BaseBo<SysError> {
     private static final Logger log = LoggerFactory.getLogger(SysErrorBo.class);
 
     /**
-     * 告警邮件节流间隔：最多 5 分钟发送一封
+     * 告警邮件节流间隔：同一分类最多 5 分钟发送一封
      */
     private static final long THROTTLE_INTERVAL_MS = 5 * 60 * 1000L;
 
     /**
-     * 上次成功触发告警邮件的时间戳（毫秒）
+     * 最近一次允许发送告警的时间戳（毫秒），跨分类共用。
+     * 仅用于表达"全部错误共用一个窗口"的节流语义（[checkAndThrottle(long)]），
+     * 与 [lastAlertTimestampByType] 是两套独立窗口，互不干扰。
      */
-    private final AtomicLong lastAlertTimestamp = new AtomicLong(0L);
+    private final AtomicLong lastAlertTimestamp = new AtomicLong(WINDOW_UNSET);
+
+    /**
+     * 各分类最近一次允许发送告警的时间戳（毫秒）。
+     * 按分类分别节流，避免"某一类刷屏把其他类别的告警整体压掉"，
+     * 也避免"某一类的告警把真正要处理的另一类告警顶掉"。
+     */
+    private final ConcurrentHashMap<String, AtomicLong> lastAlertTimestampByType = new ConcurrentHashMap<>();
+
+    /**
+     * 无需告警的分类：客户端明确标注为"纯网络抖动"的同步失败
+     * （连接超时、响应超时、连接被中断、DNS 失败等）。
+     *
+     * <p>这类异常绝大多数是用户设备网络问题，客户端下一轮同步会自动重试成功，
+     * 服务端没有任何需要人工干预的动作；而它们数量大，一旦发信会把真正需要处理的
+     * 分类（如客户端数据不自洽、同步数据解析失败）淹没掉。
+     * 因此仍然照常记录进 sys_error 表供排查，但不再触发告警邮件。
+     *
+     * <p>注意：不要把 {@code CLIENT_SYNC_ERROR} 也放进来 —— 旧版客户端把所有同步失败
+     * （含解析失败、服务端 5xx 等真问题）都归在它名下，一律压掉会漏掉真问题。
+     */
+    private static final Set<String> TRANSIENT_NETWORK_ERROR_TYPES = Set.of("CLIENT_SYNC_NETWORK_JITTER");
+
+    /** 判定某个分类的异常是否值得给管理员发告警邮件 */
+    static boolean isAlertWorthy(String errorType) {
+        if (errorType == null || errorType.trim().isEmpty()) {
+            return false;
+        }
+        return !TRANSIENT_NETWORK_ERROR_TYPES.contains(errorType.trim());
+    }
+
+    /** 各分类节流窗口的时间戳：0 表示该窗口尚未被占用 */
+    private static final long WINDOW_UNSET = 0L;
 
     @Autowired
     private UserBo userBo;
@@ -51,7 +87,7 @@ public class SysErrorBo extends BaseBo<SysError> {
     }
 
     /**
-     * 记录带关联用户的系统/客户端异常，并根据节流规则向管理员发送告警邮件
+     * 记录带关联用户的系统/客户端异常，并按分类节流规则向管理员发送告警邮件
      */
     public void recordError(String userId, String errorType, String details) throws IllegalAccessException {
         User user = null;
@@ -62,7 +98,7 @@ public class SysErrorBo extends BaseBo<SysError> {
         issue.setId(Util.uuid());
         createEntity(issue);
 
-        // 异步旁路判断并触发邮件告警（5分钟节流保护，绝不阻塞主事务与请求）
+        // 异步旁路判断并触发邮件告警（绝不阻塞主事务与请求）
         triggerEmailAlertAsync(user, errorType, details);
     }
 
@@ -74,36 +110,78 @@ public class SysErrorBo extends BaseBo<SysError> {
     }
 
     /**
-     * 节流检查并尝试获取告警发送许可（包级可见，便于单元测试）
-     * 
+     * 节流检查并尝试获取告警发送许可（包级可见，便于单元测试）。
+     * 语义是"全部错误共用一个窗口"，供不区分分类的调用方使用。
+     *
      * @param now 当前时间戳（毫秒）
-     * @return true 表示允许发送；false 表示处于 5 分钟节流窗口内，应跳过
+     * @return true 表示允许发送；false 表示处于节流窗口内，应跳过
      */
     boolean checkAndThrottle(long now) {
         long last = lastAlertTimestamp.get();
-        if (now - last < THROTTLE_INTERVAL_MS) {
+        if (last != WINDOW_UNSET && now - last < THROTTLE_INTERVAL_MS) {
             return false;
         }
         return lastAlertTimestamp.compareAndSet(last, now);
     }
 
     /**
-     * 异步评估并发送告警邮件（5分钟节流控制）
+     * 按分类节流检查并尝试获取告警发送许可（包级可见，便于单元测试）。
+     *
+     * <p>每个分类各有自己的 5 分钟窗口，互不压制：
+     * 某一类刷屏不会让其他类别的告警发不出去，某一类的告警也不会被别的类别顶掉。
+     *
+     * @param now       当前时间戳（毫秒）
+     * @param errorType 异常分类
+     * @return true 表示允许发送；false 表示该分类处于节流窗口内，应跳过
+     */
+    boolean checkAndThrottle(long now, String errorType) {
+        AtomicLong typeTimestamp = lastAlertTimestampByType.computeIfAbsent(errorType, key -> new AtomicLong(WINDOW_UNSET));
+        long lastOfType = typeTimestamp.get();
+        if (lastOfType != WINDOW_UNSET && now - lastOfType < THROTTLE_INTERVAL_MS) {
+            return false;
+        }
+        return typeTimestamp.compareAndSet(lastOfType, now);
+    }
+
+    /**
+     * 发信失败时回退占用掉的节流时间戳，避免"邮件没发出去却把 5 分钟额度用掉"。
+     * 只回退到本次占用的那个值，避免覆盖并发场景下别人刚占用的时间戳。
+     */
+    private void releaseThrottleSlot(long occupiedAt, String errorType) {
+        AtomicLong typeTimestamp = lastAlertTimestampByType.get(errorType);
+        if (typeTimestamp != null) {
+            typeTimestamp.compareAndSet(occupiedAt, WINDOW_UNSET);
+        }
+    }
+
+    /**
+     * 异步评估并发送告警邮件（按分类节流）
+     *
+     * <p>无条件发信的只有"值得人工处理"的分类；瞬时网络异常只落库不发信。
      */
     private void triggerEmailAlertAsync(User user, String errorType, String details) {
+        if (!isAlertWorthy(errorType)) {
+            log.info("ℹ️ 异常分类无需告警（瞬时网络异常，已记录待排查）: errorType={}", errorType);
+            return;
+        }
         long now = System.currentTimeMillis();
-        if (!checkAndThrottle(now)) {
-            long elapsedSec = (now - lastAlertTimestamp.get()) / 1000;
-            log.info("⚠️ 系统错误告警触发 5 分钟节流 (距上次发送 {} 秒)，跳过本次邮件发送: errorType={}", 
-                    elapsedSec, errorType);
+        if (!checkAndThrottle(now, errorType)) {
+            log.info("⚠️ 系统错误告警触发 5 分钟节流（按分类独立计算），跳过本次邮件发送: errorType={}", errorType);
             return;
         }
 
         CompletableFuture.runAsync(() -> {
+            boolean sent = false;
             try {
                 sendAlertEmail(user, errorType, details);
+                sent = true;
             } catch (Exception e) {
                 log.error("发送系统错误告警邮件异常: errorType=" + errorType, e);
+            } finally {
+                if (!sent) {
+                    // 邮件没发出去，不能白占掉节流额度，否则真实告警会被压 5 分钟
+                    releaseThrottleSlot(now, errorType);
+                }
             }
         });
     }
@@ -141,7 +219,7 @@ public class SysErrorBo extends BaseBo<SysError> {
                 + safeDetails
                 + "</div>"
                 + "<div style=\"margin-top: 20px; padding-top: 12px; border-top: 1px solid #edf2f7; font-size: 12px; color: #a0aec0; text-align: center;\">"
-                + "此邮件为系统自动化监控告警 · 已启用 5 分钟节流保护"
+                + "此邮件为系统自动化监控告警 · 同一分类 5 分钟内只发一封 · 瞬时网络异常只记录不发信"
                 + "</div>"
                 + "</div>";
 

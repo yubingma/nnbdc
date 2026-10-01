@@ -62,6 +62,14 @@
 - **表与字段注释铁律**：新建表或新增/修改数据库表字段时，必须使用 `COMMENT ON TABLE "table_name" IS '...';` 和 `COMMENT ON COLUMN "table_name"."column_name" IS '...';` 为所有表和字段添加清晰准确的中文业务注释，严禁字段注释裸奔，便于长期维护与理解。
 - **保留关键字转义铁律**：PostgreSQL 中包含大量系统保留关键字（最典型的如 `"user"`、`"group"`、`"order"`、`"position"`、`"date"` 等）。编写 DDL、SQL 升级脚本或原生查询时，**涉及保留关键字的表名与列名必须强制使用双引号包裹**（如 `COMMENT ON TABLE "user" IS '...';`），严禁裸写导致语法解析异常。
 
+## Flutter 资源目录声明铁律
+- `pubspec.yaml` 的 `assets:` 声明**只递归一层**：声明 `assets/images/` 只覆盖它直接包含的文件，以及「一层子目录里直接包含的文件」。
+- **`assets/images/pet/moods/` 这类第二层及更深的子目录必须单独声明**，否则整个目录会被静默跳过：代码报 `Unable to load asset`，而编译、静态检查、单元测试全部通过，毫无提示。
+- **验证必须看打包产物，不能看界面、也不能只看文件是否存在**：执行 `flutter build bundle` 后检查 `build/flutter_assets/` 下是否真有该文件，或查 `.dart_tool/flutter_build/*/flutter_assets.d` 资源清单里有没有该目录条目。
+- **读文件系统的测试验证不了资源能否随包发布**（`File(...).existsSync()` 不经过 Flutter 的资源解析）。新增资源目录时，必须同时在测试中断言 pubspec 里已声明该目录。
+- 资源路径与目录名必须完全一致（含大小写与中文），路径写错同样只在真机运行时才报错，因此新增资源时应补一条「代码引用的资源是否存在」的断言。
+- 新增或替换资源后必须**完全重新构建**才会进包，热重载与热重启都不重扫资源清单。
+
 
 
 ## Think Before Coding

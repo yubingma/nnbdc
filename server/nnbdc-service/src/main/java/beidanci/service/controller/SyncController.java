@@ -240,19 +240,33 @@ public class SyncController {
         }
     }
 
+    /** 客户端上报内容的长度上限，避免异常内容异常巨大撑爆表与告警邮件 */
+    private static final int MAX_REPORTED_DETAILS_LENGTH = 1000;
+
     /**
      * 接收客户端上报的系统与同步异常
+     *
+     * @param userId    关联用户，可为空（未登录或游客阶段）
+     * @param errorType 异常分类；不上报时按同步异常归类
+     * @param details   现场上下文，超长会被截断
      */
     @PostMapping("/reportSysError.do")
     public Result<Void> reportSysError(
             @RequestParam(value = "userId", required = false) String userId,
-            @RequestParam("errorType") String errorType,
+            @RequestParam(value = "errorType", required = false) String errorType,
             @RequestParam("details") String details) {
+        String effectiveErrorType = (errorType == null || errorType.trim().isEmpty())
+                ? "CLIENT_SYNC_ERROR"
+                : errorType.trim();
+        String effectiveDetails = details;
+        if (effectiveDetails != null && effectiveDetails.length() > MAX_REPORTED_DETAILS_LENGTH) {
+            effectiveDetails = effectiveDetails.substring(0, MAX_REPORTED_DETAILS_LENGTH) + "...(已截断)";
+        }
         try {
-            sysErrorBo.recordError(userId, errorType, details);
+            sysErrorBo.recordError(userId, effectiveErrorType, effectiveDetails);
             return Result.success(null);
         } catch (Exception e) {
-            log.error("记录客户端上报的 sys_error 失败: errorType=" + errorType, e);
+            log.error("记录客户端上报的 sys_error 失败: errorType=" + effectiveErrorType, e);
             return new Result<>("FAIL", "记录失败: " + e.getMessage(), null);
         }
     }

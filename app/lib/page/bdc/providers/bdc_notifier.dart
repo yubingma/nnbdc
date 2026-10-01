@@ -35,6 +35,8 @@ import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/study_config.dart';
+import 'package:nnbdc/util/study_consistency_checker.dart';
+import 'package:nnbdc/util/sync.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -858,7 +860,30 @@ class BdcNotifier extends _$BdcNotifier {
     // （形近词及其释义等，实测查询约 80ms）。这样用户点开详情页时首帧就是完整内容，
     // 不会在 200ms 后再整体重建一次（那次重建实测占满一帧 36ms）。
     unawaited(_prefetchWordDetail());
+    // 呈现新词的同一个时机顺带核对本地数据是否自洽（只读、静默、限流）。
+    // 这是这类"进度与流水对不上"问题的实时探针：它能在用户被卡住的当天就暴露问题，
+    // 而不是等用户主动反馈。发现问题只上报，绝不在这里修数据。
+    unawaited(_reportStudyConsistencyIfNeeded());
     return true;
+  }
+
+  /// 核对当前词今天的数据是否自洽，不自洽则上报服务端（只读，不改任何数据）。
+  Future<void> _reportStudyConsistencyIfNeeded() async {
+    final userId = Global.getLoggedInUser()?.id;
+    final wordId = state.word?.id;
+    if (userId == null || wordId == null || _isDisposed) return;
+    try {
+      final violation = await checkWordStudyConsistency(
+        userId: userId,
+        wordId: wordId,
+        now: AppClock.now(),
+      );
+      if (violation == null || _isDisposed) return;
+      // 同一词在本次会话里可能被反复呈现，这里交给上报侧去重与限流
+      await reportStudyConsistency(violation);
+    } catch (e, st) {
+      Global.logger.w('核对本地数据自洽性失败（忽略）', error: e, stackTrace: st);
+    }
   }
 
   /// 后台预取当前词的详情页数据，供 [showWordDetail] 直接使用。
