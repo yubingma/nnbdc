@@ -1,0 +1,91 @@
+0|birthday
+0|buy
+0|present
+0|for you
+0|card
+0|what about
+0|football
+0|cake
+0|here
+0|bird
+0|can
+0|swim
+0|draw
+0|run
+0|ride
+0|bike
+0|skate
+0|yes
+0|can't
+0|cannot
+0|like
+0|rice
+0|hamburger
+0|grape
+0|sweet
+0|jump
+0|don't
+0|do not
+0|early
+0|eleven
+0|twelve
+0|o'clock
+0|home
+0|story
+0|late
+0|sorry
+0|so
+0|many
+0|so many
+0|clock
+0|time
+0|mom
+0|London
+0|face
+0|eye
+0|then
+0|nose
+0|mouth
+0|ear
+0|touch
+0|honey
+0|hand
+0|arm
+0|head
+0|leg
+0|foot
+0|pupil
+0|put on
+0|T-shirt
+0|wear
+0|too
+0|size
+0|big
+0|small
+0|want
+0|sports
+0|shoe
+0|sports shoes
+0|whose
+0|shirt
+0|sweater
+0|beautiful
+0|skirt
+0|hat
+0|kid
+0|child
+0|day
+0|Children's Day
+0|park
+0|fly
+0|play football
+0|ready
+0|boat
+0|fun
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 84
+# Total Entries Extracted: 84
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 84
+# -------------------------------

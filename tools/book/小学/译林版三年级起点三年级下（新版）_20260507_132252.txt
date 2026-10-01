@@ -1,0 +1,144 @@
+0|school
+0|thing
+0|pen
+0|pencil
+0|ruler
+0|rubber
+0|schoolbag
+0|pencil case
+0|that
+0|put
+0|guess
+0|again
+0|long
+0|Good idea!
+0|our
+0|classroom
+0|put away
+0|close
+0|window
+0|blackboard
+0|chair
+0|sweep
+0|floor
+0|let
+0|us
+0|desk
+0|dirty
+0|Me too.
+0|All right.
+0|clean
+0|keep
+0|rule
+0|library
+0|shout
+0|talk
+0|eat
+0|run
+0|Mrs
+0|Mrs.
+0|sit down
+0|late
+0|look out of
+0|on
+0|shh
+0|fun
+0|quiet
+0|follow
+0|Would you like ...?
+0|sweet
+0|look at
+0|That's all right.
+0|have fun
+0|after class
+0|behind
+0|tree
+0|by
+0|under
+0|flower
+0|break time
+0|play
+0|outside
+0|ready
+0|go
+0|plane
+0|very
+0|far
+0|where
+0|find
+0|over
+0|student
+0|from
+0|Art Club
+0|nice
+0|of
+0|garden
+0|butterfly
+0|beautiful
+0|duck
+0|fruit
+0|orange
+0|grape
+0|banana
+0|apple
+0|mango
+0|share
+0|like
+0|they
+0|make
+0|salad
+0|together
+0|an
+0|What about you?
+0|good
+0|farm
+0|cow
+0|sheep
+0|rabbit
+0|chicken
+0|carrot
+0|pig
+0|Welcome to ...
+0|home
+0|these
+0|those
+0|help
+0|cute
+0|move
+0|animal
+0|monkey
+0|lion
+0|bear
+0|tiger
+0|panda
+0|elephant
+0|lunchtime
+0|fish
+0|high five
+0|feed
+0|zoo
+0|see
+0|colour
+0|color
+0|yellow
+0|blue
+0|red
+0|pink
+0|green
+0|brown
+0|black
+0|white
+0|buy
+0|balloon
+0|sure
+0|chameleon
+0|little
+0|What colour is ...?
+0|How come?
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 137
+# Total Entries Extracted: 137
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 137
+# -------------------------------

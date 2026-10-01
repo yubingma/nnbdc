@@ -1,0 +1,88 @@
+0|Miss
+0|Mr
+0|Mrs
+0|stand up
+0|sit down
+0|open
+0|close
+0|door
+0|name
+0|book
+0|write
+0|one
+0|two
+0|three
+0|four
+0|five
+0|six
+0|seven
+0|eight
+0|nine
+0|ten
+0|today
+0|fat
+0|thin
+0|tall
+0|short
+0|boy
+0|girl
+0|friend
+0|grandfather
+0|grandmother
+0|father
+0|mother
+0|brother
+0|sister
+0|me
+0|eye
+0|nose
+0|hair
+0|ear
+0|mouth
+0|small
+0|long
+0|big
+0|school
+0|library
+0|toilet
+0|hall
+0|playground
+0|classroom
+0|apple
+0|orange
+0|banana
+0|peach
+0|boat
+0|balloon
+0|flower
+0|kite
+0|red
+0|yellow
+0|ladybird
+0|bee
+0|butterfly
+0|ant
+0|fly
+0|black
+0|chick
+0|hen
+0|duck
+0|pig
+0|dog
+0|cat
+0|leaf
+0|leaves
+0|branch
+0|trunk
+0|root
+0|plant
+0|green
+0|pink
+0|beautiful
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 81
+# Total Entries Extracted: 81
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 81
+# -------------------------------

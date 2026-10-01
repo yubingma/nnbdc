@@ -1,0 +1,75 @@
+0|play
+0|farm
+0|swim
+0|strong
+0|some
+0|Thursday
+0|mountain
+0|let
+0|glasses
+0|please
+0|problem
+0|young
+0|neck
+0|but
+0|football
+0|match
+0|myself
+0|cry
+0|lunch
+0|chocolate
+0|supper
+0|see
+0|Monday
+0|hotel
+0|angry
+0|hill
+0|west
+0|around
+0|many
+0|ride
+0|horse
+0|smart
+0|PE
+0|history
+0|those
+0|modern
+0|stop
+0|ago
+0|hold
+0|take part in
+0|number
+0|visitor
+0|world
+0|tie
+0|Mr
+0|goodbye
+0|singer
+0|stage
+0|dress
+0|sing
+0|like
+0|colour
+0|clothes
+0|hobby
+0|tiger
+0|twelve
+0|animal
+0|rat
+0|rabbit
+0|decide
+0|order
+0|choose
+0|start
+0|stamp
+0|collect
+0|show
+0|ox
+0|worker
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 68
+# Total Entries Extracted: 68
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 68
+# -------------------------------

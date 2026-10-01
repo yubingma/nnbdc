@@ -1,0 +1,142 @@
+0|month
+0|cute
+0|pretty
+0|handsome
+0|turtle
+0|catch
+0|fly
+0|grow up
+0|junior high school
+0|born
+0|be born
+0|famous
+0|during
+0|spend
+0|everyone
+0|countryside
+0|pick
+0|summer holiday
+0|healthy
+0|unhealthy
+0|hamburger
+0|cola
+0|yesterday
+0|fruit
+0|pie
+0|pizza
+0|sandwich
+0|vegetable
+0|chicken
+0|chocolate
+0|a little
+0|fish and chips
+0|neighbour
+0|son
+0|daughter
+0|noisy
+0|owl
+0|dig
+0|make noise
+0|thousand
+0|hundred
+0|wild
+0|South China tiger
+0|blue whale
+0|way
+0|die
+0|rhino
+0|learn
+0|send
+0|in danger
+0|in the past
+0|take care of
+0|go for a walk
+0|drive away
+0|e-friend
+0|country
+0|other
+0|team
+0|hobby
+0|grade
+0|yourself
+0|would like
+0|shall
+0|princess
+0|police
+0|exciting
+0|brave
+0|policeman
+0|boring
+0|queen
+0|mirror
+0|fairest
+0|kill
+0|asleep
+0|next time
+0|once upon a time
+0|fall asleep
+0|bee
+0|insect
+0|ant
+0|anything
+0|kind
+0|finger
+0|dancer
+0|insect museum
+0|car museum
+0|model car
+0|science museum
+0|many kinds of
+0|capital
+0|north
+0|east
+0|west
+0|south
+0|palace
+0|most
+0|tourist
+0|building
+0|sushi
+0|in the north of
+0|in the east of
+0|air
+0|everywhere
+0|alive
+0|balloon
+0|factory
+0|smoke
+0|dirty
+0|clean
+0|hurt
+0|fresh
+0|plant
+0|keep ... alive
+0|plant trees
+0|wood
+0|cool
+0|match
+0|miss
+0|have to
+0|cut ... down
+0|look for
+0|Earth
+0|part
+0|forest
+0|land
+0|ocean
+0|rubbish
+0|sick
+0|recycle
+0|glass
+0|own
+0|so many
+0|pick up
+0|shopping bag
+0|plastic bag
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 135
+# Total Entries Extracted: 135
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 135
+# -------------------------------

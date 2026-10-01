@@ -9,27 +9,72 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import beidanci.api.model.DictGroupDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictGroup;
+import beidanci.service.util.JsonUtils;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class DictGroupBo extends BaseBo<DictGroup> {
+    private static final Logger logger = LoggerFactory.getLogger(DictGroupBo.class);
+
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
+    private SysDbSyncBo sysDbLogBo;
 
     @PostConstruct
     public void init() {
         setDao(new BaseDao<DictGroup>() {
         });
+    }
+
+    public DictGroupDto toDto(DictGroup dictGroup) {
+        if (dictGroup == null) return null;
+        DictGroupDto dto = new DictGroupDto();
+        dto.setId(dictGroup.getId());
+        dto.setName(dictGroup.getName());
+        dto.setDisplayIndex(dictGroup.getDisplayIndex());
+        if (dictGroup.getDictGroup() != null) {
+            dto.setParentId(dictGroup.getDictGroup().getId());
+        }
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void createEntity(DictGroup dictGroup) {
+        super.createEntity(dictGroup);
+        try {
+            DictGroupDto dto = toDto(dictGroup);
+            sysDbLogBo.logOperation("INSERT", "dict_group", dictGroup.getId(), JsonUtils.toJson(dto));
+        } catch (Exception e) {
+            logger.error("记录词书分组创建同步日志失败: id=" + dictGroup.getId(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateEntity(DictGroup dictGroup) throws IllegalArgumentException, IllegalAccessException {
+        super.updateEntity(dictGroup);
+        try {
+            DictGroupDto dto = toDto(dictGroup);
+            sysDbLogBo.logOperation("UPDATE", "dict_group", dictGroup.getId(), JsonUtils.toJson(dto));
+        } catch (Exception e) {
+            logger.error("记录词书分组更新同步日志失败: id=" + dictGroup.getId(), e);
+        }
     }
 
     // 获取所有单词书分组
@@ -153,9 +198,6 @@ public class DictGroupBo extends BaseBo<DictGroup> {
         }
     }
 
-    @Autowired
-    private SysDbSyncBo sysDbLogBo;
-
     /**
      * 安全地级联删除分组及其所有子分组，并解除与词书的关联
      */
@@ -169,7 +211,13 @@ public class DictGroupBo extends BaseBo<DictGroup> {
             deleteDictGroupSafely(childId);
         }
         
-        // 2. 删除与词书的关联 (group_and_dict_link)
+        // 2. 删除与词书的关联 (group_and_dict_link) 并下发同步日志
+        String getOldLinksSql = "SELECT dict_id FROM group_and_dict_link WHERE group_id = :groupId";
+        List<String> oldDictIds = namedParameterJdbcTemplate.queryForList(getOldLinksSql,
+                new MapSqlParameterSource("groupId", id), String.class);
+        for (String dictId : oldDictIds) {
+            sysDbLogBo.logOperation("DELETE", "group_and_dict_link", id + "_" + dictId, "{}");
+        }
         String deleteLinksSql = "DELETE FROM group_and_dict_link WHERE group_id = :groupId";
         namedParameterJdbcTemplate.update(deleteLinksSql, new MapSqlParameterSource("groupId", id));
         

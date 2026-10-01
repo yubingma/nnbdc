@@ -1,0 +1,48 @@
+0|live
+0|quite
+0|scarf
+0|airport
+0|pupil
+0|arrive
+0|meet
+0|wardrobe
+0|show ... around
+0|Queen's Park
+0|art gallery
+0|public library
+0|downtown
+0|Lake Ontario
+0|stadium
+0|volunteer
+0|sandwich
+0|top
+0|habit
+0|idea
+0|less
+0|at least
+0|talk about
+0|hockey
+0|together
+0|special
+0|beaver
+0|raccoon
+0|moose
+0|countryside
+0|Thanksgiving
+0|roast turkey
+0|squirrel
+0|swan
+0|wild goose
+0|frog
+0|English-Chinese dictionary
+0|shopping centre
+0|shopping mall
+0|amazing
+0|hot pot
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 41
+# Total Entries Extracted: 41
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 41
+# -------------------------------

@@ -1,0 +1,140 @@
+0|visited the Great Wall
+0|went to the zoo
+0|did homework
+0|played football
+0|had a party
+0|sang and danced
+0|ate and drank
+0|read books
+0|wrote emails
+0|had a fever
+0|had a headache
+0|had a cold
+0|had a cough
+0|took care of his mum
+0|made the bed
+0|cleaned the room
+0|cooked a meal
+0|pick fruits
+0|hurt animals
+0|climb trees
+0|step on the grass
+0|run a red light
+0|light a fire
+0|litter
+0|feed
+0|fight
+0|smoke
+0|shout
+0|park
+0|rain
+0|cloud
+0|wind
+0|snow
+0|sun
+0|earth
+0|lake
+0|mountain
+0|moon
+0|star
+0|tennis player
+0|artist
+0|writer
+0|driver
+0|farmer
+0|policeman
+0|worker
+0|scientist
+0|helpful
+0|angry
+0|busy
+0|honest
+0|brave
+0|free
+0|air
+0|answer
+0|because
+0|become
+0|but
+0|care
+0|clean
+0|cook
+0|cough
+0|cry
+0|dance
+0|do
+0|down
+0|drink
+0|drop
+0|eat
+0|fall
+0|feel
+0|fever
+0|finally
+0|finish
+0|fire
+0|follow
+0|fruit
+0|future
+0|go to the zoo
+0|happen
+0|headache
+0|hold
+0|have a cold
+0|have a cough
+0|have a fever
+0|have a headache
+0|have a party
+0|homework
+0|ill
+0|inside
+0|journey
+0|kid
+0|last Sunday
+0|light
+0|many
+0|meal
+0|mean
+0|miss
+0|make the bed
+0|never
+0|next
+0|pick
+0|place
+0|player
+0|primary school
+0|public
+0|put
+0|play football
+0|really
+0|rule
+0|read a book
+0|salt
+0|should
+0|sick
+0|sing
+0|soon
+0|sorry
+0|stay
+0|step
+0|take care of
+0|terrible
+0|them
+0|turn into
+0|use
+0|usually
+0|village
+0|visit the Great Wall
+0|want
+0|wonderful
+0|would
+0|write emails
+0|wrong
+0|yesterday
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 133
+# Total Entries Extracted: 133
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 133
+# -------------------------------

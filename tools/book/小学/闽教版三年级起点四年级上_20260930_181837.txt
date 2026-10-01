@@ -1,0 +1,102 @@
+0|see
+0|again
+0|grade
+0|our
+0|classroom
+0|class
+0|chair
+0|desk
+0|look
+0|look at
+0|blackboard
+0|read
+0|after
+0|tiger
+0|isn't
+0|is not
+0|that
+0|cousin
+0|from
+0|school
+0|playground
+0|big
+0|computer
+0|room
+0|library
+0|have
+0|farm
+0|dear
+0|thirteen
+0|cow
+0|fourteen
+0|horse
+0|fifteen
+0|sheep
+0|sixteen
+0|how much
+0|seventeen
+0|twenty
+0|eighteen
+0|very
+0|clever
+0|nineteen
+0|thirty
+0|slow
+0|sleep
+0|have a sleep
+0|fifty
+0|winner
+0|forty
+0|begin
+0|bus
+0|full
+0|get into
+0|car
+0|when
+0|do
+0|get up
+0|at
+0|breakfast
+0|to
+0|go to school
+0|lunch
+0|bed
+0|go to bed
+0|milk
+0|bread
+0|tomato
+0|them
+0|welcome
+0|dinner
+0|beef
+0|potato
+0|vegetable
+0|some
+0|Christmas
+0|robot
+0|tree
+0|email
+0|merry
+0|spring
+0|festival
+0|the Spring Festival
+0|Chinese
+0|spend
+0|we
+0|make
+0|dumpling
+0|family
+0|watch
+0|TV
+0|get
+0|money
+0|fair
+0|friend
+0|say
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 95
+# Total Entries Extracted: 95
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 95
+# -------------------------------

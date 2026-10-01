@@ -1,0 +1,85 @@
+0|machine
+0|welcome
+0|crisp
+0|sir
+0|potato
+0|dangerous
+0|put
+0|wait
+0|each
+0|cheap
+0|expensive
+0|send
+0|email
+0|cost
+0|hundred
+0|shout
+0|wolf
+0|sheep
+0|ran
+0|once upon a time
+0|look after
+0|bored
+0|village
+0|everyone
+0|laugh
+0|lie
+0|learnt
+0|lesson
+0|wouldn't
+0|into
+0|month
+0|cheese
+0|scared
+0|run away
+0|concert
+0|violin
+0|guitar
+0|nervous
+0|end
+0|proud
+0|surprise
+0|hear
+0|special
+0|Father's Day
+0|message
+0|great
+0|report
+0|stick
+0|fantastic
+0|fun
+0|meet
+0|east
+0|west
+0|o'clock
+0|time
+0|cartoon
+0|much
+0|am
+0|pm
+0|best
+0|north
+0|south
+0|rest
+0|have a rest
+0|country
+0|speak
+0|capital
+0|maybe
+0|map
+0|because
+0|language
+0|Australian
+0|kangaroo
+0|back
+0|postcard
+0|plan
+0|museum
+0|restaurant
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 78
+# Total Entries Extracted: 78
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 78
+# -------------------------------

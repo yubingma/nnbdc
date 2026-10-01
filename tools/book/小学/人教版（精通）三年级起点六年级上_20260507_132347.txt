@@ -1,0 +1,158 @@
+0|get up
+0|have breakfast
+0|go to school
+0|School begins.
+0|have lunch
+0|School is over.
+0|go home
+0|have dinner
+0|go to bed
+0|breakfast
+0|lunch
+0|dinner
+0|cook breakfast
+0|teach English
+0|take a walk
+0|read stories
+0|walk
+0|every
+0|morning
+0|afternoon
+0|evening
+0|see a film
+0|play the piano
+0|clean the window
+0|clean the door
+0|clean the floor
+0|often
+0|easy
+0|difficult
+0|collect toy cars
+0|collect stamps
+0|collect maps
+0|collect picture cards
+0|open
+0|hobby
+0|collect
+0|map
+0|box
+0|colour
+0|go fishing
+0|plant flowers
+0|cook meals
+0|dad
+0|mum
+0|plant
+0|flower
+0|drink
+0|tea
+0|play computer games
+0|make dolls
+0|take photos
+0|photo
+0|kid
+0|baby
+0|hungry
+0|cry
+0|invite your friends to your party
+0|celebrate your birthday with your friends
+0|give a birthday card to your friend
+0|time
+0|after
+0|then
+0|me
+0|bye
+0|star-shaped cake
+0|heart-shaped cake
+0|jelly
+0|fruit pie
+0|kind
+0|ice cream
+0|candy
+0|sure
+0|light the candles
+0|sing the birthday song
+0|make a wish
+0|blow out the candles
+0|cut the cake
+0|eat the cake
+0|light
+0|the first month of the year
+0|the second month of the year
+0|New Year's Day
+0|Spring Festival
+0|January
+0|February
+0|back
+0|their
+0|the third month of the year
+0|the fourth month of the year
+0|Tree Planting Day
+0|March
+0|April
+0|tree
+0|grass
+0|stop
+0|the fifth month of the year
+0|the sixth month of the year
+0|Labour Day
+0|May
+0|June
+0|Mother's Day
+0|Children's Day
+0|Father's Day
+0|the seventh month of the year
+0|the eighth month of the year
+0|CPC Founding Day
+0|PLA Day
+0|July
+0|August
+0|month
+0|year
+0|the ninth month of the year
+0|the tenth month of the year
+0|National Day
+0|September
+0|October
+0|Teachers' Day
+0|the eleventh month of the year
+0|the twelfth month of the year
+0|Thanksgiving
+0|Christmas
+0|November
+0|December
+0|farm the land
+0|go on spring outings
+0|fly kites
+0|season
+0|spring
+0|little
+0|green
+0|bird
+0|fly
+0|go on a trip
+0|go to a summer camp
+0|have summer holidays
+0|begin
+0|close
+0|summer
+0|weather
+0|heavy
+0|rain
+0|pick apples
+0|cut rice
+0|make a snowman
+0|sweep the snow
+0|autumn
+0|yellow
+0|brown
+0|white
+0|winter
+0|snowman
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 151
+# Total Entries Extracted: 151
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 151
+# -------------------------------

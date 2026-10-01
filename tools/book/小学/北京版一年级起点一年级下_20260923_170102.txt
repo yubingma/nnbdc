@@ -1,0 +1,55 @@
+0|cap
+0|head
+0|hair
+0|uniform
+0|nose
+0|vest
+0|window
+0|yard
+0|wall
+0|ball
+0|van
+0|oil
+0|net
+0|banana
+0|ice cream
+0|ice
+0|orange
+0|jam
+0|apple
+0|juice
+0|peach
+0|grapes
+0|yogurt
+0|zoo
+0|tiger
+0|panda
+0|snake
+0|elephant
+0|fox
+0|lion
+0|monkey
+0|zebra
+0|sun
+0|leaf
+0|king
+0|park
+0|gift
+0|queen
+0|river
+0|ox
+0|duck
+0|egg
+0|cow
+0|rabbit
+0|kitten
+0|map
+0|flag
+0|desk
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 48
+# Total Entries Extracted: 48
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 48
+# -------------------------------

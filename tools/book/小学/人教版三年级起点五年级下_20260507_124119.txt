@@ -1,0 +1,169 @@
+0|eat breakfast
+0|have ... class
+0|play sports
+0|exercise
+0|do morning exercises
+0|eat dinner
+0|clean my room
+0|go for a walk
+0|go shopping
+0|take
+0|dancing
+0|take a dancing class
+0|when
+0|after
+0|start
+0|usually
+0|Spain
+0|late
+0|a.m.
+0|p.m.
+0|why
+0|shop
+0|work
+0|last
+0|sound
+0|also
+0|busy
+0|need
+0|play
+0|letter
+0|live
+0|island
+0|always
+0|cave
+0|go swimming
+0|win
+0|spring
+0|summer
+0|autumn
+0|winter
+0|season
+0|picnic
+0|go on a picnic
+0|pick
+0|pick apples
+0|snowman
+0|make a snowman
+0|which
+0|best
+0|snow
+0|good job
+0|because
+0|vacation
+0|all
+0|pink
+0|lovely
+0|leaf
+0|fall
+0|paint
+0|January
+0|February
+0|March
+0|April
+0|May
+0|June
+0|July
+0|August
+0|September
+0|October
+0|November
+0|December
+0|few
+0|a few
+0|thing
+0|meet
+0|sports meet
+0|trip
+0|year
+0|plant
+0|contest
+0|the Great Wall
+0|national
+0|National Day
+0|American
+0|Thanksgiving
+0|Christmas
+0|game
+0|riddle
+0|act
+0|act out
+0|RSVP
+0|by
+0|first
+0|1st
+0|second
+0|2nd
+0|third
+0|3rd
+0|fourth
+0|4th
+0|fifth
+0|5th
+0|twelfth
+0|12th
+0|twentieth
+0|20th
+0|twenty-first
+0|21st
+0|twenty-third
+0|23rd
+0|thirtieth
+0|30th
+0|other
+0|special
+0|show
+0|festival
+0|kitten
+0|diary
+0|still
+0|noise
+0|fur
+0|open
+0|walk
+0|mine
+0|yours
+0|his
+0|hers
+0|theirs
+0|ours
+0|climbing
+0|eating
+0|playing
+0|jumping
+0|drinking
+0|sleeping
+0|each
+0|each other
+0|excited
+0|like
+0|doing morning exercises
+0|having ... class
+0|eating lunch
+0|reading a book
+0|listening to music
+0|keep
+0|keep to the right
+0|keep your desk clean
+0|talk quietly
+0|turn
+0|take turns
+0|bamboo
+0|its
+0|anything
+0|else
+0|exhibition
+0|say
+0|have a look
+0|sushi
+0|teach
+0|sure
+0|Canadian
+0|Spanish
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 162
+# Total Entries Extracted: 162
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 162
+# -------------------------------

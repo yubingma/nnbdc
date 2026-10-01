@@ -1,0 +1,73 @@
+0|school
+0|classroom
+0|textbook
+0|storybook
+0|Chinese book
+0|English book
+0|exercise book
+0|notebook
+0|desk
+0|chair
+0|one
+0|two
+0|three
+0|four
+0|five
+0|six
+0|seven
+0|eight
+0|nine
+0|ten
+0|eleven
+0|twelve
+0|father
+0|dad
+0|mother
+0|mum
+0|brother
+0|sister
+0|daughter
+0|son
+0|grandfather
+0|grandpa
+0|grandmother
+0|grandma
+0|uncle
+0|aunt
+0|mango
+0|bread
+0|candy
+0|doughnut
+0|coffee
+0|fruit
+0|grapes
+0|honey
+0|ice cream
+0|jam
+0|kangaroo
+0|lion
+0|nest
+0|owl
+0|parrot
+0|quail
+0|rooster
+0|elephant
+0|tiger
+0|skirt
+0|T-shirt
+0|uniform
+0|vest
+0|watch
+0|box
+0|yacht
+0|zip
+0|zebra
+0|coat
+0|sweater
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 66
+# Total Entries Extracted: 66
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 66
+# -------------------------------

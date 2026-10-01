@@ -1,0 +1,118 @@
+0|dear
+0|well
+0|of
+0|soon
+0|tell
+0|love
+0|skirt
+0|clean
+0|finish
+0|dirty
+0|paint
+0|Mr
+0|phone
+0|didn't
+0|did not
+0|National Day
+0|stay
+0|what
+0|boring
+0|day
+0|invent
+0|paper
+0|important
+0|printing
+0|print
+0|right
+0|between
+0|bicycle
+0|mouse
+0|beside
+0|man
+0|went
+0|saw
+0|trip
+0|took
+0|fifty
+0|minute
+0|top
+0|mountain
+0|ate
+0|candies
+0|plant
+0|had
+0|have
+0|have a good time
+0|bought
+0|wore
+0|go on a trip
+0|ice
+0|at first
+0|fell
+0|fall over
+0|hurt
+0|a lot
+0|able
+0|be able to
+0|skate
+0|become
+0|gold
+0|ago
+0|long ago
+0|magic
+0|paintbrush
+0|woman
+0|became
+0|real
+0|bad
+0|away
+0|leaves
+0|only
+0|painting
+0|angry
+0|said
+0|doll
+0|matter
+0|lost
+0|found
+0|key
+0|look for
+0|when
+0|came
+0|competition
+0|won
+0|cup
+0|flute
+0|practise
+0|look
+0|happen
+0|fall off
+0|bike ride
+0|thirsty
+0|water
+0|watermelon
+0|carried
+0|bump
+0|knee
+0|cut
+0|finger
+0|early
+0|every
+0|during
+0|computer game
+0|take
+0|medicine
+0|a lot of
+0|exercise
+0|healthy
+0|juice
+0|before
+0|after
+0|toilet
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 111
+# Total Entries Extracted: 111
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 111
+# -------------------------------

@@ -1,0 +1,68 @@
+0|how long
+0|near
+0|along
+0|more than
+0|kilometre
+0|metre
+0|office building
+0|Chinatown
+0|town
+0|subject
+0|everywhere
+0|spoke
+0|lion dance
+0|tomb
+0|wrote
+0|when
+0|stamp
+0|book
+0|collect
+0|hobby
+0|sun
+0|island
+0|coconut
+0|Thanksgiving
+0|nearly
+0|the Spring Festival
+0|sure
+0|December
+0|light
+0|pleased
+0|pretty
+0|French
+0|phone
+0|world
+0|difficult
+0|answer
+0|Miss
+0|bamboo
+0|gave
+0|its
+0|almost
+0|deaf
+0|frightened
+0|sh
+0|roar
+0|fox
+0|at night
+0|coin
+0|ever
+0|tidy
+0|messy
+0|never
+0|blackboard
+0|peace
+0|make peace
+0|member state
+0|famous
+0|aunt
+0|forgot
+0|way
+0|cross
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 61
+# Total Entries Extracted: 61
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 61
+# -------------------------------

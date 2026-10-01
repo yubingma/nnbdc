@@ -1,0 +1,109 @@
+0|my
+0|your
+0|name
+0|new
+0|year
+0|old
+0|how old
+0|class
+0|grade
+0|age
+0|dear
+0|body
+0|head
+0|hair
+0|arm
+0|hand
+0|leg
+0|foot
+0|feet
+0|the matter
+0|hurt
+0|help
+0|bad
+0|bite
+0|tongue
+0|kick
+0|morning
+0|afternoon
+0|summary
+0|face
+0|eye
+0|nose
+0|mouth
+0|ear
+0|bread
+0|cake
+0|fruit
+0|ice-cream
+0|potato
+0|tomato
+0|meat
+0|for
+0|shopping list
+0|cola
+0|buy
+0|rice
+0|noodles
+0|vegetables
+0|fish
+0|chicken
+0|egg
+0|duck
+0|rabbit
+0|pet
+0|snake
+0|turtle
+0|small
+0|long
+0|look for
+0|tail
+0|dance
+0|cat
+0|dog
+0|bird
+0|monkey
+0|tiger
+0|big
+0|short
+0|cap
+0|coat
+0|shoes
+0|sweater
+0|jacket
+0|gloves
+0|trousers
+0|should
+0|wear
+0|week
+0|soon
+0|look forward to
+0|T-shirt
+0|shorts
+0|socks
+0|skirt
+0|dress
+0|shirt
+0|January
+0|February
+0|March
+0|April
+0|May
+0|June
+0|July
+0|August
+0|September
+0|October
+0|November
+0|December
+0|birthday
+0|first
+0|party
+0|delicious
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 102
+# Total Entries Extracted: 102
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 102
+# -------------------------------

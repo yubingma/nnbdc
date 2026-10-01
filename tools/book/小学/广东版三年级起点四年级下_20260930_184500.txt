@@ -1,0 +1,92 @@
+0|teachers' office
+0|classroom
+0|hall
+0|library
+0|music room
+0|art room
+0|gym
+0|playground
+0|school
+0|come
+0|too
+0|of course
+0|idea
+0|living room
+0|dining room
+0|bedroom
+0|kitchen
+0|bathroom
+0|garden
+0|new
+0|kid
+0|everyone
+0|nice
+0|movie theater
+0|swimming pool
+0|hospital
+0|bank
+0|shopping mall
+0|restaurant
+0|park
+0|supermarket
+0|beach
+0|bus
+0|go to the zoo
+0|buy an ice cream
+0|call ... friend
+0|call my friend
+0|borrow a book
+0|watch TV
+0|listen to a song
+0|balloon
+0|like
+0|come back
+0|Thank you.
+0|You're welcome.
+0|coat
+0|dress
+0|sweater
+0|cap
+0|shorts
+0|shirt
+0|T-shirt
+0|red
+0|blue
+0|shoes
+0|whose
+0|mine
+0|taxi
+0|driver
+0|firefighter
+0|police officer
+0|writer
+0|office worker
+0|doctor
+0|nurse
+0|teacher
+0|magician
+0|listen to music
+0|ride
+0|play cards
+0|make models
+0|hobby
+0|ice skate
+0|go to the park
+0|see a movie
+0|play outside
+0|read a story
+0|surf the Internet
+0|bored
+0|make
+0|snowman
+0|body
+0|head
+0|wing
+0|sure
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 85
+# Total Entries Extracted: 85
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 85
+# -------------------------------

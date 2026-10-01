@@ -1,0 +1,85 @@
+0|what
+0|day
+0|it
+0|Tuesday
+0|I
+0|Wednesday
+0|go
+0|on
+0|are
+0|in
+0|a
+0|week
+0|do
+0|you
+0|park
+0|class
+0|we
+0|to
+0|the
+0|Sunday
+0|zoo
+0|Saturday
+0|film
+0|grandma
+0|grandmother
+0|grandpa
+0|grandfather
+0|or
+0|is
+0|eleven
+0|his
+0|her
+0|how many
+0|pig
+0|your
+0|sixteen
+0|my
+0|cow
+0|nineteen
+0|our
+0|two
+0|three
+0|after
+0|elephant
+0|yes
+0|four
+0|baby
+0|cat
+0|thin
+0|dog
+0|toy
+0|monkey
+0|these
+0|them
+0|no
+0|ear
+0|red
+0|eye
+0|hair
+0|long
+0|and
+0|short
+0|me
+0|arm
+0|leg
+0|body
+0|small
+0|hand
+0|thank
+0|old
+0|eight
+0|cake
+0|look
+0|at
+0|tree
+0|big
+0|new
+0|year
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 78
+# Total Entries Extracted: 78
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 78
+# -------------------------------

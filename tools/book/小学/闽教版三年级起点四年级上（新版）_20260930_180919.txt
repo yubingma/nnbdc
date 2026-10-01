@@ -1,0 +1,121 @@
+0|there
+0|new
+0|student
+0|cousin
+0|computer
+0|IT
+0|Information Technology
+0|library
+0|which
+0|grade
+0|same
+0|cow
+0|card
+0|cold
+0|blackboard
+0|clean
+0|bright
+0|come
+0|desk
+0|Ms.
+0|city
+0|cinema
+0|ice
+0|sing
+0|dance
+0|classmate
+0|daily
+0|life
+0|get
+0|get up
+0|bus
+0|full
+0|into
+0|car
+0|when
+0|football
+0|has
+0|garden
+0|sweep
+0|floor
+0|chore
+0|pick up
+0|wash
+0|toilet
+0|gym
+0|age
+0|often
+0|talk
+0|her
+0|sometimes
+0|ball
+0|hand
+0|house
+0|hobby
+0|their
+0|interesting
+0|wonderful
+0|basketball
+0|China
+0|they're
+0|they are
+0|kung fu
+0|Peking opera
+0|ping-pong
+0|he's
+0|he is
+0|tree
+0|lake
+0|learn
+0|a lot
+0|from
+0|also
+0|collect
+0|stamp
+0|thing
+0|listen
+0|music
+0|song
+0|tail
+0|festival
+0|Spring Festival
+0|before
+0|put up
+0|luck
+0|else
+0|buy
+0|dumpling
+0|gala
+0|dragon
+0|say
+0|them
+0|any
+0|lucky
+0|money
+0|lantern
+0|riddle
+0|Lantern Festival
+0|Dragon Boat Festival
+0|Mid-Autumn Festival
+0|fair
+0|boat
+0|race
+0|try
+0|map
+0|sleep
+0|merry
+0|Christmas
+0|moon
+0|mooncake
+0|hope
+0|join
+0|best
+0|yours
+0|quiet
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 114
+# Total Entries Extracted: 114
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 114
+# -------------------------------

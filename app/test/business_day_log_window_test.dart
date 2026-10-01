@@ -113,8 +113,11 @@ void main() {
     await addLog('log_assess', assessTime, FsrsRating.easy);
     await addLog('log_consolidate', consolidateTime, FsrsRating.good);
 
-    expect(await StudyBo().getTodayWrongWordIds([wordId]), isEmpty,
-        reason: '本业务日首条评分是 23:50 的 easy，词不该进"今天答错"集合');
+    final wrongIds = await StudyBo().getTodayWrongWordIds([wordId]);
+    expect(wrongIds.checkWrong, isEmpty,
+        reason: '本业务日首条评分是 23:50 的 easy，词不该进"测评答错"集合');
+    expect(wrongIds.laterWrong, isEmpty,
+        reason: '后面的巩固是 good，也不构成"测评之后又答错"');
   });
 
   test('今天首条评分口径：本业务日首条（前一自然日 23:50）是 again 时算今天答错', () async {
@@ -122,8 +125,21 @@ void main() {
     await addLog('log_assess', assessTime, FsrsRating.again);
     await addLog('log_consolidate', consolidateTime, FsrsRating.good);
 
-    expect(await StudyBo().getTodayWrongWordIds([wordId]), {wordId},
+    final wrongIds = await StudyBo().getTodayWrongWordIds([wordId]);
+    expect(wrongIds.checkWrong, {wordId},
         reason: '23:50 与 01:00 同属业务日 6/15，首条是 23:50 的 again');
+    expect(wrongIds.laterWrong, isEmpty,
+        reason: '后面的巩固是 good，不算"又答错"');
+  });
+
+  test('测评答对、后续环节又答错：只进"测评之后又答错"，不污染测评答错', () async {
+    await addLog('log_assess', assessTime, FsrsRating.easy);
+    await addLog('log_consolidate', consolidateTime, FsrsRating.again);
+
+    final wrongIds = await StudyBo().getTodayWrongWordIds([wordId]);
+    expect(wrongIds.checkWrong, isEmpty, reason: '测评（当天首条）是 easy');
+    expect(wrongIds.laterWrong, {wordId},
+        reason: '巩固环节 again → 小结把拼写标次级警示色');
   });
 
   test('「今天首条评分」口径：每词取业务日窗口内最早一条（按 createTime 正序）', () async {

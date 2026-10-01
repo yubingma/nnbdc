@@ -1,0 +1,53 @@
+0|vacation
+0|travel
+0|traveled
+0|housework
+0|over
+0|trip
+0|London
+0|exciting
+0|photo
+0|tour
+0|top
+0|special
+0|bring
+0|brought
+0|weekend
+0|read
+0|write
+0|wrote
+0|concert
+0|program
+0|piano
+0|drum
+0|guitar
+0|flute
+0|will
+0|wonderful
+0|begin
+0|soon
+0|tonight
+0|worried
+0|violin
+0|year
+0|live
+0|people
+0|think
+0|life
+0|hard
+0|happen
+0|future
+0|everything
+0|more
+0|better
+0|dirty
+0|terrible
+0|believe
+0|sea
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 46
+# Total Entries Extracted: 46
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 46
+# -------------------------------

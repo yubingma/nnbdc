@@ -1,0 +1,54 @@
+0|frog
+0|rabbit
+0|bee
+0|bird
+0|sheep
+0|hen
+0|dog
+0|cat
+0|rice
+0|soup
+0|egg
+0|noodles
+0|ball
+0|doll
+0|bicycle
+0|kite
+0|jelly
+0|ice cream
+0|sweet
+0|biscuit
+0|cola
+0|juice
+0|milk
+0|water
+0|warm
+0|hot
+0|spring
+0|summer
+0|sunny
+0|cloudy
+0|rainy
+0|windy
+0|T-shirt
+0|dress
+0|shorts
+0|blouse
+0|ride
+0|skip
+0|play
+0|fly
+0|gift
+0|card
+0|firecracker
+0|firework
+0|boy
+0|wolf
+0|farmer
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 47
+# Total Entries Extracted: 47
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 47
+# -------------------------------

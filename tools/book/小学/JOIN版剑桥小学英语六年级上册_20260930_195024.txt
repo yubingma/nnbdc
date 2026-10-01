@@ -1,0 +1,185 @@
+0|cinema
+0|cry out
+0|exercise
+0|few
+0|get along
+0|grade
+0|left
+0|plan
+0|spend
+0|supermarket
+0|That's all right.
+0|That's OK.
+0|trip
+0|turn on
+0|will
+0|act
+0|by
+0|dialogue
+0|drama
+0|fan
+0|French
+0|geography
+0|history
+0|ICT
+0|language
+0|nice
+0|play
+0|pop
+0|south
+0|around
+0|at the moment
+0|building
+0|busy
+0|capital
+0|culture
+0|direction
+0|east
+0|famous
+0|first
+0|map
+0|middle
+0|most
+0|north
+0|palace
+0|Queen
+0|right
+0|river
+0|second
+0|third
+0|twin towers
+0|west
+0|anything
+0|back
+0|call out
+0|check
+0|check out
+0|corn
+0|dark
+0|doorbell
+0|down
+0|dress up
+0|far
+0|festival
+0|fourth
+0|full
+0|get
+0|Halloween
+0|hunt
+0|important
+0|invite
+0|land
+0|lock out
+0|lunar
+0|Mid-Autumn Festival
+0|moon cake
+0|myself
+0|Native American
+0|nobody
+0|officer
+0|peanut
+0|plant
+0|ring
+0|strange
+0|surprise
+0|sweet potato
+0|Thanksgiving
+0|the Mayflower
+0|treat
+0|trick
+0|trick or treat
+0|turkey
+0|upstairs
+0|wild
+0|accident
+0|bandage
+0|belt
+0|bottle
+0|campsite
+0|cut
+0|deep
+0|finally
+0|helmet
+0|keep
+0|keep to
+0|kind
+0|matter
+0|pad
+0|put away
+0|rule
+0|safe
+0|stay
+0|stitch
+0|swimming
+0|take care
+0|understand
+0|unhappy
+0|village
+0|well
+0|anyone
+0|bamboo
+0|black rhino
+0|danger
+0|dig
+0|dirty
+0|fur
+0|grass
+0|have a look
+0|horn
+0|kill
+0|kingfisher
+0|leaf
+0|medicine
+0|mud
+0|nest
+0|part
+0|rhino
+0|riverbank
+0|save
+0|so
+0|South China Tiger
+0|sweet
+0|web
+0|work
+0|American
+0|band
+0|bookshop
+0|camera
+0|CD
+0|CD player
+0|chicken
+0|club
+0|cute
+0|dream
+0|each other
+0|feed
+0|forever
+0|grown-up
+0|hobby
+0|job
+0|little
+0|mango
+0|national
+0|near
+0|once
+0|own
+0|peace
+0|photograph
+0|player
+0|poor
+0|poverty
+0|precious
+0|signature
+0|soccer
+0|sorrow
+0|war
+0|without
+0|hotel
+0|plaster
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 178
+# Total Entries Extracted: 178
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 178
+# -------------------------------

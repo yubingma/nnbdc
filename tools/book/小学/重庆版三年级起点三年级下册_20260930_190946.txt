@@ -1,0 +1,113 @@
+0|boy
+0|girl
+0|man
+0|woman
+0|pupil
+0|teacher
+0|doctor
+0|nurse
+0|uncle
+0|aunt
+0|bus
+0|train
+0|ship
+0|kite
+0|panda
+0|monkey
+0|father
+0|mother
+0|sister
+0|brother
+0|grandpa
+0|grandfather
+0|grandma
+0|grandmother
+0|cousin
+0|coat
+0|shirt
+0|dress
+0|skirt
+0|cap
+0|sweater
+0|T-shirt
+0|scarf
+0|water
+0|juice
+0|milk
+0|tea
+0|pie
+0|cake
+0|egg
+0|ice-cream
+0|play football
+0|play basketball
+0|run
+0|jump
+0|eleven
+0|twelve
+0|thirteen
+0|fourteen
+0|fifteen
+0|and
+0|And you?
+0|all right
+0|basketball
+0|can't
+0|can not
+0|child
+0|children
+0|Class is over.
+0|clothes
+0|come on
+0|drink
+0|evening
+0|fast
+0|fine
+0|football
+0|go
+0|good evening
+0|good night
+0|great
+0|have
+0|he
+0|he's
+0|he is
+0|hungry
+0|idea
+0|job
+0|just right
+0|late
+0|let's
+0|like
+0|new
+0|night
+0|put on
+0|ready
+0|school
+0|see
+0|she
+0|she's
+0|she is
+0|small
+0|some
+0|start
+0|the
+0|then
+0|thirsty
+0|time
+0|time for bed
+0|time for rest
+0|time for tea
+0|too
+0|toy
+0|try on
+0|we
+0|What do you like?
+0|who
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 106
+# Total Entries Extracted: 106
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 106
+# -------------------------------

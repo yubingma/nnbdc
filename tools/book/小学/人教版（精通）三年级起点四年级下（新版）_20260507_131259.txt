@@ -1,0 +1,112 @@
+0|by
+0|car
+0|subway
+0|on foot
+0|taxi
+0|train
+0|ship
+0|plane
+0|usually
+0|come
+0|near
+0|our
+0|travel
+0|holiday
+0|see
+0|live
+0|parent
+0|we
+0|work
+0|go to work
+0|Chinese
+0|maths
+0|art
+0|English
+0|science
+0|PE
+0|IT
+0|model
+0|study
+0|plant
+0|poem
+0|flute
+0|subject
+0|dear
+0|because
+0|learn
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|Saturday
+0|Sunday
+0|badminton
+0|tennis
+0|piano
+0|guzheng
+0|Beijing Opera
+0|else
+0|happy
+0|playground
+0|with
+0|busy
+0|interesting
+0|chore
+0|homework
+0|exercise
+0|cook
+0|visit
+0|grandparent
+0|have
+0|picnic
+0|weekend
+0|together
+0|take a walk
+0|flower
+0|card
+0|cup
+0|write
+0|letter
+0|tell
+0|sing
+0|song
+0|cut
+0|paper cutting
+0|act
+0|play
+0|know
+0|Mother's Day
+0|Children's Day
+0|party
+0|Spring Festival
+0|TV
+0|lucky money
+0|Good idea!
+0|post office
+0|restaurant
+0|supermarket
+0|zoo
+0|straight
+0|turn
+0|left
+0|right
+0|across from
+0|next to
+0|between
+0|map
+0|phone
+0|far
+0|very
+0|think
+0|ask someone for help
+0|shop
+0|then
+0|Excuse me.
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 105
+# Total Entries Extracted: 105
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 105
+# -------------------------------

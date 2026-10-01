@@ -1,0 +1,108 @@
+0|too much
+0|candy
+0|go to bed
+0|early
+0|exercise
+0|tired
+0|drink
+0|before
+0|dirty
+0|always
+0|stomachache
+0|headache
+0|toothache
+0|a lot of
+0|sleepy
+0|subject
+0|mark
+0|advice
+0|more
+0|New Year's Day
+0|Tree Planting Day
+0|Mother's Day
+0|Children's Day
+0|Father's Day
+0|Teachers' Day
+0|National Day
+0|Christmas Day
+0|birthday
+0|fifth
+0|5th
+0|tenth
+0|10th
+0|twelfth
+0|12th
+0|twenty-fifth
+0|25th
+0|plant
+0|make a poster
+0|celebrate
+0|have a picnic
+0|office
+0|together
+0|special
+0|send an email
+0|write a letter
+0|make a phone call
+0|send a short message
+0|mail a present
+0|make a video call
+0|say
+0|make a card
+0|everywhere
+0|flower show
+0|cleaned the window
+0|watched TV
+0|climbed a hill
+0|visited grandparents
+0|danced
+0|jumped rope
+0|listened to music
+0|rowed a boat
+0|played computer games
+0|stayed at home
+0|played the piano
+0|played chess
+0|washed clothes
+0|boring
+0|badminton
+0|won
+0|went to the beach
+0|drank cold drinks
+0|swam
+0|ate ice-cream
+0|the Stone Forest
+0|bought some gifts
+0|took photos
+0|saw flowers
+0|slept
+0|delicious
+0|felt happy
+0|sad
+0|left
+0|French fries
+0|were
+0|was born
+0|started to speak
+0|learned to walk
+0|learned to ride a bike
+0|went to kindergarten
+0|went to school
+0|learned to swim
+0|fifteenth
+0|15th
+0|started to buy things
+0|started to study English
+0|started to use a computer
+0|all over
+0|out of
+0|into
+0|chopsticks
+0|wet
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 101
+# Total Entries Extracted: 101
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 101
+# -------------------------------

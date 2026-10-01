@@ -1,0 +1,185 @@
+0|beautiful
+0|clean
+0|hard
+0|learn
+0|New South Wales
+0|soon
+0|summer holiday
+0|take
+0|take photos
+0|time
+0|the UK
+0|umbrella
+0|whose
+0|work
+0|both
+0|change
+0|come in
+0|come on
+0|cook
+0|cousin
+0|doctor
+0|driver
+0|family
+0|fantastic
+0|farmer
+0|grandfather
+0|grandmother
+0|grandparent
+0|granny
+0|introduce
+0|Little Red Riding Hood
+0|member
+0|nurse
+0|phone
+0|police
+0|problem
+0|role
+0|run away
+0|scene
+0|taxi
+0|these
+0|walk off
+0|woods
+0|word
+0|worker
+0|always
+0|band
+0|because
+0|bell
+0|bring
+0|cool
+0|darling
+0|dollar
+0|easy
+0|everywhere
+0|friendship
+0|hurt
+0|luck
+0|mascot
+0|necklace
+0|Olympic
+0|popular
+0|Puma Ranch
+0|ring
+0|shell
+0|silver
+0|soft toy
+0|test
+0|watch out
+0|answer
+0|athlete
+0|collect
+0|cyclist
+0|end
+0|go
+0|kilometre
+0|opera house
+0|quarter
+0|say
+0|special
+0|spot
+0|stamp
+0|tell
+0|top
+0|train
+0|Yours
+0|autograph
+0|comic
+0|email
+0|for
+0|gone
+0|hat
+0|postcard
+0|sticker
+0|thief
+0|also
+0|broken
+0|bush
+0|buy
+0|candy
+0|chewing gum
+0|flower
+0|garden
+0|happen
+0|hide
+0|pass
+0|pick
+0|plum
+0|shall
+0|till
+0|wait
+0|weekend
+0|alright
+0|around
+0|cartoon
+0|castle
+0|down
+0|dream
+0|dust
+0|DVD
+0|fast asleep
+0|film
+0|funny
+0|ghost
+0|Hurry up!
+0|just a minute
+0|key
+0|little
+0|lock
+0|open
+0|path
+0|pond
+0|prince
+0|quickly
+0|right now
+0|sleep
+0|sometimes
+0|talk
+0|travel
+0|zoo
+0|across
+0|air
+0|appear
+0|beach
+0|blush
+0|bucket
+0|cassette
+0|fall
+0|flipper
+0|golden
+0|hear
+0|kick
+0|laugh
+0|lollipop
+0|lolly
+0|loud
+0|mask
+0|meet
+0|Nintendo
+0|no problem
+0|note pad
+0|pretty
+0|princess
+0|recorder
+0|several
+0|snorkel
+0|so
+0|so that
+0|sound
+0|stage
+0|such
+0|suddenly
+0|towel
+0|trip
+0|uh huh
+0|voice
+0|want
+0|well
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 178
+# Total Entries Extracted: 178
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 178
+# -------------------------------

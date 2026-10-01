@@ -1,0 +1,74 @@
+0|aeroplane
+0|bus
+0|ship
+0|car
+0|pineapple
+0|cake
+0|bread
+0|glass
+0|bag
+0|sweet
+0|lemon
+0|sour
+0|salt
+0|salty
+0|coffee
+0|bitter
+0|tiger
+0|lion
+0|panda
+0|monkey
+0|clever
+0|strong
+0|toy train
+0|doll
+0|skateboard
+0|robot
+0|lovely
+0|hat
+0|scarf
+0|jacket
+0|a pair of gloves
+0|a pair of socks
+0|a pair of shoes
+0|funny
+0|his
+0|circle
+0|square
+0|triangle
+0|star
+0|rectangle
+0|house
+0|sky
+0|sea
+0|mountain
+0|river
+0|plant a tree
+0|have a picnic
+0|ice-skate
+0|ski
+0|body
+0|head
+0|shoulder
+0|arm
+0|finger
+0|hand
+0|knee
+0|leg
+0|foot
+0|feet
+0|park
+0|cinema
+0|zoo
+0|our
+0|class
+0|party
+0|take a photograph
+0|parent
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 67
+# Total Entries Extracted: 67
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 67
+# -------------------------------

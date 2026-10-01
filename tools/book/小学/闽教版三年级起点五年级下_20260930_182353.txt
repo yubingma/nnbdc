@@ -1,0 +1,124 @@
+0|was
+0|am
+0|is
+0|were
+0|are
+0|China
+0|went
+0|go
+0|parent
+0|hometown
+0|took
+0|take
+0|tour
+0|Sun Moon Lake
+0|lake
+0|did
+0|do
+0|swam
+0|swim
+0|elephant
+0|map
+0|over there
+0|hill
+0|under
+0|next to
+0|animal
+0|saw
+0|see
+0|hungry
+0|ate
+0|eat
+0|any
+0|doctor
+0|search for
+0|information
+0|tired
+0|fight
+0|Covid-19
+0|love
+0|people
+0|hero
+0|award
+0|Medal of the Republic
+0|honor
+0|Young Pioneer
+0|learn
+0|hard
+0|serve
+0|grow up
+0|Dr.
+0|still
+0|wife
+0|member
+0|women
+0|woman
+0|team
+0|spring outing
+0|climb
+0|mountain
+0|water
+0|thirsty
+0|camera
+0|sky
+0|cloud
+0|get on
+0|gate
+0|pick
+0|village
+0|hard-working
+0|top
+0|farmhouse
+0|really
+0|meal
+0|Sports Day
+0|meter
+0|fast
+0|long jump
+0|try
+0|high jump
+0|shout
+0|proud
+0|fall down
+0|well
+0|busy
+0|ran
+0|run
+0|grass
+0|race
+0|first
+0|second
+0|third
+0|drink
+0|sad
+0|cheer up
+0|only
+0|fourth
+0|angry
+0|program
+0|building
+0|floor
+0|twelfth
+0|would
+0|living room
+0|bridge
+0|also
+0|fifteenth
+0|neighbor
+0|river
+0|grandmother
+0|grandfather
+0|date
+0|lucky
+0|guess
+0|difficult
+0|calendar
+0|before
+0|Mrs.
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 117
+# Total Entries Extracted: 117
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 117
+# -------------------------------

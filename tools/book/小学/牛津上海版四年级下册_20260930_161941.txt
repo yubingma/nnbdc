@@ -1,0 +1,105 @@
+0|watermelon
+0|grape
+0|plum
+0|cherry
+0|strawberry
+0|a glass of
+0|juice
+0|hard
+0|soft
+0|rough
+0|smooth
+0|sharp
+0|blunt
+0|thick
+0|thin
+0|knife
+0|pencil
+0|pencil case
+0|hill
+0|lawn
+0|path
+0|bench
+0|shadow
+0|sun
+0|the sun
+0|rise
+0|high
+0|at noon
+0|go down
+0|play football
+0|play table tennis
+0|play volleyball
+0|play badminton
+0|play basketball
+0|sport
+0|poster
+0|join
+0|club
+0|bone
+0|cat food
+0|dog food
+0|fish
+0|parrot
+0|tortoise
+0|cute
+0|bedroom
+0|living room
+0|bathroom
+0|kitchen
+0|homework
+0|model plane
+0|wash
+0|dinner
+0|quiet
+0|loud
+0|bell
+0|television
+0|TV
+0|sound
+0|noisy
+0|ring
+0|watch TV
+0|seven o'clock
+0|a quarter past seven
+0|half past seven
+0|a quarter to eight
+0|get up
+0|brush my teeth
+0|wash my face
+0|have breakfast
+0|always
+0|usually
+0|often
+0|sometimes
+0|never
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|Saturday
+0|Sunday
+0|Chinese chess
+0|at weekends
+0|piano
+0|violin
+0|triangle
+0|drum
+0|music
+0|the Spring Festival
+0|the Dragon Boat Festival
+0|the Mid-autumn Festival
+0|the Double Ninth Festival
+0|festival
+0|rice dumpling
+0|duckling
+0|swan
+0|nest
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 98
+# Total Entries Extracted: 98
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 98
+# -------------------------------

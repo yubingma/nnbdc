@@ -1,0 +1,119 @@
+0|look
+0|cashier
+0|cola
+0|dollar
+0|cent
+0|enjoy
+0|careful
+0|Be careful!
+0|later
+0|to go
+0|duck
+0|pond
+0|cloud
+0|dry
+0|like
+0|look like
+0|stay
+0|shine
+0|cry
+0|everyone
+0|fly away
+0|just
+0|cow
+0|blow
+0|rabbit
+0|balloon
+0|stairs
+0|mess
+0|play
+0|third
+0|time
+0|bark
+0|loudly
+0|nothing
+0|home
+0|got
+0|get
+0|space
+0|interested
+0|spaceship
+0|finish
+0|decide
+0|paper
+0|brought
+0|bring
+0|bring back
+0|model
+0|taikonaut
+0|first
+0|national
+0|seed
+0|spent
+0|about
+0|flew
+0|fly
+0|October
+0|video
+0|proud
+0|someday
+0|born
+0|as
+0|became
+0|become
+0|letter
+0|spell
+0|herself
+0|all over
+0|live
+0|role model
+0|cup
+0|planned
+0|plan
+0|baseball
+0|more
+0|smile
+0|mistake
+0|make mistakes
+0|with
+0|said
+0|say
+0|raincoat
+0|wish
+0|best wishes
+0|primary
+0|primary school
+0|message
+0|keep
+0|forever
+0|joy
+0|future
+0|wonderful
+0|happiness
+0|what
+0|middle
+0|middle school
+0|speech
+0|classmate
+0|leave
+0|September
+0|excited
+0|geography
+0|same
+0|at the same time
+0|spoke
+0|speak
+0|little
+0|keep on
+0|practise
+0|sometime
+0|each other
+0|chemistry
+0|physics
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 112
+# Total Entries Extracted: 112
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 112
+# -------------------------------

@@ -1,0 +1,57 @@
+0|morning
+0|afternoon
+0|book
+0|ruler
+0|pencil
+0|rubber
+0|eye
+0|mouth
+0|face
+0|nose
+0|ear
+0|dance
+0|read
+0|sing
+0|draw
+0|grandfather
+0|grandmother
+0|father
+0|mother
+0|me
+0|fat
+0|thin
+0|tall
+0|short
+0|one
+0|two
+0|three
+0|four
+0|five
+0|six
+0|apple
+0|pear
+0|peach
+0|orange
+0|hamburger
+0|pizza
+0|cake
+0|pie
+0|chick
+0|duck
+0|cow
+0|pig
+0|bear
+0|tiger
+0|monkey
+0|panda
+0|red
+0|blue
+0|yellow
+0|green
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 50
+# Total Entries Extracted: 50
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 50
+# -------------------------------

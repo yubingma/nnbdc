@@ -1,0 +1,159 @@
+0|country
+0|field
+0|pick
+0|grass
+0|cow
+0|sheep
+0|other
+0|few
+0|a few
+0|goat
+0|goose
+0|geese
+0|river
+0|grandparent
+0|milk
+0|ride
+0|rode
+0|take
+0|took
+0|still
+0|help ... with ...
+0|air
+0|city
+0|student
+0|quiet
+0|cheap
+0|modern
+0|noisy
+0|wide
+0|crowded
+0|comfortable
+0|heavy
+0|slow
+0|postcard
+0|different to ...
+0|dirty
+0|afraid
+0|be afraid ...
+0|because
+0|sell
+0|sold
+0|countryside
+0|theatre
+0|all day
+0|health
+0|matter
+0|What's the matter?
+0|ill
+0|stomachache
+0|ate
+0|eat
+0|hear
+0|heard
+0|I'm sorry to hear that.
+0|gave
+0|give
+0|check-up
+0|medicine
+0|time
+0|toothache
+0|brush
+0|twice
+0|broken
+0|finger
+0|rest
+0|take a rest
+0|have a cold
+0|wore
+0|wear
+0|headache
+0|could
+0|can
+0|fever
+0|secret
+0|simple
+0|least
+0|at least
+0|diet
+0|keep a good diet
+0|less
+0|oily
+0|finally
+0|smile
+0|even
+0|past
+0|experience
+0|yesterday
+0|bought
+0|buy
+0|angry
+0|came
+0|come
+0|no ... at all
+0|not ... at all
+0|poor
+0|last
+0|year
+0|met
+0|meet
+0|saw
+0|see
+0|read
+0|diary
+0|Disneyland
+0|Mickey Mouse
+0|Donald Duck
+0|a little
+0|later
+0|felt
+0|feel
+0|sat
+0|sit
+0|until
+0|better
+0|surprised
+0|back then
+0|polite
+0|surf
+0|Internet
+0|surf the Internet
+0|fat
+0|cry
+0|ago
+0|village
+0|nearby
+0|far away
+0|office
+0|store
+0|department store
+0|each other
+0|gift
+0|lucky
+0|lucky money
+0|wish
+0|jiaozi
+0|moon
+0|mooncake
+0|dragon
+0|Dragon Boat Festival
+0|zongzi
+0|race
+0|Chongyang Festival
+0|lunar
+0|celebrate
+0|remember
+0|ancient
+0|poet
+0|bean
+0|bamboo
+0|cheer
+0|reunion
+0|lantern
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 152
+# Total Entries Extracted: 152
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 152
+# -------------------------------

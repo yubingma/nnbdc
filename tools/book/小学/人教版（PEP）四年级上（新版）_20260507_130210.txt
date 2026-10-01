@@ -1,0 +1,116 @@
+0|PE
+0|job
+0|doctor
+0|farmer
+0|nurse
+0|office worker
+0|factory worker
+0|busy
+0|tired
+0|chore
+0|cook
+0|clean
+0|room
+0|look after
+0|sweep
+0|floor
+0|together
+0|people
+0|child
+0|his
+0|strong
+0|hair
+0|also
+0|kind
+0|quiet
+0|best
+0|read
+0|Chinese
+0|play
+0|game
+0|football
+0|basketball
+0|always
+0|afternoon
+0|there
+0|playground
+0|park
+0|over
+0|hospital
+0|shop
+0|toilet
+0|bus stop
+0|library
+0|sport
+0|walk
+0|community
+0|favourite
+0|place
+0|photo
+0|story
+0|buy
+0|firefighter
+0|why
+0|driver
+0|cleaner
+0|delivery worker
+0|police officer
+0|a lot of
+0|now
+0|make the bed
+0|old
+0|tell
+0|everyone
+0|Mrs
+0|speak
+0|weather
+0|sunny
+0|hot
+0|bad
+0|cold
+0|windy
+0|cloudy
+0|rainy
+0|snowy
+0|cool
+0|warm
+0|tomorrow
+0|rain
+0|closed
+0|film
+0|idea
+0|fly
+0|kite
+0|snowman
+0|fun
+0|their
+0|swim
+0|Sydney
+0|whose
+0|sweater
+0|sock
+0|mine
+0|wear
+0|shirt
+0|coat
+0|dress
+0|which
+0|season
+0|winter
+0|snow
+0|get together
+0|spring
+0|summer
+0|autumn
+0|T-shirt
+0|fall
+0|leaf
+0|glove
+0|then
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 109
+# Total Entries Extracted: 109
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 109
+# -------------------------------

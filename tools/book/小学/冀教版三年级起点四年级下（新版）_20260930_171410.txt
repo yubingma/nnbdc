@@ -1,0 +1,99 @@
+0|come
+0|sun
+0|hot
+0|and
+0|rain
+0|snow
+0|cold
+0|feel
+0|sad
+0|too
+0|happy
+0|strong
+0|winter
+0|warm
+0|spring
+0|summer
+0|autumn
+0|weather
+0|rainy
+0|windy
+0|snowy
+0|cloudy
+0|sunny
+0|clothes
+0|wear
+0|umbrella
+0|shorts
+0|T-shirt
+0|shirt
+0|cap
+0|coat
+0|trousers
+0|shoe
+0|much
+0|lovely
+0|dress
+0|cool
+0|but
+0|sweater
+0|season
+0|year
+0|new
+0|month
+0|March
+0|April
+0|May
+0|June
+0|July
+0|August
+0|September
+0|October
+0|November
+0|December
+0|January
+0|February
+0|fly
+0|kite
+0|when
+0|New Year's Day
+0|or
+0|child
+0|Children's Day
+0|sing
+0|street
+0|will
+0|party
+0|song
+0|park
+0|supermarket
+0|cinema
+0|behind
+0|film
+0|front
+0|in front of
+0|between
+0|turn right
+0|right
+0|left
+0|then
+0|safe
+0|by
+0|bus
+0|on foot
+0|car
+0|bike
+0|taxi
+0|wait for
+0|careful
+0|driver
+0|stop
+0|should
+0|back
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 92
+# Total Entries Extracted: 92
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 92
+# -------------------------------

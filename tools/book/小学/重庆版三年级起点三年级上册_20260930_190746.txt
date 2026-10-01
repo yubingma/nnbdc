@@ -1,0 +1,125 @@
+0|Miss Liu
+0|Lu Hua
+0|Max
+0|Rex
+0|Mr. White
+0|Hao Tian
+0|Du Xiaomao
+0|Gao Wendi
+0|car
+0|ball
+0|cat
+0|dog
+0|pen
+0|pencil
+0|ruler
+0|book
+0|zero
+0|one
+0|two
+0|three
+0|four
+0|five
+0|six
+0|seven
+0|eight
+0|nine
+0|ten
+0|red
+0|white
+0|yellow
+0|green
+0|blue
+0|crayon
+0|orange
+0|pink
+0|purple
+0|brown
+0|black
+0|picture
+0|lemon
+0|banana
+0|apple
+0|watermelon
+0|pear
+0|strawberry
+0|grape
+0|dad
+0|daddy
+0|mum
+0|mom
+0|card
+0|rabbit
+0|ballon
+0|plane
+0|bear
+0|boat
+0|a
+0|an
+0|afternoon
+0|balloon
+0|birthday
+0|can
+0|Can I help you?
+0|class
+0|colour
+0|color
+0|dear
+0|for
+0|good
+0|Good afternoon!
+0|Good morning!
+0|happy
+0|Happy birthday!
+0|Happy New Year!
+0|have
+0|hello
+0|help
+0|Here you are.
+0|hi
+0|how
+0|How old are you?
+0|I'm
+0|I am
+0|it
+0|it's
+0|it is
+0|it isn't
+0|look
+0|love
+0|lovely
+0|Miss
+0|morning
+0|Mr.
+0|my
+0|name
+0|New Year
+0|nice
+0|Nice to meet you.
+0|no
+0|Not at all.
+0|number
+0|pass
+0|please
+0|same
+0|show
+0|thank
+0|Thank you.
+0|that
+0|The same to you.
+0|this
+0|very much
+0|what
+0|what's
+0|what is
+0|which
+0|yes
+0|you
+0|your
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 118
+# Total Entries Extracted: 118
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 118
+# -------------------------------

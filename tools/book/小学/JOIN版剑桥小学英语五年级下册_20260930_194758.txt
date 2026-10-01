@@ -1,0 +1,173 @@
+0|alphabet
+0|enjoy
+0|everyone
+0|fun
+0|head
+0|hey
+0|near
+0|notebook
+0|ping-pong
+0|school
+0|shake hands
+0|until
+0|ask
+0|before
+0|call
+0|CD-ROM
+0|do shopping
+0|Easter
+0|Easter Bunny
+0|get
+0|ill
+0|mobile phone
+0|moment
+0|over there
+0|paint
+0|phone box
+0|phone call
+0|programme
+0|see you tomorrow
+0|something
+0|squirrel
+0|storybook
+0|wait a moment
+0|website
+0|work
+0|wrong
+0|Arctic
+0|come to a stop
+0|early
+0|earth
+0|fishing
+0|go fishing
+0|grandad
+0|grandma
+0|grandpa
+0|hare
+0|hill
+0|ice
+0|lake
+0|North Pole
+0|polar bear
+0|pull
+0|seal
+0|shopping mall
+0|snow
+0|South Pole
+0|will
+0|detective
+0|different
+0|interesting
+0|Kung Fu Panda
+0|nature
+0|only
+0|romantic
+0|science fiction
+0|star
+0|sweet
+0|television
+0|telly
+0|thousand
+0|true
+0|usually
+0|want
+0|while
+0|ahead
+0|beside
+0|bus stop
+0|church
+0|excuse me
+0|hospital
+0|just
+0|late
+0|left
+0|museum
+0|neighbour
+0|next
+0|next to
+0|on
+0|opposite
+0|past
+0|police station
+0|post office
+0|right
+0|side
+0|straight
+0|tell
+0|tourist office
+0|town
+0|train station
+0|baby
+0|badly
+0|blood
+0|boat
+0|Children's Day
+0|city
+0|clear
+0|close
+0|cloudy
+0|come along
+0|fine
+0|hurt
+0|island
+0|jet-ski
+0|most
+0|nearby
+0|pass by
+0|rain
+0|rock
+0|sand
+0|snorkel
+0|snorkelling
+0|starfish
+0|sun
+0|sunny
+0|too
+0|tourist
+0|windy
+0|adventure
+0|afraid
+0|age
+0|ago
+0|alone
+0|bank
+0|be afraid of
+0|boot
+0|born to
+0|cactus
+0|coat
+0|cowboy hat
+0|dark
+0|good at
+0|ground
+0|Hands up!
+0|hero
+0|horror film
+0|hot
+0|last
+0|pancake
+0|proud
+0|ride
+0|robber
+0|sheriff
+0|short
+0|soup
+0|strong
+0|swimmer
+0|thin
+0|worry
+0|build
+0|butter
+0|childish
+0|daughter
+0|drink
+0|quite a lot
+0|Really?
+0|sand castle
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 166
+# Total Entries Extracted: 166
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 166
+# -------------------------------

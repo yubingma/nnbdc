@@ -1,0 +1,165 @@
+0|get up
+0|have breakfast
+0|go to school
+0|have lunch
+0|go home
+0|have dinner
+0|go to bed
+0|daily
+0|schedule
+0|at
+0|o'clock
+0|half
+0|little
+0|drink
+0|lesson
+0|draw
+0|quarter
+0|Miss
+0|brush my teeth
+0|wash my face
+0|Good night, kids!
+0|Chinese
+0|Maths
+0|English
+0|PE
+0|Music
+0|Art
+0|IT
+0|Science
+0|club
+0|student
+0|different
+0|subject
+0|class
+0|pig
+0|timetable
+0|raise the national flag
+0|work out
+0|after school
+0|put on a play
+0|model plane
+0|Great!
+0|firefighter
+0|police officer
+0|farmer
+0|teacher
+0|doctor
+0|bus driver
+0|fire
+0|sick
+0|soup
+0|Mrs
+0|job
+0|people
+0|know
+0|dentist
+0|or
+0|sweet
+0|check
+0|hospital
+0|nurse
+0|put out fires
+0|look after
+0|twice or three times
+0|fill holes in teeth
+0|pull bad teeth out
+0|triangle
+0|violin
+0|piano
+0|guitar
+0|erhu
+0|flute
+0|pipa
+0|drum
+0|woman
+0|concert
+0|think
+0|clever
+0|idea
+0|jar
+0|them
+0|these
+0|bucket
+0|pot
+0|hit
+0|beautiful
+0|clap
+0|musical instrument
+0|paper-cut
+0|painting
+0|circle
+0|square
+0|star
+0|rectangle
+0|clock
+0|shape
+0|side
+0|corner
+0|ask
+0|tiger
+0|say
+0|day
+0|night
+0|hour
+0|minute
+0|second
+0|month
+0|year
+0|measure
+0|question
+0|around
+0|exercise
+0|get ready
+0|at the same time
+0|What time is it?
+0|liquid
+0|solid
+0|gas
+0|sugar
+0|salt
+0|cream
+0|melt
+0|steam
+0|heat
+0|hungry
+0|party
+0|ice cream
+0|freezer
+0|door
+0|open
+0|plastic
+0|mix
+0|put
+0|mixture
+0|chocolate
+0|shake
+0|freeze
+0|Sure!
+0|Don't worry!
+0|Done!
+0|polite
+0|take turns
+0|knock
+0|ox
+0|until
+0|someone
+0|invite
+0|behind
+0|maybe
+0|cry
+0|kind
+0|honey
+0|joke
+0|whatever
+0|another
+0|helpful
+0|way
+0|May I come in?
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 158
+# Total Entries Extracted: 158
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 158
+# -------------------------------

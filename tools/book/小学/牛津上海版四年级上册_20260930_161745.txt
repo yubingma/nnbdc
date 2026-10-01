@@ -1,0 +1,128 @@
+0|eleven
+0|twelve
+0|thirteen
+0|fourteen
+0|fifteen
+0|sixteen
+0|classmate
+0|paint
+0|draw
+0|read
+0|write
+0|swim
+0|jump
+0|fast
+0|picture
+0|very
+0|well
+0|fly
+0|high
+0|happy
+0|hungry
+0|thirsty
+0|sad
+0|full
+0|tired
+0|new
+0|back
+0|biscuit
+0|then
+0|uncle
+0|aunt
+0|cousin
+0|police
+0|officer
+0|doctor
+0|nurse
+0|teacher
+0|student
+0|firefighter
+0|cook
+0|bus driver
+0|coat
+0|shirt
+0|blouse
+0|T-shirt
+0|skirt
+0|sweater
+0|jeans
+0|shorts
+0|pink
+0|friend
+0|canteen
+0|computer lab
+0|office
+0|gym
+0|behind
+0|in front of
+0|building
+0|lesson
+0|lunch
+0|supermarket
+0|post office
+0|restaurant
+0|next to
+0|between
+0|street
+0|shop
+0|near
+0|city
+0|many
+0|some
+0|a packet of sweets
+0|a loaf of bread
+0|a bowl of noodles
+0|a bar of chocolate
+0|a packet of biscuits
+0|a bottle of water
+0|hay
+0|grass
+0|corn
+0|meat
+0|Don't litter.
+0|Don't walk on the grass.
+0|Don't pick flowers.
+0|Don't throw stones.
+0|farm
+0|rubbish
+0|visit
+0|bin
+0|sketchbook
+0|cap
+0|camera
+0|aviary
+0|fountain
+0|pond
+0|far away
+0|road
+0|take
+0|sunny
+0|rainy
+0|cloudy
+0|windy
+0|warm
+0|hot
+0|wet
+0|dry
+0|January
+0|February
+0|March
+0|April
+0|May
+0|June
+0|July
+0|August
+0|September
+0|October
+0|November
+0|December
+0|China
+0|Australia
+0|always
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 121
+# Total Entries Extracted: 121
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 121
+# -------------------------------

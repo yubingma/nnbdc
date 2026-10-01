@@ -1,0 +1,151 @@
+0|about
+0|activity
+0|be
+0|best
+0|boring
+0|clothes
+0|country
+0|jacket
+0|love
+0|many
+0|pig
+0|place
+0|trousers
+0|uniform
+0|school uniform
+0|weather
+0|year
+0|correct
+0|er
+0|half
+0|homework
+0|midnight
+0|minute
+0|o'clock
+0|slow
+0|strike
+0|tick tock
+0|watch
+0|What time is it?
+0|American football
+0|Chinese
+0|Chinese leaves
+0|classmate
+0|cucumber
+0|family name
+0|fruit
+0|grape
+0|group
+0|hmm
+0|hour
+0|L. A. Lakers
+0|later
+0|maths
+0|message
+0|music
+0|over
+0|PE
+0|physical education
+0|pear
+0|pepper
+0|pineapple
+0|potato
+0|rat
+0|science
+0|silly
+0|So what?
+0|spider
+0|subject
+0|tall
+0|team
+0|together
+0|tomato
+0|What's the matter?
+0|a lot
+0|Africa
+0|basket
+0|better
+0|chance
+0|clever
+0|crocodile
+0|drink
+0|fast
+0|fat
+0|for
+0|fox
+0|give
+0|Here we go!
+0|hippo
+0|isn't
+0|is not
+0|its
+0|lion
+0|more
+0|much
+0|sheep
+0|teach
+0|then
+0|walk
+0|wolf
+0|wolfie
+0|bee
+0|gold
+0|mirror
+0|not
+0|of course
+0|old
+0|sofa
+0|wardrobe
+0|blouse
+0|chain
+0|chant
+0|doggie
+0|go away
+0|lesson
+0|life
+0|man
+0|next
+0|on
+0|Rome
+0|story
+0|study
+0|them
+0|way
+0|who
+0|who's
+0|who is
+0|yours
+0|asleep
+0|aunt
+0|bath
+0|bathroom
+0|bedroom
+0|bright
+0|dish
+0|Hawaii
+0|holiday
+0|on holiday
+0|home
+0|kitchen
+0|knock
+0|living room
+0|monster
+0|moon
+0|pool
+0|really
+0|rock'n'roll
+0|Russia
+0|sea
+0|sweet
+0|the Great Wall
+0|tonight
+0|uncle
+0|visit
+0|wash
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 144
+# Total Entries Extracted: 144
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 144
+# -------------------------------

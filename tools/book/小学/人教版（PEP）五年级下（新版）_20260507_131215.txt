@@ -1,0 +1,148 @@
+0|must
+0|sir
+0|inside
+0|scare
+0|password
+0|line
+0|wait
+0|guard
+0|stand
+0|shout
+0|smoke
+0|flash
+0|open
+0|return
+0|borrow
+0|write
+0|along
+0|street
+0|station
+0|next
+0|far
+0|cinema
+0|between
+0|city
+0|behind
+0|left
+0|teach
+0|litter
+0|recycle
+0|taxi
+0|traffic
+0|direct
+0|artist
+0|Ms
+0|scientist
+0|volunteer
+0|live
+0|train
+0|lost
+0|sign
+0|note
+0|foreign
+0|visitor
+0|January
+0|February
+0|skate
+0|holiday
+0|March
+0|April
+0|May
+0|June
+0|party
+0|celebrate
+0|December
+0|Christmas
+0|turkey
+0|July
+0|August
+0|September
+0|October
+0|November
+0|country
+0|sit
+0|beside
+0|west
+0|cup
+0|sunshine
+0|catch
+0|ago
+0|ice
+0|Labour Day
+0|Dragon Boat Festival
+0|CPC Founding Day
+0|PLA Day
+0|National Day
+0|hometown
+0|its
+0|common
+0|beach
+0|desert
+0|grassland
+0|special
+0|wild
+0|kangaroo
+0|koala
+0|wish
+0|could
+0|high
+0|island
+0|travel
+0|feel like
+0|middle
+0|painting
+0|pyramid
+0|ride
+0|camel
+0|even
+0|Confucius
+0|Beijing opera
+0|Mount Taishan
+0|India
+0|Italy
+0|Britain
+0|Cairo
+0|Hawaii
+0|early
+0|underground
+0|bike
+0|foot
+0|on foot
+0|plane
+0|ship
+0|hurt
+0|environment
+0|tip
+0|health
+0|carry
+0|finally
+0|suggest
+0|everyday
+0|internet
+0|seafood
+0|maybe
+0|join
+0|hill
+0|explore
+0|culture
+0|hot pot
+0|tour
+0|local
+0|history
+0|plan
+0|app
+0|information
+0|blog
+0|magazine
+0|northeast
+0|building
+0|palace
+0|stone
+0|last
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 141
+# Total Entries Extracted: 141
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 141
+# -------------------------------

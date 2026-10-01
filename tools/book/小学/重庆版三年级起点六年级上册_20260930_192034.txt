@@ -1,0 +1,96 @@
+0|young
+0|handsome
+0|old
+0|pretty
+0|thin
+0|active
+0|funny
+0|kind
+0|friendly
+0|clever
+0|first
+0|second
+0|third
+0|fourth
+0|fifth
+0|sixth
+0|seventh
+0|eighth
+0|ninth
+0|twelfth
+0|twentieth
+0|twenty-first
+0|collecting stamps
+0|climbing rocks
+0|keeping pets
+0|taking photos
+0|watching birds
+0|playing chess
+0|making things
+0|growing flowers
+0|by bus
+0|by taxi
+0|on foot
+0|by bike
+0|by train
+0|by ship
+0|by car
+0|bookstore
+0|cinema
+0|shop
+0|hospital
+0|supermarket
+0|travel to Beijing
+0|take tennis lessons
+0|visit my aunt
+0|buy books
+0|today
+0|tomorrow
+0|this Sunday
+0|next Sunday
+0|also
+0|April
+0|August
+0|calendar
+0|city
+0|climb rocks
+0|collect stamps
+0|December
+0|enjoy
+0|February
+0|festival
+0|grow flowers
+0|healthy
+0|hobby
+0|holiday
+0|January
+0|July
+0|June
+0|keep pets
+0|kite
+0|learn
+0|like
+0|make things
+0|March
+0|May
+0|month
+0|no wonder
+0|November
+0|October
+0|plan
+0|play chess
+0|practise
+0|September
+0|stamp
+0|take photos
+0|think
+0|trip
+0|watch birds
+0|yesterday
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 89
+# Total Entries Extracted: 89
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 89
+# -------------------------------

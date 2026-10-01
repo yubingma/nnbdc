@@ -1,0 +1,132 @@
+0|blink
+0|boss
+0|cowboy
+0|for now
+0|pilot
+0|pm
+0|pony
+0|really
+0|spacecraft
+0|supersonic
+0|auntie
+0|Australia Day
+0|Australian
+0|baby
+0|Canberra
+0|climb
+0|fact
+0|friendly
+0|koala
+0|little
+0|outgoing
+0|sixth
+0|Spring Festival
+0|tail
+0|active
+0|celery
+0|cherry
+0|corn-on-the-cob
+0|fit
+0|glass
+0|habit
+0|health
+0|healthy
+0|kind
+0|look after
+0|memory
+0|not ... at all
+0|own
+0|plenty
+0|plenty of
+0|protein
+0|stay
+0|string bean
+0|sugar
+0|warm
+0|weight
+0|whole grains
+0|diary
+0|difficult
+0|flavour
+0|gentleman
+0|guide
+0|horrible
+0|lady
+0|rope
+0|saying
+0|share
+0|show
+0|strawberry
+0|tour
+0|vanilla
+0|almost
+0|around
+0|blind
+0|brave
+0|camp
+0|college
+0|confident
+0|dead
+0|deer
+0|die
+0|everything
+0|fight
+0|footballer
+0|forest
+0|heart
+0|hold on
+0|hybrid rice
+0|king
+0|leave
+0|move
+0|Nottingham
+0|shy
+0|soldier
+0|the poor
+0|wise
+0|woman
+0|writer
+0|young
+0|bookworm
+0|California
+0|celebrate
+0|competition
+0|heroine
+0|hood
+0|joy
+0|nonsense
+0|read
+0|rest
+0|Sherwood Forest
+0|shock
+0|Spiderman
+0|trick
+0|win
+0|dangerous
+0|enough
+0|every now and then
+0|glad
+0|ocean
+0|owl
+0|robot
+0|situation
+0|sure
+0|wish
+0|become
+0|colourful
+0|Dunvegan Castle
+0|Edinburgh
+0|Glasgow
+0|goldfish
+0|gun
+0|hiding
+0|Loch Ness
+0|Nessie
+0|painting
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 125
+# Total Entries Extracted: 125
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 125
+# -------------------------------

@@ -1,0 +1,93 @@
+0|across from
+0|next to
+0|between
+0|restaurant
+0|post office
+0|bank
+0|grocery
+0|turn left
+0|turn right
+0|go straight
+0|crossroads
+0|neighbourhood
+0|send
+0|get
+0|money
+0|get to
+0|before
+0|leave
+0|toy
+0|hospital
+0|bookshop
+0|school
+0|supermarket
+0|ball
+0|city
+0|street
+0|sports centre
+0|hotel
+0|square
+0|buy toys
+0|see a film
+0|go boating
+0|busy
+0|station
+0|place
+0|thing
+0|stay
+0|star
+0|king
+0|central
+0|take photos
+0|museum
+0|dream
+0|sea
+0|ski
+0|eat seafood
+0|visit the Mogao Caves
+0|West Lake
+0|row a boat
+0|the Great Wall
+0|summer vacation
+0|travel
+0|reading
+0|skateboarding
+0|singing
+0|dancing
+0|doing jigsaw puzzles
+0|making models
+0|collecting erasers
+0|different
+0|hobby
+0|stamp
+0|catch
+0|go for a picnic
+0|play the violin
+0|go skating
+0|go camping
+0|do the housework
+0|free
+0|never
+0|once a week
+0|twice a week
+0|three times a week
+0|Canada
+0|Australia
+0|the UK
+0|the USA
+0|China
+0|koala
+0|maple leaves
+0|Big Ben
+0|Disneyland
+0|campfire
+0|cute
+0|country
+0|pretty
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 86
+# Total Entries Extracted: 86
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 86
+# -------------------------------

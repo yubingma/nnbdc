@@ -1,0 +1,124 @@
+0|he
+0|he's
+0|he is
+0|doctor
+0|she
+0|she's
+0|she is
+0|me
+0|nurse
+0|driver
+0|policeman
+0|pupil
+0|where
+0|where's
+0|where is
+0|in
+0|on
+0|hat
+0|under
+0|toy
+0|bed
+0|look at
+0|bear
+0|eleven
+0|twelve
+0|don't
+0|do not
+0|know
+0|other
+0|short
+0|tree
+0|let's
+0|head
+0|touch
+0|nose
+0|face
+0|ear
+0|mouth
+0|eye
+0|body
+0|these
+0|leg
+0|hand
+0|feet
+0|any
+0|they
+0|they're
+0|they are
+0|cow
+0|pig
+0|farm
+0|duck
+0|chicken
+0|egg
+0|thin
+0|very
+0|fat
+0|big
+0|little
+0|snake
+0|small
+0|elephant
+0|go
+0|zoo
+0|long
+0|giraffe
+0|tall
+0|tiger
+0|cute
+0|strong
+0|horse
+0|aren't
+0|are not
+0|there is
+0|animal
+0|can
+0|see
+0|there are
+0|help
+0|over there
+0|table
+0|we
+0|miaow
+0|some
+0|meat
+0|a pair of
+0|shoes
+0|shirt
+0|shoe
+0|swim
+0|T-shirt
+0|sock
+0|put on
+0|clothes
+0|here
+0|football
+0|basketball
+0|ping-pong
+0|like
+0|lion
+0|them
+0|all
+0|play
+0|with
+0|together
+0|favourite
+0|sport
+0|guess
+0|meatball
+0|what about ...?
+0|swimming
+0|idea
+0|hot
+0|go swimming
+0|sing
+0|dance
+0|tired
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 118
+# Total Entries Extracted: 118
+# Duplicate Words Merged : 1
+# Final Unique Word Count: 117
+# -------------------------------

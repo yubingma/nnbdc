@@ -1,0 +1,164 @@
+0|still
+0|programme
+0|lady
+0|life
+0|different
+0|ago
+0|interviewer
+0|enough
+0|television
+0|grandchildren
+0|grandchild
+0|change
+0|night
+0|work
+0|field
+0|fire
+0|or
+0|radio
+0|telephone
+0|couldn't
+0|could not
+0|write
+0|hope
+0|learnt
+0|learn
+0|taught
+0|teach
+0|language
+0|wrote
+0|dancer
+0|foreign
+0|studied
+0|study
+0|hard
+0|hamburger
+0|English
+0|breakfast
+0|lunch
+0|sandwich
+0|fish and chips
+0|traditional
+0|dish
+0|very much
+0|gave
+0|give
+0|tonight
+0|library
+0|student
+0|sent
+0|send
+0|CD
+0|idea
+0|put
+0|shelf
+0|heavy
+0|dictionary
+0|card
+0|library card
+0|ask
+0|wrong
+0|dear
+0|information
+0|e-book
+0|project
+0|guide
+0|film
+0|as well
+0|way
+0|on
+0|topic
+0|light
+0|broken
+0|department store
+0|pocket
+0|umbrella
+0|sales assistant
+0|wheel
+0|easy
+0|take
+0|too
+0|try
+0|lovely
+0|moon
+0|get
+0|west
+0|parent
+0|stay
+0|July
+0|south
+0|remember
+0|June
+0|east
+0|best
+0|north
+0|rest
+0|have a rest
+0|rode
+0|evening
+0|late
+0|worker
+0|factory
+0|early
+0|taxi
+0|quarter
+0|to
+0|worry
+0|paper
+0|Chinese
+0|so
+0|word
+0|drew
+0|draw
+0|cut
+0|piece
+0|paint
+0|stick
+0|tied
+0|string
+0|laugh
+0|wore
+0|wear
+0|letter
+0|theatre
+0|women
+0|woman
+0|actor
+0|told
+0|tell
+0|joke
+0|after
+0|show
+0|restaurant
+0|ready
+0|borrow
+0|read
+0|at all
+0|in
+0|another
+0|history
+0|question
+0|forget
+0|bring
+0|soon
+0|when
+0|end
+0|nervous
+0|all right
+0|airport
+0|ticket
+0|passport
+0|safe
+0|pet
+0|speak
+0|building
+0|American
+0|find out
+0|more
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 157
+# Total Entries Extracted: 157
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 157
+# -------------------------------

@@ -1,0 +1,82 @@
+0|anywhere
+0|famous
+0|travel
+0|along
+0|the Yangtze River
+0|go back
+0|made
+0|make
+0|show
+0|fat
+0|thin
+0|Ice and Snow Festival
+0|break
+0|broke
+0|hear
+0|lesson
+0|heavy
+0|carry
+0|light
+0|feel
+0|hope
+0|soon
+0|ill
+0|wrong
+0|headache
+0|have a cold
+0|toothache
+0|fever
+0|open
+0|must
+0|mustn't
+0|must not
+0|a lot of
+0|medicine
+0|doctor
+0|cross
+0|street
+0|kiss
+0|love
+0|surprise
+0|kind
+0|dining room
+0|restaurant
+0|farmer
+0|cook
+0|worker
+0|grow
+0|police officer
+0|nurse
+0|job
+0|dancer
+0|singer
+0|true
+0|driver
+0|scientist
+0|learn
+0|middle school
+0|teachers' office
+0|study
+0|physics
+0|lab
+0|chemistry
+0|bottle
+0|Edison
+0|inventor
+0|subject
+0|history
+0|geography
+0|miss
+0|year book
+0|address
+0|information
+0|gave
+0|give
+0|leave
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 75
+# Total Entries Extracted: 75
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 75
+# -------------------------------

@@ -1,0 +1,86 @@
+0|time
+0|o'clock
+0|nice
+0|when
+0|thirty
+0|home
+0|five
+0|fifty
+0|nine
+0|twenty
+0|sleep
+0|good
+0|one
+0|dad
+0|for
+0|bread
+0|milk
+0|egg
+0|an
+0|fish
+0|rice
+0|noodle
+0|down
+0|ice cream
+0|back
+0|hungry
+0|hello
+0|dear
+0|orange
+0|vegetable
+0|evening
+0|room
+0|love
+0|bed
+0|big
+0|chair
+0|sit
+0|kitchen
+0|fridge
+0|table
+0|bathroom
+0|want
+0|call
+0|mum
+0|phone
+0|where
+0|shirt
+0|find
+0|coat
+0|sofa
+0|this
+0|jacket
+0|that
+0|schoolbag
+0|shorts
+0|not
+0|bag
+0|trousers
+0|how
+0|bus
+0|by
+0|car
+0|work
+0|she
+0|bike
+0|he
+0|come
+0|taxi
+0|they
+0|sky
+0|blue
+0|green
+0|white
+0|snow
+0|cool
+0|cold
+0|make
+0|which
+0|spring
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 79
+# Total Entries Extracted: 79
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 79
+# -------------------------------

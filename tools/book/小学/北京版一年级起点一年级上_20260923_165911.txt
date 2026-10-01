@@ -1,0 +1,46 @@
+0|star
+0|moon
+0|night
+0|lake
+0|house
+0|boat
+0|key
+0|car
+0|gate
+0|kite
+0|girl
+0|bike
+0|uniform
+0|bag
+0|cake
+0|dish
+0|cup
+0|nut
+0|spoon
+0|eye
+0|ear
+0|knee
+0|foot
+0|bed
+0|box
+0|pen
+0|book
+0|coat
+0|UFO
+0|hut
+0|skirt
+0|wood
+0|bird
+0|bee
+0|deer
+0|cat
+0|dog
+0|fish
+0|mouse
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 39
+# Total Entries Extracted: 39
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 39
+# -------------------------------

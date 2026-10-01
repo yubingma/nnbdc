@@ -1,0 +1,28 @@
+0|coat
+0|sweater
+0|T-shirt
+0|skirt
+0|push
+0|jump
+0|shout
+0|climb
+0|do sit-ups
+0|bounce a ball
+0|jump rope
+0|flower
+0|lake
+0|house
+0|tree
+0|hill
+0|pass
+0|use
+0|head
+0|arm
+0|leg
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 21
+# Total Entries Extracted: 21
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 21
+# -------------------------------

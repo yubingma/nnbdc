@@ -1,0 +1,164 @@
+0|colourful
+0|prefer
+0|winter
+0|either
+0|autumn
+0|ski
+0|plant
+0|camp
+0|go camping
+0|middle
+0|classmate
+0|Australia
+0|answer
+0|China
+0|too ... to ...
+0|if
+0|plan
+0|test
+0|date
+0|Why?
+0|be going to
+0|forget
+0|important
+0|month
+0|museum
+0|meeting
+0|open day
+0|farm
+0|second
+0|third
+0|fifth
+0|eighth
+0|ninth
+0|have a good time
+0|travel
+0|mountain
+0|climb
+0|mountain climbing
+0|beach
+0|deer
+0|noon
+0|invitation
+0|would
+0|Would you like ...?
+0|hey
+0|guy
+0|nothing
+0|sound
+0|gate
+0|a.m.
+0|cool
+0|Oh dear!
+0|problem
+0|No problem.
+0|match
+0|centre
+0|supermarket
+0|I'd like to ...
+0|I would like to ...
+0|invite
+0|special
+0|surprise
+0|begin
+0|arrive
+0|call
+0|by
+0|train
+0|leave
+0|exciting
+0|valley
+0|island
+0|taxi
+0|London
+0|New York
+0|America
+0|Hong Kong
+0|American
+0|Australian
+0|trip
+0|excited
+0|hotel
+0|on foot
+0|the Great Wall
+0|the Summer Palace
+0|take a walk
+0|around
+0|lake
+0|street
+0|underground
+0|safety
+0|careful
+0|kid
+0|oops
+0|hurt
+0|get hurt
+0|must
+0|cut
+0|sharp
+0|yourself
+0|watch out
+0|fall
+0|down
+0|fall down
+0|dry
+0|bad
+0|fan
+0|feed
+0|dangerous
+0|safe
+0|cross
+0|traffic
+0|light
+0|crossing
+0|road
+0|stair
+0|money
+0|candy
+0|stranger
+0|trouble
+0|in trouble
+0|hour
+0|without
+0|direction
+0|way
+0|lost
+0|lose
+0|Excuse me.
+0|hospital
+0|straight
+0|ahead
+0|right
+0|left
+0|miss
+0|bank
+0|post office
+0|train station
+0|zoo
+0|restaurant
+0|police station
+0|short cut
+0|were
+0|are
+0|stand
+0|watch
+0|late
+0|out of ...
+0|took
+0|take
+0|take the first right
+0|through
+0|suddenly
+0|believe
+0|on time
+0|did
+0|do
+0|does
+0|how long
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 157
+# Total Entries Extracted: 157
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 157
+# -------------------------------

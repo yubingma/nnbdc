@@ -1,0 +1,129 @@
+0|in class
+0|Stand up.
+0|Mr
+0|Sit down.
+0|please
+0|open
+0|the
+0|door
+0|sorry
+0|come in
+0|close
+0|window
+0|blackboard
+0|book
+0|rubber
+0|don't
+0|do not
+0|listen to
+0|parrot
+0|in
+0|library
+0|shh
+0|shout
+0|run
+0|eat
+0|here
+0|talk
+0|sleep
+0|drink
+0|milk
+0|English
+0|your
+0|pencil
+0|isn't
+0|is not
+0|that's
+0|that is
+0|schoolbag
+0|pen
+0|crayon
+0|ruler
+0|pencil case
+0|lunch box
+0|where
+0|where's
+0|where is
+0|over there
+0|bird
+0|beautiful
+0|under
+0|desk
+0|behind
+0|on
+0|chair
+0|tree
+0|guess
+0|one
+0|two
+0|three
+0|oh
+0|wow
+0|How old are you?
+0|lovely
+0|nine
+0|eight
+0|four
+0|five
+0|six
+0|seven
+0|ten
+0|right
+0|out
+0|What a nice cake!
+0|Make a wish.
+0|want
+0|It's time for ...
+0|What time is it?
+0|wake up
+0|mum
+0|o'clock
+0|breakfast
+0|Hurry up.
+0|class
+0|dinner
+0|bed
+0|OK
+0|lunch
+0|eleven
+0|twelve
+0|bag
+0|these
+0|here's
+0|here is
+0|farm
+0|Welcome to ...
+0|they
+0|they're
+0|they are
+0|pig
+0|those
+0|cow
+0|apple
+0|pear
+0|chicken
+0|duck
+0|orange
+0|picture
+0|who
+0|who's
+0|who is
+0|we
+0|we're
+0|we are
+0|twin
+0|aunt
+0|girl
+0|man
+0|woman
+0|boy
+0|baby
+0|cousin
+0|name
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 122
+# Total Entries Extracted: 122
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 122
+# -------------------------------

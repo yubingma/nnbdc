@@ -139,7 +139,7 @@ Future<void> applySysDbLogs(List<SysDbLogDto> logs) async {
         } else if (log.tblName == 'group_and_dict_link') {
           // 分组与词典关联
           if (log.operate == 'DELETE') {
-            var parts = log.recordId.split('-');
+            var parts = log.recordId.contains('_') ? log.recordId.split('_') : log.recordId.split('-');
             if (parts.length == 2) {
               await (db.delete(db.groupAndDictLinks)
                     ..where((t) => t.groupId.equals(parts[0]))

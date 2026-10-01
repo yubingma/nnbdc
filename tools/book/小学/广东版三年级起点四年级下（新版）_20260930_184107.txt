@@ -1,0 +1,141 @@
+0|near
+0|supermarket
+0|around
+0|park
+0|sign
+0|light
+0|mean
+0|stop
+0|wait
+0|road
+0|quiet
+0|often
+0|metro station
+0|take care of
+0|give
+0|seat
+0|safe
+0|better
+0|dirty
+0|litter
+0|pick
+0|flower
+0|traffic
+0|special
+0|January
+0|culture
+0|February
+0|School Open Day
+0|March
+0|plant
+0|Tree Planting Day
+0|picnic
+0|April
+0|sport
+0|Sports Meeting
+0|May
+0|museum
+0|June
+0|Children's Day
+0|when
+0|fly
+0|kite
+0|parents
+0|city
+0|bring
+0|birthday
+0|July
+0|photo
+0|photograph
+0|August
+0|September
+0|meal
+0|October
+0|trip
+0|November
+0|December
+0|card
+0|him
+0|Canada
+0|India
+0|fair
+0|sell
+0|sunny
+0|hot
+0|rainy
+0|London
+0|cold
+0|umbrella
+0|windy
+0|cool
+0|cloudy
+0|warm
+0|weather
+0|snowy
+0|snowman
+0|wear
+0|usually
+0|spring
+0|summer
+0|autumn
+0|winter
+0|season
+0|grass
+0|snow
+0|Sydney
+0|rain
+0|the South Pole
+0|Singapore
+0|week
+0|right
+0|ride
+0|bike
+0|bicycle
+0|Paris
+0|leaves
+0|Moscow
+0|countryside
+0|cow
+0|pig
+0|horse
+0|sheep
+0|top
+0|hill
+0|river
+0|duck
+0|bee
+0|listen
+0|sun
+0|water
+0|air
+0|lake
+0|country
+0|baby
+0|daytime
+0|market
+0|badminton
+0|volleyball
+0|basketball
+0|ping-pong
+0|be good at
+0|join
+0|club
+0|tennis
+0|the long jump
+0|the high jump
+0|always
+0|sometimes
+0|win
+0|never
+0|come on
+0|race
+0|well
+0|kung fu
+0|star
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 134
+# Total Entries Extracted: 134
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 134
+# -------------------------------

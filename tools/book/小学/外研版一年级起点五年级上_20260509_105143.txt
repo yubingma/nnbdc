@@ -1,0 +1,87 @@
+0|for
+0|different
+0|bench
+0|then
+0|playground
+0|heavy
+0|let
+0|sell
+0|sometimes
+0|Halloween
+0|trick or treat
+0|give
+0|festival
+0|scary
+0|mask
+0|neighbour
+0|night
+0|Easter
+0|chick
+0|chocolate
+0|stories
+0|invitation
+0|tidy up
+0|November
+0|from
+0|to
+0|reply
+0|mine
+0|whose
+0|yours
+0|hers
+0|both
+0|wet
+0|That's OK.
+0|take away
+0|worker
+0|still
+0|well
+0|high
+0|true
+0|got
+0|eighty
+0|point
+0|fan
+0|seventy
+0|sixty
+0|useful
+0|show
+0|presenter
+0|blind
+0|could
+0|speak
+0|fire
+0|inside
+0|firefighter
+0|couldn't
+0|could not
+0|often
+0|around
+0|start
+0|line
+0|half
+0|past
+0|miss
+0|study
+0|open
+0|wall
+0|have fun
+0|break
+0|nothing
+0|think
+0|drank
+0|should
+0|go to bed
+0|shouldn't
+0|should not
+0|take down
+0|clean
+0|rule
+0|kind
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 80
+# Total Entries Extracted: 80
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 80
+# -------------------------------

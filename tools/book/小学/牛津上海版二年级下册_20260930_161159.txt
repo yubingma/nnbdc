@@ -1,0 +1,62 @@
+0|white
+0|purple
+0|pink
+0|orange
+0|brown
+0|black
+0|watch
+0|bag
+0|soft
+0|hard
+0|rough
+0|smooth
+0|train
+0|bus
+0|car
+0|van
+0|bicycle
+0|ship
+0|run
+0|skate
+0|hop
+0|skip
+0|ride a bicycle
+0|salad
+0|carrot
+0|fish
+0|chicken
+0|banana
+0|giraffe
+0|snake
+0|elephant
+0|zebra
+0|autumn
+0|winter
+0|cool
+0|cold
+0|stop
+0|go
+0|wait
+0|light
+0|trousers
+0|sweater
+0|shirt
+0|coat
+0|play football
+0|play basketball
+0|play ping-pong
+0|play cards
+0|letter
+0|balloon
+0|carnation
+0|hungry
+0|thirsty
+0|bread
+0|milk
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 55
+# Total Entries Extracted: 55
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 55
+# -------------------------------

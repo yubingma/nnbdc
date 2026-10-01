@@ -1,0 +1,98 @@
+0|often
+0|every
+0|week
+0|Monday
+0|raise
+0|national
+0|flag
+0|national flag
+0|meeting
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|clean
+0|Saturday
+0|Sunday
+0|stand
+0|door
+0|Well done!
+0|bright
+0|close
+0|turn off
+0|fan
+0|all right
+0|math
+0|English
+0|worry
+0|music
+0|Chinese
+0|art
+0|PE
+0|help
+0|science
+0|interesting
+0|Ms.
+0|by car
+0|work
+0|on foot
+0|aunt
+0|plane
+0|ship
+0|place
+0|train
+0|kitchen
+0|shopping list
+0|need
+0|chicken
+0|fruit
+0|tea
+0|juice
+0|supermarket
+0|with
+0|toy
+0|these
+0|Teddy Bear
+0|seventy
+0|hundred
+0|sixty
+0|eighty
+0|ninety
+0|weather
+0|snow
+0|cold
+0|coat
+0|rain
+0|but
+0|warm
+0|today
+0|sunny
+0|take
+0|cloudy
+0|windy
+0|favorite
+0|season
+0|why
+0|summer
+0|hot
+0|long
+0|vacation
+0|autumn
+0|cool
+0|winter
+0|wonderful
+0|will
+0|live
+0|the UK
+0|visit
+0|Big Ben
+0|the Great Wall
+0|homework
+0|basketball
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 91
+# Total Entries Extracted: 91
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 91
+# -------------------------------

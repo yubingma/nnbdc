@@ -1,0 +1,126 @@
+0|clock
+0|two o'clock
+0|fifteen
+0|half
+0|past
+0|half past eight
+0|forty-five
+0|beat the clock
+0|life
+0|task
+0|hour
+0|kilometre
+0|km
+0|salad
+0|am
+0|pm
+0|evening
+0|breakfast
+0|activity
+0|year
+0|all year round
+0|when
+0|January
+0|February
+0|March
+0|April
+0|May
+0|June
+0|July
+0|August
+0|September
+0|October
+0|November
+0|remember
+0|December
+0|swallow
+0|lunchtime
+0|baby
+0|art
+0|lesson
+0|photo
+0|move
+0|the south
+0|bookshelf
+0|lamp
+0|sofa
+0|table
+0|bed
+0|leave
+0|bag
+0|cup
+0|kitchen
+0|living room
+0|bathroom
+0|bedroom
+0|tidy
+0|car
+0|different
+0|together
+0|maybe
+0|anymore
+0|both
+0|phone
+0|gift
+0|will
+0|indeed
+0|friendly
+0|trip
+0|history
+0|plant
+0|museum
+0|forest
+0|last
+0|shopping
+0|soon
+0|note
+0|beech
+0|metre
+0|lark
+0|letter
+0|newspaper
+0|nature
+0|reserve
+0|nature reserve
+0|beach
+0|off
+0|running
+0|playground
+0|library
+0|hill
+0|watch
+0|rule
+0|follow
+0|time
+0|super
+0|dance
+0|piano
+0|play the piano
+0|sit
+0|singer
+0|snow
+0|snowman
+0|fan
+0|loudly
+0|must
+0|dinosaur
+0|bone
+0|suddenly
+0|storm
+0|cave
+0|careful
+0|free
+0|ticket
+0|player
+0|happily
+0|palace
+0|servant
+0|actor
+0|die
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 119
+# Total Entries Extracted: 119
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 119
+# -------------------------------

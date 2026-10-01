@@ -1,0 +1,125 @@
+0|school
+0|subject
+0|Welcome back to ...
+0|see
+0|timetable
+0|Chinese
+0|Maths
+0|Art
+0|PE
+0|Music
+0|Science
+0|fun
+0|go to
+0|playground
+0|lesson
+0|Monday
+0|afternoon
+0|after school
+0|go
+0|What day is it today?
+0|Wednesday
+0|match
+0|today
+0|What a pity!
+0|Saturday
+0|All right.
+0|Sunday
+0|Tuesday
+0|Thursday
+0|Friday
+0|get up
+0|when
+0|every
+0|day
+0|usually
+0|go to school
+0|in the morning
+0|have lunch
+0|in the afternoon
+0|play football
+0|go home
+0|homework
+0|have dinner
+0|watch TV
+0|go to bed
+0|in the evening
+0|at night
+0|drawing
+0|park
+0|draw
+0|Good idea!
+0|flower
+0|them
+0|easy
+0|boat
+0|river
+0|difficult
+0|try
+0|hill
+0|lake
+0|again
+0|season
+0|spring
+0|warm
+0|fly
+0|kite
+0|go boating
+0|summer
+0|hot
+0|go swimming
+0|autumn
+0|cool
+0|picnic
+0|go climbing
+0|winter
+0|cold
+0|go skating
+0|fine
+0|hey
+0|whose
+0|dress
+0|too
+0|trousers
+0|party
+0|glove
+0|so
+0|coat
+0|shirt
+0|sweater
+0|jeans
+0|shorts
+0|wrong
+0|move
+0|I think so.
+0|What's the matter?
+0|hand
+0|hurt
+0|thirsty
+0|water
+0|ill
+0|tired
+0|Good night.
+0|dear
+0|happy
+0|Mrs
+0|speak
+0|may
+0|come to school
+0|fever
+0|hear
+0|take care
+0|I'm fine, thank you.
+0|See you tomorrow.
+0|See you.
+0|cough
+0|headache
+0|Not so good.
+0|at school
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 118
+# Total Entries Extracted: 118
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 118
+# -------------------------------

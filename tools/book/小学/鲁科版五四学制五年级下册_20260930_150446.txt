@@ -1,0 +1,151 @@
+0|holiday
+0|Beijing Opera
+0|a little
+0|difficult
+0|went
+0|go
+0|place
+0|enjoy
+0|them
+0|so
+0|ice hockey
+0|ski
+0|dog
+0|dog sledding
+0|also
+0|ice fishing
+0|lake
+0|got
+0|get
+0|lantern
+0|the Lantern Festival
+0|parade
+0|act
+0|like
+0|riddle
+0|prize
+0|auntie
+0|aunt
+0|cross
+0|street
+0|stop
+0|get on
+0|push
+0|wait in line
+0|shout
+0|seat
+0|put
+0|You're welcome.
+0|far
+0|near
+0|get off
+0|walk
+0|grass
+0|give
+0|feed
+0|deer
+0|too much
+0|dear
+0|all
+0|feel
+0|fever
+0|wrong
+0|What's wrong?
+0|cough
+0|headache
+0|bad
+0|cold
+0|medicine
+0|on time
+0|much
+0|better
+0|rest
+0|get well
+0|soon
+0|lesson
+0|keep away
+0|should
+0|every
+0|enough
+0|sleep
+0|healthy
+0|junk food
+0|health
+0|fat
+0|next to
+0|neighbour
+0|stay
+0|neighbourhood
+0|show
+0|around
+0|idea
+0|men
+0|man
+0|garden
+0|chess
+0|Chinese chess
+0|think
+0|bookshop
+0|supermarket
+0|beside
+0|centre
+0|people
+0|themselves
+0|enjoy themselves
+0|women
+0|woman
+0|follow
+0|come over
+0|lots of
+0|village
+0|bird
+0|happily
+0|river
+0|any
+0|duck
+0|catch
+0|yard
+0|baby
+0|sheep
+0|goat
+0|cucumber
+0|plant
+0|soil
+0|grade
+0|field
+0|cow
+0|orchard
+0|pick
+0|cherry
+0|plan
+0|storybook
+0|painting
+0|sound
+0|camp
+0|must
+0|travel
+0|during
+0|weekday
+0|the British Museum
+0|Hyde Park
+0|the London Eye
+0|camera
+0|map
+0|You'd better ...
+0|umbrella
+0|country
+0|trip
+0|get ready
+0|middle school
+0|life
+0|term
+0|miss
+0|more
+0|exciting
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 144
+# Total Entries Extracted: 144
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 144
+# -------------------------------

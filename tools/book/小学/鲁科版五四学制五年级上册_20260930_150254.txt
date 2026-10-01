@@ -1,0 +1,130 @@
+0|card
+0|September
+0|who
+0|young
+0|kind
+0|strict
+0|was
+0|is
+0|then
+0|his
+0|little
+0|thin
+0|interesting
+0|were
+0|are
+0|pupil
+0|ago
+0|but
+0|active
+0|naughty
+0|smart
+0|look
+0|excited
+0|sky
+0|angry
+0|lost
+0|lose
+0|sad
+0|late
+0|glad
+0|worried
+0|with
+0|wasn't
+0|was not
+0|poor
+0|why
+0|find
+0|worry
+0|saw
+0|see
+0|yesterday
+0|helpful
+0|party
+0|when
+0|March
+0|May
+0|April
+0|October
+0|present
+0|open
+0|wish
+0|song
+0|say cheese
+0|had
+0|have
+0|did
+0|do
+0|children
+0|sang
+0|sing
+0|made
+0|make
+0|make a wish
+0|ate
+0|eat
+0|really
+0|reading
+0|French
+0|after
+0|film
+0|busy
+0|building
+0|tree
+0|gym
+0|send
+0|photo
+0|sit
+0|group
+0|tell
+0|story
+0|tell stories
+0|circle
+0|different
+0|club
+0|table tennis
+0|join
+0|oops
+0|try
+0|again
+0|match
+0|high
+0|ball
+0|basket
+0|get
+0|shoot
+0|win
+0|their
+0|easy
+0|last
+0|pass
+0|got
+0|shot
+0|goal
+0|won
+0|animal
+0|the Spring Festival
+0|February
+0|January
+0|before
+0|relative
+0|came
+0|come
+0|set off
+0|firework
+0|house
+0|wonderful
+0|fun
+0|country
+0|ask
+0|lucky money
+0|eve
+0|early
+0|next
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 123
+# Total Entries Extracted: 123
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 123
+# -------------------------------

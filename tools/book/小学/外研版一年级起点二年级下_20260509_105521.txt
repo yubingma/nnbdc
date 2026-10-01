@@ -1,0 +1,116 @@
+0|weather
+0|like
+0|sunny
+0|windy
+0|take
+0|cap
+0|sofa
+0|street
+0|rain
+0|snow
+0|ski
+0|radio
+0|photo
+0|newspaper
+0|little
+0|camera
+0|smile
+0|draw
+0|picture
+0|write
+0|letter
+0|colour
+0|tidy
+0|room
+0|do
+0|homework
+0|sleep
+0|secret
+0|card
+0|flower
+0|science
+0|today
+0|call
+0|noise
+0|drink
+0|talk
+0|stone
+0|five-stones
+0|behind
+0|hide
+0|seek
+0|hide-and-seek
+0|skip
+0|hurry up
+0|late
+0|sad
+0|no
+0|those
+0|clap
+0|game
+0|clapping game
+0|well
+0|kid
+0|catch
+0|of course
+0|usually
+0|us
+0|ride
+0|thing
+0|ill
+0|cook
+0|her
+0|go shopping
+0|kitchen
+0|Children's Day
+0|TV
+0|play
+0|say
+0|poem
+0|dragon
+0|dragon dance
+0|picnic
+0|family
+0|beach
+0|hill
+0|past
+0|station
+0|hospital
+0|stop
+0|turn
+0|around
+0|turn around
+0|ground
+0|again
+0|jump
+0|back
+0|come back
+0|left
+0|turn left
+0|right
+0|turn right
+0|road
+0|excuse me
+0|straight
+0|go straight on
+0|lost
+0|out
+0|factory
+0|next to
+0|cousin
+0|supermarket
+0|wrong
+0|way
+0|turn back
+0|front
+0|in front of
+0|taxi
+0|Mrs
+0|cinema
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 109
+# Total Entries Extracted: 109
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 109
+# -------------------------------

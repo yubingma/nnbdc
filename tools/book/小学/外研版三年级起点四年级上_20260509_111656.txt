@@ -1,0 +1,156 @@
+0|straight
+0|go straight on
+0|left
+0|right
+0|lost
+0|live
+0|No.
+0|number
+0|street
+0|excuse me
+0|turn left
+0|turn right
+0|next to
+0|supermarket
+0|beside
+0|cinema
+0|so much
+0|You're welcome!
+0|station
+0|train
+0|hill
+0|near
+0|house
+0|read
+0|running
+0|these
+0|picture
+0|take
+0|take pictures
+0|children
+0|child
+0|listen
+0|listen to
+0|talk
+0|talk to
+0|China
+0|kid
+0|get on
+0|can
+0|see
+0|lots of
+0|interesting
+0|thing
+0|people
+0|row
+0|dragon
+0|boat
+0|dragon boat
+0|men
+0|man
+0|between
+0|chess
+0|play chess
+0|drink
+0|soya milk
+0|clock
+0|hungry
+0|Me too.
+0|draw
+0|jump
+0|sing
+0|dance
+0|want
+0|some
+0|juice
+0|ice
+0|also
+0|food
+0|fast food
+0|make
+0|tomato
+0|egg
+0|potato
+0|How much ...?
+0|flower
+0|dumpling
+0|help
+0|buy
+0|run
+0|fast
+0|sky
+0|high
+0|winner
+0|far
+0|afraid
+0|strong
+0|star
+0|sweets
+0|soup
+0|sorry
+0|bread
+0|dark
+0|well
+0|turn on
+0|light
+0|Halloween
+0|trick or treat
+0|give
+0|come in
+0|of course
+0|there is
+0|horse
+0|there are
+0|have a look
+0|sheep
+0|vegetable
+0|climb
+0|face
+0|fruit
+0|chicken
+0|bear
+0|pig
+0|visit
+0|tomorrow
+0|plane
+0|get up
+0|o'clock
+0|from
+0|sea
+0|swimsuit
+0|sock
+0|fish
+0|hooray
+0|sports day
+0|win
+0|month
+0|hundred
+0|metre
+0|every
+0|day
+0|luck
+0|good luck
+0|come on
+0|high jump
+0|long jump
+0|How about ...?
+0|subject
+0|family
+0|dinner
+0|year
+0|New Year
+0|Chinese
+0|festival
+0|the Spring Festival
+0|I see.
+0|peanut
+0|merry
+0|Christmas
+0|Merry Christmas!
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 149
+# Total Entries Extracted: 149
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 149
+# -------------------------------

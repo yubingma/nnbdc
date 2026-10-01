@@ -1,0 +1,172 @@
+0|long long ago
+0|magic
+0|clever
+0|foolish
+0|through
+0|laugh
+0|wear
+0|tell
+0|each
+0|say
+0|sentence
+0|quick
+0|next
+0|little
+0|turn
+0|think
+0|hard
+0|laugh at
+0|grandchildren
+0|move ... away
+0|child
+0|sunny
+0|show
+0|interesting
+0|weather
+0|become
+0|windy
+0|cloudy
+0|high
+0|sky
+0|bring
+0|honey
+0|drink
+0|ant
+0|bee
+0|cloud
+0|rain
+0|rainy
+0|meet
+0|lose
+0|know
+0|What happened?
+0|climb up
+0|hold onto
+0|fly away
+0|holiday
+0|National Day
+0|call
+0|Bund
+0|Shanghai Museum
+0|star
+0|Great Wall
+0|Palace Museum
+0|Summer Palace
+0|Tian'anmen Square
+0|fashion show
+0|excited
+0|paper
+0|ask
+0|bottle
+0|go well
+0|at first
+0|heavy rain
+0|then and now
+0|ago
+0|use
+0|telephone
+0|office
+0|mobile phone
+0|anywhere
+0|radio
+0|newspaper
+0|news
+0|watch
+0|e-book
+0|make friends
+0|all over the world
+0|do shopping
+0|TV
+0|look out of
+0|go on
+0|still
+0|What day is today?
+0|spell
+0|make a sentence
+0|with
+0|yesterday
+0|sign
+0|shopping centre
+0|careful
+0|What does it mean?
+0|mean
+0|floor
+0|litter
+0|go in
+0|take ... into
+0|restaurant
+0|someone
+0|smoke
+0|smell
+0|No eating or drinking.
+0|No littering.
+0|No parking.
+0|No smoking.
+0|Danger!
+0|Wet floor.
+0|outing
+0|walk on
+0|around
+0|keep
+0|clean
+0|make
+0|air
+0|dirty
+0|rubbish
+0|messy
+0|dead
+0|bin
+0|plant
+0|more
+0|museum
+0|throw
+0|skin
+0|ground
+0|pick ... up
+0|slip
+0|fall
+0|protect
+0|Earth
+0|save
+0|useful
+0|much
+0|waste
+0|reuse
+0|energy
+0|most
+0|come from
+0|coal
+0|oil
+0|drive
+0|wood
+0|other
+0|cut down
+0|too many
+0|too much
+0|plastic
+0|glass
+0|project
+0|poster
+0|gate
+0|get
+0|Hong Kong
+0|next week
+0|food
+0|tangyuan
+0|Chinese New Year's Eve
+0|Chinese New Year's Day
+0|red packet
+0|lion dance
+0|fireworks
+0|firecracker
+0|rich
+0|plan
+0|hooray
+0|light
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 165
+# Total Entries Extracted: 165
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 165
+# -------------------------------

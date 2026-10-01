@@ -1,0 +1,2101 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "21",
+  "targetGameHallIds": [
+    "19"
+  ],
+  "books": [
+    {
+      "fileName": "JOIN版剑桥小学英语三年级上册_20260930_193736.txt",
+      "dictName": "JOIN版剑桥小学英语三年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语三年级上（新版）_20260930_192939.txt",
+      "dictName": "JOIN版剑桥小学英语三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语三年级下册_20260930_193936.txt",
+      "dictName": "JOIN版剑桥小学英语三年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语三年级下册（新版）_20260930_193139.txt",
+      "dictName": "JOIN版剑桥小学英语三年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语五年级上册_20260930_194536.txt",
+      "dictName": "JOIN版剑桥小学英语五年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语五年级下册_20260930_194758.txt",
+      "dictName": "JOIN版剑桥小学英语五年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语六年级上册_20260930_195024.txt",
+      "dictName": "JOIN版剑桥小学英语六年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语六年级下册_20260930_210005.txt",
+      "dictName": "JOIN版剑桥小学英语六年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语四年级上册_20260930_194136.txt",
+      "dictName": "JOIN版剑桥小学英语四年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语四年级上册（新版）_20260930_193338.txt",
+      "dictName": "JOIN版剑桥小学英语四年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语四年级下册_20260930_194336.txt",
+      "dictName": "JOIN版剑桥小学英语四年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "JOIN版剑桥小学英语四年级下册（新版）_20260930_193538.txt",
+      "dictName": "JOIN版剑桥小学英语四年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1015",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点一年级上_20260506_174339.txt",
+      "dictName": "人教版一年级起点一年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点一年级下_20260507_122806.txt",
+      "dictName": "人教版一年级起点一年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点三年级上_20260507_123011.txt",
+      "dictName": "人教版一年级起点三年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点三年级下_20260507_123100.txt",
+      "dictName": "人教版一年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点二年级上_20260507_122837.txt",
+      "dictName": "人教版一年级起点二年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点二年级下_20260507_122939.txt",
+      "dictName": "人教版一年级起点二年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点五年级上_20260506_174158.txt",
+      "dictName": "人教版一年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点五年级下_20260507_124158.txt",
+      "dictName": "人教版一年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点六年级上_20260507_124226.txt",
+      "dictName": "人教版一年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点六年级下_20260507_124259.txt",
+      "dictName": "人教版一年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点四年级上_20260507_123127.txt",
+      "dictName": "人教版一年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版一年级起点四年级下_20260507_123153.txt",
+      "dictName": "人教版一年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版三年级起点三年级上_20260507_124327.txt",
+      "dictName": "人教版三年级起点三年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版三年级起点三年级下_20260507_123914.txt",
+      "dictName": "人教版三年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版三年级起点五年级上_20260507_124046.txt",
+      "dictName": "人教版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版三年级起点五年级下_20260507_124119.txt",
+      "dictName": "人教版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版三年级起点六年级上_20260507_123849.txt",
+      "dictName": "人教版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版三年级起点六年级下_20260507_125833.txt",
+      "dictName": "人教版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版三年级起点四年级上_20260507_123941.txt",
+      "dictName": "人教版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版三年级起点四年级下_20260507_124006.txt",
+      "dictName": "人教版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）一年级上（新版）_20260507_130036.txt",
+      "dictName": "人教版（PEP）一年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）一年级下（新版）_20260507_130007.txt",
+      "dictName": "人教版（PEP）一年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）三年级上（新版）_20260507_125903.txt",
+      "dictName": "人教版（PEP）三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）三年级下（新版）_20260507_125943.txt",
+      "dictName": "人教版（PEP）三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）二年级上（新版）_20260507_130117.txt",
+      "dictName": "人教版（PEP）二年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）二年级下（新版）_20260507_130143.txt",
+      "dictName": "人教版（PEP）二年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）五年级上（新版）_20260507_125805.txt",
+      "dictName": "人教版（PEP）五年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）五年级下（新版）_20260507_131215.txt",
+      "dictName": "人教版（PEP）五年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）四年级上（新版）_20260507_130210.txt",
+      "dictName": "人教版（PEP）四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（PEP）四年级下（新版）_20260507_130234.txt",
+      "dictName": "人教版（PEP）四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点三年级上_20260507_131017.txt",
+      "dictName": "人教版（精通）三年级起点三年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点三年级上（新版）_20260507_131113.txt",
+      "dictName": "人教版（精通）三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点三年级下_20260507_130935.txt",
+      "dictName": "人教版（精通）三年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点三年级下（新版）_20260507_131042.txt",
+      "dictName": "人教版（精通）三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点五年级上_20260507_130816.txt",
+      "dictName": "人教版（精通）三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点五年级下_20260507_132413.txt",
+      "dictName": "人教版（精通）三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点六年级上_20260507_132347.txt",
+      "dictName": "人教版（精通）三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点六年级下_20260507_132322.txt",
+      "dictName": "人教版（精通）三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点四年级上_20260507_130910.txt",
+      "dictName": "人教版（精通）三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点四年级上（新版）_20260507_131142.txt",
+      "dictName": "人教版（精通）三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点四年级下_20260507_130843.txt",
+      "dictName": "人教版（精通）三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "人教版（精通）三年级起点四年级下（新版）_20260507_131259.txt",
+      "dictName": "人教版（精通）三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1001",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点三年级上（新版）_20260930_170821.txt",
+      "dictName": "冀教版三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点三年级下_20260930_171605.txt",
+      "dictName": "冀教版三年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点三年级下（新版）_20260930_171018.txt",
+      "dictName": "冀教版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点五年级上_20260930_172157.txt",
+      "dictName": "冀教版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点五年级下_20260930_172354.txt",
+      "dictName": "冀教版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点六年级上_20260930_172613.txt",
+      "dictName": "冀教版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点六年级下_20260930_172835.txt",
+      "dictName": "冀教版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点四年级上_20260930_171803.txt",
+      "dictName": "冀教版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点四年级上（新版）_20260930_171213.txt",
+      "dictName": "冀教版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点四年级下_20260930_172000.txt",
+      "dictName": "冀教版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "冀教版三年级起点四年级下（新版）_20260930_171410.txt",
+      "dictName": "冀教版三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1006",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级上册（新版）_20260923_165721.txt",
+      "dictName": "北京版一年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级下册（新版）_20260923_165446.txt",
+      "dictName": "北京版一年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点一年级上_20260923_165911.txt",
+      "dictName": "北京版一年级起点一年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点一年级下_20260923_170102.txt",
+      "dictName": "北京版一年级起点一年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点三年级上_20260923_163435.txt",
+      "dictName": "北京版一年级起点三年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点三年级下_20260923_171508.txt",
+      "dictName": "北京版一年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点二年级上_20260923_170254.txt",
+      "dictName": "北京版一年级起点二年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点二年级下_20260923_170446.txt",
+      "dictName": "北京版一年级起点二年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点五年级上_20260923_172204.txt",
+      "dictName": "北京版一年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点五年级下_20260923_172422.txt",
+      "dictName": "北京版一年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点六年级上_20260923_172641.txt",
+      "dictName": "北京版一年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点六年级下_20260923_172900.txt",
+      "dictName": "北京版一年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点四年级上_20260923_171726.txt",
+      "dictName": "北京版一年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版一年级起点四年级下_20260923_171944.txt",
+      "dictName": "北京版一年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版三年级上册（新版）_20260923_170638.txt",
+      "dictName": "北京版三年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版三年级下册（新版）_20260923_170829.txt",
+      "dictName": "北京版三年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版五年级上册（新版）_20260923_171214.txt",
+      "dictName": "北京版五年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版五年级下册（新版）_20260923_173541.txt",
+      "dictName": "北京版五年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版四年级上册（新版）_20260923_171021.txt",
+      "dictName": "北京版四年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北京版四年级下册（新版）_20260923_142809.txt",
+      "dictName": "北京版四年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1003",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点三年级上（新版）_20260509_111627.txt",
+      "dictName": "北师大版三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点三年级下_20260509_113054.txt",
+      "dictName": "北师大版三年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点三年级下（新版）_20260509_113127.txt",
+      "dictName": "北师大版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点五年级上_20260509_112927.txt",
+      "dictName": "北师大版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点五年级下_20260509_112902.txt",
+      "dictName": "北师大版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点六年级上_20260509_112832.txt",
+      "dictName": "北师大版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点六年级下_20260509_112806.txt",
+      "dictName": "北师大版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点四年级上_20260509_113024.txt",
+      "dictName": "北师大版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点四年级上（新版）_20260509_113151.txt",
+      "dictName": "北师大版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点四年级下_20260509_113001.txt",
+      "dictName": "北师大版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "北师大版三年级起点四年级下（新版）_20260509_113223.txt",
+      "dictName": "北师大版三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1005",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点一年级上_20260509_103602.txt",
+      "dictName": "外研版一年级起点一年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点一年级下_20260509_103535.txt",
+      "dictName": "外研版一年级起点一年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点三年级上_20260509_105303.txt",
+      "dictName": "外研版一年级起点三年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点三年级下_20260509_105329.txt",
+      "dictName": "外研版一年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点二年级上_20260509_103402.txt",
+      "dictName": "外研版一年级起点二年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点二年级下_20260509_105521.txt",
+      "dictName": "外研版一年级起点二年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点五年级上_20260509_105143.txt",
+      "dictName": "外研版一年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点五年级下_20260509_105115.txt",
+      "dictName": "外研版一年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点六年级上_20260509_105354.txt",
+      "dictName": "外研版一年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点六年级下_20260509_105453.txt",
+      "dictName": "外研版一年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点四年级上_20260509_105237.txt",
+      "dictName": "外研版一年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版一年级起点四年级下_20260509_105211.txt",
+      "dictName": "外研版一年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点三年级上（新版）_20260509_105046.txt",
+      "dictName": "外研版三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点三年级下（新版）_20260509_111948.txt",
+      "dictName": "外研版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点五年级上_20260509_111802.txt",
+      "dictName": "外研版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点五年级下_20260509_111827.txt",
+      "dictName": "外研版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点六年级上_20260509_111856.txt",
+      "dictName": "外研版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点六年级下_20260509_111921.txt",
+      "dictName": "外研版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点四年级上_20260509_111656.txt",
+      "dictName": "外研版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点四年级上（新版）_20260509_112036.txt",
+      "dictName": "外研版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点四年级下_20260509_111736.txt",
+      "dictName": "外研版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "外研版三年级起点四年级下（新版）_20260509_112100.txt",
+      "dictName": "外研版三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1002",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "小学英语大纲词汇_20260506_174254.txt",
+      "dictName": "小学英语大纲词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1016",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点三年级上（新版）_20260930_183517.txt",
+      "dictName": "广东版三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点三年级下（新版）_20260930_183713.txt",
+      "dictName": "广东版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点五年级上_20260930_184656.txt",
+      "dictName": "广东版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点五年级下_20260930_184853.txt",
+      "dictName": "广东版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点六年级上_20260930_185049.txt",
+      "dictName": "广东版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点六年级下_20260930_185309.txt",
+      "dictName": "广东版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点四年级上_20260930_184304.txt",
+      "dictName": "广东版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点四年级上（新版）_20260930_183910.txt",
+      "dictName": "广东版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点四年级下_20260930_184500.txt",
+      "dictName": "广东版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广东版三年级起点四年级下（新版）_20260930_184107.txt",
+      "dictName": "广东版三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1010",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点三年级上（新版）_20260930_163825.txt",
+      "dictName": "广州版三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点三年级下_20260930_164613.txt",
+      "dictName": "广州版三年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点三年级下（新版）_20260930_164021.txt",
+      "dictName": "广州版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点五年级上_20260930_165202.txt",
+      "dictName": "广州版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点五年级下_20260930_165358.txt",
+      "dictName": "广州版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点六年级上_20260930_165615.txt",
+      "dictName": "广州版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点六年级下_20260930_165839.txt",
+      "dictName": "广州版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点四年级上_20260930_164809.txt",
+      "dictName": "广州版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点四年级上（新版）_20260930_164222.txt",
+      "dictName": "广州版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点四年级下_20260930_165005.txt",
+      "dictName": "广州版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "广州版三年级起点四年级下（新版）_20260930_164418.txt",
+      "dictName": "广州版三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1011",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点三年级上（新版）_20260930_141539.txt",
+      "dictName": "沪教版三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点三年级下_20260930_142309.txt",
+      "dictName": "沪教版三年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点三年级下（新版）_20260930_141732.txt",
+      "dictName": "沪教版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点五年级上_20260930_142846.txt",
+      "dictName": "沪教版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点五年级下_20260930_143039.txt",
+      "dictName": "沪教版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点六年级上_20260930_143255.txt",
+      "dictName": "沪教版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点六年级下_20260930_143513.txt",
+      "dictName": "沪教版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点四年级上_20260930_142501.txt",
+      "dictName": "沪教版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点四年级上（新版）_20260930_141925.txt",
+      "dictName": "沪教版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点四年级下_20260930_142653.txt",
+      "dictName": "沪教版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "沪教版三年级起点四年级下（新版）_20260930_142117.txt",
+      "dictName": "沪教版三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1007",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版一年级上册_20260930_160612.txt",
+      "dictName": "牛津上海版一年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版一年级下册_20260930_160807.txt",
+      "dictName": "牛津上海版一年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版三年级上册_20260930_161355.txt",
+      "dictName": "牛津上海版三年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版三年级下册_20260930_161549.txt",
+      "dictName": "牛津上海版三年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版二年级上册_20260930_161003.txt",
+      "dictName": "牛津上海版二年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版二年级下册_20260930_161159.txt",
+      "dictName": "牛津上海版二年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版五年级上册_20260930_162138.txt",
+      "dictName": "牛津上海版五年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版五年级下册_20260930_162356.txt",
+      "dictName": "牛津上海版五年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版六年级上册_20260930_162619.txt",
+      "dictName": "牛津上海版六年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版六年级下册_20260930_162843.txt",
+      "dictName": "牛津上海版六年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版四年级上册_20260930_161745.txt",
+      "dictName": "牛津上海版四年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "牛津上海版四年级下册_20260930_161941.txt",
+      "dictName": "牛津上海版四年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1009",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版一年级上_20260507_132108.txt",
+      "dictName": "译林版一年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版一年级下_20260507_132439.txt",
+      "dictName": "译林版一年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点三年级上册（新版）_20260507_132229.txt",
+      "dictName": "译林版三年级起点三年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点三年级下_20260509_103818.txt",
+      "dictName": "译林版三年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点三年级下（新版）_20260507_132252.txt",
+      "dictName": "译林版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点五年级上_20260509_103726.txt",
+      "dictName": "译林版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点五年级下_20260509_103752.txt",
+      "dictName": "译林版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点六年级上_20260509_103630.txt",
+      "dictName": "译林版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点六年级下_20260509_103657.txt",
+      "dictName": "译林版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点四年级上_20260509_103507.txt",
+      "dictName": "译林版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点四年级上（新版）_20260507_132042.txt",
+      "dictName": "译林版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版三年级起点四年级下_20260509_103440.txt",
+      "dictName": "译林版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版二年级上_20260507_132202.txt",
+      "dictName": "译林版二年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "译林版二年级下_20260507_132138.txt",
+      "dictName": "译林版二年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1004",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重大版三年级起点三年级上（新版）_20260930_185949.txt",
+      "dictName": "重大版三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1014",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重大版三年级起点三年级下（新版）_20260930_190149.txt",
+      "dictName": "重大版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1014",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重大版三年级起点四年级上（新版）_20260930_190348.txt",
+      "dictName": "重大版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1014",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重大版三年级起点四年级下（新版）_20260930_190547.txt",
+      "dictName": "重大版三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1014",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重庆版三年级起点三年级上册_20260930_190746.txt",
+      "dictName": "重庆版三年级起点三年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1013",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重庆版三年级起点三年级下册_20260930_190946.txt",
+      "dictName": "重庆版三年级起点三年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1013",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重庆版三年级起点五年级上册_20260930_191545.txt",
+      "dictName": "重庆版三年级起点五年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1013",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重庆版三年级起点五年级下册_20260930_191807.txt",
+      "dictName": "重庆版三年级起点五年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1013",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重庆版三年级起点六年级上册_20260930_192034.txt",
+      "dictName": "重庆版三年级起点六年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1013",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重庆版三年级起点六年级下册_20260930_192258.txt",
+      "dictName": "重庆版三年级起点六年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1013",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重庆版三年级起点四年级上册_20260930_191145.txt",
+      "dictName": "重庆版三年级起点四年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1013",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "重庆版三年级起点四年级下册_20260930_191345.txt",
+      "dictName": "重庆版三年级起点四年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1013",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点三年级上_20260930_181400.txt",
+      "dictName": "闽教版三年级起点三年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点三年级上（新版）_20260930_200317.txt",
+      "dictName": "闽教版三年级起点三年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点三年级下_20260930_181618.txt",
+      "dictName": "闽教版三年级起点三年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点三年级下（新版）_20260930_180659.txt",
+      "dictName": "闽教版三年级起点三年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点五年级上_20260930_182132.txt",
+      "dictName": "闽教版三年级起点五年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点五年级下_20260930_182353.txt",
+      "dictName": "闽教版三年级起点五年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点六年级上_20260930_182615.txt",
+      "dictName": "闽教版三年级起点六年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点六年级下_20260930_182839.txt",
+      "dictName": "闽教版三年级起点六年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点四年级上_20260930_181837.txt",
+      "dictName": "闽教版三年级起点四年级上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点四年级上（新版）_20260930_180919.txt",
+      "dictName": "闽教版三年级起点四年级上（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点四年级下_20260930_200513.txt",
+      "dictName": "闽教版三年级起点四年级下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "闽教版三年级起点四年级下（新版）_20260930_181140.txt",
+      "dictName": "闽教版三年级起点四年级下（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1012",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "鲁科版五四学制三年级上册（新版）_20260930_145142.txt",
+      "dictName": "鲁科版五四学制三年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1008",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "鲁科版五四学制三年级下册（新版）_20260930_145334.txt",
+      "dictName": "鲁科版五四学制三年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1008",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "鲁科版五四学制五年级上册_20260930_150254.txt",
+      "dictName": "鲁科版五四学制五年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1008",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "鲁科版五四学制五年级下册_20260930_150446.txt",
+      "dictName": "鲁科版五四学制五年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1008",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "鲁科版五四学制四年级上册_20260930_145910.txt",
+      "dictName": "鲁科版五四学制四年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1008",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "鲁科版五四学制四年级上册（新版）_20260930_145525.txt",
+      "dictName": "鲁科版五四学制四年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1008",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "鲁科版五四学制四年级下册_20260930_150102.txt",
+      "dictName": "鲁科版五四学制四年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1008",
+      "targetGameHallIds": [
+        "19"
+      ]
+    },
+    {
+      "fileName": "鲁科版五四学制四年级下册（新版）_20260930_145718.txt",
+      "dictName": "鲁科版五四学制四年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "98a1b021d7434a978f89e13a401c1008",
+      "targetGameHallIds": [
+        "19"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+0|bedroom
+0|draw
+0|next
+0|next to
+0|window
+0|door
+0|computer
+0|pink
+0|flower
+0|map
+0|between
+0|wall
+0|for
+0|minute
+0|close
+0|right
+0|wrong
+0|now
+0|open
+0|clock
+0|floor
+0|sofa
+0|welcome
+0|welcome to
+0|house
+0|come
+0|come in
+0|living room
+0|love
+0|Here it is!
+0|wow
+0|study
+0|large
+0|kitchen
+0|clean
+0|beautiful
+0|toilet
+0|garden
+0|flat
+0|building
+0|after
+0|after school
+0|live
+0|bathroom
+0|shower
+0|take a shower
+0|meal
+0|have meals
+0|watch
+0|read
+0|do
+0|homework
+0|do one's homework
+0|grow
+0|one
+0|our
+0|classroom
+0|library
+0|pool
+0|swimming pool
+0|opposite
+0|playground
+0|sometimes
+0|PE
+0|music
+0|lesson
+0|have lessons
+0|teachers' room
+0|work
+0|art
+0|hall
+0|dining hall
+0|gym
+0|eat
+0|or
+0|tree
+0|eleven
+0|twelve
+0|thirteen
+0|fifteen
+0|eighteen
+0|twenty
+0|thirty
+0|forty
+0|fifty
+0|eighty
+0|class
+0|star
+0|does
+0|each
+0|group
+0|blackboard
+0|see
+0|Let me see.
+0|winner
+0|Chinese
+0|maths
+0|best
+0|subject
+0|favourite
+0|write
+0|story
+0|about
+0|What about ...?
+0|And you?
+0|everything
+0|learn
+0|sing
+0|song
+0|sport
+0|science
+0|understand
+0|world
+0|clothes
+0|T-shirt
+0|blouse
+0|much
+0|very much
+0|how much
+0|hundred
+0|yuan
+0|too
+0|expensive
+0|will
+0|won't
+0|will not
+0|take
+0|cap
+0|jacket
+0|coat
+0|shirt
+0|dress
+0|skirt
+0|grey
+0|sweater
+0|help
+0|shoe
+0|pair
+0|a pair of
+0|I'll
+0|I will
+0|them
+0|jeans
+0|anything
+0|else
+0|all
+0|sock
+0|trousers
+0|shorts
+0|wear
+0|occupation
+0|painter
+0|when
+0|grow up
+0|be good at
+0|sick
+0|nurse
+0|cook
+0|food
+0|builder
+0|build
+0|doctor
+0|policeman
+0|reporter
+0|news
+0|job
+0|factory
+0|worker
+0|like
+0|his
+0|writer
+0|tell
+0|her
+0|driver
+0|drive
+0|pupil
+0|women
+0|farmer
+0|men
+0|make
+0|machine
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 181
+# Total Entries Extracted: 181
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 181
+# -------------------------------

@@ -1,0 +1,86 @@
+0|day
+0|week
+0|Wednesday
+0|Thursday
+0|Monday
+0|Sunday
+0|Tuesday
+0|Friday
+0|Saturday
+0|today
+0|every
+0|diary
+0|remember
+0|all
+0|tomorrow
+0|visit
+0|watch
+0|time
+0|... o'clock
+0|hurry
+0|early
+0|late
+0|know
+0|fix
+0|tell
+0|night
+0|afternoon
+0|evening
+0|morning
+0|space
+0|ask
+0|him
+0|question
+0|when
+0|get up
+0|always
+0|often
+0|breakfast
+0|sometimes
+0|meat
+0|newspaper
+0|exercise
+0|lunch
+0|never
+0|activity
+0|museum
+0|dinosaur
+0|film
+0|shall
+0|let's
+0|homework
+0|group
+0|about
+0|enough
+0|free
+0|by bus
+0|close
+0|by bike
+0|buy
+0|robot
+0|by car
+0|on foot
+0|by taxi
+0|weather
+0|rainy
+0|sunny
+0|cloudy
+0|snowy
+0|farm
+0|dark
+0|cloud
+0|rain
+0|weather report
+0|scared
+0|fun
+0|windy
+0|warm
+0|coat
+0|sunglasses
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 79
+# Total Entries Extracted: 79
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 79
+# -------------------------------

@@ -1,0 +1,188 @@
+0|relative
+0|family tree
+0|granddaughter
+0|grandson
+0|only
+0|member
+0|classmate
+0|shop
+0|go shopping
+0|else
+0|badminton
+0|cycle
+0|go cycling
+0|almost
+0|never
+0|other
+0|each other
+0|friendly
+0|helpful
+0|kind
+0|naughty
+0|lie
+0|ocean
+0|yet
+0|just
+0|already
+0|Earth
+0|look after
+0|environment
+0|pollute
+0|pollution
+0|land
+0|keep
+0|pick up
+0|into
+0|rubbish bin
+0|leave
+0|promise
+0|discuss
+0|reuse
+0|spend
+0|island
+0|bay
+0|dragon
+0|weekend
+0|seaside
+0|lucky
+0|market
+0|space
+0|museum
+0|activity
+0|barbecue
+0|kite
+0|sandcastle
+0|collect
+0|album
+0|plan
+0|shall
+0|o'clock
+0|cost
+0|trip
+0|secretary
+0|bank
+0|clerk
+0|policewoman
+0|dentist
+0|pilot
+0|fireman
+0|postman
+0|shop assistant
+0|person
+0|teach
+0|put out
+0|interview
+0|find out
+0|if
+0|finish
+0|age
+0|programme
+0|entrance
+0|choir
+0|noticeboard
+0|parent
+0|arrive
+0|first
+0|classroom
+0|next
+0|project
+0|craft
+0|club
+0|finally
+0|ground
+0|invitation
+0|yesterday
+0|travel
+0|about
+0|minute
+0|ferry
+0|hour
+0|half an hour
+0|hotel
+0|advertisement
+0|board
+0|a few
+0|a lot of
+0|when
+0|light rail
+0|department store
+0|kindergarten
+0|housing estate
+0|temple
+0|rule
+0|wait for
+0|enter
+0|loudly
+0|mean
+0|lift
+0|escalator
+0|on the left
+0|on the right
+0|centre
+0|exit
+0|upstairs
+0|middle
+0|in the middle
+0|chase
+0|menu
+0|cabbage
+0|garlic
+0|noodle
+0|seafood
+0|steam
+0|prawn
+0|also
+0|fry
+0|bacon
+0|boil
+0|wing
+0|stall
+0|section
+0|frozen
+0|packet
+0|bake
+0|hamburger
+0|fun
+0|cola
+0|spicy
+0|nut
+0|lemon
+0|snack
+0|salty
+0|chilli
+0|sour
+0|bitter
+0|tasty
+0|delicious
+0|spread
+0|prepare
+0|enough
+0|healthy
+0|eating
+0|diet
+0|pyramid
+0|salt
+0|yogurt
+0|a little
+0|plenty of
+0|fresh
+0|unhealthy
+0|exercise
+0|countryside
+0|fit
+0|stay
+0|porridge
+0|than
+0|as ... as
+0|habit
+0|quiz
+0|before
+0|should
+0|suggestion
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 181
+# Total Entries Extracted: 181
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 181
+# -------------------------------

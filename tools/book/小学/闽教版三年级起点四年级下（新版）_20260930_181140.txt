@@ -1,0 +1,107 @@
+0|weekly
+0|activity
+0|week
+0|Sunday
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|Saturday
+0|fifty
+0|must
+0|robot
+0|weekday
+0|piano
+0|chess
+0|every
+0|sit
+0|door
+0|helpful
+0|foot
+0|tomorrow
+0|weekend
+0|hooray
+0|film
+0|evening
+0|picnic
+0|subject
+0|science
+0|math
+0|because
+0|useful
+0|but
+0|worry
+0|water
+0|poem
+0|kind
+0|exercise
+0|fox
+0|enjoy
+0|search
+0|internet
+0|information
+0|tell
+0|story
+0|fly
+0|why
+0|slide show
+0|zero
+0|feeling
+0|tired
+0|excited
+0|over
+0|nervous
+0|winner
+0|proud
+0|feel
+0|better
+0|next
+0|sad
+0|him
+0|high
+0|angry
+0|count
+0|parent
+0|farm
+0|poor
+0|duckling
+0|bored
+0|ugly
+0|lonely
+0|thirsty
+0|swan
+0|by
+0|subway
+0|near
+0|far
+0|away
+0|dad
+0|take
+0|does
+0|work
+0|his
+0|office
+0|live
+0|forty
+0|travel
+0|train
+0|cheap
+0|summer
+0|holiday
+0|plane
+0|surprise
+0|turn
+0|will
+0|I'll
+0|I will
+0|the UK
+0|Hong Kong
+0|ship
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 100
+# Total Entries Extracted: 100
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 100
+# -------------------------------

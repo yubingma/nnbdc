@@ -1,0 +1,145 @@
+0|weigh
+0|kilogram
+0|centimetre
+0|taller
+0|fan
+0|fantastic
+0|themselves
+0|theatre
+0|go fishing
+0|enjoy oneself
+0|get ... in
+0|life
+0|writer
+0|photographer
+0|film
+0|digital
+0|street cleaner
+0|sweep
+0|broom
+0|drive
+0|street sweeper
+0|wife
+0|poor
+0|fairy
+0|wish
+0|by hand
+0|right away
+0|in a short time
+0|carry
+0|online
+0|head teacher
+0|PS
+0|mountain
+0|even
+0|space
+0|dinosaur
+0|a piece of
+0|have a picnic
+0|better and better
+0|oil
+0|oil painting
+0|powerful
+0|ink
+0|Chinese ink painting
+0|brush
+0|paints
+0|artist
+0|unhappy
+0|carefully
+0|on the left
+0|on the right
+0|all the time
+0|craft
+0|crown
+0|scissors
+0|tape
+0|glue
+0|saw
+0|craftsman
+0|tool
+0|easily
+0|himself
+0|still
+0|model house
+0|a long time ago
+0|at work
+0|say to oneself
+0|long race
+0|short race
+0|win
+0|long jump
+0|high jump
+0|swimsuit
+0|swimming cap
+0|swimming pool
+0|warm-up
+0|fit
+0|swimming goggles
+0|bell
+0|neck
+0|ago
+0|gatekeeper
+0|praise
+0|praise ... for ...
+0|sign
+0|middle
+0|special
+0|path
+0|may
+0|lost
+0|worry
+0|follow
+0|in the middle
+0|look out
+0|no smoking
+0|no swimming
+0|get lost
+0|some time
+0|on the way
+0|reuse
+0|can
+0|rubber
+0|vase
+0|pen holder
+0|envelope
+0|plastic
+0|rubbish bin
+0|truck
+0|piece
+0|cloth
+0|throw away
+0|fairy tale
+0|adult
+0|well-known
+0|stronger
+0|than
+0|scarf
+0|blow off
+0|take off
+0|Western
+0|turkey
+0|moment
+0|decorate
+0|bright
+0|laugh at
+0|pea
+0|pod
+0|forever
+0|bigger
+0|excited
+0|bullet
+0|lazy
+0|roof
+0|yard
+0|hit
+0|see the world
+0|one by one
+0|look out of
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 138
+# Total Entries Extracted: 138
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 138
+# -------------------------------

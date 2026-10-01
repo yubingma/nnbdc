@@ -1,0 +1,135 @@
+0|city
+0|building
+0|flat
+0|street
+0|country
+0|farm
+0|house
+0|people
+0|live
+0|many
+0|place
+0|quiet
+0|all kinds of
+0|a lot of
+0|eagle
+0|owl
+0|honeybee
+0|nest
+0|their
+0|tree hole
+0|safe
+0|there
+0|snake
+0|hive
+0|under
+0|at night
+0|make honey
+0|plus
+0|equal
+0|answer
+0|minus
+0|odd numbers
+0|even numbers
+0|use
+0|help
+0|count
+0|thing
+0|say
+0|every day
+0|how many
+0|supermarket
+0|a bag of rice
+0|a box of eggs
+0|a bottle of juice
+0|buy
+0|sell
+0|need
+0|shopping list
+0|each
+0|team
+0|faster
+0|candy
+0|bread
+0|win
+0|still
+0|share
+0|water
+0|how much
+0|a bar of chocolate
+0|Here they are.
+0|All right.
+0|What would you like?
+0|spring
+0|warm
+0|summer
+0|hot
+0|autumn
+0|cool
+0|winter
+0|cold
+0|parent
+0|season
+0|year
+0|grow
+0|get
+0|usually
+0|after
+0|fall
+0|turn
+0|often
+0|snow
+0|then
+0|begin
+0|flower
+0|fruit
+0|leaf
+0|soil
+0|sunflower
+0|seed
+0|put
+0|plant
+0|root
+0|tall
+0|round
+0|oil
+0|amazing
+0|green light
+0|red light
+0|wait
+0|cross
+0|Mr
+0|way
+0|road
+0|should
+0|first
+0|left
+0|car
+0|right
+0|skate
+0|sorry
+0|kid
+0|late
+0|Good job!
+0|Hurry up!
+0|go shopping
+0|go for a walk
+0|use the internet
+0|do exercise
+0|do housework
+0|do gardening
+0|grandparent
+0|week
+0|work
+0|always
+0|vlog
+0|watch
+0|do tai chi
+0|tidy up
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 128
+# Total Entries Extracted: 128
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 128
+# -------------------------------

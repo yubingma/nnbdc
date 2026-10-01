@@ -1,0 +1,97 @@
+0|on the desk
+0|in the desk
+0|under the chair
+0|near the chair
+0|blackboard
+0|fan
+0|map
+0|schoolbag
+0|light
+0|farm
+0|cow
+0|horse
+0|pig
+0|sheep
+0|bird
+0|hen
+0|tree
+0|flower
+0|grass
+0|duck
+0|party
+0|candle
+0|candy
+0|present
+0|table
+0|sixteen
+0|seventeen
+0|eighteen
+0|nineteen
+0|twenty
+0|twenty-one
+0|trousers
+0|shorts
+0|shoes
+0|socks
+0|thirty
+0|forty
+0|fifty
+0|sixty
+0|in the morning
+0|in the afternoon
+0|in the evening
+0|at night
+0|go running
+0|go walking
+0|listen to English
+0|do homework
+0|rainy
+0|cloudy
+0|sunny
+0|windy
+0|snowy
+0|warm
+0|hot
+0|cool
+0|cold
+0|birthday
+0|chair
+0|desk
+0|far
+0|first
+0|game
+0|give me a hand
+0|Here you are.
+0|how
+0|in
+0|near
+0|on
+0|pass
+0|pencil box
+0|put on
+0|run
+0|see
+0|shoe
+0|size
+0|sock
+0|take off
+0|there
+0|there is
+0|there are
+0|today
+0|under
+0|walk
+0|weather
+0|welcome to
+0|What is 5 and 15?
+0|when
+0|where
+0|whose
+0|why
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 90
+# Total Entries Extracted: 90
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 90
+# -------------------------------

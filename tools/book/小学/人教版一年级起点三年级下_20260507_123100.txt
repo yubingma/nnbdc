@@ -1,0 +1,91 @@
+0|Chinese
+0|English
+0|science
+0|PE
+0|music
+0|maths
+0|art
+0|computer class
+0|we
+0|that
+0|classroom
+0|library
+0|toilet
+0|playground
+0|first
+0|second
+0|third
+0|floor
+0|room
+0|our
+0|they
+0|chair
+0|desk
+0|blackboard
+0|after school
+0|play sports
+0|draw pictures
+0|play chess
+0|dance
+0|sing songs
+0|read books
+0|really
+0|tomorrow
+0|wake up
+0|be back
+0|play football
+0|fly a kite
+0|ride a bike
+0|swim
+0|make a model plane
+0|make a snowman
+0|family
+0|uncle
+0|aunt
+0|cousin
+0|handsome
+0|beautiful
+0|lost
+0|water bottle
+0|know
+0|ok
+0|much
+0|welcome
+0|grandfather
+0|grandmother
+0|father
+0|mother
+0|brother
+0|sister
+0|cooking dinner
+0|walking the dog
+0|watering the plants
+0|cleaning the room
+0|listening to music
+0|watching TV
+0|feeding the fish
+0|play with
+0|in one hour
+0|everyone
+0|children
+0|run
+0|home
+0|bedroom
+0|living room
+0|bathroom
+0|dining room
+0|study
+0|kitchen
+0|for rent
+0|sofa
+0|light
+0|bed
+0|door
+0|box
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 84
+# Total Entries Extracted: 84
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 84
+# -------------------------------

@@ -1,0 +1,153 @@
+0|science
+0|museum
+0|post office
+0|bookstore
+0|cinema
+0|hospital
+0|crossing
+0|turn
+0|left
+0|straight
+0|right
+0|ask
+0|sir
+0|interesting
+0|Italian
+0|restaurant
+0|pizza
+0|street
+0|get
+0|BDS
+0|gave
+0|feature
+0|follow
+0|far
+0|tell
+0|on foot
+0|by
+0|bus
+0|plane
+0|taxi
+0|ship
+0|subway
+0|train
+0|slow
+0|down
+0|slow down
+0|stop
+0|Mrs
+0|early
+0|helmet
+0|must
+0|wear
+0|attention
+0|pay attention to
+0|traffic
+0|traffic lights
+0|Munich
+0|Germany
+0|Alaska
+0|sled
+0|fast
+0|ferry
+0|Papa Westray
+0|Scotland
+0|visit
+0|film
+0|see a film
+0|trip
+0|take a trip
+0|supermarket
+0|evening
+0|tonight
+0|tomorrow
+0|next week
+0|dictionary
+0|comic
+0|comic book
+0|word
+0|word book
+0|postcard
+0|lesson
+0|space
+0|travel
+0|half
+0|price
+0|Mid-Autumn Festival
+0|together
+0|get together
+0|mooncake
+0|poem
+0|moon
+0|studies
+0|puzzle
+0|hiking
+0|pen pal
+0|hobby
+0|jasmine
+0|idea
+0|Canberra
+0|amazing
+0|shall
+0|goal
+0|join
+0|club
+0|share
+0|factory
+0|worker
+0|postman
+0|businessman
+0|police officer
+0|fisherman
+0|scientist
+0|pilot
+0|coach
+0|country
+0|head teacher
+0|sea
+0|stay
+0|university
+0|gym
+0|if
+0|reporter
+0|use
+0|type
+0|quickly
+0|secretary
+0|angry
+0|afraid
+0|sad
+0|worried
+0|happy
+0|see a doctor
+0|more
+0|deep
+0|breath
+0|take a deep breath
+0|count
+0|count to ten
+0|chase
+0|mice
+0|bad
+0|hurt
+0|ill
+0|wrong
+0|should
+0|feel
+0|well
+0|sit
+0|grass
+0|hear
+0|ant
+0|worry
+0|stuck
+0|mud
+0|pull
+0|everyone
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 146
+# Total Entries Extracted: 146
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 146
+# -------------------------------

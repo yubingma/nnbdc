@@ -1,0 +1,161 @@
+0|sport
+0|jump
+0|high
+0|far
+0|ping-pong
+0|volleyball
+0|across
+0|hope
+0|lose
+0|because
+0|because of sb.
+0|because of sth.
+0|cancer
+0|money
+0|hard
+0|kind
+0|keep
+0|month
+0|ill
+0|year
+0|remember
+0|fail
+0|give
+0|give up
+0|never
+0|try
+0|try your best
+0|star
+0|ability
+0|player
+0|phew
+0|wash
+0|dish
+0|feed
+0|sweep
+0|floor
+0|rubbish
+0|chore
+0|to-do list
+0|may
+0|outside
+0|tidy
+0|easy
+0|clean
+0|woof
+0|job
+0|Good job!
+0|dirty
+0|desk
+0|wall
+0|again
+0|also
+0|sunshine
+0|sometimes
+0|feel
+0|tired
+0|helpful
+0|warm
+0|warm up
+0|water
+0|yard
+0|helper
+0|pick
+0|pig
+0|cow
+0|cut
+0|grass
+0|weather
+0|sunny
+0|cloud
+0|by
+0|cloudy
+0|wind
+0|blow
+0|windy
+0|rain
+0|rainy
+0|snow
+0|any
+0|cold
+0|or
+0|enjoy
+0|diary
+0|teacher
+0|taste
+0|ice cream
+0|real
+0|later
+0|coat
+0|turn
+0|turn on
+0|TV
+0|report
+0|season
+0|spring
+0|summer
+0|autumn
+0|winter
+0|favourite
+0|birthday
+0|fly
+0|snowstorm
+0|beach
+0|sea
+0|equator
+0|round
+0|all year round
+0|quite
+0|join
+0|bus
+0|car
+0|train
+0|city
+0|town
+0|ship
+0|plane
+0|sky
+0|place
+0|near
+0|travel
+0|way
+0|picnic
+0|minute
+0|wear
+0|live
+0|away
+0|truck
+0|bamboo
+0|bike
+0|ring
+0|beep
+0|subway
+0|whoosh
+0|tram
+0|chug
+0|wheel
+0|left
+0|straight
+0|library
+0|centre
+0|cinema
+0|hospital
+0|supermarket
+0|museum
+0|tomorrow
+0|woman
+0|wish
+0|step
+0|own
+0|on one's own
+0|cross
+0|careful
+0|be careful
+0|underground
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 154
+# Total Entries Extracted: 154
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 154
+# -------------------------------

@@ -1,0 +1,72 @@
+0|practice
+0|read
+0|textbook
+0|TV
+0|talk
+0|chess
+0|photo
+0|picture
+0|have
+0|will
+0|would
+0|different
+0|job
+0|follow
+0|listen
+0|plant
+0|up
+0|carry
+0|nothing
+0|earth
+0|without
+0|sun
+0|their
+0|forest
+0|make use of
+0|wood
+0|example
+0|tomato
+0|carrot
+0|corn
+0|nut
+0|else
+0|both
+0|travel
+0|son
+0|sister
+0|eighteen
+0|lovely
+0|kid
+0|seven
+0|niece
+0|nephew
+0|daughter
+0|lucky
+0|often
+0|same
+0|pilot
+0|should
+0|study
+0|cap
+0|birthday
+0|teach
+0|engineer
+0|exercise
+0|build
+0|excited
+0|hour
+0|email
+0|enjoy
+0|exciting
+0|famous
+0|its
+0|beach
+0|sea
+0|camera
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 65
+# Total Entries Extracted: 65
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 65
+# -------------------------------

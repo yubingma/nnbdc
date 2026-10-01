@@ -1,0 +1,135 @@
+0|hobby
+0|kind
+0|folk
+0|club
+0|join
+0|because
+0|science
+0|chess
+0|well
+0|why
+0|fan
+0|travel
+0|study
+0|face
+0|feeling
+0|throw
+0|thing
+0|out
+0|safe
+0|down
+0|stair
+0|skate
+0|fall
+0|March
+0|thin
+0|dangerous
+0|board
+0|lake
+0|careful
+0|push
+0|crowd
+0|slowly
+0|fast
+0|street
+0|light
+0|again
+0|fun
+0|game
+0|be good at
+0|seventy
+0|eighty
+0|ninety
+0|tired
+0|win
+0|hundred
+0|kung fu
+0|leg
+0|hurt
+0|badly
+0|king
+0|visit
+0|the Great Wall
+0|hero
+0|him
+0|Labour Day
+0|holiday
+0|May
+0|chore
+0|the USA
+0|September
+0|June
+0|November
+0|Canada
+0|often
+0|cinema
+0|zoo
+0|National Day
+0|October
+0|flag
+0|watch
+0|early
+0|special
+0|Water-Splashing Festival
+0|April
+0|Inner Mongolia
+0|Naadam
+0|July
+0|August
+0|grandma
+0|dear
+0|TV
+0|grandpa
+0|plant
+0|kitchen
+0|weekend
+0|people
+0|they
+0|sky
+0|fly
+0|put
+0|role
+0|paint
+0|funny
+0|brave
+0|enjoy
+0|world
+0|woman
+0|tea
+0|rabbit
+0|glad
+0|need
+0|buy
+0|tell
+0|way
+0|shop
+0|near
+0|front
+0|in front of
+0|building
+0|far
+0|robot
+0|know
+0|third
+0|shelf
+0|letter
+0|second
+0|beside
+0|playground
+0|centre
+0|center
+0|smart
+0|community
+0|themselves
+0|dark
+0|toilet
+0|between
+0|supermarket
+0|quickly
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 128
+# Total Entries Extracted: 128
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 128
+# -------------------------------

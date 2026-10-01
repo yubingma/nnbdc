@@ -1,0 +1,252 @@
+0|a
+0|an
+0|away
+0|bag
+0|bake
+0|bike
+0|blow a kiss
+0|boy
+0|break
+0|catch
+0|clock
+0|cow
+0|crazy
+0|do
+0|don't
+0|do not
+0|football
+0|go to school
+0|have
+0|kiss
+0|policeman
+0|ride
+0|school
+0|street
+0|take out
+0|through
+0|April
+0|August
+0|autumn
+0|Canada
+0|cold
+0|cool
+0|December
+0|February
+0|how old
+0|in
+0|January
+0|June
+0|March
+0|May
+0|Nice to meet you.
+0|November
+0|October
+0|remember
+0|season
+0|September
+0|spring
+0|summer
+0|warm
+0|when
+0|where
+0|which
+0|why
+0|wind
+0|winter
+0|ah
+0|any
+0|ball
+0|behind
+0|class
+0|curtain
+0|good idea
+0|idea
+0|in front of
+0|it
+0|mm
+0|on
+0|sir
+0|teacher
+0|turn
+0|under
+0|wall
+0|Well done!
+0|what about
+0|at
+0|British
+0|coin
+0|dinner
+0|eighty
+0|fifty
+0|forty
+0|has got
+0|his
+0|hole
+0|how much
+0|hundred
+0|live
+0|London Zoo
+0|look for
+0|lunch
+0|minus
+0|money
+0|ninety
+0|plus
+0|pocket
+0|seventy
+0|shop
+0|sixty
+0|song
+0|take
+0|thirty
+0|to
+0|wonderful
+0|art
+0|canteen
+0|China
+0|computer
+0|gym
+0|head teacher
+0|help
+0|here
+0|Japan
+0|library
+0|of
+0|often
+0|or
+0|our
+0|play
+0|playground
+0|sport
+0|stop
+0|their
+0|basketball
+0|bow and arrow
+0|brother
+0|can't
+0|can not
+0|dare
+0|drive
+0|duck
+0|first
+0|fly
+0|free
+0|genius
+0|girl
+0|I dare you ...
+0|never
+0|piano
+0|pupil
+0|racing car
+0|right
+0|shoot
+0|sister
+0|ski
+0|stand on one's head
+0|superstar
+0|table tennis
+0|thanks
+0|time
+0|try
+0|winner
+0|again
+0|all
+0|as
+0|circle
+0|cm
+0|centimetre
+0|dice
+0|drop
+0|farm
+0|fete
+0|fix
+0|fold
+0|from
+0|full
+0|helicopter
+0|line
+0|London
+0|miss
+0|month
+0|name
+0|other
+0|page
+0|paper clip
+0|parent
+0|picture
+0|rectangle
+0|round
+0|same
+0|sell
+0|shape
+0|square
+0|strip
+0|telephone
+0|triangle
+0|use
+0|used
+0|watch
+0|way
+0|around
+0|atishoo
+0|Be quiet.
+0|blazer
+0|Bless you!
+0|cardigan
+0|carry
+0|chimney
+0|chorus
+0|cup
+0|dear
+0|down
+0|end
+0|enter
+0|every
+0|fall
+0|fall asleep
+0|father
+0|find
+0|for
+0|get
+0|get up
+0|go home
+0|go off
+0|go to bed
+0|Good night.
+0|hang
+0|heavy
+0|her
+0|Here it is.
+0|him
+0|home
+0|know
+0|ladder
+0|lamp
+0|leave
+0|make
+0|mother
+0|out
+0|people
+0|piece
+0|poor
+0|pot
+0|pour
+0|pyjamas
+0|quiet
+0|so
+0|switch on
+0|then
+0|tie
+0|us
+0|very much
+0|wake
+0|wake up
+0|well
+0|world
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 245
+# Total Entries Extracted: 245
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 245
+# -------------------------------

@@ -1,0 +1,91 @@
+0|more than
+0|thousand
+0|kilometre
+0|something
+0|million
+0|map
+0|right
+0|country
+0|dancing
+0|Chinatown
+0|sometimes
+0|shop
+0|then
+0|ah
+0|strong
+0|collect
+0|stamp
+0|hobby
+0|doll
+0|bicycle
+0|Thanksgiving
+0|Thanksgiving Day
+0|flag
+0|Flag Day
+0|fly
+0|special
+0|meal
+0|sound
+0|football
+0|moon cake
+0|the Mid-Autumn Festival
+0|the Dragon Boat Festival
+0|race
+0|lantern
+0|the Lantern Festival
+0|hang
+0|pen friend
+0|Pleased to meet you!
+0|address
+0|French
+0|age
+0|story
+0|candy
+0|world
+0|often
+0|difficult
+0|knife
+0|fork
+0|chopsticks
+0|Japanese
+0|believe
+0|snake
+0|DVD
+0|together
+0|lucky
+0|bamboo
+0|its
+0|body
+0|come out of
+0|flute
+0|get
+0|frightened
+0|long ago
+0|I'd love to
+0|not really
+0|stop
+0|clean
+0|camera
+0|show
+0|never
+0|around
+0|all around
+0|member state
+0|inside
+0|should
+0|line
+0|stand in line
+0|close
+0|librarian
+0|rule
+0|quiet
+0|problem
+0|No problem.
+0|cross
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 84
+# Total Entries Extracted: 84
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 84
+# -------------------------------

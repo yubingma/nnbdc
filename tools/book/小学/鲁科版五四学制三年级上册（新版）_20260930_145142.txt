@@ -1,0 +1,202 @@
+0|greeting
+0|hello
+0|I
+0|am
+0|I'm
+0|I am
+0|hi
+0|Miss
+0|how
+0|are
+0|you
+0|How are you?
+0|good
+0|morning
+0|Good morning!
+0|fine
+0|thank
+0|and
+0|goodbye
+0|bye
+0|see
+0|tomorrow
+0|See you tomorrow.
+0|Thanks.
+0|nice
+0|to
+0|meet
+0|Nice to meet you.
+0|afternoon
+0|Good afternoon!
+0|too
+0|friend
+0|this
+0|is
+0|Mr
+0|my
+0|what
+0|what's
+0|what is
+0|your
+0|name
+0|he
+0|he's
+0|he is
+0|she
+0|she's
+0|she is
+0|let
+0|us
+0|let's
+0|let us
+0|start
+0|OK
+0|part
+0|of
+0|the
+0|body
+0|head
+0|oh
+0|look
+0|arm
+0|wow
+0|at
+0|look at
+0|leg
+0|ha-ha
+0|foot
+0|yes
+0|no
+0|it
+0|it's
+0|it is
+0|a
+0|small
+0|nose
+0|big
+0|eye
+0|mouth
+0|face
+0|me
+0|cool
+0|ear
+0|have
+0|two
+0|wing
+0|feet
+0|hand
+0|an
+0|school
+0|thing
+0|new
+0|pen
+0|pencil
+0|eraser
+0|ruler
+0|so
+0|long
+0|that
+0|panda
+0|schoolbag
+0|pencil-case
+0|don't
+0|do not
+0|know
+0|I don't know.
+0|book
+0|crayon
+0|put
+0|in
+0|bag
+0|please
+0|mum
+0|tidy
+0|desk
+0|boy
+0|our
+0|room
+0|colour
+0|around
+0|red
+0|yellow
+0|about
+0|what about
+0|now
+0|orange
+0|make
+0|right
+0|white
+0|rainbow
+0|green
+0|else
+0|blue
+0|purple
+0|fun
+0|like
+0|black
+0|brown
+0|pink
+0|number
+0|five
+0|balloon
+0|many
+0|how many
+0|three
+0|here
+0|Here you are!
+0|one
+0|four
+0|eight
+0|happy
+0|birthday
+0|old
+0|how old
+0|guess
+0|count
+0|candle
+0|six
+0|seven
+0|you're
+0|you are
+0|for
+0|dad
+0|nine
+0|ten
+0|cake
+0|ready
+0|we
+0|share
+0|great
+0|heart
+0|family
+0|mother
+0|welcome
+0|father
+0|brother
+0|baby
+0|sister
+0|woof
+0|puppy
+0|yeah
+0|her
+0|isn't
+0|is not
+0|grandfather
+0|grandmother
+0|nurse
+0|PE
+0|teacher
+0|doctor
+0|beautiful
+0|strong
+0|cook
+0|tall
+0|driver
+0|love
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 195
+# Total Entries Extracted: 195
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 195
+# -------------------------------

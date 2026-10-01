@@ -1,0 +1,111 @@
+0|nice
+0|always
+0|a bit
+0|shy
+0|e-card
+0|quiet
+0|another
+0|him
+0|parrot
+0|twenty
+0|helpful
+0|maths
+0|plus
+0|more
+0|about
+0|river
+0|wide
+0|old
+0|clock
+0|wheel
+0|round
+0|will
+0|you'll
+0|tower
+0|bridge
+0|won't
+0|will not
+0|countryside
+0|farmer
+0|there
+0|lots of
+0|breakfast
+0|have breakfast
+0|tea
+0|tea party
+0|pick
+0|fourteen
+0|sixteen
+0|eighteen
+0|thirteen
+0|fifteen
+0|seventeen
+0|nineteen
+0|afraid
+0|feel
+0|all right
+0|tomorrow
+0|Monday
+0|why
+0|Why not?
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|next
+0|week
+0|stamp
+0|computer
+0|shall
+0|arm
+0|class
+0|any
+0|ask
+0|question
+0|forty
+0|so
+0|thirty
+0|hard
+0|lazy
+0|parent
+0|Parents' Day
+0|speak
+0|with
+0|quite
+0|good at
+0|English
+0|PE
+0|physical education
+0|Chinese
+0|art
+0|report
+0|try
+0|were
+0|young
+0|beautiful
+0|was
+0|also
+0|then
+0|who
+0|grandparent
+0|yesterday
+0|weren't
+0|were not
+0|wasn't
+0|was not
+0|fun
+0|second
+0|floor
+0|worried
+0|find
+0|first
+0|remember
+0|Mother's Day
+0|vegetable
+0|last
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 104
+# Total Entries Extracted: 104
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 104
+# -------------------------------

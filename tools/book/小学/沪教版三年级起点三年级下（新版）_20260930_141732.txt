@@ -1,0 +1,165 @@
+0|read
+0|sing
+0|paint
+0|dance
+0|swim
+0|play basketball
+0|play ping-pong
+0|play football
+0|centre
+0|Ms
+0|our
+0|talk
+0|hobby
+0|do
+0|free
+0|us
+0|favourite
+0|sport
+0|basketball court
+0|play a game
+0|take a photo
+0|row a boat
+0|climb a mountain
+0|tell a story
+0|sandcastle
+0|great
+0|sand
+0|join
+0|meet
+0|her
+0|we
+0|play beach volleyball
+0|sweater
+0|T-shirt
+0|skirt
+0|dress
+0|shirt
+0|trousers
+0|shorts
+0|coat
+0|cap
+0|shoes
+0|wear
+0|school
+0|different
+0|clothes
+0|uniform
+0|whose
+0|around the world
+0|take a look
+0|of course
+0|a pair of
+0|grass
+0|river
+0|hear
+0|bird
+0|duck
+0|bee
+0|lake
+0|chirp
+0|buzz
+0|by
+0|swish
+0|blow
+0|quack
+0|past
+0|walk
+0|along
+0|path
+0|pitter-patter
+0|time
+0|again
+0|sound
+0|go outside
+0|go home
+0|where
+0|colour
+0|pink
+0|blue
+0|red
+0|brown
+0|black
+0|white
+0|purple
+0|green
+0|orange
+0|yellow
+0|tree
+0|out
+0|garden
+0|up
+0|there
+0|there is
+0|there are
+0|butterfly
+0|lizard
+0|now
+0|problem
+0|sky
+0|dark
+0|colourful
+0|firework
+0|kitchen
+0|bathroom
+0|bedroom
+0|dining room
+0|living room
+0|study
+0|desk
+0|chair
+0|sofa
+0|from
+0|new
+0|dear
+0|show
+0|write
+0|window
+0|wish
+0|because
+0|boat
+0|in front of
+0|look out of
+0|teddy bear
+0|welcome
+0|classroom
+0|computer room
+0|toilet
+0|sports ground
+0|library
+0|office
+0|picture
+0|tomorrow
+0|also
+0|schoolbag
+0|ruler
+0|pencil
+0|pen
+0|eraser
+0|show ... around
+0|art room
+0|swimming pool
+0|lots of
+0|Come and see!
+0|Children's Day
+0|go to the beach
+0|go to the cinema
+0|go to the park
+0|go to the zoo
+0|go to the museum
+0|survey
+0|elephant
+0|film
+0|pizza
+0|shop
+0|eat
+0|classmate
+0|song
+0|science museum
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 158
+# Total Entries Extracted: 158
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 158
+# -------------------------------

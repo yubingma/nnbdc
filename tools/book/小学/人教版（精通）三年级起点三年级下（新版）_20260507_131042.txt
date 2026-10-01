@@ -1,0 +1,123 @@
+0|in
+0|on
+0|under
+0|box
+0|chair
+0|computer
+0|desk
+0|blackboard
+0|classroom
+0|door
+0|floor
+0|wall
+0|window
+0|guess
+0|many
+0|book
+0|love
+0|dirty
+0|clean
+0|help
+0|great
+0|today
+0|turn
+0|one
+0|two
+0|three
+0|four
+0|five
+0|six
+0|seven
+0|eight
+0|nine
+0|ten
+0|eleven
+0|twelve
+0|class
+0|which
+0|grade
+0|student
+0|school
+0|Well done!
+0|father
+0|dad
+0|mother
+0|mum
+0|baby
+0|brother
+0|baby brother
+0|sister
+0|me
+0|aunt
+0|uncle
+0|grandfather
+0|grandpa
+0|grandmother
+0|grandma
+0|family
+0|son
+0|meet
+0|that
+0|daughter
+0|who
+0|beautiful
+0|very much
+0|cap
+0|coat
+0|shirt
+0|sweater
+0|T-shirt
+0|dress
+0|shorts
+0|skirt
+0|sock
+0|trousers
+0|clothes
+0|take
+0|wash
+0|by myself
+0|shoe
+0|by hand
+0|helpful
+0|home
+0|chicken
+0|cow
+0|duck
+0|horse
+0|sheep
+0|bee
+0|bird
+0|fish
+0|mouse
+0|pig
+0|rabbit
+0|animal
+0|kid
+0|here
+0|right
+0|where
+0|tree
+0|heavy
+0|grass
+0|give
+0|us
+0|blue
+0|brown
+0|green
+0|pink
+0|red
+0|black
+0|orange
+0|white
+0|yellow
+0|colour
+0|draw
+0|dream
+0|garden
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 116
+# Total Entries Extracted: 116
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 116
+# -------------------------------

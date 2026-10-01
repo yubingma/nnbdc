@@ -1,0 +1,164 @@
+0|mess
+0|yesterday
+0|whose
+0|living room
+0|happen
+0|wet
+0|forget
+0|deal with
+0|bring
+0|back
+0|list
+0|check
+0|method
+0|word
+0|Ms
+0|Ms.
+0|card
+0|go over
+0|free
+0|song
+0|aloud
+0|solve
+0|break
+0|afraid
+0|close
+0|window
+0|away
+0|put up
+0|notice
+0|picture
+0|phone
+0|part
+0|grass
+0|root
+0|stem
+0|seed
+0|ground
+0|take in
+0|soil
+0|carry
+0|protect
+0|foot
+0|wind
+0|take ... away
+0|stick
+0|thick
+0|growth
+0|bean
+0|begin
+0|sunlight
+0|little by little
+0|pod
+0|come out
+0|job
+0|cabbage
+0|come from
+0|give
+0|else
+0|Mother's Day
+0|Teachers' Day
+0|pear
+0|peach
+0|wood
+0|paper
+0|table
+0|chair
+0|house
+0|wash away
+0|in short
+0|medicine
+0|balance
+0|recycle
+0|print
+0|step on
+0|go shopping
+0|toy
+0|quite a few
+0|go well with ...
+0|try ... on
+0|pair
+0|shoe
+0|size
+0|comfortable
+0|off
+0|flea market
+0|sell
+0|ago
+0|white
+0|shape
+0|online
+0|choose
+0|app
+0|application
+0|goods
+0|decide
+0|address
+0|pay
+0|worker
+0|pilot
+0|astronaut
+0|be interested in ...
+0|rocket
+0|launch
+0|spaceship
+0|research
+0|writer
+0|future
+0|sick
+0|born
+0|fall over
+0|from then on
+0|come true
+0|exercise
+0|minute
+0|take ... lesson
+0|give up
+0|scientist
+0|the Medal of the Republic
+0|honour
+0|hybrid rice
+0|once
+0|farmer
+0|invent
+0|output
+0|each
+0|square
+0|the Summer Palace
+0|well-kept
+0|colourful
+0|international
+0|airport
+0|modern
+0|computer
+0|subway
+0|line
+0|its
+0|Beijing roast duck
+0|hot pot
+0|Central Axis
+0|Bell and Drum Towers
+0|northern
+0|end
+0|bird's-eye view
+0|the Palace Museum
+0|wooden
+0|palace
+0|treasure
+0|bus
+0|gate
+0|Tian'anmen Square Complex
+0|southern
+0|own
+0|young
+0|Bird's Nest
+0|well-known
+0|hold
+0|ceremony
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 157
+# Total Entries Extracted: 157
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 157
+# -------------------------------

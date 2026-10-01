@@ -1,0 +1,152 @@
+0|library
+0|borrow
+0|borrow books
+0|meeting room
+0|have a meeting
+0|welcome
+0|meet
+0|our
+0|English lesson
+0|language lab
+0|science lesson
+0|science lab
+0|we
+0|have
+0|all
+0|like
+0|very much
+0|art club
+0|paint a picture
+0|music club
+0|play the piano
+0|many
+0|way
+0|please
+0|also
+0|toy train
+0|toy plane
+0|toy ship
+0|toy boat
+0|can
+0|help
+0|want
+0|toy
+0|train
+0|plane
+0|ship
+0|boat
+0|motorbike
+0|jeep
+0|coach
+0|buy
+0|bike
+0|car
+0|bus
+0|taxi
+0|trousers
+0|short pants
+0|try
+0|coat
+0|clothes
+0|ask
+0|answer
+0|eat
+0|make
+0|think
+0|late
+0|class
+0|question
+0|actively
+0|quiet
+0|make noise
+0|keep your room clean
+0|do housework
+0|read in bed
+0|go home late
+0|go home
+0|get up
+0|go to bed
+0|help old people
+0|keep off the grass
+0|take good care of young children
+0|play on the street
+0|pick flowers
+0|litter
+0|wait
+0|take
+0|young
+0|child
+0|children
+0|people
+0|have a bad cold
+0|have a fever
+0|have a headache
+0|have a cough
+0|dear
+0|ill
+0|bad
+0|afraid
+0|worry
+0|have a toothache
+0|have a stomachache
+0|take some medicine
+0|take a good rest
+0|wrong
+0|with
+0|head
+0|face
+0|ear
+0|arm
+0|chocolate
+0|dragon fruit
+0|bring
+0|feel
+0|get-well card
+0|here
+0|for
+0|make a call
+0|write an email
+0|wash the clothes
+0|clean the room
+0|tell a story
+0|sing a song
+0|play the guitar
+0|play the violin
+0|look at the picture
+0|talk about
+0|stand
+0|sit
+0|cousin
+0|play football
+0|play volleyball
+0|play basketball
+0|watch the games
+0|game
+0|foot
+0|feet
+0|football
+0|basketball
+0|playground
+0|play badminton
+0|play tennis
+0|play ping-pong
+0|play baseball
+0|Miss
+0|MS
+0|Mr
+0|Mrs
+0|favourite
+0|sport
+0|do the high jump
+0|do the long jump
+0|run fast
+0|run
+0|high jump
+0|long jump
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 145
+# Total Entries Extracted: 145
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 145
+# -------------------------------

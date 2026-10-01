@@ -1,0 +1,111 @@
+0|first floor
+0|second floor
+0|teachers' office
+0|library
+0|playground
+0|computer room
+0|art room
+0|music room
+0|next to
+0|homework
+0|class
+0|forty
+0|way
+0|breakfast
+0|English class
+0|lunch
+0|music class
+0|PE class
+0|dinner
+0|get up
+0|go to school
+0|go home
+0|go to bed
+0|over
+0|now
+0|o'clock
+0|kid
+0|thirty
+0|hurry up
+0|come on
+0|just a minute
+0|cold
+0|cool
+0|warm
+0|hot
+0|sunny
+0|windy
+0|cloudy
+0|snowy
+0|rainy
+0|outside
+0|be careful
+0|weather
+0|New York
+0|how about ...
+0|degree
+0|world
+0|London
+0|Moscow
+0|Singapore
+0|Sydney
+0|fly
+0|love
+0|tomato
+0|potato
+0|green beans
+0|carrot
+0|horse
+0|cow
+0|sheep
+0|hen
+0|these
+0|yum
+0|animal
+0|those
+0|garden
+0|farm
+0|goat
+0|eat
+0|clothes
+0|pants
+0|hat
+0|dress
+0|skirt
+0|coat
+0|sweater
+0|sock
+0|shorts
+0|jacket
+0|shirt
+0|yours
+0|whose
+0|mine
+0|pack
+0|wait
+0|glove
+0|scarf
+0|umbrella
+0|sunglasses
+0|pretty
+0|expensive
+0|cheap
+0|nice
+0|try on
+0|size
+0|of course
+0|too
+0|just
+0|how much
+0|eighty
+0|dollar
+0|sale
+0|more
+0|us
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 104
+# Total Entries Extracted: 104
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 104
+# -------------------------------

@@ -1,0 +1,77 @@
+0|tomorrow
+0|woman
+0|women
+0|too
+0|plant
+0|fun
+0|people
+0|favourite
+0|turn
+0|bird
+0|hear
+0|out
+0|flag
+0|yellow
+0|watch
+0|from
+0|square
+0|black
+0|shape
+0|round
+0|circle
+0|now
+0|try
+0|ship
+0|wonderful
+0|any
+0|banana
+0|before
+0|sweet
+0|potato
+0|sweet potato
+0|food
+0|best
+0|great
+0|apple
+0|drink
+0|may
+0|tea
+0|sure
+0|child
+0|children
+0|fly
+0|kite
+0|song
+0|voice
+0|dance
+0|pencil case
+0|water
+0|bottle
+0|look
+0|mother
+0|box
+0|drive
+0|parent
+0|father
+0|write
+0|open
+0|much
+0|hard
+0|afraid
+0|be
+0|aunt
+0|uncle
+0|hospital
+0|nurse
+0|doctor
+0|tooth
+0|teeth
+0|lesson
+0|story
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 70
+# Total Entries Extracted: 70
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 70
+# -------------------------------

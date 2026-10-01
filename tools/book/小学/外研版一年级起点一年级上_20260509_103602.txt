@@ -1,0 +1,145 @@
+0|hello
+0|hi
+0|aah
+0|ooh
+0|I
+0|am
+0|I'm
+0|I am
+0|goodbye
+0|bye
+0|How are you?
+0|woof
+0|no
+0|yes
+0|sorry
+0|fine
+0|thank
+0|you
+0|what
+0|is
+0|what's
+0|what is
+0|your
+0|name
+0|please
+0|ha ha
+0|good
+0|morning
+0|Ms
+0|my
+0|bird
+0|tweet
+0|a
+0|an
+0|boy
+0|girl
+0|whoops
+0|afternoon
+0|panda
+0|sit
+0|down
+0|stand
+0|up
+0|open
+0|the
+0|window
+0|door
+0|See you!
+0|point
+0|to
+0|aargh
+0|desk
+0|chair
+0|it
+0|it's
+0|it is
+0|red
+0|aha
+0|blue
+0|wow
+0|yellow
+0|oh
+0|colour
+0|green
+0|now
+0|black
+0|white
+0|dog
+0|cat
+0|and
+0|hey
+0|look
+0|orange
+0|this
+0|our
+0|teacher
+0|school
+0|classroom
+0|Nice to meet you.
+0|child
+0|that
+0|bag
+0|schoolbag
+0|book
+0|pen
+0|pencil
+0|ruler
+0|eraser
+0|pencil case
+0|crayon
+0|new
+0|kite
+0|or
+0|not
+0|isn't
+0|is not
+0|monkey
+0|monster
+0|help
+0|house
+0|box
+0|how many
+0|one
+0|two
+0|three
+0|four
+0|count
+0|say
+0|five
+0|six
+0|seven
+0|eight
+0|nine
+0|ten
+0|pink
+0|ball
+0|so
+0|many
+0|brown
+0|how old
+0|are
+0|too
+0|happy
+0|birthday
+0|but
+0|for
+0|You're welcome!
+0|father
+0|daddy
+0|mother
+0|grandpa
+0|grandma
+0|friend
+0|his
+0|car
+0|sister
+0|brother
+0|her
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 138
+# Total Entries Extracted: 138
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 138
+# -------------------------------

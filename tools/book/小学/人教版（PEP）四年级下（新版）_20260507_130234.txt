@@ -1,0 +1,118 @@
+0|sorry
+0|late
+0|class
+0|hurry
+0|ready
+0|rule
+0|classroom
+0|turn
+0|light
+0|blackboard
+0|desk
+0|chair
+0|tidy
+0|music
+0|wall
+0|door
+0|window
+0|fan
+0|when
+0|understand
+0|newspaper
+0|hand out
+0|workbook
+0|watch
+0|TV
+0|homework
+0|first
+0|wet
+0|run
+0|house
+0|safe
+0|word
+0|wash
+0|loud
+0|sleep
+0|bedroom
+0|kitchen
+0|living
+0|study
+0|bathroom
+0|work
+0|think
+0|hard
+0|follow
+0|feel
+0|over
+0|kid
+0|dinner
+0|art
+0|lunch
+0|maths
+0|get up
+0|go to school
+0|go home
+0|go to bed
+0|want
+0|clock
+0|just
+0|minute
+0|trousers
+0|pair
+0|clothes
+0|shorts
+0|jacket
+0|skirt
+0|dear
+0|expensive
+0|take
+0|cheap
+0|shoe
+0|beautiful
+0|hat
+0|sunglasses
+0|free
+0|large
+0|size
+0|list
+0|try
+0|any
+0|cow
+0|horse
+0|sheep
+0|pig
+0|chicken
+0|tomato
+0|bee
+0|mouse
+0|carrot
+0|potato
+0|green bean
+0|can
+0|a box of
+0|feed
+0|pass
+0|pick
+0|milk
+0|knife
+0|fork
+0|chopstick
+0|waste
+0|food
+0|delicious
+0|clear the table
+0|bowl
+0|spoon
+0|set
+0|supermarket
+0|by oneself
+0|week
+0|salad
+0|ad
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 111
+# Total Entries Extracted: 111
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 111
+# -------------------------------

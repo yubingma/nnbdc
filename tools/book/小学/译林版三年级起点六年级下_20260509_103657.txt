@@ -1,0 +1,124 @@
+0|mouse
+0|large
+0|strong
+0|walk by
+0|wake ... up
+0|some day
+0|quietly
+0|weak
+0|loudly
+0|let ... go
+0|the next day
+0|net
+0|bite
+0|sharp
+0|sadly
+0|just then
+0|soon
+0|happily
+0|from then on
+0|cheer
+0|hit
+0|deep
+0|reach
+0|quickly
+0|pour ... into
+0|habit
+0|never
+0|late
+0|put ... in order
+0|finish
+0|tidy
+0|bad
+0|sleepy
+0|last night
+0|fast
+0|go into
+0|slowly
+0|badly
+0|healthy
+0|diet
+0|a little
+0|a few
+0|at a time
+0|cola
+0|need
+0|road
+0|safety
+0|cross
+0|safely
+0|must
+0|zebra crossing
+0|safe
+0|pavement
+0|look out for
+0|easily
+0|follow
+0|rule
+0|stay
+0|light
+0|Children's Day
+0|clown
+0|appear
+0|balloon
+0|begin
+0|put on
+0|end
+0|country
+0|will
+0|learn
+0|Australia
+0|find out
+0|magazine
+0|kangaroo
+0|koala
+0|sport-lover
+0|Australian football
+0|exciting
+0|Sydney
+0|welcome
+0|visitor
+0|for example
+0|London
+0|Oxford
+0|like
+0|Big Ben
+0|London Eye
+0|Tower Bridge
+0|What do you think?
+0|month
+0|summer holiday
+0|go back to
+0|how long
+0|sound
+0|Disneyland
+0|Ocean Park
+0|Taipei
+0|photo
+0|travel
+0|traveller
+0|travel around the world
+0|different
+0|dream
+0|future
+0|care about
+0|tooth
+0|astronaut
+0|spaceship
+0|football player
+0|World Cup
+0|dancer
+0|pianist
+0|come true
+0|take care of
+0|scientist
+0|brave
+0|artist
+0|paint
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 117
+# Total Entries Extracted: 117
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 117
+# -------------------------------

@@ -1,0 +1,35 @@
+0|Good morning!
+0|school
+0|Hi! My name is Lingling.
+0|boys
+0|girls
+0|Nice to meet you!
+0|classroom
+0|ruler
+0|book
+0|schoolbag
+0|pencil
+0|pencil box
+0|eraser
+0|family
+0|grandma
+0|grandpa
+0|father
+0|mother
+0|sister
+0|brother
+0|jiaozi
+0|fish
+0|Happy Chinese New Year!
+0|eyes
+0|ears
+0|face
+0|nose
+0|mouth
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 28
+# Total Entries Extracted: 28
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 28
+# -------------------------------

@@ -1,0 +1,28 @@
+0|hello
+0|hi
+0|bye
+0|pencil
+0|book
+0|show
+0|open
+0|look
+0|listen
+0|read
+0|say
+0|bottle
+0|pencil case
+0|bag
+0|cap
+0|brother
+0|dad
+0|mum
+0|sister
+0|classmate
+0|teacher
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 21
+# Total Entries Extracted: 21
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 21
+# -------------------------------

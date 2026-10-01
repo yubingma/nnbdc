@@ -1,0 +1,34 @@
+0|nine
+0|ten
+0|panda
+0|run
+0|fly a kite
+0|sing and dance
+0|jump
+0|swim
+0|I'm hungry.
+0|grapes
+0|cake
+0|fish
+0|rice
+0|noodles
+0|bread
+0|pears
+0|apples
+0|watermelon
+0|eggs
+0|bananas
+0|oranges
+0|yellow
+0|green
+0|blue
+0|orange
+0|red
+0|colourful flowers
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 27
+# Total Entries Extracted: 27
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 27
+# -------------------------------

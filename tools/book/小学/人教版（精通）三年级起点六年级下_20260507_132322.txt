@@ -1,0 +1,97 @@
+0|go to the beach
+0|enjoy sunbathing
+0|enjoy the moon and stars
+0|stay at home
+0|have a party
+0|enjoy Spring Festival
+0|sun
+0|moon
+0|star
+0|at night
+0|at home
+0|listen to English
+0|speak English
+0|read English
+0|write English
+0|talk in English
+0|play in English
+0|learn
+0|a lot of
+0|word
+0|blackboard
+0|say
+0|do tasks
+0|have an English party
+0|act in drama
+0|learn from each other
+0|subject
+0|but
+0|yesterday
+0|why
+0|use
+0|in front of
+0|bookshop
+0|behind
+0|clothes shop
+0|supermarket
+0|across the road
+0|river
+0|near
+0|beside
+0|between
+0|healthy
+0|healthy food
+0|vegetable
+0|go down this street
+0|turn right at the traffic lights
+0|cross the street
+0|street
+0|turn right
+0|turn left
+0|on the right
+0|on the left
+0|minute
+0|City Library
+0|restaurant
+0|post office
+0|by bike
+0|by bus
+0|by subway
+0|on foot
+0|half an hour
+0|city
+0|Shanghai
+0|Xi'an
+0|Wuhan
+0|by plane
+0|by train
+0|by ship
+0|travel
+0|know
+0|hear
+0|lake
+0|the Ming Tombs
+0|the Temple of Heaven
+0|the Summer Palace
+0|the Forbidden City
+0|Beihai Park
+0|tomorrow
+0|visit
+0|the Great Wall
+0|them
+0|Tower Bridge
+0|Big Ben
+0|Niagara Falls
+0|CN Tower
+0|Sydney Opera House
+0|Disneyland
+0|see
+0|favourite
+0|place
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 90
+# Total Entries Extracted: 90
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 90
+# -------------------------------

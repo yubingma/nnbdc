@@ -1,0 +1,62 @@
+0|play football
+0|fly a kite
+0|ride a bike
+0|make a model plane
+0|swim
+0|make a snowman
+0|can't
+0|rainy
+0|cloudy
+0|snowy
+0|windy
+0|sunny
+0|umbrella
+0|weather
+0|wow
+0|let's
+0|spring
+0|summer
+0|autumn
+0|winter
+0|hot
+0|warm
+0|cool
+0|cold
+0|favourite
+0|season
+0|eleven
+0|twelve
+0|twenty
+0|thirty
+0|forty
+0|fifty
+0|thirteen
+0|fourteen
+0|fifteen
+0|time
+0|playtime
+0|get up
+0|eat breakfast
+0|go to school
+0|eat lunch
+0|go home
+0|eat dinner
+0|go to bed
+0|when
+0|every day
+0|at
+0|Sunday
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|Saturday
+0|today
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 55
+# Total Entries Extracted: 55
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 55
+# -------------------------------

@@ -1,0 +1,80 @@
+0|she's
+0|she is
+0|aunt
+0|cousin
+0|uncle
+0|he's
+0|he is
+0|tall
+0|Mrs
+0|short
+0|have
+0|rabbit
+0|white
+0|small
+0|dog
+0|brown
+0|big
+0|hamster
+0|too
+0|cat
+0|it
+0|has
+0|tail
+0|bear
+0|giraffe
+0|long
+0|neck
+0|monkey
+0|tiger
+0|autumn
+0|cool
+0|these
+0|are
+0|apple
+0|those
+0|pear
+0|what
+0|pumpkin
+0|so
+0|orange
+0|potato
+0|some
+0|juice
+0|yogurt
+0|snack
+0|mmm
+0|sandwich
+0|yummy
+0|tart
+0|cupcake
+0|our
+0|school
+0|go to school
+0|every day
+0|read
+0|write
+0|play games
+0|have fun
+0|at school
+0|clean up
+0|clean
+0|table
+0|chair
+0|desk
+0|door
+0|window
+0|phew
+0|doctor
+0|cook
+0|teacher
+0|nurse
+0|farmer
+0|worker
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 73
+# Total Entries Extracted: 73
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 73
+# -------------------------------

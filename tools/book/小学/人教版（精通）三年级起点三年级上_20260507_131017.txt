@@ -1,0 +1,76 @@
+0|cat
+0|monkey
+0|dog
+0|duck
+0|panda
+0|bear
+0|pig
+0|rabbit
+0|bird
+0|mouse
+0|book
+0|bag
+0|pen
+0|pencil
+0|pencil-box
+0|ruler
+0|eraser
+0|sharpener
+0|glue
+0|marker
+0|nose
+0|eye
+0|face
+0|mouth
+0|head
+0|ear
+0|neck
+0|arm
+0|hand
+0|leg
+0|knee
+0|foot
+0|doll
+0|ball
+0|kite
+0|balloon
+0|car
+0|bus
+0|bike
+0|taxi
+0|train
+0|ship
+0|plane
+0|boat
+0|red
+0|blue
+0|yellow
+0|green
+0|purple
+0|brown
+0|white
+0|black
+0|pink
+0|orange
+0|grey
+0|hamburger
+0|hot dog
+0|Coke
+0|cake
+0|egg
+0|pear
+0|apple
+0|banana
+0|milk
+0|juice
+0|water
+0|rice
+0|noodles
+0|chicken
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 69
+# Total Entries Extracted: 69
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 69
+# -------------------------------

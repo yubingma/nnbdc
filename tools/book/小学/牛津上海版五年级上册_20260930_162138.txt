@@ -1,0 +1,101 @@
+0|first
+0|second
+0|third
+0|fourth
+0|fifth
+0|sixth
+0|party
+0|begin
+0|bring
+0|wear
+0|favourite
+0|taxi
+0|underground
+0|zebra
+0|crossing
+0|traffic
+0|light
+0|lights
+0|pavement
+0|live
+0|leave
+0|by
+0|on foot
+0|arrive
+0|arrive at
+0|cross
+0|worker
+0|pilot
+0|farmer
+0|shop
+0|assistant
+0|fly
+0|help
+0|sick
+0|write an e-mail
+0|go shopping
+0|play chess
+0|once
+0|twice
+0|talk
+0|Internet
+0|the Internet
+0|same
+0|different
+0|both
+0|all
+0|class
+0|each other
+0|together
+0|north
+0|south
+0|west
+0|east
+0|study
+0|a lot of
+0|hotel
+0|bank
+0|hospital
+0|bakery
+0|museum
+0|cinema
+0|along
+0|turn
+0|button
+0|zip
+0|pocket
+0|need
+0|put on
+0|try on
+0|fever
+0|toothache
+0|cough
+0|cold
+0|well
+0|medicine
+0|next
+0|then
+0|finally
+0|tea
+0|boil
+0|pour
+0|drink
+0|gently
+0|strongly
+0|slowly
+0|quickly
+0|blow
+0|happily
+0|smoke
+0|start
+0|campfire
+0|match
+0|careful
+0|safety
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 94
+# Total Entries Extracted: 94
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 94
+# -------------------------------

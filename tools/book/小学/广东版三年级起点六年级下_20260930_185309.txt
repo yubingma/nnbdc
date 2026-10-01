@@ -1,0 +1,104 @@
+0|used
+0|studied
+0|played
+0|visited
+0|ran
+0|talked
+0|jumped
+0|cleaned
+0|watched
+0|clean up
+0|last night
+0|the day before yesterday
+0|parade
+0|trumpet
+0|went
+0|ate
+0|wrote
+0|read
+0|made
+0|rode
+0|sang
+0|drank
+0|What a ...!
+0|What an ...!
+0|beautiful
+0|desert
+0|feel
+0|chicken
+0|anything
+0|bottle
+0|water
+0|won
+0|ate some cotton candy
+0|had fun with friends
+0|woke
+0|missed
+0|forgot
+0|lost
+0|happened
+0|luck
+0|key
+0|lucky
+0|fine
+0|first
+0|next
+0|then
+0|really
+0|tired
+0|scared
+0|excited
+0|sad
+0|stayed
+0|stay up late
+0|heard
+0|noise
+0|got
+0|kitten
+0|got a poor grade
+0|because
+0|climb
+0|mountain
+0|why
+0|into
+0|cave
+0|angry
+0|proud
+0|turn on
+0|turn on the light
+0|turn off
+0|turn off the TV
+0|put away
+0|put away your books
+0|take out
+0|trash
+0|put on
+0|put on your jacket
+0|hang up
+0|hang up your clothes
+0|busy
+0|in a minute
+0|later
+0|carried
+0|pushed
+0|gave
+0|found
+0|dropped
+0|pulled
+0|must
+0|master
+0|way
+0|careful
+0|dangerous
+0|afraid
+0|club
+0|fight
+0|hurry up
+0|go out
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 97
+# Total Entries Extracted: 97
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 97
+# -------------------------------

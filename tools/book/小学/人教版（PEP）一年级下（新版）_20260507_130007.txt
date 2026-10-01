@@ -1,0 +1,34 @@
+0|thank
+0|Mr
+0|sorry
+0|Miss
+0|wash
+0|hand
+0|face
+0|brush
+0|tooth
+0|teeth
+0|noodle
+0|noodles
+0|tomato
+0|rice
+0|carrot
+0|apple
+0|banana
+0|dog
+0|bird
+0|fish
+0|rabbit
+0|cat
+0|big
+0|swim
+0|fly
+0|small
+0|run
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 27
+# Total Entries Extracted: 27
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 27
+# -------------------------------

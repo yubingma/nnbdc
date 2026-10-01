@@ -1,0 +1,91 @@
+0|take a test
+0|play games
+0|get a haircut
+0|see the doctor
+0|shop for clothes
+0|have a party
+0|write a letter
+0|meet some friends
+0|tonight
+0|tomorrow
+0|bored
+0|vacation
+0|go camping
+0|like
+0|take photos
+0|plan
+0|love
+0|ship
+0|train
+0|bus
+0|by
+0|by ship
+0|by plane
+0|by bus
+0|by train
+0|stay in a hotel
+0|stay with my aunt and uncle
+0|go sightseeing
+0|Tibet
+0|hurray
+0|wolves
+0|have a picnic
+0|visit
+0|relatives
+0|help
+0|play with friends
+0|make models
+0|surf the Internet
+0|read books
+0|next
+0|during
+0|fruit
+0|the Great Wall of China
+0|do tai chi
+0|never
+0|sometimes
+0|usually
+0|always
+0|subway
+0|taxi
+0|bike
+0|take
+0|drive
+0|walk
+0|woods
+0|look for
+0|candies
+0|find
+0|lost
+0|once
+0|twice
+0|three times
+0|go fishing
+0|go hiking
+0|go ice-skating
+0|go swimming
+0|often
+0|fish
+0|favorite
+0|activity
+0|about
+0|habit
+0|brush
+0|teeth
+0|comb
+0|hair
+0|finish
+0|pack
+0|schoolbag
+0|hang up
+0|take out
+0|trash
+0|clean up
+0|understand
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 84
+# Total Entries Extracted: 84
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 84
+# -------------------------------

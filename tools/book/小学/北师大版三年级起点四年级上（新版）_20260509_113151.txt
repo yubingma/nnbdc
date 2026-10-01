@@ -1,0 +1,138 @@
+0|new
+0|lunch
+0|library
+0|computer
+0|music
+0|science
+0|Good morning.
+0|subject
+0|day
+0|today
+0|on
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|story
+0|find
+0|many
+0|word
+0|thing
+0|put
+0|map
+0|easy
+0|make
+0|plan
+0|Saturday
+0|Sunday
+0|live
+0|sound
+0|those
+0|bird
+0|rabbit
+0|deer
+0|lion
+0|tiger
+0|monkey
+0|clever
+0|people
+0|work hard
+0|honey
+0|strong
+0|cute
+0|elephant
+0|cat
+0|bee
+0|mouse
+0|dog
+0|turtle
+0|there
+0|how many
+0|eleven
+0|twelve
+0|thirteen
+0|fourteen
+0|fifteen
+0|sixteen
+0|seventeen
+0|eighteen
+0|nineteen
+0|twenty
+0|they
+0|football
+0|jump rope
+0|sell
+0|buy
+0|basketball
+0|fun
+0|game
+0|kick
+0|catch
+0|group
+0|on your own
+0|in pairs
+0|try
+0|or
+0|get
+0|all the time
+0|any
+0|tea
+0|around
+0|here
+0|near
+0|cinema
+0|supermarket
+0|beside
+0|hospital
+0|bus stop
+0|visit
+0|in front of
+0|behind
+0|hungry
+0|Beijing roast duck
+0|Tian'anmen Square
+0|the Palace Museum
+0|round
+0|clock
+0|tower
+0|call
+0|house
+0|window
+0|long ago
+0|holiday
+0|take
+0|dress
+0|heavy coat
+0|sweater
+0|coat
+0|cap
+0|sock
+0|shorts
+0|shirt
+0|gift
+0|how much
+0|bag
+0|thirty
+0|forty
+0|fifty
+0|sixty
+0|seventy
+0|eighty
+0|ninety
+0|No touching.
+0|No photos.
+0|be careful
+0|Keep quiet.
+0|No pets.
+0|No food or drink.
+0|No bikes.
+0|No running.
+0|watch
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 131
+# Total Entries Extracted: 131
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 131
+# -------------------------------

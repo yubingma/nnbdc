@@ -1,0 +1,102 @@
+0|China
+0|from
+0|Canada
+0|the U.S.
+0|Britain
+0|Australia
+0|India
+0|France
+0|her
+0|live
+0|Ottawa
+0|London
+0|famous
+0|Washington D.C.
+0|housework
+0|shoe
+0|clean
+0|window
+0|wash
+0|clothes
+0|meal
+0|water
+0|flower
+0|dish
+0|yum
+0|want
+0|eat
+0|noodle
+0|food
+0|out
+0|potato
+0|soup
+0|tomato
+0|wait
+0|minute
+0|pizza
+0|cake
+0|something
+0|drink
+0|pear
+0|fruit
+0|banana
+0|ouch
+0|weekend
+0|visit
+0|grandparent
+0|sometimes
+0|museum
+0|help
+0|picnic
+0|great
+0|go shopping
+0|cinema
+0|go fishing
+0|usually
+0|take
+0|take pictures
+0|violin
+0|very
+0|listen
+0|toy
+0|bus
+0|car
+0|fast
+0|cheap
+0|all right
+0|buy
+0|Excuse me.
+0|this way
+0|forty
+0|how much
+0|hundred
+0|fit
+0|trousers
+0|fifty
+0|June
+0|vacation
+0|travel
+0|Mount Taishan
+0|back
+0|July
+0|temple
+0|kung fu
+0|plane
+0|by
+0|ship
+0|train
+0|bike
+0|learn
+0|sunrise
+0|August
+0|sea
+0|boy
+0|girl
+0|have a good time
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 95
+# Total Entries Extracted: 95
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 95
+# -------------------------------

@@ -1,0 +1,152 @@
+0|hand
+0|arm
+0|leg
+0|foot
+0|body
+0|head
+0|these
+0|long
+0|face
+0|nose
+0|mouth
+0|eye
+0|ear
+0|or
+0|look at
+0|jump
+0|run
+0|sing
+0|see
+0|hear
+0|smile
+0|but
+0|hair
+0|classroom
+0|blackboard
+0|desk
+0|chair
+0|window
+0|clean
+0|whiteboard
+0|open
+0|door
+0|on
+0|close
+0|then
+0|go home
+0|rule
+0|come
+0|school
+0|on time
+0|line up
+0|make
+0|for
+0|should
+0|draw
+0|wall
+0|late
+0|keep
+0|nice
+0|may
+0|use
+0|sorry
+0|OK
+0|help
+0|only
+0|student
+0|apple
+0|banana
+0|grape
+0|egg
+0|bread
+0|get
+0|some
+0|food
+0|party
+0|fruit
+0|meat
+0|chicken
+0|fish
+0|ice cream
+0|sweet
+0|yummy
+0|carrot
+0|vegetable
+0|fresh
+0|a lot of
+0|birthday
+0|noodle
+0|water
+0|milk
+0|cake
+0|also
+0|many
+0|Happy birthday!
+0|You're welcome.
+0|Sure.
+0|Here you are.
+0|eat
+0|drink
+0|very
+0|breakfast
+0|an
+0|lunch
+0|dinner
+0|hamburger
+0|fat
+0|chip
+0|too many
+0|much
+0|bad
+0|walk
+0|zoo
+0|monkey
+0|elephant
+0|bird
+0|tiger
+0|lion
+0|fast
+0|eleven
+0|twelve
+0|thirteen
+0|fourteen
+0|tree
+0|animal
+0|strong
+0|slowly
+0|time
+0|tail
+0|fifteen
+0|sixteen
+0|seventeen
+0|eighteen
+0|nineteen
+0|twenty
+0|live
+0|forest
+0|panda
+0|bamboo
+0|grassland
+0|cat
+0|China
+0|those
+0|dog
+0|rabbit
+0|mouse
+0|hamster
+0|house
+0|pet
+0|whose
+0|feed
+0|What about you?
+0|wake up
+0|every
+0|take
+0|doctor
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 145
+# Total Entries Extracted: 145
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 145
+# -------------------------------

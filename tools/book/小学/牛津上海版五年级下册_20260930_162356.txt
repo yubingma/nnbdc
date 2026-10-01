@@ -1,0 +1,121 @@
+0|school bag
+0|brush
+0|paints
+0|crayon
+0|notebook
+0|glue
+0|tape
+0|put
+0|egg
+0|cocoon
+0|caterpillar
+0|chicken
+0|duckling
+0|puppy
+0|grow
+0|fly
+0|was
+0|were
+0|drill
+0|lorry
+0|motorbike
+0|outside
+0|sleep
+0|another
+0|noise
+0|heard
+0|sat
+0|meat
+0|pork
+0|beef
+0|fish
+0|fruit
+0|vegetable
+0|tomato
+0|potato
+0|carrot
+0|cabbage
+0|bean
+0|rice
+0|drink
+0|milk
+0|had
+0|eat
+0|healthy
+0|did
+0|keep ... away
+0|ticket
+0|office
+0|exit
+0|entrance
+0|seat
+0|film
+0|funny
+0|princess
+0|see a film
+0|Chinese
+0|English
+0|Maths
+0|Art
+0|Music
+0|IT
+0|PE
+0|class
+0|subject
+0|telephone
+0|smoking
+0|swimming
+0|walk
+0|sign
+0|cloud
+0|rain
+0|snow
+0|snowy
+0|storm
+0|stormy
+0|fog
+0|foggy
+0|yesterday
+0|degree
+0|weather
+0|make
+0|bookshelf
+0|mirror
+0|cushion
+0|cupboard
+0|bed
+0|lamp
+0|sofa
+0|furniture
+0|next
+0|give
+0|move
+0|window
+0|wall
+0|science museum
+0|art museum
+0|history museum
+0|insect museum
+0|car museum
+0|railway museum
+0|perform
+0|dance
+0|useful
+0|really
+0|Christmas
+0|Easter
+0|Halloween
+0|Thanksgiving
+0|find
+0|hide
+0|holiday
+0|present
+0|giant
+0|castle
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 114
+# Total Entries Extracted: 114
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 114
+# -------------------------------

@@ -1,0 +1,110 @@
+0|game
+0|Olympic Games
+0|take place
+0|Summer Olympics
+0|Winter Olympics
+0|ring
+0|answer
+0|hold
+0|something
+0|began
+0|begin
+0|slogan
+0|world
+0|dream
+0|strong
+0|together
+0|continent
+0|between
+0|woman
+0|women
+0|healthy
+0|exercise
+0|always
+0|often
+0|sometimes
+0|pass
+0|ball
+0|catch
+0|cry
+0|cheer
+0|their
+0|team
+0|bring
+0|basket
+0|glass
+0|candy
+0|bad
+0|teeth
+0|tooth
+0|keep
+0|body
+0|food
+0|menu
+0|delicious
+0|any
+0|problem
+0|usually
+0|salad
+0|daughter
+0|son
+0|dress
+0|pair
+0|shorts
+0|cap
+0|try it on
+0|trousers
+0|clothes
+0|boring
+0|go shopping
+0|housework
+0|those
+0|dirty
+0|sock
+0|think
+0|washing machine
+0|box
+0|bedroom
+0|floor
+0|water
+0|plant
+0|a piece of cake
+0|toilet
+0|half
+0|past
+0|hour
+0|walk
+0|get to school
+0|seat
+0|last
+0|last night
+0|little
+0|fan
+0|Thanksgiving
+0|American
+0|invite
+0|join
+0|yourselves
+0|help yourselves
+0|corn
+0|soup
+0|hope
+0|better
+0|luck
+0|moon
+0|shine
+0|its
+0|sun
+0|real
+0|because
+0|earth
+0|go around
+0|Mid-Autumn Festival
+0|evening
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 103
+# Total Entries Extracted: 103
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 103
+# -------------------------------

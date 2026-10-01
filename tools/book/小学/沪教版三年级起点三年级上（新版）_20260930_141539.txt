@@ -1,0 +1,163 @@
+0|happy
+0|sad
+0|angry
+0|tired
+0|boy
+0|girl
+0|you
+0|are
+0|not
+0|I
+0|am
+0|cold
+0|OK
+0|let
+0|find
+0|pencil
+0|a
+0|an
+0|too
+0|start
+0|again
+0|evening
+0|close the window
+0|look at the blackboard
+0|Good morning.
+0|How are you?
+0|Fine, thank you.
+0|grandfather
+0|grandpa
+0|grandmother
+0|grandma
+0|father
+0|mother
+0|sister
+0|brother
+0|me
+0|family
+0|my
+0|this
+0|and
+0|she
+0|he
+0|who
+0|twin
+0|small
+0|big
+0|head
+0|eye
+0|ear
+0|mouth
+0|hair
+0|nose
+0|face
+0|haircut
+0|long
+0|but
+0|like
+0|see
+0|now
+0|sit
+0|chair
+0|please
+0|have
+0|short
+0|mum
+0|You look great!
+0|skip
+0|run
+0|fly a kite
+0|skateboard
+0|ride a bike
+0|child
+0|children
+0|in
+0|park
+0|can
+0|fun
+0|fast
+0|help
+0|get
+0|bring
+0|jump
+0|want to
+0|want to do
+0|Hello.
+0|milk
+0|juice
+0|tomato
+0|carrot
+0|apple
+0|banana
+0|grape
+0|meat
+0|fish
+0|food
+0|some
+0|fruit
+0|vegetable
+0|cut
+0|no
+0|yes
+0|chicken
+0|squirrel
+0|rabbit
+0|cat
+0|mouse
+0|mice
+0|dog
+0|frog
+0|it
+0|nice
+0|has
+0|cute
+0|that
+0|they
+0|tail
+0|animal
+0|bad
+0|bug
+0|sunny
+0|sun
+0|windy
+0|wind
+0|rainy
+0|rain
+0|cloudy
+0|cloud
+0|weather
+0|today
+0|hat
+0|plant
+0|hot
+0|very
+0|have a big harvest
+0|cake
+0|candle
+0|gift
+0|noodles
+0|toy plane
+0|doll
+0|card
+0|come
+0|love
+0|meet
+0|box
+0|book
+0|ball
+0|share
+0|go out
+0|Happy birthday!
+0|What a lovely picture!
+0|Good afternoon.
+0|China
+0|Thailand
+0|UK
+0|New Year's Day
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 156
+# Total Entries Extracted: 156
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 156
+# -------------------------------

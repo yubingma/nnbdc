@@ -1,0 +1,109 @@
+0|Happy Birthday!
+0|How old ...?
+0|grandpa
+0|grandma
+0|one
+0|two
+0|three
+0|four
+0|five
+0|six
+0|seven
+0|eight
+0|nine
+0|ten
+0|he
+0|colour
+0|red
+0|blue
+0|yellow
+0|white
+0|black
+0|storybook
+0|play sport
+0|run
+0|swim
+0|dance
+0|plant flowers
+0|ride bikes
+0|aunt
+0|uncle
+0|cousin
+0|she
+0|job
+0|doctor
+0|worker
+0|farmer
+0|driver
+0|What's wrong?
+0|happy
+0|angry
+0|tired
+0|sad
+0|farm
+0|animal
+0|chicken
+0|sheep
+0|horse
+0|cow
+0|let's
+0|let us
+0|go over
+0|hill
+0|river
+0|lake
+0|forest
+0|boat
+0|spring
+0|summer
+0|autumn
+0|winter
+0|favourite
+0|season
+0|fly kites
+0|travel
+0|safe
+0|park
+0|by bus
+0|on foot
+0|fast
+0|on the way
+0|we
+0|plane
+0|ship
+0|far
+0|close
+0|water
+0|Excuse me.
+0|shop
+0|walk along
+0|street
+0|turn right
+0|left
+0|love
+0|China
+0|star
+0|sea
+0|sky
+0|green
+0|pink
+0|Mrs
+0|some
+0|fish
+0|meat
+0|tofu
+0|vegetable
+0|Chinese
+0|food
+0|homeland
+0|the Great Wall
+0|city
+0|place
+0|lots of
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 102
+# Total Entries Extracted: 102
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 102
+# -------------------------------

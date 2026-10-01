@@ -1,0 +1,51 @@
+0|on
+0|under
+0|behind
+0|in
+0|a sofa
+0|a vase
+0|a basket
+0|rice
+0|broccoli
+0|fish
+0|soup
+0|meat
+0|noodles
+0|Maths
+0|Chinese
+0|English
+0|PE
+0|Art
+0|Music
+0|ear
+0|hair
+0|eye
+0|mouth
+0|face
+0|nose
+0|skip
+0|ride a bike
+0|skate
+0|swim
+0|a dress
+0|a skirt
+0|shorts
+0|a T-shirt
+0|a blouse
+0|a hat
+0|beach
+0|pool
+0|ice cream
+0|orange juice
+0|queue up
+0|clean up
+0|push
+0|talk
+0|shout
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 44
+# Total Entries Extracted: 44
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 44
+# -------------------------------

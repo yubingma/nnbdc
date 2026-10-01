@@ -1,0 +1,76 @@
+0|supermarket
+0|meat
+0|juice
+0|pay
+0|English
+0|difficult
+0|maths
+0|subject
+0|draw
+0|art
+0|science
+0|sheep
+0|bear
+0|minute
+0|put
+0|must
+0|brother
+0|pass
+0|finish
+0|homework
+0|half
+0|late
+0|dirty
+0|ask
+0|join
+0|wash
+0|autumn
+0|family
+0|fruit
+0|climb
+0|usually
+0|him
+0|dress
+0|night
+0|as
+0|tongue
+0|the U.S.A.
+0|the United States of America
+0|east
+0|morning
+0|the U.K.
+0|clock
+0|river
+0|city
+0|afternoon
+0|map
+0|Canada
+0|leaf
+0|tennis
+0|golf
+0|British
+0|basketball
+0|with
+0|friend
+0|baseball
+0|team
+0|ski
+0|winter
+0|fast
+0|panda
+0|forget
+0|cousin
+0|brave
+0|tall
+0|driver
+0|early
+0|breakfast
+0|busy
+0|dinner
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 69
+# Total Entries Extracted: 69
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 69
+# -------------------------------

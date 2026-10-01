@@ -1,0 +1,141 @@
+0|life
+0|English
+0|girl
+0|classmate
+0|everyone
+0|subject
+0|Chinese
+0|maths
+0|also
+0|science
+0|IT
+0|today
+0|computer
+0|story
+0|week
+0|Wednesday
+0|with
+0|Monday
+0|Friday
+0|Thursday
+0|Tuesday
+0|dance
+0|club
+0|piano
+0|Saturday
+0|lesson
+0|Sunday
+0|visit
+0|grandparent
+0|colourful
+0|season
+0|spring
+0|summer
+0|autumn
+0|winter
+0|clever
+0|cool
+0|warm
+0|plant
+0|hot
+0|flower
+0|tree
+0|cold
+0|snow
+0|fly
+0|kite
+0|swim
+0|ski
+0|climb
+0|hill
+0|weather
+0|sunny
+0|cloudy
+0|windy
+0|put on
+0|can't
+0|can not
+0|report
+0|snowy
+0|Harbin
+0|foggy
+0|rainy
+0|all
+0|all right
+0|ping-pong
+0|rain
+0|sorry
+0|take
+0|care
+0|take care
+0|Lhasa
+0|hobby
+0|run
+0|basketball
+0|skip
+0|join
+0|get ready
+0|party
+0|well
+0|dancer
+0|drum
+0|paper-cut
+0|paper-cutting
+0|uncle
+0|aunt
+0|member
+0|has
+0|hair
+0|there
+0|over there
+0|cheer
+0|him
+0|which
+0|wear
+0|work
+0|paint
+0|artist
+0|businessman
+0|farmer
+0|hospital
+0|man
+0|policeman
+0|police
+0|station
+0|police station
+0|hotel
+0|grandpa
+0|gardener
+0|park
+0|woman
+0|way
+0|communication
+0|speak
+0|may
+0|hold
+0|hold on
+0|year
+0|New Year's Day
+0|invite
+0|invitation
+0|card
+0|idea
+0|write
+0|email
+0|send
+0|online
+0|call
+0|begin
+0|horse
+0|racing
+0|horse racing
+0|crosstalk
+0|sure
+0|letter
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 134
+# Total Entries Extracted: 134
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 134
+# -------------------------------

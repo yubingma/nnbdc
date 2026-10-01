@@ -1,0 +1,103 @@
+0|tall
+0|beside
+0|pupil
+0|Australia
+0|behind
+0|short
+0|long
+0|hair
+0|where
+0|sitting room
+0|lovely
+0|panda
+0|September
+0|tomorrow
+0|Teachers' Day
+0|kind
+0|near
+0|flower
+0|paper
+0|picture
+0|photo
+0|smile
+0|National Day
+0|holiday
+0|uncle
+0|won't
+0|will not
+0|tell
+0|about
+0|July
+0|August
+0|October
+0|there
+0|turn on
+0|find
+0|thing
+0|Internet
+0|cinema
+0|sit down
+0|put on
+0|glasses
+0|film
+0|afraid
+0|welcome
+0|museum
+0|cook
+0|player
+0|chess
+0|play chess
+0|come on
+0|April
+0|March
+0|June
+0|May
+0|month
+0|December
+0|January
+0|easy
+0|remember
+0|November
+0|February
+0|or
+0|Excuse me.
+0|get to
+0|station
+0|far away
+0|taxi
+0|young
+0|man
+0|men
+0|You're welcome.
+0|hospital
+0|nearby
+0|go straight
+0|turn
+0|right
+0|left
+0|bus stop
+0|speak
+0|wait
+0|minute
+0|page
+0|write
+0|word
+0|sorry
+0|time
+0|call
+0|mobile
+0|way
+0|on my way
+0|city
+0|the USA
+0|classmate
+0|understand
+0|know
+0|see
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 96
+# Total Entries Extracted: 96
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 96
+# -------------------------------

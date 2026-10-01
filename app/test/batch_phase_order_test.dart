@@ -476,11 +476,11 @@ void main() {
     expect(learnedTimes['w_2'], 0, reason: 'w_2 还没答对，仍留在测评环节');
   });
 
-  test('小结标红只认"测评答错"：后续环节答错不参与', () async {
+  test('小结错词标记：测评答错算一份，测评答对但巩固又答错另算一份', () async {
     final prep = await LearningService.prepareTodayStudy(true);
     expect(prep.success, true);
 
-    // w_1 测评答错；w_2 测评答对、但汉译英答错
+    // w_1 测评答错；w_2 测评答对、但汉译英（巩固）答错
     await playWholeDay(wrongOnceWordId: 'w_1', wrongAtCh2EnWordId: 'w_2');
 
     // 前提校验：w_2 确实在今天留下过 again 日志，否则本用例会空转
@@ -495,8 +495,10 @@ void main() {
     final batchWordIds = [for (int i = 1; i <= batchSize; i++) 'w_$i'];
     final wrongIds = await studyBo.getTodayWrongWordIds(batchWordIds);
 
-    expect(wrongIds, {'w_1'},
-        reason: '标红口径 = 当天首条评分，与「新词答错」轨道一致；w_2 是汉译英答错，测评答对，不标红');
+    expect(wrongIds.checkWrong, {'w_1'},
+        reason: '红色口径 = 当天首条评分，与「新词答错」轨道一致；w_2 测评答对，不进这一份');
+    expect(wrongIds.laterWrong, {'w_2'},
+        reason: 'w_2 测评答对、汉译英又答错 → 进"测评之后又答错"这一份（小结标次级琥珀色）');
   });
 
   test('第 N 组指示：组号按今日列表每 10 词一组递增', () async {

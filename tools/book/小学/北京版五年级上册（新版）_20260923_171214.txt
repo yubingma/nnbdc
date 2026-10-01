@@ -1,0 +1,186 @@
+0|which
+0|journey
+0|difficult
+0|ancient
+0|India
+0|Pigsy
+0|subject
+0|maths
+0|mathematics
+0|math
+0|music
+0|calligraphy
+0|PE
+0|physical education
+0|important
+0|over
+0|quiet
+0|place
+0|hill
+0|take
+0|some
+0|delicious
+0|us
+0|practice
+0|every
+0|write
+0|character
+0|Mid-Autumn Festival
+0|fifteenth
+0|eighth
+0|month
+0|lunar calendar
+0|usually
+0|middle
+0|moon
+0|cake
+0|any
+0|Double Ninth Festival
+0|ninth
+0|elder
+0|here
+0|life
+0|lives
+0|something
+0|care
+0|Tomb-sweeping Day
+0|traditional
+0|mostly
+0|tomb
+0|their
+0|national
+0|hero
+0|public
+0|south
+0|ball
+0|email
+0|solar term
+0|crop
+0|north
+0|grow
+0|thing
+0|harvest
+0|keep
+0|store up
+0|camp
+0|trip
+0|pick
+0|vegetable
+0|set
+0|ourselves
+0|myself
+0|never
+0|before
+0|take out
+0|rubbish
+0|all
+0|helper
+0|poster
+0|ask
+0|service
+0|sort
+0|wall
+0|helpful
+0|recyclable
+0|harmful
+0|waste
+0|bag
+0|bin
+0|will
+0|amazing
+0|famous
+0|hometown
+0|stay
+0|few
+0|by
+0|choice
+0|train
+0|car
+0|sure
+0|only
+0|hour
+0|high-speed train
+0|convenient
+0|more than
+0|plan
+0|p.m.
+0|history
+0|busy
+0|leave
+0|a.m.
+0|say
+0|ride
+0|bike
+0|bicycle
+0|east
+0|west
+0|view
+0|clear
+0|slow
+0|map
+0|China
+0|Asia
+0|rooster
+0|Canada
+0|North America
+0|UK
+0|Europe
+0|capital
+0|city
+0|France
+0|Paris
+0|speak
+0|French
+0|Canadian
+0|London
+0|River Thames
+0|other
+0|Big Ben
+0|clock
+0|heavy
+0|tower
+0|wheel
+0|sky wheel
+0|bank
+0|top
+0|New Delhi
+0|Taj Mahal
+0|most
+0|wonder
+0|Italy
+0|Rome
+0|Venice
+0|taxi
+0|Washington D.C.
+0|UN
+0|New York
+0|work
+0|popular
+0|badminton
+0|hit
+0|miss
+0|another
+0|British
+0|much
+0|tennis
+0|rugby
+0|lesson
+0|team
+0|really
+0|news
+0|skiing
+0|ice hockey
+0|age
+0|medal
+0|Olympics
+0|the Olympic Games
+0|exciting
+0|single
+0|double
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 179
+# Total Entries Extracted: 179
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 179
+# -------------------------------

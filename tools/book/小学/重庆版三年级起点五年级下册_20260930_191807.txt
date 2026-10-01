@@ -1,0 +1,104 @@
+0|clean the room
+0|wash the socks
+0|make the bed
+0|do the dishes
+0|cook the dinner
+0|water the plants
+0|put away the clothes
+0|take out the rubbish
+0|reading a book
+0|watching TV
+0|seeing a film
+0|writing an email
+0|drawing a picture
+0|working
+0|studying
+0|eating
+0|drinking
+0|sleeping
+0|spring
+0|summer
+0|autumn
+0|winter
+0|season
+0|sky
+0|river
+0|sea
+0|woods
+0|beach
+0|teaching building
+0|school
+0|library
+0|playground
+0|swimming pool
+0|classroom
+0|office
+0|lab
+0|toilet
+0|garden
+0|money
+0|a box of candies
+0|seventy
+0|eighty
+0|ninety
+0|hundred
+0|a pair of chopsticks
+0|a bottle of juice
+0|a cup of coffee
+0|a piece of bread
+0|a bowl of rice
+0|a bottle of
+0|a bowl of
+0|a box of
+0|a cup of
+0|a pair of
+0|a piece of
+0|always
+0|buy
+0|chopsticks
+0|clean
+0|cook
+0|dish
+0|drink
+0|eat
+0|email
+0|exercise
+0|film
+0|find
+0|food
+0|helper
+0|here
+0|him
+0|how much
+0|interesting
+0|laboratory
+0|make
+0|now
+0|parent
+0|plant
+0|put away
+0|rubbish
+0|see a film
+0|show
+0|sleep
+0|sometimes
+0|study
+0|take
+0|turn
+0|up
+0|wait
+0|wash
+0|watch
+0|water
+0|way
+0|which
+0|work
+0|write
+0|year
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 97
+# Total Entries Extracted: 97
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 97
+# -------------------------------

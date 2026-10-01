@@ -1,0 +1,122 @@
+0|swim
+0|run
+0|jump
+0|rope
+0|play
+0|ping-pong
+0|basketball
+0|football
+0|once
+0|week
+0|twice
+0|time
+0|every
+0|day
+0|sport
+0|make
+0|be good at
+0|from
+0|the USA
+0|China
+0|dance
+0|guitar
+0|paint
+0|listen
+0|music
+0|collect
+0|stamp
+0|weiqi
+0|read
+0|story
+0|practise
+0|kung fu
+0|drum
+0|hobby
+0|these
+0|any
+0|fishing
+0|eat
+0|hot
+0|warm
+0|cool
+0|cold
+0|sunny
+0|rainy
+0|cloudy
+0|snowy
+0|windy
+0|weather
+0|how
+0|there
+0|should
+0|sometimes
+0|also
+0|umbrella
+0|will
+0|put on
+0|go
+0|boating
+0|fly
+0|snowman
+0|bookshop
+0|library
+0|cinema
+0|museum
+0|sports centre
+0|fine
+0|too
+0|now
+0|after
+0|all kinds of
+0|when
+0|park
+0|bear
+0|panda
+0|tiger
+0|elephant
+0|monkey
+0|lion
+0|arm
+0|foot
+0|leg
+0|body
+0|tail
+0|head
+0|favourite
+0|fast
+0|clever
+0|its
+0|pet
+0|meat
+0|slow
+0|thirteen
+0|fourteen
+0|fifteen
+0|sixteen
+0|seventeen
+0|eighteen
+0|nineteen
+0|twenty
+0|thirty
+0|forty
+0|fifty
+0|get up
+0|clock
+0|have to
+0|get to
+0|before
+0|hurry up
+0|at
+0|o'clock
+0|breakfast
+0|over
+0|half
+0|hour
+0|go to bed
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 115
+# Total Entries Extracted: 115
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 115
+# -------------------------------

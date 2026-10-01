@@ -1,0 +1,91 @@
+0|classroom
+0|window
+0|blackboard
+0|light
+0|picture
+0|door
+0|teacher's desk
+0|computer
+0|fan
+0|wall
+0|floor
+0|really
+0|near
+0|TV
+0|clean
+0|help
+0|schoolbag
+0|maths book
+0|English book
+0|Chinese book
+0|storybook
+0|candy
+0|notebook
+0|toy
+0|key
+0|wow
+0|lost
+0|so much
+0|cute
+0|strong
+0|friendly
+0|quiet
+0|hair
+0|shoe
+0|glasses
+0|his
+0|or
+0|right
+0|hat
+0|her
+0|bedroom
+0|living room
+0|study
+0|kitchen
+0|bathroom
+0|bed
+0|phone
+0|table
+0|sofa
+0|fridge
+0|find
+0|them
+0|beef
+0|chicken
+0|noodles
+0|soup
+0|vegetable
+0|chopsticks
+0|bowl
+0|fork
+0|knife
+0|spoon
+0|dinner
+0|ready
+0|help yourself
+0|pass
+0|try
+0|parents
+0|cousin
+0|uncle
+0|aunt
+0|baby brother
+0|doctor
+0|cook
+0|driver
+0|farmer
+0|nurse
+0|people
+0|but
+0|little
+0|puppy
+0|football player
+0|job
+0|basketball
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 84
+# Total Entries Extracted: 84
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 84
+# -------------------------------

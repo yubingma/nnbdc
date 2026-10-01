@@ -1,0 +1,144 @@
+0|food
+0|drink
+0|egg
+0|breakfast
+0|bread
+0|but
+0|milk
+0|orange
+0|juice
+0|fish
+0|vegetable
+0|they
+0|they're
+0|they are
+0|lunch
+0|how about
+0|rice
+0|tomato
+0|chicken
+0|yummy
+0|want
+0|meat
+0|hungry
+0|go
+0|dinner
+0|some
+0|apple
+0|tea
+0|help
+0|yourself
+0|help yourself
+0|clothes
+0|sweater
+0|cap
+0|dress
+0|hat
+0|T-shirt
+0|skirt
+0|helpful
+0|coat
+0|shirt
+0|whose
+0|trousers
+0|these
+0|jacket
+0|much
+0|sock
+0|shoe
+0|zoo
+0|lion
+0|tiger
+0|those
+0|elephant
+0|lovely
+0|animal
+0|bear
+0|monkey
+0|funny
+0|banana
+0|have a look
+0|duck
+0|can
+0|rabbit
+0|short
+0|tail
+0|eleven
+0|twelve
+0|another
+0|thirteen
+0|fourteen
+0|home
+0|bedroom
+0|come
+0|come in
+0|living room
+0|dining room
+0|something
+0|water
+0|bathroom
+0|play
+0|bed
+0|very
+0|read
+0|often
+0|sit
+0|watch
+0|TV
+0|television
+0|watch TV
+0|where
+0|kitchen
+0|under
+0|behind
+0|door
+0|on
+0|cat
+0|office
+0|playground
+0|classroom
+0|lab
+0|library
+0|first
+0|floor
+0|clean
+0|music
+0|second
+0|art
+0|third
+0|draw
+0|picture
+0|sing
+0|one
+0|garden
+0|grow
+0|day
+0|time
+0|get
+0|up
+0|get up
+0|o'clock
+0|twenty
+0|wolf
+0|class
+0|over
+0|sport
+0|football
+0|play football
+0|goal
+0|go home
+0|do
+0|homework
+0|thirty
+0|pack
+0|fifteen
+0|chore
+0|do chores
+0|go to bed
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 137
+# Total Entries Extracted: 137
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 137
+# -------------------------------

@@ -1,0 +1,139 @@
+0|old
+0|young
+0|funny
+0|kind
+0|strict
+0|polite
+0|hard-working
+0|helpful
+0|clever
+0|shy
+0|know
+0|our
+0|Ms
+0|will
+0|sometimes
+0|robot
+0|him
+0|speak
+0|finish
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|Saturday
+0|Sunday
+0|weekend
+0|wash
+0|wash my clothes
+0|watch
+0|watch TV
+0|do
+0|do homework
+0|read
+0|read books
+0|play
+0|play football
+0|cooking
+0|often
+0|park
+0|tired
+0|sport
+0|play sports
+0|should
+0|every
+0|day
+0|schedule
+0|sandwich
+0|salad
+0|hamburger
+0|ice cream
+0|tea
+0|fresh
+0|healthy
+0|delicious
+0|hot
+0|sweet
+0|drink
+0|thirsty
+0|favourite
+0|food
+0|Dear
+0|onion
+0|sing
+0|song
+0|sing English songs
+0|play the pipa
+0|kung fu
+0|do kung fu
+0|dance
+0|draw
+0|cartoon
+0|draw cartoons
+0|cook
+0|swim
+0|play basketball
+0|ping-pong
+0|play ping-pong
+0|speak English
+0|we'll
+0|we will
+0|party
+0|next
+0|wonderful
+0|learn
+0|any
+0|problem
+0|no problem
+0|want
+0|send
+0|email
+0|at
+0|clock
+0|plant
+0|bottle
+0|water bottle
+0|bike
+0|photo
+0|front
+0|in front of
+0|between
+0|above
+0|beside
+0|behind
+0|there
+0|grandparent
+0|their
+0|house
+0|lot
+0|lots of
+0|flower
+0|move
+0|dirty
+0|everywhere
+0|mouse
+0|live
+0|nature
+0|forest
+0|river
+0|lake
+0|mountain
+0|hill
+0|tree
+0|bridge
+0|building
+0|village
+0|boating
+0|go boating
+0|aren't
+0|are not
+0|rabbit
+0|high
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 132
+# Total Entries Extracted: 132
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 132
+# -------------------------------

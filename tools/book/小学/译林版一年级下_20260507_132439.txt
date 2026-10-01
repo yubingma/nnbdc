@@ -1,0 +1,75 @@
+0|let's
+0|let us
+0|count
+0|Cool!
+0|how many
+0|marble
+0|one
+0|two
+0|three
+0|four
+0|yellow
+0|five
+0|pencil
+0|Ouch!
+0|I'm sorry.
+0|That's OK.
+0|book
+0|ruler
+0|rubber
+0|like
+0|carrot
+0|Me too.
+0|onion
+0|No, thanks.
+0|pea
+0|Yes, please.
+0|we
+0|all
+0|pepper
+0|spring
+0|the
+0|tree
+0|they're
+0|they are
+0|flower
+0|beautiful
+0|bird
+0|happy
+0|kite
+0|colourful
+0|what's
+0|what is
+0|What's this?
+0|ladybird
+0|cute
+0|cicada
+0|butterfly
+0|dragonfly
+0|Are you ready?
+0|run
+0|jump
+0|Well done!
+0|hop
+0|walk
+0|What's that?
+0|Shh!
+0|pig
+0|Baa!
+0|lamb
+0|Quack!
+0|duck
+0|cow
+0|in
+0|bottle
+0|hankie
+0|and
+0|sticker
+0|yo-yo
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 68
+# Total Entries Extracted: 68
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 68
+# -------------------------------

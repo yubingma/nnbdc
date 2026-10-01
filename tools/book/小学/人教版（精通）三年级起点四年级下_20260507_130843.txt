@@ -1,0 +1,129 @@
+0|home
+0|bedroom
+0|bed
+0|desk
+0|chair
+0|living room
+0|TV
+0|sofa
+0|armchair
+0|ball
+0|kite
+0|kitchen
+0|fridge
+0|table
+0|study
+0|computer
+0|picture
+0|bathroom
+0|clock
+0|twenty-one
+0|twenty-two
+0|twenty-three
+0|twenty-four
+0|twenty-five
+0|twenty-six
+0|twenty-seven
+0|twenty-eight
+0|twenty-nine
+0|eleven
+0|twelve
+0|thirty
+0|forty
+0|boy
+0|girl
+0|fifty
+0|sixty
+0|student
+0|school
+0|seventy
+0|eighty
+0|bag
+0|book
+0|ninety
+0|one hundred
+0|pen
+0|pencil
+0|maths
+0|PE
+0|Chinese
+0|English
+0|music
+0|art
+0|subject
+0|science
+0|lesson
+0|drama
+0|listen
+0|do
+0|speak
+0|listen and do
+0|speak and sing
+0|play and act
+0|sing
+0|play
+0|act
+0|day
+0|week
+0|Sunday
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|Saturday
+0|today
+0|weekend
+0|park
+0|theme park
+0|picnic
+0|sausage
+0|bread
+0|cake
+0|lunch
+0|pork
+0|beef
+0|rice
+0|chicken
+0|dance
+0|paint
+0|draw
+0|read
+0|watch
+0|read a book
+0|watch TV
+0|play computer games
+0|game
+0|go
+0|shop
+0|go shopping
+0|swim
+0|go swimming
+0|fish
+0|go fishing
+0|zoo
+0|farm
+0|giraffe
+0|camel
+0|monkey
+0|panda
+0|bear
+0|seal
+0|dolphin
+0|hippo
+0|tiger
+0|cat
+0|dog
+0|horse
+0|cow
+0|sheep
+0|goat
+0|duck
+0|pig
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 122
+# Total Entries Extracted: 122
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 122
+# -------------------------------

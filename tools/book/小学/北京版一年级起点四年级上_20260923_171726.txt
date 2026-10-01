@@ -1,0 +1,71 @@
+0|again
+0|glad
+0|why
+0|book
+0|sad
+0|surprised
+0|look for
+0|get well
+0|upset
+0|speak
+0|robot
+0|housework
+0|Ms
+0|Mrs
+0|there
+0|really
+0|bring
+0|school
+0|bad
+0|cold
+0|drink
+0|word
+0|computer
+0|easy
+0|light
+0|door
+0|kind
+0|window
+0|glass
+0|take
+0|fine
+0|get
+0|pen
+0|brown
+0|think
+0|pair
+0|shoe
+0|how much
+0|buy
+0|shop
+0|sell
+0|eat
+0|healthy
+0|sour
+0|cook
+0|duck
+0|soup
+0|sorry
+0|pie
+0|chicken
+0|hamburger
+0|change
+0|money
+0|become
+0|clever
+0|ice
+0|walk
+0|interesting
+0|close
+0|farmer
+0|lake
+0|say
+0|air
+0|live
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 64
+# Total Entries Extracted: 64
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 64
+# -------------------------------

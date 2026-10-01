@@ -1,0 +1,105 @@
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|fly a kite
+0|ride a bike
+0|go to the park
+0|week
+0|Saturday
+0|Sunday
+0|sport
+0|table tennis
+0|tennis
+0|high jump
+0|long jump
+0|go swimming
+0|go skating
+0|go boating
+0|go fishing
+0|noodles
+0|chicken
+0|vegetables
+0|rice
+0|soup
+0|bread
+0|tomato
+0|potato
+0|fish
+0|house
+0|bedroom
+0|bathroom
+0|living room
+0|study
+0|kitchen
+0|dining room
+0|next to
+0|between
+0|behind
+0|in front of
+0|TV
+0|computer
+0|bed
+0|clock
+0|photo
+0|door
+0|floor
+0|cup
+0|window
+0|sofa
+0|umbrella
+0|about
+0|after
+0|any
+0|bad
+0|be
+0|am
+0|is
+0|are
+0|be good at
+0|bike
+0|bicycle
+0|box
+0|day
+0|easy
+0|every
+0|favourite
+0|favorite
+0|fine
+0|fly
+0|I'd like
+0|I would like ...
+0|its
+0|live
+0|many
+0|much
+0|noodle
+0|not bad
+0|of
+0|often
+0|open
+0|our
+0|park
+0|room
+0|so many
+0|some
+0|swim
+0|there
+0|they
+0|today
+0|try
+0|us
+0|vegetable
+0|want
+0|well
+0|with
+0|word
+0|would like
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 98
+# Total Entries Extracted: 98
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 98
+# -------------------------------

@@ -1,0 +1,162 @@
+0|look like
+0|which
+0|with
+0|glasses
+0|her
+0|know
+0|him
+0|policewoman
+0|policewomen
+0|uniform
+0|its
+0|their
+0|kind
+0|What is ... like?
+0|shy
+0|round
+0|friendly
+0|daily
+0|routine
+0|time
+0|It's time to ...
+0|It's time for ...
+0|up
+0|get up
+0|o'clock
+0|half
+0|past
+0|half past ...
+0|quarter
+0|to
+0|a quarter to ...
+0|sleep
+0|tired
+0|lunch
+0|back
+0|home
+0|dinner
+0|teach
+0|paint
+0|have class
+0|usually
+0|well
+0|day
+0|breakfast
+0|from
+0|from ... to ...
+0|hmmm ...
+0|exercise
+0|take exercise
+0|run
+0|go running
+0|swim
+0|go swimming
+0|week
+0|today
+0|Wednesday
+0|Thursday
+0|why
+0|Sunday
+0|Monday
+0|Tuesday
+0|Friday
+0|Saturday
+0|always
+0|parent
+0|housework
+0|never
+0|often
+0|go shopping
+0|park
+0|visit
+0|film
+0|activity
+0|free
+0|feel
+0|bored
+0|Me too.
+0|do some reading
+0|interesting
+0|cartoon
+0|shall
+0|Shall we ...?
+0|king
+0|Monkey King
+0|take photos
+0|listen
+0|listen to ...
+0|email
+0|picnic
+0|have a look
+0|fish
+0|fly
+0|dance
+0|fun
+0|basketball
+0|football
+0|kung fu
+0|think
+0|skate
+0|try
+0|table tennis
+0|jump
+0|the long jump
+0|high
+0|the high jump
+0|tennis
+0|chess
+0|arm
+0|volleyball
+0|fast
+0|water
+0|bath
+0|take a bath
+0|clever
+0|badminton
+0|celebration
+0|was
+0|be born ...
+0|January
+0|present
+0|card
+0|go on
+0|party
+0|candle
+0|cake
+0|February
+0|March
+0|April
+0|August
+0|June
+0|November
+0|Christmas
+0|December
+0|already
+0|soon
+0|lot
+0|lots of
+0|dress
+0|as
+0|dress up as
+0|Father Christmas
+0|July
+0|summer
+0|holiday
+0|May
+0|Mother's Day
+0|September
+0|Teachers' Day
+0|October
+0|Halloween
+0|spring
+0|festival
+0|Spring Festival
+0|give
+0|Mid-Autumn Festival
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 155
+# Total Entries Extracted: 155
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 155
+# -------------------------------

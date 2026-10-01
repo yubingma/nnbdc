@@ -1,0 +1,96 @@
+0|China
+0|America
+0|England
+0|Singapore
+0|Canada
+0|good
+0|friend
+0|brother
+0|sister
+0|boy
+0|girl
+0|teacher
+0|farmer
+0|postman
+0|doctor
+0|nurse
+0|driver
+0|class
+0|grade
+0|one
+0|two
+0|three
+0|four
+0|thirteen
+0|fourteen
+0|five
+0|six
+0|fifteen
+0|sixteen
+0|seven
+0|eight
+0|seventeen
+0|eighteen
+0|nine
+0|ten
+0|nineteen
+0|twenty
+0|pineapple
+0|lemon
+0|apple
+0|pear
+0|watermelon
+0|kiwi fruit
+0|orange
+0|banana
+0|potato
+0|tomato
+0|carrot
+0|cucumber
+0|eggplant
+0|green pepper
+0|fine
+0|nice
+0|warm
+0|cool
+0|hot
+0|cold
+0|sunny
+0|cloudy
+0|windy
+0|rainy
+0|snowy
+0|cap
+0|hat
+0|T-shirt
+0|dress
+0|blouse
+0|jacket
+0|raincoat
+0|sweater
+0|skirt
+0|shirt
+0|shorts
+0|jeans
+0|socks
+0|sock
+0|shoes
+0|shoe
+0|big
+0|small
+0|long
+0|tall
+0|short
+0|fat
+0|strong
+0|thin
+0|new
+0|old
+0|happy
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 89
+# Total Entries Extracted: 89
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 89
+# -------------------------------

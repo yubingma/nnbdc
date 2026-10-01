@@ -1,0 +1,73 @@
+0|clever
+0|careless
+0|polite
+0|quiet
+0|cute
+0|friendly
+0|helpful
+0|active
+0|popular
+0|talk
+0|party
+0|all
+0|but
+0|sometimes
+0|bark
+0|forget
+0|with
+0|wear glasses
+0|slim
+0|curly
+0|straight
+0|nice
+0|young
+0|teach
+0|guess
+0|has
+0|animal
+0|elephant
+0|panda
+0|horse
+0|cow
+0|pig
+0|sheep
+0|bee
+0|farm
+0|fast
+0|why
+0|lovely
+0|butterfly
+0|exercise book
+0|pencil sharpener
+0|a pair of scissors
+0|pencil box
+0|a box of crayons
+0|please
+0|only
+0|also
+0|saleswoman
+0|great
+0|love
+0|how much
+0|a lot
+0|wonderful
+0|cool
+0|fantastic
+0|cartoons
+0|news shows
+0|nature shows
+0|chore
+0|clean the room
+0|make the bed
+0|take out the rubbish
+0|wash clothes
+0|tidy the desk
+0|sweep the floor
+0|call
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 66
+# Total Entries Extracted: 66
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 66
+# -------------------------------

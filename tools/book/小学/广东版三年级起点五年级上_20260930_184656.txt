@@ -1,0 +1,99 @@
+0|season
+0|spring
+0|summer
+0|fall
+0|winter
+0|sunny
+0|rainy
+0|windy
+0|cloudy
+0|hot
+0|look at
+0|flower
+0|leaves
+0|cold
+0|weather
+0|hang glider
+0|month
+0|January
+0|February
+0|March
+0|April
+0|May
+0|June
+0|before
+0|after
+0|when
+0|winter holiday
+0|go ice-skating
+0|now
+0|beach
+0|today
+0|July
+0|August
+0|September
+0|October
+0|November
+0|December
+0|1st
+0|2nd
+0|3rd
+0|4th
+0|20th
+0|21st
+0|22nd
+0|23rd
+0|30th
+0|31st
+0|date
+0|party
+0|grandma
+0|bag
+0|map
+0|pencil case
+0|picture
+0|blackboard
+0|crayon
+0|paper
+0|glue
+0|any
+0|but
+0|some
+0|color
+0|juice
+0|rice
+0|salt
+0|sugar
+0|meat
+0|vegetables
+0|tofu
+0|fruit
+0|hungry
+0|own
+0|need
+0|all
+0|cook
+0|Here!
+0|Come on!
+0|Wow!
+0|Cool!
+0|forty
+0|fifty
+0|sixty
+0|seventy
+0|eighty
+0|ninety
+0|hundred
+0|one hundred
+0|cheap
+0|expensive
+0|dollar
+0|magic
+0|much
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 92
+# Total Entries Extracted: 92
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 92
+# -------------------------------

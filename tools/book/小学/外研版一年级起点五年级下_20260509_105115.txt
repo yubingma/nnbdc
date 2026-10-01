@@ -1,0 +1,78 @@
+0|drive
+0|drove
+0|player
+0|office
+0|fish
+0|sausage
+0|sandwich
+0|fish and chips
+0|traditional
+0|dish
+0|delicious
+0|chicken
+0|DVD
+0|librarian
+0|show
+0|borrow
+0|sent
+0|American
+0|read
+0|interesting
+0|season
+0|snow
+0|How much ...?
+0|light
+0|sales assistant
+0|carry
+0|pound
+0|back
+0|over
+0|shoulder
+0|build
+0|place
+0|thousand
+0|circle
+0|answer
+0|hope
+0|so
+0|get
+0|hour
+0|amazing
+0|take
+0|short
+0|helicopter
+0|evening
+0|actor
+0|busy
+0|quarter
+0|Chinese
+0|drew
+0|piece
+0|painted
+0|scissors
+0|stick
+0|tied
+0|string
+0|theatre
+0|men
+0|women
+0|told
+0|joke
+0|funny
+0|put
+0|history
+0|subject
+0|ticket
+0|passport
+0|leave
+0|July
+0|August
+0|met
+0|classmate
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 71
+# Total Entries Extracted: 71
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 71
+# -------------------------------

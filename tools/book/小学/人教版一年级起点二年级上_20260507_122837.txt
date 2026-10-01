@@ -1,0 +1,61 @@
+0|father
+0|mother
+0|brother
+0|sister
+0|grandmother
+0|grandfather
+0|who
+0|he
+0|she
+0|classmate
+0|friend
+0|woman
+0|girl
+0|man
+0|boy
+0|look
+0|his
+0|name
+0|her
+0|or
+0|big
+0|tall
+0|pretty
+0|thin
+0|short
+0|handsome
+0|new
+0|does
+0|bookshop
+0|zoo
+0|school
+0|supermarket
+0|park
+0|hospital
+0|go
+0|to
+0|grass
+0|tree
+0|flower
+0|boat
+0|lake
+0|hill
+0|Christmas
+0|Father Christmas
+0|Christmas tree
+0|card
+0|present
+0|New Year
+0|merry
+0|too
+0|here
+0|for
+0|thank
+0|happy
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 54
+# Total Entries Extracted: 54
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 54
+# -------------------------------

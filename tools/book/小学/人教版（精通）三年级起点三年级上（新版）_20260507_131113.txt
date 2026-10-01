@@ -1,0 +1,147 @@
+0|hello
+0|hi
+0|I
+0|am
+0|I'm
+0|I am
+0|Miss
+0|what
+0|is
+0|what's
+0|what is
+0|your
+0|name
+0|stand up
+0|boy
+0|and
+0|girl
+0|sit down
+0|Mr
+0|dad
+0|Good morning!
+0|Good afternoon!
+0|Good evening!
+0|Goodbye!
+0|Good night!
+0|bye
+0|pencil
+0|sharpener
+0|pencil box
+0|schoolbag
+0|eraser
+0|crayon
+0|pen
+0|ruler
+0|look
+0|have
+0|a
+0|new
+0|it
+0|it's
+0|it is
+0|nice
+0|can
+0|use
+0|find
+0|my
+0|sure
+0|you
+0|sorry
+0|don't
+0|do not
+0|Here you are.
+0|Thank you!
+0|You're welcome.
+0|ball
+0|doll
+0|kite
+0|jigsaw
+0|toy
+0|cat
+0|dog
+0|bike
+0|bus
+0|this
+0|mum
+0|mom
+0|gift
+0|for
+0|so
+0|cute
+0|play with
+0|good
+0|friend
+0|she
+0|has
+0|often
+0|share
+0|Happy birthday!
+0|face
+0|hair
+0|eye
+0|ear
+0|nose
+0|mouth
+0|long
+0|short
+0|big
+0|small
+0|tall
+0|let's
+0|let us
+0|OK
+0|his
+0|he
+0|or
+0|her
+0|are
+0|milk
+0|water
+0|tea
+0|juice
+0|cola
+0|apple
+0|banana
+0|orange
+0|grape
+0|lemon
+0|drink
+0|fruit
+0|buy
+0|some
+0|too
+0|tomorrow
+0|like
+0|want
+0|make
+0|say
+0|ice cream
+0|candy
+0|they
+0|bad
+0|cake
+0|bread
+0|rice
+0|noodle
+0|noodles
+0|soup
+0|egg
+0|chicken
+0|fish
+0|tomato
+0|potato
+0|food
+0|but
+0|hungry
+0|dinner
+0|need
+0|vegetable
+0|tomatoes with eggs
+0|What about ...?
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 140
+# Total Entries Extracted: 140
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 140
+# -------------------------------

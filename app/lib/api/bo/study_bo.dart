@@ -1159,17 +1159,30 @@ class StudyBo {
     return nextFsrs;
   }
 
-  /// 今天测评答错（当天**首条**评分为 again）的词 id 集合。
-  /// 与轨道名「新词答错 / 旧词答错」同一判据（不是"今天任何一次答错"），
-  /// 供本组小结把答错的词标红。
-  Future<Set<String>> getTodayWrongWordIds(Iterable<String> wordIds) async {
+  /// 本组小结的两份错词标记（同一次查询出两份口径）：
+  /// - [checkWrong]：今天**测评**答错（当天首条评分为 again）。与轨道名「新词答错 / 旧词答错」
+  ///   同一判据（不是"今天任何一次答错"）。
+  /// - [laterWrong]：测评之后（巩固/加测等后续评分环节）**又**答错（首条之后的某条评分为 again）。
+  ///   这些词测评是答对的，只是今天后来又忘了一次 —— 小结据此给一个次级警示色，
+  ///   而不是与"测评就没答对"混为一谈。重练不写日志，所以这里只会被各环节的首次作答影响。
+  Future<({Set<String> checkWrong, Set<String> laterWrong})> getTodayWrongWordIds(
+      Iterable<String> wordIds) async {
     final user = Global.getLoggedInUser();
-    if (user == null) return {};
-    final logs = await _loadTodayFirstLogsOfIds(user.id, wordIds);
-    return {
-      for (final e in logs.entries)
-        if (e.value.rating == FsrsRating.again.value) e.key,
-    };
+    if (user == null) return (checkWrong: <String>{}, laterWrong: <String>{});
+    // 唯一口径的"今天全部评分"，按 createTime 正序：每词第一条 = 当天测评
+    final rows = await MyDatabase.instance.learningLogsDao
+        .getInBusinessDay(user.id, wordIds: wordIds.toList());
+    final checkWrong = <String>{};
+    final laterWrong = <String>{};
+    final seen = <String>{};
+    for (final row in rows) {
+      if (seen.add(row.wordId)) {
+        if (row.rating == FsrsRating.again.value) checkWrong.add(row.wordId);
+        continue;
+      }
+      if (row.rating == FsrsRating.again.value) laterWrong.add(row.wordId);
+    }
+    return (checkWrong: checkWrong, laterWrong: laterWrong);
   }
 
   /// 查询今日单词在今天的首条评分日志（elapsedDays/rating，用于固化当天学习/复习轨道），

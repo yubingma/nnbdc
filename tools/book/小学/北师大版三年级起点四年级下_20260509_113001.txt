@@ -1,0 +1,105 @@
+0|restaurant
+0|like
+0|here
+0|hungry
+0|chicken
+0|noodles
+0|menu
+0|fried rice
+0|hamburger
+0|French fries
+0|bread
+0|love
+0|dumplings
+0|rice
+0|hot dog
+0|talent
+0|show
+0|from
+0|China
+0|where
+0|Ms
+0|India
+0|how old
+0|Mr
+0|Australia
+0|wait
+0|minute
+0|hear
+0|US
+0|year
+0|UK
+0|Canada
+0|thin
+0|strong
+0|not bad
+0|heavy
+0|fast
+0|tall
+0|great
+0|easy
+0|too
+0|now
+0|short
+0|slow
+0|old
+0|young
+0|hot
+0|soup
+0|thirsty
+0|tired
+0|want
+0|water
+0|any
+0|milk
+0|cola
+0|healthy
+0|juice
+0|idea
+0|home
+0|tea
+0|favourite
+0|fresh
+0|ready
+0|cold
+0|feel
+0|store
+0|hat
+0|them
+0|clock
+0|storybook
+0|sell
+0|schoolbag
+0|long
+0|illness
+0|tummy
+0|hurt
+0|hand
+0|well
+0|body
+0|ear
+0|head
+0|arm
+0|leg
+0|hair
+0|eye
+0|nose
+0|mouth
+0|foot
+0|have a fever
+0|open
+0|say
+0|how
+0|have a cold
+0|have a headache
+0|have a toothache
+0|ticket
+0|window
+0|sit
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 98
+# Total Entries Extracted: 98
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 98
+# -------------------------------

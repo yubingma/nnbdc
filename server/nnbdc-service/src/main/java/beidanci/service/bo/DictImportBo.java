@@ -348,8 +348,18 @@ public class DictImportBo {
                     }
                 }
                 
+                List<?> rawHallIds = (List<?>) config.get("targetGameHallIds");
+                if (rawHallIds != null && !rawHallIds.isEmpty()) {
+                    for (Object hallIdObj : rawHallIds) {
+                        if (hallIdObj instanceof String) {
+                            String hallId = (String) hallIdObj;
+                            if (!hallId.trim().isEmpty()) {
+                                linkDictToGameHall(dictId, hallId.trim());
+                            }
+                        }
+                    }
+                }
 
-                
                 if (generateShuffledVersion) {
                     String shuffledDictName = dictBo.findById(dictId).getName() + " (乱序版)";
                     Dict sDict = dictBo.findByName(shuffledDictName);
@@ -363,6 +373,16 @@ public class DictImportBo {
                                     String gid = (String) idObj;
                                     if (!gid.trim().isEmpty()) {
                                         linkDictToGroup(sDict.getId(), gid);
+                                    }
+                                }
+                            }
+                        }
+                        if (rawHallIds != null && !rawHallIds.isEmpty()) {
+                            for (Object hallIdObj : rawHallIds) {
+                                if (hallIdObj instanceof String) {
+                                    String hallId = (String) hallIdObj;
+                                    if (!hallId.trim().isEmpty()) {
+                                        linkDictToGameHall(sDict.getId(), hallId.trim());
                                     }
                                 }
                             }
@@ -1162,6 +1182,29 @@ public class DictImportBo {
             }
         } catch (Exception e) {
             logger.error("自动关联词库至分组时出错", e);
+        }
+    }
+
+    private void linkDictToGameHall(String dictId, String hallIdOrName) {
+        if (dictId == null || hallIdOrName == null || hallIdOrName.trim().isEmpty()) return;
+        try {
+            // 先尝试按 ID 查 game_hall 对应的 dict_group_id
+            String getHallGroupSql = "SELECT dict_group_id FROM game_hall WHERE id = :hallId";
+            MapSqlParameterSource p = new MapSqlParameterSource("hallId", hallIdOrName.trim());
+            List<String> groupIds = namedParameterJdbcTemplate.queryForList(getHallGroupSql, p, String.class);
+            if (groupIds.isEmpty() || groupIds.get(0) == null) {
+                // 如果按 ID 没查到，按 hall_name 查
+                String getByNameSql = "SELECT dict_group_id FROM game_hall WHERE hall_name = :name";
+                groupIds = namedParameterJdbcTemplate.queryForList(getByNameSql, new MapSqlParameterSource("name", hallIdOrName.trim()), String.class);
+            }
+            if (!groupIds.isEmpty() && groupIds.get(0) != null) {
+                String targetGroupId = groupIds.get(0);
+                linkDictToGroup(dictId, targetGroupId);
+            } else {
+                logger.warn("未找到对应的游戏大厅或其关联的分组为空: hallId/name={}", hallIdOrName);
+            }
+        } catch (Exception e) {
+            logger.error("自动关联词库至游戏大厅对应分组时出错: dictId=" + dictId + ", hall=" + hallIdOrName, e);
         }
     }
 }

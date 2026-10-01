@@ -1,0 +1,122 @@
+0|foreign
+0|China
+0|from
+0|Canada
+0|the USA
+0|the UK
+0|live
+0|London
+0|Ottawa
+0|the London Eye
+0|famous
+0|New York
+0|city
+0|Australia
+0|who
+0|India
+0|France
+0|kung fu
+0|sweep
+0|wash
+0|use
+0|machine
+0|show
+0|try
+0|back
+0|window
+0|potato
+0|wait
+0|minute
+0|wait a minute
+0|feed
+0|grandma
+0|children
+0|walk
+0|table
+0|make the bed
+0|chair
+0|restaurant
+0|noodle
+0|eat
+0|shall
+0|out
+0|would
+0|beef
+0|tofu
+0|cabbage
+0|soup
+0|salad
+0|order
+0|pizza
+0|fruit
+0|pie
+0|pear
+0|coffee
+0|kid
+0|weekend
+0|activity
+0|volleyball
+0|sometimes
+0|museum
+0|supermarket
+0|take pictures
+0|violin
+0|gym
+0|listen
+0|song
+0|picnic
+0|go for a picnic
+0|shop
+0|go shopping
+0|cinema
+0|film
+0|go fishing
+0|toy
+0|bus
+0|robot
+0|car
+0|fast
+0|will
+0|we'll
+0|we will
+0|need
+0|excuse
+0|Excuse me
+0|this way
+0|buy
+0|fit
+0|how much
+0|fifty
+0|them
+0|qipao
+0|try on
+0|hundred
+0|forty
+0|travel
+0|plan
+0|Mount Taishan
+0|June
+0|holiday
+0|July
+0|temple
+0|Sydney
+0|plane
+0|by
+0|by plane
+0|train
+0|then
+0|ship
+0|bike
+0|sunrise
+0|learn
+0|August
+0|ocean
+0|place
+0|wish
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 115
+# Total Entries Extracted: 115
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 115
+# -------------------------------

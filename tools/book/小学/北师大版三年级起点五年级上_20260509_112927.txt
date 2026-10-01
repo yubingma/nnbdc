@@ -1,0 +1,96 @@
+0|job
+0|teacher
+0|doctor
+0|vet
+0|juggler
+0|Miss
+0|telephone
+0|call
+0|farmer
+0|policeman
+0|nurse
+0|student
+0|singer
+0|worker
+0|taxi
+0|driver
+0|animal
+0|rabbit
+0|squirrel
+0|meet
+0|cute
+0|snake
+0|scary
+0|a lot
+0|go away
+0|fox
+0|beautiful
+0|interesting
+0|funny
+0|clever
+0|clothes
+0|T-shirt
+0|trousers
+0|cap
+0|shoes
+0|too
+0|expensive
+0|cheap
+0|size
+0|only
+0|shorts
+0|dress
+0|skirt
+0|shirt
+0|sweater
+0|socks
+0|position
+0|on
+0|under
+0|in
+0|in front of
+0|magic
+0|gone
+0|table
+0|behind
+0|box
+0|desk
+0|door
+0|window
+0|bed
+0|floor
+0|chair
+0|place
+0|zoo
+0|supermarket
+0|post office
+0|train station
+0|excuse me
+0|near
+0|next to
+0|town
+0|map
+0|down
+0|street
+0|then
+0|turn
+0|between
+0|lake
+0|park
+0|toilet
+0|cage
+0|cinema
+0|bus
+0|bus stop
+0|hospital
+0|actor
+0|dancer
+0|angry
+0|again
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 89
+# Total Entries Extracted: 89
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 89
+# -------------------------------

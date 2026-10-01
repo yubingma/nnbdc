@@ -1,0 +1,48 @@
+0|morning
+0|afternoon
+0|evening
+0|night
+0|boy
+0|girl
+0|big
+0|small
+0|seven
+0|eight
+0|nine
+0|ten
+0|run
+0|write
+0|swim
+0|fly
+0|young
+0|old
+0|hair
+0|head
+0|face
+0|slide
+0|swing
+0|seesaw
+0|bag
+0|box
+0|desk
+0|chair
+0|bowl
+0|plate
+0|spoon
+0|chopsticks
+0|sun
+0|moon
+0|star
+0|fox
+0|hippo
+0|meat
+0|grass
+0|flower
+0|tree
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 41
+# Total Entries Extracted: 41
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 41
+# -------------------------------

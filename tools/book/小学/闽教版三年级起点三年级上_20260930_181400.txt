@@ -1,0 +1,134 @@
+0|hello
+0|I'm
+0|I am
+0|Miss
+0|hi
+0|nice
+0|meet
+0|you
+0|too
+0|a
+0|an
+0|apple
+0|banana
+0|what
+0|is
+0|your
+0|name
+0|my
+0|cat
+0|dog
+0|good
+0|morning
+0|How are you?
+0|fine
+0|thank
+0|goodbye
+0|egg
+0|fish
+0|afternoon
+0|boy
+0|girl
+0|Mr.
+0|hen
+0|come
+0|and
+0|play
+0|OK
+0|one
+0|two
+0|three
+0|four
+0|five
+0|six
+0|seven
+0|eight
+0|nine
+0|ten
+0|great
+0|ice cream
+0|jacket
+0|look
+0|baby
+0|duck
+0|how many
+0|no
+0|right
+0|kite
+0|lion
+0|how old
+0|monkey
+0|noodle
+0|phone
+0|number
+0|it
+0|orange
+0|pig
+0|who
+0|he
+0|brother
+0|she
+0|sister
+0|queen
+0|rabbit
+0|this
+0|are
+0|they
+0|mother
+0|father
+0|grandma
+0|grandpa
+0|star
+0|teacher
+0|stop
+0|light
+0|red
+0|now
+0|green
+0|let's
+0|let us
+0|go
+0|yellow
+0|blue
+0|umbrella
+0|violin
+0|color
+0|pink
+0|white
+0|black
+0|window
+0|X-ray
+0|please
+0|give
+0|me
+0|ruler
+0|which
+0|the
+0|Here you are.
+0|You're welcome.
+0|pen
+0|pencil
+0|zoo
+0|pencil-box
+0|may
+0|use
+0|sure
+0|book
+0|bag
+0|crayon
+0|new
+0|year
+0|party
+0|have a party
+0|idea
+0|sing
+0|dance
+0|happy
+0|all
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 127
+# Total Entries Extracted: 127
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 127
+# -------------------------------

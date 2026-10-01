@@ -93,6 +93,10 @@ class WordWrapper {
   /// 今天测评答错（当天首条评分为 again）—— 本组小结据此把拼写标红
   bool isWrongToday = false;
 
+  /// 测评之后（巩固/加测等后续评分环节）又答错过（当天首条之后的某条评分为 again）
+  /// —— 本组小结据此把拼写标成次级警示色：它今天已经学过一遍，只是后来又忘了一次
+  bool isWrongLaterToday = false;
+
   /// 初始学习状态（进入词表时的状态）
   bool? initialLearningStatus;
 

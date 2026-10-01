@@ -1,0 +1,111 @@
+0|classmate
+0|subject
+0|we
+0|Chinese
+0|PE
+0|today
+0|favourite
+0|science
+0|English
+0|maths
+0|computer studies
+0|make
+0|thing
+0|often
+0|basketball
+0|there
+0|run
+0|skip
+0|come
+0|piano
+0|dance
+0|drum
+0|well
+0|hobby
+0|paper cutting
+0|uncle
+0|aunt
+0|cook
+0|day
+0|Wednesday
+0|Tuesday
+0|Friday
+0|Monday
+0|Thursday
+0|football
+0|picture
+0|hurry up
+0|Saturday
+0|Sunday
+0|season
+0|year
+0|spring
+0|summer
+0|autumn
+0|winter
+0|warm
+0|wear
+0|hot
+0|T-shirt
+0|cool
+0|jacket
+0|cold
+0|fly
+0|kite
+0|what about
+0|swim
+0|skate
+0|sunny
+0|climb
+0|hill
+0|cloudy
+0|windy
+0|put on
+0|snow
+0|weather
+0|rain
+0|sorry
+0|dad
+0|raincoat
+0|tomorrow
+0|will
+0|shall
+0|can't
+0|can not
+0|tall
+0|strong
+0|has
+0|short
+0|hair
+0|long
+0|parent
+0|work
+0|businessman
+0|cute
+0|nurse
+0|hospital
+0|policeman
+0|gardener
+0|park
+0|speak
+0|may
+0|hold on
+0|call
+0|do some training
+0|write
+0|email
+0|sure
+0|everyone
+0|winner
+0|jump
+0|long jump
+0|high
+0|high jump
+0|come on
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 104
+# Total Entries Extracted: 104
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 104
+# -------------------------------

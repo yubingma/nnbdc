@@ -13,6 +13,15 @@ class ModeComponents {
   }) {
     final textMain = themeConfig?.textPrimary ?? (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724));
     final textSub = themeConfig?.textSecondary ?? (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570));
+    // 小结的错词着色（口径见 StudyBo.getTodayWrongWordIds）：
+    // - 测评就没答对 → 红色（与「答错」轨道同一判据）；
+    // - 测评答对、后来巩固环节又答错 → 次级警示琥珀（与词根组头行同一个琥珀，暗色下自动提亮）；
+    // - 其余保持正常字色。两种都算"今天没拿下"，但成因不同，不混为一谈。
+    final spellColor = word.isWrongToday
+        ? FsrsRating.again.colorWithDark(isDarkMode)
+        : (word.isWrongLaterToday
+            ? FsrsRating.hard.colorWithDark(isDarkMode)
+            : textMain);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -25,10 +34,7 @@ class ModeComponents {
             word.word.spell,
             softWrap: false,
             style: TextStyle(
-              // 今天测评答错的词标红（口径见 StudyBo.getTodayWrongWordIds）
-              color: word.isWrongToday
-                  ? FsrsRating.again.colorWithDark(isDarkMode)
-                  : textMain,
+              color: spellColor,
               fontSize: 16.5,
               fontWeight: FontWeight.w700,
               height: 1.25,

@@ -1,0 +1,123 @@
+0|running
+0|basketball
+0|roller skating
+0|jumping rope
+0|ping-pong
+0|What about ...?
+0|interesting
+0|often
+0|be good at
+0|late
+0|swim
+0|friend
+0|father
+0|get up
+0|visit one's grandparents
+0|go to a drawing club
+0|climb a hill
+0|pick fruit
+0|play computer games
+0|go fishing
+0|go to the cinema
+0|on the weekend
+0|fun
+0|always
+0|step
+0|paint
+0|evening
+0|dirty
+0|their
+0|house
+0|poor
+0|hope
+0|so
+0|Saturday
+0|near
+0|day
+0|usually
+0|by bus
+0|by boat
+0|by ship
+0|by car
+0|by taxi
+0|by bike
+0|on foot
+0|by school bus
+0|by subway
+0|by plane
+0|by train
+0|garden
+0|meeting place
+0|gate
+0|transportation
+0|film
+0|earth
+0|snow
+0|theatre
+0|come
+0|enjoy
+0|park
+0|apple
+0|pen
+0|knife
+0|eraser
+0|crayon
+0|scissors
+0|glue stick
+0|paper
+0|use
+0|please
+0|find
+0|Information Centre
+0|Excuse me
+0|phone
+0|dad
+0|hamburger
+0|ruler
+0|pencil
+0|schoolbag
+0|shop
+0|climb on the window ledge
+0|dangerous
+0|play with fire
+0|Be careful!
+0|run down the stairs
+0|sidewalk
+0|wait for
+0|safe
+0|stop
+0|street
+0|safety rule
+0|green
+0|red
+0|play football
+0|nurse
+0|cook
+0|doctor
+0|bus driver
+0|police officer
+0|taxi driver
+0|farmer
+0|worker
+0|in the future
+0|great
+0|job
+0|sick
+0|people
+0|teach
+0|just
+0|myself
+0|sound
+0|Monday
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Friday
+0|teacher
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 116
+# Total Entries Extracted: 116
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 116
+# -------------------------------

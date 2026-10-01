@@ -1,0 +1,104 @@
+0|heavy
+0|tall
+0|keep off
+0|grass
+0|brave
+0|anyone
+0|funny
+0|anything
+0|hero
+0|helpful
+0|old
+0|young
+0|lovely
+0|from
+0|France
+0|film
+0|player
+0|soup
+0|Russia
+0|parent
+0|mother
+0|war
+0|father
+0|stay
+0|him
+0|look after
+0|dear
+0|girl
+0|sport
+0|more
+0|race
+0|get up
+0|with
+0|hit back
+0|wait
+0|sleep
+0|win
+0|busy
+0|must
+0|wear
+0|go up
+0|go down
+0|because
+0|can
+0|need
+0|drum
+0|ask
+0|piano
+0|good at
+0|sorry
+0|cook
+0|watch out
+0|move
+0|again
+0|give up
+0|minute
+0|late
+0|What time is it?
+0|time
+0|exercise
+0|o'clock
+0|have lunch
+0|do homework
+0|make breakfast
+0|go to work
+0|have dinner
+0|go home
+0|go to bed
+0|save
+0|when
+0|dream
+0|hour
+0|light rain
+0|weather
+0|windy
+0|sunny
+0|rainy
+0|raincoat
+0|umbrella
+0|snowy
+0|cloudy
+0|insect
+0|wake up
+0|trousers
+0|warm
+0|hot
+0|skirt
+0|very
+0|cool
+0|cold
+0|begin
+0|bring
+0|bad
+0|stand
+0|under
+0|tree
+0|heavy rain
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 97
+# Total Entries Extracted: 97
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 97
+# -------------------------------

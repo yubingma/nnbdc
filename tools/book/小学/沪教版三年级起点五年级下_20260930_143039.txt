@@ -1,0 +1,171 @@
+0|tidy
+0|mess
+0|let
+0|sock
+0|yours
+0|cap
+0|mine
+0|crayon
+0|umbrella
+0|nail
+0|drop
+0|stick
+0|second
+0|hers
+0|theirs
+0|tidy up
+0|full of
+0|be full of
+0|a few
+0|why
+0|because
+0|study
+0|dining room
+0|wild goose
+0|wild geese
+0|change
+0|place
+0|twice
+0|every
+0|north
+0|south
+0|enough
+0|then
+0|all day
+0|future
+0|stand
+0|machine
+0|will
+0|exercise
+0|early
+0|easily
+0|hard
+0|more
+0|in the future
+0|in front of
+0|take a photo
+0|wear glasses
+0|do exercise
+0|weak in
+0|be weak in
+0|not ... any more
+0|storybook
+0|buy
+0|story
+0|dictionary
+0|magazine
+0|newspaper
+0|week
+0|student
+0|poster
+0|best
+0|writer
+0|over there
+0|do a survey
+0|act ... out
+0|weekend
+0|stay
+0|film
+0|boat
+0|plan
+0|tomorrow
+0|build
+0|next
+0|swing
+0|cry
+0|until
+0|see a film
+0|row a boat
+0|holiday
+0|clear
+0|seafood
+0|hotel
+0|island
+0|butterfly
+0|how long
+0|go swimming
+0|in the south of
+0|all year round
+0|meet
+0|school gate
+0|art room
+0|hall
+0|finally
+0|meeting room
+0|show
+0|project
+0|board
+0|which
+0|trousers
+0|size
+0|sweater
+0|coat
+0|shoe
+0|emperor
+0|only
+0|nod
+0|smile
+0|money
+0|keep
+0|laugh
+0|try ... on
+0|put ... on
+0|keep quiet
+0|have a look
+0|ill
+0|headache
+0|fever
+0|should
+0|medicine
+0|rest
+0|toothache
+0|toothless
+0|present
+0|world
+0|dentist
+0|have a headache
+0|have a fever
+0|have a cold
+0|have a rest
+0|get well
+0|have a toothache
+0|have a meeting
+0|pull ... out
+0|invention
+0|watch
+0|anywhere
+0|travel
+0|invent
+0|something
+0|myself
+0|camera
+0|far away from ...
+0|festival
+0|important
+0|call
+0|dumpling
+0|relative
+0|red packet
+0|firework
+0|monster
+0|end
+0|village
+0|last
+0|firecracker
+0|mooncake
+0|at the end of
+0|giant
+0|wall
+0|kind
+0|through
+0|no entry
+0|kind to ...
+0|be kind to ...
+0|knock down
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 164
+# Total Entries Extracted: 164
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 164
+# -------------------------------

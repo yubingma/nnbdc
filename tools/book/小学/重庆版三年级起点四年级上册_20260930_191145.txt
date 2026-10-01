@@ -1,0 +1,124 @@
+0|Chinese book
+0|music book
+0|English book
+0|art book
+0|maths book
+0|science book
+0|IT book
+0|story book
+0|face
+0|eye
+0|nose
+0|ear
+0|mouth
+0|hair
+0|big
+0|small
+0|long
+0|short
+0|hand
+0|arm
+0|foot
+0|leg
+0|body
+0|head
+0|clean
+0|dirty
+0|left
+0|right
+0|USA
+0|UK
+0|China
+0|Canada
+0|Australia
+0|speak
+0|sing
+0|dance
+0|draw
+0|zoo
+0|giraffe
+0|tiger
+0|lion
+0|elephant
+0|beautiful
+0|lovely
+0|tall
+0|strong
+0|PE class
+0|breakfast
+0|lunch
+0|dinner
+0|go home
+0|go to school
+0|get up
+0|go to bed
+0|again
+0|all right
+0|animal
+0|art
+0|ask
+0|baby
+0|back
+0|bag
+0|call
+0|Chinese
+0|class
+0|close
+0|come
+0|English
+0|feet
+0|from
+0|good bye
+0|bye
+0|half
+0|has
+0|have
+0|have a rest
+0|hear
+0|heavy
+0|her
+0|his
+0|hurry up
+0|hurt
+0|IT
+0|know
+0|late
+0|little
+0|maths
+0|math
+0|Mr.
+0|Mrs.
+0|Ms.
+0|music
+0|new
+0|o'clock
+0|open
+0|or
+0|PE
+0|physical education
+0|pull
+0|read
+0|say
+0|science
+0|show
+0|sit
+0|song
+0|sorry
+0|stand
+0|story
+0|talk
+0|talk about
+0|these
+0|they
+0|those
+0|touch
+0|we
+0|What time is it?
+0|What's wrong?
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 117
+# Total Entries Extracted: 117
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 117
+# -------------------------------

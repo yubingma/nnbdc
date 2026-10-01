@@ -1,0 +1,142 @@
+0|Britain
+0|Australia
+0|New Zealand
+0|hello
+0|hi
+0|I
+0|am
+0|I'm
+0|I am
+0|France
+0|Germany
+0|Russia
+0|where
+0|are
+0|you
+0|from
+0|city
+0|road
+0|street
+0|what
+0|is
+0|your
+0|name
+0|what's
+0|what is
+0|clever
+0|quiet
+0|pretty
+0|her
+0|his
+0|eye
+0|nose
+0|hair
+0|smart
+0|cute
+0|lovely
+0|active
+0|how old
+0|he
+0|she
+0|beautiful
+0|handsome
+0|that
+0|man
+0|woman
+0|writer
+0|singer
+0|dancer
+0|this
+0|family
+0|father
+0|mother
+0|love
+0|worker
+0|actor
+0|actress
+0|a
+0|an
+0|parent
+0|parents
+0|policeman
+0|policewoman
+0|reporter
+0|who
+0|uncle
+0|aunt
+0|police
+0|cinema
+0|bank
+0|hotel
+0|work
+0|study
+0|CCTV
+0|hospital
+0|shopping mall
+0|in
+0|on
+0|at
+0|shop
+0|restaurant
+0|company
+0|library
+0|grandfather
+0|grandpa
+0|grandmother
+0|grandma
+0|taxi driver
+0|schoolbag
+0|activity book
+0|dictionary
+0|put
+0|ruler
+0|crayon
+0|yes
+0|fish
+0|hen
+0|goose
+0|animal
+0|cow
+0|horse
+0|elephant
+0|no
+0|not
+0|isn't
+0|is not
+0|sun cap
+0|camera
+0|it
+0|time
+0|whose
+0|umbrella
+0|fan
+0|coconut
+0|grapefruit
+0|Hami melon
+0|fruit
+0|juice
+0|milk
+0|water
+0|watermelon
+0|cherry
+0|strawberry
+0|star fruit
+0|peach
+0|food
+0|noodle
+0|noodles
+0|longan
+0|lychee
+0|these
+0|those
+0|they
+0|thank
+0|they're
+0|they are
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 135
+# Total Entries Extracted: 135
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 135
+# -------------------------------
