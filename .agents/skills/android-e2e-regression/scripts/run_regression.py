@@ -624,14 +624,14 @@ class PureE2ERegressionRunner:
             if next_group_btn:
                 print(f"[*] 第 {turn} 步：处于本组小结，点击「下一组」推进...")
                 self.device.click_element(next_group_btn)
-                time.sleep(0.6)
+                time.sleep(0.8)
                 continue
 
-            # 4. 检查是否有「下一词」直接流转按钮
+            # 4. 检查是否有「下一词」流转动作（正常用户看完全文/答案后，自然点击下一词继续往下学）
             next_word_btn = self.device.find_element(text="下一词", nodes=nodes)
             if next_word_btn:
                 self.device.click_element(next_word_btn)
-                time.sleep(0.3)
+                time.sleep(0.8)
                 continue
 
             # 5. 专项交互测试：手动改变评分测试（只要底栏出现测评结果且未测试过时触发）
@@ -649,7 +649,6 @@ class PureE2ERegressionRunner:
                 if rating_panel and rating_panel.get("center"):
                     self.device.click_element(rating_panel)
                 else:
-                    # 屏幕物理兜底坐标：底栏「测评结果: 忘记」居于 X=310, Y=2000
                     self.device.click(310, 2000)
                 time.sleep(1.2)
 
@@ -661,7 +660,8 @@ class PureE2ERegressionRunner:
                     if good_opt:
                         print("[*] 成功呼出「修改今日评分」对话框，点击切换为「良好」...")
                         self.device.click_element(good_opt)
-                        time.sleep(1.0)
+                        # 留出 1.2 秒让客户端异步计算 FSRS、落库并刷新凭据
+                        time.sleep(1.2)
 
                         after_nodes = self.device.dump_ui_hierarchy()
                         after_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in after_nodes)
@@ -699,7 +699,7 @@ class PureE2ERegressionRunner:
                     self.device.click_element(master_btn)
                     self.mastered_test_word = current_spell
                     mastered_tested = True
-                    time.sleep(0.6)
+                    time.sleep(0.8)
                     shot_m = self.capture("word_marked_mastered")
                     self.log("学习中标记已掌握", "PASSED", f"成功对单词 [{current_spell}] 触发掌握流转并播放飞入动画", shot_m)
                     continue
@@ -714,35 +714,10 @@ class PureE2ERegressionRunner:
                 target_spell = spell_nodes[0].get("text", "")
                 print(f"[*] [Mac 物理发音] 朗读单词: {target_spell}，驱动真机 ASR 拾音...")
                 voice_driver.speak_out(target_spell)
-                time.sleep(0.6)
-                nxt = self.device.find_element(text="下一词")
-                if nxt:
-                    self.device.click_element(nxt)
-                    time.sleep(0.3)
-                    continue
-
-            # 8. 测评与初见卡片：优先点「不认识」或「再学学」快速推进
-            dont_know_btn = self.device.find_element(text="不认识", nodes=nodes)
-            study_again_btn = self.device.find_element(text="再学学", nodes=nodes)
-
-            if dont_know_btn:
-                self.device.click_element(dont_know_btn)
-                time.sleep(0.4)
-                nxt = self.device.find_element(text="下一词")
-                if nxt:
-                    self.device.click_element(nxt)
-                    time.sleep(0.3)
-                continue
-            elif study_again_btn:
-                self.device.click_element(study_again_btn)
-                time.sleep(0.4)
-                nxt = self.device.find_element(text="下一词")
-                if nxt:
-                    self.device.click_element(nxt)
-                    time.sleep(0.3)
+                time.sleep(0.8)
                 continue
 
-            # 9. 选择题模式处理（限定在卡片选项区域 1250~1800，且严禁匹配辅助工具按钮、纯数字与底栏状态）
+            # 8. 题目等待作答状态（无下一词）：优先选择题作答
             excluded_labels = (
                 "不认识", "再学学", "说释义", "说发音", "显示翻译", "默写", "掌握", "报错", "回看",
                 "拼写", "提示", "清除", "选择题"
@@ -760,14 +735,23 @@ class PureE2ERegressionRunner:
             if choice_candidates:
                 target_choice = choice_candidates[-1]
                 self.device.click_element(target_choice)
-                time.sleep(0.4)
-                nxt = self.device.find_element(text="下一词")
-                if nxt:
-                    self.device.click_element(nxt)
-                    time.sleep(0.3)
+                time.sleep(0.8)
+                continue
+
+            # 9. 题目等待作答状态（初见测评无选项）：用户点击「再学学」或「不认识」查看释义
+            study_again_btn = self.device.find_element(text="再学学", nodes=nodes)
+            dont_know_btn = self.device.find_element(text="不认识", nodes=nodes)
+
+            if study_again_btn:
+                self.device.click_element(study_again_btn)
+                time.sleep(0.8)
+                continue
+            elif dont_know_btn:
+                self.device.click_element(dont_know_btn)
+                time.sleep(0.8)
                 continue
             else:
-                time.sleep(0.3)
+                time.sleep(0.4)
 
         shot = self.capture("daka_finish_page")
         if in_finish_page:
@@ -775,15 +759,25 @@ class PureE2ERegressionRunner:
         else:
             self.log("当日30词学完进入打卡页", "WARNING", "已执行多轮流转，尝试触发打卡结算", shot)
 
-        # 3. 生产数据库打卡数据一致性核验（轮询等待端云周期同步）
+        # 3. 从完成页返回主页，并切入 Tab 触发增量同步以确保生产库打卡落库
+        print("[*] 按返回键退出完成页并返回主页...")
+        self.device.press_key(4)
+        time.sleep(2)
+        print("[*] 切换 Tab 强制触发增量同步，确保打卡数据即时上报生产库...")
+        self.device.wait_and_click(text="我", timeout=2, exact=True)
+        time.sleep(2)
+        self.device.wait_and_click(text="学习", timeout=2, exact=True)
+        time.sleep(2)
+
+        # 4. 生产数据库打卡数据一致性核验（轮询等待端云周期同步）
         print("[*] 正在从生产数据库校验当天的 daka 打卡数据记录...")
         daka_rec = None
-        for attempt in range(6):
+        for attempt in range(8):
             time.sleep(2)
             daka_rec = manage_e2e_account.check_user_daka()
             if daka_rec:
                 break
-            print(f"[*] 等待生产库打卡记录写入同步 (尝试 {attempt + 1}/6)...")
+            print(f"[*] 等待生产库打卡记录写入同步 (尝试 {attempt + 1}/8)...")
 
         if daka_rec:
             daka_date = daka_rec.get("for_learning_date", "")
@@ -791,11 +785,6 @@ class PureE2ERegressionRunner:
             self.log("端云打卡数据持久化核验", "PASSED", f"生产库 daka 表确认落库成功: 业务日={daka_date}, 打卡文本={daka_txt}", shot)
         else:
             self.log("端云打卡数据持久化核验", "WARNING", "生产库暂未检索到当前打卡记录（可能等待周期同步）", shot)
-
-        # 4. 从完成页返回主页
-        print("[*] 按返回键退出完成页并返回主页...")
-        self.device.press_key(4)
-        time.sleep(2)
 
     def step_10_audit_local_db_and_fsrs(self):
         print("\n--- [Step 10] 本地 SQLite 深度审计与 FSRS 算法核验 ---")
@@ -883,21 +872,25 @@ class PureE2ERegressionRunner:
                 nxt = self.device.find_element(text="下一词", nodes=nodes) or self.device.find_element(text="下一组", nodes=nodes)
                 if nxt:
                     self.device.click_element(nxt)
-                    time.sleep(0.3)
+                    time.sleep(0.8)
                     continue
-                dk = self.device.find_element(text="不认识", nodes=nodes) or self.device.find_element(text="再学学", nodes=nodes)
+                dk = self.device.find_element(text="再学学", nodes=nodes) or self.device.find_element(text="不认识", nodes=nodes)
                 if dk:
                     self.device.click_element(dk)
-                    time.sleep(0.3)
+                    time.sleep(0.8)
                     continue
 
-        # 按返回键返回主页
+        # 按返回键返回主页并切 Tab 触发增量同步
         self.device.press_key(4)
+        time.sleep(2)
+        self.device.wait_and_click(text="我", timeout=2, exact=True)
+        time.sleep(2)
+        self.device.wait_and_click(text="学习", timeout=2, exact=True)
         time.sleep(2)
 
         # 生产库校验第 2 天的连续打卡记录（轮询重试确保落库）
         daka_info = None
-        for _ in range(5):
+        for _ in range(8):
             daka_sql = f"SELECT count(*), min(for_learning_date), max(for_learning_date) FROM daka WHERE user_id = '{uid}';"
             daka_info = manage_e2e_account.run_psql(daka_sql)
             if daka_info and int(daka_info.split("|")[0]) >= 2:
