@@ -74,6 +74,73 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
     }
   }
 
+  Future<void> _deleteFeatureRequest(FeatureRequestVo request) async {
+    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+        title: Text(
+          '确认删除',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        content: Text(
+          '确定要删除需求“${request.title ?? ''}”吗？删除后将同时删除相关的投票和举报记录，此操作不可恢复。',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white70 : Colors.black87,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              '取消',
+              style: TextStyle(
+                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final adminUser = Global.getLoggedInUser();
+      if (adminUser == null || adminUser.isAdmin != true) {
+        ToastUtil.error('权限不足');
+        return;
+      }
+
+      final result = await Api.client.deleteFeatureRequest(request.id, adminUser.id);
+
+      if (!mounted) return;
+      if (result.success) {
+        setState(() {
+          _requests.removeWhere((r) => r.id == request.id);
+        });
+        ToastUtil.success('删除成功');
+      } else {
+        ToastUtil.error(result.msg ?? '删除失败');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ToastUtil.error('删除失败');
+    }
+  }
+
   void _showStatusDialog(FeatureRequestVo request) {
     final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
@@ -303,6 +370,24 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
                         const SizedBox(width: 4),
                         const Icon(Icons.edit, size: 12),
                       ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _deleteFeatureRequest(request),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      size: 16,
+                      color: Colors.red,
                     ),
                   ),
                 ),

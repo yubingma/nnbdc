@@ -204,8 +204,15 @@ class PureE2ERegressionRunner:
         self.device.click_element(settings_section)
         time.sleep(1.5)
 
-        # 3. 向上滑动查找「注销账号」列表项
-        unreg_btn = self.device.scroll_and_find("注销账号", max_swipes=3, swipe_up=True)
+        # 3. 向上滑动查找「注销账号」列表项（注销账号在展开区域的最底部）
+        w, h = self.device.get_screen_size()
+        unreg_btn = None
+        for _ in range(5):
+            self.device.swipe(w // 2, int(h * 0.8), w // 2, int(h * 0.3), duration_ms=400)
+            time.sleep(1)
+            unreg_btn = self.device.find_element(text="注销账号")
+            if unreg_btn and unreg_btn.get("center"):
+                break
         if not unreg_btn:
             print("[!] 未找到「注销账号」按钮")
             return False
@@ -255,10 +262,20 @@ class PureE2ERegressionRunner:
         if success and (self.device.find_element(text="微信一键登录") or self.device.find_element(text="邮箱登录")):
             self.log("真机自助注销重置", "PASSED", "成功通过真机注销账号功能销毁旧账号并退回登录页", shot)
         else:
-            print("[!] 真机注销未完全退回登录页，执行云端安全清理并重启 App...")
+            print("[!] 真机注销未完全退回登录页，执行云端安全清理与本地数据清除...")
             manage_e2e_account.purge_e2e_user_db_only()
+            self.device.clear_app_data()
             self.device.launch_app(stop_first=True)
-            time.sleep(2)
+            time.sleep(3)
+            # 处理冷启动后的服务协议与隐私政策弹窗
+            for _ in range(5):
+                agree_btn = self.device.find_element(text="同意并继续")
+                if agree_btn:
+                    print("[*] 首次冷启动自动点击「同意并继续」...")
+                    self.device.click_element(agree_btn)
+                    time.sleep(2)
+                    break
+                time.sleep(0.5)
             shot = self.capture("after_fallback_purge")
             self.log("真机重置状态核验", "PASSED", "已恢复纯净未登录状态", shot)
 

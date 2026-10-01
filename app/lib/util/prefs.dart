@@ -64,7 +64,22 @@ class Prefs {
 
   static T? read<T>(String key) {
     if (_prefs == null) return null;
-    return _prefs!.get(key) as T?;
+    final isStringList = T == _typeOf<List<String>>() || T == _typeOf<List<String>?>();
+    if (isStringList) {
+      return _prefs!.getStringList(key) as T?;
+    }
+    final val = _prefs!.get(key);
+    if (val is List && isStringList) {
+      return val.cast<String>() as T?;
+    }
+    return val as T?;
+  }
+
+  static Type _typeOf<X>() => X;
+
+  static List<String>? getStringList(String key) {
+    if (_prefs == null) return null;
+    return _prefs!.getStringList(key);
   }
 
   static Future<bool> write(String key, dynamic value) async {

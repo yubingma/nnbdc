@@ -65,7 +65,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
   void _loadCachedVotedStatus() {
     final key = _getVotedPrefsKey();
     if (key == null) return;
-    final cached = Prefs.read<List<String>>(key);
+    final cached = Prefs.getStringList(key);
     if (cached != null && cached.isNotEmpty) {
       for (final id in cached) {
         _votedStatus[id] = true;
@@ -77,7 +77,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
     _votedStatus[requestId] = true;
     final key = _getVotedPrefsKey();
     if (key == null) return;
-    final cached = Prefs.read<List<String>>(key) ?? <String>[];
+    final cached = Prefs.getStringList(key) ?? <String>[];
     if (!cached.contains(requestId)) {
       final updated = List<String>.from(cached)..add(requestId);
       await Prefs.write(key, updated);
@@ -407,6 +407,193 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         ),
       ),
     );
+  }
+
+  Future<void> _deleteRequest(FeatureRequestVo request) async {
+    final adminUser = Global.getLoggedInUser();
+    if (adminUser == null || adminUser.isAdmin != true) {
+      ToastUtil.error('权限不足');
+      return;
+    }
+
+    final theme = context.themeConfig;
+    final isDark = context.isDarkMode;
+
+    final confirmed = await showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'dismiss_delete_dialog',
+      barrierColor: Colors.black.withValues(alpha: isDark ? 0.40 : 0.16),
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+          child: child,
+        );
+      },
+      pageBuilder: (dialogContext, anim1, anim2) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xB3181E27)
+                      : const Color(0x66FFFFFF),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isDark ? const Color(0x33FFFFFF) : const Color(0xB3FFFFFF),
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                      blurRadius: 28,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.20 : 0.12),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Color(0xFFEF4444),
+                            size: 19,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '删除需求',
+                                style: TextStyle(
+                                  color: theme.textPrimary,
+                                  fontSize: 16.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '此操作不可恢复',
+                                style: TextStyle(
+                                  color: theme.textMuted,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      '确定要删除需求“${request.title ?? ''}”吗？删除后将同时删除相关的投票和举报记录。',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: theme.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: TextButton(
+                              onPressed: () => Navigator.pop(dialogContext, false),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                foregroundColor: theme.textSecondary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(100),
+                                  side: BorderSide(
+                                    color: isDark ? const Color(0x2BFFFFFF) : const Color(0x33000000),
+                                    width: 0.8,
+                                  ),
+                                ),
+                              ),
+                              child: const Text(
+                                '取消',
+                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 42,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(dialogContext, true),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                backgroundColor: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.24 : 0.14),
+                                foregroundColor: const Color(0xFFEF4444),
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                side: BorderSide(
+                                  color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.45 : 0.28),
+                                  width: 0.8,
+                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                              ),
+                              child: const Text(
+                                '确认删除',
+                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final result = await Api.client.deleteFeatureRequest(request.id, adminUser.id);
+      if (!mounted) return;
+      if (result.success) {
+        setState(() {
+          _requests.removeWhere((r) => r.id == request.id);
+        });
+        ToastUtil.success('需求已删除');
+      } else {
+        ToastUtil.error(result.msg ?? '删除失败');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ToastUtil.error('删除失败');
+    }
   }
 
   void _showCreateDialog() {
@@ -1071,6 +1258,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
   Widget _buildRequestCard(FeatureRequestVo request) {
     final theme = context.themeConfig;
     final isDark = context.isDarkMode;
+    final isAdmin = Global.getLoggedInUser()?.isAdmin == true;
 
     final status = FeatureRequestStatusExt.fromString(request.status ?? 'VOTING');
 
@@ -1287,6 +1475,38 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                   ),
                 ),
                 const Spacer(),
+                if (isAdmin) ...[
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _deleteRequest(request),
+                      borderRadius: BorderRadius.circular(100),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              size: 13.5,
+                              color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.85 : 0.75),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              '删除',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.85 : 0.75),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
                 // 举报辅助操作：克制低调的浅灰幽灵微按钮，彻底消除满屏刺眼粉红大色块
                 Material(
                   color: Colors.transparent,

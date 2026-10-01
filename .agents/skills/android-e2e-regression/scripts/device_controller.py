@@ -137,6 +137,13 @@ class AndroidDeviceController:
         # 尝试消除任何系统启动弹窗
         self.dismiss_system_dialogs()
 
+    def clear_app_data(self):
+        """清除 App 本地应用数据与缓存，强制还原纯净初始安装状态"""
+        print(f"[*] 清除 App 本地应用数据: {APP_PACKAGE}...")
+        self._run_adb(["shell", "pm", "clear", APP_PACKAGE])
+        time.sleep(1)
+        self.grant_runtime_permissions()
+
     def stop_app(self):
         """停止 App"""
         self._run_adb(["shell", "am", "force-stop", APP_PACKAGE])

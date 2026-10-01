@@ -82,5 +82,17 @@ void main() {
       expect(newestSorted.first.id, 'req-new-cold');
       expect(newestSorted.last.id, 'req-old-hot');
     });
+
+    test('需求删除后从列表中同步移除', () {
+      final list = [
+        FeatureRequestVo('req-1', '需求1', '内容1', 'VOTING', 'FEATURE', 10, null, DateTime.now()),
+        FeatureRequestVo('req-2', '需求2', '内容2', 'VOTING', 'FEATURE', 20, null, DateTime.now()),
+      ];
+
+      expect(list.length, 2);
+      list.removeWhere((r) => r.id == 'req-1');
+      expect(list.length, 1);
+      expect(list.first.id, 'req-2');
+    });
   });
 }
