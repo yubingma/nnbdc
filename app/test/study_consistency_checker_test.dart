@@ -6,6 +6,123 @@ import 'package:nnbdc/util/study_consistency_checker.dart';
 /// 判定口径必须与服务端只读体检一致：某业务日内某词的
 /// 「今日评分流水条数」不得少于「learning_word.today_learned_times」。
 void main() {
+  group('judgeDuplicateGrade', () {
+    GradeLogSummary log(String id, int rating, double stability, DateTime at) =>
+        GradeLogSummary(id: id, rating: rating, stability: stability, createTime: at);
+
+    // 线上真实现场：electronic 的三条流水写在 17 毫秒内，其中两条稳定度完全相同
+    final base = DateTime(2026, 10, 1, 5, 23, 24, 36);
+
+    test('只有一条流水时不报', () {
+      expect(
+        judgeDuplicateGrade(
+          wordId: '15407',
+          spell: 'electronic',
+          logs: [log('a', 4, 5.8, base)],
+        ),
+        isNull,
+      );
+    });
+
+    test('相邻两条间隔 5 毫秒且稳定度相同：命中并带出现场数值', () {
+      final violation = judgeDuplicateGrade(
+        wordId: '15407',
+        spell: 'electronic',
+        logs: [
+          log('a', 4, 5.8, base),
+          log('b', 4, 5.8, base.add(const Duration(milliseconds: 5))),
+        ],
+      );
+
+      expect(violation, isNotNull);
+      expect(violation!.gapMilliseconds, 5);
+      expect(violation.sameStability, isTrue, reason: '两份流水稳定度一字不差，说明同一前态被算了两遍');
+      expect(violation.firstLogId, 'a');
+      expect(violation.secondLogId, 'b');
+    });
+
+    test('间隔一秒内的不同评分档也命中（同一作答被两条路径分别计分）', () {
+      final violation = judgeDuplicateGrade(
+        wordId: '15407',
+        spell: 'electronic',
+        logs: [
+          log('a', 4, 5.8, base),
+          log('b', 3, 2.4, base.add(const Duration(milliseconds: 900))),
+        ],
+      );
+
+      expect(violation, isNotNull);
+      expect(violation!.sameStability, isFalse, reason: '不同前态算出来的稳定度不同，要如实记录');
+    });
+
+    test('正常作答间隔（超过窗口）不报', () {
+      expect(
+        judgeDuplicateGrade(
+          wordId: '15407',
+          spell: 'electronic',
+          logs: [
+            log('a', 4, 5.8, base),
+            log('b', 4, 7.9, base.add(const Duration(seconds: 12))),
+          ],
+        ),
+        isNull,
+        reason: '人手正常作答的间隔远大于 2 秒，不能被当成重复计分',
+      );
+    });
+
+    test('三条流水里首尾很近但相邻的都正常时不报（只看相邻两条）', () {
+      // 中间隔着一次正常作答：首尾差 4 秒，但相邻间隔都超过窗口
+      expect(
+        judgeDuplicateGrade(
+          wordId: '15407',
+          spell: 'electronic',
+          logs: [
+            log('a', 4, 5.8, base),
+            log('b', 3, 2.4, base.add(const Duration(seconds: 3))),
+            log('c', 4, 7.9, base.add(const Duration(seconds: 6))),
+          ],
+        ),
+        isNull,
+        reason: '判定只取时间上相邻的两条，不能拿首尾去比',
+      );
+    });
+
+    test('三条流水里命中第一对相邻的就返回', () {
+      final violation = judgeDuplicateGrade(
+        wordId: '15407',
+        spell: 'electronic',
+        logs: [
+          log('a', 4, 5.8, base),
+          log('b', 3, 2.4, base.add(const Duration(milliseconds: 5))),
+          log('c', 4, 7.9, base.add(const Duration(seconds: 8))),
+        ],
+      );
+
+      expect(violation, isNotNull);
+      expect(violation!.secondLogId, 'b');
+    });
+
+    test('上报文本带规则标识、两条流水、时间差与客户端版本', () {
+      final violation = judgeDuplicateGrade(
+        wordId: '15407',
+        spell: 'electronic',
+        logs: [
+          log('log_first', 4, 5.8, base),
+          log('log_second', 4, 5.8, base.add(const Duration(milliseconds: 5))),
+        ],
+      )!;
+
+      final message = violation.toMessage('26092401');
+
+      expect(message.contains('duplicate_grade'), isTrue, reason: message);
+      expect(message.contains('log_first'), isTrue, reason: message);
+      expect(message.contains('log_second'), isTrue, reason: message);
+      expect(message.contains('间隔=5ms'), isTrue, reason: message);
+      expect(message.contains('26092401'), isTrue, reason: message);
+      expect(message.contains('电子'), isFalse, reason: '不得把学习内容带上服务端: $message');
+    });
+  });
+
   group('judgeStudyConsistency', () {
     test('进度与流水条数相等时自洽', () {
       expect(judgeStudyConsistency(progress: 3, actualLogCount: 3), isNull);

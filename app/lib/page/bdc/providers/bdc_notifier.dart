@@ -878,9 +878,21 @@ class BdcNotifier extends _$BdcNotifier {
         wordId: wordId,
         now: AppClock.now(),
       );
-      if (violation == null || _isDisposed) return;
-      // 同一词在本次会话里可能被反复呈现，这里交给上报侧去重与限流
-      await reportStudyConsistency(violation);
+      if (violation != null && !_isDisposed) {
+        // 同一词在本次会话里可能被反复呈现，这里交给上报侧去重与限流
+        await reportStudyConsistency(violation);
+      }
+      if (_isDisposed) return;
+      // 顺带抓"同一次作答被计分两次"的第一现场：它是上面那条不一致的上游成因，
+      // 只有当场留下时间差与两条流水的状态，将来才能直接定性而不用靠毫秒值反推
+      final duplicate = await checkWordDuplicateGrade(
+        userId: userId,
+        wordId: wordId,
+        now: AppClock.now(),
+      );
+      if (duplicate != null && !_isDisposed) {
+        await reportDuplicateGrade(duplicate);
+      }
     } catch (e, st) {
       Global.logger.w('核对本地数据自洽性失败（忽略）', error: e, stackTrace: st);
     }

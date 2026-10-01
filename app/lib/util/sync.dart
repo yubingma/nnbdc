@@ -168,15 +168,39 @@ void _reportSysErrorToServer(String errorMessage, [String errorType = 'CLIENT_SY
 /// 客户端数据不自洽的上报分类。服务端按分类独立告警，避免被同步失败等噪音压制。
 const String kClientDataInconsistentErrorType = 'CLIENT_DATA_INCONSISTENT';
 
-/// 每个业务日最多上报多少条数据不自洽，避免一个批量问题把服务端刷屏
+/// "同一次作答被计分两次"的上报分类（是"数据不自洽"的上游成因，单独归类便于第一时间定位）
+const String kClientDuplicateGradeErrorType = 'CLIENT_DUPLICATE_GRADE';
+
+/// 每个业务日最多上报多少条这类客户端数据问题，避免一个批量问题把服务端刷屏
 const int _maxConsistencyReportsPerDay = 10;
 
-/// 本次会话内已上报过的"规则|业务日|单词"，同一条不自洽只报一次
+/// 本次会话内已上报过的"规则|业务日|单词"，同一条问题只报一次
 final Set<String> _reportedConsistencyKeys = {};
 
 /// 今天已上报的条数与所属业务日（跨天自动重置）
 int _consistencyReportsToday = 0;
 String? _consistencyReportBusinessDay;
+
+/// 领取一次上报额度：按"规则|业务日|单词"去重、每个业务日有总量上限。
+/// 返回 null 表示这次不该报（重复或已达上限）。
+String? _takeConsistencyReportSlot(String ruleId, String wordId) {
+  final businessDay = DateUtils.businessDayStart(AppClock.now()).toIso8601String();
+  if (_consistencyReportBusinessDay != businessDay) {
+    _consistencyReportBusinessDay = businessDay;
+    _consistencyReportsToday = 0;
+    _reportedConsistencyKeys.clear();
+  }
+
+  final dedupeKey = '$ruleId|$businessDay|$wordId';
+  if (_reportedConsistencyKeys.contains(dedupeKey)) return null;
+  if (_consistencyReportsToday >= _maxConsistencyReportsPerDay) {
+    Global.logger.d('📊 [Consistency] 本业务日客户端数据问题上报已达上限，跳过: $dedupeKey');
+    return null;
+  }
+  _reportedConsistencyKeys.add(dedupeKey);
+  _consistencyReportsToday++;
+  return dedupeKey;
+}
 
 /// 把一个业务日内同一个词的数据不自洽上报服务端（只上报，绝不修数据）。
 ///
@@ -185,28 +209,32 @@ String? _consistencyReportBusinessDay;
 Future<void> reportStudyConsistency(StudyConsistencyViolation violation) async {
   final user = Global.getLoggedInUser();
   if (user == null) return;
-
-  final now = AppClock.now();
-  final businessDay = DateUtils.businessDayStart(now).toIso8601String();
-  if (_consistencyReportBusinessDay != businessDay) {
-    _consistencyReportBusinessDay = businessDay;
-    _consistencyReportsToday = 0;
-    _reportedConsistencyKeys.clear();
-  }
-
-  final dedupeKey = '${violation.rule.ruleId}|$businessDay|${violation.wordId}';
-  if (_reportedConsistencyKeys.contains(dedupeKey)) return;
-  if (_consistencyReportsToday >= _maxConsistencyReportsPerDay) {
-    Global.logger.d('📊 [Consistency] 本业务日数据不自洽上报已达上限，跳过: $dedupeKey');
+  if (_takeConsistencyReportSlot(violation.rule.ruleId, violation.wordId) == null) {
     return;
   }
-  _reportedConsistencyKeys.add(dedupeKey);
-  _consistencyReportsToday++;
 
   final version = await resolveClientVersion();
   _reportSysErrorToServer(
     violation.toMessage(version),
     kClientDataInconsistentErrorType,
+  );
+}
+
+/// 把"同一个词在极短时间内被写下两条评分流水"的现场上报服务端（只上报，不改数据）。
+///
+/// 这是"进度多一格、记录少一条"的上游成因：同一次作答被多条提交路径各处理了一次。
+/// 去重与限流规则同 [reportStudyConsistency]。
+Future<void> reportDuplicateGrade(DuplicateGradeViolation violation) async {
+  final user = Global.getLoggedInUser();
+  if (user == null) return;
+  if (_takeConsistencyReportSlot('duplicate_grade', violation.wordId) == null) {
+    return;
+  }
+
+  final version = await resolveClientVersion();
+  _reportSysErrorToServer(
+    violation.toMessage(version),
+    kClientDuplicateGradeErrorType,
   );
 }
 

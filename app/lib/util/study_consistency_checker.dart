@@ -60,6 +60,54 @@ class StudyConsistencyViolation {
   }
 }
 
+/// 同一个词在极短时间内被写下两条评分流水 —— 这是"同一次作答被计分两次"的第一现场，
+/// 也正是"进度多一格、记录少一条"的上游成因。把它单独做成一类上报，
+/// 是为了让将来再出现时能在事发现场留下证据，而不是只能靠毫秒值事后反推。
+class DuplicateGradeViolation {
+  const DuplicateGradeViolation({
+    required this.wordId,
+    required this.spell,
+    required this.firstLogId,
+    required this.secondLogId,
+    required this.firstRating,
+    required this.secondRating,
+    required this.firstStability,
+    required this.secondStability,
+    required this.gapMilliseconds,
+  });
+
+  /// 同一词的两条评分流水间隔小于这个毫秒数就认为"不是两次人工作答"
+  static const int duplicateWindowMilliseconds = 2000;
+
+  final String wordId;
+  final String spell;
+  final String firstLogId;
+  final String secondLogId;
+  final int firstRating;
+  final int secondRating;
+  final double firstStability;
+  final double secondStability;
+  final int gapMilliseconds;
+
+  /// 两条流水的记忆稳定度是否一字不差：若是，说明它们是**同一份前态**被算了两遍，
+  /// 而不是"从第一条接着算第二条"
+  bool get sameStability => (firstStability - secondStability).abs() < 1e-9;
+
+  String toMessage(String clientVersion) {
+    final buffer = StringBuffer()
+      ..writeln('规则=duplicate_grade（同一词在 $duplicateWindowMilliseconds 毫秒内出现两条评分流水）')
+      ..writeln('单词=$spell ($wordId)')
+      ..writeln('先写入: id=$firstLogId, rating=$firstRating, stability=$firstStability')
+      ..writeln('后写入: id=$secondLogId, rating=$secondRating, stability=$secondStability')
+      ..writeln('间隔=${gapMilliseconds}ms, 两条稳定度相同=$sameStability')
+      ..writeln('期望值: 同一个词在 $duplicateWindowMilliseconds 毫秒内只应有一条评分流水')
+      ..writeln('客户端版本=$clientVersion')
+      ..write('说明: 人手不可能在这个间隔内完成两次作答，说明同一次作答被多条提交路径'
+          '各处理了一次；它会让环节进度比学习记录多一格，进而使该词被夹在最后一个环节反复出题');
+    return buffer.toString();
+  }
+}
+
 /// 纯判定：给定"记录的今日进展"与"今天真实流水条数"，算出违反了哪条规则。
 /// 抽成纯函数是为了让判定口径能被单元测试直接覆盖。
 StudyConsistencyRule? judgeStudyConsistency({
@@ -116,8 +164,7 @@ StudyConsistencyViolation? judgeTodayWord({
   );
 }
 
-/// 扫描"今天已经进入学习队列的词"（batch_id > 0），列出所有不自洽的词。
-///
+/// 扫描"今天已经进入学习队列的词"（batch_id > 0），列出所有不自洽的词。///
 /// 供用户可见的"数据健康检查"页面体检使用：这些词才是用户当下会遇到的那一批，
 /// 只查它们既够用又便宜，不需要扫全库。只读，不改任何数据。
 Future<List<StudyConsistencyViolation>> scanTodayStudyConsistency({
@@ -150,6 +197,80 @@ Future<List<StudyConsistencyViolation>> scanTodayStudyConsistency({
     if (violation != null) violations.add(violation);
   }
   return violations;
+}
+
+/// 判定"极短间隔重复计分"时用到的单条流水摘要（把判定与 Drift 实体解耦）
+class GradeLogSummary {
+  const GradeLogSummary({
+    required this.id,
+    required this.rating,
+    required this.stability,
+    required this.createTime,
+  });
+
+  final String id;
+  final int rating;
+  final double stability;
+  final DateTime createTime;
+}
+
+/// 从"某个词今天的评分流水（按时间正序）"里找出极短间隔的两条，判定为"同一次作答被计分两次"。
+///
+/// 抽成纯函数：判定口径可被单元测试直接覆盖，也不依赖数据库。
+/// 只取**时间上相邻**的两条比较，不拿首尾去比——中间隔着别的作答就不能算重复。
+DuplicateGradeViolation? judgeDuplicateGrade({
+  required String wordId,
+  required String spell,
+  required List<GradeLogSummary> logs,
+}) {
+  if (logs.length < 2) return null;
+  for (var i = 1; i < logs.length; i++) {
+    final previous = logs[i - 1];
+    final current = logs[i];
+    final gap = current.createTime.difference(previous.createTime).inMilliseconds;
+    if (gap >= 0 && gap < DuplicateGradeViolation.duplicateWindowMilliseconds) {
+      return DuplicateGradeViolation(
+        wordId: wordId,
+        spell: spell,
+        firstLogId: previous.id,
+        secondLogId: current.id,
+        firstRating: previous.rating,
+        secondRating: current.rating,
+        firstStability: previous.stability,
+        secondStability: current.stability,
+        gapMilliseconds: gap,
+      );
+    }
+  }
+  return null;
+}
+
+/// 读取某个词今天的评分流水，判定是否存在"极短间隔的两条"。
+///
+/// 只读：只查 `learning_log` 与 `word`，不改任何数据。
+Future<DuplicateGradeViolation?> checkWordDuplicateGrade({
+  required String userId,
+  required String wordId,
+  required DateTime now,
+}) async {
+  final db = MyDatabase.instance;
+  final logs = await db.learningLogsDao
+      .getInBusinessDay(userId, wordIds: [wordId], instant: now);
+  if (logs.length < 2) return null;
+
+  final word = await db.wordsDao.getWordById(wordId);
+  return judgeDuplicateGrade(
+    wordId: wordId,
+    spell: (word != null && word.spell.isNotEmpty) ? word.spell : wordId,
+    logs: logs
+        .map((l) => GradeLogSummary(
+              id: l.id,
+              rating: l.rating,
+              stability: l.stability,
+              createTime: l.createTime,
+            ))
+        .toList(growable: false),
+  );
 }
 
 /// 修复结果
