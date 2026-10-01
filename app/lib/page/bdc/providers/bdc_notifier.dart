@@ -683,7 +683,12 @@ class BdcNotifier extends _$BdcNotifier {
       // 换环节（含从本组小结回来）时清掉"本环节已出过题"的记录：
       // 那份记录只服务于当前环节的 x/y 指示，留着会让下一个环节的分子偏大
       //（脏数据也只是显示问题：分子会被夹在 [1, 分母] 内）
-      if (oldStudyStep != newStudyStep) {
+      //
+      // 本会话呈现的第一个词（oldStudyStep == null）不算"换环节"：从今日计划页重新进入学习页时
+      // notifier 是全新的、studyStep 还是空的，若照清不误，用户回来就会看到 x/y 从 7/10 掉回 1/10、
+      // 本环节答错待重练的词也不再标"本环节重测"。记录本来就按（组号, 轨道名, 环节序号）分桶，
+      // 真正的环节切换读的是另一个桶，无须靠清空来隔离。
+      if (oldStudyStep != null && oldStudyStep != newStudyStep) {
         unawaited(PhasePresentationTracker.clear());
       }
       final asrInitStopwatch = Stopwatch()..start();

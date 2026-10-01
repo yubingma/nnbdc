@@ -21,6 +21,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/phase_presentation_tracker.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/study_config.dart';
@@ -2607,6 +2608,119 @@ void main() {
     expect(state.groupStepPosition, 0);
     expect(state.groupStepTotal, 0);
     expect(state.groupStepHint, null);
+  });
+
+  test('BdcNotifier - 从今日计划页重新进入学习页：本环节出题记录与"本环节重测"不得丢', () async {
+    final now = AppClock.now();
+    // 额外插入第二个单词 word_2（本组 2 个词）
+    await db.into(db.words).insert(Word(
+          id: 'word_2',
+          spell: 'banana',
+          popularity: 90,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.meaningItems).insert(MeaningItem(
+          id: 'mim_2',
+          wordId: 'word_2',
+          dictId: Global.commonDictId,
+          ciXing: 'n.',
+          meaning: '香蕉',
+          popularity: 90,
+          ownerId: Global.sysUserId,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.dictWords).insert(DictWord(
+          dictId: 'mock_dict_1',
+          wordId: 'word_2',
+          seq: 2,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.learningWords).insert(LearningWord(
+          userId: 'test_user_id',
+          wordId: 'word_2',
+          addTime: now,
+          addDay: 1,
+          batchId: 1,
+          lastLearningDate: AppClock.today(),
+          stability: 0.0,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          learningOrder: 2,
+          createTime: now,
+          updateTime: now,
+          isExtra: false,
+        ));
+    // 上个会话：word_1 在本环节被答错（今天最近一次评分 again → 拼写标红），排在队尾待重测
+    await db.learningLogsDao.saveEntity(
+      LearningLog(
+        id: 'log_word_1_again',
+        userId: testUser.id,
+        wordId: 'word_1',
+        rating: FsrsRating.again.value,
+        stability: 0.4,
+        difficulty: 3.05,
+        elapsedDays: 0,
+        scheduledDays: 1,
+        createTime: now,
+        updateTime: now,
+      ),
+      false,
+    );
+    StudyCacheManager().clear();
+    // 上个会话：本环节已经把这两个词出过题（word_2 是没作答就退出时留下的）
+    await PhasePresentationTracker.markPresented(
+        groupNo: 1, trackName: '新词测评', stepIndex: 0, wordId: 'word_1');
+    await PhasePresentationTracker.markPresented(
+        groupNo: 1, trackName: '新词测评', stepIndex: 0, wordId: 'word_2');
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    // 全新 notifier（等价于从今日计划页重新进入学习页）
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    await _waitUntil(container, (s) => s.groupStepTotal > 0);
+
+    var state = container.read(bdcNotifierProvider);
+    expect(state.groupStepNo, 1);
+    expect(state.groupStepTrackName, '新词测评');
+    expect(state.word!.id, 'word_2', reason: '答错待重练的 word_1 排到队尾，先呈现未作答的 word_2');
+    expect(state.groupStepPosition, 2,
+        reason: '重新进入学习页不是"换环节"，x/y 不能从 2/2 掉回 1/2');
+    expect(state.groupStepTotal, 2);
+    expect(state.isGroupStepRetry, true,
+        reason: 'word_2 本环节已出过题，重新进来仍应标"本环节重测"');
+    expect(
+      PhasePresentationTracker.presentedWordIds(
+              groupNo: 1, trackName: '新词测评', stepIndex: 0)
+          .length,
+      2,
+      reason: '本环节已出过题的记录必须保留（word_1 不能被清掉）',
+    );
+
+    // 继续往下走 → 轮到答错的 word_1 重测：拼写标红 + 仍标"本环节重测"
+    notifier.acceptAnswerForTesting(FsrsRating.good);
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
+    // 等指示器按新词重算落定（word_2 已走完本环节，分母收敛为 1）
+    await _waitUntil(
+        container, (s) => s.word?.id == 'word_1' && s.groupStepTotal == 1);
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.isLatestAnswerWrongToday, isTrue, reason: '今天最近一次评分 again → 拼写标红');
+    expect(state.isGroupStepRetry, true,
+        reason: '答错的词回到本环节队尾重测，必须标"本环节重测"');
   });
 
   test('BdcNotifier - Ch2En环节发音通过后残余低分ASR帧不应覆盖通关评分', () async {
