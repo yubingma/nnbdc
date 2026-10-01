@@ -721,27 +721,7 @@ class PureE2ERegressionRunner:
                     time.sleep(0.3)
                     continue
 
-            # 8. 选择题模式处理（限定在卡片选项区域 1250~1800，且严禁匹配纯数字与底栏状态）
-            choice_candidates = [
-                n for n in nodes
-                if n.get("clickable") and n.get("bounds")
-                and 1250 <= n.get("center", (0, 0))[1] <= 1800
-                and not (n.get("text") or "").strip().isdigit()
-                and n.get("label") not in ("不认识", "再学学", "说释义", "说发音", "显示翻译", "默写", "掌握", "报错", "回看")
-                and not any(k in (n.get("text") or "") or k in (n.get("label") or "") for k in ("测评结果", "下次复习", "记忆历史", "关闭"))
-            ]
-
-            if choice_candidates:
-                target_choice = choice_candidates[-1]
-                self.device.click_element(target_choice)
-                time.sleep(0.4)
-                nxt = self.device.find_element(text="下一词")
-                if nxt:
-                    self.device.click_element(nxt)
-                    time.sleep(0.3)
-                continue
-
-            # 9. 初见卡片：点「不认识」或「再学学」
+            # 8. 测评与初见卡片：优先点「不认识」或「再学学」快速推进
             dont_know_btn = self.device.find_element(text="不认识", nodes=nodes)
             study_again_btn = self.device.find_element(text="再学学", nodes=nodes)
 
@@ -755,6 +735,31 @@ class PureE2ERegressionRunner:
                 continue
             elif study_again_btn:
                 self.device.click_element(study_again_btn)
+                time.sleep(0.4)
+                nxt = self.device.find_element(text="下一词")
+                if nxt:
+                    self.device.click_element(nxt)
+                    time.sleep(0.3)
+                continue
+
+            # 9. 选择题模式处理（限定在卡片选项区域 1250~1800，且严禁匹配辅助工具按钮、纯数字与底栏状态）
+            excluded_labels = (
+                "不认识", "再学学", "说释义", "说发音", "显示翻译", "默写", "掌握", "报错", "回看",
+                "拼写", "提示", "清除", "选择题"
+            )
+            choice_candidates = [
+                n for n in nodes
+                if n.get("clickable") and n.get("bounds")
+                and 1250 <= n.get("center", (0, 0))[1] <= 1800
+                and not (n.get("text") or "").strip().isdigit()
+                and n.get("label") not in excluded_labels
+                and n.get("text") not in excluded_labels
+                and not any(k in (n.get("text") or "") or k in (n.get("label") or "") for k in ("测评结果", "下次复习", "记忆历史", "关闭"))
+            ]
+
+            if choice_candidates:
+                target_choice = choice_candidates[-1]
+                self.device.click_element(target_choice)
                 time.sleep(0.4)
                 nxt = self.device.find_element(text="下一词")
                 if nxt:
