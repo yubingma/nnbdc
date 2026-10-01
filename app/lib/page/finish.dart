@@ -242,10 +242,11 @@ class FinishPageState extends State<FinishPage> {
     }
 
     if (!mounted) return;
-    // 守护兽养成状态：只读，加载失败不阻塞完成页其余内容
+    // 守护兽养成状态：只读，加载失败不阻塞完成页其余内容。
+    // 该功能尚未对外发布（入口只对管理员开放），因此非管理员不必白查一次库。
     try {
       final user = Global.getLoggedInUser();
-      if (user != null) {
+      if (user != null && user.isAdmin == true) {
         petState = await PetGameBo().loadState(user.id);
       }
     } catch (e, stackTrace) {
@@ -293,6 +294,9 @@ class FinishPageState extends State<FinishPage> {
       );
     }
 
+    // 记忆守护兽尚未对外发布：只对管理员开放，用于真机验收，普通用户看不到入口。
+    final isAdmin = Global.getLoggedInUser()?.isAdmin == true;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 22, 16, 28),
       child: Column(
@@ -303,8 +307,10 @@ class FinishPageState extends State<FinishPage> {
             _buildMetricsCard(themeConfig),
             const SizedBox(height: 14),
           ],
-          _buildPetCard(themeConfig),
-          const SizedBox(height: 14),
+          if (isAdmin) ...[
+            _buildPetCard(themeConfig),
+            const SizedBox(height: 14),
+          ],
           _buildActionGroup(themeConfig),
         ],
       ),

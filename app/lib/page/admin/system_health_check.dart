@@ -62,10 +62,34 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       'step': 13,
       'category': 'sentence_audio_integrity'
     },
+    {
+      'id': 14,
+      'title': '学习进度与学习记录一致性（只读）',
+      'step': 14,
+      'category': 'learning_progress_inconsistent',
+      // 只读体检：只列出不一致的明细，不在管理后台改任何用户数据
+      'readonly': true
+    },
     {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
     {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
     {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
   ];
+
+  /// 该检查项是否只读（只诊断、不提供修复入口）
+  static bool _isReadonlyCategory(String category) {
+    return _checkItems.any((item) =>
+        item['category'] == category && item['readonly'] == true);
+  }
+
+  /// 可自动修复的问题类别（只读体检项不在其中：服务端没有对应修复动作）
+  List<String> get _autoFixableCategories {
+    if (_checkResult == null) return const [];
+    return _checkResult!.issues
+        .map((issue) => issue.category)
+        .where((category) => !_isReadonlyCategory(category))
+        .toSet()
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +103,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
         actions: [
-          if (_checkResult != null && _checkResult!.hasIssues)
+          // 只有存在可修复项时才给修复入口，避免只读体检的发现被当成"能一键修好"
+          if (_autoFixableCategories.isNotEmpty)
             IconButton(
               onPressed: _isRunning ? null : _runAutoFix,
               icon: const Icon(Icons.build, color: Colors.white),
@@ -569,8 +594,23 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      // 修复按钮
-                      if (relatedIssues.isNotEmpty) ...[
+                      // 只读体检项：明确说明不提供修复入口，避免误以为可以一键修好
+                      if (_isReadonlyCategory(category)) ...[
+                        Expanded(
+                          child: Text(
+                            '只读体检：仅列出不一致明细，不在管理后台修改用户数据',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ],
+                      // 修复按钮（只读体检项不显示）
+                      if (relatedIssues.isNotEmpty &&
+                          !_isReadonlyCategory(category)) ...[
                         TextButton(
                           onPressed: () =>
                               _fixSystemIssues(context, relatedIssues),
@@ -660,6 +700,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
 
       // 13. 检查例句发音完整性
       await _checkSentenceAudioIntegrity(result, 13);
+
+      // 14. 检查学习进度与学习记录一致性（只读）
+      await _checkLearningProgressConsistency(result, 14);
 
       // 8. 检查网络连接
       await _checkNetworkConnectivity(result, 8);
@@ -1031,6 +1074,57 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
+  /// 只读检查：学习进度与学习记录是否自洽。
+  /// 判定口径由服务端给出：某业务日内某词的学习记录条数 ≤ 该词记录的今日环节进度 ≤ 当前轨道长度。
+  /// 这里只列出明细供排查，不提供修复入口——本项目禁止在客户端静默修数据。
+  Future<void> _checkLearningProgressConsistency(
+      SystemHealthResult result, int step) async {
+    setState(() {
+      _checkStates[step] = false; // 进行中
+    });
+
+    try {
+      final apiResult = await Api.client.checkLearningProgressConsistency();
+
+      if (apiResult.success && apiResult.data != null) {
+        final data = apiResult.data!;
+
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
+          for (final issue in data.issues) {
+            result.addIssue(issue.type, issue.description,
+                'learning_progress_inconsistent');
+          }
+          setState(() {
+            _checkStates[step] = 'failed';
+          });
+        } else {
+          setState(() {
+            _checkStates[step] = true; // 通过
+          });
+        }
+      } else {
+        result.addIssue('学习进度与学习记录一致性', 'API调用失败: ${apiResult.msg}',
+            'learning_progress_inconsistent');
+        setState(() {
+          _checkStates[step] = 'failed';
+        });
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('检查学习进度与学习记录一致性时出错: $e',
+          error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '学习进度与学习记录一致性',
+        '检查学习进度与学习记录一致性时出错: $e',
+        'learning_progress_inconsistent',
+        stackTrace: stackTrace.toString(),
+        logMessage: '学习进度与学习记录一致性检查: $e',
+      );
+      setState(() {
+        _checkStates[step] = 'failed';
+      });
+    }
+  }
+
   Future<void> _checkMissingUserDicts(
       SystemHealthResult result, int step) async {
     setState(() {
@@ -1360,13 +1454,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     _showSystemFixProgressDialog();
 
     try {
-      // 收集需要修复的问题类型
-      final issueTypes = <String>[];
-      for (final issue in _checkResult!.issues) {
-        if (!issueTypes.contains(issue.category)) {
-          issueTypes.add(issue.category);
-        }
-      }
+      // 需要修复的问题类型（只读体检项不参与修复，服务端也没有对应的修复动作）
+      final issueTypes = _autoFixableCategories;
 
       if (issueTypes.isEmpty) {
         // 关闭进度对话框

@@ -242,6 +242,14 @@ public class AdminController {
         return Result.success(systemHealthCheckBo.checkMissingUserDicts());
     }
 
+    /**
+     * 只读检查：学习进度与学习记录是否自洽（不修任何数据）。
+     */
+    @GetMapping("/admin/checkLearningProgressConsistency.do")
+    public Result<SystemHealthCheckResult> checkLearningProgressConsistency() {
+        return Result.success(systemHealthCheckBo.checkLearningProgressConsistency());
+    }
+
     @PostMapping("/admin/autoFixSystemIssues.do")
     public Result<SystemHealthFixResult> autoFixSystemIssues(
             @RequestParam("issueTypes") List<String> issueTypes

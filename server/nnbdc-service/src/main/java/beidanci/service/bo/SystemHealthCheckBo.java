@@ -136,6 +136,126 @@ public class SystemHealthCheckBo {
 
     
 
+    /** 一次审计最多返回多少条不一致明细，避免明细过多把响应撑爆 */
+    private static final int LEARNING_PROGRESS_AUDIT_LIMIT = 200;
+
+    /** 审计窗口只回看最近这么久，兜住异常的 last_learning_date（epoch 或超前写入） */
+    private static final int LEARNING_PROGRESS_AUDIT_MAX_LOOKBACK_HOURS = 72;
+
+    /**
+     * 检查「今日环节进度」与「今日评分流水」是否自洽（只读，不修任何数据）。
+     *
+     * <p>判定两条不变式：
+     * <ol>
+     * <li>今天某词的学习记录条数 &lt;= 该词记录的今日环节进度（today_learned_times）。
+     * 条数多出来说明同一次作答被重复计分。</li>
+     * <li>今日环节进度 &lt;= 该用户当前配置下的轨道长度上限。进度超过上限说明环节被多推进了，
+     * 客户端会把越界的环节编号夹回最后一个环节，于是该词会带着「答案已揭晓」的界面状态被重复出题，
+     * 这正是用户反馈「答对了却卡住、只能强行切走」的成因。</li>
+     * </ol>
+     *
+     * <p>两条都成立时数据自洽。第 2 条取「新词轨道」与「复习轨道」中较长的一条作上限：
+     * 只要进度超过了两条中更长的那个，无论该词今天走哪条轨道都必然是越界的，不会误报。
+     *
+     * <p>「今天」的窗口按用户自己的学习时刻锚定：取该用户最近一条学习记录的写入时刻往前 24 小时。
+     * 不用固定回看 36 小时，那样会把更早一个业务日的流水算进「今天」；
+     * 而评分流水的 create_time 由服务端写入，无法直接换算各用户的当地业务日。
+     */
+    public SystemHealthCheckResult checkLearningProgressConsistency() {
+        List<SystemHealthIssue> issues = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        try {
+            String sql = "SELECT l.user_id, u.nick_name, l.word_id, w.spell, "
+                    + "       count(*) AS today_log_count, lw.today_learned_times, "
+                    + "       GREATEST(COALESCE(nullif(new_max.max_len, 0), 0), "
+                    + "                COALESCE(nullif(rev_max.max_len, 0), 0)) AS track_len_max "
+                    + "FROM learning_log l "
+                    + "JOIN learning_word lw ON lw.user_id = l.user_id AND lw.word_id = l.word_id "
+                    + "LEFT JOIN \"user\" u ON u.id = l.user_id "
+                    + "LEFT JOIN word w ON w.id = l.word_id "
+                    + "JOIN (SELECT user_id, MAX(create_time) AS anchor FROM learning_log GROUP BY user_id) a "
+                    + "  ON a.user_id = l.user_id "
+                    + "LEFT JOIN ( "
+                    + "    SELECT user_id, MAX(check_len + correct_len + wrong_len) AS max_len "
+                    + "    FROM ( "
+                    + "        SELECT user_id, "
+                    + "               MAX(CASE WHEN group_name = 'check' THEN 1 ELSE 0 END) AS check_len, "
+                    + "               SUM(CASE WHEN group_name = 'correct' THEN 1 ELSE 0 END) AS correct_len, "
+                    + "               SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len "
+                    + "        FROM user_study_step "
+                    + "        WHERE scope = 'new' AND state = 'Active' "
+                    + "        GROUP BY user_id "
+                    + "    ) t GROUP BY user_id "
+                    + ") new_max ON new_max.user_id = l.user_id "
+                    + "LEFT JOIN ( "
+                    + "    SELECT user_id, MAX(check_len + correct_len + wrong_len) AS max_len "
+                    + "    FROM ( "
+                    + "        SELECT user_id, "
+                    + "               MAX(CASE WHEN group_name = 'check' THEN 1 ELSE 0 END) AS check_len, "
+                    + "               SUM(CASE WHEN group_name = 'correct' THEN 1 ELSE 0 END) AS correct_len, "
+                    + "               SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len "
+                    + "        FROM user_study_step "
+                    + "        WHERE scope = 'review' AND state = 'Active' "
+                    + "        GROUP BY user_id "
+                    + "    ) t GROUP BY user_id "
+                    + ") rev_max ON rev_max.user_id = l.user_id "
+                    + "WHERE l.create_time >= a.anchor - make_interval(hours => 24) "
+                    + "  AND l.create_time >= now() - make_interval(hours => :maxLookbackHours) "
+                    + "GROUP BY l.user_id, u.nick_name, l.word_id, w.spell, lw.today_learned_times, "
+                    + "         new_max.max_len, rev_max.max_len "
+                    + "HAVING count(*) > lw.today_learned_times "
+                    + "    OR lw.today_learned_times > "
+                    + "       GREATEST(COALESCE(new_max.max_len, 0), COALESCE(rev_max.max_len, 0)) "
+                    + "ORDER BY count(*) - lw.today_learned_times DESC, l.user_id, l.word_id "
+                    + "LIMIT :auditLimit";
+
+            MapSqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("maxLookbackHours", LEARNING_PROGRESS_AUDIT_MAX_LOOKBACK_HOURS)
+                    .addValue("auditLimit", LEARNING_PROGRESS_AUDIT_LIMIT);
+
+            List<SystemHealthIssue> found = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) ->
+                    buildLearningProgressIssue(
+                            rs.getString("user_id"),
+                            rs.getString("nick_name"),
+                            rs.getString("word_id"),
+                            rs.getString("spell"),
+                            rs.getInt("today_log_count"),
+                            rs.getInt("today_learned_times"),
+                            rs.getInt("track_len_max")));
+
+            issues.addAll(found);
+        } catch (DataAccessException e) {
+            errors.add("检查学习进度与学习记录一致性时出错: " + e.getMessage());
+        }
+
+        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
+    /**
+     * 把一条审计结果整理成给人看的说明。只表达「哪里对不上」，不做任何修复判断。
+     * 抽出静态方法是为了让判定口径可被单元测试直接覆盖。
+     */
+    static SystemHealthIssue buildLearningProgressIssue(String userId, String nickName, String wordId,
+            String spell, int todayLogCount, int todayLearnedTimes, int trackLenMax) {
+        String wordLabel = (spell == null || spell.isEmpty()) ? wordId : spell;
+        StringBuilder desc = new StringBuilder();
+        desc.append("用户「").append(nickName == null || nickName.isEmpty() ? userId : nickName)
+                .append("」(").append(userId).append(") 的单词 ").append(wordLabel)
+                .append(" (").append(wordId).append(")：今日评分流水 ")
+                .append(todayLogCount).append(" 条，记录的今日环节进度 ")
+                .append(todayLearnedTimes).append("，当前配置下轨道长度上限 ")
+                .append(trackLenMax);
+        if (todayLogCount > todayLearnedTimes) {
+            desc.append("。流水多于进度，说明同一次作答被重复计分");
+        }
+        if (todayLearnedTimes > trackLenMax) {
+            desc.append("。进度超过轨道长度，环节被多推进，该词会被夹在最后一个环节反复出题");
+        }
+        return new SystemHealthIssue("learning_progress_inconsistent", desc.toString(),
+                "learning_progress_inconsistent");
+    }
+
     /**
      * 检查数据库版本一致性
      */
@@ -401,7 +521,10 @@ public class SystemHealthCheckBo {
                     case "missing_raw_word_dict", "missing_user_dict" -> fixedCount += fixMissingUserDicts(fixed);
                     case "word_image_integrity" -> fixedCount += fixWordImageIntegrity(fixed);
                     case "sentence_audio_integrity" -> fixedCount += fixSentenceAudioIntegrity(fixed);
-                    default -> errors.add("未知的问题类型: " + issueType);
+                    // 没有对应修复动作的问题类型（例如只读体检项 learning_progress_inconsistent）：
+                    // 无事可做，静默跳过。报"未知类型"会把只读体检的发现误报成修复失败。
+                    default -> {
+                    }
                 }
                 // fixedCount += fixLearningProgress(fixed);
                             }

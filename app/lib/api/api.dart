@@ -712,6 +712,10 @@ abstract class RestClient {
   @GET("/admin/checkMissingUserDicts.do")
   Future<Result<SystemHealthCheckResult>> checkMissingUserDicts();
 
+  /// 只读检查：学习进度与学习记录是否自洽（服务端不修任何数据）
+  @GET("/admin/checkLearningProgressConsistency.do")
+  Future<Result<SystemHealthCheckResult>> checkLearningProgressConsistency();
+
   @POST("/admin/autoFixSystemIssues.do")
   @FormUrlEncoded()
   Future<Result<SystemHealthFixResult>> autoFixSystemIssues(

@@ -1157,7 +1157,9 @@
                 <strong>Flutter 实现：</strong><code>app/lib/widget/guardian_pet.dart</code>，组件名 <code>GuardianPet</code>，<code>flutter analyze</code> 零问题；情绪枚举 <code>PetMood</code> 同时决定光核脉冲周期与整体饱和/亮度。<br/>
                 <strong>分层素材（动画的前提）：</strong>运行时素材在 <code>app/assets/images/pet/</code> 下的 <code>layers/</code>（<code>身体层</code> 呼吸与挤压、<code>眼睛层</code> 眨眼与情绪、<code>光核层</code> 发光脉冲）与 <code>moods/</code>（五张情绪图），由 <code>tools/pet_assets/export_layers.py</code> 拆分，并带「叠层 = 原图」的像素级校验（实测通道差 0）。<br/>
                 <strong>⚠️ 素材必须分两处放：</strong>Flutter 只打包 <code>app/assets/</code>（<code>app/pubspec.yaml</code> 声明的是 <code>assets/images/</code>），而设计稿、三视图、五阶总览等源图留在项目根的 <code>assets/images/pet/</code>。运行时用到的图放到根 <code>assets/</code> 会在真机上显示成「资源缺失」的破图——这个坑已经踩过一次。<br/>
-                <strong>⚠️ 同一类坑还有两处：</strong>① 情绪图在 <code>app/assets/images/pet/moods/</code> 子目录下，代码若按 <code>assets/images/pet/mood_xxx.png</code> 去取会全部加载失败，且编译期毫无提示，只有真机跑到这一屏才报错；② 新增资源必须在<strong>完全重新构建</strong>（或热重启）后才会进包，热重载不扫资源清单。现已加测试 <code>app/test/guardian_pet_assets_test.dart</code> 把「代码引用的资源是否存在」「情绪图与枚举是否一一对应」钉死在测试阶段。<br/>
+                <strong>⚠️ 同一类坑还有三处：</strong>① 情绪图在 <code>app/assets/images/pet/moods/</code> 子目录下，代码若按 <code>assets/images/pet/mood_xxx.png</code> 去取会全部加载失败，且编译期毫无提示，只有真机跑到这一屏才报错；② 新增资源必须在<strong>完全重新构建</strong>（或热重启）后才会进包，热重载不扫资源清单；③ <strong>Flutter 的资源目录声明只递归一层</strong>——<code>assets/images/</code> 只覆盖它直接包含的文件与「一层子目录里直接包含的文件」，<code>images/pet/moods/</code> 属于第二层，<strong>必须在 pubspec 里单独声明</strong>，否则整个目录被静默跳过。<br/>
+                <strong>③ 的排查过程值得记：</strong>现象是代码路径已正确、文件确实存在、<code>ls</code> 能看到，但真机仍报 <code>Asset not found</code>；对照发现同样位于 <code>assets/images/</code> 下的 <code>scenes/</code> 能进包，而 <code>pet/</code> 不能——差别正是 <code>scenes/</code> 在 pubspec 里被单独声明过。最终确认方式是 <code>flutter build bundle</code> 后直接查打包产物与 <code>.dart_tool/flutter_build/*/flutter_assets.d</code> 资源清单里有没有该目录，而不是靠肉眼看界面。<br/>
+                <strong>这件事的教训：</strong>读文件系统的测试<b>验证不了资源能否随包发布</b>。现有的 <code>app/test/guardian_pet_assets_test.dart</code> 已补一条断言，直接检查 pubspec 里是否声明了 <code>assets/images/pet/moods/</code> 与 <code>layers/</code>。<br/>
                 <strong>六件动效参数：</strong>呼吸 2.6s（位移 ±2.2px、缩放 1→0.992，<code>easeInOut</code>）；眨眼 140ms（眼睛层透明度 1→0→1，间隔 3~6s 随机，固定间隔会显机械）；戳一下 380ms（1.07/0.94 → 0.96/1.05 → 1，<code>easeOutBack</code>）；情绪切换 300ms 交叉淡入；光核脉冲 2.6s（透明度 0.45→0.9、缩放 0.94→1.06，与呼吸同相位）；睡姿 6s 循环 + 饱和度 0.5 + 亮度 0.86。<br/>
                 <strong>为什么要分层：</strong>整张 PNG 做缩放会像贴在屏幕上的贴纸；分层后身体、眼睛、光核各有自己的节奏，才有「活着」的感觉。
               </div>
@@ -1169,6 +1171,17 @@
                 <strong>实现位置：</strong>规则与投喂动作 <code>app/lib/api/bo/pet_game_bo.dart</code>；完成页卡片与投喂交互 <code>app/lib/page/finish.dart</code>；养成状态表 <code>app/lib/db/table.dart</code> 的 <code>UserPetStates</code>。<br/>
                 <strong>端云同步：</strong>新增本地表 <code>userPetStates</code> ↔ 服务端表 <code>user_pet_state</code>，四处登记点都已补（表名双向映射 <code>app/lib/util/utils.dart</code>、同步分发与批量删除 <code>app/lib/util/sync.dart</code> 四处、服务端 <code>UserDbSyncBo</code> 的 <code>switch</code>）；建表脚本 <code>server/db_upgrade/v69_add_user_pet_state.sql</code>。<br/>
                 <strong>设计取舍：</strong>养成状态<strong>每个用户一行</strong>、只存「累计投喂次数 + 阶段下标」，不记每一次投喂的流水——投喂的价值全在「次数 → 阶段」这个映射上，而泡泡的收支流水已由 <code>user_cow_dung_log</code> 完整记录，再记一份只会让同步体积膨胀。另外，投喂<strong>不写 <code>user_oper</code></strong>：服务端 <code>oper_type</code> 是 <code>VARCHAR(20)</code> 的受控取值，新增类型要两端同时改，而这件事并不需要第二份流水。
+              </div>
+
+              <div class="section-title">发版体积：宠物素材从 3.0 MB 压到 80 KB</div>
+              <div class="principle-box" style="background: rgba(251, 191, 36, 0.04); border-color: rgba(251, 191, 36, 0.16); color: #fde68a;">
+                <strong style="color: var(--accent-amber);">真正的大头不是色彩精度，是分辨率过剩。</strong>素材原始高度 1116px，而完成页里宠物只显示约 116 逻辑像素高，等于按 9 倍高度存储。压到显示高度的 3 倍（348px）再量化成 256 色，8 张图从 <code>3082 KB → 80 KB</code>（省 97%），在 3 倍屏下与真彩原图的色差平均 4.4、99.9 分位 23，肉眼不可辨。<br/>
+                <strong>压缩必须同时处理对三件事，错一个就肉眼可见：</strong><br/>
+                ① <strong>透明度不能丢。</strong>必须直接对 RGBA 调 <code>quantize(FASTOCTREE)</code>，PIL 会把 alpha 一并纳入分色。绝不能走「RGB 取色 + <code>putalpha</code> + <code>convert('P')</code>」——<code>putalpha</code> 作用在 P 模式图上只是设置单个透明索引，实测身体层的脸部会变成一块实心椭圆，整只宠物破图。<br/>
+                ② <strong>身体层与情绪图必须同色。</strong>两者在脸部椭圆处互补拼接，各自取色会让同一种肤色映射到两个近似色，拼缝处浮出一圈轮廓（放大后肉眼可辨）。做法是先用共享调色板把两者渲染成同一套颜色，再把已量化的情绪图合成进身体层的脸部空洞。<br/>
+                ③ <strong>素材等高。</strong>不等高会让叠层错位。<br/>
+                <strong>落地：</strong>脚本 <code>tools/pet_assets/quantize_assets.py</code>（含 <code>--backup</code> 与 <code>--dry-run</code>）；真彩原图备份在 <code>assets/images/pet/full/</code>；<code>app/test/guardian_pet_assets_test.dart</code> 把「尺寸不超过显示高度 3 倍」「每张图保留透明区域」「素材等高」钉成了测试。<br/>
+                <strong>尚未压缩的部分：</strong>五阶形态图与六张食物道具还没进包（代码尚未引用），等进化展示与喂食动效接上时，按同一套流程处理即可。
               </div>
 
               <div class="section-title">桌面与唤醒</div>
