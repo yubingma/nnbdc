@@ -302,21 +302,37 @@ class PureE2ERegressionRunner:
             time.sleep(0.5)
             self.device.clear_text_input(10)
             self.device.input_text(code)
-            time.sleep(1)
+            time.sleep(0.8)
+            # 点击顶部空白安全区（邮箱登录标题位置），主动收起软键盘并解除输入法焦点，防止遮挡登录按钮或吞掉点击
+            self.device.click(540, 700)
+            time.sleep(0.5)
 
         # 7. 点击「登录」
         print("[*] 点击「登录」提交...")
         submit_btn = self.device.find_element(text="登录")
         if submit_btn:
             self.device.click_element(submit_btn)
+        else:
+            self.device.click(540, 1635)
 
-        # 8. 轮询等待登录成功并进入主页（最多等待 12 秒）
+        # 8. 轮询等待登录成功并进入主页（内存级快速单次 dump，支持未点中自动补点）
         is_in_main = False
-        for wait_i in range(12):
-            time.sleep(1)
-            if self.device.find_element(text="学习") or self.device.find_element(text="词表"):
+        start_wait = time.time()
+        while time.time() - start_wait < 15:
+            time.sleep(1.2)
+            elements = self.device.dump_ui_hierarchy()
+            labels = [el.get("label", "") for el in elements]
+            texts = [el.get("text", "") for el in elements]
+            all_txt = " ".join(labels + texts)
+
+            if "学习" in all_txt or "词表" in all_txt:
                 is_in_main = True
                 break
+
+            # 若 2.5 秒后依然停留在未响应的「登录」按钮，且无「登录中...」，说明被系统焦点/动画吞掉点击，自动补点
+            if "登录" in all_txt and "登录中..." not in all_txt and (time.time() - start_wait > 2.5):
+                print("[*] 检测到登录按钮未响应，正在自动补点「登录」...")
+                self.device.click(540, 1635)
 
         shot = self.capture("login_success")
         if is_in_main:
