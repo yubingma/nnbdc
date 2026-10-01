@@ -1675,6 +1675,8 @@ extension BdcPageStateDialogs on BdcPageState {
 
     // 计算即将到来的待办单元格 sequence（按批次内调度实际优先级：普通练习题优先，List在后）
     List<Map<String, dynamic>> pendingCells = [];
+    // 本环节出题先后（StudyBo._compareBatchWords 同口径）：同为待重练的词，最久没出过题的先出
+    final Map<String, int> presentedRanks = PhasePresentationTracker.presentationRanks();
     final batchIdsList = batches.keys.toList()..sort();
     for (final bId in batchIdsList) {
       final bWords = List<dynamic>.from(batches[bId]!);
@@ -1708,6 +1710,14 @@ extension BdcPageStateDialogs on BdcPageState {
             (b.todayLearnedTimes as int);
         if (isARetry != isBRetry) {
           return isARetry ? 1 : -1;
+        }
+        // 同为待重练：最久没出过题的先出（刚出过的名次最大，让位给还在等的错词）
+        if (isARetry) {
+          final int? rankA = presentedRanks[a.wordId as String];
+          final int? rankB = presentedRanks[b.wordId as String];
+          if (rankA != null && rankB != null && rankA != rankB) {
+            return rankA.compareTo(rankB);
+          }
         }
         return (a.learningOrder as int).compareTo(b.learningOrder as int);
       });

@@ -543,9 +543,13 @@ class StudyBo {
   ///   - true: 会推进学习进度，移动到下一个单词或下一个学习模式，并更新用户的学习位置
   ///   - false: 仅刷新当前单词，不改变学习位置（用于初始加载、从批次列表返回后刷新等场景）
   /// [fsrsRating] 当前单词的学习评分（来自 FSRS 算法），用于计算未来的复习时间
+  /// [answeredWordId] 本次评分对应的那个词（用户在答的词）。错词重练按"最久没出过的先出"
+  ///   排队后，调度选出的"优先级最高的词"可能已经是**下一个**待出的词，不能再拿它反推评分对象，
+  ///   因此提交评分时必须由调用方显式指明；无评分的取词流转传不传都一样。
   ///
   /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
-  Future<Result<GetWordResult>> getWord(bool isWordMastered, bool gotoNext, {FsrsRating? fsrsRating}) async {
+  Future<Result<GetWordResult>> getWord(bool isWordMastered, bool gotoNext,
+      {FsrsRating? fsrsRating, String? answeredWordId}) async {
     try {
       final swTotal = Stopwatch()..start();
       Global.logger.d('开始获取单词: isWordMastered=$isWordMastered, gotoNext=$gotoNext, fsrsRating=$fsrsRating');
@@ -725,6 +729,14 @@ class StudyBo {
         Global.logger.d('  - [${w.wordId}] todayTimes=${w.todayLearnedTimes}, isMastered=$isMastered, isFinished=$isFinished');
       }
 
+      // 出题先后（最久没出过的名次最小）用于让同一个环节里的多个错词轮流重练。
+      // 只在"能确定用户在答哪个词"时才启用：提交评分却没说清是哪个词的老调用方，
+      // 排序结果会被当成用户在答的词，此时再按出题先后排就会把评分记到别的词上。
+      final Map<String, int> presentedRanks =
+          (fsrsRating == null || answeredWordId != null)
+              ? PhasePresentationTracker.presentationRanks()
+              : const <String, int>{};
+
       // 在当前批次内，推导当前单词和环节（练习题优先，List在后）
       List<LearningWord> sortedBatchWords = List.from(batchWords);
       sortedBatchWords.sort((a, b) => _compareBatchWords(
@@ -733,9 +745,21 @@ class StudyBo {
             masteredWordIds: masteredWordIds,
             trackOf: trackOf,
             isRetryStep: isRetryStep,
+            presentedRanks: presentedRanks,
           ));
 
-      final currentWordForPos = sortedBatchWords.first;
+      // 提交评分时"用户在答哪个词"由调用方显式给出：见 getWord 的 answeredWordId 说明。
+      // 只刷新当前词的流转（无评分）不需要它，排序结果本身就是即将呈现的词。
+      LearningWord currentWordForPos = sortedBatchWords.first;
+      if (fsrsRating != null && answeredWordId != null) {
+        final int answeredIndex =
+            todayWords.indexWhere((w) => w.wordId == answeredWordId);
+        if (answeredIndex >= 0) {
+          currentWordForPos = todayWords[answeredIndex];
+        } else {
+          Global.logger.w('getWord: 提交评分的词不在今日列表，退回按调度优先级定位: $answeredWordId');
+        }
+      }
       int currentWordIndex = todayWords.indexOf(currentWordForPos);
 
       // 获取当前学习环节：由该单词今日已练习的次数在自身轨道内推导
@@ -882,6 +906,7 @@ class StudyBo {
             masteredWordIds: masteredWordIds,
             trackOf: trackOf,
             isRetryStep: isRetryStep,
+            presentedRanks: presentedRanks,
           ));
 
       final nextWordForPos = nextBatchWords.first;
@@ -1470,13 +1495,17 @@ class StudyBo {
   /// 3. 同处于普通练习题（或均处于 List）：按 todayLearnedTimes 升序（保证横向轮流推进）；
   /// 4. 步数相同时，本环节答错待重练的词排到队尾，优先让尚未作答的词先过一遍
   ///    （错词答错时刚看过答案，紧接着复述测的是短时记忆，必须拉开间隔）；
-  /// 5. 其余按批次内既定序号 learningOrder 升序（从左到右）。
+  /// 5. 同为待重练的词：按"最久没出过题的先出"排（出题先后见 PhasePresentationTracker），
+  ///    让多个错词轮流复现，而不是死磕组内序号最小的那个；没有出题记录时（两边都缺名次）
+  ///    回落到 learningOrder，与没有这份记录时的行为一致。
+  /// 6. 其余按批次内既定序号 learningOrder 升序（从左到右）。
   static int _compareBatchWords(
     LearningWord a,
     LearningWord b, {
     required Set<String> masteredWordIds,
     required List<String> Function(LearningWord) trackOf,
     required bool Function(LearningWord) isRetryStep,
+    required Map<String, int> presentedRanks,
   }) {
     final trackA = trackOf(a);
     final trackB = trackOf(b);
@@ -1510,6 +1539,14 @@ class StudyBo {
     final bool isBRetry = isRetryStep(b);
     if (isARetry != isBRetry) {
       return isARetry ? 1 : -1;
+    }
+    // 同为待重练：最久没出过题的先出（刚出过的那个名次最大，让位给还在等的错词）
+    if (isARetry) {
+      final int? rankA = presentedRanks[a.wordId];
+      final int? rankB = presentedRanks[b.wordId];
+      if (rankA != null && rankB != null && rankA != rankB) {
+        return rankA.compareTo(rankB);
+      }
     }
     return a.learningOrder.compareTo(b.learningOrder);
   }

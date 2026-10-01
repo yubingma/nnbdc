@@ -763,6 +763,9 @@ class BdcNotifier extends _$BdcNotifier {
       showSentenceTranslation: false,
       showSentenceWordMeaning: false,
       currentScore: null,
+      // 本次作答是否通过只对"当前这次呈现"成立：换词/换环节/同环节重练都要复位，
+      // 否则上一词答对留下的 true 会让新词的波形旁提前显示「回答正确」（用户还没作答）。
+      isScorePassed: false,
       englishDigestOfFirstSentence: null,
       wordStartTime: AppClock.now(),
       fsrsItem: null,
@@ -2018,7 +2021,14 @@ class BdcNotifier extends _$BdcNotifier {
       }
 
       final apiStopwatch = Stopwatch()..start();
-      final result = await StudyBo().getWord(state.isWordMastered, gotoNext, fsrsRating: gradeRating);
+      // answeredWordId：错词重练按"最久没出过的先出"排队后，调度选出的优先级最高者可能
+      // 已经是下一个待出的词，评分必须显式记在"用户在答的那个词"上（就是眼前这个词）。
+      final result = await StudyBo().getWord(
+        state.isWordMastered,
+        gotoNext,
+        fsrsRating: gradeRating,
+        answeredWordId: state.word?.id,
+      );
       Global.logger.d('[PERF] getNextWord -> StudyBo().getWord API cost: ${apiStopwatch.elapsedMilliseconds}ms');
       
       if (result.success && result.data != null) {

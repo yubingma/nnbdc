@@ -189,6 +189,13 @@ class PureE2ERegressionRunner:
 
     def _do_phone_unregister(self) -> bool:
         """纯黑盒真实用户操作：从个人中心注销当前账号"""
+        # 0. 连续按返回键，确保从任何二级页面、弹窗或软键盘退回四大主导航页
+        for _ in range(4):
+            if self.device.find_element(text="我", exact=True):
+                break
+            self.device.press_key(4)
+            time.sleep(0.5)
+
         # 1. 切换到「我」Tab
         if not self.device.wait_and_click(text="我", timeout=5, exact=True):
             print("[!] 未能点击「我」Tab")
@@ -249,6 +256,42 @@ class PureE2ERegressionRunner:
         self.device.click_element(confirm_btn)
         time.sleep(3)
         return True
+
+    def trigger_immediate_sync(self):
+        """通过进入客户端「云同步状态」界面触发原生端云即时同步并等待完成"""
+        print("[*] 正在通过客户端「云同步状态」界面触发原生端云即时同步...")
+        for _ in range(4):
+            if self.device.find_element(text="我", exact=True):
+                break
+            self.device.press_key(4)
+            time.sleep(0.5)
+
+        if not self.device.wait_and_click(text="我", timeout=3, exact=True):
+            print("[!] 未能切换至「我」Tab 触发同步")
+            return
+
+        time.sleep(1.0)
+        sync_tile = self.device.find_element(text="云同步状态")
+        if not sync_tile:
+            settings_section = self.device.scroll_and_find("设置与工具", max_swipes=4, swipe_up=True)
+            if settings_section:
+                self.device.click_element(settings_section)
+                time.sleep(1.0)
+            sync_tile = self.device.scroll_and_find("云同步状态", max_swipes=3, swipe_up=True)
+
+        if sync_tile:
+            print("[*] 点击「云同步状态」进入同步页面执行 immediate sync...")
+            self.device.click_element(sync_tile)
+            time.sleep(3.5)
+            self.device.press_key(4)
+            time.sleep(1.0)
+            print("[*] 端云即时同步执行完毕，已返回「我」页面。")
+        else:
+            print("[!] 未找到「云同步状态」菜单，按常规 Tab 切换触发")
+            self.device.wait_and_click(text="学习", timeout=2, exact=True)
+            time.sleep(1.5)
+            self.device.wait_and_click(text="我", timeout=2, exact=True)
+            time.sleep(1.5)
 
     def step_3_ensure_clean_state(self):
         print("\n--- [Step 3] 环境纯净度检查与初始重置 ---")
@@ -410,6 +453,7 @@ class PureE2ERegressionRunner:
         shot = self.capture("login_success")
         if is_in_main:
             self.log("真实用户注册与登录", "PASSED", "手机端输入邮箱验证码完成注册，成功冷启动进入主页", shot)
+            manage_e2e_account.grant_e2e_admin()
         else:
             self.log("真实用户注册与登录", "FAILED", "登录提交后未能进入主页面", shot)
             raise RuntimeError("登录后未进入主页面")
@@ -605,11 +649,22 @@ class PureE2ERegressionRunner:
             nodes = self.device.dump_ui_hierarchy()
             all_text_joined = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in nodes)
 
-            # 1. 检查是否已自动跳转至完成打卡页（/finish）
-            if any(k in all_text_joined for k in ("学习完成", "打卡成功", "已打卡", "打卡成果", "今日已打卡", "再来一组", "生成打卡海报", "前往词表")):
+            # 1. 检查是否已自动跳转至完成打卡页（/finish）或弹出成就勋章弹窗
+            has_finish_marker = any(k in all_text_joined for k in (
+                "学习完成", "打卡成功", "已打卡", "打卡成果", "今日已打卡", 
+                "再来一组", "生成打卡海报", "前往词表", "恭喜斩获新勋章", "开心收下", "百发百中"
+            ))
+            if has_finish_marker:
                 in_finish_page = True
-                print(f"[*] 第 {turn} 步：检测到已完成当日全部计划，成功进入完成打卡页！")
-                time.sleep(3.0)
+                print(f"[*] 第 {turn} 步：检测到已完成当日全部计划，成功进入完成打卡页（含勋章奖励）！")
+                # 若当前界面有成就奖励「开心收下」，点击收下勋章奖励
+                claim_btn = self.device.find_element(text="开心收下", nodes=nodes)
+                if claim_btn:
+                    print("[*] 点击「开心收下」领取成就奖励并关闭勋章弹窗...")
+                    self.device.click_element(claim_btn)
+                    time.sleep(2.0)
+                else:
+                    time.sleep(2.0)
                 break
 
             # 2. 如果检测到意外弹出的「记忆历史」等对话框遮罩，按返回键优雅收起
@@ -759,21 +814,18 @@ class PureE2ERegressionRunner:
         else:
             self.log("当日30词学完进入打卡页", "WARNING", "已执行多轮流转，尝试触发打卡结算", shot)
 
-        # 3. 从完成页返回主页，并切入 Tab 触发增量同步以确保生产库打卡落库
+        # 3. 从完成页返回主页，并通过「云同步状态」界面强制触发原生端云即时同步
         print("[*] 按返回键退出完成页并返回主页...")
         self.device.press_key(4)
         time.sleep(2)
-        print("[*] 切换 Tab 强制触发增量同步，确保打卡数据即时上报生产库...")
-        self.device.wait_and_click(text="我", timeout=2, exact=True)
-        time.sleep(2)
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
-        time.sleep(2)
+        print("[*] 触发原生端云即时同步，确保打卡数据即时上报生产库...")
+        self.trigger_immediate_sync()
 
-        # 4. 生产数据库打卡数据一致性核验（轮询等待端云周期同步）
+        # 4. 生产数据库打卡数据一致性核验（轮询等待端云即时同步落库）
         print("[*] 正在从生产数据库校验当天的 daka 打卡数据记录...")
         daka_rec = None
         for attempt in range(8):
-            time.sleep(2)
+            time.sleep(1.5)
             daka_rec = manage_e2e_account.check_user_daka()
             if daka_rec:
                 break
@@ -838,57 +890,93 @@ class PureE2ERegressionRunner:
             return
 
         uid = user["id"]
-        print("[*] 正在触发云端时间旅行（Time Travel），将打卡与学习记录前推 1 天...")
-        manage_e2e_account.time_travel_yesterday(uid)
-        time.sleep(2)
+        # 确保测试账号拥有管理员权限
+        manage_e2e_account.grant_e2e_admin(uid)
 
-        # 手机端刷新：切到「我」再切回「学习」，触发同步与跨天时钟检测
-        print("[*] 手机端切入「我」与「学习」刷新跨天状态...")
-        self.device.wait_and_click(text="我", timeout=2, exact=True)
-        time.sleep(2)
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
-        time.sleep(2.5)
+        # 1. 优先通过客户端「快进时间」功能将应用时钟推进 1 天
+        print("[*] 正在通过客户端「快进时间」功能将应用时钟推进 1 天...")
+        for _ in range(4):
+            if self.device.find_element(text="我", exact=True):
+                break
+            self.device.press_key(4)
+            time.sleep(0.5)
 
+        self.device.wait_and_click(text="我", timeout=3, exact=True)
+        time.sleep(1.0)
+
+        fast_forward_btn = None
+        for _ in range(2):
+            nodes = self.device.dump_ui_hierarchy()
+            for n in nodes:
+                txt = (n.get("text") or "") + (n.get("label") or "")
+                if "快进时间" in txt:
+                    fast_forward_btn = n
+                    break
+            if fast_forward_btn:
+                break
+            settings_section = self.device.scroll_and_find("设置与工具", max_swipes=4, swipe_up=True)
+            if settings_section:
+                self.device.click_element(settings_section)
+                time.sleep(1.0)
+            w, h = self.device.get_screen_size()
+            for _ in range(3):
+                nodes = self.device.dump_ui_hierarchy()
+                for n in nodes:
+                    txt = (n.get("text") or "") + (n.get("label") or "")
+                    if "快进时间" in txt:
+                        fast_forward_btn = n
+                        break
+                if fast_forward_btn:
+                    break
+                self.device.swipe(w // 2, int(h * 0.7), w // 2, int(h * 0.4), duration_ms=400)
+                time.sleep(0.8)
+
+        if fast_forward_btn:
+            print("[*] 成功定位「快进时间」，点击执行时间快进...")
+            self.device.click_element(fast_forward_btn)
+            time.sleep(1.5)
+        else:
+            print("[*] 界面未直接找到「快进时间」，执行云端时间旅行更新...")
+            manage_e2e_account.time_travel_yesterday(uid)
+            time.sleep(1.5)
+
+        # 2. 切换回「学习」Tab，验证主页跨天状态已复位
+        self.device.wait_and_click(text="学习", timeout=3, exact=True)
+        time.sleep(2.0)
         shot_reset = self.capture("cross_day_home_reset")
-        # 验证主页今日已打卡状态已复位，呈现待复习或今日计划
-        home_reset_ok = not bool(self.device.find_element(text="今日已打卡"))
-        if home_reset_ok:
-            print("[*] 跨天检测成功：主页打卡印章已自动复位，展示新一天的待学习/待复习任务！")
 
-        # 再次点击「开始学习」或「继续学习」进行第二天复习流转
+        # 3. 再次点击「开始学习」或「继续学习」进行第二天复习流转
         start_btn = self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习")
         if start_btn:
             print("[*] 点击开启第 2 天的复习流转...")
             self.device.click_element(start_btn)
-            time.sleep(2)
-            # 答题几轮完成复习
-            for _ in range(40):
-                time.sleep(0.8)
+            time.sleep(2.0)
+            for turn in range(1, 50):
+                time.sleep(0.5)
                 nodes = self.device.dump_ui_hierarchy()
                 all_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in nodes)
                 if any(k in all_text for k in ("学习完成", "打卡成功", "已打卡", "今日已打卡", "再来一组", "生成打卡海报", "前往词表")):
-                    time.sleep(3)
+                    print(f"[*] 第 2 天复习完成并成功打卡（第 {turn} 步）！")
+                    claim_btn = self.device.find_element(text="开心收下", nodes=nodes)
+                    if claim_btn:
+                        self.device.click_element(claim_btn)
+                        time.sleep(1.5)
                     break
                 nxt = self.device.find_element(text="下一词", nodes=nodes) or self.device.find_element(text="下一组", nodes=nodes)
                 if nxt:
                     self.device.click_element(nxt)
-                    time.sleep(0.8)
                     continue
                 dk = self.device.find_element(text="再学学", nodes=nodes) or self.device.find_element(text="不认识", nodes=nodes)
                 if dk:
                     self.device.click_element(dk)
-                    time.sleep(0.8)
                     continue
 
-        # 按返回键返回主页并切 Tab 触发增量同步
+        # 按返回键返回主页并通过原生界面触发即时同步
         self.device.press_key(4)
-        time.sleep(2)
-        self.device.wait_and_click(text="我", timeout=2, exact=True)
-        time.sleep(2)
-        self.device.wait_and_click(text="学习", timeout=2, exact=True)
-        time.sleep(2)
+        time.sleep(1.5)
+        self.trigger_immediate_sync()
 
-        # 生产库校验第 2 天的连续打卡记录（轮询重试确保落库）
+        # 4. 生产库校验第 2 天的连续打卡记录（轮询重试确保落库）
         daka_info = None
         for _ in range(8):
             daka_sql = f"SELECT count(*), min(for_learning_date), max(for_learning_date) FROM daka WHERE user_id = '{uid}';"
@@ -898,7 +986,6 @@ class PureE2ERegressionRunner:
             time.sleep(2)
 
         shot_cross = self.capture("cross_day_consecutive_daka")
-
         if daka_info and int(daka_info.split("|")[0]) >= 2:
             count = daka_info.split("|")[0]
             self.log("跨天复习与连续打卡", "PASSED", f"跨天时钟推进成功，连续打卡达成 {count} 天，生产库具备跨天两条打卡记录", shot_cross)
@@ -1172,18 +1259,23 @@ class PureE2ERegressionRunner:
         
         # 构造邮件 HTML（包含轻量化高清真机截屏直出）
         email_rows = ""
-        for r in self.results:
+        for idx, r in enumerate(self.results):
             badge_color = "#10B981" if r["status"] == "PASSED" else ("#F59E0B" if r["status"] in ("SKIPPED", "WARNING") else "#EF4444")
             duration_str = f"{r.get('duration', 0.0)}s"
             
             shot_html = "-"
             if r.get("screenshot"):
                 shot_path = r.get("abs_screenshot") or os.path.join(REPORT_DIR, r["screenshot"])
-                b64 = self.get_thumbnail_base64(shot_path)
-                if b64:
-                    shot_html = f'<img src="{b64}" style="width:72px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.12);display:block;margin:auto;" />'
+                # 仅精选 6~8 个关键里程碑展示缩略图，防止邮件体积过大触发云端 Spam 拦截
+                key_milestones = ("进入单词测评卡片", "当日30词学完进入打卡页", "本地DB与FSRS算法审计", "主页与个人中心打卡状态", "真实用户注册与登录")
+                if any(k in r["step"] for k in key_milestones) or idx in (3, 8):
+                    b64 = self.get_thumbnail_base64(shot_path, max_width=90)
+                    if b64:
+                        shot_html = f'<img src="{b64}" style="width:60px;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,0.1);display:block;margin:auto;" />'
+                    else:
+                        shot_html = f'<span style="font-size:11px;color:#64748B;">已截屏</span>'
                 else:
-                    shot_html = f'<span style="font-size:11px;color:#94A3B8;">{os.path.basename(r["screenshot"])}</span>'
+                    shot_html = f'<span style="font-size:11px;color:#94A3B8;">本地存档</span>'
 
             email_rows += f"""
             <tr>

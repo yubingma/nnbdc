@@ -247,7 +247,9 @@ void main() {
       final rating = wantWrong && wrongDone.add(wrongKey)
           ? FsrsRating.again
           : FsrsRating.good;
-      await studyBo.getWord(false, true, fsrsRating: rating);
+      // 与学习页一致：显式声明"用户在答哪个词"（错词轮流重练依赖它）
+      await studyBo.getWord(false, true,
+          fsrsRating: rating, answeredWordId: wordId);
     }
     return seq;
   }
@@ -362,7 +364,8 @@ void main() {
               wrongDone.add(wordId)
           ? FsrsRating.again
           : FsrsRating.good;
-      await studyBo.getWord(false, true, fsrsRating: rating);
+      await studyBo.getWord(false, true,
+          fsrsRating: rating, answeredWordId: wordId);
     }
 
     // 只看第 1 组（本文件今日共 20 词，第 2 组无人答错）
@@ -399,6 +402,78 @@ void main() {
     expect(right.map((e) => e.position).toList(),
         List.generate(batchSize - 1, (i) => i + 1));
     expect(right.every((e) => e.total == batchSize - 1), true);
+  });
+
+  test('同组两个错词轮流重练：不重复出同一个，直到作对为止', () async {
+    final prep = await LearningService.prepareTodayStudy(true);
+    expect(prep.success, true);
+
+    // w_1、w_2 在测评环节每次都答"不认识"；其余答对
+    final seq = <String>[];
+    var guard = 0;
+    while (seq.length < batchSize + 6 && guard++ < 60) {
+      final res = await studyBo.getWord(false, false);
+      final data = res.data!;
+      if (data.finished || data.learningWord == null) break;
+      final wordId = data.learningWord!.word.id!;
+      final step = newWordTrack[data.stepIndex];
+      seq.add(wordId);
+      // 与学习页一致：呈现即记为"本环节已出过题"（同时也是出题先后的记录）
+      await studyBo.getBatchPhaseProgress(
+          wordId: wordId, step: step, markPresentedWord: true);
+      final rating = step == 'En2Ch' && (wordId == 'w_1' || wordId == 'w_2')
+          ? FsrsRating.again
+          : FsrsRating.good;
+      // 与学习页一致：显式声明"用户在答哪个词"
+      await studyBo.getWord(false, true,
+          fsrsRating: rating, answeredWordId: wordId);
+    }
+
+    expect(seq.take(batchSize).toList(),
+        List.generate(batchSize, (i) => 'w_${i + 1}'));
+    expect(seq.skip(batchSize).take(6).toList(),
+        ['w_1', 'w_2', 'w_1', 'w_2', 'w_1', 'w_2'],
+        reason: '同为待重练的词按"最久没出过的先出"排队：刚重练过的排到最后，另一个错词先出');
+  });
+
+  test('重练答对时评分记在"用户在答的那个词"上，不能按调度优先级反推', () async {
+    final prep = await LearningService.prepareTodayStudy(true);
+    expect(prep.success, true);
+
+    // w_1、w_2 首答都答错；随后只让重练轮到的第一个词作答（答对）
+    final seq = <String>[];
+    var guard = 0;
+    while (guard++ < 60) {
+      final res = await studyBo.getWord(false, false);
+      final data = res.data!;
+      if (data.finished || data.learningWord == null) break;
+      final wordId = data.learningWord!.word.id!;
+      final step = newWordTrack[data.stepIndex];
+      seq.add(wordId);
+      await studyBo.getBatchPhaseProgress(
+          wordId: wordId, step: step, markPresentedWord: true);
+      final bool firstPass = seq.length <= batchSize;
+      final bool wrongWord = wordId == 'w_1' || wordId == 'w_2';
+      // 第一遍两个错词答"不认识"；重练一律答对
+      final rating = firstPass && wrongWord ? FsrsRating.again : FsrsRating.good;
+      await studyBo.getWord(false, true,
+          fsrsRating: rating, answeredWordId: wordId);
+      if (seq.length > batchSize) break; // 只答第一个重练词
+    }
+
+    // 重练先轮到最久没出过题的 w_1
+    expect(seq.sublist(batchSize), ['w_1']);
+
+    final learnedTimes = <String, int>{};
+    for (final wordId in ['w_1', 'w_2']) {
+      final lw = await (db.select(db.learningWords)
+            ..where((t) =>
+                t.userId.equals(testUser.id) & t.wordId.equals(wordId)))
+          .getSingle();
+      learnedTimes[wordId] = lw.todayLearnedTimes;
+    }
+    expect(learnedTimes['w_1'], 1, reason: 'w_1 重练答对 → 推进到下一环节');
+    expect(learnedTimes['w_2'], 0, reason: 'w_2 还没答对，仍留在测评环节');
   });
 
   test('小结标红只认"测评答错"：后续环节答错不参与', () async {

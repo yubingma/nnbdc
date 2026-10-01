@@ -131,6 +131,7 @@ def purge_e2e_user_db_only():
     sql = f"""
     BEGIN;
     DELETE FROM email_verification_code WHERE email = '{E2E_EMAIL}';
+    DELETE FROM book_mark WHERE user_id = '{uid}';
     DELETE FROM user_study_step WHERE user_id = '{uid}';
     DELETE FROM learning_dict WHERE user_id = '{uid}';
     DELETE FROM user_db_log WHERE user_id = '{uid}';
@@ -143,9 +144,15 @@ def purge_e2e_user_db_only():
     DELETE FROM user_study_record WHERE user_id = '{uid}';
     DELETE FROM user_wrong_word WHERE user_id = '{uid}';
     DELETE FROM user_score_log WHERE user_id = '{uid}';
+    DELETE FROM user_cow_dung_log WHERE user_id = '{uid}';
     DELETE FROM user_game WHERE user_id = '{uid}';
     DELETE FROM user_snapshot_daily WHERE user_id = '{uid}';
     DELETE FROM login_log WHERE user_id = '{uid}';
+    DELETE FROM msg WHERE from_user_id = '{uid}' OR to_user_id = '{uid}';
+    DELETE FROM error_report WHERE user_id = '{uid}';
+    DELETE FROM info_vote_log WHERE user_id = '{uid}';
+    DELETE FROM feature_request_vote WHERE user_id = '{uid}';
+    DELETE FROM sys_error WHERE user_id = '{uid}';
     DELETE FROM dict_word WHERE dict_id IN (SELECT id FROM dict WHERE owner_id = '{uid}');
     DELETE FROM dict WHERE owner_id = '{uid}';
     DELETE FROM "user" WHERE id = '{uid}';
@@ -153,6 +160,17 @@ def purge_e2e_user_db_only():
     """
     run_psql(sql)
     print(f"✅ 生产库已彻底清除 {E2E_EMAIL} 遗留数据。")
+
+def grant_e2e_admin(user_id: str = None):
+    """赋予当前测试账号管理员与超级管理员权限，以便在客户端呈现调试与时间快进功能"""
+    if not user_id:
+        user = check_user()
+        if not user:
+            return
+        user_id = user["id"]
+    sql = f"UPDATE \"user\" SET is_admin = true, is_super_admin = true WHERE id = '{user_id}';"
+    run_psql(sql)
+    print(f"[*] 已在生产库为 e2etest 账号配置管理员权限 (userId={user_id})")
 
 def get_user_learning_logs(user_id: str = None) -> list:
     """获取指定用户在云端的所有评分流水日志（用于审计评分与下次复习天数）"""

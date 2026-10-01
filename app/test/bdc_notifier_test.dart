@@ -2723,6 +2723,99 @@ void main() {
         reason: '答错的词回到本环节队尾重测，必须标"本环节重测"');
   });
 
+  test('BdcNotifier - 同组两个错词轮流重练：刚重练过的那个不紧接着再出', () async {
+    final now = AppClock.now();
+    // 额外插入第二个单词 word_2（本组 2 个词）
+    await db.into(db.words).insert(Word(
+          id: 'word_2',
+          spell: 'banana',
+          popularity: 90,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.meaningItems).insert(MeaningItem(
+          id: 'mim_2',
+          wordId: 'word_2',
+          dictId: Global.commonDictId,
+          ciXing: 'n.',
+          meaning: '香蕉',
+          popularity: 90,
+          ownerId: Global.sysUserId,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.dictWords).insert(DictWord(
+          dictId: 'mock_dict_1',
+          wordId: 'word_2',
+          seq: 2,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.learningWords).insert(LearningWord(
+          userId: 'test_user_id',
+          wordId: 'word_2',
+          addTime: now,
+          addDay: 1,
+          batchId: 1,
+          lastLearningDate: AppClock.today(),
+          stability: 0.0,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          learningOrder: 2,
+          createTime: now,
+          updateTime: now,
+          isExtra: false,
+        ));
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+
+    // 出题先后是异步落盘的：等"某个词成为最后出过题的那个"，就是等它的先后记录写定。
+    // 学习页真实链路同样靠这份记录排队，所以这里必须等，不能抢跑。
+    Future<void> waitNewest(String wordId) async {
+      for (var i = 0; i < 200; i++) {
+        final ranks = PhasePresentationTracker.presentationRanks();
+        final rank = ranks[wordId];
+        if (rank != null && rank == ranks.length - 1) return;
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+      fail('本环节出题先后记录没有更新: $wordId');
+    }
+
+    Future<void> answerAgain(String displayedWordId) async {
+      await waitNewest(displayedWordId);
+      notifier.acceptAnswerForTesting(FsrsRating.again);
+      await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+    }
+
+    await notifier.loadData(FakeBuildContext());
+    expect(container.read(bdcNotifierProvider).word!.id, 'word_1');
+
+    // 第 1 个词答"不认识" → 先让还没作答的第 2 个词过一遍（错词排到本环节队尾）
+    await answerAgain('word_1');
+    expect(container.read(bdcNotifierProvider).word!.id, 'word_2');
+
+    // 第 2 个词也答"不认识" → 两个错词都待重练，先回到最久没出过题的第 1 个
+    await answerAgain('word_2');
+    expect(container.read(bdcNotifierProvider).word!.id, 'word_1');
+
+    // 第 1 个错词重练仍答"不认识" → 必须轮到另一个错词，而不是又出它自己
+    await answerAgain('word_1');
+    expect(container.read(bdcNotifierProvider).word!.id, 'word_2',
+        reason: '同为待重练时按"最久没出过的先出"，刚重练过的词排在其它错词后面');
+  });
+
   test('BdcNotifier - Ch2En环节发音通过后残余低分ASR帧不应覆盖通关评分', () async {
     // 设置步骤配置为 Ch2En 测评
     await (db.delete(db.userStudySteps)..where((uss) => uss.userId.equals(testUser.id))).go();
@@ -3738,5 +3831,68 @@ void main() {
         reason: '本词已答对，或已换到别的词，红色提示都必须消失');
 
     await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 上一词被判定通过后，新词呈现不得残留"本次已通过"', () async {
+    // 答对组配汉译英：测评答对后，同一个词会在汉译英环节再出现
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
+          studyStep: 'Ch2En',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    // 大模型裁判认可用户的中文回答：这条链路会把 isScorePassed 置为 true
+    AiRefereeUtil.aiChatOverride = (messagesJson, userId) async =>
+        Result('200', '', true)
+          ..data = '{"isCorrect": true, "intendedMeaning": "苹果"}';
+    addTearDown(() => AiRefereeUtil.aiChatOverride = null);
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('n.', '苹果'),
+    ];
+    notifier.updateAsrPassRuleCache('HALF');
+
+    // 本地一个释义都匹配不到 → 回落 AI 裁判 → 裁判认可 → 本次作答"已通过"
+    await notifier.onAsrResult(jsonEncode({
+      'best': '汽车',
+      'candidates': ['汽车'],
+      'isFinal': true,
+    }));
+    await Future.delayed(const Duration(milliseconds: 1700));
+
+    var state = container.read(bdcNotifierProvider);
+    expect(state.isScorePassed, isTrue, reason: 'AI 裁判认可后本次作答已通过');
+    final approvedWordId = state.word!.id;
+
+    // 流转到下一个环节（本组只有 1 个词，汉译英环节还是它）
+    notifier.acceptAnswerForTesting(state.lastFsrsRating ?? FsrsRating.good);
+    await notifier.getNextWord(true,
+        fsrsRating: state.lastFsrsRating ?? FsrsRating.good);
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.word!.id, approvedWordId);
+    expect(state.studyStep, StudyStep.ch2En.json);
+    expect(state.isScorePassed, isFalse,
+        reason: '"本次作答已通过"只对上一次呈现成立，新呈现必须复位，否则波形旁会提前显示"回答正确"');
+    expect(state.hasFinishedAnswering, isFalse, reason: '新呈现应回到未作答状态');
+    expect(state.currentScore, null, reason: '新呈现不得残留上一轮的得分');
   });
 }

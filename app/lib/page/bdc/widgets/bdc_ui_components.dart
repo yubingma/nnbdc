@@ -3270,6 +3270,11 @@ extension BdcPageStateUIComponents on BdcPageState {
     }
 
     final cixingColor = context.textNeutral;
+    // 今天最近一次作答答错的词：题目（中文释义）标红，提醒"这个词你刚答错过"。
+    // 与英译汉环节把英文拼写标红同一口径（见 _buildWordStepCard）。
+    final meaningColor = state.isLatestAnswerWrongToday
+        ? const Color(0xFFE53935)
+        : context.textPrimary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -3309,7 +3314,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         style: TextStyle(
                           fontSize: meaningFontSize,
                           fontWeight: FontWeight.w600,
-                          color: context.textPrimary,
+                          color: meaningColor,
                           height: 1.35,
                           letterSpacing: -0.3,
                         ),
@@ -3361,7 +3366,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             style: TextStyle(
                               fontSize: meaningFontSize,
                               fontWeight: FontWeight.w600,
-                              color: context.textPrimary,
+                              color: meaningColor,
                               height: 1.4,
                               letterSpacing: -0.2,
                             ),

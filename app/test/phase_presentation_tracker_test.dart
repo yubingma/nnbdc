@@ -98,4 +98,25 @@ void main() {
             groupNo: 1, trackName: '新词测评', stepIndex: 0),
         0);
   });
+
+  test('出题先后：每出一次题就排到最后，重练过的词名次最大', () async {
+    AppClock.setClock(FakeClock(DateTime(2026, 10, 1, 10, 0)));
+
+    await PhasePresentationTracker.markPresented(
+        groupNo: 1, trackName: '新词测评', stepIndex: 0, wordId: 'w_1');
+    await PhasePresentationTracker.markPresented(
+        groupNo: 1, trackName: '新词测评', stepIndex: 0, wordId: 'w_2');
+    expect(PhasePresentationTracker.presentationRanks(), {'w_1': 0, 'w_2': 1});
+
+    // w_1 答错后回到队尾重练：集合不变，但先后必须更新（它变成"刚出过"的那个）
+    await PhasePresentationTracker.markPresented(
+        groupNo: 1, trackName: '新词测评', stepIndex: 0, wordId: 'w_1');
+    expect(
+        PhasePresentationTracker.presentedCount(
+            groupNo: 1, trackName: '新词测评', stepIndex: 0),
+        2,
+        reason: '重练不重复计入"已出过题"的词数');
+    expect(PhasePresentationTracker.presentationRanks(), {'w_2': 0, 'w_1': 1},
+        reason: '刚重练过的 w_1 应排到最后，让还在等的 w_2 先出');
+  });
 }
