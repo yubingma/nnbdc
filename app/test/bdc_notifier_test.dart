@@ -2610,6 +2610,65 @@ void main() {
     expect(state.groupStepHint, null);
   });
 
+  test('BdcNotifier - 指示行随本次呈现一次到位（不残留上一环节，重测标记不等异步补写）', () async {
+    // 答对组配汉译英：测评答对后，同一个词会在汉译英环节再出现
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
+          studyStep: 'Ch2En',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.studyStep, StudyStep.en2Ch.json);
+    expect(state.groupStepTrackName, '新词测评');
+
+    // 测评答对 → 汉译英环节：指示行必须当场就是本环节（含环节顺序提示）
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+      'isFinal': true,
+    }));
+    final rating =
+        container.read(bdcNotifierProvider).lastFsrsRating ?? FsrsRating.good;
+    await notifier.getNextWord(true, fsrsRating: rating);
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.studyStep, StudyStep.ch2En.json);
+    expect(state.groupStepTrackName, '新词答对',
+        reason: '指示行必须与本次呈现的环节一致，不能还挂着上一环节的轨道名');
+    expect(state.groupStepHint, isNot(null),
+        reason: '环节顺序提示随本次呈现一次到位，不必等异步补写');
+    expect(state.isGroupStepRetry, false);
+
+    // 汉译英点「不认识」→ 同一个词回到本环节重练：重测标记必须当场就在
+    notifier.revealAnswerAndMarkWrong(FakeBuildContext());
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.studyStep, StudyStep.ch2En.json);
+    expect(state.groupStepTrackName, '新词答对');
+    expect(state.isGroupStepRetry, true,
+        reason: '重练标记随本次呈现一次到位，用户第一眼就该看到「本环节重测」');
+  });
+
   test('BdcNotifier - 从今日计划页重新进入学习页：本环节出题记录与"本环节重测"不得丢', () async {
     final now = AppClock.now();
     // 额外插入第二个单词 word_2（本组 2 个词）

@@ -1,6 +1,9 @@
 {
     "dart.debugSdkLibraries": false,
     "dart.debugExternalPackageLibraries": false,
+    "dart.analysisExcludedFolders": [
+        "${workspaceFolder}/tmp"
+    ],
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
     "java.compile.nullAnalysis.mode": "automatic",
     "java.debug.settings.hotCodeReplace": "auto",
@@ -43,9 +46,6 @@
         ".github/workflows/build.yml"
     ],
     "markdownlint.enable": false,
-    "markdownlint.config": {
-        "default": false
-    },
     "markdown.validate.enabled": false,
     "cmake.sourceDirectory": "/Volumes/ssd/ppdc/app/linux"
 }

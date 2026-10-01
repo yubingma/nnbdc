@@ -153,6 +153,35 @@ class AndroidDeviceController:
         res = self._run_adb(["shell", "dumpsys", "window"])
         return APP_PACKAGE in res.stdout
 
+    def ensure_app_foreground(self):
+        """确保 App 在前台，若退回系统桌面则自动重新拉起激活"""
+        if not self.is_app_in_foreground():
+            print("[*] 检测到 App 不在前台，正在自动重新拉起至前台...")
+            self.launch_app(stop_first=False)
+            time.sleep(2.0)
+
+    def navigate_back_safely(self):
+        """安全返回上一页：优先点击左上角返回按钮，仅在非主导航页才尝试单次返回键，绝不退回桌面"""
+        self.ensure_app_foreground()
+        nodes = self.dump_ui_hierarchy()
+        all_labels = [(n.get("label") or "") + " " + (n.get("text") or "") for n in nodes]
+        has_nav_tab = any("学习" in l or "词表" in l for l in all_labels) and any("我" in l for l in all_labels)
+        if has_nav_tab:
+            return
+
+        # 优先点击左上角返回按钮 (x < 200, y < 260)
+        for n in nodes:
+            center = n.get("center")
+            if center and center[0] < 200 and center[1] < 260 and n.get("clickable"):
+                self.click_element(n)
+                time.sleep(1.0)
+                return
+
+        # 降级：点击通用左上角返回坐标 (78, 140)
+        self.click(78, 140)
+        time.sleep(1.0)
+        self.ensure_app_foreground()
+
     def take_screenshot(self, save_path: str) -> str:
         """捕获屏幕截图并保存到本地"""
         os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
@@ -169,6 +198,7 @@ class AndroidDeviceController:
 
     def dump_ui_hierarchy(self) -> List[Dict]:
         """抓取当前屏幕的 UI 节点树，统一适配 Flutter Semantics（支持多轮重试防动画瞬时阻塞）"""
+        self.ensure_app_foreground()
         success = False
         for attempt in range(4):
             dump_cmd = self._run_adb(["shell", "uiautomator", "dump", "/sdcard/e2e_dump.xml"], check=False)

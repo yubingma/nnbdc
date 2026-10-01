@@ -746,11 +746,26 @@ class BdcNotifier extends _$BdcNotifier {
     _answerAccepted = false;
     _pendingGrade = null;
 
+    // 本环节进度随这次呈现一起算好、一起写进 state（见 _computeGroupStepProgress 的说明）
+    final phase = word.id == null
+        ? null
+        : await _computeGroupStepProgress(
+            wordId: word.id!,
+            step: newStudyStep,
+            stepIndex: stepIdx,
+          );
+
     state = state.copyWith(
       currentGetWordResult: getWordResult,
       word: word,
       wordWrapper: wordWrapper,
       studyStep: newStudyStep,
+      groupStepNo: phase?.groupNo ?? 0,
+      groupStepPosition: phase?.position ?? 0,
+      groupStepTotal: phase?.total ?? 0,
+      groupStepTrackName: phase?.trackName,
+      isGroupStepRetry: phase?.isRetry ?? false,
+      groupStepHint: phase?.hint,
       isReviewWord: trackResult.isReview,
       assessmentRating: followUpAssessment,
       assessmentScheduledDays: followUpAssessmentDays,
@@ -780,8 +795,6 @@ class BdcNotifier extends _$BdcNotifier {
       isWordMastered: false,
       isPttPressed: false,
       isPracticeMode: false,
-      // 跨词残留防护：重测标记只对"当前词"成立，换词先清掉，等 _refreshGroupStepProgress 写回真实值
-      isGroupStepRetry: false,
       // 今天最近一次作答答错的词：拼写显示为红色（数据来自本词的今日评分流水，随呈现刷新）
       isLatestAnswerWrongToday:
           trackResult.todayLatestLogRating == FsrsRating.again.value,
@@ -870,7 +883,6 @@ class BdcNotifier extends _$BdcNotifier {
     });
     
     Global.logger.i('[PERF] Total handleWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
-    unawaited(_refreshGroupStepProgress());
     // 用户读题通常有几秒，利用这段时间预取单词详情页所需的完整数据
     // （形近词及其释义等，实测查询约 80ms）。这样用户点开详情页时首帧就是完整内容，
     // 不会在 200ms 后再整体重建一次（那次重建实测占满一帧 36ms）。
@@ -946,32 +958,35 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(groupStepHint: null);
   }
 
-  /// 刷新学习页「第 N 组 · 环节 x/y」指示；环节推进到本组新环节的首个词时给出一次顺序提示。
-  Future<void> _refreshGroupStepProgress() async {
-    final wordId = state.word?.id;
-    final step = state.studyStep;
-    final stepIndex = state.currentGetWordResult?.stepIndex ?? 0;
-    if (wordId == null || step == null || step == StudyStep.list.json) {
-      state = state.copyWith(
-        groupStepNo: 0,
-        groupStepPosition: 0,
-        groupStepTotal: 0,
-        groupStepTrackName: null,
-        isGroupStepRetry: false,
-        groupStepHint: null,
-      );
-      return;
-    }
+  /// 算好"当前这个词在本组本环节的进度"：第 N 组 · 轨道 · 环节 x/y、是否本环节重测、
+  /// 以及环节推进的一次性顺序提示。
+  ///
+  /// 必须在**呈现之前**算，和这次呈现一起写进 state：指示行（含「本环节重测」）绝不能先带着
+  /// 上一环节的旧值出现、再被一次异步补正 —— 那个空窗里用户看到的是错的（旧轨道名、
+  /// 少了重测标记），实测重练场景下用户会以为标记丢了。
+  ///
+  /// [stepIndex] 传入本次呈现的环节序号（已经过轨道长度夹取），与 `track[stepIndex]` 同源。
+  /// 无法定位（词不在本组、或该词今天不走这个环节）时返回 null，调用方据此收起指示行。
+  Future<
+      ({
+        int groupNo,
+        int position,
+        int total,
+        String trackName,
+        bool isRetry,
+        String? hint,
+      })?> _computeGroupStepProgress({
+    required String wordId,
+    required String step,
+    required int stepIndex,
+  }) async {
     final progress = await StudyBo().getBatchPhaseProgress(
       wordId: wordId,
       step: step,
-      // 本次调用就发生在"刚刚呈现这个词"之后：让指示器把本词记为已出题，
-      // 分子立刻包含它，用户才能看到 1/10 → 2/10 的前进
+      // 这次调用就发生在"刚刚呈现这个词"的同一个时机：让指示器把本词记为已出题，
+      // 分子立刻包含它，用户才能看到 1/10 → 2/10 的前进，重测也才认得出来。
       markPresentedWord: true,
     );
-    if (_isDisposed) return;
-    // 计算期间已切到别的词/环节：这次结果作废，避免旧位置覆盖新词
-    if (state.word?.id != wordId || state.studyStep != step) return;
     // 提示只在"本组后续环节的首个词"上出现：首次环节（测评）无需解释顺序，
     // 回看历史词时也不提示，避免重放打乱顺序的错觉。用户关掉后不再提示。
     final hint = (stepIndex > 0 &&
@@ -981,13 +996,14 @@ class BdcNotifier extends _$BdcNotifier {
             !StudyConfig.fromCurrentUser().hideGroupStepHint)
         ? _ch2EnPhaseHint
         : null;
-    state = state.copyWith(
-      groupStepNo: progress?.groupNo ?? 0,
-      groupStepPosition: progress?.position ?? 0,
-      groupStepTotal: progress?.total ?? 0,
-      groupStepTrackName: progress?.trackName,
-      isGroupStepRetry: progress?.isRetry ?? false,
-      groupStepHint: hint,
+    if (progress == null) return null;
+    return (
+      groupNo: progress.groupNo,
+      position: progress.position,
+      total: progress.total,
+      trackName: progress.trackName,
+      isRetry: progress.isRetry,
+      hint: hint,
     );
   }
 

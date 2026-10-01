@@ -20,6 +20,7 @@ import base64
 import io
 import re
 import fcntl
+import sqlite3
 from datetime import datetime
 from PIL import Image
 
@@ -258,34 +259,36 @@ class PureE2ERegressionRunner:
         return True
 
     def trigger_immediate_sync(self):
-        """通过进入客户端「云同步状态」界面触发原生端云即时同步并等待完成"""
+        """通过进入客户端「云同步状态」界面触发原生端云即时同步并安全返回"""
         print("[*] 正在通过客户端「云同步状态」界面触发原生端云即时同步...")
-        for _ in range(4):
-            if self.device.find_element(text="我", exact=True):
-                break
-            self.device.press_key(4)
-            time.sleep(0.5)
+        self.device.ensure_app_foreground()
 
-        if not self.device.wait_and_click(text="我", timeout=3, exact=True):
+        if not self.device.wait_and_click(text="我", timeout=4, exact=True):
             print("[!] 未能切换至「我」Tab 触发同步")
             return
-
         time.sleep(1.0)
-        sync_tile = self.device.find_element(text="云同步状态")
+
+        # 检查是否已能看见「云同步状态」
+        sync_tile = self.device.find_element(text_contains="云同步状态")
         if not sync_tile:
-            settings_section = self.device.scroll_and_find("设置与工具", max_swipes=4, swipe_up=True)
+            settings_section = self.device.find_element(text_contains="设置与工具")
             if settings_section:
                 self.device.click_element(settings_section)
                 time.sleep(1.0)
-            sync_tile = self.device.scroll_and_find("云同步状态", max_swipes=3, swipe_up=True)
+            w, h = self.device.get_screen_size()
+            self.device.swipe(w // 2, int(h * 0.8), w // 2, int(h * 0.3), duration_ms=400)
+            time.sleep(1.0)
+            sync_tile = self.device.find_element(text_contains="云同步状态")
 
         if sync_tile:
             print("[*] 点击「云同步状态」进入同步页面执行 immediate sync...")
             self.device.click_element(sync_tile)
             time.sleep(3.5)
-            self.device.press_key(4)
+            # 点击页面左上角返回按钮 (78, 140) 安全返回「我」页面，绝不按系统返回键退出 App
+            self.device.click(78, 140)
             time.sleep(1.0)
-            print("[*] 端云即时同步执行完毕，已返回「我」页面。")
+            self.device.ensure_app_foreground()
+            print("[*] 端云即时同步执行完毕，已安全返回「我」页面。")
         else:
             print("[!] 未找到「云同步状态」菜单，按常规 Tab 切换触发")
             self.device.wait_and_click(text="学习", timeout=2, exact=True)
@@ -815,9 +818,10 @@ class PureE2ERegressionRunner:
             self.log("当日30词学完进入打卡页", "WARNING", "已执行多轮流转，尝试触发打卡结算", shot)
 
         # 3. 从完成页返回主页，并通过「云同步状态」界面强制触发原生端云即时同步
-        print("[*] 按返回键退出完成页并返回主页...")
-        self.device.press_key(4)
-        time.sleep(2)
+        print("[*] 点击完成页左上角返回按钮退出完成页并返回主页...")
+        self.device.click(78, 140)
+        time.sleep(2.0)
+        self.device.ensure_app_foreground()
         print("[*] 触发原生端云即时同步，确保打卡数据即时上报生产库...")
         self.trigger_immediate_sync()
 
@@ -890,62 +894,37 @@ class PureE2ERegressionRunner:
             return
 
         uid = user["id"]
-        # 确保测试账号拥有管理员权限
-        manage_e2e_account.grant_e2e_admin(uid)
+        print("[*] 正在执行端云时间旅行（Time Travel）：将云端与本地沙盒打卡和学习记录同步前推 1 天...")
+        # 1. 云端数据库前推 1 天
+        manage_e2e_account.time_travel_yesterday(uid)
 
-        # 1. 优先通过客户端「快进时间」功能将应用时钟推进 1 天
-        print("[*] 正在通过客户端「快进时间」功能将应用时钟推进 1 天...")
-        for _ in range(4):
-            if self.device.find_element(text="我", exact=True):
-                break
-            self.device.press_key(4)
-            time.sleep(0.5)
-
-        self.device.wait_and_click(text="我", timeout=3, exact=True)
+        # 2. 本地沙盒 SQLite 前推 1 天（通过停进程 -> pull -> update -> push -> 重启）
+        self.device.stop_app()
         time.sleep(1.0)
+        tt_db = os.path.join(self.auditor.work_dir, "e2e_tt.sqlite")
+        self.device._run_adb(["shell", "run-as", "com.nn.nnbdc.android", "cp", "app_flutter/db.sqlite", "/sdcard/e2e_tt.sqlite"])
+        self.device._run_adb(["pull", "/sdcard/e2e_tt.sqlite", tt_db])
+        if os.path.exists(tt_db):
+            conn = sqlite3.connect(tt_db)
+            c = conn.cursor()
+            c.execute("UPDATE dakas SET for_learning_date = for_learning_date - 86400, create_time = create_time - 86400, update_time = update_time - 86400;")
+            c.execute("UPDATE learning_words SET last_learning_date = last_learning_date - 86400, update_time = update_time - 86400;")
+            c.execute("UPDATE user_study_daily_stats SET date = date - 86400, update_time = update_time - 86400;")
+            conn.commit()
+            conn.close()
+            self.device._run_adb(["push", tt_db, "/sdcard/e2e_tt.sqlite"])
+            self.device._run_adb(["shell", "run-as", "com.nn.nnbdc.android", "cp", "/sdcard/e2e_tt.sqlite", "app_flutter/db.sqlite"])
+            self.device._run_adb(["shell", "run-as", "com.nn.nnbdc.android", "rm", "-f", "app_flutter/db.sqlite-wal", "app_flutter/db.sqlite-shm"])
+            print("[*] 本地 SQLite 打卡与学习记录已成功前推 86400 秒（1天）！")
 
-        fast_forward_btn = None
-        for _ in range(2):
-            nodes = self.device.dump_ui_hierarchy()
-            for n in nodes:
-                txt = (n.get("text") or "") + (n.get("label") or "")
-                if "快进时间" in txt:
-                    fast_forward_btn = n
-                    break
-            if fast_forward_btn:
-                break
-            settings_section = self.device.scroll_and_find("设置与工具", max_swipes=4, swipe_up=True)
-            if settings_section:
-                self.device.click_element(settings_section)
-                time.sleep(1.0)
-            w, h = self.device.get_screen_size()
-            for _ in range(3):
-                nodes = self.device.dump_ui_hierarchy()
-                for n in nodes:
-                    txt = (n.get("text") or "") + (n.get("label") or "")
-                    if "快进时间" in txt:
-                        fast_forward_btn = n
-                        break
-                if fast_forward_btn:
-                    break
-                self.device.swipe(w // 2, int(h * 0.7), w // 2, int(h * 0.4), duration_ms=400)
-                time.sleep(0.8)
-
-        if fast_forward_btn:
-            print("[*] 成功定位「快进时间」，点击执行时间快进...")
-            self.device.click_element(fast_forward_btn)
-            time.sleep(1.5)
-        else:
-            print("[*] 界面未直接找到「快进时间」，执行云端时间旅行更新...")
-            manage_e2e_account.time_travel_yesterday(uid)
-            time.sleep(1.5)
-
-        # 2. 切换回「学习」Tab，验证主页跨天状态已复位
-        self.device.wait_and_click(text="学习", timeout=3, exact=True)
+        # 3. 重新拉起 App，直接进入主界面
+        self.device.launch_app(stop_first=False)
+        time.sleep(3.0)
+        self.device.wait_and_click(text="学习", timeout=4, exact=True)
         time.sleep(2.0)
         shot_reset = self.capture("cross_day_home_reset")
 
-        # 3. 再次点击「开始学习」或「继续学习」进行第二天复习流转
+        # 4. 点击「开始学习」或「继续学习」进行第二天复习流转并打卡
         start_btn = self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习")
         if start_btn:
             print("[*] 点击开启第 2 天的复习流转...")
@@ -971,19 +950,20 @@ class PureE2ERegressionRunner:
                     self.device.click_element(dk)
                     continue
 
-        # 按返回键返回主页并通过原生界面触发即时同步
-        self.device.press_key(4)
+        # 点击左上角返回按钮 (78, 140) 退出完成页返回主页，绝不按返回键
+        self.device.click(78, 140)
         time.sleep(1.5)
+        self.device.ensure_app_foreground()
         self.trigger_immediate_sync()
 
-        # 4. 生产库校验第 2 天的连续打卡记录（轮询重试确保落库）
+        # 5. 生产库校验第 2 天的连续打卡记录（轮询重试确保落库）
         daka_info = None
-        for _ in range(8):
+        for _ in range(10):
             daka_sql = f"SELECT count(*), min(for_learning_date), max(for_learning_date) FROM daka WHERE user_id = '{uid}';"
             daka_info = manage_e2e_account.run_psql(daka_sql)
             if daka_info and int(daka_info.split("|")[0]) >= 2:
                 break
-            time.sleep(2)
+            time.sleep(1.5)
 
         shot_cross = self.capture("cross_day_consecutive_daka")
         if daka_info and int(daka_info.split("|")[0]) >= 2:
