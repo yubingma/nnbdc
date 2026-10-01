@@ -1,0 +1,225 @@
+0|betray
+0|quiz
+0|pretend
+0|cheerful
+0|washroom
+0|admit
+0|beg
+0|swear
+0|spy
+0|truly
+0|forgive
+0|sincerely
+0|childhood
+0|superb
+0|focus
+0|pace
+0|manner
+0|horrible
+0|guilty
+0|cruel
+0|remark
+0|dislike
+0|argue
+0|awkward
+0|apologize
+0|quarrel
+0|sensitive
+0|athletic
+0|envy
+0|blame
+0|gifted
+0|disagreement
+0|before long
+0|mailbox
+0|algebra
+0|arithmetic
+0|Easter
+0|amusement
+0|circus
+0|online
+0|identity
+0|absurd
+0|hopeless
+0|overcome
+0|get through
+0|acquaintance
+0|twin
+0|apartment
+0|topic
+0|attitude
+0|anchor
+0|be based on
+0|cautious
+0|eager
+0|worldwide
+0|adolescent
+0|respond
+0|pause
+0|regardless
+0|security
+0|end up
+0|waiting room
+0|rely
+0|trolleybus
+0|revision
+0|thanks to
+0|committed
+0|mercy
+0|apology
+0|economy
+0|spokeswoman
+0|consultant
+0|debate
+0|open the floor
+0|flow
+0|billion
+0|duty
+0|cut back on
+0|production
+0|recycle
+0|pipe
+0|greedy
+0|businessman
+0|responsibility
+0|belief
+0|environmental
+0|operate
+0|credit
+0|quantity
+0|raw
+0|seafood
+0|willing
+0|tax
+0|goods
+0|pump
+0|use up
+0|run out
+0|run out of
+0|madam
+0|arrival
+0|clean up
+0|arrest
+0|illegally
+0|customs
+0|feather
+0|tortoise
+0|blanket
+0|impress
+0|clap
+0|economic
+0|conflict
+0|queue
+0|desertification
+0|crop
+0|fence
+0|soil
+0|bush
+0|decrease
+0|drill
+0|measure
+0|administration
+0|satellite
+0|pick out
+0|typhoon
+0|flood
+0|range
+0|illegal
+0|under way
+0|conservation
+0|dolphin
+0|in regard to
+0|with regard to
+0|appreciate
+0|climate
+0|low-carbon
+0|carbon
+0|dioxide
+0|let off
+0|vehicle
+0|petrol
+0|engine
+0|electrical
+0|plant
+0|fuel
+0|consume
+0|particular
+0|absorb
+0|oxygen
+0|decade
+0|do one's part
+0|clone
+0|embryo
+0|on the one hand ... on the other hand ...
+0|tissue
+0|toy with
+0|real-life
+0|monster
+0|exact
+0|cell
+0|mammal
+0|Scottish
+0|intention
+0|anxiety
+0|saleswoman
+0|adopt
+0|legal
+0|push ahead with
+0|Italian
+0|physician
+0|goat
+0|consequence
+0|harvest
+0|for sale
+0|transform
+0|concept
+0|crime
+0|fellow
+0|profession
+0|radiation
+0|breakthrough
+0|original
+0|judgement
+0|be burnt out
+0|get burnt out
+0|relation
+0|follow in one's footsteps
+0|conduct
+0|majority
+0|summary
+0|consideration
+0|hunger
+0|tasty
+0|nutrition
+0|ordinary
+0|reliable
+0|accurate
+0|brief
+0|actual
+0|confirm
+0|agriculture
+0|channel
+0|favour
+0|point of view
+0|catastrophe
+0|resource
+0|acre
+0|rainforest
+0|income
+0|genetics
+0|frighten
+0|genetically
+0|modify
+0|insert
+0|DNA
+0|pest
+0|profit
+0|chain
+0|permission
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 218
+# Total Entries Extracted: 218
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 218
+# -------------------------------

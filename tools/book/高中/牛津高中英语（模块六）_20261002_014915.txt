@@ -1,0 +1,277 @@
+0|comedy
+0|weekly
+0|crosstalk
+0|stand up for
+0|stand-up
+0|stage
+0|comedian
+0|tease
+0|previous
+0|variety
+0|style
+0|behave
+0|visual
+0|hammer
+0|trip
+0|performance
+0|make fun of
+0|affection
+0|performer
+0|academy
+0|perform
+0|little-known
+0|come up with
+0|technical
+0|lip
+0|silent film
+0|howl
+0|amuse
+0|saying
+0|cigar
+0|bathtub
+0|pass away
+0|mourn
+0|fitness
+0|strengthen
+0|yoga
+0|muscle
+0|participate
+0|deep-breathing
+0|positive
+0|drive away
+0|negative
+0|guarantee
+0|foolishness
+0|foreigner
+0|instruct
+0|take on
+0|initial
+0|attain
+0|polish
+0|invisible
+0|bench
+0|setting
+0|make room for
+0|textbook
+0|cosy
+0|invitation
+0|alongside
+0|crowded
+0|castle
+0|armchair
+0|yell
+0|pipe
+0|official-looking
+0|anger
+0|bow
+0|dash
+0|tear
+0|burst
+0|empty-handed
+0|glare
+0|hold out
+0|toilet paper
+0|surround
+0|suffering
+0|gymnast
+0|viewer
+0|goodwill
+0|junior
+0|vault
+0|apart
+0|mat
+0|specialist
+0|severe
+0|in good spirits
+0|appreciation
+0|sorrow
+0|accomplish
+0|thankful
+0|adapt
+0|broadcasting
+0|advocate
+0|admirable
+0|rebuild
+0|unbearable
+0|go after
+0|alcohol
+0|temporary
+0|depth
+0|soul
+0|ski
+0|accompany
+0|instructor
+0|on one's own
+0|downhill
+0|procedure
+0|directly
+0|head for
+0|obey
+0|outstanding
+0|talent
+0|allocate
+0|adequate
+0|quit
+0|uncertain
+0|golden
+0|at that point
+0|rush
+0|entertainment
+0|hardship
+0|ache
+0|vivid
+0|predict
+0|workday
+0|part-time
+0|handy
+0|assist
+0|automatic
+0|instant
+0|maximum
+0|minimum
+0|mature
+0|motivation
+0|Thailand
+0|greet
+0|hug
+0|the Middle East
+0|Arab
+0|the Netherlands
+0|Netherlands
+0|Brunei
+0|end-of-term
+0|wedding
+0|Korea
+0|rooster
+0|ensure
+0|congratulate
+0|reception
+0|bridegroom
+0|bride
+0|permit
+0|prohibit
+0|throughout
+0|offence
+0|thumb
+0|adjust
+0|accustomed
+0|Brit
+0|alike
+0|bonfire
+0|familiar
+0|celebration
+0|firework
+0|hot dog
+0|mustard
+0|barbecue
+0|expectation
+0|emperor
+0|let alone
+0|show somebody around
+0|take up
+0|taboo
+0|religion
+0|gesture
+0|greeting
+0|slight
+0|business card
+0|minority
+0|Inuit
+0|Nunavut
+0|sled
+0|seal
+0|deer
+0|Arctic
+0|feast
+0|account
+0|bravery
+0|mask
+0|carve
+0|claw
+0|wolf
+0|Aborigine
+0|Kakado
+0|govern
+0|musical
+0|boomerang
+0|mysterious
+0|Maori
+0|Polynesia
+0|Rotura
+0|steam
+0|stove
+0|Indian
+0|tribe
+0|plain
+0|Plains Indian
+0|have power over
+0|peace pipe
+0|arrow
+0|retell
+0|roast
+0|lack
+0|running water
+0|refer to
+0|ambassador
+0|description
+0|political
+0|worthy
+0|victim
+0|addition
+0|equal
+0|voluntary
+0|draw someone's attention to
+0|contribute
+0|acquire
+0|expand
+0|worthwhile
+0|under the umbrella of
+0|urgent
+0|starvation
+0|AIDS
+0|boil
+0|carpet
+0|wool
+0|fetch
+0|export
+0|alternative
+0|if only
+0|remote
+0|charity
+0|possession
+0|mountainous
+0|poverty
+0|means
+0|primitive
+0|obtain
+0|heating
+0|well
+0|container
+0|break down
+0|troublesome
+0|wage
+0|commitment
+0|chaos
+0|colleague
+0|assistant
+0|vacant
+0|get hold of
+0|muddy
+0|damp
+0|bacteria
+0|shelter
+0|crowd
+0|remind
+0|staff
+0|barrier
+0|interpreter
+0|think back to
+0|angle
+0|make a difference
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 270
+# Total Entries Extracted: 270
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 270
+# -------------------------------

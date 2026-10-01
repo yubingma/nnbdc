@@ -226,4 +226,13 @@ environment:
       expect(fullText, contains('watching TV, or'));
     });
   });
-} 
+
+  group('Util.getShortName 词书名称清洗测试', () {
+    test('正确剥离 .dict 后缀并保留纯书名', () {
+      expect(Util.getShortName('四级词汇(2026版).dict'), equals('四级词汇(2026版)'));
+      expect(Util.getShortName('考研高频词汇.dict'), equals('考研高频词汇'));
+      expect(Util.getShortName('高考核心词.dict'), equals('高考核心词'));
+      expect(Util.getShortName('基础词汇'), equals('基础词汇'));
+    });
+  });
+}

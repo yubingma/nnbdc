@@ -1,0 +1,23 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "18",
+  "targetGameHallIds": [
+    "27",
+    "12"
+  ],
+  "books": [
+    {
+      "fileName": "2027朱伟英语题源报刊7000词_20261002_023044.txt",
+      "dictName": "2027朱伟英语题源报刊7000词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "27",
+        "12"
+      ]
+    }
+  ]
+}

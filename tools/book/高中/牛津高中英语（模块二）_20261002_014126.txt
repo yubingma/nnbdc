@@ -1,0 +1,217 @@
+0|tale
+0|unexplained
+0|puzzled
+0|step up
+0|incident
+0|due
+0|alien
+0|disappear
+0|witness
+0|spaceship
+0|creature
+0|flash
+0|UFO
+0|assume
+0|construction
+0|occur
+0|show up
+0|aboard
+0|possibility
+0|detective
+0|take charge of
+0|case
+0|journalist
+0|make up
+0|amazing
+0|evidence
+0|injury
+0|dismiss
+0|look into
+0|laughter
+0|schoolboy
+0|astronomer
+0|enthusiastic
+0|base
+0|exist
+0|mystery
+0|comic strip
+0|questionnaire
+0|tick
+0|statement
+0|disagree
+0|appropriate
+0|blank
+0|humour
+0|discount
+0|table tennis
+0|badminton
+0|organize
+0|tournament
+0|award
+0|Yeti
+0|Bigfoot
+0|Wild Man of Shennongjia
+0|hairy
+0|human being
+0|attack
+0|villager
+0|fur
+0|track
+0|centimetre
+0|length
+0|examine
+0|north-west
+0|dozen
+0|reserve
+0|strength
+0|belong
+0|existence
+0|convince
+0|link
+0|ancestor
+0|make one's way to
+0|survive
+0|adventure
+0|arrange
+0|extraordinary
+0|flight
+0|camel
+0|desert
+0|dusty
+0|shade
+0|brilliant
+0|flashlight
+0|altogether
+0|uncomfortable
+0|rough
+0|white-water rafting
+0|helmet
+0|life jacket
+0|protection
+0|in case
+0|backpack
+0|advance
+0|supply
+0|wildlife
+0|photograph
+0|defence
+0|scare
+0|up close
+0|mount
+0|tiring
+0|atmosphere
+0|African
+0|afterwards
+0|sleeve
+0|cheek
+0|tourism
+0|schedule
+0|crane
+0|explore
+0|sunrise
+0|view
+0|heaven
+0|mountaintop
+0|temple
+0|bury
+0|destination
+0|cage
+0|beauty
+0|south-west
+0|highway
+0|classic
+0|novel
+0|kingdom
+0|steep
+0|forever
+0|officially
+0|spot
+0|publish
+0|announce
+0|tower
+0|sunshine
+0|reflect
+0|diamond
+0|cattle
+0|wander
+0|surrounding
+0|harmony
+0|endless
+0|mild
+0|curse
+0|mummy
+0|explorer
+0|curious
+0|set sail
+0|tomb
+0|Egyptian
+0|fortune
+0|jewel
+0|preserve
+0|valley
+0|lord
+0|come across
+0|entrance
+0|content
+0|swallow
+0|death
+0|shortly
+0|within
+0|coincidence
+0|connection
+0|punishment
+0|scientific
+0|virus
+0|disturb
+0|breathe
+0|result in
+0|clothing
+0|riddle
+0|labour
+0|whichever
+0|airplane
+0|signal
+0|warning
+0|iceberg
+0|widespread
+0|requirement
+0|inspire
+0|sex
+0|female
+0|nationality
+0|native
+0|outgoing
+0|gorilla
+0|data
+0|companion
+0|rare
+0|discourage
+0|devotion
+0|PhD
+0|murder
+0|various
+0|organization
+0|voyage
+0|orbit
+0|astronaut
+0|north-east
+0|desire
+0|apply
+0|candidate
+0|survival
+0|rocket
+0|status
+0|superior
+0|be in control
+0|be in control of something
+0|quality
+0|optimistic
+0|indeed
+0|look up to
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 210
+# Total Entries Extracted: 210
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 210
+# -------------------------------

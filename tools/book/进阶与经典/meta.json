@@ -1,0 +1,151 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "d4100600d7434a978f89e13a401c2000",
+  "targetGameHallIds": [
+    "25"
+  ],
+  "books": [
+    {
+      "fileName": "KET核心词 巧记速练_20261002_011633.txt",
+      "dictName": "KET核心词 巧记速练",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2057",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "PET核心词 巧记速练_20261002_011839.txt",
+      "dictName": "PET核心词 巧记速练",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2057",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "The Oxford 3000 - English_20261002_012157.txt",
+      "dictName": "The Oxford 3000 - English",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2058",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "剑桥国际英语教程2_20261002_013237.txt",
+      "dictName": "剑桥国际英语教程2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2060",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "剑桥国际英语教程3_20261002_013443.txt",
+      "dictName": "剑桥国际英语教程3",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2060",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "剑桥国际英语教程入门级_20261002_013016.txt",
+      "dictName": "剑桥国际英语教程入门级",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2060",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "新概念英语第一册（新版）_20261002_010332.txt",
+      "dictName": "新概念英语第一册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2051",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "新概念英语第三册（新版）_20261002_010734.txt",
+      "dictName": "新概念英语第三册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2051",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "新概念英语第二册（新版）_20261002_010533.txt",
+      "dictName": "新概念英语第二册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2051",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "新概念英语第四册（新版）_20261002_010934.txt",
+      "dictName": "新概念英语第四册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2051",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "突破英文词汇22000（新版）_20261002_013840.txt",
+      "dictName": "突破英文词汇22000（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2061",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "美国当代语料库 20200_20261002_011349.txt",
+      "dictName": "美国当代语料库 20200",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "词汇进阶 23000_20261002_012701.txt",
+      "dictName": "词汇进阶 23000",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2059",
+      "targetGameHallIds": [
+        "25"
+      ]
+    },
+    {
+      "fileName": "词汇进阶 6000_20261002_012439.txt",
+      "dictName": "词汇进阶 6000",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2059",
+      "targetGameHallIds": [
+        "25"
+      ]
+    }
+  ]
+}

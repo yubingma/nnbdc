@@ -1,0 +1,254 @@
+0|keep in touch with
+0|evolution
+0|device
+0|drawback
+0|principle
+0|construct
+0|delay
+0|black-and-white
+0|accessible
+0|satellite dish
+0|distribute
+0|percentage
+0|receiver
+0|tube
+0|disc
+0|wind
+0|component
+0|eventually
+0|portable
+0|cassette
+0|digital
+0|VCD
+0|storage
+0|foresee
+0|patent
+0|adaptation
+0|relay
+0|sceptical
+0|ample
+0|casual
+0|insurance
+0|obvious
+0|all-round
+0|electronic
+0|translation
+0|idiom
+0|gram
+0|suitable
+0|scan
+0|elegant
+0|battery
+0|Christian
+0|carriage
+0|refrigerator
+0|religious
+0|vote
+0|reject
+0|tight
+0|oppose
+0|valid
+0|circumstance
+0|merely
+0|dial
+0|typical
+0|text message
+0|shallow
+0|sacrifice
+0|stable
+0|dustbin
+0|for good measure
+0|rid
+0|chemist
+0|acupuncture
+0|needle
+0|surgeon
+0|operating theatre
+0|life-saving
+0|revolution
+0|cupboard
+0|counter
+0|aspirin
+0|penicillin
+0|beneficial
+0|chew
+0|possess
+0|salicylic acid
+0|acid
+0|tablet
+0|best-selling
+0|vital
+0|potential
+0|heart attack
+0|circulate
+0|stroke
+0|blood sugar
+0|diabetes
+0|abnormal
+0|mould
+0|astonish
+0|try out
+0|application
+0|unable
+0|effective
+0|approval
+0|accelerate
+0|mass
+0|sickness
+0|symptom
+0|bleed
+0|wear somebody out
+0|reasonable
+0|outcome
+0|applaud
+0|arrangement
+0|dull
+0|pressure point
+0|sword
+0|let out
+0|swell
+0|acupuncturist
+0|stainless
+0|sharp
+0|complex
+0|pulse
+0|heartbeat
+0|wrist
+0|organ
+0|alcoholic
+0|addicted
+0|theory
+0|phenomenon
+0|relate
+0|subscribe
+0|brand
+0|source
+0|turn to somebody
+0|turn to something
+0|click
+0|abundant
+0|command
+0|claim
+0|assumption
+0|statistics
+0|bond
+0|diverse
+0|what is more
+0|correspond
+0|globe
+0|avenue
+0|address
+0|evaluate
+0|accuracy
+0|up to date
+0|weakness
+0|false
+0|educator
+0|reference
+0|booth
+0|drop out
+0|withdraw
+0|conference
+0|explicit
+0|alarm
+0|lifetime
+0|competence
+0|inventor
+0|bulb
+0|abandon
+0|appointment
+0|sample
+0|terminal
+0|search engine
+0|directory
+0|classify
+0|type
+0|web
+0|qualification
+0|comb
+0|specific
+0|category
+0|bunch
+0|relevant
+0|bother
+0|correction
+0|plus
+0|sparrow
+0|minus
+0|outline
+0|acknowledge
+0|route
+0|drop off
+0|rail
+0|outer
+0|horse-drawn
+0|tram
+0|cab
+0|convey
+0|unfortunately
+0|unbelievable
+0|traffic jam
+0|metropolitan
+0|via
+0|postpone
+0|tunnel
+0|section
+0|link up
+0|interval
+0|choke
+0|undertake
+0|ownership
+0|authority
+0|architect
+0|prime
+0|minister
+0|Prime Minister
+0|enlarge
+0|user-friendly
+0|anniversary
+0|subway
+0|platform
+0|growth
+0|put through
+0|decide on
+0|decide upon
+0|put off
+0|turn up
+0|enquiry
+0|fill in
+0|handful
+0|split
+0|annual
+0|receptionist
+0|detail
+0|reservation
+0|newsflash
+0|speed up
+0|timetable
+0|departure
+0|ferry
+0|port
+0|punctual
+0|arise
+0|cyclist
+0|pedestrian
+0|minibus
+0|aggressive
+0|lane
+0|crash
+0|fine
+0|drunk
+0|violate
+0|beer
+0|turning
+0|load
+0|brake
+0|tyre
+0|crossing
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 247
+# Total Entries Extracted: 247
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 247
+# -------------------------------

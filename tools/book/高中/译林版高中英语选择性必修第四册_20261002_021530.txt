@@ -1,0 +1,305 @@
+0|barely
+0|cigar
+0|appointment
+0|tear down
+0|keen
+0|jaw
+0|scar
+0|eyebrow
+0|scarfpin
+0|diamond
+0|make one's fortune
+0|lose contact
+0|reliable
+0|worthwhile
+0|collar
+0|bless
+0|inch
+0|arm in arm
+0|outline
+0|suspect
+0|arrest
+0|under arrest
+0|wire
+0|criminal
+0|anyhow
+0|innocent
+0|legal
+0|principle
+0|decent
+0|burden
+0|geophysicist
+0|core
+0|socialist
+0|resign
+0|ward
+0|substantial
+0|mineral
+0|superb
+0|photographer
+0|guilty
+0|ashamed
+0|forgive
+0|cheat
+0|wrap
+0|parcel
+0|bow
+0|nephew
+0|disappointed
+0|wrinkle
+0|pause
+0|sew
+0|pretend
+0|privilege
+0|embrace
+0|phase
+0|anchor
+0|mercy
+0|at the mercy of sb.
+0|at the mercy of sth.
+0|likewise
+0|deadline
+0|guidance
+0|fault
+0|virtue
+0|integrity
+0|organic
+0|starfish
+0|discouraged
+0|garbage
+0|saving
+0|bonus
+0|weigh on sb.
+0|weigh on sth.
+0|jade
+0|sow
+0|harvest
+0|rejoice
+0|quote
+0|react
+0|gentle
+0|encode
+0|mail
+0|decode
+0|feedback
+0|competent
+0|obtain
+0|suit
+0|negotiate
+0|enterprise
+0|straightforward
+0|fold
+0|friction
+0|clarify
+0|knowledgeable
+0|empathy
+0|put yourself in sb.'s shoes
+0|sympathy
+0|account for sth.
+0|empathize
+0|approve
+0|approve of
+0|tone
+0|gain
+0|gesture
+0|precisely
+0|vocabulary
+0|preference
+0|jam
+0|somewhat
+0|taboo
+0|embarrassed
+0|intention
+0|correspond
+0|behave
+0|tolerate
+0|kindergarten
+0|recite
+0|accent
+0|handwriting
+0|fluent
+0|cooperate
+0|cite
+0|broaden one's mind
+0|tofu
+0|bacon
+0|tank
+0|golf
+0|integrate
+0|bilingual
+0|kung fu
+0|oppose
+0|intervention
+0|pure
+0|tribe
+0|reject
+0|pessimistic
+0|Germanic
+0|linguist
+0|tendency
+0|skateboard
+0|canteen
+0|sincerely
+0|slip
+0|fence
+0|contest
+0|salary
+0|labour
+0|labour force
+0|gear
+0|earn a living
+0|attain
+0|endeavour
+0|passion
+0|fond
+0|be fond of
+0|anticipate
+0|status quo
+0|superior
+0|prejudice
+0|lawyer
+0|servant
+0|public servant
+0|consultant
+0|clerk
+0|receptionist
+0|respective
+0|zone
+0|comfort zone
+0|operate
+0|hire
+0|leadership
+0|weigh up
+0|receipt
+0|commercial
+0|weekly
+0|monthly
+0|budget
+0|put sth. on the line
+0|loan
+0|client
+0|detective
+0|detective work
+0|subjective
+0|directory
+0|plug
+0|groundwork
+0|premier
+0|institute
+0|proportion
+0|fabric
+0|fibre
+0|qualification
+0|swing
+0|swing into action
+0|label
+0|candidate
+0|gain the upper hand
+0|applicant
+0|prior
+0|prior to
+0|profile
+0|criterion
+0|concisely
+0|shave
+0|refreshed
+0|mode
+0|delay
+0|duration
+0|for the duration
+0|rude
+0|justify
+0|relevant
+0|infer
+0|convey
+0|firm
+0|genuine
+0|yawn
+0|seize
+0|corporate
+0|put one's best foot forward
+0|rainbow
+0|madam
+0|temporary
+0|bowling
+0|tournament
+0|auditory
+0|verbal
+0|blank
+0|composition
+0|educator
+0|Confucius
+0|bound
+0|be bound to
+0|keep pace with sb.
+0|keep pace with sth.
+0|resolve
+0|refresh
+0|objective
+0|criticize
+0|inquire
+0|register
+0|subscribe
+0|subscribe to
+0|concrete
+0|comprehension
+0|cease
+0|self-worth
+0|inductive
+0|reasoning
+0|abstract
+0|swan
+0|assumption
+0|domain
+0|vocational
+0|occupation
+0|qualify
+0|prospect
+0|motor
+0|institution
+0|drill
+0|circuit
+0|competence
+0|recreation
+0|lamp
+0|random
+0|statistic
+0|tablet
+0|certificate
+0|breast
+0|curtain
+0|in a flash
+0|tight
+0|mature
+0|compose oneself
+0|dormitory
+0|circus
+0|essay
+0|geometry
+0|paragraph
+0|laptop
+0|dizzy
+0|sneeze
+0|reference
+0|draft
+0|polish
+0|drawer
+0|presentation
+0|cafeteria
+0|bounce
+0|bounce ideas off sb.
+0|professor
+0|beard
+0|intimidating
+0|carriage
+0|kettle
+0|librarian
+0|forehead
+0|extension
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 298
+# Total Entries Extracted: 298
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 298
+# -------------------------------

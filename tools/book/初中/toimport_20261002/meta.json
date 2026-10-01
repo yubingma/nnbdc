@@ -1,0 +1,21 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "11",
+  "targetGameHallIds": [
+    "8"
+  ],
+  "books": [
+    {
+      "fileName": "鲁教版五四学制九年级全一册（新版）_20261002_022451.txt",
+      "dictName": "鲁教版五四学制九年级全一册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2039",
+      "targetGameHallIds": [
+        "8"
+      ]
+    }
+  ]
+}

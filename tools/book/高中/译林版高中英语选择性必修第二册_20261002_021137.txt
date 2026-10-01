@@ -1,0 +1,368 @@
+0|critical
+0|trap
+0|release
+0|ambulance
+0|extend
+0|construction
+0|dozen
+0|dozens of
+0|minor
+0|bath
+0|scream
+0|bark
+0|choke
+0|cigarette
+0|carpet
+0|automatic
+0|investigate
+0|come about
+0|journalist
+0|priority
+0|contradict
+0|factual
+0|instance
+0|for instance
+0|differ
+0|conclusion
+0|false
+0|bring sth. to light
+0|minimum
+0|maximum
+0|sum up
+0|sum
+0|accurate
+0|committed
+0|be committed to
+0|discrimination
+0|curiosity
+0|journalism
+0|commitment
+0|citizen
+0|found
+0|politics
+0|accuse
+0|tax
+0|mount
+0|mount up
+0|elevation
+0|profession
+0|drama
+0|scholarship
+0|category
+0|nevertheless
+0|witness
+0|edition
+0|platform
+0|spring up
+0|interaction
+0|membership
+0|chart
+0|the charts
+0|broadcast
+0|advertising
+0|persuasion
+0|persuade
+0|advertisement
+0|channel
+0|peak
+0|advertise
+0|boost
+0|psychology
+0|purchase
+0|memorable
+0|slogan
+0|teapot
+0|get across
+0|brand
+0|ambassador
+0|placement
+0|rating
+0|sponsor
+0|absorb
+0|discount
+0|tailor
+0|brighten up
+0|housing
+0|estate
+0|housing estate
+0|amuse
+0|solidarity
+0|BCE
+0|participate
+0|compete
+0|racial
+0|diverse
+0|joint
+0|motivate
+0|motto
+0|mottoes
+0|mottos
+0|boundary
+0|demonstrate
+0|afterwards
+0|afterward
+0|proceed
+0|flame
+0|applaud
+0|track and field
+0|consistent
+0|call on sb. to do sth.
+0|humanity
+0|rank
+0|trend
+0|hurdle
+0|hurdles
+0|election
+0|advent
+0|faith
+0|ambition
+0|ascend
+0|identical
+0|fellow
+0|relay
+0|chest
+0|cheek
+0|half-marathon
+0|amateur
+0|ankle
+0|gradually
+0|session
+0|limit
+0|marathon
+0|chairman
+0|constitution
+0|pour
+0|walk on air
+0|keep sth. in perspective
+0|celebrity
+0|opponent
+0|humility
+0|grace
+0|dignity
+0|bobsleigh
+0|unselfish
+0|idiom
+0|find one's way into
+0|league
+0|opposing
+0|net
+0|the net
+0|move the goalposts
+0|insurance
+0|salesman
+0|complain
+0|score an own goal
+0|unintentionally
+0|council
+0|backfire
+0|ballpark
+0|in the ballpark
+0|a ballpark estimate
+0|venue
+0|curveball
+0|throw sb. a curveball
+0|handle
+0|three strikes and you are out
+0|fist
+0|waist
+0|below the belt
+0|cruel
+0|remark
+0|towel
+0|throw in the towel
+0|literally
+0|iron
+0|surgeon
+0|physician
+0|chemist
+0|dentist
+0|specialize
+0|specialise
+0|gene
+0|game-changing
+0|genome
+0|cell
+0|being
+0|lifespan
+0|affect
+0|contract
+0|virus
+0|cancer
+0|identify
+0|relate
+0|relate to
+0|means
+0|delete
+0|restore
+0|ultimately
+0|abnormal
+0|weapon
+0|fundamental
+0|pace
+0|arise
+0|arose
+0|arisen
+0|restrict
+0|prohibit
+0|prohibit sb. from doing sth.
+0|resistance
+0|flu
+0|characteristic
+0|wrestle
+0|wrestle with
+0|put sth. in place
+0|debate
+0|without doubt
+0|finding
+0|ripe
+0|a ripe old age
+0|withdraw
+0|withdrew
+0|withdrawn
+0|equip
+0|artificial
+0|limb
+0|rubber
+0|outgoing
+0|grateful
+0|disabled
+0|disability
+0|conventional
+0|leather
+0|sensory
+0|patent
+0|fuel
+0|disturb
+0|tackle
+0|head-on
+0|go to great lengths to do sth.
+0|adjust
+0|centimetre
+0|centimeter
+0|acupuncture
+0|needle
+0|evidence
+0|date back to
+0|solid
+0|switch
+0|stainless
+0|steel
+0|millimetre
+0|millimeter
+0|clinic
+0|examine
+0|tongue
+0|pulse
+0|wrist
+0|organ
+0|severe
+0|anxiety
+0|abuse
+0|alcohol
+0|tobacco
+0|drug
+0|phenomenon
+0|phenomena
+0|substance
+0|symbol
+0|widespread
+0|bandage
+0|infection
+0|department
+0|castle
+0|castles in the air
+0|build castles in the air
+0|input
+0|capacity
+0|analyse
+0|analyze
+0|massive
+0|network
+0|coin
+0|breakthrough
+0|finance
+0|to name but a few
+0|autonomous
+0|domestic
+0|threaten
+0|commit
+0|crime
+0|murder
+0|urge
+0|pose
+0|apparently
+0|warning
+0|demand
+0|victim
+0|fall victim to
+0|greedy
+0|recognition
+0|database
+0|alternative
+0|hacker
+0|theft
+0|break into
+0|fail-safe
+0|drone
+0|distribution
+0|predict
+0|decrease
+0|deny
+0|quantity
+0|in large quantities
+0|airline
+0|threat
+0|spy
+0|spy on
+0|illegal
+0|monitor
+0|licence
+0|license
+0|stadium
+0|highlight
+0|capsule
+0|bury
+0|fountain
+0|fountain pen
+0|contemporary
+0|seed
+0|wheat
+0|muscular
+0|conclude
+0|justified
+0|superiority
+0|virtual
+0|at the forefront of
+0|definition
+0|headset
+0|sensor
+0|practical
+0|a host of
+0|academic
+0|immersive
+0|engage
+0|twin
+0|clone
+0|barrier
+0|boil down to
+0|fine-tune
+0|initial
+0|optimistic
+0|annoy
+0|weed
+0|like weeds
+0|state-of-the-art
+0|globe
+0|satellite
+0|expense
+0|at the expense of
+0|gender
+0|envy
+0|pub
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 361
+# Total Entries Extracted: 361
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 361
+# -------------------------------

@@ -3,6 +3,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/select_book.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/utils.dart';
 
 enum DownloadStatus { pending, downloading, success, failure }
 
@@ -194,7 +195,7 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  _dictNames[dict.id] ?? dict.name?.replaceAll('.dict', '') ?? dict.id.replaceAll('.dict', ''),
+                                  Util.getShortName(_dictNames[dict.id] ?? dict.name ?? dict.id),
                                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                                 ),
                               ),

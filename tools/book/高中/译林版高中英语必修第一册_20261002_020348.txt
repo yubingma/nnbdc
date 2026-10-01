@@ -1,0 +1,284 @@
+0|potential
+0|senior
+0|path
+0|challenge
+0|thinking
+0|positive
+0|opportunity
+0|lie in
+0|rise to
+0|acquire
+0|effort
+0|advance
+0|amazing
+0|confidence
+0|make a difference
+0|make the most of
+0|resource
+0|take advantage of
+0|facility
+0|equal
+0|attitude
+0|goal
+0|balance
+0|improve
+0|last but not least
+0|well-rounded
+0|individual
+0|character
+0|responsible
+0|ahead
+0|junior
+0|forward
+0|look forward to
+0|independent
+0|focus
+0|detail
+0|as a result of
+0|tip
+0|base
+0|remind
+0|stick to
+0|proposal
+0|aim
+0|style
+0|technique
+0|workshop
+0|professional
+0|material
+0|poster
+0|secondary
+0|exchange
+0|host
+0|a.m.
+0|p.m.
+0|biology
+0|tough
+0|alarm
+0|contribution
+0|fortunately
+0|over time
+0|option
+0|butter
+0|pudding
+0|attract
+0|rugby
+0|calligraphy
+0|nest
+0|roof
+0|battle
+0|see eye to eye with sb.
+0|see eye to eye with sb. on sth.
+0|argument
+0|teenager
+0|tension
+0|anxious
+0|rate
+0|shoot
+0|shoot up
+0|spot
+0|target
+0|anger
+0|mental
+0|adult
+0|desire
+0|struggle
+0|rough
+0|breakdown
+0|regular
+0|calm
+0|calm down
+0|view
+0|from one's point of view
+0|think sth. through
+0|concern
+0|back down
+0|normal
+0|stress
+0|editor
+0|argue
+0|skin
+0|design
+0|forum
+0|expert
+0|likely
+0|unique
+0|passive
+0|performance
+0|cheer up
+0|press
+0|eager
+0|youth
+0|adventure
+0|be on sb.'s back about sth.
+0|kangaroo
+0|flexible
+0|account
+0|rent
+0|grocery
+0|secure
+0|graduate
+0|gather
+0|emergency
+0|volunteer
+0|pipe
+0|figure
+0|downtown
+0|draw sth. out of sth.
+0|operation
+0|lap
+0|teller
+0|scene
+0|flat
+0|response
+0|on the rocks
+0|awkward
+0|sight
+0|out of one's sight
+0|original
+0|medium
+0|media
+0|social media
+0|make it
+0|horrible
+0|chat
+0|cafe
+0|recover
+0|respond
+0|loss
+0|at a loss
+0|judge
+0|in the wrong
+0|apologize
+0|behaviour
+0|case
+0|in any case
+0|frank
+0|definitely
+0|trick
+0|let go of
+0|ignore
+0|suffer
+0|misunderstand
+0|contact
+0|explode
+0|generous
+0|count on
+0|eat away at
+0|shallow
+0|blog
+0|come between ... and ...
+0|in person
+0|theme
+0|slave
+0|raft
+0|high point
+0|through thick and thin
+0|opinion
+0|in one's opinion
+0|quality
+0|basis
+0|respect
+0|get over
+0|efficient
+0|extra
+0|bring out
+0|measure
+0|reflection
+0|seek
+0|escape
+0|smooth out
+0|be meant to do sth.
+0|benefit
+0|comfort
+0|joy
+0|failure
+0|take on
+0|in full measure
+0|moment
+0|indeed
+0|well-meaning
+0|recognize
+0|thorough
+0|death
+0|company
+0|crowd
+0|poet
+0|admire
+0|wine
+0|skip
+0|yogurt
+0|faint
+0|pass out
+0|immediately
+0|concentrate
+0|sex
+0|extreme
+0|slim
+0|slim down
+0|per cent
+0|concerned
+0|effect
+0|side effect
+0|prove
+0|slightly
+0|diet
+0|nutrition
+0|function
+0|take in
+0|energetic
+0|effective
+0|get into shape
+0|frightened
+0|within
+0|rather
+0|aspect
+0|pressure
+0|contribute
+0|contribute to
+0|in the short term
+0|in the long term
+0|memory
+0|attack
+0|amount
+0|schedule
+0|negative
+0|plastic
+0|surgery
+0|plastic surgery
+0|campus
+0|treatment
+0|guy
+0|addition
+0|in addition
+0|saying
+0|hang over
+0|jeans
+0|male
+0|female
+0|guard against
+0|beauty
+0|fight a losing battle
+0|live up to
+0|end up
+0|fashion
+0|shadow
+0|digital
+0|series
+0|show off
+0|external
+0|strength
+0|talent
+0|piano
+0|take pride in
+0|content
+0|individuality
+0|achievement
+0|app
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 277
+# Total Entries Extracted: 277
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 277
+# -------------------------------

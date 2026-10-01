@@ -1,0 +1,927 @@
+0|ability
+0|homemaking ability
+0|accomplishment
+0|affection
+0|attractive
+0|attractiveness
+0|physical attractiveness
+0|brag
+0|can
+0|can't stand
+0|could
+0|depressed
+0|during
+0|during a movie
+0|easygoing
+0|egotistical
+0|find
+0|friend
+0|close friend
+0|get
+0|get angry
+0|get annoyed
+0|go out
+0|go out with
+0|have
+0|have a sense of humor
+0|have in common
+0|herself
+0|himself
+0|homemaking
+0|ideal
+0|intelligence
+0|interested
+0|intolerant
+0|leadership
+0|mad
+0|modest
+0|organized
+0|others
+0|passion
+0|performance
+0|potential
+0|earnings potential
+0|reliable
+0|selflessness
+0|sense
+0|fashion sense
+0|sense of humor
+0|sensitivity
+0|skill
+0|job skill
+0|social skill
+0|sociable
+0|someone
+0|stingy
+0|success
+0|supportive
+0|temperamental
+0|unreliable
+0|warmth
+0|will
+0|would
+0|accountant
+0|advantage
+0|agent
+0|secret agent
+0|air traffic controller
+0|architect
+0|as
+0|but
+0|child-care worker
+0|choir director
+0|coach
+0|high school coach
+0|columnist
+0|gossip columnist
+0|comedian
+0|cook
+0|restaurant cook
+0|conduct
+0|conventional
+0|counselor
+0|designer
+0|clothing designer
+0|Web designer
+0|disadvantage
+0|driver
+0|bus driver
+0|taxi driver
+0|earn
+0|enterprising
+0|flight attendant
+0|headhunter
+0|instructor
+0|aerobics instructor
+0|intern
+0|investigative
+0|landscaper
+0|landscaping
+0|lawyer
+0|lead
+0|job lead
+0|orchestra
+0|pharmacist
+0|politician
+0|predictable
+0|probably
+0|psychiatrist
+0|realistic
+0|reporter
+0|newspaper reporter
+0|TV reporter
+0|salary
+0|seem
+0|social
+0|sound
+0|speaking
+0|public speaking
+0|tan
+0|unpredictable
+0|veterinarian
+0|accept
+0|accept an apology
+0|accept an invitation
+0|accept a request
+0|at
+0|at five
+0|before
+0|behind
+0|behind me
+0|by the way
+0|camera
+0|digital camera
+0|complicated
+0|decline
+0|deny
+0|deny a request
+0|do
+0|do a favor
+0|espresso
+0|finish
+0|free
+0|not busy
+0|give
+0|give a gift
+0|have a party
+0|look at
+0|make
+0|make a phone call
+0|make a request
+0|meeting
+0|staff meeting
+0|move
+0|move into
+0|number
+0|phone number
+0|of course
+0|offer
+0|offer an apology
+0|on
+0|on Friday
+0|out
+0|ready
+0|receive
+0|receive a compliment
+0|receive a gift
+0|receive an invitation
+0|receive a phone call
+0|refuse
+0|refuse a gift
+0|refuse a request
+0|reject
+0|return
+0|return a favor
+0|return a phone call
+0|return a compliment
+0|spill
+0|stay
+0|take back
+0|take care
+0|take care of
+0|turn down
+0|turn down an invitation
+0|uh
+0|um
+0|underwater
+0|un-huh
+0|yeah
+0|accidentally
+0|achievement
+0|ad
+0|classified ad
+0|ambulance
+0|apart
+0|applicant
+0|job applicant
+0|arrest
+0|be able to
+0|break into
+0|by chance
+0|carjacker
+0|coast
+0|coincidence
+0|come back
+0|connected
+0|destruction
+0|disaster
+0|diver
+0|each other
+0|editorial
+0|elevator
+0|emergency
+0|envelope
+0|even though
+0|eye
+0|fortune
+0|good fortune
+0|freeway
+0|get caught
+0|get locked out
+0|get stuck
+0|gold
+0|half
+0|hardly
+0|identical
+0|illusion
+0|incident
+0|interrupt
+0|involve
+0|kick
+0|license
+0|driver's license
+0|light up
+0|lock
+0|locker
+0|lucky break
+0|mailbox
+0|misfortune
+0|mystery
+0|obvious
+0|off
+0|order
+0|pain
+0|perform
+0|police
+0|predicament
+0|product
+0|hair care product
+0|protester
+0|puzzling
+0|quick
+0|reach
+0|reef
+0|coral reef
+0|reunite
+0|rob
+0|robbery
+0|run out
+0|run out of
+0|score
+0|secretary
+0|shipwreck
+0|sky
+0|solution
+0|strange
+0|stuff
+0|stylist
+0|hair stylist
+0|sudden
+0|suffering
+0|surprise
+0|thief
+0|triumph
+0|twin
+0|unexplained
+0|unlock
+0|along
+0|anxious
+0|appropriately
+0|by
+0|by bus
+0|by train
+0|challenge
+0|climate
+0|comfortable
+0|communicate
+0|confident
+0|cooking
+0|culture shock
+0|curious
+0|eat out
+0|embarrassed
+0|enthusiastic
+0|ever
+0|fascinated
+0|feel
+0|for
+0|for a while
+0|for example
+0|get sick
+0|get used to
+0|have a baby
+0|homesick
+0|host
+0|in
+0|in public
+0|insecure
+0|keep
+0|keep in mind
+0|language
+0|most
+0|the most
+0|nervous
+0|plan
+0|take
+0|take photographs
+0|temple
+0|tip
+0|uncertain
+0|uncomfortable
+0|worried
+0|adjust
+0|answering machine
+0|break
+0|break down
+0|by hand
+0|calculator
+0|charge
+0|chipped
+0|control
+0|crack
+0|cracked
+0|crash
+0|damage
+0|damaged
+0|deliver
+0|dented
+0|dirty
+0|discount
+0|dry cleaner
+0|even
+0|even when
+0|everything
+0|flicker
+0|go dead
+0|hair dryer
+0|jam
+0|lamp shade
+0|landlord
+0|leak
+0|lens
+0|lining
+0|jacket lining
+0|made
+0|well made
+0|mug
+0|oven
+0|over
+0|overheat
+0|pair
+0|pair of
+0|pitcher
+0|purchase
+0|receipt
+0|refrigerator
+0|refund
+0|remote control
+0|repair
+0|replace
+0|right away
+0|right now
+0|scratch
+0|scratched
+0|shirt
+0|shrink
+0|skip
+0|solar-powered
+0|stain
+0|stained
+0|store credit
+0|tablecloth
+0|tabletop
+0|tear
+0|telephone
+0|temperature
+0|torn
+0|TV
+0|flat-screen TV
+0|undercooked
+0|vase
+0|washing machine
+0|work
+0|function
+0|worn
+0|acid rain
+0|air
+0|against
+0|against the law
+0|as a result of
+0|because of
+0|CFC
+0|chemical
+0|coal
+0|conserve
+0|contaminate
+0|contribution
+0|create
+0|dependence
+0|deplete
+0|develop
+0|displace
+0|dispose
+0|dispose of
+0|drug trafficking
+0|due to
+0|eat up
+0|educate
+0|executive
+0|factory
+0|famine
+0|farmland
+0|fish
+0|forest
+0|rain forest
+0|fumes
+0|global warming
+0|growth
+0|hair spray
+0|harm
+0|health
+0|HIV
+0|AIDS
+0|homeless
+0|the homeless
+0|illegal
+0|industrial
+0|inflation
+0|innovative
+0|jammed
+0|landfill
+0|law
+0|livestock
+0|major
+0|management
+0|ocean
+0|oil
+0|on the street
+0|outside
+0|overbuilding
+0|overcrowding
+0|overpopulation
+0|ozone layer
+0|paper
+0|plant
+0|political unrest
+0|pollute
+0|pollution
+0|poverty
+0|publicity
+0|pump
+0|rare
+0|recycling
+0|reduce
+0|reduction
+0|river
+0|run
+0|run a story
+0|shelter
+0|soil
+0|station
+0|TV station
+0|supply
+0|think about
+0|threaten
+0|traffic
+0|heavy traffic
+0|training
+0|underground
+0|unemployed
+0|unemployment
+0|urban
+0|wasteful
+0|wildlife
+0|work on
+0|accent
+0|artistic appreciation
+0|attend
+0|broadcasting
+0|communication skills
+0|competitiveness
+0|concern for others
+0|cooperation
+0|correctly
+0|courtesy
+0|creativity
+0|criminology
+0|curriculum
+0|economics
+0|environmental science
+0|exercise science
+0|fashion
+0|film studies
+0|grammar
+0|hospitality
+0|idiom
+0|interior design
+0|join
+0|learn
+0|learn about
+0|learner's dictionary
+0|martial art
+0|native
+0|about
+0|pen pal
+0|perseverance
+0|private
+0|pronunciation
+0|register
+0|register for
+0|right
+0|correct
+0|sign up
+0|sign up for
+0|sitcom
+0|software
+0|software program
+0|stick
+0|stick on
+0|take a class
+0|take a course
+0|take a course on
+0|tolerance
+0|translation
+0|useful
+0|vocabulary
+0|volunteer
+0|actively
+0|argue
+0|beauty service
+0|break up with
+0|cleaning
+0|house cleaning
+0|clothing
+0|come up with
+0|commuter
+0|computer support
+0|cut down on
+0|dating service
+0|dry cleaning
+0|essay typing
+0|examine
+0|fatty
+0|fingernail
+0|get in shape
+0|get along with
+0|guarantee
+0|keep up with
+0|language tutoring
+0|laundry
+0|look forward to
+0|mall
+0|shopping mall
+0|music lesson
+0|over the Internet
+0|overcome
+0|overweight
+0|painting
+0|house painting
+0|pet-sitting
+0|photo
+0|portrait
+0|professionally
+0|put up with
+0|quit
+0|relax
+0|reunion
+0|service
+0|financial service
+0|handyman service
+0|shyness
+0|temper
+0|upgrade
+0|vending machine
+0|album
+0|assassination
+0|atmosphere
+0|baldness
+0|cellular
+0|century
+0|coastal
+0|come out
+0|come out with
+0|craze
+0|disco
+0|discovery
+0|eliminate
+0|epidemic
+0|everyone
+0|existence
+0|fad
+0|feather
+0|for 44 years
+0|gather
+0|hijack
+0|hit the scene
+0|hula hoop
+0|human
+0|ice cap
+0|impact
+0|in existence
+0|in 1989
+0|introduce
+0|invention
+0|launch
+0|mission
+0|moon
+0|none
+0|not ever
+0|peaceful
+0|polar
+0|prevent
+0|public figure
+0|release
+0|respected
+0|rock 'n' roll
+0|rover
+0|sensation
+0|set up
+0|so far
+0|spacecraft
+0|summit
+0|surface
+0|sweep the nation
+0|terrorism
+0|terrorist act
+0|thought
+0|translate
+0|vaccine
+0|voice command
+0|within
+0|within 20 years
+0|ambitious
+0|appreciate
+0|argumentative
+0|at this job
+0|bank account
+0|bar mitzvah
+0|bat mitzvah
+0|broke
+0|carefree
+0|confirmation
+0|conscientious
+0|find out
+0|go back
+0|high school
+0|immature
+0|importance
+0|irresponsible
+0|make friends
+0|mature
+0|myself
+0|naive
+0|not ... anymore
+0|paycheck
+0|practical
+0|pragmatic
+0|promotion
+0|rebellious
+0|relationship
+0|responsible
+0|retire
+0|rite of passage
+0|save
+0|save money
+0|selfish
+0|sensible
+0|sophisticated
+0|tend
+0|tend to
+0|turning point
+0|acoustics
+0|advertising
+0|affordable
+0|anyway
+0|athletic center
+0|attract
+0|be seen
+0|boutique
+0|clothing boutique
+0|brand new
+0|catchy
+0|charming
+0|clever
+0|coffee bar
+0|concert hall
+0|crowded
+0|dance club
+0|diverse
+0|entertaining
+0|fabulous
+0|fashionable
+0|funny
+0|industrious
+0|informative
+0|knowledgeable
+0|megastore
+0|muscular
+0|operate
+0|packed
+0|persuasive
+0|plenty
+0|profitable
+0|reason
+0|slender
+0|slogan
+0|sort
+0|sort of
+0|succeed
+0|sufficient
+0|supermarket
+0|tough
+0|trainer
+0|trendy
+0|wait
+0|well written
+0|worldwide
+0|accuse
+0|acquaintance
+0|advise
+0|assumption
+0|burst
+0|burst out laughing
+0|carefully
+0|catch
+0|catch a bus
+0|check
+0|check e-mail
+0|check one's messages
+0|criticism
+0|demand
+0|dent
+0|excuse
+0|explanation
+0|field
+0|fire
+0|get peeved
+0|guilty
+0|have ... on one's mind
+0|however
+0|impress
+0|inconsiderate
+0|locksmith
+0|messy
+0|miss out
+0|miss out on
+0|mood
+0|one
+0|pet peeve
+0|prediction
+0|short
+0|short of money
+0|sleepwalk
+0|slowly
+0|suggestion
+0|suspicion
+0|tow truck
+0|turn up
+0|voice mail
+0|warning
+0|yawn
+0|actor
+0|advanced
+0|angle
+0|camera operator
+0|casting director
+0|complete
+0|computer animated
+0|computer graphics
+0|computer programmer
+0|concert
+0|rock concert
+0|costume
+0|depend
+0|graphic designer
+0|prop designer
+0|special-effects designer
+0|Web-page designer
+0|detail
+0|dialect coach
+0|director
+0|distribute
+0|divide
+0|drive-in
+0|drive-in theater
+0|editor
+0|editorial page editor
+0|film editor
+0|photo editor
+0|expand
+0|fashion show
+0|film
+0|final
+0|foreign correspondent
+0|full-length
+0|gross
+0|IMAX
+0|in order
+0|in sequence
+0|industry
+0|location
+0|location scout
+0|movie producer
+0|narrative
+0|network installer
+0|on stage
+0|outline
+0|pick
+0|prepare
+0|rehearse
+0|review
+0|scandal
+0|scene
+0|screen
+0|screenplay
+0|screenwriter
+0|script
+0|script doctor
+0|separately
+0|set
+0|shoot
+0|shoot a scene
+0|shoot a movie scene
+0|shot
+0|silent
+0|TV sitcom
+0|situational comedy
+0|soon after
+0|stage
+0|stagehand
+0|stand in
+0|stand in for
+0|stick out
+0|studio
+0|stunt person
+0|thousands
+0|thousands of
+0|three-dimensional
+0|3-D
+0|write out
+0|coffee break
+0|car alarm
+0|child care
+0|day care
+0|downsizing
+0|ethnic conflict
+0|flush
+0|go off
+0|graffiti
+0|gun violence
+0|handgun
+0|health care
+0|helmet
+0|high-rise
+0|honk
+0|horn
+0|hunt
+0|illiteracy
+0|insurance
+0|health insurance
+0|make ends meet
+0|next door
+0|offense
+0|pass
+0|periodic
+0|permit
+0|pretend
+0|run-down
+0|Seeing Eye dog
+0|stray animals
+0|street crime
+0|tax
+0|sales tax
+0|telemarketing
+0|accomplish
+0|adaptable
+0|addiction
+0|ahead
+0|ambassador
+0|goodwill ambassador
+0|compassionate
+0|courageous
+0|cynical
+0|deal with
+0|dependent
+0|emergency room
+0|frustrating
+0|grade
+0|imaginative
+0|impaired
+0|visually impaired
+0|insensitive
+0|land mine
+0|life-or-death
+0|manage
+0|manage to
+0|nursing home
+0|on a regular basis
+0|on one's own
+0|orphanage
+0|resourceful
+0|rigid
+0|self-sufficient
+0|senior citizen
+0|animal shelter
+0|homeless shelter
+0|timid
+0|unimaginative
+0|upbeat
+0|weakness
+0|youthful
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 920
+# Total Entries Extracted: 920
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 920
+# -------------------------------

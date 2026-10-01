@@ -1,0 +1,251 @@
+0|hearing
+0|raised
+0|dot
+0|sign
+0|confuse
+0|vase
+0|fog
+0|mist
+0|forecast
+0|conductor
+0|fare
+0|foggy
+0|observe
+0|overcoat
+0|glance
+0|nowhere
+0|footstep
+0|wherever
+0|in sight
+0|narrow
+0|approach
+0|wish for
+0|darkness
+0|hesitate
+0|reach out
+0|grasp
+0|stare
+0|beard
+0|watch out for
+0|crossroads
+0|anxious
+0|firmly
+0|grateful
+0|helper
+0|aid
+0|relief
+0|lorry
+0|pavement
+0|reduce
+0|volunteer
+0|sniff
+0|analyse
+0|recognize
+0|puzzle
+0|ignore
+0|pole
+0|boot
+0|sweat
+0|distance
+0|thunder
+0|lightning
+0|triangle
+0|wave
+0|overhead
+0|tap
+0|suit
+0|attach
+0|disability
+0|hopeful
+0|whisper
+0|bite
+0|shark
+0|jaw
+0|bull
+0|contrary
+0|flesh
+0|jewellery
+0|attract
+0|calm
+0|panic
+0|fist
+0|likely
+0|pigeon
+0|soldier
+0|roll
+0|loose
+0|employ
+0|compass
+0|unlike
+0|be made up of
+0|vocabulary
+0|nowadays
+0|Celtic
+0|Germanic
+0|mainland
+0|Angle
+0|Saxon
+0|occupy
+0|consist
+0|mixture
+0|name after
+0|aside
+0|Viking
+0|official
+0|phrase
+0|contribution
+0|Norman
+0|defeat
+0|take control of
+0|the Norman Conquest
+0|lead to
+0|replace
+0|entire
+0|servant
+0|raise
+0|therefore
+0|mutton
+0|bacon
+0|plural
+0|high-class
+0|mother tongue
+0|the Renaissance
+0|Latin
+0|Greek
+0|process
+0|distinction
+0|spelling
+0|accent
+0|concern
+0|ban
+0|pure
+0|unique
+0|access
+0|character
+0|bark
+0|racial
+0|gentle
+0|embarrass
+0|backwards
+0|conclusion
+0|custom
+0|interrupt
+0|mistaken
+0|ought to
+0|differ
+0|alphabet
+0|stand for
+0|deed
+0|writing
+0|hunt
+0|appearance
+0|represent
+0|drawing
+0|simplify
+0|as a whole
+0|combine
+0|distinguish
+0|indicate
+0|shortcoming
+0|ink
+0|eyesight
+0|press
+0|wire
+0|convenient
+0|battle
+0|pattern
+0|drag
+0|practical
+0|thus
+0|typewriter
+0|version
+0|civilization
+0|lecture
+0|found
+0|BC
+0|Roman
+0|take over
+0|volcano
+0|AD
+0|erupt
+0|lava
+0|ash
+0|pour
+0|unfortunate
+0|mud
+0|decorate
+0|flee
+0|researcher
+0|true-to-life
+0|disaster
+0|destroy
+0|commercial
+0|wealthy
+0|gradually
+0|sandstorm
+0|scholar
+0|cultural
+0|institute
+0|ruin
+0|remains
+0|beneath
+0|pot
+0|material
+0|document
+0|workshop
+0|explode
+0|nearby
+0|extreme
+0|complain
+0|bone
+0|wooden
+0|leather
+0|historical
+0|solution
+0|expression
+0|audience
+0|cave
+0|ceremony
+0|republic
+0|chairman
+0|pearl
+0|harbor
+0|navy
+0|powerful
+0|airfield
+0|bomb
+0|sailor
+0|fortunate
+0|aircraft
+0|carrier
+0|declare
+0|in memory of
+0|memorial
+0|educate
+0|statue
+0|no doubt
+0|rise up against
+0|troop
+0|stand in one's path
+0|march
+0|glory
+0|ahead
+0|come down with
+0|vast
+0|philosophy
+0|salary
+0|aware
+0|basis
+0|court
+0|god
+0|corrupt
+0|trial
+0|judge
+0|poison
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 244
+# Total Entries Extracted: 244
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 244
+# -------------------------------

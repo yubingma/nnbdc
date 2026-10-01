@@ -1,0 +1,349 @@
+0|mood
+0|combination
+0|do the trick
+0|creamy
+0|flavour
+0|flavor
+0|greedily
+0|gently
+0|dessert
+0|association
+0|vary
+0|link
+0|emotion
+0|saucer
+0|vinegar
+0|native
+0|salty
+0|sour
+0|cry out for
+0|relieve
+0|bond
+0|security
+0|generate
+0|calorie
+0|digest
+0|lower
+0|cycle
+0|enhance
+0|throw oneself into
+0|boil
+0|fry
+0|steak
+0|pan
+0|impress
+0|buffet
+0|bay
+0|scenery
+0|bet
+0|atmosphere
+0|out of this world
+0|version
+0|filling
+0|elderly
+0|bake
+0|flour
+0|adorable
+0|mild
+0|tiramisu
+0|bakery
+0|layer
+0|cheese
+0|bitter
+0|cream
+0|ingredient
+0|loose
+0|let sth. loose
+0|chilli
+0|chili
+0|pepper
+0|Sichuan pepper
+0|onion
+0|spring onion
+0|damp
+0|foggy
+0|dynasty
+0|expand
+0|multiple
+0|sauce
+0|plain
+0|slice
+0|chef
+0|property
+0|appropriate
+0|estimate
+0|consume
+0|hit the spot
+0|Cantonese
+0|dim sum
+0|essential
+0|innovation
+0|concept
+0|stimulate
+0|appetite
+0|delicate
+0|emphasis
+0|emphases
+0|steam
+0|gram
+0|cabbage
+0|wrapper
+0|mixture
+0|edge
+0|apart
+0|fall apart
+0|Austrian
+0|composer
+0|symphony
+0|concerto
+0|Polish
+0|compose
+0|deserve
+0|tear apart
+0|pleasant
+0|whisper
+0|dramatic
+0|weep
+0|wept
+0|overcome
+0|overcame
+0|sorrow
+0|grave
+0|transform
+0|forever
+0|combine
+0|rely on
+0|blues
+0|the blues
+0|folk
+0|tune
+0|lyric
+0|throw in
+0|for good measure
+0|rural
+0|surroundings
+0|heaven
+0|breeze
+0|guarantee
+0|jazz
+0|arch
+0|adaptation
+0|communist
+0|invader
+0|consist of
+0|defend
+0|solo
+0|flow
+0|spacecraft
+0|solar
+0|greet
+0|get down to sth
+0|get down to doing sth
+0|suitable
+0|recording
+0|distant
+0|volume
+0|stare
+0|breath
+0|unusual
+0|grab
+0|sweep
+0|swept
+0|disc
+0|disk
+0|complicated
+0|lane
+0|accompany
+0|expectation
+0|remarkable
+0|stream
+0|enthusiastic
+0|handkerchief
+0|handkerchiefs
+0|handkerchieves
+0|vast
+0|gifted
+0|reputation
+0|brilliant
+0|prediction
+0|extraordinary
+0|depress
+0|upset
+0|possess
+0|abandon
+0|all of a sudden
+0|orchestra
+0|desperate
+0|uplifting
+0|ease
+0|genius
+0|variation
+0|chorus
+0|grand
+0|finale
+0|rhythm
+0|portrait
+0|landscape
+0|wander
+0|gallery
+0|decade
+0|mostly
+0|pond
+0|canvas
+0|neighbourhood
+0|strike
+0|struck
+0|setting
+0|like-minded
+0|liberation
+0|opposed
+0|as opposed to
+0|dominate
+0|employ
+0|brushwork
+0|realistic
+0|essence
+0|vivid
+0|vision
+0|display
+0|worthy
+0|calling
+0|shade
+0|bathe
+0|pixel
+0|wage
+0|campaign
+0|architecture
+0|toast
+0|garlic
+0|mushroom
+0|arrange
+0|raw
+0|scroll
+0|insight
+0|crop
+0|wind
+0|wound
+0|sail
+0|civilian
+0|all walks of life
+0|butcher
+0|go about sth
+0|apparent
+0|ink
+0|perspective
+0|precise
+0|ambitious
+0|enormous
+0|comprehensive
+0|clothing
+0|temple
+0|structure
+0|overall
+0|critic
+0|inspection
+0|expose
+0|political
+0|soldier
+0|crisis
+0|crises
+0|decline
+0|overthrow
+0|overthrew
+0|overthrown
+0|be down to
+0|scale
+0|emperor
+0|in one's own right
+0|outstanding
+0|exhibition
+0|rare
+0|speak volumes about
+0|historic
+0|career
+0|barren
+0|frozen
+0|imply
+0|dimension
+0|grasp
+0|detect
+0|rhyme
+0|complex
+0|contradictory
+0|dig up
+0|clue
+0|cage
+0|trill
+0|interpret
+0|patience
+0|aside
+0|set sth. aside
+0|remote
+0|reward
+0|constantly
+0|logical
+0|inner
+0|perceive
+0|reality
+0|mist
+0|novelist
+0|break with sth
+0|ideal
+0|rigid
+0|undergo
+0|underwent
+0|undergone
+0|industrialization
+0|advocate
+0|belief
+0|era
+0|district
+0|diverge
+0|bend
+0|bent
+0|claim
+0|tread
+0|trod
+0|trodden
+0|sigh
+0|hence
+0|dare
+0|dweller
+0|striking
+0|characterize
+0|characterise
+0|Confucianism
+0|Taoism
+0|legend
+0|encounter
+0|nourish
+0|numerous
+0|glorious
+0|boom
+0|stability
+0|tolerant
+0|liberty
+0|unconstrained
+0|vitality
+0|distinguish
+0|exaggeration
+0|metaphor
+0|representative
+0|frost
+0|cast
+0|owe
+0|debt
+0|fascinate
+0|entitle
+0|blame
+0|allowance
+0|make allowance for
+0|triumph
+0|impostor
+0|unforgiving
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 343
+# Total Entries Extracted: 343
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 343
+# -------------------------------

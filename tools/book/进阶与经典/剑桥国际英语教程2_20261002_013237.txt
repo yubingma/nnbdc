@@ -1,0 +1,853 @@
+0|background
+0|be into
+0|be into something
+0|bicycle
+0|camp
+0|summer camp
+0|childhood
+0|collect
+0|comic book
+0|competition
+0|degree
+0|follow
+0|get
+0|get in trouble
+0|get to know
+0|good
+0|good at
+0|hero
+0|immigrant
+0|interest
+0|keep fit
+0|memory
+0|messy
+0|movie star
+0|neat
+0|occupation
+0|online
+0|outdoor
+0|personal ad
+0|politics
+0|possession
+0|professional
+0|rabbit
+0|refer
+0|regularly
+0|remember
+0|scrapbook
+0|skate
+0|taste
+0|toy
+0|tree house
+0|trumpet
+0|two-story
+0|allow
+0|area
+0|banquet
+0|bicycle lane
+0|bicycle stand
+0|bus lane
+0|bus station
+0|bus stop
+0|bus system
+0|cash machine
+0|cause
+0|certificate
+0|concern
+0|cost
+0|counter
+0|culture
+0|district
+0|duty-free
+0|editor
+0|fewer
+0|highway
+0|information center
+0|tourist information center
+0|less
+0|marvel
+0|more
+0|motorist
+0|nature
+0|newsstand
+0|nightclub
+0|not enough
+0|paradise
+0|parking garage
+0|parking space
+0|pedestrian
+0|provide
+0|rating
+0|road
+0|rush hour
+0|shopping mall
+0|sightsee
+0|sign
+0|slogan
+0|solve
+0|stay
+0|stay open
+0|streetlight
+0|subway line
+0|subway station
+0|subway stop
+0|subway system
+0|taxi lane
+0|taxi stand
+0|theme
+0|too many
+0|too much
+0|tourism campaign
+0|traffic jam
+0|train station
+0|train stop
+0|train system
+0|upstairs
+0|whom
+0|add
+0|afraid
+0|board
+0|room and board
+0|bright
+0|comfortable
+0|cramped
+0|dingy
+0|expect
+0|expense
+0|housework
+0|inconvenient
+0|list
+0|locate
+0|make
+0|make changes
+0|modern
+0|per
+0|PIN number
+0|private
+0|safari
+0|separate
+0|shabby
+0|two-car
+0|vegetable
+0|wild
+0|wish
+0|appetizer
+0|bagel
+0|bake
+0|barbecue
+0|barbecued
+0|boil
+0|bowl
+0|charcoal
+0|close
+0|cookbook
+0|cover
+0|crispy
+0|cry
+0|cut up
+0|diced
+0|diet
+0|eggplant
+0|ethnic
+0|exam
+0|from time to time
+0|fry
+0|guacamole
+0|guacamole dip
+0|ingredient
+0|lightly
+0|lime
+0|marinate
+0|marinated
+0|mash
+0|melted
+0|mix
+0|mixture
+0|overnight
+0|pan
+0|peanut butter
+0|pepper
+0|chili pepper
+0|plate
+0|poisoning
+0|food poisoning
+0|popcorn
+0|pork
+0|raw
+0|recipe
+0|refrigerate
+0|roast
+0|salt
+0|sauce
+0|shredded
+0|side
+0|skewer
+0|slice
+0|snail
+0|spice
+0|spread
+0|steam
+0|strange
+0|sugar
+0|tablespoon
+0|tempting
+0|toast
+0|toasted
+0|turn over
+0|uncooked
+0|video game
+0|vinegar
+0|accommodation
+0|antique shopping
+0|ATM card
+0|avoid
+0|bring back
+0|by myself
+0|camper
+0|camping
+0|candlelit
+0|carry
+0|check out
+0|condition
+0|copy
+0|couple
+0|a couple
+0|a couple of
+0|credit card
+0|cross-country
+0|discover
+0|document
+0|eating out
+0|equipment
+0|exact
+0|excited
+0|fare
+0|feature
+0|fireplace
+0|first-aid kit
+0|fishing
+0|fix up
+0|gallery
+0|art gallery
+0|guidebook
+0|had better
+0|hiking boots
+0|horse-drawn
+0|identification
+0|in advance
+0|include
+0|inn
+0|Jacuzzi
+0|lift
+0|luxurious
+0|medication
+0|mention
+0|must
+0|national park
+0|necessary
+0|nightlife
+0|option
+0|ought to
+0|overnight bag
+0|plane ticket
+0|reading
+0|required
+0|resort
+0|round-trip
+0|route
+0|safety
+0|should
+0|sledding
+0|sleigh
+0|specialty
+0|stall
+0|suitcase
+0|surfboard
+0|tap
+0|tour
+0|vaccination
+0|visa
+0|windbreaker
+0|wonderland
+0|admit
+0|apologize
+0|as soon as
+0|association
+0|badly
+0|bother
+0|clean up
+0|contact
+0|criticize
+0|effort
+0|enjoyment
+0|feel free
+0|flower
+0|following
+0|go through
+0|groceries
+0|guest
+0|guideline
+0|hallway
+0|hang up
+0|household chore
+0|keep clean
+0|laptop
+0|lend
+0|let out
+0|lock
+0|loudly
+0|make sure
+0|mess
+0|mind
+0|nag
+0|pick up
+0|pleasant
+0|program
+0|promise
+0|put away
+0|quietly
+0|realize
+0|seat
+0|security
+0|sound
+0|stereo
+0|stranger
+0|take off
+0|take out
+0|tenant
+0|throw out
+0|toothbrush
+0|towel
+0|trash
+0|turn down
+0|turn off
+0|turn on
+0|affect
+0|answering machine
+0|area code
+0|assignment
+0|battery
+0|bill
+0|boss
+0|browse
+0|burglar
+0|button
+0|calculator
+0|caller
+0|camcorder
+0|CD-ROM
+0|check
+0|criminal
+0|cut and paste
+0|dial
+0|disk drive
+0|double-click
+0|double-click on
+0|download
+0|drag and drop
+0|dropout
+0|empty
+0|engineer
+0|entertain
+0|escape
+0|evader
+0|feed
+0|fingerprinting
+0|DNA fingerprinting
+0|geek
+0|hacker
+0|hardware
+0|highlight
+0|house-sit
+0|impression
+0|influence
+0|instruction
+0|invention
+0|keyboard
+0|letter
+0|monitor
+0|mouse
+0|percentage
+0|perform
+0|press
+0|protect
+0|receive
+0|recharge
+0|recording
+0|ring
+0|robot
+0|robotics
+0|satellite
+0|scan
+0|screen
+0|set
+0|store
+0|task
+0|technology
+0|technophile
+0|term
+0|transmission
+0|transmit
+0|understand
+0|voice mail
+0|Walkman
+0|watercraft
+0|Web site
+0|whiz
+0|World Wide Web
+0|April Fools' Day
+0|at least
+0|be like
+0|boyfriend
+0|bride
+0|Carnaval
+0|cemetery
+0|ceremony
+0|Children's Day
+0|Chinese New Year
+0|court
+0|courtship
+0|cranberry sauce
+0|custom
+0|dancing
+0|date
+0|Day of the Dead
+0|diamond ring
+0|firecracker
+0|firework
+0|fruit punch
+0|get engaged
+0|get married
+0|get together
+0|get-together
+0|groom
+0|harvest
+0|home movie
+0|honeymoon
+0|honor
+0|in honor
+0|in honor of
+0|Labor Day
+0|last
+0|look forward
+0|luck
+0|marriage
+0|Mother's Day
+0|national
+0|New Year's Day
+0|New Year's Eve
+0|occur
+0|picnic
+0|reception
+0|resolution
+0|romantic
+0|samba
+0|shrine
+0|speech
+0|streamer
+0|surprise
+0|Thanksgiving
+0|trick
+0|turkey
+0|Valentine's Day
+0|accident
+0|advantage
+0|audio
+0|automobile
+0|bored
+0|charity
+0|cinema
+0|cold
+0|common cold
+0|commercial
+0|communication
+0|consequence
+0|consider
+0|construction site
+0|cure
+0|disadvantage
+0|donate
+0|environment
+0|fine
+0|first class
+0|flying
+0|high-paying
+0|housing
+0|inherit
+0|instead
+0|jet airplane
+0|leader
+0|litter
+0|may
+0|might
+0|multiplex
+0|nowadays
+0|ocean liner
+0|postal system
+0|railroad
+0|reality game
+0|soon
+0|space flight
+0|star
+0|tax
+0|tear down
+0|3-D
+0|unexpected
+0|violent
+0|virtual
+0|accountant
+0|activity
+0|architect
+0|article
+0|artist
+0|assistant
+0|attitude
+0|bad-tempered
+0|bilingual
+0|bookkeeper
+0|break
+0|break into
+0|calendar
+0|commute
+0|co-worker
+0|creative
+0|critical
+0|cruise ship
+0|decision
+0|diaper
+0|director
+0|entertainment director
+0|disorganized
+0|do sth. for a living
+0|door-to-door
+0|employer
+0|excursion
+0|experience
+0|forgetful
+0|generous
+0|hardworking
+0|hire
+0|impatient
+0|interview
+0|iron
+0|journalist
+0|level-headed
+0|maintain
+0|make a decision
+0|make a mistake
+0|manage
+0|marine biologist
+0|marketing
+0|model
+0|moody
+0|novelist
+0|organize
+0|patient
+0|personnel
+0|pressure
+0|product
+0|punctual
+0|recent
+0|reliable
+0|reporter
+0|requirement
+0|resume
+0|schedule
+0|songwriter
+0|stock market
+0|stockbroker
+0|strict
+0|to and fro
+0|toward
+0|unfriendly
+0|agricultural
+0|battle
+0|catch
+0|cattle
+0|compose
+0|construct
+0|consume
+0|corn
+0|crop
+0|cultivate
+0|currency
+0|digital
+0|direct
+0|electronics industry
+0|employ
+0|export
+0|farm
+0|fill
+0|film
+0|hair salon
+0|high-definition
+0|landmark
+0|lobster
+0|lowland
+0|make up
+0|manufacture
+0|microchip
+0|novel
+0|official
+0|officially
+0|opera
+0|oyster
+0|plain
+0|playwright
+0|president
+0|produce
+0|radium
+0|raise
+0|record
+0|revolution
+0|royal
+0|sheep
+0|snow-capped
+0|structure
+0|textile industry
+0|travel agent
+0|variety
+0|wide
+0|accomplishment
+0|asleep
+0|author
+0|be on one's way
+0|be out
+0|be out of
+0|billionaire
+0|calm
+0|coincidentally
+0|ending
+0|face down
+0|face up
+0|fortunately
+0|generally
+0|get a chance
+0|have a chance
+0|kayak
+0|leading
+0|luckily
+0|mining company
+0|miraculously
+0|modeling
+0|modeling career
+0|mud
+0|normal
+0|pursue
+0|role
+0|sadly
+0|slip
+0|snowboard
+0|software
+0|strangely
+0|suddenly
+0|surprisingly
+0|tiny
+0|toss
+0|tutor
+0|unexpectedly
+0|unfortunately
+0|unlucky
+0|absurd
+0|acting
+0|action
+0|adventure
+0|alien
+0|amaze
+0|amuse
+0|animated
+0|annoy
+0|be based on
+0|bizarre
+0|bore
+0|by mistake
+0|category
+0|character
+0|chase
+0|classic
+0|comedy
+0|confuse
+0|critic
+0|disgust
+0|disgusting
+0|documentary
+0|drama
+0|dreadful
+0|dumb
+0|embarrass
+0|excite
+0|fair
+0|fantasy
+0|fascinate
+0|fascinating
+0|get left
+0|get left behind
+0|hilarious
+0|horrible
+0|horror
+0|iceberg
+0|in a row
+0|laugh
+0|main
+0|mania
+0|marvelous
+0|mayor
+0|musical
+0|mystery
+0|odd
+0|outstanding
+0|photography
+0|poor
+0|put down
+0|rate
+0|remind
+0|ridiculous
+0|romance
+0|scare
+0|science fiction
+0|script
+0|shock
+0|silly
+0|sink
+0|smile
+0|society
+0|special effect
+0|story
+0|studio
+0|stupid
+0|take place
+0|talented
+0|thriller
+0|title
+0|village
+0|war
+0|weird
+0|wonderful
+0|absolutely
+0|annoyed
+0|bike rack
+0|bite
+0|can
+0|chew
+0|confused
+0|could
+0|disgusted
+0|embarrassed
+0|exist
+0|fasten
+0|fight
+0|flash
+0|from
+0|from side to side
+0|frustrated
+0|gesture
+0|go away
+0|gum
+0|hard hat
+0|have to
+0|have got to
+0|irritated
+0|land
+0|lane
+0|leash
+0|nail
+0|nervous
+0|notice
+0|obligation
+0|parking ticket
+0|peace
+0|perhaps
+0|permission
+0|possibly
+0|prohibition
+0|recycle
+0|regulation
+0|repeat
+0|reserved
+0|roll
+0|rule
+0|scratch
+0|seat belt
+0|situation
+0|speed limit
+0|steal
+0|throw
+0|turn out
+0|twirl
+0|warning
+0|wastepaper basket
+0|wrinkle
+0|advice column
+0|afford
+0|ashamed
+0|break down
+0|brief
+0|businessman
+0|campsite
+0|cheat
+0|comb
+0|confess
+0|counselor
+0|cushion
+0|deny
+0|dislike
+0|divorce
+0|exchange
+0|flat tire
+0|garage sale
+0|hide
+0|honesty
+0|ignore
+0|immediately
+0|jail
+0|original
+0|owner
+0|personally
+0|predicament
+0|radio talk show
+0|repair shop
+0|reply
+0|reward
+0|shoplift
+0|shopping problem
+0|simply
+0|spank
+0|spill
+0|straight
+0|throw away
+0|tough
+0|trust
+0|value
+0|warn
+0|yell
+0|anger
+0|apology
+0|coach
+0|criticism
+0|due
+0|express
+0|fly
+0|fly in
+0|get out
+0|have
+0|have the flu
+0|houseguest
+0|intention
+0|lie
+0|make a date
+0|make plans
+0|out of
+0|out of town
+0|regret
+0|reorganize
+0|ride
+0|sail
+0|sympathy
+0|weigh
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 846
+# Total Entries Extracted: 846
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 846
+# -------------------------------

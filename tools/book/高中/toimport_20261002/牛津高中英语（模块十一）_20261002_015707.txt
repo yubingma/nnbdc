@@ -1,0 +1,231 @@
+0|carpenter
+0|suited
+0|career
+0|actually
+0|so-called
+0|glamorous
+0|cushion
+0|jet
+0|baggage
+0|suitcase
+0|trunk
+0|waiter
+0|grocer
+0|option
+0|lawyer
+0|well-paid
+0|canyon
+0|zone
+0|brewery
+0|litre
+0|shopkeeper
+0|barber
+0|barbershop
+0|cleaner
+0|rat
+0|go about
+0|salesgirl
+0|cucumber
+0|sly
+0|fox
+0|cast-iron
+0|nerve
+0|martial
+0|weed
+0|spear
+0|magician
+0|bath
+0|bedding
+0|bandage
+0|ward
+0|creative
+0|self-confident
+0|artistic
+0|realistic
+0|greengrocer
+0|tailor
+0|investigative
+0|pianist
+0|violinist
+0|librarian
+0|stewardess
+0|enterprising
+0|take pleasure in
+0|typist
+0|Ltd
+0|engineering
+0|covering
+0|gap
+0|session
+0|employer
+0|employee
+0|interviewer
+0|off the top of one's head
+0|have butterflies in one's stomach
+0|refresh
+0|yawn
+0|razor
+0|shaver
+0|shave
+0|haircut
+0|conservative
+0|allowance
+0|roundabout
+0|parking
+0|look somebody in the eye
+0|look somebody in the eyes
+0|wag
+0|follow something up
+0|give somebody the edge
+0|punctuation
+0|as easy as pie
+0|management
+0|trainee
+0|smartly
+0|garage
+0|relaxed
+0|team player
+0|response
+0|diploma
+0|videophone
+0|division
+0|fluency
+0|CV
+0|ladder
+0|Antarctic
+0|fund
+0|Brazil
+0|Amazon
+0|Ghana
+0|cooker
+0|switch
+0|nail
+0|mayor
+0|improvement
+0|self-educated
+0|geometry
+0|diagram
+0|circuit
+0|resign
+0|pocket-sized
+0|pull out
+0|the last minute
+0|the last moment
+0|put out
+0|take off
+0|calculator
+0|amateur
+0|put together
+0|receipt
+0|spectrum
+0|motor
+0|ridiculous
+0|tire
+0|throw oneself into
+0|fold
+0|cycle
+0|will
+0|plug
+0|graph
+0|economical
+0|sanitary
+0|correctional
+0|facility
+0|downsize
+0|body count
+0|survivor
+0|unsure
+0|reveal
+0|informer
+0|offshore
+0|scratch
+0|lounge
+0|allergic
+0|employment
+0|surplus
+0|capital punishment
+0|taxpayer
+0|pre-owned
+0|flexibility
+0|unemployed
+0|penalty
+0|faith
+0|optional
+0|fibre
+0|thirst
+0|microscope
+0|drive
+0|for the taking
+0|bless
+0|nursery
+0|porter
+0|mop
+0|jar
+0|turkey
+0|brunch
+0|shrink
+0|dignity
+0|archaeology
+0|preview
+0|numerous
+0|brochure
+0|catalogue
+0|psychology
+0|fry
+0|pepper
+0|steak
+0|rice cooker
+0|bean curd
+0|garlic
+0|microwave
+0|saucer
+0|Thermos
+0|put something away
+0|furnished
+0|basin
+0|hook
+0|millimetre
+0|room-mate
+0|astronomy
+0|mineral
+0|bat
+0|dive
+0|terrify
+0|as for
+0|universe
+0|embassy
+0|allusion
+0|surprisingly
+0|den
+0|catch-22
+0|heel
+0|mythology
+0|unbeatable
+0|prophet
+0|overboard
+0|vomit
+0|Herculean
+0|a good Samaritan
+0|bang
+0|aimless
+0|land on one's feet
+0|atom
+0|nuclear
+0|missile
+0|communism
+0|socialism
+0|socialist
+0|fountain
+0|currently
+0|premier
+0|arch
+0|seminar
+0|sharpen
+0|shuttle
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 224
+# Total Entries Extracted: 224
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 224
+# -------------------------------

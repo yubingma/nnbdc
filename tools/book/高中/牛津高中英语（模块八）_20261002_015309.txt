@@ -1,0 +1,282 @@
+0|bookworm
+0|poetry
+0|drama
+0|fiction
+0|antique
+0|characteristic
+0|novelist
+0|chapter
+0|opera
+0|author
+0|abuse
+0|cemetery
+0|desperate
+0|criminal
+0|tension
+0|twist
+0|plot
+0|generous
+0|vain
+0|rigid
+0|civil
+0|bent
+0|theme
+0|violent
+0|on the run
+0|painter
+0|live up to
+0|workhouse
+0|millionaire
+0|vice
+0|reform
+0|threat
+0|violence
+0|resist
+0|reunite
+0|home-made
+0|bind
+0|spin
+0|sneaker
+0|pin
+0|worn out
+0|envelope
+0|brand new
+0|spit
+0|chest
+0|attic
+0|modern-day
+0|stepmother
+0|stepsister
+0|rag
+0|Ireland
+0|rescue
+0|wrap
+0|Scotland
+0|supreme
+0|reputation
+0|debt
+0|holy
+0|widow
+0|monument
+0|adore
+0|romantic
+0|touch on
+0|intend
+0|paragraph
+0|rhyme
+0|melodic
+0|tune
+0|thou
+0|thee
+0|farewell
+0|spring
+0|bonnie
+0|lass
+0|melt
+0|universal
+0|jazz
+0|string
+0|cast
+0|butterfly
+0|awesome
+0|stubborn
+0|princess
+0|condemn
+0|dare
+0|ask for somebody's hand in marriage
+0|prince
+0|disturbing
+0|fall in love
+0|at first sight
+0|unwilling
+0|seize
+0|demand
+0|grab
+0|evident
+0|scold
+0|merciful
+0|dawn
+0|deadline
+0|unite
+0|grand
+0|broken
+0|opportunity
+0|unemployment
+0|personnel
+0|department
+0|chorus
+0|sore
+0|throat
+0|composer
+0|motherland
+0|Austria
+0|tutor
+0|symphony
+0|bachelor
+0|flute
+0|kindergarten
+0|folk
+0|ballet
+0|swan
+0|album
+0|collection
+0|chart
+0|blues
+0|root
+0|slavery
+0|tendency
+0|format
+0|spring up
+0|trumpet
+0|liberty
+0|rock and roll
+0|gradual
+0|decline
+0|trend
+0|rhythm
+0|rattle
+0|comet
+0|band
+0|seek
+0|prejudice
+0|discrimination
+0|scream
+0|break up
+0|mural
+0|still life
+0|abstract
+0|Spain
+0|birthplace
+0|architecture
+0|output
+0|medium
+0|Cubism
+0|acute
+0|cube
+0|rectangle
+0|consensus
+0|calculate
+0|helicopter
+0|tank
+0|Impressionism
+0|shadow
+0|water lily
+0|pond
+0|Impressionist
+0|oil painting
+0|starry
+0|commit
+0|being
+0|reward
+0|agent
+0|franc
+0|upwards of
+0|be off to
+0|gallery
+0|changeable
+0|ankle
+0|suite
+0|accommodation
+0|dormitory
+0|canal
+0|passer-by
+0|souvenir
+0|admission
+0|scenery
+0|scholarship
+0|cloth
+0|slice
+0|apron
+0|chef
+0|seaweed
+0|cut up
+0|onion
+0|pineapple
+0|eggplant
+0|seashell
+0|lay out
+0|pillow
+0|disgusting
+0|aluminium
+0|spray
+0|paintbrush
+0|tin
+0|dip
+0|wrinkle
+0|cut something out
+0|cut something out of something
+0|have a go
+0|have a go at
+0|dragon
+0|representative
+0|spokesman
+0|criterion
+0|finance
+0|in defence of
+0|restriction
+0|deliberately
+0|boycott
+0|hatch
+0|sponsor
+0|modest
+0|expose
+0|contradict
+0|resemble
+0|edge
+0|broad
+0|overlook
+0|entry
+0|preference
+0|top-ranking
+0|swift
+0|laundry
+0|maid
+0|disappointment
+0|formal
+0|tiresome
+0|script
+0|shoot
+0|sincere
+0|congratulation
+0|screenwriter
+0|full-length
+0|robbery
+0|anecdote
+0|biography
+0|accumulate
+0|popcorn
+0|salty
+0|tense
+0|thriller
+0|paramount
+0|touchstone
+0|conquer
+0|concubine
+0|lantern
+0|philosopher
+0|fantasy
+0|scar
+0|forehead
+0|wizard
+0|witch
+0|evil
+0|institution
+0|parallel
+0|curriculum
+0|contradictory
+0|partner
+0|fierce
+0|zoom
+0|broom
+0|dizzy
+0|attraction
+0|show off
+0|disappoint
+0|give thought to
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 275
+# Total Entries Extracted: 275
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 275
+# -------------------------------

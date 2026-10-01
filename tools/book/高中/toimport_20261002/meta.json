@@ -1,0 +1,181 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "44",
+  "targetGameHallIds": [
+    "32"
+  ],
+  "books": [
+    {
+      "fileName": "人教版高中英语选择性必修第二册_20261002_005409.txt",
+      "dictName": "人教版高中英语选择性必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2022",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块七）_20261002_015112.txt",
+      "dictName": "牛津高中英语（模块七）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块三）_20261002_014324.txt",
+      "dictName": "牛津高中英语（模块三）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块九）_20261002_015505.txt",
+      "dictName": "牛津高中英语（模块九）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块二）_20261002_014126.txt",
+      "dictName": "牛津高中英语（模块二）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块五）_20261002_014718.txt",
+      "dictName": "牛津高中英语（模块五）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块八）_20261002_015309.txt",
+      "dictName": "牛津高中英语（模块八）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块六）_20261002_014915.txt",
+      "dictName": "牛津高中英语（模块六）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块十一）_20261002_015707.txt",
+      "dictName": "牛津高中英语（模块十一）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "牛津高中英语（模块四）_20261002_014520.txt",
+      "dictName": "牛津高中英语（模块四）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2025",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "译林版高中英语必修第一册_20261002_020348.txt",
+      "dictName": "译林版高中英语必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2024",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "译林版高中英语必修第三册_20261002_020741.txt",
+      "dictName": "译林版高中英语必修第三册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2024",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "译林版高中英语必修第二册_20261002_020544.txt",
+      "dictName": "译林版高中英语必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2024",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "译林版高中英语选择性必修第一册_20261002_020939.txt",
+      "dictName": "译林版高中英语选择性必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2024",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "译林版高中英语选择性必修第三册_20261002_021334.txt",
+      "dictName": "译林版高中英语选择性必修第三册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2024",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "译林版高中英语选择性必修第二册_20261002_021137.txt",
+      "dictName": "译林版高中英语选择性必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2024",
+      "targetGameHallIds": [
+        "32"
+      ]
+    },
+    {
+      "fileName": "译林版高中英语选择性必修第四册_20261002_021530.txt",
+      "dictName": "译林版高中英语选择性必修第四册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2024",
+      "targetGameHallIds": [
+        "32"
+      ]
+    }
+  ]
+}
