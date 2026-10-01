@@ -45,20 +45,30 @@ def head(n=3):
 # --- 页面定位 --------------------------------------------------------------
 def ensure_study():
     """确保在主学习页（标题是「Day N」）。已在则零开销返回。"""
-    if any(t.startswith("Day") for t in head()):
+    texts = ui.texts()
+    if any(t.startswith("Day") for t in texts[:5]):
         return
-    sh("am", "start", "-n", SPLASH)
-    time.sleep(4.0)
+    # 如果在更换词书或其他页面，尝试按 BACK 返回主页
     for _ in range(3):
-        if any(t.startswith("Day") for t in head()):
+        if any(t.startswith("Day") for t in ui.texts()[:5]):
             return
-        time.sleep(2)
+        ui.back(wait=1.0)
+    sh("am", "start", "-n", SPLASH)
+    time.sleep(3.0)
+    for _ in range(5):
+        if any(t.startswith("Day") for t in ui.texts()[:5]):
+            return
+        if "更换词书" in ui.texts()[:5]:
+            ui.back(wait=1.5)
+            if any(t.startswith("Day") for t in ui.texts()[:5]):
+                return
+        time.sleep(1.5)
     raise RuntimeError("未能进入主学习页")
 
 
 def ensure_changebook():
     """确保在「更换词书」页。"""
-    if "更换词书" in head():
+    if "更换词书" in ui.texts()[:5]:
         return
     ensure_study()
     ui.tap(*XY_DRAWER, wait=1.5)
