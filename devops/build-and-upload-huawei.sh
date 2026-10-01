@@ -112,123 +112,212 @@ validate_version() {
     fi
 }
 
+# Flags & Variables
+BUILD_ONLY=false
+UPLOAD_ONLY=false
+SKIP_TESTS=false
+CUSTOM_APK_PATH=""
+
+show_usage() {
+    cat << EOF
+用法: $0 [选项]
+
+选项:
+  --client-id ID          Huawei Client ID
+  --client-secret SECRET  Huawei Client Secret
+  --app-id ID             Huawei App ID
+  --apk PATH              指定 APK 路径 (默认: build/app/outputs/flutter-apk/app-release.apk)
+  --skip-tests            跳过单元测试步骤
+  --build-only            仅构建 APK，不上传
+  --upload-only           仅上传已有 APK，不重新构建与测试
+  --help, -h              显示此帮助信息
+EOF
+}
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --client-id)
+                CLIENT_ID="$2"
+                shift 2
+                ;;
+            --client-secret)
+                CLIENT_SECRET="$2"
+                shift 2
+                ;;
+            --app-id)
+                APP_ID="$2"
+                shift 2
+                ;;
+            --apk)
+                CUSTOM_APK_PATH="$2"
+                shift 2
+                ;;
+            --skip-tests)
+                SKIP_TESTS=true
+                shift
+                ;;
+            --build-only)
+                BUILD_ONLY=true
+                shift
+                ;;
+            --upload-only)
+                UPLOAD_ONLY=true
+                shift
+                ;;
+            --help|-h)
+                show_usage
+                exit 0
+                ;;
+            *)
+                echo "❌ 未知选项: $1"
+                show_usage
+                exit 1
+                ;;
+        esac
+    done
+}
+
+parse_args "$@"
+
 validate_version
 
 echo "======================================"
 echo "   Build and Upload to Huawei AppGallery"
 echo "======================================"
 
-# Reason for restoring: Shell variables defined in the terminal (like `VAR=val`) are NOT visible
-# to scripts (child processes) unless they are `export`ed (like `export VAR=val`).
-# Loading the .env file here ensures the script can see them without requiring you to type `export` manually.
+# 1. 凭证检查 (仅在需要上传时严格检查)
+gather_credentials() {
+    # Resolve Client Secret
+    CLIENT_SECRET=${CLIENT_SECRET:-${HUAWEI_API_CLIENT_SECRET:-$HUAWEI_CLIENT_SECRET}}
 
+    # Resolve App ID
+    APP_ID=${APP_ID:-${HUAWEI_PPDC_APP_ID:-$HUAWEI_APP_ID}}
 
+    # Resolve Client ID
+    CLIENT_ID=${CLIENT_ID:-${HUAWEI_API_CLIENT_ID:-${HUAWEI_CLIENT_ID:-$DEFAULT_CLIENT_ID}}}
 
-echo "DEBUG: Checking credentials..."
-# DEBUG: Print status of variables (masking secret)
-if [ -n "$HUAWEI_API_CLIENT_SECRET" ]; then echo " - HUAWEI_API_CLIENT_SECRET: [FOUND]"; else echo " - HUAWEI_API_CLIENT_SECRET: [NOT FOUND]"; fi
-if [ -n "$HUAWEI_API_CLIENT_ID" ]; then echo " - HUAWEI_API_CLIENT_ID: $HUAWEI_API_CLIENT_ID"; else echo " - HUAWEI_API_CLIENT_ID: [NOT FOUND]"; fi
-if [ -n "$HUAWEI_PPDC_APP_ID" ]; then echo " - HUAWEI_PPDC_APP_ID: $HUAWEI_PPDC_APP_ID"; else echo " - HUAWEI_PPDC_APP_ID: [NOT FOUND]"; fi
+    echo "DEBUG: Checking credentials..."
+    if [ -n "$CLIENT_SECRET" ]; then echo " - HUAWEI_API_CLIENT_SECRET: [FOUND]"; else echo " - HUAWEI_API_CLIENT_SECRET: [NOT FOUND]"; fi
+    if [ -n "$CLIENT_ID" ]; then echo " - HUAWEI_API_CLIENT_ID: $CLIENT_ID"; else echo " - HUAWEI_API_CLIENT_ID: [NOT FOUND]"; fi
+    if [ -n "$APP_ID" ]; then echo " - HUAWEI_PPDC_APP_ID: $APP_ID"; else echo " - HUAWEI_PPDC_APP_ID: [NOT FOUND]"; fi
 
-# 1. Gather Credentials
+    if [ -z "$CLIENT_SECRET" ] && [ "$CLIENT_ID" == "$DEFAULT_CLIENT_ID" ] && [ -z "$HUAWEI_API_CLIENT_ID" ] && [ -z "$HUAWEI_CLIENT_ID" ]; then
+        read -p "Enter Client ID [$DEFAULT_CLIENT_ID]: " INPUT_CLIENT_ID
+        CLIENT_ID=${INPUT_CLIENT_ID:-$DEFAULT_CLIENT_ID}
+    fi
 
-# Resolve Client Secret
-CLIENT_SECRET=${HUAWEI_API_CLIENT_SECRET:-$HUAWEI_CLIENT_SECRET}
-
-# Resolve App ID
-APP_ID=${HUAWEI_PPDC_APP_ID:-$HUAWEI_APP_ID}
-
-# Resolve Client ID
-# Check HUAWEI_API_CLIENT_ID (if user adds it later), then HUAWEI_CLIENT_ID, then default
-CLIENT_ID=${HUAWEI_API_CLIENT_ID:-${HUAWEI_CLIENT_ID:-$DEFAULT_CLIENT_ID}}
-
-# Logic: If we have the SECRET (via Env) and we are using the Default Client ID, assume the user accepts the default to allow automation.
-# Only prompt if we DON'T have a secret (interactive mode) AND explicit Client ID override is missing.
-if [ -z "$CLIENT_SECRET" ] && [ "$CLIENT_ID" == "$DEFAULT_CLIENT_ID" ] && [ -z "$HUAWEI_API_CLIENT_ID" ] && [ -z "$HUAWEI_CLIENT_ID" ]; then
-    # Only prompt if no environment variable provided at all AND we are likely in interactive mode (no secret)
-    read -p "Enter Client ID [$DEFAULT_CLIENT_ID]: " INPUT_CLIENT_ID
-    CLIENT_ID=${INPUT_CLIENT_ID:-$DEFAULT_CLIENT_ID}
-fi
-
-if [ -z "$CLIENT_SECRET" ]; then
-    read -sp "Enter Client Secret: " CLIENT_SECRET
-    echo ""
-fi
-
-if [ -z "$APP_ID" ]; then
-    read -p "Enter App ID: " APP_ID
-fi
-
-if [ -z "$CLIENT_SECRET" ] || [ -z "$APP_ID" ]; then
-    echo "Error: Client Secret and App ID are required."
-    exit 1
-fi
-
-# 2. Run Unit Tests
-echo ""
-echo "=================================================="
-echo " 🧪 正在运行单元测试 (flutter test)..."
-echo "=================================================="
-cd "$PROJECT_ROOT"
-flutter test -j 1
-echo "✅ 所有测试用例已通过！"
-
-# 3. Prepare Config & Build APK
-CONFIG_FILE="$PROJECT_ROOT/lib/config.dart"
-BACKUP_CONFIG_FILE="${CONFIG_FILE}.bak"
-
-echo ""
-echo "Preparing configuration..."
-
-# 1. Backup original config
-cp "$CONFIG_FILE" "$BACKUP_CONFIG_FILE"
-
-# 2. Define cleanup function to restore config
-restore_config() {
-    if [ -f "$BACKUP_CONFIG_FILE" ]; then
+    if [ -z "$CLIENT_SECRET" ]; then
+        read -sp "Enter Client Secret: " CLIENT_SECRET
         echo ""
-        echo "Restoring original configuration..."
-        mv "$BACKUP_CONFIG_FILE" "$CONFIG_FILE"
+    fi
+
+    if [ -z "$APP_ID" ]; then
+        read -p "Enter App ID: " APP_ID
+    fi
+
+    if [ -z "$CLIENT_SECRET" ] || [ -z "$APP_ID" ]; then
+        echo "❌ Error: Client Secret and App ID are required."
+        exit 1
     fi
 }
 
-# 3. Register cleanup to run on exit or error
-trap restore_config EXIT
+# 2. Run Unit Tests
+run_unit_tests() {
+    if [ "$SKIP_TESTS" = true ]; then
+        echo "⏭️  跳过单元测试 (--skip-tests)"
+        return
+    fi
+    echo ""
+    echo "=================================================="
+    echo " 🧪 正在运行单元测试 (flutter test)..."
+    echo "=================================================="
+    cd "$PROJECT_ROOT"
+    flutter test -j 1
+    echo "✅ 所有测试用例已通过！"
+}
 
-# 4. Modify config to use 'prod'
-# Use sed to replace profileName = "..." with profileName = "prod"
-# Using a temp file for compatibility with both GNU and BSD sed
-sed 's/static String profileName = ".*";/static String profileName = "prod";/' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+# 3. Build APK
+build_apk() {
+    CONFIG_FILE="$PROJECT_ROOT/lib/config.dart"
+    BACKUP_CONFIG_FILE="${CONFIG_FILE}.bak"
 
-echo "Configuration switched to 'prod'."
+    echo ""
+    echo "Preparing configuration..."
 
-echo ""
-# 5. Build
+    # 1. Backup original config
+    cp "$CONFIG_FILE" "$BACKUP_CONFIG_FILE"
 
-echo ""
-echo "Building Flutter APK (Release)..."
-cd "$PROJECT_ROOT"
-flutter build apk --release
+    # 2. Define cleanup function to restore config
+    restore_config() {
+        if [ -f "$BACKUP_CONFIG_FILE" ]; then
+            echo ""
+            echo "Restoring original configuration..."
+            mv "$BACKUP_CONFIG_FILE" "$CONFIG_FILE"
+        fi
+    }
 
-# Find the built APK
-APK_PATH="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release.apk"
+    # 3. Register cleanup to run on exit or error
+    trap restore_config EXIT INT TERM
 
-if [ ! -f "$APK_PATH" ]; then
-    echo "Error: APK not found at $APK_PATH"
-    exit 1
+    # 4. Modify config to use 'prod'
+    sed 's/static String profileName = ".*";/static String profileName = "prod";/' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+
+    echo "Configuration switched to 'prod'."
+
+    echo ""
+    echo "Building Flutter APK (Release)..."
+    cd "$PROJECT_ROOT"
+    flutter build apk --release
+
+    APK_PATH="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release.apk"
+    if [ ! -f "$APK_PATH" ]; then
+        echo "❌ Error: APK not found at $APK_PATH"
+        exit 1
+    fi
+
+    echo "✅ Build successful: $APK_PATH"
+
+    # 构建完成安全恢复配置
+    restore_config
+    trap - EXIT INT TERM
+}
+
+# 4. Upload APK
+upload_apk() {
+    gather_credentials
+
+    local target_apk="${CUSTOM_APK_PATH:-$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release.apk}"
+    if [ ! -f "$target_apk" ]; then
+        echo "❌ Error: APK not found at $target_apk"
+        exit 1
+    fi
+
+    echo ""
+    echo "Uploading to Huawei AppGallery ($target_apk)..."
+    "$PYTHON_EXEC" "$UPLOAD_SCRIPT" \
+        --client-id "$CLIENT_ID" \
+        --client-secret "$CLIENT_SECRET" \
+        --app-id "$APP_ID" \
+        --file "$target_apk"
+    echo "✅ Huawei Upload Done!"
+}
+
+# --- 执行流程 ---
+if [ "$UPLOAD_ONLY" = true ]; then
+    echo "▶️ 模式: 仅上传已有 APK"
+    upload_apk
+elif [ "$BUILD_ONLY" = true ]; then
+    echo "▶️ 模式: 仅构建 APK"
+    run_unit_tests
+    build_apk
+else
+    echo "▶️ 模式: 完整构建并上传"
+    gather_credentials
+    run_unit_tests
+    build_apk
+    upload_apk
 fi
 
-echo "Build successful: $APK_PATH"
-
-# 4. Upload
-echo ""
-echo "Uploading to Huawei AppGallery..."
-"$PYTHON_EXEC" "$UPLOAD_SCRIPT" \
-    --client-id "$CLIENT_ID" \
-    --client-secret "$CLIENT_SECRET" \
-    --app-id "$APP_ID" \
-    --file "$APK_PATH"
-
-echo "Done!"
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Total time: $(($ELAPSED_TIME / 60)) minutes and $(($ELAPSED_TIME % 60)) seconds."

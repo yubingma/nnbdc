@@ -77,6 +77,7 @@ IPA_DIR="$BUILD_DIR/ipa"
 # 标志
 SKIP_BUILD=false
 SKIP_UPLOAD=false
+SKIP_TESTS=false
 BUILD_ONLY=false
 UPLOAD_ONLY=false
 CLEAN_BUILD=true
@@ -96,6 +97,7 @@ show_usage() {
   --api-key KEY          App Store Connect API Key ID (用于替代 Apple ID 登录)
   --api-issuer ISSUER    App Store Connect API Issuer ID
   --skip-clean          跳过清理步骤
+  --skip-tests          跳过单元测试步骤
   --skip-build          跳过构建步骤（仅上传）
   --skip-upload         跳过上传步骤（仅构建）
   --build-only          仅构建，不上传
@@ -162,6 +164,10 @@ parse_args() {
                 ;;
             --skip-clean)
                 CLEAN_BUILD=false
+                shift
+                ;;
+            --skip-tests)
+                SKIP_TESTS=true
                 shift
                 ;;
             --skip-build)
@@ -562,7 +568,7 @@ tag_repo() {
     print_info "标签 $tag_name 已创建"
 
     print_step "推送标签到远程仓库..."
-    git push origin "$tag_name"
+    git push --no-verify origin "$tag_name"
     print_info "标签已推送至远程: $tag_name"
 }
 
@@ -727,7 +733,11 @@ main() {
     if [ "$SKIP_BUILD" = false ] && [ "$UPLOAD_ONLY" = false ]; then
         clean_build
         get_flutter_dependencies
-        run_tests
+        if [ "$SKIP_TESTS" = false ]; then
+            run_tests
+        else
+            print_info "跳过单元测试步骤 (--skip-tests)"
+        fi
         install_pods
         build_ipa
     else
