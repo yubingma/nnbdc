@@ -367,6 +367,9 @@ class PureE2ERegressionRunner:
 
         # 检查首页是否提示「选择词书」
         select_dict_btn = self.device.find_element(text="选择词书")
+        if not select_dict_btn:
+            select_dict_btn = self.device.scroll_and_find("选择词书", max_swipes=2, swipe_up=True)
+
         if select_dict_btn:
             print("[*] 新用户无选定词书，自动执行选词书流程...")
             self.device.click_element(select_dict_btn)
@@ -454,11 +457,11 @@ class PureE2ERegressionRunner:
         self.device.swipe(w // 2, int(h * 0.25), w // 2, int(h * 0.8), 350)
         time.sleep(1)
 
-        # 查找中央大仪表盘的数字（默认 20）
-        target_num_el = self.device.find_element(text="20", exact=True) or self.device.find_element(text="10", exact=True)
-        if not target_num_el:
-            # 尝试通过「今日目标」或中央坐标定位
-            target_num_el = self.device.find_element(text="词", exact=False)
+        # 查找中央大仪表盘的数字（新用户默认 30 词，或匹配「点击调整目标」）
+        target_num_el = (self.device.find_element(text="点击调整目标", exact=False) or
+                         self.device.find_element(text="30", exact=True) or
+                         self.device.find_element(text="20", exact=True) or 
+                         self.device.find_element(text="10", exact=True))
 
         if target_num_el:
             print("[*] 点击学习仪表盘单词量打开定制弹窗...")
@@ -500,7 +503,9 @@ class PureE2ERegressionRunner:
         time.sleep(1)
 
         # 1. 点击「开始学习」
-        start_btn = self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习")
+        start_btn = (self.device.find_element(text="开始学习") or 
+                     self.device.find_element(text="继续学习") or
+                     self.device.scroll_and_find("开始学习", max_swipes=2, swipe_up=True))
         if not start_btn:
             shot = self.capture("start_study_btn_missing")
             self.log("发起背单词", "FAILED", "主页未展示「开始学习」按钮", shot)

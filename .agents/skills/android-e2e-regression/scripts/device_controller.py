@@ -78,7 +78,11 @@ class AndroidDeviceController:
         return 1080, 2280
 
     def wake_up_and_unlock(self):
-        """唤醒屏幕并解锁（无密码锁屏可直接滑动）"""
+        """唤醒屏幕并解锁（无密码锁屏可直接滑动，并强制锁定标准竖屏）"""
+        # 强制锁定系统为竖屏方向（关闭自动旋转），杜绝机身晃动或倾斜导致横屏UI变形
+        self._run_adb(["shell", "settings", "put", "system", "accelerometer_rotation", "0"])
+        self._run_adb(["shell", "settings", "put", "system", "user_rotation", "0"])
+
         res = self._run_adb(["shell", "dumpsys", "power"])
         if "mHoldingDisplaySuspendBlocker=false" in res.stdout or "Display Power: state=OFF" in res.stdout:
             self._run_adb(["shell", "input", "keyevent", "26"])
