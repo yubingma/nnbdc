@@ -613,6 +613,9 @@ public class DictImportBo {
         }
 
         synchronized (commonDictLock) {
+            // 通过数据库行级排他锁锁定通用兜底词典记录，确保跨事务并发时单调递增发号，彻底杜绝序号重复竞态
+            dictBo.lockDictForUpdate(Constants.COMMON_DICT_ID);
+
             // 无论单词是刚创建的还是已存在的，都必须确保它被通用兜底词书（ID="0"）收录，以免触发数据不一致健康警告
             DictWord dw0Check = dictWordBo.findById(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
             if (dw0Check == null) {

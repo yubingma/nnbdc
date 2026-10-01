@@ -1090,7 +1090,7 @@ public class DictBo extends BaseBo<Dict> {
         String sql = "UPDATE dict_word dw1 " +
                 "SET seq = ranked.new_seq " +
                 "FROM (" +
-                "    SELECT word_id, ROW_NUMBER() OVER (ORDER BY seq) as new_seq " +
+                "    SELECT word_id, ROW_NUMBER() OVER (ORDER BY seq, create_time, word_id) as new_seq " +
                 "    FROM dict_word " +
                 "    WHERE dict_id = :dictId" +
                 ") ranked " +
@@ -1099,9 +1099,8 @@ public class DictBo extends BaseBo<Dict> {
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         namedParameterJdbcTemplate.update(sql, params);
 
-        // 更新词典更新时间，触发缓存失效
-        String updateTimeSql = "UPDATE dict SET update_time = NOW() WHERE id = :dictId";
-        namedParameterJdbcTemplate.update(updateTimeSql, params);
+        // 序号修复后，同步原子校准词典记录数
+        syncWordCountFromActual(dictId);
 
         // 记录同步日志
         try {
@@ -1162,5 +1161,14 @@ public class DictBo extends BaseBo<Dict> {
         String sql = "UPDATE dict SET word_count = word_count + 1, update_time = NOW() WHERE id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         namedParameterJdbcTemplate.update(sql, params);
+    }
+
+    /**
+     * 悲观锁定词典记录（FOR UPDATE），用于跨事务排队并发发号或并发同步
+     */
+    public void lockDictForUpdate(String dictId) {
+        String sql = "SELECT id FROM dict WHERE id = :dictId FOR UPDATE";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        namedParameterJdbcTemplate.queryForObject(sql, params, String.class);
     }
 }
