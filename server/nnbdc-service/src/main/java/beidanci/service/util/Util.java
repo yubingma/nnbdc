@@ -1203,17 +1203,30 @@ public class Util {
      */
     public static final String MEANING_SEPARATOR_REGEX = "[;；]";
 
-    private static final Pattern MEANING_SEPARATOR_PATTERN = Pattern.compile(MEANING_SEPARATOR_REGEX);
-
     /**
-     * 判断释义文本中是否含有非法的分号分隔符
+     * 判断释义文本中是否含有非法的分号分隔符（括号内部的修饰性分号除外）
      */
     public static boolean hasMeaningSeparator(String meaning) {
-        return meaning != null && MEANING_SEPARATOR_PATTERN.matcher(meaning).find();
+        if (meaning == null || meaning.isEmpty()) {
+            return false;
+        }
+        int depth = 0;
+        for (int i = 0; i < meaning.length(); i++) {
+            char c = meaning.charAt(i);
+            if (c == '(' || c == '（' || c == '[' || c == '【') {
+                depth++;
+            } else if (c == ')' || c == '）' || c == ']' || c == '】') {
+                if (depth > 0) depth--;
+            } else if ((c == ';' || c == '；') && depth == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * 按中英文分号把释义文本拆成多个独立义项（去空白、去末尾逗号、去重）。
+     * 括号（含全角/半角圆括号与方括号）内部的分号视为补充说明，不进行拆分。
      * <p>
      * 该方法是"分号即多个释义项"这一约定的唯一实现，服务端所有释义写入路径共用。
      *
@@ -1224,8 +1237,28 @@ public class Util {
         if (meaning == null) {
             return parts;
         }
-        for (String part : meaning.split(MEANING_SEPARATOR_REGEX)) {
-            String trimmed = sanitizeAiString(part);
+        int depth = 0;
+        StringBuilder current = new StringBuilder();
+        for (int i = 0; i < meaning.length(); i++) {
+            char c = meaning.charAt(i);
+            if (c == '(' || c == '（' || c == '[' || c == '【') {
+                depth++;
+                current.append(c);
+            } else if (c == ')' || c == '）' || c == ']' || c == '】') {
+                if (depth > 0) depth--;
+                current.append(c);
+            } else if ((c == ';' || c == '；') && depth == 0) {
+                String trimmed = sanitizeAiString(current.toString());
+                if (trimmed != null && !trimmed.isEmpty() && !parts.contains(trimmed)) {
+                    parts.add(trimmed);
+                }
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        if (current.length() > 0) {
+            String trimmed = sanitizeAiString(current.toString());
             if (trimmed != null && !trimmed.isEmpty() && !parts.contains(trimmed)) {
                 parts.add(trimmed);
             }

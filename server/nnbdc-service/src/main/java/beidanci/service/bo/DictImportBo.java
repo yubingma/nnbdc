@@ -865,7 +865,7 @@ public class DictImportBo {
         }
 
         // AI 偶发违约：一条释义里用分号挤进了多个义项。按约定拆成多条独立释义项，
-        // 首条保留 AI 给出的例句与同义词，其余条目的例句交由系统健康检查补全。
+        // 各拆分项继承 AI 给出的例句，首条保留同义词，确保每个义项均具备完整例句。
         List<AiMeaning> expandedMeanings = new ArrayList<>();
         for (AiMeaning am : aiResult.meanings) {
             if (am.meaning == null) continue;
@@ -879,8 +879,8 @@ public class DictImportBo {
                 AiMeaning part = new AiMeaning();
                 part.pos = am.pos;
                 part.meaning = parts.get(p);
-                part.sentenceEn = p == 0 ? am.sentenceEn : null;
-                part.sentenceCn = p == 0 ? am.sentenceCn : null;
+                part.sentenceEn = am.sentenceEn;
+                part.sentenceCn = am.sentenceCn;
                 part.synonyms = p == 0 ? am.synonyms : null;
                 expandedMeanings.add(part);
             }
