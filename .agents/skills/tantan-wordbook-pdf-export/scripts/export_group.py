@@ -27,7 +27,8 @@ def main():
     ap.add_argument("--no-resume", action="store_true", help="已存在的也重导")
     a = ap.parse_args()
 
-    out_dir = a.out or os.path.join(ROOT, "tools/book", a.tab)
+    tab_dir = "进阶与经典" if a.tab == "其他" else a.tab
+    out_dir = a.out or os.path.join(ROOT, "tools/book", tab_dir)
     books = json.load(open(a.books)) if a.books else None
     if books:
         books = [(n, int(c)) for n, c in books]

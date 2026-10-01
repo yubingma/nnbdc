@@ -41,9 +41,13 @@ $PY collect_group.py 初中 人教版 -o books.json
 # 2) 批量导出（自动：腾位 → 添加/切换 → 导出 → adb pull → 校验）
 $PY export_group.py 初中 人教版
 
-# 想带音标 / 双列 / 换目录
-$PY export_group.py 高中 外研版 --out /Volumes/ssd/ppdc/tools/book/高中 --phonetic
+# 导出炭炭「其他」大类（如新概念、COCA、牛津等），脚本会自动映射落盘到 tools/book/进阶与经典/
+$PY export_group.py 其他 新概念
 ```
+
+> **★ 特别约定：炭炭「其他」Tab ⇋ 泡泡单词「进阶与经典」**：
+> - 炭炭的「其他」分类下涵盖新概念、剑桥、BEC、COCA、牛津等经典与权威进阶书目。
+> - 导出时传入 `其他`，脚本会自动落盘至 `tools/book/进阶与经典/<分组>/`，与泡泡单词批量导入规范完全对齐。
 
 `export_group.py` **默认跳过已存在的 `<书名>_*.pdf`**（断点续跑），中断后直接重跑即可。
 单本约 **100–140 秒**，20 本约 40 分钟，用后台任务跑。
