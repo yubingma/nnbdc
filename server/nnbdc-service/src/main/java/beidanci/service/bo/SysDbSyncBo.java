@@ -40,6 +40,10 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private SysDbSyncBo self;
+
     @PostConstruct
     public void init() {
         setDao(new BaseDao<SysDbLog>() {
@@ -57,17 +61,18 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
                     "SECURITY ALERT: Attempted to log private data to global sync log! table=" + table + ", ownerId=" + ownerId);
             }
         }
-        logOperation(operate, table, recordId, record);
+        self.logOperation(operate, table, recordId, record);
     }
 
     /**
-     * 记录系统数据操作日志
+     * 记录系统数据操作日志 (独立短事务，即拿即放，杜绝与外部业务长事务锁冲突)
      * 
      * @param operate  操作类型：INSERT/UPDATE/DELETE
      * @param table    表名：word_image/sentence/word_shortdesc_chinese
      * @param recordId 记录ID
      * @param record   记录内容（JSON格式）
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Throwable.class)
     public void logOperation(String operate, String table, String recordId, String record) {
         // 断言：核心参数不能为空，且在 INSERT/UPDATE 时 record JSON 不能为空
         Assert.hasText(operate, "SysDbSync: operate must not be blank");
@@ -87,8 +92,8 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             }
         }
 
-        // 在同一事务中完成：1）记录日志 2）递增版本号
-        int currentVersion = getSysDbVersion();
+        // 在独立短事务中完成：1）获取行锁并递增版本 2）写入日志
+        int currentVersion = getSysDbVersionForUpdate();
         int nextVersion = currentVersion + 1;
 
         // 创建日志
@@ -112,11 +117,24 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     }
 
     /**
-     * 获取当前全局版本号
+     * 获取当前全局版本号 (只读查询，使用 MVCC 快照读，绝不加锁，供客户端增量同步等查询使用)
      * 
      * @return 当前版本号，若不存在则返回0
      */
     public int getSysDbVersion() {
+        String sql = "SELECT version FROM sys_db_version WHERE id = 'singleton'";
+        List<Integer> versions = namedParameterJdbcTemplate.query(sql,
+                (rs, rowNum) -> rs.getInt("version"));
+        if (versions.isEmpty()) {
+            return 0;
+        }
+        return versions.get(0);
+    }
+
+    /**
+     * 获取当前全局版本号并加排他锁 (仅限写日志的独立事务内部使用)
+     */
+    private int getSysDbVersionForUpdate() {
         String sql = "SELECT version FROM sys_db_version WHERE id = 'singleton' FOR UPDATE";
         List<Integer> versions = namedParameterJdbcTemplate.query(sql,
                 (rs, rowNum) -> rs.getInt("version"));
@@ -154,17 +172,18 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     }
 
     /**
-     * 批量记录系统数据操作日志
+     * 批量记录系统数据操作日志 (独立短事务)
      * 
      * @param logs 待记录的日志DTO列表
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Throwable.class)
     public void logOperations(List<SysDbLogDto> logs) {
         if (logs == null || logs.isEmpty()) {
             return;
         }
 
-        // 在同一事务中完成：1）记录日志 2）递增版本号
-        int currentVersion = getSysDbVersion();
+        // 在同一独立事务中完成：1）记录日志 2）递增版本号
+        int currentVersion = getSysDbVersionForUpdate();
         Date now = new Date();
         
         for (SysDbLogDto dto : logs) {
