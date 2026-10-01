@@ -131,7 +131,6 @@ class RegressionRunner:
         self.device.launch_app(stop_first=True)
         time.sleep(3)
 
-        # 检查是否在前台
         if not self.device.is_app_in_foreground():
             time.sleep(2)
             if not self.device.is_app_in_foreground():
@@ -160,39 +159,52 @@ class RegressionRunner:
             self._do_email_login_flow()
             return
 
-        if self.device.find_element(text="获取", exact=True) and self.device.find_element(text="验证码"):
+        if self.device.find_element(text="验证码") and self.device.find_element(text="获取"):
             print("[*] 当前直接在邮箱登录页...")
             self._fill_email_and_code()
             return
 
-        # 若在主页，切换到“我”检查是否已是 e2etest
-        print("[*] 当前已在主界面，检查登录账户...")
+        # 若在主页，先点底部「我」检查当前账户
+        print("[*] 当前已在主界面，切换到「我」检查登录账户...")
         if self.device.wait_and_click(text="我", timeout=3):
-            time.sleep(1)
+            time.sleep(1.5)
+            # 检查当前登录昵称
             el_nick = self.device.find_element(text="E2E测试用户")
-            el_email = self.device.find_element(text="e2etest@nnbdc.com")
+            el_email = self.device.find_element(text="e2etest")
             if el_nick or el_email:
                 shot = self.capture("already_e2e_user")
                 self.log("用户身份校验", "PASSED", "当前已登录为 e2etest 账号，无需重登", shot)
                 self.device.wait_and_click(text="学习", timeout=2)
                 return
 
-            print("[*] 当前非 e2etest 用户，准备切换账号...")
+            print("[*] 当前非 e2etest 用户，准备展开设置并切换账号...")
+            # 检查「设置与工具」是否需要展开
+            settings_expand = self.device.scroll_and_find("设置与工具", max_swipes=2)
+            if settings_expand:
+                if "展开" in settings_expand.get("label", "") or "展开" in settings_expand.get("desc", ""):
+                    print("[*] 点击展开「设置与工具」...")
+                    self.device.click_element(settings_expand)
+                    time.sleep(1)
+
             # 向上滑动寻找「切换账号」
-            w, h = self.device.get_screen_size()
-            self.device.swipe(w // 2, int(h * 0.7), w // 2, int(h * 0.3), 400)
-            time.sleep(1)
-            if self.device.wait_and_click(text="切换账号", timeout=3):
+            switch_btn = self.device.scroll_and_find("切换账号", max_swipes=5)
+            if switch_btn:
+                print("[*] 点击「切换账号」...")
+                self.device.click_element(switch_btn)
                 time.sleep(2)
                 self._do_email_login_flow()
             else:
-                self.log("切换账号按钮定位", "FAILED", "在个人中心未找到「切换账号」按钮", self.capture("logout_failed"))
+                shot = self.capture("switch_account_not_found")
+                self.log("切换账号按钮定位", "FAILED", "未能在设置中定位到「切换账号」按钮", shot)
+                # 兜底切回学习页
+                self.device.wait_and_click(text="学习", timeout=2)
                 return
 
     def _do_email_login_flow(self):
         # 1. 勾选同意协议（如果在登录主页）
-        if self.device.find_element(text="同意"):
-            self.device.wait_and_click(text="同意", timeout=2)
+        agree_el = self.device.find_element(text="同意")
+        if agree_el:
+            self.device.click_element(agree_el)
             time.sleep(0.5)
 
         # 2. 点击「邮箱登录」
@@ -203,8 +215,8 @@ class RegressionRunner:
             self.log("进入邮箱登录页", "FAILED", "未找到「邮箱登录」入口", self.capture("email_login_entry_failed"))
 
     def _fill_email_and_code(self):
-        # 点击邮箱输入框
-        el_email_input = self.device.find_element(text="请输入邮箱") or self.device.find_element(text="邮箱")
+        # 点击邮箱输入框并输入
+        el_email_input = self.device.find_element(text="邮箱") or self.device.find_element(text="请输入邮箱")
         if el_email_input:
             self.device.click_element(el_email_input)
             time.sleep(0.5)
@@ -212,24 +224,24 @@ class RegressionRunner:
             self.device.input_text("e2etest@nnbdc.com")
             time.sleep(0.5)
 
-        # 再次确认勾选同意协议
-        self.device.wait_and_click(text="同意", timeout=1)
+        # 再次勾选同意协议
+        agree_el = self.device.find_element(text="同意")
+        if agree_el:
+            self.device.click_element(agree_el)
+            time.sleep(0.5)
 
         # 点击「获取」验证码按钮
         print("[*] 点击获取验证码...")
-        get_btn = self.device.find_element(text="获取", exact=True)
-        if not get_btn:
-            # 尝试通过文本包含查找
-            get_btn = self.device.find_element(text="获取")
+        get_btn = self.device.find_element(text="获取")
         if get_btn:
             self.device.click_element(get_btn)
             time.sleep(2)
         else:
-            print("[!] 未找到「获取」验证码按钮，尝试直接读取最新验证码...")
+            print("[!] 未找到「获取」验证码按钮，尝试从数据库读取最新验证码...")
 
         # 从生产数据库查询刚刚生成的 6 位验证码
         code = None
-        for attempt in range(5):
+        for attempt in range(6):
             code = manage_e2e_account.get_latest_code()
             if code:
                 break
@@ -253,8 +265,11 @@ class RegressionRunner:
         # 隐藏键盘并点击「登录」
         self.device.press_key(4) # BACK 隐藏软键盘
         time.sleep(0.5)
-        if self.device.wait_and_click(text="登录", exact=True, timeout=3):
-            time.sleep(3)
+
+        login_btn = self.device.find_element(text="登录")
+        if login_btn:
+            self.device.click_element(login_btn)
+            time.sleep(4)
             shot = self.capture("login_result")
             # 校验是否回到主页
             if self.device.find_element(text="学习") or self.device.find_element(text="开始学习"):
@@ -276,7 +291,7 @@ class RegressionRunner:
         for tab_name, desc, tag in tabs:
             time.sleep(1)
             clicked = self.device.wait_and_click(text=tab_name, timeout=3)
-            time.sleep(1)
+            time.sleep(1.5)
             shot = self.capture(f"tab_{tag}")
             if clicked:
                 self.log(f"导航切换: {tab_name}", "PASSED", f"成功切入 {desc}", shot)
@@ -293,9 +308,10 @@ class RegressionRunner:
         start_btn = self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习")
         if not start_btn:
             shot = self.capture("start_learn_not_found")
-            self.log("进入学习流程", "SKIPPED", "主页未展示「开始学习/继续学习」按钮（可能未配置词书或已完成）", shot)
+            self.log("进入学习流程", "SKIPPED", "主页未展示「开始学习/继续学习」按钮", shot)
             return
 
+        print("[*] 点击「开始学习」按钮...")
         self.device.click_element(start_btn)
         time.sleep(3)
         shot = self.capture("in_study_page")
@@ -309,9 +325,9 @@ class RegressionRunner:
                    self.device.find_element(text="下一词") or
                    self.device.find_element(text="再学学"))
             if btn:
-                btn_text = btn.get("text", "未知")
+                btn_text = btn.get("label", "未知")
                 self.device.click_element(btn)
-                time.sleep(1)
+                time.sleep(1.5)
                 shot = self.capture(f"study_action_round_{round_idx}")
                 self.log(f"单词交互: 轮次{round_idx}", "PASSED", f"点击了「{btn_text}」按钮推进学习步骤", shot)
             else:
@@ -322,9 +338,10 @@ class RegressionRunner:
         print("[*] 按返回键退出学习界面...")
         self.device.press_key(4) # KEYCODE_BACK
         time.sleep(1.5)
-        # 如果有弹窗“确定退出学习”，点击确定
-        if self.device.find_element(text="退出"):
-            self.device.wait_and_click(text="退出", timeout=1)
+        # 如果有弹窗“确定退出学习”，点击退出
+        exit_btn = self.device.find_element(text="退出") or self.device.find_element(text="确定")
+        if exit_btn:
+            self.device.click_element(exit_btn)
             time.sleep(1)
         shot = self.capture("back_to_home")
         self.log("退出学习回到首页", "PASSED", "学习状态保存并顺利返回主页", shot)
@@ -448,7 +465,7 @@ class RegressionRunner:
 <body>
     <div class="container">
         <h1>📱 泡泡单词 Android 端到端回归测试报告</h1>
-        <div style="font-size: 14px; color: #64748B;">测试环境：生产数据库 (47.108.27.205) + Android 真机自动化</div>
+        <div style="font-size: 14px; color: #64748B;">测试环境：生产数据库 (47.108.27.205) + Android 实体真机自动化</div>
         
         <div class="summary-cards">
             <div class="card">

@@ -3,6 +3,7 @@
 """
 Android 设备控制驱动模块
 基于 ADB 和 uiautomator 实现对真实 Android 手机的连接、控制、布局抓取与智能点击。
+深度适配 Flutter Semantics（自动匹配 text 与 content-desc）。
 """
 
 import os
@@ -43,7 +44,7 @@ class AndroidDeviceController:
             raise TimeoutError(f"ADB 命令超时: {' '.join(full_cmd)}")
 
     def _ensure_device(self):
-        """确保有且仅有一台设备，或指定序列号已连接"""
+        """确保设备已连接"""
         res = self._run_adb(["devices"])
         lines = [line.strip() for line in res.stdout.splitlines() if line.strip()]
         devices = []
@@ -66,7 +67,7 @@ class AndroidDeviceController:
                 raise ConnectionError(f"❌ 指定的设备序列号 {self.serial} 未在线！当前在线设备: {devices}")
         else:
             self.serial = devices[0]
-            print(f"[*] 自动选定当前唯一在线设备: {self.serial}")
+            print(f"[*] 选定当前在线设备: {self.serial}")
 
     def get_screen_size(self) -> Tuple[int, int]:
         """获取屏幕分辨率 (width, height)"""
@@ -74,18 +75,15 @@ class AndroidDeviceController:
         match = re.search(r"Physical size:\s*(\d+)x(\d+)", res.stdout)
         if match:
             return int(match.group(1)), int(match.group(2))
-        return 1080, 2400
+        return 1080, 2280
 
     def wake_up_and_unlock(self):
         """唤醒屏幕并解锁（无密码锁屏可直接滑动）"""
-        # 检查屏幕亮起状态
         res = self._run_adb(["shell", "dumpsys", "power"])
         if "mHoldingDisplaySuspendBlocker=false" in res.stdout or "Display Power: state=OFF" in res.stdout:
-            # 点亮屏幕
             self._run_adb(["shell", "input", "keyevent", "26"])
             time.sleep(0.5)
         
-        # 向上滑动解锁
         w, h = self.get_screen_size()
         self.swipe(w // 2, int(h * 0.8), w // 2, int(h * 0.2), 300)
         time.sleep(0.5)
@@ -97,13 +95,11 @@ class AndroidDeviceController:
             time.sleep(1)
         
         print(f"[*] 启动 App: {APP_PACKAGE}...")
-        # 使用 monkey 或 am 启动
         self._run_adb(["shell", "monkey", "-p", APP_PACKAGE, "-c", "android.intent.category.LAUNCHER", "1"])
         time.sleep(3)
 
     def stop_app(self):
-        """强制停止 App"""
-        print(f"[*] 停止 App: {APP_PACKAGE}...")
+        """停止 App"""
         self._run_adb(["shell", "am", "force-stop", APP_PACKAGE])
 
     def is_app_in_foreground(self) -> bool:
@@ -114,7 +110,6 @@ class AndroidDeviceController:
     def take_screenshot(self, save_path: str) -> str:
         """捕获屏幕截图并保存到本地"""
         os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
-        # 用 exec-out 直接将 stdout 重定向为本地文件，避免先写入手机再 pull
         cmd = ["adb"]
         if self.serial:
             cmd.extend(["-s", self.serial])
@@ -127,8 +122,7 @@ class AndroidDeviceController:
         return save_path
 
     def dump_ui_hierarchy(self) -> List[Dict]:
-        """抓取当前屏幕的 UI 节点树，返回结构化列表"""
-        # 在设备端 dump
+        """抓取当前屏幕的 UI 节点树，统一适配 Flutter Semantics"""
         dump_cmd = self._run_adb(["shell", "uiautomator", "dump", "/sdcard/e2e_dump.xml"], check=False)
         if dump_cmd.returncode != 0:
             time.sleep(1)
@@ -143,8 +137,8 @@ class AndroidDeviceController:
         try:
             root = ET.fromstring(xml_content)
             for node in root.iter("node"):
-                text = node.attrib.get("text", "")
-                desc = node.attrib.get("content-desc", "")
+                text = node.attrib.get("text", "").strip()
+                desc = node.attrib.get("content-desc", "").strip()
                 bounds_str = node.attrib.get("bounds", "") # format: [x1,y1][x2,y2]
                 res_id = node.attrib.get("resource-id", "")
                 clickable = node.attrib.get("clickable", "false") == "true"
@@ -156,7 +150,11 @@ class AndroidDeviceController:
                 else:
                     center = None
 
+                # 提取统一可视标签（合并 text 与 desc）
+                label = text if text else desc
+
                 elements.append({
+                    "label": label,
                     "text": text,
                     "desc": desc,
                     "resource_id": res_id,
@@ -171,21 +169,23 @@ class AndroidDeviceController:
         return elements
 
     def find_element(self, text: Optional[str] = None, desc: Optional[str] = None, exact: bool = False) -> Optional[Dict]:
-        """查找满足条件的元素"""
+        """查找满足条件的元素（自动贯通 text 与 desc）"""
+        target = text or desc
+        if not target:
+            return None
+
         elements = self.dump_ui_hierarchy()
         for el in elements:
-            if text is not None:
-                el_text = el.get("text", "")
-                if exact and el_text == text:
-                    return el
-                if not exact and text in el_text:
-                    return el
-            if desc is not None:
-                el_desc = el.get("desc", "")
-                if exact and el_desc == desc:
-                    return el
-                if not exact and desc in el_desc:
-                    return el
+            candidates = [el.get("label", ""), el.get("text", ""), el.get("desc", "")]
+            for cand in candidates:
+                cand_clean = cand.replace("\n", " ").strip()
+                target_clean = target.strip()
+                if exact:
+                    if cand_clean == target_clean or cand == target:
+                        return el
+                else:
+                    if target_clean in cand_clean or target in cand:
+                        return el
         return None
 
     def click(self, x: int, y: int):
@@ -199,20 +199,35 @@ class AndroidDeviceController:
             raise ValueError(f"元素无有效中心坐标: {el}")
         self.click(center[0], center[1])
 
-    def wait_and_click(self, text: Optional[str] = None, desc: Optional[str] = None, timeout: int = 10, exact: bool = False) -> bool:
+    def wait_and_click(self, text: str, timeout: int = 10, exact: bool = False) -> bool:
         """等待某元素出现并点击"""
         start = time.time()
         while time.time() - start < timeout:
-            el = self.find_element(text=text, desc=desc, exact=exact)
+            el = self.find_element(text=text, exact=exact)
             if el and el.get("center"):
                 self.click_element(el)
                 return True
             time.sleep(1)
         return False
 
+    def scroll_and_find(self, text: str, max_swipes: int = 5, swipe_up: bool = True) -> Optional[Dict]:
+        """在屏幕上滑动查找元素"""
+        w, h = self.get_screen_size()
+        for _ in range(max_swipes):
+            el = self.find_element(text=text)
+            if el and el.get("center"):
+                return el
+            # 滑动
+            if swipe_up:
+                self.swipe(w // 2, int(h * 0.75), w // 2, int(h * 0.35), 350)
+            else:
+                self.swipe(w // 2, int(h * 0.35), w // 2, int(h * 0.75), 350)
+            time.sleep(1)
+        # 最后再查一次
+        return self.find_element(text=text)
+
     def input_text(self, text: str):
-        """通过 ADB 输入文本（针对英文字符和数字，空格自动转义）"""
-        # 注意: 字符在 adb shell input text 中有些需要转义
+        """通过 ADB 输入文本"""
         escaped = text.replace(" ", "%s").replace("&", "\\&").replace("@", "\\@")
         self._run_adb(["shell", "input", "text", escaped])
 
@@ -222,7 +237,7 @@ class AndroidDeviceController:
             self.press_key(67) # KEYCODE_DEL
 
     def press_key(self, keycode: int):
-        """发送按键事件 (e.g. 4=BACK, 66=ENTER, 3=HOME)"""
+        """发送按键事件 (4=BACK, 66=ENTER, 3=HOME)"""
         self._run_adb(["shell", "input", "keyevent", str(keycode)])
 
     def swipe(self, x1: int, y1: int, x2: int, y2: int, duration_ms: int = 300):
@@ -230,10 +245,6 @@ class AndroidDeviceController:
         self._run_adb(["shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration_ms)])
 
 if __name__ == "__main__":
-    try:
-        controller = AndroidDeviceController()
-        w, h = controller.get_screen_size()
-        print(f"✅ 连接成功！分辨率: {w}x{h}")
-        print(f"[*] 前台状态: {controller.is_app_in_foreground()}")
-    except Exception as e:
-        print(f"❌ 初始化失败: {e}")
+    controller = AndroidDeviceController()
+    w, h = controller.get_screen_size()
+    print(f"✅ 连接成功！分辨率: {w}x{h}")
