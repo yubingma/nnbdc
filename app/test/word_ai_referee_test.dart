@@ -130,5 +130,49 @@ void main() {
       expect(parsed.isSynonym, isFalse);
       expect(parsed.explanation, equals('发音与目标词不符'));
     });
+
+    test('AiRefereeUtil.parseRefereeResponse parses en2Ch confusable word correctly', () {
+      const rawAiResponse = '{"isCorrect": false, "confusedWord": "dew"}';
+      final parsed = AiRefereeUtil.parseRefereeResponse(rawAiResponse);
+      expect(parsed.isCorrect, isFalse);
+      expect(parsed.confusedWord, equals('dew'));
+    });
+
+    test('英译汉形近词记混：提示点明用户答的是哪个单词的意思', () {
+      final hint = AiRefereeUtil.confusableWordHint(
+        userAnswer: '露水',
+        confusedWord: 'dew',
+        targetWord: 'jew',
+      );
+      expect(hint, equals('「露水」是单词 dew 的意思，注意区分形近词'));
+    });
+
+    test('英译汉形近词记混：不可信的形近词一律不出提示（宁可不提示也不误导）', () {
+      // 大模型没给形近词 / 给的不是英文单词 / 给回本词自己 / 用户答案为空
+      expect(
+        AiRefereeUtil.confusableWordHint(userAnswer: '露水', confusedWord: null, targetWord: 'jew'),
+        isNull,
+      );
+      expect(
+        AiRefereeUtil.confusableWordHint(userAnswer: '露水', confusedWord: '  ', targetWord: 'jew'),
+        isNull,
+      );
+      expect(
+        AiRefereeUtil.confusableWordHint(userAnswer: '露水', confusedWord: '露水', targetWord: 'jew'),
+        isNull,
+      );
+      expect(
+        AiRefereeUtil.confusableWordHint(userAnswer: '露水', confusedWord: 'dew 的意思', targetWord: 'jew'),
+        isNull,
+      );
+      expect(
+        AiRefereeUtil.confusableWordHint(userAnswer: '露水', confusedWord: 'Jew', targetWord: 'jew'),
+        isNull,
+      );
+      expect(
+        AiRefereeUtil.confusableWordHint(userAnswer: '   ', confusedWord: 'dew', targetWord: 'jew'),
+        isNull,
+      );
+    });
   });
 }

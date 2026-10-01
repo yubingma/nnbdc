@@ -4141,7 +4141,16 @@ class BdcNotifier extends _$BdcNotifier {
         _failedWordAiEvaluationsForCurrentWord.add(cleanInput);
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);
-        if (context != null && context.mounted) {
+        final confusableHint = AiRefereeUtil.confusableWordHint(
+          userAnswer: cleanInput,
+          confusedWord: refereeResult.confusedWord,
+          targetWord: targetWord,
+        );
+        if (confusableHint != null) {
+          // 形近词张冠李戴：直接点明"你答的是哪个词的意思"，比笼统判错更能帮用户把两个词分开记。
+          // 自动兜底裁判没有 context（不走对话框），提示条同样要能出现。
+          ToastUtil.info(confusableHint, autoCloseDuration: const Duration(seconds: 4));
+        } else if (context != null && context.mounted) {
           await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
           if (!_isDisposed) _handleTabChangeForAsr();
         }

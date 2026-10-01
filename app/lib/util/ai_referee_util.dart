@@ -14,7 +14,7 @@ class AiRefereeUtil {
   static Future<Result<String>> _chat(String messagesJson, String userId) =>
       (aiChatOverride ?? Api.client.aiChat)(messagesJson, userId);
 
-  /// 单词释义裁判系统提示词（含 ASR 声学容错与同义词覆盖规则）
+  /// 单词释义裁判系统提示词（含 ASR 声学容错、同义词覆盖与形近词记混点词规则）
   static const String wordRefereeSystemPrompt = '''
 You are an expert bilingual lexicographer and translation referee. Your task is to judge whether the user's spoken answer accurately represents a valid meaning, synonym, or translation of the target English word.
 
@@ -33,8 +33,20 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
    - If the user's spoken answer is already a valid Chinese word, synonym, or phrasing (e.g., user said "在一旁" for "beside", or "工资"/"月薪" for "salary"), "intendedMeaning" MUST preserve the user's valid phrasing (e.g. "在一旁", "工资"), DO NOT replace it with the dictionary's reference text (e.g. do NOT change "在一旁" to "在旁边").
    - ONLY correct acoustic/homophone transcription errors into proper Chinese characters (e.g., if ASR recognized "公子/工资本" for "工资", return "intendedMeaning": "工资"; if ASR recognized "再一旁", return "intendedMeaning": "在一旁").
 
+4. CONFUSABLE WORD MIX-UP (形近词/音近词记混) — NAME THE OTHER WORD:
+   - A wrong answer is often not random: the user recalled the Chinese meaning of an English word that is written or pronounced almost the same as the target word (e.g., target "jew", user answered "露水" which is the meaning of "dew"; target "abroad", user answered "在国外" which is the meaning of "aboard").
+   - Judge as FALSE and put that other English word in "confusedWord" ONLY when all three hold:
+     a. the answer is NOT any valid meaning of the target word (rule 1 does not apply);
+     b. the answer IS a valid, common Chinese meaning of exactly one other English word;
+     c. that other English word is confusable with the target word (same length with only one or two letters different, or a clearly similar pronunciation).
+   - "confusedWord" MUST be a bare lowercase English word, NEVER the target word itself, and no "explanation" is needed in this case (the app itself tells the user that the answer is the meaning of that word):
+     {"isCorrect": false, "confusedWord": "dew"}
+   - NEVER reveal the target word's own Chinese meaning here: the user is still expected to recall it.
+   - If you are not sure which English word the answer belongs to, or that word is not confusable with the target, DO NOT guess: judge as FALSE exactly as in rule 1.
+
 Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 {"isCorrect": true, "intendedMeaning": "Preserved user synonym or phonetically corrected Chinese meaning (e.g. 在一旁 or 工资)"} if the answer is a valid meaning or acoustically matching translation of the word.
+{"isCorrect": false, "confusedWord": "dew"} if the answer is the meaning of a confusable English word (rule 4).
 {"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
 ''';
 
@@ -69,9 +81,9 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 ''';
 
   /// 解析大模型返回的 JSON 判决结果
-  static ({bool isCorrect, bool isSynonym, String explanation, String? intendedMeaning}) parseRefereeResponse(String? rawResponse) {
+  static ({bool isCorrect, bool isSynonym, String explanation, String? intendedMeaning, String? confusedWord}) parseRefereeResponse(String? rawResponse) {
     if (rawResponse == null || rawResponse.trim().isEmpty) {
-      return (isCorrect: false, isSynonym: false, explanation: '无裁判结果', intendedMeaning: null);
+      return (isCorrect: false, isSynonym: false, explanation: '无裁判结果', intendedMeaning: null, confusedWord: null);
     }
 
     try {
@@ -95,16 +107,37 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
       final isSynonym = parsed['isSynonym'] as bool? ?? false;
       final explanation = parsed['explanation'] as String? ?? '';
       final intendedMeaning = parsed['intendedMeaning'] as String?;
+      final confusedWord = parsed['confusedWord'] as String?;
       return (
         isCorrect: isCorrect,
         isSynonym: isSynonym,
         explanation: explanation,
         intendedMeaning: intendedMeaning,
+        confusedWord: confusedWord,
       );
     } catch (e) {
       Global.logger.w('解析 AI 裁判结果异常: rawResponse=$rawResponse', error: e);
-      return (isCorrect: false, isSynonym: false, explanation: '解析裁判结果失败', intendedMeaning: null);
+      return (isCorrect: false, isSynonym: false, explanation: '解析裁判结果失败', intendedMeaning: null, confusedWord: null);
     }
+  }
+
+  /// 形近词/音近词记混的友好提示：用户把本词的中文意思记成了另一个形近英文单词的意思
+  /// （例如把 "jew" 答成「露水」，而「露水」其实是 "dew" 的意思）。
+  ///
+  /// [confusedWord] 是大模型给出的"用户其实想的是哪个英文单词"。返回 null 表示本次不是形近词
+  /// 记混（按普通答错处理）——词形不像英文单词、就是本词本身、或用户答案为空时都不可信，
+  /// 宁可不出提示，也不能给出张冠李戴的误导性提示。
+  static String? confusableWordHint({
+    required String userAnswer,
+    required String? confusedWord,
+    required String targetWord,
+  }) {
+    final word = confusedWord?.trim() ?? '';
+    if (!RegExp(r'^[a-zA-Z]+$').hasMatch(word)) return null;
+    if (word.toLowerCase() == targetWord.trim().toLowerCase()) return null;
+    final answer = userAnswer.trim();
+    if (answer.isEmpty) return null;
+    return '「$answer」是单词 $word 的意思，注意区分形近词';
   }
 
   /// 单词中英（ch2En）裁判系统提示词（音素近似/发音容错与同义词区分引导）
@@ -145,7 +178,10 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
   ///
   /// [unavailableReason] 非空表示"裁判根本没有执行"（额度用尽、并发受限、超时、网络异常等），
   /// 此时 isCorrect=false 并不代表用户答错，调用方必须区别对待：只提示原因，不得判错。
-  static Future<({bool isCorrect, String explanation, String? intendedMeaning, String? rawResponse, String? unavailableReason})> judgeWordMeaning({
+  ///
+  /// [confusedWord] 非空表示"用户答的中文其实是另一个形近/音近英文单词的意思"，
+  /// 调用方据此给出点明该词的友好提示（见 [confusableWordHint]）。
+  static Future<({bool isCorrect, String explanation, String? intendedMeaning, String? confusedWord, String? rawResponse, String? unavailableReason})> judgeWordMeaning({
     required String targetWord,
     required String referenceMeanings,
     required String userInput,
@@ -181,16 +217,17 @@ ASR Candidate List: $candidateStr
           isCorrect: parsed.isCorrect,
           explanation: parsed.explanation,
           intendedMeaning: parsed.intendedMeaning,
+          confusedWord: parsed.confusedWord,
           rawResponse: result.data,
           unavailableReason: null,
         );
       } else {
         final reason = result.msg ?? '调用 AI 裁判失败';
-        return (isCorrect: false, explanation: reason, intendedMeaning: null, rawResponse: null, unavailableReason: reason);
+        return (isCorrect: false, explanation: reason, intendedMeaning: null, confusedWord: null, rawResponse: null, unavailableReason: reason);
       }
     } catch (e) {
       Global.logger.e('[AI裁判-单词] 请求异常: $e');
-      return (isCorrect: false, explanation: 'AI 裁判请求异常，请重试', intendedMeaning: null, rawResponse: null, unavailableReason: 'AI 裁判请求异常，请重试');
+      return (isCorrect: false, explanation: 'AI 裁判请求异常，请重试', intendedMeaning: null, confusedWord: null, rawResponse: null, unavailableReason: 'AI 裁判请求异常，请重试');
     }
   }
 

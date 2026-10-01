@@ -916,6 +916,57 @@ void main() {
     expect(state.isAiEvaluating, false, reason: '裁判结束后应复位判定中状态');
   });
 
+  test('BdcNotifier - 英译汉答成形近词的意思时不得判通过（提示点明该词不改变判题口径）', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    // 本用例含 1.5s 以上的真实等待：必须持有监听，避免 autoDispose 在等待期间销毁 notifier
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    // 大模型裁判的判决：用户答的「露水」其实是形近词 dew 的意思（本词是 jew）
+    String? refereeRequest;
+    AiRefereeUtil.aiChatOverride = (messagesJson, userId) async {
+      refereeRequest = messagesJson;
+      return Result('200', '', true)..data = '{"isCorrect": false, "confusedWord": "dew"}';
+    };
+    addTearDown(() => AiRefereeUtil.aiChatOverride = null);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    final wrapper = container.read(bdcNotifierProvider).wordWrapper!;
+    wrapper.word.spell = 'jew';
+    wrapper.word.meaningItems = [MeaningItemVo.from('n.', '犹太人')];
+    notifier.updateAsrPassRuleCache('HALF');
+
+    // 说成「露水」（dew 的意思）：本地一个释义都命中不了 -> 回落 AI 裁判
+    await notifier.onAsrResult(jsonEncode({
+      'best': '露水',
+      'candidates': ['露水'],
+      'isFinal': true,
+    }));
+    expect(notifier.hasPendingWordAiReferee, true, reason: '本地一个都没命中，应调度 AI 裁判兜底');
+
+    await Future.delayed(const Duration(milliseconds: 1700));
+
+    expect(refereeRequest, isNot(null), reason: '应真的请教了大模型裁判');
+    expect(refereeRequest, contains('jew'), reason: '裁判拿到的应是本词 jew');
+
+    final state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false, reason: '答的是形近词的意思不是答对，绝不能整词放行');
+    expect(state.wordWrapper!.asrMatchedMeaningItemParts, isEmpty, reason: '不得把本词释义标记为已答对');
+    expect(state.wordWrapper!.aiApprovedAnswer, null, reason: '不得记录 AI 认可回答');
+    expect(state.isAiEvaluating, false, reason: '裁判结束后应复位判定中状态');
+
+    // Note: 形近词提示走 ToastUtil.info，纯单元测试环境没有 ToastificationWrapper，
+    // 无法实例化提示条，故此处不覆盖提示文案（文案本身由 AiRefereeUtil.confusableWordHint 的单测覆盖）。
+  });
+
   test('BdcNotifier - 英译汉英文拼写板内拼写不应触发释义 AI 裁判', () async {
     final mockAsr = MockAsr();
     final container = ProviderContainer(

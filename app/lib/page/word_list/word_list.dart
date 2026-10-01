@@ -1809,6 +1809,15 @@ class WordListPageState extends State<WordListPage>
         }
       } else {
         _failedAiEvaluationsForCurrentWord.add(cleanInput);
+        // 形近词张冠李戴：点明"你答的是哪个词的意思"，帮用户把两个词分开记（与背单词页一致）。
+        final confusableHint = AiRefereeUtil.confusableWordHint(
+          userAnswer: cleanInput,
+          confusedWord: refereeResult.confusedWord,
+          targetWord: targetWord,
+        );
+        if (confusableHint != null) {
+          ToastUtil.info(confusableHint, autoCloseDuration: const Duration(seconds: 4));
+        }
       }
     } catch (e, st) {
       Global.logger.e("AI单词裁判判分出错", error: e, stackTrace: st);
