@@ -20,8 +20,8 @@
 0|rode
 0|sang
 0|drank
-0|What a ...!
-0|What an ...!
+0|What a
+0|What an
 0|beautiful
 0|desert
 0|feel
@@ -95,7 +95,6 @@
 0|fight
 0|hurry up
 0|go out
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 97
 # Total Entries Extracted: 97

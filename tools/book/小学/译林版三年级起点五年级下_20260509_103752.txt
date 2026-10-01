@@ -94,7 +94,7 @@
 0|vegetable
 0|tomato
 0|potato
-0|I can't wait!
+0|I can't wait
 0|look for
 0|ready
 0|yummy
@@ -150,7 +150,6 @@
 0|fourth
 0|start
 0|fight
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 152
 # Total Entries Extracted: 152

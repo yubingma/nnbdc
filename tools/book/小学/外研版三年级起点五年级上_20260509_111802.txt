@@ -57,9 +57,9 @@
 0|shorts
 0|argue
 0|matter
-0|What's the matter?
+0|What's the matter
 0|wear
-0|That's OK.
+0|That's OK
 0|sports
 0|hey
 0|nineteen
@@ -156,7 +156,6 @@
 0|grass
 0|baby
 0|dangerous
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 158
 # Total Entries Extracted: 158

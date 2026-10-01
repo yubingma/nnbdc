@@ -105,7 +105,7 @@
 0|green
 0|grey
 0|heeheehee
-0|Help!
+0|Help
 0|here you are
 0|house
 0|light
@@ -159,10 +159,10 @@
 0|Christmas
 0|day
 0|happy
-0|Happy birthday!
-0|Happy New Year!
+0|Happy birthday
+0|Happy New Year
 0|have
-0|hip, hip, hooray!
+0|hip, hip, hooray
 0|into
 0|lovely
 0|mouse
@@ -230,7 +230,6 @@
 0|that is
 0|wrap
 0|wrapping paper
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 232
 # Total Entries Extracted: 232

@@ -1,7 +1,7 @@
 0|China
 0|from
 0|Canada
-0|the U.S.
+0|the U.S
 0|Britain
 0|Australia
 0|India
@@ -11,7 +11,7 @@
 0|Ottawa
 0|London
 0|famous
-0|Washington D.C.
+0|Washington D.C
 0|housework
 0|shoe
 0|clean
@@ -65,7 +65,7 @@
 0|cheap
 0|all right
 0|buy
-0|Excuse me.
+0|Excuse me
 0|this way
 0|forty
 0|how much
@@ -93,7 +93,6 @@
 0|boy
 0|girl
 0|have a good time
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 95
 # Total Entries Extracted: 95

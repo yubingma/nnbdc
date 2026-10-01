@@ -38,17 +38,17 @@
 0|thirty
 0|first
 0|hurry up
-0|What time is it?
-0|I'm coming!
+0|What time is it
+0|I'm coming
 0|twenty
-0|Come on!
+0|Come on
 0|class
 0|eleven
 0|sport
 0|fifteen
 0|It's time to ...
 0|bed
-0|Good night!
+0|Good night
 0|week
 0|Monday
 0|Tuesday
@@ -62,7 +62,7 @@
 0|at
 0|up
 0|today
-0|What day is it today?
+0|What day is it today
 0|cinema
 0|after school
 0|dancing
@@ -71,7 +71,7 @@
 0|dog
 0|tomorrow
 0|free
-0|See you tomorrow!
+0|See you tomorrow
 0|play
 0|football
 0|ping-pong
@@ -80,11 +80,11 @@
 0|swimming
 0|so
 0|well
-0|Have a go!
+0|Have a go
 0|hard
-0|It's OK.
+0|It's OK
 0|try
-0|Well played!
+0|Well played
 0|different
 0|same
 0|hair
@@ -114,11 +114,11 @@
 0|warm
 0|save ... for a rainy day
 0|money
-0|What's the weather like today?
+0|What's the weather like today
 0|park
 0|meet
 0|fly a kite
-0|It's raining.
+0|It's raining
 0|worry
 0|umbrella
 0|there
@@ -156,7 +156,6 @@
 0|because
 0|bright
 0|clothes
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 158
 # Total Entries Extracted: 158

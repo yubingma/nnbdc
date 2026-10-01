@@ -20,7 +20,7 @@
 0|dog
 0|good
 0|morning
-0|How are you?
+0|How are you
 0|fine
 0|thank
 0|goodbye
@@ -29,7 +29,7 @@
 0|afternoon
 0|boy
 0|girl
-0|Mr.
+0|Mr
 0|hen
 0|come
 0|and
@@ -104,8 +104,8 @@
 0|ruler
 0|which
 0|the
-0|Here you are.
-0|You're welcome.
+0|Here you are
+0|You're welcome
 0|pen
 0|pencil
 0|zoo
@@ -125,7 +125,6 @@
 0|dance
 0|happy
 0|all
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 127
 # Total Entries Extracted: 127

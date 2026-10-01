@@ -18,7 +18,7 @@
 0|Miss
 0|brush my teeth
 0|wash my face
-0|Good night, kids!
+0|Good night, kids
 0|Chinese
 0|Maths
 0|English
@@ -39,7 +39,7 @@
 0|after school
 0|put on a play
 0|model plane
-0|Great!
+0|Great
 0|firefighter
 0|police officer
 0|farmer
@@ -112,7 +112,7 @@
 0|exercise
 0|get ready
 0|at the same time
-0|What time is it?
+0|What time is it
 0|liquid
 0|solid
 0|gas
@@ -135,9 +135,9 @@
 0|chocolate
 0|shake
 0|freeze
-0|Sure!
-0|Don't worry!
-0|Done!
+0|Sure
+0|Don't worry
+0|Done
 0|polite
 0|take turns
 0|knock
@@ -155,8 +155,7 @@
 0|another
 0|helpful
 0|way
-0|May I come in?
-
+0|May I come in
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 158
 # Total Entries Extracted: 158

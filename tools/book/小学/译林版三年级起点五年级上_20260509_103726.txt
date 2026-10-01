@@ -10,7 +10,7 @@
 0|afraid
 0|in front of
 0|her
-0|Help!
+0|Help
 0|beside
 0|between
 0|China
@@ -60,7 +60,7 @@
 0|idea
 0|ice
 0|hole
-0|Look out!
+0|Look out
 0|wet
 0|teacher
 0|teach
@@ -80,7 +80,7 @@
 0|nurse
 0|policeman
 0|e-friend
-0|Wait a minute.
+0|Wait a minute
 0|send
 0|email
 0|to
@@ -96,7 +96,7 @@
 0|go fishing
 0|tomorrow
 0|fishing
-0|Don't worry.
+0|Don't worry
 0|sit
 0|by ...
 0|wait
@@ -137,15 +137,14 @@
 0|card
 0|children
 0|message
-0|Merry Christmas!
+0|Merry Christmas
 0|song
-0|What's wrong with ...?
+0|What's wrong with
 0|him
 0|us
 0|letter
 0|storybook
 0|after
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 147
 # Total Entries Extracted: 147

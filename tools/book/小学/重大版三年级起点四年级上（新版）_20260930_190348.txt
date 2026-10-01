@@ -54,11 +54,11 @@
 0|fine
 0|friend
 0|ago
-0|a.m.
+0|a.m
 0|busy
 0|happy
 0|long
-0|p.m.
+0|p.m
 0|often
 0|parent
 0|park
@@ -120,7 +120,6 @@
 0|poor
 0|tag
 0|way
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 122
 # Total Entries Extracted: 122

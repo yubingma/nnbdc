@@ -35,7 +35,7 @@
 0|the Lantern Festival
 0|hang
 0|pen friend
-0|Pleased to meet you!
+0|Pleased to meet you
 0|address
 0|French
 0|age
@@ -80,9 +80,8 @@
 0|rule
 0|quiet
 0|problem
-0|No problem.
+0|No problem
 0|cross
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 84
 # Total Entries Extracted: 84

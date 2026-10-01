@@ -140,7 +140,7 @@
 0|dark
 0|good at
 0|ground
-0|Hands up!
+0|Hands up
 0|hero
 0|horror film
 0|hot
@@ -162,9 +162,8 @@
 0|daughter
 0|drink
 0|quite a lot
-0|Really?
+0|Really
 0|sand castle
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 166
 # Total Entries Extracted: 166

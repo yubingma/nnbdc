@@ -103,11 +103,11 @@
 0|convenient
 0|more than
 0|plan
-0|p.m.
+0|p.m
 0|history
 0|busy
 0|leave
-0|a.m.
+0|a.m
 0|say
 0|ride
 0|bike
@@ -151,7 +151,7 @@
 0|Rome
 0|Venice
 0|taxi
-0|Washington D.C.
+0|Washington D.C
 0|UN
 0|New York
 0|work
@@ -177,7 +177,6 @@
 0|exciting
 0|single
 0|double
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 179
 # Total Entries Extracted: 179

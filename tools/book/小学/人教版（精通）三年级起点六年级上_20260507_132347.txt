@@ -1,9 +1,9 @@
 0|get up
 0|have breakfast
 0|go to school
-0|School begins.
+0|School begins
 0|have lunch
-0|School is over.
+0|School is over
 0|go home
 0|have dinner
 0|go to bed
@@ -149,7 +149,6 @@
 0|white
 0|winter
 0|snowman
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 151
 # Total Entries Extracted: 151

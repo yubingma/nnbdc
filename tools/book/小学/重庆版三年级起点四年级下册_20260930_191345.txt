@@ -61,7 +61,7 @@
 0|first
 0|game
 0|give me a hand
-0|Here you are.
+0|Here you are
 0|how
 0|in
 0|near
@@ -83,12 +83,11 @@
 0|walk
 0|weather
 0|welcome to
-0|What is 5 and 15?
+0|What is 5 and 15
 0|when
 0|where
 0|whose
 0|why
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 90
 # Total Entries Extracted: 90

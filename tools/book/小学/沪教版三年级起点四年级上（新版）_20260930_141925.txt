@@ -57,9 +57,9 @@
 0|water
 0|how much
 0|a bar of chocolate
-0|Here they are.
-0|All right.
-0|What would you like?
+0|Here they are
+0|All right
+0|What would you like
 0|spring
 0|warm
 0|summer
@@ -110,8 +110,8 @@
 0|sorry
 0|kid
 0|late
-0|Good job!
-0|Hurry up!
+0|Good job
+0|Hurry up
 0|go shopping
 0|go for a walk
 0|use the internet
@@ -126,7 +126,6 @@
 0|watch
 0|do tai chi
 0|tidy up
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 128
 # Total Entries Extracted: 128

@@ -4,7 +4,7 @@
 0|computer
 0|music
 0|science
-0|Good morning.
+0|Good morning
 0|subject
 0|day
 0|today
@@ -120,16 +120,15 @@
 0|seventy
 0|eighty
 0|ninety
-0|No touching.
-0|No photos.
+0|No touching
+0|No photos
 0|be careful
-0|Keep quiet.
-0|No pets.
-0|No food or drink.
-0|No bikes.
-0|No running.
+0|Keep quiet
+0|No pets
+0|No food or drink
+0|No bikes
+0|No running
 0|watch
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 131
 # Total Entries Extracted: 131

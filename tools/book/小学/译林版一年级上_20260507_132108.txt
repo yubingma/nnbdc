@@ -1,12 +1,12 @@
-0|Hello.
+0|Hello
 0|I'm
 0|I am
-0|Hi.
-0|Good morning!
-0|Good afternoon!
-0|Good evening!
-0|Woof!
-0|Good night!
+0|Hi
+0|Good morning
+0|Good afternoon
+0|Good evening
+0|Woof
+0|Good night
 0|morning
 0|afternoon
 0|evening
@@ -18,10 +18,10 @@
 0|this
 0|is
 0|This is ...
-0|Goodbye!
+0|Goodbye
 0|Mr
 0|Mr Green
-0|Is this ...?
+0|Is this
 0|a
 0|teddy
 0|box
@@ -34,10 +34,10 @@
 0|banana
 0|peach
 0|grape
-0|OK.
-0|Thank you.
-0|Look!
-0|Ha! Ha!
+0|OK
+0|Thank you
+0|Look
+0|Ha Ha
 0|look at
 0|my
 0|balloon
@@ -55,9 +55,9 @@
 0|robot
 0|sing
 0|draw
-0|Great!
+0|Great
 0|cook
-0|Wow!
+0|Wow
 0|put on
 0|your
 0|coat
@@ -66,7 +66,6 @@
 0|scarf
 0|beanie
 0|sweater
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 68
 # Total Entries Extracted: 68

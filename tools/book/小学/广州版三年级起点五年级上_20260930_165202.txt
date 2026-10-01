@@ -15,7 +15,7 @@
 0|place
 0|drawing
 0|ability
-0|That's right.
+0|That's right
 0|together
 0|far
 0|talk
@@ -97,7 +97,7 @@
 0|sweet
 0|salty
 0|quite
-0|What do you think of ...?
+0|What do you think of
 0|healthy
 0|hungry
 0|wait
@@ -168,11 +168,10 @@
 0|thought
 0|think
 0|finish
-0|p.m.
+0|p.m
 0|walk
 0|true
 0|yours
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 174
 # Total Entries Extracted: 174

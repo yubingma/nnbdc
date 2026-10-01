@@ -184,8 +184,8 @@
 0|minute
 0|money
 0|monster
-0|Mr.
-0|Mrs.
+0|Mr
+0|Mrs
 0|mum
 0|museum
 0|need
@@ -252,7 +252,7 @@
 0|very
 0|visit
 0|wall
-0|Washington, D.C.
+0|Washington, D.C
 0|water
 0|waterfall
 0|who
@@ -272,7 +272,6 @@
 0|Big Ben
 0|Statue of Liberty
 0|CN Tower
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 274
 # Total Entries Extracted: 274

@@ -3,7 +3,7 @@
 0|roller skating
 0|jumping rope
 0|ping-pong
-0|What about ...?
+0|What about
 0|interesting
 0|often
 0|be good at
@@ -80,7 +80,7 @@
 0|climb on the window ledge
 0|dangerous
 0|play with fire
-0|Be careful!
+0|Be careful
 0|run down the stairs
 0|sidewalk
 0|wait for
@@ -114,7 +114,6 @@
 0|Thursday
 0|Friday
 0|teacher
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 116
 # Total Entries Extracted: 116

@@ -47,7 +47,7 @@
 0|hard
 0|serve
 0|grow up
-0|Dr.
+0|Dr
 0|still
 0|wife
 0|member
@@ -114,8 +114,7 @@
 0|difficult
 0|calendar
 0|before
-0|Mrs.
-
+0|Mrs
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 117
 # Total Entries Extracted: 117

@@ -14,7 +14,7 @@
 0|well
 0|them
 0|worry
-0|Don't worry.
+0|Don't worry
 0|easy
 0|turn left
 0|turn right
@@ -28,7 +28,7 @@
 0|cross
 0|hamburger
 0|please
-0|Excuse me.
+0|Excuse me
 0|enough
 0|not enough
 0|plenty of
@@ -40,7 +40,7 @@
 0|cheese
 0|jelly
 0|all
-0|Not really.
+0|Not really
 0|a lot of
 0|yuck
 0|from now on
@@ -87,7 +87,7 @@
 0|month
 0|show
 0|the woods
-0|Wonderful!
+0|Wonderful
 0|planted
 0|plant
 0|listened
@@ -110,9 +110,8 @@
 0|the Tree Planting Day
 0|last
 0|year
-0|What?
+0|What
 0|walk
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 114
 # Total Entries Extracted: 114

@@ -87,14 +87,14 @@
 0|scared
 0|seventeen
 0|she
-0|Sit down.
+0|Sit down
 0|sixteen
 0|sleep
 0|smile
 0|snap
 0|sorry
 0|stamp
-0|Stand up.
+0|Stand up
 0|stretch
 0|stupid
 0|thirteen
@@ -168,7 +168,6 @@
 0|spaghetti
 0|thing
 0|turn off
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 170
 # Total Entries Extracted: 170

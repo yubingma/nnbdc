@@ -41,8 +41,8 @@
 0|balloon
 0|like
 0|come back
-0|Thank you.
-0|You're welcome.
+0|Thank you
+0|You're welcome
 0|coat
 0|dress
 0|sweater
@@ -83,7 +83,6 @@
 0|head
 0|wing
 0|sure
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 85
 # Total Entries Extracted: 85

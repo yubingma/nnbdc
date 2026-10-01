@@ -26,7 +26,7 @@
 0|strike
 0|tick tock
 0|watch
-0|What time is it?
+0|What time is it
 0|American football
 0|Chinese
 0|Chinese leaves
@@ -53,14 +53,14 @@
 0|rat
 0|science
 0|silly
-0|So what?
+0|So what
 0|spider
 0|subject
 0|tall
 0|team
 0|together
 0|tomato
-0|What's the matter?
+0|What's the matter
 0|a lot
 0|Africa
 0|basket
@@ -74,7 +74,7 @@
 0|for
 0|fox
 0|give
-0|Here we go!
+0|Here we go
 0|hippo
 0|isn't
 0|is not
@@ -142,7 +142,6 @@
 0|uncle
 0|visit
 0|wash
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 144
 # Total Entries Extracted: 144

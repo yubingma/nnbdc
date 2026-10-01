@@ -38,7 +38,7 @@
 0|grade
 0|student
 0|school
-0|Well done!
+0|Well done
 0|father
 0|dad
 0|mother
@@ -114,7 +114,6 @@
 0|draw
 0|dream
 0|garden
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 116
 # Total Entries Extracted: 116

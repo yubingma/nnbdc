@@ -10,7 +10,7 @@
 0|you
 0|nice
 0|meet
-0|Nice to meet you.
+0|Nice to meet you
 0|goodbye
 0|bye
 0|hello
@@ -26,7 +26,7 @@
 0|how
 0|are
 0|fine
-0|Thank you.
+0|Thank you
 0|Miss
 0|family
 0|father
@@ -74,7 +74,7 @@
 0|here
 0|Egypt
 0|the UK
-0|Great!
+0|Great
 0|her
 0|his
 0|eight
@@ -91,7 +91,7 @@
 0|music
 0|chess
 0|football
-0|Cool!
+0|Cool
 0|play
 0|together
 0|cute
@@ -155,7 +155,6 @@
 0|dear
 0|after
 0|cool
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 157
 # Total Entries Extracted: 157

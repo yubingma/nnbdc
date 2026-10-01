@@ -17,7 +17,7 @@
 0|bright
 0|come
 0|desk
-0|Ms.
+0|Ms
 0|city
 0|cinema
 0|ice
@@ -112,7 +112,6 @@
 0|best
 0|yours
 0|quiet
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 114
 # Total Entries Extracted: 114

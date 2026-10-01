@@ -5,7 +5,7 @@
 0|cent
 0|enjoy
 0|careful
-0|Be careful!
+0|Be careful
 0|later
 0|to go
 0|duck
@@ -110,7 +110,6 @@
 0|each other
 0|chemistry
 0|physics
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 112
 # Total Entries Extracted: 112

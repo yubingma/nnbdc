@@ -81,10 +81,10 @@
 0|cake
 0|also
 0|many
-0|Happy birthday!
-0|You're welcome.
-0|Sure.
-0|Here you are.
+0|Happy birthday
+0|You're welcome
+0|Sure
+0|Here you are
 0|eat
 0|drink
 0|very
@@ -138,12 +138,11 @@
 0|pet
 0|whose
 0|feed
-0|What about you?
+0|What about you
 0|wake up
 0|every
 0|take
 0|doctor
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 145
 # Total Entries Extracted: 145

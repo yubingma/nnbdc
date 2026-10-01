@@ -38,7 +38,7 @@
 0|June
 0|March
 0|May
-0|Nice to meet you.
+0|Nice to meet you
 0|November
 0|October
 0|remember
@@ -70,7 +70,7 @@
 0|turn
 0|under
 0|wall
-0|Well done!
+0|Well done
 0|what about
 0|at
 0|British
@@ -189,9 +189,9 @@
 0|way
 0|around
 0|atishoo
-0|Be quiet.
+0|Be quiet
 0|blazer
-0|Bless you!
+0|Bless you
 0|cardigan
 0|carry
 0|chimney
@@ -212,11 +212,11 @@
 0|go home
 0|go off
 0|go to bed
-0|Good night.
+0|Good night
 0|hang
 0|heavy
 0|her
-0|Here it is.
+0|Here it is
 0|him
 0|home
 0|know
@@ -243,7 +243,6 @@
 0|wake up
 0|well
 0|world
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 245
 # Total Entries Extracted: 245

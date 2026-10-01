@@ -60,7 +60,7 @@
 0|November
 0|February
 0|or
-0|Excuse me.
+0|Excuse me
 0|get to
 0|station
 0|far away
@@ -68,7 +68,7 @@
 0|young
 0|man
 0|men
-0|You're welcome.
+0|You're welcome
 0|hospital
 0|nearby
 0|go straight
@@ -94,7 +94,6 @@
 0|understand
 0|know
 0|see
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 96
 # Total Entries Extracted: 96

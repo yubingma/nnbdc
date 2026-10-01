@@ -107,8 +107,8 @@
 0|o'clock
 0|begin
 0|day
-0|a.m.
-0|p.m.
+0|a.m
+0|p.m
 0|Chinese
 0|need
 0|plan
@@ -141,7 +141,6 @@
 0|lucky money
 0|bank
 0|dance
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 143
 # Total Entries Extracted: 143

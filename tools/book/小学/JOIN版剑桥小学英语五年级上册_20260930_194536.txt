@@ -122,7 +122,7 @@
 0|film
 0|funny
 0|ghost
-0|Hurry up!
+0|Hurry up
 0|just a minute
 0|key
 0|little
@@ -176,7 +176,6 @@
 0|voice
 0|want
 0|well
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 178
 # Total Entries Extracted: 178

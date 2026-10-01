@@ -135,8 +135,8 @@
 0|me
 0|I
 0|more
-0|Mr.
-0|Mrs.
+0|Mr
+0|Mrs
 0|museum
 0|need
 0|newspaper
@@ -210,7 +210,6 @@
 0|Tess
 0|Tom
 0|Zeke
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 212
 # Total Entries Extracted: 212

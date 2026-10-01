@@ -4,8 +4,8 @@
 0|family
 0|hello
 0|hi
-0|Nice to meet you!
-0|What's your name?
+0|Nice to meet you
+0|What's your name
 0|this
 0|that
 0|dad
@@ -100,7 +100,6 @@
 0|car
 0|ball
 0|train
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 102
 # Total Entries Extracted: 102

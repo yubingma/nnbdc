@@ -34,11 +34,11 @@
 0|night
 0|as
 0|tongue
-0|the U.S.A.
+0|the U.S.A
 0|the United States of America
 0|east
 0|morning
-0|the U.K.
+0|the U.K
 0|clock
 0|river
 0|city
@@ -67,7 +67,6 @@
 0|breakfast
 0|busy
 0|dinner
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 69
 # Total Entries Extracted: 69

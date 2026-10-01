@@ -31,7 +31,7 @@
 0|hers
 0|both
 0|wet
-0|That's OK.
+0|That's OK
 0|take away
 0|worker
 0|still
@@ -78,7 +78,6 @@
 0|clean
 0|rule
 0|kind
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 80
 # Total Entries Extracted: 80

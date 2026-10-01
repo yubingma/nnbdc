@@ -73,10 +73,10 @@
 0|need
 0|all
 0|cook
-0|Here!
-0|Come on!
-0|Wow!
-0|Cool!
+0|Here
+0|Come on
+0|Wow
+0|Cool
 0|forty
 0|fifty
 0|sixty
@@ -90,7 +90,6 @@
 0|dollar
 0|magic
 0|much
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 92
 # Total Entries Extracted: 92

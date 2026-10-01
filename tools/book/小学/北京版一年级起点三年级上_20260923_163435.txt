@@ -48,7 +48,7 @@
 0|June
 0|fifteenth
 0|fourteenth
-0|How old ...?
+0|How old
 0|July
 0|weather
 0|like
@@ -89,7 +89,6 @@
 0|bright
 0|house
 0|same
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 91
 # Total Entries Extracted: 91

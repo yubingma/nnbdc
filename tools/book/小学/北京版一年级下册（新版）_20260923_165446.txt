@@ -6,7 +6,7 @@
 0|sing and dance
 0|jump
 0|swim
-0|I'm hungry.
+0|I'm hungry
 0|grapes
 0|cake
 0|fish
@@ -25,7 +25,6 @@
 0|orange
 0|red
 0|colourful flowers
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 27
 # Total Entries Extracted: 27

@@ -23,7 +23,7 @@
 0|London
 0|Toronto
 0|Sydney
-0|Washington D.C.
+0|Washington D.C
 0|the British Museum
 0|the CN Tower
 0|kangaroo
@@ -98,7 +98,6 @@
 0|pity
 0|prize
 0|look forward to
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 100
 # Total Entries Extracted: 100

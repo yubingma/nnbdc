@@ -10,7 +10,7 @@
 0|to go
 0|dark
 0|cloud
-0|Oh dear!
+0|Oh dear
 0|dry
 0|stay
 0|cloudy
@@ -89,7 +89,6 @@
 0|each other
 0|chemistry
 0|physics
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 91
 # Total Entries Extracted: 91

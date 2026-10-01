@@ -11,7 +11,7 @@
 0|its
 0|their
 0|kind
-0|What is ... like?
+0|What is ... like
 0|shy
 0|round
 0|friendly
@@ -74,12 +74,12 @@
 0|free
 0|feel
 0|bored
-0|Me too.
+0|Me too
 0|do some reading
 0|interesting
 0|cartoon
 0|shall
-0|Shall we ...?
+0|Shall we
 0|king
 0|Monkey King
 0|take photos
@@ -153,7 +153,6 @@
 0|Spring Festival
 0|give
 0|Mid-Autumn Festival
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 155
 # Total Entries Extracted: 155

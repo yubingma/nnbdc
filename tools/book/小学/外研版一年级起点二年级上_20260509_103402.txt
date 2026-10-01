@@ -17,7 +17,7 @@
 0|orange
 0|fruit
 0|milkshake
-0|Here you are.
+0|Here you are
 0|everything
 0|tomato
 0|really
@@ -62,7 +62,7 @@
 0|beep
 0|by
 0|walk
-0|How about ...?
+0|How about
 0|goes
 0|work
 0|go to work
@@ -104,7 +104,7 @@
 0|cold
 0|coat
 0|year
-0|Happy New Year!
+0|Happy New Year
 0|come in
 0|present
 0|dumpling
@@ -115,7 +115,6 @@
 0|Christmas
 0|wish
 0|dinner
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 117
 # Total Entries Extracted: 117

@@ -85,7 +85,7 @@
 0|math
 0|English
 0|Chinese
-0|P.E.
+0|P.E
 0|class
 0|their
 0|teacher
@@ -103,7 +103,6 @@
 0|gift
 0|parents
 0|some
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 105
 # Total Entries Extracted: 105

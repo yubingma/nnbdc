@@ -1,7 +1,7 @@
 0|in class
-0|Stand up.
+0|Stand up
 0|Mr
-0|Sit down.
+0|Sit down
 0|please
 0|open
 0|the
@@ -59,7 +59,7 @@
 0|three
 0|oh
 0|wow
-0|How old are you?
+0|How old are you
 0|lovely
 0|nine
 0|eight
@@ -70,16 +70,16 @@
 0|ten
 0|right
 0|out
-0|What a nice cake!
-0|Make a wish.
+0|What a nice cake
+0|Make a wish
 0|want
 0|It's time for ...
-0|What time is it?
+0|What time is it
 0|wake up
 0|mum
 0|o'clock
 0|breakfast
-0|Hurry up.
+0|Hurry up
 0|class
 0|dinner
 0|bed
@@ -120,7 +120,6 @@
 0|baby
 0|cousin
 0|name
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 122
 # Total Entries Extracted: 122

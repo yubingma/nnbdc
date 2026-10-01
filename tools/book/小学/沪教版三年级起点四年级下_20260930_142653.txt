@@ -45,8 +45,8 @@
 0|Art
 0|timetable
 0|from
-0|a.m.
-0|p.m.
+0|a.m
+0|p.m
 0|break
 0|from ... to ...
 0|sport
@@ -149,7 +149,6 @@
 0|away
 0|swan
 0|into
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 151
 # Total Entries Extracted: 151

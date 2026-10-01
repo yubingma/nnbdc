@@ -93,15 +93,15 @@
 0|lost and found
 0|bye
 0|kid
-0|take care of sb.
-0|take care of sth.
+0|take care of sb
+0|take care of sth
 0|there
 0|please
 0|back
 0|come back
 0|look
-0|look at sb.
-0|look at sth.
+0|look at sb
+0|look at sth
 0|colourful
 0|world
 0|hooray
@@ -216,7 +216,6 @@
 0|like
 0|run
 0|lucky
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 218
 # Total Entries Extracted: 218

@@ -17,7 +17,7 @@
 0|plan
 0|test
 0|date
-0|Why?
+0|Why
 0|be going to
 0|forget
 0|important
@@ -41,17 +41,17 @@
 0|noon
 0|invitation
 0|would
-0|Would you like ...?
+0|Would you like
 0|hey
 0|guy
 0|nothing
 0|sound
 0|gate
-0|a.m.
+0|a.m
 0|cool
-0|Oh dear!
+0|Oh dear
 0|problem
-0|No problem.
+0|No problem
 0|match
 0|centre
 0|supermarket
@@ -124,7 +124,7 @@
 0|way
 0|lost
 0|lose
-0|Excuse me.
+0|Excuse me
 0|hospital
 0|straight
 0|ahead
@@ -155,7 +155,6 @@
 0|do
 0|does
 0|how long
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 157
 # Total Entries Extracted: 157

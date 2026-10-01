@@ -86,9 +86,9 @@
 0|little
 0|maths
 0|math
-0|Mr.
-0|Mrs.
-0|Ms.
+0|Mr
+0|Mrs
+0|Ms
 0|music
 0|new
 0|o'clock
@@ -113,9 +113,8 @@
 0|those
 0|touch
 0|we
-0|What time is it?
-0|What's wrong?
-
+0|What time is it
+0|What's wrong
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 117
 # Total Entries Extracted: 117

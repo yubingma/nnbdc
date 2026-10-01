@@ -166,7 +166,7 @@
 0|Monday
 0|morning
 0|mother
-0|Mrs.
+0|Mrs
 0|much
 0|mum
 0|music
@@ -242,7 +242,6 @@
 0|John
 0|Kim
 0|Kitty
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 244
 # Total Entries Extracted: 244

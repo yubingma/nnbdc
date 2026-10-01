@@ -4,7 +4,7 @@
 0|music
 0|art
 0|math
-0|P.E.
+0|P.E
 0|science
 0|like
 0|and
@@ -93,7 +93,6 @@
 0|busy
 0|cook
 0|wait
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 95
 # Total Entries Extracted: 95

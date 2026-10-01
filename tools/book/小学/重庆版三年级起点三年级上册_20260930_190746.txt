@@ -2,7 +2,7 @@
 0|Lu Hua
 0|Max
 0|Rex
-0|Mr. White
+0|Mr White
 0|Hao Tian
 0|Du Xiaomao
 0|Gao Wendi
@@ -60,25 +60,25 @@
 0|balloon
 0|birthday
 0|can
-0|Can I help you?
+0|Can I help you
 0|class
 0|colour
 0|color
 0|dear
 0|for
 0|good
-0|Good afternoon!
-0|Good morning!
+0|Good afternoon
+0|Good morning
 0|happy
-0|Happy birthday!
-0|Happy New Year!
+0|Happy birthday
+0|Happy New Year
 0|have
 0|hello
 0|help
-0|Here you are.
+0|Here you are
 0|hi
 0|how
-0|How old are you?
+0|How old are you
 0|I'm
 0|I am
 0|it
@@ -90,23 +90,23 @@
 0|lovely
 0|Miss
 0|morning
-0|Mr.
+0|Mr
 0|my
 0|name
 0|New Year
 0|nice
-0|Nice to meet you.
+0|Nice to meet you
 0|no
-0|Not at all.
+0|Not at all
 0|number
 0|pass
 0|please
 0|same
 0|show
 0|thank
-0|Thank you.
+0|Thank you
 0|that
-0|The same to you.
+0|The same to you
 0|this
 0|very much
 0|what
@@ -116,7 +116,6 @@
 0|yes
 0|you
 0|your
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 118
 # Total Entries Extracted: 118

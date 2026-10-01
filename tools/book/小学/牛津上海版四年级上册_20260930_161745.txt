@@ -79,10 +79,10 @@
 0|grass
 0|corn
 0|meat
-0|Don't litter.
-0|Don't walk on the grass.
-0|Don't pick flowers.
-0|Don't throw stones.
+0|Don't litter
+0|Don't walk on the grass
+0|Don't pick flowers
+0|Don't throw stones
 0|farm
 0|rubbish
 0|visit
@@ -119,7 +119,6 @@
 0|China
 0|Australia
 0|always
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 121
 # Total Entries Extracted: 121

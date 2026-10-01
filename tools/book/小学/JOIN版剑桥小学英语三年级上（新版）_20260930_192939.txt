@@ -9,7 +9,7 @@
 0|are
 0|easy
 0|come
-0|come on!
+0|come on
 0|and
 0|you
 0|ready
@@ -118,7 +118,7 @@
 0|duck
 0|show
 0|about
-0|be about to do sth.
+0|be about to do sth
 0|dad
 0|please
 0|hurry
@@ -272,7 +272,6 @@
 0|clever
 0|very
 0|kind
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 274
 # Total Entries Extracted: 274

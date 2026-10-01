@@ -47,7 +47,7 @@
 0|tomorrow
 0|Monday
 0|why
-0|Why not?
+0|Why not
 0|Tuesday
 0|Wednesday
 0|Thursday
@@ -102,7 +102,6 @@
 0|Mother's Day
 0|vegetable
 0|last
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 104
 # Total Entries Extracted: 104

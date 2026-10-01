@@ -1,5 +1,5 @@
-0|Happy Birthday!
-0|How old ...?
+0|Happy Birthday
+0|How old
 0|grandpa
 0|grandma
 0|one
@@ -35,7 +35,7 @@
 0|worker
 0|farmer
 0|driver
-0|What's wrong?
+0|What's wrong
 0|happy
 0|angry
 0|tired
@@ -74,7 +74,7 @@
 0|far
 0|close
 0|water
-0|Excuse me.
+0|Excuse me
 0|shop
 0|walk along
 0|street
@@ -100,7 +100,6 @@
 0|city
 0|place
 0|lots of
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 102
 # Total Entries Extracted: 102

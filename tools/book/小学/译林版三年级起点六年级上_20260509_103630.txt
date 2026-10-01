@@ -39,7 +39,7 @@
 0|meet
 0|lose
 0|know
-0|What happened?
+0|What happened
 0|climb up
 0|hold onto
 0|fly away
@@ -80,7 +80,7 @@
 0|look out of
 0|go on
 0|still
-0|What day is today?
+0|What day is today
 0|spell
 0|make a sentence
 0|with
@@ -88,7 +88,7 @@
 0|sign
 0|shopping centre
 0|careful
-0|What does it mean?
+0|What does it mean
 0|mean
 0|floor
 0|litter
@@ -98,12 +98,12 @@
 0|someone
 0|smoke
 0|smell
-0|No eating or drinking.
-0|No littering.
-0|No parking.
-0|No smoking.
-0|Danger!
-0|Wet floor.
+0|No eating or drinking
+0|No littering
+0|No parking
+0|No smoking
+0|Danger
+0|Wet floor
 0|outing
 0|walk on
 0|around
@@ -163,7 +163,6 @@
 0|plan
 0|hooray
 0|light
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 165
 # Total Entries Extracted: 165

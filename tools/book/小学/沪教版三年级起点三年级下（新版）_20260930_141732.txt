@@ -140,7 +140,7 @@
 0|art room
 0|swimming pool
 0|lots of
-0|Come and see!
+0|Come and see
 0|Children's Day
 0|go to the beach
 0|go to the cinema
@@ -156,7 +156,6 @@
 0|classmate
 0|song
 0|science museum
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 158
 # Total Entries Extracted: 158

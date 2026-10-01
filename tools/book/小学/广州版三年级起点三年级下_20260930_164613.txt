@@ -38,9 +38,9 @@
 0|information
 0|happy
 0|birthday
-0|Happy birthday!
+0|Happy birthday
 0|how
-0|How old ...?
+0|How old
 0|guess
 0|one
 0|two
@@ -69,8 +69,8 @@
 0|apple
 0|pear
 0|can
-0|Can I ...?
-0|Of course.
+0|Can I
+0|Of course
 0|get
 0|relative
 0|photo
@@ -84,7 +84,7 @@
 0|short
 0|lovely
 0|many
-0|How many ...?
+0|How many
 0|people
 0|they
 0|big
@@ -114,7 +114,6 @@
 0|mice
 0|pig
 0|horse
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 116
 # Total Entries Extracted: 116

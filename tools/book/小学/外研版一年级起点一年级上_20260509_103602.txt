@@ -8,7 +8,7 @@
 0|I am
 0|goodbye
 0|bye
-0|How are you?
+0|How are you
 0|woof
 0|no
 0|yes
@@ -45,7 +45,7 @@
 0|the
 0|window
 0|door
-0|See you!
+0|See you
 0|point
 0|to
 0|aargh
@@ -76,7 +76,7 @@
 0|teacher
 0|school
 0|classroom
-0|Nice to meet you.
+0|Nice to meet you
 0|child
 0|that
 0|bag
@@ -124,7 +124,7 @@
 0|birthday
 0|but
 0|for
-0|You're welcome!
+0|You're welcome
 0|father
 0|daddy
 0|mother
@@ -136,7 +136,6 @@
 0|sister
 0|brother
 0|her
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 138
 # Total Entries Extracted: 138

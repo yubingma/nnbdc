@@ -8,8 +8,8 @@
 0|plan
 0|spend
 0|supermarket
-0|That's all right.
-0|That's OK.
+0|That's all right
+0|That's OK
 0|trip
 0|turn on
 0|will
@@ -176,7 +176,6 @@
 0|without
 0|hotel
 0|plaster
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 178
 # Total Entries Extracted: 178

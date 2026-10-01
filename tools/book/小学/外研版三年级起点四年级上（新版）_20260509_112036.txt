@@ -8,8 +8,8 @@
 0|hope
 0|lose
 0|because
-0|because of sb.
-0|because of sth.
+0|because of sb
+0|because of sth
 0|cancer
 0|money
 0|hard
@@ -44,7 +44,7 @@
 0|clean
 0|woof
 0|job
-0|Good job!
+0|Good job
 0|dirty
 0|desk
 0|wall
@@ -152,7 +152,6 @@
 0|careful
 0|be careful
 0|underground
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 154
 # Total Entries Extracted: 154

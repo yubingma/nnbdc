@@ -18,11 +18,11 @@
 0|sit down
 0|Mr
 0|dad
-0|Good morning!
-0|Good afternoon!
-0|Good evening!
-0|Goodbye!
-0|Good night!
+0|Good morning
+0|Good afternoon
+0|Good evening
+0|Goodbye
+0|Good night
 0|bye
 0|pencil
 0|sharpener
@@ -49,9 +49,9 @@
 0|sorry
 0|don't
 0|do not
-0|Here you are.
-0|Thank you!
-0|You're welcome.
+0|Here you are
+0|Thank you
+0|You're welcome
 0|ball
 0|doll
 0|kite
@@ -75,7 +75,7 @@
 0|has
 0|often
 0|share
-0|Happy birthday!
+0|Happy birthday
 0|face
 0|hair
 0|eye
@@ -137,8 +137,7 @@
 0|need
 0|vegetable
 0|tomatoes with eggs
-0|What about ...?
-
+0|What about
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 140
 # Total Entries Extracted: 140

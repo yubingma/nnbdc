@@ -44,14 +44,14 @@
 0|all day
 0|health
 0|matter
-0|What's the matter?
+0|What's the matter
 0|ill
 0|stomachache
 0|ate
 0|eat
 0|hear
 0|heard
-0|I'm sorry to hear that.
+0|I'm sorry to hear that
 0|gave
 0|give
 0|check-up
@@ -150,7 +150,6 @@
 0|cheer
 0|reunion
 0|lantern
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 152
 # Total Entries Extracted: 152

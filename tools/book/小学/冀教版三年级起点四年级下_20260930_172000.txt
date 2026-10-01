@@ -31,18 +31,18 @@
 0|he
 0|she
 0|month
-0|Jan.
-0|Feb.
-0|Mar.
-0|Apr.
+0|Jan
+0|Feb
+0|Mar
+0|Apr
 0|May
-0|Jun.
-0|Jul.
-0|Aug.
-0|Sept.
-0|Oct.
-0|Nov.
-0|Dec.
+0|Jun
+0|Jul
+0|Aug
+0|Sept
+0|Oct
+0|Nov
+0|Dec
 0|rain
 0|sun
 0|hot
@@ -175,8 +175,8 @@
 0|monster
 0|moon
 0|morning
-0|Mr.
-0|Mrs.
+0|Mr
+0|Mrs
 0|national
 0|nice
 0|ninth
@@ -259,7 +259,6 @@
 0|Tess
 0|Tom
 0|Zeke
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 261
 # Total Entries Extracted: 261

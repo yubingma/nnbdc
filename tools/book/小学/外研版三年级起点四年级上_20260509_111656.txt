@@ -4,7 +4,7 @@
 0|right
 0|lost
 0|live
-0|No.
+0|No
 0|number
 0|street
 0|excuse me
@@ -15,7 +15,7 @@
 0|beside
 0|cinema
 0|so much
-0|You're welcome!
+0|You're welcome
 0|station
 0|train
 0|hill
@@ -55,7 +55,7 @@
 0|soya milk
 0|clock
 0|hungry
-0|Me too.
+0|Me too
 0|draw
 0|jump
 0|sing
@@ -71,7 +71,7 @@
 0|tomato
 0|egg
 0|potato
-0|How much ...?
+0|How much
 0|flower
 0|dumpling
 0|help
@@ -133,7 +133,7 @@
 0|come on
 0|high jump
 0|long jump
-0|How about ...?
+0|How about
 0|subject
 0|family
 0|dinner
@@ -142,12 +142,11 @@
 0|Chinese
 0|festival
 0|the Spring Festival
-0|I see.
+0|I see
 0|peanut
 0|merry
 0|Christmas
-0|Merry Christmas!
-
+0|Merry Christmas
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 149
 # Total Entries Extracted: 149

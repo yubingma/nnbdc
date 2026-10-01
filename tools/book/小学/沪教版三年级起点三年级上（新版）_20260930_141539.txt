@@ -22,9 +22,9 @@
 0|evening
 0|close the window
 0|look at the blackboard
-0|Good morning.
-0|How are you?
-0|Fine, thank you.
+0|Good morning
+0|How are you
+0|Fine, thank you
 0|grandfather
 0|grandpa
 0|grandmother
@@ -63,7 +63,7 @@
 0|have
 0|short
 0|mum
-0|You look great!
+0|You look great
 0|skip
 0|run
 0|fly a kite
@@ -82,7 +82,7 @@
 0|jump
 0|want to
 0|want to do
-0|Hello.
+0|Hello
 0|milk
 0|juice
 0|tomato
@@ -147,14 +147,13 @@
 0|ball
 0|share
 0|go out
-0|Happy birthday!
-0|What a lovely picture!
-0|Good afternoon.
+0|Happy birthday
+0|What a lovely picture
+0|Good afternoon
 0|China
 0|Thailand
 0|UK
 0|New Year's Day
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 156
 # Total Entries Extracted: 156

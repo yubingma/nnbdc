@@ -23,7 +23,7 @@
 0|banana
 0|some
 0|grape
-0|Thanks.
+0|Thanks
 0|our
 0|cool
 0|wonderful
@@ -72,9 +72,9 @@
 0|fridge
 0|table
 0|bathroom
-0|How are you?
+0|How are you
 0|hungry
-0|What would you like?
+0|What would you like
 0|I'd like ...
 0|at
 0|snack bar
@@ -85,13 +85,13 @@
 0|sandwich
 0|a cup of
 0|coffee
-0|Anything else ?
+0|Anything else
 0|tea
 0|juice
 0|rice
-0|Me too.
+0|Me too
 0|fish
-0|Can I help you?
+0|Can I help you
 0|big
 0|how much
 0|shoe
@@ -100,7 +100,7 @@
 0|umbrella
 0|only
 0|twenty-eight
-0|Well done.
+0|Well done
 0|fan
 0|twenty
 0|thirty
@@ -122,7 +122,6 @@
 0|thin
 0|tall
 0|snowman
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 124
 # Total Entries Extracted: 124

@@ -21,10 +21,10 @@
 0|card
 0|them
 0|they
-0|Mr.
-0|Mrs.
+0|Mr
+0|Mrs
 0|umbrella
-0|Ms.
+0|Ms
 0|driver
 0|well
 0|class
@@ -193,7 +193,6 @@
 0|Oba
 0|Sam
 0|Scott
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 195
 # Total Entries Extracted: 195

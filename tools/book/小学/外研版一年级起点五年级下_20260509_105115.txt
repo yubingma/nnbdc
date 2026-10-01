@@ -20,7 +20,7 @@
 0|interesting
 0|season
 0|snow
-0|How much ...?
+0|How much
 0|light
 0|sales assistant
 0|carry
@@ -69,7 +69,6 @@
 0|August
 0|met
 0|classmate
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 71
 # Total Entries Extracted: 71

@@ -1,13 +1,13 @@
 0|hello
 0|hi
-0|Good morning.
+0|Good morning
 0|I
 0|am
 0|ah
 0|a
 0|cat
 0|Miss
-0|Good afternoon.
+0|Good afternoon
 0|class
 0|goodbye
 0|bye
@@ -16,20 +16,19 @@
 0|your
 0|name
 0|my
-0|Nice to meet you!
+0|Nice to meet you
 0|too
 0|boy
 0|and
 0|girl
 0|Mr
-0|Mr.
 0|are
 0|you
 0|no
 0|not
 0|yes
 0|ha
-0|Here I am!
+0|Here I am
 0|but
 0|oh
 0|sorry
@@ -45,7 +44,7 @@
 0|he
 0|it
 0|good
-0|Thank you.
+0|Thank you
 0|have
 0|many
 0|mother
@@ -56,7 +55,7 @@
 0|brother
 0|baby
 0|sister
-0|Good evening.
+0|Good evening
 0|quick
 0|look
 0|the
@@ -80,7 +79,7 @@
 0|big
 0|happy
 0|love
-0|Happy Birthday!
+0|Happy Birthday
 0|one
 0|two
 0|three
@@ -97,18 +96,18 @@
 0|book
 0|ball
 0|cake
-0|How lovely!
-0|Can I help you?
-0|Yes, please.
+0|How lovely
+0|Can I help you
+0|Yes, please
 0|some
 0|toy
 0|for
 0|OK
-0|How old are you?
+0|How old are you
 0|please
 0|here
-0|Here you are.
-0|You're welcome.
+0|Here you are
+0|You're welcome
 0|thanks
 0|can
 0|do
@@ -118,7 +117,7 @@
 0|sing
 0|take pictures
 0|dance
-0|Are you OK?
+0|Are you OK
 0|dizzy
 0|picture
 0|er
@@ -128,7 +127,6 @@
 0|child
 0|children
 0|thing
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 130
 # Total Entries Extracted: 130

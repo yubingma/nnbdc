@@ -107,7 +107,7 @@
 0|sport
 0|guess
 0|meatball
-0|what about ...?
+0|what about
 0|swimming
 0|idea
 0|hot
@@ -115,7 +115,6 @@
 0|sing
 0|dance
 0|tired
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 118
 # Total Entries Extracted: 118

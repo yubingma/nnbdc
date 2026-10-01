@@ -11,7 +11,7 @@
 0|guess
 0|again
 0|long
-0|Good idea!
+0|Good idea
 0|our
 0|classroom
 0|put away
@@ -25,8 +25,8 @@
 0|us
 0|desk
 0|dirty
-0|Me too.
-0|All right.
+0|Me too
+0|All right
 0|clean
 0|keep
 0|rule
@@ -36,7 +36,6 @@
 0|eat
 0|run
 0|Mrs
-0|Mrs.
 0|sit down
 0|late
 0|look out of
@@ -45,10 +44,10 @@
 0|fun
 0|quiet
 0|follow
-0|Would you like ...?
+0|Would you like
 0|sweet
 0|look at
-0|That's all right.
+0|That's all right
 0|have fun
 0|after class
 0|behind
@@ -89,7 +88,7 @@
 0|salad
 0|together
 0|an
-0|What about you?
+0|What about you
 0|good
 0|farm
 0|cow
@@ -133,9 +132,8 @@
 0|sure
 0|chameleon
 0|little
-0|What colour is ...?
-0|How come?
-
+0|What colour is
+0|How come
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 137
 # Total Entries Extracted: 137

@@ -49,14 +49,14 @@
 0|fourteen
 0|fifteen
 0|and
-0|And you?
+0|And you
 0|all right
 0|basketball
 0|can't
 0|can not
 0|child
 0|children
-0|Class is over.
+0|Class is over
 0|clothes
 0|come on
 0|drink
@@ -102,9 +102,8 @@
 0|toy
 0|try on
 0|we
-0|What do you like?
+0|What do you like
 0|who
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 106
 # Total Entries Extracted: 106

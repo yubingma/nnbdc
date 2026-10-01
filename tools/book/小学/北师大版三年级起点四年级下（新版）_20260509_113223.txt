@@ -55,7 +55,7 @@
 0|give up
 0|minute
 0|late
-0|What time is it?
+0|What time is it
 0|time
 0|exercise
 0|o'clock
@@ -95,7 +95,6 @@
 0|under
 0|tree
 0|heavy rain
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 97
 # Total Entries Extracted: 97

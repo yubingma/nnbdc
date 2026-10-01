@@ -35,7 +35,7 @@
 0|shout
 0|seat
 0|put
-0|You're welcome.
+0|You're welcome
 0|far
 0|near
 0|get off
@@ -50,7 +50,7 @@
 0|feel
 0|fever
 0|wrong
-0|What's wrong?
+0|What's wrong
 0|cough
 0|headache
 0|bad
@@ -142,7 +142,6 @@
 0|miss
 0|more
 0|exciting
-
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 144
 # Total Entries Extracted: 144

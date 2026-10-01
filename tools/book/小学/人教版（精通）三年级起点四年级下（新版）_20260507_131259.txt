@@ -82,7 +82,7 @@
 0|Spring Festival
 0|TV
 0|lucky money
-0|Good idea!
+0|Good idea
 0|post office
 0|restaurant
 0|supermarket
@@ -102,8 +102,7 @@
 0|ask someone for help
 0|shop
 0|then
-0|Excuse me.
-
+0|Excuse me
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 105
 # Total Entries Extracted: 105
