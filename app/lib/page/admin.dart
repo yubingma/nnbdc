@@ -10,6 +10,7 @@ import 'package:nnbdc/page/admin/feature_request_report_management.dart';
 import 'package:nnbdc/page/admin/feedback_management.dart';
 import 'package:nnbdc/page/admin/system_health_check.dart';
 import 'package:nnbdc/page/admin/data_sanitize_page.dart';
+import 'package:nnbdc/page/admin/server_exception_log_page.dart';
 import 'package:nnbdc/page/admin/user_management.dart';
 import 'package:nnbdc/page/admin/word_management.dart';
 import 'package:nnbdc/page/admin/dict_import_management.dart';
@@ -158,6 +159,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.description,
         color: const Color(0xFF795548),
         onTap: () => _showComingSoon('日志管理'),
+      ),
+      _buildManagementCard(
+        title: '服务端异常日志',
+        icon: Icons.report_problem,
+        color: const Color(0xFFD32F2F),
+        onTap: () => _navigateToServerExceptionLog(),
       ),
       _buildManagementCard(
         title: 'CDN管理',
@@ -475,6 +482,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const DataSanitizePage(),
+      ),
+    );
+  }
+
+  void _navigateToServerExceptionLog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ServerExceptionLogPage(),
       ),
     );
   }

@@ -82,6 +82,9 @@ public class AdminController {
     @Autowired
     private SysDbSyncBo sysDbSyncBo;
 
+    @Autowired
+    private SysErrorBo sysErrorBo;
+
     // ============================================
     // 系统词典管理相关API (管理员接口)
     // ============================================
@@ -248,6 +251,15 @@ public class AdminController {
     @GetMapping("/admin/checkLearningProgressConsistency.do")
     public Result<SystemHealthCheckResult> checkLearningProgressConsistency() {
         return Result.success(systemHealthCheckBo.checkLearningProgressConsistency());
+    }
+
+    /**
+     * 管理后台用：查看客户端上报的异常日志（sys_error），含上报客户端的平台与版本号。
+     * 只读，按时间倒序取最近若干条。
+     */
+    @GetMapping("/admin/getSysErrors.do")
+    public Result<List<SysErrorVo>> getSysErrors() {
+        return Result.success(sysErrorBo.listRecentErrors());
     }
 
     @PostMapping("/admin/autoFixSystemIssues.do")

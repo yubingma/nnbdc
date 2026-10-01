@@ -18,6 +18,7 @@ import json
 import argparse
 import base64
 import io
+import fcntl
 from datetime import datetime
 from PIL import Image
 
@@ -301,8 +302,6 @@ class PureE2ERegressionRunner:
             time.sleep(0.5)
             self.device.clear_text_input(10)
             self.device.input_text(code)
-            time.sleep(0.5)
-            self.device.press_key(4)  # 收起软键盘
             time.sleep(1)
 
         # 7. 点击「登录」
@@ -310,10 +309,16 @@ class PureE2ERegressionRunner:
         submit_btn = self.device.find_element(text="登录")
         if submit_btn:
             self.device.click_element(submit_btn)
-            time.sleep(5)
+
+        # 8. 轮询等待登录成功并进入主页（最多等待 12 秒）
+        is_in_main = False
+        for wait_i in range(12):
+            time.sleep(1)
+            if self.device.find_element(text="学习") or self.device.find_element(text="词表"):
+                is_in_main = True
+                break
 
         shot = self.capture("login_success")
-        is_in_main = self.device.find_element(text="学习") or self.device.find_element(text="词表")
         if is_in_main:
             self.log("真实用户注册与登录", "PASSED", "手机端输入邮箱验证码完成注册，成功冷启动进入主页", shot)
         else:
@@ -653,20 +658,7 @@ class PureE2ERegressionRunner:
         rows_html = ""
         for r in self.results:
             badge_color = "#10B981" if r["status"] == "PASSED" else ("#F59E0B" if r["status"] in ("SKIPPED", "WARNING") else "#EF4444")
-            
-            # 构造嵌入缩略图（如果有）
-            img_html = "-"
-            if r.get("abs_screenshot") and os.path.exists(r["abs_screenshot"]):
-                try:
-                    # 压缩生成轻量 Base64 缩略图，保证在邮件中直接渲染不丢失
-                    with Image.open(r["abs_screenshot"]) as im:
-                        im.thumbnail((240, 506), Image.Resampling.LANCZOS)
-                        buf = io.BytesIO()
-                        im.convert("RGB").save(buf, format="JPEG", quality=75)
-                        b64_str = base64.b64encode(buf.getvalue()).decode("utf-8")
-                        img_html = f'<img src="data:image/jpeg;base64,{b64_str}" style="width:72px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.1);" />'
-                except Exception:
-                    img_html = f'<a href="{r["screenshot"]}" target="_blank">查看截图</a>'
+            img_html = f'<a href="{r["screenshot"]}" target="_blank"><img src="{r["screenshot"]}" style="width:72px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.1);" /></a>' if r["screenshot"] else "-"
 
             rows_html += f"""
             <tr>
@@ -807,11 +799,73 @@ class PureE2ERegressionRunner:
 
     def step_13_send_report_email(self, report_path: str, total_time: float, passed: int, failed: int):
         print("\n--- [Step 13] 测试报告邮件直推 ---")
-        subject = f"【泡泡单词回归报告】E2E全量回归完成 - 通过: {passed} / 失败: {failed} (耗时 {total_time}s)"
+        now_str = datetime.now().strftime("%m-%d %H:%M:%S")
+        subject = f"【泡泡单词回归报告】E2E全量回归完成 - 通过: {passed} / 失败: {failed} ({now_str})"
+        
+        # 构造邮件专用纯净 HTML（避免包含大量 base64 触发阿里防垃圾拦截）
+        email_rows = ""
+        for r in self.results:
+            badge_color = "#10B981" if r["status"] == "PASSED" else ("#F59E0B" if r["status"] in ("SKIPPED", "WARNING") else "#EF4444")
+            shot_name = os.path.basename(r["screenshot"]) if r["screenshot"] else "-"
+            email_rows += f"""
+            <tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;"><span style="background:{badge_color};color:#FFFFFF;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:bold;">{r['status']}</span></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;"><strong>{r['step']}</strong></td>
+                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;color:#334155;font-size:13px;">{r['details']}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#64748B;">{r['timestamp']}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;color:#94A3B8;text-align:center;">{shot_name}</td>
+            </tr>
+            """
+
+        email_html = f"""
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:850px;margin:0 auto;background:#FFFFFF;padding:24px;border:1px solid #E2E8F0;border-radius:12px;">
+            <h2 style="color:#0F172A;margin-top:0;">📱 泡泡单词 Android 纯黑盒端到端回归测试报告</h2>
+            <div style="font-size:13px;color:#64748B;margin-bottom:16px;">
+                执行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | 设备: {self.device.serial if self.device else 'Android'}
+            </div>
+            
+            <div style="display:flex;gap:12px;margin-bottom:20px;">
+                <div style="flex:1;background:#F1F5F9;padding:12px;border-radius:8px;text-align:center;">
+                    <div style="font-size:12px;color:#64748B;">测试用例总数</div>
+                    <div style="font-size:22px;font-weight:bold;color:#0F172A;">{len(self.results)}</div>
+                </div>
+                <div style="flex:1;background:#ECFDF5;border:1px solid #A7F3D0;padding:12px;border-radius:8px;text-align:center;">
+                    <div style="font-size:12px;color:#065F46;">通过 (Passed)</div>
+                    <div style="font-size:22px;font-weight:bold;color:#10B981;">{passed}</div>
+                </div>
+                <div style="flex:1;background:#FEF2F2;border:1px solid #FECACA;padding:12px;border-radius:8px;text-align:center;">
+                    <div style="font-size:12px;color:#991B1B;">失败 (Failed)</div>
+                    <div style="font-size:22px;font-weight:bold;color:#EF4444;">{failed}</div>
+                </div>
+                <div style="flex:1;background:#F1F5F9;padding:12px;border-radius:8px;text-align:center;">
+                    <div style="font-size:12px;color:#64748B;">总执行耗时</div>
+                    <div style="font-size:22px;font-weight:bold;color:#0F172A;">{total_time}s</div>
+                </div>
+            </div>
+
+            <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+                <thead>
+                    <tr style="background:#F8FAFC;text-align:left;">
+                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">状态</th>
+                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">测试步骤</th>
+                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">断言与执行详情</th>
+                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;">执行时间</th>
+                        <th style="padding:10px 12px;font-size:12px;color:#475569;border-bottom:2px solid #E2E8F0;text-align:center;">截图文件</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {email_rows}
+                </tbody>
+            </table>
+
+            <div style="margin-top:24px;text-align:center;font-size:12px;color:#94A3B8;">
+                泡泡单词 Android 自动化回归系统 | 本地报告与高清原图已保存至项目 tmp/e2e_report/
+            </div>
+        </div>
+        """
+
         try:
-            with open(report_path, "r", encoding="utf-8") as f:
-                html_body = f.read()
-            ok = send_report_email.send_email_report(self.target_email, subject, html_body)
+            ok = send_report_email.send_email_report(self.target_email, subject, email_html)
             if ok:
                 self.log("测试报告邮件直推", "PASSED", f"报告已通过阿里云邮件推送至: {self.target_email}")
             else:
@@ -819,7 +873,38 @@ class PureE2ERegressionRunner:
         except Exception as e:
             self.log("测试报告邮件直推", "WARNING", f"发送异常: {e}")
 
+def acquire_single_instance_lock():
+    """获取单实例互斥文件锁，防止并发执行相互冲突（操作系统级自动释放）"""
+    os.makedirs(REPORT_DIR, exist_ok=True)
+    lock_file = os.path.join(REPORT_DIR, "regression.lock")
+    lock_fd = open(lock_file, "a+")
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        lock_fd.seek(0)
+        lock_fd.truncate()
+        lock_fd.write(f"PID: {os.getpid()}\nStarted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        lock_fd.flush()
+        return lock_fd
+    except (BlockingIOError, IOError):
+        try:
+            lock_fd.seek(0)
+            info = lock_fd.read().strip()
+        except Exception:
+            info = ""
+        print("\n" + "=" * 52)
+        print("❌ [互斥拦截] 检测到已有另一个端到端回归测试进程正在运行！")
+        if info:
+            print(f"ℹ️ 当前正在执行的测试会话信息:\n{info}")
+        print("⚠️ 物理 Android 设备与生产测试账号同时只能由单一测试进程独占操控。")
+        print("💡 请等待前序测试执行结束，或手动终止冲突进程。本次运行已自动安全退出。")
+        print("=" * 52 + "\n")
+        return None
+
 def main():
+    lock_fd = acquire_single_instance_lock()
+    if not lock_fd:
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(description="运行纯黑盒端到端自动化回归测试")
     parser.add_argument("--serial", type=str, default=None, help="ADB 设备序列号")
     parser.add_argument("--email", type=str, default="mmyybb3000@icloud.com", help="测试报告接收邮箱")

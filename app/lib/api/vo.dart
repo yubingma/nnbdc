@@ -1273,6 +1273,41 @@ class WordAdditionalInfoVo {
 }
 
 @JsonSerializable()
+class SysErrorVo {
+  String id;
+
+  /// 关联用户（可为空：未登录或游客阶段产生的异常）
+  String? userId;
+  String? nickName;
+
+  /// 异常分类，例如 CLIENT_SYNC_ERROR / CLIENT_DATA_INCONSISTENT
+  String errorType;
+
+  /// 现场上下文
+  String? details;
+
+  /// 上报客户端的版本号；服务端自身产生或旧版客户端未上报时为空
+  String? clientVersion;
+
+  /// 上报客户端的平台类型：android/ios/macos/windows/linux/browser
+  String? clientType;
+
+  DateTime? createTime;
+
+  SysErrorVo(this.id, this.errorType,
+      {this.userId,
+      this.nickName,
+      this.details,
+      this.clientVersion,
+      this.clientType,
+      this.createTime});
+
+  factory SysErrorVo.fromJson(Map<String, dynamic> json) => _$SysErrorVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SysErrorVoToJson(this);
+}
+
+@JsonSerializable()
 class ErrorReportVo {
   String id;
   String createdBy;

@@ -1,7 +1,9 @@
 package beidanci.service.bo;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,9 +14,12 @@ import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import beidanci.api.model.SysErrorVo;
 import beidanci.service.config.AliyunEmailProperties;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.SysError;
@@ -81,6 +86,9 @@ public class SysErrorBo extends BaseBo<SysError> {
     @Autowired
     private AliyunEmailProperties emailProperties;
 
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
     @PostConstruct
     public void init() {
         setDao(new BaseDao<SysError>() {});
@@ -116,6 +124,39 @@ public class SysErrorBo extends BaseBo<SysError> {
      */
     public void recordError(String errorType, String details) throws IllegalAccessException {
         recordError(null, errorType, details);
+    }
+
+    /** 管理后台一次最多返回多少条异常日志 */
+    private static final int ADMIN_LIST_LIMIT = 200;
+
+    /**
+     * 管理后台用：按时间倒序取最近的异常日志（含客户端平台与版本号），只读。
+     *
+     * <p>一次最多返回 {@value #ADMIN_LIST_LIMIT} 条：这张表会持续增长，
+     * 管理后台是人工排查用的，不需要翻全量；要按分类或版本聚合时再走 SQL。
+     */
+    public List<SysErrorVo> listRecentErrors() {
+        String sql = "SELECT e.id, e.user_id, u.nick_name, e.error_type, e.details, "
+                + "       e.client_version, e.client_type, e.create_time "
+                + "FROM sys_error e "
+                + "LEFT JOIN \"user\" u ON u.id = e.user_id "
+                + "ORDER BY e.create_time DESC "
+                + "LIMIT :limit";
+        MapSqlParameterSource params = new MapSqlParameterSource("limit", ADMIN_LIST_LIMIT);
+        try {
+            return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> new SysErrorVo(
+                    rs.getString("id"),
+                    rs.getString("user_id"),
+                    rs.getString("nick_name"),
+                    rs.getString("error_type"),
+                    rs.getString("details"),
+                    rs.getString("client_version"),
+                    rs.getString("client_type"),
+                    rs.getTimestamp("create_time")));
+        } catch (Exception e) {
+            log.error("查询 sys_error 列表失败", e);
+            return new ArrayList<>();
+        }
     }
 
     /**
