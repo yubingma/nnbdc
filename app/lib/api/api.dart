@@ -588,7 +588,9 @@ abstract class RestClient {
   Future<Result<void>> reportSysError(
       @Field("userId") String? userId,
       @Field("errorType") String errorType,
-      @Field("details") String details);
+      @Field("details") String details,
+      @Field("clientVersion") String? clientVersion,
+      @Field("clientType") String? clientType);
 
   @GET("/getSysDbVersion.do")
   Future<Result<int>> getSysDbVersion();

@@ -9,6 +9,7 @@ import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/client_type.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/study_consistency_checker.dart';
@@ -899,27 +900,31 @@ class DataIntegrityChecker {
       fixResult.addFixed('已修复 "${repair.spell}" 的今日进度：'
           '${repair.progressBefore} → ${repair.progressAfter}（对齐今日 ${repair.logCount} 条学习记录）');
       // 修复结果也上报一次：让服务端知道这条不一致已经被处理掉，便于核对告警与终态
-      _reportStudyProgressRepair(userId, repair);
+      await _reportStudyProgressRepair(userId, repair);
     }
   }
 
   /// 把一次显式修复的结果上报服务端（旁路、静默失败）
-  void _reportStudyProgressRepair(String userId, StudyConsistencyRepairResult repair) {
-    Api.client
-        .reportSysError(
-          userId,
-          'CLIENT_DATA_INCONSISTENT_REPAIRED',
-          '规则=progress_gt_logs（今日环节进度 大于 今日评分流水条数）\n'
-              '单词=${repair.spell} (${repair.wordId})\n'
-              '修复前 progress=${repair.progressBefore}\n'
-              '修复后 progress=${repair.progressAfter}\n'
-              '今日评分流水条数=${repair.logCount}\n'
-              '说明: 用户在学习页/体检页确认后执行的显式修复，仅下调进度，未改动任何学习记录',
-        )
-        .then((_) => Global.logger.d('🚀 [Consistency] 修复结果已上报服务端'))
-        .catchError((Object e) {
+  Future<void> _reportStudyProgressRepair(
+      String userId, StudyConsistencyRepairResult repair) async {
+    try {
+      final clientVersion = await resolveClientVersion();
+      await Api.client.reportSysError(
+        userId,
+        'CLIENT_DATA_INCONSISTENT_REPAIRED',
+        '规则=progress_gt_logs（今日环节进度 大于 今日评分流水条数）\n'
+            '单词=${repair.spell} (${repair.wordId})\n'
+            '修复前 progress=${repair.progressBefore}\n'
+            '修复后 progress=${repair.progressAfter}\n'
+            '今日评分流水条数=${repair.logCount}\n'
+            '说明: 用户在体检页确认后执行的显式修复，仅下调今日进度，未改动任何学习记录',
+        clientVersion,
+        getClientType().name,
+      );
+      Global.logger.d('🚀 [Consistency] 修复结果已上报服务端');
+    } catch (e) {
       Global.logger.w('⚠️ [Consistency] 修复结果上报失败（静默忽略）: $e');
-    });
+    }
   }
 
   /// 通过非全局大喇叭的“点对点私房补件”策略，向后端索取缺失的基础托底数据，直接静默入库

@@ -90,16 +90,25 @@ public class SysErrorBo extends BaseBo<SysError> {
      * 记录带关联用户的系统/客户端异常，并按分类节流规则向管理员发送告警邮件
      */
     public void recordError(String userId, String errorType, String details) throws IllegalAccessException {
+        recordError(userId, errorType, details, null, null);
+    }
+
+    /**
+     * 记录带关联用户与客户端信息的异常。
+     * 版本号与平台类型单独成列，便于按"哪一端、哪一版"聚合判断问题是否集中出现。
+     */
+    public void recordError(String userId, String errorType, String details, String clientVersion, String clientType)
+            throws IllegalAccessException {
         User user = null;
         if (userId != null && !userId.trim().isEmpty()) {
             user = userBo.findById(userId);
         }
-        SysError issue = new SysError(user, errorType, details);
+        SysError issue = new SysError(user, errorType, details, clientVersion, clientType);
         issue.setId(Util.uuid());
         createEntity(issue);
 
         // 异步旁路判断并触发邮件告警（绝不阻塞主事务与请求）
-        triggerEmailAlertAsync(user, errorType, details);
+        triggerEmailAlertAsync(user, errorType, details, clientVersion, clientType);
     }
 
     /**
@@ -159,7 +168,8 @@ public class SysErrorBo extends BaseBo<SysError> {
      *
      * <p>无条件发信的只有"值得人工处理"的分类；瞬时网络异常只落库不发信。
      */
-    private void triggerEmailAlertAsync(User user, String errorType, String details) {
+    private void triggerEmailAlertAsync(User user, String errorType, String details, String clientVersion,
+            String clientType) {
         if (!isAlertWorthy(errorType)) {
             log.info("ℹ️ 异常分类无需告警（瞬时网络异常，已记录待排查）: errorType={}", errorType);
             return;
@@ -173,7 +183,7 @@ public class SysErrorBo extends BaseBo<SysError> {
         CompletableFuture.runAsync(() -> {
             boolean sent = false;
             try {
-                sendAlertEmail(user, errorType, details);
+                sendAlertEmail(user, errorType, details, clientVersion, clientType);
                 sent = true;
             } catch (Exception e) {
                 log.error("发送系统错误告警邮件异常: errorType=" + errorType, e);
@@ -189,7 +199,8 @@ public class SysErrorBo extends BaseBo<SysError> {
     /**
      * 组装 HTML 格式告警邮件并发送
      */
-    private void sendAlertEmail(User user, String errorType, String details) {
+    private void sendAlertEmail(User user, String errorType, String details, String clientVersion,
+            String clientType) {
         String adminEmail = emailProperties.getAdminEmail();
         if (adminEmail == null || adminEmail.trim().isEmpty()) {
             adminEmail = "mmyybb3000@icloud.com";
@@ -213,6 +224,12 @@ public class SysErrorBo extends BaseBo<SysError> {
                 + "<div><strong>异常分类：</strong><span style=\"color: #c53030; font-weight: 600;\">" + errorType + "</span></div>"
                 + "<div><strong>发生时间：</strong>" + timeStr + "</div>"
                 + "<div><strong>关联用户：</strong>" + userInfo + "</div>"
+                + "<div><strong>客户端版本：</strong>"
+                + (clientVersion == null || clientVersion.trim().isEmpty() ? "未上报" : clientVersion)
+                + "</div>"
+                + "<div><strong>客户端平台：</strong>"
+                + (clientType == null || clientType.trim().isEmpty() ? "未上报" : clientType)
+                + "</div>"
                 + "</div>"
                 + "<div style=\"font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px;\">异常堆栈 / 现场上下文：</div>"
                 + "<div style=\"background-color: #1a202c; color: #edf2f7; padding: 14px; border-radius: 8px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.5; max-height: 400px; overflow-y: auto; word-break: break-all;\">"

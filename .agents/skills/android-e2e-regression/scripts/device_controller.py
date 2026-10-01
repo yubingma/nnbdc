@@ -168,24 +168,59 @@ class AndroidDeviceController:
 
         return elements
 
-    def find_element(self, text: Optional[str] = None, desc: Optional[str] = None, exact: bool = False) -> Optional[Dict]:
-        """查找满足条件的元素（自动贯通 text 与 desc）"""
+    def find_element(self, text: Optional[str] = None, desc: Optional[str] = None, exact: bool = False, only_clickable: bool = False) -> Optional[Dict]:
+        """查找满足条件的元素（自动贯通 text 与 desc，精准加权匹配：精确匹配优先，可点击优先）"""
         target = text or desc
         if not target:
             return None
 
         elements = self.dump_ui_hierarchy()
+        target_clean = target.strip()
+
+        exact_clickable = []
+        exact_any = []
+        contains_clickable = []
+        contains_any = []
+
         for el in elements:
+            if only_clickable and not el.get("clickable"):
+                continue
+
             candidates = [el.get("label", ""), el.get("text", ""), el.get("desc", "")]
+            is_exact = False
+            is_contains = False
+
             for cand in candidates:
+                if not cand:
+                    continue
                 cand_clean = cand.replace("\n", " ").strip()
-                target_clean = target.strip()
-                if exact:
-                    if cand_clean == target_clean or cand == target:
-                        return el
+                if cand_clean == target_clean or cand.strip() == target_clean:
+                    is_exact = True
+                    break
+                elif not exact and (target_clean in cand_clean or target in cand):
+                    is_contains = True
+
+            if is_exact:
+                if el.get("clickable"):
+                    exact_clickable.append(el)
                 else:
-                    if target_clean in cand_clean or target in cand:
-                        return el
+                    exact_any.append(el)
+            elif is_contains:
+                if el.get("clickable"):
+                    contains_clickable.append(el)
+                else:
+                    contains_any.append(el)
+
+        if exact_clickable:
+            return exact_clickable[0]
+        if exact_any:
+            return exact_any[0]
+        if not exact:
+            if contains_clickable:
+                return contains_clickable[0]
+            if contains_any:
+                return contains_any[0]
+
         return None
 
     def click(self, x: int, y: int):
@@ -231,10 +266,14 @@ class AndroidDeviceController:
         escaped = text.replace(" ", "%s").replace("&", "\\&").replace("@", "\\@")
         self._run_adb(["shell", "input", "text", escaped])
 
-    def clear_text_input(self, delete_count: int = 50):
-        """向左回退删除已有输入"""
+    def clear_text_input(self, delete_count: int = 60):
+        """双向彻底清空输入框文本（MOVE_END后退删 + MOVE_HOME前进删）"""
+        self.press_key(123) # KEYCODE_MOVE_END
         for _ in range(delete_count):
             self.press_key(67) # KEYCODE_DEL
+        self.press_key(122) # KEYCODE_MOVE_HOME
+        for _ in range(delete_count):
+            self.press_key(112) # KEYCODE_FORWARD_DEL
 
     def press_key(self, keycode: int):
         """发送按键事件 (4=BACK, 66=ENTER, 3=HOME)"""

@@ -36,6 +36,13 @@ void main() {
       );
     });
 
+    test('进度为 0 且有流水时不报（跨天复位后的正常状态）', () {
+      // 线上实测：八成告警是这一形态——用户上一个业务日学过，跨天复位把进度清零，
+      // 而查询窗口还看得到昨天的流水。它不是缺陷，不该报。
+      expect(judgeStudyConsistency(progress: 0, actualLogCount: 4), isNull);
+      expect(judgeStudyConsistency(progress: 0, actualLogCount: 1), isNull);
+    });
+
     test('进度为 0 且没有流水时自洽（新词还没答过）', () {
       expect(judgeStudyConsistency(progress: 0, actualLogCount: 0), isNull);
     });

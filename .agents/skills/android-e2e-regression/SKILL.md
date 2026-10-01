@@ -10,30 +10,37 @@ whenToUse: 当发布新版本前需要进行回归测试、每次发版前做冒
 
 ---
 
-## 核心设计与数据架构
+## 核心设计与纯黑盒端到端原则
 
 ```mermaid
 flowchart TD
-    A[执行回归测试] --> B[Step 1: 检查生产数据库]
-    B --> C{e2etest@nnbdc.com 是否存在?}
-    C -- 否 --> D[自动创建测试用户 + 生词本/学习步骤/泡泡]
-    C -- 是 --> E[重置测试用户数据为纯净初始态]
-    D --> F[Step 2: 握手 Android 真实手机]
-    E --> F
-    F --> G[Step 3: 唤醒并启动 com.nn.nnbdc.android]
-    G --> H[Step 4: 登录认证链路闭环]
-    H --> I[手机点击'获取验证码' -> 生产库抓取最新验证码 -> 自动填入登录]
-    I --> J[Step 5: 底部主导航遍历]
-    J --> K[Step 6: 单词学习核心流程冒烟]
-    K --> L[Step 7: 端云同步校验]
-    L --> M[Step 8: 生成 tmp/e2e_report/report.html]
+    A[执行回归测试] --> B[Step 1: 连接 Android 真实手机并点亮屏幕]
+    B --> C[Step 2: 启动 App 前台校验]
+    C --> D[Step 3: 初始纯净状态核验]
+    D --> E{是否已处于登录态?}
+    E -- 是 --> F[手机端进入设置 -> 注销账号 -> 销毁数据退回登录页]
+    E -- 否 --> G[保持欢迎页冷启动]
+    F --> G
+    G --> H[Step 4: 手机端自主注册与验证码登录]
+    H --> I[手机输入邮箱 -> 点击获取 -> 生产库唯一截获验证码 -> 自动填入提交]
+    I --> J[Step 5: 底部四大主导航遍历 (词表/查词/我/学习)]
+    J --> K[Step 6: 新用户词书配置生效]
+    K --> L[Step 7: 学习轨道配置与切换体验]
+    L --> M[Step 8: 每日学习计划定制]
+    M --> N[Step 9: 单词全流程学习直至触发打卡结算]
+    N --> O[Step 10: 主页打卡印章与个人中心状态核验]
+    O --> P[Step 11: 端云同步健康度校验]
+    P --> Q[Step 12: 测试善后：真机自助注销账号还原未登录态]
+    Q --> R[Step 13: 生成 HTML 报告并自动邮件直推]
 ```
 
-### 1. 生产库专属账号安全红线
-- **测试专属账号**：`e2etest@nnbdc.com`（用户 ID 必须使用标准 32 位 UUID，严禁拼接）。
-- **严格范围隔离**：脚本和 SQL 的任何 `INSERT/UPDATE/DELETE` 操作**强制限定为 `e2etest@nnbdc.com` 或其对应的 `user_id`**，绝对严禁触碰生产库其他真实用户的数据！
-- **测试数据纯净性**：测试前自动重置该用户的学习记录、打卡记录、临时生词本，并将魔法泡泡重置为 100，确保每次回归处于确定性的基线状态。
-- **验证码全自动拦截**：由于生产环境登录采用邮箱验证码，客户端点击「获取」后，服务端将 6 位验证码写入生产库 `email_verification_code` 表。脚本直接通过只读查询截获最新验证码填入，无需人工收信，实现 100% 全自动化。
+### 1. 纯黑盒端到端测试黄金原则
+- **真实客户端注册**：严禁通过后端后门 SQL 直接插入新用户。所有账号由手机端原生登录/注册界面输入邮箱触发，让服务端与客户端完整走通首次注册、配置分发、本地数据库初始化的真实链路。
+- **真机自助注销闭环**：回归测试前与测试结束后，若存在旧账号，必须通过手机端自身的**「注销账号」**功能（输入 `okay` 确认）彻底销毁云端与本地的所有学习进度与配置，恢复纯净未登录态，保证每次回归测试 100% 确定且幂等。
+- **打卡与学习轨道全流程覆盖**：不仅测试单词交互，还完整回归「学习轨道」展开/折叠与 Tab 切换、每日计划词数定制，以及完整学完当天全部单词直至触发「打卡完成页」，并查验生产库 `daka` 表真实写入。
+- **极简唯一后端协同**：整个回归链路中，**只有「从生产库读取验证码」和「核对打卡是否入库」连接后端**（因为自动化测试无法人肉收信，截获验证码是唯一的合理外部辅助），其余所有操作 100% 均为真实手机屏幕上的人机交互。
+- **自动化邮件直推**：测试结束自动将内嵌真机截图与状态指标的高清 HTML 测试报告通过阿里云邮件推送直达用户指定邮箱（如 `mmyybb3000@icloud.com`）。
+- **安全红线**：严禁波及生产环境其他任何正常用户，测试邮箱固定为 `e2etest@nnbdc.com`。
 
 ---
 
@@ -43,20 +50,22 @@ flowchart TD
 
 | 脚本文件 | 核心职责 | 常用命令 |
 |---|---|---|
-| `scripts/manage_e2e_account.py` | 生产库账号核验、创建、重置、验证码抓取 | `./scripts/manage_e2e_account.py --ensure`<br>`./scripts/manage_e2e_account.py --reset`<br>`./scripts/manage_e2e_account.py --get-code` |
+| `scripts/manage_e2e_account.py` | 生产库账号核验、创建、重置、验证码抓取、打卡记录核验 | `./scripts/manage_e2e_account.py --check`<br>`./scripts/manage_e2e_account.py --get-code` |
 | `scripts/device_controller.py` | ADB 设备连接、屏幕唤醒解锁、UI 节点 dump 与智能点击 | 模块引用或直接测试连接 |
-| `scripts/run_regression.py` | 全量自动化回归执行引擎与 HTML 报告生成器 | `./scripts/run_regression.py` |
+| `scripts/send_report_email.py` | 阿里云邮件推送 (DirectMail) HTML 报告推送模块 | `./scripts/send_report_email.py --to <邮箱>` |
+| `scripts/run_regression.py` | 全量自动化回归执行引擎与 HTML 报告生成器 | `./scripts/run_regression.py --email mmyybb3000@icloud.com` |
 
 ---
 
 ## 执行模式
 
-### 模式 A：一键全自动回归（推荐）
+### 模式 A：一键全自动回归与邮件直推（推荐）
 
 在终端或由 AI 直接运行回归脚本：
 ```bash
-python3 .agents/skills/android-e2e-regression/scripts/run_regression.py
+python3 .agents/skills/android-e2e-regression/scripts/run_regression.py --email mmyybb3000@icloud.com
 ```
+> 若跳过邮件推送，可添加 `--no-email` 参数。若有多个设备，可通过 `--serial <设备号>` 指定。
 > 若手机上有多个设备或模拟器在线，可通过 `--serial <设备号>` 指定目标设备。
 
 执行完毕后，测试报告将自动保存至：

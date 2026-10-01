@@ -246,15 +246,19 @@ public class SyncController {
     /**
      * 接收客户端上报的系统与同步异常
      *
-     * @param userId    关联用户，可为空（未登录或游客阶段）
-     * @param errorType 异常分类；不上报时按同步异常归类
-     * @param details   现场上下文，超长会被截断
+     * @param userId        关联用户，可为空（未登录或游客阶段）
+     * @param errorType     异常分类；不上报时按同步异常归类
+     * @param details       现场上下文，超长会被截断
+     * @param clientVersion 上报客户端的版本号，可为空（旧版客户端未上报）
+     * @param clientType    上报客户端的平台类型（android / ios / macos / windows / linux / browser），可为空
      */
     @PostMapping("/reportSysError.do")
     public Result<Void> reportSysError(
             @RequestParam(value = "userId", required = false) String userId,
             @RequestParam(value = "errorType", required = false) String errorType,
-            @RequestParam("details") String details) {
+            @RequestParam("details") String details,
+            @RequestParam(value = "clientVersion", required = false) String clientVersion,
+            @RequestParam(value = "clientType", required = false) String clientType) {
         String effectiveErrorType = (errorType == null || errorType.trim().isEmpty())
                 ? "CLIENT_SYNC_ERROR"
                 : errorType.trim();
@@ -263,7 +267,7 @@ public class SyncController {
             effectiveDetails = effectiveDetails.substring(0, MAX_REPORTED_DETAILS_LENGTH) + "...(已截断)";
         }
         try {
-            sysErrorBo.recordError(userId, effectiveErrorType, effectiveDetails);
+            sysErrorBo.recordError(userId, effectiveErrorType, effectiveDetails, clientVersion, clientType);
             return Result.success(null);
         } catch (Exception e) {
             log.error("记录客户端上报的 sys_error 失败: errorType=" + effectiveErrorType, e);

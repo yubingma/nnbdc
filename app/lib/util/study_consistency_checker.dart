@@ -66,6 +66,11 @@ StudyConsistencyRule? judgeStudyConsistency({
   required int progress,
   required int actualLogCount,
 }) {
+  // 今天一个环节都还没走完（进度为 0）时不以"流水条数"论短长：
+  // 进度为 0 而今天有流水，绝大多数是"上一个业务日学过、这两天还没开始学"
+  // —— 跨天复位已经把进度清零，属于正常状态。
+  // 反过来，真正会让用户卡住的"进度领先于流水"必然出现在进度大于 0 的时候。
+  if (progress <= 0) return null;
   if (progress > actualLogCount) return StudyConsistencyRule.progressExceedsLogs;
   return null;
 }
@@ -200,7 +205,22 @@ Future<StudyConsistencyRepairResult?> repairStudyConsistency({
   final logs = await db.learningLogsDao
       .getInBusinessDay(userId, wordIds: [violation.wordId], instant: now);
   final logCount = logs.length;
-  // 只在"进度多于记录"时下调；今天一条记录都没有时不改（没有可靠依据）
+
+  // 今天一条记录都没有："对不上"可能只是跨天复位与同步的时序差异，
+  // 没有可靠依据判断该整成几，动它等于把进度抹成 0，一律不修。
+  // （体检页已把这种情况写清：今天没有任何学习记录时不会改动。）
+  if (logCount == 0) {
+    Global.logger.w('⚠️ [Consistency] 今天没有任何学习记录，放弃修复: ${violation.wordId}');
+    return StudyConsistencyRepairResult(
+      wordId: violation.wordId,
+      spell: violation.spell,
+      progressBefore: progressBefore,
+      progressAfter: progressBefore,
+      logCount: logCount,
+    );
+  }
+
+  // 只在"进度多于记录"时下调；"进度少于记录"（多设备抢跑等）不往上补齐
   if (progressBefore <= logCount) {
     return StudyConsistencyRepairResult(
       wordId: violation.wordId,

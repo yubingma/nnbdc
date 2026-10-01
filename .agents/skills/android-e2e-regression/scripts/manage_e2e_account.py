@@ -1,33 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-管理 E2E 回归测试专属账号 (e2etest@nnbdc.com)
-支持：检查账号、自动创建初始化、数据重置、提取最新验证码
-安全红线：仅针对 e2etest@nnbdc.com 精确操作，绝不波及生产其他用户。
+E2E 回归测试辅助模块 (e2etest@nnbdc.com)
+端到端原则：
+1. 真实用户注册链路：账号由手机 App 输入邮箱和验证码自助触发注册与初始化；
+2. 真实用户注销链路：账号通过手机端「注销账号」功能自助销毁；
+3. 本模块唯一在日常回归中使用的核心功能：从生产库截获最新邮箱验证码 (get_latest_code)。
+   (自动化测试无法人肉收取邮件，读取 verification_code 表是唯一必要的外部配合)。
 """
 
 import os
 import sys
-import uuid
 import argparse
 import subprocess
 from datetime import datetime
 import time
 
-# 生产环境配置（支持读取环境变量或 ~/.zprofile）
 PROD_HOST = "47.108.27.205"
 PROD_PORT = "22"
 PROD_USER = "root"
 PROD_DB_NAME = "bdc"
 PROD_DB_USER = "myb"
 E2E_EMAIL = "e2etest@nnbdc.com"
-E2E_USERNAME = "e2etest"
-E2E_NICKNAME = "E2E测试用户"
 
 def get_server_pwd():
     pwd = os.environ.get("nnbdc_server_pwd")
     if not pwd:
-        # 尝试从 ~/.zprofile 解析
         try:
             with open(os.path.expanduser("~/.zprofile"), "r", encoding="utf-8") as f:
                 for line in f:
@@ -39,7 +37,7 @@ def get_server_pwd():
     return pwd
 
 def run_psql(sql: str) -> str:
-    """通过 SSH 隧道/命令在生产 docker pg 容器中执行 SQL (带重试机制)"""
+    """通过 SSH 隧道在生产 docker pg 容器中执行 SQL (带重试机制)"""
     pwd = get_server_pwd()
     if not pwd:
         raise RuntimeError("未检测到环境变量 nnbdc_server_pwd，请在环境或 ~/.zprofile 中配置。")
@@ -67,8 +65,23 @@ def run_psql(sql: str) -> str:
 
     raise RuntimeError(f"SQL 执行失败: {last_err}")
 
+def clear_old_codes():
+    """清理发往 e2etest 邮箱的历史旧验证码，确保后续获取的一定是当前测试生成的"""
+    sql = f"DELETE FROM email_verification_code WHERE email = '{E2E_EMAIL}';"
+    run_psql(sql)
+
+def get_latest_code() -> str:
+    """获取发往 e2etest@nnbdc.com 的最新有效验证码 (回归核心：唯一连库操作)"""
+    sql = f"""
+    SELECT code FROM email_verification_code
+    WHERE email = '{E2E_EMAIL}' AND used = false
+    ORDER BY create_time DESC LIMIT 1;
+    """
+    code = run_psql(sql)
+    return code.strip() if code else None
+
 def check_user():
-    """检查 e2etest 用户是否存在"""
+    """只读检查 e2etest 用户在云端是否存在"""
     sql = f'SELECT id, user_name, email, cow_dung, words_per_day, create_time FROM "user" WHERE email = \'{E2E_EMAIL}\';'
     out = run_psql(sql)
     if not out:
@@ -83,129 +96,62 @@ def check_user():
         "create_time": parts[5] if len(parts) > 5 else ""
     }
 
-def create_e2e_user():
-    """在生产库中创建 e2etest 账号及配套基础数据"""
-    user_id = uuid.uuid4().hex
-    raw_dict_id = uuid.uuid4().hex
-    mastered_dict_id = uuid.uuid4().hex
-    version_id = uuid.uuid4().hex
+def check_user_daka(user_id: str = None):
+    """查询该用户在云端是否存在打卡记录"""
+    if not user_id:
+        user = check_user()
+        if not user:
+            return None
+        user_id = user["id"]
+    sql = f"SELECT user_id, for_learning_date, text, create_time FROM daka WHERE user_id = '{user_id}' ORDER BY create_time DESC LIMIT 1;"
+    out = run_psql(sql)
+    if not out:
+        return None
+    parts = out.split("|")
+    return {
+        "user_id": parts[0],
+        "for_learning_date": parts[1] if len(parts) > 1 else "",
+        "text": parts[2] if len(parts) > 2 else "",
+        "create_time": parts[3] if len(parts) > 3 else ""
+    }
 
-    print(f"[*] 正在为 {E2E_EMAIL} 创建用户实体 (userId={user_id})...")
-
-    # 1. 插入 user 表
-    sql_user = f"""
-    INSERT INTO "user" (
-        id, user_name, nick_name, email, password,
-        words_per_day, daka_day_count, learned_days, mastered_words,
-        cow_dung, throw_dice_chance, continuous_daka_day_count, max_continuous_daka_day_count,
-        daka_score, game_score, total_learning_seconds, today_learning_seconds,
-        is_admin, is_super_admin, is_inputor, is_sys_user, is_premium_ios,
-        invite_award_taken, learning_finished, today_study_started,
-        create_time, update_time
-    ) VALUES (
-        '{user_id}', '{E2E_USERNAME}', '{E2E_NICKNAME}', '{E2E_EMAIL}', '',
-        10, 0, 0, 0,
-        100, 5, 0, 0,
-        0, 0, 0, 0,
-        false, false, false, false, false,
-        false, false, false,
-        NOW(), NOW()
-    );
+def purge_e2e_user_db_only():
     """
-
-    # 2. 插入生词本与已掌握词书
-    sql_dicts = f"""
-    INSERT INTO dict (id, name, word_count, is_ready, is_shared, visible, editable, deletable, owner_id, popularity_limit, create_time, update_time)
-    VALUES ('{raw_dict_id}', '生词本', 0, true, false, true, true, false, '{user_id}', 5, NOW(), NOW());
-
-    INSERT INTO learning_dict (dict_id, user_id, is_privileged, fetch_mastered, sort_alg, create_time, update_time)
-    VALUES ('{raw_dict_id}', '{user_id}', false, true, 'ORIGINAL', NOW(), NOW());
-
-    INSERT INTO dict (id, name, word_count, is_ready, is_shared, visible, editable, deletable, owner_id, popularity_limit, create_time, update_time)
-    VALUES ('{mastered_dict_id}', '已掌握', 0, true, false, true, false, false, '{user_id}', 5, NOW(), NOW());
-
-    INSERT INTO learning_dict (dict_id, user_id, is_privileged, fetch_mastered, sort_alg, create_time, update_time)
-    VALUES ('{mastered_dict_id}', '{user_id}', false, false, 'ORIGINAL', NOW(), NOW());
+    【仅限应急清理】：当真机由于客户端严重 Bug 无法进入设置进行「注销账号」时，
+    才使用此函数在云端执行级联删除，彻底抹除 e2etest 账号以恢复初始环境。
+    安全红线：硬编码 WHERE email = 'e2etest@nnbdc.com'，绝不触碰生产任何其他用户。
     """
+    user = check_user()
+    if not user:
+        print(f"[*] 生产库中已无 {E2E_EMAIL} 账号，无需清理。")
+        return
 
-    # 3. 插入用户学习步骤 (new / review)
-    sql_steps = f"""
-    INSERT INTO user_study_step (user_id, scope, group_name, study_step, seq, state, create_time, update_time)
-    VALUES
-        ('{user_id}', 'new', 'check', 'En2Ch', 0, 'Active', NOW(), NOW()),
-        ('{user_id}', 'new', 'correct', 'Ch2En', 0, 'Active', NOW(), NOW()),
-        ('{user_id}', 'new', 'wrong', 'Ch2En', 0, 'Active', NOW(), NOW()),
-        ('{user_id}', 'review', 'check', 'En2Ch', 0, 'Active', NOW(), NOW()),
-        ('{user_id}', 'review', 'wrong', 'Ch2En', 0, 'Active', NOW(), NOW());
-    """
-
-    # 4. 插入 user_db_version
-    sql_version = f"""
-    INSERT INTO user_db_version (id, user_id, version, create_time, update_time)
-    VALUES ('{version_id}', '{user_id}', 1, NOW(), NOW());
-    """
-
-    full_sql = f"BEGIN;\n{sql_user}\n{sql_dicts}\n{sql_steps}\n{sql_version}\nCOMMIT;"
-    run_psql(full_sql)
-    print(f"✅ 用户 {E2E_EMAIL} 创建成功！(ID: {user_id})")
-    return user_id
-
-def reset_e2e_user(user_id: str):
-    """重置测试用户数据，恢复到干净的初始回归测试状态"""
-    print(f"[*] 正在重置用户 {E2E_EMAIL} (userId={user_id}) 的测试数据...")
+    uid = user["id"]
+    print(f"[!] 触发云端安全物理删除: {E2E_EMAIL} (userId={uid})...")
     sql = f"""
     BEGIN;
-    -- 清理打卡与学习流水
-    DELETE FROM daka WHERE user_id = '{user_id}';
-    DELETE FROM user_oper WHERE user_id = '{user_id}';
-    DELETE FROM user_study_daily_stat WHERE user_id = '{user_id}';
-    DELETE FROM user_study_record WHERE user_id = '{user_id}';
-    DELETE FROM user_db_log WHERE user_id = '{user_id}';
-
-    -- 清理生词本中的测试单词
-    DELETE FROM dict_word WHERE dict_id IN (SELECT id FROM dict WHERE owner_id = '{user_id}');
-    UPDATE dict SET word_count = 0 WHERE owner_id = '{user_id}';
-
-    -- 恢复基础属性与测试魔法泡泡
-    UPDATE "user" SET
-        daka_day_count = 0,
-        continuous_daka_day_count = 0,
-        max_continuous_daka_day_count = 0,
-        learned_days = 0,
-        mastered_words = 0,
-        cow_dung = 100,
-        today_study_started = false,
-        total_learning_seconds = 0,
-        today_learning_seconds = 0,
-        last_daka_date = NULL,
-        last_learning_date = NULL,
-        update_time = NOW()
-    WHERE id = '{user_id}';
-
-    -- 重置同步版本号为 1
-    UPDATE user_db_version SET version = 1, update_time = NOW() WHERE user_id = '{user_id}';
-
+    DELETE FROM email_verification_code WHERE email = '{E2E_EMAIL}';
+    DELETE FROM user_study_step WHERE user_id = '{uid}';
+    DELETE FROM learning_dict WHERE user_id = '{uid}';
+    DELETE FROM user_db_log WHERE user_id = '{uid}';
+    DELETE FROM user_db_version WHERE user_id = '{uid}';
+    DELETE FROM daka WHERE user_id = '{uid}';
+    DELETE FROM user_oper WHERE user_id = '{uid}';
+    DELETE FROM user_study_daily_stat WHERE user_id = '{uid}';
+    DELETE FROM user_study_record WHERE user_id = '{uid}';
+    DELETE FROM dict_word WHERE dict_id IN (SELECT id FROM dict WHERE owner_id = '{uid}');
+    DELETE FROM dict WHERE owner_id = '{uid}';
+    DELETE FROM "user" WHERE id = '{uid}';
     COMMIT;
     """
     run_psql(sql)
-    print(f"✅ 用户 {E2E_EMAIL} 数据重置完成，状态已还原为纯净初始态。")
-
-def get_latest_code():
-    """获取发往 e2etest@nnbdc.com 的最新有效验证码"""
-    sql = f"""
-    SELECT code FROM email_verification_code
-    WHERE email = '{E2E_EMAIL}' AND used = false
-    ORDER BY create_time DESC LIMIT 1;
-    """
-    code = run_psql(sql)
-    return code.strip()
+    print(f"✅ 生产库已彻底清除 {E2E_EMAIL} 遗留数据。")
 
 def main():
-    parser = argparse.ArgumentParser(description="E2E 回归测试数据库账号管理工具")
-    parser.add_argument("--check", action="store_true", help="检查测试账号是否存在")
-    parser.add_argument("--ensure", action="store_true", help="若不存在则自动创建，若存在则打印")
-    parser.add_argument("--reset", action="store_true", help="重置测试账号数据到初始状态")
+    parser = argparse.ArgumentParser(description="E2E 回归测试生产数据库辅助工具")
     parser.add_argument("--get-code", action="store_true", help="获取最新登录验证码")
+    parser.add_argument("--check", action="store_true", help="只读核验测试账号是否存在")
+    parser.add_argument("--purge", action="store_true", help="应急物理清理测试账号")
 
     args = parser.parse_args()
 
@@ -215,39 +161,16 @@ def main():
             print(f"CODE:{code}")
         else:
             print("未找到有效的验证码")
-        return
-
-    user = check_user()
-
-    if args.check:
+    elif args.check:
+        user = check_user()
         if user:
-            print(f"✅ 账号存在: ID={user['id']}, 用户名={user['user_name']}, 泡泡={user['cow_dung']}, 词/日={user['words_per_day']}")
+            print(f"✅ 账号存在: ID={user['id']}, 用户名={user['user_name']}, 泡泡={user['cow_dung']}")
         else:
-            print(f"❌ 账号不存在: {E2E_EMAIL}")
-        return
-
-    if args.ensure:
-        if not user:
-            print(f"⚠️ 账号 {E2E_EMAIL} 不存在，开始自动创建...")
-            user_id = create_e2e_user()
-            user = check_user()
-        else:
-            print(f"✅ 账号已就绪: ID={user['id']}, 用户名={user['user_name']}")
-        return
-
-    if args.reset:
-        if not user:
-            print(f"⚠️ 账号不存在，正在创建并初始化...")
-            create_e2e_user()
-        else:
-            reset_e2e_user(user["id"])
-        return
-
-    # 默认行为：ensure
-    if not user:
-        create_e2e_user()
+            print(f"ℹ️ 账号不存在: {E2E_EMAIL}")
+    elif args.purge:
+        purge_e2e_user_db_only()
     else:
-        print(f"✅ 账号已就绪: {user}")
+        parser.print_help()
 
 if __name__ == "__main__":
     main()
