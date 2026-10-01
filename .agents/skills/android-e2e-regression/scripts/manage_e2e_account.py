@@ -281,6 +281,29 @@ def time_travel_yesterday(user_id: str = None):
     """
     run_psql(sql)
 
+def get_word_spells(word_ids: list) -> dict:
+    """批量根据 word_id 从生产库查询单词拼写"""
+    if not word_ids:
+        return {}
+    clean_ids = [str(w).strip() for w in word_ids if str(w).strip()]
+    if not clean_ids:
+        return {}
+    in_clause = ",".join(f"'{wid}'" for wid in clean_ids)
+    sql = f"SELECT id, spell FROM word WHERE id IN ({in_clause});"
+    try:
+        out = run_psql(sql)
+        res = {}
+        for line in out.splitlines():
+            line = line.strip()
+            if not line or "|" not in line:
+                continue
+            parts = line.split("|", 1)
+            res[parts[0].strip()] = parts[1].strip()
+        return res
+    except Exception as e:
+        print(f"[!] 查询单词拼写异常: {e}")
+        return {}
+
 def main():
     parser = argparse.ArgumentParser(description="E2E 回归测试生产数据库辅助工具")
     parser.add_argument("--get-code", action="store_true", help="获取最新登录验证码")

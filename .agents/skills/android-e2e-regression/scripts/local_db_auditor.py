@@ -53,11 +53,26 @@ class LocalDbAuditor:
         cur = conn.cursor()
 
         # 1. 审计 learning_logs
-        cur.execute("""
-        SELECT id, user_id, word_id, rating, stability, difficulty, elapsed_days, scheduled_days, create_time
-        FROM learning_logs
-        ORDER BY create_time ASC;
-        """)
+        has_words_table = False
+        try:
+            cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='words';")
+            has_words_table = bool(cur.fetchone())
+        except Exception:
+            pass
+
+        if has_words_table:
+            cur.execute("""
+            SELECT l.id, l.user_id, l.word_id, l.rating, l.stability, l.difficulty, l.elapsed_days, l.scheduled_days, l.create_time, w.spell
+            FROM learning_logs l
+            LEFT JOIN words w ON l.word_id = w.id
+            ORDER BY l.create_time ASC;
+            """)
+        else:
+            cur.execute("""
+            SELECT id, user_id, word_id, rating, stability, difficulty, elapsed_days, scheduled_days, create_time, NULL
+            FROM learning_logs
+            ORDER BY create_time ASC;
+            """)
         raw_logs = cur.fetchall()
 
         logs = []
@@ -65,6 +80,7 @@ class LocalDbAuditor:
         last_log_by_word = {}
 
         for row in raw_logs:
+            spell = row[9] if len(row) > 9 else None
             log_item = {
                 "id": row[0],
                 "user_id": row[1],
@@ -74,13 +90,28 @@ class LocalDbAuditor:
                 "difficulty": row[5],
                 "elapsed_days": row[6],
                 "scheduled_days": row[7],
-                "create_time": row[8]
+                "create_time": row[8],
+                "spell": spell
             }
             logs.append(log_item)
 
-            # 重复评分违规检测 (2000ms 窗口)
-            wid = row[2]
-            ctime = row[8]  # 秒级或毫秒级时间戳
+        # 补全缺失的单词英文拼写
+        missing_spell_ids = [l["word_id"] for l in logs if not l.get("spell")]
+        if missing_spell_ids:
+            try:
+                import manage_e2e_account
+                spells_map = manage_e2e_account.get_word_spells(missing_spell_ids)
+                for l in logs:
+                    wid_str = str(l["word_id"])
+                    if not l.get("spell") and wid_str in spells_map:
+                        l["spell"] = spells_map[wid_str]
+            except Exception as e:
+                print(f"[!] 批量补全单词拼写异常: {e}")
+
+        # 重复评分违规检测 (2000ms 窗口)
+        for log_item in logs:
+            wid = log_item["word_id"]
+            ctime = log_item["create_time"]
             if wid in last_log_by_word:
                 prev = last_log_by_word[wid]
                 diff_ms = abs(ctime - prev["create_time"]) * 1000 if ctime < 10000000000 else abs(ctime - prev["create_time"])
@@ -88,9 +119,9 @@ class LocalDbAuditor:
                     duplicate_violations.append({
                         "word_id": wid,
                         "first_log_id": prev["id"],
-                        "second_log_id": row[0],
+                        "second_log_id": log_item["id"],
                         "gap_ms": diff_ms,
-                        "rating": row[3]
+                        "rating": log_item["rating"]
                     })
             last_log_by_word[wid] = log_item
 

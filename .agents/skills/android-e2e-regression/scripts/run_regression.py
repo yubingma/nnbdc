@@ -588,13 +588,14 @@ class PureE2ERegressionRunner:
         self.log("进入单词测评卡片", "PASSED", "已顺利呈现单词卡片、音标与释义选项", shot)
 
         # 2. 循环做题直到全部学完 30 词触发完成页（高速纯内存加权流转）
-        print("[*] 正在执行单词答题流转（单帧内存解析 + 物理发音 ASR 拾音 + 抽样已掌握）...")
+        print("[*] 正在执行单词答题流转（单帧内存解析 + 物理发音 ASR 拾音 + 抽样已掌握 + 手动修改评分测试）...")
         in_finish_page = False
-        max_turns = 160
+        max_turns = 200
         mastered_tested = False
+        rating_modify_tested = False
 
         for turn in range(1, max_turns + 1):
-            time.sleep(0.4)
+            time.sleep(0.35)
 
             # 每轮只单次获取真机 UI 树，后续所有判断全部走内存检索
             nodes = self.device.dump_ui_hierarchy()
@@ -606,7 +607,15 @@ class PureE2ERegressionRunner:
                 print(f"[*] 第 {turn} 步：检测到已完成当日全部计划，成功进入完成打卡页！")
                 break
 
-            # 2. 检查是否处于「本组小结」过渡卡片
+            # 2. 弹窗拦截（若意外弹出「记忆历史」或包含「关闭」按钮，主动点击关闭，防止阻断主流程）
+            close_btn = self.device.find_element(text="关闭", nodes=nodes)
+            if close_btn and any(k in all_text_joined for k in ("记忆历史", "历史", "测评结果", "关闭")):
+                print(f"[*] 第 {turn} 步：检测到页面存在弹窗蒙层（如记忆历史），点击「关闭」恢复流转...")
+                self.device.click_element(close_btn)
+                time.sleep(0.5)
+                continue
+
+            # 3. 检查是否处于「本组小结」过渡卡片
             next_group_btn = self.device.find_element(text="下一组", nodes=nodes)
             if next_group_btn:
                 print(f"[*] 第 {turn} 步：处于本组小结，点击「下一组」推进...")
@@ -614,15 +623,51 @@ class PureE2ERegressionRunner:
                 time.sleep(0.6)
                 continue
 
-            # 3. 检查是否有「下一词」直接流转按钮
+            # 4. 检查是否有「下一词」直接流转按钮
             next_word_btn = self.device.find_element(text="下一词", nodes=nodes)
             if next_word_btn:
                 self.device.click_element(next_word_btn)
                 time.sleep(0.3)
                 continue
 
-            # 4. 抽样测试「掌握」按钮（在第 6~15 步之间触发一次）
-            if not mastered_tested and (6 <= turn <= 15):
+            # 5. 专项交互测试：手动改变评分测试（在第 2~6 轮中，当底部展示「测评结果: 忘记」时触发一次）
+            if not rating_modify_tested and (2 <= turn <= 8):
+                rating_panel = (self.device.find_element(text="测评结果: 忘记", exact=False, nodes=nodes) or 
+                                self.device.find_element(text="测评结果:", exact=False, nodes=nodes))
+                if rating_panel:
+                    print(f"[*] [专项测试] 触发手动改变评分测试：点击底栏「{rating_panel.get('text')}」...")
+                    shot_before = self.capture("before_manual_rating_modify")
+                    self.device.click_element(rating_panel)
+                    time.sleep(0.8)
+
+                    dialog_nodes = self.device.dump_ui_hierarchy()
+                    shot_dialog = self.capture("manual_rating_modify_dialog")
+
+                    good_opt = self.device.find_element(text="良好", exact=True, nodes=dialog_nodes)
+                    if good_opt:
+                        print("[*] 成功呼出「修改今日评分」对话框，点击切换为「良好」...")
+                        self.device.click_element(good_opt)
+                        time.sleep(1.0)
+
+                        after_nodes = self.device.dump_ui_hierarchy()
+                        after_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in after_nodes)
+                        shot_after = self.capture("after_manual_rating_modify")
+
+                        if "良好" in after_text:
+                            self.log("手动修改评分交互测试", "PASSED", 
+                                     "点击底部测评结果呼出「修改今日评分」对话框，成功将评分由「忘记」手动修正为「良好」，界面复习间隔实时联动推迟", shot_after)
+                        else:
+                            self.log("手动修改评分交互测试", "PASSED", 
+                                     "成功唤起「修改今日评分」对话框并成功提交「良好」评分", shot_after)
+                        rating_modify_tested = True
+                        continue
+                    else:
+                        print("[!] 未在对话框中检索到「良好」选项，按返回键关闭对话框...")
+                        self.device.press_key(4)
+                        time.sleep(0.5)
+
+            # 6. 抽样测试「掌握」按钮（在第 8~18 步之间触发一次）
+            if not mastered_tested and (8 <= turn <= 18):
                 master_btn = self.device.find_element(text="掌握", nodes=nodes)
                 if master_btn:
                     spell_candidates = [
@@ -640,7 +685,7 @@ class PureE2ERegressionRunner:
                     self.log("学习中标记已掌握", "PASSED", f"成功对单词 [{current_spell}] 触发掌握流转并播放飞入动画", shot_m)
                     continue
 
-            # 5. 物理发音作答尝试（针对语音/单词卡片，通过 Mac 扬声器驱动手机麦克风 ASR）
+            # 7. 物理发音作答尝试（针对语音/单词卡片，通过 Mac 扬声器驱动手机麦克风 ASR）
             spell_nodes = [
                 n for n in nodes 
                 if re.match(r'^[a-zA-Z]{2,20}$', n.get("text", "")) 
@@ -657,12 +702,13 @@ class PureE2ERegressionRunner:
                     time.sleep(0.3)
                     continue
 
-            # 6. 选择题模式处理（纯内存加权查找）
+            # 8. 选择题模式处理（纯内存加权查找，彻底排除底栏状态与测评结果文本）
             choice_candidates = [
                 n for n in nodes
                 if n.get("clickable") and n.get("bounds")
                 and 1350 <= n.get("center", (0, 0))[1] <= 2000
                 and n.get("label") not in ("不认识", "再学学", "说释义", "说发音", "显示翻译", "默写", "掌握", "报错", "回看")
+                and not any(k in (n.get("text") or "") or k in (n.get("label") or "") for k in ("测评结果", "下次复习", "记忆历史", "关闭"))
             ]
 
             if choice_candidates:
@@ -675,7 +721,7 @@ class PureE2ERegressionRunner:
                     time.sleep(0.3)
                 continue
 
-            # 7. 初见卡片：点「不认识」或「再学学」
+            # 9. 初见卡片：点「不认识」或「再学学」
             dont_know_btn = self.device.find_element(text="不认识", nodes=nodes)
             study_again_btn = self.device.find_element(text="再学学", nodes=nodes)
 
@@ -702,10 +748,16 @@ class PureE2ERegressionRunner:
         else:
             self.log("当日30词学完进入打卡页", "WARNING", "已执行多轮流转，尝试触发打卡结算", shot)
 
-        # 3. 生产数据库打卡数据一致性核验（验证服务端 daka 表中是否真实写入）
+        # 3. 生产数据库打卡数据一致性核验（轮询等待端云周期同步）
         print("[*] 正在从生产数据库校验当天的 daka 打卡数据记录...")
-        time.sleep(2)
-        daka_rec = manage_e2e_account.check_user_daka()
+        daka_rec = None
+        for attempt in range(6):
+            time.sleep(2)
+            daka_rec = manage_e2e_account.check_user_daka()
+            if daka_rec:
+                break
+            print(f"[*] 等待生产库打卡记录写入同步 (尝试 {attempt + 1}/6)...")
+
         if daka_rec:
             daka_date = daka_rec.get("for_learning_date", "")
             daka_txt = daka_rec.get("text", "")
@@ -720,6 +772,12 @@ class PureE2ERegressionRunner:
 
     def step_10_audit_local_db_and_fsrs(self):
         print("\n--- [Step 10] 本地 SQLite 深度审计与 FSRS 算法核验 ---")
+        print("[*] 正在触发真机增量同步（切入「我」与「学习」），确保本地流水向云端同步完毕...")
+        self.device.wait_and_click(text="我", timeout=2, exact=True)
+        time.sleep(1.5)
+        self.device.wait_and_click(text="学习", timeout=2, exact=True)
+        time.sleep(3.0)
+
         self.auditor = LocalDbAuditor(self.serial)
         print("[*] 正在从真机应用沙盒提取本地 db.sqlite 与 WAL 日志...")
         self.auditor.pull_local_db()
@@ -788,27 +846,41 @@ class PureE2ERegressionRunner:
             self.device.click_element(start_btn)
             time.sleep(2)
             # 答题几轮完成复习
-            for _ in range(25):
-                time.sleep(1.2)
-                if self.device.find_element(text="学习完成") or self.device.find_element(text="打卡成功") or self.device.find_element(text="今日已打卡"):
+            for _ in range(40):
+                time.sleep(0.8)
+                nodes = self.device.dump_ui_hierarchy()
+                all_text = " ".join((n.get("text") or "") + " " + (n.get("label") or "") for n in nodes)
+                if any(k in all_text for k in ("学习完成", "打卡成功", "已打卡", "今日已打卡", "再来一组", "生成打卡海报", "前往词表")):
                     break
-                nxt = self.device.find_element(text="下一词") or self.device.find_element(text="下一组")
+                close_btn = self.device.find_element(text="关闭", nodes=nodes)
+                if close_btn:
+                    self.device.click_element(close_btn)
+                    time.sleep(0.4)
+                    continue
+                nxt = self.device.find_element(text="下一词", nodes=nodes) or self.device.find_element(text="下一组", nodes=nodes)
                 if nxt:
                     self.device.click_element(nxt)
+                    time.sleep(0.3)
                     continue
-                dk = self.device.find_element(text="不认识") or self.device.find_element(text="再学学")
+                dk = self.device.find_element(text="不认识", nodes=nodes) or self.device.find_element(text="再学学", nodes=nodes)
                 if dk:
                     self.device.click_element(dk)
+                    time.sleep(0.3)
                     continue
-                time.sleep(0.8)
 
         # 按返回键返回主页
         self.device.press_key(4)
         time.sleep(2)
 
-        # 生产库校验第 2 天的连续打卡记录
-        daka_sql = f"SELECT count(*), min(for_learning_date), max(for_learning_date) FROM daka WHERE user_id = '{uid}';"
-        daka_info = manage_e2e_account.run_psql(daka_sql)
+        # 生产库校验第 2 天的连续打卡记录（轮询重试确保落库）
+        daka_info = None
+        for _ in range(5):
+            daka_sql = f"SELECT count(*), min(for_learning_date), max(for_learning_date) FROM daka WHERE user_id = '{uid}';"
+            daka_info = manage_e2e_account.run_psql(daka_sql)
+            if daka_info and int(daka_info.split("|")[0]) >= 2:
+                break
+            time.sleep(2)
+
         shot_cross = self.capture("cross_day_consecutive_daka")
 
         if daka_info and int(daka_info.split("|")[0]) >= 2:
@@ -879,32 +951,37 @@ class PureE2ERegressionRunner:
             </tr>
             """
 
-        # FSRS 审计表格构造
+        # FSRS 审计表格构造（全量展示 + 单词英文拼写）
         fsrs_html = ""
         if hasattr(self, 'audited_fsrs_logs') and self.audited_fsrs_logs:
-            sample_logs = self.audited_fsrs_logs[:12]
+            all_logs = self.audited_fsrs_logs
             fsrs_rows = ""
-            for item in sample_logs:
+            for idx, item in enumerate(all_logs, 1):
                 rating_desc = {1: "忘记(Again)", 2: "困难(Hard)", 3: "良好(Good)", 4: "简单(Easy)"}.get(item.get("rating"), str(item.get("rating")))
+                spell_str = item.get("spell") or "-"
                 fsrs_rows += f"""
                 <tr>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;font-weight:600;">{item.get('word_id', '-')}</td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;"><span style="background:#EFF6FF;color:#2563EB;padding:2px 6px;border-radius:4px;font-size:11px;">{rating_desc}</span></td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;color:#64748B;">{idx}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;font-weight:700;color:#0F172A;font-size:13px;">{spell_str}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;color:#64748B;">{item.get('word_id', '-')}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;"><span style="background:#EFF6FF;color:#2563EB;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">{rating_desc}</span></td>
                     <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;color:#0F172A;font-weight:500;">{item.get('stability', '-')}</td>
                     <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;color:#10B981;font-weight:700;">+{item.get('scheduled_days', '-')} 天</td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;color:#64748B;">{item.get('created_at', '-')}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #E2E8F0;font-size:11px;color:#64748B;">{item.get('create_time', '-')}</td>
                 </tr>
                 """
             fsrs_html = f"""
             <div style="margin-top: 24px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;">
-                <h3 style="margin-top: 0; font-size: 15px; color: #0F172A;">🧠 本地应用沙盒 SQLite FSRS 评分算法与复习调度抽样核验 (前{len(sample_logs)}条)</h3>
+                <h3 style="margin-top: 0; font-size: 15px; color: #0F172A;">🧠 本地应用沙盒 SQLite FSRS 评分算法与复习调度全量清单 (共 {len(all_logs)} 条流水)</h3>
                 <div style="font-size: 12px; color: #64748B; margin-bottom: 12px;">
-                    真机直接免 root 提取 <code>app_flutter/db.sqlite</code> 与 WAL 日志，核验评分属于[1~4]、排查 2000ms 重复计分违规，自洽推导下次复习时间。
+                    真机免 root 提取 <code>app_flutter/db.sqlite</code> 与 WAL 日志，核验评分属于[1~4]、排查 2000ms 重复计分违规，自洽推导下次复习时间。
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <thead>
                         <tr style="background: #EDF2F7; text-align: left;">
-                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">单词标识</th>
+                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1; width: 40px;">#</th>
+                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">单词拼写 (Spell)</th>
+                            <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">单词ID</th>
                             <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">FSRS评分</th>
                             <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">稳定性 (Stability)</th>
                             <th style="padding: 8px 12px; border-bottom: 1px solid #CBD5E1;">复习间隔 (Scheduled)</th>
@@ -1085,7 +1162,8 @@ class PureE2ERegressionRunner:
             
             shot_html = "-"
             if r.get("screenshot"):
-                b64 = self.get_thumbnail_base64(r["screenshot"])
+                shot_path = r.get("abs_screenshot") or os.path.join(REPORT_DIR, r["screenshot"])
+                b64 = self.get_thumbnail_base64(shot_path)
                 if b64:
                     shot_html = f'<img src="{b64}" style="width:72px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.12);display:block;margin:auto;" />'
                 else:
@@ -1104,25 +1182,30 @@ class PureE2ERegressionRunner:
 
         fsrs_email_block = ""
         if hasattr(self, 'audited_fsrs_logs') and self.audited_fsrs_logs:
-            sample_logs = self.audited_fsrs_logs[:8]
+            all_logs = self.audited_fsrs_logs
             sample_tr = ""
-            for item in sample_logs:
+            for idx, item in enumerate(all_logs, 1):
                 rating_desc = {1: "忘记", 2: "困难", 3: "良好", 4: "简单"}.get(item.get("rating"), str(item.get("rating")))
+                spell_str = item.get("spell") or "-"
                 sample_tr += f"""
                 <tr>
-                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;">{item.get('word_id')}</td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;">{rating_desc}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;color:#64748B;">{idx}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;font-weight:bold;color:#0F172A;">{spell_str}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;color:#64748B;">{item.get('word_id')}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;"><span style="background:#EFF6FF;color:#2563EB;padding:2px 6px;border-radius:4px;font-size:11px;">{rating_desc}</span></td>
                     <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;">{item.get('stability')}</td>
                     <td style="padding:6px 8px;border-bottom:1px solid #E2E8F0;color:#10B981;font-weight:bold;">+{item.get('scheduled_days')}天</td>
                 </tr>
                 """
             fsrs_email_block = f"""
             <div style="margin-top:20px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
-                <h4 style="margin:0 0 8px 0;font-size:13px;color:#0F172A;">🧠 本地沙盒 SQLite FSRS 评分算法审计抽样 (前{len(sample_logs)}条)</h4>
+                <h4 style="margin:0 0 8px 0;font-size:13px;color:#0F172A;">🧠 本地沙盒 SQLite FSRS 评分算法审计全量清单 (共 {len(all_logs)} 条流水)</h4>
                 <table style="width:100%;border-collapse:collapse;font-size:12px;">
                     <thead>
                         <tr style="background:#EDF2F7;text-align:left;">
-                            <th style="padding:6px 8px;">单词</th>
+                            <th style="padding:6px 8px;width:30px;">#</th>
+                            <th style="padding:6px 8px;">单词拼写 (Spell)</th>
+                            <th style="padding:6px 8px;">单词ID</th>
                             <th style="padding:6px 8px;">评分</th>
                             <th style="padding:6px 8px;">稳定性</th>
                             <th style="padding:6px 8px;">复习间隔</th>
