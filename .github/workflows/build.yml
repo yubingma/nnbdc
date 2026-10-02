@@ -349,6 +349,10 @@ jobs:
           echo "检查 Android 构建环境变量："
           echo "KEYSTORE_PASSWORD is set: $([ -n "$KEYSTORE_PASSWORD" ] && echo "✅ Yes" || echo "❌ No")"
           echo "KEY_PASSWORD is set: $([ -n "$KEY_PASSWORD" ] && echo "✅ Yes" || echo "❌ No")"
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          echo "ANDROID_NDK_ROOT: $ANDROID_NDK_ROOT"
+          echo "已安装的 NDK 列表："
+          ls -la /usr/local/lib/android/sdk/ndk 2>/dev/null || true
           echo "注意：出于安全考虑，不会显示密码值"
 
       # 更新 CocoaPods 仓库并尝试更新 sqlite3 (解决 sqlite3 等依赖版本过旧导致构建失败的问题)

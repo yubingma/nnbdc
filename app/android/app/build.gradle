@@ -41,11 +41,35 @@ def sdkDir = localProperties.getProperty('sdk.dir') ?: System.getenv("ANDROID_HO
 def sdk36Exists = sdkDir != null && new File(sdkDir, "platforms/android-36").exists()
 def compileSdkVersion = (isCI || sdk36Exists) ? 36 : 35
 
+// 动态解析 NDK 版本：优先匹配已安装的 27.x 系列（如 CI 上的 27.3.13750724 或本地的 27.0.12077973）
+// 避免硬编码小版本导致 AGP 触发自动下载（因 Google 废弃 repository2-2.xml 协议导致 404 失败）
+def resolveNdkVersion = {
+    def targetPrefix = "27."
+    if (sdkDir != null) {
+        def ndkDir = new File(sdkDir, "ndk")
+        if (ndkDir.exists() && ndkDir.isDirectory()) {
+            def matched = ndkDir.list().findAll { it != null && it.startsWith(targetPrefix) }.sort().reverse()
+            if (!matched.isEmpty()) {
+                return matched[0]
+            }
+        }
+    }
+    def envNdk = System.getenv("ANDROID_NDK_HOME") ?: System.getenv("ANDROID_NDK_ROOT")
+    if (envNdk != null) {
+        def ndkFile = new File(envNdk)
+        if (ndkFile.exists()) {
+            return ndkFile.name
+        }
+    }
+    return "27.0.12077973"
+}
+def ndkVersionStr = resolveNdkVersion()
+println "[NNBDC] Using compileSdk: ${compileSdkVersion}, ndkVersion: ${ndkVersionStr}"
+
 android {
     namespace 'com.nn.nnbdc'
     compileSdk = compileSdkVersion
-    // 升级到 NDK 27.0.12077973 以兼容所有 Flutter 插件
-    ndkVersion = "27.0.12077973"
+    ndkVersion = ndkVersionStr
     
     compileOptions {
         coreLibraryDesugaringEnabled true
