@@ -767,10 +767,23 @@ public class SystemHealthCheckBo {
         List<DictWordDto> dictWords = new ArrayList<>();
         List<MeaningItemDto> meaningItems = new ArrayList<>();
         List<SentenceDto> sentences = new ArrayList<>();
+        List<String> unrecognizedWordIds = new ArrayList<>();
         
         if (wordIds != null) {
             for (String wordId : wordIds) {
                 String foundDictId = null;
+
+                Word word = wordBo.findById(wordId);
+                if (word == null) {
+                    // 云端主库根本没有该词，说明属于历史因事务割裂残留的幽灵脏数据
+                    unrecognizedWordIds.add(wordId);
+                    logger.warn("【健康检查】发现客户端请求的单词在云端完全不存在(幽灵词): wordId={}", wordId);
+                    try {
+                        sysDbSyncBo.logOperation("DELETE", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, "{}");
+                        sysDbSyncBo.logOperation("DELETE", "word", wordId, "{}");
+                    } catch (Exception ignore) {}
+                    continue;
+                }
                 
                 // 1. 优先尝试从系统公共库（0库）找
                 DictWord dw = dictWordBo.findById(new DictWordId(Constants.COMMON_DICT_ID, wordId));
@@ -834,6 +847,7 @@ public class SystemHealthCheckBo {
         data.put("dictWords", dictWords);
         data.put("meaningItems", meaningItems);
         data.put("sentences", sentences);
+        data.put("unrecognizedWordIds", unrecognizedWordIds);
         return data;
     }
 

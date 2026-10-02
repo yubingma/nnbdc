@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -19,10 +20,12 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
+import beidanci.api.model.DictWordDto;
 import beidanci.api.model.MeaningItemDto;
 import beidanci.api.model.WordDto;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
+import beidanci.service.po.DictWordId;
 import beidanci.service.po.ImportTask;
 import beidanci.service.po.MeaningItem;
 import beidanci.service.po.Sentence;
@@ -541,13 +544,143 @@ public class DictImportBo {
     }
 
 
+    public static class ExtrinsicResourcePlan {
+        public AiResult aiResult;
+        public String ownerId;
+        public String targetDictId;
+
+        public ExtrinsicResourcePlan(AiResult aiResult, String ownerId, String targetDictId) {
+            this.aiResult = aiResult;
+            this.ownerId = ownerId;
+            this.targetDictId = targetDictId;
+        }
+    }
+
+    private boolean isDuplicateKey(Throwable e) {
+        Throwable cause = e;
+        while (cause != null) {
+            String msg = cause.toString();
+            if (msg.contains("duplicate key") || msg.contains("DuplicateKey") || msg.contains("unique constraint")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
     @Transactional(rollbackFor = Throwable.class)
+    public Word persistWordData(Word word, boolean isNewWord, List<ExtrinsicResourcePlan> resourcePlans,
+                                String dictId, Integer unit, String preferredVoices, String voiceRequirement, TaskStatistics stats) throws Exception {
+        if (isNewWord) {
+            try {
+                wordBo.createEntity(word);
+                stats.addedWordCount++;
+                stats.addedAudioCount++; // 统计单词发音资源
+
+                // 新增单词全局可见，必须为客户端插入一条系统同步日志
+                WordDto wordDto = new WordDto();
+                org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
+                sysDbSyncBo.logOperation(wordDto, "INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
+                stats.addSyncLog("INSERT", "word");
+            } catch (Exception e) {
+                if (isDuplicateKey(e)) {
+                    logger.info("检测到并发导入冲突，单词 [" + word.getSpell() + "] 刚才已被其它任务线程写入，执行降级查询。");
+                    word = wordBo.getWordBySpell(word.getSpell());
+                    if (word == null) {
+                        throw e;
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        }
+
+        if (word == null) {
+            throw new RuntimeException("无法获取或创建单词对象");
+        }
+
+        synchronized (commonDictLock) {
+            // 通过数据库行级排他锁锁定通用兜底词典记录，确保跨事务并发时单调递增发号，彻底杜绝序号重复竞态
+            dictBo.lockDictForUpdate(Constants.COMMON_DICT_ID);
+
+            // 无论单词是刚创建的还是已存在的，都必须确保它被通用兜底词书（ID="0"）收录，以免触发数据不一致健康警告
+            DictWord dw0Check = dictWordBo.findById(new DictWordId(Constants.COMMON_DICT_ID, word.getId()));
+            if (dw0Check == null) {
+                DictWord dw0 = new DictWord();
+                dw0.setId(new DictWordId(Constants.COMMON_DICT_ID, word.getId()));
+                Dict commonDict = new Dict();
+                commonDict.setId(Constants.COMMON_DICT_ID);
+                dw0.setDict(commonDict);
+                dw0.setWord(word);
+                dw0.setSeq(dictWordBo.getMaxSeqNo(commonDict) + 1);
+                dw0.setCreateTime(new Date());
+
+                try {
+                    dictWordBo.createEntity(dw0);
+
+                    // 只有成功插入后，才记录日志和递增计数
+                    DictWordDto dwDto = new DictWordDto();
+                    dwDto.setDictId(Constants.COMMON_DICT_ID);
+                    dwDto.setWordId(word.getId());
+                    dwDto.setSeq(dw0.getSeq());
+                    dwDto.setUnit(0);
+                    dwDto.setCreateTime(dw0.getCreateTime());
+                    sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
+                    stats.addSyncLog("INSERT", "dict_word");
+
+                    // 原子递增 "0" 词书的 wordCount
+                    dictBo.incrementWordCount(Constants.COMMON_DICT_ID);
+                } catch (Exception e) {
+                    logger.debug("单词已存在于通用词典，跳过重复插入: " + word.getSpell());
+                }
+            }
+        }
+
+        // 保存释义与例句资源 (原子提交，异常一并回滚)
+        if (resourcePlans != null) {
+            for (ExtrinsicResourcePlan plan : resourcePlans) {
+                saveExtrinsicResources(word, plan.aiResult, plan.ownerId, plan.targetDictId, preferredVoices, voiceRequirement, stats);
+            }
+        }
+
+        // 维护词书与单词关系
+        if (dictId != null) {
+            Dict dict = new Dict();
+            dict.setId(dictId);
+            if (dictWordBo.findById(new DictWordId(dictId, word.getId())) == null) {
+                DictWord dw = new DictWord();
+                dw.setId(new DictWordId(dictId, word.getId()));
+                dw.setDict(dict);
+                dw.setWord(word);
+                dw.setUnit(unit);
+                dw.setSeq(dictWordBo.getMaxSeqNo(dict) + 1);
+                dw.setCreateTime(new Date());
+
+                try {
+                    dictWordBo.createEntity(dw);
+                    stats.addedDictWordCount++;
+
+                    // 更新词书单词计数
+                    Dict dictToUpdate = dictBo.findById(dictId);
+                    if (dictToUpdate != null) {
+                        dictToUpdate.setWordCount(dictToUpdate.getWordCount() + 1);
+                        dictBo.updateEntity(dictToUpdate);
+                    }
+                } catch (Exception e) {
+                    if (isDuplicateKey(e)) {
+                        logger.warn("向词书 [{}] 导入单词 [{}] 时遭遇并发冲突，该映射记录已存在，跳过本次写入。", dictId, word.getSpell());
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        }
+
+        return word;
+    }
+
     public void processSingleWord(String taskId, String spell, String manualMeaning, Integer unit, boolean isSystemDict, User user, String dictId, String dictName, String domain,
                                    boolean generateWordImage, String preferredVoices, String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) throws Exception {
-        
-
-
-
         if (canceledTaskIds.contains(taskId)) {
             return;
         }
@@ -560,127 +693,17 @@ public class DictImportBo {
         if (isNewWord) {
             word = new Word();
             word.setSpell(spell);
-            word.setPopularity(5); 
-            
+            word.setPopularity(5);
 
-
-            
             lastAiResult = getAiResult(spell, null, null, false, null, sentenceRequirement, null);
 
             String sanitizedPhonetic = Util.sanitizePhonetic(lastAiResult.phonetic);
             word.setBritishPronounce(sanitizedPhonetic);
             word.setAmericaPronounce(sanitizedPhonetic);
             word.setPronounce(sanitizedPhonetic);
-            
-            try {
-                wordBo.createEntity(word);
-                stats.addedWordCount++;
-                stats.addedAudioCount++; // 统计单词发音资源
-
-                // 新增单词全局可见，必须为客户端插入一条系统同步日志
-                WordDto wordDto = new WordDto();
-                org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
-                sysDbSyncBo.logOperation(wordDto, "INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
-                stats.addSyncLog("INSERT", "word");
-            } catch (Exception e) {
-                // 可能是由于并发竞态冲突（唯一约束异常）
-                Throwable cause = e;
-                boolean isDup = false;
-                while (cause != null) {
-                    if (cause.toString().contains("duplicate key") || 
-                        cause.toString().contains("DuplicateKey") || 
-                        cause.toString().contains("unique constraint")) {
-                        isDup = true;
-                        break;
-                    }
-                    cause = cause.getCause();
-                }
-                
-                if (isDup) {
-                    logger.info("检测到并发导入冲突，单词 [" + spell + "] 刚才已被其它任务线程写入，执行降级查询。");
-                    word = wordBo.getWordBySpell(spell);
-                    if (word == null) {
-                        throw e;
-                    }
-                } else {
-                    throw e;
-                }
-            }
         }
 
-        if (word == null) {
-            throw new RuntimeException("无法获取或创建单词对象: " + spell);
-        }
-
-        synchronized (commonDictLock) {
-            // 通过数据库行级排他锁锁定通用兜底词典记录，确保跨事务并发时单调递增发号，彻底杜绝序号重复竞态
-            dictBo.lockDictForUpdate(Constants.COMMON_DICT_ID);
-
-            // 无论单词是刚创建的还是已存在的，都必须确保它被通用兜底词书（ID="0"）收录，以免触发数据不一致健康警告
-            DictWord dw0Check = dictWordBo.findById(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
-            if (dw0Check == null) {
-                DictWord dw0 = new DictWord();
-                dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
-                Dict commonDict = new Dict();
-                commonDict.setId(Constants.COMMON_DICT_ID);
-                dw0.setDict(commonDict);
-                dw0.setWord(word);
-                dw0.setSeq(dictWordBo.getMaxSeqNo(commonDict) + 1);
-                dw0.setCreateTime(new Date());
-                
-                // 使用 try-catch 忽略数据库层面的唯一键冲突，确保幂等性
-                try {
-                    dictWordBo.createEntity(dw0);
-                    
-                    // 只有成功插入后，才记录日志和递增计数
-                    beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
-                    dwDto.setDictId(Constants.COMMON_DICT_ID);
-                    dwDto.setWordId(word.getId());
-                    dwDto.setSeq(dw0.getSeq());
-                    dwDto.setUnit(0);
-                    dwDto.setCreateTime(dw0.getCreateTime());
-                    sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
-                    stats.addSyncLog("INSERT", "dict_word");
-
-                    // 原子递增 "0" 词书的 wordCount
-                    dictBo.incrementWordCount(Constants.COMMON_DICT_ID);
-                } catch (Exception e) {
-                    // 如果由于并发导致插入失败（已存在），则忽略，不需要重复记录日志和递增
-                    logger.debug("单词已存在于通用词典，跳过重复插入: " + spell);
-                }
-            }
-        }
-
-
-            // 同样必须同步 dict 表的变更
-            Dict dict0 = dictBo.findById(Constants.COMMON_DICT_ID);
-            if (dict0 != null) {
-                if (dict0.getOwner() == null) {
-                    User sysUser = new User();
-                    sysUser.setId(Constants.SYS_USER_SYS_ID);
-                    dict0.setOwner(sysUser);
-                }
-                if (dict0.getName() == null) {
-                    dict0.setName("通用词典.dict");
-                }
-                // 已移除：sysDbSyncBo.logOperation(dict0, "UPDATE", "dict", Constants.COMMON_DICT_ID, ...)
-                // 为了减少日志量，通用词库的 UPDATE 日志已移至 executeImportTask 任务结束时统一记录一次
-                stats.addSyncLog("UPDATE", "dict");
-            }
-
-
-        List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId);
-        boolean isPrivateReusing = false;
-
-        // 对于私有词典：如果当前词典已经有该词的资源，直接跳过生成，实现一致性和防重复
-        if (!isSystemDict && !isNewWord && !existingMeaningsInDict.isEmpty()) {
-            logger.info("单词 {} 在私人词典 {} 中已存在资源，直接重用（跳过生成）", spell, dictId);
-            stats.skippedCount++;
-            stats.wordDetails.add(new WordDetail(spell, "REUSED", null, null));
-            isPrivateReusing = true;
-        }
-
-        // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音(旧版无后缀 + 英音/美音双轨)
+        // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音(网络IO，无事务)
         try {
             String pureSpell = Utils.uniformSpellForFilename(spell);
             if (pureSpell.length() > 0) {
@@ -695,45 +718,54 @@ public class DictImportBo {
             logger.error("生成单词发音失败: " + spell, e);
         }
 
-        // 获取该词在所有词典中的现有释义（为了给 AI 提供上下文参考）
-        List<MeaningItemDto> allExistingMeanings = meaningItemBo.findMeaningsByWord(word.getId());
-        String contextMeanings = allExistingMeanings.stream()
-                .map(m -> (m.getCiXing() != null ? m.getCiXing() : "") + " " + m.getMeaning())
-                .collect(java.util.stream.Collectors.joining("; "));
+        List<MeaningItemDto> existingMeaningsInDict = (!isNewWord && word != null && dictId != null)
+                ? meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId)
+                : Collections.emptyList();
+        boolean isPrivateReusing = false;
 
-
-
+        // 对于私有词典：如果当前词典已经有该词的资源，直接跳过生成，实现一致性和防重复
+        if (!isSystemDict && !isNewWord && !existingMeaningsInDict.isEmpty()) {
+            logger.info("单词 {} 在私人词典 {} 中已存在资源，直接重用（跳过生成）", spell, dictId);
+            stats.skippedCount++;
+            stats.wordDetails.add(new WordDetail(spell, "REUSED", null, null));
+            isPrivateReusing = true;
+        }
 
         if (canceledTaskIds.contains(taskId)) {
             return;
         }
 
+        List<ExtrinsicResourcePlan> resourcePlans = new ArrayList<>();
         if (!isPrivateReusing) {
-            boolean hasDomain = (domain != null && !domain.trim().isEmpty());
+            List<MeaningItemDto> allExistingMeanings = (!isNewWord && word != null)
+                    ? meaningItemBo.findMeaningsByWord(word.getId())
+                    : Collections.emptyList();
+            String contextMeanings = allExistingMeanings.stream()
+                    .map(m -> (m.getCiXing() != null ? m.getCiXing() : "") + " " + m.getMeaning())
+                    .collect(java.util.stream.Collectors.joining("; "));
 
+            boolean hasDomain = (domain != null && !domain.trim().isEmpty());
             String aiContext = hasDomain ? domain : null;
 
             if (manualMeaning != null) {
                 // 无论是否为系统词书，只要提供了 manualMeaning，其在目标 dictId 中应具有最高优先级
                 lastAiResult = getAiResult(spell, manualMeaning, contextMeanings, generateWordImage, aiContext, sentenceRequirement, meaningRequirement);
-                saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, preferredVoices, voiceRequirement, stats);
+                resourcePlans.add(new ExtrinsicResourcePlan(lastAiResult, user.getId(), dictId));
 
                 // 如果是系统导入，除目标词书外，还要维护通用的“托底”一致性
                 if (isSystemDict) {
                     boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
                     if (!hasCommonMeaning) {
-                        // 托底释义保持通用，不强制使用 manualMeaning，以保留通用词库的全面性
                         AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null, sentenceRequirement, null);
-                        saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, preferredVoices, voiceRequirement, stats);
+                        resourcePlans.add(new ExtrinsicResourcePlan(genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID));
                     }
                 }
             } else if (isSystemDict) {
-                // 系统词书，实现绝对一致性状态：无论何时导入，都存在对应的补充内容（按需生成）
-                // 1. 确保通用词库("0")有该词的基础托底释放
+                // 1. 确保通用词库("0")有该词的基础托底释义
                 boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
                 if (!hasCommonMeaning) {
                     AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null, sentenceRequirement, null);
-                    saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, preferredVoices, voiceRequirement, stats);
+                    resourcePlans.add(new ExtrinsicResourcePlan(genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID));
                     lastAiResult = genericAiResult;
                 }
 
@@ -742,68 +774,29 @@ public class DictImportBo {
                     boolean hasSpecializedMeaning = allExistingMeanings.stream().anyMatch(m -> dictId.equals(m.getDictId()));
                     if (!hasSpecializedMeaning) {
                         AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext, sentenceRequirement, meaningRequirement);
-                        saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, preferredVoices, voiceRequirement, stats);
+                        resourcePlans.add(new ExtrinsicResourcePlan(specializedAiResult, Constants.SYS_USER_SYS_ID, dictId));
                         lastAiResult = specializedAiResult;
                     }
                 }
             } else {
                 // 用户导入 (且 manualMeaning 为空)
                 lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext, sentenceRequirement, meaningRequirement);
-                saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, preferredVoices, voiceRequirement, stats);
+                resourcePlans.add(new ExtrinsicResourcePlan(lastAiResult, user.getId(), dictId));
             }
         }
-
-        // 维护词书与单词关系
-        if (dictId != null) {
-            Dict dict = new Dict();
-            dict.setId(dictId);
-            if (dictWordBo.findById(new beidanci.service.po.DictWordId(dictId, word.getId())) == null) {
-                DictWord dw = new DictWord();
-                dw.setId(new beidanci.service.po.DictWordId(dictId, word.getId()));
-                dw.setDict(dict);
-                dw.setWord(word);
-                dw.setUnit(unit);
-                dw.setSeq(dictWordBo.getMaxSeqNo(dict) + 1);
-                dw.setCreateTime(new Date());
-                
-                try {
-                    dictWordBo.createEntity(dw);
-                    stats.addedDictWordCount++;
-                    
-                    // 更新词书单词计数
-                    Dict dictToUpdate = dictBo.findById(dictId);
-                    if (dictToUpdate != null) {
-                        dictToUpdate.setWordCount(dictToUpdate.getWordCount() + 1);
-                        dictBo.updateEntity(dictToUpdate);
-                    }
-                } catch (Exception e) {
-                    // 再次检查异常类型，如果是唯一键冲突，属于可接受的并发竞态，跳过即可
-                    Throwable cause = e;
-                    boolean isDup = false;
-                    while (cause != null) {
-                        if (cause.toString().contains("duplicate key") || 
-                            cause.toString().contains("DuplicateKey") || 
-                            cause.toString().contains("unique constraint")) {
-                            isDup = true;
-                            break;
-                        }
-                        cause = cause.getCause();
-                    }
-                    if (isDup) {
-                        logger.warn("向词书 [{}] 导入单词 [{}] 时遭遇并发冲突，该映射记录已存在，跳过本次写入。", dictId, word.getSpell());
-                    } else {
-                        throw e; // 如果是其他数据库错误，依然严格抛出，绝不姑息！
-                    }
-                }
-            }
-        }
-
 
         if (canceledTaskIds.contains(taskId)) {
             return;
         }
 
-        // ----- 生成单词卡通配图 -----
+        // 调用原子短事务方法保存所有实体与同步日志 (耗时仅 1-2ms，杜绝长事务锁竞争)
+        word = self.persistWordData(word, isNewWord, resourcePlans, dictId, unit, preferredVoices, voiceRequirement, stats);
+
+        if (canceledTaskIds.contains(taskId)) {
+            return;
+        }
+
+        // ----- 生成单词卡通配图 (网络与磁盘IO，移出事务) -----
         if (generateWordImage && lastAiResult != null && lastAiResult.imagePrompts != null && !lastAiResult.imagePrompts.isEmpty()) {
             String pureSpell = Utils.uniformSpellForFilename(spell);
             for (int i = 0; i < Math.min(2, lastAiResult.imagePrompts.size()); i++) {
@@ -817,13 +810,13 @@ public class DictImportBo {
                             wordImgDir.mkdirs();
                         }
                         File destFile = new File(wordImgDir, fileName);
-                        
+
                         OkHttpClient client = new OkHttpClient.Builder()
                                 .connectTimeout(Duration.ofSeconds(10))
                                 .readTimeout(Duration.ofSeconds(60))
                                 .build();
                         Request request = new Request.Builder().url(imgUrl).build();
-                        
+
                         try (okhttp3.Response response = client.newCall(request).execute()) {
                             if (response.isSuccessful() && response.body() != null) {
                                 File tempFile = new File(wordImgDir, fileName + ".tmp");
@@ -835,7 +828,7 @@ public class DictImportBo {
                                         fos.write(buffer, 0, bytesRead);
                                     }
                                 }
-                                
+
                                 // 压缩图片，将其缩放至不大于 512x512（保持纵横比），使用 JPEG 压缩存储
                                 beidanci.service.util.MyImage.resizeImage(tempFile, destFile, 512, 512, "JPEG", true);
                                 tempFile.delete();
@@ -857,7 +850,7 @@ public class DictImportBo {
                 }
             }
         }
-        
+
         stats.wordDetails.add(new WordDetail(spell, actionType, null, lastAiResult));
     }
 

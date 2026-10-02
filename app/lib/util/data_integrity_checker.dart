@@ -775,7 +775,9 @@ class DataIntegrityChecker {
             final response = await Api.client.getFallbackWordsData(jsonStr);
             if (response.success && response.data != null) {
               final data = response.data!.data;
+              int cleanedCount = 0;
               int mCount = 0, sCount = 0;
+              final healedWordIds = <String>{};
 
               await _db.transaction(() async {
                 // 恢复 MeaningItem
@@ -785,6 +787,9 @@ class DataIntegrityChecker {
                   final m = MeaningItem.fromJson(mMap);
                   await _db.meaningItemsDao.insertEntity(m, false);
                   mCount++;
+                  if (m.wordId.isNotEmpty) {
+                    healedWordIds.add(m.wordId);
+                  }
                 }
 
                 // 恢复 Sentence
@@ -795,8 +800,31 @@ class DataIntegrityChecker {
                   await _db.sentencesDao.insertEntity(s);
                   sCount++;
                 }
+
+                // 物理清理云端确认不存在/无任何数据的幽灵单词
+                for (final wordId in missingWordIds) {
+                  if (!healedWordIds.contains(wordId)) {
+                    await (_db.dictWordsDao.delete(_db.dictWords)
+                          ..where((dw) => dw.dictId.equals(Global.commonDictId) & dw.wordId.equals(wordId)))
+                        .go();
+                    // 若无其他词典引用且无学习进度，一并清理 words 孤儿记录
+                    final otherRefs = await (_db.dictWordsDao.select(_db.dictWords)
+                          ..where((dw) => dw.wordId.equals(wordId)))
+                        .get();
+                    if (otherRefs.isEmpty) {
+                      await (_db.wordsDao.delete(_db.words)..where((w) => w.id.equals(wordId))).go();
+                    }
+                    cleanedCount++;
+                    Global.logger.i('💡 [修复] 已物理清理本地幽灵孤儿单词: $wordId');
+                  }
+                }
               });
-              fixResult.addFixed('成功靶向缝合了 ${missingWordIds.length} 个通用词典缺失单词的释义数据！(包含 $mCount 条释义，$sCount 条例句)');
+              if (mCount > 0) {
+                fixResult.addFixed('成功靶向缝合了 ${healedWordIds.length} 个通用词典缺失单词的释义数据！(包含 $mCount 条释义，$sCount 条例句)');
+              }
+              if (cleanedCount > 0) {
+                fixResult.addFixed('成功清理了 $cleanedCount 个云端已不存在的历史幽灵残留单词！');
+              }
             } else {
               fixResult.addError('请求云端补全通用词典释义数据失败: ${response.msg}');
             }

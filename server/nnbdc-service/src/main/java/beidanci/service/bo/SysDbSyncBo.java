@@ -65,14 +65,14 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     }
 
     /**
-     * 记录系统数据操作日志 (独立短事务，即拿即放，杜绝与外部业务长事务锁冲突)
+     * 记录系统数据操作日志 (参与调用方当前事务，与业务数据同生共死，回滚时同步日志一并回滚，彻底杜绝幽灵日志)
      * 
      * @param operate  操作类型：INSERT/UPDATE/DELETE
      * @param table    表名：word_image/sentence/word_shortdesc_chinese
      * @param recordId 记录ID
      * @param record   记录内容（JSON格式）
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = Throwable.class)
     public void logOperation(String operate, String table, String recordId, String record) {
         // 断言：核心参数不能为空，且在 INSERT/UPDATE 时 record JSON 不能为空
         Assert.hasText(operate, "SysDbSync: operate must not be blank");
@@ -172,11 +172,11 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     }
 
     /**
-     * 批量记录系统数据操作日志 (独立短事务)
+     * 批量记录系统数据操作日志 (参与调用方当前事务)
      * 
      * @param logs 待记录的日志DTO列表
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = Throwable.class)
     public void logOperations(List<SysDbLogDto> logs) {
         if (logs == null || logs.isEmpty()) {
             return;
