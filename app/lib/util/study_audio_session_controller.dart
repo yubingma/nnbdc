@@ -120,10 +120,15 @@ class StudyAudioSessionController {
   Future<void> _pendingCleanup = Future.value();
 
   /// 登记一个「下一次播放前必须完成」的清理任务。
-  /// 调用方无需 await，转场可立即进行；播放侧会在 [transitTo] 前自动串行等待。
+  /// 调用方无需 await，转场可立即进行；播放侧会在进入播放队列保护时自动串行等待。
   void scheduleCleanupBeforeNextPlayback(Future<void> cleanup) {
-    _pendingCleanup = cleanup;
+    _pendingCleanup = cleanup.whenComplete(() {
+      _pendingCleanup = Future.value();
+    });
   }
+
+  @visibleForTesting
+  Future<void> get pendingCleanupForTesting => _pendingCleanup;
 
   @visibleForTesting
   Timer? get idleTimerForTesting => _idleTimer;
@@ -347,6 +352,7 @@ class StudyAudioSessionController {
       interruptPlayback();
     }
     return _queueLock.protect(() async {
+      await _pendingCleanup;
       _unsubscribeMeter();
       final shouldKeepRecordCategory = keepMicrophoneWarm &&
           _currentSessionCategory == 'playAndRecord';
@@ -367,6 +373,7 @@ class StudyAudioSessionController {
       interruptPlayback();
     }
     return _queueLock.protect(() async {
+      await _pendingCleanup;
       _unsubscribeMeter();
       final shouldKeepRecordCategory = keepMicrophoneWarm &&
           _currentSessionCategory == 'playAndRecord';
@@ -386,6 +393,7 @@ class StudyAudioSessionController {
       interruptPlayback();
     }
     return _queueLock.protect(() async {
+      await _pendingCleanup;
       final player = SoundUtil.createAudioPlayer();
       _currentWordSoundPlayer = player;
       _watchPlayer(player);
@@ -416,6 +424,7 @@ class StudyAudioSessionController {
       'isSpeakMode=$isSpeakMode'
     );
     return _queueLock.protect(() async {
+      await _pendingCleanup;
       if (!playWord && !playSentence) return;
       _unsubscribeMeter();
 

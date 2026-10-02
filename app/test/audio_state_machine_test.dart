@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/util/study_audio_session_controller.dart';
@@ -18,6 +19,21 @@ void main() {
 
     test('protect 中一个任务失败不影响后续任务', () async {
       // 这是代码审查级别的验证，不需要运行时测试
+    });
+
+    test('scheduleCleanupBeforeNextPlayback 串行保障与完成自动复位', () async {
+      final controller = StudyAudioSessionController.instance;
+      var cleanupDone = false;
+      final completer = Completer<void>();
+
+      controller.scheduleCleanupBeforeNextPlayback(
+        completer.future.then((_) => cleanupDone = true),
+      );
+
+      expect(cleanupDone, isFalse);
+      completer.complete();
+      await controller.pendingCleanupForTesting;
+      expect(cleanupDone, isTrue);
     });
   });
 
