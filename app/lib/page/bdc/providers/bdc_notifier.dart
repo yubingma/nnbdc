@@ -161,6 +161,7 @@ class BdcNotifier extends _$BdcNotifier {
   BdcState build() {
     asr = ref.watch(asrProvider);
     StudyAudioSessionController.instance.registerNotifier(this);
+    StudyAudioSessionController.instance.keepMicrophoneWarm = true;
     
     // Initialize args
     final argsJson = Prefs.read<String>("BdcPageArgs");
