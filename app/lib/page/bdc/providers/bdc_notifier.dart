@@ -3000,6 +3000,8 @@ class BdcNotifier extends _$BdcNotifier {
     if (_isDisposed) return;
     final stopwatch = Stopwatch()..start();
     final studyConfig = StudyConfig.fromCurrentUser();
+    final capturedToken = _playToken;
+    final capturedWordId = state.word?.id;
     
     debugPrint('🕵️ [AudioDiag] playWordAndFirstSentence.enter | forcePlayWord=$forcePlayWord startAsrWhenFinish=$startAsrWhenFinish word=${state.word?.spell}');
 
@@ -3028,6 +3030,13 @@ class BdcNotifier extends _$BdcNotifier {
           isSpeakMode: startAsrWhenFinish && _shouldShowSpeakTab && state.tabIndex == 0,
         );
       }
+    }
+
+    // 若播放期间发生切词、作答提交或页面离开，旧词的后续清理与开麦流程全部作废，
+    // 避免旧词残存的 ASR 就绪提示音漏入新词，导致叠音与声波震颤（颤音）。
+    if (_playToken != capturedToken || _isDisposed || state.word?.id != capturedWordId) {
+      debugPrint('⚡ [AudioDiag] 播放结束后检测到单词已流转 (token或wordId变化)，放弃自动衔接 ASR');
+      return;
     }
 
     _isSoundPlayingOrPending = false; // 播音已结束，释放状态保护
