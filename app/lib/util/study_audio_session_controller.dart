@@ -314,6 +314,7 @@ class StudyAudioSessionController {
         _audioPlayer.stop();
       }
     } catch (_) {}
+    unawaited(_tts.stop());
   }
 
   /// 正在发声的单词发音播放器（"按拼写播放"用的是独立一次性播放器，不掐断它就无法真正静音）
@@ -582,6 +583,9 @@ class StudyAudioSessionController {
       }
       await _audioPlayer.seek(Duration.zero).timeout(const Duration(milliseconds: 500));
       _logPlayerState('cancelPlayback.afterStop');
+    } catch (_) {}
+    try {
+      await _tts.stop().timeout(const Duration(milliseconds: 500));
     } catch (_) {}
   }
 

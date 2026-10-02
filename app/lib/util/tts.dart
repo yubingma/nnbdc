@@ -13,8 +13,9 @@ class Tts {
   bool initialized = false;
   final completedUtterances = <String>{};
   
-  // 引入异步锁，确保串行执行
-  Future? _activeSpeakFuture;
+  // 抢占代际标记与状态
+  int _currentGeneration = 0;
+  Future<void>? _activeSpeakFuture;
   bool _isSpeaking = false;
   bool _stopRequested = false;
 
@@ -72,30 +73,48 @@ class Tts {
     }
   }
 
+  /// 播放文本语音。
+  /// 采用抢占式设计：新发音请求会立即打断并丢弃上一条发音，杜绝串行排队。
   Future<void> speak(String text) async {
     if (!PlatformUtils.isTtsSupported() || text.trim().isEmpty) {
       return;
     }
 
-    _stopRequested = false; // 每次新的 speak 开始前，重置停止请求标记
+    final generation = ++_currentGeneration;
 
-    // 等待上一个播放任务结束 (简单的 Mutex 实现)
-    while (_activeSpeakFuture != null) {
-      await _activeSpeakFuture;
+    // 抢占停止前一个发音
+    if (_isSpeaking || _activeSpeakFuture != null) {
+      _stopRequested = true;
+      try {
+        await methodChannel.invokeMethod('stop');
+      } catch (_) {}
+      if (_activeSpeakFuture != null) {
+        try {
+          await _activeSpeakFuture;
+        } catch (_) {}
+      }
     }
 
-    Completer completer = Completer();
+    // 若在停止/等待期间产生了更新的 speak，本请求被抢占，直接作废
+    if (generation != _currentGeneration) {
+      return;
+    }
+
+    _stopRequested = false;
+    final completer = Completer<void>();
     _activeSpeakFuture = completer.future;
 
     try {
-      await _doSpeak(text);
+      await _doSpeak(text, generation);
     } finally {
-      _activeSpeakFuture = null;
+      if (_activeSpeakFuture == completer.future) {
+        _activeSpeakFuture = null;
+      }
       completer.complete();
     }
   }
 
-  Future<void> _doSpeak(String text) async {
+  Future<void> _doSpeak(String text, int generation) async {
     // 自动判断语言
     String language = _detectLanguage(text);
     Global.logger.d('TTS _doSpeak: $text, language: $language');
@@ -105,11 +124,18 @@ class Tts {
       var uuid = const Uuid();
       final utteranceId = uuid.v4();
       
-      // 调整估算语速，更接近真实水平 (中文 4.5 字/秒, 英文 3.5 词/秒)
-      double charsPerSecond = language == 'zh-CN' ? 4.5 : 3.5;
-      int estimatedDurationMs = (text.length / charsPerSecond * 1000).round();
-      // 兜底保护时间：如果没收到事件，最多等估算时间的 1.5 倍
-      int fallbackDurationMs = (estimatedDurationMs * 1.5).round().clamp(1000, 15000);
+      // 合理估算语速与保护时长
+      int estimatedDurationMs;
+      if (language == 'zh-CN') {
+        // 中文约 4.5 字/秒，加上前后各 100ms 缓冲
+        estimatedDurationMs = (text.length / 4.5 * 1000).round() + 200;
+      } else {
+        // 英文按词数估算 (平均约 2.8 词/秒，每词约 350ms，加 200ms 首尾缓冲)
+        final words = text.trim().split(RegExp(r'\s+')).length;
+        estimatedDurationMs = (words * 350) + 200;
+      }
+      // 兜底保护时间：如果没收到原生完成事件，最多等估算时间的 1.5 倍
+      int fallbackDurationMs = (estimatedDurationMs * 1.5).round().clamp(800, 15000);
       
       final startTime = DateTime.now();
       await methodChannel.invokeMethod('speak', {'text': text, 'utteranceId': utteranceId, 'language': language});
@@ -122,8 +148,9 @@ class Tts {
       Global.logger.d('TTS 开始等待完成: $utteranceId, 估算时长: ${estimatedDurationMs}ms, 兜底时长: ${fallbackDurationMs}ms');
 
       while (attempts < maxAttempts) {
-        if (_stopRequested) {
-          Global.logger.d('TTS 收到停止请求，中断等待循环: $utteranceId');
+        // 关键：检测到停止请求或已被更新的发音抢占，立即终止等待循环
+        if (_stopRequested || generation != _currentGeneration) {
+          Global.logger.d('TTS 收到停止或抢占请求，中断等待循环: $utteranceId');
           break;
         }
 
@@ -135,9 +162,9 @@ class Tts {
         // 1. 优先信任完成事件：一旦收到事件，稍微缓冲一下即退出
         if (completedUtterances.contains(utteranceId)) {
           // 额外等待一个极短的时间，确保硬件缓冲区播放完毕
-          await Future.delayed(const Duration(milliseconds: 100));
-          debugPrint('🗣️ [AudioDiag] TTS完成(事件): id=$utteranceId, 实际=${elapsedMs + 100}ms');
-          Global.logger.d('TTS 播放完成事件触发: $utteranceId, 实际耗时: ${elapsedMs + 100}ms');
+          await Future.delayed(const Duration(milliseconds: 60));
+          debugPrint('🗣️ [AudioDiag] TTS完成(事件): id=$utteranceId, 实际=${elapsedMs + 60}ms');
+          Global.logger.d('TTS 播放完成事件触发: $utteranceId, 实际耗时: ${elapsedMs + 60}ms');
           break;
         }
 
@@ -160,7 +187,9 @@ class Tts {
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: 'TTS异常', showToast: false);
     } finally {
-      _isSpeaking = false;
+      if (generation == _currentGeneration) {
+        _isSpeaking = false;
+      }
     }
   }
 
@@ -174,17 +203,18 @@ class Tts {
     }
   }
 
+  /// 立即停止当前正在播放的声音，并使任何等待/排队中的发音失效。
   Future<void> stop() async {
-    // 在 Android 和 iOS 平台上使用 TTS，Web 不支持
-    if (!PlatformUtils.isAndroid && !PlatformUtils.isIOS) {
+    _currentGeneration++;
+    _stopRequested = true;
+    _isSpeaking = false;
+
+    if (!PlatformUtils.isTtsSupported()) {
       return;
     }
 
-    _stopRequested = true; // 设置停止标记，中断正在执行的 _doSpeak 循环
-
     try {
       await methodChannel.invokeMethod('stop');
-      _isSpeaking = false;
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace,
           logPrefix: 'TTS停止异常', showToast: false);

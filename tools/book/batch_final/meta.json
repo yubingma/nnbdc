@@ -1,0 +1,727 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "books": [
+    {
+      "fileName": "剑桥雅思词汇精典_20261002_114726.txt",
+      "dictName": "剑桥雅思词汇精典",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "朗文3000常用交流词汇_20261002_122206.txt",
+      "dictName": "朗文3000常用交流词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2055",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "美国当代语料库 5000_20261002_122753.txt",
+      "dictName": "美国当代语料库 5000",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "美国当代语料库 10000_20261002_123344.txt",
+      "dictName": "美国当代语料库 10000",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "美国当代语料库 15000_20261002_123937.txt",
+      "dictName": "美国当代语料库 15000",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "全国等级考试词汇必备第一级_20261002_124218.txt",
+      "dictName": "全国等级考试词汇必备第一级",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "全国等级考试词汇必备第二级_20261002_124458.txt",
+      "dictName": "全国等级考试词汇必备第二级",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "全国等级考试词汇必备第三级_20261002_124741.txt",
+      "dictName": "全国等级考试词汇必备第三级",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "全国等级考试词汇必备第四级_20261002_125026.txt",
+      "dictName": "全国等级考试词汇必备第四级",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "全国等级考试词汇必备第五级_20261002_125315.txt",
+      "dictName": "全国等级考试词汇必备第五级",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2056",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "MBA词汇正序版_20261002_125600.txt",
+      "dictName": "MBA词汇正序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2054",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "BEC初级词汇精选（乱序版）_20261002_125931.txt",
+      "dictName": "BEC初级词汇精选（乱序版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2053",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "BEC中级词汇精选（乱序版）_20261002_130255.txt",
+      "dictName": "BEC中级词汇精选（乱序版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2053",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "BEC高级词汇精选（乱序版）_20261002_130627.txt",
+      "dictName": "BEC高级词汇精选（乱序版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2053",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "BEC词汇乱序版_20261002_130941.txt",
+      "dictName": "BEC词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2053",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "BEC初级词汇精选_20261002_131254.txt",
+      "dictName": "BEC初级词汇精选",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2053",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "BEC高级词汇精选_20261002_131606.txt",
+      "dictName": "BEC高级词汇精选",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2053",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "FCE核心词 巧记速练_20261002_131852.txt",
+      "dictName": "FCE核心词 巧记速练",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2057",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "The Oxford 3000 - American_20261002_132135.txt",
+      "dictName": "The Oxford 3000 - American",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2058",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "The Oxford 5000 - American_20261002_132421.txt",
+      "dictName": "The Oxford 5000 - American",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2058",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "The Oxford 5000 - English_20261002_132707.txt",
+      "dictName": "The Oxford 5000 - English",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2058",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "词汇进阶 BASIC_20261002_132954.txt",
+      "dictName": "词汇进阶 BASIC",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2059",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "词汇进阶 12000_20261002_133538.txt",
+      "dictName": "词汇进阶 12000",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2059",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "剑桥国际英语教程1_20261002_133821.txt",
+      "dictName": "剑桥国际英语教程1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2060",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "突破英文词汇5000（新版）_20261002_134356.txt",
+      "dictName": "突破英文词汇5000（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2061",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "突破英文词汇10000_20261002_134945.txt",
+      "dictName": "突破英文词汇10000",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100601d7434a978f89e13a401c2061",
+      "targetGameHallIds": [
+        "7"
+      ]
+    },
+    {
+      "fileName": "2027蝶变单词详解巧记高中英语词汇_20261002_115016.txt",
+      "dictName": "2027蝶变单词详解巧记高中英语词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2021",
+      "targetGameHallIds": [
+        "8"
+      ]
+    },
+    {
+      "fileName": "外研版高中英语必修第一册_20261002_161223.txt",
+      "dictName": "外研版高中英语必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2023",
+      "targetGameHallIds": [
+        "8"
+      ]
+    },
+    {
+      "fileName": "外研版高中英语必修第二册_20261002_161501.txt",
+      "dictName": "外研版高中英语必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2023",
+      "targetGameHallIds": [
+        "8"
+      ]
+    },
+    {
+      "fileName": "2027中考词汇闪过_20261002_120035.txt",
+      "dictName": "2027中考词汇闪过",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2031",
+      "targetGameHallIds": [
+        "2"
+      ]
+    },
+    {
+      "fileName": "仁爱版初中英语九年级上册（新版）_20261002_120309.txt",
+      "dictName": "仁爱版初中英语九年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2033",
+      "targetGameHallIds": [
+        "2"
+      ]
+    },
+    {
+      "fileName": "译林版牛津英语九年级上册（新版）_20261002_120545.txt",
+      "dictName": "译林版牛津英语九年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2035",
+      "targetGameHallIds": [
+        "2"
+      ]
+    },
+    {
+      "fileName": "外研版初中英语九年级上册（新版）_20261002_120853.txt",
+      "dictName": "外研版初中英语九年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2034",
+      "targetGameHallIds": [
+        "2"
+      ]
+    },
+    {
+      "fileName": "沪教版牛津英语九年级上册（新版）_20261002_121131.txt",
+      "dictName": "沪教版牛津英语九年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2036",
+      "targetGameHallIds": [
+        "2"
+      ]
+    },
+    {
+      "fileName": "北师大版初中英语九年级上册（新版）_20261002_121409.txt",
+      "dictName": "北师大版初中英语九年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2038",
+      "targetGameHallIds": [
+        "2"
+      ]
+    },
+    {
+      "fileName": "鲁教版五四学制八年级上册（新版）_20261002_121648.txt",
+      "dictName": "鲁教版五四学制八年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2039",
+      "targetGameHallIds": [
+        "2"
+      ]
+    },
+    {
+      "fileName": "冀教版初中英语九年级上册（新版）_20261002_121926.txt",
+      "dictName": "冀教版初中英语九年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100401d7434a978f89e13a401c2040",
+      "targetGameHallIds": [
+        "2"
+      ]
+    },
+    {
+      "fileName": "2026硕士研究生英语（一）大纲词汇_20261002_135230.txt",
+      "dictName": "2026硕士研究生英语（一）大纲词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "2026硕士研究生英语（二）大纲词汇_20261002_135512.txt",
+      "dictName": "2026硕士研究生英语（二）大纲词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "2027考研英语词汇红宝书_20261002_135815.txt",
+      "dictName": "2027考研英语词汇红宝书",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "2027考研英语词汇红宝书（必考+基础）_20261002_140115.txt",
+      "dictName": "2027考研英语词汇红宝书（必考+基础）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "2027考研英语词汇的逻辑_20261002_161759.txt",
+      "dictName": "2027考研英语词汇的逻辑",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "2027十天搞定考研词汇乱序版_20261002_141103.txt",
+      "dictName": "2027十天搞定考研词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "2027十天搞定考研词汇乱序版（带派生词）_20261002_141409.txt",
+      "dictName": "2027十天搞定考研词汇乱序版（带派生词）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "2026考研词汇背考通（必背词）_20261002_141729.txt",
+      "dictName": "2026考研词汇背考通（必背词）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "黄皮书考研英语一冲刺2200词_20261002_142114.txt",
+      "dictName": "黄皮书考研英语一冲刺2200词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "背词有道 速记考研英语5500词_20261002_142843.txt",
+      "dictName": "背词有道 速记考研英语5500词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "海文考研英语分级词汇记忆宝典_20261002_143238.txt",
+      "dictName": "海文考研英语分级词汇记忆宝典",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "海文考研英语核心词汇随身宝_20261002_143626.txt",
+      "dictName": "海文考研英语核心词汇随身宝",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "王晶婷考研核心3500词速背_20261002_144348.txt",
+      "dictName": "王晶婷考研核心3500词速背",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "蝶变考研英语必备词汇_20261002_144742.txt",
+      "dictName": "蝶变考研英语必备词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "考研词汇词以类记_20261002_145132.txt",
+      "dictName": "考研词汇词以类记",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2001",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "大学英语四级大纲词汇_20261002_145416.txt",
+      "dictName": "大学英语四级大纲词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "四级新大纲词汇表_20261002_145658.txt",
+      "dictName": "四级新大纲词汇表",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "黄皮书四级大纲词汇背诵词典_20261002_150000.txt",
+      "dictName": "黄皮书四级大纲词汇背诵词典",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "恋练有词四级词汇_20261002_150249.txt",
+      "dictName": "恋练有词四级词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "四级词汇闪过_20261002_150545.txt",
+      "dictName": "四级词汇闪过",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "英语四级 你还在背单词吗_20261002_151713.txt",
+      "dictName": "英语四级 你还在背单词吗",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "大雁带你背四级单词_20261002_151129.txt",
+      "dictName": "大雁带你背四级单词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "四级词汇星火式巧记速记_20261002_152012.txt",
+      "dictName": "四级词汇星火式巧记速记",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "星火四级词汇必背乱序版_20261002_152308.txt",
+      "dictName": "星火四级词汇必背乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "四级词汇正序版_20261002_152609.txt",
+      "dictName": "四级词汇正序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "四级词汇乱序版_20261002_152912.txt",
+      "dictName": "四级词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "四级词汇便携版_20261002_153759.txt",
+      "dictName": "四级词汇便携版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "PASS 四级词汇乱序版_20261002_154103.txt",
+      "dictName": "PASS 四级词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "PASS 四级词汇必备_20261002_154403.txt",
+      "dictName": "PASS 四级词汇必备",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "PASS图解速记四级词汇乱序版_20261002_154705.txt",
+      "dictName": "PASS图解速记四级词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "2024年图解速记四级词汇乱序版_20261002_155007.txt",
+      "dictName": "2024年图解速记四级词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "四级词汇分频精讲速记_20261002_155548.txt",
+      "dictName": "四级词汇分频精讲速记",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "思思大王四级一笑而过（白金版）_20261002_155855.txt",
+      "dictName": "思思大王四级一笑而过（白金版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "思思大王四级单词一笑而过_20261002_160151.txt",
+      "dictName": "思思大王四级单词一笑而过",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2002",
+      "targetGameHallIds": [
+        "4"
+      ]
+    },
+    {
+      "fileName": "21天突破英语专4核心词汇_20261002_160431.txt",
+      "dictName": "21天突破英语专四核心词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100101d7434a978f89e13a401c2004",
+      "targetGameHallIds": [
+        "4"
+      ]
+    }
+  ]
+}

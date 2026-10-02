@@ -1,0 +1,848 @@
+0|a
+0|actually
+0|am
+0|are
+0|beautiful
+0|big
+0|birthday
+0|bow
+0|brother
+0|cafeteria
+0|chemistry
+0|city
+0|class
+0|classmate
+0|club
+0|common
+0|cool
+0|exciting
+0|family
+0|famous
+0|friend
+0|friendly
+0|good
+0|here
+0|hobby
+0|hug
+0|interesting
+0|is
+0|love
+0|member
+0|Miss
+0|Mr.
+0|Mrs.
+0|Ms.
+0|name
+0|new
+0|next
+0|nice
+0|now
+0|old
+0|over there
+0|parent
+0|pat
+0|person
+0|really
+0|same
+0|semester
+0|shy
+0|sister
+0|student
+0|teacher
+0|too
+0|university
+0|unusual
+0|vacation
+0|very
+0|year
+0|after
+0|airline
+0|a lot
+0|announcer
+0|answer the phone
+0|around
+0|assist
+0|before
+0|breakfast
+0|build
+0|care for
+0|carpenter
+0|cashier
+0|chef
+0|clothes
+0|company
+0|construction
+0|cook
+0|country
+0|cowboy
+0|dancer
+0|dangerous
+0|department store
+0|design
+0|different
+0|difficult
+0|dinner
+0|director
+0|doctor
+0|drink
+0|during
+0|entertainment business
+0|exactly
+0|fantastic
+0|fisherman
+0|flight attendant
+0|food
+0|full-time
+0|get up
+0|guide
+0|hospital
+0|house
+0|job
+0|late
+0|like
+0|live
+0|lumberjack
+0|music
+0|musician
+0|nurse
+0|office
+0|part-time
+0|passenger
+0|patient
+0|pilot
+0|receptionist
+0|recognize
+0|restaurant
+0|salesperson
+0|schedule
+0|school
+0|sell
+0|serve
+0|server
+0|similar
+0|singer
+0|sleep
+0|snack
+0|start
+0|stay up
+0|study
+0|tour
+0|travel industry
+0|until
+0|usually
+0|wake up
+0|weather report
+0|Web-site designer
+0|worst
+0|almost
+0|attractive
+0|backpack
+0|bag
+0|black
+0|blue
+0|boot
+0|boring
+0|bracelet
+0|brown
+0|buy
+0|cap
+0|CD
+0|cell phone
+0|cent
+0|cheap
+0|clerk
+0|coffee
+0|cost
+0|cotton
+0|cup
+0|customer
+0|dollar
+0|dress
+0|each
+0|earring
+0|else
+0|expensive
+0|flea market
+0|fun
+0|gold
+0|gray
+0|green
+0|happy
+0|help
+0|in-line skate
+0|item
+0|jacket
+0|jealous
+0|jeans
+0|large
+0|leather
+0|light
+0|look
+0|look at
+0|loving
+0|meaning
+0|medium
+0|more
+0|mysterious
+0|necklace
+0|necktie
+0|newspaper
+0|notebook
+0|orange
+0|paperback book
+0|pay
+0|perfect
+0|pink
+0|plastic
+0|polyester
+0|prefer
+0|present
+0|pretty
+0|price
+0|price tag
+0|pure
+0|purple
+0|radio
+0|reasonable
+0|red
+0|right there
+0|ring
+0|rubber
+0|sad
+0|shirt
+0|silk
+0|silver
+0|small
+0|sock
+0|spend
+0|style
+0|stylish
+0|sunglasses
+0|tennis racket
+0|think of
+0|truthful
+0|try on
+0|T-shirt
+0|VCR
+0|warm
+0|watch
+0|white
+0|wool
+0|yellow
+0|actor
+0|actress
+0|cello
+0|classical
+0|concert
+0|date
+0|especially
+0|fan
+0|from ... until
+0|from ... till
+0|game show
+0|gate
+0|go out
+0|gospel
+0|guess
+0|guitar
+0|have to
+0|horror film
+0|jazz
+0|just
+0|know
+0|listen to
+0|match
+0|meet
+0|musical instrument
+0|need
+0|never
+0|news
+0|piano
+0|pop
+0|R&B
+0|rap
+0|rock
+0|salsa
+0|soap opera
+0|sound
+0|stadium
+0|still
+0|talk show
+0|thriller
+0|ticket
+0|tomorrow
+0|video
+0|visit
+0|voice
+0|western
+0|win
+0|with
+0|abroad
+0|adult
+0|a few
+0|age
+0|alone
+0|a lot of
+0|lots of
+0|anyone
+0|aunt
+0|because
+0|between
+0|bus stop
+0|by
+0|by the age of ...
+0|child
+0|college
+0|couple
+0|cousin
+0|dad
+0|daughter
+0|eat
+0|elevator
+0|e-mail
+0|fact
+0|family tree
+0|foreign language
+0|government
+0|grandfather
+0|grandmother
+0|grandparent
+0|husband
+0|lonely
+0|married
+0|marry
+0|mom
+0|money
+0|move
+0|nearly
+0|nephew
+0|niece
+0|only child
+0|people
+0|percent
+0|photographer
+0|project
+0|right now
+0|secret
+0|shopping
+0|single
+0|sister-in-law
+0|son
+0|stand
+0|stuck
+0|television
+0|together
+0|travel
+0|typical
+0|uncle
+0|unmarried
+0|vote
+0|wait
+0|wife
+0|young
+0|aerobics
+0|athlete
+0|average
+0|baseball
+0|basketball
+0|be good at
+0|bicycle
+0|chat
+0|contest
+0|couch potato
+0|draw
+0|enjoy
+0|enter
+0|exercise
+0|fit
+0|fitness freak
+0|football
+0|free time
+0|gym
+0|jogging
+0|karate
+0|keep
+0|lift weights
+0|real
+0|regular
+0|relax
+0|running
+0|sing
+0|soccer
+0|softball
+0|sometime
+0|sometimes
+0|sports fan
+0|swimming
+0|tennis
+0|tip
+0|tired
+0|treadmill
+0|type
+0|volleyball
+0|walking
+0|weight training
+0|work out
+0|yoga
+0|again
+0|amazing
+0|anybody
+0|anything
+0|anywhere
+0|argument
+0|as usual
+0|away
+0|awful
+0|believe
+0|bookstore
+0|bowling
+0|broke
+0|cloudy
+0|cold
+0|dish
+0|downtown
+0|drive
+0|excellent
+0|first of all
+0|fish
+0|foggy
+0|forget
+0|freezing
+0|full
+0|garden
+0|happen
+0|hear
+0|hot
+0|incredible
+0|insect
+0|invite
+0|karaoke
+0|last night
+0|last Saturday
+0|last weekend
+0|laundry
+0|lost
+0|lucky
+0|luggage
+0|make a phone call
+0|neighbor
+0|noise
+0|party
+0|passport
+0|photocopy
+0|plane
+0|rain
+0|rude
+0|service
+0|sick
+0|special
+0|surf
+0|take off
+0|take a day off
+0|terrible
+0|terrific
+0|test
+0|tourist
+0|trip
+0|unfortunately
+0|wave
+0|whole
+0|worry
+0|wrong
+0|advertisement
+0|agree
+0|alarm
+0|amusement park
+0|animal
+0|apartment
+0|aquarium
+0|available
+0|avenue
+0|bank
+0|barber shop
+0|bark
+0|bedroom
+0|behind
+0|botanical garden
+0|campus
+0|choice
+0|cleanliness
+0|close to
+0|clothing store
+0|complaint
+0|convenient
+0|crime
+0|drugstore
+0|dry
+0|everywhere
+0|find
+0|floor
+0|garbage
+0|gas station
+0|grocery store
+0|haircut
+0|hold on
+0|ice-skating rink
+0|in back of
+0|in fact
+0|in front of
+0|Internet cafe
+0|kid
+0|laundromat
+0|library
+0|look for
+0|loud
+0|movie theater
+0|museum
+0|nearby
+0|next to
+0|of course
+0|on the corner of
+0|opposite
+0|parking
+0|pay phone
+0|pet
+0|pollution
+0|post office
+0|privacy
+0|roommate
+0|safe
+0|share
+0|shopping center
+0|skateboard
+0|stationery store
+0|swimming pool
+0|transportation
+0|travel agency
+0|utility
+0|video arcade
+0|wash
+0|yard
+0|youth center
+0|zoo
+0|airport
+0|appearance
+0|bald
+0|beard
+0|blond
+0|boyfriend
+0|casual
+0|centimeter
+0|contact lenses
+0|couch
+0|curly
+0|dark
+0|describe
+0|elderly
+0|fairly
+0|fashion model
+0|funky
+0|girlfriend
+0|glasses
+0|good-looking
+0|gorgeous
+0|handsome
+0|height
+0|length
+0|meter
+0|middle-aged
+0|mustache
+0|quite
+0|serious
+0|short
+0|slim
+0|straight
+0|sweater
+0|tall
+0|wear
+0|window
+0|appointment
+0|awake
+0|busy
+0|camel
+0|cheese
+0|choose
+0|clean
+0|climb
+0|current
+0|curry
+0|decide
+0|dictionary
+0|easygoing
+0|elementary school
+0|engaged
+0|hairstyle
+0|herbal tea
+0|hike
+0|hill
+0|important
+0|key
+0|lately
+0|latest
+0|lifestyle
+0|lose
+0|magazine
+0|recently
+0|ride
+0|riverboat
+0|several
+0|streetcar
+0|take-out
+0|taste
+0|teenager
+0|traffic ticket
+0|truck
+0|valuable
+0|wedding
+0|bargain
+0|beach
+0|crowded
+0|definitely
+0|delicious
+0|efficient
+0|event
+0|extremely
+0|harbor
+0|historical
+0|hometown
+0|however
+0|inexpensive
+0|information
+0|local
+0|maybe
+0|nightclub
+0|noisy
+0|outside
+0|pollute
+0|quiet
+0|recommend
+0|relaxing
+0|rent
+0|scenery
+0|sight
+0|somewhat
+0|souvenir
+0|stressful
+0|subway
+0|summer
+0|supermarket
+0|taxi
+0|though
+0|ugly
+0|visitor
+0|advice
+0|aisle
+0|aspirin
+0|backache
+0|bandage
+0|bath
+0|bottle
+0|breathe
+0|breath mint
+0|burn
+0|can
+0|chicken stock
+0|chop up
+0|concentrate
+0|cough
+0|dentist
+0|deodorant
+0|energy
+0|face cream
+0|faint
+0|fever
+0|flu
+0|garlic
+0|headache
+0|heating pad
+0|helpful
+0|hiccup
+0|homesick
+0|hurt
+0|insomnia
+0|itchy
+0|jar
+0|jet lag
+0|liquid
+0|lotion
+0|mosquito
+0|muscle
+0|ointment
+0|pack
+0|shaving cream
+0|sneeze
+0|sore
+0|soup
+0|stick
+0|stomachache
+0|stressed
+0|suggest
+0|sunburn
+0|throat
+0|tissue
+0|toothache
+0|toothpaste
+0|tube
+0|upset
+0|vitamin
+0|baked
+0|beef
+0|beverage
+0|bland
+0|bread
+0|burrito
+0|cappuccino
+0|chocolate
+0|coffee shop
+0|dessert
+0|dressing
+0|flavor
+0|fresh
+0|fried
+0|greasy
+0|grilled
+0|hamburger
+0|healthy
+0|ice cream
+0|international
+0|kebab
+0|lamb
+0|lemon
+0|lettuce
+0|main dish
+0|mashed
+0|meatball
+0|menu
+0|mixed
+0|mushroom
+0|noodle
+0|omelet
+0|order
+0|pizza
+0|potato
+0|rice
+0|rich
+0|salad
+0|salmon
+0|salty
+0|sandwich
+0|seafood
+0|shrimp
+0|sour
+0|spaghetti
+0|spicy
+0|stir-fried
+0|sushi
+0|sweet
+0|tofu
+0|tomato
+0|tuna
+0|vegetarian
+0|vinaigrette
+0|waiter
+0|waitress
+0|capital
+0|coastline
+0|deep
+0|degree
+0|desert
+0|earth
+0|far
+0|forest
+0|geography
+0|gift
+0|hard
+0|high
+0|island
+0|isolated
+0|kilometer
+0|knowledge
+0|lake
+0|metal
+0|mile
+0|million
+0|mountain
+0|mountainous
+0|ocean
+0|planet
+0|population
+0|quiz
+0|square
+0|valley
+0|volcano
+0|waterfall
+0|wet
+0|winter
+0|world
+0|worse
+0|accept
+0|address
+0|afterward
+0|babysitter
+0|barbecue
+0|cancel
+0|comedy
+0|excuse
+0|gathering
+0|golf
+0|hockey
+0|invitation
+0|meeting
+0|message
+0|on time
+0|overtime
+0|performance
+0|physical
+0|pick up
+0|pick someone up
+0|picnic
+0|practice
+0|puppy
+0|refuse
+0|request
+0|return
+0|roller coaster
+0|spectator
+0|tournament
+0|achieve
+0|anniversary
+0|anymore
+0|not ... anymore
+0|career
+0|clinic
+0|congratulations
+0|credit card
+0|differently
+0|driver's license
+0|dye
+0|fall in love
+0|future
+0|gain
+0|goal
+0|graduate
+0|graduation
+0|hope
+0|improve
+0|less
+0|loan
+0|lottery
+0|outgoing
+0|own
+0|pay off
+0|photo album
+0|private
+0|responsibility
+0|savings account
+0|skill
+0|someday
+0|suburb
+0|successful
+0|vocabulary
+0|weight
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 841
+# Total Entries Extracted: 841
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 841
+# -------------------------------

@@ -1,0 +1,325 @@
+0|energetic
+0|organized
+0|order
+0|keep ... in order
+0|keep ... in good order
+0|explain
+0|come up with
+0|careless
+0|neither
+0|neither ... nor ...
+0|nor
+0|accountant
+0|suppose
+0|social
+0|either ... or ...
+0|impress
+0|imagination
+0|manager
+0|suit
+0|railway
+0|mention
+0|standard
+0|tough
+0|at all times
+0|passenger
+0|personality
+0|winner
+0|outgoing
+0|opposite
+0|kindness
+0|let sb. down
+0|pass sth. on
+0|pass sth. on to sb.
+0|son
+0|remain
+0|confident
+0|likely
+0|negative
+0|study
+0|point
+0|point out
+0|pay off
+0|challenge
+0|succeed
+0|president
+0|position
+0|cooperate
+0|voice
+0|consider
+0|teenage
+0|drive
+0|mad
+0|be in low spirits
+0|lately
+0|decision
+0|patience
+0|stick
+0|stick to
+0|stress
+0|under stress
+0|waste
+0|mobile phone
+0|regret
+0|cut back on sth.
+0|hate
+0|exam
+0|examination
+0|focused
+0|argue
+0|silly
+0|normal
+0|stressed
+0|bottom
+0|dialogue
+0|communicate
+0|dictionary
+0|youth
+0|stage
+0|experience
+0|rapid
+0|mood
+0|ugly
+0|probably
+0|risk
+0|risk sth.
+0|risk doing sth.
+0|go through
+0|unkind
+0|stranger
+0|bully
+0|stand up for sb.
+0|stand up for sth.
+0|screen
+0|bedtime
+0|pain
+0|put up with sb.
+0|put up with sth.
+0|get sb. down
+0|shame
+0|adult
+0|seed
+0|dancer
+0|recognize
+0|recognise
+0|inspire
+0|shortly
+0|take away
+0|muscle
+0|yet
+0|final
+0|universe
+0|scientific
+0|audience
+0|highly
+0|whenever
+0|achievement
+0|will
+0|however
+0|musician
+0|death
+0|shoulder
+0|coach
+0|pretty
+0|knee
+0|cheers
+0|fair
+0|fair play
+0|Irish
+0|gymnast
+0|make it
+0|make it to
+0|performance
+0|runner
+0|semi-final
+0|finishing line
+0|whatever
+0|inspiring
+0|diary
+0|victory
+0|live through sth.
+0|perform
+0|disappoint
+0|self
+0|cactus
+0|lotus
+0|exactly
+0|peanut
+0|unused
+0|pity
+0|dig
+0|dig up
+0|a couple of
+0|celebration
+0|oil
+0|unlike
+0|stem
+0|bear
+0|attractive
+0|compare
+0|judge
+0|hidden
+0|society
+0|purpose
+0|satisfied
+0|boss
+0|take over
+0|wife
+0|dentist
+0|passage
+0|stamp
+0|daughter
+0|over time
+0|digitalize
+0|digitalise
+0|graduate
+0|drop out of school
+0|amazed
+0|research
+0|make up one's mind
+0|musical
+0|instrument
+0|keyboard
+0|bow
+0|guitar
+0|pear-shaped
+0|strength
+0|boundary
+0|composer
+0|unique
+0|gift
+0|familiar
+0|familiar with sth.
+0|flow
+0|gentle
+0|drip
+0|eastern
+0|award
+0|bell
+0|talented
+0|press
+0|concert
+0|country
+0|jazz
+0|rock
+0|cowboy
+0|drum
+0|African American
+0|attend
+0|quick
+0|brain
+0|flute
+0|download
+0|all the time
+0|calligrapher
+0|ink
+0|date back
+0|date back to
+0|bottled
+0|calligraphy
+0|stroke
+0|appear
+0|doorway
+0|writing
+0|still
+0|pleasure
+0|take pleasure in
+0|character
+0|artistic
+0|breath
+0|pressure
+0|under pressure
+0|pride
+0|beautifully
+0|basket
+0|brushwork
+0|similarity
+0|perhaps
+0|sometime
+0|expert
+0|a great deal
+0|the big screen
+0|action
+0|action film
+0|comedy
+0|cartoon
+0|documentary
+0|romance
+0|all-time
+0|actress
+0|humanitarian
+0|ballet
+0|charm
+0|insist
+0|based
+0|based upon
+0|based on
+0|major
+0|mark
+0|princess
+0|radio
+0|discover
+0|cancer
+0|pass away
+0|peacefully
+0|a number of
+0|rush hour
+0|park
+0|mistake
+0|steal
+0|steal the show
+0|supporting
+0|kung fu
+0|actor
+0|handsome
+0|suitable
+0|price
+0|dinosaur
+0|script
+0|scriptwriter
+0|director
+0|film-maker
+0|shoot
+0|editor
+0|bring sb. to life
+0|bring sth. to life
+0|come to life
+0|world-class
+0|wrestler
+0|touching
+0|fighter
+0|elder
+0|classic
+0|short story
+0|take one's time
+0|branch
+0|bedside
+0|anger
+0|make sense
+0|have ... to do with
+0|apartment
+0|masterpiece
+0|fool
+0|actually
+0|widely
+0|run out of
+0|act
+0|unable
+0|enemy
+0|image
+0|lasting
+0|loss
+0|show up
+0|mirror
+0|knock
+0|hurry up
+0|matter
+0|doorbell
+0|ring
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 318
+# Total Entries Extracted: 318
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 318
+# -------------------------------

@@ -73,10 +73,13 @@ class PlatformUtils {
     return englishAsrSupportedOverride ?? asrSupportedOverride ?? (isIOS || isAndroid);
   }
 
+  @visibleForTesting
+  static bool? ttsSupportedOverride;
+
   /// 判断当前平台是否支持TTS（文本转语音）
   /// 目前Android、iOS支持TTS
   static bool isTtsSupported() {
-    return isAndroid || isIOS;
+    return ttsSupportedOverride ?? (isAndroid || isIOS);
   }
 
   /// 测试专用：覆盖卓易通环境判定（null = 自动检测）
