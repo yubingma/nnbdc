@@ -321,6 +321,9 @@ class StudyAudioSessionController {
   /// 中断当前正在进行的发音播放，并清空所有排队中的旧发音任务（用于用户点击新单词时即时抢占）
   void interruptPlayback() {
     _queueLock.cancel();
+    if (PlatformUtils.isIOS) {
+      unawaited(_asr.stopLocalAudio());
+    }
     unawaited(_stopCurrentWordSound());
     try {
       if (_audioPlayer.playing) {
@@ -596,6 +599,9 @@ class StudyAudioSessionController {
   Future<void> cancelPlayback() async {
     _logPlayerState('cancelPlayback.enter');
     _queueLock.cancel();
+    if (PlatformUtils.isIOS) {
+      unawaited(_asr.stopLocalAudio());
+    }
     await _stopCurrentWordSound();
     try {
       final isReallyPlaying = _audioPlayer.playing &&
@@ -926,6 +932,30 @@ class StudyAudioSessionController {
       final loadSw = Stopwatch()..start();
       bool loaded = false;
       final cacheManager = PlatformUtils.isWeb ? null : DefaultCacheManager();
+
+      // iOS 原生短音频专用通道：直接走进程内 AVAudioPlayer，彻底绕过 AVPlayer/mediaplaybackd 跨进程 XPC 与采样率重置爆音
+      if (PlatformUtils.isIOS && !PlatformUtils.isTesting) {
+        FileInfo? fileInfo;
+        try {
+          fileInfo = await cacheManager?.getFileFromCache(soundUrl);
+        } catch (_) {}
+        var localPath = fileInfo?.file.path ?? '';
+        if (localPath.isEmpty && cacheManager != null) {
+          try {
+            final file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+            if (await file.exists() && await file.length() > 200) {
+              localPath = file.path;
+            }
+          } catch (_) {}
+        }
+        if (localPath.isNotEmpty) {
+          final playSw = Stopwatch()..start();
+          await _asr.playLocalAudio(localPath).timeout(Duration(milliseconds: playTimeoutMs));
+          debugPrint('⏱️ [Latency-Sound] iOS 原生 AVAudioPlayer 播放完成，耗时: ${playSw.elapsedMilliseconds}ms');
+          Global.logger.d('🔊 [SessionController] playSoundByUrl 原生直放结束，总逻辑耗时: ${totalSw.elapsedMilliseconds}ms');
+          return;
+        }
+      }
 
       // 1. 尝试从本地缓存加载（带坏缓存自愈：0 字节/损坏文件自动清除）
       Future<bool> tryLoadFromCache(String filePath, String url) async {

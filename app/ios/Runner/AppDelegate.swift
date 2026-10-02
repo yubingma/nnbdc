@@ -8,12 +8,14 @@ import AudioToolbox
 import Accelerate
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, AVAudioPlayerDelegate {
     
     // MARK: - Properties
     
     private var readyHintPlayer: AVAudioPlayer?
     private var lastReadyHintTime: TimeInterval = 0
+    private var localAudioPlayer: AVAudioPlayer?
+    private var localAudioCompletion: FlutterResult?
     
     // ASR 相关属性
     private var speechRecognizer: SFSpeechRecognizer?
@@ -380,6 +382,17 @@ import Accelerate
         case "playReadyHint":
             playReadyHint(result: result)
             
+        case "playLocalAudio":
+            if let args = call.arguments as? [String: Any],
+               let path = args["path"] as? String {
+                playLocalAudio(path: path, result: result)
+            } else {
+                result(FlutterError(code: "INVALID_ARGUMENTS", message: "Missing path", details: nil))
+            }
+            
+        case "stopLocalAudio":
+            stopLocalAudio(result: result)
+            
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -600,6 +613,55 @@ import Accelerate
         result(nil)
     }
     
+    private func playLocalAudio(path: String, result: @escaping FlutterResult) {
+        let url = URL(fileURLWithPath: path)
+        do {
+            if let player = localAudioPlayer, player.isPlaying {
+                player.stop()
+            }
+            localAudioCompletion?(nil)
+            localAudioCompletion = nil
+            
+            localAudioPlayer = try AVAudioPlayer(contentsOf: url)
+            localAudioPlayer?.delegate = self
+            localAudioPlayer?.prepareToPlay()
+            localAudioCompletion = result
+            localAudioPlayer?.play()
+        } catch {
+            print("IOS: [Audio] Failed to play local audio: \(error)")
+            result(FlutterError(code: "PLAY_FAILED", message: error.localizedDescription, details: nil))
+        }
+    }
+
+    private func stopLocalAudio(result: FlutterResult) {
+        if let player = localAudioPlayer, player.isPlaying {
+            player.stop()
+        }
+        localAudioCompletion?(nil)
+        localAudioCompletion = nil
+        result(nil)
+    }
+
+    // MARK: - AVAudioPlayerDelegate
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        if player == localAudioPlayer {
+            localAudioCompletion?(nil)
+            localAudioCompletion = nil
+        }
+    }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        if player == localAudioPlayer {
+            if let error = error {
+                localAudioCompletion?(FlutterError(code: "DECODE_ERROR", message: error.localizedDescription, details: nil))
+            } else {
+                localAudioCompletion?(nil)
+            }
+            localAudioCompletion = nil
+        }
+    }
+    
     // MARK: - Audio Session Management
     
     private func setupAudioSession() {
@@ -631,6 +693,8 @@ import Accelerate
                     options: targetOptions
                 )
             }
+            try audioSession.setPreferredSampleRate(48000.0)
+            try audioSession.setPreferredIOBufferDuration(0.02)
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
             readyHintPlayer?.prepareToPlay()
         } catch {
