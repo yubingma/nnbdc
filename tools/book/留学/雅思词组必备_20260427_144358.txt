@@ -1,0 +1,1273 @@
+0|a big potato
+0|a box office smash
+0|a bunch of
+0|a couple of
+0|a cushion of air
+0|a heavy demand for
+0|a host of
+0|a matter of time
+0|a multitude of
+0|a piece of cake
+0|a range of
+0|a series of
+0|a set of
+0|a shortage of
+0|a slice of
+0|a sort of
+0|a stone's throw away from
+0|a variety of
+0|a vicious circle
+0|a wealth of
+0|academic atmosphere
+0|academic circle
+0|access to
+0|account for
+0|adapt to
+0|add up to
+0|add ... to
+0|adept in
+0|adjacent to
+0|adjust to
+0|adult education
+0|advertising campaign
+0|advice on
+0|aerial photograph
+0|afford to
+0|agree on
+0|agricultural workforce
+0|ahead of time
+0|aim to
+0|air conditioning
+0|all of a sudden
+0|all set
+0|all walks of life
+0|all-talking film
+0|alter the course of one's life
+0|alternative fuel
+0|alternative work
+0|annual fee
+0|annual interest rate
+0|anything but
+0|apart from
+0|appeal to
+0|appear to
+0|application form
+0|apply for
+0|approach to
+0|argue over
+0|arise from
+0|art exhibition
+0|art gallery
+0|as a result
+0|as a result of
+0|as a whole
+0|as far as
+0|as far as I know
+0|as far as sth. is concerned
+0|as I see it
+0|as long as
+0|as much as
+0|as though
+0|as usual
+0|as well as
+0|ask for trouble
+0|assembly line
+0|assist with
+0|at a loss
+0|at a significant cost
+0|at all times
+0|at any time
+0|at least
+0|at one time
+0|at one's service
+0|at risk
+0|at some stage
+0|at the end of
+0|at the expense of
+0|at the moment
+0|at the outset
+0|at the top of
+0|at this stage
+0|at work
+0|attach ... to
+0|attempt to
+0|attitude towards
+0|average salary
+0|baby cot
+0|baggage reclaim
+0|bail out
+0|bank statement
+0|bank transfer
+0|bar graph
+0|bare skin
+0|be absent from
+0|be accompanied by
+0|be addicted to
+0|be against
+0|be alienated from
+0|be allergic to
+0|be around the corner
+0|be associated with
+0|be attached to
+0|be attributed to
+0|be based on
+0|be beneficial to
+0|be best with
+0|be blamed for
+0|be bound for
+0|be bound to
+0|be broken beyond repair
+0|be close to
+0|be closely linked to
+0|be composed of
+0|be concerned about
+0|be concerned with
+0|be confronted with
+0|be confused about
+0|be covered with
+0|be crazy about
+0|be dependent on
+0|be dependent upon
+0|be dotted with
+0|be eligible for
+0|be embossed with
+0|be entitled to
+0|be entitled to do
+0|be equipped with
+0|be expelled from
+0|be familiar with
+0|be fascinated by
+0|be flexible in
+0|be fond of
+0|be fussy about
+0|be going extinct
+0|be good with
+0|be honest with
+0|be ideal for
+0|be impatient with
+0|be in charge of
+0|be in good form
+0|be in good shape
+0|be in good health
+0|be incapacitated with
+0|be incompatible with
+0|be innovative with
+0|be keen on
+0|be likely to do
+0|be located on
+0|be mad about
+0|be mad at
+0|be made into
+0|be made of
+0|be motivated to do
+0|be nervous of
+0|be on speaking terms
+0|be on the safe side
+0|be open to
+0|be opposed to
+0|be packed with
+0|be parallel to
+0|be popular among
+0|be prepared to do
+0|be prone to
+0|be proud of
+0|be relevant to
+0|be removed from
+0|be replaced with
+0|be responsible for
+0|be satisfied with
+0|be shocked to do
+0|be shouted at
+0|be sick with
+0|be stuck on
+0|be suited to
+0|be supposed to do
+0|be taken aback
+0|be taken to court
+0|be teeming with
+0|be told to do
+0|be torn between ... and
+0|be unfamiliar to
+0|be unwilling to do
+0|be vital to
+0|be well off
+0|beauty saloon
+0|bed linen
+0|belong to
+0|bend over
+0|benefit from
+0|best buy
+0|best man
+0|beware of
+0|bid for
+0|blame for
+0|blood pressure
+0|blow up
+0|boarding school
+0|book over the phone
+0|book ... in
+0|book up
+0|boost one's confidence
+0|boost the efficiency of
+0|bother to do
+0|bother with
+0|box office
+0|brand name
+0|break down
+0|break off
+0|break records
+0|break the record
+0|break with
+0|breeze through
+0|bring about
+0|bring along
+0|bring out
+0|bring up
+0|broadband connection
+0|brush up lessons
+0|budget price range
+0|build up
+0|build up one's confidence
+0|bullet point
+0|bump into
+0|burn out
+0|bus route
+0|buy sb. out
+0|by hand
+0|by heart
+0|by installment
+0|by means of
+0|by profession
+0|by the middle of
+0|by the way
+0|call ... out
+0|call slip
+0|cancel one's reservation
+0|capable of doing
+0|car exhaust fume
+0|carry on
+0|carry out
+0|case study
+0|cash the check
+0|cash the cheque
+0|cashpoint machine
+0|cast one's eyes along
+0|catch a glimpse of
+0|catch sb. red handed
+0|cater for
+0|certificate course
+0|change one's mind
+0|charter flight
+0|chase up
+0|chat with
+0|check in
+0|check on
+0|check out
+0|check account
+0|cheque account
+0|cheer ... up
+0|cheering section
+0|church service
+0|civil servant
+0|classical literature
+0|classical music
+0|clean up
+0|clear off
+0|closed reserve
+0|closed stacks
+0|coffee break
+0|come along
+0|come to an end
+0|come to nothing
+0|come true
+0|come up to
+0|come up with
+0|commercial value
+0|commercial bank
+0|merchant bank
+0|commit a crime
+0|common sense
+0|communicate with
+0|compare with
+0|compatible with
+0|compensate for
+0|compete with
+0|complain about
+0|compound apartment
+0|computer literate
+0|concentrate on
+0|concessions for
+0|confine oneself to
+0|confine oneself to doing
+0|confirm a reservation
+0|consist of
+0|contact lenses
+0|contrary to
+0|contribute to
+0|convert into
+0|convince sb. of
+0|cooperate with
+0|cope with
+0|corporate loan
+0|correspondence course
+0|cost sb. an arm and a leg
+0|cough up
+0|counselling service
+0|count on
+0|count towards
+0|course arrangement
+0|course code
+0|course feedback form
+0|cover an area of
+0|cover the cost of
+0|crack down
+0|cramming teaching
+0|credit card
+0|credit point
+0|creep up on
+0|crime rate
+0|cross-country race
+0|culture shock
+0|cup of tea
+0|currency exchange
+0|current account
+0|current affair
+0|curriculum schedule
+0|curriculum vitae
+0|cut down
+0|cut out
+0|dash off
+0|date back to
+0|date of expiry
+0|daytime phone number
+0|dead easy
+0|deal with
+0|death toll
+0|debate on ... with
+0|department store
+0|departmental library
+0|departure lounge
+0|depend on
+0|depend upon
+0|deposit account
+0|deposit money in a bank
+0|descend from
+0|die a death
+0|die out
+0|dip into
+0|diploma course
+0|direct line number
+0|direct flight
+0|non-stop flight
+0|discussion group
+0|dispute against
+0|dispute with
+0|distance education
+0|divide into
+0|divide up
+0|divorce rate
+0|do a face-to-face interview
+0|do a presentation on
+0|do background reading
+0|do further study
+0|do housework
+0|do jogging
+0|do ... a favor
+0|do some trips
+0|do ... on one's own
+0|domestic market
+0|double lock
+0|double unit
+0|double-bed room
+0|draft an outline
+0|draft plan
+0|draw out
+0|draw the line
+0|draw up
+0|dress rehearsal
+0|dressing room
+0|drop down
+0|drop in
+0|drop out of
+0|drop-out rate
+0|dry up
+0|due to
+0|duty-free shop
+0|eager to do
+0|eat out
+0|ecological balance
+0|education system
+0|either ... or
+0|electronic gadget
+0|eligible to do
+0|embark on
+0|embark upon
+0|emphasize on
+0|enable ... to do
+0|end up
+0|end with
+0|endangered species
+0|enjoy a superb reputation
+0|enquire about
+0|enrol on
+0|enrollment fee
+0|enrollment form
+0|entertainment facilities
+0|entertainment industry
+0|even though
+0|every walk of life
+0|evolve into
+0|except for
+0|excess charge
+0|exchange rate
+0|exchange student
+0|expand one's knowledge
+0|expect ... to do
+0|extended family
+0|extensive reading
+0|extra cost
+0|eye contact
+0|face up to
+0|faculty head
+0|fall in love with
+0|fall to
+0|fall upon
+0|fall on
+0|familiarize oneself with
+0|family album
+0|family bonds
+0|family planning policy
+0|family reunion
+0|feel bored with
+0|feel free to do
+0|field research
+0|field trip
+0|fill out
+0|fill ... in
+0|fill ... in on
+0|financial assistance
+0|financial budget
+0|financial circumstance
+0|financial crisis
+0|find it's difficult to do
+0|finish off
+0|fire away
+0|fire exit
+0|first aid
+0|first of all
+0|fix up
+0|flag down
+0|floppy disk
+0|focus on
+0|for instance
+0|for lease
+0|for rent
+0|for one thing
+0|for the sake of
+0|freak out
+0|freeze over
+0|frequency of buses
+0|from the outset
+0|full address
+0|full refund
+0|full-time student
+0|fundamental differences between ... and
+0|further education
+0|gain a reputation for
+0|gear change
+0|gene pool
+0|general practitioner
+0|generally speaking
+0|get a good view of
+0|get a move on
+0|get a refund
+0|get admitted to
+0|get along with
+0|get an extension of time
+0|get behind with
+0|get hold of
+0|get hurt
+0|get into
+0|get into the habit of
+0|get into trouble
+0|get married
+0|get on one's nerve
+0|get on with
+0|get promoted
+0|get ... down
+0|get separated from
+0|get straight down to
+0|get stuck
+0|get the best deal
+0|get the hang of
+0|get through
+0|get to grips with
+0|get used to
+0|give a prescription
+0|give comments on
+0|give off
+0|give out
+0|give over to
+0|give priority to
+0|give ... a sack
+0|give ... a miss
+0|give away
+0|give up
+0|glance down at
+0|global warming
+0|go ahead
+0|go away
+0|go back
+0|go bad
+0|go for a dinner
+0|go for an interview
+0|go for the interview
+0|go hand in hand
+0|go hand in hand with
+0|go off
+0|go on a date
+0|go on strike
+0|go out of fashion
+0|go over
+0|go rock climbing
+0|go round
+0|go surfing
+0|go through
+0|go under
+0|go up
+0|go with
+0|graduate from
+0|graduation ceremony
+0|greenhouse gas emission
+0|greenhouse effect
+0|gross national product
+0|ground floor
+0|group discussion
+0|group interview
+0|grow up
+0|guided tour
+0|hall of residence
+0|hand in
+0|hand out
+0|hand over
+0|handicapped toilet
+0|hang on
+0|hang on to
+0|hang out with
+0|hang over
+0|hatch out
+0|have a baby
+0|have a blast
+0|have a check
+0|have a fever
+0|have a good relationship with
+0|have a look around
+0|have a look
+0|have a reputation for
+0|have a significant effect on
+0|have a significant impact on
+0|have a sore throat
+0|have a stuffed nose
+0|have access to
+0|have an overdraft
+0|have disagreement on
+0|have taste in
+0|have a taste in
+0|have faith in
+0|have links with
+0|have no choice but do
+0|have no choice but to do
+0|have problems with
+0|have ... done
+0|have trouble in doing
+0|have trouble with
+0|having said that
+0|health system
+0|healthy diet
+0|hear about
+0|help with
+0|help out
+0|high heels
+0|high jump
+0|historical viewpoint
+0|hit on
+0|hit upon
+0|hold a reception
+0|hold up
+0|home visit
+0|host family
+0|house appliance
+0|household appliance
+0|household budget
+0|household waste
+0|hover around
+0|hunt for
+0|hustle and bustle
+0|illegal profit
+0|immigrate to
+0|immune system
+0|impose on
+0|impose upon
+0|in a dilemma
+0|in a mess
+0|in a position to
+0|in a slump
+0|in a way
+0|in a word
+0|in accordance with
+0|in addition
+0|in addition to
+0|in advance
+0|in broad terms
+0|in case
+0|in case of
+0|in circulation
+0|in comparison
+0|in comparison with
+0|in danger
+0|in detail
+0|in employment
+0|in full blossom
+0|in favour of
+0|in general
+0|in demand
+0|in great demand
+0|in harmony
+0|in line with
+0|in moderation
+0|in most cases
+0|in need of
+0|in other words
+0|in part
+0|in particular
+0|in person
+0|in place
+0|in reaction to
+0|in relation to
+0|with relation to
+0|in short supply
+0|in spite of
+0|in stock
+0|in store
+0|in terms of
+0|in that case
+0|in the end
+0|in the first place
+0|in the heart of
+0|in the majority
+0|in the meantime
+0|in the middle of
+0|in the middle of nowhere
+0|in that position
+0|in the region of
+0|in the same vein
+0|in this case
+0|in total
+0|in ... faculty
+0|incineration plant
+0|incorporate ... into
+0|indifference to
+0|individual circumstance
+0|information desk
+0|information explosion
+0|insight into
+0|insist on
+0|inspire ... to do
+0|instant coffee
+0|instant hit
+0|instead of
+0|insufficient for
+0|insurance for
+0|integrate into
+0|intensive reading
+0|interest rate
+0|interest-free overdraft
+0|interfere with
+0|interior decoration
+0|inter-library service
+0|international trade
+0|introduce ... to
+0|iron out
+0|irreversible damage
+0|it makes no sense to
+0|it's a pleasure for ... to do
+0|it is absolutely essential for ... to
+0|becomes absolutely essential for ... to
+0|it's no exaggeration to say that
+0|it's worthwhile to do
+0|it's necessary to do
+0|job description
+0|job responsibility
+0|joint account
+0|joint effort
+0|just as well
+0|keep fit
+0|keep in touch with
+0|keep on the file
+0|keep ... in mind
+0|keep to oneself
+0|keep watch on
+0|keep-fit studio
+0|kick ... out of
+0|kill off
+0|kind of
+0|knock down
+0|know ... backwards and forwards
+0|known as
+0|landfill site
+0|last but not least
+0|late fee
+0|launch new products
+0|laundry fee
+0|lead into
+0|lead to
+0|learn through
+0|lecture on
+0|letter of acceptance
+0|leisure time
+0|lend an ear
+0|letter of recommendation
+0|life expectancy
+0|light rail
+0|line up
+0|live music
+0|living condition
+0|loads of
+0|local resident
+0|log on
+0|log in
+0|long jump
+0|look ahead
+0|look back
+0|look forward to
+0|look through
+0|look up
+0|lose sight of
+0|lose temper
+0|lottery ticket
+0|lower the rate of
+0|low-risk investment
+0|loyalty to
+0|lucky you
+0|lunar calendar
+0|maid of honor
+0|main branch
+0|main course
+0|main topic
+0|make a complaint
+0|make a deep impression
+0|make a detour
+0|make a hit
+0|make a nominal charge
+0|make note of
+0|make a note of
+0|make a provisional booking
+0|make a quick getaway
+0|make a reference to
+0|make a wish
+0|make allowances for
+0|make an application
+0|make an appointment
+0|make an effort to
+0|make efforts to
+0|make an exception
+0|make an exception of
+0|make clear
+0|make difference
+0|make friends with
+0|make great progress
+0|make headway
+0|make it difficult for ... to do
+0|make notes
+0|make one's blood boil
+0|make out of
+0|make seat reservation
+0|make sure
+0|make up one's mind
+0|make up
+0|make use of
+0|make waves
+0|make the ... conclusion
+0|draw the ... conclusion
+0|man of the year
+0|management layer
+0|man-made object
+0|manual gear
+0|many thanks to ... for doing
+0|market economy
+0|market share
+0|marketing consultant
+0|mass media
+0|maximum profit
+0|medium-sized city
+0|meet the deadline
+0|meet one's needs
+0|meet up
+0|meet up with
+0|metropolitan area
+0|military use
+0|mind doing
+0|mind you
+0|misplace trust in
+0|more or less
+0|motivate ... to do
+0|mountain climbing
+0|move along
+0|move away from ... to
+0|move forward
+0|move on
+0|move on to
+0|multiple entry visa
+0|musical instrument
+0|natural resources
+0|natural scenery
+0|never mind
+0|nine-year compulsory education
+0|no charge
+0|no exception
+0|no substitute for
+0|non-native speaker
+0|non-smoking section
+0|nose dive
+0|not always be the case
+0|not for circulation
+0|not have a clue about
+0|not mean any offense on
+0|not only ... but also
+0|not to mention
+0|not ... but rather
+0|note down
+0|notice board
+0|now that
+0|nuclear family
+0|nursing care
+0|ocean current
+0|off campus
+0|off topic
+0|offer opportunity for ... to do
+0|give opportunity for ... to do
+0|office staff
+0|on a roll
+0|on average
+0|on business
+0|on campus
+0|on display
+0|on hand
+0|on impulse
+0|on one's behalf
+0|on one's way to
+0|on request
+0|on second thoughts
+0|on strike
+0|on the margin of
+0|on the minus side
+0|on the other hand
+0|on the phone
+0|on the same wavelength
+0|on the weaker side
+0|on the whole
+0|on top of
+0|one's best bet
+0|the best bet
+0|open a bank account
+0|open admission
+0|open stacks
+0|open ticket
+0|open shelves
+0|opening time
+0|other than
+0|ought to do
+0|out of bounds
+0|out of character
+0|out of date
+0|out of print
+0|out of shape
+0|out of temper
+0|out of the way
+0|out on loan
+0|over and above
+0|over the phone
+0|overseas student
+0|owe ... to
+0|ozone layer
+0|pace of life
+0|packing list
+0|pain killer
+0|parallel to
+0|parent organization
+0|parking lot
+0|parking permit
+0|parking sticker
+0|part exchange
+0|part-time job
+0|participate in
+0|passport photo
+0|pay a ... deposit
+0|pay a mortgage
+0|pay the mortgage
+0|pay attention to
+0|pay for
+0|pay off
+0|pay tribute to
+0|peak time
+0|per person
+0|personal contents insurance
+0|personal possession
+0|personal statement
+0|personality questionnaire
+0|personally speaking
+0|personnel management
+0|phone bill
+0|phone up
+0|pick one's brain
+0|pick out
+0|pitch in
+0|places of historical interest
+0|plan on
+0|plastic bag
+0|play a significant role
+0|plenty of evidence has shown that
+0|point of view
+0|point out
+0|population growth
+0|pose a threat to
+0|postgraduate student
+0|potential customer
+0|potential problem
+0|prefer ... to
+0|present oneself
+0|prevent ... from
+0|price range
+0|price structure
+0|pride oneself on
+0|proficient in
+0|proficient at
+0|profound influence
+0|projection system
+0|promote sustainable development
+0|property insurance
+0|propose a toast
+0|protect ... from
+0|provide ... with
+0|public transport system
+0|publicity leaflet
+0|pull out
+0|pull up
+0|punch in
+0|punch line
+0|punch out
+0|push up
+0|put aside
+0|put down
+0|put emphasis on
+0|put one's feet up
+0|put ... at risk
+0|put ... on to
+0|put ... through
+0|put together
+0|put up
+0|queue up
+0|range from ...
+0|range from ... to
+0|rather than
+0|raw materials
+0|recommend ... to
+0|recommend ... for
+0|recover from
+0|refer to
+0|reference letter
+0|reference materials
+0|reference number
+0|reference source
+0|reference stacks
+0|refrain from
+0|refresh one's memory
+0|refresher course
+0|regard as
+0|regardless of
+0|register with
+0|registered mail
+0|registration fee
+0|regular meeting
+0|relate to
+0|relay race
+0|release pressure
+0|religious practice
+0|rely on
+0|rely upon
+0|remind ... of
+0|removals van
+0|research assessment
+0|research method
+0|research methodology
+0|resistant to
+0|respond to
+0|response rate
+0|response to
+0|result from
+0|result in
+0|ringback tone
+0|roam about
+0|root for
+0|round-trip ticket
+0|roundabout route
+0|routine work
+0|run across
+0|run into
+0|run out of
+0|run risks
+0|run the risk of
+0|run through
+0|run wild
+0|rush hour
+0|rush off
+0|sanitary condition
+0|satisfy the need of
+0|save a back-up copy
+0|save up
+0|saver ticket
+0|savings account
+0|scare off
+0|scenic spot
+0|science fiction
+0|security entrance
+0|sell out
+0|semi-detached house
+0|send out
+0|senior citizen
+0|serve ... with
+0|service charge
+0|set aside
+0|set back
+0|set down
+0|set out
+0|set off
+0|set the table
+0|set up
+0|settle down
+0|share the view on
+0|shift work
+0|shock value
+0|shoot a film
+0|show off
+0|show up
+0|shut down
+0|side effect
+0|sightseeing spot
+0|sign a contract with
+0|sign up
+0|single-speed cycle
+0|sit in
+0|sit with
+0|slip from ... to
+0|slip on
+0|slow down
+0|snap up
+0|so forth
+0|soak up
+0|social interaction
+0|social welfare
+0|soft drink
+0|soil conditioner
+0|solar energy
+0|sort ... out
+0|sound good
+0|spare time
+0|spark off
+0|speak at natural speed
+0|speak of
+0|speak up
+0|speak up for
+0|special clinic
+0|specialized course
+0|speed up
+0|split off
+0|spoken English
+0|spot on
+0|spring up
+0|sprout up
+0|staff room
+0|stand for
+0|stand out
+0|standard of living
+0|start off
+0|start up
+0|start with a clean slate
+0|state-run enterprise
+0|stay in touch with
+0|stay within the budget
+0|stereo system
+0|stick shift
+0|stick in one's mind
+0|stick to
+0|stock market
+0|store ... away
+0|store ... up
+0|straight away
+0|strip down
+0|strive for
+0|student account
+0|student handbook
+0|student union
+0|students' union
+0|subscription fee
+0|suffer from
+0|suggestion box
+0|suitable for
+0|summit conference
+0|summit meeting
+0|superior to
+0|surf the Internet
+0|sweep across
+0|swimming costume
+0|table tennis
+0|take a sip of
+0|take a stroll around
+0|take a ... view of
+0|take an ... view of
+0|take a ... view towards
+0|take an ... view towards
+0|take advantage of
+0|take ages
+0|take an interest in
+0|take ... as an example
+0|take care of
+0|take control of
+0|take down
+0|take ... into account
+0|take account of
+0|take ... into consideration
+0|take a heavy toll
+0|take a heavy toll on
+0|take its toll
+0|take its toll on
+0|take notes
+0|take off
+0|take one's breath away
+0|take one's temperature
+0|take out insurance
+0|take over one's business
+0|take pictures
+0|take pity on
+0|take responsibility for
+0|take the role of
+0|take unpaid leave
+0|take up
+0|talcum powder
+0|talk through
+0|tax revenue
+0|teaching facilities
+0|team spirit
+0|tear down
+0|telephone interview
+0|telephone rental
+0|tell ... from
+0|tend to
+0|thank goodness for
+0|thanks to
+0|the last thing ... want to do
+0|your best bet
+0|theme park
+0|through and through
+0|tick away
+0|tick by
+0|ticket office
+0|tie ... in
+0|tie ... in to
+0|tie ... in with
+0|time difference
+0|to be frank
+0|to be precise
+0|to one's surprise
+0|to some extent
+0|to some degree
+0|to sum up
+0|to the best of one's knowledge
+0|to the point
+0|tourist attraction
+0|tourist destination
+0|tow ... away
+0|track and field
+0|trade fair
+0|trade show
+0|trade ... in
+0|trade on
+0|trade up
+0|traffic congestion
+0|traffic jam
+0|traffic noise
+0|trail away
+0|trail off
+0|train of thought
+0|transfer to
+0|translate ... into
+0|transportation system
+0|travel agency
+0|travel light
+0|traveller's cheque
+0|traveller's check
+0|try on
+0|try one's best to do
+0|try out
+0|turn a blind eye
+0|turn a blind eye to
+0|turn down
+0|turn off
+0|turn to
+0|turn up
+0|tutorial paper
+0|twice as many
+0|ultra-violet radiation
+0|uncertain about
+0|under pressure
+0|under stress
+0|undergraduate student
+0|union fee
+0|universal education
+0|up to
+0|upper class
+0|upper limit
+0|vacant position
+0|vacuum flask
+0|various aspects of
+0|vary with
+0|vice versa
+0|virgin forest
+0|virtual reality
+0|vocational school
+0|voluntary organization
+0|volunteer to do
+0|wake up
+0|walk away with
+0|washing machine
+0|waste disposal
+0|watch for
+0|watch out
+0|water-soluble vitamin
+0|way off base
+0|website address
+0|wedding vow
+0|weigh the pros and cons
+0|weight lifting
+0|well done
+0|wipe out
+0|with a population of
+0|with the help of
+0|without question
+0|word processing
+0|data processing
+0|work out
+0|work through
+0|working experience
+0|worth doing
+0|write back
+0|write up
+0|you name it
+0|youth hostel
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 1266
+# Total Entries Extracted: 1266
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 1266
+# -------------------------------

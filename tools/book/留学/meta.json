@@ -1,0 +1,326 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "d4100200d7434a978f89e13a401c2000",
+  "books": [
+    {
+      "fileName": "100个句子记完7000个托福单词_20260427_144635.txt",
+      "dictName": "100个句子记完7000个托福单词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2012",
+      "targetGameHallIds": [
+        "26"
+      ]
+    },
+    {
+      "fileName": "100个句子记完7000个雅思单词_20260427_115836.txt",
+      "dictName": "100个句子记完7000个雅思单词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "7 天搞定托福高频核心词_20260427_150130.txt",
+      "dictName": "7 天搞定托福高频核心词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2012",
+      "targetGameHallIds": [
+        "26"
+      ]
+    },
+    {
+      "fileName": "7 天搞定雅思高频核心词_20260427_144516.txt",
+      "dictName": "7 天搞定雅思高频核心词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "ACT必备核心词汇_20260427_150804.txt",
+      "dictName": "ACT必备核心词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2016",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "GMAT词汇精选_20260427_150619.txt",
+      "dictName": "GMAT词汇精选",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2017",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "GMAT词汇词以类记_20260427_150730.txt",
+      "dictName": "GMAT词汇词以类记",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2017",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "GRE 高分必备短语搭配_20260427_150051.txt",
+      "dictName": "GRE 高分必备短语搭配",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2013",
+      "targetGameHallIds": [
+        "1"
+      ]
+    },
+    {
+      "fileName": "GRE词汇 词以类记_20260427_145936.txt",
+      "dictName": "GRE词汇 词以类记",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2013",
+      "targetGameHallIds": [
+        "1"
+      ]
+    },
+    {
+      "fileName": "GRE词汇精选乱序版_20260427_150303.txt",
+      "dictName": "GRE词汇精选乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2013",
+      "targetGameHallIds": [
+        "1"
+      ]
+    },
+    {
+      "fileName": "GRE词汇精选（NEW）_20260427_145716.txt",
+      "dictName": "GRE词汇精选（NEW）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2013",
+      "targetGameHallIds": [
+        "1"
+      ]
+    },
+    {
+      "fileName": "GRE高频真词表_20260427_145754.txt",
+      "dictName": "GRE高频真词表",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2013",
+      "targetGameHallIds": [
+        "1"
+      ]
+    },
+    {
+      "fileName": "IELTS词汇词以类记_20260427_115744.txt",
+      "dictName": "IELTS词汇词以类记",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "SAT词汇乱序版_20260427_145851.txt",
+      "dictName": "SAT词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2014",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "TOEFLiBT 词以类记 2.0_20260427_144550.txt",
+      "dictName": "TOEFLiBT 词以类记 2.0",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2012",
+      "targetGameHallIds": [
+        "26"
+      ]
+    },
+    {
+      "fileName": "TOEFL词汇乱序版_20260427_144212.txt",
+      "dictName": "TOEFL词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2012",
+      "targetGameHallIds": [
+        "26"
+      ]
+    },
+    {
+      "fileName": "TOEIC 990分核心词汇_20260427_150649.txt",
+      "dictName": "TOEIC 990分核心词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2015",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "剑桥雅思听力考点词真经_20260427_120051.txt",
+      "dictName": "剑桥雅思听力考点词真经",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "剑桥雅思阅读考点词真经 考点词_20260427_120131.txt",
+      "dictName": "剑桥雅思阅读考点词真经 考点词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "托业词汇正序版_20260427_145634.txt",
+      "dictName": "托业词汇正序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2015",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "托福考试官方指南词汇必备_20260427_144710.txt",
+      "dictName": "托福考试官方指南词汇必备",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2012",
+      "targetGameHallIds": [
+        "26"
+      ]
+    },
+    {
+      "fileName": "托福词组必备_20260427_150012.txt",
+      "dictName": "托福词组必备",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2012",
+      "targetGameHallIds": [
+        "26"
+      ]
+    },
+    {
+      "fileName": "托福高频词汇精讲_20260427_150213.txt",
+      "dictName": "托福高频词汇精讲",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2012",
+      "targetGameHallIds": [
+        "26"
+      ]
+    },
+    {
+      "fileName": "新托福官方指定核心词汇超详解_20260427_144744.txt",
+      "dictName": "新托福官方指定核心词汇超详解",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2012",
+      "targetGameHallIds": [
+        "26"
+      ]
+    },
+    {
+      "fileName": "雅思分级词汇 21 天进阶_20260427_144437.txt",
+      "dictName": "雅思分级词汇 21 天进阶",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "雅思真词汇（第8版）_20260427_120252.txt",
+      "dictName": "雅思真词汇（第8版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "雅思真词汇（第8版）无同根词版_20260427_120325.txt",
+      "dictName": "雅思真词汇（第8版）无同根词版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "雅思词以类记2.0_20260427_115912.txt",
+      "dictName": "雅思词以类记2.0",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "雅思词汇乱序版_20260427_115646.txt",
+      "dictName": "雅思词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "雅思词汇加强版_20260427_120213.txt",
+      "dictName": "雅思词汇加强版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "雅思词汇真经_20260427_144248.txt",
+      "dictName": "雅思词汇真经",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "雅思词汇胜经_20260427_144327.txt",
+      "dictName": "雅思词汇胜经",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    },
+    {
+      "fileName": "雅思词组必备_20260427_144358.txt",
+      "dictName": "雅思词组必备",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100201d7434a978f89e13a401c2011",
+      "targetGameHallIds": [
+        "30"
+      ]
+    }
+  ]
+}

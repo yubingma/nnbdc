@@ -1,0 +1,7 @@
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 0
+# Total Entries Extracted: 0
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 0
+# -------------------------------

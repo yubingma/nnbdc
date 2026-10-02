@@ -1,0 +1,4843 @@
+0|account
+0|address
+0|approach
+0|article
+0|bar
+0|bet
+0|block
+0|book
+0|branch
+0|brief
+0|bullet
+0|capital
+0|cause
+0|character
+0|check
+0|china
+0|coach
+0|complex
+0|current
+0|drought
+0|due
+0|even
+0|expect
+0|fat
+0|figure
+0|fine
+0|firm
+0|flat
+0|hold
+0|instrument
+0|insure
+0|issue
+0|last
+0|lift
+0|make
+0|mark
+0|matter
+0|measure
+0|orientation
+0|pack
+0|park
+0|performance
+0|physical
+0|plain
+0|plant
+0|placement
+0|pose
+0|post
+0|premise
+0|present
+0|project
+0|property
+0|provide
+0|quote
+0|rate
+0|recall
+0|record
+0|revision
+0|row
+0|scale
+0|set
+0|settle
+0|share
+0|shift
+0|shoot
+0|sign
+0|spot
+0|stamp
+0|stick
+0|stock
+0|stretch
+0|strike
+0|cost
+0|spread
+0|beat
+0|beaten
+0|become
+0|became
+0|come
+0|came
+0|run
+0|ran
+0|bring
+0|brought
+0|build
+0|built
+0|burn
+0|burnt
+0|buy
+0|bought
+0|catch
+0|caught
+0|dig
+0|dug
+0|feed
+0|fed
+0|feel
+0|felt
+0|fight
+0|fought
+0|find
+0|found
+0|flee
+0|fled
+0|get
+0|got
+0|gotten
+0|hang
+0|hung
+0|hear
+0|heard
+0|held
+0|keep
+0|kept
+0|lay
+0|laid
+0|learn
+0|learned
+0|learnt
+0|leave
+0|left
+0|lend
+0|lent
+0|lose
+0|lost
+0|made
+0|mean
+0|meant
+0|meet
+0|met
+0|say
+0|said
+0|sell
+0|sold
+0|send
+0|sent
+0|shine
+0|shone
+0|shined
+0|shot
+0|sit
+0|sat
+0|sleep
+0|slept
+0|smell
+0|smelled
+0|smelt
+0|spell
+0|spelled
+0|spelt
+0|spend
+0|spent
+0|spit
+0|spat
+0|stand
+0|stood
+0|stuck
+0|sting
+0|stung
+0|struck
+0|strook
+0|stricken
+0|sweep
+0|swept
+0|teach
+0|taught
+0|tell
+0|told
+0|think
+0|thought
+0|understand
+0|understood
+0|win
+0|won
+0|begin
+0|began
+0|begun
+0|blow
+0|blew
+0|blown
+0|break
+0|broke
+0|broken
+0|choose
+0|chose
+0|chosen
+0|draw
+0|drew
+0|drawn
+0|drink
+0|drank
+0|drunk
+0|drive
+0|drove
+0|driven
+0|eat
+0|ate
+0|eaten
+0|fall
+0|fell
+0|fallen
+0|fly
+0|flew
+0|flown
+0|forget
+0|forgot
+0|forgotten
+0|freeze
+0|froze
+0|frozen
+0|give
+0|gave
+0|given
+0|go
+0|went
+0|gone
+0|grow
+0|grew
+0|grown
+0|hide
+0|hid
+0|hidden
+0|know
+0|knew
+0|known
+0|lie
+0|lain
+0|mistake
+0|mistook
+0|mistaken
+0|prove
+0|proved
+0|proven
+0|ride
+0|rode
+0|ridden
+0|ring
+0|rang
+0|rung
+0|rise
+0|rose
+0|risen
+0|see
+0|saw
+0|seen
+0|show
+0|showed
+0|shown
+0|sing
+0|sang
+0|sung
+0|sink
+0|sank
+0|sunk
+0|sunken
+0|speak
+0|spoke
+0|spoken
+0|steal
+0|stole
+0|stolen
+0|swim
+0|swam
+0|swum
+0|take
+0|took
+0|taken
+0|throw
+0|threw
+0|thrown
+0|wake
+0|woke
+0|woken
+0|wear
+0|wore
+0|worn
+0|weave
+0|wove
+0|woven
+0|write
+0|wrote
+0|written
+0|a couple of
+0|a great deal of
+0|a head
+0|a host of
+0|a jar of
+0|a load of
+0|a mass of
+0|a range of
+0|a series of
+0|a set of
+0|a total of
+0|a variety of
+0|a waste of
+0|aim for
+0|all sorts of
+0|along with
+0|and so forth
+0|apart from
+0|arise from
+0|as a matter of fact
+0|as a whole
+0|as far as
+0|as long as
+0|as usual
+0|at a time
+0|at least
+0|at present
+0|at risk
+0|at some stage
+0|at speeds of
+0|at the moment
+0|at the outset
+0|at this stage
+0|based on
+0|be accompanied by
+0|be afraid of
+0|be attached to
+0|be confused about
+0|be converted into
+0|be coupled with
+0|be credited to
+0|be expected to do
+0|be familiar with
+0|be frightened about doing
+0|be made up of
+0|be replaced with
+0|be struck by
+0|be subjected to
+0|be superior to
+0|be supposed to
+0|be taken aback
+0|be to blame
+0|be up to sb
+0|be used to sth
+0|bear in mind
+0|belong to
+0|blow up
+0|break the mould
+0|buy out
+0|by means of
+0|come across
+0|carry out
+0|cater for
+0|chase up
+0|chop down
+0|come along
+0|come down to
+0|come up with
+0|come up
+0|compare with
+0|compensate for
+0|concentrate on
+0|consist of
+0|cope with
+0|cough up
+0|deal with
+0|depend on
+0|dispense with
+0|do a degree
+0|do painting
+0|do the speech
+0|do trips
+0|don't mind doing
+0|draw the line
+0|draw up
+0|drop out
+0|due to
+0|eat out
+0|either ... or ...
+0|end up
+0|enrol on
+0|fall into
+0|far more
+0|figure out
+0|fill in
+0|fill out
+0|fire a gun
+0|fix up
+0|for the sake of
+0|from abroad
+0|from the very beginning
+0|generally speaking
+0|get around
+0|get hold of sb
+0|get hold of
+0|get into shape
+0|get on and off
+0|get on with
+0|get on
+0|get stuck
+0|get to
+0|give priority to
+0|give the speech
+0|give up
+0|go for
+0|go through
+0|go to around
+0|go wrong
+0|grab a coffee
+0|hand in
+0|hand out
+0|have a word with
+0|have access to
+0|have difficulty doing
+0|have trouble with
+0|have words with sb
+0|hit on
+0|hop-on hop-off
+0|in a moment
+0|in accordance with
+0|in advance
+0|in broad terms
+0|in case
+0|in comparison with
+0|in fashion
+0|in favour of
+0|in line
+0|in one's employ
+0|in particular
+0|in peak times
+0|in person
+0|in place
+0|in regard to
+0|in spite of
+0|in terms of
+0|in that
+0|in the list
+0|in the middle of
+0|in the region of
+0|in this field
+0|in turn
+0|in which case
+0|intend to
+0|jet lag
+0|keep fit
+0|keep in mind
+0|keep up the pace
+0|kick off
+0|knock down
+0|line up
+0|loads of
+0|log on to
+0|look after
+0|look around
+0|look through
+0|look to
+0|make a claim
+0|make a contribution
+0|make a note
+0|make an application
+0|make an effort to
+0|make model
+0|make up one's mind
+0|manage to do
+0|meet target
+0|meet up
+0|not at all
+0|note down
+0|on a roll
+0|on behalf of
+0|on board
+0|on campus
+0|on display
+0|on one's behalf
+0|on request
+0|on the same wavelength
+0|on time
+0|on top of
+0|on your own
+0|open air
+0|ought to
+0|out of bounds
+0|out of print
+0|pack up
+0|part exchange
+0|per month
+0|per person
+0|phase out
+0|pick one's brain
+0|pick out
+0|pick sb. up
+0|pick up
+0|plan on
+0|point out
+0|print off
+0|pull out
+0|put aside
+0|put it another way
+0|put off
+0|put up
+0|quite a few
+0|raise money
+0|raise public awareness
+0|rather than
+0|refer to
+0|relating to
+0|reliance on
+0|rely on
+0|run out of time
+0|second half
+0|serve a purpose
+0|set back
+0|set in
+0|set trends
+0|shut down
+0|sign up
+0|sit in on
+0|so far
+0|sold out
+0|sort out
+0|spend time on
+0|split off
+0|spoil oneself
+0|spot on
+0|stand still
+0|stay calm
+0|straight away
+0|suffer from
+0|sum up
+0|take a sip
+0|take advantage of
+0|take down
+0|take part in
+0|take photograph
+0|take pity on sb
+0|take the lead
+0|take up
+0|the sheer volume of
+0|throw away
+0|to some extent
+0|to start with
+0|turn down
+0|turn into
+0|turn out to be
+0|under control
+0|upside down
+0|wait ages to do
+0|wash up onto
+0|watch out
+0|win an award
+0|wipe out
+0|work out
+0|good
+0|places
+0|... and ... and ...
+0|where
+0|organise
+0|arrange
+0|seats
+0|place
+0|read
+0|have a look
+0|such as
+0|like
+0|metal industry
+0|iron forge
+0|established
+0|area
+0|region
+0|woodside
+0|on the left
+0|bottom
+0|ticket office
+0|entrance
+0|right
+0|gift shop
+0|in front of
+0|to the left
+0|main workshop
+0|beyond
+0|circle
+0|yard
+0|at the top
+0|showroom
+0|the top right-hand corner
+0|cafe
+0|on one side of that
+0|on the other
+0|cottages
+0|doing work
+0|spending time on
+0|excuses
+0|reasons
+0|personal illness
+0|medical
+0|accident
+0|compassionate
+0|methods
+0|methodology
+0|don't read
+0|won't bother
+0|conclusion
+0|the last part
+0|limited value
+0|some help
+0|but not that much
+0|changing accommodation
+0|move
+0|noisy
+0|disturbing
+0|quieter
+0|neighbours
+0|the people living nearby
+0|landlord
+0|the owner of the property
+0|uncooperative
+0|not helpful
+0|environment
+0|neighbourhood
+0|ways
+0|how
+0|large-scale
+0|local areas
+0|city streets
+0|tall
+0|high
+0|cause more wind
+0|windier
+0|wind force
+0|wind
+0|passes through
+0|goes through
+0|require
+0|need
+0|want to
+0|would love
+0|cold
+0|chilled
+0|mineral water
+0|not working
+0|system was down
+0|American
+0|New York
+0|the bus routes
+0|the bus system
+0|food
+0|hungry
+0|snack
+0|all day
+0|morning and afternoon
+0|free entry
+0|charge ... except ...
+0|not pay
+0|visit
+0|go to see
+0|art gallery
+0|the painting
+0|inform
+0|feedback
+0|progress
+0|time pressure
+0|deadline
+0|handle
+0|lack
+0|without
+0|support
+0|help
+0|family and friends
+0|social network
+0|disruption
+0|interrupt
+0|suffer
+0|not complete
+0|fail
+0|drop out of
+0|can't eat
+0|is not to your liking
+0|upset
+0|financial difficulties
+0|money problems
+0|receive
+0|assistance
+0|loan
+0|available
+0|be covered by
+0|effective
+0|not too bad
+0|staff shortages
+0|staff cuts
+0|understaffed
+0|number
+0|how much
+0|disadvantage
+0|drawback
+0|too few
+0|low
+0|less likely
+0|tends not
+0|be committed by
+0|be connected with
+0|groups
+0|companies
+0|organisations
+0|not include
+0|exclude
+0|stealing
+0|theft
+0|also
+0|needing
+0|whereas
+0|the third reason
+0|appear
+0|seem
+0|unimportant
+0|insignificant
+0|large
+0|massive
+0|example
+0|illustrate
+0|reference
+0|length of time
+0|long
+0|twin
+0|single
+0|alone
+0|would like to
+0|be used to
+0|part
+0|proportion
+0|theatre
+0|theatrical events
+0|several
+0|plenty of
+0|tent
+0|marquee
+0|canvas portable building
+0|highlights
+0|best part
+0|type of audience
+0|taste
+0|going back
+0|refresher
+0|returning to
+0|two days
+0|the first and second
+0|improve
+0|more
+0|clarity
+0|clearly
+0|analytically
+0|analysing
+0|encourage interest
+0|motivational
+0|positive
+0|enthusiastic
+0|use effectively
+0|management
+0|reserve
+0|ahead
+0|Monday
+0|Tuesday
+0|and Wednesday
+0|three consecutive
+0|coping with
+0|at the beginning
+0|from the basics
+0|points
+0|suggestions
+0|respondents
+0|completed
+0|choice
+0|option
+0|advantages and disadvantages
+0|for and against
+0|problems
+0|unpopular
+0|advantages
+0|supporters
+0|the most popular
+0|request
+0|would like
+0|mini
+0|small
+0|fitness
+0|gym
+0|poor use
+0|waste
+0|resources
+0|funds
+0|minority
+0|elitist
+0|closed-circuit TV
+0|video surveillance
+0|when asked
+0|venue
+0|College Dining Room
+0|during
+0|best time
+0|student representative
+0|student leader
+0|find out
+0|want to hear
+0|price
+0|currently
+0|planning to
+0|only in
+0|first
+0|outside
+0|all
+0|abilities
+0|skills
+0|people
+0|client
+0|the same
+0|no
+0|provided
+0|laid on
+0|plus
+0|includes
+0|costs
+0|equipment
+0|demonstrate
+0|why we need
+0|the importance of having
+0|standard
+0|fixed
+0|and
+0|apart from that
+0|form
+0|growing
+0|dangerous
+0|risky
+0|get hurt
+0|boring
+0|tame
+0|needs ... more active and interesting
+0|wait up
+0|fortnight
+0|difficult
+0|ambitious
+0|can't cope with
+0|kg
+0|kilograms
+0|aids
+0|helps
+0|gather
+0|scavenge
+0|locate
+0|sense the presence
+0|setting
+0|along
+0|parallel
+0|coastline
+0|shore
+0|summer
+0|the warmest months
+0|maximum temperature
+0|strong
+0|high rolling
+0|maximum
+0|only
+0|up to
+0|included in the price
+0|no extra charge
+0|part of the package
+0|no later than
+0|before
+0|required
+0|easy
+0|simple
+0|verdict
+0|label
+0|negatives
+0|niggle
+0|should not
+0|fees
+0|the cost of the course
+0|last for
+0|be over
+0|are required
+0|be expected to
+0|each month
+0|every four weeks
+0|work
+0|study
+0|very
+0|much more
+0|more prepared to
+0|more willing to
+0|tend to
+0|far more likely to
+0|left alone
+0|without a partner
+0|be old
+0|in old age
+0|only think ... when ...
+0|take ... to make them think ...
+0|good way
+0|best way
+0|dealing with
+0|overcome
+0|financial affairs
+0|economic situation
+0|high proportion
+0|forms
+0|documents
+0|otherwise
+0|start at
+0|minimum
+0|enough
+0|constant supply
+0|regularly
+0|every six months
+0|totally transformed
+0|developed so much
+0|not the same
+0|overheads
+0|money
+0|prize money
+0|hoping to
+0|looking to
+0|invest in
+0|event
+0|activities
+0|raise
+0|bring in
+0|areas
+0|benefit from
+0|enjoyed
+0|liked
+0|going to
+0|visiting
+0|be inside
+0|asked
+0|invited
+0|some
+0|three of them
+0|vocabulary
+0|words
+0|normal
+0|natural
+0|large amount of
+0|a lot of
+0|have different views
+0|don't agree with
+0|stage
+0|step
+0|make effort to
+0|try to
+0|too long
+0|would
+0|shorter
+0|more than
+0|over
+0|big
+0|size
+0|classified
+0|fall into the category
+0|accommodation
+0|living
+0|adjustable
+0|extendable
+0|changing
+0|daily
+0|a day
+0|requirement
+0|approximately
+0|about
+0|measuring
+0|surveying
+0|provide an index
+0|caused by
+0|the effects of
+0|openings
+0|opportunities
+0|type
+0|kind
+0|wish
+0|just
+0|name
+0|called
+0|condition
+0|describe
+0|near
+0|just 35 minutes from
+0|good links
+0|close relationships
+0|local
+0|in the area
+0|delays
+0|the hold-up
+0|same country
+0|own country
+0|work independently
+0|independent learning
+0|limited
+0|demand exceeds supply
+0|earlier
+0|contact
+0|for
+0|on behalf
+0|advise
+0|be worth
+0|from
+0|start
+0|to
+0|finish
+0|too much
+0|a whole load
+0|evenly balanced
+0|must
+0|lower
+0|reduce
+0|than
+0|compared with
+0|save
+0|use much less
+0|not enough
+0|utilised
+0|used
+0|product
+0|manufacture
+0|as
+0|develop
+0|intended
+0|plan
+0|general
+0|suppose
+0|preferred
+0|would really like
+0|location
+0|live in
+0|special
+0|particular requirements
+0|starting
+0|be
+0|be held
+0|picnic
+0|presentation
+0|responsibility
+0|job
+0|been affected
+0|were suffering from
+0|drop in
+0|falling
+0|increased
+0|causes
+0|be set back
+0|lack of good
+0|poor
+0|look for
+0|private
+0|individuals
+0|investors
+0|the capital
+0|change
+0|alter
+0|offer
+0|suggest
+0|solutions
+0|some ways
+0|recover
+0|marketing
+0|advertising
+0|improvement
+0|innovation
+0|descriptions
+0|talks
+0|materials
+0|information
+0|unreliable
+0|useless
+0|cheap
+0|little extra cost
+0|take away
+0|borrow
+0|oversee
+0|induction
+0|specialised
+0|different
+0|ask
+0|see if it's OK
+0|language support
+0|language lessons
+0|membership
+0|tennis court
+0|primarily
+0|golf
+0|badminton
+0|vice versa
+0|keep-fit
+0|studio
+0|judo
+0|keen
+0|kick-boxing
+0|yoga
+0|relaxing
+0|assume
+0|a salad bar
+0|fully-licensed
+0|scheme
+0|annual
+0|subscription
+0|suit
+0|restricted
+0|assessment
+0|instructor
+0|trial session
+0|direct line
+0|have
+0|there's
+0|currently running
+0|additional
+0|after
+0|fee
+0|expensive
+0|pay
+0|times
+0|when
+0|from ... to
+0|between ... and
+0|public relations
+0|foyer
+0|reorient
+0|audience
+0|auditorium
+0|leg-room
+0|install
+0|air conditioning
+0|stuffy
+0|wheelchair
+0|twice
+0|efficient
+0|performer
+0|backstage
+0|dressing room
+0|convert
+0|airy room
+0|state-of-the-art
+0|electronic
+0|lighting system
+0|royal
+0|hunt
+0|curtain
+0|public transport
+0|fax
+0|separate
+0|own
+0|access
+0|temporarily
+0|hope to reopen
+0|reduced
+0|fewer
+0|doubled
+0|replaced
+0|used to have
+0|till
+0|beginning
+0|sold out almost
+0|recommend
+0|integrate
+0|refectory
+0|special diet
+0|allergy
+0|warn
+0|daughter
+0|eligible
+0|nursery
+0|qualified
+0|one-to-one
+0|fitness centre
+0|general public
+0|audio-visual
+0|cassette
+0|manual
+0|hire
+0|enrollment form
+0|attend
+0|a class
+0|a teaching session
+0|less
+0|as well as
+0|include
+0|cover
+0|for members only
+0|per year
+0|a year
+0|district
+0|AD
+0|Roman
+0|the river Thames
+0|farmland
+0|crop
+0|livestock
+0|invasion
+0|tribe
+0|Denmark
+0|Angle
+0|Saxon
+0|Jute
+0|leather
+0|precise
+0|conquer
+0|merchant
+0|money-lender
+0|dock
+0|alternative
+0|semi-rural
+0|marshland
+0|drain
+0|port
+0|afford
+0|pleasant
+0|poverty
+0|appalling
+0|sanitary
+0|regulation
+0|needy
+0|availability
+0|tenant
+0|contribute
+0|tiny
+0|damp
+0|unhealthy
+0|occupy
+0|grandparent
+0|aunt
+0|uncle
+0|implication
+0|nutrition
+0|produce
+0|crops
+0|population
+0|allowed
+0|lack of
+0|encouraged
+0|benefited
+0|building
+0|constructed
+0|stimulate
+0|making
+0|other parts
+0|the rest
+0|land
+0|house
+0|inhabitants
+0|great
+0|extreme
+0|sanitation
+0|sanitary conditions
+0|overcrowding
+0|crowded closely together
+0|poor standards
+0|workshop
+0|craft
+0|security entrance
+0|castle
+0|glue
+0|bottle tops
+0|decoration
+0|scene
+0|cavern
+0|splash
+0|silver paper
+0|shiny
+0|under
+0|below
+0|open door
+0|let in
+0|behind
+0|back
+0|phoning
+0|calling
+0|clothes
+0|title
+0|call
+0|leaflet
+0|commuter line
+0|regional
+0|weekday
+0|buffet
+0|refreshment
+0|first class
+0|discounted
+0|valid
+0|fascinating
+0|theme
+0|original
+0|miner
+0|excursion
+0|mainline
+0|fare
+0|internationally-acclaimed
+0|aquarium
+0|anticipate
+0|during the week
+0|weekdays
+0|essential
+0|have to
+0|attractions
+0|dissertation
+0|target
+0|catalogue
+0|checklist
+0|email
+0|bookshop
+0|entitle
+0|chat
+0|description
+0|review
+0|specific
+0|statistics
+0|zone
+0|cite
+0|urgent
+0|draft
+0|index cards
+0|sort
+0|embark
+0|prepare
+0|add
+0|need to have
+0|give the title
+0|various
+0|dated after
+0|later than
+0|embark upon
+0|hooves
+0|gallop
+0|photographer
+0|succession
+0|Scotsman
+0|fellow
+0|primitive
+0|existing
+0|motion
+0|camera
+0|projection
+0|rival
+0|cinema
+0|tendency
+0|tension
+0|wheel
+0|reel
+0|snap
+0|robbery
+0|sensation
+0|faint
+0|craze
+0|talkie
+0|jazz
+0|singer
+0|subtitle
+0|dialogue
+0|could see
+0|feet
+0|heavy
+0|weigh over
+0|been told
+0|had heard about
+0|independently
+0|removing
+0|took away
+0|because of
+0|to compensate for
+0|current account
+0|deposit account
+0|joint account
+0|Holland
+0|daytime
+0|by profession
+0|sum
+0|transfer
+0|live
+0|time
+0|how long
+0|at office
+0|occupation
+0|every
+0|once a
+0|supply
+0|let
+0|hesitation
+0|bathroom
+0|electricity
+0|marry
+0|devastate
+0|elder
+0|pure
+0|haven
+0|escape
+0|mullioned
+0|sandstone
+0|tile
+0|brick
+0|chimney
+0|stack
+0|bake
+0|clay
+0|oak
+0|arrow
+0|orchard
+0|greenhouse
+0|exotic
+0|fruit
+0|wander
+0|purchase
+0|souvenir
+0|side entrance
+0|garage
+0|Rolls-Royce
+0|far side
+0|estate
+0|signpost
+0|underneath
+0|footbridge
+0|welcome
+0|shade
+0|energetic
+0|viewpoint
+0|unsure
+0|too slow making up mind
+0|family
+0|personal life
+0|brother
+0|view
+0|regard
+0|typical
+0|pear alley
+0|first corner
+0|mulberry garden
+0|second corner
+0|shop
+0|situated
+0|tea room
+0|walk through
+0|cross
+0|go over
+0|way back
+0|return
+0|go up
+0|climb up
+0|assignment
+0|observation
+0|interview
+0|preference
+0|compare
+0|contrast
+0|show up
+0|folk
+0|classical
+0|concert
+0|pub
+0|hall
+0|live music
+0|department store
+0|recorded music
+0|opera house
+0|karaoke bars
+0|time-scale
+0|investigate
+0|look at
+0|one part
+0|one area
+0|collect
+0|in total
+0|altogether
+0|similar
+0|same
+0|preferences
+0|source
+0|or
+0|hunter-gatherer
+0|Ireland
+0|neolithic
+0|hypothesis
+0|origin
+0|archaeological
+0|viable
+0|beforehand
+0|scatter
+0|sustain
+0|descend
+0|native
+0|cattle herd
+0|severely
+0|fleet
+0|sheer volume
+0|cereal crops
+0|wheat
+0|barley
+0|variety
+0|impression
+0|pottery
+0|grain
+0|embed
+0|pot
+0|identify
+0|botanist
+0|plough
+0|blade
+0|excavation
+0|county
+0|cultivation
+0|husbandry
+0|shelter
+0|axe
+0|superior
+0|systematically
+0|exploit
+0|quarry
+0|chip
+0|grind
+0|polish
+0|coloniser
+0|hollow
+0|thickness
+0|retain
+0|glaze
+0|fragment
+0|stitch
+0|imitation
+0|vessel
+0|sew
+0|not clear
+0|hypotheses
+0|came from
+0|origins
+0|early
+0|the first
+0|animals
+0|sheep
+0|above
+0|exceed
+0|limit
+0|restrict
+0|distance
+0|range
+0|marks
+0|impressions
+0|embedded
+0|pull
+0|necessary
+0|needed
+0|export
+0|transport
+0|watertight
+0|retain water
+0|sources
+0|the earliest
+0|at first
+0|compute
+0|conference
+0|register
+0|invitation
+0|cheque
+0|delegate
+0|convenient
+0|on arrival
+0|at the conference office
+0|conference pack
+0|exhibition
+0|staff
+0|recruit
+0|smoothly
+0|divide
+0|colour-coded
+0|regarding
+0|publicity leaflet
+0|information booth
+0|hospitality
+0|chef
+0|kitchen hand
+0|direct
+0|car park
+0|employ
+0|attendant
+0|temporary
+0|orient
+0|arrangement
+0|the fire exit
+0|canteen
+0|a buffet lunch
+0|delay
+0|checking
+0|stamping
+0|preparing refreshments
+0|chefs
+0|kitchen hands
+0|give out
+0|explain
+0|1.00 pm
+0|after lunch
+0|sociology
+0|secondary
+0|primary
+0|familiarise
+0|periodical
+0|current issue
+0|overdue
+0|theoretically
+0|convention
+0|together with
+0|relevant to
+0|covering
+0|the majority of
+0|most of
+0|day
+0|whole range
+0|include everything
+0|the Internet
+0|online
+0|standard requirements
+0|forgive
+0|roam
+0|globe
+0|Asiatic
+0|sub-species
+0|Greek
+0|coin
+0|image
+0|familiar
+0|appearance
+0|mane
+0|neck
+0|fold
+0|underside
+0|sanctuary
+0|square
+0|threaten
+0|survival
+0|ever-present
+0|disease
+0|fearful
+0|vulnerable
+0|gene pool
+0|dozen
+0|prince
+0|goat
+0|attack
+0|ancient
+0|disappear
+0|very few
+0|not many
+0|stomach
+0|undersides
+0|threat
+0|danger
+0|ancestors
+0|descend from
+0|protect
+0|a large part
+0|a significant proportion
+0|consists of
+0|is made up of
+0|belonging to
+0|of
+0|water is short
+0|Toronto
+0|airport
+0|rent
+0|cab
+0|shuttle
+0|whereabouts
+0|departure
+0|flight
+0|one way
+0|baggage
+0|London Heathrow
+0|vacation
+0|motel
+0|quite
+0|bus
+0|No
+0|camp
+0|retail
+0|chain
+0|continental
+0|Switzerland
+0|Spain
+0|mountainous
+0|superb
+0|well-qualified
+0|volleyball
+0|mime
+0|poster
+0|child-friendly
+0|occasionally
+0|luxury
+0|oven
+0|cooking rings
+0|fuel
+0|mirror
+0|blanket
+0|fridge
+0|washing machine
+0|clothes line
+0|mop
+0|bucket
+0|dine
+0|most
+0|no noise
+0|quiet
+0|at the time
+0|booking
+0|reservation
+0|a free gift
+0|a thank-you present
+0|ask for
+0|individualism
+0|multinational
+0|fundamentally
+0|realise
+0|attitude
+0|diversity
+0|personality
+0|variation
+0|exposure
+0|asset
+0|root
+0|conflict
+0|talent
+0|utilise
+0|neglect
+0|entire
+0|notion
+0|amongst
+0|co-operation
+0|conformity
+0|applicant
+0|psychological
+0|problem solver
+0|convince
+0|quality
+0|overrate
+0|reward
+0|incentive
+0|recognition
+0|tricky
+0|strain
+0|reason
+0|factor
+0|advantage
+0|positive side
+0|encourage
+0|unfortunately
+0|employers
+0|managers
+0|potential leaders
+0|balance
+0|on one hand ... on the other
+0|conflicting
+0|individual
+0|group
+0|for themselves
+0|early on
+0|not only ... but also ...
+0|company
+0|organisation
+0|more important than
+0|employee
+0|individual staff
+0|satisfaction
+0|needs
+0|increased amounts
+0|high levels
+0|preparation
+0|fieldwork
+0|Namibia
+0|fantastically
+0|partial
+0|contemporary
+0|rock art
+0|do's and don'ts
+0|interpretation
+0|engraving
+0|surface
+0|footprint
+0|scholar
+0|purpose
+0|track
+0|giraffe
+0|mystery
+0|repeat
+0|dozens of
+0|illustration
+0|identifiable
+0|unrealistic
+0|wise
+0|magic
+0|unintentional
+0|pressure
+0|disrespectful
+0|romantic
+0|priceless
+0|trace
+0|fragile
+0|precious
+0|heroics
+0|earliest
+0|used to
+0|use
+0|help learn
+0|usually
+0|and another
+0|with
+0|observe
+0|be damaged
+0|avoid
+0|never
+0|motor
+0|insurance
+0|dentist
+0|engine
+0|model
+0|presume
+0|insurer
+0|claim
+0|brother-in-law
+0|recommended
+0|the best bet
+0|attraction
+0|palace
+0|residence
+0|commercial
+0|invade
+0|soldier
+0|shallow
+0|interactive
+0|entertainment
+0|bowling
+0|alley
+0|arcade
+0|commentary
+0|sightseeing
+0|has
+0|lovely
+0|beautiful
+0|specialise
+0|how often
+0|Antarctic
+0|Christchurch
+0|New Zealand
+0|treaty
+0|expedition
+0|complementary
+0|scientific
+0|South Pole
+0|warehouse
+0|airforce
+0|recreate
+0|atmosphere
+0|mock
+0|showcase
+0|awesome
+0|magnificent
+0|land mass
+0|dome
+0|slope
+0|fossil
+0|propose
+0|achievement
+0|peaceful
+0|prohibit
+0|nuclear
+0|explosion
+0|disposal
+0|marvelous
+0|because
+0|why
+0|geographically
+0|positioned
+0|closest
+0|clothing
+0|coat
+0|library
+0|mapping
+0|service
+0|aim
+0|extremely
+0|so
+0|result
+0|continent
+0|geological evidence
+0|rock
+0|date
+0|no military
+0|nuclear testing
+0|nuclear explosion
+0|handedness
+0|relevance
+0|psychologist
+0|investigation
+0|persuade
+0|beneficial
+0|strategy
+0|trainer
+0|reluctant
+0|insight
+0|short-sighted
+0|flexibility
+0|capacity
+0|equally
+0|musician
+0|variable
+0|regularity
+0|keyboard
+0|string
+0|cellist
+0|violinist
+0|ape
+0|ant
+0|consistently
+0|dominant
+0|laterality
+0|opposite
+0|hockey
+0|deploy
+0|direction
+0|counterpart
+0|slightly
+0|racket
+0|occur
+0|invisible
+0|swing
+0|correction
+0|gymnastics
+0|predominant
+0|aid
+0|impressive size
+0|tactics
+0|strategies
+0|each game
+0|given game
+0|coaches
+0|trainers
+0|underestimate
+0|reluctant to make use of
+0|early youth
+0|younger
+0|always
+0|most successful
+0|has to
+0|much
+0|significantly
+0|larger
+0|bigger
+0|field
+0|too late
+0|much later
+0|important
+0|central
+0|uni
+0|reception desk
+0|lab
+0|clerical
+0|shelf
+0|typing
+0|administrative
+0|studying
+0|doing a degree
+0|duty
+0|charity
+0|sponsor
+0|entail
+0|promise
+0|donate
+0|trek
+0|pupil
+0|certificate
+0|daunt
+0|foothill
+0|fit
+0|rucksack
+0|peak
+0|valley
+0|carpet
+0|wood carving
+0|welcoming
+0|deliberately
+0|landscape
+0|outline
+0|itinerary
+0|acclimatise
+0|culminate
+0|waterfall
+0|gorgeous
+0|packed
+0|timetable
+0|per cent
+0|student
+0|carry
+0|belongings
+0|long tradition
+0|famous for centuries
+0|whole
+0|old
+0|twelfth-century
+0|robotic
+0|float
+0|cigar
+0|profile
+0|launch
+0|activate
+0|satellite
+0|salinity
+0|balloon
+0|beam
+0|automatically
+0|onshore
+0|meteorological
+0|El Nino
+0|mechanics
+0|ozone
+0|depletion
+0|ongoing
+0|variability
+0|forecast
+0|prevail
+0|rescue
+0|mission
+0|yachtsman
+0|owe
+0|biological
+0|fishery
+0|legislation
+0|sustainable
+0|application
+0|agricultural
+0|appropriate
+0|yield
+0|rainfall
+0|science fiction
+0|concept
+0|shape
+0|look
+0|work on
+0|travel
+0|records
+0|data
+0|already
+0|long-term
+0|long way
+0|right now
+0|near future
+0|quite soon
+0|tourism
+0|module
+0|scenario
+0|disoriented
+0|empty
+0|dispirit
+0|opulent
+0|luxurious
+0|inviting
+0|well-being
+0|chic
+0|boutique
+0|stately
+0|mansion
+0|palm
+0|idyllic
+0|career
+0|subjective
+0|slogan
+0|apartment
+0|maximise
+0|sleek
+0|entertain
+0|lasting
+0|psychology
+0|underpin
+0|hotelier
+0|security
+0|entrust
+0|predictability
+0|pretend
+0|indulge
+0|pamper
+0|spoil
+0|treat
+0|miniscule
+0|shampoo
+0|soap
+0|pillow
+0|eco-hotel
+0|whatsoever
+0|depressed
+0|dispiriting
+0|overlook
+0|comfortable
+0|feel at home
+0|surroundings
+0|focus
+0|wide
+0|no effect
+0|didn't matter
+0|stylish
+0|modern
+0|throughout
+0|all over
+0|permanent
+0|ordinary routine
+0|everyday lives
+0|care for
+0|all respects
+0|everything
+0|little
+0|cosmetics
+0|family name
+0|first name
+0|nationality
+0|enrol
+0|pet
+0|veterinarian
+0|vegetarian
+0|seafood
+0|hobby
+0|handball
+0|length
+0|approx
+0|no objection
+0|that's fine
+0|particularly
+0|really
+0|prefer
+0|demolition
+0|derelict
+0|storehouse
+0|property developer
+0|high-rise
+0|recreation
+0|indoor sports complex
+0|arena
+0|stadium
+0|track and field
+0|synchronise
+0|diving
+0|circular
+0|ornamental
+0|pond
+0|bench
+0|rowing boat
+0|shed
+0|wetland
+0|boardwalk
+0|frog
+0|refuge
+0|estuary
+0|spy
+0|binocular
+0|swan
+0|walking
+0|comfortable shoes
+0|industrial buildings
+0|factories
+0|warehouses
+0|storehouses
+0|leisure
+0|outdoor activities
+0|to the east
+0|look down
+0|rose garden
+0|to the west
+0|facility
+0|remind
+0|cos
+0|island
+0|overview
+0|nope
+0|overhead projector
+0|brochure
+0|literacy
+0|encyclopaedia
+0|up-to-date
+0|embassy
+0|stuff
+0|definitely
+0|might
+0|think ... later
+0|of course
+0|not
+0|figures
+0|rates
+0|as above
+0|as well
+0|glutamate
+0|enhancer
+0|cuisine
+0|flavour
+0|meal
+0|incorporate
+0|seaweed
+0|kombu
+0|ingredient
+0|extraction
+0|sodium
+0|amino acid
+0|protein
+0|cheese
+0|pizza
+0|potato crisp
+0|sour
+0|bitter
+0|evolutionary
+0|detect
+0|an associate professor
+0|Chicago
+0|signal
+0|presence
+0|energy-giving
+0|carbohydrate
+0|alert
+0|toxin
+0|spoilage
+0|mineral
+0|way
+0|discover
+0|production
+0|a large scale
+0|increase dramatically
+0|contain
+0|in
+0|secretary
+0|festival
+0|Spanish
+0|highlight
+0|lobby
+0|drum
+0|flute
+0|fantastic
+0|actually
+0|anyway
+0|bargain
+0|pianist
+0|senior citizen
+0|discount
+0|better
+0|telephone
+0|numbers
+0|four
+0|dinosaur
+0|guide tour
+0|remain
+0|exhibition area
+0|after-tour activities
+0|allow
+0|crowded
+0|backpack
+0|lunch box
+0|etc
+0|cloakroom
+0|strict rule
+0|accidentally
+0|knock
+0|handout
+0|quizzes
+0|theatrette
+0|ground floor
+0|continuous
+0|screening
+0|documentary
+0|damage
+0|recently
+0|CD ROM
+0|habitat
+0|survive threats
+0|not open
+0|close
+0|at the back
+0|worksheets
+0|handouts with questions and quizzes
+0|pens
+0|cameras
+0|photographs
+0|watch
+0|films
+0|screenings
+0|documentaries
+0|computer
+0|IT centre
+0|CD ROMs
+0|proposal
+0|submit
+0|typo
+0|layout
+0|contents page
+0|sequence
+0|annotate
+0|consequence
+0|paragraphing
+0|inclusion
+0|subheading
+0|train of thought
+0|formatting
+0|headers and footers
+0|bullet point
+0|tribal
+0|cowboy films
+0|epic
+0|comprehensive
+0|relevant
+0|perspective
+0|plateaux
+0|cliff
+0|erode
+0|outcrop
+0|flock
+0|hardship
+0|endure
+0|territory
+0|settler
+0|vegetation
+0|presumably
+0|shallow-rooted
+0|snowy
+0|penetrate
+0|flood
+0|factual
+0|monolith
+0|spire
+0|hectare
+0|trading post
+0|four-wheel drive jeep
+0|re-order
+0|better sequence
+0|easier
+0|hard
+0|shorten
+0|cut down
+0|separate points
+0|listing ideas
+0|interest
+0|want
+0|movies
+0|epics
+0|content
+0|geographical features
+0|cliffs
+0|do
+0|animal
+0|wildlife
+0|what else
+0|explore
+0|there
+0|process
+0|affect
+0|physical feature
+0|impact
+0|topography
+0|community
+0|economic
+0|interact
+0|migration
+0|cartography
+0|definition
+0|practicality
+0|means
+0|census
+0|relay
+0|pattern
+0|predict
+0|resolve
+0|confidential
+0|atlas
+0|replicate
+0|three-dimensional
+0|distortion
+0|aerial
+0|altitude
+0|Landsat
+0|transmit
+0|effects
+0|a great deal
+0|dynamic
+0|relationships
+0|human
+0|we
+0|lifestyled
+0|their
+0|those
+0|associated
+0|relate
+0|effect
+0|consequences
+0|certain
+0|trees
+0|diseased
+0|density
+0|ocean floor
+0|sea beds
+0|monitor
+0|give information
+0|item
+0|suburb
+0|ship
+0|agent
+0|Singapore
+0|electrical
+0|crack
+0|unusable
+0|repair
+0|cabinet
+0|towel
+0|extent
+0|replace
+0|Indonesia
+0|container
+0|split
+0|estimate
+0|plate
+0|dish
+0|saucer
+0|lot
+0|arrival
+0|television
+0|TV
+0|new
+0|hole
+0|six
+0|value
+0|around
+0|remit
+0|giant
+0|rare
+0|breed
+0|grazing
+0|experimental
+0|rectangular
+0|marsh
+0|ban
+0|tram
+0|solar cell
+0|poultry
+0|nutritional
+0|broaden
+0|season
+0|geese
+0|fruit trees
+0|blossom
+0|display
+0|calendar
+0|browse
+0|author
+0|organic farming
+0|purposes
+0|forest
+0|further east
+0|largest
+0|fish farms
+0|market garden
+0|south-eastern corner
+0|a short time
+0|on foot
+0|maintain
+0|at the present time
+0|demonstration
+0|displays
+0|seminar
+0|insect
+0|quarantine
+0|regulate
+0|import
+0|pest
+0|Queensland
+0|eradicate
+0|New South Wales
+0|infest
+0|mite
+0|microscopic
+0|home-grown
+0|bush
+0|pollinate
+0|devastating
+0|flora
+0|allergic
+0|skeleton
+0|digest
+0|pellet
+0|moisten
+0|scrunch
+0|reliable
+0|inspire
+0|problem
+0|wrong
+0|be infested with
+0|parasite
+0|mites
+0|live on
+0|sell abroad
+0|economy
+0|locations
+0|spots
+0|favourite
+0|analysis
+0|examine
+0|soften
+0|search for
+0|medical care
+0|rationale
+0|postgraduate
+0|questionnaire
+0|focus group
+0|collate
+0|reform
+0|guarantee
+0|revert
+0|implement
+0|honestly
+0|encounter
+0|odd
+0|round
+0|shame
+0|reassurance
+0|traceable
+0|bizarre
+0|substance
+0|eye-opener
+0|students
+0|postgraduates
+0|other countries
+0|overseas
+0|focus on
+0|working
+0|in employment
+0|a wide range
+0|misrepresent
+0|despite ... in fact
+0|establish
+0|colleagues
+0|everyone in department
+0|necessarily
+0|stop
+0|undergraduate
+0|the first-year student
+0|worry about
+0|want reassurance
+0|confidentiality
+0|no names
+0|colleague
+0|work with
+0|keep changing
+0|one minute
+0|then
+0|in the end
+0|tutor
+0|teacher
+0|refuse
+0|wouldn't tell
+0|upper limit
+0|probably
+0|combine
+0|furnish
+0|equip
+0|decorate
+0|schedule
+0|too
+0|monthly
+0|a month
+0|host
+0|spotlight
+0|classical music
+0|gallery
+0|enormous
+0|bomb
+0|opportunity
+0|symphony
+0|orchestra
+0|involve
+0|Mozart
+0|opera
+0|reduction
+0|collection
+0|sculpture
+0|well known
+0|famous
+0|managed by
+0|run by
+0|of the year
+0|gain
+0|fluency
+0|Latin American
+0|barrier
+0|voluntary
+0|possibility
+0|construction
+0|volcano
+0|physically
+0|de-motivate
+0|remote
+0|suspicious
+0|meaningful
+0|guidance
+0|academic
+0|lodging
+0|laptop
+0|reconfigure
+0|elect
+0|sphere
+0|acquisition
+0|indigenous
+0|judge
+0|Portuguese
+0|interfere
+0|accent
+0|learn about
+0|life
+0|originally
+0|choose to
+0|well organised
+0|proper structure
+0|trust
+0|less suspicious
+0|supportive
+0|advice
+0|surprise
+0|not expect
+0|won't do
+0|will do
+0|definite
+0|might do
+0|talk about ... later
+0|do something else
+0|branch bank
+0|naturally
+0|capture
+0|glamorous
+0|previous
+0|confine
+0|overwhelming
+0|attempt
+0|confirm
+0|retail store
+0|real estate agency
+0|call centre
+0|isolated
+0|component
+0|interweave
+0|complicate
+0|ignorance
+0|duplicate
+0|combination
+0|misguide
+0|comparable
+0|modification
+0|compromise
+0|underlying
+0|adjust
+0|realistic
+0|cautious
+0|exert
+0|merely
+0|characteristic
+0|template
+0|built-in
+0|consistency
+0|copy
+0|frequent
+0|often
+0|consistent
+0|consult
+0|go to
+0|pick one's brains
+0|in certain circumstances
+0|if
+0|incomplete
+0|ideal
+0|perfect
+0|changes
+0|modifications
+0|impose
+0|rigorous
+0|strict
+0|features
+0|characteristics
+0|gazette
+0|temporary staff
+0|alternate
+0|negotiate
+0|charge
+0|tip
+0|generous
+0|uniform
+0|trousers
+0|waistcoat
+0|jacket
+0|midday
+0|vouch
+0|vacancy
+0|councilor
+0|city council
+0|consultation
+0|overhead
+0|power lines
+0|bear
+0|mature
+0|pine
+0|pavement
+0|widen
+0|pedestrian
+0|intersection
+0|erect
+0|junction
+0|traffic light
+0|children
+0|walk
+0|safety
+0|bury
+0|underground
+0|bear the cost
+0|C
+0|to the right of
+0|footpaths
+0|D
+0|on the corner of
+0|coloured
+0|painted
+0|red
+0|G
+0|at the entry to
+0|new sign
+0|a sign will be erected
+0|B
+0|intersections
+0|at the junction of
+0|F
+0|half way down
+0|artwork
+0|paintings
+0|A
+0|on the other side of
+0|E
+0|at the other end of
+0|close to
+0|the intersection with
+0|grant
+0|contribution
+0|scholarship
+0|desperate
+0|rehearsal
+0|tough
+0|stamina
+0|haul
+0|wavelength
+0|tutorial
+0|priority
+0|base on
+0|allocate
+0|tackle
+0|brilliant
+0|finance
+0|funding
+0|former
+0|employer
+0|boss
+0|provide funding
+0|parents
+0|take pity on
+0|sufficiently
+0|challenge
+0|not enough time
+0|but with all ... something has to go
+0|feel inferior to
+0|wonder if clever enough
+0|other students
+0|those people
+0|much better
+0|study skills
+0|write essays
+0|plan revision
+0|in view
+0|break down
+0|one
+0|aboriginal
+0|symbolic
+0|categorise
+0|depict
+0|static
+0|dominate
+0|reflect
+0|stick-like
+0|naturalistic
+0|X-ray
+0|organ
+0|curvy
+0|resemble
+0|miniature
+0|shell
+0|marine
+0|diet
+0|prominently
+0|intrigue
+0|rainbow
+0|serpent
+0|curious
+0|kangaroo
+0|crocodile
+0|coincide
+0|tremendous
+0|creep
+0|ribbon
+0|pipefish
+0|sea horse
+0|unfamiliar
+0|inspiration
+0|abundance
+0|witness
+0|understandable
+0|creation
+0|bones
+0|rounded
+0|curvier
+0|missing
+0|smaller
+0|sea
+0|plants
+0|vegetables
+0|as the basis for
+0|higher
+0|rising
+0|especially
+0|symbolise
+0|as a symbol of
+0|vacant
+0|advert
+0|interfere with
+0|physics
+0|work permit
+0|fringe
+0|hostel
+0|perk
+0|referee
+0|next to
+0|beside
+0|extra
+0|ability to
+0|be able to
+0|custom
+0|preview
+0|ultimate
+0|retailing
+0|minimalist
+0|autograph
+0|competition
+0|entrant
+0|fixture
+0|cardiac
+0|muscle tone
+0|open another
+0|floors 1-3
+0|first three floors
+0|any item
+0|what you want
+0|within
+0|specialises in
+0|is devoted to
+0|morning only
+0|until about midday
+0|cheaper
+0|half price
+0|keep eye contact
+0|stress
+0|colloquialism
+0|speak up
+0|jump in
+0|turn to
+0|journal
+0|speed-reading
+0|frustrated
+0|professional
+0|keep eye contact with
+0|dissatisfied
+0|not very happy
+0|not so pleased
+0|know each other well
+0|be familiar with each other
+0|make contribution
+0|reference materials
+0|books
+0|journals
+0|a long time
+0|speed
+0|slow
+0|subject area
+0|subject areas
+0|mass stranding
+0|occurrence
+0|navigate
+0|ingest
+0|humpback whale
+0|saxitoxin
+0|fatal
+0|prey
+0|squid
+0|pinpoint
+0|mammal
+0|phenomenon
+0|common
+0|goes out
+0|quickly
+0|suddenly
+0|originate from
+0|commonly
+0|consumed
+0|feeding
+0|unlikely
+0|not seem to hold true
+0|military tests
+0|military exercises
+0|are linked to
+0|recent
+0|late
+0|unusual
+0|stand out
+0|in addition
+0|frequently
+0|ill
+0|healthy
+0|further reading
+0|gives information
+0|finding out
+0|hall of residence
+0|so forth
+0|catering
+0|full board
+0|opt
+0|red meat
+0|bedsit
+0|socialise
+0|planned
+0|best option
+0|interests
+0|love
+0|enjoy
+0|creature
+0|accessible
+0|willow
+0|commercially
+0|ancient craft
+0|reintroduce
+0|replica
+0|bear ... in mind
+0|herb
+0|dye
+0|ranger
+0|hedge
+0|litter
+0|slide
+0|particular interest
+0|is noted for
+0|many different
+0|great range of
+0|reconstruction
+0|book in advance
+0|phone
+0|wearing
+0|bird hide
+0|west
+0|end
+0|dog-walking area
+0|southern
+0|flower garden
+0|surrounded
+0|wooded area
+0|western
+0|between
+0|self-access centre
+0|routine
+0|relocate
+0|cramped
+0|multiple
+0|laminate
+0|supervise
+0|major
+0|studies
+0|course
+0|prefer to
+0|benefit a lot
+0|elsewhere
+0|relocating
+0|concern
+0|worry
+0|getting help
+0|go to a teacher for advice
+0|concerned about
+0|worried about
+0|difficulty
+0|supervising
+0|is looked after
+0|update
+0|be more current
+0|introducing
+0|divide them up
+0|break them up
+0|talk
+0|reach some agreement on
+0|putting in
+0|personal use
+0|misused
+0|memo
+0|maintenance
+0|expertise
+0|life-span
+0|flexible
+0|by
+0|takes the form of
+0|might not
+0|doesn't always
+0|not afraid
+0|happy
+0|many
+0|lots of different
+0|e.g
+0|for example
+0|benefits
+0|ability
+0|disadvantages
+0|on the other hand
+0|recognise
+0|studio flat
+0|reasonable
+0|feature
+0|mountainside
+0|terrace
+0|barbecue
+0|well-equipped
+0|budget
+0|balcony
+0|cancellation
+0|sensible
+0|resort
+0|representative
+0|switchboard
+0|overlooking
+0|views
+0|not more than
+0|series
+0|locally-run
+0|co-founder
+0|acre
+0|settle down
+0|locomotive
+0|miserable
+0|expand
+0|retirement
+0|mechanical
+0|squadron
+0|stalwart
+0|geology
+0|tunnel
+0|installation
+0|go-kart
+0|mound
+0|trip
+0|weather
+0|driest
+0|not miserable
+0|wet
+0|visitors
+0|been through doors
+0|staffing
+0|recruiting and supporting
+0|workers
+0|watered
+0|sales
+0|square metres
+0|wanted
+0|sufficient
+0|note-taking
+0|peer-group
+0|confidence
+0|structured
+0|discipline
+0|strengths
+0|good at
+0|weak
+0|increases
+0|try
+0|only a few
+0|recommendations
+0|domestic
+0|architect
+0|environmentally-friendly
+0|rural
+0|relatively
+0|recycle
+0|sloping
+0|layer
+0|photovoltaic
+0|foam
+0|insulation
+0|energy-efficient
+0|generate
+0|surplus
+0|reclaim
+0|organically
+0|purify
+0|filter
+0|reed bed
+0|occupant
+0|chemical
+0|concrete
+0|carbon dioxide
+0|initial
+0|debt
+0|interested in environmental issues
+0|two
+0|double
+0|increase
+0|walls
+0|lots of
+0|internal
+0|inside
+0|more than it needs
+0|recycled
+0|reclaimed
+0|used for
+0|made of
+0|processing
+0|quantities
+0|amounts
+0|clinic
+0|appointment
+0|reputation
+0|vaccinate
+0|injury
+0|treatment
+0|therapy
+0|homeopathy
+0|pay-to-use
+0|acupuncture
+0|pilot
+0|asthma
+0|offers
+0|free of charge
+0|employment
+0|control
+0|switch
+0|light up
+0|radiator
+0|plastic
+0|indicator
+0|complicated
+0|instruction
+0|cupboard
+0|hook
+0|lamp
+0|bulb
+0|cardboard
+0|takeaway
+0|pasta
+0|on switch
+0|off switch
+0|far left
+0|main control switch
+0|reset button
+0|in the middle
+0|warning indicator
+0|the third
+0|living room
+0|sitting room
+0|closed
+0|pharmacy
+0|credit ... with
+0|lecturer
+0|essentially
+0|assertive
+0|faculty
+0|set aside
+0|dispensary
+0|sense of achievement
+0|confident
+0|familiarity
+0|home country
+0|my country
+0|finished
+0|altering
+0|way of thinking
+0|discuss
+0|talk about
+0|very much
+0|in addition to
+0|else
+0|become familiar with
+0|familiarity with
+0|background
+0|technique
+0|sparrow-hawk
+0|turn up
+0|inhabit
+0|endorse
+0|tick off
+0|pro-forma
+0|exception
+0|graphic
+0|representation
+0|indication
+0|proliferate
+0|hedgehog
+0|predator
+0|song thrush
+0|resurgence
+0|feed on
+0|provision
+0|incidentally
+0|wondered why
+0|confirmed
+0|endorsed
+0|consulting
+0|looking at
+0|official documents
+0|maps
+0|keep a record
+0|ticking off
+0|adding
+0|species
+0|extensive
+0|reading
+0|wild animals
+0|decline
+0|rural areas
+0|countryside
+0|focuses on
+0|best
+0|general trends
+0|settings as a whole
+0|safer
+0|predators
+0|better survival
+0|no difficulties
+0|accurately
+0|precisely
+0|an extensive range of
+0|self-drive tour
+0|theme park
+0|lodge
+0|beach
+0|dinner
+0|don't like
+0|gymnasium
+0|indoor pool
+0|outdoor pool
+0|training
+0|joining
+0|leisure club
+0|health problem
+0|safety rule
+0|compulsory
+0|premier member
+0|peak time
+0|guest
+0|photo card
+0|swimming pool
+0|pool
+0|improved
+0|refurbished
+0|fitness suite
+0|giving details of
+0|take you through
+0|will be explained to you
+0|be given
+0|must pay
+0|entitles to
+0|are given
+0|gives
+0|booking reference
+0|peak hour
+0|remember
+0|always take
+0|design
+0|energy-saving
+0|appliance
+0|technology
+0|dishwasher
+0|appealing
+0|economical
+0|holding chamber
+0|gas
+0|cleaning process
+0|be disposed of
+0|re-use
+0|technical detail
+0|written report
+0|looks
+0|more appealing
+0|turn
+0|switch on
+0|reverts to
+0|changes back to
+0|is sent back to
+0|is collected
+0|be used again and again
+0|be re-used
+0|you really need
+0|top quality
+0|good quality
+0|why don't you talk to the university about
+0|apply for
+0|details
+0|uncommon
+0|gene
+0|tree root
+0|salmon
+0|stream
+0|erosion
+0|soil
+0|feeding habit
+0|nutrient
+0|deforestation
+0|logging company
+0|unrestricted
+0|existence
+0|reproduction
+0|expansion
+0|protecting
+0|prevent
+0|a few
+0|a small number of
+0|have built
+0|construction of
+0|low rate of
+0|requiring
+0|survey
+0|hairdresser
+0|suggestion
+0|lighting
+0|footpath
+0|train
+0|cycling
+0|safe
+0|more frequent
+0|don't think there are enough
+0|parking
+0|bicycles
+0|bikes
+0|opportunity to have
+0|would like to see you offering
+0|development
+0|City Council
+0|public
+0|architectural style
+0|heating system
+0|method
+0|water treatment
+0|up-to-the-minute
+0|recycling system
+0|decision
+0|statue
+0|jewel
+0|precious stones
+0|space travel
+0|rocket
+0|international Space Station
+0|medieval
+0|fort
+0|fortification
+0|represent
+0|waterway
+0|local people
+0|you
+0|up-to-the-minute features
+0|raised worries about
+0|quite a bit of discussion
+0|local newspaper
+0|local press
+0|room
+0|decide
+0|at the door
+0|at the entrance
+0|snake
+0|tiger
+0|precious stone
+0|rockets and the International Space Station
+0|ancient forts
+0|medieval castles and other fortifications
+0|waterways
+0|great rivers
+0|youth
+0|climbing
+0|collecting
+0|experience
+0|extreme environment
+0|raft journey
+0|setback
+0|authentic
+0|Polynesian
+0|archaeology
+0|academic subject
+0|boy
+0|young man
+0|isolated place
+0|a small island
+0|remote location
+0|harsh weather conditions
+0|main reason
+0|more a matter of
+0|test
+0|trying out
+0|a new theory
+0|idea
+0|authentic construction methods
+0|ancient techniques and local materials
+0|in Olivia's opinion
+0|to my mind
+0|out of date
+0|need to do a new
+0|revised edition
+0|corporation
+0|discussion with
+0|particular
+0|position
+0|leadership
+0|influence
+0|greater
+0|a major increase in
+0|corporations
+0|certain countries
+0|India
+0|China
+0|Brazil and Russia
+0|great skills in
+0|senior roles
+0|senior management position
+0|Childcare Centre
+0|enrolment
+0|glasses
+0|emergency
+0|relationship
+0|each
+0|Dolphin Conservation Trust
+0|volunteer
+0|conservation organisation
+0|fishing practice
+0|exploration
+0|photograph
+0|sight
+0|latest
+0|fin
+0|fishing policy
+0|help in
+0|working in
+0|various ways
+0|office work and other things
+0|better known
+0|more widely publicised and understood
+0|creates
+0|story
+0|sighted
+0|has a lot of energy
+0|newest
+0|unusual shape
+0|particularly large fin
+0|imagine
+0|visualise
+0|boredom
+0|repetition
+0|phrase
+0|scenery
+0|dull colour
+0|pause
+0|conversation
+0|guideline
+0|leader
+0|material
+0|political
+0|social attitude
+0|transformation
+0|equipment failure
+0|letter of recommendation
+0|institution
+0|personal statement
+0|abroad
+0|imagined
+0|repetition of words and phrases
+0|kept saying the same thing over and over
+0|clear guidelines
+0|exactly what to do
+0|shining on the wrong side of the stage
+0|self-regulatory
+0|theory
+0|promotion
+0|goal
+0|emphasise
+0|chronic
+0|situational
+0|friend
+0|aspiration
+0|obligation
+0|behaviour
+0|style
+0|pay attention to
+0|follower
+0|passionate
+0|communication
+0|vision
+0|structure
+0|comes from one's
+0|connected to a person's
+0|ideal version of themselves
+0|ideal self
+0|leadership behaviour
+0|leaders behave
+0|leading
+0|pay special attention to
+0|clear
+0|definitive
+0|create
+0|developing
+0|make expectations clear
+0|exactly what is expected
+0|postbox
+0|glass
+0|cooker
+0|fence
+0|opposite entrance
+0|on the other side of the road from the entrance
+0|fixing
+0|replacing
+0|river transport
+0|Industrial Revolution
+0|demand
+0|metal
+0|shortage
+0|Trust
+0|unemployed
+0|rebuild
+0|copper mine
+0|adapted
+0|enclosed
+0|restore
+0|increase in demand for metals
+0|tremendous need for metals
+0|shortage of fuel
+0|not enough coal
+0|went away
+0|emigrate out of the area
+0|reconstructing
+0|closed in
+0|shouldn't use
+0|don't recommend ... use ...
+0|benefit
+0|cost saving
+0|growth
+0|sale
+0|personnel department
+0|personal tutor
+0|mentor
+0|career officer
+0|booklet
+0|outcome
+0|Organisation
+0|managing time and prioritizing things
+0|explaining things and asserting opinions
+0|get better at
+0|enhances
+0|obtaining
+0|getting
+0|discussing
+0|internet
+0|website
+0|notifies
+0|personal
+0|nanotechnology
+0|misunderstand
+0|scientist
+0|nano-particle
+0|caution
+0|unethical
+0|continue
+0|stronger
+0|space
+0|the masses
+0|energy
+0|affordable
+0|pollutant
+0|remove
+0|famine
+0|speed up
+0|wrong idea
+0|be used with more caution
+0|be treated as new chemicals with separate safety
+0|continued
+0|plough ahead
+0|more durable
+0|ordinary people
+0|a million times more
+0|the cost ... reduced
+0|pollutants
+0|oil & other contaminants
+0|easily
+0|effectively
+0|will be no
+0|wouldn't be
+0|manufacturing
+0|medicine
+0|in minutes rather than in days
+0|Main Hall
+0|deposit
+0|cash
+0|kitchen
+0|licence
+0|caretaker
+0|entry
+0|smoking
+0|band
+0|stage door
+0|volume
+0|microphone
+0|code
+0|plastic bag
+0|evening
+0|from 6 pm to midnight
+0|insist
+0|payment
+0|safety tips
+0|tool
+0|sharp points
+0|sandal
+0|slip
+0|guide dog
+0|ticket
+0|harm
+0|frighten
+0|injure
+0|Scarecrow
+0|corner
+0|maze
+0|Cafe
+0|turn right
+0|first bend
+0|Black Barn
+0|Covered picnic area
+0|Fiddy House
+0|through
+0|science
+0|engineering
+0|mathematics
+0|unfair
+0|logical thinking
+0|grade
+0|positive impact
+0|writing task
+0|oral task
+0|teamwork
+0|assumption
+0|significant
+0|reduce stress
+0|relax
+0|overcome the psychological factors
+0|the same results
+0|biodiversity
+0|hotspot
+0|conservation
+0|worm
+0|temperature
+0|oxygen
+0|ocean currents
+0|distribution
+0|corridor
+0|quota
+0|consumption
+0|locating
+0|not rich
+0|badly off
+0|higher temperature
+0|high temperature
+0|so that
+0|waiter
+0|postcode
+0|politics
+0|economics
+0|council
+0|election
+0|from Monday to Friday
+0|be interested in
+0|be keen on
+0|refurbishment
+0|interior
+0|exterior
+0|backstage tour
+0|postpone
+0|costume
+0|making puppets
+0|now
+0|every month
+0|box office
+0|next door
+0|separate entrance
+0|theatre manager's office
+0|go across
+0|lighting box
+0|turn left
+0|right again
+0|second room
+0|artistic director's office
+0|first room
+0|right-hand side
+0|organism
+0|endangered species
+0|classify
+0|compass
+0|wave speed
+0|scan
+0|splash zone
+0|error
+0|identification
+0|generalization
+0|sample
+0|habitats
+0|leave something behind
+0|straightforward
+0|pictures
+0|lack of water
+0|dry out
+0|too hot
+0|missed
+0|incorrect identification
+0|not identify correctly
+0|concert hall
+0|designer
+0|context
+0|canal
+0|bridge
+0|screen
+0|pad
+0|rubber
+0|curve
+0|ceiling panel
+0|acoustics
+0|critic
+0|international
+0|but also
+0|disused
+0|border
+0|cross over
+0|act as
+0|function as
+0|huge
+0|adjustment
+0|ceramic
+0|nature reserve
+0|mushroom
+0|run from
+0|majority
+0|all year round
+0|throughout the year
+0|pick
+0|suitable
+0|swimming
+0|route
+0|network
+0|bypass
+0|cycle path
+0|retailer
+0|few
+0|major retailers
+0|well-known chain stores
+0|no hospital
+0|hospital closed
+0|education
+0|schools
+0|colleges
+0|expanded
+0|site
+0|redecorated
+0|opening hours extended
+0|open later
+0|administers
+0|cave
+0|dancing
+0|ice-skater
+0|grass
+0|trunk
+0|scarf
+0|comment
+0|all around
+0|men and women
+0|ice-skaters
+0|skating
+0|stories
+0|write something
+0|ethnography
+0|measuring cup
+0|cell phone
+0|entrepreneur
+0|software
+0|administrator
+0|patient
+0|nurse
+0|respondent
+0|emotion
+0|principle
+0|criteria
+0|income
+0|participant
+0|computer records
+0|travelling
+0|passengers
+0|first-hand
+0|secondary school
+0|prize
+0|actor
+0|sailor
+0|Prize
+0|well-known
+0|5-10-year-olds
+0|adults
+0|yourself and your husband
+0|all ages
+0|young and old
+0|painting
+0|exhibit
+0|media
+0|artist
+0|basement
+0|porcelain
+0|most popular
+0|largest number of visitors
+0|given by
+0|a number of
+0|newspapers
+0|the public
+0|one person
+0|its founder
+0|restaurant
+0|straight ahead
+0|facing
+0|on the right
+0|baby-changing facilities
+0|downstairs
+0|left-hand side
+0|last door
+0|subject
+0|recording
+0|string instrument
+0|technical
+0|role
+0|link
+0|controversy
+0|reaction
+0|masculine
+0|distract
+0|freedom
+0|internationally
+0|different continents
+0|top performers
+0|leading musicians
+0|dress
+0|dress choice
+0|clothing from
+0|respect
+0|esteem
+0|safeguard
+0|absorb
+0|sugar
+0|microbe
+0|invent
+0|regenerative
+0|fertile
+0|moist
+0|cattle
+0|compost
+0|fertilizer
+0|storage
+0|more likely
+0|ground
+0|using
+0|cultivating
+0|store
+0|passenger
+0|holding pens
+0|basic cost
+0|extra charge
+0|photos
+0|surround
+0|in the farm's
+0|belong to the farm
+0|at extra cost
+0|not included in the basic cost
+0|cyclists
+0|someone
+0|a bit more
+0|hired
+0|anywhere to stay
+0|prices
+0|total
+0|whole family
+0|an adult and a child
+0|tour
+0|previous experience
+0|slippery
+0|hazard
+0|minor
+0|incident
+0|perishables
+0|order
+0|the variety of
+0|so many different
+0|things to do
+0|moving you up
+0|shoes
+0|footwear
+0|jewellery
+0|rings and bracelets
+0|almost fully booked
+0|don't have any tables free
+0|18 or older
+0|under 18
+0|need to
+0|immediately
+0|straightaway
+0|physically demanding
+0|on your feet all day long
+0|timetables
+0|during the day
+0|first aid
+0|injure yourself
+0|appropriate treatment
+0|breakages
+0|smash a plate
+0|flour or sugar
+0|stocks
+0|stores
+0|getting low in
+0|for instance
+0|in detail
+0|brainstorm
+0|obsolete
+0|physical book
+0|personal preference
+0|evolve
+0|financial implications
+0|in-depth
+0|floor coverings
+0|emergency exits
+0|archive
+0|longer
+0|in the future
+0|in the next few years
+0|no longer
+0|all disappear
+0|is required
+0|needs to have
+0|accidents
+0|gets injured
+0|a famous person
+0|a well-known politician
+0|different from
+0|differences between
+0|take ... for granted
+0|over-simple
+0|theoretical concepts
+0|pursue
+0|by all means
+0|backfire
+0|get in the way
+0|centimetre
+0|comply with
+0|aptitude
+0|puzzle
+0|inconsistency
+0|TV commercial
+0|version
+0|result in
+0|senior managers
+0|business leaders
+0|managing
+0|arise
+0|team
+0|construct
+0|experienced
+0|descended
+0|in the case of
+0|a bad use
+0|wastes
+0|in this context
+0|here
+0|refers to
+0|avoid doing tasks
+0|not to carry out
+0|memorable
+0|remembered
+0|failed to
+0|without having any effect
+0|boost
+0|should be
+0|needs to be
+0|a response
+0|targeted
+0|identified
+0|far higher than
+0|less than half that
+0|only 13%
+0|choir
+0|army cadets
+0|college
+0|ballet
+0|perform
+0|later
+0|the sun sets
+0|across
+0|on the opposite side of
+0|connected with
+0|can
+0|which have
+0|displaying
+0|up to date
+0|liaise with
+0|meat-oriented
+0|playwright
+0|a dressy occasion
+0|soundtrack
+0|revival
+0|mayor
+0|reception
+0|for the first time
+0|premiere
+0|celebrate
+0|an anniversary
+0|the birth of a well-known scientist
+0|outdoors
+0|in the garden
+0|officials
+0|the mayor and all the other dignitaries
+0|a historical building
+0|old Town Hall
+0|accurate
+0|undergraduate course
+0|translating
+0|fruitful
+0|genre
+0|textbook
+0|make sense
+0|Danish people
+0|her relations or friends
+0|visited his family
+0|came to see us
+0|work in the media
+0|writing for magazines
+0|will be replaced
+0|the social background
+0|in the context of the society
+0|paper
+0|source material
+0|suitable articles and books
+0|write notes
+0|take notes
+0|put ... as
+0|considerably
+0|abusively
+0|aggressively
+0|numerous
+0|hierarchy
+0|optimism
+0|intolerant
+0|pessimistic
+0|behind-the-scenes
+0|spiral
+0|autocratic
+0|politeness
+0|mostly consists of
+0|much of this
+0|in the general category of
+0|is covered by
+0|a result of
+0|wanting to
+0|feels the need to
+0|differences
+0|incompatible with
+0|more concerned about
+0|more interested in
+0|resulting in
+0|both
+0|combine two opposing characteristics
+0|managers and board members
+0|their own
+0|they can't agree
+0|bosses
+0|a good manager
+0|try hard
+0|make efforts to
+0|earn
+0|from outside the company
+0|external
+0|resolve conflicts
+0|be able to help
+0|magazine
+0|section
+0|reference book
+0|community room
+0|fiction
+0|experiment
+0|crime
+0|blood sugar
+0|cholesterol level
+0|wall-chart
+0|devoted to
+0|and also
+0|competitive
+0|trend
+0|popularity
+0|risk
+0|rafting
+0|organic ingredients
+0|meat-free recipe
+0|tuition
+0|programme
+0|weight
+0|increasing
+0|friends
+0|culture
+0|customs
+0|one-on-one
+0|reduces
+0|losing
+0|case study
+0|note
+0|interviewee
+0|anonymous
+0|graph
+0|chart
+0|category
+0|retired people
+0|investment
+0|permission
+0|restriction
+0|warden
+0|enforce
+0|information from
+0|employees
+0|people who work
+0|administrators
+0|names
+0|patterns
+0|trends
+0|publicity
+0|restrictions
+0|mercury
+0|element
+0|symbol
+0|thermometer
+0|toxic
+0|coal
+0|food chain
+0|sub-effect
+0|memory
+0|contaminate
+0|laboratory
+0|emission
+0|acquire
+0|learning
+0|cycle trip
+0|cancel
+0|cyclist
+0|youth club
+0|food allergy
+0|notice
+0|short
+0|ten-minute
+0|fibre
+0|gala evening
+0|receipt
+0|winding road
+0|young professional people
+0|graduates on careers
+0|arts and crafts
+0|ceramics
+0|aspects
+0|music
+0|adaptation
+0|classification
+0|faithful
+0|clip
+0|patriotism
+0|succeed
+0|throne
+0|innovative
+0|animation
+0|different country
+0|Japan
+0|Britain
+0|different period
+0|move the action into the present day
+0|another kind of film
+0|typical action hero movie
+0|a variety of art forms
+0|dance
+0|singing
+0|parts
+0|a few scenes
+0|decibel
+0|database
+0|perception
+0|city-dweller
+0|composition
+0|fountain
+0|emotional response
+0|interdisciplinary research
+0|high heel
+0|intrusive
+0|drainage
+0|aesthetic
+0|virtual reality
+0|nice and relaxing
+0|not much
+0|very little
+0|gender
+0|medium build
+0|average height
+0|slim
+0|stout
+0|plump
+0|bald
+0|balding
+0|hair colour
+0|brown
+0|blond
+0|straight hair
+0|curly hair
+0|waved hair
+0|fair hair
+0|dyed hair
+0|a pony tail
+0|long plaits
+0|short plaits
+0|angular
+0|scar
+0|beard
+0|moustache
+0|mustache
+0|chin
+0|wearing glasses
+0|contact lenses
+0|tattoo
+0|jeans
+0|T-shirt
+0|top
+0|pullover
+0|sweater
+0|pink and white striped skirt
+0|spotted shirt
+0|checked shirt
+0|be in red
+0|be in green
+0|be in dark
+0|be in tie
+0|wear tie
+0|bracelet
+0|stockings
+0|boots
+0|high-heel shoe
+0|sports shoes
+0|surname
+0|last name
+0|given name
+0|full name
+0|middle initial
+0|passport number
+0|visa
+0|ID
+0|identity
+0|driving
+0|driver's license
+0|date of birth
+0|age
+0|blood type
+0|height
+0|marital status
+0|home address
+0|preferred food
+0|favourite food
+0|hobbies
+0|register date
+0|enrolment date
+0|English proficiency
+0|signature
+0|home number
+0|office number
+0|date of arrival
+0|date of departure
+0|first impressions of the city
+0|first impressions of the university
+0|Student Accommodation Centre
+0|Student Accommodation Officer
+0|roommate
+0|flatmate
+0|dormmate
+0|housemate
+0|housing coordinator
+0|newspaper advertisements
+0|landlady
+0|for lease
+0|for rent
+0|for sale
+0|downtown
+0|Road
+0|Rd
+0|Street
+0|St
+0|Lane
+0|Avenue
+0|floor number
+0|room number
+0|dormitory
+0|dorm
+0|student hostel
+0|youth hostel
+0|homestay
+0|unit
+0|townhouse
+0|bedroom
+0|double bedroom
+0|twin bedroom
+0|single bedroom
+0|laundry room
+0|shower
+0|hallway
+0|store room
+0|store house
+0|garden
+0|stove
+0|refrigerator
+0|microwave oven
+0|air-conditioner
+0|electric fan
+0|electric stoves
+0|unfurnished
+0|furnished
+0|pillow case
+0|bed linen
+0|bedspread
+0|sheet
+0|mattress
+0|wardrobe
+0|utilities
+0|bond
+0|blackout
+0|insects haunting
+0|travel agency
+0|book the ticket
+0|passport
+0|make a reservation
+0|confirm a reservation
+0|cancel one's reservation
+0|first come
+0|first serve
+0|book a room
+0|book a table
+0|toll
+0|saver ticket
+0|open ticket
+0|one-way ticket
+0|round-trip ticket
+0|return ticket
+0|business class
+0|economy class
+0|layover
+0|stopover
+0|non-stop flight
+0|connecting-flight
+0|flight number
+0|take off
+0|check in
+0|airport tax
+0|duty-free shop
+0|excess charge
+0|vacant seat
+0|destination
+0|extra surcharge
+0|fulling-booked
+0|seat arrangement
+0|seat assignment
+0|express way
+0|express train
+0|van
+0|shuttle bus
+0|airport limousine
+0|berth
+0|Ford
+0|Benz
+0|BMW
+0|parking lot
+0|parking area
+0|parking meter
+0|parking permit
+0|parking sticker
+0|pay a fine
+0|tow away
+0|clamp the wheel
+0|E.T.A
+0|estimated time of arrival
+0|E.T.D
+0|estimated time of departure
+0|credit card
+0|driving license
+0|driving licence
+0|expire
+0|platform
+0|book the room
+0|currency
+0|Canadian dollar
+0|Australian dollar
+0|pound
+0|euro
+0|Japanese yen
+0|Visa
+0|Master Card
+0|American Express
+0|deserts
+0|hilly areas
+0|wetlands
+0|bushland
+0|tropical rain forests
+0|resorts
+0|beaches
+0|coastal areas
+0|lake
+0|hot spring
+0|spotlight tour
+0|four-wheel drive
+0|museum
+0|private transport
+0|ferry
+0|subway
+0|tube
+0|metro
+0|river cruise
+0|boat trips
+0|hiking
+0|hitch-hike
+0|backpacker
+0|scuba diving
+0|surfing
+0|skiing
+0|water skiing
+0|hang gliding
+0|water polo
+0|stinger
+0|shark
+0|jellyfish
+0|certain plants
+0|beach towel
+0|telescope
+0|walking boots
+0|socks
+0|sunscreen
+0|long trousers
+0|labour market
+0|seasonal work
+0|piecework
+0|timework
+0|to apply for a job
+0|occupational disease
+0|vocational guidance
+0|vocational training
+0|personnel
+0|clerk
+0|trainee
+0|apprentice
+0|night shift
+0|trade union
+0|remuneration
+0|wage
+0|salary
+0|premium pay
+0|bonus pay
+0|extra pay
+0|payday
+0|pay slip
+0|payroll
+0|pension
+0|receptionist
+0|typist entry
+0|data entry
+0|key puncher
+0|stenographer
+0|telephone operator
+0|shorthand typist
+0|delivery boy
+0|cleaner
+0|mailman
+0|newspaper boy
+0|milkman
+0|florist
+0|baker
+0|guide
+0|window dressing
+0|shoplifter
+0|keep an eye on stock
+0|coffee break
+0|labour exchange
+0|employment exchange
+0|ATM
+0|cashier
+0|teller
+0|draw money
+0|withdraw money
+0|pin number
+0|pin password
+0|pin code
+0|open a student account
+0|bank statement
+0|apply for a personal loan
+0|change pounds into dollars
+0|the current rate
+0|give the money in fives
+0|give the money in tens
+0|check the present balance in your account
+0|physician
+0|oculist doctor
+0|eye doctor
+0|surgeon
+0|vet
+0|see a doctor
+0|send for a doctor
+0|make an appointment
+0|symptom
+0|have a cold
+0|catch a cold
+0|have a sore throat
+0|stomachache
+0|fever
+0|cough
+0|headache
+0|toothache
+0|have a runny nose
+0|depression
+0|vomit up
+0|throw up
+0|dizzy
+0|feel chilly
+0|liver trouble
+0|pneumonia
+0|flu
+0|twisted
+0|diabetic
+0|cramp
+0|diarrhea
+0|have a stuffed nose
+0|stiff neck
+0|yellow fever
+0|hay fever
+0|pill
+0|tablet
+0|capsule
+0|mixture
+0|eyedrop
+0|syrup
+0|vitamin
+0|penicillin
+0|antibiotic
+0|ointment
+0|medication
+0|aspirin
+0|cold cure
+0|sweating medicine
+0|febrifuge
+0|bandage
+0|syringe
+0|stethoscope
+0|injection
+0|preventive injection
+0|gauze
+0|case history
+0|extract
+0|take one's temperature
+0|feel one's pulse
+0|take one's blood pressure
+0|give a prescription
+0|have an operation
+0|province
+0|state
+0|cost of living
+0|pace of life
+0|interesting
+0|dull
+0|main industry
+0|primary industry
+0|leading industry
+0|farming
+0|sheep and cattle farming
+0|fishing
+0|fish farming
+0|wine-making
+0|transportation
+0|printing
+0|electronics
+0|climate
+0|annual average
+0|highest temperature
+0|lowest temperature
+0|windy
+0|cold and wet
+0|rainy
+0|cloudy
+0|language
+0|dialect
+0|main attraction
+0|wine
+0|wool
+0|cereal
+0|timber
+0|minus twenty degrees Celsius
+0|minus twenty degrees Centigrade
+0|rear
+0|at the end of
+0|opposite to
+0|be far from
+0|be nearby
+0|go back
+0|back up
+0|go down
+0|go east
+0|go west
+0|go south
+0|go north
+0|be on sb.'s left
+0|be on sb.'s right
+0|directly opposite
+0|be in the corner of
+0|wing
+0|annex
+0|twin building
+0|landmark
+0|stair
+0|aisle
+0|wheel chair access
+0|crossroad
+0|a fork on the road
+0|a T road
+0|flyover
+0|go straight across
+0|go straight to
+0|go straight through
+0|go on ... till you meet ...
+0|go along ... till you meet ...
+0|be the first from the left
+0|be the first from the right
+0|be the second from the left
+0|be the second from the right
+0|be the third from the left
+0|be the third from the right
+0|be located behind
+0|be located in front of
+0|be on the corner of ... street and ... street
+0|U.K
+0|the United Kingdom
+0|Great Britain
+0|London
+0|England
+0|Liverpool
+0|Manchester
+0|Sheffield
+0|Birmingham
+0|Coventry
+0|Leeds
+0|Scotland
+0|Glasgow
+0|Edinburgh
+0|Wales
+0|Cardiff
+0|Northern Ireland
+0|Belfast
+0|Dublin
+0|Australia
+0|Canberra
+0|Brisbane
+0|Sydney
+0|South Australia
+0|Adelaide
+0|Victoria
+0|Melbourne
+0|Western Australia
+0|Perth
+0|Wellington
+0|Auckland
+0|Canada
+0|Ottawa
+0|British Columbia
+0|Vancouver
+0|Alberta
+0|Edmonton
+0|Ontario
+0|Quebec
+0|Montreal
+0|the United States of America
+0|Washington
+0|Boston
+0|Atlanta
+0|Seattle
+0|Los Angeles
+0|L.A
+0|Tokyo
+0|Seoul
+0|Bangkok
+0|Rome
+0|Paris
+0|admission office
+0|student union
+0|opening ceremony
+0|orientation meeting
+0|orientation week
+0|lecture
+0|president
+0|chancellor
+0|principal
+0|headmaster
+0|headmistress
+0|dean
+0|professor
+0|associate professor
+0|assistant professor
+0|adviser
+0|counselor
+0|coordinator
+0|Italian
+0|Russian
+0|Arabic
+0|Mandarin
+0|Mandarin Standard Chinese
+0|Cantonese
+0|French
+0|German
+0|Latin
+0|fundamental
+0|elementary
+0|intermediate
+0|advanced
+0|selective course
+0|selective elective
+0|selective option
+0|required course
+0|compulsory course
+0|exemption
+0|enrollment
+0|application form
+0|course arrangement
+0|school
+0|graduate school
+0|School of Arts and Sciences
+0|score
+0|credit
+0|degree
+0|diploma
+0|literature
+0|philosophy
+0|history
+0|art
+0|linguistics
+0|architecture
+0|business
+0|law
+0|accounting
+0|banking
+0|biochemistry
+0|geography
+0|anthropology
+0|volcanology
+0|TA
+0|Teaching Assistant
+0|office hour
+0|essay
+0|class participation
+0|attendance
+0|research
+0|teaching aid
+0|powerpoint
+0|ppt
+0|thesis
+0|reference stacks
+0|library card
+0|admission card
+0|date slip
+0|date of expiry
+0|overdue and pay a fine
+0|renew
+0|out on loan
+0|closed reserved
+0|in circulation
+0|out circulation
+0|not for circulation
+0|held in the closed reserved
+0|bibliography
+0|periodical magazines and journals
+0|return in time
+0|interlibrary service
+0|open shelves
+0|closed shelves
+0|computer lab
+0|mainframe
+0|cable modem
+0|mouse
+0|hard disk
+0|floppy disk
+0|disc
+0|loudspeaker
+0|printer
+0|scanner
+0|photocopier
+0|copier
+0|laser printer
+0|dot-matrix printer
+0|colour inject printer
+0|software programmes
+0|viruses
+0|copyright laws
+0|poll
+0|short answer questions
+0|multiple choice
+0|matching
+0|rank
+0|gap filling
+0|statistically valid
+0|datum
+0|quantitative
+0|analyze data
+0|analyse data
+0|opinion
+0|private opinions
+0|public opinions
+0|campus
+0|common room
+0|dining hall
+0|cafeteria
+0|pie
+0|pudding
+0|soup
+0|coffee
+0|fish and chips
+0|greasy
+0|parking regulation
+0|shopping mall
+0|teaching building
+0|lecture theatre
+0|administrating office
+0|admin office
+0|club
+0|society
+0|student account
+0|chequebook
+0|checkbook
+0|withdraw cash
+0|midterm
+0|final
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 4838
+# Total Entries Extracted: 4838
+# Duplicate Words Merged : 1
+# Duplicate List Preview : ['cafe']
+# Final Unique Word Count: 4837
+# -------------------------------

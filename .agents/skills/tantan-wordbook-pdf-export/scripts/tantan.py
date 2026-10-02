@@ -338,11 +338,15 @@ def pull(name, out_dir):
 
 def verify(path, expect):
     """校验 PDF 的最大序号 == App 标注词数（即整本、无漏词）。"""
-    import pypdf
-    r = pypdf.PdfReader(path)
-    t = "\n".join((p.extract_text() or "") for p in r.pages)
-    got = max((int(x) for x in re.findall(r"(?m)^\s*(\d{1,5})\s*$", t)), default=0)
-    return len(r.pages), got, got == expect
+    try:
+        import pypdf
+        r = pypdf.PdfReader(path)
+        t = "\n".join((p.extract_text() or "") for p in r.pages)
+        got = max((int(x) for x in re.findall(r"(?m)^\s*(\d{1,5})\s*$", t)), default=0)
+        return len(r.pages), got, got == expect
+    except Exception as e:
+        log(f"    verify 解析异常: {e}")
+        return 0, -1, False
 
 
 def export_group(tab, chip, out_dir, template="中英词表",
@@ -357,9 +361,19 @@ def export_group(tab, chip, out_dir, template="中英词表",
     report = []
     clear_in_study()
     for i, (name, expect) in enumerate(books, 1):
-        if resume and glob.glob(os.path.join(out_dir, f"{name}_*.pdf")):
-            log(f"[{i}/{len(books)}] 跳过（已导出）: {name}")
-            continue
+        if resume:
+            exist_files = glob.glob(os.path.join(out_dir, f"{name}_*.pdf"))
+            if exist_files:
+                pages, got, ok = verify(exist_files[0], expect)
+                if ok:
+                    log(f"[{i}/{len(books)}] 跳过（已导出且校验通过）: {name}")
+                    continue
+                else:
+                    log(f"[{i}/{len(books)}] 已有 PDF 校验未通过 (页={pages}, got={got}, 期望={expect})，重新导出: {name}")
+                    try:
+                        os.remove(exist_files[0])
+                    except Exception:
+                        pass
         t0 = time.time()
         try:
             n, cap = in_study_count()
