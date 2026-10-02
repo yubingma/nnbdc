@@ -1687,10 +1687,11 @@ class StudyBo {
       trackName: currentTrackName,
       stepIndex: stepIndexInTrack,
     );
-    // 重测 = 本环节已经出过一次题（在记录里），但该词还没走完本环节（learnedTimes 仍停在本环节）。
-    // 必须在 markPresented 之前算，否则刚呈现的自己会被算成"已出过题"。
+    // 重测 = 本环节已产生过作答记录但答错未通过（待重练），与调度口径（_compareBatchWords）完全一致。
+    // 绝不能仅凭 alreadyPresented.contains(wordId) 判定：若用户未作答即退出页面，再次进入时该词
+    // 尚未作答，绝不能被误标为"本环节重测"。
     final bool isRetry =
-        alreadyPresented.contains(wordId) && current.learnedTimes <= stepIndexInTrack;
+        (firstLogs[wordId]?.logCount ?? 0) > current.learnedTimes;
 
     if (markPresentedWord) {
       await PhasePresentationTracker.markPresented(

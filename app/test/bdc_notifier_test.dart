@@ -2759,8 +2759,8 @@ void main() {
     expect(state.groupStepPosition, 2,
         reason: '重新进入学习页不是"换环节"，x/y 不能从 2/2 掉回 1/2');
     expect(state.groupStepTotal, 2);
-    expect(state.isGroupStepRetry, true,
-        reason: 'word_2 本环节已出过题，重新进来仍应标"本环节重测"');
+    expect(state.isGroupStepRetry, false,
+        reason: 'word_2 尚未作答，重新进入学习页不得标"本环节重测"');
     expect(
       PhasePresentationTracker.presentedWordIds(
               groupNo: 1, trackName: '新词测评', stepIndex: 0)
