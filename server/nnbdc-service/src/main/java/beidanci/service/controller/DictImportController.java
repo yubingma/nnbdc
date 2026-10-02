@@ -191,13 +191,17 @@ public class DictImportController {
                 return Result.fail("meta.json 中没有配置需要导入的词书 books");
             }
 
-            // 1. 首先验证是否所有的词书都不存在同名词书
-            for (Map<String, Object> book : books) {
-                String dictName = (String) book.get("dictName");
-                if (dictName != null && !dictName.trim().isEmpty()) {
-                    Dict existingDict = dictBo.findByName(dictName.trim());
-                    if (existingDict != null) {
-                        return Result.fail("批量导入失败：同名词书「" + dictName + "」已存在，所有任务不予创建！");
+            boolean allowExisting = (boolean) metaMap.getOrDefault("allowExisting", false);
+
+            // 1. 首先验证是否所有的词书都不存在同名词书 (若显式指定 allowExisting=true 则允许增量续传/补齐)
+            if (!allowExisting) {
+                for (Map<String, Object> book : books) {
+                    String dictName = (String) book.get("dictName");
+                    if (dictName != null && !dictName.trim().isEmpty()) {
+                        Dict existingDict = dictBo.findByName(dictName.trim());
+                        if (existingDict != null) {
+                            return Result.fail("批量导入失败：同名词书「" + dictName + "」已存在，所有任务不予创建！");
+                        }
                     }
                 }
             }

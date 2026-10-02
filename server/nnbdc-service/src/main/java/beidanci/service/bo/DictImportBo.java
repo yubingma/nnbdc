@@ -566,33 +566,66 @@ public class DictImportBo {
         return false;
     }
 
+    public Word getOrCreateWord(String spell, AiResult aiResult, TaskStatistics stats) {
+        Word word = wordBo.getWordBySpell(spell);
+        if (word != null) {
+            return word;
+        }
+
+        // JVM 级锁：严格互斥同一拼写的并发创建，从物理源头消灭 duplicate key
+        String lockKey = ("WORD_LOCK_" + spell.toLowerCase().trim()).intern();
+        synchronized (lockKey) {
+            word = wordBo.getWordBySpell(spell);
+            if (word != null) {
+                return word;
+            }
+            try {
+                return self.createWordInNewTx(spell, aiResult, stats);
+            } catch (Exception e) {
+                if (isDuplicateKey(e)) {
+                    logger.info("检测到并发创建冲突，回退查询已有单词: " + spell);
+                    word = wordBo.getWordBySpell(spell);
+                    if (word != null) {
+                        return word;
+                    }
+                }
+                throw new RuntimeException("创建单词失败: " + spell, e);
+            }
+        }
+    }
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, rollbackFor = Throwable.class)
+    public Word createWordInNewTx(String spell, AiResult aiResult, TaskStatistics stats) {
+        Word word = wordBo.getWordBySpell(spell);
+        if (word != null) {
+            return word;
+        }
+        word = new Word();
+        word.setSpell(spell);
+        word.setPopularity(5);
+        if (aiResult != null && aiResult.phonetic != null) {
+            String sanitizedPhonetic = Util.sanitizePhonetic(aiResult.phonetic);
+            word.setBritishPronounce(sanitizedPhonetic);
+            word.setAmericaPronounce(sanitizedPhonetic);
+            word.setPronounce(sanitizedPhonetic);
+        }
+        wordBo.createEntity(word);
+        if (stats != null) {
+            stats.addedWordCount++;
+            stats.addedAudioCount++;
+        }
+        WordDto wordDto = wordBo.toDto(word);
+        sysDbSyncBo.logOperation(wordDto, "INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
+        if (stats != null) {
+            stats.addSyncLog("INSERT", "word");
+        }
+        return word;
+    }
+
     @Transactional(rollbackFor = Throwable.class)
     public Word persistWordData(Word word, boolean isNewWord, List<ExtrinsicResourcePlan> resourcePlans,
                                 String dictId, Integer unit, String preferredVoices, String voiceRequirement, TaskStatistics stats) throws Exception {
-        if (isNewWord) {
-            try {
-                wordBo.createEntity(word);
-                stats.addedWordCount++;
-                stats.addedAudioCount++; // 统计单词发音资源
-
-                // 新增单词全局可见，必须为客户端插入一条系统同步日志
-                WordDto wordDto = wordBo.toDto(word);
-                sysDbSyncBo.logOperation(wordDto, "INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
-                stats.addSyncLog("INSERT", "word");
-            } catch (Exception e) {
-                if (isDuplicateKey(e)) {
-                    logger.info("检测到并发导入冲突，单词 [" + word.getSpell() + "] 刚才已被其它任务线程写入，执行降级查询。");
-                    word = wordBo.getWordBySpell(word.getSpell());
-                    if (word == null) {
-                        throw e;
-                    }
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        if (word == null) {
+        if (word == null || word.getId() == null) {
             throw new RuntimeException("无法获取或创建单词对象");
         }
 
@@ -688,16 +721,8 @@ public class DictImportBo {
         AiResult lastAiResult = null;
 
         if (isNewWord) {
-            word = new Word();
-            word.setSpell(spell);
-            word.setPopularity(5);
-
             lastAiResult = getAiResult(spell, null, null, false, null, sentenceRequirement, null);
-
-            String sanitizedPhonetic = Util.sanitizePhonetic(lastAiResult.phonetic);
-            word.setBritishPronounce(sanitizedPhonetic);
-            word.setAmericaPronounce(sanitizedPhonetic);
-            word.setPronounce(sanitizedPhonetic);
+            word = self.getOrCreateWord(spell, lastAiResult, stats);
         }
 
         // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音(网络IO，无事务)
