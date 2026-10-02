@@ -31,6 +31,9 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
   final List<String> _selectedGroupIds = [];
   final List<String> _selectedHallIds = [];
 
+  bool _isFetchingBatches = false;
+  int _batchRequestId = 0;
+
   @override
   void initState() {
     super.initState();
@@ -40,7 +43,6 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       _loadBatches(silent: true);
     });
   }
-
 
   @override
   void dispose() {
@@ -86,8 +88,12 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
   }
 
   Future<void> _loadBatches({bool silent = false}) async {
+    // 互斥锁：无论是否 silent，同一时刻只允许一个批次查询在进行
+    if (_isFetchingBatches) return;
+    _isFetchingBatches = true;
 
-    if (_isLoading) return;
+    final currentRequestId = ++_batchRequestId;
+
     if (!silent) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() { _isLoading = true; });
@@ -95,9 +101,12 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     }
     try {
       final res = await Api.client.getAllBatches();
+      // 如果期间发起了更新的请求，或者组件已卸载，丢弃该响应
+      if (currentRequestId != _batchRequestId || !mounted) return;
+
       if (res.success && res.data != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
+          if (mounted && currentRequestId == _batchRequestId) {
             setState(() {
               _batches = res.data!.data;
             });
@@ -112,6 +121,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
         });
       }
     } finally {
+      _isFetchingBatches = false;
       if (!silent) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) setState(() { _isLoading = false; });
@@ -612,7 +622,11 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     sortedTasks.sort((a, b) {
       double progressA = (a['processedWords'] ?? 0) / ((a['totalWords'] ?? 0) > 0 ? a['totalWords'] : 1);
       double progressB = (b['processedWords'] ?? 0) / ((b['totalWords'] ?? 0) > 0 ? b['totalWords'] : 1);
-      return progressB.compareTo(progressA);
+      int cmp = progressB.compareTo(progressA);
+      if (cmp != 0) return cmp;
+      String nameA = (a['dictName'] ?? a['fileName'] ?? '').toString();
+      String nameB = (b['dictName'] ?? b['fileName'] ?? '').toString();
+      return nameA.compareTo(nameB);
     });
 
     return Card(

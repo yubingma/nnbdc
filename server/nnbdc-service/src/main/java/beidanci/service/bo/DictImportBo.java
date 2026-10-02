@@ -415,22 +415,20 @@ public class DictImportBo {
         } catch (Exception e) {
             logger.error("词典导入任务失败: " + taskId, e);
             ImportTask latestTask = importTaskBo.findById(taskId);
-            if (latestTask != null && "CANCELED".equals(latestTask.getStatus())) {
-                latestTask.setResults(JsonUtils.toJson(stats));
+            ImportTask taskToUpdate = latestTask != null ? latestTask : task;
+            if ("CANCELED".equals(taskToUpdate.getStatus())) {
+                taskToUpdate.setResults(JsonUtils.toJson(stats));
                 String errorMsg = e.getMessage() != null ? e.getMessage() : "导入任务已被手动终止";
-                latestTask.setLog((latestTask.getLog() != null ? latestTask.getLog() : "") + "\nCANCELED: " + errorMsg);
-                try {
-                    importTaskBo.updateEntity(latestTask);
-                } catch (IllegalAccessException ignore) {}
+                taskToUpdate.setLog((taskToUpdate.getLog() != null ? taskToUpdate.getLog() : "") + "\nCANCELED: " + errorMsg);
             } else {
-                task.setStatus("FAILED");
-                task.setResults(JsonUtils.toJson(stats));
+                taskToUpdate.setStatus("FAILED");
+                taskToUpdate.setResults(JsonUtils.toJson(stats));
                 String errorMsg = e.getMessage() != null ? e.getMessage() : "未知错误";
-                task.setLog((task.getLog() != null ? task.getLog() : "") + "\nERROR: " + errorMsg);
-                try {
-                    importTaskBo.updateEntity(task);
-                } catch (IllegalAccessException ignore) {}
+                taskToUpdate.setLog((taskToUpdate.getLog() != null ? taskToUpdate.getLog() : "") + "\nERROR: " + errorMsg);
             }
+            try {
+                importTaskBo.updateEntity(taskToUpdate);
+            } catch (IllegalAccessException ignore) {}
 
         } finally {
             try {
