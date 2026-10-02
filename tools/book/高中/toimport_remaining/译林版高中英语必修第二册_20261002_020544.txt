@@ -1,0 +1,302 @@
+0|type
+0|comedy
+0|documentary
+0|fantasy
+0|horror
+0|romance
+0|fiction
+0|science fiction
+0|behind the scenes
+0|actually
+0|brief
+0|familiar
+0|factor
+0|dinosaur
+0|roar
+0|sheet
+0|envelope
+0|attach
+0|visual
+0|frequently
+0|studio
+0|enable
+0|aid
+0|prefer
+0|creative
+0|approach
+0|angle
+0|prop
+0|revise
+0|historian
+0|ensure
+0|Atlantic
+0|ocean
+0|not to mention
+0|lecture
+0|justice
+0|do justice to
+0|iceberg
+0|dragon
+0|award
+0|audience
+0|perform
+0|location
+0|in addition to
+0|martial
+0|martial art
+0|desert
+0|jungle
+0|title
+0|adapt
+0|regard
+0|classic
+0|super
+0|solution
+0|onto
+0|system
+0|cure
+0|eventually
+0|typical
+0|fancy
+0|narrow
+0|recommend
+0|personality
+0|despite
+0|major
+0|event
+0|pull up
+0|wave
+0|recollect
+0|recall
+0|angel
+0|dandy
+0|crooked
+0|arrow
+0|pea
+0|soccer
+0|bat
+0|skydiving
+0|congratulation
+0|assume
+0|do wonders
+0|lung
+0|over the long term
+0|tend
+0|immune
+0|disease
+0|moreover
+0|reduce
+0|routine
+0|muscle
+0|aerobic
+0|jogging
+0|skiing
+0|pull-up
+0|bone
+0|gymnastics
+0|tai chi
+0|stretch
+0|range
+0|movement
+0|stick with
+0|petrol
+0|carbohydrate
+0|energy
+0|protein
+0|average
+0|throughout
+0|make up for
+0|sweat
+0|injury
+0|prevent
+0|tissue
+0|equipment
+0|lack
+0|maintain
+0|announce
+0|put finishing touches to
+0|update
+0|in response to
+0|replace
+0|athlete
+0|boxing
+0|champion
+0|court
+0|under the weather
+0|plus
+0|nearby
+0|gym
+0|partner
+0|position
+0|hesitate
+0|admit
+0|inspire
+0|explore
+0|crane
+0|rooster
+0|inspiration
+0|nowadays
+0|master
+0|no wonder
+0|imitate
+0|ache
+0|satisfaction
+0|root
+0|be rooted in
+0|philosophy
+0|unity
+0|exist
+0|backwards
+0|breathe
+0|diagram
+0|wedding
+0|ceremony
+0|decorate
+0|formal
+0|tradition
+0|bride
+0|eye-catching
+0|sari
+0|custom
+0|impression
+0|bridegroom
+0|entrance
+0|anything but
+0|ordinary
+0|romantic
+0|flight
+0|occasion
+0|in the air
+0|merry
+0|band
+0|costume
+0|samba
+0|twist
+0|clap
+0|march
+0|current
+0|beer
+0|roast
+0|be caught up in
+0|annual
+0|engine
+0|fire engine
+0|acid
+0|stuff
+0|vehicle
+0|earn
+0|mirror
+0|apartment
+0|hunt
+0|chain
+0|pass down
+0|income
+0|per
+0|comb
+0|package
+0|promote
+0|fall on
+0|lunar
+0|observe
+0|nation
+0|honour
+0|in honour of
+0|generation
+0|source
+0|identity
+0|previous
+0|duty
+0|precious
+0|eve
+0|china
+0|plate
+0|sort
+0|pork
+0|bite
+0|select
+0|settle
+0|convenient
+0|neat
+0|couplet
+0|represent
+0|midnight
+0|snack
+0|set off
+0|firecracker
+0|firework
+0|fortune
+0|lantern
+0|riddle
+0|willow
+0|creep
+0|tear
+0|sleeve
+0|devote
+0|earnest
+0|butterfly
+0|literature
+0|shell
+0|in store
+0|in store for sb
+0|appeal
+0|determine
+0|significant
+0|description
+0|sensitive
+0|soul
+0|reflect
+0|capable
+0|awaken
+0|launch
+0|permanence
+0|contain
+0|element
+0|universal
+0|summary
+0|in summary
+0|feature
+0|author
+0|therefore
+0|issue
+0|novel
+0|draw on
+0|upper
+0|gap
+0|context
+0|specific
+0|ought to
+0|particular
+0|in particular
+0|topic
+0|collection
+0|section
+0|mean
+0|transport
+0|turkey
+0|generosity
+0|chapter
+0|poetry
+0|stage
+0|autobiography
+0|biography
+0|extremely
+0|destroy
+0|defeat
+0|attempt
+0|straighten
+0|strain
+0|alongside
+0|accomplish
+0|noble
+0|confused
+0|clear up
+0|be on the point of doing sth
+0|weave
+0|mushy
+0|flash
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 296
+# Total Entries Extracted: 296
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 296
+# -------------------------------

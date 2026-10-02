@@ -1,0 +1,395 @@
+0|cholera
+0|severe
+0|diarrhoea
+0|dehydration
+0|frustrated
+0|once and for all
+0|contradictory
+0|infection
+0|infect
+0|germ
+0|subscribe
+0|subscribe to
+0|proof
+0|multiple
+0|pump
+0|water pump
+0|household
+0|suspect
+0|blame
+0|handle
+0|intervention
+0|link
+0|raw
+0|pure
+0|substantial
+0|decrease
+0|thanks to
+0|statistic
+0|transform
+0|epidemiology
+0|microscope
+0|thinking
+0|protein
+0|cell
+0|virus
+0|finding
+0|initial
+0|vaccine
+0|framework
+0|theoretical framework
+0|solid
+0|cast
+0|shadow
+0|rainbow
+0|pour
+0|concrete
+0|plasma
+0|aerospace
+0|patriotic
+0|mechanical
+0|mechanic
+0|break out
+0|aviation
+0|defend
+0|jet
+0|assistant
+0|in charge of
+0|missile
+0|leadership
+0|trace
+0|outstanding
+0|gifted
+0|come down
+0|abstract
+0|steady
+0|concept
+0|astronomer
+0|astronomy
+0|telescope
+0|besides
+0|brilliant
+0|furthermore
+0|above all
+0|fault
+0|shift
+0|vivid
+0|Queen Victoria
+0|Cambridge
+0|non-Newtonian fluid
+0|the Jet Propulsion Laboratory
+0|Stephen Hawking
+0|the big bang theory
+0|Fred Hoyle
+0|complex
+0|recall
+0|qualification
+0|qualify
+0|ambition
+0|ambitious
+0|adaptation
+0|comfort
+0|tutor
+0|cite
+0|participation
+0|participate
+0|participate in
+0|presentation
+0|speak up
+0|feel at home
+0|engage
+0|engage in
+0|involve
+0|get involved in
+0|messenger
+0|edition
+0|culture shock
+0|zone
+0|comfort zone
+0|overwhelming
+0|homesickness
+0|motivated
+0|motivation
+0|motivate
+0|advisor
+0|reasonable
+0|expectation
+0|applicant
+0|firm
+0|exposure
+0|expose
+0|insight
+0|departure
+0|setting
+0|grasp
+0|dramatic
+0|expense
+0|cost an arm and a leg
+0|tremendous
+0|behave
+0|surroundings
+0|surrounding
+0|mature
+0|depressed
+0|depress
+0|boom
+0|strengthen
+0|deny
+0|optimistic
+0|gain
+0|perspective
+0|competence
+0|competent
+0|envoy
+0|cooperate
+0|angle
+0|outlook
+0|belt
+0|initiative
+0|sincerely
+0|budget
+0|side with
+0|logical
+0|as far as I know
+0|as far as I am concerned
+0|in summary
+0|generally speaking
+0|outcome
+0|Rome
+0|Aisha
+0|the Belt and Road Initiative
+0|cuisine
+0|prior
+0|prior to
+0|consist
+0|consist of
+0|pepper
+0|recipe
+0|bold
+0|chef
+0|peppercorn
+0|vinegar
+0|stuff
+0|slice
+0|slice ... off
+0|onion
+0|lamb
+0|lamb kebab
+0|elegant
+0|dim sum
+0|exceptional
+0|minimum
+0|consume
+0|temper
+0|vegetarian
+0|junk
+0|junk food
+0|garlic
+0|bacon
+0|ham
+0|sausage
+0|cabbage
+0|bean curd
+0|tofu
+0|brand
+0|olive
+0|fig
+0|ingredient
+0|dessert
+0|dough
+0|stable
+0|haggis
+0|canteen
+0|cafeteria
+0|bun
+0|chilli
+0|chili
+0|pork
+0|red braised pork
+0|pearl
+0|somewhat
+0|madam
+0|calorie
+0|association
+0|regardless
+0|regardless of
+0|category
+0|vitamin
+0|fibre
+0|fiber
+0|quantity
+0|dairy
+0|moderation
+0|ideal
+0|fundamental
+0|chew
+0|consistent
+0|modest
+0|trick
+0|overall
+0|Jean Anthelme Brillat-Savarin
+0|Kazak
+0|St Andrews
+0|airline
+0|bay
+0|craft
+0|antique
+0|pleasant
+0|arise
+0|massive
+0|literally
+0|breath
+0|take sb.'s breath away
+0|bound
+0|scenery
+0|awesome
+0|spectacular
+0|peak
+0|highlight
+0|goat
+0|grizzly bear
+0|drill
+0|freezing
+0|freezing cold
+0|freeze
+0|mall
+0|shopping mall
+0|prairie
+0|anticipate
+0|bunch
+0|a bunch of
+0|thunder
+0|frost
+0|curtain
+0|border
+0|duration
+0|harbour
+0|harbor
+0|enrol
+0|enroll
+0|quarry
+0|idiom
+0|contrary
+0|contrary to
+0|anyhow
+0|alongside
+0|proceed
+0|proceed to sth
+0|shore
+0|astonish
+0|misty
+0|mist
+0|steel
+0|dusk
+0|advertisement
+0|ad
+0|accent
+0|photographer
+0|owe
+0|owe sth. to sb
+0|toast
+0|cobblestone
+0|coherent
+0|Halifax
+0|Vancouver
+0|Lake Louise
+0|Jasper
+0|Toronto
+0|Edmonton
+0|Winnipeg
+0|Ontario
+0|Butchart Gardens
+0|Lake Huron
+0|Quebec City
+0|Montreal
+0|Niagara Falls
+0|St Lawrence River
+0|Jean-Philippe
+0|Nova Scotia
+0|technique
+0|leaflet
+0|organ
+0|toxin
+0|ray
+0|sense of touch
+0|radiation
+0|acid
+0|millimetre
+0|minor
+0|layer
+0|electric
+0|electric shock
+0|victim
+0|swollen
+0|swell
+0|blister
+0|underneath
+0|nerve
+0|fabric
+0|loose
+0|urgent
+0|ease
+0|paramedic
+0|swallow
+0|wrap
+0|bathtub
+0|bath
+0|bathe
+0|slip
+0|mosquito
+0|mosquitoes
+0|mosquitos
+0|elderly
+0|carpet
+0|operator
+0|ambulance
+0|delay
+0|needle
+0|IV needle
+0|vital sign
+0|ward
+0|drown
+0|sprain
+0|ankle
+0|bleeding
+0|bleed
+0|panic
+0|interrupt
+0|scream
+0|fellow
+0|diner
+0|choke
+0|steak
+0|throat
+0|desperate
+0|slap
+0|help sb. to one's feet
+0|practical
+0|obstruction
+0|fist
+0|grab
+0|tightly
+0|tight
+0|motion
+0|face up
+0|face down
+0|justify
+0|welfare
+0|collapse
+0|manual
+0|sleep in
+0|out of shape
+0|foggy
+0|suburb
+0|membership
+0|Taylor
+0|CPR
+0|cardiopulmonary resuscitation
+0|mouth-to-mouth rescue breathing
+0|Heimlich manoeuvre
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 389
+# Total Entries Extracted: 389
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 389
+# -------------------------------
