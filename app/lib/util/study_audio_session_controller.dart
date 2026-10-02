@@ -144,11 +144,10 @@ class StudyAudioSessionController {
     debugPrint('⏱️ [SessionController] 注册新的活跃 Notifier: $notifier');
   }
 
-  /// 取消待执行的延迟释放麦克风任务
+  /// 取消待执行的延迟释放麦克风任务（保持麦克风持续保温）
   void cancelIdleTimer() {
-    keepMicrophoneWarm = false;
     if (_idleTimer != null) {
-      debugPrint('⏱️ [SessionController] 取消待执行的延迟释放麦克风任务');
+      debugPrint('⏱️ [SessionController] 取消待执行的延迟释放麦克风任务，保持麦克风保温');
       _idleTimer!.cancel();
       _idleTimer = null;
     }
@@ -434,9 +433,6 @@ class StudyAudioSessionController {
             await _audioPlayer.setVolume(0.0).timeout(const Duration(milliseconds: 30));
           } catch (_) {}
           await _audioPlayer.stop();
-          try {
-            await _audioPlayer.setVolume(1.0).timeout(const Duration(milliseconds: 30));
-          } catch (_) {}
         }
       } catch (_) {}
 
@@ -614,9 +610,6 @@ class StudyAudioSessionController {
           } catch (_) {}
         }
         await _audioPlayer.stop().timeout(const Duration(milliseconds: 500));
-        try {
-          await _audioPlayer.setVolume(1.0).timeout(const Duration(milliseconds: 30));
-        } catch (_) {}
       }
       _logPlayerState('cancelPlayback.afterStop');
     } catch (_) {}
