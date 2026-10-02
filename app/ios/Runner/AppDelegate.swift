@@ -5,6 +5,7 @@ import AVFoundation
 import AVFAudio
 import StoreKit
 import AudioToolbox
+import Accelerate
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -703,8 +704,6 @@ import AudioToolbox
         installTap()
     }
     
-    private var tapBufferCount = 0
-
     private func installTap() {
         let inputNode = audioEngine.inputNode
         let session = AVAudioSession.sharedInstance()
@@ -735,37 +734,33 @@ import AudioToolbox
         }
         
         print("IOS: [ASR] Installing tap with format: \(finalFormat)")
-        self.tapBufferCount = 0
-        
         // 3. 使用 native/fallback format 安装 Tap。
         // SFSpeechAudioBufferRecognitionRequest 会自动处理缓冲区格式转换。
+        // 核心铁律：本回调运行在 CoreAudio 实时优先级音频 I/O 线程，绝对禁止 print/文件锁/多余分配
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: finalFormat) { [weak self] (buffer, when) in
             guard let self = self else { return }
             
-            self.tapBufferCount += 1
-            if self.tapBufferCount % 100 == 0 {
-                let level = self.calculateLevel(from: buffer)
-                print("IOS: [ASR] Tap Heartbeat - buffers: \(self.tapBufferCount), level: \(level), stopped: \(self.isAsrStopped), hasRequest: \(self.recognitionRequest != nil)")
+            // 核心实时保护 1：麦克风保温阶段（ASR已停止），必须极速直接返回，避免任何非必要开销
+            if self.isAsrStopped {
+                return
             }
 
-            // 始终计算音量，用于 UI 反馈
+            // 核心实时保护 2：仅当识别请求存在时喂入数据
+            if let request = self.recognitionRequest {
+                request.append(buffer)
+            }
+
+            // 核心实时保护 3：UI 音量反馈节流计算（严禁在实时线程打印日志或无节制抛闭包）
             if let sink = self.meterEventSink {
-                let now = Date().timeIntervalSince1970
-                if now - self.lastMeterSentAt >= (1.0 / 30.0) {
+                let now = CACurrentMediaTime()
+                if now - self.lastMeterSentAt >= 0.05 {
+                    self.lastMeterSentAt = now
                     let level = self.calculateLevel(from: buffer)
                     DispatchQueue.main.async {
                         sink(level)
                     }
-                    self.lastMeterSentAt = now
                 }
             }
-
-            // 如果 ASR 已停止或识请求为空，不喂数据
-            if self.isAsrStopped || self.recognitionRequest == nil {
-                return
-            }
-            
-            self.recognitionRequest?.append(buffer)
         }
         print("IOS: [ASR] Audio tap installed successfully on bus 0")
     }
@@ -937,15 +932,13 @@ import AudioToolbox
         guard let channelData = buffer.floatChannelData?.pointee else { return 0.0 }
         let frameLength = Int(buffer.frameLength)
         if frameLength == 0 { return 0.0 }
-        var sum: Float = 0.0
-        // 计算均方值
-        for i in 0..<frameLength {
-            let s = channelData[i]
-            sum += s * s
-        }
-        let meanSquare = sum / Float(frameLength)
+        
+        // 使用 Accelerate 的 vDSP_measqv 做单指令硬件级向量均方计算，耗时近乎为 0
+        var meanSquare: Float = 0.0
+        vDSP_measqv(channelData, 1, &meanSquare, vDSP_Length(frameLength))
         let rms = sqrtf(meanSquare)
-        // 转换为分贝并归一到 0..1。调整 minDb 过滤门槛（从 -60.0 调整到 -40.0），过滤微弱的环境噪音，解决 iPhone 等设备上波形图过于灵敏的问题
+        
+        // 转换为分贝并归一到 0..1。调整 minDb 过滤门槛（从 -60.0 调整到 -40.0），过滤微弱的环境噪音
         let minDb: Float = -40.0
         var db = 20.0 * log10f(max(rms, 1e-6))
         if db < minDb { db = minDb }

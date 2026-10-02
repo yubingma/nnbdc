@@ -146,8 +146,9 @@ class StudyAudioSessionController {
 
   /// 取消待执行的延迟释放麦克风任务（保持麦克风持续保温）
   void cancelIdleTimer() {
+    keepMicrophoneWarm = false;
     if (_idleTimer != null) {
-      debugPrint('⏱️ [SessionController] 取消待执行的延迟释放麦克风任务，保持麦克风保温');
+      debugPrint('⏱️ [SessionController] 取消待执行的延迟释放麦克风任务');
       _idleTimer!.cancel();
       _idleTimer = null;
     }
@@ -1398,28 +1399,14 @@ class StudyAudioSessionController {
     bool hasStoppedAny = false;
     final List<ja.AudioPlayer> successfullyCleaned = [];
     for (var p in earlyExitPlayers) {
-      final bool isLogicallyFinished = _logicallyFinishedPlayers.contains(p);
-      final bool isPhysicallyCompleted = 
-          p.processingState == ja.ProcessingState.completed ||
-          p.processingState == ja.ProcessingState.idle;
-
-      final bool shouldSkipStop = isLogicallyFinished || isPhysicallyCompleted;
-
       if (p.playing) {
-        if (shouldSkipStop) {
-          debugPrint('🔊 [AudioDiag] Skip Physical Stop: player=${p.hashCode}');
-          successfullyCleaned.add(p);
-        } else {
-          try {
-            debugPrint('🔊 [AudioDiag] EarlyExit 强制stop: player=${p.hashCode}');
-            await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
-            hasStoppedAny = true;
-            successfullyCleaned.add(p);
-          } catch (_) {}
-        }
-      } else {
-        successfullyCleaned.add(p);
+        try {
+          debugPrint('🔊 [AudioDiag] 清理活跃残留播放器 stop: player=${p.hashCode}');
+          await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
+          hasStoppedAny = true;
+        } catch (_) {}
       }
+      successfullyCleaned.add(p);
     }
     _logicallyFinishedPlayers.removeAll(successfullyCleaned);
     
