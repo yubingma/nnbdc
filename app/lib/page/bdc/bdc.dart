@@ -462,7 +462,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       }
     }
 
-    final isDesktop = PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS;
+    final isDesktop = PlatformUtils.isDesktop;
     const double maxContentWidth = 600.0;
 
     Widget pageContent = (!state.dataLoaded) 

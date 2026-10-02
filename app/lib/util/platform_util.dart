@@ -9,6 +9,11 @@ class PlatformUtils {
   static bool? asrSupportedOverride;
   @visibleForTesting
   static bool? englishAsrSupportedOverride;
+  @visibleForTesting
+  static bool? isDesktopOverride;
+
+  static bool get isDesktop =>
+      isDesktopOverride ?? (!isTesting && (isWindows || isLinux || isMacOS));
 
   static bool _isWeb() {
     // 通过kIsWeb变量判断是否为web环境!

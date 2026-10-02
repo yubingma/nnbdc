@@ -1784,79 +1784,92 @@ class WordDetailPageState extends State<WordDetailPage>
               ),
             ),
 
-          // 从背单词页面进入时，显示"下一词"按钮（参考学习页面底部极简流转按钮风格）
+          // 从背单词页面进入时，显示"下一词"按钮（与背单词主页面宽屏拇指工学对齐，保持相同位置降到最低心智负担）
           if (args.showNextWordButton &&
               args.bottomBtn == null &&
               !(_canUseAiAssistant &&
                   _tabController.index == calcTabsCount() - 1))
             SafeArea(
               top: false,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 8.0),
-                alignment: Alignment.center,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: _isLoadingNextWord
-                        ? null
-                        : () {
-                            _isLoadingNextWord = true;
-                            // 立即退出详情页，零秒等待
-                            context.pop(true);
-                            // 并行在后台流转下一词
-                            if (args.onNextWord != null) {
-                              unawaited(args.onNextWord!());
-                            }
-                          },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 6),
-                      child: _isLoadingNextWord
-                          ? SizedBox.square(
-                              dimension: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(accentColor),
-                              ),
-                            )
-                          : Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '下一词',
-                                  style: TextStyle(
-                                    fontSize: 16.0,
-                                    fontWeight: FontWeight.w600,
-                                    color: textColor,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Container(
-                                  width: 20.0,
-                                  height: 3.2,
-                                  decoration: BoxDecoration(
-                                    color: accentColor,
-                                    borderRadius: BorderRadius.circular(1.6),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: accentColor.withValues(
-                                            alpha: isDarkMode ? 0.45 : 0.3),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 1),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 560;
+                  return Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.fromLTRB(
+                      isWide ? 28.0 : 16.0,
+                      4.0,
+                      isWide ? 28.0 : 16.0,
+                      8.0,
                     ),
-                  ),
-                ),
+                    alignment:
+                        isWide ? Alignment.centerRight : Alignment.center,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        key: const Key('detail_next_word_btn'),
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: _isLoadingNextWord
+                            ? null
+                            : () {
+                                _isLoadingNextWord = true;
+                                // 立即退出详情页，零秒等待
+                                context.pop(true);
+                                // 并行在后台流转下一词
+                                if (args.onNextWord != null) {
+                                  unawaited(args.onNextWord!());
+                                }
+                              },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 6),
+                          child: _isLoadingNextWord
+                              ? SizedBox.square(
+                                  dimension: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        accentColor),
+                                  ),
+                                )
+                              : Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '下一词',
+                                      style: TextStyle(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w600,
+                                        color: textColor,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Container(
+                                      width: 20.0,
+                                      height: 3.2,
+                                      decoration: BoxDecoration(
+                                        color: accentColor,
+                                        borderRadius:
+                                            BorderRadius.circular(1.6),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: accentColor.withValues(
+                                                alpha: isDarkMode ? 0.45 : 0.3),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
         ],

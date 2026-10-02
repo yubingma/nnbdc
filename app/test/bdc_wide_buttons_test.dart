@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/bdc/bdc.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
+import 'package:nnbdc/page/word_detail.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/word_util.dart';
@@ -95,11 +97,13 @@ void main() {
   setUp(() {
     PlatformUtils.asrSupportedOverride = true;
     PlatformUtils.englishAsrSupportedOverride = true;
+    PlatformUtils.isDesktopOverride = false;
   });
 
   tearDown(() {
     PlatformUtils.asrSupportedOverride = null;
     PlatformUtils.englishAsrSupportedOverride = null;
+    PlatformUtils.isDesktopOverride = null;
   });
 
   testWidgets('iPad 宽屏设备下学习页面按钮布局与对称性测试', (tester) async {
@@ -185,6 +189,10 @@ void main() {
     final newRightSpace = 800.0 - nextWordRect.right;
     expect(newRightSpace, lessThan(leftSpace),
         reason: '只有当下一词按钮出现时，才允许打破左右对称');
+
+    // 核心细节验证 5：在 800px 宽屏下，主学习页下一词右边距必须为严格的 28.0px
+    final bdcRightMargin = 800.0 - nextWordRect.right;
+    expect(bdcRightMargin, 28.0, reason: '学习主页下一词右边距为 28.0px (16px 外边距 + 12px 间距)');
   });
 
   testWidgets('手机窄屏设备下按钮保持居中排列', (tester) async {
@@ -227,5 +235,56 @@ void main() {
     final rightPadding = 390.0 - nextWordRect.right;
     expect((leftPadding - rightPadding).abs(), lessThan(10.0),
         reason: '手机窄屏下三个按钮整体应居中排列');
+  });
+
+  testWidgets('单词详情页下一词按钮在宽屏设备上右边距同样为28px（与主学习页完全相同位置，心智负担最低）', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final (testWord, _) = _createTestData();
+
+    final detailArgs = WordDetailPageArgs(
+      testWord,
+      false,
+      null,
+      false,
+      showNextWordButton: true,
+      autoPlayWordOnEnter: false,
+    );
+
+    final router = GoRouter(
+      initialLocation: '/word_detail',
+      initialExtra: detailArgs,
+      routes: [
+        GoRoute(
+          path: '/word_detail',
+          builder: (context, routerState) => const WordDetailPage(),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      provider.ChangeNotifierProvider<DarkMode>(
+        create: (_) => DarkMode(),
+        child: MaterialApp.router(
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final detailNextWordFinder = find.byKey(const Key('detail_next_word_btn'));
+    expect(detailNextWordFinder, findsOneWidget, reason: '详情页应展示带有 detail_next_word_btn Key 的下一词按钮');
+    final detailNextWordRect = tester.getRect(detailNextWordFinder);
+    final detailRightMargin = 800.0 - detailNextWordRect.right;
+
+    // 验证详情页下一词右边距为 28.0px，与主学习页完全一致
+    expect((detailRightMargin - 28.0).abs(), lessThan(1.0),
+        reason: '详情页下一词按钮右边距($detailRightMargin)必须与主页面下一词按钮右边距(28.0)完全相同以降低心智负担');
   });
 }
