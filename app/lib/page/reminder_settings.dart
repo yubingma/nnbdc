@@ -249,17 +249,20 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> with Widget
               boxShadow: cardShadow,
               border: border,
             ),
-            child: Column(
-              children: [
-                _buildToggleRow(accentColor: accentColor, textColor: textColor, subtitleColor: subtitleColor),
-                _hairline(isDarkMode: isDarkMode),
-                _buildTimeRow(
-                  accentColor: accentColor,
-                  textColor: textColor,
-                  subtitleColor: subtitleColor,
-                  mutedColor: mutedColor,
-                ),
-              ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Column(
+                children: [
+                  _buildToggleRow(accentColor: accentColor, textColor: textColor, subtitleColor: subtitleColor),
+                  _hairline(isDarkMode: isDarkMode),
+                  _buildTimeRow(
+                    accentColor: accentColor,
+                    textColor: textColor,
+                    subtitleColor: subtitleColor,
+                    mutedColor: mutedColor,
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -273,11 +276,14 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> with Widget
               boxShadow: cardShadow,
               border: border,
             ),
-            child: _buildTestRow(
-              accentColor: accentColor,
-              textColor: textColor,
-              subtitleColor: subtitleColor,
-              mutedColor: mutedColor,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: _buildTestRow(
+                accentColor: accentColor,
+                textColor: textColor,
+                subtitleColor: subtitleColor,
+                mutedColor: mutedColor,
+              ),
             ),
           ),
 
@@ -403,30 +409,47 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> with Widget
     required Color textColor,
     required Color subtitleColor,
   }) {
-    return SwitchListTile.adaptive(
-      value: _enabled,
-      activeTrackColor: accentColor,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      title: Text(
-        '每日学习提醒',
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.1,
-          color: textColor,
-          fontFamily: 'NotoSansSC',
+    return InkWell(
+      onTap: () => _saveSettings(newEnabled: !_enabled),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '每日学习提醒',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                      color: textColor,
+                      fontFamily: 'NotoSansSC',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '每天定时提醒，保持连续打卡好习惯',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: subtitleColor,
+                      height: 1.4,
+                      fontFamily: 'NotoSansSC',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch.adaptive(
+              value: _enabled,
+              activeTrackColor: accentColor,
+              onChanged: (val) => _saveSettings(newEnabled: val),
+            ),
+          ],
         ),
       ),
-      subtitle: Text(
-        '每天定时提醒，保持连续打卡好习惯',
-        style: TextStyle(
-          fontSize: 12.5,
-          color: subtitleColor,
-          height: 1.4,
-          fontFamily: 'NotoSansSC',
-        ),
-      ),
-      onChanged: (val) => _saveSettings(newEnabled: val),
     );
   }
 

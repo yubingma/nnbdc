@@ -1850,310 +1850,330 @@ class MePageState extends State<MePage> implements RefreshableTab {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildMenuTile(
-                icon: Icons.tune_rounded,
-                title: '底栏导航管理',
-                trailingText: Prefs.hiddenBottomNavKeys.isEmpty
-                    ? '全部常驻'
-                    : '已收纳 ${Prefs.hiddenBottomNavKeys.length} 项',
-                onTap: () async {
-                  await NavBarCustomizationSheet.show(context);
-                  if (mounted) setState(() {});
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.palette_outlined,
-                title: '外观主题',
-                trailingText: context.watch<DarkMode>().themeStyle.label,
-                onTap: () => ThemeSelectDialog.show(context),
-              ),
-              _buildMenuTile(
-                icon: Icons.format_size_rounded,
-                title: '字体大小',
-                trailingText: context.watch<DarkMode>().fontScale.label,
-                onTap: () async {
-                  await FontScaleDialog.show(context);
-                  if (mounted) setState(() {});
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.graphic_eq_rounded,
-                title: '发音口音',
-                trailingText: Prefs.pronunciationAccent == 'uk' ? '英音' : '美音',
-                onTap: () async {
-                  final accent = await PronunciationAccentDialog.show(context);
-                  if (accent != null && mounted) {
-                    setState(() {});
-                  }
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.person_outline_rounded,
-                title: '个人信息',
-                trailingText: '编辑',
-                onTap: () => showUpdateUserInfoDlg(),
-              ),
-              _buildMenuTile(
-                icon: Icons.alarm_rounded,
-                title: '学习提醒',
-                trailingText: NotificationUtil.isReminderEnabled()
-                    ? '每天 ${NotificationUtil.getReminderHour().toString().padLeft(2, '0')}:${NotificationUtil.getReminderMinute().toString().padLeft(2, '0')}'
-                    : '已关闭',
-                onTap: () async {
-                  await context.push('/reminder_settings');
-                  if (mounted) setState(() {});
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.chat_bubble_outline_rounded,
-                title: '意见建议 / 客服',
-                trailing: unreadMsgCount > 0
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFA6E59),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          unreadMsgCount.toString(),
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      )
-                    : null,
-                onTap: () async {
-                  if (Global.isGuest || loggedInUser == null) {
-                    final shouldLogin = await showGeneralDialog<bool>(
-                      context: context,
-                      barrierDismissible: true,
-                      barrierLabel: 'dismiss_guest_login',
-                      barrierColor: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.40 : 0.18),
-                      transitionDuration: const Duration(milliseconds: 220),
-                      transitionBuilder: (context, anim1, anim2, child) {
-                        return ScaleTransition(
-                          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
-                          child: child,
-                        );
-                      },
-                      pageBuilder: (ctx, anim1, anim2) => Dialog(
-                        backgroundColor: Colors.transparent,
-                        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 340),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: BackdropFilter(
-                              filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                              child: Container(
-                                padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: isDarkModeEnabled
-                                        ? [
-                                            const Color(0xB8161B26),
-                                            const Color(0x9910141D),
-                                          ]
-                                        : [
-                                            const Color(0x66FFFFFF),
-                                            const Color(0x4DFFFFFF),
-                                          ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(
-                                    color: isDarkModeEnabled ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
-                                    width: 1.2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.08),
-                                      blurRadius: 28,
-                                      offset: const Offset(0, 8),
+                            icon: Icons.tune_rounded,
+                            iconColor: const Color(0xFF6366F1),
+                            title: '底栏导航管理',
+                            trailingText: Prefs.hiddenBottomNavKeys.isEmpty
+                                ? '全部常驻'
+                                : '已收纳 ${Prefs.hiddenBottomNavKeys.length} 项',
+                            onTap: () async {
+                              await NavBarCustomizationSheet.show(context);
+                              if (mounted) setState(() {});
+                            },
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.palette_outlined,
+                            iconColor: const Color(0xFFEC4899),
+                            title: '外观主题',
+                            trailingText: context.watch<DarkMode>().themeStyle.label,
+                            onTap: () => ThemeSelectDialog.show(context),
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.format_size_rounded,
+                            iconColor: const Color(0xFF0EA5E9),
+                            title: '字体大小',
+                            trailingText: context.watch<DarkMode>().fontScale.label,
+                            onTap: () async {
+                              await FontScaleDialog.show(context);
+                              if (mounted) setState(() {});
+                            },
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.graphic_eq_rounded,
+                            iconColor: const Color(0xFF14B8A6),
+                            title: '发音口音',
+                            trailingText: Prefs.pronunciationAccent == 'uk' ? '英音' : '美音',
+                            onTap: () async {
+                              final accent = await PronunciationAccentDialog.show(context);
+                              if (accent != null && mounted) {
+                                setState(() {});
+                              }
+                            },
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.person_outline_rounded,
+                            iconColor: const Color(0xFF3B82F6),
+                            title: '个人信息',
+                            trailingText: '编辑',
+                            onTap: () => showUpdateUserInfoDlg(),
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.alarm_rounded,
+                            iconColor: const Color(0xFFF59E0B),
+                            title: '学习提醒',
+                            trailingText: NotificationUtil.isReminderEnabled()
+                                ? '每天 ${NotificationUtil.getReminderHour().toString().padLeft(2, '0')}:${NotificationUtil.getReminderMinute().toString().padLeft(2, '0')}'
+                                : '已关闭',
+                            onTap: () async {
+                              await context.push('/reminder_settings');
+                              if (mounted) setState(() {});
+                            },
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.chat_bubble_outline_rounded,
+                            iconColor: const Color(0xFF10B981),
+                            title: '意见建议 / 客服',
+                            trailing: unreadMsgCount > 0
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFA6E59),
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 36,
-                                          height: 36,
-                                          decoration: BoxDecoration(
-                                            color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.22 : 0.12),
-                                            borderRadius: BorderRadius.circular(11),
-                                            border: Border.all(
-                                              color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.20),
-                                              width: 0.8,
+                                    child: Text(
+                                      unreadMsgCount.toString(),
+                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  )
+                                : null,
+                            onTap: () async {
+                              if (Global.isGuest || loggedInUser == null) {
+                                final shouldLogin = await showGeneralDialog<bool>(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  barrierLabel: 'dismiss_guest_login',
+                                  barrierColor: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.40 : 0.18),
+                                  transitionDuration: const Duration(milliseconds: 220),
+                                  transitionBuilder: (context, anim1, anim2, child) {
+                                    return ScaleTransition(
+                                      scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+                                      child: child,
+                                    );
+                                  },
+                                  pageBuilder: (ctx, anim1, anim2) => Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(maxWidth: 340),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(24),
+                                        child: BackdropFilter(
+                                          filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                                          child: Container(
+                                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                                colors: isDarkModeEnabled
+                                                    ? [
+                                                        const Color(0xB8161B26),
+                                                        const Color(0x9910141D),
+                                                      ]
+                                                    : [
+                                                        const Color(0x66FFFFFF),
+                                                        const Color(0x4DFFFFFF),
+                                                      ],
+                                              ),
+                                              borderRadius: BorderRadius.circular(24),
+                                              border: Border.all(
+                                                color: isDarkModeEnabled ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                                                width: 1.2,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.08),
+                                                  blurRadius: 28,
+                                                  offset: const Offset(0, 8),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 36,
+                                                      height: 36,
+                                                      decoration: BoxDecoration(
+                                                        color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.22 : 0.12),
+                                                        borderRadius: BorderRadius.circular(11),
+                                                        border: Border.all(
+                                                          color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.20),
+                                                          width: 0.8,
+                                                        ),
+                                                      ),
+                                                      alignment: Alignment.center,
+                                                      child: Icon(
+                                                        Icons.tips_and_updates_outlined,
+                                                        color: accentColor,
+                                                        size: 19,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Text(
+                                                      '温馨提示',
+                                                      style: TextStyle(
+                                                        fontSize: 16.5,
+                                                        fontWeight: FontWeight.w700,
+                                                        letterSpacing: -0.3,
+                                                        color: textColor,
+                                                        fontFamily: 'NotoSansSC',
+                                                        fontFamilyFallback: AppTheme.sansSerifFallback,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 14),
+                                                Text(
+                                                  '当前处于游客模式，登录后方可提交意见并接收客服回复与活动兑换。\n\n是否前往登录？',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: subtitleColor,
+                                                    height: 1.5,
+                                                    fontFamily: 'NotoSansSC',
+                                                    fontFamilyFallback: AppTheme.sansSerifFallback,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 20),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: _buildDialogButton(
+                                                        text: '取消',
+                                                        onPressed: () => Navigator.of(ctx).pop(false),
+                                                        isPrimary: false,
+                                                        isDarkMode: isDarkModeEnabled,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: _buildDialogButton(
+                                                        text: '前往登录',
+                                                        onPressed: () => Navigator.of(ctx).pop(true),
+                                                        isPrimary: true,
+                                                        isDarkMode: isDarkModeEnabled,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          alignment: Alignment.center,
-                                          child: Icon(
-                                            Icons.tips_and_updates_outlined,
-                                            color: accentColor,
-                                            size: 19,
-                                          ),
                                         ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          '温馨提示',
-                                          style: TextStyle(
-                                            fontSize: 16.5,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: -0.3,
-                                            color: textColor,
-                                            fontFamily: 'NotoSansSC',
-                                            fontFamilyFallback: AppTheme.sansSerifFallback,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 14),
-                                    Text(
-                                      '当前处于游客模式，登录后方可提交意见并接收客服回复与活动兑换。\n\n是否前往登录？',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: subtitleColor,
-                                        height: 1.5,
-                                        fontFamily: 'NotoSansSC',
-                                        fontFamilyFallback: AppTheme.sansSerifFallback,
                                       ),
                                     ),
-                                    const SizedBox(height: 20),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _buildDialogButton(
-                                            text: '取消',
-                                            onPressed: () => Navigator.of(ctx).pop(false),
-                                            isPrimary: false,
-                                            isDarkMode: isDarkModeEnabled,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: _buildDialogButton(
-                                            text: '前往登录',
-                                            onPressed: () => Navigator.of(ctx).pop(true),
-                                            isPrimary: true,
-                                            isDarkMode: isDarkModeEnabled,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                                  ),
+                                );
+                                if (shouldLogin == true && mounted) {
+                                  context.push('/login');
+                                }
+                                return;
+                              }
+                              await context.push('/msg');
+                              loadData();
+                            },
                           ),
-                        ),
-                      ),
-                    );
-                    if (shouldLogin == true && mounted) {
-                      context.push('/login');
-                    }
-                    return;
-                  }
-                  await context.push('/msg');
-                  loadData();
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.cloud_sync_outlined,
-                title: '云同步状态',
-                trailingText: _syncStatus == SyncStatus.syncing
-                    ? '同步中...'
-                    : (_syncStatus == SyncStatus.failed ? '同步失败' : '已是最新'),
-                trailingTextColor: _syncStatus == SyncStatus.failed
-                    ? const Color(0xFFFA6E59)
-                    : accentColor,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SyncLogViewerPage(),
-                    ),
-                  ).then((_) {
-                    _checkSyncStatus();
-                  });
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.health_and_safety_outlined,
-                title: '数据健康检查',
-                trailingText: '正常',
-                onTap: () => _navigateToDataDiagnostic(),
-              ),
-              _buildMenuTile(
-                icon: Icons.edit_note_rounded,
-                title: '需求墙 / 功能投票',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const FeatureRequestWallPage()),
-                  );
-                },
-              ),
-              // 管理员专区
-              if (loggedInUser?.isAdmin == true) ...[
-                _buildMenuTile(
-                  icon: Icons.eco_outlined,
-                  title: '我的小天地 (农场)',
-                  onTap: () => context.push('/farm'),
-                ),
-                _buildMenuTile(
-                  icon: Icons.psychology_outlined,
-                  title: '本地 AI 模型配置',
-                  onTap: () => context.push('/ai_activation'),
-                ),
-                _buildMenuTile(
-                  icon: Icons.access_time_filled_rounded,
-                  title: '快进时间 (当前: ${AppClock.now().toString().substring(0, 10)})',
-                  onTap: () {
-                    AppClock.advanceDays(1);
-                    setState(() {});
-                    ToastUtil.success('时间已快进1天，新日期: ${AppClock.now().toString().substring(0, 10)}');
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.pageview_outlined,
-                  title: '页面查看器',
-                  onTap: () => context.push('/page_viewer'),
-                ),
-                _buildMenuTile(
-                  icon: Icons.storage_rounded,
-                  title: '数据库查看器',
-                  onTap: () => _openDbViewPage(),
-                ),
-              ],
-              _buildMenuTile(
-                icon: Icons.cleaning_services_outlined,
-                title: '重建本地数据',
-                onTap: () => _showWipeLocalDataDialog(),
-              ),
-              _buildMenuTile(
-                icon: Icons.logout_rounded,
-                title: '切换账号',
-                trailingText: '切换',
-                onTap: () async {
-                  await Global.logout();
-                  if (mounted) context.go('/login');
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.no_accounts_outlined,
-                title: '注销账号',
-                onTap: () => showUnRegisterDlg(),
-                showDivider: loggedInUser?.isAdmin == true,
-              ),
-              if (loggedInUser?.isAdmin == true)
-                _buildMenuTile(
-                  icon: Icons.admin_panel_settings_outlined,
-                  title: '系统管理后台',
-                  onTap: () => context.push('/admin'),
-                  showDivider: false,
-                ),
+                          _buildMenuTile(
+                            icon: Icons.cloud_sync_outlined,
+                            iconColor: const Color(0xFF0284C7),
+                            title: '云同步状态',
+                            trailingText: _syncStatus == SyncStatus.syncing
+                                ? '同步中...'
+                                : (_syncStatus == SyncStatus.failed ? '同步失败' : '已是最新'),
+                            trailingTextColor: _syncStatus == SyncStatus.failed
+                                ? const Color(0xFFFA6E59)
+                                : accentColor,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SyncLogViewerPage(),
+                                ),
+                              ).then((_) {
+                                _checkSyncStatus();
+                              });
+                            },
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.health_and_safety_outlined,
+                            iconColor: const Color(0xFF0D9488),
+                            title: '数据健康检查',
+                            trailingText: '正常',
+                            onTap: () => _navigateToDataDiagnostic(),
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.edit_note_rounded,
+                            iconColor: const Color(0xFF8B5CF6),
+                            title: '需求墙 / 功能投票',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const FeatureRequestWallPage()),
+                              );
+                            },
+                          ),
+                          // 管理员专区
+                          if (loggedInUser?.isAdmin == true) ...[
+                            _buildMenuTile(
+                              icon: Icons.eco_outlined,
+                              iconColor: const Color(0xFF22C55E),
+                              title: '我的小天地 (农场)',
+                              onTap: () => context.push('/farm'),
+                            ),
+                            _buildMenuTile(
+                              icon: Icons.psychology_outlined,
+                              iconColor: const Color(0xFFA855F7),
+                              title: '本地 AI 模型配置',
+                              onTap: () => context.push('/ai_activation'),
+                            ),
+                            _buildMenuTile(
+                              icon: Icons.access_time_filled_rounded,
+                              iconColor: const Color(0xFFEAB308),
+                              title: '快进时间 (当前: ${AppClock.now().toString().substring(0, 10)})',
+                              onTap: () {
+                                AppClock.advanceDays(1);
+                                setState(() {});
+                                ToastUtil.success('时间已快进1天，新日期: ${AppClock.now().toString().substring(0, 10)}');
+                              },
+                            ),
+                            _buildMenuTile(
+                              icon: Icons.pageview_outlined,
+                              iconColor: const Color(0xFF06B6D4),
+                              title: '页面查看器',
+                              onTap: () => context.push('/page_viewer'),
+                            ),
+                            _buildMenuTile(
+                              icon: Icons.storage_rounded,
+                              iconColor: const Color(0xFF4F46E5),
+                              title: '数据库查看器',
+                              onTap: () => _openDbViewPage(),
+                            ),
+                          ],
+                          _buildMenuTile(
+                            icon: Icons.cleaning_services_outlined,
+                            iconColor: const Color(0xFFF97316),
+                            title: '重建本地数据',
+                            onTap: () => _showWipeLocalDataDialog(),
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.logout_rounded,
+                            iconColor: const Color(0xFF64748B),
+                            title: '切换账号',
+                            trailingText: '切换',
+                            onTap: () async {
+                              await Global.logout();
+                              if (mounted) context.go('/login');
+                            },
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.no_accounts_outlined,
+                            isDestructive: true,
+                            iconColor: const Color(0xFFEF4444),
+                            title: '注销账号',
+                            onTap: () => showUnRegisterDlg(),
+                            showDivider: loggedInUser?.isAdmin == true,
+                          ),
+                          if (loggedInUser?.isAdmin == true)
+                            _buildMenuTile(
+                              icon: Icons.admin_panel_settings_outlined,
+                              iconColor: const Color(0xFF7C3AED),
+                              title: '系统管理后台',
+                              onTap: () => context.push('/admin'),
+                              showDivider: false,
+                            ),
                         ],
                       ),
                     ),
