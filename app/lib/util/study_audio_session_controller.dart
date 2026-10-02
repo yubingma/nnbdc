@@ -354,8 +354,7 @@ class StudyAudioSessionController {
     return _queueLock.protect(() async {
       await _pendingCleanup;
       _unsubscribeMeter();
-      final shouldKeepRecordCategory = keepMicrophoneWarm &&
-          _currentSessionCategory == 'playAndRecord';
+      final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord';
       final sessionFuture = shouldKeepRecordCategory
           ? Future.value()
           : transitTo(AudioMode.playback);
@@ -375,8 +374,7 @@ class StudyAudioSessionController {
     return _queueLock.protect(() async {
       await _pendingCleanup;
       _unsubscribeMeter();
-      final shouldKeepRecordCategory = keepMicrophoneWarm &&
-          _currentSessionCategory == 'playAndRecord';
+      final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord';
       final sessionFuture = shouldKeepRecordCategory
           ? Future.value()
           : transitTo(AudioMode.playback);
@@ -437,8 +435,7 @@ class StudyAudioSessionController {
         }
       } catch (_) {}
 
-      final shouldKeepRecordCategory = (keepMicrophoneWarm || isSpeakMode) &&
-          _currentSessionCategory == 'playAndRecord';
+      final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord';
       final sessionFuture = shouldKeepRecordCategory
           ? Future.value()
           : transitTo(AudioMode.playback);

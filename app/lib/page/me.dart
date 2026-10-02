@@ -1631,21 +1631,32 @@ class MePageState extends State<MePage> implements RefreshableTab {
                           fontFamily: 'NotoSansSC',
                         ),
                       ),
-                      const Spacer(),
-                      Text(
-                        '今日 ${_formatLearningDuration(studyProgress!.todayLearningSeconds)} · 累计 ${_formatLearningDuration(studyProgress!.totalLearningSeconds)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: 'NotoSansSC',
-                          fontWeight: FontWeight.w500,
-                          color: subtitleColor,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                '今日 ${_formatLearningDuration(studyProgress!.todayLearningSeconds)} · 累计 ${_formatLearningDuration(studyProgress!.totalLearningSeconds)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontFamily: 'NotoSansSC',
+                                  fontWeight: FontWeight.w500,
+                                  color: subtitleColor,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 10,
+                              color: subtitleColor.withValues(alpha: 0.5),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 10,
-                        color: subtitleColor.withValues(alpha: 0.5),
                       ),
                     ],
                   ),

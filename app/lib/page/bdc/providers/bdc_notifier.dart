@@ -1252,6 +1252,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
     _cancelPendingWordTimers();
     debugPrint('🕵️ [AudioDiag] showWordDetail.enter | word=${word.spell} isAnswerWrong=$isAnswerWrong');
+    StudyAudioSessionController.instance.keepMicrophoneWarm = true;
     // 音频与 ASR 清理不再阻塞页面转场：把清理登记为「下一次播放前必须完成」，
     // 转场立即开始，而详情页入场发音会自动排在清理之后，避免发音被旧的 stop/seek 掐断。
     // 1.5s 硬超时保留，防止底层系统音频驱动卡死拖住后续每一次播放。
