@@ -348,7 +348,11 @@ class StudyAudioSessionController {
     }
     return _queueLock.protect(() async {
       _unsubscribeMeter();
-      final sessionFuture = transitTo(AudioMode.playback);
+      final shouldKeepRecordCategory = keepMicrophoneWarm &&
+          _currentSessionCategory == 'playAndRecord';
+      final sessionFuture = shouldKeepRecordCategory
+          ? Future.value()
+          : transitTo(AudioMode.playback);
       await _playPronounceSound2(word, _audioPlayer,
           preWaitFuture: preWaitFuture ?? sessionFuture);
     });
@@ -364,7 +368,11 @@ class StudyAudioSessionController {
     }
     return _queueLock.protect(() async {
       _unsubscribeMeter();
-      final sessionFuture = transitTo(AudioMode.playback);
+      final shouldKeepRecordCategory = keepMicrophoneWarm &&
+          _currentSessionCategory == 'playAndRecord';
+      final sessionFuture = shouldKeepRecordCategory
+          ? Future.value()
+          : transitTo(AudioMode.playback);
       await _playSentenceSound2(digest, _audioPlayer,
           speed: speed, preWaitFuture: preWaitFuture ?? sessionFuture);
     });
@@ -413,11 +421,21 @@ class StudyAudioSessionController {
 
       try {
         if (_audioPlayer.playing) {
+          try {
+            await _audioPlayer.setVolume(0.0).timeout(const Duration(milliseconds: 30));
+          } catch (_) {}
           await _audioPlayer.stop();
+          try {
+            await _audioPlayer.setVolume(1.0).timeout(const Duration(milliseconds: 30));
+          } catch (_) {}
         }
       } catch (_) {}
 
-      final sessionFuture = transitTo(AudioMode.playback);
+      final shouldKeepRecordCategory = (keepMicrophoneWarm || isSpeakMode) &&
+          _currentSessionCategory == 'playAndRecord';
+      final sessionFuture = shouldKeepRecordCategory
+          ? Future.value()
+          : transitTo(AudioMode.playback);
       _watchPlayer(_audioPlayer);
 
       if (playWord) {
@@ -581,7 +599,15 @@ class StudyAudioSessionController {
           _audioPlayer.processingState == ja.ProcessingState.buffering ||
           _audioPlayer.processingState == ja.ProcessingState.loading;
       if (needHardStop) {
+        if (_audioPlayer.playing) {
+          try {
+            await _audioPlayer.setVolume(0.0).timeout(const Duration(milliseconds: 30));
+          } catch (_) {}
+        }
         await _audioPlayer.stop().timeout(const Duration(milliseconds: 500));
+        try {
+          await _audioPlayer.setVolume(1.0).timeout(const Duration(milliseconds: 30));
+        } catch (_) {}
       }
       _logPlayerState('cancelPlayback.afterStop');
     } catch (_) {}
@@ -859,6 +885,9 @@ class StudyAudioSessionController {
         try {
           _logicallyFinishedPlayers.remove(player);
           if (player.playing) {
+            try {
+              await player.setVolume(0.0).timeout(const Duration(milliseconds: 30));
+            } catch (_) {}
             await player.stop();
           }
           await player.seek(Duration.zero);
@@ -880,7 +909,13 @@ class StudyAudioSessionController {
       try {
         _logicallyFinishedPlayers.remove(player);
         if (player.playing) {
+          try {
+            await player.setVolume(0.0).timeout(const Duration(milliseconds: 30));
+          } catch (_) {}
           await player.stop();
+          try {
+            await player.setVolume(1.0).timeout(const Duration(milliseconds: 30));
+          } catch (_) {}
         }
       } catch (_) {}
 
