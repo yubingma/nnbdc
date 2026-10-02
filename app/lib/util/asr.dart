@@ -644,6 +644,18 @@ class Asr {
     }
   }
 
+  /// 播放 ASR 就绪提示音（iOS 端通过 AudioServices 硬件级直通播放，零管线冲突零破音）
+  Future<void> playReadyHint() async {
+    if (!PlatformUtils.isAsrSupported()) {
+      return;
+    }
+    try {
+      await asrMethodChannel.invokeMethod('playReadyHint');
+    } catch (e) {
+      Global.logger.w('ASR: playReadyHint failed: $e');
+    }
+  }
+
   // 为 iOS 提供上下文短语，提高目标短语的识别概率（仅提示，不强制）
   Future<void> setContextualStrings(List<String> phrases) async {
     if (!PlatformUtils.isAsrSupported()) {

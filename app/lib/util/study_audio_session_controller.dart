@@ -70,13 +70,15 @@ class StudyAudioSessionController {
       : _asr = Asr(),
         _audioPlayer = SoundUtil.createAudioPlayer() {
     _watchPlayer(_audioPlayer);
-    _asrHintPlayer = SoundUtil.createAudioPlayer();
-    _watchPlayer(_asrHintPlayer!);
-    if (!PlatformUtils.isWeb && !PlatformUtils.isTesting) {
-      const assetPath = 'assets/audio/asr_ready_hint.wav';
-      _asrHintPlayer!.setAsset(assetPath).then((_) {
-        _playerLoadedAsset[_asrHintPlayer!] = assetPath;
-      }).catchError((_) {});
+    if (!PlatformUtils.isIOS) {
+      _asrHintPlayer = SoundUtil.createAudioPlayer();
+      _watchPlayer(_asrHintPlayer!);
+      if (!PlatformUtils.isWeb && !PlatformUtils.isTesting) {
+        const assetPath = 'assets/audio/asr_ready_hint.wav';
+        _asrHintPlayer!.setAsset(assetPath).then((_) {
+          _playerLoadedAsset[_asrHintPlayer!] = assetPath;
+        }).catchError((_) {});
+      }
     }
     _asr.addStateListener(_onAsrStateChange);
   }
@@ -1110,17 +1112,19 @@ class StudyAudioSessionController {
       }
     }
 
-    final hintPlayer = _asrHintPlayer;
-    if (hintPlayer != null) {
-      try {
-        const assetPath = 'assets/audio/asr_ready_hint.wav';
-        if (_playerLoadedAsset[hintPlayer] != assetPath) {
-          await hintPlayer.setAsset(assetPath);
-          _playerLoadedAsset[hintPlayer] = assetPath;
-          debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热成功');
+    if (!PlatformUtils.isIOS) {
+      final hintPlayer = _asrHintPlayer;
+      if (hintPlayer != null) {
+        try {
+          const assetPath = 'assets/audio/asr_ready_hint.wav';
+          if (_playerLoadedAsset[hintPlayer] != assetPath) {
+            await hintPlayer.setAsset(assetPath);
+            _playerLoadedAsset[hintPlayer] = assetPath;
+            debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热成功');
+          }
+        } catch (e) {
+          debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热失败: $e');
         }
-      } catch (e) {
-        debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热失败: $e');
       }
     }
 
@@ -1240,6 +1244,10 @@ class StudyAudioSessionController {
   }
 
   Future<void> _playAsrReadyHintSound() async {
+    if (PlatformUtils.isIOS) {
+      await _asr.playReadyHint();
+      return;
+    }
     final player = _asrHintPlayer;
     if (player == null) return;
     try {

@@ -4,10 +4,14 @@ import Speech
 import AVFoundation
 import AVFAudio
 import StoreKit
+import AudioToolbox
+
 @main
 @objc class AppDelegate: FlutterAppDelegate {
     
     // MARK: - Properties
+    
+    private var readyHintSoundId: SystemSoundID = 0
     
     // ASR 相关属性
     private var speechRecognizer: SFSpeechRecognizer?
@@ -180,6 +184,8 @@ import StoreKit
             name: .AVAudioEngineConfigurationChange,
             object: audioEngine
         )
+        
+        setupReadyHintSound()
         
         print(String(format: "IOS启动: didFinishLaunchingWithOptions 完成 +%.2fs", Date().timeIntervalSince(nativeStart)))
         return result
@@ -369,6 +375,9 @@ import StoreKit
             // iOS natively handles models, no-op needed
             result(nil)
             
+        case "playReadyHint":
+            playReadyHint(result: result)
+            
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -539,6 +548,28 @@ import StoreKit
         partialResultTimer?.invalidate()
         partialResultTimer = nil
         
+        result(nil)
+    }
+    
+    // MARK: - Ready Hint Sound (AudioServices System Sound)
+    
+    private func setupReadyHintSound() {
+        let key = FlutterDartProject.lookupKey(forAsset: "assets/audio/asr_ready_hint.wav")
+        if let path = Bundle.main.path(forResource: key, ofType: nil) {
+            let soundUrl = URL(fileURLWithPath: path)
+            let status = AudioServicesCreateSystemSoundID(soundUrl as CFURL, &readyHintSoundId)
+            print("IOS: [ASR] Ready hint sound registered from \(path), id: \(readyHintSoundId), status: \(status)")
+        } else {
+            print("IOS: [ASR] Ready hint asset not found via FlutterDartProject, will use fallback system sound (1057)")
+        }
+    }
+    
+    private func playReadyHint(result: FlutterResult) {
+        if readyHintSoundId != 0 {
+            AudioServicesPlaySystemSound(readyHintSoundId)
+        } else {
+            AudioServicesPlaySystemSound(1057)
+        }
         result(nil)
     }
     
