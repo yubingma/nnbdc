@@ -715,7 +715,7 @@ class StudyAudioSessionController {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
 
-      if (_asr.state == AsrState.started || _asr.state == AsrState.stopping) {
+      if (_activeMode == AudioMode.record || _asr.state == AsrState.started || _asr.state == AsrState.stopping) {
         debugPrint('⚠️ [SessionController] 拦截 usePlaybackCategory：ASR 仍处于活动中，跳过 Category 切换以防 iOS 优先级死锁。');
         return;
       }
@@ -1086,6 +1086,10 @@ class StudyAudioSessionController {
   /// 预热音效池。
   Future<void> prewarm() async {
     if (PlatformUtils.isWeb || PlatformUtils.isTesting) return;
+    if (_activeMode == AudioMode.record || _asr.state == AsrState.started) {
+      debugPrint('🔊 [SessionController] 录音进行中，跳过后台 prewarm 以免抢占音频硬件');
+      return;
+    }
     for (int i = 0; i < _sfxPoolSize; i++) {
       if (_sfxPool.length <= i) {
         try {
@@ -1149,7 +1153,7 @@ class StudyAudioSessionController {
       if (player.playing) {
         await player.stop();
       }
-      if (isSameAsset) {
+      if (isSameAsset && player.position > Duration.zero) {
         await player.seek(Duration.zero);
       }
       if (player.speed != speed) {
@@ -1208,9 +1212,7 @@ class StudyAudioSessionController {
       
       final assetPath = 'assets/audio/$soundFileName';
       final bool isSameAsset = _playerLoadedAsset[player] == assetPath;
-      if (isSameAsset) {
-        await player.seek(Duration.zero);
-      } else {
+      if (!isSameAsset) {
         await player.setAsset(assetPath);
         _playerLoadedAsset[player] = assetPath;
       }
@@ -1222,7 +1224,6 @@ class StudyAudioSessionController {
       Future.delayed(maxPlay, () async {
         try {
           if (_activeCutToken[player] == token && player.playing) {
-            await player.setVolume(0.0);
             await player.stop();
           }
         } catch (_) {}
@@ -1240,7 +1241,9 @@ class StudyAudioSessionController {
       if (player.playing) {
         await player.stop();
       }
-      await player.seek(Duration.zero);
+      if (player.position > Duration.zero) {
+        await player.seek(Duration.zero);
+      }
       await player.setVolume(0.2);
       _logicallyFinishedPlayers.remove(player);
       unawaited(player.play().catchError((_) {}));
@@ -1350,7 +1353,6 @@ class StudyAudioSessionController {
         } else {
           try {
             debugPrint('🔊 [AudioDiag] EarlyExit 强制stop: player=${p.hashCode}');
-            await p.setVolume(0.0);
             await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
             hasStoppedAny = true;
             successfullyCleaned.add(p);
@@ -1435,13 +1437,11 @@ class StudyAudioSessionController {
     if (hintPlayer != null) {
       _unwatchPlayer(hintPlayer);
       try {
-        hintPlayer.setVolume(0.0);
         hintPlayer.stop();
         hintPlayer.dispose().catchError((_) {});
       } catch (_) {}
     }
     try {
-      _audioPlayer.setVolume(0.0);
       _audioPlayer.stop();
     } catch (_) {}
     return _audioPlayer.dispose();

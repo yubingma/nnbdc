@@ -325,15 +325,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.dataLoaded || state.isGettingNextWord) return;
     final totalStopwatch = Stopwatch()..start();
     Api.setLoadingDisabled(true);
-    
-    // 极致优化：为了绝对保障批次第一个单词的发音稳定与流畅，我们将音效池的预热延后 2 秒（用户看词阶段）执行，
-    // 彻底避开首词加载与发音播放的硬件黄金窗口，根治并发硬件抢占导致的破音。
-    final ctrl = StudyAudioSessionController.instance;
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!_isDisposed && !ctrl.isSfxPoolFullyPrewarmed) {
-        unawaited(ctrl.prewarm());
-      }
-    });
+
 
     bool dialogShown = false;
     Timer? dialogTimer;
