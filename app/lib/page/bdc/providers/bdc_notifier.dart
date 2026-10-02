@@ -946,20 +946,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  /// 本组环节推进到"汉译英"时的一次性顺序提示：把"整组横向推进"讲清楚，
-  /// 消除"刚答错的词怎么没在后面的环节里出现"的误解。用户可点 × 永久关闭。
-  static const String _ch2EnPhaseHint = '本组测评已完成 · 现在逐个汉译英';
-
-  /// 用户关闭「本组环节顺序提示」：记住偏好（之后不再展示），并收起当前这条。
-  Future<void> dismissGroupStepHint() async {
-    final config = StudyConfig.fromCurrentUser()..hideGroupStepHint = true;
-    await config.saveToCurrentUser();
-    if (_isDisposed) return;
-    state = state.copyWith(groupStepHint: null);
-  }
-
-  /// 算好"当前这个词在本组本环节的进度"：第 N 组 · 轨道 · 环节 x/y、是否本环节重测、
-  /// 以及环节推进的一次性顺序提示。
+  /// 算好"当前这个词在本组本环节的进度"：第 N 组 · 轨道 · 环节 x/y、是否本环节重测。
   ///
   /// 必须在**呈现之前**算，和这次呈现一起写进 state：指示行（含「本环节重测」）绝不能先带着
   /// 上一环节的旧值出现、再被一次异步补正 —— 那个空窗里用户看到的是错的（旧轨道名、
@@ -987,15 +974,6 @@ class BdcNotifier extends _$BdcNotifier {
       // 分子立刻包含它，用户才能看到 1/10 → 2/10 的前进，重测也才认得出来。
       markPresentedWord: true,
     );
-    // 提示只在"本组后续环节的首个词"上出现：首次环节（测评）无需解释顺序，
-    // 回看历史词时也不提示，避免重放打乱顺序的错觉。用户关掉后不再提示。
-    final hint = (stepIndex > 0 &&
-            step == StudyStep.ch2En.json &&
-            progress?.position == 1 &&
-            state.historyIndex == -1 &&
-            !StudyConfig.fromCurrentUser().hideGroupStepHint)
-        ? _ch2EnPhaseHint
-        : null;
     if (progress == null) return null;
     return (
       groupNo: progress.groupNo,
@@ -1003,7 +981,7 @@ class BdcNotifier extends _$BdcNotifier {
       total: progress.total,
       trackName: progress.trackName,
       isRetry: progress.isRetry,
-      hint: hint,
+      hint: null,
     );
   }
 

@@ -1300,7 +1300,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     final position = state.groupStepPosition;
     final total = state.groupStepTotal;
     final isRetry = state.isGroupStepRetry;
-    final hint = state.groupStepHint;
     final stepDesc = StudyStepExt.fromString(state.studyStep ?? '').description;
     return SizedBox(
       width: double.infinity,
@@ -1308,77 +1307,36 @@ extension BdcPageStateUIComponents on BdcPageState {
           ? const SizedBox.shrink()
           : Padding(
               padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: context.textSecondary,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: '第 $groupNo 组 · $trackName · $stepDesc ',
-                        ),
-                        TextSpan(
-                          text: '$position/$total',
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                          ),
-                        ),
-                        // 本环节的重测：答错后回到队尾再答一遍。明确标出来，
-                        // 用户不会把它当成"新词怎么又出现一次"，排查时也一眼能认出这是重测。
-                        if (isRetry)
-                          const TextSpan(
-                            text: ' · 本环节重测',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFFE65100),
-                            ),
-                          ),
-                      ],
-                    ),
+              child: Text.rich(
+                TextSpan(
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: context.textSecondary,
                   ),
-                  // 环节切换的一次性轻提示（只在切换后第一个词上出现，点 × 永久关闭）
-                  if (hint != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              hint,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                                height: 1.35,
-                                color: context.primaryColor,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 2),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: notifier.dismissGroupStepHint,
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 13,
-                                color: context.textSecondary
-                                    .withValues(alpha: 0.55),
-                              ),
-                            ),
-                          ),
-                        ],
+                  children: [
+                    TextSpan(
+                      text: '第 $groupNo 组 · $trackName · $stepDesc ',
+                    ),
+                    TextSpan(
+                      text: '$position/$total',
+                      style: const TextStyle(
+                        fontFamily: 'Roboto',
                       ),
                     ),
-                ],
+                    // 本环节的重测：答错后回到队尾再答一遍。明确标出来，
+                    // 用户不会把它当成"新词怎么又出现一次"，排查时也一眼能认出这是重测。
+                    if (isRetry)
+                      const TextSpan(
+                        text: ' · 本环节重测',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFE65100),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
     );
