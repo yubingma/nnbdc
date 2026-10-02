@@ -595,6 +595,16 @@ import Accelerate
         }
     }
     
+    private func stopPlayerSafely(_ player: AVAudioPlayer?, restoreVolume: Float = 1.0) {
+        guard let p = player, p.isPlaying else { return }
+        // 15ms 快速微淡出，使波形平滑归零，彻底杜绝快速切词/打断时的直流断崖冲击爆音（DC Cutoff Pop）
+        p.setVolume(0.0, fadeDuration: 0.015)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+            p.stop()
+            p.volume = restoreVolume
+        }
+    }
+
     private func playReadyHint(result: FlutterResult) {
         let now = Date().timeIntervalSince1970
         if now - lastReadyHintTime < 0.3 {
@@ -605,10 +615,17 @@ import Accelerate
         lastReadyHintTime = now
         if let player = readyHintPlayer {
             if player.isPlaying {
-                player.stop()
+                stopPlayerSafely(player, restoreVolume: 0.5)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+                    player.currentTime = 0
+                    player.volume = 0.5
+                    player.play()
+                }
+            } else {
+                player.currentTime = 0
+                player.volume = 0.5
+                player.play()
             }
-            player.currentTime = 0
-            player.play()
         }
         result(nil)
     }
@@ -616,17 +633,18 @@ import Accelerate
     private func playLocalAudio(path: String, result: @escaping FlutterResult) {
         let url = URL(fileURLWithPath: path)
         do {
-            if let player = localAudioPlayer, player.isPlaying {
-                player.stop()
+            if let oldPlayer = localAudioPlayer {
+                stopPlayerSafely(oldPlayer)
             }
             localAudioCompletion?(nil)
             localAudioCompletion = nil
             
-            localAudioPlayer = try AVAudioPlayer(contentsOf: url)
-            localAudioPlayer?.delegate = self
-            localAudioPlayer?.prepareToPlay()
+            let newPlayer = try AVAudioPlayer(contentsOf: url)
+            newPlayer.delegate = self
+            newPlayer.prepareToPlay()
+            localAudioPlayer = newPlayer
             localAudioCompletion = result
-            localAudioPlayer?.play()
+            newPlayer.play()
         } catch {
             print("IOS: [Audio] Failed to play local audio: \(error)")
             result(FlutterError(code: "PLAY_FAILED", message: error.localizedDescription, details: nil))
@@ -634,8 +652,11 @@ import Accelerate
     }
 
     private func stopLocalAudio(result: FlutterResult) {
-        if let player = localAudioPlayer, player.isPlaying {
-            player.stop()
+        if let player = localAudioPlayer {
+            stopPlayerSafely(player)
+        }
+        if let readyPlayer = readyHintPlayer {
+            stopPlayerSafely(readyPlayer, restoreVolume: 0.5)
         }
         localAudioCompletion?(nil)
         localAudioCompletion = nil

@@ -1907,14 +1907,14 @@ class BdcNotifier extends _$BdcNotifier {
     );
 
     try {
+      // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
+      // 杜绝跨词音频撞车，使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
+      try {
+        unawaited(StudyAudioSessionController.instance.cancelPlayback());
+      } catch (_) {}
+
       // 快速通道（详情页预拉取）：跳过音频/ASR 清理和视觉驻留，仅做数据加载。
       if (!fastPath) {
-        // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
-        // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
-        try {
-          unawaited(StudyAudioSessionController.instance.cancelPlayback());
-        } catch (_) {}
-
         // 答对单词后切换下一词前的视觉驻留延迟。
         // Ch2En 模式（说英文）发音已播完提供充足的驻留时长，无需额外等待；
         // 其他模式（如 En2Ch）仅播短促提示音，保留 50ms 缓冲让用户看一眼评分。
