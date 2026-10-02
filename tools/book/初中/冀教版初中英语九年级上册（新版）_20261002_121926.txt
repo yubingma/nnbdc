@@ -1,0 +1,373 @@
+0|congratulation
+0|ache
+0|hamburger
+0|biscuit
+0|stomachache
+0|thirsty
+0|iced
+0|pill
+0|forehead
+0|pale
+0|sensible
+0|dietary
+0|guideline
+0|bottom
+0|grain
+0|cereal
+0|based
+0|mutton
+0|soybean
+0|nut
+0|base
+0|regular
+0|pressure
+0|energetic
+0|unable
+0|brush
+0|tooth
+0|wheelchair
+0|laptop
+0|married
+0|son
+0|kick
+0|daughter
+0|keyboard
+0|disabled
+0|cloud
+0|lining
+0|jog
+0|bone
+0|mood
+0|belonging
+0|belong
+0|judgment
+0|bat
+0|relaxed
+0|illness
+0|cancer
+0|whenever
+0|somebody
+0|someone
+0|account
+0|tradition
+0|fit
+0|kung fu
+0|misunderstanding
+0|fix
+0|difficulty
+0|partner
+0|succeed
+0|satisfied
+0|hate
+0|anger
+0|seriously
+0|hopefully
+0|president
+0|council
+0|opinion
+0|successful
+0|bake
+0|divide
+0|charity
+0|agreement
+0|satisfy
+0|proper
+0|joke
+0|listener
+0|contact
+0|promise
+0|cancel
+0|leader
+0|disappointment
+0|absent
+0|paragraph
+0|shame
+0|silly
+0|solve
+0|instruction
+0|playwright
+0|translate
+0|enrich
+0|alive
+0|worth
+0|artwork
+0|calligraphy
+0|drama
+0|legendary
+0|ink
+0|slab
+0|lay
+0|grind
+0|immerse
+0|grab
+0|harmony
+0|rhythm
+0|source
+0|distinct
+0|calligrapher
+0|mix
+0|emotion
+0|stroke
+0|angle
+0|appreciate
+0|impressive
+0|artistic
+0|position
+0|audience
+0|dialogue
+0|couple
+0|complex
+0|actor
+0|actress
+0|director
+0|involve
+0|budget
+0|comedy
+0|humour
+0|wander
+0|war
+0|battle
+0|contribution
+0|painter
+0|itself
+0|artist
+0|exception
+0|lifetime
+0|master
+0|among
+0|dwell
+0|masterpiece
+0|surround
+0|size
+0|closely
+0|detail
+0|peaceful
+0|significant
+0|wife
+0|hat
+0|prince
+0|whatever
+0|god
+0|honey
+0|marry
+0|fool
+0|ours
+0|coast
+0|quality
+0|style
+0|hero
+0|hybrid
+0|gifted
+0|rocket
+0|spare
+0|rocketry
+0|mathematician
+0|extend
+0|decimal
+0|army
+0|pirate
+0|sail
+0|voyage
+0|glad
+0|intelligence
+0|universe
+0|theory
+0|relativity
+0|article
+0|pioneer
+0|receive
+0|prize
+0|weapon
+0|conclusion
+0|course
+0|planetary
+0|writer
+0|educator
+0|blind
+0|deaf
+0|essay
+0|peanut
+0|shade
+0|agriculture
+0|variety
+0|introduction
+0|production
+0|tirelessly
+0|soldier
+0|socialism
+0|pancake
+0|worst
+0|operate
+0|Chinatown
+0|crowded
+0|balloon
+0|chili
+0|pepper
+0|spicy
+0|spoon
+0|fork
+0|ant
+0|collapse
+0|dyke
+0|mile
+0|penny
+0|pound
+0|foolish
+0|image
+0|being
+0|pronounce
+0|manner
+0|Canadian
+0|modest
+0|virtue
+0|praise
+0|cost
+0|guest
+0|plate
+0|extra
+0|waiter
+0|Australian
+0|accept
+0|lemon
+0|coffee
+0|themselves
+0|overnight
+0|suggestion
+0|noisy
+0|thick
+0|method
+0|jar
+0|cardboard
+0|upside
+0|shall
+0|raincoat
+0|tightly
+0|conclude
+0|tablet
+0|text
+0|widespread
+0|movable
+0|printing
+0|quantity
+0|accessible
+0|general
+0|available
+0|industrial
+0|revolution
+0|further
+0|lower
+0|electronic
+0|increasingly
+0|reader
+0|access
+0|blueprint
+0|complicated
+0|living
+0|strongly
+0|twin
+0|repeat
+0|identify
+0|relative
+0|distant
+0|gene
+0|interact
+0|edit
+0|genetic
+0|booking
+0|platform
+0|navigation
+0|bill
+0|regardless
+0|review
+0|climate
+0|to tell the truth
+0|get dressed
+0|learn a lesson
+0|in order to
+0|come down to
+0|at the bottom of
+0|at the top of
+0|at the base of
+0|put on
+0|play soccer
+0|play the keyboard
+0|a sense of belonging
+0|go through
+0|form good habits
+0|have difficulty doing
+0|have difficulty in doing
+0|be satisfied with
+0|move on
+0|make sure
+0|divide into
+0|reach an agreement
+0|make a great effort to
+0|in a friendly way
+0|tell jokes
+0|make eye contact
+0|waste time doing
+0|keep one's promise
+0|ahead of time
+0|to one's disappointment
+0|be absent from
+0|get sb. into trouble
+0|laugh at
+0|work out
+0|on stage
+0|be worth doing
+0|be interested in
+0|have a whale of a time
+0|lie in
+0|mix ... with ...
+0|be into
+0|have an effect on
+0|a couple of
+0|be involved in
+0|be based on
+0|make contributions to
+0|no exception
+0|pass away
+0|be surrounded by
+0|in the distance
+0|come to mind
+0|spare no effort to do
+0|have ... in common
+0|go on
+0|in the field of
+0|make progress
+0|finish university
+0|do one's best
+0|a number of
+0|succeed in doing
+0|be introduced to
+0|fall behind
+0|set higher goals
+0|in one's spare time
+0|not at all
+0|all walks of life
+0|other than
+0|take turns doing
+0|tidy up
+0|serve oneself
+0|feel at home
+0|upside down
+0|pour out
+0|date back to
+0|as time goes on
+0|a means of
+0|in large quantities
+0|at lower costs
+0|except for
+0|interact with
+0|in the coming years
+0|do with
+0|regardless of
+0|benefit from
+0|what's more
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 366
+# Total Entries Extracted: 366
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 366
+# -------------------------------

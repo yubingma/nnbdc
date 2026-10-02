@@ -1,0 +1,251 @@
+0|advertising
+0|airline
+0|drug
+0|shine
+0|shampoo
+0|advertisement
+0|persuade
+0|advertise
+0|be meant to
+0|welfare
+0|cheat
+0|skilful
+0|even if
+0|even though
+0|innocent
+0|breath
+0|bad breath
+0|fool
+0|cure
+0|grocery
+0|pleased
+0|comment
+0|mental
+0|fall for
+0|trick
+0|aim
+0|nationwide
+0|campaign
+0|deal with
+0|motto
+0|cigarette
+0|benefit
+0|promote
+0|intelligence
+0|slave
+0|consult
+0|comprehension
+0|latest
+0|best-seller
+0|amazed
+0|recommend
+0|publisher
+0|senior
+0|purchase
+0|designer
+0|software
+0|tip
+0|eye-catching
+0|logo
+0|slogan
+0|corporation
+0|bar
+0|multiply
+0|design
+0|update
+0|youth
+0|aspect
+0|CD
+0|recipe
+0|yummy
+0|bargain
+0|bonus
+0|fancy
+0|figure out
+0|media
+0|poster
+0|target
+0|determine
+0|analysis
+0|appeal
+0|react
+0|personally
+0|get something across
+0|anti-smoking
+0|packet
+0|poisonous
+0|lung
+0|cancer
+0|smoker
+0|fingernail
+0|urge
+0|tobacco
+0|essay
+0|shock
+0|die from
+0|committee
+0|delighted
+0|significance
+0|Olympia
+0|Greece
+0|wrestling
+0|tradition
+0|compete
+0|honour
+0|male
+0|nation
+0|contemporary
+0|well-known
+0|boxer
+0|medal
+0|heavyweight
+0|boxing
+0|championship
+0|flame
+0|opening
+0|absence
+0|excite
+0|hurdle
+0|lead the way
+0|gymnastics
+0|champion
+0|hang on
+0|final
+0|joy
+0|attempt
+0|boundary
+0|movement
+0|nest
+0|torch
+0|stadium
+0|pass something on
+0|pass something on to somebody
+0|roof
+0|transport
+0|citizen
+0|vest
+0|underwear
+0|kettle
+0|otherwise
+0|per
+0|association
+0|grain
+0|routine
+0|toast
+0|Coke
+0|lemonade
+0|ping-pong
+0|net
+0|origin
+0|outdoors
+0|frequent
+0|technique
+0|bowling
+0|continent
+0|budget
+0|remove
+0|unusual
+0|power
+0|power boating
+0|make way for
+0|tae kwon do
+0|rugby
+0|golf
+0|eagle
+0|teammate
+0|kangaroo
+0|goal
+0|shot
+0|referee
+0|whistle
+0|reporter
+0|unfair
+0|bitter
+0|meanwhile
+0|tie
+0|precious
+0|virtual
+0|reality
+0|presentation
+0|amaze
+0|passive
+0|user
+0|sightseeing
+0|happiness
+0|headset
+0|3-D
+0|add to
+0|network
+0|studio
+0|social
+0|Brazilian
+0|winning
+0|confident
+0|put forward
+0|disappointed
+0|disabled
+0|convenience
+0|secure
+0|firefighter
+0|injure
+0|biology
+0|whale
+0|squirrel
+0|urban
+0|planning
+0|neighbourhood
+0|as to
+0|operation
+0|fee
+0|disadvantage
+0|electric
+0|built-in
+0|power-free
+0|clay
+0|powder-free
+0|liquid
+0|powder
+0|last but not least
+0|programming
+0|accuse
+0|piracy
+0|fade
+0|editor
+0|constant
+0|modem
+0|monitor
+0|function
+0|PC
+0|printer
+0|button
+0|chief
+0|importance
+0|pack
+0|nephew
+0|hire
+0|shore
+0|mushroom
+0|gas
+0|dinosaur
+0|exit
+0|ceiling
+0|float
+0|escape
+0|terror
+0|upwards
+0|sunlight
+0|zip
+0|worn
+0|mankind
+0|evolve
+0|beast
+0|impression
+0|master
+0|frost
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 244
+# Total Entries Extracted: 244
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 244
+# -------------------------------

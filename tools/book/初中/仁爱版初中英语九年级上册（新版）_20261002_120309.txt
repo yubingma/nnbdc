@@ -1,0 +1,422 @@
+0|leisure
+0|treatment
+0|nowadays
+0|achievement
+0|international
+0|narrow
+0|block
+0|apartment
+0|improvement
+0|pleasure
+0|conclusion
+0|amusement
+0|agreement
+0|shut
+0|pollute
+0|childhood
+0|laughter
+0|excite
+0|happiness
+0|remain
+0|comfort
+0|recently
+0|familiar
+0|entertainment
+0|jazz
+0|neighbourhood
+0|neighborhood
+0|rail
+0|complete
+0|era
+0|probably
+0|false
+0|pollution
+0|union
+0|awareness
+0|whale
+0|giraffe
+0|eagle
+0|dolphin
+0|sort
+0|journalist
+0|interview
+0|environmental
+0|organization
+0|pardon
+0|recycle
+0|toilet
+0|donate
+0|charity
+0|wastewater
+0|loudspeaker
+0|negative
+0|blood
+0|waste bin
+0|grey
+0|gray
+0|correctly
+0|cooperate
+0|ever
+0|found
+0|award
+0|medal
+0|honour
+0|honor
+0|introduction
+0|ant
+0|suffer
+0|carbon
+0|tick
+0|packaging
+0|cloth
+0|greening
+0|process
+0|lung
+0|raincoat
+0|wooden
+0|lock
+0|lover
+0|inventor
+0|bulb
+0|horseback
+0|certainly
+0|discovery
+0|gunpowder
+0|printing
+0|paper-making
+0|compass
+0|position
+0|fishing
+0|net
+0|sailor
+0|magnetic
+0|needle
+0|disk
+0|war
+0|Arab
+0|movable
+0|print
+0|drug
+0|broaden
+0|woollen
+0|woolen
+0|sharp
+0|wake
+0|passport
+0|airplane
+0|instruction
+0|stamp
+0|balloon
+0|lamp
+0|wheel
+0|jeans
+0|imaginative
+0|daydream
+0|moreover
+0|awake
+0|nail
+0|Egyptian
+0|test
+0|prize
+0|Russian
+0|German
+0|castle
+0|Neuschwanstein
+0|matryoshka
+0|doll
+0|official
+0|brain
+0|either
+0|Japanese
+0|bow
+0|wave
+0|goodbye
+0|bye
+0|nod
+0|opposite
+0|finger
+0|spell
+0|expression
+0|lyric
+0|underline
+0|circle
+0|imitate
+0|comprehend
+0|native
+0|speaker
+0|imitation
+0|gentleman
+0|united
+0|tour
+0|Arabic
+0|widely
+0|tongue
+0|leader
+0|Spanish
+0|worldwide
+0|population
+0|sixth
+0|tourism
+0|eager
+0|unbelievable
+0|accent
+0|forecast
+0|dialogue
+0|dialog
+0|cartoon
+0|tiger
+0|wolf
+0|contest
+0|primary
+0|grammar
+0|challenging
+0|influence
+0|differently
+0|rose
+0|handwriting
+0|replace
+0|recognise
+0|recognize
+0|praise
+0|pronounce
+0|path
+0|diversion
+0|radio
+0|underwater
+0|surprise
+0|waiter
+0|self-driving
+0|decision
+0|exactly
+0|completely
+0|engineering
+0|closely
+0|navigation
+0|GPS
+0|Global Positioning System
+0|technological
+0|require
+0|the Asia-Pacific area
+0|aim
+0|compete
+0|virtual
+0|aware
+0|cheat
+0|trait
+0|charge
+0|electric
+0|appointment
+0|glance
+0|widespread
+0|AI
+0|artificial intelligence
+0|dam
+0|jump
+0|secondly
+0|Olympic
+0|missile
+0|iron
+0|hybrid
+0|winner
+0|physics
+0|glorious
+0|leadership
+0|forever
+0|admire
+0|institute
+0|observe
+0|signal
+0|X-ray
+0|designer
+0|failure
+0|army
+0|general
+0|knowledgeable
+0|agricultural
+0|interestingly
+0|greatness
+0|deer
+0|unluckily
+0|refer
+0|researcher
+0|developer
+0|devoted
+0|behave
+0|whom
+0|refuse
+0|cleaner
+0|poverty
+0|settle
+0|secretary
+0|doubt
+0|patience
+0|lift
+0|sunshine
+0|organise
+0|organize
+0|wounded
+0|tricycle
+0|earn
+0|protector
+0|medallist
+0|medalist
+0|athlete
+0|gold
+0|talent
+0|home-made
+0|gun
+0|shooter
+0|career
+0|Asian
+0|coach
+0|excellence
+0|nickname
+0|victory
+0|get in touch
+0|take place
+0|get used to sth.
+0|get used to doing sth.
+0|get around
+0|save time
+0|make progress
+0|make great progress
+0|make achievements
+0|play an important role in ...
+0|take ... as an example
+0|keep up with
+0|lead a ... life
+0|smile at ...
+0|remind sb. of
+0|of all ages
+0|far away from
+0|care about
+0|high-speed railway
+0|kind of
+0|social media
+0|connect with
+0|take action
+0|put ... at risk
+0|green traveling
+0|waste sorting
+0|environmental protection
+0|make use of
+0|turn ... into ...
+0|pour into
+0|high blood pressure
+0|heart disease
+0|encourage sb. to do sth.
+0|take the chance
+0|set up
+0|protect ... from ...
+0|in honor of
+0|clean up
+0|throw ... away
+0|keep doing sth.
+0|a member of ...
+0|main cause
+0|as a result
+0|in a word
+0|say no to
+0|according to
+0|make a big difference in
+0|cry for help
+0|most importantly
+0|make efforts to do sth.
+0|be made of
+0|be used for
+0|day and night
+0|all kinds of
+0|support sb. in doing sth.
+0|meet the needs
+0|bring about
+0|solve the problem of ...
+0|hold a leading position
+0|hold a leading position in
+0|depend on
+0|movable type printing
+0|wake up
+0|first of all
+0|ask for help
+0|dream big
+0|change into
+0|be related to ...
+0|go on a holiday
+0|stay awake
+0|draw great interest
+0|reduce traffic accidents
+0|be filled with
+0|be named after
+0|one of ...
+0|either ... or ...
+0|from side to side
+0|spell out
+0|one by one
+0|use sth. to do sth.
+0|native speaker
+0|walk sb. through sth.
+0|with the rapid development of ...
+0|last but not least
+0|be thankful to
+0|be eager to do sth.
+0|learning tools
+0|across the world
+0|primary school
+0|on business
+0|in any case
+0|the risk of ...
+0|at work
+0|follow one's instructions
+0|go quite well
+0|be proud of sb.
+0|feel proud of sb.
+0|run tests
+0|put ... into use
+0|pass on
+0|aim to do sth.
+0|compete with sb.
+0|compete with sth.
+0|be aware of
+0|can't wait to do sth.
+0|power station
+0|as a part of ...
+0|for ... purpose
+0|rather than
+0|return to
+0|pass away
+0|light year
+0|join the army
+0|at a young age
+0|be honored as
+0|be curious about
+0|set high goals
+0|develop a strong interest in ...
+0|suffer from ...
+0|take one's life
+0|focus on
+0|save lives
+0|save one's lives
+0|even though
+0|keep on doing sth.
+0|as is known to us all
+0|make laws
+0|even if
+0|set a good example for ...
+0|all one's life
+0|refuse to do sth.
+0|in one's eyes
+0|most of all
+0|day after day
+0|settle down
+0|be lifted out of ...
+0|a group of ...
+0|follow one's example
+0|risk one's life
+0|put out
+0|go beyond
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 415
+# Total Entries Extracted: 415
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 415
+# -------------------------------

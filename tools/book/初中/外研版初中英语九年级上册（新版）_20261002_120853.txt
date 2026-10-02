@@ -1,0 +1,243 @@
+0|lady
+0|gentleman
+0|high school
+0|puppet
+0|performer
+0|finger
+0|teenager
+0|old-fashioned
+0|take part in
+0|performance
+0|unless
+0|video
+0|amaze
+0|post
+0|be flooded with
+0|hold on
+0|blood
+0|interested
+0|surprising
+0|lost
+0|viewer
+0|attention
+0|abroad
+0|teenage
+0|folk arts
+0|programme
+0|volunteer
+0|group
+0|report
+0|fence
+0|kill
+0|scarecrow
+0|educator
+0|country
+0|nation
+0|shoulder the responsibility
+0|energy
+0|youth
+0|wealthy
+0|independent
+0|excerpt
+0|tin
+0|spare
+0|moneybox
+0|own
+0|size
+0|better
+0|make sense
+0|dreamland
+0|manage
+0|key
+0|deal
+0|deal with
+0|laptop
+0|budget
+0|exactly
+0|pleasure
+0|end
+0|save
+0|bank
+0|account
+0|expensive
+0|price
+0|savings
+0|make ends meet
+0|date
+0|sale
+0|on sale
+0|T-shirt
+0|website
+0|worth
+0|dollar
+0|cent
+0|penny
+0|couple
+0|flat
+0|treasure
+0|Christmas Eve
+0|certainly
+0|chain
+0|comb
+0|guest
+0|remains
+0|lie
+0|northwest
+0|such
+0|archaeologist
+0|giant
+0|the fruit of ...
+0|centre
+0|period
+0|form
+0|valuable
+0|smoothly
+0|luck
+0|bring out
+0|cartoon
+0|silk
+0|matchbox
+0|weight
+0|around
+0|ton
+0|mystery
+0|coast
+0|pretty
+0|hit
+0|besides
+0|creativity
+0|come to life
+0|technology
+0|multimedia
+0|noisy
+0|collection
+0|fever
+0|pride
+0|take pride in
+0|design
+0|bat
+0|scarf
+0|fridge
+0|fridge magnet
+0|mirror
+0|great-aunt
+0|person
+0|fighter
+0|later
+0|footstep
+0|name ... after
+0|realise
+0|could
+0|leave ... behind
+0|gentle
+0|pity
+0|war
+0|battle
+0|shock
+0|survivor
+0|temperature
+0|front line
+0|lose
+0|deeply
+0|presenter
+0|recommend
+0|co-pilot
+0|engine
+0|state
+0|dreamer
+0|pick
+0|countless
+0|thing
+0|experiment
+0|scientific research
+0|type
+0|poor
+0|soil
+0|feed
+0|pass away
+0|socialist
+0|human
+0|drop
+0|tourist
+0|benefit
+0|wonder
+0|once again
+0|admire
+0|throughout
+0|mark
+0|rapid
+0|society
+0|cancel
+0|start over
+0|get along with
+0|permit
+0|affect
+0|organisation
+0|harm
+0|punish
+0|global warming
+0|rubbish
+0|overfish
+0|gas
+0|greenhouse gas
+0|square
+0|logging
+0|solar panel
+0|microphone
+0|alarm
+0|guard
+0|foreigner
+0|logo
+0|endangered
+0|vulnerable
+0|protection
+0|farmland
+0|consider
+0|material
+0|shape
+0|long-lasting
+0|cheap
+0|environmental
+0|toothbrush
+0|glove
+0|former
+0|wing
+0|tie
+0|stuck
+0|bin
+0|mistake ... for ...
+0|average
+0|on average
+0|gram
+0|tiny
+0|break down
+0|trouble
+0|wisely
+0|highlight
+0|pollute
+0|electronic
+0|truck
+0|emission
+0|upcycle
+0|reuse
+0|fox
+0|loudly
+0|land
+0|village
+0|reporter
+0|depth
+0|suggest
+0|businessman
+0|industrial
+0|litter
+0|peace
+0|business
+0|building
+0|imagination
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 236
+# Total Entries Extracted: 236
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 236
+# -------------------------------

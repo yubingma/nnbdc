@@ -104,7 +104,7 @@ def _find(text, ymin=None, ymax=None, visible=False):
 
 def tap_tab(name):
     """横向可滚动的分类 tab（在学/我的/大学/…/小学/…）。"""
-    for rng in ((1000, 100), (100, 1000)):
+    for rng in ((850, 250), (250, 850)):
         for _ in range(8):
             n = _find(name, ymax=330)
             if n:
@@ -116,7 +116,7 @@ def tap_tab(name):
 
 def tap_chip(name):
     """横向可滚动的出版社锚点（人教版/北京版/…）。点它会把列表滚到该分组。"""
-    for rng in ((1000, 100), (100, 1000)):
+    for rng in ((850, 250), (250, 850)):
         for _ in range(10):
             n = _find(name, ymin=340, ymax=460)
             if n:

@@ -1,0 +1,3256 @@
+0|man
+0|feel compelled to
+0|manager
+0|German
+0|manufacture
+0|manufacturer
+0|policeman
+0|human
+0|manly
+0|manual
+0|manually
+0|command
+0|demand
+0|chairman
+0|gentleman
+0|a gentleman's agreement
+0|mankind
+0|management
+0|can
+0|candidate
+0|focus on
+0|cancer
+0|scan
+0|candle
+0|power failure
+0|burn the candle at both ends
+0|can't hold a candle to
+0|the game is not worth the candle
+0|more
+0|moreover
+0|furthermore
+0|people
+0|pay for
+0|low
+0|follow
+0|flow
+0|power grid
+0|in full flow
+0|go with the flow
+0|hollow
+0|mat
+0|matter
+0|material
+0|let
+0|run a risk
+0|completely
+0|outlet
+0|delete
+0|line
+0|between the lines
+0|gasoline
+0|headline
+0|like
+0|likely
+0|dislike
+0|take the time
+0|alike
+0|unlikely
+0|know
+0|knowledge
+0|unknown
+0|most
+0|mostly
+0|make
+0|make like
+0|make it
+0|just
+0|adjust
+0|justify
+0|justice
+0|unjust
+0|new
+0|existing assets
+0|newspaper
+0|lie
+0|believe
+0|belief
+0|may
+0|come across
+0|maybe
+0|mayor
+0|come
+0|become
+0|outcome
+0|overcome
+0|comfort
+0|comfortable
+0|income
+0|get
+0|forget
+0|less
+0|nevertheless
+0|endlessly
+0|think over
+0|hang over
+0|careless
+0|hopeless
+0|worthless
+0|restless
+0|conversation
+0|in real time
+0|conversion
+0|convert
+0|conversely
+0|convenience
+0|convenient
+0|convention
+0|conventional
+0|mean
+0|means
+0|meaning
+0|meanwhile
+0|meantime
+0|want
+0|run with it
+0|for want of
+0|give
+0|forgive
+0|list
+0|specialist
+0|letter
+0|first
+0|at first
+0|come first
+0|at first hand
+0|life
+0|need
+0|form
+0|inform
+0|information
+0|perform
+0|performance
+0|former
+0|uniform
+0|be conditioned to
+0|transform
+0|transformer
+0|transformation
+0|look
+0|never look back
+0|look sb. up and down
+0|overlook
+0|outlook
+0|fee
+0|feeling
+0|coffee
+0|feedback
+0|place
+0|problem
+0|main
+0|maintain
+0|maintenance
+0|mainland
+0|live
+0|liver
+0|deliver
+0|lively
+0|delivery
+0|hear
+0|heart
+0|mad
+0|get along
+0|down
+0|downward
+0|both
+0|in parallel
+0|bother
+0|in the least
+0|light
+0|in the light of
+0|set light to
+0|the light at the end of the tunnel
+0|delight
+0|daylight
+0|in broad daylight
+0|lighten
+0|listen
+0|mate
+0|playmate
+0|climate
+0|classmate
+0|approximate
+0|intimate
+0|ultimate
+0|effect
+0|for effect
+0|in effect
+0|take effect
+0|come into effect
+0|with immediate effect
+0|effective
+0|far
+0|farm
+0|welfare
+0|farther
+0|farewell
+0|even
+0|prevent
+0|absent-mindedness
+0|evening
+0|event
+0|in the event of
+0|in any event
+0|in the event
+0|eventually
+0|friend
+0|friendly
+0|friendship
+0|important
+0|once
+0|all at once
+0|at once
+0|for once
+0|once again
+0|once in a while
+0|once and for all
+0|concern
+0|concept
+0|concentrate
+0|concert
+0|concentration
+0|concerning
+0|conceal
+0|computer
+0|few
+0|paper
+0|feel
+0|keep
+0|keep pace with
+0|keeper
+0|press
+0|express
+0|impression
+0|make an impression
+0|impressive
+0|compress
+0|old
+0|hold
+0|take hold
+0|cold
+0|have a cold
+0|catch a cold
+0|gold
+0|a heart of gold
+0|household
+0|golden
+0|bold
+0|more or less
+0|fold
+0|choose
+0|plan
+0|plant
+0|plane
+0|take off
+0|explanation
+0|go to lengths
+0|go to great lengths
+0|planet
+0|plantation
+0|money
+0|have money to burn
+0|money talks
+0|product
+0|production
+0|fit
+0|benefit
+0|found
+0|foundation
+0|job
+0|vice-chancellor
+0|just the job
+0|the job in hand
+0|on the job
+0|it's a good job
+0|it's a good thing
+0|office
+0|officer
+0|car
+0|care
+0|health care
+0|career
+0|carry
+0|in case
+0|card
+0|carpenter
+0|scarcely
+0|carriage
+0|carpet
+0|peel off
+0|carbon
+0|cart
+0|carrier
+0|cargo
+0|food
+0|off one's food
+0|food for thought
+0|water
+0|in hot water
+0|pour cold water on
+0|hold water
+0|waterproof
+0|play
+0|play a role
+0|display
+0|playground
+0|be aware of
+0|family
+0|energy
+0|leave out
+0|never
+0|will never do
+0|would never do
+0|present
+0|representative
+0|work one's way up
+0|represent
+0|for better or worse
+0|presently
+0|following
+0|develop
+0|development
+0|close
+0|as of yet
+0|enclose
+0|little
+0|our
+0|hour
+0|encourage
+0|neighbour
+0|journey
+0|the last leg of the journey
+0|favour
+0|in favour of
+0|honour
+0|pour
+0|labour
+0|sour
+0|sour grapes
+0|flourish
+0|favourable
+0|pace
+0|spacecraft
+0|company
+0|accompany
+0|comparison
+0|compass
+0|finish
+0|mental
+0|fundamental
+0|experimental
+0|environment
+0|miss
+0|send in
+0|dismiss
+0|publicity stunt
+0|missing
+0|mission
+0|admission
+0|in the wake of
+0|commission
+0|missile
+0|transmission
+0|bit
+0|bite
+0|orbit
+0|exhibition
+0|exhibit
+0|inhabitant
+0|bitter
+0|now
+0|nowadays
+0|culture
+0|sink or swim
+0|member
+0|remember
+0|difficult
+0|difficulty
+0|in difficulty
+0|in difficulties
+0|government
+0|order
+0|in order to
+0|border
+0|disorder
+0|orderly
+0|kind
+0|kindness
+0|in return for
+0|gain
+0|bargain
+0|great
+0|mode
+0|model
+0|modest
+0|moderate
+0|child
+0|childhood
+0|fun
+0|for fun
+0|in fun
+0|make fun of
+0|a figure of fun
+0|fund
+0|funny
+0|funeral
+0|increase
+0|meet
+0|lion
+0|million
+0|billion
+0|however
+0|picture
+0|organ
+0|organization
+0|organize
+0|organic
+0|organism
+0|expect
+0|expectation
+0|unexpected
+0|learning
+0|learned
+0|deal
+0|deal with
+0|ideal
+0|bank
+0|serve
+0|observe
+0|reserve
+0|preserve
+0|observer
+0|note down
+0|move
+0|remove
+0|report
+0|reporter
+0|class
+0|classroom
+0|classical
+0|classify
+0|classification
+0|poor
+0|tend
+0|attend
+0|intend
+0|extend
+0|pretend
+0|best
+0|better
+0|had better
+0|bed
+0|bell
+0|night
+0|midnight
+0|overnight
+0|fortnight
+0|pain
+0|painting
+0|painful
+0|painter
+0|professor
+0|home
+0|doctor
+0|least
+0|free
+0|freedom
+0|freeze
+0|mill
+0|tear down
+0|off
+0|spin off
+0|offer
+0|offend
+0|choice
+0|half
+0|mine
+0|examine
+0|be vulnerable to
+0|prominent
+0|famine
+0|process
+0|at intervals
+0|core
+0|cord
+0|cordial
+0|corn
+0|corner
+0|corporation
+0|correct
+0|correction
+0|correspond
+0|correspondent
+0|corresponding
+0|economic
+0|economical
+0|fat
+0|father
+0|fatal
+0|fate
+0|grandfather
+0|inherit from
+0|living
+0|major
+0|majority
+0|wear
+0|too soon
+0|weary
+0|age
+0|passage
+0|language
+0|manage
+0|damage
+0|marriage
+0|image
+0|engage
+0|page
+0|eager
+0|be eager to
+0|disadvantage
+0|package
+0|luggage
+0|garage
+0|postage
+0|storage
+0|cage
+0|driver
+0|foreign
+0|foreigner
+0|buy
+0|force
+0|enforce
+0|in sb's wake
+0|bring
+0|fast
+0|breakfast
+0|fasten
+0|hard
+0|because
+0|store
+0|restore
+0|storey
+0|eye
+0|eyesight
+0|group
+0|involve
+0|land
+0|island
+0|fill
+0|full
+0|power
+0|powerful
+0|early
+0|yearly
+0|bad
+0|badly
+0|health
+0|logic
+0|logical
+0|hunt
+0|on the hunt for
+0|brain
+0|death
+0|cloth
+0|clothes
+0|clothing
+0|college
+0|certain
+0|certainly
+0|period
+0|come through
+0|pick
+0|pick up
+0|perhaps
+0|remark
+0|coin
+0|daughter
+0|decade
+0|establish
+0|establishment
+0|fix
+0|gas
+0|house
+0|interesting
+0|key
+0|sales representative
+0|monkey
+0|medicine
+0|medical
+0|mention
+0|news
+0|previous
+0|simply
+0|simplify
+0|close call
+0|specific
+0|specify
+0|board
+0|across the board
+0|on board
+0|aboard
+0|build
+0|building
+0|busy
+0|cancel
+0|device
+0|leave sb. to their own devices
+0|expense
+0|save on
+0|fair
+0|fairly
+0|affair
+0|familiar
+0|here
+0|elsewhere
+0|nowhere
+0|get one nowhere
+0|get near
+0|in the middle of nowhere
+0|sphere
+0|way ahead
+0|hundred
+0|a hundred per cent
+0|ice
+0|ice-cream
+0|juice
+0|nice
+0|price
+0|sacrifice
+0|relate
+0|relation
+0|relationship
+0|relative
+0|relatively
+0|relativity
+0|investment
+0|invest
+0|invite
+0|invitation
+0|mix
+0|mixture
+0|negative
+0|request
+0|time out
+0|risk
+0|sequence
+0|adapt
+0|appoint
+0|association
+0|associate
+0|dark
+0|error
+0|fly
+0|grant
+0|take ... for granted
+0|immigrant
+0|heavy
+0|hotel
+0|impossible
+0|instruction
+0|instruct
+0|loud
+0|cloud
+0|on cloud nine
+0|under a cloud
+0|cloudy
+0|policy
+0|predict
+0|access
+0|accent
+0|acceleration
+0|acceptable
+0|acceptance
+0|accessory
+0|addition
+0|in addition
+0|additional
+0|assume
+0|beginning
+0|charge
+0|in charge
+0|daily
+0|daily life
+0|double
+0|exam
+0|examination
+0|example
+0|glass
+0|hurt
+0|intelligence
+0|intellectual
+0|intelligent
+0|judge
+0|judgement
+0|ordinary
+0|polite
+0|accommodate
+0|attempt
+0|basket
+0|come up with
+0|the bottom of
+0|basketball
+0|break
+0|break down
+0|catch
+0|conclude
+0|conclusion
+0|day
+0|holiday
+0|Friday
+0|birthday
+0|Monday
+0|chief
+0|handkerchief
+0|dress
+0|address
+0|due
+0|in due course
+0|excuse
+0|get tired of
+0|extent
+0|huge
+0|imagine
+0|much less
+0|imaginary
+0|improvement
+0|improve
+0|insist
+0|install
+0|installation
+0|liable
+0|master
+0|meal
+0|luck
+0|lucky
+0|match
+0|noise
+0|noisy
+0|notice
+0|noticeable
+0|political
+0|politician
+0|prison
+0|repair
+0|settle
+0|settle an argument
+0|settlement
+0|setting
+0|advanced
+0|compare
+0|comparative
+0|central
+0|centre
+0|keep informed of
+0|china
+0|conflict
+0|eagle
+0|economy
+0|entertain
+0|entertainment
+0|faint
+0|film
+0|glance
+0|at a glance
+0|at first glance
+0|harm
+0|harmony
+0|be in harmony with ...
+0|nor
+0|north
+0|minor
+0|ignore
+0|enormous
+0|normally
+0|northern
+0|minority
+0|ignorant
+0|northeast
+0|governor
+0|tenant
+0|evict
+0|objective
+0|non-stop
+0|pleasant
+0|tap
+0|tap water
+0|ANWR
+0|accomplish
+0|assist
+0|assistant
+0|assistance
+0|bag
+0|cabbage
+0|doubt
+0|doubtful
+0|weed out
+0|undoubtedly
+0|doubtless
+0|facility
+0|guest
+0|be my guest
+0|happy
+0|retell
+0|lest
+0|mere
+0|merely
+0|mood
+0|in turn
+0|musical
+0|musician
+0|plate
+0|pretty
+0|primary
+0|witness
+0|atom
+0|atomic
+0|hour glass
+0|balance
+0|coat
+0|overcoat
+0|code
+0|confidence
+0|go a long way
+0|confident
+0|date
+0|differ
+0|different
+0|difference
+0|element
+0|elementary
+0|federal
+0|feed
+0|frank
+0|goods
+0|hair
+0|chair
+0|imply
+0|interfere
+0|interference
+0|mirror
+0|necessarily
+0|resident
+0|review
+0|interview
+0|schedule
+0|separate
+0|sew
+0|site
+0|social-networking site
+0|administration
+0|automatic
+0|auto automation
+0|biology
+0|cent
+0|dollars and cents
+0|century
+0|innocent
+0|magnificent
+0|decent
+0|centimetre
+0|complicated
+0|complicate
+0|complain
+0|complaint
+0|divorce
+0|evolution
+0|excellent
+0|expose
+0|exposure
+0|female
+0|fridge
+0|green
+0|guess
+0|imagination
+0|instrument
+0|intention
+0|have intention of
+0|have no intention of
+0|married
+0|marry
+0|sensitive
+0|nonsense
+0|sensible
+0|sound
+0|adequate
+0|job hunting
+0|borrow
+0|characteristic
+0|character
+0|in character
+0|out of character
+0|Christmas
+0|combine
+0|combination
+0|division
+0|divide
+0|divide into
+0|electricity
+0|electrical
+0|engineer
+0|engine
+0|extensive
+0|sign language
+0|extension
+0|faculty
+0|floor
+0|garden
+0|gift
+0|hot
+0|be in hot water
+0|instance
+0|for instance
+0|instant
+0|manner
+0|all manner of
+0|good manners
+0|bad manners
+0|map
+0|meter
+0|parking meter
+0|kilometer
+0|prior
+0|priority
+0|give priority to
+0|respond
+0|response
+0|route
+0|routine
+0|worldwide
+0|annual
+0|appreciate
+0|argument
+0|award
+0|blue
+0|brief
+0|briefly
+0|confuse
+0|hodge-podge
+0|desert
+0|dramatic
+0|drama
+0|dying
+0|emphasize
+0|emphasis
+0|lay emphasis on
+0|employment
+0|employee
+0|employ
+0|employer
+0|finger
+0|forest
+0|guard
+0|hide
+0|kitchen
+0|kitchen garden
+0|magazine
+0|monitor
+0|make a point
+0|native
+0|necessity
+0|necessary
+0|oppose
+0|otherwise
+0|or otherwise
+0|politics
+0|praise
+0|primarily
+0|principle
+0|reputation
+0|spring
+0|ancient
+0|anxiety
+0|automobile
+0|bacteria
+0|bread
+0|breadth
+0|burden
+0|capacity
+0|captain
+0|captive
+0|capable
+0|church
+0|committee
+0|commit
+0|custom
+0|customer
+0|document
+0|emotion
+0|except
+0|exception
+0|extra
+0|extraordinary
+0|gap
+0|helpful
+0|helpless
+0|hit
+0|architecture
+0|illegal
+0|turn a blind eye to
+0|legal
+0|inspire
+0|insurance
+0|insure
+0|introduction
+0|law
+0|lawyer
+0|length
+0|motivate
+0|motive
+0|motion
+0|nurse
+0|nursery
+0|obvious
+0|prince
+0|princess
+0|steel
+0|accurate
+0|accuracy
+0|alarm
+0|blame
+0|blank
+0|go blank
+0|blanket
+0|bottom
+0|at bottom
+0|clerk
+0|debt
+0|take over
+0|run up
+0|decrease
+0|drown
+0|drop
+0|drought
+0|entitle
+0|essay
+0|liter
+0|literary
+0|literature
+0|library
+0|liberation
+0|exceed
+0|exceedingly
+0|exclude
+0|exclusively
+0|exhaust
+0|fare
+0|fare well
+0|fare badly
+0|foot
+0|feet on the ground
+0|put a foot wrong
+0|stand on one's own two feet
+0|football
+0|gather
+0|genuine
+0|hook
+0|get off the hook
+0|ring off the hook
+0|take off the hook
+0|idea
+0|be up to
+0|get the idea
+0|have no idea
+0|impose
+0|interpret
+0|interpretation
+0|lady
+0|First Lady
+0|the first lady of
+0|our Lady
+0|lake
+0|lay
+0|lay it on thick
+0|lay open to
+0|delay
+0|layer
+0|layout
+0|leak
+0|location
+0|locate
+0|meat
+0|meat and drink
+0|the meat and potatoes of
+0|medium
+0|happy medium
+0|moon
+0|once in a blue moon
+0|over the moon
+0|observation
+0|at the table
+0|on the table
+0|plus
+0|scale
+0|economies of scale
+0|out of scale with
+0|to scale
+0|senior
+0|Atlantic
+0|bicycle
+0|branch
+0|brown
+0|casual
+0|coach
+0|find fault
+0|detect
+0|homing signal
+0|detection
+0|dim
+0|domestic
+0|dozen
+0|embarrass
+0|ending
+0|excessive
+0|exploit
+0|float
+0|float around
+0|forbid
+0|Greek
+0|horse
+0|from the horse's mouth
+0|ill
+0|make up for
+0|ill health
+0|fall ill
+0|for good or ill
+0|illustrate
+0|isolate
+0|lift
+0|get a lift
+0|mass
+0|mature
+0|mechanic
+0|mechanical
+0|metal
+0|milk
+0|milk and water
+0|none
+0|none but
+0|none too
+0|pacific
+0|pilot
+0|possibility
+0|It is not beyond the realms of
+0|It is not beyond the bounds of
+0|possibly
+0|remind
+0|Let me remind you that ...
+0|May I remind you that ...
+0|resist
+0|resistant
+0|reverse
+0|in reverse
+0|staff
+0|strange
+0|stranger
+0|arise
+0|attribute
+0|the Conservancy
+0|the Nature Conservancy
+0|attract
+0|attraction
+0|attractive
+0|boat
+0|miss the boat
+0|push the boat out
+0|in the same boat
+0|bright
+0|make a difference
+0|look on the bright side
+0|cheat
+0|cheats death
+0|feel cheated
+0|deaf
+0|director
+0|eight
+0|height
+0|freight
+0|endure
+0|equip
+0|executive
+0|in the interest of
+0|flood
+0|floods of tears
+0|be flooded out
+0|flower
+0|frighten
+0|frighten the life
+0|grave
+0|sb. is digging one's own grave
+0|sb. is digging one's own graves
+0|from the cradle to the grave
+0|guidance
+0|hang
+0|get the hang of
+0|let it all hang out
+0|hazard
+0|historical
+0|honey
+0|interaction
+0|action
+0|active
+0|activity
+0|Italian
+0|laboratory
+0|limb
+0|climb
+0|climb down
+0|lip
+0|mask
+0|free of charge
+0|prejudice
+0|rent
+0|rescue
+0|reveal
+0|stock
+0|abstract
+0|anxious
+0|artistic
+0|authority
+0|blind
+0|broad
+0|cable
+0|cell
+0|cell phone
+0|turn upside down
+0|civilization
+0|club
+0|dependent
+0|distribute
+0|empty
+0|parking space
+0|finance
+0|financial
+0|guarantee
+0|identical
+0|identify
+0|infant
+0|insect
+0|globe
+0|be drawn into
+0|tube
+0|go down the tubes
+0|label
+0|obey
+0|in the main
+0|be liable to
+0|beer
+0|bear
+0|beard
+0|bean
+0|beam
+0|beast
+0|beat
+0|beef
+0|institute
+0|institution
+0|kingdom
+0|knock
+0|launch
+0|limitation
+0|lock
+0|lock up
+0|under lock
+0|murder
+0|get away with murder
+0|scream blue murder bloody murder
+0|scream blue scream bloody murder
+0|museum
+0|merit
+0|judge sth. or sb. on merit
+0|mild
+0|mile
+0|go the extra mile
+0|recognize sth. a mile off
+0|stick out a mile
+0|stand out a mile
+0|mislead
+0|poison
+0|portion
+0|poverty
+0|procedure
+0|robot
+0|secure
+0|somewhat
+0|spite
+0|in spite of
+0|temporary
+0|weaken
+0|weakness
+0|worst
+0|worst of all
+0|at one's worst
+0|if worst comes to worst
+0|do one's worst
+0|accordance
+0|in accordance with
+0|accordingly
+0|apologize
+0|go out with
+0|apology
+0|approval
+0|pay off
+0|give sth. one's stamp of approval
+0|seal of approval
+0|stamp of approval
+0|approve
+0|astonish
+0|astonishing
+0|backward
+0|camera
+0|on camera
+0|off camera
+0|in camera
+0|collision
+0|comment
+0|commerce
+0|commercial
+0|congress
+0|dance
+0|lead sb. a merry dance
+0|definition
+0|definitely
+0|definite
+0|description
+0|describe
+0|descend
+0|devote
+0|efficiency
+0|efficient
+0|enthusiasm
+0|equivalent
+0|external
+0|for external use
+0|false
+0|hate
+0|hatred
+0|hurry
+0|There's no hurry
+0|in no hurry to do sth.
+0|intensity
+0|intense
+0|intensive
+0|internal
+0|jacket
+0|join
+0|joint
+0|jointly
+0|June
+0|muscle
+0|mysterious
+0|mystery
+0|naturally
+0|sth. comes naturally to sb.
+0|navy
+0|nose
+0|keep one's nose clean
+0|follow one's nose
+0|have a nose for sth.
+0|get up one's nose
+0|look down one's nose at
+0|overall
+0|partial
+0|pollute
+0|render
+0|retain
+0|shift
+0|skilled
+0|skillful
+0|strain
+0|check-up
+0|place strain on
+0|restrain
+0|restraint
+0|restriction
+0|wave
+0|absorb
+0|be absorbed in
+0|adventure
+0|advantage
+0|aircraft
+0|airline
+0|airplane
+0|airport
+0|annoy
+0|awake
+0|waken
+0|awaken
+0|basis
+0|base
+0|basic
+0|basically
+0|basin
+0|bath
+0|bat
+0|bathe
+0|bathroom
+0|blow
+0|boast
+0|game hog
+0|curious
+0|demonstrate
+0|depart
+0|catch on
+0|department
+0|departure
+0|deposit
+0|destination
+0|distinct
+0|distinction
+0|drawing
+0|withdraw
+0|drawer
+0|encounter
+0|existence
+0|file
+0|fond
+0|forth
+0|back and forth
+0|frame
+0|guilty
+0|heat
+0|hero
+0|heroic
+0|inquire
+0|apartment complex
+0|insult
+0|inventor
+0|out of business
+0|means business
+0|invent
+0|invention
+0|joke
+0|lap
+0|in the lap of the gods
+0|license
+0|lid
+0|loan
+0|magnetic
+0|magnet
+0|misunderstand
+0|mutual
+0|neighborhood
+0|noble
+0|occupy
+0|occupation
+0|ownership
+0|pray
+0|precise
+0|prize
+0|reply
+0|series
+0|a series of
+0|sort
+0|sportsman
+0|withstand
+0|absolutely
+0|absolute
+0|preferable to
+0|abundant
+0|alternative
+0|amuse
+0|analyse
+0|analysis
+0|bond
+0|bound
+0|be bound to
+0|boundary
+0|brush
+0|burst
+0|calm
+0|chain
+0|prior to
+0|cliff
+0|decorate
+0|dig
+0|digest
+0|digital
+0|disposal
+0|diverse
+0|edge
+0|elevator
+0|emerge
+0|emergency
+0|envy
+0|explosion
+0|explode
+0|fashionable
+0|fashion
+0|after a fashion
+0|in fashion
+0|out of fashion
+0|faulty
+0|fierce
+0|forecast
+0|broadcast
+0|talk show
+0|grammar
+0|grammatical
+0|gun
+0|with guns blazing
+0|jump the gun
+0|stick to one's guns
+0|hall
+0|halt
+0|sb. call a halt to sth.
+0|harsh
+0|hire
+0|for hire
+0|hunger
+0|hungry
+0|go hungry
+0|interrupt
+0|lane
+0|in the fast lane
+0|lunch
+0|there's no such thing as a free lunch
+0|luxury
+0|metre
+0|mouth
+0|keep one's mouth shut
+0|nerve
+0|have the nerve to do sth.
+0|get on one's nerves
+0|keep one's nerves
+0|hold one's nerve
+0|nervous
+0|object
+0|money is no object
+0|objection
+0|operator
+0|operate
+0|operation
+0|operational
+0|outstanding
+0|portable
+0|practise
+0|practically
+0|presence
+0|resolve
+0|resort
+0|rid
+0|royal
+0|sample
+0|scheme
+0|chemical
+0|chemist
+0|chemistry
+0|secondary
+0|somehow
+0|sometime
+0|spare
+0|spoil
+0|treatment
+0|treat
+0|amaze
+0|appliance
+0|astronaut
+0|barrier
+0|crash barrier
+0|bone
+0|close to the bone
+0|in your bones
+0|to the bone
+0|breed
+0|ceremony
+0|chart
+0|chase
+0|chew
+0|chicken
+0|cigarette
+0|cinema
+0|coal
+0|companion
+0|declare
+0|delicate
+0|destruction
+0|dirty
+0|dirt
+0|distress
+0|drill
+0|drum
+0|duck
+0|dull
+0|editor
+0|edition
+0|elaborate
+0|election
+0|elect
+0|empire
+0|era
+0|erect
+0|evil
+0|exert
+0|extreme
+0|fabric
+0|fence
+0|finding
+0|fortunately
+0|fortunate
+0|gaze
+0|gesture
+0|giant
+0|god
+0|grasp
+0|hesitate
+0|imitate
+0|import
+0|export
+0|inferior
+0|influential
+0|influence
+0|injury
+0|injure
+0|insert
+0|investigate
+0|iron
+0|irons in the fire
+0|joy
+0|jury
+0|lately
+0|later
+0|Latin
+0|laugh
+0|laughter
+0|burst into
+0|leg
+0|by rail
+0|lessen
+0|lever
+0|lung
+0|oblige
+0|odd
+0|odd jobs
+0|omit
+0|output
+0|outline
+0|outset
+0|outskirt
+0|parallel
+0|in parallel with
+0|pioneer
+0|in point
+0|preparation
+0|prepare
+0|privilege
+0|police force
+0|proceed
+0|restrict
+0|revise
+0|technician
+0|technical
+0|tedious
+0|trend
+0|type
+0|not one's type
+0|typewriter
+0|stability
+0|stable
+0|close the stable door after the horse has bolted
+0|stimulate
+0|unique
+0|worthwhile
+0|abuse
+0|alcohol
+0|aluminum
+0|attain
+0|barrel
+0|have sb. over a barrel
+0|a barrel of laughs
+0|biscuit
+0|take the biscuit
+0|bury
+0|bush
+0|beat about the bush
+0|calculator
+0|calculate
+0|Canadian
+0|cease
+0|chocolate
+0|component
+0|opponent
+0|concrete
+0|set in concrete
+0|embed in concrete
+0|conductor
+0|conduct
+0|congratulate
+0|decay
+0|democratic
+0|democracy
+0|deny
+0|devise
+0|dissolve
+0|disturb
+0|disturb the peace
+0|dorm
+0|dormitory
+0|drift
+0|drift away
+0|dust
+0|bite the dust
+0|the dust settles
+0|gather dust
+0|industry
+0|duty
+0|off duty
+0|on duty
+0|evident
+0|fancy
+0|fiction
+0|fool
+0|foolish
+0|frequency
+0|glow
+0|grand
+0|grey
+0|gentle
+0|harvest
+0|set back
+0|reap harvest
+0|hobby
+0|horizontal
+0|horizon
+0|broaden one's horizon
+0|on the horizon
+0|hut
+0|blow hot and cold
+0|hot and bothered
+0|indirect
+0|direction
+0|directly
+0|inherit
+0|inquiry
+0|inspect
+0|kid
+0|ladder
+0|lean
+0|learn
+0|expose sb. to sth.
+0|leave
+0|leave sb. alone
+0|leave sth. alone
+0|leave sb. be
+0|leave sth. be
+0|leave aside
+0|leave to one side
+0|take one's leave
+0|take leave of
+0|librarian
+0|loose
+0|on the loose
+0|loyal
+0|loyalty
+0|march
+0|marching order
+0|steal a march on
+0|menu
+0|mobile
+0|multiply
+0|neutral
+0|noon
+0|occurrence
+0|optional
+0|outer
+0|outwards
+0|plot
+0|lose the plot
+0|poet
+0|reservoir
+0|rival
+0|satellite
+0|scenery
+0|have a change of scenery
+0|section
+0|similarity
+0|similarly
+0|specialize
+0|specialize in
+0|steam
+0|go full steam ahead
+0|pick up steam
+0|run out of steam
+0|under one's own steam
+0|stem
+0|stem from
+0|from stem to stern
+0|transportation
+0|transport
+0|truth
+0|in truth
+0|to tell you the truth
+0|truth to tell
+0|union
+0|read of
+0|unite
+0|wound
+0|wind
+0|to name a few
+0|get wind of something
+0|in the wind
+0|yard
+0|yield
+0|youth
+0|accidental
+0|accommodation
+0|afterward
+0|ankle
+0|assembly
+0|assemble
+0|awkward
+0|bar
+0|behind bars
+0|bark
+0|barn
+0|battery
+0|butter
+0|bore
+0|cake
+0|certificate
+0|cheerful
+0|cheer
+0|clap
+0|clarify
+0|clue
+0|clumsy
+0|column
+0|comprehensive
+0|comprise
+0|compromise
+0|curse
+0|curve
+0|dash
+0|rush
+0|cash
+0|dawn
+0|density
+0|dense
+0|determination
+0|dictate
+0|dictation
+0|dictionary
+0|diligent
+0|disagree
+0|disable
+0|disappoint
+0|disaster
+0|distribution
+0|district
+0|distinguish
+0|dose
+0|drain
+0|grain
+0|drunk
+0|dynamic
+0|excite
+0|excited
+0|exciting
+0|faith
+0|faithful
+0|festival
+0|flesh
+0|folk
+0|fruitful
+0|fruit
+0|furnish
+0|fur
+0|germ
+0|gym
+0|out of shape
+0|glimpse
+0|grateful
+0|greedy
+0|gulf
+0|gymnasium
+0|haste
+0|helicopter
+0|hint
+0|a hint of
+0|hole
+0|industrialize
+0|ink
+0|link
+0|initiative
+0|initial
+0|January
+0|jet
+0|lab
+0|laundry
+0|laundry detergent
+0|lazy
+0|leap
+0|lens
+0|lend
+0|lightning
+0|lime
+0|loaf
+0|load
+0|lodge
+0|log
+0|lump
+0|marine
+0|maximum
+0|minimum
+0|melt
+0|mud
+0|nothing
+0|nuclear
+0|optimistic
+0|optical
+0|outdoors
+0|indoors
+0|outward
+0|pitch
+0|plug
+0|pull the plug on
+0|poisonous
+0|pool
+0|precaution
+0|prevail
+0|primitive
+0|remedy
+0|over-the-counter
+0|porter
+0|resign
+0|design
+0|sigh
+0|sign
+0|signal
+0|signature
+0|significance
+0|respectively
+0|respect
+0|respectful
+0|respective
+0|retreat
+0|retire
+0|roll
+0|rough
+0|rural
+0|saucer
+0|scholar
+0|seal
+0|set the seal on sth.
+0|put the seal on sth.
+0|under seal
+0|sketch
+0|sophisticated
+0|steady
+0|troublesome
+0|upset
+0|warmth
+0|weed
+0|worship
+0|have a weakness for
+0|worthy
+0|yawn
+0|accelerate
+0|acquaintance
+0|acquire
+0|acre
+0|altitude
+0|arithmetic
+0|avenue
+0|await
+0|bake
+0|blend
+0|boil
+0|brick
+0|bubble
+0|bulb
+0|button
+0|cassette
+0|catalog
+0|cave
+0|chill
+0|circulate
+0|circle
+0|circumstance
+0|collective
+0|collection
+0|commander
+0|compound
+0|cushion
+0|deadly
+0|bow
+0|bowl
+0|brake
+0|jewel
+0|brave
+0|brilliant
+0|bucket
+0|laser
+0|cafe
+0|ASL
+0|camp
+0|campaign
+0|castle
+0|celebrate
+0|cement
+0|champion
+0|cheese
+0|big cheese
+0|say "cheese"
+0|choke
+0|circular
+0|claw
+0|collapse
+0|daring
+0|defeat
+0|defect
+0|defence
+0|desperate
+0|despair
+0|despise
+0|dialect
+0|neglect
+0|diary
+0|diagram
+0|diamond
+0|dot
+0|drag
+0|dragon
+0|dumb
+0|dye
+0|echo
+0|egg
+0|elastic
+0|plastic
+0|evaporate
+0|evaluate
+0|eve
+0|level
+0|evolve
+0|volt
+0|voltage
+0|volume
+0|voluntary
+0|exit
+0|favourite
+0|fertilizer
+0|fibre
+0|flag
+0|flour
+0|glue
+0|be glued to
+0|goat
+0|grace
+0|tread
+0|gradual
+0|grandmother
+0|gratitude
+0|gravity
+0|gray
+0|greeting
+0|grip
+0|hammer
+0|hammer on
+0|hammer at
+0|under the hammer
+0|handful
+0|harbour
+0|hat
+0|head
+0|overhead
+0|heap
+0|cheap
+0|knife
+0|like a knife through butter
+0|hedge
+0|hedge funds
+0|heel
+0|wheel
+0|at one's heels
+0|bring someone to heel
+0|hence
+0|herd
+0|impatient
+0|jazz
+0|inward
+0|jealous
+0|kick
+0|for kicks
+0|kick sb. when he is down
+0|a kick in the teeth
+0|lamp
+0|lawn
+0|lorry
+0|intermediate
+0|mathematical
+0|mathematics
+0|merchant
+0|mineral
+0|molecule
+0|nest
+0|fly the nest
+0|honest
+0|net
+0|network
+0|cabinet
+0|nitrogen
+0|nuisance
+0|nut
+0|minute
+0|opera
+0|moist
+0|pale
+0|pardon
+0|pear
+0|disappear
+0|appearance
+0|penetrate
+0|penny
+0|persist
+0|physicist
+0|pinch
+0|pipe
+0|organ pipe
+0|platform
+0|plunge
+0|polish
+0|portrait
+0|powder
+0|republic
+0|residence
+0|rouse
+0|arouse
+0|rust
+0|trust
+0|saddle
+0|sadly
+0|sadness
+0|scratch
+0|from scratch
+0|scratch one's head
+0|scratch the surface of sth.
+0|up to scratch
+0|session
+0|profession
+0|possession
+0|pole
+0|shade
+0|shed
+0|simplicity
+0|sponsor
+0|squeeze
+0|square
+0|stack
+0|statue
+0|telescope
+0|telegram
+0|telegraph
+0|telephone
+0|television
+0|tension
+0|transmit
+0|admit
+0|emit
+0|treasure
+0|ensure
+0|leisure
+0|at leisure
+0|assure
+0|pleasure
+0|tremble
+0|tremendous
+0|humble
+0|resemble
+0|trial
+0|trim
+0|triumph
+0|tune
+0|typist
+0|uncover
+0|underneath
+0|undergo
+0|undergraduate
+0|lead the way
+0|undertake
+0|unity
+0|community
+0|opportunity
+0|wander
+0|weave
+0|wheat
+0|whistle
+0|whisper
+0|widow
+0|wrap
+0|trap
+0|wreck
+0|accustomed
+0|accumulate
+0|affect
+0|affection
+0|abroad
+0|absence
+0|academic
+0|accident
+0|achieve
+0|acid
+0|actually
+0|acute
+0|add
+0|adopt
+0|advertisement
+0|advise
+0|afford
+0|aggressive
+0|agreement
+0|agriculture
+0|aid
+0|alone
+0|alter
+0|although
+0|altogether
+0|amount
+0|anger
+0|announce
+0|anticipate
+0|anyway
+0|apart
+0|apartment
+0|appeal
+0|appetite
+0|apply
+0|approach
+0|arrangement
+0|arrest
+0|arrival
+0|artificial
+0|ashamed
+0|asleep
+0|aspect
+0|assign
+0|attach
+0|attack
+0|attitude
+0|audience
+0|available
+0|avoid
+0|aware
+0|behave
+0|behavior
+0|belong
+0|bill
+0|bomb
+0|boot
+0|brand
+0|campus
+0|careful
+0|case
+0|cause
+0|challenge
+0|change
+0|channel
+0|chapter
+0|check
+0|chess
+0|chest
+0|citizen
+0|clearly
+0|closely
+0|coast
+0|color
+0|commonly
+0|communication
+0|compete
+0|composition
+0|comprehension
+0|compute
+0|condition
+0|conference
+0|confirm
+0|connection
+0|conservation
+0|consider
+0|consideration
+0|consist
+0|consistent
+0|constant
+0|construction
+0|consult
+0|consume
+0|consumption
+0|contact
+0|container
+0|content
+0|continue
+0|continuous
+0|contract
+0|contribute
+0|convey
+0|convince
+0|cooperate
+0|cope
+0|copy
+0|crude
+0|curiosity
+0|dangerous
+0|data
+0|debate
+0|deepen
+0|define
+0|delicious
+0|depend
+0|depress
+0|depth
+0|derive
+0|deserve
+0|detail
+0|determine
+0|devil
+0|dinner
+0|direct
+0|discard
+0|discourage
+0|discover
+0|discuss
+0|disease
+0|draw
+0|during
+0|earn
+0|earthquake
+0|ease
+0|easily
+0|eastern
+0|effort
+0|electronics
+0|eliminate
+0|embrace
+0|emotional
+0|especially
+0|essential
+0|ever
+0|exactly
+0|exaggerate
+0|exchange
+0|execute
+0|expansion
+0|expensive
+0|experience
+0|explore
+0|expression
+0|fan
+0|fatigue
+0|fear
+0|fearful
+0|fever
+0|finally
+0|flight
+0|flu
+0|formal
+0|fox
+0|freely
+0|frequent
+0|frequently
+0|fry
+0|fuel
+0|fulfil
+0|function
+0|furniture
+0|further
+0|garbage
+0|generally
+0|generate
+0|generation
+0|generous
+0|glove
+0|grade
+0|gradually
+0|graduate
+0|gross
+0|guide
+0|handle
+0|handwriting
+0|handy
+0|happen
+0|happiness
+0|hardship
+0|hardware
+0|harmful
+0|headache
+0|heavily
+0|highway
+0|honesty
+0|hospital
+0|illness
+0|immediate
+0|immediately
+0|immense
+0|impact
+0|implication
+0|importance
+0|increasingly
+0|indeed
+0|independence
+0|industrial
+0|infer
+0|inside
+0|instantly
+0|instead
+0|interest
+0|international
+0|introduce
+0|invade
+0|investigation
+0|issue
+0|item
+0|jam
+0|knee
+0|lack
+0|leadership
+0|lecture
+0|lemon
+0|lose
+0|loss
+0|machine
+0|magic
+0|mail
+0|male
+0|measure
+0|medal
+0|meeting
+0|memory
+0|message
+0|method
+0|military
+0|modern
+0|moral
+0|mountain
+0|movement
+0|nap
+0|narrow
+0|nasty
+0|national
+0|natural
+0|nature
+0|neck
+0|newly
+0|normal
+0|occasion
+0|occasionally
+0|occur
+0|ocean
+0|official
+0|opinion
+0|orchestra
+0|origin
+0|overseas
+0|overtake
+0|overtime
+0|pack
+0|pad
+0|pant
+0|paragraph
+0|patience
+0|patient
+0|pattern
+0|payment
+0|peak
+0|pension
+0|percentage
+0|permanent
+0|permission
+0|personal
+0|personnel
+0|persuade
+0|phase
+0|phenomenon
+0|philosophy
+0|phone
+0|physical
+0|physics
+0|picnic
+0|pie
+0|plain
+0|point
+0|pollution
+0|popular
+0|population
+0|positive
+0|possess
+0|possible
+0|post
+0|postpone
+0|pound
+0|practical
+0|preferable
+0|preference
+0|prescribe
+0|previously
+0|print
+0|prisoner
+0|private
+0|professional
+0|profit
+0|program
+0|progress
+0|promise
+0|promote
+0|prompt
+0|pronounce
+0|proof
+0|properly
+0|proposal
+0|propose
+0|prospect
+0|prosperity
+0|prosperous
+0|protect
+0|protection
+0|protest
+0|proud
+0|psychological
+0|publish
+0|pump
+0|punch
+0|pursue
+0|pursuit
+0|qualify
+0|quarter
+0|quick
+0|quote
+0|race
+0|racial
+0|rail
+0|railway
+0|rain
+0|rare
+0|rational
+0|raw
+0|ray
+0|react
+0|reaction
+0|reader
+0|ready
+0|reality
+0|reap
+0|recall
+0|receive
+0|recent
+0|recently
+0|recognition
+0|recognize
+0|recommend
+0|recommendation
+0|record
+0|recover
+0|recovery
+0|reduction
+0|reference
+0|refine
+0|reflection
+0|reform
+0|refresh
+0|refrigerator
+0|regard
+0|register
+0|regret
+0|regular
+0|regularly
+0|regulate
+0|reinforce
+0|reject
+0|relax
+0|release
+0|relevant
+0|reliability
+0|reliable
+0|relief
+0|relieve
+0|reluctant
+0|rely
+0|remain
+0|remarkable
+0|replace
+0|research
+0|researcher
+0|resistance
+0|resource
+0|responsibility
+0|responsible
+0|resume
+0|revolution
+0|rhythm
+0|ring
+0|rob
+0|robbery
+0|rock
+0|romantic
+0|root
+0|roughly
+0|round
+0|rub
+0|rubbish
+0|ruin
+0|safety
+0|salad
+0|sale
+0|salt
+0|sandwich
+0|satisfaction
+0|satisfy
+0|saving
+0|scene
+0|scholarship
+0|scientific
+0|scream
+0|screen
+0|secret
+0|security
+0|sell
+0|semester
+0|sentence
+0|seriously
+0|service
+0|shadow
+0|share
+0|sharp
+0|sharply
+0|shelf
+0|shell
+0|shelter
+0|shoot
+0|shortage
+0|shortcoming
+0|shortly
+0|shoulder
+0|shrink
+0|sightseeing
+0|silver
+0|simple
+0|single
+0|skill
+0|skim
+0|skin
+0|slide
+0|slight
+0|slightly
+0|slip
+0|slippery
+0|slogan
+0|soccer
+0|social
+0|soda
+0|solar
+0|solid
+0|solution
+0|solve
+0|source
+0|southern
+0|spend
+0|spin
+0|spirit
+0|spiritual
+0|stake
+0|standard
+0|state
+0|statement
+0|status
+0|straight
+0|strategy
+0|strengthen
+0|stretch
+0|string
+0|strongly
+0|structure
+0|struggle
+0|stuff
+0|submit
+0|subsequent
+0|substance
+0|success
+0|successful
+0|suffer
+0|sugar
+0|suit
+0|sum
+0|supermarket
+0|support
+0|surface
+0|surgery
+0|surprise
+0|surprisingly
+0|surround
+0|survive
+0|suspect
+0|sustain
+0|swallow
+0|sweet
+0|swell
+0|switch
+0|symbol
+0|sympathy
+0|system
+0|tank
+0|target
+0|technique
+0|technology
+0|temperature
+0|temptation
+0|tent
+0|term
+0|terrible
+0|theatre
+0|theory
+0|thief
+0|thorough
+0|thousand
+0|threat
+0|threaten
+0|throat
+0|thumb
+0|tip
+0|tired
+0|title
+0|together
+0|ton
+0|tone
+0|total
+0|tough
+0|tour
+0|tourist
+0|tower
+0|town
+0|trace
+0|track
+0|trade
+0|tradition
+0|traditional
+0|traffic
+0|tragedy
+0|transfer
+0|translation
+0|travel
+0|trip
+0|trousers
+0|truck
+0|twice
+0|twin
+0|typical
+0|ultimately
+0|underground
+0|understand
+0|unit
+0|urge
+0|utility
+0|utter
+0|vacation
+0|vague
+0|valley
+0|valuable
+0|variation
+0|vast
+0|vegetable
+0|vehicle
+0|version
+0|vessel
+0|via
+0|victim
+0|victory
+0|video
+0|view
+0|violence
+0|violent
+0|virtually
+0|vital
+0|vocabulary
+0|voice
+0|vote
+0|warn
+0|wealth
+0|wealthy
+0|weapon
+0|weather
+0|wedding
+0|weight
+0|well
+0|white
+0|widely
+0|widespread
+0|wisdom
+0|writing
+0|wrong
+0|zone
+0|actress
+0|agent
+0|angel
+0|athlete
+0|author
+0|barber
+0|beggar
+0|boss
+0|conservative
+0|emperor
+0|enemy
+0|evidence
+0|failure
+0|fireman
+0|fisherman
+0|gardener
+0|heir
+0|host
+0|hostess
+0|housewife
+0|journalist
+0|landlady
+0|landlord
+0|liar
+0|listener
+0|lord
+0|lover
+0|madam
+0|maid
+0|minister
+0|mistress
+0|Negro
+0|orphan
+0|passenger
+0|player
+0|president
+0|priest
+0|rebel
+0|ruler
+0|sailor
+0|salesman
+0|scientist
+0|scout
+0|seaman
+0|secretary
+0|servant
+0|shepherd
+0|singer
+0|slave
+0|statesman
+0|steward
+0|stewardess
+0|surgeon
+0|tailor
+0|talent
+0|teenager
+0|traitor
+0|tutor
+0|abnormal
+0|absent
+0|dishonour
+0|displease
+0|dissatisfy
+0|incorrect
+0|indefinite
+0|indifferent
+0|indispensable
+0|inexpensive
+0|infinite
+0|insufficient
+0|needless
+0|regardless
+0|unfair
+0|unfortunate
+0|unfortunately
+0|unkind
+0|unlucky
+0|unnecessary
+0|unpleasant
+0|unsatisfactory
+0|unsuitable
+0|unusual
+0|unusually
+0|unwilling
+0|wireless
+0|African
+0|Arabian
+0|Australia
+0|Australian
+0|Britain
+0|British
+0|Canada
+0|continent
+0|France
+0|Germany
+0|India
+0|Indian
+0|Jewish
+0|Mediterranean
+0|Portuguese
+0|Roman
+0|Russian
+0|Spanish
+0|Swiss
+0|bundle
+0|bureau
+0|helmet
+0|hydrogen
+0|jaw
+0|jungle
+0|locomotive
+0|mercury
+0|mosquito
+0|mutton
+0|nucleus
+0|nylon
+0|ounce
+0|paste
+0|pebble
+0|petroleum
+0|pistol
+0|porridge
+0|purity
+0|radar
+0|radiation
+0|radioactivity
+0|radish
+0|radium
+0|radius
+0|rag
+0|razor
+0|refuge
+0|rein
+0|ribbon
+0|riddle
+0|ridge
+0|sauce
+0|sausage
+0|scar
+0|scarf
+0|scissors
+0|sheet
+0|sleeve
+0|slum
+0|squirrel
+0|stadium
+0|straw
+0|strawberry
+0|sulphur
+0|tablet
+0|thermometer
+0|timber
+0|toast
+0|torch
+0|triangle
+0|trumpet
+0|trunk
+0|turnip
+0|vacuum
+0|van
+0|velvet
+0|vice
+0|vinegar
+0|volcano
+0|waggon
+0|wax
+0|whisky
+0|wreath
+0|wrist
+0|advisable
+0|ambition
+0|anchor
+0|angle
+0|announcer
+0|apparent
+0|applicable
+0|approximately
+0|arbitrary
+0|ash
+0|assess
+0|atmosphere
+0|atmospheric
+0|attentive
+0|awful
+0|awfully
+0|band
+0|banner
+0|beg
+0|behalf
+0|belt
+0|bench
+0|beneath
+0|bet
+0|bind
+0|bleed
+0|bolt
+0|breathe
+0|bud
+0|bunch
+0|cannon
+0|canteen
+0|centigrade
+0|charity
+0|charming
+0|cheek
+0|cheque
+0|circuit
+0|colony
+0|confess
+0|confusion
+0|conscious
+0|consciousness
+0|consent
+0|considerate
+0|constitution
+0|contemporary
+0|continual
+0|contradiction
+0|crowd
+0|cruel
+0|cube
+0|curl
+0|curtain
+0|deed
+0|defend
+0|desirable
+0|dial
+0|dip
+0|discharge
+0|disguise
+0|dive
+0|dread
+0|durable
+0|duration
+0|elbow
+0|electronic
+0|elephant
+0|enthusiastic
+0|entrance
+0|entry
+0|envelope
+0|equation
+0|escape
+0|exclaim
+0|excursion
+0|feasible
+0|final
+0|flash
+0|fluent
+0|fluid
+0|foremost
+0|forever
+0|formula
+0|frost
+0|gallery
+0|generator
+0|genius
+0|gently
+0|glorious
+0|govern
+0|grandson
+0|grocery
+0|gum
+0|haircut
+0|hamburger
+0|hasten
+0|headquarters
+0|hell
+0|horror
+0|hostile
+0|humid
+0|humorous
+0|humour
+0|idle
+0|illustration
+0|inch
+0|instinct
+0|interval
+0|invisible
+0|irregular
+0|junior
+0|kilogram
+0|knit
+0|lantern
+0|likewise
+0|lonely
+0|loosen
+0|materialism
+0|meadow
+0|measurable
+0|mechanically
+0|mend
+0|metric
+0|midday
+0|miserable
+0|neat
+0|neighbourhood
+0|occasional
+0|oppress
+0|oven
+0|owe
+0|pan
+0|panda
+0|parade
+0|parliament
+0|passion
+0|passive
+0|passport
+0|patch
+0|pave
+0|pavement
+0|peculiar
+0|perfectly
+0|permanently
+0|pessimistic
+0|photograph
+0|photographic
+0|phrase
+0|pierce
+0|plough
+0|pond
+0|pop
+0|pork
+0|port
+0|precious
+0|probable
+0|progressive
+0|pronunciation
+0|protective
+0|publication
+0|pulse
+0|punctual
+0|punishment
+0|pupil
+0|quantity
+0|quarrel
+0|queue
+0|quotation
+0|rabbit
+0|raid
+0|readily
+0|realm
+0|receipt
+0|receiver
+0|reception
+0|recite
+0|recorder
+0|reed
+0|refusal
+0|reliance
+0|religion
+0|religious
+0|repeatedly
+0|repetition
+0|revenge
+0|revolutionary
+0|rigid
+0|roar
+0|rocket
+0|rude
+0|saint
+0|sake
+0|satisfactory
+0|scarce
+0|secondly
+0|seller
+0|severely
+0|sideways
+0|silence
+0|sing
+0|ski
+0|skirt
+0|slender
+0|slipper
+0|sock
+0|soldier
+0|sore
+0|soup
+0|southeast
+0|span
+0|spark
+0|specially
+0|splendid
+0|spontaneous
+0|spray
+0|spur
+0|stale
+0|startle
+0|starve
+0|statistical
+0|steadily
+0|steep
+0|sticky
+0|stiff
+0|stomach
+0|stony
+0|stove
+0|stream
+0|strip
+0|stripe
+0|stroke
+0|stupid
+0|substantial
+0|substitute
+0|suburb
+0|subway
+0|succession
+0|successive
+0|suck
+0|sufficiently
+0|summary
+0|sunshine
+0|supreme
+0|surroundings
+0|sweat
+0|sweater
+0|sweep
+0|swing
+0|sympathetic
+0|synthetic
+0|tale
+0|tame
+0|tempt
+0|tender
+0|tennis
+0|tense
+0|terminal
+0|terrific
+0|thickness
+0|thirsty
+0|thoughtful
+0|thrive
+0|tick
+0|tidy
+0|tight
+0|tin
+0|tire
+0|tobacco
+0|toilet
+0|tolerance
+0|tomato
+0|tongue
+0|tractor
+0|trail
+0|truly
+0|tuition
+0|tunnel
+0|twist
+0|ugly
+0|universe
+0|upstairs
+0|urgent
+0|usage
+0|vain
+0|valid
+0|verify
+0|vest
+0|vitamin
+0|vivid
+0|waist
+0|waterfall
+0|widen
+0|wing
+0|wooden
+0|workshop
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 3249
+# Total Entries Extracted: 3249
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 3249
+# -------------------------------

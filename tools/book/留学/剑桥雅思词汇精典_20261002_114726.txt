@@ -1,0 +1,4270 @@
+0|abandon
+0|abide by
+0|abolish
+0|absorb
+0|abuse
+0|accelerate
+0|accommodate
+0|accomplish
+0|achieve
+0|acquire
+0|adapt
+0|adhere
+0|adjust
+0|admit
+0|adopt
+0|adore
+0|advocate
+0|affect
+0|afford
+0|allocate
+0|alter
+0|annoy
+0|anticipate
+0|apply
+0|appreciate
+0|approve
+0|arouse
+0|arrange
+0|assert
+0|assess
+0|assume
+0|attain
+0|attend
+0|attribute
+0|avoid
+0|balance
+0|ban
+0|bear
+0|behave
+0|believe
+0|belong
+0|blame
+0|block
+0|boost
+0|bother
+0|broaden
+0|cancel
+0|challenge
+0|cherish
+0|claim
+0|classify
+0|commit
+0|communicate
+0|compel
+0|compensate
+0|compete
+0|complain
+0|complement
+0|concentrate
+0|concern
+0|condemn
+0|confirm
+0|conflict
+0|conform
+0|confront
+0|conquer
+0|conserve
+0|consume
+0|contain
+0|contribute
+0|control
+0|convey
+0|cooperate
+0|copy
+0|correct
+0|criticise
+0|cultivate
+0|cure
+0|damage
+0|declare
+0|decline
+0|decrease
+0|deepen
+0|define
+0|defy
+0|deliver
+0|demand
+0|demonstrate
+0|deny
+0|depend
+0|deprive
+0|deserve
+0|destroy
+0|determine
+0|develop
+0|devote
+0|diminish
+0|disagree
+0|disclose
+0|discourage
+0|discriminate
+0|dispose
+0|dispute
+0|distinguish
+0|distribute
+0|disturb
+0|dominate
+0|doubt
+0|earn
+0|ease
+0|eliminate
+0|embrace
+0|encounter
+0|encourage
+0|endeavour
+0|enforce
+0|engage
+0|enhance
+0|enjoy
+0|enrich
+0|ensure
+0|escape
+0|establish
+0|exert
+0|expand
+0|experience
+0|explore
+0|express
+0|extend
+0|facilitate
+0|follow
+0|forbid
+0|force
+0|foster
+0|fulfil
+0|gain
+0|generate
+0|guarantee
+0|handle
+0|harm
+0|implement
+0|impose
+0|improve
+0|increase
+0|injure
+0|interfere
+0|interrupt
+0|involve
+0|keep
+0|lack
+0|lead
+0|live
+0|lose
+0|lower
+0|maintain
+0|manage
+0|meet
+0|nurture
+0|observe
+0|occupy
+0|oppose
+0|overcome
+0|participate
+0|pass
+0|perceive
+0|perform
+0|pose
+0|present
+0|preserve
+0|prevent
+0|prohibit
+0|promote
+0|protect
+0|provide
+0|punish
+0|pursue
+0|raise
+0|realise
+0|receive
+0|recognise
+0|reduce
+0|reinforce
+0|reject
+0|release
+0|relieve
+0|remove
+0|resist
+0|respect
+0|safeguard
+0|satisfy
+0|share
+0|shoulder
+0|stimulate
+0|strengthen
+0|struggle
+0|suffer
+0|undermine
+0|violate
+0|widen
+0|withdraw
+0|abolishment
+0|absorption
+0|abundance
+0|access
+0|accomplishment
+0|achievement
+0|adaptability
+0|advancement
+0|advent
+0|aid
+0|ailment
+0|assessment
+0|atmosphere
+0|authority
+0|breakdown
+0|breakthrough
+0|calamity
+0|campaign
+0|captivity
+0|career
+0|catastrophe
+0|celebrity
+0|censorship
+0|characteristic
+0|circulation
+0|cohesion
+0|communication
+0|compensation
+0|computer
+0|conservation
+0|consumption
+0|contempt
+0|corruption
+0|costume
+0|coverage
+0|creativity
+0|crisis
+0|critic
+0|cultivation
+0|curiosity
+0|deception
+0|delinquency
+0|depression
+0|destiny
+0|destruction
+0|deterioration
+0|dignity
+0|dilemma
+0|disaster
+0|discrimination
+0|disposal
+0|distinction
+0|distribution
+0|diversity
+0|drug
+0|ecology
+0|elimination
+0|elite
+0|embarrassment
+0|enforcement
+0|entertainment
+0|enthusiasm
+0|environment
+0|equality
+0|evaluation
+0|evil
+0|exchange
+0|extinction
+0|feeling
+0|flavour
+0|flexibility
+0|freedom
+0|genius
+0|gratitude
+0|greed
+0|guidance
+0|harmony
+0|heritage
+0|horizon
+0|household
+0|hygiene
+0|ignorance
+0|imitation
+0|indifference
+0|individuality
+0|infrastructure
+0|infringement
+0|innovation
+0|insight
+0|inspiration
+0|instinct
+0|intake
+0|integrity
+0|interaction
+0|interference
+0|intervention
+0|jeopardy
+0|leisure
+0|liberty
+0|minority
+0|monopoly
+0|motivation
+0|nutrition
+0|obesity
+0|obligation
+0|obstacle
+0|opponent
+0|participation
+0|peer
+0|penalty
+0|peril
+0|perspective
+0|pollution
+0|popularisation
+0|population
+0|potential
+0|poverty
+0|preference
+0|prejudice
+0|preservation
+0|priority
+0|privilege
+0|prohibition
+0|promotion
+0|property
+0|proponent
+0|prospect
+0|pursuit
+0|replacement
+0|reputation
+0|reservation
+0|resource
+0|restriction
+0|sacrifice
+0|safety
+0|sanitation
+0|scandal
+0|scope
+0|sense
+0|shortage
+0|source
+0|species
+0|stability
+0|statistics
+0|stereotype
+0|stimulation
+0|strain
+0|strategy
+0|strength
+0|stress
+0|subsistence
+0|substitute
+0|superiority
+0|superstition
+0|supervision
+0|supplement
+0|surveillance
+0|survival
+0|symbol
+0|symptom
+0|talent
+0|temptation
+0|tendency
+0|theory
+0|therapy
+0|threat
+0|tolerance
+0|torture
+0|traffic
+0|transfer
+0|trait
+0|tragedy
+0|transformation
+0|treasure
+0|triumph
+0|upgrade
+0|urbanisation
+0|urge
+0|value
+0|variety
+0|vegetation
+0|victim
+0|vigour
+0|violation
+0|violence
+0|virtue
+0|vision
+0|vitality
+0|warning
+0|waste
+0|weakness
+0|welfare
+0|wisdom
+0|worship
+0|yearning
+0|abandoned
+0|abnormal
+0|aboriginal
+0|abrupt
+0|absorbing
+0|absurd
+0|abundant
+0|academic
+0|accessible
+0|accountable
+0|adaptable
+0|addicted
+0|admirable
+0|adolescent
+0|adoring
+0|advanced
+0|advantaged
+0|advantageous
+0|adverse
+0|advisable
+0|aesthetic
+0|affluent
+0|aggravating
+0|aggressive
+0|agile
+0|alarming
+0|all-round
+0|alluring
+0|alternative
+0|amateur
+0|antisocial
+0|appalling
+0|appealing
+0|appetising
+0|arrogant
+0|artificial
+0|artistic
+0|aspirant
+0|astonishing
+0|astray
+0|astronomical
+0|athletic
+0|authentic
+0|available
+0|awkward
+0|backward
+0|balanced
+0|baneful
+0|barbaric
+0|barren
+0|beforehand
+0|beneficial
+0|benign
+0|bewildering
+0|biased
+0|bilingual
+0|biological
+0|booming
+0|boundless
+0|brutal
+0|cardiovascular
+0|careful
+0|carnivorous
+0|catastrophic
+0|challenging
+0|cheating
+0|chronic
+0|civilised
+0|cocky
+0|cognitive
+0|compatible
+0|compelling
+0|competent
+0|compulsive
+0|compulsory
+0|conducive
+0|conservative
+0|considerably
+0|considerate
+0|conspicuous
+0|contagious
+0|contemptible
+0|content
+0|controversial
+0|conventional
+0|cooperative
+0|corrupt
+0|deceitful
+0|deceptive
+0|defiant
+0|definite
+0|deliberate
+0|delicious
+0|delinquent
+0|demanding
+0|democratic
+0|dependent
+0|depressed
+0|desirable
+0|destitute
+0|detrimental
+0|devastating
+0|deviant
+0|devoid
+0|dietary
+0|diffident
+0|diligent
+0|disabled
+0|disappointed
+0|disciplinary
+0|discontented
+0|disgusting
+0|dishonest
+0|disinterested
+0|disobedient
+0|disorderly
+0|disposable
+0|distasteful
+0|distinctive
+0|distinguished
+0|distracted
+0|diverse
+0|diversified
+0|domestic
+0|dominant
+0|doubtful
+0|dreary
+0|durable
+0|dutiful
+0|dynamic
+0|eccentric
+0|ecological
+0|economical
+0|educational
+0|effective
+0|eligible
+0|embarrassed
+0|emotional
+0|endangered
+0|enjoyable
+0|enlightened
+0|entertaining
+0|enthusiastic
+0|environmental
+0|epidemic
+0|equivalent
+0|essential
+0|ethical
+0|ethnic
+0|everlasting
+0|evident
+0|exaggerated
+0|excessive
+0|exhausted
+0|existing
+0|exotic
+0|experienced
+0|extensive
+0|extinct
+0|extracurricular
+0|extravagant
+0|fascinating
+0|fatal
+0|feasible
+0|fertile
+0|fervent
+0|fictitious
+0|fierce
+0|flexible
+0|genetic
+0|generous
+0|greedy
+0|grievous
+0|guilty
+0|hereditary
+0|honest
+0|hospitable
+0|hostile
+0|humane
+0|identical
+0|ignorant
+0|immediate
+0|immoral
+0|imperative
+0|impoverished
+0|improper
+0|incurable
+0|indecent
+0|independent
+0|indifferent
+0|indigenous
+0|indispensable
+0|inevitable
+0|infectious
+0|inherent
+0|innocent
+0|innovative
+0|intellectual
+0|intelligent
+0|intense
+0|intensive
+0|internal
+0|intimate
+0|intolerable
+0|introverted
+0|inviolable
+0|invisible
+0|irrational
+0|irregular
+0|irreplaceable
+0|irresistible
+0|irreversible
+0|isolated
+0|jealous
+0|justifiable
+0|juvenile
+0|lavish
+0|lax
+0|legitimate
+0|liberal
+0|likely
+0|luxurious
+0|mandatory
+0|mediocre
+0|metropolitan
+0|miserable
+0|misleading
+0|mistaken
+0|mobile
+0|monotonous
+0|moral
+0|multilateral
+0|multiple
+0|mutual
+0|naive
+0|nasty
+0|nationwide
+0|needy
+0|negligent
+0|nimble
+0|noble
+0|notable
+0|notorious
+0|novel
+0|numerous
+0|nutritious
+0|obese
+0|obscene
+0|obscure
+0|offensive
+0|old-fashioned
+0|optimistic
+0|optional
+0|ordinary
+0|original
+0|outrageous
+0|outright
+0|outstanding
+0|overall
+0|overwhelming
+0|painstaking
+0|parallel
+0|particular
+0|passionate
+0|passive
+0|peaceful
+0|peculiar
+0|permissive
+0|perplexed
+0|personal
+0|pessimistic
+0|physiological
+0|poisonous
+0|pornographic
+0|powerful
+0|pragmatic
+0|preceding
+0|precious
+0|preferable
+0|preferential
+0|pregnant
+0|preliminary
+0|pressing
+0|prestigious
+0|prevailing
+0|prevalent
+0|previous
+0|probably
+0|profound
+0|prominent
+0|promising
+0|prone
+0|prospective
+0|prosperous
+0|provocative
+0|psychological
+0|rampant
+0|rational
+0|redundant
+0|refreshing
+0|regular
+0|related
+0|relative
+0|reliable
+0|remarkable
+0|renewable
+0|responsible
+0|rewarding
+0|ridiculous
+0|rigid
+0|ruthless
+0|sanitary
+0|satisfactory
+0|savage
+0|secure
+0|sedentary
+0|seemingly
+0|segregated
+0|sensational
+0|sensible
+0|shocking
+0|shrewd
+0|similar
+0|sincere
+0|slavish
+0|slightly
+0|sluggish
+0|sociable
+0|sophisticated
+0|spectacular
+0|spiritual
+0|splendid
+0|stable
+0|steady
+0|stubborn
+0|stylish
+0|substantial
+0|subtle
+0|sufficient
+0|superficial
+0|superior
+0|superstitious
+0|supplementary
+0|susceptible
+0|suspicious
+0|sustainable
+0|symbolic
+0|systematic
+0|tasty
+0|tedious
+0|temporary
+0|tempting
+0|theoretical
+0|thrifty
+0|thrilling
+0|timely
+0|timid
+0|tiresome
+0|tolerant
+0|toxic
+0|tranquil
+0|trendy
+0|troublesome
+0|truly
+0|trustworthy
+0|typical
+0|ubiquitous
+0|ultimate
+0|unable
+0|unanimous
+0|unbelievable
+0|uncomfortable
+0|undeniable
+0|undesirable
+0|undoubtedly
+0|uneasy
+0|unique
+0|universal
+0|unprecedented
+0|unreasonable
+0|useless
+0|utilitarian
+0|vain
+0|valid
+0|vegetarian
+0|versatile
+0|vigorous
+0|virtual
+0|virtuous
+0|vivid
+0|void
+0|vulgar
+0|vulnerable
+0|wholesome
+0|willing
+0|worthy
+0|zealous
+0|ambiguity
+0|astronomy
+0|civilisation
+0|computerise
+0|contaminate
+0|cultural
+0|cybercrime
+0|cyberspace
+0|deficiency
+0|dehumanise
+0|deplete
+0|deteriorate
+0|diffuse
+0|digital
+0|discipline
+0|disseminate
+0|download
+0|efficiency
+0|electronic
+0|evolution
+0|exhaustion
+0|exploit
+0|expose
+0|feedback
+0|foresee
+0|global warming
+0|hardware
+0|hinder
+0|household appliance
+0|hyperlink
+0|imperil
+0|incentive
+0|incur
+0|interact
+0|jeopardise
+0|longevity
+0|manipulate
+0|mechanical
+0|menace
+0|mission
+0|misuse
+0|mutation
+0|novelty
+0|nuclear
+0|organism
+0|overtake
+0|portable
+0|practicality
+0|probe
+0|productivity
+0|prolong
+0|protein
+0|radiation
+0|readability
+0|reliability
+0|replace
+0|reproduce
+0|revolution
+0|robot
+0|scientific
+0|software
+0|solar
+0|space
+0|specification
+0|spell
+0|sperm
+0|spur
+0|store
+0|supersede
+0|tap
+0|technical
+0|transform
+0|transition
+0|transplant
+0|accumulate
+0|acid rain
+0|afforestation
+0|aggravate
+0|begrimed
+0|biodegradable
+0|biosphere
+0|break down
+0|carcinogen
+0|chemical
+0|congestion
+0|decay
+0|decomposition
+0|deforestation
+0|degrade
+0|demolish
+0|densely-populated
+0|desalination
+0|desertification
+0|devastation
+0|die out
+0|discard
+0|dump
+0|ecosystem
+0|emission
+0|energy
+0|evolve
+0|exhaust
+0|exploitation
+0|fertiliser
+0|filter
+0|greenhouse effect
+0|grimy
+0|habitat
+0|hazardous
+0|imbalance
+0|impurity
+0|incinerate
+0|industrialised
+0|inhabitable
+0|inundate
+0|landfill
+0|litter
+0|natural resource
+0|nonrenewable
+0|overcrowding
+0|overexploit
+0|overgraze
+0|pesticide
+0|poison
+0|pollutant
+0|purify
+0|rainfall
+0|recycle
+0|reforestation
+0|restore
+0|reuse
+0|saline
+0|sandstorm
+0|sewage
+0|smelly
+0|soil erosion
+0|sustain
+0|tillable
+0|trash
+0|treatment
+0|unsanitary
+0|use up
+0|utilise
+0|ventilation
+0|vermin
+0|vicious circle
+0|wasteland
+0|wildlife
+0|ancestor
+0|anthropological
+0|antiquated
+0|antique
+0|archeologist
+0|assimilate
+0|belonging
+0|blend
+0|coexist
+0|conformism
+0|conformity
+0|cornerstone
+0|craft
+0|cuisine
+0|distinct
+0|distinguishing
+0|doomed
+0|embody
+0|emulate
+0|fad
+0|faddism
+0|festivity
+0|fogyism
+0|globalisation
+0|handicraft
+0|heirloom
+0|homogeneous
+0|hostility
+0|identity
+0|imitate
+0|infiltrate
+0|intrinsic
+0|mainstream
+0|modish
+0|moribund
+0|national
+0|orthodox
+0|outdated
+0|popularise
+0|prestige
+0|prevalence
+0|propagandise
+0|quintessence
+0|recipe
+0|relic
+0|retain
+0|revitalisation
+0|revive
+0|souvenir
+0|speciality
+0|tradition
+0|traditional
+0|tribal
+0|vanish
+0|vernacular
+0|westernize
+0|workmanship
+0|abomination
+0|abortion
+0|agony
+0|atrocity
+0|avarice
+0|base
+0|bawdry
+0|bereave
+0|censor
+0|commiserate
+0|compassionate
+0|condone
+0|conscience
+0|deceive
+0|decency
+0|degenerate
+0|depravation
+0|desert
+0|disgrace
+0|dishonesty
+0|dupe
+0|edifying
+0|ego
+0|envy
+0|erode
+0|erotic
+0|euthanasia
+0|falsehood
+0|forgiving
+0|gossip
+0|harmonious
+0|heartless
+0|homosexual
+0|hypocrisy
+0|immorality
+0|ingratitude
+0|insidious
+0|lenient
+0|lewd
+0|libel
+0|loyalty
+0|maltreat
+0|merciless
+0|misguiding
+0|money-oriented
+0|obedience
+0|obscenity
+0|permissiveness
+0|piety
+0|profanity
+0|promiscuity
+0|reciprocate
+0|rest home
+0|seduce
+0|self-interest
+0|sexual
+0|sinister
+0|slacken
+0|slander
+0|sluttish
+0|social
+0|tabloid
+0|taboo
+0|ulterior
+0|unethical
+0|vice
+0|vile
+0|violent
+0|whoredom
+0|acclimatise
+0|adolescence
+0|adventurous
+0|aggression
+0|alienate
+0|allure
+0|ambition
+0|arrogance
+0|assault
+0|avocation
+0|bewilder
+0|bias
+0|bully
+0|caning
+0|cartoon
+0|coeducation
+0|cohabitation
+0|collectivism
+0|companionship
+0|compassion
+0|competence
+0|compromise
+0|corporal
+0|cowardice
+0|criminal
+0|dependence
+0|deterrent
+0|differentiate
+0|diffidence
+0|discourteous
+0|disobey
+0|disoriented
+0|disrespect
+0|distract
+0|dropout
+0|edify
+0|egoist
+0|emotion
+0|enlightenment
+0|entice
+0|esteem
+0|estranged
+0|evaluate
+0|fantastic
+0|formative
+0|frugality
+0|frustrate
+0|gregarious
+0|hardship
+0|homesick
+0|ideal
+0|idol
+0|ill-bred
+0|illegal
+0|illiteracy
+0|illusion
+0|immature
+0|impede
+0|impetuous
+0|inappropriate
+0|inculcate
+0|individualism
+0|indoctrinate
+0|indolent
+0|indulge
+0|inexperience
+0|inferior
+0|instill
+0|interpersonal
+0|introversive
+0|jealousy
+0|law-abiding
+0|literacy
+0|malnutrition
+0|mature
+0|misbehave
+0|misguide
+0|money
+0|motivate
+0|mould
+0|myopia
+0|narcotic
+0|naughty
+0|negative
+0|neglect
+0|obsession
+0|optimism
+0|originality
+0|parental
+0|perplex
+0|physical
+0|plagiarise
+0|pornography
+0|prodigy
+0|puberty
+0|rebel
+0|refrain
+0|rowdy
+0|savour
+0|schooling
+0|segregate
+0|self
+0|sequacious
+0|slothful
+0|spoil
+0|supervise
+0|tease
+0|temper
+0|tempt
+0|thrift
+0|traumatize
+0|truancy
+0|uncivilised
+0|undisciplined
+0|unrealistic
+0|unsociable
+0|vanity
+0|vex
+0|vulgarity
+0|willful
+0|willpower
+0|withdrawn
+0|world-weary
+0|wrongdoer
+0|abhorrent
+0|activist
+0|amoral
+0|anaesthetic
+0|anatomy
+0|animal
+0|anthropomorphism
+0|antibiotic
+0|antivivisectionism
+0|brazen
+0|bullfighting
+0|cannibalism
+0|capture
+0|chimpanzee
+0|clinical
+0|confinement
+0|cosmetic
+0|creator
+0|cruelty
+0|despoil
+0|disregard
+0|dominance
+0|endanger
+0|enslave
+0|existence
+0|extremism
+0|hazard
+0|hypocrite
+0|inborn
+0|inflict
+0|infringe upon
+0|inhumane
+0|insecticide
+0|isolation
+0|justify
+0|medical
+0|omnivorous
+0|pathological
+0|predator
+0|prerogative
+0|primate
+0|sentient
+0|slaughter
+0|suffering
+0|therapeutic
+0|torment
+0|underprivileged
+0|vaccine
+0|vegetarianism
+0|veterinarian
+0|vivisector
+0|anarchy
+0|antivivisectionist
+0|bribery
+0|constitute
+0|copyright
+0|democracy
+0|disadvantaged
+0|disorder
+0|disparity
+0|enact
+0|encroach
+0|enlist
+0|fair
+0|humiliation
+0|impinge
+0|impoverishment
+0|inalienable
+0|inequality
+0|infringe
+0|invade
+0|just
+0|justice
+0|justified
+0|legal
+0|legislative
+0|legislator
+0|legitimacy
+0|legitimise
+0|liberation
+0|media
+0|oppression
+0|orphanage
+0|outlaw
+0|pauper
+0|penalize
+0|privacy
+0|prosperity
+0|racism
+0|regulate
+0|repression
+0|right
+0|righteous
+0|sacred
+0|sovereignty
+0|stipulate
+0|suppress
+0|trespass
+0|unjustifiable
+0|unlawful
+0|unprejudiced
+0|voluntary
+0|affection
+0|apathy
+0|authoritarian
+0|avaricious
+0|avid
+0|begrudge
+0|bleak
+0|breadwinner
+0|breeding
+0|childhood
+0|commute
+0|competitive
+0|corporate
+0|dedicate
+0|discontent
+0|dissipation
+0|economic
+0|egalitarian
+0|employee
+0|employment
+0|estrange
+0|expertise
+0|family
+0|feminist
+0|financial
+0|fluctuate
+0|futile
+0|greenhorn
+0|guardian
+0|inhospitality
+0|job
+0|living
+0|mammonist
+0|maternity
+0|mobility
+0|momentum
+0|pastime
+0|pension
+0|pessimism
+0|prosper
+0|snobbish
+0|strive
+0|telecommuting
+0|ungrateful
+0|unshirkable
+0|weary
+0|work
+0|addiction
+0|anomaly
+0|arson
+0|avenge
+0|burglary
+0|charge
+0|confidence
+0|egocentric
+0|harassment
+0|innocence
+0|lure
+0|material
+0|monitoring
+0|morally
+0|offender
+0|perpetrate
+0|perpetrator
+0|personality
+0|perverted
+0|pregnancy
+0|pressure
+0|prevention
+0|proper
+0|protest
+0|punishment
+0|rationalisation
+0|retaliate
+0|risky
+0|robbery
+0|role
+0|self-esteem
+0|skill
+0|spoiled
+0|substance
+0|theft
+0|trustful
+0|unwed
+0|upbringing
+0|vengeance
+0|victimise
+0|aerobics
+0|allergy
+0|anorexia
+0|appetite
+0|artery
+0|arthritis
+0|asthma
+0|athletics
+0|bronchitis
+0|calorie
+0|cancer
+0|carnivore
+0|cholesterol
+0|circulatory
+0|consultation
+0|contamination
+0|convenience
+0|coronary
+0|corpulence
+0|deadly
+0|diabetes
+0|dieter
+0|digestion
+0|disability
+0|dizzy
+0|expectancy
+0|fatigue
+0|fibre
+0|food
+0|fruitarian
+0|health
+0|heredity
+0|heroin
+0|hormone
+0|hypertension
+0|immune
+0|inactivity
+0|incidence
+0|infection
+0|ingredient
+0|insomnia
+0|jogging
+0|junk
+0|lifestyle
+0|meat
+0|medication
+0|metabolism
+0|mortality
+0|nutrient
+0|overweight
+0|paediatrician
+0|physician
+0|physique
+0|plague
+0|pneumonia
+0|programme
+0|relaxation
+0|respiratory
+0|sensitivity
+0|sore
+0|stamina
+0|stimulus
+0|stroke
+0|surgery
+0|yoga
+0|abdomen
+0|aborigine
+0|arboreal
+0|breeding season
+0|bushfire
+0|bushland
+0|claw
+0|clearing
+0|cub
+0|defoliation
+0|devastate
+0|digestive system
+0|erosion
+0|eucalyptus
+0|feral
+0|fertile soil
+0|fibre-digesting organ
+0|fibrous
+0|forelimb
+0|forestry
+0|fossil
+0|fur
+0|fussy eater
+0|goanna
+0|gum tree
+0|herbivorous
+0|inbreeding
+0|incidence of sickness
+0|incisor
+0|joey
+0|kangaroo
+0|koala
+0|leaf-eating animal
+0|mammal
+0|marsupial
+0|migratory
+0|monotreme
+0|nocturnal animal
+0|palm
+0|pelt
+0|plant-eating
+0|pouch
+0|python
+0|Queensland
+0|ringtail
+0|shelter
+0|shin
+0|territorial animal
+0|tree-dwelling
+0|biological compass
+0|acute sense of smell
+0|agribusiness
+0|alevin
+0|anadromous
+0|anchovy
+0|angler
+0|aquaculture
+0|barge
+0|chinook salmon
+0|chum salmon
+0|circuit
+0|circumnavigation
+0|climatic phenomenon
+0|coho
+0|commercial fishery
+0|degraded spawning area
+0|dog salmon
+0|downstream
+0|egg sac
+0|El Nino
+0|epic journey from stream to sea
+0|estuary
+0|excess sedimentation
+0|fishing industry
+0|fry
+0|geomagnetic
+0|global ocean circulation
+0|hatchery
+0|headwater
+0|humpback salmon
+0|logging
+0|marine
+0|migration
+0|migration pattern
+0|migration route
+0|mystery of nature
+0|natural heritage
+0|navigate
+0|non-native predator
+0|nourish
+0|oceanographer
+0|oceanographic
+0|offspring
+0|olfactory
+0|predation
+0|rainbow trout
+0|riparian
+0|river system
+0|salmon habitat
+0|salmon population
+0|salmon protection and restoration
+0|salmon stock
+0|salvation
+0|sardine
+0|siltation
+0|smolt
+0|sockeye
+0|spawn
+0|steelhead
+0|stream channel
+0|temperature increase
+0|timber industry
+0|topography
+0|trout
+0|upstream habitat
+0|acoustic faculty
+0|air sac
+0|albacore
+0|alga
+0|aquatic environment
+0|aquatic life
+0|auditory system
+0|bacterial and viral infection
+0|bait
+0|baleen whale
+0|billfish
+0|blowhole
+0|blubber
+0|blue whale
+0|bottle-nosed dolphin
+0|bowhead
+0|buzz
+0|cavity
+0|cetacea
+0|cetacean
+0|cod
+0|commercial whaling
+0|crab fishery
+0|die-off
+0|dolphin
+0|dorado
+0|drift-net fishing
+0|echolocate
+0|echolocation
+0|entangle
+0|fatty tissue
+0|frequency
+0|genetic abnormaly
+0|gillnet
+0|gray whale
+0|groundfish
+0|hawksbill
+0|herring
+0|heyday
+0|highly evolved mammal
+0|humpback whale
+0|intestinal blockage
+0|killer whale
+0|lagoon
+0|marine debris
+0|marine life
+0|melon
+0|minke whale
+0|natural food chain
+0|neonate dolphin
+0|neural impulse
+0|ocean ecosystem
+0|operculum
+0|otter
+0|overexploitation
+0|pinniped
+0|polar bear
+0|porpoise
+0|prey
+0|right whale
+0|sea lion
+0|seal
+0|seine
+0|snout
+0|sole
+0|squid
+0|strand
+0|suspension of fishing license
+0|swim bladder
+0|tailstock
+0|taste bud
+0|terrestrial mammal
+0|touch sensor
+0|toxin
+0|trawler
+0|tuna
+0|walrus
+0|West Indian manatee
+0|butterfly husbandry techniques
+0|butterfly rancher
+0|canopy
+0|caterpillar
+0|circadian rhythm
+0|cluster
+0|commercial exploitation
+0|cypress
+0|day length
+0|diapause
+0|diversification
+0|dormant
+0|entomologist
+0|fir
+0|host
+0|imbibe
+0|inhospitable
+0|internal body clock
+0|landmark
+0|market value
+0|mating
+0|model organism
+0|monarch butterfly
+0|nectar
+0|nervous system
+0|ovarian development
+0|overwintering aggregation
+0|overwintering
+0|pupa
+0|rainforest habitat
+0|ranch
+0|reproductive organ
+0|roost
+0|shrub
+0|specimen
+0|sun compass
+0|tropical rainforest
+0|underbrush
+0|adaptation
+0|aerodynamics
+0|aeronautical engineer
+0|analogous
+0|anterior
+0|appendage
+0|apterous
+0|arthropod
+0|biomechanics
+0|crustacean
+0|cuticula
+0|developmental genetics
+0|dipteran
+0|dorsal
+0|drosophila
+0|embryology
+0|epithelial
+0|Evolutionary Theory
+0|exoskeleton
+0|flap
+0|fossil evidence
+0|gene product
+0|gill cover
+0|gradient
+0|hawkmoth
+0|horsefly
+0|hover
+0|imaginal
+0|instar
+0|joint
+0|larval
+0|microhabitat
+0|morphology
+0|mouthpart
+0|notum
+0|paleontology
+0|pleuron
+0|propeller
+0|sclerite
+0|skeleton
+0|skim
+0|taxon
+0|terrestrial
+0|ventral
+0|winglike
+0|wingspan
+0|apiculture
+0|architectural miracle
+0|bee colony
+0|bee resin
+0|beehive
+0|beekeeper
+0|beeswax
+0|circulatory system
+0|colony
+0|comb
+0|congregate
+0|cylinder
+0|domicile
+0|drone bee
+0|flowering plant
+0|forage
+0|geometry
+0|hexagonal structure
+0|hive
+0|homesite
+0|honey production
+0|honeybee
+0|honeycomb
+0|hornet
+0|intestinal function
+0|intruder
+0|larva
+0|octagonal
+0|ovary
+0|pentagonal
+0|pheromone
+0|pollen
+0|prism
+0|propolis
+0|rhombus
+0|royal jelly
+0|scout bee
+0|social wasp
+0|swarm
+0|triangle
+0|wax moth
+0|wax
+0|wingtip
+0|worker bee
+0|amputation
+0|anticoagulant
+0|antivenin
+0|aquatic
+0|belly
+0|boa
+0|capybara
+0|cardiotoxic
+0|cobra
+0|constrictor
+0|copperhead
+0|crawl
+0|diagnose
+0|dialysis
+0|elapid
+0|envenomate
+0|envenomation
+0|epinephrine
+0|hypotension
+0|inject
+0|intravenous
+0|itching
+0|king cobra
+0|laceration
+0|loss of consciousness
+0|neurological
+0|neuromuscular
+0|neurotoxic
+0|nocturnal vision
+0|ophthalmoplegia
+0|paralysis
+0|rattlesnake
+0|renal shutdown
+0|respiratory obstruction or failure
+0|rodent
+0|scratch
+0|sea snake
+0|snake charmer
+0|snakebite
+0|trauma
+0|venom
+0|venomous
+0|viper
+0|aerodynamic construction
+0|aerodynamic shape
+0|animal migration
+0|avian migrant
+0|calibrate
+0|chart
+0|compass
+0|cruising speed
+0|detect
+0|diversion off course
+0|earth's magnetic field
+0|evolutionary and population biology
+0|feedback system
+0|flying capacity
+0|geographical position
+0|guidance system
+0|internal compass
+0|loggerhead turtle
+0|magnetic field
+0|magnetic field intensity
+0|magnetic sense
+0|migrant
+0|migratory animal
+0|migratory route
+0|navigational accomplishment
+0|navigational skill
+0|ocean science
+0|orientation mechanism
+0|outward journey
+0|periodic migration
+0|plover
+0|polar light
+0|sensory cue
+0|shearwater
+0|sophisticated navigational aids and instruments
+0|sparrow
+0|visual landmark
+0|wind resistance
+0|ape
+0|avian intelligence
+0|baboon
+0|biochemical change
+0|crow
+0|emotional characteristic
+0|grub
+0|hippocampus
+0|mimic
+0|parrot
+0|pigeon
+0|puzzle
+0|raven
+0|social emotion
+0|tasty treat
+0|untangle
+0|animal behaviour
+0|domestication
+0|ethology
+0|external stimulus
+0|gene
+0|genetics
+0|genotype
+0|hybrid
+0|inheritance
+0|innate
+0|intelligence
+0|internal hormonal and neural mechanism
+0|invertebrate
+0|livestock
+0|mate
+0|mechanism
+0|poultry
+0|reptile
+0|variation
+0|a desired treat
+0|abstract concept
+0|alphabet
+0|American Sign Language
+0|an innate ability
+0|arbitrary
+0|artificial intelligence
+0|automatic language translation
+0|be adept at
+0|be endowed with
+0|chimp
+0|cognition
+0|deduce
+0|denote
+0|geometric configuration
+0|gorilla
+0|human cognition
+0|language acquisition
+0|laughing gull
+0|linguist
+0|linguistic and numerical abilities
+0|logical reasoning
+0|macaque
+0|navigational ability
+0|navigator
+0|non-human primate
+0|numerical
+0|nutcracker
+0|orangutan
+0|partial imitation
+0|psychiatry
+0|psychologist
+0|psychology
+0|randomly
+0|recognisable
+0|rhesus
+0|rote motor response
+0|sign language
+0|social animal
+0|surpass
+0|synthetic voice
+0|theory of innate language ability
+0|universal grammar
+0|visual form of language
+0|arctic
+0|Arctic Circle
+0|changeable
+0|cracking
+0|forecast
+0|freeze
+0|fluctuation
+0|ice shelf
+0|latitude
+0|monsoon
+0|Northern Hemisphere
+0|penguin
+0|polar region
+0|twilight
+0|variability
+0|active volcano
+0|casualties
+0|chaotic
+0|coastal subsidence
+0|concentrate monitoring efforts
+0|crustal movement
+0|crustal
+0|deformation
+0|detectable
+0|distortion
+0|domestic animal
+0|earthquake intensity
+0|earthquake precursor
+0|earthquake prediction
+0|magnitude
+0|the Richter scale
+0|earthquake-triggered mudflow
+0|earth's crust
+0|electrical resistivity
+0|electromagnetic field
+0|epicentral zone
+0|fault slippage
+0|fault zone
+0|fault
+0|federal support
+0|foreshock
+0|fracture zone dynamics
+0|gather data
+0|gauge
+0|Geophysical Observatory
+0|geophysicist
+0|ground crack
+0|ground fracturing
+0|ground motion
+0|ground settling
+0|hydraulic system
+0|immobilise
+0|inconclusive research
+0|increased strain
+0|ionised groundwater
+0|landslide
+0|lava bedrock
+0|magma
+0|Mauna Loa
+0|microquake
+0|moment magnitude scale
+0|monitoring equipment
+0|non-damaging earthquake
+0|plate tectonics
+0|pre-earthquake behaviour
+0|radioactive gas
+0|Richter magnitude scale
+0|rift zone
+0|rocks'fabric
+0|rupture zone
+0|rupture
+0|seismic
+0|seismic hazard zones
+0|seismic wave
+0|seismically active area
+0|seismogram
+0|seismograph
+0|seismologist
+0|seismology
+0|seismometer
+0|sensor
+0|structural weakness
+0|submarine communication
+0|the United States Geological Survey
+0|USGS
+0|tsunami
+0|vibration
+0|volcanic activity
+0|volcanism
+0|volcano
+0|atmospheric moisture
+0|Celsius
+0|climatologist
+0|computer simulation
+0|condense
+0|drift
+0|Ecuador
+0|evaporated
+0|fishery
+0|geophysical
+0|glacier
+0|greenhouse gas
+0|hydrologic cycle
+0|ice core
+0|ice storm
+0|jet stream
+0|Kelvin wave
+0|killer tornado
+0|low pressure zone
+0|meteorologist
+0|mudslide
+0|normal cycle
+0|oscillation
+0|positive feedback
+0|Rossby wave
+0|socioeconomic
+0|tidal wave
+0|trade wind
+0|upwelling
+0|warm pool
+0|warm water
+0|beach
+0|buffer
+0|coastline
+0|dune
+0|ecological group
+0|inland
+0|oblivion
+0|preservationist
+0|retreat
+0|restoration
+0|remedial
+0|runoff
+0|sandy
+0|seashore
+0|seawall
+0|sediment
+0|accumulation
+0|alternating layers of lava flows
+0|ash particle
+0|basaltic lava
+0|blast
+0|bomb
+0|bowl-shaped crater
+0|bubble
+0|caldera
+0|cinder cone
+0|circular depression
+0|composite volcano
+0|cone
+0|conical hill
+0|crater
+0|crystal
+0|crystalline
+0|dense clouds of lava fragments
+0|dissolved gas
+0|dome
+0|domical shape
+0|dormancy
+0|eruption
+0|eruptive activity
+0|fissure
+0|fluid lava flow
+0|force of gravity
+0|Fujiyama
+0|funnel-shaped crater
+0|geologic
+0|geologist
+0|grained crystalline materials
+0|granitic
+0|igneous
+0|incandescent
+0|lava dome
+0|lava plateau
+0|lava
+0|molten
+0|mudflow
+0|non-explosive lava flow
+0|pasty
+0|Pele, Goddess of Volcanoes
+0|periodic violent unleashing
+0|Pompeii
+0|precipitate
+0|profile
+0|pumice
+0|shield volcano
+0|silicon
+0|sloping cone
+0|spine
+0|steep-sided and symmetrical cone
+0|stratospheric
+0|terrane
+0|vent
+0|Vesuvius
+0|volcanic cinder and dust
+0|volcanic ash and dust
+0|volcanic dust
+0|volcanic eruption
+0|volcanic landform
+0|volcanic lava
+0|volcanic terrain
+0|volcanic vent
+0|Yosemite National Park
+0|aquatic mammal
+0|be threatened with extinction
+0|burning process
+0|carbon dioxide emission
+0|climate zone
+0|coastal erosion and flooding
+0|coastal flooding
+0|coastal marsh
+0|combustion
+0|compound
+0|coral reef
+0|dengue fever
+0|disease-carrying mosquito
+0|everglade
+0|foliage
+0|fossil fuel
+0|geological data
+0|hurricane
+0|incidence of infectious diseases
+0|industrial waste gas
+0|leaking natural gas pipeline
+0|lethal heat wave
+0|malaria
+0|massive deforestation
+0|melting icecap
+0|natural habitat
+0|nitrous oxide
+0|nonpolluting
+0|outbreak
+0|permafrost
+0|polar icecap
+0|red tide
+0|salmon
+0|surface temperature
+0|threatened aquatic species
+0|carving
+0|cinchona
+0|contaminant
+0|cropland
+0|cuckoo
+0|decimation
+0|deforest
+0|durable timber
+0|epiphyte
+0|extract
+0|fern
+0|flora and fauna
+0|forest canopy
+0|forest clearing
+0|forest epiphyte
+0|forest floor
+0|forest sanctuary
+0|fungus
+0|grazing
+0|gum digger
+0|gum digging
+0|gum
+0|hardwood
+0|kaka
+0|kauri gum
+0|kauri
+0|kiekie
+0|kowhai
+0|linoleum
+0|log
+0|log skidder
+0|mahogany
+0|manuka
+0|Maori
+0|over-production
+0|parasite
+0|pasture
+0|peasant farmer
+0|pioneer settler
+0|plank
+0|plant and animal species
+0|plantation
+0|planting
+0|ploughing
+0|pulp
+0|rainforest
+0|resin
+0|rimu
+0|sawmill
+0|sawn timber
+0|scrubland
+0|seedling
+0|shade
+0|shrub layer
+0|sub-tropical rainforest
+0|surface soil
+0|swamp
+0|swampland
+0|timber
+0|treetop
+0|tropical
+0|trunk girth
+0|under story
+0|vine
+0|vineyard
+0|avoidance of lightning strikes
+0|casualty
+0|electrical current
+0|electrical system
+0|fatality
+0|flash
+0|hypothesis
+0|insulating
+0|lightning discharge
+0|lightning hazard
+0|lightning
+0|positive and negative charges
+0|property damage
+0|spectroscopic
+0|stoppage
+0|supernatural
+0|Thor
+0|thunderbolt
+0|thundercloud
+0|Zeus
+0|desalinisation
+0|dry steam
+0|evaporate
+0|generator
+0|geothermal
+0|heat energy
+0|ocean engineering
+0|rotate
+0|seafloor
+0|thermal energy
+0|turbine
+0|vaporise
+0|vapour
+0|air transport
+0|anticyclone
+0|anticyclonic
+0|asphyxiate
+0|atmospheric condition
+0|belch
+0|catalyst
+0|chronic health problem
+0|coal tar
+0|coke oven
+0|concentration
+0|condensation
+0|death toll
+0|domestic dwelling
+0|emit
+0|epidemiology
+0|fluoride
+0|fog
+0|foggy
+0|foundry
+0|fuliginous
+0|hydrochloric acid
+0|hygroscopic particle
+0|industrial pollution
+0|Industrial Revolution
+0|influenza
+0|lethal
+0|lung and eye irritations
+0|meteorologic
+0|mist
+0|morbidity
+0|mortality rate
+0|noisome
+0|particulate matter
+0|premature death
+0|radiation fog
+0|respiratory morbidity
+0|shroud
+0|smelter
+0|smog
+0|smoke-laden fog
+0|soot
+0|steel mill
+0|sulfur dioxide
+0|SO2
+0|sulfuric acid mist
+0|sulphuric acid
+0|visibility
+0|artificial pesticide
+0|biodiversity
+0|cattle
+0|conventional food
+0|conversion
+0|cross-contamination
+0|cultivable area
+0|food chain
+0|foot-and-mouth disease
+0|genetic modification
+0|germ
+0|grower
+0|maize
+0|National Farmers' Union
+0|nitrate
+0|nutritional benefit
+0|organic cultivation
+0|organic farming
+0|organic food
+0|organic produce
+0|pesticide and drug residue
+0|political landscape
+0|renewable raw materials
+0|rural economics
+0|starch
+0|swine fever
+0|unchecked
+0|virus
+0|aquatic ecosystems
+0|bald eagle
+0|biochemist
+0|biological diversity
+0|biological heritage
+0|biological integrity
+0|biologically diverse
+0|dinosaur
+0|ecological integrity
+0|endangered plants and animals
+0|energy depletion
+0|environmental damage
+0|exploiter
+0|extinction of plants and animals
+0|extinguish
+0|falcon
+0|forest ecosystem
+0|intact habitat
+0|intact
+0|interdependent
+0|legacy
+0|loss of biodiversity
+0|loss of genetic and species diversity
+0|malaria epidemic
+0|renewable and sustainable resource
+0|replenish
+0|resource-dependent industry
+0|terrestrial evolution
+0|the brink of ecological meltdown
+0|the survival and well-being of man
+0|tragic consequence
+0|unbroken
+0|virgin forest
+0|Arctic Ocean
+0|boreal
+0|Bulgaria
+0|Carpathian Mountains
+0|climatic
+0|conceive
+0|conifer
+0|conservation of biodiversity and naturalness
+0|densely populated
+0|ecological corridor
+0|economic, environmental and social functions
+0|environmental sustainability
+0|extensive exploitation
+0|forest administration
+0|forest cover
+0|forest dwelling species
+0|forest land
+0|forest management
+0|forest protection
+0|forester
+0|functional network
+0|genetic reservoir
+0|gulf stream
+0|ice age
+0|implementation
+0|increment
+0|industrialisation
+0|institutional
+0|insufficient
+0|irretrievably
+0|landmass
+0|measurement
+0|Mediterranean climate
+0|Mediterranean Sea
+0|misconception
+0|monoculture
+0|natural forest
+0|pristine forest
+0|nature conservation
+0|orientation
+0|original forest
+0|plantation forestry
+0|prehistoric
+0|primary forest
+0|public sector
+0|reconciliation
+0|remnant
+0|state intervention
+0|storage
+0|stump
+0|subsidization
+0|subsidy
+0|sustainable management
+0|taiga
+0|temperate
+0|tract
+0|urban demand
+0|vestige
+0|viable
+0|wood production
+0|Yellowstone National Park
+0|yield of wood
+0|biotic agent
+0|diagnostics and research reports
+0|endemic pest
+0|exotic pest
+0|infested
+0|interception
+0|life cycle
+0|native pest
+0|native indigenous pest
+0|pest distribution database
+0|pest free area
+0|pest hazard
+0|pest harm
+0|pest host range
+0|pest interception
+0|pest occurrence
+0|pest prevention
+0|pest rating category
+0|pest rating
+0|pest risk analysis
+0|PRA
+0|pest risk management
+0|pest diagnostics
+0|pests diagnostics
+0|phytosanitary measures
+0|preservation and transportation of samples
+0|quarantine pest
+0|quarantined shipment
+0|quarantine
+0|sampling and inspection
+0|sampling method
+0|activated charcoal
+0|acute exposure
+0|acute respiratory disease
+0|airborne bacteria
+0|airborne microorganism
+0|American Society of Heating, Refrigerating and
+0|ASHRAE
+0|bacteria
+0|biological contaminant
+0|breathing problem
+0|building-related illness
+0|carbon dioxide concentration
+0|carbon dioxide
+0|carbon monoxide and radon gases
+0|chronic exposure
+0|cleaning agent
+0|commercial building
+0|dizziness
+0|dry or itchy skin
+0|environmental irritant
+0|irritation
+0|formaldehyde
+0|fragrance
+0|gaseous contaminant
+0|gaseous pollutant
+0|gender difference
+0|hazardous chemical
+0|High Efficiency Particulate Air filter
+0|HEPA filter
+0|humidifier
+0|hygienic
+0|individual susceptibility
+0|indoor air pollutant
+0|indoor air quality
+0|IAQ
+0|indoor air quality problem
+0|indoor condition
+0|irritant
+0|kerosene
+0|microbiological contaminant
+0|microorganism
+0|mucus membrane
+0|nasal congestion
+0|nausea
+0|nitrogen dioxide
+0|non-environmental factor
+0|noxious
+0|odour
+0|odourless
+0|olfactory nasal mucosa
+0|particle
+0|perceptual process
+0|periodic cleaning or replacement of filters
+0|physiological change
+0|psychiatric disorder
+0|psychogenic illness
+0|radon
+0|respirable particulate matter
+0|sensitivity to odours
+0|sensory process
+0|sensory system
+0|sick building syndrome
+0|SBS
+0|skin irritation
+0|toxic chemical constituent
+0|toxic compound
+0|World Health Organisation
+0|acidic juices from the stomach
+0|air conditioning
+0|alkali
+0|asthmatic
+0|bicarbonate
+0|biochemical
+0|cancer prevention
+0|cancer-causing compound
+0|carcinogencity
+0|chronic obstructive pulmonary disease
+0|chronic respiratory disease
+0|coronary heart disease
+0|detoxification
+0|detoxify
+0|diarrhea
+0|duodenal ulcer
+0|duodenum
+0|emphysema
+0|exhale
+0|exposure
+0|eye irritation
+0|eye or respiratory irritants
+0|heart disease
+0|immune system
+0|immunosuppressive
+0|incidence of asthma
+0|incremental health insurance cost
+0|inflammation
+0|inhalation
+0|involuntary smoking
+0|legal obligation
+0|legal status
+0|life-threatening disease
+0|liver
+0|metabolic
+0|nicotine withdrawal symptom
+0|passive smoking
+0|peptic ulcer
+0|phlegm
+0|respiratory disease
+0|secondhand smoke
+0|severity of symptom
+0|sidestream smoke
+0|smoke-free policy
+0|smoking cessation programme
+0|sodium bicarbonate
+0|sore eyes and throat
+0|symptom of upper respiratory tract irritation
+0|workplace
+0|acupuncture
+0|alkaloid
+0|alternative and complementary medicine
+0|ACM
+0|alternative therapy
+0|aromatherapy
+0|ayurveda
+0|Chinese medical therapy
+0|chronic and degenerative condition
+0|clinical trial
+0|complementary medicine
+0|conventional medical drug
+0|conventional method
+0|diagnosis
+0|disease and ailment
+0|disharmony
+0|endangered species
+0|glycoside
+0|hepatitis
+0|herb
+0|herbal
+0|herbal medicine
+0|herbal practitioner
+0|herbalist
+0|holistic medicine
+0|homeopathy
+0|massage
+0|medicine industry
+0|moxibustion
+0|natural therapy
+0|naturopathy
+0|orthodox drug
+0|orthodox medical treatment
+0|personalised and individual form of treatment
+0|pharmaceutic
+0|post-operative care
+0|practitioner
+0|reflexology
+0|restore normal function
+0|therapeutic approach
+0|therapist
+0|traditional Chinese medicine
+0|traditional philosophy of treatment
+0|Western drug therapy
+0|Western herbal medicine
+0|yin yang principle
+0|complexion
+0|freckle
+0|incidence rate
+0|melanoma
+0|naevus
+0|occurrence
+0|ozone layer
+0|radiation exposure
+0|sunburn
+0|sunscreen
+0|suntan
+0|susceptibility
+0|tan
+0|tanning
+0|ultraviolet
+0|ultraviolet radiation
+0|commendable
+0|curriculum
+0|detriment
+0|discomfort
+0|endurance
+0|function
+0|hopscotch
+0|osteoporosis
+0|overprotect
+0|physical activity
+0|physical endurance
+0|physical exercise
+0|playground
+0|sedentary lifestyle
+0|skeletal muscle
+0|vascular disease
+0|abbreviation
+0|all-weather system
+0|alphabetic character
+0|Associated Press
+0|automated teleprinter technology
+0|click
+0|clockwork
+0|commercial telegram service
+0|continental code
+0|International code
+0|dash
+0|dial-up
+0|digital signal
+0|electrical communication system
+0|electromagnetic pulse
+0|electromagnet
+0|inferior quality wire
+0|intelligible
+0|magnetism
+0|Marine Dispatch Service
+0|Morse code
+0|Morse operator
+0|Morse telegraphy
+0|needle telegraph
+0|optical system
+0|patent
+0|pulse
+0|punctuation
+0|radio amateur
+0|radio wave
+0|radiotelegraphy
+0|receiving operator
+0|receiving system
+0|recognisability
+0|repertoire
+0|sending device
+0|signalling code
+0|spaced dot
+0|spacing
+0|spring
+0|static
+0|submarine cable
+0|telecommunication
+0|telegraph key
+0|telegraph system
+0|telegrapher
+0|telegraphy
+0|the Morse system of telegraphy
+0|ticker tape
+0|transmission line
+0|transmission
+0|transmitting and receiving instruments
+0|troop deployment and intelligence
+0|typesetter
+0|typewriter
+0|undersea cable
+0|wireless telegraphy
+0|wireless transmission
+0|abutment
+0|acoustic emission monitoring system
+0|agent of decay
+0|aging timber structure
+0|ambient vibration
+0|amplitude
+0|antenna
+0|asphalt wearing surface
+0|automated defect identification software
+0|automated lumber grading system
+0|bare concrete and asphalt-covered concrete
+0|beam
+0|bearing
+0|bolometric imaging technology
+0|bridge span
+0|broken or corroded wire
+0|cable
+0|chemical parameter
+0|coating tolerant thermography
+0|conventional radiographic technique
+0|corrosion activity
+0|coupling technology
+0|coupon
+0|crack
+0|crack length reader
+0|crushed fiber
+0|crystal structure
+0|cumulative fatigue loading
+0|curvature
+0|data acquisition system
+0|data error checking
+0|density measurement
+0|density variation
+0|depth resolution
+0|detect and measure
+0|diagnostic load testing
+0|dielectric
+0|digital spread spectrum radio telemetry
+0|drill resistance
+0|dual-band infrared thermography
+0|dynamic characteristic
+0|dynamic or static loading
+0|dynamic stress measurement
+0|dynamic system identification
+0|electromagnetic acoustic transducer
+0|electromagnetic wave
+0|embedded microsensor
+0|experimental vibrational data
+0|external damage
+0|fatigue crack
+0|fatigue loading
+0|fungal attack
+0|gamma ray
+0|grain angle
+0|ground-penetrating radar
+0|high frequency stress wave
+0|high resolution thermographic imaging system
+0|image processing technique
+0|imaging rate
+0|in-site inspection
+0|infrared imaging technology
+0|infrared thermography
+0|infrared wavelength
+0|interface
+0|internal defect
+0|internal flaw
+0|internal image
+0|load carrying capacity
+0|loading condition
+0|loading spectrum
+0|localised flaw
+0|localised wood density
+0|longitudinal wave energy
+0|magnetic flux leakage inspection system
+0|magnetic scanning head
+0|magnetic steel
+0|master controller
+0|material density
+0|material integrity and structural capacity
+0|mechanical shaker
+0|microwave and millimeter wave inspection technique
+0|modal analysis
+0|mode of vibration
+0|monitoring and measurement
+0|multi-path redundancy
+0|nondestructive evaluation technique
+0|overall structural integrity and strength
+0|overload
+0|precision electromagnetic roadway
+0|evaluation system
+0|portability
+0|portable and versatile inspection tool
+0|portable laser scanning system
+0|predetermine
+0|prestressed concrete
+0|propagation
+0|pulse travel time
+0|quantitative bridge assessment
+0|radio telemetry
+0|radio transponder module
+0|radiography
+0|regional condition assessment
+0|signal processing and imaging algorithm
+0|single transmitting
+0|receiving antenna
+0|spatial resolution
+0|specific integrated circuit
+0|spectral analysis
+0|spectrum
+0|standard data acquisition system
+0|statistical correlation
+0|steel girder bridge
+0|strain gage
+0|structural deformation survey
+0|structural integrity
+0|telemeter
+0|three dimensional image
+0|timber bridge deck
+0|transducer
+0|ultrasonic field inspection
+0|ultrasonic inspection
+0|vibration technique
+0|vibrational analysis
+0|visual acuity
+0|visual inspection
+0|wireless communication
+0|wireless data transmission
+0|wireless bridge monitoring system
+0|wireless strain measurement system
+0|wood degradation
+0|acid dye
+0|alizarin dye
+0|aniline dye
+0|aniline oxidation
+0|anionic dye
+0|basic dye
+0|cellulosic
+0|chemical oxidising agent
+0|chromic dye
+0|chromogen
+0|cochineal
+0|diazo reaction
+0|direct dye
+0|disperse dye
+0|dye
+0|fabric
+0|fastness
+0|fat dye
+0|flax
+0|henna
+0|indigo
+0|indigoid dye
+0|insoluble
+0|jute
+0|logwood
+0|madder
+0|mauve
+0|metachromatic dye
+0|mineral dye
+0|mixed dye
+0|mordant
+0|natural dye
+0|organic chemical
+0|organic dye
+0|photochemical
+0|pigment
+0|reactive dye
+0|sulfur dye
+0|sulphur
+0|synthetic dye
+0|synthetic fiber
+0|synthetic indigoid
+0|tannin
+0|textile dyeing industry
+0|textile fiber
+0|vegetable dye
+0|water-insoluble dye
+0|water-soluble compound
+0|aerobic
+0|anaerobic
+0|antiquity
+0|aquifer
+0|astronomer
+0|atmospheric pressure
+0|atmospheric water vapour
+0|biological activity
+0|Cretaceous
+0|dam
+0|depletion
+0|dissolve
+0|dweller
+0|equatorial region
+0|equator
+0|geological
+0|geyser
+0|habitable
+0|humidity
+0|hydration
+0|hydrogen
+0|hydrothermal
+0|imaging
+0|incubation
+0|inorganic
+0|lander
+0|manned space flight
+0|Martian
+0|meteorite
+0|microbe
+0|microbial
+0|microbiological life
+0|micro-organism
+0|molecular
+0|orbiter
+0|organic
+0|oxidiser
+0|peroxide
+0|planetary
+0|polar
+0|primitive microbe
+0|radioactive carbon
+0|reactant
+0|reconcile with
+0|regolith
+0|remote sensing instrument
+0|reside in
+0|respiration
+0|seepage
+0|space probe
+0|spacecraft
+0|superoxide
+0|theological
+0|ultra-violet
+0|underground water
+0|aerial photography
+0|archaeologist
+0|atlas
+0|Babylonian
+0|baseline
+0|basin
+0|Bronze Age
+0|cardinal point
+0|cartographer
+0|cartography
+0|cave painting
+0|centre of the universe
+0|circumference
+0|colonial possession
+0|colonial settlement
+0|continental outline
+0|copperplate
+0|copperplate map
+0|cosmological map
+0|cosmology
+0|cosmos
+0|Crusade
+0|cube
+0|cylindrical
+0|dichotomy
+0|egg-shaped
+0|electromagnetic spectrum
+0|engrave
+0|Eurocentric
+0|expedition
+0|fictional
+0|geographer
+0|geographic information system
+0|Greenwich Time
+0|Greenwich Mean Time
+0|historically testifiable
+0|history of cartography
+0|hypothesise
+0|illustration
+0|itinerary
+0|longitude
+0|mapmaker
+0|mapmaking
+0|marking
+0|mecca
+0|Makkah
+0|Mekka
+0|medieval period
+0|Mercator
+0|missionary
+0|navigation chart
+0|notation
+0|Old World
+0|Orinoco
+0|photographic technique
+0|pixel
+0|Ptolemy
+0|Pythagoras
+0|radar altimeter
+0|remote sensing
+0|Roman Empire
+0|sacred myth
+0|satellite image
+0|sea passage
+0|selective
+0|satellite imaging and digital processing
+0|spatial concept
+0|spherical earth
+0|square vignette
+0|symmetry
+0|Television and Infrared Observation Satellite
+0|TIROS
+0|terrestrial paradise
+0|territorial claim
+0|theodolite
+0|transit
+0|triangulation
+0|vertical axis
+0|woodcut
+0|balloon flight
+0|bulk commodity
+0|bulk freight
+0|container
+0|containerisation
+0|containership
+0|development of logistics
+0|diesel engine
+0|dominant form of industrial production
+0|efficient distribution system
+0|fiber optic cable
+0|financial and service sectors
+0|freight transportation
+0|freight transport
+0|globalisation of trade
+0|illumination
+0|intercontinental
+0|internal combustion engine
+0|international and regional transport system
+0|international container shipping service
+0|international division of work
+0|international transport system
+0|land transport
+0|maritime propulsion
+0|maritime, rail and road transportation
+0|network of satellite communication
+0|oil tanker
+0|passenger transoceanic ship
+0|production line
+0|propeller aircraft
+0|propel
+0|steam engine
+0|supersonic commercial plane
+0|transportation mode
+0|transshipment
+0|VLCC
+0|very large crude carrier
+0|Volkswagen
+0|Orville and Wilbur Wright
+0|20th Century Fox
+0|animated cartoon
+0|animation
+0|artistic personality
+0|auteur
+0|autobiographical film
+0|Bell
+0|celluloid
+0|cinematograph
+0|cinematography
+0|Columbia Pictures
+0|comedy genre
+0|comedy
+0|complicated plot
+0|contemporary
+0|diorama
+0|director
+0|Eastman
+0|filmmaker
+0|filmstrip
+0|impressionist
+0|interlude
+0|interpersonal relationship
+0|kinetograph
+0|kinetoscope
+0|legendary
+0|Metro-Goldwyn-Mayer
+0|MGM
+0|monopolistic practice
+0|motion picture
+0|motion-picture film
+0|movie studio
+0|Movietone
+0|moving picture
+0|music hall
+0|newsreel
+0|opera
+0|panorama
+0|photographer
+0|photographic
+0|photography
+0|playwright
+0|projection machine
+0|projector
+0|propaganda film
+0|puppet
+0|realistic style
+0|screenplay
+0|screenwriter
+0|shutter mechanism
+0|silent film
+0|slide
+0|sound film
+0|soundtrack
+0|studio
+0|suspense film
+0|Technicolor
+0|telecine
+0|theatre chain
+0|theatre empire
+0|trilogy
+0|vaudeville
+0|Warner Bros.
+0|mechanical watch
+0|Accutron
+0|alloy
+0|atomic clock
+0|attachment
+0|automata
+0|automatic winding watches
+0|automation
+0|battery-powered watch
+0|bimetallic
+0|brass
+0|calibration
+0|cast
+0|caesium fountain atomic clock
+0|chronograph
+0|chronometer
+0|coiled spring
+0|digital watch
+0|drip
+0|dust cap
+0|electronic vibration
+0|electronic watch
+0|elinvar
+0|error ratio
+0|escape wheel
+0|escapement
+0|fusee
+0|gain or lose a second
+0|gear
+0|going barrel
+0|hinged cover
+0|horologist
+0|horology
+0|hour
+0|minute
+0|second hand
+0|hourglass
+0|interchangeable
+0|interval
+0|keyless
+0|lever
+0|lever watch
+0|limitation
+0|luxury
+0|mainspring
+0|mass produced
+0|mass production
+0|measure
+0|mechanical clock
+0|meshed
+0|metallurgy
+0|movement
+0|navigation
+0|non-isochroous
+0|obelisk
+0|pendant
+0|pendulum clock
+0|pivoted
+0|pocket watch
+0|quartz crystal
+0|quartz watch
+0|ratchet
+0|shockproof
+0|standard time zone
+0|sundial
+0|swinging pendulum
+0|Swiss
+0|synchronise
+0|tell time
+0|timekeeping device
+0|toothed wheel
+0|Victorian
+0|watch case
+0|watch dial
+0|watch making
+0|watchmaker
+0|waterproof
+0|winder
+0|wristwatch
+0|allocative system
+0|badge
+0|banking
+0|bank note
+0|barter
+0|bezant
+0|bill of exchange
+0|bimetallic standard
+0|blood money
+0|bond
+0|bottomry
+0|bride money
+0|bronze or copper
+0|bullion
+0|capital asset
+0|carat
+0|cash transaction
+0|cheque
+0|chronic shortage
+0|coinage
+0|Constantinople
+0|convertibility
+0|counterfeiter
+0|counterfeit
+0|cowrie shell
+0|credit card
+0|credit transfer
+0|cumbersome physical form
+0|currency
+0|Danegeld
+0|debit
+0|deferred payment
+0|demonetise
+0|deposit of jewels
+0|drachma
+0|elaborate system of testing
+0|electronic money
+0|e-money
+0|exchange rate
+0|Fijian
+0|general means of payment
+0|Genoa
+0|goldsmith's safe
+0|granary
+0|Hellenic
+0|hoard
+0|hoe
+0|hyperinflation
+0|illiquid asset
+0|inflation-prone currency
+0|intangible asset
+0|intangible money
+0|internal circulation
+0|intrinsic value
+0|intrinsic worth
+0|lambskin
+0|liquid asset
+0|live off one's wits
+0|Lydia
+0|medieval
+0|medium of exchange
+0|metallic content
+0|metallic money
+0|metallurgical skill
+0|mint
+0|monetary purpose
+0|monetary transaction
+0|monetary uniformity
+0|national currency
+0|nominal value
+0|obolus
+0|original depositor
+0|originate
+0|ornamental metallic object
+0|paper money
+0|pawn
+0|penny
+0|physical form
+0|pictograph
+0|plating of silver
+0|pledge
+0|precious metal
+0|purity
+0|real credit receipt
+0|recoinage cycle
+0|Reichsmark
+0|reimburse
+0|revenue
+0|revival of banking
+0|safekeeping
+0|schist or quartz stone
+0|seigniorage
+0|spade
+0|steppe
+0|sterling
+0|subsidiary unit
+0|substantial premium
+0|supply of money
+0|tangible property
+0|tax gatherer
+0|Templar
+0|tool currency
+0|touchstone
+0|trapezium-shaped
+0|trial of the pyx
+0|tribute
+0|abacus
+0|accounting
+0|addition
+0|algorithm
+0|alphabetic
+0|anthropologist
+0|archaeological
+0|arithmetic
+0|calculating machine
+0|cave dweller
+0|clay
+0|complicated computational task
+0|counting
+0|cuneiform
+0|Czechoslovakia
+0|decipher
+0|division
+0|Egyptian writing and numerals
+0|elaborately knotted counting string
+0|embedded
+0|fragment
+0|Greek
+0|invention and evolution of numbers
+0|kiln
+0|mark
+0|mathematical system
+0|Maya
+0|Mayan civilisation
+0|multiplication
+0|notational system
+0|notch
+0|numeral
+0|numeric system
+0|positional notation
+0|pottery
+0|reed
+0|Roman
+0|South American Mayan culture
+0|string
+0|subtraction
+0|summand
+0|tally
+0|token
+0|acoustic
+0|automatic facsimile device
+0|automatic transmission
+0|bronco
+0|cellular phone
+0|decode
+0|deflect
+0|divesture
+0|dot
+0|electronic communication
+0|express rider service
+0|fax machine
+0|financial transaction
+0|long distance communication
+0|monopolise
+0|multimedia
+0|multiplex
+0|operator
+0|paper tape
+0|patent litigation
+0|pulse of current
+0|regulated industry
+0|sending and receiving of messages
+0|telegraph line
+0|terminal
+0|transcontinental
+0|transmit
+0|two-way communication
+0|aboriginal people
+0|alluvial gold
+0|bloody suppression
+0|bushranger
+0|Canberra
+0|digger
+0|diggings
+0|emigration
+0|explorer
+0|fever pitch
+0|fortune
+0|gold fever
+0|goldfield
+0|gold-seeker
+0|Governor-General
+0|gravel
+0|hinterland
+0|immigrant
+0|lynch law
+0|Melbourne
+0|nugget
+0|opportunist
+0|parliamentary legislation
+0|political and cultural landscape
+0|ravage
+0|settler
+0|territory
+0|tributary
+0|auxiliary verb
+0|bilingualism
+0|code-switching
+0|cultural background
+0|cultural identity
+0|culture conflict
+0|dialect
+0|dialectal variation
+0|dominant language
+0|Indo-European language
+0|Junggrammatiker
+0|Latin
+0|linguistics
+0|multilingual
+0|Neogrammarian
+0|Sanskrit
+0|anti-bilingual education measure
+0|balanced bilingualism
+0|bilingual education
+0|consistency
+0|English immersion
+0|fluent
+0|hybrid language
+0|immersion
+0|interpreter
+0|language interaction
+0|language proficiency
+0|language strategy
+0|limited proficiency in English
+0|linguistically diverse student
+0|literacy skill
+0|literate
+0|monolingual
+0|native language dependency
+0|native tongue
+0|norm
+0|poor command of English
+0|proficient
+0|abstract
+0|academic performance
+0|adjust speed and strategy
+0|adjust to
+0|adjustment
+0|background knowledge
+0|barrier
+0|browse
+0|cursive writing
+0|digest
+0|enumerate
+0|face-to-face interchange
+0|fixate
+0|fuzzy zone
+0|flip through
+0|gist
+0|key component
+0|literature
+0|locate
+0|manuscript
+0|necessary precondition
+0|overworked
+0|paperback
+0|pattern of presentation
+0|pattern of discourse
+0|perceptual reaction time
+0|perceptual
+0|professional journal
+0|rate adjustment
+0|regression
+0|restatement
+0|review of literature
+0|saccade
+0|scanning
+0|sequence
+0|shorthand
+0|skim over
+0|skimming
+0|skip over
+0|skip
+0|span
+0|subheading
+0|sub-vocalisation
+0|technical vocabulary
+0|terminology
+0|visual perception span
+0|visual regression
+0|vocalisation
+0|word cluster
+0|ashamed of
+0|battered
+0|bystander
+0|condemned
+0|despicable
+0|distressing
+0|gentle
+0|harass
+0|horseplay
+0|injury
+0|intimidate
+0|name-calling
+0|oppress
+0|reluctance
+0|reprisal
+0|retaliation
+0|ringleader
+0|rumor
+0|school setting
+0|sibling
+0|stand up
+0|suicide attempt
+0|taunt
+0|tolerate
+0|verbally
+0|adventure
+0|bold
+0|burgeon
+0|conviction
+0|educational system
+0|entrepreneur
+0|exploration
+0|fragile
+0|gift
+0|incredible
+0|innovator
+0|passion
+0|preoccupied
+0|ridicule
+0|risk taker
+0|academic world
+0|acknowledgment
+0|be guilty of
+0|bibliography
+0|complete originality
+0|footnote
+0|inexcusable
+0|offence
+0|page reference
+0|paraphrase
+0|plagiarism
+0|publication
+0|reference
+0|submit an essay
+0|summarise
+0|unambiguous
+0|unoriginal
+0|absenteeism
+0|academic and vocational course
+0|accessibility
+0|accommodation cost
+0|accreditation
+0|approved curriculum outline
+0|bachelor and graduate degrees
+0|conflation of education and training
+0|conventional school
+0|conventional teaching institution
+0|delivery platform
+0|disabled student
+0|disseminate information
+0|distance education
+0|distraction
+0|educational institution
+0|educational radio
+0|face-to-face interaction
+0|feeling of isolation
+0|increased workload
+0|interactive capabilities of networks and
+0|motivation and interactivity
+0|multi-media and video conferencing
+0|reduce stress and absenteeism
+0|school administrator
+0|social being
+0|social interaction
+0|technical infrastructure
+0|technical, logistical, and economic challenges
+0|technical, pedagogic, economic and political aspects
+0|technological innovation
+0|teleconferencing
+0|traditional academic institution
+0|vocational training
+0|burnout
+0|career-oriented
+0|childrearing
+0|commute times
+0|consultant
+0|corporate client
+0|corporate culture
+0|corporate environment
+0|corporation
+0|counselor
+0|domestic helper
+0|establish a regular procedure
+0|family obligation
+0|fiscal flexibility
+0|flexible scheduling
+0|flexible working option
+0|flexitime
+0|frantic schedule
+0|gender-biased
+0|hectic
+0|high-pressured
+0|international conglomerate
+0|job posting
+0|juggling of family and career
+0|maintain a healthy ratio of work and life
+0|male-dominated
+0|marital satisfaction
+0|meditation
+0|nanny industry
+0|nuclear family
+0|online recruitment site
+0|perfectionist
+0|pretax
+0|relentless pressure
+0|resilience
+0|routine maintenance
+0|stay-at-home spouse
+0|tenure
+0|time flexibility
+0|top-level management
+0|turnover
+0|unpredictability
+0|job search counselor
+0|team player
+0|viable candidate
+0|award
+0|be qualified for
+0|chamber of commerce
+0|company literature
+0|dedicated
+0|employee handbook
+0|employer-centred
+0|first impression
+0|in the employer's shoes
+0|initiative
+0|knowledgeable
+0|letter of reference
+0|make a worthwhile contribution
+0|mock interview
+0|portfolio
+0|presentation
+0|problem-solver
+0|professional attitude and motivation
+0|professional
+0|project a sense of confidence
+0|qualifications for the job
+0|relevant traits and attributes
+0|resume
+0|self-centred
+0|a multi-faceted target audience
+0|advertising campaign
+0|athletic shoe industry
+0|athletic shoe market
+0|athletic specialty store
+0|brand
+0|brand value
+0|brand's image
+0|buying power
+0|communications channel
+0|competitive advantage
+0|competitiveness
+0|consistency of positioning
+0|distribution system
+0|dominant market player
+0|international brand
+0|market share
+0|marketing mix
+0|marketing strategy
+0|pricing strategy
+0|product endorsement
+0|product identity
+0|profitable segment
+0|promotional campaign
+0|reappraise
+0|Reebok
+0|retail
+0|strategic innovation
+0|target market
+0|viable alternative
+0|acidity
+0|altitude terrain
+0|altitude training
+0|altitude-related symptom
+0|athletic ability
+0|athletic performance
+0|adenosine triphosphate
+0|ATP
+0|blood sugar
+0|boost personal performance
+0|carbo
+0|carbohydrate
+0|creatine
+0|dairy product
+0|dietary expert
+0|energy reserve
+0|healthy eating habit
+0|high-intensity exercise
+0|ingest
+0|intense exercise
+0|liver cell
+0|marathon runner
+0|muscle cell
+0|muscle contraction
+0|oximeter
+0|paramedic
+0|peak performance
+0|phosphocreatine
+0|placebo
+0|proper training
+0|recommended dietary allowance
+0|RDA
+0|red cell
+0|saturation
+0|simulate
+0|skiing
+0|all-expenses-paid seminar
+0|altruistic act
+0|approved
+0|chief investigator
+0|collude
+0|diarrhoea
+0|direct-to-consumer advertising
+0|DTCA
+0|dispenser
+0|dispensing pharmacy
+0|drug company representative
+0|drug promotion
+0|drug representative
+0|drug sample
+0|drug therapy
+0|enforce control over advertising
+0|ethics of drug promotion
+0|face-to-face drug promotion
+0|flow of information
+0|forestall
+0|form of therapy
+0|formulary
+0|generic drug
+0|generic form
+0|indulgence
+0|insurer
+0|item of negligible value
+0|license
+0|manufacturer
+0|marketing agency
+0|medical journal
+0|medical practice
+0|moral outrage
+0|non-drug treatment
+0|obsessive compulsive disorder
+0|orthodox marketing technique
+0|personal and professional profile
+0|persuasive
+0|pharmaceutical industry
+0|pharmaceutical marketing
+0|pharmaceutical promotion
+0|pharmaceutical representative
+0|pharmacist
+0|practicing physician
+0|prescriber
+0|prescribe
+0|prescription drug
+0|prescription medication
+0|prescription tracking system
+0|promotional activity
+0|seminar
+0|sponsor
+0|surgical device
+0|waiting room
+0|Mesozoic era
+0|Cenozoic era
+0|mystery
+0|Tertiary period
+0|astrophysics
+0|geochemistry
+0|mass extinction
+0|evolutionary
+0|Paleozoic
+0|age of mammals
+0|paleontologist
+0|cessation
+0|origination
+0|cataclysm
+0|intractable
+0|reconstruction
+0|selectivity
+0|causation
+0|cephalopod
+0|continental drift
+0|asteroid
+0|comet
+0|insect
+0|microscope
+0|route
+0|deposit
+0|trail
+0|fertilized
+0|touch
+0|inhabitant
+0|nourishment
+0|aphid
+0|antennae
+0|breeder
+0|forager
+0|housekeeping
+0|hymenoptera
+0|evolutionist
+0|navigational abilities
+0|biological clock
+0|rhythm
+0|internal clock
+0|rotation
+0|axis
+0|timepiece
+0|external
+0|jet lag
+0|earth orbit
+0|circadian
+0|pacemaker
+0|sleep disorder
+0|precision
+0|awakening
+0|electromagnetic
+0|natural electromagnetic field
+0|wakefulness
+0|pineal gland
+0|sleeping pill
+0|cortisol
+0|bedtime
+0|nerve cell
+0|night shift
+0|neuron
+0|physiological mechanism
+0|emotionally
+0|react to
+0|polygraph
+0|electrode
+0|lie detector
+0|dracaena
+0|be sensitive to
+0|reaction
+0|nonhuman
+0|intention
+0|psychic
+0|affinity
+0|memory
+0|biologist
+0|lavender
+0|wasp
+0|natural enemy
+0|devour
+0|lima bean
+0|cranberry
+0|bean
+0|Ice Age
+0|Eurasia
+0|mammoth
+0|Cro-Magnon
+0|glacial advance
+0|fauna
+0|rock formation
+0|Earth history
+0|glaciation
+0|Proterozoic
+0|Neogene
+0|Ordovician
+0|Silurian
+0|crust
+0|ice sheet
+0|Alps
+0|Pleistocene
+0|epoch
+0|interglacial
+0|reconfiguration
+0|extraterrestrial
+0|ebb and flow
+0|moraine
+0|radiocarbon
+0|chronology
+0|deglaciation
+0|hemisphere
+0|assimilation
+0|ascertain
+0|world language
+0|rescue
+0|elucidate
+0|panda
+0|cultural and intellectual diversity
+0|dominant languages
+0|indigenous language
+0|cultural identities
+0|displace
+0|genocide
+0|standardisation
+0|cultural integrity
+0|on the verge of
+0|global village
+0|be doomed to
+0|ethnic minorities
+0|cultural globalisation
+0|massacre
+0|cultural diversity
+0|linguistic diversity
+0|interactive
+0|mobile phone users
+0|couch potato
+0|voting
+0|chat
+0|viewer
+0|advertiser
+0|mobile subscriber
+0|network
+0|youth-oriented programming
+0|entertainment business
+0|technical backbone
+0|broadcaster
+0|multimedia service
+0|connectivity
+0|Wireless Application Protocol
+0|WAP
+0|Internetwork Packet Exchange
+0|IPX
+0|content provider
+0|participant
+0|merchandising
+0|teletext
+0|analogue TV
+0|business model
+0|interactive television
+0|a passive viewer
+0|an active user
+0|digital television
+0|cable channel
+0|interoperable
+0|Multimedia Messaging Service
+0|Electronic Data Gathering Equipment
+0|EDGE
+0|Java
+0|downloadable
+0|sweet
+0|fizzy drinks
+0|confectionery
+0|junk food
+0|eating habit
+0|cola
+0|lifespan
+0|guzzle
+0|snack
+0|mealtime
+0|Pepsi
+0|cardiovascular disease
+0|energy-dense food
+0|chronic disease
+0|nutritionally
+0|nutritional
+0|foodstuff
+0|fruit vegetable
+0|inferiority
+0|immobility
+0|armor
+0|fortress
+0|sword
+0|drawbridge
+0|entranceway
+0|fantasy
+0|picturesque
+0|cobblestone
+0|Languedoc
+0|Roussillon
+0|fairy tale
+0|cafe
+0|Versailles
+0|terrain
+0|wilderness
+0|serenity
+0|pentacle
+0|official residence
+0|kingdom
+0|mythology
+0|symmetrical
+0|terrace
+0|embellishment
+0|sculpture
+0|tapestry
+0|sovereign
+0|reign
+0|courtyard
+0|royal
+0|statue
+0|questionnaire
+0|pessimist
+0|infectious disease
+0|optimist
+0|blood test
+0|immune activity
+0|brain hormones
+0|stressed
+0|setback
+0|morale
+0|popularity
+0|afflict
+0|well-being
+0|congenial
+0|gloom
+0|expectation
+0|defeat
+0|misfortune
+0|soybean
+0|colonizer
+0|frontier
+0|savannah
+0|machinery
+0|biotech industry
+0|genetically modified crops
+0|GM crops
+0|environmentally sustainable
+0|herbicide-tolerant crops
+0|natural habitats
+0|agroindustry
+0|nonagricultural
+0|hectare
+0|transgenic technology
+0|erodible
+0|meadow
+0|short-term profitability
+0|antibiotics
+0|fungicide
+0|pest-resistance
+0|pathogen
+0|insect pest
+0|ecologica
+0|soil degradation
+0|cattle-grazing
+0|fertilizer
+0|inactive
+0|slim down
+0|high blood pressure
+0|infertility
+0|gall bladder
+0|osteoarthritis
+0|physical inactivity
+0|high-calorie food
+0|weight-loss product
+0|liposuction
+0|fast-food joints
+0|physiology
+0|life expectancy
+0|life-threatening
+0|activity
+0|qualified teacher
+0|academic achievement
+0|cumulative
+0|expenditure
+0|individualise
+0|individualised instruction
+0|well-behaved
+0|inattentive
+0|classroom atmosphere
+0|individualised attention
+0|instructional approach
+0|outperform
+0|misbehaviour
+0|learning disability
+0|cooperative learning
+0|disturbance
+0|inappropriate behaviour
+0|coeducational
+0|unisex
+0|single sex classes
+0|unisex education
+0|deficient
+0|coed
+0|gender
+0|physically
+0|sexual impulse
+0|self-conscious
+0|microcosm
+0|maturity
+0|ornamental
+0|greenhouse
+0|harvest
+0|reap
+0|herbaceous
+0|perennial
+0|monocotyledon
+0|rhizome
+0|stem
+0|propagate
+0|drainage
+0|acidic
+0|loamy
+0|moisture
+0|organic compost
+0|mineral
+0|tamp
+0|inflorescence
+0|bract
+0|plump
+0|stalk
+0|ripen
+0|ethylene gas
+0|slope
+0|mountainside
+0|avalanche
+0|suffocating
+0|backcountry
+0|hiking
+0|snowflake
+0|layer
+0|snowpack
+0|refreeze
+0|melt
+0|forewarn
+0|skier
+0|natural disaster
+0|earthquake
+0|beacon
+0|signal
+0|snowfall
+0|architecture
+0|Stonehenge
+0|architect
+0|trace
+0|neolithic
+0|monument
+0|Roman architecture
+0|domestic architecture
+0|Chester
+0|spa
+0|remains
+0|Anglo-Saxon
+0|Buckinghamshire
+0|defensive architecture
+0|striation
+0|polygonal
+0|Norman
+0|castle
+0|garrison
+0|erection
+0|Tower of London
+0|parish church
+0|settlement
+0|wattle and daub
+0|daub
+0|Gothic
+0|clergy
+0|glorification
+0|cathedral
+0|Tudor
+0|unfortified
+0|mansion
+0|Elizabethan
+0|Stuart
+0|baroque
+0|corfe
+0|Palladian
+0|St. Paul's Cathedral
+0|monarchy
+0|architectural style
+0|Georgian
+0|Glasgow
+0|modernism
+0|neoclassical
+0|oriental
+0|automatic control
+0|servo mechanism
+0|sensing
+0|science fiction
+0|television camera
+0|visual input
+0|an automatic chauffeur
+0|destination
+0|keyboard
+0|emergency speed
+0|computer controlled car
+0|freeway
+0|bumper-to-bumper
+0|public utility
+0|compact computer
+0|electronic circuitry
+0|electronics
+0|vehicle
+0|road safety
+0|wireless technology
+0|bump
+0|sixth sense
+0|fuel cell
+0|automaker
+0|vertical takeoff and landing
+0|transportation
+0|parking
+0|well-maintained road
+0|automobile-dependent
+0|congested
+0|motorize
+0|pedestrian-friendly street
+0|culprit
+0|public transportation system
+0|mileage
+0|traffic jam
+0|queue
+0|passenger
+0|motorist
+0|real estate
+0|intersection
+0|capacity
+0|bottleneck
+0|carpool
+0|vanpool
+0|ride sharing
+0|quota
+0|licensed
+0|crossroad
+0|legislation
+0|speed limit
+0|transport network
+0|language teaching
+0|communicative
+0|structural
+0|incorporate
+0|grammatical rule
+0|communicative approach
+0|long-term memory
+0|methodology
+0|grammar translation method
+0|grammatical structure
+0|native language
+0|target language
+0|audiolingual method
+0|mimicry
+0|direct method
+0|first language
+0|linguistic
+0|mother tongue
+0|ESL
+0|English as a second language
+0|EFL
+0|English as a foreign language
+0|language teaching methodology
+0|applied linguistics
+0|graphic
+0|structural linguistics
+0|structuralism
+0|behaviouristic
+0|behaviourism
+0|rote
+0|memorization
+0|role playing
+0|proficiency
+0|Chomsky
+0|Chomskian
+0|eclecticism
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 4263
+# Total Entries Extracted: 4263
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 4263
+# -------------------------------

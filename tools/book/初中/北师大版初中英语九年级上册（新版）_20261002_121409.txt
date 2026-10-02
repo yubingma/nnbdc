@@ -1,0 +1,233 @@
+0|feature
+0|print
+0|broadcasting
+0|radio
+0|up-to-date
+0|news
+0|mostly
+0|news stand
+0|as long as
+0|smartphone
+0|connection
+0|favourite
+0|breaking news
+0|reporter
+0|source
+0|producer
+0|non-official
+0|cross-check
+0|organisation
+0|climate
+0|trust
+0|detail
+0|keep in touch
+0|entertainment
+0|imagine
+0|shocked
+0|after all
+0|to one's surprise
+0|contact
+0|impressed
+0|shut
+0|shut down
+0|honestly
+0|final
+0|round
+0|compete
+0|speaker
+0|judge
+0|announce
+0|seat
+0|painting
+0|allow
+0|kid
+0|lose
+0|ugly
+0|attack
+0|ignore
+0|literature
+0|literary
+0|work
+0|historical
+0|biography
+0|encouraging
+0|educational
+0|imaginative
+0|powerful
+0|hole
+0|camp
+0|dig
+0|fiction
+0|fairy tale
+0|unlucky
+0|empty
+0|necessary
+0|stuff
+0|unbeaten
+0|bank
+0|pull
+0|doubt
+0|normal
+0|faith
+0|beer
+0|fisherman
+0|make fun of
+0|politely
+0|shadow
+0|ought to
+0|silly
+0|journey
+0|west
+0|scene
+0|precious
+0|kingdom
+0|posthouse
+0|master
+0|monster
+0|spell
+0|forgive
+0|apologise
+0|unwilling
+0|east
+0|rise
+0|rock
+0|miss
+0|drive sb. away
+0|truth
+0|prison
+0|liberation
+0|outstanding
+0|death
+0|position
+0|ill-treat
+0|give in
+0|flag
+0|moving
+0|fearless
+0|recommend
+0|appear
+0|acting
+0|overall
+0|memory
+0|attitude
+0|current
+0|encouragement
+0|responsibility
+0|beyond
+0|peer
+0|take turns
+0|chair
+0|discussion
+0|terribly
+0|indeed
+0|beat
+0|silent
+0|involve
+0|joke
+0|increase
+0|promise
+0|dare
+0|pronunciation
+0|talented
+0|actor
+0|copy
+0|script
+0|conflict
+0|natural
+0|get back at
+0|hit
+0|disagreement
+0|step-by-step
+0|count
+0|fault
+0|statement
+0|boss
+0|actively
+0|addition
+0|in addition
+0|permission
+0|anyway
+0|exit
+0|camera
+0|finance
+0|pocket
+0|pocket money
+0|soft drink
+0|stamp
+0|afford
+0|recycled
+0|reflect
+0|smiling
+0|attract
+0|customer
+0|beauty
+0|e-card
+0|material
+0|deal
+0|monthly
+0|how come
+0|price
+0|skateboard
+0|budget
+0|expense
+0|school supply
+0|wireless
+0|lend
+0|track
+0|save up
+0|recyclable
+0|penny
+0|fortune
+0|fame
+0|riches
+0|separate
+0|neither
+0|fond
+0|opera
+0|painter
+0|discovery
+0|roll
+0|bounce
+0|harvest
+0|joy
+0|from then on
+0|boring
+0|perfectly
+0|disappear
+0|audience
+0|achievement
+0|junior
+0|power
+0|thought
+0|exhibition
+0|micro-film
+0|society
+0|display
+0|compose
+0|violinist
+0|orchestra
+0|illness
+0|passion
+0|lively
+0|evidence
+0|so-called
+0|productivity
+0|stroke
+0|valley
+0|below
+0|calmness
+0|extremely
+0|pop music
+0|rock music
+0|jazz
+0|classical
+0|old-fashioned
+0|borrow
+0|fork
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 226
+# Total Entries Extracted: 226
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 226
+# -------------------------------
