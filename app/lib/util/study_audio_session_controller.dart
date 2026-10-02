@@ -1244,6 +1244,7 @@ class StudyAudioSessionController {
   }
 
   Future<void> _playAsrReadyHintSound() async {
+    debugPrint('🔊 [SessionController] 触发 ASR 就绪提示音播放...');
     if (PlatformUtils.isIOS) {
       await _asr.playReadyHint();
       return;

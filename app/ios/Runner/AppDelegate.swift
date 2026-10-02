@@ -11,7 +11,7 @@ import AudioToolbox
     
     // MARK: - Properties
     
-    private var readyHintSoundId: SystemSoundID = 0
+    private var readyHintPlayer: AVAudioPlayer?
     
     // ASR 相关属性
     private var speechRecognizer: SFSpeechRecognizer?
@@ -551,24 +551,41 @@ import AudioToolbox
         result(nil)
     }
     
-    // MARK: - Ready Hint Sound (AudioServices System Sound)
+    // MARK: - Ready Hint Sound (In-Process AVAudioPlayer)
+    
+    private func findFlutterAssetPath(_ assetPath: String) -> String? {
+        let key = FlutterDartProject.lookupKey(forAsset: assetPath)
+        if let path = Bundle.main.path(forResource: key, ofType: nil) {
+            return path
+        }
+        if let frameworkPath = Bundle.main.path(forResource: "Frameworks/App.framework/" + key, ofType: nil) {
+            return frameworkPath
+        }
+        return nil
+    }
     
     private func setupReadyHintSound() {
-        let key = FlutterDartProject.lookupKey(forAsset: "assets/audio/asr_ready_hint.wav")
-        if let path = Bundle.main.path(forResource: key, ofType: nil) {
-            let soundUrl = URL(fileURLWithPath: path)
-            let status = AudioServicesCreateSystemSoundID(soundUrl as CFURL, &readyHintSoundId)
-            print("IOS: [ASR] Ready hint sound registered from \(path), id: \(readyHintSoundId), status: \(status)")
-        } else {
-            print("IOS: [ASR] Ready hint asset not found via FlutterDartProject, will use fallback system sound (1057)")
+        guard let path = findFlutterAssetPath("assets/audio/asr_ready_hint.wav") else {
+            print("IOS: [ASR] Ready hint asset not found")
+            return
+        }
+        let url = URL(fileURLWithPath: path)
+        do {
+            readyHintPlayer = try AVAudioPlayer(contentsOf: url)
+            readyHintPlayer?.prepareToPlay()
+            print("IOS: [ASR] Ready hint AVAudioPlayer prepared from \(path)")
+        } catch {
+            print("IOS: [ASR] Failed to create ready hint AVAudioPlayer: \(error)")
         }
     }
     
     private func playReadyHint(result: FlutterResult) {
-        if readyHintSoundId != 0 {
-            AudioServicesPlaySystemSound(readyHintSoundId)
-        } else {
-            AudioServicesPlaySystemSound(1057)
+        if let player = readyHintPlayer {
+            if player.isPlaying {
+                player.stop()
+            }
+            player.currentTime = 0
+            player.play()
         }
         result(nil)
     }
