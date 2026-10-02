@@ -135,7 +135,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         children: [
           // 核心检查项聚合卡片
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: theme.cardBg,
               borderRadius: BorderRadius.circular(20),
@@ -145,57 +145,6 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 卡片头部
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: theme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.health_and_safety_rounded,
-                        size: 22,
-                        color: theme.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '系统与数据健康诊断',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: theme.textPrimary,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '实时诊断 12 项本地数据库、学习进度与网络状态',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(
-                    height: 1,
-                    thickness: 0.5,
-                    color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
-                  ),
-                ),
                 // 检查项列表
                 ..._checkItems.map((item) => _buildCheckItemWithStatus(
                       item['title'] as String,
@@ -322,7 +271,9 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isHealthy ? '检查完成，所有项目状态良好' : '发现 $totalIssues 处状态异常',
+                  isHealthy ? '所有项目检查正常' : '发现 $totalIssues 处状态异常',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
@@ -331,7 +282,9 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isHealthy ? '本地数据库结构完好，数据与网络状态健康' : '可点击各项右侧详情或上方一键修复',
+                  isHealthy ? '本地数据与网络状态健康' : '点击各项可查看详情或修复',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.textMuted,
