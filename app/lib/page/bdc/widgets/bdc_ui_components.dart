@@ -1000,10 +1000,18 @@ extension BdcPageStateUIComponents on BdcPageState {
                   : null,
             ),
             padding: const EdgeInsets.symmetric(vertical: 20),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.center,
-              child: _buildRatingButtonsRow(),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth >= 560;
+                if (isWide) {
+                  return _buildWideRatingButtonsRow(constraints.maxWidth);
+                }
+                return FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: _buildRatingButtonsRow(),
+                );
+              },
             ),
           ),
         ],
@@ -1015,7 +1023,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildMinimalPillButton({
-    required Key key,
+    Key? key,
     required String label,
     required Color textColor,
     required Color indicatorColor,
@@ -1034,6 +1042,158 @@ extension BdcPageStateUIComponents on BdcPageState {
       isEnabled: isEnabled,
       indicatorWidth: indicatorWidth,
       fontSize: fontSize,
+    );
+  }
+
+  Widget _buildNotKnowButton({
+    required Color normalTextColor,
+    required Color againIndicator,
+  }) {
+    return _buildMinimalPillButton(
+      key: const Key('bdc_not_know_btn'),
+      label: '不认识',
+      textColor: normalTextColor,
+      indicatorColor: againIndicator,
+      isEnabled: state.buttonsEnabled,
+      indicatorWidth: 16.0,
+      onTap: () => notifier.showWordDetail(
+        state.word!,
+        true,
+        context,
+        fsrsRating: FsrsRating.again,
+        reason: "主动点击了不再认识，评分: 忘记",
+      ),
+    );
+  }
+
+  Widget _buildStudyAgainButton({
+    required Color normalTextColor,
+    required Color studyAgainIndicator,
+  }) {
+    return _buildMinimalPillButton(
+      key: const Key('bdc_study_again'),
+      label: '再学学',
+      textColor: normalTextColor,
+      indicatorColor: studyAgainIndicator,
+      isEnabled: state.buttonsEnabled,
+      indicatorWidth: 16.0,
+      onTap: () => notifier.showWordDetail(
+        state.word!,
+        false,
+        context,
+        fsrsRating: FsrsRating.good,
+        reason: "主动点击了再学学，评分: 良好",
+      ),
+    );
+  }
+
+  Widget _buildNextWordButton({
+    required Color normalTextColor,
+    required Color nextWordIndicator,
+    bool isPlaceholder = false,
+  }) {
+    final btn = _buildMinimalPillButton(
+      key: isPlaceholder ? null : const Key('bdc_next_word_btn'),
+      label: '下一词',
+      textColor: normalTextColor,
+      indicatorColor: nextWordIndicator,
+      isEnabled: !isPlaceholder && !state.isGettingNextWord,
+      indicatorWidth: 20.0,
+      fontSize: 16.0,
+      onTap: isPlaceholder || state.isGettingNextWord
+          ? null
+          : () => notifier.getNextWord(true,
+              fsrsRating: state.lastFsrsRating),
+    );
+
+    if (isPlaceholder) {
+      return ExcludeSemantics(
+        child: IgnorePointer(
+          child: Opacity(
+            opacity: 0.0,
+            child: btn,
+          ),
+        ),
+      );
+    }
+    return btn;
+  }
+
+  Widget _buildWideRatingButtonsRow(double maxWidth) {
+    final showStudyActions = state.showAnswerButtons ||
+        state.studyStep == StudyStep.en2Ch.json ||
+        state.studyStep == StudyStep.ch2En.json ||
+        state.studyStep == StudyStep.enSentence2Ch.json ||
+        state.studyStep == StudyStep.chSentence2En.json ||
+        state.studyStep == StudyStep.list.json;
+
+    final isDark = _cachedIsDarkMode;
+    final againIndicator = FsrsRating.again.colorWithDark(isDark);
+    final studyAgainIndicator = FsrsRating.good.colorWithDark(isDark);
+    final nextWordIndicator = context.primaryColor;
+    final normalTextColor = context.textPrimary;
+
+    final showNextWord = state.canLeaveCurrWord && notifier.hasSeenAnswer;
+
+    if (!showStudyActions) {
+      if (showNextWord) {
+        return SizedBox(
+          width: maxWidth,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _buildNextWordButton(
+                normalTextColor: normalTextColor,
+                nextWordIndicator: nextWordIndicator,
+              ),
+              const SizedBox(width: 12),
+            ],
+          ),
+        );
+      }
+      return const SizedBox.shrink();
+    }
+
+    // iPad 等宽屏人体工学布局：
+    // 用户双手握持 iPad 时主要通过两手大拇指操作。
+    // 「不认识」贴近左侧，「再学学」与「下一词」贴近右侧。
+    // 对称性与固定位置细节：
+    // 1. 在「再学学」右方提前预留「下一词」的位置；
+    // 2. 在「不认识」左侧放置等宽等间距的隐形镜像占位，保证在「下一词」出现前，
+    //    「不认识」左侧的空间与「再学学」右侧的空间严格相等，左右完全对称；
+    // 3. 当「下一词」出现时，「再学学」和「不认识」的绝对位置完全不移动；
+    // 4. 只有当「下一词」出现填充右侧预留位置时，才允许打破左右对称。
+    return SizedBox(
+      width: maxWidth,
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
+          _buildNextWordButton(
+            normalTextColor: normalTextColor,
+            nextWordIndicator: nextWordIndicator,
+            isPlaceholder: true,
+          ),
+          const SizedBox(width: 20),
+          _buildNotKnowButton(
+            normalTextColor: normalTextColor,
+            againIndicator: againIndicator,
+          ),
+
+          const Spacer(),
+
+          _buildStudyAgainButton(
+            normalTextColor: normalTextColor,
+            studyAgainIndicator: studyAgainIndicator,
+          ),
+          const SizedBox(width: 20),
+          _buildNextWordButton(
+            normalTextColor: normalTextColor,
+            nextWordIndicator: nextWordIndicator,
+            isPlaceholder: !showNextWord,
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
     );
   }
 
@@ -1059,54 +1219,23 @@ extension BdcPageStateUIComponents on BdcPageState {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (showStudyActions) ...[
-            _buildMinimalPillButton(
-              key: const Key('bdc_not_know_btn'),
-              label: '不认识',
-              textColor: normalTextColor,
-              indicatorColor: againIndicator,
-              isEnabled: state.buttonsEnabled,
-              indicatorWidth: 16.0,
-              onTap: () => notifier.showWordDetail(
-                state.word!,
-                true,
-                context,
-                fsrsRating: FsrsRating.again,
-                reason: "主动点击了不再认识，评分: 忘记",
-              ),
+            _buildNotKnowButton(
+              normalTextColor: normalTextColor,
+              againIndicator: againIndicator,
             ),
             const SizedBox(width: 20),
-            _buildMinimalPillButton(
-              key: const Key('bdc_study_again'),
-              label: '再学学',
-              textColor: normalTextColor,
-              indicatorColor: studyAgainIndicator,
-              isEnabled: state.buttonsEnabled,
-              indicatorWidth: 16.0,
-              onTap: () => notifier.showWordDetail(
-                state.word!,
-                false,
-                context,
-                fsrsRating: FsrsRating.good,
-                reason: "主动点击了再学学，评分: 良好",
-              ),
+            _buildStudyAgainButton(
+              normalTextColor: normalTextColor,
+              studyAgainIndicator: studyAgainIndicator,
             ),
           ],
           // 答案未看过(仅答对部分释义、未达通过线)时不渲染流转按钮：此时唯一出口是「不认识/再学学」，
           // 两者都会进入单词详情页看答案并留下评分。这样"没看答案就跳到下一词"在结构上不可能发生。
           if (state.canLeaveCurrWord && notifier.hasSeenAnswer) ...[
             if (showStudyActions) const SizedBox(width: 20),
-            _buildMinimalPillButton(
-              key: const Key('bdc_next_word_btn'),
-              label: '下一词',
-              textColor: normalTextColor,
-              indicatorColor: nextWordIndicator,
-              isEnabled: !state.isGettingNextWord,
-              indicatorWidth: 20.0,
-              fontSize: 16.0,
-              onTap: state.isGettingNextWord
-                  ? null
-                  : () => notifier.getNextWord(true,
-                      fsrsRating: state.lastFsrsRating),
+            _buildNextWordButton(
+              normalTextColor: normalTextColor,
+              nextWordIndicator: nextWordIndicator,
             ),
           ],
         ],

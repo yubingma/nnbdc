@@ -1,0 +1,231 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/page/bdc/bdc.dart';
+import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
+import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
+import 'package:nnbdc/state.dart';
+import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/word_util.dart';
+import 'package:provider/provider.dart' as provider;
+
+class MockBdcNotifierForWideScreen extends BdcNotifier {
+  final BdcState initialState;
+  bool mockHasSeenAnswer;
+
+  MockBdcNotifierForWideScreen(this.initialState, {this.mockHasSeenAnswer = false});
+
+  @override
+  BdcState build() {
+    return initialState;
+  }
+
+  @override
+  bool get hasSeenAnswer => mockHasSeenAnswer;
+
+  void updateMockState(BdcState newState, {bool? hasSeen}) {
+    if (hasSeen != null) mockHasSeenAnswer = hasSeen;
+    state = newState;
+  }
+
+  @override
+  Future<void> loadData(BuildContext? context, {bool isAutoTest = false}) async {}
+}
+
+(WordVo, GetWordResult) _createTestData() {
+  final testWord = WordVo.c2('apple')
+    ..id = 'w_apple'
+    ..setMeaningStr('n. 苹果');
+
+  testWord.meaningItems = [
+    MeaningItemVo('mi_1', 'n.', '苹果', null, null, []),
+  ];
+
+  final testLw = LearningWordVo(
+    UserVo.c2('user1'),
+    DateTime.now(),
+    1,
+    DateTime.now(),
+    1,
+    0,
+    testWord,
+  );
+
+  final mockGetWordResult = GetWordResult(
+    testLw,
+    0,
+    null,
+    [1, 10],
+    null,
+    false,
+    false,
+    [],
+    [],
+    [],
+    null,
+    [],
+    [],
+    [],
+    false,
+    false,
+  );
+
+  return (testWord, mockGetWordResult);
+}
+
+Widget _buildPageWithNotifier(MockBdcNotifierForWideScreen notifier) {
+  return provider.ChangeNotifierProvider<DarkMode>(
+    create: (_) => DarkMode(),
+    child: ProviderScope(
+      overrides: [
+        bdcNotifierProvider.overrideWith(() => notifier),
+      ],
+      child: const MaterialApp(
+        home: Scaffold(
+          body: BdcPage(),
+        ),
+      ),
+    ),
+  );
+}
+
+void main() {
+  setUp(() {
+    PlatformUtils.asrSupportedOverride = true;
+    PlatformUtils.englishAsrSupportedOverride = true;
+  });
+
+  tearDown(() {
+    PlatformUtils.asrSupportedOverride = null;
+    PlatformUtils.englishAsrSupportedOverride = null;
+  });
+
+  testWidgets('iPad 宽屏设备下学习页面按钮布局与对称性测试', (tester) async {
+    // 模拟 iPad 宽屏（宽度 >= 560，如 800x1000）
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final (testWord, mockResult) = _createTestData();
+    final wordWrapper = WordWrapper(testWord, null);
+
+    // 阶段 1：下一词未出现（hasSeenAnswer: false）
+    final stateStage1 = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockResult,
+      wordWrapper: wordWrapper,
+      studyStep: StudyStep.en2Ch.json,
+      showAnswerButtons: true,
+      canLeaveCurrWord: false,
+    );
+
+    final notifier = MockBdcNotifierForWideScreen(stateStage1, mockHasSeenAnswer: false);
+
+    await tester.pumpWidget(_buildPageWithNotifier(notifier));
+    await tester.pumpAndSettle();
+
+    final notKnowFinder = find.byKey(const Key('bdc_not_know_btn'));
+    final studyAgainFinder = find.byKey(const Key('bdc_study_again'));
+    final nextWordFinder = find.byKey(const Key('bdc_next_word_btn'));
+
+    expect(notKnowFinder, findsOneWidget, reason: '应展示「不认识」按钮');
+    expect(studyAgainFinder, findsOneWidget, reason: '应展示「再学学」按钮');
+    expect(nextWordFinder, findsNothing, reason: '未看答案前不得展示真实的「下一词」流转按钮');
+
+    // 获取坐标与尺寸
+    final notKnowRect = tester.getRect(notKnowFinder);
+    final studyAgainRect = tester.getRect(studyAgainFinder);
+
+    final leftSpace = notKnowRect.left; // 不认识左侧到屏幕左边缘的空间
+    final rightSpace = 800.0 - studyAgainRect.right; // 再学学右侧到屏幕右边缘的空间
+
+    // 验证对称性：不认识左侧的空间和再学学右侧的空间必须严格相等（误差允许在 1px 像素取整以内）
+    expect((leftSpace - rightSpace).abs(), lessThan(1.0),
+        reason: '未出现下一词时，不认识左侧空间($leftSpace)必须与再学学右侧空间($rightSpace)严格相等以保持左右对称');
+
+    final stage1StudyAgainPos = tester.getTopLeft(studyAgainFinder);
+    final stage1NotKnowPos = tester.getTopLeft(notKnowFinder);
+
+    // 阶段 2：答案揭晓，下一词按钮出现（hasSeenAnswer: true, canLeaveCurrWord: true）
+    final stateStage2 = stateStage1.copyWith(
+      canLeaveCurrWord: true,
+    );
+
+    notifier.updateMockState(stateStage2, hasSeen: true);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('bdc_next_word_btn')), findsOneWidget,
+        reason: '此时应展示「下一词」流转按钮');
+
+    final stage2StudyAgainPos = tester.getTopLeft(studyAgainFinder);
+    final stage2NotKnowPos = tester.getTopLeft(notKnowFinder);
+    final nextWordRect = tester.getRect(find.byKey(const Key('bdc_next_word_btn')));
+
+    // 核心细节验证 1：下一词按钮出现时，再学学按钮的位置不要移动（0 偏移）
+    expect((stage2StudyAgainPos.dx - stage1StudyAgainPos.dx).abs(), lessThan(0.1),
+        reason: '当下一词按钮出现时，再学学按钮的水平位置绝对不要移动');
+    expect((stage2StudyAgainPos.dy - stage1StudyAgainPos.dy).abs(), lessThan(0.1),
+        reason: '当下一词按钮出现时，再学学按钮的垂直位置绝对不要移动');
+
+    // 核心细节验证 2：不认识按钮的位置同样保持不动
+    expect((stage2NotKnowPos.dx - stage1NotKnowPos.dx).abs(), lessThan(0.1),
+        reason: '当下一词按钮出现时，不认识按钮的位置保持不动');
+
+    // 核心细节验证 3：下一词出现在再学学右侧预留的位置
+    expect(nextWordRect.left, greaterThan(studyAgainRect.right),
+        reason: '下一词必须出现在再学学右方');
+
+    // 核心细节验证 4：此时打破对称性（最右侧是下一词，离右边缘更近）
+    final newRightSpace = 800.0 - nextWordRect.right;
+    expect(newRightSpace, lessThan(leftSpace),
+        reason: '只有当下一词按钮出现时，才允许打破左右对称');
+  });
+
+  testWidgets('手机窄屏设备下按钮保持居中排列', (tester) async {
+    // 模拟 iPhone 窄屏（例如 390x844）
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final (testWord, mockResult) = _createTestData();
+    final wordWrapper = WordWrapper(testWord, null);
+
+    final state = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockResult,
+      wordWrapper: wordWrapper,
+      studyStep: StudyStep.en2Ch.json,
+      showAnswerButtons: true,
+      canLeaveCurrWord: true,
+    );
+
+    final notifier = MockBdcNotifierForWideScreen(state, mockHasSeenAnswer: true);
+
+    await tester.pumpWidget(_buildPageWithNotifier(notifier));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('bdc_not_know_btn')), findsOneWidget);
+    expect(find.byKey(const Key('bdc_study_again')), findsOneWidget);
+    expect(find.byKey(const Key('bdc_next_word_btn')), findsOneWidget);
+
+    // 手机窄屏下三个按钮紧密排列并居中
+    final notKnowRect = tester.getRect(find.byKey(const Key('bdc_not_know_btn')));
+    final nextWordRect = tester.getRect(find.byKey(const Key('bdc_next_word_btn')));
+
+    // 左右留白相近（整体居中）
+    final leftPadding = notKnowRect.left;
+    final rightPadding = 390.0 - nextWordRect.right;
+    expect((leftPadding - rightPadding).abs(), lessThan(10.0),
+        reason: '手机窄屏下三个按钮整体应居中排列');
+  });
+}
