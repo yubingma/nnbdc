@@ -578,8 +578,7 @@ public class DictImportBo {
                 stats.addedAudioCount++; // 统计单词发音资源
 
                 // 新增单词全局可见，必须为客户端插入一条系统同步日志
-                WordDto wordDto = new WordDto();
-                org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
+                WordDto wordDto = wordBo.toDto(word);
                 sysDbSyncBo.logOperation(wordDto, "INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
                 stats.addSyncLog("INSERT", "word");
             } catch (Exception e) {
@@ -770,7 +769,7 @@ public class DictImportBo {
                 }
 
                 // 2. 如果声明了专业领域，且当前关联词书并非通用库自身，则必须确保该词书有专有资源
-                if (hasDomain && !Constants.COMMON_DICT_ID.equals(dictId)) {
+                if (hasDomain && dictId != null && !Constants.COMMON_DICT_ID.equals(dictId)) {
                     boolean hasSpecializedMeaning = allExistingMeanings.stream().anyMatch(m -> dictId.equals(m.getDictId()));
                     if (!hasSpecializedMeaning) {
                         AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext, sentenceRequirement, meaningRequirement);
