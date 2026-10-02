@@ -72,6 +72,12 @@ class StudyAudioSessionController {
     _watchPlayer(_audioPlayer);
     _asrHintPlayer = SoundUtil.createAudioPlayer();
     _watchPlayer(_asrHintPlayer!);
+    if (!PlatformUtils.isWeb && !PlatformUtils.isTesting) {
+      const assetPath = 'assets/audio/asr_ready_hint.wav';
+      _asrHintPlayer!.setAsset(assetPath).then((_) {
+        _playerLoadedAsset[_asrHintPlayer!] = assetPath;
+      }).catchError((_) {});
+    }
     _asr.addStateListener(_onAsrStateChange);
   }
 
@@ -1237,6 +1243,11 @@ class StudyAudioSessionController {
     final player = _asrHintPlayer;
     if (player == null) return;
     try {
+      const assetPath = 'assets/audio/asr_ready_hint.wav';
+      if (_playerLoadedAsset[player] != assetPath) {
+        await player.setAsset(assetPath);
+        _playerLoadedAsset[player] = assetPath;
+      }
       _activeVolumeToken[player] = Object();
       if (player.playing) {
         await player.stop();
@@ -1244,9 +1255,11 @@ class StudyAudioSessionController {
       if (player.position > Duration.zero) {
         await player.seek(Duration.zero);
       }
-      await player.setVolume(0.2);
+      await player.setVolume(0.4);
       _logicallyFinishedPlayers.remove(player);
-      unawaited(player.play().catchError((_) {}));
+      unawaited(player.play().catchError((e) {
+        debugPrint('🔊 [SessionController] 播放 ASR 提示音失败: $e');
+      }));
       _playerBusyUntil[player] = AppClock.now().add(const Duration(milliseconds: 500));
     } catch (e) {
       debugPrint('🔊 [SessionController] 极速播放 ASR 提示音出错: $e');
