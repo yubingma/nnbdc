@@ -129,16 +129,16 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   Widget _buildContent(AppThemeConfig theme, bool isDark) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 核心检查项聚合卡片
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: theme.cardBg,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(color: theme.cardBorder, width: 0.8),
               boxShadow: theme.cardShadows,
             ),
@@ -158,10 +158,10 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
           ),
           // 检查结果提示卡片
           if (_checkResult != null) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             _buildResultSummary(theme, isDark),
           ],
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           // 底部开始/重新检查主按钮（最新美学：薄雾微光底 + 精细描边 + 主题色文字与图标）
           Material(
             color: Colors.transparent,
@@ -249,7 +249,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         isHealthy ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: accentStatusColor.withValues(alpha: isDark ? 0.14 : 0.08),
         borderRadius: BorderRadius.circular(16),
@@ -263,9 +263,9 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
           Icon(
             isHealthy ? Icons.verified_rounded : Icons.warning_amber_rounded,
             color: accentStatusColor,
-            size: 24,
+            size: 20,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,7 +275,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14.5,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: theme.textPrimary,
                   ),
@@ -286,7 +286,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     color: theme.textMuted,
                   ),
                 ),
@@ -297,7 +297,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
             TextButton(
               onPressed: _isRunning ? null : _runAutoFix,
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 backgroundColor: accentStatusColor.withValues(alpha: 0.12),
@@ -306,7 +306,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
               child: Text(
                 '一键修复',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                   color: accentStatusColor,
                 ),
@@ -327,16 +327,16 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       // 尚未检查：轻淡细圆圈
       iconWidget = Icon(
         Icons.radio_button_unchecked_rounded,
-        size: 15,
+        size: 14,
         color: theme.textMuted.withValues(alpha: 0.35),
       );
     } else if (status == false) {
       // 正在进行中：微型转圈动画
       iconWidget = SizedBox(
-        width: 14,
-        height: 14,
+        width: 13,
+        height: 13,
         child: CircularProgressIndicator(
-          strokeWidth: 1.8,
+          strokeWidth: 1.6,
           valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
         ),
       );
@@ -345,14 +345,14 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       // 通过：翡翠绿微对勾
       iconWidget = const Icon(
         Icons.check_circle_rounded,
-        size: 16,
+        size: 15,
         color: Color(0xFF10B981),
       );
     } else {
       // 失败：珊瑚红错误图标
       iconWidget = const Icon(
         Icons.error_rounded,
-        size: 16,
+        size: 15,
         color: Color(0xFFEF4444),
       );
       textColor = const Color(0xFFEF4444);
@@ -360,11 +360,11 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.5),
+      padding: const EdgeInsets.symmetric(vertical: 3.5),
       child: Row(
         children: [
           Container(
-            width: 20,
+            width: 18,
             alignment: Alignment.centerLeft,
             child: iconWidget,
           ),
@@ -373,7 +373,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: isFailed ? FontWeight.w600 : FontWeight.w400,
                 color: textColor,
               ),
