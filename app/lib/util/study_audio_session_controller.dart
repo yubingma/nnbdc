@@ -600,7 +600,7 @@ class StudyAudioSessionController {
     _logPlayerState('cancelPlayback.enter');
     _queueLock.cancel();
     if (PlatformUtils.isIOS) {
-      unawaited(_asr.stopLocalAudio());
+      await _asr.stopLocalAudio();
     }
     await _stopCurrentWordSound();
     try {

@@ -595,13 +595,11 @@ import Accelerate
         }
     }
     
-    private func stopPlayerSafely(_ player: AVAudioPlayer?, restoreVolume: Float = 1.0) {
-        guard let p = player, p.isPlaying else { return }
-        // 15ms 快速微淡出，使波形平滑归零，彻底杜绝快速切词/打断时的直流断崖冲击爆音（DC Cutoff Pop）
-        p.setVolume(0.0, fadeDuration: 0.015)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+    private func stopPlayerSafely(_ player: AVAudioPlayer?) {
+        guard let p = player else { return }
+        p.delegate = nil
+        if p.isPlaying {
             p.stop()
-            p.volume = restoreVolume
         }
     }
 
@@ -615,17 +613,11 @@ import Accelerate
         lastReadyHintTime = now
         if let player = readyHintPlayer {
             if player.isPlaying {
-                stopPlayerSafely(player, restoreVolume: 0.5)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
-                    player.currentTime = 0
-                    player.volume = 0.5
-                    player.play()
-                }
-            } else {
-                player.currentTime = 0
-                player.volume = 0.5
-                player.play()
+                player.stop()
             }
+            player.currentTime = 0
+            player.volume = 0.5
+            player.play()
         }
         result(nil)
     }
@@ -635,6 +627,7 @@ import Accelerate
         do {
             if let oldPlayer = localAudioPlayer {
                 stopPlayerSafely(oldPlayer)
+                localAudioPlayer = nil
             }
             localAudioCompletion?(nil)
             localAudioCompletion = nil
@@ -654,9 +647,14 @@ import Accelerate
     private func stopLocalAudio(result: FlutterResult) {
         if let player = localAudioPlayer {
             stopPlayerSafely(player)
+            localAudioPlayer = nil
         }
         if let readyPlayer = readyHintPlayer {
-            stopPlayerSafely(readyPlayer, restoreVolume: 0.5)
+            if readyPlayer.isPlaying {
+                readyPlayer.stop()
+            }
+            readyPlayer.currentTime = 0
+            readyPlayer.volume = 0.5
         }
         localAudioCompletion?(nil)
         localAudioCompletion = nil
@@ -667,6 +665,7 @@ import Accelerate
 
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         if player == localAudioPlayer {
+            localAudioPlayer = nil
             localAudioCompletion?(nil)
             localAudioCompletion = nil
         }
@@ -674,6 +673,7 @@ import Accelerate
 
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         if player == localAudioPlayer {
+            localAudioPlayer = nil
             if let error = error {
                 localAudioCompletion?(FlutterError(code: "DECODE_ERROR", message: error.localizedDescription, details: nil))
             } else {
