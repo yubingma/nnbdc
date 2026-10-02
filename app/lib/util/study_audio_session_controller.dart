@@ -675,7 +675,7 @@ class StudyAudioSessionController {
             await _usePlayAndRecordCategory();
             await _asr.startMicrophone();
             
-            final delayMs = isColdStart ? 100 : 60;
+            final delayMs = isColdStart ? 180 : 60;
             debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活 (${isColdStart ? "冷启动" : "热复用"})，错峰延迟 ${delayMs}ms 稳定时钟...');
             await Future.delayed(Duration(milliseconds: delayMs));
             await _playAsrReadyHintSound();
@@ -731,7 +731,7 @@ class StudyAudioSessionController {
   Future<void> _doConfigureAudioSession() async {
     try {
       if (_currentSessionCategory != 'playAndRecord') {
-        await _usePlaybackCategory();
+        await _usePlayAndRecordCategory();
       }
       _audioSessionConfigured = true;
       _logicallyFinishedPlayers.clear();
@@ -1279,6 +1279,7 @@ class StudyAudioSessionController {
   }
 
   Future<void> _playAsrReadyHintSound() async {
+    if (PlatformUtils.isTesting) return;
     debugPrint('🔊 [SessionController] 触发 ASR 就绪提示音播放...');
     if (PlatformUtils.isIOS) {
       await _asr.playReadyHint();

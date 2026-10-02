@@ -13,6 +13,7 @@ import Accelerate
     // MARK: - Properties
     
     private var readyHintPlayer: AVAudioPlayer?
+    private var lastReadyHintTime: TimeInterval = 0
     
     // ASR 相关属性
     private var speechRecognizer: SFSpeechRecognizer?
@@ -581,6 +582,13 @@ import Accelerate
     }
     
     private func playReadyHint(result: FlutterResult) {
+        let now = Date().timeIntervalSince1970
+        if now - lastReadyHintTime < 0.3 {
+            print("IOS: [ASR] playReadyHint ignored due to debounce (\(now - lastReadyHintTime)s)")
+            result(nil)
+            return
+        }
+        lastReadyHintTime = now
         if let player = readyHintPlayer {
             if player.isPlaying {
                 player.stop()
@@ -623,6 +631,7 @@ import Accelerate
                 )
             }
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            readyHintPlayer?.prepareToPlay()
         } catch {
             print("IOS: setupAudioSession error: \(error)")
         }
