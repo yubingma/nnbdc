@@ -598,15 +598,13 @@ class StudyAudioSessionController {
     _queueLock.cancel();
     await _stopCurrentWordSound();
     try {
-      final needHardStop = _audioPlayer.playing ||
-          _audioPlayer.processingState == ja.ProcessingState.buffering ||
-          _audioPlayer.processingState == ja.ProcessingState.loading;
-      if (needHardStop) {
-        if (_audioPlayer.playing) {
-          try {
-            await _audioPlayer.setVolume(0.0).timeout(const Duration(milliseconds: 30));
-          } catch (_) {}
-        }
+      final isReallyPlaying = _audioPlayer.playing &&
+          _audioPlayer.processingState != ja.ProcessingState.completed &&
+          _audioPlayer.processingState != ja.ProcessingState.idle;
+      if (isReallyPlaying) {
+        try {
+          await _audioPlayer.setVolume(0.0).timeout(const Duration(milliseconds: 30));
+        } catch (_) {}
         await _audioPlayer.stop().timeout(const Duration(milliseconds: 500));
       }
       _logPlayerState('cancelPlayback.afterStop');
@@ -884,7 +882,10 @@ class StudyAudioSessionController {
       if (isSameLoadedUrl && (player.processingState == ja.ProcessingState.ready || player.processingState == ja.ProcessingState.completed)) {
         try {
           _logicallyFinishedPlayers.remove(player);
-          if (player.playing) {
+          final isReallyPlaying = player.playing &&
+              player.processingState != ja.ProcessingState.completed &&
+              player.processingState != ja.ProcessingState.idle;
+          if (isReallyPlaying) {
             try {
               await player.setVolume(0.0).timeout(const Duration(milliseconds: 30));
             } catch (_) {}
@@ -908,7 +909,10 @@ class StudyAudioSessionController {
 
       try {
         _logicallyFinishedPlayers.remove(player);
-        if (player.playing) {
+        final isReallyPlaying = player.playing &&
+            player.processingState != ja.ProcessingState.completed &&
+            player.processingState != ja.ProcessingState.idle;
+        if (isReallyPlaying) {
           try {
             await player.setVolume(0.0).timeout(const Duration(milliseconds: 30));
           } catch (_) {}
@@ -1397,7 +1401,10 @@ class StudyAudioSessionController {
     bool hasStoppedAny = false;
     final List<ja.AudioPlayer> successfullyCleaned = [];
     for (var p in earlyExitPlayers) {
-      if (p.playing) {
+      final isReallyPlaying = p.playing &&
+          p.processingState != ja.ProcessingState.completed &&
+          p.processingState != ja.ProcessingState.idle;
+      if (isReallyPlaying) {
         try {
           debugPrint('🔊 [AudioDiag] 清理活跃残留播放器 stop: player=${p.hashCode}');
           await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});

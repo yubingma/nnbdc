@@ -574,6 +574,7 @@ import Accelerate
         let url = URL(fileURLWithPath: path)
         do {
             readyHintPlayer = try AVAudioPlayer(contentsOf: url)
+            readyHintPlayer?.volume = 0.5
             readyHintPlayer?.prepareToPlay()
             print("IOS: [ASR] Ready hint AVAudioPlayer prepared from \(path)")
         } catch {
