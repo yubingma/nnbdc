@@ -405,10 +405,8 @@ class StudyAudioSessionController {
 
       try {
         if (_audioPlayer.playing) {
-          await _audioPlayer.setVolume(0.0);
+          await _audioPlayer.stop();
         }
-        await _audioPlayer.pause();
-        await _audioPlayer.seek(Duration.zero);
       } catch (_) {}
 
       final sessionFuture = transitTo(AudioMode.playback);
@@ -571,17 +569,12 @@ class StudyAudioSessionController {
     _queueLock.cancel();
     await _stopCurrentWordSound();
     try {
-      await _audioPlayer.setVolume(0.0);
-      _logPlayerState('cancelPlayback.afterMute');
       final needHardStop = _audioPlayer.playing ||
           _audioPlayer.processingState == ja.ProcessingState.buffering ||
           _audioPlayer.processingState == ja.ProcessingState.loading;
       if (needHardStop) {
         await _audioPlayer.stop().timeout(const Duration(milliseconds: 500));
-      } else {
-        await _audioPlayer.pause().timeout(const Duration(milliseconds: 500));
       }
-      await _audioPlayer.seek(Duration.zero).timeout(const Duration(milliseconds: 500));
       _logPlayerState('cancelPlayback.afterStop');
     } catch (_) {}
     try {
@@ -857,6 +850,9 @@ class StudyAudioSessionController {
       if (isSameLoadedUrl && (player.processingState == ja.ProcessingState.ready || player.processingState == ja.ProcessingState.completed)) {
         try {
           _logicallyFinishedPlayers.remove(player);
+          if (player.playing) {
+            await player.stop();
+          }
           await player.seek(Duration.zero);
           await player.setSpeed(speed);
           await player.setVolume(1.0);
@@ -1151,10 +1147,11 @@ class StudyAudioSessionController {
       
       final bool isSameAsset = _playerLoadedAsset[player] == assetPath;
       if (player.playing) {
-        await player.setVolume(0.0);
         await player.stop();
       }
-      await player.seek(Duration.zero);
+      if (isSameAsset) {
+        await player.seek(Duration.zero);
+      }
       if (player.speed != speed) {
         await player.setSpeed(speed);
       }
@@ -1204,14 +1201,16 @@ class StudyAudioSessionController {
       final now = AppClock.now();
       _playerBusyUntil[player] = now.add(maxPlay + const Duration(milliseconds: 100));
       
-      await player.setVolume(0.0);
-      await player.stop();
-      await player.seek(Duration.zero);
+      if (player.playing) {
+        await player.stop();
+      }
       await player.setSpeed(speed);
       
       final assetPath = 'assets/audio/$soundFileName';
       final bool isSameAsset = _playerLoadedAsset[player] == assetPath;
-      if (!isSameAsset) {
+      if (isSameAsset) {
+        await player.seek(Duration.zero);
+      } else {
         await player.setAsset(assetPath);
         _playerLoadedAsset[player] = assetPath;
       }
@@ -1238,9 +1237,11 @@ class StudyAudioSessionController {
     if (player == null) return;
     try {
       _activeVolumeToken[player] = Object();
-      await player.setVolume(0.2);
-      await player.stop();
+      if (player.playing) {
+        await player.stop();
+      }
       await player.seek(Duration.zero);
+      await player.setVolume(0.2);
       _logicallyFinishedPlayers.remove(player);
       unawaited(player.play().catchError((_) {}));
       _playerBusyUntil[player] = AppClock.now().add(const Duration(milliseconds: 500));
