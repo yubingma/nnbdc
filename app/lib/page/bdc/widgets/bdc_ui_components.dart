@@ -1776,8 +1776,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                         .watch(bdcNotifierProvider.select((s) => s.asrState));
                     final currentScore = ref.watch(
                         bdcNotifierProvider.select((s) => s.currentScore));
-                    final isScorePassed = ref.watch(bdcNotifierProvider.select(
-                        (s) => s.isScorePassed || s.hasFinishedAnswering));
+                    // 「本次作答是否通过」只看 isScorePassed 这一个事实：已作答/已揭晓答案
+                    // （hasFinishedAnswering）不等于通过 —— 否则用户把答对改判成「忘记」后，
+                    // 输入区会一边显示"回答正确"、一边按忘记算分，表里不一。
+                    final isScorePassed = ref.watch(
+                        bdcNotifierProvider.select((s) => s.isScorePassed));
                     final isAiEvaluating = ref.watch(
                         bdcNotifierProvider.select((s) => s.isAiEvaluating));
 

@@ -1179,6 +1179,8 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(
       hasFinishedAnswering: false,
       isPracticeMode: true,
+      // 练习＝这次作答重来一遍：通关呈现必须跟着撤掉，不能挂着上一次的"回答正确"
+      isScorePassed: false,
       selectedAnswerIndex: null,
       // 练习模式允许点"下一词"离开(canLeaveCurrWord=true 使底部按钮可见)
       canLeaveCurrWord: true,
@@ -1214,6 +1216,7 @@ class BdcNotifier extends _$BdcNotifier {
         _playCorrectSound();
         state = state.copyWith(
           hasFinishedAnswering: true,
+          isScorePassed: true,
           canLeaveCurrWord: true,
         );
       } else {
@@ -1226,6 +1229,7 @@ class BdcNotifier extends _$BdcNotifier {
         // 练习模式下选错仅显示错题反馈与揭晓答案，不中断弹窗详情页
         state = state.copyWith(
           hasFinishedAnswering: true,
+          isScorePassed: false,
           canLeaveCurrWord: true,
         );
       } else {
@@ -1264,14 +1268,21 @@ class BdcNotifier extends _$BdcNotifier {
     _playToken++; // 取消任何待执行的自动播放延迟 callback，防止详情页与主页延迟自动播放并发撞车
 
     if (fsrsRating != null) {
-      // 受理本次作答（幂等）：详情页「下一词」与 autoJump 定时器谁先触发都只会计分一次
-      _acceptAnswer(fsrsRating);
+      // 受理本次作答（幂等 + 覆盖）：详情页「下一词」与 autoJump 定时器谁先触发都只会计分一次；
+      // 而用户**主动改判**（答对后没点「下一词」，改点「不认识 / 再学学」）必须用最后表态的评分
+      // 覆盖先前那次，否则详情页「下一词」会因凭据不匹配被当成"迟到提交"丢弃、评分表里不一。
+      _acceptAnswer(fsrsRating, refresh: true);
       // 只同步写"详情页后续流程要用、且不进入顶层 UI 签名"的字段：
       // lastFsrsRating 供详情页「下一词」读取、fsrsItem 供 FSRS 预览显示，
       // 两者都不在 BdcStateUiSignature 里，因此不会让学习页重建。
+      //
+      // 通过与否严格跟随评分：忘记＝未通过，轻松/良好/吃力＝通过。
+      // 「再学学」就是良好，改判回去照样算通过 —— 同一个评分在任何时候结论都相同，
+      // 用户不用去记"这个分数算不算通过"。
       state = state.copyWith(
         lastFsrsRating: fsrsRating,
         lastFsrsRatingReason: reason,
+        isScorePassed: fsrsRating != FsrsRating.again,
       );
       _updateFsrsPreview(fsrsRating);
 
@@ -2910,6 +2921,9 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(
       isAiEvaluating: false,
       hasFinishedAnswering: true,
+      // 通过与否严格跟随评分（本地判对但用了大量提示会降级为忘记＝未通过）：
+      // 输入区据此显示/撤下"回答正确"，不依赖"已作答"
+      isScorePassed: rating != FsrsRating.again,
       canLeaveCurrWord: true,
       lastFsrsRating: rating,
       lastFsrsRatingReason: reason,

@@ -3751,6 +3751,144 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
+  test('BdcNotifier - 答对后未点「下一词」改点「不认识」：评分必须以最后表态为准', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.id, 'word_1');
+
+    // 用户答对：底部出现「下一词」，输入区呈现"回答正确"，但用户没点它
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.isScorePassed, isTrue, reason: '答对后输入区显示"回答正确"');
+
+    // 改点「不认识」：进详情页看答案，并把这次作答改判为忘记
+    // （线上点击链路：bdc_notifier.dart 的 showWordDetail(fsrsRating: again)）
+    unawaited(notifier.showWordDetail(state.word!, true, null,
+        fsrsRating: FsrsRating.again, reason: '主动点击了不再认识，评分: 忘记'));
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.again,
+        reason: '改判后详情页与评分面板都应显示新的评分');
+    expect(state.isScorePassed, isFalse,
+        reason: '改判为忘记＝这次没通过，必须撤回"回答正确"的通关呈现');
+
+    // 详情页「下一词」：必须带着最后表态的 again 正常流转
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1, reason: '同一次呈现只落一条评分日志，改判不是新增一次作答');
+    expect(logs.first.rating, FsrsRating.again.value,
+        reason: '最后表态是「不认识」，落库必须是 again，不能被先前答对的 good 顶掉');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 改判为「忘记」后再点「再学学」：结论必须随评分回到通过', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.isScorePassed, isTrue, reason: '答对后输入区显示"回答正确"');
+
+    // 改判为忘记 → 撤回通关呈现
+    unawaited(notifier.showWordDetail(state.word!, true, null,
+        fsrsRating: FsrsRating.again, reason: '主动点击了不再认识，评分: 忘记'));
+    state = container.read(bdcNotifierProvider);
+    expect(state.isScorePassed, isFalse);
+
+    // 又改主意点「再学学」（良好）→ 结论必须跟着评分回到通过
+    unawaited(notifier.showWordDetail(state.word!, false, null,
+        fsrsRating: FsrsRating.good, reason: '主动点击了再学学，评分: 良好'));
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.good);
+    expect(state.isScorePassed, isTrue,
+        reason: '"再学学"就是良好，结论必须与良好一致，用户不该去记两套口径');
+
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1);
+    expect(logs.first.rating, FsrsRating.good.value,
+        reason: '最后表态是「再学学」，落库必须是良好');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 答对为轻松后改点「再学学」：以良好落库并正常流转', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.id, 'word_1');
+
+    // 用户在 8 秒内作答答对：真实判题链路 _calculateRating 给出"轻松"
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.easy);
+    expect(state.isScorePassed, isTrue, reason: '答对后输入区显示"回答正确"');
+
+    // 用户不点「下一词」，改点「再学学」进详情页（评分良好）
+    unawaited(notifier.showWordDetail(state.word!, false, null,
+        fsrsRating: FsrsRating.good, reason: '主动点击了再学学，评分: 良好'));
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.good);
+    expect(state.isScorePassed, isTrue,
+        reason: '良好也是通过：改判不得把通过状态丢掉');
+
+    // 详情页「下一词」：改判后的评分与原评分不同，凭据必须被覆盖，流转不能因此丢失
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1, reason: '同一次呈现只落一条评分日志，改判不是新增一次作答');
+    expect(logs.first.rating, FsrsRating.good.value,
+        reason: '最后表态是「再学学」，落库必须是良好，不能被先前答对的轻松顶掉');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
   test('BdcNotifier - 修改今日评分:业务日窗口内的「昨天23:50测评+今天01:00巩固」必须同属一天', () async {
     // 改评分发生在 6/16 01:30 → 业务日 6/15，窗口 [6/15 03:00, 6/16 03:00)。
     // 「6/15 23:50 测评」与「6/16 01:00 巩固」都落在窗口内，是同一个业务日的两条日志；

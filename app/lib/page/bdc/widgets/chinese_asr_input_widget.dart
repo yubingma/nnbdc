@@ -158,8 +158,9 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final accentColor = context.primaryColor;
 
-    final bool isPassed = widget.isScorePassed ||
-        (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
+    // 「本次作答是否通过」只看 isScorePassed 这一个事实：得分只描述识别质量，
+    // 不能自行把"得分高"当成"通过"（否则改判为「忘记」后仍会显示"回答正确"）
+    final bool isPassed = widget.isScorePassed;
 
     // 状态驱动反馈文字
     String statusText;
