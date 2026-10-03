@@ -144,7 +144,11 @@ class StudyAudioSessionController {
     debugPrint('⏱️ [SessionController] 注册新的活跃 Notifier: $notifier');
   }
 
-  /// 取消待执行的延迟释放麦克风任务（保持麦克风持续保温）
+  /// 取消待执行的延迟释放麦克风任务，并把保温意图复位为"不保温"。
+  ///
+  /// 语义（自 6fff8101 起，由 test/sound_session_switch_test.dart 锁定）：
+  /// 一旦又有音频活动或会话配置发生，就说明当前已不在"离开页面后的宽限期"里，
+  /// 于是撤销待执行的延迟释放，之后退出页面按正常流程立即释放麦克风。
   void cancelIdleTimer() {
     keepMicrophoneWarm = false;
     if (_idleTimer != null) {
@@ -557,7 +561,6 @@ class StudyAudioSessionController {
       }
 
       debugPrint('⏱️ [SessionController] 收到麦克风保温释放请求，延迟 10 秒物理释放...');
-      final completer = Completer<void>();
       _idleTimer = Timer(const Duration(seconds: 10), () async {
         _idleTimer = null;
         keepMicrophoneWarm = false;
@@ -568,12 +571,14 @@ class StudyAudioSessionController {
             await transitTo(AudioMode.idle);
             await _asr.reset();
           });
-          completer.complete();
         } catch (e, st) {
-          completer.completeError(e, st);
+          Global.logger.e('⏱️ [SessionController] 保温延迟释放麦克风失败: $e', error: e, stackTrace: st);
         }
       });
-      return completer.future;
+      // 延迟释放是"稍后再说"，调用方无需也不该等它：
+      // 原实现返回一个 10 秒后才完成的 Future，await 它的调用方会被整段卡住；
+      // 而一旦期间有新的播放取消了这个计时器，那个 Future 将永远不完成。
+      return;
     }
 
     if (forceStopMicrophone) {
@@ -690,9 +695,9 @@ class StudyAudioSessionController {
           case AudioMode.idle:
             await _asr.stopMicrophone();
             await _cleanupEarlyExitPlayers();
-            if (_currentSessionCategory != 'playback') {
-              _currentSessionCategory = 'none';
-            }
+            // 这里只关麦克风，不碰 AVAudioSession 的 Category（本控制器从不 setActive(false)），
+            // 所以 _currentSessionCategory 必须保留真实值：写成 'none' 会让下一次录放切换
+            // 无谓地重配一遍 Category（真机实测多耗 ~260ms 并制造一次路由抖动）。
             break;
         }
         
@@ -814,11 +819,24 @@ class StudyAudioSessionController {
     }
   }
 
+  /// 激活音频会话（幂等，已激活时为空操作）。
+  ///
+  /// 音频会话的 Category 与激活态由本控制器独占管理，原生侧不再兜底（见 AppDelegate.playLocalAudio/startMicrophone），
+  /// 因此凡是"要用录放通道"的地方都必须先经过这里。
+  Future<void> _activateSession() async {
+    final session = await AudioSession.instance;
+    await session.setActive(true).timeout(const Duration(milliseconds: 1000));
+  }
+
   Future<void> _usePlayAndRecordCategory() {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
       await _cleanupEarlyExitPlayers();
-      if (_currentSessionCategory == 'playAndRecord') return;
+      if (_currentSessionCategory == 'playAndRecord') {
+        // Category 已经对了，但仍要确保它处于激活态：系统中断/路由变化后会话可能被停用。
+        await _activateSession();
+        return;
+      }
 
       final sw = Stopwatch()..start();
       _logAudioState('会话切换前(→playAndRecord)');
@@ -853,6 +871,8 @@ class StudyAudioSessionController {
         androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
         androidWillPauseWhenDucked: true,
       )).timeout(const Duration(milliseconds: 1000));
+      // 与 playback 分支对称：Category 配好之后由本控制器负责激活会话。
+      await _activateSession();
       _currentSessionCategory = 'playAndRecord';
       debugPrint('⏱️ [Latency-Sound] Session 切换到 playAndRecord 完成，总耗时: ${totalSw.elapsedMilliseconds}ms');
       _logAudioState('会话切换完成(→playAndRecord ${totalSw.elapsedMilliseconds}ms)');

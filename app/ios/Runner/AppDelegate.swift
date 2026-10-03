@@ -478,7 +478,7 @@ import Accelerate
             return
         }
         
-        setupAudioSession()
+        // 会话已由 Dart 侧（StudyAudioSessionController.transitTo(record)）配置并激活，这里只负责启动音频引擎。
         // 核心优化：在 startMicrophone 时即初始化并启动音频引擎（Pre-warm），
         // 避免在后续 startAsr 时临时启动引擎产生的音频切换回声或杂音（尤其解决第一个单词的问题）
         initializeAudioEngine()
@@ -628,7 +628,9 @@ import Accelerate
     }
     
     private func playLocalAudio(path: String, result: @escaping FlutterResult) {
-        setupAudioSession()
+        // 这里不碰 AVAudioSession：会话的 Category 与激活态由 Dart 侧 StudyAudioSessionController 独占管理，
+        // 播放前 Dart 已保证会话就绪。原生在起播前再配一次 Category，会把 Dart 刚切好的
+        // playback/playAndRecord 又扳回去，真机日志里表现为单词发音时路由来回抖动。
         let url = URL(fileURLWithPath: path)
         do {
             if let oldPlayer = localAudioPlayer {
@@ -686,6 +688,11 @@ import Accelerate
     
     // MARK: - Audio Session Management
     
+    /// 修复音频会话配置（**仅供系统触发的引擎重启使用**，见 resetAudioEngineAndTap）。
+    ///
+    /// 会话的 Category 与激活态由 Dart 侧 StudyAudioSessionController 独占管理，
+    /// 这里只在系统路由/格式变化导致引擎需要重建时，把 App 的意图重新落回去；
+    /// 正常播放与正常开麦路径都不再走这里，避免两个"主人"互相覆盖。
     private func setupAudioSession() {
         do {
             let audioSession = AVAudioSession.sharedInstance()
@@ -698,13 +705,12 @@ import Accelerate
                audioSession.mode == targetMode {
                 print("IOS: [ASR] setupAudioSession: AVAudioSession is already correctly configured as playAndRecord, keeping options: \(audioSession.categoryOptions)")
             } else {
-                // 仅在 category 不符（如冷启动）时才进行初始配置
-                // 此时读取并尊重当前 options 中是否包含了 mixWithOthers 选项
+                // 仅在 category 不符（如被系统中断改写）时才重新落回 App 的意图，
+                // 选项必须与 Dart 侧 _configurePlayAndRecordSession 完全一致，否则两边会来回改写 options。
                 let currentOptions = audioSession.categoryOptions
-                let hasMixOption = currentOptions.contains(.mixWithOthers)
-                
-                var targetOptions: AVAudioSession.CategoryOptions = [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
-                if hasMixOption {
+                var targetOptions: AVAudioSession.CategoryOptions =
+                    [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP, .allowAirPlay]
+                if currentOptions.contains(.mixWithOthers) {
                     targetOptions.insert(.mixWithOthers)
                 }
                 
@@ -727,11 +733,15 @@ import Accelerate
             return
         }
         
-        // 确保音频会话已正确配置
-        setupAudioSession()
-        
-        // 验证音频会话配置
+        // 会话的 Category 与激活态由 Dart 侧 StudyAudioSessionController 独占管理，
+        // Dart 会在调用 startMicrophone 之前把它配好并激活。这里只做契约校验：
+        // 不满足就直接暴露出来，绝不偷偷改 Category —— 两边都改会互相覆盖，
+        // 真机日志里表现为同一秒内 playAndRecord 被反复重配、音频路由抖动。
         let audioSession = AVAudioSession.sharedInstance()
+        guard audioSession.category == .playAndRecord else {
+            print("IOS: [ASR] 音频会话 Category 不是 playAndRecord（当前 \(audioSession.category.rawValue)），拒绝启动音频引擎")
+            return
+        }
         guard audioSession.sampleRate > 0 && audioSession.inputNumberOfChannels > 0 else {
             print("IOS: [ASR] Audio session not ready (rate: \(audioSession.sampleRate), channels: \(audioSession.inputNumberOfChannels))")
             return

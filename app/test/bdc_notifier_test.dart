@@ -2852,6 +2852,111 @@ void main() {
         reason: '同为待重练时按"最久没出过的先出"，刚重练过的词排在其它错词后面');
   });
 
+  test('BdcNotifier - 当前词是本环节重测且未作答：返回今日计划页再进来仍是这个词', () async {
+    final now = AppClock.now();
+    // 额外插入第二个单词 word_2（本组 2 个词）
+    await db.into(db.words).insert(Word(
+          id: 'word_2',
+          spell: 'banana',
+          popularity: 90,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.meaningItems).insert(MeaningItem(
+          id: 'mim_2',
+          wordId: 'word_2',
+          dictId: Global.commonDictId,
+          ciXing: 'n.',
+          meaning: '香蕉',
+          popularity: 90,
+          ownerId: Global.sysUserId,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.dictWords).insert(DictWord(
+          dictId: 'mock_dict_1',
+          wordId: 'word_2',
+          seq: 2,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.learningWords).insert(LearningWord(
+          userId: 'test_user_id',
+          wordId: 'word_2',
+          addTime: now,
+          addDay: 1,
+          batchId: 1,
+          lastLearningDate: AppClock.today(),
+          stability: 0.0,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          learningOrder: 2,
+          createTime: now,
+          updateTime: now,
+          isExtra: false,
+        ));
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+
+    // 出题先后是异步落盘的：等"某个词成为最后出过题的那个"，就是等它的先后记录写定
+    Future<void> waitNewest(String wordId) async {
+      for (var i = 0; i < 200; i++) {
+        final ranks = PhasePresentationTracker.presentationRanks();
+        final rank = ranks[wordId];
+        if (rank != null && rank == ranks.length - 1) return;
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+      fail('本环节出题先后记录没有更新: $wordId');
+    }
+
+    Future<void> answerAgain(String displayedWordId) async {
+      await waitNewest(displayedWordId);
+      notifier.acceptAnswerForTesting(FsrsRating.again);
+      await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+    }
+
+    await notifier.loadData(FakeBuildContext());
+    expect(container.read(bdcNotifierProvider).word!.id, 'word_1');
+
+    // 两个词都答"不认识" → 都待重练，最久没出过题的 word_1 先重测
+    await answerAgain('word_1');
+    await answerAgain('word_2');
+    await waitNewest('word_1');
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.id, 'word_1');
+    expect(state.isGroupStepRetry, true, reason: 'word_1 本环节答错过，这次是重测');
+
+    // 用户在 word_1（本环节重测）上没作答，直接返回今日计划页，再点继续学习：
+    // 页面与 notifier 都是全新的（等价于重新进入学习页）
+    final reentered = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive2 = reentered.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive2.close();
+      reentered.dispose();
+    });
+
+    await reentered.read(bdcNotifierProvider.notifier).loadData(FakeBuildContext());
+
+    state = reentered.read(bdcNotifierProvider);
+    expect(state.word!.id, 'word_1',
+        reason: '用户没点下一词，返回再进来必须还是眼前这个词，不能换成另一个待重练的词');
+    expect(state.isGroupStepRetry, true, reason: '它仍是本环节重测');
+  });
+
   test('BdcNotifier - Ch2En环节发音通过后残余低分ASR帧不应覆盖通关评分', () async {
     // 设置步骤配置为 Ch2En 测评
     await (db.delete(db.userStudySteps)..where((uss) => uss.userId.equals(testUser.id))).go();

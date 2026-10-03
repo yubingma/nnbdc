@@ -381,7 +381,7 @@ class BdcNotifier extends _$BdcNotifier {
       state = state.copyWith(loadError: null);
 
       final nextWordStopwatch = Stopwatch()..start();
-      bool success = await getNextWord(false);
+      bool success = await getNextWord(false, currentWordId: _currentStudyWordId());
       debugPrint('⚡ [PERF] loadData -> getNextWord cost: ${nextWordStopwatch.elapsedMilliseconds}ms');
       
       if (context.mounted && dialogShown) {
@@ -797,6 +797,7 @@ class BdcNotifier extends _$BdcNotifier {
     );
 
     final wordId = word.id;
+    if (wordId != null) _rememberCurrentStudyWord(wordId);
     if (state.wordUIStates.containsKey(wordId)) {
       _restoreWordState(getWordResult);
     } else {
@@ -1644,7 +1645,7 @@ class BdcNotifier extends _$BdcNotifier {
     
     final target = state.reviewReturnTarget;
     if (target == null) {
-      await getNextWord(false);
+      await getNextWord(false, currentWordId: _currentStudyWordId());
       return;
     }
 
@@ -1654,9 +1655,44 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(historyIndex: -1);
     await handleWord(target, isFromBatchWordList: true);
   }
+
+  /// 用户眼前的当前词：学习页每次呈现单词时记录（见 [handleWord]）。
+  /// 用户没点「下一词」就退出学习页时，重新进入必须仍然呈现这个词
+  /// （见 StudyBo.getWord 的 currentWordId）。按账号与业务日隔离，换账号/跨天自动作废。
+  static const String _currentStudyWordKey = 'current_study_word';
+
+  String? _currentStudyWordId() {
+    final raw = Prefs.read<String>(_currentStudyWordKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final data = json.decode(raw) as Map<String, dynamic>;
+      if (data['userId'] != Global.currentUserId ||
+          data['businessDay'] !=
+              app_date.DateUtils.businessDayStart(AppClock.now()).toIso8601String()) {
+        return null;
+      }
+      return data['wordId'] as String?;
+    } catch (e) {
+      Global.logger.e('读取当前词失败: $e');
+      return null;
+    }
+  }
+
+  void _rememberCurrentStudyWord(String wordId) {
+    if (wordId == _currentStudyWordId()) return;
+    unawaited(Prefs.write(
+      _currentStudyWordKey,
+      json.encode({
+        'userId': Global.currentUserId,
+        'businessDay': app_date.DateUtils.businessDayStart(AppClock.now()).toIso8601String(),
+        'wordId': wordId,
+      }),
+    ));
+  }
+
   Future<void> reloadWord() async {
     await StudyBo().prepareForStudy(false);
-    getNextWord(false);
+    getNextWord(false, currentWordId: _currentStudyWordId());
   }
 
 
@@ -1833,7 +1869,8 @@ class BdcNotifier extends _$BdcNotifier {
 
   bool _isGettingNextWordLock = false;
 
-  Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating, bool fastPath = false}) async {
+  Future<bool> getNextWord(bool gotoNext,
+      {FsrsRating? fsrsRating, bool fastPath = false, String? currentWordId}) async {
     if (_isGettingNextWordLock || state.isGettingNextWord) return false;
 
     // 无评分的"作答后流转"必须丢弃：答案已揭晓（或作答已受理）却拿不到评分，说明已受理凭据
@@ -2016,6 +2053,7 @@ class BdcNotifier extends _$BdcNotifier {
         gotoNext,
         fsrsRating: gradeRating,
         answeredWordId: state.word?.id,
+        currentWordId: currentWordId,
       );
       Global.logger.d('[PERF] getNextWord -> StudyBo().getWord API cost: ${apiStopwatch.elapsedMilliseconds}ms');
       

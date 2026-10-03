@@ -546,10 +546,13 @@ class StudyBo {
   /// [answeredWordId] 本次评分对应的那个词（用户在答的词）。错词重练按"最久没出过的先出"
   ///   排队后，调度选出的"优先级最高的词"可能已经是**下一个**待出的词，不能再拿它反推评分对象，
   ///   因此提交评分时必须由调用方显式指明；无评分的取词流转传不传都一样。
+  /// [currentWordId] 调用方声明的"用户眼前的词"，仅在 [gotoNext] 为 false（刷新当前词）时生效：
+  ///   它仍在本批次且今天没学完时，就返回它。学习页重新进入时用户没点「下一词」，
+  ///   眼前必须还是这个词，绝不能因为"错词轮流重练"的让位规则被换成别的词。
   ///
   /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
   Future<Result<GetWordResult>> getWord(bool isWordMastered, bool gotoNext,
-      {FsrsRating? fsrsRating, String? answeredWordId}) async {
+      {FsrsRating? fsrsRating, String? answeredWordId, String? currentWordId}) async {
     try {
       final swTotal = Stopwatch()..start();
       Global.logger.d('开始获取单词: isWordMastered=$isWordMastered, gotoNext=$gotoNext, fsrsRating=$fsrsRating');
@@ -748,9 +751,27 @@ class StudyBo {
             presentedRanks: presentedRanks,
           ));
 
+      // 刷新当前词（gotoNext == false）不是"推进到下一个词"：用户没点「下一词」，
+      // 眼前必须还是他正在看的那个词（由学习页在每次呈现时记录并在此声明）。
+      // 调度排序服务的是"答完一题接着出哪个"，其中"错词轮流重练、刚出过的让位给别的错词"
+      // 只对"答完之后的流转"成立；刷新手若照它重排，用户没作答就退出再进来时，
+      // 眼前的当前词就被换成了另一个词。
+      LearningWord? keptCurrentWord;
+      if (!gotoNext && currentWordId != null) {
+        final int currentIndex = todayWords.indexWhere((w) => w.wordId == currentWordId);
+        if (currentIndex >= currentBatch.startIndex && currentIndex < currentBatch.endIndex) {
+          final LearningWord current = todayWords[currentIndex];
+          // 已掌握、或今天已学完的词（如本组小结返回后批次已推进）不能再留在眼前，交回调度取词
+          if (!current.isEffectivelyMastered(masteredWordIds) &&
+              !current.isTodayFinished(masteredWordIds, trackOf(current).length)) {
+            keptCurrentWord = current;
+          }
+        }
+      }
+
       // 提交评分时"用户在答哪个词"由调用方显式给出：见 getWord 的 answeredWordId 说明。
       // 只刷新当前词的流转（无评分）不需要它，排序结果本身就是即将呈现的词。
-      LearningWord currentWordForPos = sortedBatchWords.first;
+      LearningWord currentWordForPos = keptCurrentWord ?? sortedBatchWords.first;
       if (fsrsRating != null && answeredWordId != null) {
         final int answeredIndex =
             todayWords.indexWhere((w) => w.wordId == answeredWordId);
@@ -909,7 +930,7 @@ class StudyBo {
             presentedRanks: presentedRanks,
           ));
 
-      final nextWordForPos = nextBatchWords.first;
+      final nextWordForPos = keptCurrentWord ?? nextBatchWords.first;
       int nextWordIndex = todayWords.indexOf(nextWordForPos);
 
       // 计算下一个单词应该展示的学习环节（在自身轨道内推导）
