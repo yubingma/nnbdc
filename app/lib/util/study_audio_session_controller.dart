@@ -539,6 +539,7 @@ class StudyAudioSessionController {
             '🔊 [SessionController] 状态机本来已是 record 保温态，执行手动热复用就绪提示音播放...',
           );
           await _playAsrReadyHintSoundWithCleanup();
+          await Future.delayed(const Duration(milliseconds: 100));
         }
         await _asr.startAsr(language, phrases: phrases, playHintSound: false);
       }
@@ -690,6 +691,9 @@ class StudyAudioSessionController {
             debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活 (${isColdStart ? "冷启动" : "热复用"})，错峰延迟 ${delayMs}ms 稳定时钟...');
             await Future.delayed(Duration(milliseconds: delayMs));
             await _playAsrReadyHintSound();
+            // 提示音全长 100ms：让提示音播完再完成状态切换与开启 ASR 识别，
+            // 确保提示音与 ASR 识别在时间轴上完全错开，避免麦克风录入提示音造成回声感或误识别。
+            await Future.delayed(const Duration(milliseconds: 100));
             break;
  
           case AudioMode.idle:

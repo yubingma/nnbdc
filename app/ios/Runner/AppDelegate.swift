@@ -8,14 +8,30 @@ import AudioToolbox
 import Accelerate
 
 @main
-@objc class AppDelegate: FlutterAppDelegate, AVAudioPlayerDelegate {
+@objc class AppDelegate: FlutterAppDelegate {
     
     // MARK: - Properties
     
-    private var readyHintPlayer: AVAudioPlayer?
+    // 发音播放通道：进程内常驻一套 AVAudioEngine，替代"每次发音新建一个 AVAudioPlayer"。
+    //
+    // 为什么必须常驻：真机日志显示，每个新 AVAudioPlayer 都会新建一个 AudioQueue 并
+    // 新映射一整块 10MB 共享内存（slab），播完立即解映射。反复切换「不认识/下一词」
+    // 这类连续发音场景下，这块内存反复映射会让音频实时线程不断缺页
+    //（HALS_OverloadMessage: HAL client proc exceeding io cycle budget，
+    //  45~59 次 vm_rtfault_records），连续几个 I/O 周期交付失败就是用户听到的爆音。
+    // 现在引擎与两个播放节点只建一次，之后每次发音只是 scheduleFile，不再新建
+    // AudioQueue 与共享内存。两个节点分开：发音一个、ASR 就绪提示音一个，互不打断。
+    private let audioPlaybackEngine = AVAudioEngine()
+    private let wordPlaybackNode = AVAudioPlayerNode()
+    private let hintPlaybackNode = AVAudioPlayerNode()
+    private var playbackEngineReady = false
+    private var connectedPlaybackNodes = Set<ObjectIdentifier>()
+    private var wordPlaybackGeneration = 0
+    private var wordPlaybackCompletion: FlutterResult?
+    private var wordPlaybackFile: AVAudioFile? // 持有到本次播放结束，避免文件读取被提前释放
+    private var hintPlaybackFile: AVAudioFile?
+    private var hintPlaybackGeneration = 0
     private var lastReadyHintTime: TimeInterval = 0
-    private var localAudioPlayer: AVAudioPlayer?
-    private var localAudioCompletion: FlutterResult?
     
     // ASR 相关属性
     private var speechRecognizer: SFSpeechRecognizer?
@@ -566,7 +582,7 @@ import Accelerate
         result(nil)
     }
     
-    // MARK: - Ready Hint Sound (In-Process AVAudioPlayer)
+    // MARK: - 常驻发音通道（AVAudioEngine + AVAudioPlayerNode）
     
     private func findFlutterAssetPath(_ assetPath: String) -> String? {
         let key = FlutterDartProject.lookupKey(forAsset: assetPath)
@@ -584,27 +600,58 @@ import Accelerate
             print("IOS: [ASR] Ready hint asset not found")
             return
         }
-        let url = URL(fileURLWithPath: path)
         do {
-            readyHintPlayer = try AVAudioPlayer(contentsOf: url)
-            readyHintPlayer?.volume = 0.5
-            readyHintPlayer?.prepareToPlay()
-            print("IOS: [ASR] Ready hint AVAudioPlayer prepared from \(path)")
+            hintPlaybackFile = try AVAudioFile(forReading: URL(fileURLWithPath: path))
+            print("IOS: [ASR] Ready hint file loaded from \(path)")
         } catch {
-            print("IOS: [ASR] Failed to create ready hint AVAudioPlayer: \(error)")
+            print("IOS: [ASR] Failed to load ready hint file: \(error)")
         }
     }
     
-    private func stopPlayerSafely(_ player: AVAudioPlayer?) {
-        guard let p = player else { return }
-        p.delegate = nil
-        if p.isPlaying {
-            p.setVolume(0.0, fadeDuration: 0.02)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) {
-                p.stop()
-            }
+    /// 懒启动常驻发音引擎：节点只 attach/connect 一次，引擎只 start 一次。
+    /// 系统中断或路由变化会把引擎停掉，这里检测到就用同一条链路重启，不重建节点。
+    private func ensurePlaybackEngine(node: AVAudioPlayerNode, format: AVAudioFormat) -> Bool {
+        let key = ObjectIdentifier(node)
+        if !connectedPlaybackNodes.contains(key) {
+            audioPlaybackEngine.attach(node)
+            audioPlaybackEngine.connect(node, to: audioPlaybackEngine.mainMixerNode, format: format)
+            connectedPlaybackNodes.insert(key)
+        }
+        if playbackEngineReady {
+            if audioPlaybackEngine.isRunning { return true }
+            print("IOS: [Audio] 常驻发音引擎已停止（系统中断/路由变化），重启同一链路")
         } else {
-            p.stop()
+            audioPlaybackEngine.prepare()
+        }
+        do {
+            try audioPlaybackEngine.start()
+        } catch {
+            print("IOS: [Audio] 常驻发音引擎启动失败: \(error)")
+            playbackEngineReady = false
+            return false
+        }
+        if !playbackEngineReady {
+            print("IOS: [Audio] 常驻发音引擎已启动（整个进程只启动一次）")
+        }
+        playbackEngineReady = true
+        return true
+    }
+
+    /// 静音停止：先把音量压到 0 再停，避免在波形中途硬切产生爆音。
+    private func stopNodeQuietly(_ node: AVAudioPlayerNode) {
+        node.volume = 0.0
+        node.stop()
+    }
+
+    /// 20ms 线性淡入（5 步）。generation 一变说明已被新的发音抢占，立刻放弃后续步进。
+    private func fadeInNode(_ node: AVAudioPlayerNode, isWordChannel: Bool, generation: Int) {
+        for step in 1...5 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.004 * Double(step)) { [weak self] in
+                guard let self = self else { return }
+                let current = isWordChannel ? self.wordPlaybackGeneration : self.hintPlaybackGeneration
+                guard current == generation else { return }
+                node.volume = Float(step) / 5.0
+            }
         }
     }
 
@@ -616,14 +663,25 @@ import Accelerate
             return
         }
         lastReadyHintTime = now
-        if let player = readyHintPlayer {
-            if player.isPlaying {
-                stopPlayerSafely(player)
-            }
-            player.currentTime = 0
-            player.volume = 0.5
-            player.play()
+        guard let file = hintPlaybackFile else {
+            result(nil)
+            return
         }
+        guard ensurePlaybackEngine(node: hintPlaybackNode, format: file.processingFormat) else {
+            result(nil)
+            return
+        }
+        if hintPlaybackNode.isPlaying {
+            print("IOS: [ASR] Ready hint player is already playing, skipping duplicate playback")
+            result(nil)
+            return
+        }
+        hintPlaybackGeneration += 1
+        stopNodeQuietly(hintPlaybackNode)
+        file.framePosition = 0 // 同一份 AVAudioFile 反复调度，显式回卷到文件头
+        hintPlaybackNode.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { _ in }
+        hintPlaybackNode.volume = 0.4
+        hintPlaybackNode.play()
         result(nil)
     }
     
@@ -632,58 +690,49 @@ import Accelerate
         // 播放前 Dart 已保证会话就绪。原生在起播前再配一次 Category，会把 Dart 刚切好的
         // playback/playAndRecord 又扳回去，真机日志里表现为单词发音时路由来回抖动。
         let url = URL(fileURLWithPath: path)
+        let file: AVAudioFile
         do {
-            if let oldPlayer = localAudioPlayer {
-                stopPlayerSafely(oldPlayer)
-                localAudioPlayer = nil
-            }
-            localAudioCompletion?(nil)
-            localAudioCompletion = nil
-            
-            let newPlayer = try AVAudioPlayer(contentsOf: url)
-            newPlayer.delegate = self
-            newPlayer.prepareToPlay()
-            newPlayer.volume = 0.0
-            localAudioPlayer = newPlayer
-            localAudioCompletion = result
-            newPlayer.play()
-            newPlayer.setVolume(1.0, fadeDuration: 0.015)
+            file = try AVAudioFile(forReading: url)
         } catch {
-            print("IOS: [Audio] Failed to play local audio: \(error)")
+            print("IOS: [Audio] Failed to open local audio: \(error)")
             result(FlutterError(code: "PLAY_FAILED", message: error.localizedDescription, details: nil))
+            return
         }
+        guard ensurePlaybackEngine(node: wordPlaybackNode, format: file.processingFormat) else {
+            result(FlutterError(code: "PLAY_FAILED", message: "常驻发音引擎未能启动", details: nil))
+            return
+        }
+
+        // 抢占上一次发音：静音切掉，旧回调立即完成，避免 Dart 侧悬挂
+        wordPlaybackGeneration += 1
+        let generation = wordPlaybackGeneration
+        wordPlaybackCompletion?(nil)
+        wordPlaybackCompletion = nil
+        stopNodeQuietly(wordPlaybackNode)
+
+        wordPlaybackFile = file
+        wordPlaybackCompletion = result
+        wordPlaybackNode.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            DispatchQueue.main.async {
+                guard let self = self, self.wordPlaybackGeneration == generation else { return }
+                self.stopNodeQuietly(self.wordPlaybackNode)
+                self.wordPlaybackFile = nil
+                self.wordPlaybackCompletion?(nil)
+                self.wordPlaybackCompletion = nil
+            }
+        }
+        wordPlaybackNode.volume = 0.0
+        wordPlaybackNode.play()
+        fadeInNode(wordPlaybackNode, isWordChannel: true, generation: generation)
     }
 
     private func stopLocalAudio(result: FlutterResult) {
-        if let player = localAudioPlayer {
-            stopPlayerSafely(player)
-            localAudioPlayer = nil
-        }
-        localAudioCompletion?(nil)
-        localAudioCompletion = nil
+        wordPlaybackGeneration += 1 // 让在途的播完回调失效
+        stopNodeQuietly(wordPlaybackNode)
+        wordPlaybackFile = nil
+        wordPlaybackCompletion?(nil)
+        wordPlaybackCompletion = nil
         result(nil)
-    }
-
-    // MARK: - AVAudioPlayerDelegate
-
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        if player == localAudioPlayer {
-            localAudioPlayer = nil
-            localAudioCompletion?(nil)
-            localAudioCompletion = nil
-        }
-    }
-
-    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
-        if player == localAudioPlayer {
-            localAudioPlayer = nil
-            if let error = error {
-                localAudioCompletion?(FlutterError(code: "DECODE_ERROR", message: error.localizedDescription, details: nil))
-            } else {
-                localAudioCompletion?(nil)
-            }
-            localAudioCompletion = nil
-        }
     }
     
     // MARK: - Audio Session Management
@@ -722,7 +771,6 @@ import Accelerate
                 )
             }
             try audioSession.setActive(true)
-            readyHintPlayer?.prepareToPlay()
         } catch {
             print("IOS: setupAudioSession error: \(error)")
         }
@@ -760,6 +808,9 @@ import Accelerate
         // 移除任何现有的 Tap，防止重复安装
         inputNode.removeTap(onBus: 0)
         
+        // 彻底静音引擎输出：引擎仅作为输入采集（Input Tap），坚决禁止向扬声器输出或回送麦克风旁音（Sidetone Loopback）
+        audioEngine.mainMixerNode.outputVolume = 0.0
+        
         // 启动音频引擎
         do {
             audioEngine.prepare()
@@ -791,6 +842,7 @@ import Accelerate
         
         // 3. 重置引擎状态
         audioEngine.reset()
+        audioEngine.mainMixerNode.outputVolume = 0.0
         
         // 4. 重新配置并启动
         setupAudioSession()
