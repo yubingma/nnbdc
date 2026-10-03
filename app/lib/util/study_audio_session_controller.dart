@@ -951,6 +951,7 @@ class StudyAudioSessionController {
         if (localPath.isNotEmpty) {
           final playSw = Stopwatch()..start();
           await _asr.playLocalAudio(localPath).timeout(Duration(milliseconds: playTimeoutMs));
+          _logicallyFinishedPlayers.add(player);
           debugPrint('⏱️ [Latency-Sound] iOS 原生 AVAudioPlayer 播放完成，耗时: ${playSw.elapsedMilliseconds}ms');
           Global.logger.d('🔊 [SessionController] playSoundByUrl 原生直放结束，总逻辑耗时: ${totalSw.elapsedMilliseconds}ms');
           return;

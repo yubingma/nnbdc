@@ -599,6 +599,11 @@ import Accelerate
         guard let p = player else { return }
         p.delegate = nil
         if p.isPlaying {
+            p.setVolume(0.0, fadeDuration: 0.02)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) {
+                p.stop()
+            }
+        } else {
             p.stop()
         }
     }
@@ -613,7 +618,7 @@ import Accelerate
         lastReadyHintTime = now
         if let player = readyHintPlayer {
             if player.isPlaying {
-                player.stop()
+                stopPlayerSafely(player)
             }
             player.currentTime = 0
             player.volume = 0.5
@@ -648,13 +653,6 @@ import Accelerate
         if let player = localAudioPlayer {
             stopPlayerSafely(player)
             localAudioPlayer = nil
-        }
-        if let readyPlayer = readyHintPlayer {
-            if readyPlayer.isPlaying {
-                readyPlayer.stop()
-            }
-            readyPlayer.currentTime = 0
-            readyPlayer.volume = 0.5
         }
         localAudioCompletion?(nil)
         localAudioCompletion = nil
@@ -714,9 +712,7 @@ import Accelerate
                     options: targetOptions
                 )
             }
-            try audioSession.setPreferredSampleRate(48000.0)
-            try audioSession.setPreferredIOBufferDuration(0.02)
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            try audioSession.setActive(true)
             readyHintPlayer?.prepareToPlay()
         } catch {
             print("IOS: setupAudioSession error: \(error)")
