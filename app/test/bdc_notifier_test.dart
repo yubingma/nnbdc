@@ -4306,4 +4306,108 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
+
+  test('BdcNotifier - 回看里点「不认识」进详情页再点「下一词」，不得丢掉该历史词的界面状态', () async {
+    // 第二个待学词：从 apple 流转出去后，它才是当前词
+    await db.into(db.words).insert(Word(
+          id: 'word_2',
+          spell: 'banana',
+          popularity: 90,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.meaningItems).insert(MeaningItem(
+          id: 'mim_2',
+          wordId: 'word_2',
+          dictId: Global.commonDictId,
+          ciXing: 'n.',
+          meaning: '香蕉',
+          popularity: 90,
+          ownerId: Global.sysUserId,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.dictWords).insert(DictWord(
+          dictId: 'mock_dict_1',
+          wordId: 'word_2',
+          seq: 2,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_2',
+          addTime: now,
+          addDay: 1,
+          batchId: 1,
+          lastLearningDate: AppClock.today(),
+          stability: 0.0,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          learningOrder: 2,
+          createTime: now,
+          updateTime: now,
+          isExtra: false,
+        ));
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+
+    // apple 答对并流转到 banana：apple 带着"离开时已答完"的状态进入回看历史
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+    }));
+    state = container.read(bdcNotifierProvider);
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+    state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'banana');
+
+    notifier.goToPreviousWord();
+    await _waitUntil(container, (s) => s.word?.spell == 'apple');
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, isTrue,
+        reason: '前置条件：回看看到的就是离开时的"已答完"状态');
+    expect(state.wordUIStates.containsKey('word_1'), isTrue,
+        reason: '前置条件：apple 的界面状态还在缓存里');
+
+    // 回看里点「不认识」：进详情页并把这次作答改判为忘记（回看模式不落库，纯导航）
+    unawaited(notifier.showWordDetail(state.word!, true, null,
+        fsrsRating: FsrsRating.again, reason: '主动点击了不再认识，评分: 忘记'));
+    await Future.delayed(const Duration(milliseconds: 20));
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.again,
+        reason: '前置条件：回看里已改判为忘记');
+
+    // 详情页「下一词」：回看模式下是走历史栈的纯导航，翻完历史回到当前词 banana
+    await notifier.getNextWord(true,
+        fsrsRating: state.lastFsrsRating, fastPath: true);
+    state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'banana');
+    expect(state.historyIndex, -1);
+    expect(state.wordUIStates.containsKey('word_1'), isTrue,
+        reason: '回看里的「下一词」不是作答提交，不得把该历史词的界面状态当成"刚答错待重练"清掉');
+
+    // 再点「回看」：apple 必须还是离开时的样子，而不是一张没答过的新题
+    notifier.goToPreviousWord();
+    await _waitUntil(container, (s) => s.word?.spell == 'apple');
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, isTrue,
+        reason: '再次回看必须还原离开时的已答完状态，不得像重新进入答题一样要求重答');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
 }

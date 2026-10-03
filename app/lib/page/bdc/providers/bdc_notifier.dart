@@ -1925,7 +1925,12 @@ class BdcNotifier extends _$BdcNotifier {
     final totalStopwatch = Stopwatch()..start();
     debugPrint('🕵️ [AudioDiag] getNextWord.enter | gotoNext=$gotoNext fastPath=$fastPath word=${state.word?.spell}');
 
-    if (fsrsRating == FsrsRating.again) {
+    // 判据必须是 [gradeRating]（本次流转是否真的把该词作为一次计分作答提交），
+    // 不能是界面带上来的 [fsrsRating]：回看模式（historyIndex != -1）里的「下一词」是走历史栈
+    // 的纯导航，gradeRating 恒为 null，而 fsrsRating 只是该历史词早已落库的评分快照
+    // （或用户刚在回看里改的看法）。旧判据会在这种纯导航里把这个词的界面状态
+    // 当成"刚答错、待重练"清掉 —— 用户再点「回看」时，那个词就变成一张从没答过的新题。
+    if (gradeRating == FsrsRating.again) {
       // 答错的词会留在本环节循环重练（BO 不推进环节索引，它会在本环节队尾再次出现）。
       // 它此刻"已答完"的 UI 状态若被缓存下来，等它重练时 _restoreWordState 会原样恢复
       //（选项高亮、答案已揭晓、hasFinishedAnswering=true），用户得再点一次「下一词」
