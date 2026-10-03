@@ -783,8 +783,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 // 若这里再画进度弧，就会与下方细进度条表达同一个值，环退化为冗余空壳。
                 // 尺寸：172 时环占屏宽 41%、内圈空六成，显得虚大。收到 128 后占屏宽 31%；
                 // 注意约束来自环心的「宽度」而非高度——172/140/128 下内容角点距圆心恒为
-                // 55.5pt，故数字须同步由 46 缩到 38（同时贴回规范的核心指标字档），
-                // 角点余量才从 2pt 恢复到 7.4pt。描边按外径 5% 取 6.5。
+                // 55.5pt，故数字须同步收缩（46 → 34），角点才留得住余量。
+                // 描边按外径 5% 取 6.5。
                 if (isDakaStamped)
                   // 已打卡：这枚章交给画笔去"盖"——墨迹的浓淡、断口、飞白都不是描边能表达的
                   SizedBox(
@@ -826,10 +826,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             '${user?.effectiveWordsPerDay ?? 0}',
                             style: TextStyle(
                               color: textPrimary,
-                              fontSize: 38,
+                              fontSize: 34,
                               fontWeight: FontWeight.w700,
                               fontFamily: 'Roboto',
-                              letterSpacing: -1.3,
+                              letterSpacing: -1.2,
                               height: 1.0,
                             ),
                           ),

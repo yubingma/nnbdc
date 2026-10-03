@@ -348,9 +348,12 @@ class StudyAudioSessionController {
   }
 
   Future<void> _prepareSessionForPlayback() {
+    // 会话初始化（含音效池预热）仍在进行时，先等它落地再出声：绝不允许"边预热边播第一个音"。
+    final pendingSessionSetup = _configureFuture;
+    if (pendingSessionSetup != null) return pendingSessionSetup;
     final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord' || keepMicrophoneWarm;
     if (shouldKeepRecordCategory) {
-      return !_audioSessionConfigured ? configureSession() : Future.value();
+      return Future.value();
     }
     return transitTo(AudioMode.playback);
   }
@@ -739,7 +742,11 @@ class StudyAudioSessionController {
       _audioSessionConfigured = true;
       _logicallyFinishedPlayers.clear();
       Global.logger.i('StudyAudioSessionController: 全局音频会话配置完成');
-      unawaited(prewarm());
+      // 音效池的建立会在音频服务里新建播放会话与 AudioQueue（真机日志：mediaplaybackd 的 sibling session），
+      // 它是"进程首次音频设备初始化"的一部分。必须等它落地，第一次发音才允许出声：
+      // 两者并发会抢占音频 I/O 周期（真机日志：HALS_OverloadMessage: Overload possibly due to
+      // HAL client proc exceeding io cycle budget），冷启动后的第一次发音就会爆音。
+      await prewarm();
       prewarmPinyin();
     } catch (e) {
       Global.logger.e('StudyAudioSessionController: 配置全局音频会话失败: $e');
