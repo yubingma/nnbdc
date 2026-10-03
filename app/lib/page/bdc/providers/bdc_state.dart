@@ -95,9 +95,6 @@ class BdcState extends Equatable {
   /// 为真时页面把单词拼写显示为红色，提醒"这个词你刚答错过"。
   final bool isLatestAnswerWrongToday;
 
-  /// 本组环节切换时的一次性轻提示（只在切换后第一个词上展示，切词即清空）
-  final String? groupStepHint;
-  
   final DateTime? wordStartTime;
   final DateTime? firstMatchTime;
 
@@ -181,7 +178,6 @@ class BdcState extends Equatable {
     this.groupStepTrackName,
     this.isGroupStepRetry = false,
     this.isLatestAnswerWrongToday = false,
-    this.groupStepHint,
     this.wordStartTime,
     this.firstMatchTime,
     this.isUpdatingByHint = false,
@@ -270,7 +266,6 @@ class BdcState extends Equatable {
     Object? groupStepTrackName = _sentinel,
     bool? isGroupStepRetry,
     bool? isLatestAnswerWrongToday,
-    Object? groupStepHint = _sentinel,
     Object? wordStartTime = _sentinel,
     Object? firstMatchTime = _sentinel,
     bool? isUpdatingByHint,
@@ -357,7 +352,6 @@ class BdcState extends Equatable {
       groupStepTrackName: groupStepTrackName == _sentinel ? this.groupStepTrackName : (groupStepTrackName as String?),
       isGroupStepRetry: isGroupStepRetry ?? this.isGroupStepRetry,
       isLatestAnswerWrongToday: isLatestAnswerWrongToday ?? this.isLatestAnswerWrongToday,
-      groupStepHint: groupStepHint == _sentinel ? this.groupStepHint : (groupStepHint as String?),
       wordStartTime: wordStartTime == _sentinel ? this.wordStartTime : (wordStartTime as DateTime?),
       firstMatchTime: firstMatchTime == _sentinel ? this.firstMatchTime : (firstMatchTime as DateTime?),
       isUpdatingByHint: isUpdatingByHint ?? this.isUpdatingByHint,
@@ -444,7 +438,6 @@ class BdcState extends Equatable {
     groupStepTrackName,
     isGroupStepRetry,
     isLatestAnswerWrongToday,
-    groupStepHint,
     wordStartTime,
     firstMatchTime,
     isUpdatingByHint,

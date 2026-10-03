@@ -2524,7 +2524,7 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
   });
 
-  test('BdcNotifier - 本组进度指示：环节切换时正常推进，不再弹出迷糊的提示', () async {
+  test('BdcNotifier - 本组进度指示：环节切换时正常推进', () async {
     // 本组轨道补全为 [En2Ch, Ch2En, List]，让环节切换真实发生
     for (final group in ['correct', 'wrong']) {
       await db.into(db.userStudySteps).insert(UserStudyStep(
@@ -2552,16 +2552,15 @@ void main() {
     final notifier = container.read(bdcNotifierProvider.notifier);
     await notifier.loadData(FakeBuildContext());
 
-    // 测评环节：本组仅 1 个词，进度 1/1；首次进入不提示
+    // 测评环节：本组仅 1 个词，进度 1/1
     await _waitUntil(container,
         (s) => s.groupStepPosition == 1 && s.groupStepTotal == 1);
     var state = container.read(bdcNotifierProvider);
     expect(state.studyStep, StudyStep.en2Ch.json);
-    expect(state.groupStepHint, null, reason: '首次进入学习页不应弹出提示');
     expect(state.groupStepTrackName, '新词测评',
         reason: '测评环节尚未评分，当前词轨道名为"新词测评"');
 
-    // 测评答对 → 本组进入汉译英环节：指示器正常推进，不再弹出迷糊提示
+    // 测评答对 → 本组进入汉译英环节：指示器正常推进
     // 先受理这次作答（与线上判题链路一致），再提交流转
     notifier.acceptAnswerForTesting(FsrsRating.good);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
@@ -2574,8 +2573,6 @@ void main() {
     expect(state.groupStepNo, 1, reason: '本组仅 1 个词，仍是今日第 1 组');
     expect(state.groupStepTrackName, '新词答对',
         reason: '本组只有 1 个词且答对，轨道名为"新词答对"');
-    expect(state.groupStepHint, null,
-        reason: '已移除容易让人迷糊的"本组测评已完成 · 现在逐个xxx"提示');
 
     // 进入 List（本组小结）环节后指示一并清空
     // 先受理这次作答（与线上判题链路一致），再提交流转
@@ -2584,7 +2581,6 @@ void main() {
     state = container.read(bdcNotifierProvider);
     expect(state.groupStepPosition, 0);
     expect(state.groupStepTotal, 0);
-    expect(state.groupStepHint, null);
   });
 
   test('BdcNotifier - 指示行随本次呈现一次到位（不残留上一环节，重测标记不等异步补写）', () async {
@@ -2617,7 +2613,7 @@ void main() {
     expect(state.studyStep, StudyStep.en2Ch.json);
     expect(state.groupStepTrackName, '新词测评');
 
-    // 测评答对 → 汉译英环节：指示行必须当场就是本环节（含环节顺序提示）
+    // 测评答对 → 汉译英环节：指示行必须当场就是本环节
     await notifier.onAsrResult(jsonEncode({
       'best': '苹果',
       'candidates': ['苹果'],
@@ -2631,8 +2627,6 @@ void main() {
     expect(state.studyStep, StudyStep.ch2En.json);
     expect(state.groupStepTrackName, '新词答对',
         reason: '指示行必须与本次呈现的环节一致，不能还挂着上一环节的轨道名');
-    expect(state.groupStepHint, isNot(null),
-        reason: '环节顺序提示随本次呈现一次到位，不必等异步补写');
     expect(state.isGroupStepRetry, false);
 
     // 汉译英点「不认识」→ 同一个词回到本环节重练：重测标记必须当场就在

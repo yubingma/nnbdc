@@ -680,9 +680,18 @@ import Accelerate
             return
         }
         hintPlaybackGeneration += 1
+        let generation = hintPlaybackGeneration
         stopNodeQuietly(hintPlaybackNode)
         file.framePosition = 0 // 同一份 AVAudioFile 反复调度，显式回卷到文件头
-        hintPlaybackNode.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { _ in }
+        // 播完必须停掉节点：AVAudioPlayerNode 播完整个 schedule 后 isPlaying 仍为 true，
+        // 不停就会让下一次请求命中上面"正在播放"的判断而被永久跳过
+        //（真机表现：一个进程内只有第一次能听到提示音，之后每次都静默跳过）。
+        hintPlaybackNode.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            DispatchQueue.main.async {
+                guard let self = self, self.hintPlaybackGeneration == generation else { return }
+                self.stopNodeQuietly(self.hintPlaybackNode)
+            }
+        }
         hintPlaybackNode.volume = 0.4
         hintPlaybackNode.play()
         result(nil)

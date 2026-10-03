@@ -620,7 +620,6 @@ class BdcNotifier extends _$BdcNotifier {
         groupStepTrackName: null,
         isGroupStepRetry: false,
         isLatestAnswerWrongToday: false,
-        groupStepHint: null,
       );
       
       // 开启麦克风保温以跨越列表页
@@ -758,7 +757,6 @@ class BdcNotifier extends _$BdcNotifier {
       groupStepTotal: phase?.total ?? 0,
       groupStepTrackName: phase?.trackName,
       isGroupStepRetry: phase?.isRetry ?? false,
-      groupStepHint: phase?.hint,
       isReviewWord: trackResult.isReview,
       assessmentRating: followUpAssessment,
       assessmentScheduledDays: followUpAssessmentDays,
@@ -955,7 +953,6 @@ class BdcNotifier extends _$BdcNotifier {
         int total,
         String trackName,
         bool isRetry,
-        String? hint,
       })?> _computeGroupStepProgress({
     required String wordId,
     required String step,
@@ -975,7 +972,6 @@ class BdcNotifier extends _$BdcNotifier {
       total: progress.total,
       trackName: progress.trackName,
       isRetry: progress.isRetry,
-      hint: null,
     );
   }
 

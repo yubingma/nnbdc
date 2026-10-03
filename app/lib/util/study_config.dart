@@ -24,9 +24,6 @@ class StudyConfig {
   /// 每组单词数（学习批次大小）：整组横向推进时一组容纳多少词，见 [effectiveBatchSize]
   int batchSize;
 
-  /// 用户已关闭学习页「本组环节顺序提示」，不再展示
-  bool hideGroupStepHint;
-
   /// 每组单词数的上限（防异常安全兜底，实际由当日计划词数 wordsPerDay 动态约束）
   static const int maxBatchSize = 500;
 
@@ -48,7 +45,6 @@ class StudyConfig {
     this.walkman,
     this.minNewWordsPerDay = 0,
     this.batchSize = 10,
-    this.hideGroupStepHint = false,
   });
 
   factory StudyConfig.fromJson(Map<String, dynamic> json) {
@@ -70,7 +66,6 @@ class StudyConfig {
       walkman: json['walkman'] is Map<String, dynamic> ? json['walkman'] : null,
       minNewWordsPerDay: _toInt(json['minNewWordsPerDay']),
       batchSize: _toInt(json['batchSize'], 10).clamp(1, maxBatchSize),
-      hideGroupStepHint: _toBool(json['hideGroupStepHint'], false),
     );
   }
 
@@ -122,7 +117,6 @@ class StudyConfig {
       if (walkman != null) 'walkman': walkman,
       'minNewWordsPerDay': minNewWordsPerDay,
       'batchSize': batchSize,
-      'hideGroupStepHint': hideGroupStepHint,
     };
   }
 
