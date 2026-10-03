@@ -30,12 +30,21 @@ public class LearningProgressRepairItem {
     private boolean canRepair;
     private String repairBlockReason;
 
+    /** 这三个数字对不上时的一句话诊断（口径由服务端给出，客户端只展示，不再自己推断） */
+    private String diagnosis;
+
+    /**
+     * 该用户最近一次上报给服务端的客户端版本号（来自 sys_error；旧版客户端未上报时为空）。
+     * 这类坏数据往往集中在某一版上，按用户看版本就能判断是不是版本问题。
+     */
+    private String clientVersion;
+
     public LearningProgressRepairItem() {
     }
 
     public LearningProgressRepairItem(String userId, String nickName, String wordId, String spell,
             Integer progress, Integer todayLogCount, Integer trackLenMax,
-            boolean canRepair, String repairBlockReason) {
+            boolean canRepair, String repairBlockReason, String diagnosis, String clientVersion) {
         this.userId = userId;
         this.nickName = nickName;
         this.wordId = wordId;
@@ -45,6 +54,8 @@ public class LearningProgressRepairItem {
         this.trackLenMax = trackLenMax;
         this.canRepair = canRepair;
         this.repairBlockReason = repairBlockReason;
+        this.diagnosis = diagnosis;
+        this.clientVersion = clientVersion;
     }
 
     public String getUserId() {
@@ -81,5 +92,13 @@ public class LearningProgressRepairItem {
 
     public String getRepairBlockReason() {
         return repairBlockReason;
+    }
+
+    public String getDiagnosis() {
+        return diagnosis;
+    }
+
+    public String getClientVersion() {
+        return clientVersion;
     }
 }

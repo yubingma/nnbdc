@@ -1668,6 +1668,12 @@ class LearningProgressRepairItemVo {
   final bool? canRepair;
   final String? repairBlockReason;
 
+  /// 这三个数字对不上时的一句话诊断（口径由服务端给出，界面只展示）
+  final String? diagnosis;
+
+  /// 该用户最近一次上报异常时用的客户端版本号；旧版客户端未上报时为空
+  final String? clientVersion;
+
   LearningProgressRepairItemVo({
     required this.userId,
     this.nickName,
@@ -1678,6 +1684,8 @@ class LearningProgressRepairItemVo {
     this.trackLenMax,
     this.canRepair,
     this.repairBlockReason,
+    this.diagnosis,
+    this.clientVersion,
   });
 
   factory LearningProgressRepairItemVo.fromJson(Map<String, dynamic> json) =>

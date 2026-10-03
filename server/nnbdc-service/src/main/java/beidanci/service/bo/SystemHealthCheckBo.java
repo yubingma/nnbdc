@@ -181,6 +181,7 @@ public class SystemHealthCheckBo {
         try {
             String sql = "SELECT l.user_id, u.nick_name, l.word_id, w.spell, "
                     + "       count(*) AS today_log_count, lw.today_learned_times, lw.update_time, "
+                    + "       ver.client_version, "
                     + "       GREATEST(COALESCE(nullif(new_max.max_len, 0), 0), "
                     + "                COALESCE(nullif(rev_max.max_len, 0), 0)) AS track_len_max "
                     + "FROM learning_log l "
@@ -189,6 +190,14 @@ public class SystemHealthCheckBo {
                     + "LEFT JOIN word w ON w.id = l.word_id "
                     + "JOIN (SELECT user_id, MAX(create_time) AS anchor FROM learning_log GROUP BY user_id) a "
                     + "  ON a.user_id = l.user_id "
+                    // 这类坏数据往往集中在某一版客户端上，界面上要按用户看版本号：
+                    // 取该用户最近一次上报异常时带的客户端版本（旧版客户端未上报时为空）
+                    + "LEFT JOIN ( "
+                    + "    SELECT DISTINCT ON (user_id) user_id, client_version "
+                    + "    FROM sys_error "
+                    + "    WHERE client_version IS NOT NULL AND client_version <> '' "
+                    + "    ORDER BY user_id, create_time DESC "
+                    + ") ver ON ver.user_id = l.user_id "
                     + "LEFT JOIN ( "
                     + "    SELECT user_id, MAX(check_len + correct_len + wrong_len) AS max_len "
                     + "    FROM ( "
@@ -216,7 +225,7 @@ public class SystemHealthCheckBo {
                     + "WHERE l.create_time >= a.anchor - make_interval(hours => 24) "
                     + "  AND l.create_time >= now() - make_interval(hours => :maxLookbackHours) "
                     + "GROUP BY l.user_id, u.nick_name, l.word_id, w.spell, lw.today_learned_times, "
-                    + "         lw.update_time, new_max.max_len, rev_max.max_len "
+                    + "         lw.update_time, ver.client_version, new_max.max_len, rev_max.max_len "
                     + "HAVING lw.today_learned_times > 0 AND (count(*) > lw.today_learned_times "
                     + "    OR lw.today_learned_times > "
                     + "       GREATEST(COALESCE(new_max.max_len, 0), COALESCE(rev_max.max_len, 0))) "
@@ -239,10 +248,12 @@ public class SystemHealthCheckBo {
                 int todayLogCount = rs.getInt("today_log_count");
                 int todayLearnedTimes = rs.getInt("today_learned_times");
                 int trackLenMax = rs.getInt("track_len_max");
+                String clientVersion = rs.getString("client_version");
                 found.add(buildLearningProgressIssue(userId, nickName, wordId, spell,
                         todayLogCount, todayLearnedTimes, trackLenMax));
                 repairs.add(buildLearningProgressRepairItem(userId, nickName, wordId, spell,
-                        todayLearnedTimes, todayLogCount, trackLenMax, rs.getTimestamp("update_time")));
+                        todayLearnedTimes, todayLogCount, trackLenMax, rs.getTimestamp("update_time"),
+                        clientVersion));
             });
 
             issues.addAll(found);
@@ -279,7 +290,7 @@ public class SystemHealthCheckBo {
         LearningWord learningWord = learningWordBo.findById(new LearningWordId(userId, wordId));
         if (learningWord == null) {
             return new LearningProgressRepairItem(userId, null, wordId, wordId, null, null, null,
-                    false, LearningProgressRepairItem.BLOCK_NOT_FOUND);
+                    false, LearningProgressRepairItem.BLOCK_NOT_FOUND, null, null);
         }
 
         final int progress = learningWord.getTodayLearnedTimes() == null ? 0 : learningWord.getTodayLearnedTimes();
@@ -287,7 +298,7 @@ public class SystemHealthCheckBo {
         final int target = countTodayLogs(userId, wordId);
 
         LearningProgressRepairItem judgement = buildLearningProgressRepairItem(userId, null, wordId,
-                wordId, progress, target, trackLenMaxOf(userId), learningWord.getUpdateTime());
+                wordId, progress, target, trackLenMaxOf(userId), learningWord.getUpdateTime(), null);
         if (!judgement.getCanRepair()) {
             return judgement;
         }
@@ -329,8 +340,8 @@ public class SystemHealthCheckBo {
             logger.error("写入学习进度修复审计失败: userId=" + userId + ", wordId=" + wordId, e);
         }
 
-        return new LearningProgressRepairItem(userId, null, wordId, wordId,
-                progress, target, judgement.getTrackLenMax(), true, null);
+        // 判定结果里已经带着修复前后的两个数值（progress 与 todayLogCount），直接回给管理端
+        return judgement;
     }
 
     /** 某词今天（当地业务日窗口）的评分流水条数；与客户端、体检页用的是同一把窗口 */
@@ -381,9 +392,12 @@ public class SystemHealthCheckBo {
      * <li>进度行必须已经"凉"了（{@value #REPAIR_MIN_STALE_HOURS} 小时内没被更新过）——
      * 用户可能正在学这个词，改它会倒退他刚走完的进度。</li>
      * </ol>
+     *
+     * @param clientVersion 该用户最近一次上报的客户端版本号，仅用于界面展示，可为空
      */
     static LearningProgressRepairItem buildLearningProgressRepairItem(String userId, String nickName,
-            String wordId, String spell, int progress, int todayLogCount, int trackLenMax, Date lastProgressUpdate) {
+            String wordId, String spell, int progress, int todayLogCount, int trackLenMax, Date lastProgressUpdate,
+            String clientVersion) {
         String target = (spell == null || spell.isEmpty()) ? wordId : spell;
         String blockReason = null;
         if (progress <= trackLenMax) {
@@ -397,8 +411,35 @@ public class SystemHealthCheckBo {
                         - REPAIR_MIN_STALE_HOURS * 3600_000L))) {
             blockReason = LearningProgressRepairItem.BLOCK_UPDATED_TODAY;
         }
-        return new LearningProgressRepairItem(userId, nickName, wordId, target,
-                progress, todayLogCount, trackLenMax, blockReason == null, blockReason);
+        return new LearningProgressRepairItem(userId, nickName, wordId, target, progress,
+                todayLogCount, trackLenMax, blockReason == null, blockReason,
+                buildLearningProgressDiagnosis(todayLogCount, progress, trackLenMax), clientVersion);
+    }
+
+    /**
+     * 只表达「这三个数字哪里对不上」的一句话诊断，不做任何修复判断。
+     *
+     * <p>体检的问题说明与逐词明细共用它，保证界面两处口径永远一致。
+     */
+    static String buildLearningProgressDiagnosis(int todayLogCount, int todayLearnedTimes, int trackLenMax) {
+        StringBuilder desc = new StringBuilder();
+        if (todayLogCount > todayLearnedTimes) {
+            desc.append("评分流水多于今日进度，说明同一次作答被重复写了学习记录");
+        }
+        if (todayLearnedTimes > todayLogCount) {
+            if (desc.length() > 0) {
+                desc.append("。");
+            }
+            desc.append("今日进度多于评分流水，说明同一次作答被重复推进了环节，"
+                    + "该词会被夹在最后一个环节反复出题、答案揭晓后没有可前进的出口");
+        }
+        if (todayLearnedTimes > trackLenMax) {
+            if (desc.length() > 0) {
+                desc.append("。");
+            }
+            desc.append("进度超过轨道长度，环节被多推进");
+        }
+        return desc.toString();
     }
 
     /**
@@ -415,15 +456,9 @@ public class SystemHealthCheckBo {
                 .append(todayLogCount).append(" 条，记录的今日环节进度 ")
                 .append(todayLearnedTimes).append("，当前配置下轨道长度上限 ")
                 .append(trackLenMax);
-        if (todayLogCount > todayLearnedTimes) {
-            desc.append("。评分流水多于今日进度，说明同一次作答被重复写了学习记录");
-        }
-        if (todayLearnedTimes > todayLogCount) {
-            desc.append("。今日进度多于评分流水，说明同一次作答被重复推进了环节，"
-                    + "该词会被夹在最后一个环节反复出题、答案揭晓后没有可前进的出口");
-        }
-        if (todayLearnedTimes > trackLenMax) {
-            desc.append("。进度超过轨道长度，环节被多推进");
+        String diagnosis = buildLearningProgressDiagnosis(todayLogCount, todayLearnedTimes, trackLenMax);
+        if (!diagnosis.isEmpty()) {
+            desc.append("。").append(diagnosis);
         }
         return new SystemHealthIssue("learning_progress_inconsistent", desc.toString(),
                 "learning_progress_inconsistent");

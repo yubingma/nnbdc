@@ -1899,15 +1899,19 @@ class BdcNotifier extends _$BdcNotifier {
     // 计分判断条件：带评分的调用视为"提交一次作答"，必须消费一张已受理凭据，且只消费一次。
     // 迟到/重复的提交（同一次作答被 autoJump 定时器、详情页、下一词按钮等多处触发）
     // 在这里被整体丢弃 —— 既不重复写学习记录，也不会把下一个学习环节顶掉。
-    FsrsRating? gradeRating = fsrsRating;
-    if (fsrsRating != null) {
+    //
+    // 回看模式（historyIndex != -1）里的「下一词」是走历史栈的纯导航，不是提交作答：界面上的
+    // 评分只是该词的历史快照（早已落库），这里既没有本次受理凭据，也不该再写一条学习记录。
+    // 若照旧拿它去匹配凭据，翻看历史时的每次点击都会被当成"迟到提交"丢弃，用户就再也回不到当前词。
+    FsrsRating? gradeRating = state.historyIndex == -1 ? fsrsRating : null;
+    if (gradeRating != null) {
       final pending = _pendingGrade;
       final bool matched = pending != null &&
           pending.wordId == state.word?.id &&
-          pending.rating == fsrsRating;
+          pending.rating == gradeRating;
       if (!matched) {
         Global.logger.w('getNextWord: 丢弃重复/迟到的作答提交 '
-            '(word=${state.word?.spell}, rating=$fsrsRating)');
+            '(word=${state.word?.spell}, rating=$gradeRating)');
         return false;
       }
       // 凭据不在读取时就作废，改由流转成功后的 handleWord 复位：取词抛异常或返回失败时

@@ -3905,7 +3905,6 @@ void main() {
       'isFinal': true,
     }));
     state = container.read(bdcNotifierProvider);
-    final shownRating = state.lastFsrsRating!;
     final shownDays = state.fsrsItem!.scheduledDays;
 
     // 再改判为「再学学」：界面上的评分与天数必须跟着重算
@@ -4215,5 +4214,96 @@ void main() {
         reason: '"本次作答已通过"只对上一次呈现成立，新呈现必须复位，否则波形旁会提前显示"回答正确"');
     expect(state.hasFinishedAnswering, isFalse, reason: '新呈现应回到未作答状态');
     expect(state.currentScore, null, reason: '新呈现不得残留上一轮的得分');
+  });
+
+  test('BdcNotifier - 回看模式点「下一词」翻完历史必须回到进入回看前的当前词', () async {
+    // 第二个待学词：回看历史翻到末尾后，要回到的当前词就是它
+    await db.into(db.words).insert(Word(
+          id: 'word_2',
+          spell: 'banana',
+          popularity: 90,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.meaningItems).insert(MeaningItem(
+          id: 'mim_2',
+          wordId: 'word_2',
+          dictId: Global.commonDictId,
+          ciXing: 'n.',
+          meaning: '香蕉',
+          popularity: 90,
+          ownerId: Global.sysUserId,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.dictWords).insert(DictWord(
+          dictId: 'mock_dict_1',
+          wordId: 'word_2',
+          seq: 2,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_2',
+          addTime: now,
+          addDay: 1,
+          batchId: 1,
+          lastLearningDate: AppClock.today(),
+          stability: 0.0,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          learningOrder: 2,
+          createTime: now,
+          updateTime: now,
+          isExtra: false,
+        ));
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+
+    // 答对第一个词并流转到第二个词：apple 进入回看历史，banana 成为当前词
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, isTrue, reason: '前置条件：apple 已答对');
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+    state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'banana');
+    expect(state.history.length, 1, reason: '前置条件：apple 已进入回看历史');
+
+    // 进入回看：呈现历史里的 apple，并记住当前词 banana
+    notifier.goToPreviousWord();
+    await _waitUntil(container, (s) => s.word?.spell == 'apple');
+    state = container.read(bdcNotifierProvider);
+    expect(state.historyIndex, 0, reason: '前置条件：已进入回看模式');
+    expect(state.lastFsrsRating, isNot(null),
+        reason: '前置条件：回看的历史词带着已落库的历史评分（正是这次点击被误判为"迟到提交"的触发条件）');
+
+    // 回看里点「下一词」：这是走历史栈的纯导航，必须能翻完历史回到当前词
+    final backToCurrent =
+        await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+    state = container.read(bdcNotifierProvider);
+    expect(backToCurrent, isTrue, reason: '回看里的「下一词」是导航，不得被计分闸门当成迟到提交丢弃');
+    expect(state.historyIndex, -1, reason: '翻完历史应退出回看模式');
+    expect(state.word!.spell, 'banana', reason: '必须回到进入回看前的当前词');
+
+    await Future.delayed(const Duration(milliseconds: 50));
   });
 }

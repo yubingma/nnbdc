@@ -348,4 +348,54 @@ void main() {
     expect(find.textContaining('下次复习: 12天后', findRichText: true), findsNothing,
         reason: '不得展示本次重练推算出的、不会生效的下次复习天数');
   });
+
+  testWidgets('回看模式横幅必须参与布局，不得遮挡顶部「返回/掌握/报错」按钮', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    // 真机状态栏高度：横幅此前用 Positioned 悬浮在页面顶部，
+    // 其"状态栏 + 文字"的总高度会盖住紧贴状态栏下方的顶部按钮行
+    tester.view.padding = const FakeViewPadding(top: 47);
+    // 大字号（App 字号设置/系统字号）会直接把悬浮横幅的文字撑高，盖子随之加深
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPadding();
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+    });
+
+    final (testWord, mockResult) = _createTestData();
+    final wordWrapper = WordWrapper(testWord, null);
+    final state = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockResult,
+      wordWrapper: wordWrapper,
+      studyStep: StudyStep.en2Ch.json,
+      showAnswerButtons: true,
+      canLeaveCurrWord: true,
+      history: [mockResult],
+      historyIndex: 0,
+    );
+    final notifier = MockBdcNotifierForWideScreen(state, mockHasSeenAnswer: true);
+
+    await tester.pumpWidget(_buildPageWithNotifier(notifier));
+    await tester.pumpAndSettle();
+
+    final bannerFinder = find.text('回看模式');
+    expect(bannerFinder, findsOneWidget, reason: '回看模式应展示横幅');
+
+    // 量的是橙色横条本体（Container），不是其中的文字
+    final bannerRect = tester.getRect(find.byKey(const Key('review_mode_banner')));
+    final masteredIconRect =
+        tester.getRect(find.byIcon(Icons.check_circle_outline_rounded));
+    final backLabelRect = tester.getRect(find.text('返回'));
+    debugPrint('回看横幅条=$bannerRect 掌握图标=$masteredIconRect 返回文字=$backLabelRect');
+
+    // 横幅不遮挡「掌握」图标（顶部按钮行中最高的一员）
+    expect(bannerRect.bottom, lessThanOrEqualTo(masteredIconRect.top),
+        reason: '回看横幅底边必须落在顶部按钮行之上，否则会盖住「掌握」按钮');
+    expect(bannerRect.bottom, lessThanOrEqualTo(backLabelRect.top),
+        reason: '回看横幅底边必须落在顶部按钮行之上，否则会盖住「返回」按钮');
+  });
 }

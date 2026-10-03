@@ -115,7 +115,7 @@ public class SystemHealthCheckBoTest {
     @Test
     public void 可修性判定_进度超轨道且流水足够且已凉下来时才允许修复() {
         LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
-                "user_1", "纪白", "15407", "electronic", 4, 3, 3, staleProgressUpdate());
+                "user_1", "纪白", "15407", "electronic", 4, 3, 3, staleProgressUpdate(), "26021901");
 
         assertTrue(item.getCanRepair(), "四条护栏都满足时应允许修复");
         assertNull(item.getRepairBlockReason());
@@ -128,7 +128,7 @@ public class SystemHealthCheckBoTest {
     public void 可修性判定_进度未超轨道长度时不修() {
         // 只是"比流水多一条"，可能是同步滞后；没超轨道长度说明该词还没走完整条轨道
         LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
-                "user_1", "纪白", "15407", "electronic", 2, 1, 3, staleProgressUpdate());
+                "user_1", "纪白", "15407", "electronic", 2, 1, 3, staleProgressUpdate(), "26021901");
 
         assertFalse(item.getCanRepair(), "进度未超过轨道长度时不得在服务端改动");
         assertEquals(LearningProgressRepairItem.BLOCK_NOT_OVER_TRACK, item.getRepairBlockReason());
@@ -137,7 +137,7 @@ public class SystemHealthCheckBoTest {
     @Test
     public void 可修性判定_今天没有流水时不修() {
         LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
-                "user_1", "纪白", "15407", "electronic", 4, 0, 3, staleProgressUpdate());
+                "user_1", "纪白", "15407", "electronic", 4, 0, 3, staleProgressUpdate(), "26021901");
 
         assertFalse(item.getCanRepair(), "没有流水就没有可靠依据判断该整成几");
         assertEquals(LearningProgressRepairItem.BLOCK_NO_LOG_TODAY, item.getRepairBlockReason());
@@ -147,7 +147,7 @@ public class SystemHealthCheckBoTest {
     public void 可修性判定_进度行最近还在更新时不修() {
         // 用户可能正在学这个词：此刻改它会把他刚走完的进度倒退回去
         LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
-                "user_1", "纪白", "15407", "electronic", 4, 3, 3, freshProgressUpdate());
+                "user_1", "纪白", "15407", "electronic", 4, 3, 3, freshProgressUpdate(), "26021901");
 
         assertFalse(item.getCanRepair(), "进度行还在更新时不得改动，避免倒退用户正在学的进度");
         assertEquals(LearningProgressRepairItem.BLOCK_UPDATED_TODAY, item.getRepairBlockReason());
@@ -157,9 +157,26 @@ public class SystemHealthCheckBoTest {
     public void 可修性判定_目标值不得大于等于当前值() {
         // 只降不升：进度已经等于流水条数时没有可下调的空间
         LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
-                "user_1", "纪白", "15407", "electronic", 3, 3, 3, staleProgressUpdate());
+                "user_1", "纪白", "15407", "electronic", 3, 3, 3, staleProgressUpdate(), "26021901");
 
         assertFalse(item.getCanRepair());
         assertEquals(LearningProgressRepairItem.BLOCK_NOT_OVER_TRACK, item.getRepairBlockReason());
+    }
+
+    // ---------- 界面按用户分组展示所需的两项信息 ----------
+
+    @Test
+    public void 逐词明细带着与体检说明一字不差的诊断文案和用户上报的客户端版本() {
+        // 同一份现场：3 条流水、进度被推到 4、轨道长度 2（进度既多于流水、又超过轨道长度）
+        SystemHealthIssue issue = SystemHealthCheckBo.buildLearningProgressIssue(
+                "user_1", "纪白", "15407", "electronic", 3, 4, 2);
+        LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
+                "user_1", "纪白", "15407", "electronic", 4, 3, 2, staleProgressUpdate(), "26021901");
+
+        assertTrue(item.getDiagnosis().contains("重复推进了环节"), item.getDiagnosis());
+        assertTrue(item.getDiagnosis().contains("进度超过轨道长度"), item.getDiagnosis());
+        assertTrue(issue.getDescription().endsWith(item.getDiagnosis()),
+                "体检说明里那句诊断应与逐词明细一致，不能两处各写一套: " + issue.getDescription());
+        assertEquals("26021901", item.getClientVersion());
     }
 }

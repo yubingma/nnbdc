@@ -311,20 +311,28 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     );
   }
 
-  /// 逐词明细：每个词一行，可修的给"修复"按钮，不可修的说明原因。
+  /// 逐词明细按用户分组：同一个人的词放在一起，组头给出昵称、用户 ID 与
+  /// 他最近上报的客户端版本号（这类坏数据往往集中在某一版客户端上）。
   ///
   /// 刻意不做"全部修复"：这类数据的可修性取决于该词是否真的卡住、是否还在被学习，
   /// 只能逐个判断，批量修会误伤正在学的用户。
-  Widget _buildLearningProgressRepairList(bool isDarkMode) {
+  Widget _buildLearningProgressGroups(bool isDarkMode) {
     final repairable =
         _learningProgressRepairs.where((item) => item.canRepair == true).toList();
+
+    // 按用户归组，保留服务端"差得最多排最前"的顺序：先出现的用户就是问题最重的
+    final groups = <String, List<LearningProgressRepairItemVo>>{};
+    for (final item in _learningProgressRepairs) {
+      groups.putIfAbsent(item.userId, () => []).add(item);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 4),
         Text(
-          '逐词明细（共 ${_learningProgressRepairs.length} 条，其中可修复 ${repairable.length} 条）',
+          '逐词明细（共 ${groups.length} 个用户 ${_learningProgressRepairs.length} 条，'
+          '其中可修复 ${repairable.length} 条）',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -341,77 +349,147 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           ),
         ),
         const SizedBox(height: 10),
-        ..._learningProgressRepairs.map((item) {
-          final wordLabel =
-              (item.spell == null || item.spell!.isEmpty) ? item.wordId : item.spell!;
-          final canRepair = item.canRepair == true;
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: canRepair
-                    ? Colors.green.withValues(alpha: 0.5)
-                    : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '$wordLabel (${item.wordId})',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: isDarkMode ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '用户 ${item.nickName ?? item.userId} · '
-                        '今日进度 ${item.progress} · 今日记录 ${item.todayLogCount} 条 · '
-                        '轨道长度 ${item.trackLenMax}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                      if (!canRepair && item.repairBlockReason != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          item.repairBlockReason!,
-                          style: TextStyle(fontSize: 12, color: Colors.orange[700]),
-                        ),
-                      ],
-                    ],
+        ...groups.entries.map((group) =>
+            _buildLearningProgressUserGroup(group.key, group.value, isDarkMode)),
+      ],
+    );
+  }
+
+  /// 一个用户一组：组头是他本人（昵称、ID、最近上报的客户端版本号），下面是他名下的词
+  Widget _buildLearningProgressUserGroup(String userId,
+      List<LearningProgressRepairItemVo> items, bool isDarkMode) {
+    final nickName = items.first.nickName;
+    final userLabel = (nickName == null || nickName.isEmpty) ? userId : nickName;
+    final version = items.first.clientVersion;
+    final repairableCount = items.where((item) => item.canRepair == true).length;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.person_outline,
+                  size: 18,
+                  color: isDarkMode ? Colors.grey[300] : Colors.grey[700]),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '用户「$userLabel」',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? Colors.white : Colors.black87,
                   ),
                 ),
-                const SizedBox(width: 8),
-                if (canRepair)
-                  TextButton(
-                    onPressed: () => _repairLearningProgress(item),
-                    style: TextButton.styleFrom(foregroundColor: Colors.green),
-                    child: const Text('修复'),
-                  )
-                else
+              ),
+              Text(
+                '${items.length} 条 · 可修复 $repairableCount 条',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '$userId · 最近上报客户端版本 '
+            '${(version == null || version.isEmpty) ? '未上报' : version}',
+            style: TextStyle(
+              fontSize: 12,
+              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...items.map((item) => _buildLearningProgressWordRow(item, isDarkMode)),
+        ],
+      ),
+    );
+  }
+
+  /// 组内一个词一行：可修的给"修复"按钮，不可修的说明原因
+  Widget _buildLearningProgressWordRow(
+      LearningProgressRepairItemVo item, bool isDarkMode) {
+    final wordLabel =
+        (item.spell == null || item.spell!.isEmpty) ? item.wordId : item.spell!;
+    final canRepair = item.canRepair == true;
+    final diagnosis = item.diagnosis;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: canRepair
+              ? Colors.green.withValues(alpha: 0.5)
+              : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$wordLabel (${item.wordId})',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '今日进度 ${item.progress} · 今日记录 ${item.todayLogCount} 条 · '
+                  '轨道长度 ${item.trackLenMax}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                if (diagnosis != null && diagnosis.isNotEmpty) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    '不可修',
+                    diagnosis,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDarkMode ? Colors.grey[500] : Colors.grey[500],
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
+                ],
+                if (!canRepair && item.repairBlockReason != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    item.repairBlockReason!,
+                    style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                  ),
+                ],
               ],
             ),
-          );
-        }),
-      ],
+          ),
+          const SizedBox(width: 8),
+          if (canRepair)
+            TextButton(
+              onPressed: () => _repairLearningProgress(item),
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+              child: const Text('修复'),
+            )
+          else
+            Text(
+              '不可修',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDarkMode ? Colors.grey[500] : Colors.grey[500],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -427,6 +505,14 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     if (relatedIssues.isEmpty) {
       return;
     }
+
+    // 「学习进度与学习记录一致性」的每条明细都带着结构化的用户与词：详情按用户分组展示
+    // （组头给昵称与他最近上报的客户端版本号，可逐词修复），不再逐条重复渲染问题卡片；
+    // 只读导出失败（明细为空）时退回逐条卡片，让失败本身仍然可见。
+    final issueCards = (category == 'learning_progress_inconsistent' &&
+            _learningProgressRepairs.isNotEmpty)
+        ? const <SystemHealthIssue>[]
+        : relatedIssues;
 
     final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
 
@@ -495,7 +581,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...relatedIssues.map((issue) {
+                        ...issueCards.map((issue) {
                           return Container(
                           margin: const EdgeInsets.only(bottom: 20),
                           padding: const EdgeInsets.all(16),
@@ -688,10 +774,10 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                           ),
                         );
                         }),
-                        // 「学习进度与学习记录一致性」逐词明细：可修的给出修复按钮
+                        // 「学习进度与学习记录一致性」逐词明细：按用户分组，可修的给出修复按钮
                         if (category == 'learning_progress_inconsistent' &&
                             _learningProgressRepairs.isNotEmpty)
-                          _buildLearningProgressRepairList(isDarkMode),
+                          _buildLearningProgressGroups(isDarkMode),
                       ],
                     ),
                   ),

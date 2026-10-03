@@ -555,7 +555,12 @@ extension BdcPageStateUIComponents on BdcPageState {
             }
           },
           child: Container(
-            height: MediaQuery.of(context).padding.top + 2.5,
+            // 回看模式下橙色横幅已经铺满状态栏那一条：正文不再重复预留状态栏高度，
+            // 否则横幅与进度条之间会空出整整一条状态栏的空白。
+            height: (state.historyIndex == -1
+                    ? MediaQuery.of(context).padding.top
+                    : 0.0) +
+                2.5,
             width: double.infinity,
             alignment: Alignment.bottomCenter,
             child: state.currentGetWordResult?.progress != null

@@ -547,6 +547,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       children: [
         Column(
           children: [
+            // 回看横幅参与正常布局（不再用 Positioned 悬浮覆盖）：横幅多高，下方内容就下移多少，
+            // 「返回/掌握/报错」这一行永远落在横幅之下 —— 大字号下横幅变高同样压不到按钮。
+            if (state.historyIndex != -1) _buildReviewBanner(),
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -563,49 +566,6 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
             ),
           ],
         ),
-        if (state.historyIndex != -1)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top,
-                  bottom: 2,
-                  left: 20,
-                  right: 20),
-              color: Colors.orange.withValues(alpha: 0.9),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        '回顾模式',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        '-${state.history.length - state.historyIndex}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         // 新手引导：只讲「你说，我来听」（首次进入学习页自动展示，遮罩吸收点击）
         if (_showStudyGuide)
           Positioned.fill(
@@ -660,6 +620,32 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     debugPrint('⚡ [PERF] BdcPage.renderPage cost: ${stopwatch.elapsedMilliseconds}ms');
     return res;
+  }
+
+  /// 回看模式横幅：橙色横条自带状态栏内边距，一直铺到状态栏底下，文字落在状态栏下方。
+  /// 它按普通子组件参与 Column 布局，高度由自身内容决定，不再悬浮压住下方内容。
+  Widget _buildReviewBanner() {
+    return Container(
+      key: const Key('review_mode_banner'),
+      width: double.infinity,
+      padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top,
+          bottom: 2,
+          left: 20,
+          right: 20),
+      color: Colors.orange.withValues(alpha: 0.9),
+      child: const Center(
+        child: Text(
+          '回看模式',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+          ),
+        ),
+      ),
+    );
   }
 
   bool _getShouldShowSpeakTab(BdcState state) {
