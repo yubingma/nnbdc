@@ -86,10 +86,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// > 0 表示还有加量要接着学，首页据此把主按钮换成"继续学习（加量）"入口。
   int get _pendingExtraWordCount => _extraTotalCount - _extraCompletedCount;
   Set<String> _masteredWordIds = {};
-  /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道配置）
-  int _studyStepsTab = 0;
-  /// 学习轨道是否处于编辑模式（默认 false 为极简图形化显示模式，true 为完整配置编辑模式）
-  bool _isEditingTracks = false;
+  /// 正在编辑的学习轨道作用域：null 为显示模式，'new' 为编辑新词轨道，'review' 为编辑旧词轨道。
+  /// 用一个状态同时表达"是否在编辑"和"编辑哪条轨道"，避免编辑开关与 tab 索引两处状态互相打架。
+  String? _editingTrackScope;
   /// 新词三组规则（显式设置）；_newConfigSaved=false 表示未落库（当前为默认规则）
   String? _newCheckStep;
   List<String> _newCorrectSteps = [];
@@ -1953,60 +1952,33 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   Widget renderStudySteps() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final themeStyle = context.watch<DarkMode>().themeStyle;
-    final themeConfig = AppThemeConfig.of(themeStyle);
+    final editingScope = _editingTrackScope;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 标题与轻量化切换模式按钮（纯文字链接，不再抢占主按钮视线）
+        // 区域标题（每条轨道自带调整入口，这里不再放不区分轨道的汇总按钮）
         Padding(
           padding: const EdgeInsets.only(left: 2, right: 2, bottom: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '学习轨道',
-                style: TextStyle(
-                  color: context.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _isEditingTracks = !_isEditingTracks),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _isEditingTracks ? Icons.check_rounded : Icons.tune_rounded,
-                      size: 13,
-                      color: _isEditingTracks ? context.primaryColor : themeConfig.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _isEditingTracks ? '完成配置' : '调整轨道',
-                      style: TextStyle(
-                        color: _isEditingTracks ? context.primaryColor : themeConfig.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          child: Text(
+            '学习轨道',
+            style: TextStyle(
+              color: context.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
           ),
         ),
 
-        // 显示模式 vs 编辑模式
-        AnimatedCrossFade(
-          duration: const Duration(milliseconds: 250),
-          crossFadeState: _isEditingTracks ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          firstChild: _buildTrackDisplayCard(isDarkMode),
-          secondChild: _buildTrackEditCard(isDarkMode),
+        // 显示模式与编辑模式二选一：编辑态只构建被点击的那一条轨道，视线里不出现需要切换的另一个对象
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: editingScope == null
+              ? _buildTrackDisplayCard(isDarkMode)
+              : _buildTrackEditCard(editingScope, isDarkMode),
         ),
       ],
     );
@@ -2018,43 +1990,42 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
       child: Column(
         children: [
-          // 新词轨道（点击精准定位至新词轨道配置 Tab）
+          // 新词轨道（点这一行就只调整新词轨道）
           _buildTrackDisplayRow(
-            title: '新词',
+            scope: 'new',
             checkStep: _newCheckStep ?? 'En2Ch',
             correctSteps: _newCorrectSteps,
             wrongSteps: _newWrongSteps,
             isDarkMode: isDarkMode,
-            isNewWord: true,
           ),
           // 发丝分割线（极细、不抢戏）
           Container(height: 0.6, color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.055)),
-          // 旧词轨道（点击精准定位至旧词轨道配置 Tab）
+          // 旧词轨道（点这一行就只调整旧词轨道）
           _buildTrackDisplayRow(
-            title: '旧词',
+            scope: 'review',
             checkStep: _reviewCheckStep ?? 'En2Ch',
             correctSteps: _reviewCorrectSteps,
             wrongSteps: _reviewWrongSteps,
             isDarkMode: isDarkMode,
-            isNewWord: false,
           ),
         ],
       ),
     );
   }
 
-  /// 单个轨道的纯排版展示行：左侧裸排版「轨道名 + 测评起点」，右侧「答对/答错 → 结果流节点」
+  /// 单个轨道的纯排版展示行：左侧裸排版「轨道名 + 测评起点」，右侧「答对/答错 → 结果流节点」；
+  /// 行尾的调节图标是这条轨道自己的调整入口，点击整行即进入该轨道的编辑模式。
   Widget _buildTrackDisplayRow({
-    required String title,
+    required String scope,
     required String checkStep,
     required List<String> correctSteps,
     required List<String> wrongSteps,
     required bool isDarkMode,
-    required bool isNewWord,
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
 
+    final title = scope == 'new' ? '新词' : '旧词';
     final checkDesc = StudyStepExt.fromString(checkStep).description;
     final textPrimary = themeConfig.textPrimary;
     final textMuted = themeConfig.textMuted;
@@ -2063,10 +2034,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() {
-        _studyStepsTab = isNewWord ? 0 : 1;
-        _isEditingTracks = true;
-      }),
+      onTap: () => setState(() => _editingTrackScope = scope),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
@@ -2126,6 +2094,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: 6),
+            // 这条轨道自己的调整入口：轻量调节图标只做可见线索，点击整行即生效
+            Icon(
+              Icons.tune_rounded,
+              size: 14,
+              color: themeConfig.textSecondary.withValues(alpha: 0.55),
             ),
           ],
         ),
@@ -2225,10 +2200,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 【编辑模式】—— 完整新旧词规则配置卡片
-  Widget _buildTrackEditCard(bool isDarkMode) {
-    final badgeBg = isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04);
-
+  /// 【编辑模式】—— 只编辑 scope 指定的那一条轨道，顶部明示轨道名并提供「完成」收起
+  Widget _buildTrackEditCard(String scope, bool isDarkMode) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -2268,54 +2241,43 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 紧凑分段标签（新词轨道 / 旧词轨道）
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: badgeBg,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildSubtleTabBtn('新词轨道', 0, isDarkMode),
-                    _buildSubtleTabBtn('旧词轨道', 1, isDarkMode),
-                  ],
-                ),
+              // 正在编辑哪条轨道必须一眼可见（不再有需要来回切换的 tab）
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    scope == 'new' ? '新词轨道' : '旧词轨道',
+                    style: TextStyle(
+                      color: context.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _editingTrackScope = null),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_rounded, size: 13, color: context.primaryColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          '完成',
+                          style: TextStyle(
+                            color: context.primaryColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
-              _buildReviewStepsInfoCard(scope: _studyStepsTab == 0 ? 'new' : 'review', isDarkMode: isDarkMode),
+              _buildReviewStepsInfoCard(scope: scope, isDarkMode: isDarkMode),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubtleTabBtn(String title, int tabIndex, bool isDarkMode) {
-    final isSelected = _studyStepsTab == tabIndex;
-    final selectedColor = context.primaryColor;
-    final textMuted = context.textSecondary;
-
-    return GestureDetector(
-      onTap: () => setState(() => _studyStepsTab = tabIndex),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDarkMode ? context.subtleBg : Colors.white)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 1))]
-              : null,
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? selectedColor : textMuted,
           ),
         ),
       ),
