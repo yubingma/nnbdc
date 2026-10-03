@@ -664,6 +664,9 @@ import Accelerate
         }
         lastReadyHintTime = now
         guard let file = hintPlaybackFile else {
+            // 唯一一条"什么都听不到、日志里也没有痕迹"的分支：必须暴露出来，
+            // 否则提示音偶发不响时无从判断是没触发还是资源没就绪。
+            print("IOS: [ASR] playReadyHint 跳过：提示音文件未加载（setupReadyHintSound 未成功）")
             result(nil)
             return
         }
