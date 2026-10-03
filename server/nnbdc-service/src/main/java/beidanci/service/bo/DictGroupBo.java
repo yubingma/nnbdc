@@ -104,7 +104,7 @@ public class DictGroupBo extends BaseBo<DictGroup> {
         // 加载直接包含的单词书（dicts）
         String dictsSql = "SELECT d.* FROM dict d " +
                 "INNER JOIN group_and_dict_link gdl ON gdl.dict_id = d.id " +
-                "WHERE gdl.group_id = :groupId";
+                "WHERE gdl.group_id = :groupId AND d.visible = true";
         MapSqlParameterSource dictsParams = new MapSqlParameterSource("groupId", dictGroup.getId());
         List<Dict> dicts = namedParameterJdbcTemplate.query(dictsSql, dictsParams,
                 new EntityRowMapper<>(Dict.class));

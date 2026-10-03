@@ -69,7 +69,15 @@ public class GameHallBo extends BaseBo<GameHall> {
         dictGroupBo.loadDictGroupsAndDicts(dictGroup);
         
         List<Dict> dicts = dictGroup.getAllDicts();
-        List<String> dictIds = dicts.stream().map(d -> d.getId()).collect(Collectors.toList());
+        // 过滤出 2024 年及以后创建且 visible = true 的正版词书，彻底排除 2024 年前老旧词书
+        List<Dict> validDicts = dicts.stream()
+                .filter(d -> Boolean.TRUE.equals(d.getVisible()))
+                .filter(d -> d.getCreateTime() != null && d.getCreateTime().getTime() >= 1704038400000L /* 2024-01-01 00:00:00 */)
+                .collect(Collectors.toList());
+        List<String> dictIds = validDicts.stream().map(d -> d.getId()).collect(Collectors.toList());
+        if (dictIds.isEmpty()) {
+            return new HashMap<>();
+        }
         String sql = "SELECT DISTINCT w.* FROM word w " +
                 "INNER JOIN dict_word dw ON dw.word_id = w.id " +
                 "WHERE dw.dict_id IN (:dictIds)";
@@ -139,7 +147,7 @@ public class GameHallBo extends BaseBo<GameHall> {
             
             WordVo wordVo2 = new WordVo();
             org.springframework.beans.BeanUtils.copyProperties(Objects.requireNonNull(wordVo), wordVo2);
-            wordVo2 = Util.shrinkWordVo(wordVo2, dicts, 1, true);
+            wordVo2 = Util.shrinkWordVo(wordVo2, validDicts, 1, true);
             wordsBySpell.put(wordVo2.getSpell(), wordVo2);
         }
         return wordsBySpell;
