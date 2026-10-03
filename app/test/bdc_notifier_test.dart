@@ -1621,6 +1621,188 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
+  test('BdcNotifier - 巩固环节答完改评分：改的是本次待提交的评分，改回原值必须回到原来的天数', () async {
+    // 复刻线上 iPad 实测：新词测评 = 轻松（init 16 天），随后巩固环节答出"模糊"，
+    // 面板显示"模糊 · 13 天后"（next(init(轻松), 模糊, 0)）。
+    // 用户点这一行改评分时，改的必须是这一行显示的"本次作答"：
+    // 改成忘记再改回模糊要回到 13 天，不能按"今日测评评分"重推整天
+    //（那样只剩 init(模糊) = 1 天，怎么改都回不到 13）。
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
+
+    // 答对组配汉译英：测评答对后，同一个词进入第二个环节（巩固）
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
+          studyStep: 'Ch2En',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+    expect(state.currentGetWordResult!.stepIndex, 0, reason: '前置条件：从测评环节开始');
+
+    // 测评环节作答：秒答 → 轻松，并流转到巩固环节（此时才把测评日志写进库）
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.easy, reason: '前置条件：测评答出"轻松"');
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.currentGetWordResult!.stepIndex, 1, reason: '前置条件：已进入巩固环节');
+    expect(state.studyStep, StudyStep.ch2En.json);
+    expect(state.isGroupStepRetry, isFalse, reason: '前置条件：这是巩固环节的首次呈现');
+    expect(state.currentGetWordResult!.learningWord!.stability, 15.69105,
+        reason: '前置条件：记忆状态是测评 init(轻松) 的结果');
+    expect(state.assessmentRating, FsrsRating.easy, reason: '前置条件：测评参考＝轻松');
+    expect(state.assessmentScheduledDays, 16, reason: '前置条件：测评参考＝16 天');
+    var logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1, reason: '前置条件：测评日志已提交');
+    expect(logs.first.scheduledDays, 16);
+    expect(logs.first.rating, FsrsRating.easy.value);
+
+    // 巩固环节作答：时钟推后 20 秒 → 响应时间落在"模糊"档（>= 18s）
+    AppClock.setClock(FakeClock(testNow.add(const Duration(seconds: 20))));
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'apple',
+      'candidates': ['apple'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, isTrue);
+    expect(state.lastFsrsRating, FsrsRating.hard,
+        reason: '前置条件：巩固环节答出"模糊"');
+    expect(state.fsrsItem!.scheduledDays, 13,
+        reason: '前置条件：面板显示"模糊 · 13 天后"（next(init(轻松), 模糊, 0)）');
+
+    // 用户点面板把本次评分改成忘记：只改这次待提交的评分，不得提前写库
+    final prevItem = FSRSItem(
+      stability: 15.69105,
+      difficulty: 3.2245015893713678,
+      elapsedDays: 0,
+      scheduledDays: 16,
+      reps: 1,
+      lapses: 0,
+      state: FsrsState.learning,
+    );
+    final expectedAgainDays =
+        FSRS().next(prevItem, FsrsRating.again, 0).scheduledDays;
+    notifier.updateFsrsRating(FsrsRating.again);
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.again);
+    expect(state.fsrsItem!.scheduledDays, expectedAgainDays,
+        reason: '改成忘记后按本次作答重算（next(测评状态, 忘记, 0)）');
+
+    // 再改回模糊：必须回到 13 天（线上就是这一步没回去）
+    notifier.updateFsrsRating(FsrsRating.hard);
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.hard);
+    expect(state.fsrsItem!.scheduledDays, 13,
+        reason: '改回模糊必须回到原来的 13 天，而不是按"测评=模糊"重推成 init(模糊)=1 天');
+
+    logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1, reason: '本次作答还没流转，改评分不得提前落库');
+    expect(logs.first.rating, FsrsRating.easy.value,
+        reason: '已落库的测评日志必须原样保留（测评还是轻松）');
+
+    // 点「下一词」：以最后表态（模糊）落库成巩固环节那条日志
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+    logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 2, reason: '巩固环节这次作答此时才落库');
+    expect(logs.first.rating, FsrsRating.hard.value,
+        reason: '巩固日志落库的必须是最后表态的"模糊"');
+    expect(logs.last.rating, FsrsRating.easy.value,
+        reason: '测评那条日志保持轻松不变');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 修改今日评分写回的 learning_logs 必须进同步队列', () async {
+    // 线上实测：本地日志已改成新评分，服务端却一直保留旧评分 ——
+    // 因为 saveHistoryFSRSUpdate 用裸 drift update 改写日志，绕过了 DbLogUtil 入队。
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    AppClock.setClock(FakeClock(testNow));
+    addTearDown(AppClock.reset);
+
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_sync_1',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 15.69105,
+      difficulty: 3.2245015893713678,
+      elapsedDays: 0,
+      scheduledDays: 16,
+      createTime: testNow,
+      updateTime: testNow,
+    ), false);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    notifier.updateFsrsRating(FsrsRating.good);
+
+    // 等待异步计算与持久化完成
+    LearningLog? updated;
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      final rows = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+      if (rows.isNotEmpty && rows.first.rating == FsrsRating.good.value) {
+        updated = rows.first;
+        break;
+      }
+    }
+    expect(updated, isNot(null), reason: '改评分应把当天首条日志写成新评分');
+
+    final queue = await (db.select(db.userDbLogs)
+          ..where((t) => t.tblName.equals('learningLogs')))
+        .get();
+    expect(queue, isNotEmpty,
+        reason: '改评分写回的 learning_logs 必须进同步队列，否则服务端一直留着旧评分');
+    expect(
+        queue.any((l) =>
+            l.recordId == updated!.id &&
+            l.record.contains('"rating":${FsrsRating.good.value}')),
+        isTrue,
+        reason: '队列里的日志记录必须是被改写的那条、且带着新评分');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
   test('BdcNotifier - 修改今日评分:多环节后新词改评分应重放全部当天环节', () async {
     // 模拟今天的新词已完成测评(easy)+巩固(good)两个环节提交：
     // 真实状态是 init(easy)=15.69105 再走同日短期公式 next(good,0) ≈ 22.09
@@ -3791,7 +3973,7 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
-  test('BdcNotifier - 改判为「忘记」后再点「再学学」：结论必须随评分回到通过', () async {
+  test('BdcNotifier - 已作答后点「再学学」：不得把已答错的词提成良好', () async {
     final mockAsr = MockAsr();
     final container = ProviderContainer(
       overrides: [asrProvider.overrideWithValue(mockAsr)],
@@ -3814,31 +3996,66 @@ void main() {
     state = container.read(bdcNotifierProvider);
     expect(state.isScorePassed, isTrue, reason: '答对后输入区显示"回答正确"');
 
-    // 改判为忘记 → 撤回通关呈现
+    // 改判为忘记 → 撤回通关呈现（等价于"选错了答案"后落回详情页）
     unawaited(notifier.showWordDetail(state.word!, true, null,
         fsrsRating: FsrsRating.again, reason: '主动点击了不再认识，评分: 忘记'));
     state = container.read(bdcNotifierProvider);
     expect(state.isScorePassed, isFalse);
+    expect(state.lastFsrsRating, FsrsRating.again);
 
-    // 又改主意点「再学学」（良好）→ 结论必须跟着评分回到通过
-    unawaited(notifier.showWordDetail(state.word!, false, null,
-        fsrsRating: FsrsRating.good, reason: '主动点击了再学学，评分: 良好'));
+    // 已经作答的情况下点「再学学」：只是进详情页再看一遍，评分一个字都不动
+    unawaited(notifier.studyAgain(null));
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.again,
+        reason: '再学学不是评分表态：已答错的词不得被提成良好，'
+            '否则当天首条评分翻盘、轨道从"答错组"跳到"答对组"');
+    expect(state.isScorePassed, isFalse, reason: '没通过就是没通过，再看一遍不能改写结论');
+    expect(state.lastFsrsRatingReason, contains('保留'),
+        reason: '理由必须如实写明是保留原评分，而不是"评分: 良好"');
+
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1);
+    expect(logs.first.rating, FsrsRating.again.value,
+        reason: '落库必须还是忘记：这条评分决定当天走答错组还是答对组');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 未作答点「再学学」：记良好并正常流转', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, isNull, reason: '前置条件：本次呈现还没作答');
+
+    // 没作答时「再学学」相当于良好：用户没有任何作答事实，流程需要一个能往下走的评分
+    unawaited(notifier.studyAgain(null));
     state = container.read(bdcNotifierProvider);
     expect(state.lastFsrsRating, FsrsRating.good);
-    expect(state.isScorePassed, isTrue,
-        reason: '"再学学"就是良好，结论必须与良好一致，用户不该去记两套口径');
+    expect(state.isScorePassed, isTrue, reason: '良好是通过档');
 
     await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
 
     final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
     expect(logs.length, 1);
     expect(logs.first.rating, FsrsRating.good.value,
-        reason: '最后表态是「再学学」，落库必须是良好');
+        reason: '未作答点再学学，落库是良好');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
-  test('BdcNotifier - 答对为轻松后改点「再学学」：以良好落库并正常流转', () async {
+  test('BdcNotifier - 答对为轻松后点「再学学」：保留轻松，不因"再看一眼"被降级', () async {
     final mockAsr = MockAsr();
     final container = ProviderContainer(
       overrides: [asrProvider.overrideWithValue(mockAsr)],
@@ -3864,21 +4081,20 @@ void main() {
     expect(state.lastFsrsRating, FsrsRating.easy);
     expect(state.isScorePassed, isTrue, reason: '答对后输入区显示"回答正确"');
 
-    // 用户不点「下一词」，改点「再学学」进详情页（评分良好）
-    unawaited(notifier.showWordDetail(state.word!, false, null,
-        fsrsRating: FsrsRating.good, reason: '主动点击了再学学，评分: 良好'));
+    // 用户不点「下一词」，改点「再学学」进详情页：评分保持轻松
+    unawaited(notifier.studyAgain(null));
     state = container.read(bdcNotifierProvider);
-    expect(state.lastFsrsRating, FsrsRating.good);
-    expect(state.isScorePassed, isTrue,
-        reason: '良好也是通过：改判不得把通过状态丢掉');
+    expect(state.lastFsrsRating, FsrsRating.easy,
+        reason: '已作答时「再学学」不改评分：不该因为想看一眼例句就被降到良好');
+    expect(state.isScorePassed, isTrue, reason: '通过状态不得被撤销');
 
-    // 详情页「下一词」：改判后的评分与原评分不同，凭据必须被覆盖，流转不能因此丢失
+    // 详情页「下一词」：仍是同一条凭据，流转正常且落库就是轻松
     await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
 
     final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
-    expect(logs.length, 1, reason: '同一次呈现只落一条评分日志，改判不是新增一次作答');
-    expect(logs.first.rating, FsrsRating.good.value,
-        reason: '最后表态是「再学学」，落库必须是良好，不能被先前答对的轻松顶掉');
+    expect(logs.length, 1, reason: '同一次呈现只落一条评分日志，再学学不是新增一次作答');
+    expect(logs.first.rating, FsrsRating.easy.value,
+        reason: '落库必须是用户自己答出来的轻松');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
@@ -3907,13 +4123,13 @@ void main() {
     state = container.read(bdcNotifierProvider);
     final shownDays = state.fsrsItem!.scheduledDays;
 
-    // 再改判为「再学学」：界面上的评分与天数必须跟着重算
-    unawaited(notifier.showWordDetail(state.word!, false, null,
-        fsrsRating: FsrsRating.good, reason: '主动点击了再学学，评分: 良好'));
+    // 改判为忘记（答错后落回详情页 / 点「不认识」）：界面上的评分与天数必须跟着重算
+    unawaited(notifier.showWordDetail(state.word!, true, null,
+        fsrsRating: FsrsRating.again, reason: '选错了答案'));
     state = container.read(bdcNotifierProvider);
     final reShownRating = state.lastFsrsRating!;
     final reShownDays = state.fsrsItem!.scheduledDays;
-    expect(reShownRating, FsrsRating.good);
+    expect(reShownRating, FsrsRating.again);
     expect(reShownDays, isNot(shownDays),
         reason: '评分改了，界面上推算的下次复习天数必须跟着改（否则所见不是按新评分算的）');
 

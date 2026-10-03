@@ -1338,6 +1338,34 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+  /// 「再学学」：进详情页把这个词再看一遍。
+  ///
+  /// 它只是"去看一眼"，不是一次评分表态：
+  /// - 本次呈现还没作答（[BdcState.lastFsrsRating] 为空）→ 记「良好」：用户还没有任何作答事实，
+  ///   而流程需要一个能继续往下走的评分；"还想再学学"表达的是不熟，但不算不认识。
+  /// - 本次呈现已经作答 → **评分一个字都不动**，详情页照常打开，回来还是原来那个评分。
+  ///   绝不能把已答错的词提成良好：那会翻盘当天首条评分，轨道从"答错组"跳到"答对组"
+  ///   （见 StudyTrack.trackOf），标红、错词本、FSRS 档位一并被抹掉 ——
+  ///   等于用"再看一遍"抹掉刚刚答错的事实。想改评分走「修改今日评分」（所见即所改）。
+  /// 「再学学」会拿到的评分：本次呈现还没作答＝良好；已作答＝原样保留那个评分。
+  /// 界面（按钮横杠的颜色）与实际结果都用它 —— 颜色就是"点了会拿到什么评分"的预告，
+  /// 显示与结果必须同源，不能让用户看着绿色却拿到红色。
+  FsrsRating get studyAgainRating => state.lastFsrsRating ?? FsrsRating.good;
+
+  Future<void> studyAgain(BuildContext? context) {
+    final FsrsRating? answered = state.lastFsrsRating;
+    final FsrsRating rating = studyAgainRating;
+    return showWordDetail(
+      state.word!,
+      rating == FsrsRating.again,
+      context,
+      fsrsRating: rating,
+      reason: answered == null
+          ? '主动点击了再学学，评分: ${rating.label}'
+          : '主动点击了再学学，保留本次作答评分: ${rating.label}',
+    );
+  }
+
   void _updateFsrsPreview(FsrsRating rating) {
     final lw = state.currentGetWordResult?.learningWord;
     if (lw != null) {
@@ -1372,7 +1400,27 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+  /// 「所见即所改」：评分面板那一行显示的是哪条评分，这里就改哪条。
+  ///
+  /// - 面板显示**本次作答**的评分时（本次作答已受理、但还没随流转落库 —— 巩固/加测环节
+  ///   答完还没点「下一词」就是这种情况）：只改这次待提交的评分 —— 改内存评分与推算预览、
+  ///   覆盖待计分凭据，落库仍由「下一词」按最后表态完成，与「不认识 / 再学学」改判同一条路。
+  ///   若这时按"今日测评评分"去重推整天，用户刚看到的本次结论会被连根改掉：
+  ///   实测巩固环节答出"模糊 · 13 天后"，改成忘记再改回模糊就只剩 init(模糊) = 1 天，怎么改都回不去。
+  /// - 面板显示**今日测评参考**时（本次还没作答，或回看历史词、本环节重练）：改的是当天首条
+  ///   （测评）评分，必须按新评分把当天整体重推并立即落库，见 [_applyRatingModification]。
   void updateFsrsRating(FsrsRating rating) {
+    if (hasUnsubmittedAnswer) {
+      state = state.copyWith(
+        lastFsrsRating: rating,
+        lastFsrsRatingReason: '手动修正本次评分: ${rating.label}',
+        isScorePassed: rating != FsrsRating.again,
+      );
+      _updateFsrsPreview(rating);
+      _acceptAnswer(rating, refresh: true);
+      return;
+    }
+
     state = state.copyWith(lastFsrsRating: rating);
     // 立即同步巩固阶段的测评参考评分标签
     if (state.assessmentRating != null) {
@@ -1381,6 +1429,26 @@ class BdcNotifier extends _$BdcNotifier {
     // 异步:按"该词今天之前是否学习过"决定重新 init(新词)或 next(复习词),
     // 重新计算下次复习时间并持久化,同时刷新学习历史 future。
     unawaited(_applyRatingModification(rating));
+  }
+
+  /// 评分面板那一行此刻显示的是不是"本次作答、尚未落库"的评分（否则显示今日测评参考）。
+  ///
+  /// 这是"所见即所改"的唯一判据：[updateFsrsRating] 与面板标签都用它，
+  /// 保证"显示哪条就改哪条、就标哪条"。
+  /// 判据取待计分凭据（它只在本次作答被受理时登记、随流转成功被消费，见 [_acceptAnswer]）
+  /// 加上面板自身的分支口径：回看模式（历史快照）、本环节重练（不计分）以及
+  /// "面板落到了今日测评参考分支"（巩固/加测环节还没算出本次推算）时，那一行都不是本次作答。
+  bool get hasUnsubmittedAnswer {
+    final pending = _pendingGrade;
+    if (pending == null || pending.alreadyPersisted) return false;
+    if (pending.wordId != state.word?.id) return false;
+    if (state.historyIndex != -1) return false;
+    if (state.isGroupStepRetry) return false;
+    final bool panelShowsTodayAssessment = state.fsrsItem == null &&
+        state.currentGetWordResult != null &&
+        (state.currentGetWordResult!.stepIndex > 0 ||
+            state.assessmentRating != null);
+    return !panelShowsTodayAssessment;
   }
 
   Future<void> _applyRatingModification(FsrsRating rating) async {

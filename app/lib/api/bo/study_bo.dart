@@ -22,6 +22,7 @@ import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/db_log_util.dart';
 import 'word_bo.dart';
 import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -1279,14 +1280,20 @@ class StudyBo {
           .getInBusinessDay(user.id, wordIds: [currWord.word.id!]);
       if (firstLogList.isNotEmpty) {
         final firstLog = firstLogList.first;
-        await db.update(db.learningLogs).replace(firstLog.copyWith(
+        final updatedLog = firstLog.copyWith(
           rating: newRating.value,
           stability: firstStepFsrs.stability,
           difficulty: firstStepFsrs.difficulty,
           elapsedDays: firstStepFsrs.elapsedDays,
           scheduledDays: firstStepFsrs.scheduledDays,
           updateTime: now,
-        ));
+        );
+        await db.update(db.learningLogs).replace(updatedLog);
+        // 改写后的日志必须进同步队列：这里是裸 drift update，不经过
+        // LearningLogsDao.saveEntity，漏掉这一步服务端会一直保留旧评分
+        //（实测：本地日志已改成"模糊 · 1 天"，服务端仍是"轻松 · 16 天"）。
+        await DbLogUtil.logOperation(
+            user.id, 'INSERT', 'learningLogs', updatedLog.id, updatedLog);
       }
     } catch (e, s) {
       Global.logger.e('历史模式下修改 FSRS，更新当天首条 LearningLog 失败', error: e, stackTrace: s);

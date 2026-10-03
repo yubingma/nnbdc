@@ -1,0 +1,90 @@
+{
+  "episode": "EP01",
+  "series": "词根追凶",
+  "position": "01 / 12",
+  "slogan": "一个词根 · 一串单词",
+  "root": "spect",
+  "root_cn": "看",
+  "accent": "#F5A524",
+  "hook_chip": "本集 3 个考研高频词",
+  "segments": [
+    {
+      "type": "hook",
+      "dur": 3.4,
+      "line": "今天这个词根，是个偷窥狂。",
+      "say": "今天这个词根，是个偷窥狂。"
+    },
+    {
+      "type": "word",
+      "dur": 6.0,
+      "word": "inspect",
+      "phonetic": "ɪnˈspekt",
+      "cn": "检查",
+      "chips": [
+        {
+          "text": "in-",
+          "cn": "往里",
+          "color": "#38BDF8"
+        },
+        {
+          "text": "spect",
+          "cn": "看",
+          "color": "#F5A524"
+        }
+      ],
+      "hook": "扒着窗户往里看",
+      "say": "in 是往里。往里看，就是检查。"
+    },
+    {
+      "type": "word",
+      "dur": 6.0,
+      "word": "respect",
+      "phonetic": "rɪˈspekt",
+      "cn": "尊重",
+      "chips": [
+        {
+          "text": "re-",
+          "cn": "再一次",
+          "color": "#38BDF8"
+        },
+        {
+          "text": "spect",
+          "cn": "看",
+          "color": "#F5A524"
+        }
+      ],
+      "hook": "看完忍不住，再看一眼",
+      "say": "re 是再一次。再看一眼，是尊重。"
+    },
+    {
+      "type": "word",
+      "dur": 6.0,
+      "word": "suspect",
+      "phonetic": "səˈspekt",
+      "cn": "怀疑",
+      "chips": [
+        {
+          "text": "su-",
+          "cn": "在下面",
+          "color": "#38BDF8"
+        },
+        {
+          "text": "spect",
+          "cn": "看",
+          "color": "#F5A524"
+        }
+      ],
+      "hook": "躲在桌子底下偷看",
+      "say": "su 是在下面。躲着偷看，就是怀疑。"
+    },
+    {
+      "type": "outro",
+      "dur": 6.0,
+      "line": "一个词根，白捡 3 个考研词",
+      "sub": "spect = 看：往里看 · 再看一眼 · 底下偷看",
+      "next": "下集 EP02 · port = 搬运工",
+      "cta": "关注追更，一天一个词根",
+      "say": "记住，spect 就是看。下集讲 port，搬运工。"
+    }
+  ]
+}

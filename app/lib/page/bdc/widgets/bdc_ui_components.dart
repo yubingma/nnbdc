@@ -1073,22 +1073,26 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildStudyAgainButton({
     required Color normalTextColor,
-    required Color studyAgainIndicator,
   }) {
-    return _buildMinimalPillButton(
-      key: const Key('bdc_study_again'),
-      label: '再学学',
-      textColor: normalTextColor,
-      indicatorColor: studyAgainIndicator,
-      isEnabled: state.buttonsEnabled,
-      indicatorWidth: 16.0,
-      onTap: () => notifier.showWordDetail(
-        state.word!,
-        false,
-        context,
-        fsrsRating: FsrsRating.good,
-        reason: "主动点击了再学学，评分: 良好",
-      ),
+    // 横杠的颜色＝点了之后会拿到的评分（见 BdcNotifier.studyAgainRating）：
+    // 没作答是良好（绿），已作答就是他那个评分（忘记红 / 模糊橙 / 良好绿 / 轻松青）。
+    // 单独用 Consumer 订阅这个评分：改判（答对后点「不认识」、修改今日评分）不会让学习页
+    // 整页重建，靠顶层签名刷不到这里，横杠就会停在改判前那一档 —— 那等于给了用户一个错预告。
+    return Consumer(
+      builder: (context, ref, _) {
+        ref.watch(bdcNotifierProvider.select((s) => s.lastFsrsRating));
+        return _buildMinimalPillButton(
+          key: const Key('bdc_study_again'),
+          label: '再学学',
+          textColor: normalTextColor,
+          indicatorColor:
+              notifier.studyAgainRating.colorWithDark(_cachedIsDarkMode),
+          isEnabled: state.buttonsEnabled,
+          indicatorWidth: 16.0,
+          // 语义见 BdcNotifier.studyAgain：没作答时记良好；已作答时只进详情页，评分不动
+          onTap: () => notifier.studyAgain(context),
+        );
+      },
     );
   }
 
@@ -1134,7 +1138,6 @@ extension BdcPageStateUIComponents on BdcPageState {
 
     final isDark = _cachedIsDarkMode;
     final againIndicator = FsrsRating.again.colorWithDark(isDark);
-    final studyAgainIndicator = FsrsRating.good.colorWithDark(isDark);
     final nextWordIndicator = context.primaryColor;
     final normalTextColor = context.textPrimary;
 
@@ -1186,10 +1189,7 @@ extension BdcPageStateUIComponents on BdcPageState {
 
           const Spacer(),
 
-          _buildStudyAgainButton(
-            normalTextColor: normalTextColor,
-            studyAgainIndicator: studyAgainIndicator,
-          ),
+          _buildStudyAgainButton(normalTextColor: normalTextColor),
           const SizedBox(width: 20),
           _buildNextWordButton(
             normalTextColor: normalTextColor,
@@ -1213,7 +1213,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDark = _cachedIsDarkMode;
     // FSRS 评分严格使用记忆科学与行业通行的语义色（红/绿），通用流转导航动作「下一词」使用应用当前主题色
     final againIndicator = FsrsRating.again.colorWithDark(isDark);
-    final studyAgainIndicator = FsrsRating.good.colorWithDark(isDark);
     final nextWordIndicator = context.primaryColor;
 
     final normalTextColor = context.textPrimary;
@@ -1229,10 +1228,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               againIndicator: againIndicator,
             ),
             const SizedBox(width: 20),
-            _buildStudyAgainButton(
-              normalTextColor: normalTextColor,
-              studyAgainIndicator: studyAgainIndicator,
-            ),
+            _buildStudyAgainButton(normalTextColor: normalTextColor),
           ],
           // 答案未看过(仅答对部分释义、未达通过线)时不渲染流转按钮：此时唯一出口是「不认识/再学学」，
           // 两者都会进入单词详情页看答案并留下评分。这样"没看答案就跳到下一词"在结构上不可能发生。
@@ -2249,6 +2245,17 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
+    // 面板下半部分显示的是"本次作答"还是"今日测评参考"，标签必须跟着身份走：
+    // 后续环节（stepIndex > 0）正在显示本次作答的评分时叫「本次评分」——
+    // 测评环节那次作答本身就是测评结果，回看/重练/未作答显示的也都是测评参考。
+    // 判据与"修改今日评分"改哪条完全同一个（notifier.hasUnsubmittedAnswer），
+    // 否则用户会把本次推算当成测评结论，对着它去改测评首条 —— 所见非所改。
+    final String currentAnswerTitle =
+        (notifier.hasUnsubmittedAnswer &&
+                (state.currentGetWordResult?.stepIndex ?? 0) > 0)
+            ? '本次评分'
+            : '测评结果';
+
     // 只有**本次真的计了分**的作答，才谈得上"这次的评分与它推算出的复习安排"。
     // 本环节重练（本环节重测）不计分 —— 评分不写日志、记忆状态不更新（见 StudyBo.updateCurrWord
     // 的 isGraded），此时若照常呈现这次推算的"下次复习 N 天后"，用户看到的就是不会发生的事。
@@ -2357,9 +2364,15 @@ extension BdcPageStateUIComponents on BdcPageState {
               );
             }
 
-            final latestLog = snapshot.data!.first;
-            final rating = FsrsRatingExt.fromInt(latestLog.rating);
-            final scheduledDays = latestLog.scheduledDays;
+            // 这一行是"今日测评参考"（也正是修改评分要改的那条）：唯一口径是今日首条评分，
+            // 即 handleWord 从当天首条日志取出的 assessmentRating / assessmentScheduledDays。
+            // 不能用 learningHistoryFuture 的最新一条冒充：它是全历史倒序的第一条，
+            // 今天已经答过巩固时它就是"巩固结果"，会被错标成"测评结果"，
+            // 用户对着它改评分，改的却是测评首条 —— 所见非所改。
+            final FsrsRating rating = state.assessmentRating ??
+                FsrsRatingExt.fromInt(snapshot.data!.first.rating);
+            final int scheduledDays = state.assessmentScheduledDays ??
+                snapshot.data!.first.scheduledDays;
 
             String ratingLabel = rating.label;
             Color ratingColor = rating.colorWithDark(isDarkMode);
@@ -2476,7 +2489,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 4, vertical: 2),
                         child: Text(
-                          '测评结果: $fallbackLabel',
+                          '$currentAnswerTitle: $fallbackLabel',
                           style: TextStyle(
                             fontSize: 11.5,
                             color: hasRating
@@ -2526,7 +2539,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Text(
-                  '测评结果: $ratingLabel',
+                  '$currentAnswerTitle: $ratingLabel',
                   style: TextStyle(
                     fontSize: 11.5,
                     color: ratingColor,
