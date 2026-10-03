@@ -935,7 +935,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         ),
                                 ),
                                 SizedBox(height: isLargeFont ? 4.0 : 8.0),
-                                _buildFsrsResultPanel(),
+                                _buildLiveFsrsResultPanel(),
                               ],
                             ),
                           ),
@@ -989,7 +989,7 @@ extension BdcPageStateUIComponents on BdcPageState {
           if (!isCardShowing)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: _buildFsrsResultPanel(),
+              child: _buildLiveFsrsResultPanel(),
             ),
           Container(
             // 底部按钮区背景色 - 紫色调
@@ -2215,6 +2215,32 @@ extension BdcPageStateUIComponents on BdcPageState {
             ),
           ),
         );
+      },
+    );
+  }
+
+  /// 评分面板的实时订阅壳，包住 [_buildFsrsResultPanel]。
+  ///
+  /// 面板呈现的「测评结果 + 下次复习天数 + 今日日志」都来自 lastFsrsRating / fsrsItem /
+  /// assessmentRating 这类字段，而它们按设计**不进** [BdcStateUiSignature]：
+  /// 改判时不让学习页整页重建、去和详情页转场首帧抢帧（见 [BdcNotifier.showWordDetail]）。
+  /// 于是只改评分的路径（答对后改点「不认识 / 再学学」、「修改今日评分」）不会触发整页重建，
+  /// 用户从详情页返回就会看到改判前的旧评分 —— 所见非所得。
+  /// 这里让面板订阅自己要显示的数据：只重建这一小块，改判立刻所见即所得；
+  /// 同时刻意不订阅 ASR 等高频字段，不为识别中间结果买单。
+  Widget _buildLiveFsrsResultPanel() {
+    return Consumer(
+      builder: (context, ref, _) {
+        ref.watch(bdcNotifierProvider.select((s) => (
+              s.lastFsrsRating,
+              s.fsrsItem,
+              s.assessmentRating,
+              s.assessmentScheduledDays,
+              notifier.learningHistoryFuture,
+            )));
+        // 同步刷新缓存快照：面板显示与它的点击回调（修改今日评分）必须读到同一份评分
+        _activeState = ref.read(bdcNotifierProvider);
+        return _buildFsrsResultPanel();
       },
     );
   }

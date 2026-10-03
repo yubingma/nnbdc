@@ -1270,7 +1270,8 @@ class BdcNotifier extends _$BdcNotifier {
       _acceptAnswer(fsrsRating, refresh: true);
       // 只同步写"详情页后续流程要用、且不进入顶层 UI 签名"的字段：
       // lastFsrsRating 供详情页「下一词」读取、fsrsItem 供 FSRS 预览显示，
-      // 两者都不在 BdcStateUiSignature 里，因此不会让学习页重建。
+      // 两者都不在 BdcStateUiSignature 里，因此不会让学习页整页重建
+      //（评分面板自行订阅了这两个字段，改判后照样立刻刷新，见 _buildLiveFsrsResultPanel）。
       //
       // 通过与否严格跟随评分：忘记＝未通过，轻松/良好/吃力＝通过。
       // 「再学学」就是良好，改判回去照样算通过 —— 同一个评分在任何时候结论都相同，
