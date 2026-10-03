@@ -695,6 +695,18 @@ public class DictImportBo {
                     if (dictToUpdate != null) {
                         dictToUpdate.setWordCount(dictToUpdate.getWordCount() + 1);
                         dictBo.updateEntity(dictToUpdate);
+
+                        // 若为系统词书，记录系统数据库增量同步日志，确保客户端增量同步闭环
+                        if (dictToUpdate.getOwner() != null && Constants.SYS_USER_SYS_ID.equals(dictToUpdate.getOwner().getId())) {
+                            DictWordDto dwDto = new DictWordDto();
+                            dwDto.setDictId(dictId);
+                            dwDto.setWordId(word.getId());
+                            dwDto.setSeq(dw.getSeq());
+                            dwDto.setUnit(dw.getUnit());
+                            dwDto.setCreateTime(dw.getCreateTime());
+                            sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", dictId + "_" + word.getId(), JsonUtils.toJson(dwDto));
+                            stats.addSyncLog("INSERT", "dict_word");
+                        }
                     }
                 } catch (Exception e) {
                     if (isDuplicateKey(e)) {

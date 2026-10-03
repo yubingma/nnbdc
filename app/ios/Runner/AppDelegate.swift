@@ -628,6 +628,7 @@ import Accelerate
     }
     
     private func playLocalAudio(path: String, result: @escaping FlutterResult) {
+        setupAudioSession()
         let url = URL(fileURLWithPath: path)
         do {
             if let oldPlayer = localAudioPlayer {
@@ -640,9 +641,11 @@ import Accelerate
             let newPlayer = try AVAudioPlayer(contentsOf: url)
             newPlayer.delegate = self
             newPlayer.prepareToPlay()
+            newPlayer.volume = 0.0
             localAudioPlayer = newPlayer
             localAudioCompletion = result
             newPlayer.play()
+            newPlayer.setVolume(1.0, fadeDuration: 0.015)
         } catch {
             print("IOS: [Audio] Failed to play local audio: \(error)")
             result(FlutterError(code: "PLAY_FAILED", message: error.localizedDescription, details: nil))

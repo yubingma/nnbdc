@@ -347,6 +347,14 @@ class StudyAudioSessionController {
     } catch (_) {}
   }
 
+  Future<void> _prepareSessionForPlayback() {
+    final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord' || keepMicrophoneWarm;
+    if (shouldKeepRecordCategory) {
+      return !_audioSessionConfigured ? configureSession() : Future.value();
+    }
+    return transitTo(AudioMode.playback);
+  }
+
   /// 播放单词发音。
   /// [preempt]: 是否打断当前正在播放的声音并丢弃排队中的旧发音，默认为 true（用户连续点击只播最新单词）。
   Future<void> playWordSound(WordVo word, {Future<void>? preWaitFuture, bool preempt = true}) {
@@ -357,10 +365,7 @@ class StudyAudioSessionController {
     return _queueLock.protect(() async {
       await _pendingCleanup;
       _unsubscribeMeter();
-      final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord';
-      final sessionFuture = shouldKeepRecordCategory
-          ? Future.value()
-          : transitTo(AudioMode.playback);
+      final sessionFuture = _prepareSessionForPlayback();
       await _playPronounceSound2(word, _audioPlayer,
           preWaitFuture: preWaitFuture ?? sessionFuture);
     });
@@ -377,10 +382,7 @@ class StudyAudioSessionController {
     return _queueLock.protect(() async {
       await _pendingCleanup;
       _unsubscribeMeter();
-      final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord';
-      final sessionFuture = shouldKeepRecordCategory
-          ? Future.value()
-          : transitTo(AudioMode.playback);
+      final sessionFuture = _prepareSessionForPlayback();
       await _playSentenceSound2(digest, _audioPlayer,
           speed: speed, preWaitFuture: preWaitFuture ?? sessionFuture);
     });
@@ -438,10 +440,7 @@ class StudyAudioSessionController {
         }
       } catch (_) {}
 
-      final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord';
-      final sessionFuture = shouldKeepRecordCategory
-          ? Future.value()
-          : transitTo(AudioMode.playback);
+      final sessionFuture = _prepareSessionForPlayback();
       _watchPlayer(_audioPlayer);
 
       if (playWord) {
