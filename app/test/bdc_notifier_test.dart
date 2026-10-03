@@ -3889,6 +3889,54 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
+  test('BdcNotifier - 所见即所得：界面预览的评分与下次复习天数必须等于落库结果', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+
+    // 答对（界面随即呈现评分与"下次复习 X 天"）
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    final shownRating = state.lastFsrsRating!;
+    final shownDays = state.fsrsItem!.scheduledDays;
+
+    // 再改判为「再学学」：界面上的评分与天数必须跟着重算
+    unawaited(notifier.showWordDetail(state.word!, false, null,
+        fsrsRating: FsrsRating.good, reason: '主动点击了再学学，评分: 良好'));
+    state = container.read(bdcNotifierProvider);
+    final reShownRating = state.lastFsrsRating!;
+    final reShownDays = state.fsrsItem!.scheduledDays;
+    expect(reShownRating, FsrsRating.good);
+    expect(reShownDays, isNot(shownDays),
+        reason: '评分改了，界面上推算的下次复习天数必须跟着改（否则所见不是按新评分算的）');
+
+    // 落库：实际写进去的评分与天数必须与界面上最后看到的完全一致
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs.length, 1);
+    expect(logs.first.rating, reShownRating.value,
+        reason: '落库评分必须等于界面最后显示的评分');
+    expect(logs.first.scheduledDays, reShownDays,
+        reason: '落库的下次复习天数必须等于界面最后显示的天数');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
+
   test('BdcNotifier - 修改今日评分:业务日窗口内的「昨天23:50测评+今天01:00巩固」必须同属一天', () async {
     // 改评分发生在 6/16 01:30 → 业务日 6/15，窗口 [6/15 03:00, 6/16 03:00)。
     // 「6/15 23:50 测评」与「6/16 01:00 巩固」都落在窗口内，是同一个业务日的两条日志；

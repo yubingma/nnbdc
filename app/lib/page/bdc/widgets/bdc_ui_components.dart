@@ -2218,8 +2218,13 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    final bool hasFinishedOrPractice = state.hasFinishedAnswering ||
-        (state.isPracticeMode && state.lastFsrsRating != null);
+    // 只有**本次真的计了分**的作答，才谈得上"这次的评分与它推算出的复习安排"。
+    // 本环节重练（本环节重测）不计分 —— 评分不写日志、记忆状态不更新（见 StudyBo.updateCurrWord
+    // 的 isGraded），此时若照常呈现这次推算的"下次复习 N 天后"，用户看到的就是不会发生的事。
+    // 重练一律改走下面"呈现该词今天真实测评结果"的分支，所见严格等于已记入的事实。
+    final bool hasFinishedOrPractice = !state.isGroupStepRetry &&
+        (state.hasFinishedAnswering ||
+            (state.isPracticeMode && state.lastFsrsRating != null));
     if (!hasFinishedOrPractice || state.fsrsItem == null) {
       // stepIndex > 0 为巩固/加测环节；测评环节答错重练时 stepIndex 仍为 0，
       // 但该词今天已经测过（assessmentRating 有值），同样要展示测评结果。

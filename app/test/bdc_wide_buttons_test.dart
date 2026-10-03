@@ -4,11 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/bdc/bdc.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_state.dart';
 import 'package:nnbdc/page/word_detail.dart';
 import 'package:nnbdc/state.dart';
+import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:provider/provider.dart' as provider;
@@ -286,5 +288,64 @@ void main() {
     // 验证详情页下一词右边距为 28.0px，与主学习页完全一致
     expect((detailRightMargin - 28.0).abs(), lessThan(1.0),
         reason: '详情页下一词按钮右边距($detailRightMargin)必须与主页面下一词按钮右边距(28.0)完全相同以降低心智负担');
+  });
+
+  testWidgets('本环节重练不计分：评分面板只呈现已记入的真实成绩，不呈现本次推算的下次复习天数', (tester) async {
+    final (testWord, mockResult) = _createTestData();
+    final wordWrapper = WordWrapper(testWord, null);
+
+    final state = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockResult,
+      wordWrapper: wordWrapper,
+      studyStep: StudyStep.en2Ch.json,
+      showAnswerButtons: true,
+      canLeaveCurrWord: true,
+      hasFinishedAnswering: true,
+      // 本次是本环节重练：评分不写日志、记忆状态不更新（study_bo 的 isGraded=false）
+      isGroupStepRetry: true,
+      lastFsrsRating: FsrsRating.easy,
+      // 本次推算出的"下次复习 12 天"是假的：它不会被记入
+      fsrsItem: FSRSItem(
+        stability: 20,
+        difficulty: 5,
+        elapsedDays: 0,
+        scheduledDays: 12,
+        reps: 2,
+        lapses: 0,
+        state: FsrsState.review,
+      ),
+      assessmentRating: FsrsRating.again,
+    );
+
+    final notifier = MockBdcNotifierForWideScreen(state, mockHasSeenAnswer: true);
+    // 该词今天真实的评分流水：测评那一条（忘记，1 天后），重练不会新增流水
+    notifier.learningHistoryFuture = Future.value([
+      LearningLog(
+        id: 'log_1',
+        userId: 'user1',
+        wordId: 'w_apple',
+        rating: FsrsRating.again.value,
+        stability: 1.0,
+        difficulty: 5.0,
+        elapsedDays: 0,
+        scheduledDays: 1,
+        createTime: DateTime.now(),
+        updateTime: DateTime.now(),
+      ),
+    ]);
+
+    await tester.pumpWidget(_buildPageWithNotifier(notifier));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('测评结果: 忘记'), findsOneWidget,
+        reason: '重练不计分：面板必须呈现今天真实记入的测评结果，而不是本次重练的评分');
+    expect(find.textContaining('测评结果: 轻松'), findsNothing,
+        reason: '不得把本次重练的评分当成测评成绩展示');
+    expect(find.textContaining('下次复习: 1天后', findRichText: true), findsOneWidget,
+        reason: '下次复习天数必须来自已记入的流水');
+    expect(find.textContaining('下次复习: 12天后', findRichText: true), findsNothing,
+        reason: '不得展示本次重练推算出的、不会生效的下次复习天数');
   });
 }
