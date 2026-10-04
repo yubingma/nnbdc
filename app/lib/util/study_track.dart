@@ -1,4 +1,5 @@
 import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/util/fsrs.dart';
 
 /// 学习环节轨道推导：每个词按状态分配"学习轨道"（scope='new' 新词）或
 /// "复习轨道"（scope='review' 旧词），两条轨道同构：
@@ -99,4 +100,37 @@ class StudyTrack {
     required int todayLearnedTimes,
   }) =>
       todayLogCount <= todayLearnedTimes;
+
+  /// 当天测评之后的后续环节（同一天里再次评分）该怎么结算记忆参数。
+  ///
+  /// 项目约定：**同一天里只认"往下扣"的评分**。
+  /// - 模糊 hard（×0.8398）、忘记 again（×0.5011）照官方同日公式下调；
+  /// - 良好 good（×1.4078）、轻松 easy（×2.3598）**不再改动记忆参数**，
+  ///   只把"又提取过一次"记进 reps。
+  ///
+  /// 理由：同一天里隔几分钟的连续答对只是短期复述，不是"隔了一段时间还记得"的证据。
+  /// 官方同日公式本身没错（见 [FSRS.next]，黄金向量见 test/fsrs_test.dart），
+  /// 错的是把它当成独立的乘性增益连乘：实测新词"测评 + 三个巩固"全评轻松会从
+  /// 15.69105 连乘到 206.1829 天，越过掌握线当场毕业，当天学的词当天就不再复习。
+  ///
+  /// 因此这条限制只作用于"同一天怎么结算"，算法层 [FSRS] 与官方逐位一致。
+  /// [nextState] 不给时按评分推断（again → 重新学习，其余 → 复习），与 [FSRS.next] 同口径。
+  static FSRSItem sameDayStep(
+    FSRSItem prev,
+    FsrsRating rating, {
+    FsrsState? nextState,
+  }) {
+    if (rating == FsrsRating.good || rating == FsrsRating.easy) {
+      return FSRSItem(
+        stability: prev.stability,
+        difficulty: prev.difficulty,
+        elapsedDays: 0,
+        scheduledDays: prev.scheduledDays,
+        reps: prev.reps + 1,
+        lapses: prev.lapses,
+        state: nextState ?? FsrsState.review,
+      );
+    }
+    return FSRS().next(prev, rating, 0, nextState: nextState);
+  }
 }

@@ -255,12 +255,18 @@
 | 今日任务调度批次 | `learning_word.batch_id` | `> 0` 表示该词已被排进今日学习/复习队列；`= 0` 表示还在待学状态里沉睡 | 与界面上的「批次列表」相关但不是同一个概念 |
 | 背词日序数 | `learning_word.add_day` | 用户从首次使用以来的第几个学习业务日，从 1 开始递增 | ⚠️ 名字像日期，实际是 **INTEGER 序号**，不是日期也不是时间戳 |
 | 最近学词时刻 | `learning_word.last_learning_date` | 该词最近一次被学习、复习或测验通过的时间 | ⚠️ 名字叫 date，实际存的是**精确到毫秒的时间戳** |
-| 学习步骤 | `user_study_step` | 学习流程的进度标记：三组（测评 check / 答对后 correct / 答错后 wrong）× 作用域（新词 / 复习） | |
+| 学习步骤 | `user_study_step` | 学习流程的进度标记：三组（测评 check / 答对后 correct / 答错后 wrong）× 作用域（新词 / 复习） | 用户口中的「测评环节」= 本条的 check 组，「巩固环节」= 本条的 correct 组 |
 | 作用域 | `user_study_step.scope` | `'new'` 每日新词流程 / `'review'` 复习流程 | ⚠️ v62 注释写 LEARNING/REVIEW，与代码不符，见第六章 |
 | 步骤状态 | `user_study_step.state` | `'Active'` 进行中 / `'Inactive'` 未激活 | ⚠️ v62 注释写 WAITING/DOING/FINISHED，与服务端代码不符，见第六章 |
 | 首答计分 | `StudyTrack.isFirstAttemptOfStep`（`app/lib/util/study_track.dart:97`） | 一个评分环节只在首次作答时写学习记录、算记忆参数、计进度；答错留在本环节重练，重练只判对错、**不计分** | 判据：今天该词的评分日志条数 ≤ 已走完环节数。日志条数少于进度属异常，按首答处理（宁可重复计分，不静默丢分） |
 | FSRS | Free Spaced Repetition Scheduler | 记忆曲线算法，负责算出下次该什么时候复习 | |
 | 记忆参数 | `learning_word.stability` / `difficulty` / `elapsed_days` / `scheduled_days` / `reps` / `lapses` | 记忆稳定度、难度、间隔天数、复习次数、遗忘次数 | |
+| 同一天再次评分 | `elapsedDays == 0`，判定见 `app/lib/api/bo/study_bo.dart:1085` | 今天已经见过这个词、并且今天已经给它打过分，同一天里又打一次分 —— 测评之后紧接着的几个巩固环节就是这种 | 与「隔天复习评分」相对；这种评分走「同一天加成」 |
+| 隔天复习评分 | `elapsedDays >= 1`，见 `app/lib/api/bo/study_bo.dart:1096` | 上次学这个词是过去某一天，隔了一天以上又见到它并给它打分 —— 这才是间隔重复真正要的证据 | 只有这种评分的结果，才适合用来决定"几天后再复习" |
+| 同一天加成 | `FSRS._shortTermStability`（`app/lib/util/fsrs.dart:119`） | 同一天里每再答对一次，就把记忆稳定度乘一个固定倍数：轻松 ×2.3598、良好 ×1.4078、模糊 ×0.8398、忘记 ×0.5011 | 官方公式本身不动。**项目不使用"答对也连乘"的那一半**，见下一条 |
+| 同日结算策略 | `StudyTrack.sameDayStep`（`app/lib/util/study_track.dart:118`） | 同一天里测评之后的巩固环节怎么算记忆参数：只有"往下扣"的评分（模糊 ×0.8398、忘记 ×0.5011）才改动记忆参数；良好、轻松一律不改动，只记一次提取次数 | 沿用官方公式，只砍掉"同一天反复答对就连乘加成"的那一半 —— 否则新词"测评 + 三个巩固"全评轻松会从 15.69105 连乘到 206.1829 天并当场毕业。落库、面板推算、"修改今日评分"重放三处必须走这一条，口径不许各写一套 |
+| 折算下次复习天数 | `FSRS._calculateInterval`（`app/lib/util/fsrs.dart:140`） | 把记忆稳定度按目标保留率换算成"几天后再复习"，就是界面上那个「X 天后」 | 换算结果会写进 `learning_word.scheduled_days`，并决定这个词下次什么时候被排进复习计划 |
+| 分钟级学习节奏 | 官方 py-fsrs 的 `learning_steps`（`tmp/fsrs_ref/venv45/lib/python3.14/site-packages/fsrs/fsrs.py:417`） | 官方（Anki 系）里，新词当天几个环节之间是"1 分钟后再见、10 分钟后再见"这种分钟级节奏，走完才进入按天排期 | 本项目没有这层：当天每个环节都直接折算成"几天后" |
 | FSRS 状态 | `learning_word.state` | 0 New 新词 / 1 Learning 学习中 / 2 Review 复习 / 3 Relearning 重学 | |
 | 掌握 / 已掌握 | mastered | 单词记忆稳定到不用再复习，移入「已掌握」词书 | |
 | 掌握线 / 毕业线 | 客户端 `app/lib/constants.dart:57` 的 `graduationStability = 120.0` | 唯一真正生效的判定线：单词 `stability ≥ 120` 即认为已掌握，移出学习中库 | 口径是"四个月不忘"。存量毕业词的 stability 可能是历史哨兵值（180.0 或 120.0），不代表真实记忆强度，因此此值**只允许下调**，上调必须配套数据迁移 |

@@ -24,6 +24,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/phase_presentation_tracker.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/study_track.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
@@ -1805,18 +1806,18 @@ void main() {
 
   test('BdcNotifier - 修改今日评分:多环节后新词改评分应重放全部当天环节', () async {
     // 模拟今天的新词已完成测评(easy)+巩固(good)两个环节提交：
-    // 真实状态是 init(easy)=15.69105 再走同日短期公式 next(good,0) ≈ 22.09
+    // 测评 init(easy)=15.69105；巩固的 good 属于同一天里的答对，不再改动记忆参数，
+    // 所以两个环节之后仍是 15.69105 / 16 天（见 StudyTrack.sameDayStep）。
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
     AppClock.setClock(FakeClock(testNow));
     addTearDown(AppClock.reset);
-    const consolidateStability = 22.089408519007495; // 15.69105 * e^(w17*(3-3+w18))
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
-          stability: const Value(consolidateStability),
+          stability: const Value(15.69105),
           difficulty: const Value(3.2245015893713673),
           reps: const Value(2),
-          scheduledDays: const Value(22),
+          scheduledDays: const Value(16),
           state: const Value(2), // Review(已过巩固)
         ));
     await db.learningLogsDao.saveEntity(LearningLog(
@@ -1831,16 +1832,16 @@ void main() {
       createTime: testNow,
       updateTime: testNow,
     ), false);
-    // 巩固环节：同日第二次评分，elapsedDays=0 走短期公式
+    // 巩固环节：同一天里的答对，不再改动记忆参数，状态与测评那条保持一致
     await db.learningLogsDao.saveEntity(LearningLog(
       id: 'log_easy_multi_2',
       userId: testUser.id,
       wordId: 'word_1',
       rating: FsrsRating.good.value,
-      stability: consolidateStability,
+      stability: 15.69105,
       difficulty: 3.2245015893713673,
       elapsedDays: 0,
-      scheduledDays: 22,
+      scheduledDays: 16,
       createTime: testNow.add(const Duration(seconds: 30)),
       updateTime: testNow.add(const Duration(seconds: 30)),
     ), false);
@@ -1864,17 +1865,17 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.word!.spell, 'apple');
 
-    // 把测评的 easy 改成 good：新词重新 init(good)，再由巩固环节的 good 走同日短期公式
-    // init(good)=3.173 → ×e^(w17*(3-3+w18)) ≈ 4.467 → 4 天（旧口径只看首条，会给 3 天）
+    // 把测评的 easy 改成 good：新词重新 init(good)=3.173 → 3 天；
+    // 巩固环节的 good 属于同一天里的答对，不再叠加加成（旧口径会放大到 4.467 → 4 天）
     notifier.updateFsrsRating(FsrsRating.good);
     for (int i = 0; i < 50; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
       state = container.read(bdcNotifierProvider);
-      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 4) break;
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 3) break;
     }
     expect(state.fsrsItem, isNot(null));
-    expect(state.fsrsItem!.scheduledDays, 4,
-        reason: '多环节后新词改评分必须重放全部当天环节,预期 4 天,实际 ${state.fsrsItem!.scheduledDays}');
+    expect(state.fsrsItem!.scheduledDays, 3,
+        reason: '多环节后新词改评分必须重放全部当天环节,预期 3 天,实际 ${state.fsrsItem!.scheduledDays}');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
@@ -1888,10 +1889,10 @@ void main() {
     final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
-          stability: const Value(35.21175712420889), // 测评 easy 后再巩固 good 的真实状态
-          difficulty: const Value(2.135155608561961),
+          stability: const Value(25.012414485811277), // 今天测评 easy 跨天复习后的真实状态
+          difficulty: const Value(2.1301214599670124),
           reps: const Value(2),
-          scheduledDays: const Value(35),
+          scheduledDays: const Value(25),
           state: const Value(2), // Review
           addTime: Value(yesterday),
           addDay: const Value(2),
@@ -1928,16 +1929,16 @@ void main() {
       createTime: testNow,
       updateTime: testNow,
     ), false);
-    // 今天的巩固环节(当天第二条,elapsedDays=0 走 FSRS-5 短期公式):S 从 25.01 抬到 35.21
+    // 今天的巩固环节(当天第二条)：同一天里的答对不改动记忆参数，仍是测评后的 25.01 / 25 天
     await db.learningLogsDao.saveEntity(LearningLog(
       id: 'log_today_consolidate',
       userId: testUser.id,
       wordId: 'word_1',
       rating: FsrsRating.good.value,
-      stability: 35.21175712420889,
-      difficulty: 2.135155608561961,
+      stability: 25.012414485811277,
+      difficulty: 2.1301214599670124,
       elapsedDays: 0,
-      scheduledDays: 35,
+      scheduledDays: 25,
       createTime: testNow.add(const Duration(seconds: 30)),
       updateTime: testNow.add(const Duration(seconds: 30)),
     ), false);
@@ -1960,18 +1961,17 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.word!.spell, 'apple');
 
-    // 把测评的 easy 改成 good：先按测评前状态 next(15.69105, good, elapsedDays=1) ≈ 18.81，
-    // 再把当天巩固环节的 good 按同日短期公式抬升 ×e^(w17*(3-3+w18)) ≈ 26.48 → 26 天。
-    // 旧口径只重放当天首条（停在 19 天），漏掉了巩固环节的真实推进。
+    // 把测评的 easy 改成 good：按测评前状态 next(15.69105, good, elapsedDays=1) ≈ 18.81 → 19 天。
+    // 当天巩固环节的 good 属于同一天里的答对，不再抬升稳定度（旧口径会放大到 26.48 → 26 天）。
     notifier.updateFsrsRating(FsrsRating.good);
     for (int i = 0; i < 50; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
       state = container.read(bdcNotifierProvider);
-      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 26) break;
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 19) break;
     }
     expect(state.fsrsItem, isNot(null));
-    expect(state.fsrsItem!.scheduledDays, 26,
-        reason: '复习词改评分必须重放测评+巩固全部当天环节,预期 26 天,实际 ${state.fsrsItem!.scheduledDays}');
+    expect(state.fsrsItem!.scheduledDays, 19,
+        reason: '复习词改评分必须重放测评+巩固全部当天环节,预期 19 天,实际 ${state.fsrsItem!.scheduledDays}');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
@@ -2267,11 +2267,11 @@ void main() {
     final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
-          stability: const Value(35.21175712420889),
-          difficulty: const Value(2.135155608561961),
+          stability: const Value(25.012414485811277),
+          difficulty: const Value(2.1301214599670124),
           reps: const Value(2),
           lapses: const Value(0),
-          scheduledDays: const Value(35),
+          scheduledDays: const Value(25),
           state: const Value(2),
           addTime: Value(yesterday),
           addDay: const Value(2),
@@ -2307,10 +2307,10 @@ void main() {
       userId: testUser.id,
       wordId: 'word_1',
       rating: FsrsRating.good.value,
-      stability: 35.21175712420889,
-      difficulty: 2.135155608561961,
+      stability: 25.012414485811277,
+      difficulty: 2.1301214599670124,
       elapsedDays: 0,
-      scheduledDays: 35,
+      scheduledDays: 25,
       createTime: testNow.add(const Duration(seconds: 30)),
       updateTime: testNow.add(const Duration(seconds: 30)),
     ), false);
@@ -2338,11 +2338,11 @@ void main() {
     for (int i = 0; i < 50; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
       state = container.read(bdcNotifierProvider);
-      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 35) break;
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 25) break;
     }
     expect(state.fsrsItem, isNot(null));
-    expect(state.fsrsItem!.scheduledDays, 35);
-    expect(state.fsrsItem!.stability, closeTo(35.21175712420889, 1e-9));
+    expect(state.fsrsItem!.scheduledDays, 25);
+    expect(state.fsrsItem!.stability, closeTo(25.012414485811277, 1e-9));
     expect(state.fsrsItem!.reps, 2, reason: '重放条数与基准 reps 回推后应等于现状');
     expect(state.fsrsItem!.lapses, 0);
 
@@ -2448,11 +2448,11 @@ void main() {
     final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
-          stability: const Value(35.21175712420889),
-          difficulty: const Value(2.135155608561961),
+          stability: const Value(25.012414485811277),
+          difficulty: const Value(2.1301214599670124),
           reps: const Value(2),
           lapses: const Value(0),
-          scheduledDays: const Value(35),
+          scheduledDays: const Value(25),
           state: const Value(2), // Review
           addTime: Value(yesterday),
           addDay: const Value(2),
@@ -2489,16 +2489,16 @@ void main() {
       createTime: testNow,
       updateTime: testNow,
     ), false);
-    // 今天巩固(当天第二条)：next(25.0124, good, 0) ≈ 35.2118 → 35 天
+    // 今天巩固(当天第二条)：同一天里的答对不改动记忆参数，保持测评后的 25.0124 / 25 天
     await db.learningLogsDao.saveEntity(LearningLog(
       id: 'log_drift_consolidate',
       userId: testUser.id,
       wordId: 'word_1',
       rating: FsrsRating.good.value,
-      stability: 35.21175712420889,
-      difficulty: 2.135155608561961,
+      stability: 25.012414485811277,
+      difficulty: 2.1301214599670124,
       elapsedDays: 0,
-      scheduledDays: 35,
+      scheduledDays: 25,
       createTime: testNow.add(const Duration(seconds: 30)),
       updateTime: testNow.add(const Duration(seconds: 30)),
     ), false);
@@ -2547,28 +2547,28 @@ void main() {
       final consolidateLog = await logById('log_drift_consolidate');
       expect(consolidateLog.rating, FsrsRating.good.value,
           reason: '巩固日志的评分必须保持原值,不能被新评分污染');
-      expect(consolidateLog.stability, closeTo(35.21175712420889, 1e-9));
-      expect(consolidateLog.scheduledDays, 35);
+      expect(consolidateLog.stability, closeTo(25.012414485811277, 1e-9));
+      expect(consolidateLog.scheduledDays, 25);
     }
 
-    // 当天首条日志 = 首步态：next(15.69105, easy, 1) ≈ 25.0124 → 25 天（不是末态的 35.2118/35）
+    // 当天首条日志 = 首步态：next(15.69105, easy, 1) ≈ 25.0124 → 25 天
     final assessLog = await logById('log_drift_assess');
     expect(assessLog.stability, closeTo(25.012414485811277, 1e-9));
     expect(assessLog.scheduledDays, 25);
 
-    // learning_words = 末态，且与"一次性改成 easy"完全一致（重放：首条 easy + 巩固 good）
+    // learning_words = 末态，且与"一次性改成 easy"完全一致（重放：首条 easy + 巩固 good 不改参数）
     state = container.read(bdcNotifierProvider);
-    expect(state.fsrsItem!.stability, closeTo(35.21175712420889, 1e-9),
+    expect(state.fsrsItem!.stability, closeTo(25.012414485811277, 1e-9),
         reason: '连续修改后不得漂移');
-    expect(state.fsrsItem!.scheduledDays, 35);
+    expect(state.fsrsItem!.scheduledDays, 25);
     expect(state.fsrsItem!.reps, 2);
     expect(state.fsrsItem!.lapses, 0);
 
     final lw = await (db.select(db.learningWords)
           ..where((t) => t.userId.equals(testUser.id) & t.wordId.equals('word_1')))
         .getSingle();
-    expect(lw.stability, closeTo(35.21175712420889, 1e-9));
-    expect(lw.scheduledDays, 35);
+    expect(lw.stability, closeTo(25.012414485811277, 1e-9));
+    expect(lw.scheduledDays, 25);
     expect(lw.reps, 2);
     expect(lw.lapses, 0);
     expect(lw.learnedTimes, 3, reason: '修改评分不得改动学习步骤次数');
@@ -4220,10 +4220,10 @@ void main() {
           userId: testUser.id,
           wordId: 'word_1',
           rating: FsrsRating.good.value,
-          stability: 35.21175712420889,
-          difficulty: 2.135155608561961,
+          stability: 25.012414485811277,
+          difficulty: 2.1301214599670124,
           elapsedDays: 0,
-          scheduledDays: 35,
+          scheduledDays: 25,
           createTime: consolidateTime,
           updateTime: consolidateTime,
         ),
@@ -4268,7 +4268,7 @@ void main() {
     expect(baselineLog.scheduledDays, 16);
     expect(consolidateLog.rating, FsrsRating.good.value,
         reason: '巩固日志必须保持原评分，不得被新评分污染');
-    expect(consolidateLog.stability, closeTo(35.21175712420889, 1e-9));
+    expect(consolidateLog.stability, closeTo(25.012414485811277, 1e-9));
 
     // 首条日志只写"重放首步态"：next(基准, good, 1)，跨天间隔 1 天必须保留
     final fsrs = FSRS();
@@ -4282,7 +4282,8 @@ void main() {
       state: FsrsState.review,
     );
     final expectedFirstStep = fsrs.next(baseItem, FsrsRating.good, 1);
-    final expectedReplayed = fsrs.next(expectedFirstStep, FsrsRating.good, 0);
+    // 末态 = 首步态：当天巩固的 good 属于同一天里的答对，不再叠加加成（见 StudyTrack.sameDayStep）
+    final expectedReplayed = StudyTrack.sameDayStep(expectedFirstStep, FsrsRating.good);
 
     expect(assessLog.elapsedDays, 1,
         reason: '若把 6/15 02:00 那条误当"当天首条"，这里会变成它的间隔 5 天');

@@ -462,7 +462,7 @@ void main() {
       expect(w.todayLearnedTimes, 2);
     });
 
-    test('当天巩固环节答对维持/恢复：again 后可短期公式 good 回升', () async {
+    test('当天巩固环节答对不再改动记忆参数：忘记之后的良好不会回升', () async {
       await setupThreeSteps();
       await finishOtherWords('word_1');
       await setWordFsrs('word_1',
@@ -474,7 +474,10 @@ void main() {
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
       expect(result.success, true);
       final w = await wordOf('word_1');
-      expect(w.stability, closeTo(0.5631084858950165, 1e-9)); // 当天答对可按比例回升
+      // 同一天里只认"往下扣"的评分：good 保留前值，不再按同日公式回升（见 StudyTrack.sameDayStep）
+      expect(w.stability, closeTo(0.4, 1e-9));
+      expect(w.scheduledDays, 1);
+      expect(w.reps, 2);
       expect(w.state, FsrsState.review.value);
     });
 
@@ -544,7 +547,8 @@ void main() {
       var result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
       expect(result.success, true);
       var w = await wordOf('word_1');
-      expect(w.stability, closeTo(0.5631084858950165, 1e-9));
+      // 恢复环节的 good 属于同一天里的答对：不再改动记忆参数，只把环节推进下去
+      expect(w.stability, closeTo(0.4, 1e-9));
       expect(w.state, FsrsState.review.value); // 恢复成功，今日完成
       expect(w.lapses, 2); // good 不新增 lapse
 

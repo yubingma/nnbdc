@@ -614,17 +614,18 @@ void main() {
     // 使用默认三组配置（清掉 setUp 的紧凑配置）:
     //   新词: 测评 En2Ch + 答对组 [Ch2En] + List
     //         → 新词当天 2 次评分（init + 1 次同日巩固）；
-    //   复习词: 测评答对跳过恢复环节直接完成（+2）。
-    // 全 good 理论值（FSRS-5 默认权重 + 掌握线 120 天 ≈ 4 个月不忘）：init(3.173, 3天)
-    // → 当天巩固(4.47, 4天) → 复习1(14.22, 14天) → 复习2(43.73, 44天)
-    // → 复习3(124.80 ≥ 120) 自然毕业，累计约 62 天
-    // = 每词总评分 2(当天) + 3(跨天) = 5 次，每次评分都写学习记录 → LearningLog 5 条
+    //   复习词: 测评答对跳过恢复环节直接完成。
+    // 全 good 理论值（FSRS-5 默认权重 + 掌握线 120 天 ≈ 4 个月不忘；同日结算见
+    // StudyTrack.sameDayStep —— 当天的巩固环节答对不再加成）：init(3.173, 3天)
+    // → 复习1(10.74, 11天) → 复习2(34.58, 35天) → 复习3(100.75, 101天)
+    // → 复习4(269.28 ≥ 120) 自然毕业，理论累计约 150 天（8 词分批启动，实测约 154 天）
+    // = 每词总评分 2(当天) + 4(跨天) = 6 次，每次评分都写学习记录 → LearningLog 6 条
     // （含触发毕业的那一次复习）。
     await db.delete(db.userStudySteps).go();
 
     int loopCount = 0;
     while (loopCount < 320) {
-      // 防死循环上限（掌握线 120 天下，FSRS-5 全 good 路径约 62 天毕业）
+      // 防死循环上限（掌握线 120 天下，FSRS-5 全 good 路径约 150 天毕业）
       loopCount++;
       fakeClock.advanceDays(1);
 
@@ -655,22 +656,22 @@ void main() {
         await db.masteredWordsDao.getMasteredWordsForUser(testUser.id);
     expect(allMastered.length, 8, reason: '8 个词必须全部自然毕业');
 
-    // 断言 2：每词评分日志条数 == 5（init + 1 次当天巩固 + 3 次复习，触发毕业的那次复习也写日志）。
-    // 掌握线 120 天下 FSRS-5 全 good 路径：
-    // 3.173 →(当天巩固)→ 4.47 →(4天)→ 14.22 →(14天)→ 43.73 →(44天)→ 124.80 ≥ 120 毕业
+    // 断言 2：每词评分日志条数 == 6（init + 1 次当天巩固 + 4 次复习，触发毕业的那次复习也写日志）。
+    // 掌握线 120 天下 FSRS-5 全 good 路径（同一天只认"往下扣"，当天巩固不再加成）：
+    // 3.173 →(3天)→ 10.74 →(11天)→ 34.58 →(35天)→ 100.75 →(101天)→ 269.28 ≥ 120 毕业
     for (int i = 1; i <= 8; i++) {
       final logs =
           await db.learningLogsDao.getHistory(testUser.id, 'w_$i');
       expect(
         logs.length,
-        5,
-        reason: 'w_$i 应经历 init + 1 次当天巩固 + 3 次复习后自然毕业（总评分 5 次，每次评分都写日志）',
+        6,
+        reason: 'w_$i 应经历 init + 1 次当天巩固 + 4 次复习后自然毕业（总评分 6 次，每次评分都写日志）',
       );
     }
 
-    // 断言 3：总天数在理论区间（4→14→44 天间隔，累计约 62 天）
-    expect(loopCount, greaterThanOrEqualTo(55));
-    expect(loopCount, lessThanOrEqualTo(80));
+    // 断言 3：总天数在理论区间（3→11→35→101 天间隔，理论约 150 天；8 个词分批启动，实测约 154 天）
+    expect(loopCount, greaterThanOrEqualTo(140));
+    expect(loopCount, lessThanOrEqualTo(180));
 
     // 等待后台 unawaited 任务执行完毕
     await Future.delayed(const Duration(milliseconds: 100));
@@ -679,20 +680,21 @@ void main() {
 
   test('触发毕业的那次评分：学习记录与学习进度的稳定度都写这次评分算出的真实值，词进已掌握词书并计入当日统计', () async {
     final now = AppClock.now();
-    // 一个同日巩固过的复习词，只差这次评分就够到掌握线：
-    // stability 100.0 同日 good 走 FSRS-5 短期公式 ×e^(w17*w18) ≈ ×1.4078 → 约 140.78 ≥ 120.0
+    // 一个隔了 14 天复习的旧词，这次评分就够到掌握线：
+    // next(stability=100, good, elapsedDays=14) ≈ 126.78 ≥ 120.0
+    // （毕业必须来自隔天复习评分：同一天里的答对不再加成，见 StudyTrack.sameDayStep）
     final currWord = LearningWord(
       userId: testUser.id,
       wordId: 'w_1',
       addDay: 1,
       addTime: now,
-      lastLearningDate: now,
+      lastLearningDate: now.subtract(const Duration(days: 14)),
       learningOrder: 1,
       batchId: 1,
       isExtra: false,
       stability: 100.0,
       difficulty: 5.0,
-      elapsedDays: 0,
+      elapsedDays: 14,
       scheduledDays: 3,
       reps: 4,
       lapses: 0,
@@ -710,18 +712,18 @@ void main() {
       FSRSItem(
         stability: 100.0,
         difficulty: 5.0,
-        elapsedDays: 0,
+        elapsedDays: 14,
         scheduledDays: 3,
         reps: 4,
         lapses: 0,
         state: FsrsState.review,
       ),
       FsrsRating.good,
-      0,
+      14,
       nextState: FsrsState.review,
     );
     expect(expected.stability >= Constants.graduationStability, true,
-        reason: '前置条件：这次评分必须越过掌握线，才会走毕业分支');
+        reason: '前置条件：这次隔天复习评分必须越过掌握线，才会走毕业分支');
 
     final nextFsrs = await studyBo.updateCurrWord(
       isWordMastered: false,

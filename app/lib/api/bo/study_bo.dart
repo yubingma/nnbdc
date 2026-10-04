@@ -1085,11 +1085,12 @@ class StudyBo {
         final bool isSameDayToday = currWord.lastLearningDate != null &&
             DateUtils.isSameBusinessDay(currWord.lastLearningDate!, AppClock.today());
         if (isSameDayToday) {
-          // 当天重复评分：elapsedDays = 0 → FSRS-5 短期记忆公式。
+          // 当天重复评分：只认"往下扣"的评分（模糊/忘记），良好/轻松不再叠加加成 ——
+          // 否则同一天连评几个环节就把下次复习推到几个月后并当场毕业（见 StudyTrack.sameDayStep）。
           // state 判据：本次提交后是否还有评分环节
           //（评分环节 = 轨道中 List 之外的环节；List 恒为末位且不评分，
           //  故 allStepsCompletedForWord 语义为"最后一个评分环节已提交"，见 getWord）。
-          nextFsrs = fsrs.next(currentFsrs, fsrsRating, 0,
+          nextFsrs = StudyTrack.sameDayStep(currentFsrs, fsrsRating,
               nextState: allStepsCompletedForWord
                   ? (fsrsRating == FsrsRating.again ? FsrsState.relearning : FsrsState.review)
                   : FsrsState.learning);

@@ -1393,7 +1393,9 @@ class BdcNotifier extends _$BdcNotifier {
           lapses: lw.lapses ?? 0,
           state: FsrsStateExt.fromInt(lw.state),
         );
-        nextItem = fsrs.next(prevItem, rating, days);
+        nextItem = days == 0
+            ? StudyTrack.sameDayStep(prevItem, rating)
+            : fsrs.next(prevItem, rating, days);
       }
 
       state = state.copyWith(fsrsItem: nextItem);
@@ -1572,13 +1574,12 @@ class BdcNotifier extends _$BdcNotifier {
         ? fsrs.init(rating)
         : fsrs.next(baseItem, rating, firstTodayLog.elapsedDays);
 
-    // 其余同日日志按原评分走 FSRS-5 短期公式逐条重放
+    // 其余同日日志按原评分逐条重放（同日结算口径与落库链路同源，见 StudyTrack.sameDayStep）
     var replayed = firstStep;
     for (var i = 1; i < todayLogs.length; i++) {
-      replayed = fsrs.next(
+      replayed = StudyTrack.sameDayStep(
         replayed,
         FsrsRatingExt.fromInt(todayLogs[i].rating),
-        0,
       );
     }
     return (replayed: replayed, firstStep: firstStep);
@@ -3036,7 +3037,9 @@ class BdcNotifier extends _$BdcNotifier {
           lapses: lw.lapses ?? 0,
           state: FsrsStateExt.fromInt(lw.state),
         );
-        nextItem = fsrs.next(prevItem, rating, days);
+        nextItem = days == 0
+            ? StudyTrack.sameDayStep(prevItem, rating)
+            : fsrs.next(prevItem, rating, days);
       }
 
       state = state.copyWith(fsrsItem: nextItem, daysSinceLastReview: daysSinceLastReview);
