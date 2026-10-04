@@ -4723,4 +4723,52 @@ void main() {
     expect(matchedMeanings, contains('专车'),
         reason: '前缀帧已点亮的"专车"必须保留，不能因后续帧而丢失');
   });
+
+  test('BdcNotifier - 回看历史时不标「本环节重测」，回到学习流程才标', () async {
+    // 线上路径：某个词在测评环节点「不认识」→ 它排到本环节队尾重测；
+    // 用户切到下一个词后再点「回看」看它 —— 回看是历史浏览，不该被标成"本环节重测"，
+    // 否则用户会以为"回看就等于重测"。
+    final today = AppClock.today();
+    AppClock.setClock(FakeClock(today.add(const Duration(hours: 10))));
+    addTearDown(AppClock.reset);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+
+    // 测评环节点「不认识」→ apple 排到本环节队尾重测
+    notifier.revealAnswerAndMarkWrong(FakeBuildContext());
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+    await _waitUntil(container, (s) => s.isGroupStepRetry);
+    state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+    expect(state.isGroupStepRetry, true, reason: '前置条件：apple 正在本环节重测');
+
+    // 回看刚才那个词：历史浏览，不处于"现在要重测"这个流程位置
+    notifier.goToPreviousWord();
+    await _waitUntil(container, (s) => s.historyIndex != -1);
+    state = container.read(bdcNotifierProvider);
+    expect(state.isGroupStepRetry, false,
+        reason: '回看历史不得标「本环节重测」——那会让人以为回看就等于重测');
+
+    // 退出回看、回到学习流程：标记必须回来
+    await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+    await _waitUntil(container, (s) => s.historyIndex == -1);
+    state = container.read(bdcNotifierProvider);
+    expect(state.isGroupStepRetry, true, reason: '回到学习流程后仍要标「本环节重测」');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
 }

@@ -113,21 +113,27 @@ def build_audio(cfg, starts, total, work, word):
         guard = 0.02 + duration_of(word) + 0.20 if s.get("word_intro") else 0.30
         clips = []
         if s.get("word_intro"):
-            clips.append({"path": word, "at": t0 + 0.02})
-        sfx = SFX_DIR / SFX_BY_TYPE[s["type"]]
-        if sfx.exists():
-            clips.append({"path": sfx, "at": t0 + 0.04, "gain": 0.24})
+            clips.append({"path": word, "at": t0 + 0.02, "kind": "word"})
 
         if s["type"] == "radiate":
+            # 每个箭头长出去时各响一声气泡音，给动作打拍子。
+            # 这声音只有 0.08s，音量给低了根本听不出来。
+            pop = SFX_DIR / SFX_BY_TYPE["radiate"]
             for k, (rel, mean) in enumerate(s["_tts"]):
                 at = t0 + s["reveal"] * k + LEAD
-                clips.append({"path": rel, "at": at})
-                clips.append({"path": mean, "at": at + duration_of(rel) + JOIN_GAP})
+                clips.append({"path": rel, "at": at, "kind": "voice"})
+                clips.append({"path": mean, "at": at + duration_of(rel) + JOIN_GAP,
+                              "kind": "voice"})
+                if pop.exists():
+                    clips.append({"path": pop, "at": at, "gain": 1.0, "kind": "sfx"})
         else:
-            clips.append({"path": s["_tts"][0], "at": t0 + guard})
+            sfx = SFX_DIR / SFX_BY_TYPE[s["type"]]
+            if sfx.exists():
+                clips.append({"path": sfx, "at": t0 + 0.04, "gain": 0.24, "kind": "sfx"})
+            clips.append({"path": s["_tts"][0], "at": t0 + guard, "kind": "voice"})
 
         for c in clips:
-            if c["path"] == word:
+            if c.get("kind") == "word":
                 continue                      # 段首单词发音允许贴着段头
             end = c["at"] + duration_of(c["path"])
             if end > min(seg_end, total) + 0.02:
@@ -136,8 +142,7 @@ def build_audio(cfg, starts, total, work, word):
                     f"{c['at']:.2f}s 起播、{end:.2f}s 结束，超出段末 {seg_end:.2f}s。")
         audio.extend(clips)
 
-    voices = sorted((c for c in audio if c["path"].suffix == ".wav" and c["path"] != word),
-                    key=lambda c: c["at"])
+    voices = sorted((c for c in audio if c.get("kind") == "voice"), key=lambda c: c["at"])
     for a, b in zip(voices, voices[1:]):
         a_end = a["at"] + duration_of(a["path"])
         if b["at"] < a_end - 0.05:

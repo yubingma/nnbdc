@@ -807,7 +807,10 @@ class BdcNotifier extends _$BdcNotifier {
       groupStepPosition: phase?.position ?? 0,
       groupStepTotal: phase?.total ?? 0,
       groupStepTrackName: phase?.trackName,
-      isGroupStepRetry: phase?.isRetry ?? false,
+      // 回看是历史浏览，不在"当前学习流程"里：不标「本环节重测」。
+      // 那个标记的意思是"这个词刚答错、现在回到队尾重来"，只对正在学的那个词成立；
+      // 回看一个刚点过「不认识」的词时把它标出来，会让人以为"回看就等于重测"。
+      isGroupStepRetry: state.historyIndex == -1 ? (phase?.isRetry ?? false) : false,
       isReviewWord: trackResult.isReview,
       todayLatestRating: followUpAssessment,
       todayLatestScheduledDays: followUpAssessmentDays,
