@@ -1,0 +1,59 @@
+{
+  "episode": "CI01",
+  "series": "词核心图",
+  "position": "01",
+  "slogan": "一个词 · 一个意象",
+  "word": "spring",
+  "phonetic": "sprɪŋ",
+  "core_art": "core_37865.jpeg",
+  "core_text": "蓄势猛然向外迸发",
+  "core_sub": "spring 只有这一个意象",
+  "accent": "#6EE7B7",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "春天",
+        "弹簧",
+        "泉水"
+      ],
+      "line": "这三个意思，有关系吗？",
+      "say": "春天、弹簧、泉水。有什么关系？"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：蓄势，猛然向外迸发。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "弹簧",
+          "relation": "受压蓄力后，回弹复位",
+          "say": "受压蓄力后，回弹复位，就是弹簧。"
+        },
+        {
+          "meaning": "泉水",
+          "relation": "水从地下迸涌而出",
+          "say": "水从地下迸涌而出，就是泉水。"
+        },
+        {
+          "meaning": "春天",
+          "relation": "草木憋了一冬，破土冒出",
+          "say": "草木憋了一冬，破土冒出，就是春天。"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "next": "下集 · charge",
+      "cta": "一天一个词，关注追更",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash"
+}

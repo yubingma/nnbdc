@@ -1,0 +1,442 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+词核心图系列竖屏短视频生成器（小红书 9:16）
+
+一集一个单词：先抛出几个看似毫不相干的释义 → 念出「核心意象」与它背后的那一个意象
+→ 逐条把「什么现象 → 就是哪个释义」讲成完整的一句话 → 金句收尾。
+
+时长不手写：每段长度由配音的实际时长反推（段首单词发音 + 中文讲解 + 尾巴留白），
+所以改文案不需要再手调时间轴。
+
+用法：
+    python3 tools/xhs_video_pipeline/core_image_series.py \
+        tools/xhs_video_pipeline/episodes/ci01_spring.json
+
+词核心图放在 tmp/xhs_video_pipeline/core_images/ 下（取自生产服务器
+/var/www/html/img/core_images/），脚本 JSON 里 core_art 只写文件名即可。
+"""
+
+import argparse
+import json
+import math
+from pathlib import Path
+
+from PIL import Image, ImageDraw
+
+from xhs_common import (
+    FONT_CN, FONT_CN_BOLD, FONT_CN_REG, FONT_EN, FONT_EN_NUM, FONT_IPA,
+    FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MED, FPS, H, INK, INK_DIM, INK_FAINT, OUT_DIR,
+    SFX_DIR, W, ImageLayer, Layer, duration_of, encode_video, fetch_tts,
+    PHOTO_ALBUM, fetch_word_audio, fit_font, font, hex2rgb, import_to_photos,
+    load_line_art, make_background,
+    synth_bgm, teaser_chip,
+)
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+TMP_DIR = ROOT_DIR / "tmp" / "xhs_video_pipeline"
+CORE_IMG_DIR = TMP_DIR / "core_images"
+
+TAIL = 0.45                # 每段末尾留给观众反应的静默
+GAP = 0.45                 # 两条释义讲解之间的最小间隔
+
+# 辐射图几何：核心意象居中偏上，释义散布在它四周，箭头由中心向外生长
+HUB = (W / 2, 648)         # 核心意象（中心枢纽）位置
+WORD_Y, PHON_Y = 300, 378  # 常驻词头（首帧即出现）
+HOOK_ART, HOOK_ART_Y = 320, 700      # 片头里的核心意象
+HOOK_CARD_Y, HOOK_CARD_GAP, HOOK_LINE_Y = 1010, 140, 1424
+ART_BOX = 300              # 辐射段里核心意象的边长
+NODE_MAX_W = 252           # 单个释义节点内文字的换行宽度
+ARROW_BEND = 46            # 贝塞尔箭头的弯曲幅度
+
+# 各节点相对核心意象的偏移。三节点的 V 形排布能让三条箭头都保有足够长度——
+# 若改用同心环，左右两条箭头会被核心意象和节点本身挤成零长度。
+_SLOTS = {
+    1: [(0, 700)],
+    2: [(-380, 352), (380, 352)],
+    3: [(-380, 352), (0, 752), (380, 352)],
+    4: [(-380, 300), (-140, 720), (140, 720), (380, 300)],
+}
+
+SFX_BY_TYPE = {"hook": "magic.mp3", "core": "bubble-pop.wav",
+               "radiate": "bubble-pop.wav", "outro": "stamp.mp3"}
+
+
+# ---------------------------------------------------------------- 时间轴规划
+
+def voice_kwargs(cfg):
+    """单集脚本里声明的配音音色。默认沿用芊悦（Cherry）。"""
+    kw = {"voice": cfg.get("voice", "Cherry"),
+          "model": cfg.get("voice_model", "qwen3-tts-flash")}
+    if cfg.get("voice_instructions"):
+        kw["instructions"] = cfg["voice_instructions"]
+    return kw
+
+
+def plan(cfg, word_dur, work):
+    """按配音实际时长反推每段长度，就地写回 dur / reveal，并返回段落起点。"""
+    vk = voice_kwargs(cfg)
+    starts, clock = [], 0.0
+    for si, s in enumerate(cfg["segments"]):
+        guard = 0.02 + word_dur + 0.20 if s.get("word_intro") else 0.30
+        if s["type"] == "radiate":
+            s["_tts"] = [fetch_tts(it["say"], work, f"{si}_{k}", **vk)
+                         for k, it in enumerate(s["items"])]
+            durs = [duration_of(p) for p in s["_tts"]]
+            # 条目均匀揭示，间隔取「最长的一条讲解 + 间隔」，保证谁都不会被下一句压住
+            s["reveal"] = s.get("reveal") or max(durs) + GAP
+            dur = guard + s["reveal"] * (len(durs) - 1) + durs[-1] + TAIL
+        else:
+            s["_tts"] = [fetch_tts(s["say"], work, f"{si}_{s['type']}", **vk)]
+            dur = guard + duration_of(s["_tts"][0]) + TAIL
+        s["dur"] = s.get("dur") or dur
+        starts.append(clock)
+        clock += s["dur"]
+    return starts, clock
+
+
+def build_audio(cfg, starts, total, work, word):
+    """装配音轨。越界与配音重叠都在这里直接报错，不静默截断。"""
+    audio = []
+    for si, s in enumerate(cfg["segments"]):
+        t0, seg_end = starts[si], starts[si] + s["dur"]
+        guard = 0.02 + duration_of(word) + 0.20 if s.get("word_intro") else 0.30
+        clips = []
+        if s.get("word_intro"):
+            clips.append({"path": word, "at": t0 + 0.02})
+        sfx = SFX_DIR / SFX_BY_TYPE[s["type"]]
+        if sfx.exists():
+            clips.append({"path": sfx, "at": t0 + 0.04, "gain": 0.24})
+
+        if s["type"] == "radiate":
+            for k, tts in enumerate(s["_tts"]):
+                clips.append({"path": tts, "at": t0 + (guard if k == 0 else s["reveal"] * k)})
+        else:
+            clips.append({"path": s["_tts"][0], "at": t0 + guard})
+
+        for c in clips:
+            if c["path"] == word:
+                continue                      # 段首单词发音允许贴着段头
+            end = c["at"] + duration_of(c["path"])
+            if end > min(seg_end, total) + 0.02:
+                raise SystemExit(
+                    f"第 {si + 1} 段（{s['type']}）音频超时：{c['path'].name} "
+                    f"{c['at']:.2f}s 起播、{end:.2f}s 结束，超出段末 {seg_end:.2f}s。")
+        audio.extend(clips)
+
+    voices = sorted((c for c in audio if c["path"].suffix == ".wav" and c["path"] != word),
+                    key=lambda c: c["at"])
+    for a, b in zip(voices, voices[1:]):
+        a_end = a["at"] + duration_of(a["path"])
+        if b["at"] < a_end - 0.05:
+            raise SystemExit(
+                f"配音重叠：{a['path'].name} 到 {a_end:.2f}s，但 {b['path'].name} "
+                f"{b['at']:.2f}s 就开口了。")
+    return audio
+
+
+# ---------------------------------------------------------------- 画面元素
+
+def _text_w(fnt, text):
+    bbox = fnt.getbbox(text)
+    return bbox[2] - bbox[0]
+
+
+_PUNCT = "，。、；：！？）】"
+
+
+def wrap_cn(text, fnt, max_w):
+    """中文按宽度折行：优先在标点后断开，避免把一个词从中间劈开。"""
+    chunks, cur = [], ""
+    for ch in text:
+        cur += ch
+        if ch in _PUNCT:
+            chunks.append(cur)
+            cur = ""
+    if cur:
+        chunks.append(cur)
+
+    lines, line = [], ""
+    for ck in chunks:
+        if line and _text_w(fnt, line + ck) > max_w:
+            lines.append(line)
+            line = ck
+        else:
+            line += ck
+        while _text_w(fnt, line) > max_w and len(line) > 1:   # 单块仍超宽就逐字硬断
+            cut = len(line) - 1
+            while cut > 1 and _text_w(fnt, line[:cut]) > max_w:
+                cut -= 1
+            lines.append(line[:cut])
+            line = line[cut:]
+    if line:
+        lines.append(line)
+    return lines
+
+
+def node_positions(count):
+    """把 count 条释义散布在核心意象四周，返回各节点中心坐标。"""
+    if count in _SLOTS:
+        return [(HUB[0] + dx, HUB[1] + dy) for dx, dy in _SLOTS[count]]
+    step = math.pi / (count - 1)          # 兜底：沿下半圆均布
+    return [(HUB[0] - 380 * math.cos(step * i), HUB[1] + 380 + 320 * math.sin(step * i))
+            for i in range(count)]
+
+
+def node_size(meaning, lines, f_meaning, f_rel):
+    w = max(max(_text_w(f_rel, t) for t in lines), _text_w(f_meaning, meaning)) + 76
+    return w, 46 + 42 * len(lines) + 34
+
+
+def _rect_exit(half_w, half_h, ux, uy):
+    """沿 (ux,uy) 方向从矩形中心走到边框的距离。"""
+    tx = half_w / abs(ux) if abs(ux) > 1e-6 else float("inf")
+    ty = half_h / abs(uy) if abs(uy) > 1e-6 else float("inf")
+    return min(tx, ty)
+
+
+def arrow_geometry(node, node_half, art_half):
+    """箭头贴着核心意象边框外侧起步，精确停在释义节点边框外 14px 处。"""
+    dx, dy = node[0] - HUB[0], node[1] - HUB[1]
+    dist = math.hypot(dx, dy) or 1.0
+    ux, uy = dx / dist, dy / dist
+    start = _rect_exit(*art_half, ux, uy) + 12
+    reach = _rect_exit(*node_half, ux, uy) + 14
+    p0 = (HUB[0] + ux * start, HUB[1] + uy * start)
+    p1 = (node[0] - ux * reach, node[1] - uy * reach)
+    ctrl = ((p0[0] + p1[0]) / 2 - uy * ARROW_BEND,
+            (p0[1] + p1[1]) / 2 + ux * ARROW_BEND)
+    return p0, ctrl, p1
+
+
+def draw_arrow(d, p0, ctrl, p1, progress, color, width=5):
+    """把二次贝塞尔曲线沿 t∈[0, progress] 画出来，末端带箭头。"""
+    if progress <= 0.01:
+        return
+    steps = max(2, int(36 * progress))
+    pts = []
+    for i in range(steps + 1):
+        t = progress * i / steps
+        mt = 1 - t
+        pts.append((mt * mt * p0[0] + 2 * mt * t * ctrl[0] + t * t * p1[0],
+                    mt * mt * p0[1] + 2 * mt * t * ctrl[1] + t * t * p1[1]))
+    d.line(pts, fill=color, width=width, joint="curve")
+    tip, prev = pts[-1], pts[max(0, len(pts) - 3)]
+    ang = math.atan2(tip[1] - prev[1], tip[0] - prev[0])
+    head = 22
+    d.polygon([tip,
+               (tip[0] - head * math.cos(ang - 0.42), tip[1] - head * math.sin(ang - 0.42)),
+               (tip[0] - head * math.cos(ang + 0.42), tip[1] - head * math.sin(ang + 0.42))],
+              fill=color)
+
+
+def radiate_node(d, cx, cy, lines, size, alpha, accent, f_meaning, f_rel, meaning):
+    w, h = size
+    x0, y0 = cx - w / 2, cy - h / 2
+    d.rounded_rectangle([x0, y0, x0 + w, y0 + h], radius=26,
+                        fill=(255, 255, 255, int(13 * alpha)),
+                        outline=accent + (int(120 * alpha),), width=2)
+    d.text((cx, y0 + 52), meaning, font=f_meaning,
+           fill=INK + (int(250 * alpha),), anchor="mm")
+    for i, t in enumerate(lines):
+        d.text((cx, y0 + 98 + 42 * i), t, font=f_rel,
+               fill=INK_DIM + (int(240 * alpha),), anchor="mm")
+
+
+def hook_card(d, cx, y, text, alpha, fnt):
+    bbox = fnt.getbbox(text)
+    w = (bbox[2] - bbox[0]) + 130
+    d.rounded_rectangle([cx - w / 2, y - 68, cx + w / 2, y + 68], radius=30,
+                        fill=(255, 255, 255, int(14 * alpha)),
+                        outline=INK_FAINT + (int(130 * alpha),), width=2)
+    d.text((cx, y), text, font=fnt, fill=INK + (int(248 * alpha),), anchor="mm")
+
+
+# ---------------------------------------------------------------- 渲染
+
+def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False):
+    accent = hex2rgb(cfg.get("accent", "#6EE7B7"))
+    bg = make_background(accent)
+    segments = cfg["segments"]
+
+    f_series = font(FONT_CN, 32, FONT_CN_REG)
+    f_idx = font(FONT_LATIN, 38, FONT_LATIN_MED)
+    f_small = font(FONT_CN, 34, FONT_CN_REG)
+    f_label = font(FONT_CN, 40, FONT_CN_REG)
+    f_word_hdr = font(FONT_EN, 88, FONT_EN_NUM)
+    f_phon_hdr = font(FONT_IPA, 38)
+    f_hook = font(FONT_CN, 96, FONT_CN_BOLD)
+    f_core_cn = font(FONT_CN, 78, FONT_CN_BOLD)
+    f_meaning = font(FONT_CN, 56, FONT_CN_BOLD)
+    f_rel = font(FONT_CN, 30, FONT_CN_REG)
+    f_pct = font(FONT_LATIN, 52, FONT_LATIN_BOLD)
+
+    art_ring = core_art.copy()
+    art_ring.thumbnail((ART_BOX, ART_BOX), Image.LANCZOS)
+    art_hook = core_art.copy()
+    art_hook.thumbnail((HOOK_ART, HOOK_ART), Image.LANCZOS)
+
+    layers_by_seg = []
+    for s in segments:
+        L, dur = [], s["dur"]
+        kind = s["type"]
+
+        if kind == "hook":
+            line = s["line"]
+            L.append(ImageLayer(art_hook, (W / 2, HOOK_ART_Y), 0.0, dur=3.4,
+                                scale_from=0.93, glow=accent + (60,), fade_in=False))
+            for i, text in enumerate(s["cards"]):
+                L.append(Layer(lambda d, e, dy, t=text, y=HOOK_CARD_Y + HOOK_CARD_GAP * i:
+                               hook_card(d, W / 2, y + dy, t, e, f_hook),
+                               -1.0, dur=0.4, rise=0))
+            L.append(Layer(lambda d, e, dy, t=line: d.text(
+                (W / 2, HOOK_LINE_Y + dy), t, font=f_small,
+                fill=INK_DIM + (int(240 * e),), anchor="mm"), 1.30, dur=0.55))
+
+        elif kind == "core":
+            core_label, core_text = "核心意象", cfg["core_text"]
+            sub = cfg["core_sub"]
+            L.append(ImageLayer(core_art, (W / 2, 740), 0.10, dur=0.85,
+                                rise=26, scale_from=0.82, glow=accent + (90,)))
+            L.append(Layer(lambda d, e, dy, t=core_label: d.text(
+                (W / 2, 1130 + dy), t, font=f_label,
+                fill=INK_DIM + (int(245 * e),), anchor="mm"), dur * 0.36, dur=0.5))
+            L.append(Layer(lambda d, e, dy, t=core_text: d.text(
+                (W / 2, 1250 + dy), t, font=f_core_cn,
+                fill=accent + (int(255 * e),), anchor="mm"), dur * 0.36 + 0.15, dur=0.55, rise=30))
+            L.append(Layer(lambda d, e, dy, t=sub: d.text(
+                (W / 2, 1390 + dy), t, font=f_small,
+                fill=INK_FAINT + (int(235 * e),), anchor="mm"), dur * 0.62, dur=0.55))
+
+        elif kind == "radiate":
+            items = s["items"]
+            nodes = node_positions(len(items))
+            # 核心意象常驻中心，释义绕它一圈，箭头从中心逐条长出去
+            L.append(ImageLayer(art_ring, HUB, 0.05, dur=0.45, glow=accent + (70,)))
+            for i, item in enumerate(items):
+                node = nodes[i]
+                lines = wrap_cn(item["relation"], f_rel, NODE_MAX_W)
+                size = node_size(item["meaning"], lines, f_meaning, f_rel)
+                p0, ctrl, p1 = arrow_geometry(node, (size[0] / 2, size[1] / 2),
+                                              (art_ring.width / 2, art_ring.height / 2))
+                at = s["reveal"] * i
+                L.append(Layer(lambda d, e, dy, a=p0, c=ctrl, b=p1: draw_arrow(
+                    d, a, c, b, e, accent + (235,)), at, dur=0.45, rise=0))
+                L.append(Layer(lambda d, e, dy, it=item, nd=node, ln=lines, sz=size: radiate_node(
+                    d, nd[0], nd[1] + dy, ln, sz, e, accent, f_meaning, f_rel, it["meaning"]),
+                    at + 0.18, dur=0.42, rise=26))
+
+        elif kind == "outro":
+            nxt, cta = s["next"], s["cta"]
+            rows = s["line"].split("\n")
+            f_q = fit_font(max(rows, key=len), FONT_CN, FONT_CN_BOLD, 88, W - 170)
+            for i, txt in enumerate(rows):
+                y = 762 + (i - (len(rows) - 1) / 2) * 122
+                L.append(Layer(lambda d, e, dy, t=txt, yy=y: d.text(
+                    (W / 2, yy + dy), t, font=f_q,
+                    fill=accent + (int(255 * e),), anchor="mm"), 0.10, dur=0.6, rise=36))
+            L.append(Layer(lambda d, e, dy, t=nxt: teaser_chip(
+                d, W / 2, 1010 + dy, t, f_small, e), 0.95, dur=0.55))
+            L.append(Layer(lambda d, e, dy, t=cta: d.text(
+                (W / 2, 1210 + dy), t, font=f_small,
+                fill=INK_DIM + (int(235 * e),), anchor="mm"), 1.35, dur=0.55))
+        layers_by_seg.append(L)
+
+    def draw_chrome(img, t):
+        d = ImageDraw.Draw(img)
+        d.text((80, 146), f"{cfg['series']} · {cfg['episode']}", font=f_series,
+               fill=INK_FAINT, anchor="lm")
+        d.text((W - 80, 146), cfg.get("position", ""), font=f_idx,
+               fill=INK_FAINT, anchor="rm")
+        # 单词拼写与音标全集常驻：封面取第一帧，这里必须是全不透明
+        d.text((W / 2, WORD_Y), cfg["word"], font=f_word_hdr,
+               fill=INK + (240,), anchor="mm")
+        d.text((W / 2, PHON_Y), cfg["phonetic"], font=f_phon_hdr,
+               fill=(150, 200, 235) + (220,), anchor="mm")
+
+        # 进度条 + 百分比：数字会一路涨到 100%，是留住观众看到最后的主要钩子
+        prog = min(1.0, t / total)
+        # 小红书播放页底部左侧压标题正文、右侧压互动按钮列，所以进度条
+        # 上移到 0.84H、右端收到 0.84W 之前，尽量落在安全区里
+        bar_l, bar_r = 268, W - 174
+        bar_y, bar_h = 1616, 22
+        d.text((bar_l - 40, bar_y), f"{int(prog * 100)}%", font=f_pct,
+               fill=accent + (255,), anchor="rm")
+        d.rounded_rectangle([bar_l, bar_y - bar_h // 2, bar_r, bar_y + bar_h // 2],
+                            radius=bar_h // 2, fill=(255, 255, 255, 20))
+        head = bar_l + (bar_r - bar_l) * prog
+        if prog > 0.004:
+            d.rounded_rectangle([bar_l, bar_y - bar_h // 2, head, bar_y + bar_h // 2],
+                                radius=bar_h // 2, fill=accent + (240,))
+            d.ellipse([head - bar_h, bar_y - bar_h, head + bar_h, bar_y + bar_h],
+                      fill=accent + (90,))
+        d.text((W / 2, bar_y - 92), cfg["slogan"], font=f_small,
+               fill=INK_FAINT, anchor="mm")
+
+    n_frames = int(round(total * FPS))
+
+    def frames():
+        for f in range(n_frames):
+            t = f / FPS
+            seg = max(i for i, st in enumerate(starts) if t >= st)
+            img = bg.copy()
+            for lay in layers_by_seg[seg]:
+                lay.render(img, t - starts[seg])
+            draw_chrome(img, t)
+            yield img.convert("RGB").tobytes()
+
+    encode_video(frames(), n_frames, total, audio, out_path, bgm_path, quiet=quiet)
+    return total
+
+
+# ---------------------------------------------------------------- 主流程
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("episode_json")
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--no-bgm", action="store_true")
+    ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--to-photos", action="store_true",
+                    help="出片后直接导入 macOS「照片」，开 iCloud 即同步到手机相册")
+    args = ap.parse_args()
+
+    cfg = json.loads(Path(args.episode_json).read_text(encoding="utf-8"))
+    ep = cfg["episode"]
+    work = TMP_DIR / ep / "audio"
+    work.mkdir(parents=True, exist_ok=True)
+
+    art_path = Path(cfg["core_art"])
+    if not art_path.is_absolute():
+        art_path = CORE_IMG_DIR / art_path
+    if not art_path.exists():
+        raise SystemExit(f"找不到词核心图：{art_path}")
+    core_art = load_line_art(art_path, box=620)
+    vk = voice_kwargs(cfg)
+    print(f"· {ep} 《{cfg['series']}》 {cfg['word']} = {cfg['core_text']}"
+          f"（词核心图 {core_art.width}×{core_art.height}）")
+    print(f"· 配音音色：{vk['voice']}（{vk['model']}"
+          f"{'，带语气指令' if 'instructions' in vk else ''}）")
+
+    word = fetch_word_audio(cfg["word"], work / f"{cfg['word']}.mp3")
+    starts, total = plan(cfg, duration_of(word), work)
+    print(f"· 时长按配音自动反推：合计 {total:.1f}s")
+    audio = build_audio(cfg, starts, total, work, word)
+    if not args.quiet:
+        for s, st in zip(cfg["segments"], starts):
+            print(f"    [{s['type']:7}] {st:5.2f}s → {st + s['dur']:5.2f}s  ({s['dur']:.2f}s)")
+        for c in sorted(audio, key=lambda c: c["at"]):
+            print(f"      {c['at']:6.2f}s → {c['at'] + duration_of(c['path']):6.2f}s  {c['path'].name}")
+
+    bgm = None if args.no_bgm else synth_bgm(TMP_DIR / ep / "bgm.wav", total + 0.5)
+    out = Path(args.out) if args.out else OUT_DIR / f"{ep}_{cfg['word']}_core.mp4"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    render(cfg, core_art, audio, out, bgm, starts, total, quiet=args.quiet)
+    print(f"✅ 成片 {out}  时长 {total:.1f}s  大小 {out.stat().st_size / 1024 / 1024:.1f}MB")
+    if args.to_photos:
+        n = import_to_photos([out])
+        print(f"📱 已导入「照片」专辑「{PHOTO_ALBUM}」：{n} 项")
+
+
+if __name__ == "__main__":
+    main()

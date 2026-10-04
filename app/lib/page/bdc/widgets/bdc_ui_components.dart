@@ -2520,9 +2520,24 @@ extension BdcPageStateUIComponents on BdcPageState {
       );
     }
 
+    // 这一行显示的是"本次作答"还是"今日测评参考"，数据源必须与标签、以及
+    // "改评分改哪条"共用同一个判据（[BdcNotifier.hasUnsubmittedAnswer]，见 updateFsrsRating）：
+    // - 本次作答：lastFsrsRating + 本次推算 fsrsItem；
+    // - 今日测评参考（回看历史、本环节重练、加固环节还没算出本次推算）：
+    //   assessmentRating + assessmentScheduledDays。
+    // 回看一条"已作答的巩固环节"历史时，lastFsrsRating / fsrsItem 是**那条历史自己的作答事实**，
+    // 拿它冒充测评结果，用户就会对着它改评分，而真正被改的是今日测评首条 —— 所见非所改。
+    final bool showsCurrentAnswer = notifier.hasUnsubmittedAnswer;
+    final FsrsRating? shownRating = showsCurrentAnswer
+        ? (state.lastFsrsRating ?? state.assessmentRating)
+        : (state.assessmentRating ?? state.lastFsrsRating);
+    final int? shownDays = showsCurrentAnswer
+        ? (state.fsrsItem?.scheduledDays ?? state.assessmentScheduledDays)
+        : (state.assessmentScheduledDays ?? state.fsrsItem?.scheduledDays);
+
     // 获取本次操作的评估标签和颜色
-    String ratingLabel = state.lastFsrsRating?.label ?? '未知';
-    Color ratingColor = state.lastFsrsRating?.colorWithDark(isDarkMode) ??
+    String ratingLabel = shownRating?.label ?? '未知';
+    Color ratingColor = shownRating?.colorWithDark(isDarkMode) ??
         (isDarkMode ? Colors.white70 : Colors.black87);
 
     return Container(
@@ -2560,7 +2575,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       text: '下次复习: ',
                       style: TextStyle(fontSize: 11.5, color: textColor)),
                   TextSpan(
-                    text: '${state.fsrsItem!.scheduledDays}',
+                    text: '${shownDays ?? state.fsrsItem!.scheduledDays}',
                     style: TextStyle(
                       fontSize: 11.5,
                       color: isDarkMode

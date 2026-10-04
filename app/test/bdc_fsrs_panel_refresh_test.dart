@@ -357,4 +357,33 @@ void main() {
         reason: '不得拿历史最新一条（巩固结果）冒充测评结果');
     expect(find.textContaining('下次复习: 13天后', findRichText: true), findsNothing);
   });
+
+  testWidgets('回看已作答的巩固环节：那一行必须显示今日测评，不得拿被回看那条的作答评分冒充', (tester) async {
+    // 实测路径：新词测评轻松(16天) → 巩固环节作答良好 → 点「下一词」落库 → 点「回看」。
+    // 回看时 state 里的 lastFsrsRating / fsrsItem 是"被回看那条（巩固）的作答事实"（良好），
+    // 而 assessmentRating / assessmentScheduledDays 是"今日测评首条"（轻松 · 16 天）——
+    // 点这一行改评分，真正被改的是后者（见 BdcNotifier.updateFsrsRating 与 _applyRatingModification）。
+    // 因此显示必须跟着后者，否则用户对着"良好"改回"良好"，天数却从 16 天变成 init(良好)=3 天。
+    final (testWord, mockResult) = _createTestData(stepIndex: 1);
+    final fsrs = FSRS();
+    // 丙口径下巩固环节的"良好"不改动记忆参数，那条历史快照的天数仍是 16 天
+    final consolidateSnapshot = fsrs.init(FsrsRating.easy);
+    final notifier = MockBdcNotifierForPanel(
+      _answeredGoodState(testWord, mockResult, consolidateSnapshot).copyWith(
+        historyIndex: 1,
+        assessmentRating: FsrsRating.easy,
+        assessmentScheduledDays: 16,
+      ),
+      mockHasSeenAnswer: true,
+      mockHasUnsubmittedAnswer: false,
+    );
+    await pumpPage(tester, notifier);
+
+    expect(find.text('测评结果: 轻松'), findsOneWidget,
+        reason: '回看模式的这一行是今日测评参考（也正是改评分要改的那条），必须是测评的轻松');
+    expect(find.text('测评结果: 良好'), findsNothing,
+        reason: '不得拿被回看那条巩固环节的作答评分冒充测评结果 —— 否则所见非所改');
+    expect(find.textContaining('下次复习: 16天后', findRichText: true), findsOneWidget,
+        reason: '天数必须跟着今日测评参考走（16 天），不能显示那条快照的天数');
+  });
 }

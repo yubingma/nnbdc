@@ -6,271 +6,25 @@
 用法：
     python3 tools/xhs_video_pipeline/root_series.py tools/xhs_video_pipeline/episodes/ep01_spect.json
 
-流程：
-    1. 读取单集脚本 JSON（词根人格、词条、讲解文案、时间轴）
-    2. 下载单词真实发音（有道词典音源）与中文讲解配音（通义 qwen3-tts-flash）
-    3. numpy 合成轻量 BGM（--no-bgm 可关闭）
-    4. PIL 逐帧渲染 1080x1920 画面，rawvideo 管道喂给 ffmpeg
-    5. 输出成片到 design/ui/video/
-
-中间产物（音频、临时帧）统一落在 tmp/xhs_root_series/<集号>/。
+流程：读取单集脚本 JSON → 取发音与中文配音 → 合成 BGM → PIL 逐帧渲染 → ffmpeg 合成。
+中间产物落在 tmp/xhs_root_series/<集号>/，成片输出到 design/ui/video/。
 """
 
 import argparse
 import json
-import math
-import subprocess
-import sys
-import urllib.parse
-import urllib.request
-import wave
 from pathlib import Path
 
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw
+
+from xhs_common import (
+    FONT_CN, FONT_CN_BOLD, FONT_CN_REG, FONT_EN, FONT_EN_NUM, FONT_IPA,
+    FONT_LATIN, FONT_LATIN_MED, FPS, H, INK, INK_DIM, INK_FAINT, OUT_DIR,
+    SFX_DIR, W, Layer, duration_of, encode_video, fetch_tts, fetch_word_audio,
+    fit_font, font, hex2rgb, synth_bgm, teaser_chip, make_background,
+)
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 TMP_DIR = ROOT_DIR / "tmp" / "xhs_root_series"
-OUT_DIR = ROOT_DIR / "design" / "ui" / "video"
-SFX_DIR = ROOT_DIR / "app" / "assets" / "audio"
-
-W, H = 1080, 1920
-FPS = 30
-
-# 视觉设计令牌
-BG_TOP = (13, 16, 21)
-BG_BOTTOM = (7, 8, 11)
-INK = (242, 246, 250)
-INK_DIM = (138, 148, 163)
-INK_FAINT = (86, 94, 108)
-
-FONT_EN = "/System/Library/Fonts/Avenir Next.ttc"
-FONT_EN_NUM = 2  # Demi Bold
-FONT_LATIN = "/System/Library/Fonts/HelveticaNeue.ttc"
-FONT_LATIN_BOLD = 1
-FONT_LATIN_MED = 10
-FONT_CN = "/System/Library/Fonts/Hiragino Sans GB.ttc"
-FONT_CN_BOLD = 2
-FONT_CN_REG = 0
-# 音标含 ɪ / ˈ / ɛ / ɚ 等 IPA 字符，系统中仅 Arial Unicode MS 完整覆盖
-FONT_IPA = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
-
-_font_cache = {}
-
-
-def font(path, size, index=0):
-    key = (path, size, index)
-    if key not in _font_cache:
-        _font_cache[key] = ImageFont.truetype(path, size, index=index)
-    return _font_cache[key]
-
-
-def fit_font(text, path, index, size, max_w, min_size=22):
-    """按最大宽度自动缩字号，防止长单词/长句溢出画布。"""
-    while size > min_size:
-        f = font(path, size, index)
-        bbox = f.getbbox(text)
-        if bbox[2] - bbox[0] <= max_w:
-            return f
-        size -= 2
-    return font(path, min_size, index)
-
-
-def hex2rgb(s):
-    s = s.lstrip("#")
-    return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
-
-
-def run(cmd, **kw):
-    return subprocess.run(cmd, check=True, capture_output=True, **kw)
-
-
-_dur_cache = {}
-
-
-def duration_of(path):
-    key = str(path)
-    if key not in _dur_cache:
-        out = run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                   "-of", "default=nw=1:nk=1", key]).stdout.decode().strip()
-        _dur_cache[key] = float(out)
-    return _dur_cache[key]
-
-
-# ---------------------------------------------------------------- 素材获取
-
-def fetch_word_audio(word, dest, accent=2):
-    """有道词典真人发音（accent: 1 英音 / 2 美音）。"""
-    if dest.exists() and dest.stat().st_size > 1000:
-        return dest
-    url = "https://dict.youdao.com/dictvoice?" + urllib.parse.urlencode(
-        {"audio": word, "type": accent})
-    with urllib.request.urlopen(url, timeout=20) as r:
-        dest.write_bytes(r.read())
-    return dest
-
-
-def fetch_tts(text, dest_dir, prefix, voice="Cherry", language="Chinese"):
-    """通义 qwen3-tts-flash 合成讲解配音。文件名带文案哈希，改文案自动重新合成。"""
-    import hashlib
-    tag = hashlib.md5(text.encode("utf-8")).hexdigest()[:8]
-    dest = dest_dir / f"{prefix}_{tag}.wav"
-    if dest.exists() and dest.stat().st_size > 1000:
-        return dest
-    key = _dashscope_key()
-    body = json.dumps({"model": "qwen3-tts-flash",
-                       "input": {"text": text, "voice": voice, "language_type": language}}).encode()
-    req = urllib.request.Request(
-        "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
-        data=body, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        resp = json.loads(r.read())
-    url = resp["output"]["audio"]["url"]
-    with urllib.request.urlopen(url, timeout=60) as r:
-        dest.write_bytes(r.read())
-    return dest
-
-
-def _dashscope_key():
-    import os
-    key = os.environ.get("dashscope_api_key")
-    if key:
-        return key
-    profile = Path.home() / ".zprofile"
-    for line in profile.read_text(encoding="utf-8", errors="ignore").splitlines():
-        line = line.strip().removeprefix("export ").strip()
-        if line.startswith("dashscope_api_key="):
-            return line.split("=", 1)[1].strip().strip('"').strip("'")
-    raise RuntimeError("未在 ~/.zprofile 找到 dashscope_api_key")
-
-
-# ---------------------------------------------------------------- BGM 合成
-
-def synth_bgm(dest, seconds, bpm=96):
-    """合成一条低音量 lo-fi 底噪节奏：柔和铺底和弦 + 轻 kick + 反向 hat。"""
-    sr = 44100
-    n = int(sr * seconds)
-    t = np.arange(n) / sr
-    out = np.zeros(n)
-
-    beat = 60.0 / bpm
-    # 4 小节循环：Am - F - C - G（根音 + 五度，柔和正弦）
-    chords = [(220.0, 330.0), (174.6, 261.6), (261.6, 392.0), (196.0, 293.7)]
-    for bar in range(int(seconds / (beat * 4)) + 1):
-        for k, (f1, f2) in enumerate(chords):
-            start = (bar * 4 + k) * beat
-            i0, i1 = int(start * sr), int(min(n, (start + beat * 1.6) * sr))
-            if i0 >= n:
-                continue
-            tt = np.arange(i1 - i0) / sr
-            env = np.minimum(tt / 0.25, 1.0) * np.exp(-tt * 1.1)
-            voice = 0.30 * np.sin(2 * np.pi * f1 * tt) + 0.20 * np.sin(2 * np.pi * f2 * tt)
-            voice += 0.06 * np.sin(2 * np.pi * f1 * 2 * tt)
-            out[i0:i1] += voice * env
-
-    # 轻 kick：每小节第 1、3 拍
-    rng = np.random.default_rng(7)
-    for b in range(int(seconds / beat) + 1):
-        if b % 2:
-            continue
-        i0 = int(b * beat * sr)
-        ln = int(0.22 * sr)
-        if i0 + ln >= n:
-            break
-        tt = np.arange(ln) / sr
-        out[i0:i0 + ln] += 0.5 * np.sin(2 * np.pi * (95 - 55 * tt / 0.22) * tt) * np.exp(-tt * 22)
-
-    # 反向 hat：八分音符反拍
-    for b in range(int(seconds / (beat / 2)) + 1):
-        if b % 2 == 0:
-            continue
-        i0 = int(b * (beat / 2) * sr)
-        ln = int(0.05 * sr)
-        if i0 + ln >= n:
-            break
-        noise = rng.normal(0, 1, ln)
-        noise = np.diff(noise, prepend=0.0)  # 简易高通
-        tt = np.arange(ln) / sr
-        out[i0:i0 + ln] += 0.05 * noise * np.exp(-tt * 90)
-
-    # 柔和低通 + 淡入淡出
-    k = np.ones(48) / 48
-    out = np.convolve(out, k, mode="same")
-    fade = int(sr * 0.8)
-    out[:fade] *= np.linspace(0, 1, fade)
-    out[-fade:] *= np.linspace(1, 0, fade)
-    peak = np.max(np.abs(out)) or 1.0
-    out = out / peak * 0.5
-
-    data = (out * 32767).astype("<i2")
-    with wave.open(str(dest), "wb") as f:
-        f.setnchannels(1)
-        f.setsampwidth(2)
-        f.setframerate(sr)
-        f.writeframes(data.tobytes())
-    return dest
-
-
-# ---------------------------------------------------------------- 画面渲染
-
-class Layer:
-    """带入场动画的画面元素：淡入 + 上浮。"""
-
-    def __init__(self, draw_fn, start, dur=0.5, rise=34):
-        self.draw_fn = draw_fn
-        self.start = start
-        self.dur = dur
-        self.rise = rise
-
-    def render(self, base, t):
-        p = (t - self.start) / self.dur
-        if p <= 0:
-            return
-        p = min(1.0, p)
-        e = 1 - (1 - p) ** 3
-        layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
-        d = ImageDraw.Draw(layer)
-        self.draw_fn(d, e, (1 - e) * self.rise)
-        base.alpha_composite(layer)
-
-
-def make_background(accent):
-    """深空底色 + 顶部品牌光晕 + 细腻噪点，整集静态复用。"""
-    yy = np.linspace(0, 1, H)[:, None]
-    bg = np.zeros((H, W, 3), dtype=np.float64)
-    for c in range(3):
-        bg[:, :, c] = (BG_TOP[c] * (1 - yy) + BG_BOTTOM[c] * yy)
-
-    yy2 = np.arange(H)[:, None]
-    xx2 = np.arange(W)[None, :]
-    cx, cy, rad = W * 0.5, H * 0.22, W * 1.05
-    dist = np.sqrt((xx2 - cx) ** 2 + (yy2 - cy) ** 2)
-    glow = np.clip(1 - dist / rad, 0, 1) ** 2.2
-    for c in range(3):
-        bg[:, :, c] += glow * accent[c] * 0.16
-
-    # 底部再来一层极淡的暖色补光
-    dist2 = np.sqrt((xx2 - W * 0.5) ** 2 + (yy2 - H * 1.02) ** 2)
-    glow2 = np.clip(1 - dist2 / (W * 0.95), 0, 1) ** 2.5
-    for c in range(3):
-        bg[:, :, c] += glow2 * accent[c] * 0.05
-
-    rng = np.random.default_rng(11)
-    bg += rng.normal(0, 2.2, bg.shape)
-    return Image.fromarray(np.clip(bg, 0, 255).astype(np.uint8)).convert("RGBA")
-
-
-def teaser_chip(d, cx, y, text, fnt, alpha):
-    """胶囊标签：片头承诺（3 个考研词）与片尾下集预告共用。"""
-    if not text:
-        return
-    bbox = d.textbbox((0, 0), text, font=fnt)
-    tw = bbox[2] - bbox[0]
-    hw = tw / 2 + 56
-    d.rounded_rectangle([cx - hw, y - 48, cx + hw, y + 48], radius=48,
-                        fill=(255, 255, 255, int(16 * alpha)),
-                        outline=INK_FAINT + (int(150 * alpha),), width=2)
-    d.text((cx, y), text, font=fnt, fill=INK + (int(230 * alpha),), anchor="mm")
 
 
 def chips_row(d, cx, y, chips, alpha, max_w=W - 160):
@@ -406,34 +160,8 @@ def render_episode(cfg, audio, out_path, bgm_path, quiet=False):
                fill=INK_FAINT, anchor="mm")
 
     n_frames = int(round(total * FPS))
-    cmd = ["ffmpeg", "-y", "-loglevel", "error",
-           "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-"]
-    for a in audio:
-        cmd += ["-i", str(a["path"])]
-    if bgm_path:
-        cmd += ["-i", str(bgm_path)]
 
-    filt = []
-    mix_labels = []
-    for i, a in enumerate(audio):
-        ms = int(a["at"] * 1000)
-        gain = a.get("gain", 1.0)
-        filt.append(f"[{i + 1}:a]volume={gain},adelay={ms}:all=1,"
-                    f"aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a{i}]")
-        mix_labels.append(f"[a{i}]")
-    if bgm_path:
-        bi = len(audio) + 1
-        filt.append(f"[{bi}:a]volume=0.30,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[abgm]")
-        mix_labels.append("[abgm]")
-    filt.append("".join(mix_labels) + f"amix=inputs={len(mix_labels)}:duration=longest:normalize=0[aout]")
-
-    cmd += ["-filter_complex", ";".join(filt), "-map", "0:v", "-map", "[aout]",
-            "-c:v", "libx264", "-preset", "medium", "-crf", "19",
-            "-pix_fmt", "yuv420p", "-r", str(FPS), "-t", f"{total:.3f}",
-            "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(out_path)]
-
-    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-    try:
+    def frames():
         for f in range(n_frames):
             t = f / FPS
             seg = 0
@@ -445,22 +173,9 @@ def render_episode(cfg, audio, out_path, bgm_path, quiet=False):
             for lay in layers_by_seg[seg]:
                 lay.render(img, t - st)
             draw_chrome(img, t)
-            try:
-                proc.stdin.write(img.convert("RGB").tobytes())
-            except BrokenPipeError:
-                break
-            if not quiet and f % 150 == 0:
-                print(f"  渲染 {f}/{n_frames} 帧", flush=True)
-    finally:
-        try:
-            proc.stdin.close()
-        except BrokenPipeError:
-            pass
-        err = proc.stderr.read().decode()
-        code = proc.wait()
-    if code != 0:
-        print(err[-4000:], file=sys.stderr)
-        raise SystemExit(f"ffmpeg 合成失败，退出码 {code}")
+            yield img.convert("RGB").tobytes()
+
+    encode_video(frames(), n_frames, total, audio, out_path, bgm_path, quiet=quiet)
     return total
 
 
