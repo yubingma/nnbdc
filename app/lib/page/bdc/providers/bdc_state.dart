@@ -66,8 +66,12 @@ class BdcState extends Equatable {
   final bool showWordDetailAfterCorrect;
   final String asrPassRuleCache;
   final FsrsRating? lowestRatingForCurrentWord;
-  final FsrsRating? assessmentRating;
-  final int? assessmentScheduledDays;
+  final FsrsRating? todayLatestRating;
+  final int? todayLatestScheduledDays;
+
+  /// 今天该词第几条计分作答（1 起；null = 今天还没计分作答）。
+  /// 面板那一行的身份判据：1 = 测评，> 1 = 后续环节；改评分改的就是这一条学习记录。
+  final int? todayLatestLogIndex;
   final String? englishDigestOfFirstSentence;
 
   final Map<String, bool> playingStates;
@@ -165,8 +169,9 @@ class BdcState extends Equatable {
     this.showWordDetailAfterCorrect = false,
     this.asrPassRuleCache = 'ONE',
     this.lowestRatingForCurrentWord,
-    this.assessmentRating,
-    this.assessmentScheduledDays,
+    this.todayLatestRating,
+    this.todayLatestScheduledDays,
+    this.todayLatestLogIndex,
     this.englishDigestOfFirstSentence,
     this.playingStates = const {'word': false, 'sentence': false},
     this.hintTapCount = 0,
@@ -253,8 +258,9 @@ class BdcState extends Equatable {
     bool? showWordDetailAfterCorrect,
     String? asrPassRuleCache,
     Object? lowestRatingForCurrentWord = _sentinel,
-    Object? assessmentRating = _sentinel,
-    Object? assessmentScheduledDays = _sentinel,
+    Object? todayLatestRating = _sentinel,
+    Object? todayLatestScheduledDays = _sentinel,
+    Object? todayLatestLogIndex = _sentinel,
     Object? englishDigestOfFirstSentence = _sentinel,
     Map<String, bool>? playingStates,
     int? hintTapCount,
@@ -339,8 +345,9 @@ class BdcState extends Equatable {
       showWordDetailAfterCorrect: showWordDetailAfterCorrect ?? this.showWordDetailAfterCorrect,
       asrPassRuleCache: asrPassRuleCache ?? this.asrPassRuleCache,
       lowestRatingForCurrentWord: lowestRatingForCurrentWord == _sentinel ? this.lowestRatingForCurrentWord : (lowestRatingForCurrentWord as FsrsRating?),
-      assessmentRating: assessmentRating == _sentinel ? this.assessmentRating : (assessmentRating as FsrsRating?),
-      assessmentScheduledDays: assessmentScheduledDays == _sentinel ? this.assessmentScheduledDays : (assessmentScheduledDays as int?),
+      todayLatestRating: todayLatestRating == _sentinel ? this.todayLatestRating : (todayLatestRating as FsrsRating?),
+      todayLatestScheduledDays: todayLatestScheduledDays == _sentinel ? this.todayLatestScheduledDays : (todayLatestScheduledDays as int?),
+      todayLatestLogIndex: todayLatestLogIndex == _sentinel ? this.todayLatestLogIndex : (todayLatestLogIndex as int?),
       englishDigestOfFirstSentence: englishDigestOfFirstSentence == _sentinel ? this.englishDigestOfFirstSentence : (englishDigestOfFirstSentence as String?),
       playingStates: playingStates ?? this.playingStates,
       hintTapCount: hintTapCount ?? this.hintTapCount,
@@ -425,8 +432,9 @@ class BdcState extends Equatable {
     showWordDetailAfterCorrect,
     asrPassRuleCache,
     lowestRatingForCurrentWord,
-    assessmentRating,
-    assessmentScheduledDays,
+    todayLatestRating,
+    todayLatestScheduledDays,
+    todayLatestLogIndex,
     englishDigestOfFirstSentence,
     playingStates,
     hintTapCount,

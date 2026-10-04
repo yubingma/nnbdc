@@ -618,7 +618,7 @@ void main() {
     await notifier.loadData(FakeBuildContext());
 
     // 测评首次作答前：今天还没测过，无参考值
-    expect(container.read(bdcNotifierProvider).assessmentRating, isNull);
+    expect(container.read(bdcNotifierProvider).todayLatestRating, isNull);
 
     // 测评答错 → 留在测评环节循环重练
     // 先受理这次作答（与线上判题链路一致），再提交流转
@@ -627,7 +627,7 @@ void main() {
     final state = container.read(bdcNotifierProvider);
 
     expect(state.currentGetWordResult!.stepIndex, 0, reason: '仍在测评环节重练');
-    expect(state.assessmentRating, FsrsRating.again,
+    expect(state.todayLatestRating, FsrsRating.again,
         reason: '该词今天已经测过一次（首答答错），重练时应当能看到测评结果');
   });
 
@@ -1492,7 +1492,7 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
   });
 
-  test('BdcNotifier - updateFsrsRating 修改评分后:同步 assessmentRating、持久化 LearningLog 并刷新 learningHistoryFuture', () async {
+  test('BdcNotifier - updateFsrsRating 修改评分后:同步 todayLatestRating、持久化 LearningLog 并刷新 learningHistoryFuture', () async {
     // 准备:插入一条已有 LearningLog(模拟测评环节已提交评分 good)
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
@@ -1678,8 +1678,8 @@ void main() {
     expect(state.isGroupStepRetry, isFalse, reason: '前置条件：这是巩固环节的首次呈现');
     expect(state.currentGetWordResult!.learningWord!.stability, 15.69105,
         reason: '前置条件：记忆状态是测评 init(轻松) 的结果');
-    expect(state.assessmentRating, FsrsRating.easy, reason: '前置条件：测评参考＝轻松');
-    expect(state.assessmentScheduledDays, 16, reason: '前置条件：测评参考＝16 天');
+    expect(state.todayLatestRating, FsrsRating.easy, reason: '前置条件：测评参考＝轻松');
+    expect(state.todayLatestScheduledDays, 16, reason: '前置条件：测评参考＝16 天');
     var logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
     expect(logs.length, 1, reason: '前置条件：测评日志已提交');
     expect(logs.first.scheduledDays, 16);
@@ -1804,10 +1804,10 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
-  test('BdcNotifier - 修改今日评分:多环节后新词改评分应重放全部当天环节', () async {
-    // 模拟今天的新词已完成测评(easy)+巩固(good)两个环节提交：
+  test('BdcNotifier - 修改评分:改的是当天最近一次计分作答，测评那条纹丝不动', () async {
+    // 今天的新词已完成测评(easy)+巩固(good)两次计分作答：
     // 测评 init(easy)=15.69105；巩固的 good 属于同一天里的答对，不再改动记忆参数，
-    // 所以两个环节之后仍是 15.69105 / 16 天（见 StudyTrack.sameDayStep）。
+    // 所以两次作答之后仍是 15.69105 / 16 天（见 StudyTrack.sameDayStep）。
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
     AppClock.setClock(FakeClock(testNow));
@@ -1832,7 +1832,6 @@ void main() {
       createTime: testNow,
       updateTime: testNow,
     ), false);
-    // 巩固环节：同一天里的答对，不再改动记忆参数，状态与测评那条保持一致
     await db.learningLogsDao.saveEntity(LearningLog(
       id: 'log_easy_multi_2',
       userId: testUser.id,
@@ -1865,22 +1864,46 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.word!.spell, 'apple');
 
-    // 把测评的 easy 改成 good：新词重新 init(good)=3.173 → 3 天；
-    // 巩固环节的 good 属于同一天里的答对，不再叠加加成（旧口径会放大到 4.467 → 4 天）
-    notifier.updateFsrsRating(FsrsRating.good);
+    // 面板显示的是"最近一次计分作答"（巩固那条），改评分改的就是它：
+    // 巩固改成「模糊」→ 同一天只往下扣 ×0.8398 → 15.69105×0.8398 ≈ 13.18 → 13 天
+    final expected = StudyTrack.sameDayStep(
+        FSRS().init(FsrsRating.easy), FsrsRating.hard);
+    notifier.updateFsrsRating(FsrsRating.hard);
     for (int i = 0; i < 50; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
       state = container.read(bdcNotifierProvider);
-      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 3) break;
+      if (state.fsrsItem != null &&
+          state.fsrsItem!.scheduledDays == expected.scheduledDays) {
+        break;
+      }
     }
     expect(state.fsrsItem, isNot(null));
-    expect(state.fsrsItem!.scheduledDays, 3,
-        reason: '多环节后新词改评分必须重放全部当天环节,预期 3 天,实际 ${state.fsrsItem!.scheduledDays}');
+    expect(state.fsrsItem!.scheduledDays, expected.scheduledDays,
+        reason: '改的是最近一次计分作答（巩固那条），预期 ${expected.scheduledDays} 天,'
+            '实际 ${state.fsrsItem!.scheduledDays}');
+
+    // 测评那条纹丝不动：评分、稳定度、天数都不许被这次修改带偏
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    final assessLog = logs.firstWhere((l) => l.id == 'log_easy_multi_1');
+    expect(assessLog.rating, FsrsRating.easy.value, reason: '测评评分不得被改到');
+    expect(assessLog.stability, closeTo(15.69105, 1e-9));
+    expect(assessLog.scheduledDays, 16);
+
+    // 被改的是巩固那条，写的是它这一步重放后的状态
+    final consolidateLog = logs.firstWhere((l) => l.id == 'log_easy_multi_2');
+    expect(consolidateLog.rating, FsrsRating.hard.value, reason: '巩固那条应被改成模糊');
+    expect(consolidateLog.stability, closeTo(expected.stability, 1e-9));
+    expect(consolidateLog.scheduledDays, expected.scheduledDays);
+
+    // learning_words = 重放末态
+    final lw = await db.learningWordsDao.getById(testUser.id, 'word_1');
+    expect(lw!.stability, closeTo(expected.stability, 1e-9));
+    expect(lw.scheduledDays, expected.scheduledDays);
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
-  test('BdcNotifier - 修改今日评分:复习词改评分应重放测评+巩固全部当天环节', () async {
+  test('BdcNotifier - 修改评分:复习词改的是当天最近一次计分作答，测评那条不动', () async {
     // 模拟复习词:昨天加入(addTime=昨天)、昨天学过(stability=15.69105, scheduledDays=16)
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
@@ -1914,7 +1937,7 @@ void main() {
       createTime: yesterday,
       updateTime: yesterday,
     ), false);
-    // 今天测评提交的记录(当天首条,评分修正对话框改的就是它)
+    // 今天测评提交的记录（当天第一条计分作答）
     // 注意:测评 easy 是 next(测评前状态=15.69105, easy, elapsedDays=1) 的结果,
     // 真实 FSRS 计算 stability≈25.01, scheduledDays=25
     await db.learningLogsDao.saveEntity(LearningLog(
@@ -1961,17 +1984,50 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.word!.spell, 'apple');
 
-    // 把测评的 easy 改成 good：按测评前状态 next(15.69105, good, elapsedDays=1) ≈ 18.81 → 19 天。
-    // 当天巩固环节的 good 属于同一天里的答对，不再抬升稳定度（旧口径会放大到 26.48 → 26 天）。
-    notifier.updateFsrsRating(FsrsRating.good);
+    // 面板显示的是最近一次计分作答（今天那条巩固），改评分改的就是它：
+    // 巩固改成「模糊」→ 同一天只往下扣 ×0.8398 → 25.0124×0.8398 ≈ 21.01 → 21 天。
+    // 今天的测评那条（跨天复习）保持原样，不许被这次修改带偏。
+    final assessStep = FSRS().next(
+      FSRSItem(
+        stability: 15.69105,
+        difficulty: 3.2245015893713678,
+        elapsedDays: 5,
+        scheduledDays: 16,
+        reps: 1,
+        lapses: 0,
+        state: FsrsState.review,
+      ),
+      FsrsRating.easy,
+      1,
+      nextState: FsrsState.review,
+    );
+    final expected = StudyTrack.sameDayStep(assessStep, FsrsRating.hard);
+    notifier.updateFsrsRating(FsrsRating.hard);
     for (int i = 0; i < 50; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
       state = container.read(bdcNotifierProvider);
-      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 19) break;
+      if (state.fsrsItem != null &&
+          state.fsrsItem!.scheduledDays == expected.scheduledDays) {
+        break;
+      }
     }
     expect(state.fsrsItem, isNot(null));
-    expect(state.fsrsItem!.scheduledDays, 19,
-        reason: '复习词改评分必须重放测评+巩固全部当天环节,预期 19 天,实际 ${state.fsrsItem!.scheduledDays}');
+    expect(state.fsrsItem!.scheduledDays, expected.scheduledDays,
+        reason: '改的是最近一次计分作答（今天的巩固那条），预期 ${expected.scheduledDays} 天,'
+            '实际 ${state.fsrsItem!.scheduledDays}');
+
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    final assessLog = logs.firstWhere((l) => l.id == 'log_today_assess');
+    expect(assessLog.rating, FsrsRating.easy.value, reason: '今天的测评评分不得被改到');
+    expect(assessLog.stability, closeTo(assessStep.stability, 1e-9));
+    final consolidateLog = logs.firstWhere((l) => l.id == 'log_today_consolidate');
+    expect(consolidateLog.rating, FsrsRating.hard.value);
+    expect(consolidateLog.stability, closeTo(expected.stability, 1e-9));
+    expect(consolidateLog.scheduledDays, expected.scheduledDays);
+
+    final lw = await db.learningWordsDao.getById(testUser.id, 'word_1');
+    expect(lw!.scheduledDays, expected.scheduledDays);
+    expect(lw.stability, closeTo(expected.stability, 1e-9));
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
@@ -2437,10 +2493,9 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
-  test('BdcNotifier - 修改今日评分:连续改 good→easy→hard→easy 不漂移,只改当天首条日志', () async {
-    // 复习词：昨天学过（测评前基准 15.69105），今天测评 easy（当天首条）+ 巩固 good（当天第二条）。
-    // 巩固日志的存在正是旧的"替换最新一条"口径会踩的坑：改评分落到了巩固日志上，
-    // 当天首条仍是旧评分，反复修改互相污染（实测 good→easy→hard→easy 天数 4→22→3→13）。
+  test('BdcNotifier - 修改评分:连续改 good→easy→hard→easy 不漂移,只改当天最近一条', () async {
+    // 复习词：昨天学过（测评前基准 15.69105），今天测评 easy（第一次计分作答）+ 巩固 good（第二次）。
+    // 反复修改时每次都必须重新从当天基准重放，只把新评分落在"最近一条"上，结果才不漂移。
     final today = AppClock.today();
     final testNow = today.add(const Duration(hours: 10));
     AppClock.setClock(FakeClock(testNow));
@@ -2526,7 +2581,8 @@ void main() {
       return logs.firstWhere((l) => l.id == id);
     }
 
-    // 连续改评分：每次都只能落在"当天首条日志"上，巩固日志的评分与状态纹丝不动
+    // 连续改评分：每次都落在"当天最近一次计分作答"（巩固那条）上，
+    // 测评那条的评分与状态纹丝不动 —— 这就是"改最近一次"的语义。
     for (final rating in [
       FsrsRating.good,
       FsrsRating.easy,
@@ -2536,27 +2592,29 @@ void main() {
       notifier.updateFsrsRating(rating);
       for (int i = 0; i < 50; i++) {
         await Future.delayed(const Duration(milliseconds: 20));
-        if ((await logById('log_drift_assess')).rating == rating.value) break;
+        if ((await logById('log_drift_consolidate')).rating == rating.value) {
+          break;
+        }
       }
-      final assessLog = await logById('log_drift_assess');
-      expect(assessLog.rating, rating.value,
-          reason: '当天首条日志的评分应更新为 ${rating.label},实际 ${assessLog.rating}');
-      expect(assessLog.elapsedDays, 1,
-          reason: '首条日志只能写重放首步态：跨天测评的 elapsedDays 应保留原间隔 1；'
-              '若写成末态会得到 0，下次重放就会误走同日短期公式');
       final consolidateLog = await logById('log_drift_consolidate');
-      expect(consolidateLog.rating, FsrsRating.good.value,
-          reason: '巩固日志的评分必须保持原值,不能被新评分污染');
-      expect(consolidateLog.stability, closeTo(25.012414485811277, 1e-9));
-      expect(consolidateLog.scheduledDays, 25);
+      expect(consolidateLog.rating, rating.value,
+          reason: '最近一条记录的评分应更新为 ${rating.label},实际 ${consolidateLog.rating}');
+      final assessLog = await logById('log_drift_assess');
+      expect(assessLog.rating, FsrsRating.easy.value,
+          reason: '测评那条的评分必须保持原值,不能被新评分污染');
+      expect(assessLog.stability, closeTo(25.012414485811277, 1e-9));
+      expect(assessLog.elapsedDays, 1,
+          reason: '测评那条的跨天间隔必须原样保留（改评分不该动它）');
     }
 
-    // 当天首条日志 = 首步态：next(15.69105, easy, 1) ≈ 25.0124 → 25 天
-    final assessLog = await logById('log_drift_assess');
-    expect(assessLog.stability, closeTo(25.012414485811277, 1e-9));
-    expect(assessLog.scheduledDays, 25);
+    // 最后一次改成 easy：同一天只认"往下扣"，easy 不改动记忆参数，
+    // 所以最近那条仍是测评后的 25.0124 / 25 天
+    final consolidateLog = await logById('log_drift_consolidate');
+    expect(consolidateLog.rating, FsrsRating.easy.value);
+    expect(consolidateLog.stability, closeTo(25.012414485811277, 1e-9));
+    expect(consolidateLog.scheduledDays, 25);
 
-    // learning_words = 末态，且与"一次性改成 easy"完全一致（重放：首条 easy + 巩固 good 不改参数）
+    // learning_words = 末态，且与"一次性改成 easy"完全一致（重放：测评 easy + 最近一条 easy）
     state = container.read(bdcNotifierProvider);
     expect(state.fsrsItem!.stability, closeTo(25.012414485811277, 1e-9),
         reason: '连续修改后不得漂移');
@@ -2574,7 +2632,7 @@ void main() {
     expect(lw.learnedTimes, 3, reason: '修改评分不得改动学习步骤次数');
     expect(lw.todayLearnedTimes, 0, reason: '修改评分不得改动今日学习步骤次数');
     expect((await db.learningLogsDao.getHistory(testUser.id, 'word_1')).length, 3,
-        reason: '连续修改只应原地替换当天首条日志,不得新增或丢失日志');
+        reason: '连续修改只应原地替换当天最近一条记录,不得新增或丢失日志');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
@@ -4146,7 +4204,7 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 50));
   });
 
-  test('BdcNotifier - 修改今日评分:业务日窗口内的「昨天23:50测评+今天01:00巩固」必须同属一天', () async {
+  test('BdcNotifier - 修改评分:业务日窗口内的「昨天23:50测评+今天01:00巩固」必须同属一天', () async {
     // 改评分发生在 6/16 01:30 → 业务日 6/15，窗口 [6/15 03:00, 6/16 03:00)。
     // 「6/15 23:50 测评」与「6/16 01:00 巩固」都落在窗口内，是同一个业务日的两条日志；
     // 6/15 02:00 那条属前一业务日 6/14，只能当重放基准，绝不能被当成"当天首条日志"替换。
@@ -4251,11 +4309,13 @@ void main() {
       return logs.firstWhere((l) => l.id == id);
     }
 
-    // 把「当天首条」改成 good
+    // 把「当天最近一条」（今天 01:00 的巩固）改成 good —— 与原值相同，应精确复现
     notifier.updateFsrsRating(FsrsRating.good);
     for (int i = 0; i < 50; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
-      if ((await logById('log_bd_assess')).rating == FsrsRating.good.value) break;
+      if ((await logById('log_bd_consolidate')).rating == FsrsRating.good.value) {
+        break;
+      }
     }
 
     final baselineLog = await logById('log_bd_baseline');
@@ -4263,14 +4323,11 @@ void main() {
     final consolidateLog = await logById('log_bd_consolidate');
 
     expect(baselineLog.rating, FsrsRating.easy.value,
-        reason: '前一业务日的日志只能当重放基准，不得被当成"当天首条"替换');
+        reason: '前一业务日的日志只能当重放基准，不得被替换');
     expect(baselineLog.stability, 15.69105);
     expect(baselineLog.scheduledDays, 16);
-    expect(consolidateLog.rating, FsrsRating.good.value,
-        reason: '巩固日志必须保持原评分，不得被新评分污染');
-    expect(consolidateLog.stability, closeTo(25.012414485811277, 1e-9));
 
-    // 首条日志只写"重放首步态"：next(基准, good, 1)，跨天间隔 1 天必须保留
+    // 当天第一条（测评）纹丝不动：评分、稳定度、跨天间隔都必须原样保留
     final fsrs = FSRS();
     final baseItem = FSRSItem(
       stability: 15.69105,
@@ -4281,27 +4338,34 @@ void main() {
       lapses: 0,
       state: FsrsState.review,
     );
-    final expectedFirstStep = fsrs.next(baseItem, FsrsRating.good, 1);
-    // 末态 = 首步态：当天巩固的 good 属于同一天里的答对，不再叠加加成（见 StudyTrack.sameDayStep）
-    final expectedReplayed = StudyTrack.sameDayStep(expectedFirstStep, FsrsRating.good);
-
+    final expectedAssessStep = fsrs.next(baseItem, FsrsRating.easy, 1);
+    expect(assessLog.rating, FsrsRating.easy.value,
+        reason: '测评那条的评分不得被改到');
     expect(assessLog.elapsedDays, 1,
         reason: '若把 6/15 02:00 那条误当"当天首条"，这里会变成它的间隔 5 天');
-    expect(assessLog.stability, closeTo(expectedFirstStep.stability, 1e-9));
-    expect(assessLog.scheduledDays, expectedFirstStep.scheduledDays);
+    expect(assessLog.stability, closeTo(expectedAssessStep.stability, 1e-9));
+    expect(assessLog.scheduledDays, expectedAssessStep.scheduledDays);
+
+    // 被改的是今天 01:00 那条巩固：末态 = 它这一步重放后的状态
+    //（同一天里的答对不再叠加加成，见 StudyTrack.sameDayStep）
+    final expectedReplayed =
+        StudyTrack.sameDayStep(expectedAssessStep, FsrsRating.good);
+    expect(consolidateLog.rating, FsrsRating.good.value);
+    expect(consolidateLog.stability, closeTo(expectedReplayed.stability, 1e-9));
+    expect(consolidateLog.scheduledDays, expectedReplayed.scheduledDays);
 
     final lw = await (db.select(db.learningWords)
           ..where((t) =>
               t.userId.equals(testUser.id) & t.wordId.equals('word_1')))
         .getSingle();
     expect(lw.stability, closeTo(expectedReplayed.stability, 1e-9),
-        reason: 'learning_words 写重放末态：首条 good + 巩固 good');
+        reason: 'learning_words 写重放末态：测评 easy + 最近一条 good 不改参数');
     expect(lw.scheduledDays, expectedReplayed.scheduledDays);
     expect(lw.reps, expectedReplayed.reps);
     expect(lw.todayLearnedTimes, 0, reason: '修改评分不得改动今日环节次数');
     expect(lw.learnedTimes, 3);
     expect((await db.learningLogsDao.getHistory(testUser.id, 'word_1')).length, 3,
-        reason: '只允许原地替换当天首条日志');
+        reason: '只允许原地替换当天最近一条记录');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });

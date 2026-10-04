@@ -316,7 +316,7 @@ void main() {
         lapses: 0,
         state: FsrsState.review,
       ),
-      assessmentRating: FsrsRating.again,
+      todayLatestRating: FsrsRating.again,
     );
 
     final notifier = MockBdcNotifierForWideScreen(state, mockHasSeenAnswer: true);

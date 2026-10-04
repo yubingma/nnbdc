@@ -1243,20 +1243,21 @@ class StudyBo {
     };
   }
 
-  /// 把"修改今日评分"的结果落库：
+  /// 把"修改评分"的结果落库：
   /// - [nextFsrs] 重放末态 → learning_words；
-  /// - [firstStepFsrs] 重放首步态 → **当天首条日志**（即被修改的那条今日测评）。
-  /// - [newRating] 用户新选的评分，同样只写进当天首条日志。
+  /// - [targetStepFsrs] 被改那条记录重放后的状态 → 回写那一条 learning_log。
+  /// - [newRating] 用户新选的评分，同样只写进那一条。
   /// - 重算稳定度跌破掌握线时，把词移出「已掌握」词书（保留学习进度记录）。
   ///
-  /// 替换的必须是当天首条日志而不是最新一条：当天若有巩固环节，最新一条是巩固日志，
-  /// 改它会让反复修改评分互相污染（首条仍是旧评分，重放基准错位 → 结果漂移）。
-  /// 又因每条 learning_logs 记录的是"该次评分之后"的状态，首条日志只能写首步态，
-  /// 写末态等于把巩固环节的量变提前记到首条上，日志序列会说谎。
+  /// 被改的是"当天最近一次计分作答"（也就是面板那一行显示的那条，见 glossary「所见即所改」）。
+  /// 旧实现固定替换"当天首条"、把后续记录原样留着：用户改的是巩固那条，动的却是测评，
+  /// 所见非所改。现在按新评分替换那一条、并从当天基准重放全部记录，结果确定且幂等。
+  /// 又因每条 learning_logs 记录的是"该次评分之后"的状态，只能写那一步的态，
+  /// 写末态等于把后续环节的量变提前记到它上面，记录序列会说谎。
   Future<void> saveHistoryFSRSUpdate({
     required LearningWordVo currWord,
     required FSRSItem nextFsrs,
-    required FSRSItem firstStepFsrs,
+    required FSRSItem targetStepFsrs,
     required FsrsRating newRating,
   }) async {
     final db = MyDatabase.instance;
@@ -1275,18 +1276,19 @@ class StudyBo {
       await saveWrongWord(dbLw, db, user, now);
     }
 
-    // 2. 覆盖替换「当天首条日志」（业务日窗口 [03:00, 次日03:00)，与 _loadTodayFirstLogsOfIds 同源）
+    // 2. 覆盖替换「当天最近一条记录」（业务日窗口 [03:00, 次日03:00)，与 _loadTodayFirstLogsOfIds 同源；
+    //    getInBusinessDay 按 createTime 正序返回，last 即用户最近一次计分作答）
     try {
-      final firstLogList = await db.learningLogsDao
+      final todayLogList = await db.learningLogsDao
           .getInBusinessDay(user.id, wordIds: [currWord.word.id!]);
-      if (firstLogList.isNotEmpty) {
-        final firstLog = firstLogList.first;
-        final updatedLog = firstLog.copyWith(
+      if (todayLogList.isNotEmpty) {
+        final targetLog = todayLogList.last;
+        final updatedLog = targetLog.copyWith(
           rating: newRating.value,
-          stability: firstStepFsrs.stability,
-          difficulty: firstStepFsrs.difficulty,
-          elapsedDays: firstStepFsrs.elapsedDays,
-          scheduledDays: firstStepFsrs.scheduledDays,
+          stability: targetStepFsrs.stability,
+          difficulty: targetStepFsrs.difficulty,
+          elapsedDays: targetStepFsrs.elapsedDays,
+          scheduledDays: targetStepFsrs.scheduledDays,
           updateTime: now,
         );
         await db.update(db.learningLogs).replace(updatedLog);
@@ -1297,7 +1299,7 @@ class StudyBo {
             user.id, 'INSERT', 'learningLogs', updatedLog.id, updatedLog);
       }
     } catch (e, s) {
-      Global.logger.e('历史模式下修改 FSRS，更新当天首条 LearningLog 失败', error: e, stackTrace: s);
+      Global.logger.e('修改评分，更新当天最近一条 LearningLog 失败', error: e, stackTrace: s);
     }
 
     // 3. 更新当前单词的 FSRS 字段，但不改动学习步骤次数

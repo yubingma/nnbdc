@@ -1398,10 +1398,12 @@ extension BdcPageStateDialogs on BdcPageState {
     showDialog(
       context: context,
       builder: (context) {
-        // 评分修正对话框的"当前评分"：优先本次作答的 lastFsrsRating；
-        // 未作答的加测/巩固环节回退到测评参考评分（assessmentRating），避免默认无选中项。
-        final FsrsRating? currentRating =
-            state.lastFsrsRating ?? state.assessmentRating;
+        // 评分修正对话框的"当前评分"必须与面板显示的那一条同源（见 bdc_ui_components 的面板判据）：
+        // 本次作答 → lastFsrsRating；其余（回看/重练/本环节未作答）→ 今天最近一次计分作答。
+        // 这样"对话框默认选中哪条"与"确认后改哪条"永远是同一条。
+        final FsrsRating? currentRating = notifier.hasUnsubmittedAnswer
+            ? (state.lastFsrsRating ?? state.todayLatestRating)
+            : (state.todayLatestRating ?? state.lastFsrsRating);
         String finalReason = state.lastFsrsRatingReason ?? '';
         return AlertDialog(
           shape:
@@ -1410,7 +1412,7 @@ extension BdcPageStateDialogs on BdcPageState {
           title: Row(
             children: [
               const Expanded(
-                child: Text('修改今日评分',
+                child: Text('修改评分',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),

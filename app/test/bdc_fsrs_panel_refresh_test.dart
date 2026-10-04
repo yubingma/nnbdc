@@ -16,7 +16,7 @@ import 'package:provider/provider.dart' as provider;
 
 /// 评分面板（测评结果 + 下次复习天数）的刷新口径测试。
 ///
-/// 面板显示的数据（lastFsrsRating / fsrsItem / assessmentRating）刻意不进
+/// 面板显示的数据（lastFsrsRating / fsrsItem / todayLatestRating）刻意不进
 /// [BdcStateUiSignature]（改判时不让学习页整页重建、与详情页转场首帧抢帧），
 /// 因此面板必须自己订阅这些字段（见 BdcPageState 的 `_buildLiveFsrsResultPanel`）。
 /// 这里锁死"改判后立刻所见即所得"：界面上的评分与下次复习天数必须等于最后表态。
@@ -290,7 +290,7 @@ void main() {
     final fsrs = FSRS();
     final notifier = MockBdcNotifierForPanel(
       _answeredGoodState(testWord, mockResult, fsrs.init(FsrsRating.good))
-          .copyWith(assessmentRating: FsrsRating.easy, assessmentScheduledDays: 16),
+          .copyWith(todayLatestRating: FsrsRating.easy, todayLatestScheduledDays: 16),
       mockHasSeenAnswer: true,
       mockHasUnsubmittedAnswer: true,
     );
@@ -315,8 +315,8 @@ void main() {
         canLeaveCurrWord: false,
         hasFinishedAnswering: false,
         // 今日测评＝轻松 · 16 天（这正是"修改今日评分"要改的那条）
-        assessmentRating: FsrsRating.easy,
-        assessmentScheduledDays: 16,
+        todayLatestRating: FsrsRating.easy,
+        todayLatestScheduledDays: 16,
       ),
       mockHasSeenAnswer: false,
     );
@@ -358,32 +358,32 @@ void main() {
     expect(find.textContaining('下次复习: 13天后', findRichText: true), findsNothing);
   });
 
-  testWidgets('回看已作答的巩固环节：那一行必须显示今日测评，不得拿被回看那条的作答评分冒充', (tester) async {
+  testWidgets('回看已作答的巩固环节：那一行显示的是当天最近一次计分作答，点它就改它', (tester) async {
     // 实测路径：新词测评轻松(16天) → 巩固环节作答良好 → 点「下一词」落库 → 点「回看」。
-    // 回看时 state 里的 lastFsrsRating / fsrsItem 是"被回看那条（巩固）的作答事实"（良好），
-    // 而 assessmentRating / assessmentScheduledDays 是"今日测评首条"（轻松 · 16 天）——
-    // 点这一行改评分，真正被改的是后者（见 BdcNotifier.updateFsrsRating 与 _applyRatingModification）。
-    // 因此显示必须跟着后者，否则用户对着"良好"改回"良好"，天数却从 16 天变成 init(良好)=3 天。
+    // 面板那一行显示的必须是"当天最近一次计分作答"（巩固那条），点它改的也就是那一条。
+    // 绝不能显示成"测评结果"再去改测评首条 —— 那样用户对着"良好"改回"良好"，
+    // 天数会从 16 天变成 init(良好) 的 3 天（线上就是这么被发现的）。
     final (testWord, mockResult) = _createTestData(stepIndex: 1);
     final fsrs = FSRS();
-    // 丙口径下巩固环节的"良好"不改动记忆参数，那条历史快照的天数仍是 16 天
+    // 丙口径下巩固环节的"良好"不改动记忆参数，那条快照的天数仍是 16 天
     final consolidateSnapshot = fsrs.init(FsrsRating.easy);
     final notifier = MockBdcNotifierForPanel(
       _answeredGoodState(testWord, mockResult, consolidateSnapshot).copyWith(
         historyIndex: 1,
-        assessmentRating: FsrsRating.easy,
-        assessmentScheduledDays: 16,
+        todayLatestRating: FsrsRating.good,
+        todayLatestScheduledDays: 16,
+        todayLatestLogIndex: 2,
       ),
       mockHasSeenAnswer: true,
       mockHasUnsubmittedAnswer: false,
     );
     await pumpPage(tester, notifier);
 
-    expect(find.text('测评结果: 轻松'), findsOneWidget,
-        reason: '回看模式的这一行是今日测评参考（也正是改评分要改的那条），必须是测评的轻松');
-    expect(find.text('测评结果: 良好'), findsNothing,
-        reason: '不得拿被回看那条巩固环节的作答评分冒充测评结果 —— 否则所见非所改');
+    expect(find.text('本次评分: 良好'), findsOneWidget,
+        reason: '回看时那一行是当天最近一次计分作答（巩固那条），改评分改的就是它');
+    expect(find.text('测评结果: 轻松'), findsNothing,
+        reason: '不得把最近一次计分作答显示成测评结果 —— 那会让用户改到测评首条上（所见非所改）');
     expect(find.textContaining('下次复习: 16天后', findRichText: true), findsOneWidget,
-        reason: '天数必须跟着今日测评参考走（16 天），不能显示那条快照的天数');
+        reason: '天数跟着那一条记录走');
   });
 }

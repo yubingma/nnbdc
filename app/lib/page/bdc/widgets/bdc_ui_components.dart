@@ -2218,7 +2218,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   /// 评分面板的实时订阅壳，包住 [_buildFsrsResultPanel]。
   ///
   /// 面板呈现的「测评结果 + 下次复习天数 + 今日日志」都来自 lastFsrsRating / fsrsItem /
-  /// assessmentRating 这类字段，而它们按设计**不进** [BdcStateUiSignature]：
+  /// todayLatestRating 这类字段，而它们按设计**不进** [BdcStateUiSignature]：
   /// 改判时不让学习页整页重建、去和详情页转场首帧抢帧（见 [BdcNotifier.showWordDetail]）。
   /// 于是只改评分的路径（答对后改点「不认识 / 再学学」、「修改今日评分」）不会触发整页重建，
   /// 用户从详情页返回就会看到改判前的旧评分 —— 所见非所得。
@@ -2230,8 +2230,8 @@ extension BdcPageStateUIComponents on BdcPageState {
         ref.watch(bdcNotifierProvider.select((s) => (
               s.lastFsrsRating,
               s.fsrsItem,
-              s.assessmentRating,
-              s.assessmentScheduledDays,
+              s.todayLatestRating,
+              s.todayLatestScheduledDays,
               notifier.learningHistoryFuture,
             )));
         // 同步刷新缓存快照：面板显示与它的点击回调（修改今日评分）必须读到同一份评分
@@ -2245,16 +2245,15 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    // 面板下半部分显示的是"本次作答"还是"今日测评参考"，标签必须跟着身份走：
-    // 后续环节（stepIndex > 0）正在显示本次作答的评分时叫「本次评分」——
-    // 测评环节那次作答本身就是测评结果，回看/重练/未作答显示的也都是测评参考。
-    // 判据与"修改今日评分"改哪条完全同一个（notifier.hasUnsubmittedAnswer），
-    // 否则用户会把本次推算当成测评结论，对着它去改测评首条 —— 所见非所改。
-    final String currentAnswerTitle =
-        (notifier.hasUnsubmittedAnswer &&
-                (state.currentGetWordResult?.stepIndex ?? 0) > 0)
-            ? '本次评分'
-            : '测评结果';
+    // 面板下半部分显示的是"本次作答"还是"今天最近一次计分作答"，标签必须跟着身份走：
+    // 第 1 次计分作答就是测评（叫「测评结果」），之后的环节叫「本次评分」。
+    // 这个判据同时决定数据源与"改评分改哪条"（见 BdcNotifier.updateFsrsRating）：
+    // 显示的哪条，点它就改哪条 —— 否则用户会把这次推算当成测评结论，对着它去改另一条。
+    final bool showsCurrentAnswer = notifier.hasUnsubmittedAnswer;
+    final bool titleIsAssessment = showsCurrentAnswer
+        ? (state.currentGetWordResult?.stepIndex ?? 0) == 0
+        : (state.todayLatestLogIndex ?? 1) <= 1;
+    final String currentAnswerTitle = titleIsAssessment ? '测评结果' : '本次评分';
 
     // 只有**本次真的计了分**的作答，才谈得上"这次的评分与它推算出的复习安排"。
     // 本环节重练（本环节重测）不计分 —— 评分不写日志、记忆状态不更新（见 StudyBo.updateCurrWord
@@ -2265,10 +2264,10 @@ extension BdcPageStateUIComponents on BdcPageState {
             (state.isPracticeMode && state.lastFsrsRating != null));
     if (!hasFinishedOrPractice || state.fsrsItem == null) {
       // stepIndex > 0 为巩固/加测环节；测评环节答错重练时 stepIndex 仍为 0，
-      // 但该词今天已经测过（assessmentRating 有值），同样要展示测评结果。
+      // 但该词今天已经测过（todayLatestRating 有值），同样要展示测评结果。
       if (state.currentGetWordResult != null &&
           (state.currentGetWordResult!.stepIndex > 0 ||
-              state.assessmentRating != null) &&
+              state.todayLatestRating != null) &&
           state.wordWrapper?.word.id != null) {
         return FutureBuilder<List<LearningLog>>(
           future: notifier.learningHistoryFuture,
@@ -2277,8 +2276,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 !snapshot.hasData ||
                 snapshot.data!.isEmpty) {
               // 巩固阶段：如果当前词已有本场测评结果，直接展示测评数据
-              if (state.assessmentRating != null) {
-                final assRating = state.assessmentRating!;
+              if (state.todayLatestRating != null) {
+                final assRating = state.todayLatestRating!;
                 String assLabel = assRating.label;
                 Color assColor = assRating.colorWithDark(isDarkMode);
                 return Container(
@@ -2290,7 +2289,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '测评结果: $assLabel',
+                          '$currentAnswerTitle: $assLabel',
                           style: TextStyle(fontSize: 11, color: assColor),
                         ),
                         Padding(
@@ -2301,7 +2300,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   color: textColor.withValues(alpha: 0.3))),
                         ),
                         Text(
-                          '下次复习: ${state.assessmentScheduledDays ?? "--"}天后',
+                          '下次复习: ${state.todayLatestScheduledDays ?? "--"}天后',
                           style: TextStyle(fontSize: 11, color: textColor),
                         ),
                       ],
@@ -2309,7 +2308,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
                 );
               }
-              // 巩固阶段兜底:LearningLog 无测评记录且 assessmentRating 未恢复。
+              // 巩固阶段兜底:LearningLog 无测评记录且 todayLatestRating 未恢复。
               // 若已作答(如点击"看答案"后 lastFsrsRating=again)则显示评分,
               // 否则显示"测评中"。
               final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
@@ -2331,7 +2330,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 4, vertical: 2),
                                 child: Text(
-                                  '测评结果: $fallbackLabel',
+                                  '$currentAnswerTitle: $fallbackLabel',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: hasRating
@@ -2365,13 +2364,13 @@ extension BdcPageStateUIComponents on BdcPageState {
             }
 
             // 这一行是"今日测评参考"（也正是修改评分要改的那条）：唯一口径是今日首条评分，
-            // 即 handleWord 从当天首条日志取出的 assessmentRating / assessmentScheduledDays。
+            // 即 handleWord 从当天首条日志取出的 todayLatestRating / todayLatestScheduledDays。
             // 不能用 learningHistoryFuture 的最新一条冒充：它是全历史倒序的第一条，
             // 今天已经答过巩固时它就是"巩固结果"，会被错标成"测评结果"，
             // 用户对着它改评分，改的却是测评首条 —— 所见非所改。
-            final FsrsRating rating = state.assessmentRating ??
+            final FsrsRating rating = state.todayLatestRating ??
                 FsrsRatingExt.fromInt(snapshot.data!.first.rating);
-            final int scheduledDays = state.assessmentScheduledDays ??
+            final int scheduledDays = state.todayLatestScheduledDays ??
                 snapshot.data!.first.scheduledDays;
 
             String ratingLabel = rating.label;
@@ -2394,7 +2393,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         child: Row(
                           children: [
                             Text(
-                              '测评结果: $ratingLabel',
+                              '$currentAnswerTitle: $ratingLabel',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: ratingColor,
@@ -2469,8 +2468,8 @@ extension BdcPageStateUIComponents on BdcPageState {
     // 测评环节且已完成做题：展示测评结果
     // 巩固阶段直接进入或复习无测评记录兜底
     if (state.fsrsItem == null &&
-        (state.assessmentScheduledDays == null ||
-            state.assessmentScheduledDays! <= 0)) {
+        (state.todayLatestScheduledDays == null ||
+            state.todayLatestScheduledDays! <= 0)) {
       final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
       final bool hasRating = state.lastFsrsRating != null;
       return Container(
@@ -2520,20 +2519,17 @@ extension BdcPageStateUIComponents on BdcPageState {
       );
     }
 
-    // 这一行显示的是"本次作答"还是"今日测评参考"，数据源必须与标签、以及
-    // "改评分改哪条"共用同一个判据（[BdcNotifier.hasUnsubmittedAnswer]，见 updateFsrsRating）：
+    // 数据源与标签、以及"改评分改哪条"共用同一个判据（[BdcNotifier.hasUnsubmittedAnswer]）：
     // - 本次作答：lastFsrsRating + 本次推算 fsrsItem；
-    // - 今日测评参考（回看历史、本环节重练、加固环节还没算出本次推算）：
-    //   assessmentRating + assessmentScheduledDays。
-    // 回看一条"已作答的巩固环节"历史时，lastFsrsRating / fsrsItem 是**那条历史自己的作答事实**，
-    // 拿它冒充测评结果，用户就会对着它改评分，而真正被改的是今日测评首条 —— 所见非所改。
-    final bool showsCurrentAnswer = notifier.hasUnsubmittedAnswer;
+    // - 其余（回看历史、本环节重练、本环节还没作答）：今天最近一次计分作答 ——
+    //   todayLatestRating + todayLatestScheduledDays。
+    // 被改的永远是"显示的这一条"：回看巩固那次就改巩固那条，不再偷偷改到测评上。
     final FsrsRating? shownRating = showsCurrentAnswer
-        ? (state.lastFsrsRating ?? state.assessmentRating)
-        : (state.assessmentRating ?? state.lastFsrsRating);
+        ? (state.lastFsrsRating ?? state.todayLatestRating)
+        : (state.todayLatestRating ?? state.lastFsrsRating);
     final int? shownDays = showsCurrentAnswer
-        ? (state.fsrsItem?.scheduledDays ?? state.assessmentScheduledDays)
-        : (state.assessmentScheduledDays ?? state.fsrsItem?.scheduledDays);
+        ? (state.fsrsItem?.scheduledDays ?? state.todayLatestScheduledDays)
+        : (state.todayLatestScheduledDays ?? state.fsrsItem?.scheduledDays);
 
     // 获取本次操作的评估标签和颜色
     String ratingLabel = shownRating?.label ?? '未知';

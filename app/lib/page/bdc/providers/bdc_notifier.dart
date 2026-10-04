@@ -534,16 +534,9 @@ class BdcNotifier extends _$BdcNotifier {
             history: [...state.history, wordResult],
             wordUIStates: {...state.wordUIStates, wordId: wordUIState},
           );
-          // 若恢复的单词正是当前正在学习的单词(重新进入学习页),
-          // 将其测评得分(上个环节的 lastFsrsRating)提取为 assessmentRating,
-          // 供巩固环节显示"测评参考"与评分修正对话框默认值使用。
-          if (state.word?.id == wordId && state.currentGetWordResult != null &&
-              state.currentGetWordResult!.stepIndex > 0 && wordUIState.lastFsrsRating != null) {
-            state = state.copyWith(
-              assessmentRating: wordUIState.lastFsrsRating,
-              assessmentScheduledDays: wordUIState.fsrsItem?.scheduledDays,
-            );
-          }
+          // 面板参考值（todayLatestRating 等）不在这里恢复：它的唯一来源是
+          // handleWord 从当天学习记录里查出的"最近一次计分作答"。
+          // 拿历史快照顶替，正是"回看时显示那条的评分、改的却是另一条"的由来。
         }
       }
     } catch (e) {
@@ -724,15 +717,19 @@ class BdcNotifier extends _$BdcNotifier {
     sentenceAnswerController.text = ""; // 新单词重置例句答案区
     _isPracticeMode = false; // 新单词/新环节重置练习模式
 
-    // 以"当天测评首条评分"作为测评结果参考值（评分修正对话框也用它）。
-    // 判据是"今天是否已经测过这个词"，而不是 stepIndex > 0 —— 测评答错的词会留在
-    // 测评环节循环重练（stepIndex 仍为 0），但它今天确实已经测过一次，
-    // 用户应当能看到测评结果，而不是信息凭空消失。
-    final int? todayFirstRating = trackResult.todayFirstLogRating;
+    // 面板那一行的参考值 = 该词"今天最近一次计分作答"，它也正是改评分会改的那条学习记录：
+    // 测评还没落库时它就是测评；巩固环节落库后就是巩固那条。
+    // 判据是"今天是否已经计分作答过"，而不是 stepIndex > 0 —— 测评答错的词会留在
+    // 测评环节循环重练（stepIndex 仍为 0），但它今天确实已经计过一次，
+    // 用户应当能看到这次结论，而不是信息凭空消失。
+    // 绝不能取"当天首条"：那会让用户对着巩固的评分去改测评（见 glossary「所见即所改」）。
+    final int? latestLogRating = trackResult.todayLatestLogRating;
     final FsrsRating? followUpAssessment =
-        todayFirstRating == null ? null : FsrsRatingExt.fromInt(todayFirstRating);
+        latestLogRating == null ? null : FsrsRatingExt.fromInt(latestLogRating);
     final int? followUpAssessmentDays =
-        todayFirstRating == null ? null : trackResult.todayFirstLogScheduledDays;
+        latestLogRating == null ? null : trackResult.todayLatestLogScheduledDays;
+    final int? followUpAssessmentIndex =
+        trackResult.todayLatestLogCount == 0 ? null : trackResult.todayLatestLogCount;
 
     // 每次呈现（新词、下一环节、重练）都会走到这里：受理状态与待计分凭据随呈现复位
     _answerAccepted = false;
@@ -758,8 +755,9 @@ class BdcNotifier extends _$BdcNotifier {
       groupStepTrackName: phase?.trackName,
       isGroupStepRetry: phase?.isRetry ?? false,
       isReviewWord: trackResult.isReview,
-      assessmentRating: followUpAssessment,
-      assessmentScheduledDays: followUpAssessmentDays,
+      todayLatestRating: followUpAssessment,
+      todayLatestScheduledDays: followUpAssessmentDays,
+      todayLatestLogIndex: followUpAssessmentIndex,
       canLeaveCurrWord: false,
       hasFinishedAnswering: false,
       selectedAnswerIndex: null,
@@ -1012,6 +1010,8 @@ class BdcNotifier extends _$BdcNotifier {
         int? todayFirstLogRating,
         int? todayFirstLogScheduledDays,
         int? todayLatestLogRating,
+        int? todayLatestLogScheduledDays,
+        int todayLatestLogCount,
       })> _trackOfCurrentWord(GetWordResult getWordResult) async {
     final lw = getWordResult.learningWord;
     if (lw == null) {
@@ -1021,6 +1021,8 @@ class BdcNotifier extends _$BdcNotifier {
         todayFirstLogRating: null,
         todayFirstLogScheduledDays: null,
         todayLatestLogRating: null,
+        todayLatestLogScheduledDays: null,
+        todayLatestLogCount: 0,
       );
     }
     final userId = Global.getLoggedInUser()?.id;
@@ -1029,10 +1031,13 @@ class BdcNotifier extends _$BdcNotifier {
     int? firstLogRating;
     int? firstLogScheduledDays;
     int? latestLogRating;
+    int? latestLogScheduledDays;
+    int latestLogCount = 0;
     if (userId != null && wordId != null) {
       // 业务日窗口 [03:00, 次日03:00) 由 LearningLogsDao.getInBusinessDay 统一给出，
       // 不能用 AppClock.today() 当下界：00:00~02:59 属于前一业务日
-      // 该查询按 createTime 正序返回：first = 今天首条（分轨依据），last = 今天最近一次（决定标不标红）
+      // 该查询按 createTime 正序返回：first = 今天首条（分轨依据），
+      // last = 今天最近一次计分作答（面板那一行的参考值，也是改评分要改的那条）
       final rows = await MyDatabase.instance.learningLogsDao
           .getInBusinessDay(userId, wordIds: [wordId]);
       final row = rows.isEmpty ? null : rows.first;
@@ -1040,6 +1045,8 @@ class BdcNotifier extends _$BdcNotifier {
       firstLogRating = row?.rating;
       firstLogScheduledDays = row?.scheduledDays;
       latestLogRating = rows.isEmpty ? null : rows.last.rating;
+      latestLogScheduledDays = rows.isEmpty ? null : rows.last.scheduledDays;
+      latestLogCount = rows.length;
     }
     final newCfg = await StudyStepsService().getThreeGroupConfig('new');
     final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
@@ -1071,6 +1078,8 @@ class BdcNotifier extends _$BdcNotifier {
       todayFirstLogRating: firstLogRating,
       todayFirstLogScheduledDays: firstLogScheduledDays,
       todayLatestLogRating: latestLogRating,
+      todayLatestLogScheduledDays: latestLogScheduledDays,
+      todayLatestLogCount: latestLogCount,
     );
   }
 
@@ -1425,8 +1434,8 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(lastFsrsRating: rating);
     // 立即同步巩固阶段的测评参考评分标签
-    if (state.assessmentRating != null) {
-      state = state.copyWith(assessmentRating: rating);
+    if (state.todayLatestRating != null) {
+      state = state.copyWith(todayLatestRating: rating);
     }
     // 异步:按"该词今天之前是否学习过"决定重新 init(新词)或 next(复习词),
     // 重新计算下次复习时间并持久化,同时刷新学习历史 future。
@@ -1449,7 +1458,7 @@ class BdcNotifier extends _$BdcNotifier {
     final bool panelShowsTodayAssessment = state.fsrsItem == null &&
         state.currentGetWordResult != null &&
         (state.currentGetWordResult!.stepIndex > 0 ||
-            state.assessmentRating != null);
+            state.todayLatestRating != null);
     return !panelShowsTodayAssessment;
   }
 
@@ -1459,18 +1468,19 @@ class BdcNotifier extends _$BdcNotifier {
     try {
       final recalc = await _recalcFsrsForRating(lw, rating);
       state = state.copyWith(fsrsItem: recalc.replayed);
-      // 同步巩固阶段的测评参考显示,使"今日测评"标签立即反映新评分
-      if (state.assessmentRating != null) {
+      // 同步面板参考显示：那一行显示的评分与天数立即反映新评分与重算结果
+      if (state.todayLatestRating != null) {
         state = state.copyWith(
-          assessmentScheduledDays: state.fsrsItem?.scheduledDays,
+          todayLatestRating: rating,
+          todayLatestScheduledDays: state.fsrsItem?.scheduledDays,
         );
       }
-      await _persistRatingModification(rating, recalc.firstStep);
+      await _persistRatingModification(rating, recalc.targetStep);
       // 修改评分已自行落库：登记一份“已落库”的受理凭据，
       // 后续「下一词」只导航、不再重复计分（也避免被计分闸门当作重复提交而卡住）
       _acceptAnswer(rating, alreadyPersisted: true, refresh: true);
     } catch (e, s) {
-      Global.logger.e('修改今日评分失败', error: e, stackTrace: s);
+      Global.logger.e('修改评分失败', error: e, stackTrace: s);
     }
   }
 
@@ -1500,17 +1510,17 @@ class BdcNotifier extends _$BdcNotifier {
   /// [lw] 只用来取词身份（wordId）；所有记忆数值一律现读 learning_words 当前行。
   ///
   /// 返回一对状态，二者不可混用（每条 learning_logs 记录的是"该次评分之后"的状态）：
-  /// - [replayed] 末态：当天全部日志重放完的结果 → 写 learning_words；
-  /// - [firstStep] 首步态：仅"用新评分做完当天首条评分"的结果 → 写被替换的今日测评日志。
-  /// 把末态塞进首条日志会让日志序列撒谎（后续巩固环节的量变被提前记到首条上）。
-  Future<({FSRSItem replayed, FSRSItem firstStep})> _recalcFsrsForRating(
+  /// - [replayed] 末态：当天全部记录重放完的结果 → 写 learning_words；
+  /// - [targetStep] 被改那条记录重放后的状态 → 只回写那一条 learning_log。
+  ///   把末态塞进它会让记录序列撒谎（后续环节的量变被提前记到它上面）。
+  Future<({FSRSItem replayed, FSRSItem targetStep})> _recalcFsrsForRating(
       LearningWordVo lw, FsrsRating rating) async {
     final fsrs = FSRS();
     final userId = Global.getLoggedInUser()?.id;
     final wordId = lw.word.id;
     if (userId == null || wordId == null) {
       final item = fsrs.init(rating);
-      return (replayed: item, firstStep: item);
+      return (replayed: item, targetStep: item);
     }
 
     // 计数基准现读 learning_words 当前行，不取界面快照（见上方说明）
@@ -1519,7 +1529,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (currentRow == null) {
       // 读不到当前行（词已被移出学习库等）：视为新词，保持原语义
       final item = fsrs.init(rating);
-      return (replayed: item, firstStep: item);
+      return (replayed: item, targetStep: item);
     }
 
     // getHistory 返回 createTime 倒序
@@ -1527,15 +1537,15 @@ class BdcNotifier extends _$BdcNotifier {
         await MyDatabase.instance.learningLogsDao.getHistory(userId, wordId);
     if (logs.isEmpty) {
       final item = fsrs.init(rating);
-      return (replayed: item, firstStep: item);
+      return (replayed: item, targetStep: item);
     }
 
     final windowStart = app_date.DateUtils.businessDayStart(AppClock.now());
-    // 当天日志与"覆盖替换当天首条日志"（StudyBo.saveHistoryFSRSUpdate）同源同窗口，
-    // 由 LearningLogsDao.getInBusinessDay 按 createTime 正序给出；首条即"今日测评"
+    // 当天记录与"覆盖替换那条记录"（StudyBo.saveHistoryFSRSUpdate）同源同窗口，
+    // 由 LearningLogsDao.getInBusinessDay 按 createTime 正序给出
     final todayLogs = await MyDatabase.instance.learningLogsDao
         .getInBusinessDay(userId, wordIds: [wordId]);
-    // 今天之前的最后一条日志 = 测评前基准状态（窗口下界之前，即早于本业务日 03:00）
+    // 今天之前的最后一条日志 = 当天首次评分之前的基准状态（窗口下界之前，即早于本业务日 03:00）
     LearningLog? prevLog;
     for (final log in logs) {
       if (log.createTime.isBefore(windowStart)) {
@@ -1562,40 +1572,44 @@ class BdcNotifier extends _$BdcNotifier {
                 : FsrsState.review,
           );
 
-    // 当天无日志（无"今日测评"可改）：保持基准状态即可
+    // 当天无记录（没有可改的作答）：保持基准状态即可
     if (todayLogs.isEmpty) {
       final item = baseItem ?? fsrs.init(rating);
-      return (replayed: item, firstStep: item);
+      return (replayed: item, targetStep: item);
     }
 
-    // 首条用新评分：新词（无基准）或当天 init 起手 → init；跨天复习 → next(基准, 新评分, 间隔)
-    final firstTodayLog = todayLogs.first;
-    final firstStep = (baseItem == null || firstTodayLog.elapsedDays == 0)
-        ? fsrs.init(rating)
-        : fsrs.next(baseItem, rating, firstTodayLog.elapsedDays);
-
-    // 其余同日日志按原评分逐条重放（同日结算口径与落库链路同源，见 StudyTrack.sameDayStep）
-    var replayed = firstStep;
-    for (var i = 1; i < todayLogs.length; i++) {
-      replayed = StudyTrack.sameDayStep(
-        replayed,
-        FsrsRatingExt.fromInt(todayLogs[i].rating),
-      );
+    // 改的是"当天最近一次计分作答"（也是面板那一行显示的那条），见 glossary「所见即所改」：
+    // 逐条重放，只有这一条换成用户新选的评分，其余保持原评分。
+    // 第一条按"新词 init / 跨天 next"起手，之后的同日记录走同一天结算（StudyTrack.sameDayStep）。
+    final int targetIndex = todayLogs.length - 1;
+    FSRSItem? replayed;
+    FSRSItem? targetStep;
+    for (var i = 0; i < todayLogs.length; i++) {
+      final log = todayLogs[i];
+      final stepRating =
+          i == targetIndex ? rating : FsrsRatingExt.fromInt(log.rating);
+      final FSRSItem step = i == 0
+          ? ((baseItem == null || log.elapsedDays == 0)
+              ? fsrs.init(stepRating)
+              : fsrs.next(baseItem, stepRating, log.elapsedDays))
+          : StudyTrack.sameDayStep(replayed!, stepRating);
+      replayed = step;
+      if (i == targetIndex) targetStep = step;
     }
-    return (replayed: replayed, firstStep: firstStep);
+    return (replayed: replayed!, targetStep: targetStep!);
   }
 
-  /// [firstStepFsrs] 为"用新评分做完当天首条评分"的状态，只用于回写那条今日测评日志
+  /// [targetStepFsrs] 为"被改那条记录"重放后的状态，只用于回写那一条 learning_log
   /// （见 [StudyBo.saveHistoryFSRSUpdate]）；learning_words 仍写重放末态。
   Future<void> _persistRatingModification(
-      FsrsRating rating, FSRSItem firstStepFsrs) async {
+      FsrsRating rating, FSRSItem targetStepFsrs) async {
     final lw = state.currentGetWordResult?.learningWord;
     if (lw == null || state.fsrsItem == null) return;
     try {
       await StudyBo().saveHistoryFSRSUpdate(
         currWord: lw,
         nextFsrs: state.fsrsItem!,
-        firstStepFsrs: firstStepFsrs,
+        targetStepFsrs: targetStepFsrs,
         newRating: rating,
       );
       if (_isDisposed) return;
@@ -1920,9 +1934,9 @@ class BdcNotifier extends _$BdcNotifier {
         );
         meaningController.text = uiState.meaningText;
       } else {
-        // 环节不同（如测评→巩固），重置答题状态，将旧评分提取为测评参考
-        // 同时将测评的评分和 fsrsItem 作为巩固环节的默认值带出，
-        // 让评分修正对话框默认选中测评评分，并用测评的下次复习天数做预览
+        // 环节不同（如测评→巩固），重置答题状态。
+        // 面板参考值（todayLatestRating 等）不在这里改：它由 handleWord 按当天学习记录
+        // 的"最近一次计分作答"统一给出，历史快照顶替会让显示与修改对象脱钩。
         state = state.copyWith(
           words: uiState.words,
           correctAnswerIndex: uiState.correctAnswerIndex,
@@ -1933,8 +1947,6 @@ class BdcNotifier extends _$BdcNotifier {
           lastFsrsRating: uiState.lastFsrsRating,
           fsrsItem: uiState.fsrsItem,
           hintTapCount: 0,
-          assessmentRating: uiState.lastFsrsRating,
-          assessmentScheduledDays: uiState.fsrsItem?.scheduledDays,
           isWordMastered: false,
         );
         meaningController.text = "";
