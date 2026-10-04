@@ -1,0 +1,21 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "d4100301d7434a978f89e13a401c2030",
+  "targetGameHallIds": [
+    "35"
+  ],
+  "books": [
+    {
+      "fileName": "1993核心词汇（陶大原版）_20261004_021500.txt",
+      "dictName": "1993核心词汇（陶大原版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "d4100301d7434a978f89e13a401c2030",
+      "targetGameHallIds": [
+        "35"
+      ]
+    }
+  ]
+}
