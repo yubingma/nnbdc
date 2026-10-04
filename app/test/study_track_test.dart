@@ -269,4 +269,45 @@ void main() {
       expect(StudyTrack.isFirstAttemptOfStep(todayLogCount: 2, todayLearnedTimes: 3), true);
     });
   });
+
+  group('同环节重新出题：能否继承上一轮缓存的答题状态', () {
+    test('中断后接着答（同环节、非重测）→ 可以继承，用户只需补上剩下的', () {
+      expect(
+        StudyTrack.canInheritCachedStepState(
+            cachedStepIndex: 1, resultStepIndex: 1, isGroupStepRetry: false),
+        true,
+      );
+      expect(
+        StudyTrack.canInheritCachedStepState(
+            cachedStepIndex: 0, resultStepIndex: 0, isGroupStepRetry: false),
+        true,
+      );
+    });
+
+    test('本环节重测 → 一律不继承（那份缓存可能来自回看时的试答，带上就是把答案送出去）', () {
+      expect(
+        StudyTrack.canInheritCachedStepState(
+            cachedStepIndex: 1, resultStepIndex: 1, isGroupStepRetry: true),
+        false,
+      );
+      expect(
+        StudyTrack.canInheritCachedStepState(
+            cachedStepIndex: 0, resultStepIndex: 0, isGroupStepRetry: true),
+        false,
+      );
+    });
+
+    test('换环节 → 不继承（上一环节命中过的释义不得在新环节开局就点亮）', () {
+      expect(
+        StudyTrack.canInheritCachedStepState(
+            cachedStepIndex: 0, resultStepIndex: 1, isGroupStepRetry: false),
+        false,
+      );
+      expect(
+        StudyTrack.canInheritCachedStepState(
+            cachedStepIndex: null, resultStepIndex: 0, isGroupStepRetry: false),
+        false,
+      );
+    });
+  });
 }

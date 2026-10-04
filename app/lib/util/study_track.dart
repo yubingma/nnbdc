@@ -101,6 +101,19 @@ class StudyTrack {
   }) =>
       todayLogCount <= todayLearnedTimes;
 
+  /// 同环节重新出题时，能不能继承上一轮缓存的答题状态（已命中的释义高亮、已揭晓的答案）。
+  ///
+  /// - 中断后接着答（用户答到一半退出再回来）：可以继承，用户只需补上剩下的那几个；
+  /// - **本环节重测**（答错后回到队尾重来）：一律不可以 —— 那份缓存可能来自"回看时试答"
+  ///   （回看是历史导航、评分不入库，但界面状态会被缓存，见 getNextWord 的 _saveCurrentWordState），
+  ///   继承过来等于把答案提前送给用户。
+  static bool canInheritCachedStepState({
+    required int? cachedStepIndex,
+    required int resultStepIndex,
+    required bool isGroupStepRetry,
+  }) =>
+      cachedStepIndex == resultStepIndex && !isGroupStepRetry;
+
   /// 当天测评之后的后续环节（同一天里再次评分）该怎么结算记忆参数。
   ///
   /// 项目约定：**同一天里只认"往下扣"的评分**。

@@ -1945,14 +1945,19 @@ class BdcNotifier extends _$BdcNotifier {
     final wordId = result.learningWord?.word.id;
     final uiState = wordId != null ? state.wordUIStates[wordId] : null;
     if (uiState != null) {
-      // 按环节索引比较：相同 stepIndex 视为同环节，恢复完整答题状态
-      // 不同 stepIndex（如测评→巩固）只恢复选项，重置答题状态，并将旧评分提取为测评参考
-      if (uiState.stepIndex == result.stepIndex) {
-        // 同环节重新出题（本环节答错后回到队尾重练）：把上一轮已命中的释义带过来，
-        // 用户只需补上还没答出的那几个。
-        //
-        // 必须放在这个分支里、按 stepIndex 判定：换环节时不能继承 ——
-        // 否则上一环节答对过的释义会在新环节一开局就渲染成绿色，看起来像"答案被提前揭晓"。
+      // 按环节索引比较：相同 stepIndex 视为同环节，不同 stepIndex（如测评→巩固）只恢复选项、重置答题状态。
+      //
+      // 同环节还要再区分两种情形，绝不能混为一谈：
+      // - 中断后接着答（答到一半退出再回来）：把上一轮已命中的释义带过来，用户只需补上剩下的；
+      // - **本环节重测**（答错后回到队尾重来）：一律从零开始，一个字都不许带。
+      //   那份快照可能来自"回看时试答"——回看是历史导航，评分不入库，但界面状态会被缓存
+      //   （见 getNextWord 的 _saveCurrentWordState），带上就把已命中的释义高亮与已揭晓的
+      //   答案提前泄露给用户，等于送答案。
+      if (StudyTrack.canInheritCachedStepState(
+        cachedStepIndex: uiState.stepIndex,
+        resultStepIndex: result.stepIndex,
+        isGroupStepRetry: state.isGroupStepRetry,
+      )) {
         final wrapper = state.wordWrapper;
         if (wrapper != null) {
           if (uiState.asrMatchedMeaningItemParts != null) {
