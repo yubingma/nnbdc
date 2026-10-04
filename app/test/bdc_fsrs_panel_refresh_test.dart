@@ -147,7 +147,7 @@ void main() {
     );
     await pumpPage(tester, notifier);
 
-    expect(find.text('测评结果: 良好'), findsOneWidget, reason: '答对后面板显示良好');
+    expect(find.text('当前评分: 良好'), findsOneWidget, reason: '答对后面板显示当前评分');
 
     // 用户改点「不认识」：评分被改判为忘记（不点「下一词」，直接进详情页再返回）
     final againItem = fsrs.init(FsrsRating.again);
@@ -155,9 +155,9 @@ void main() {
         fsrsItem: againItem, reason: '主动点击了不再认识，评分: 忘记');
     await tester.pumpAndSettle();
 
-    expect(find.text('测评结果: 良好'), findsNothing,
+    expect(find.text('当前评分: 良好'), findsNothing,
         reason: '最后表态是「不认识」＝忘记，界面不得继续显示良好（所见即所得）');
-    expect(find.text('测评结果: 忘记'), findsOneWidget);
+    expect(find.text('当前评分: 忘记'), findsOneWidget);
     expect(find.textContaining('下次复习: ${againItem.scheduledDays}天后', findRichText: true),
         findsOneWidget,
         reason: '评分改了，面板上的下次复习天数必须按新评分重算');
@@ -172,15 +172,15 @@ void main() {
     final notifier = MockBdcNotifierForPanel(state, mockHasSeenAnswer: true);
     await pumpPage(tester, notifier);
 
-    expect(find.text('测评结果: 轻松'), findsOneWidget);
+    expect(find.text('当前评分: 轻松'), findsOneWidget);
 
     final goodItem = fsrs.init(FsrsRating.good);
     notifier.applyReGrade(FsrsRating.good,
         fsrsItem: goodItem, reason: '手动修正本次评分: 良好');
     await tester.pumpAndSettle();
 
-    expect(find.text('测评结果: 轻松'), findsNothing);
-    expect(find.text('测评结果: 良好'), findsOneWidget);
+    expect(find.text('当前评分: 轻松'), findsNothing);
+    expect(find.text('当前评分: 良好'), findsOneWidget);
     expect(find.textContaining('下次复习: ${goodItem.scheduledDays}天后', findRichText: true),
         findsOneWidget);
   });
@@ -302,7 +302,7 @@ void main() {
         reason: '不得把巩固环节的推算标成测评结果（用户会对着它改错对象）');
   });
 
-  testWidgets('巩固环节未作答时，「测评结果」必须取今日首条（测评参考），不得取历史最新一条', (tester) async {
+  testWidgets('巩固环节未作答时，那一行显示「当前评分」＝当天最近一次计分作答，不得取历史最新一条', (tester) async {
     final (testWord, mockResult) = _createTestData(stepIndex: 1);
     final notifier = MockBdcNotifierForPanel(
       const BdcState().copyWith(
@@ -314,7 +314,7 @@ void main() {
         showAnswerButtons: true,
         canLeaveCurrWord: false,
         hasFinishedAnswering: false,
-        // 今日测评＝轻松 · 16 天（这正是"修改今日评分"要改的那条）
+        // 当天最近一次计分作答＝测评的轻松 · 16 天（也正是改评分要改的那条）
         todayLatestRating: FsrsRating.easy,
         todayLatestScheduledDays: 16,
       ),
@@ -349,12 +349,12 @@ void main() {
     ]);
     await pumpPage(tester, notifier);
 
-    expect(find.text('测评结果: 轻松'), findsOneWidget,
-        reason: '这一行是"今日测评参考"（也正是改评分要改的那条）');
+    expect(find.text('当前评分: 轻松'), findsOneWidget,
+        reason: '这一行是"当天最近一次计分作答"（也正是改评分要改的那条）');
     expect(find.textContaining('下次复习: 16天后', findRichText: true), findsOneWidget,
-        reason: '天数必须跟着测评参考走');
-    expect(find.text('测评结果: 模糊'), findsNothing,
-        reason: '不得拿历史最新一条（巩固结果）冒充测评结果');
+        reason: '天数必须跟着那条记录走');
+    expect(find.text('当前评分: 模糊'), findsNothing,
+        reason: '不得拿历史最新一条（后来的巩固结果）冒充当前评分');
     expect(find.textContaining('下次复习: 13天后', findRichText: true), findsNothing);
   });
 
@@ -379,10 +379,10 @@ void main() {
     );
     await pumpPage(tester, notifier);
 
-    expect(find.text('本次评分: 良好'), findsOneWidget,
+    expect(find.text('当前评分: 良好'), findsOneWidget,
         reason: '回看时那一行是当天最近一次计分作答（巩固那条），改评分改的就是它');
-    expect(find.text('测评结果: 轻松'), findsNothing,
-        reason: '不得把最近一次计分作答显示成测评结果 —— 那会让用户改到测评首条上（所见非所改）');
+    expect(find.text('当前评分: 轻松'), findsNothing,
+        reason: '不得把最近一次计分作答显示成测评的轻松 —— 那会让用户改到测评首条上（所见非所改）');
     expect(find.textContaining('下次复习: 16天后', findRichText: true), findsOneWidget,
         reason: '天数跟着那一条记录走');
   });

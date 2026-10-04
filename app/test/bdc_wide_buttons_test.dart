@@ -339,10 +339,10 @@ void main() {
     await tester.pumpWidget(_buildPageWithNotifier(notifier));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('测评结果: 忘记'), findsOneWidget,
-        reason: '重练不计分：面板必须呈现今天真实记入的测评结果，而不是本次重练的评分');
-    expect(find.textContaining('测评结果: 轻松'), findsNothing,
-        reason: '不得把本次重练的评分当成测评成绩展示');
+    expect(find.textContaining('当前评分: 忘记'), findsOneWidget,
+        reason: '重练不计分：面板必须呈现这个词当天真实记入的评分，而不是本次重练的评分');
+    expect(find.textContaining('当前评分: 轻松'), findsNothing,
+        reason: '不得把本次重练的评分当成已记入的成绩展示');
     expect(find.textContaining('下次复习: 1天后', findRichText: true), findsOneWidget,
         reason: '下次复习天数必须来自已记入的流水');
     expect(find.textContaining('下次复习: 12天后', findRichText: true), findsNothing,

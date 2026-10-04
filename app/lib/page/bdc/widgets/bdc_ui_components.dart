@@ -2245,15 +2245,17 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    // 面板下半部分显示的是"本次作答"还是"今天最近一次计分作答"，标签必须跟着身份走：
-    // 第 1 次计分作答就是测评（叫「测评结果」），之后的环节叫「本次评分」。
+    // 那一行的三种标签，按"它此刻代表谁"来选：
+    // - 本次作答（已受理、还没落库）：测评环节叫「测评结果」，后续环节叫「本次评分」；
+    // - 其余（还没作答 / 本环节重练 / 回看历史）：那一行是"这个词当前记入的评分"，
+    //   一律叫「当前评分」—— 它可能来自测评，也可能来自上一个巩固环节，
+    //   叫「测评结果」会撒谎，叫「本次评分」也不对（本次还没作答）。
     // 这个判据同时决定数据源与"改评分改哪条"（见 BdcNotifier.updateFsrsRating）：
-    // 显示的哪条，点它就改哪条 —— 否则用户会把这次推算当成测评结论，对着它去改另一条。
+    // 显示的哪条，点它就改哪条。
     final bool showsCurrentAnswer = notifier.hasUnsubmittedAnswer;
-    final bool titleIsAssessment = showsCurrentAnswer
-        ? (state.currentGetWordResult?.stepIndex ?? 0) == 0
-        : (state.todayLatestLogIndex ?? 1) <= 1;
-    final String currentAnswerTitle = titleIsAssessment ? '测评结果' : '本次评分';
+    final String currentAnswerTitle = !showsCurrentAnswer
+        ? '当前评分'
+        : ((state.currentGetWordResult?.stepIndex ?? 0) == 0 ? '测评结果' : '本次评分');
 
     // 只有**本次真的计了分**的作答，才谈得上"这次的评分与它推算出的复习安排"。
     // 本环节重练（本环节重测）不计分 —— 评分不写日志、记忆状态不更新（见 StudyBo.updateCurrWord

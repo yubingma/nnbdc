@@ -463,6 +463,7 @@ void main() {
     await tester.pump();
 
     // 验证看答案后：底部的测评结果（忘记）出现
+    // （这是测评环节的"本次作答"＝看答案受理的那一次评分，标签仍是「测评结果」）
     expect(find.textContaining('测评结果: 忘记'), findsOneWidget);
     expect(find.text('隐藏答案继续练习'), findsOneWidget);
 
@@ -533,9 +534,9 @@ void main() {
     expect(find.textContaining('primate'), findsOneWidget);
     expect(find.textContaining('private'), findsWidgets);
 
-    // 验证第3个选项的释义和底部的测评结果均正常展示且无溢出
+    // 验证第3个选项的释义和底部的当前评分均正常展示且无溢出
     expect(find.textContaining('私人的'), findsOneWidget);
-    expect(find.textContaining('测评结果: 轻松'), findsOneWidget);
+    expect(find.textContaining('当前评分: 轻松'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
