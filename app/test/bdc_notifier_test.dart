@@ -4692,6 +4692,8 @@ void main() {
     expect(notifier.hasSeenAnswer, false, reason: '未说完不得揭晓答案');
     expect(state.wordWrapper!.asrMatchedMeaningItemParts, hasLength(1),
         reason: '前缀帧照常实时点亮命中的"专车"，只是不判过');
+    expect(notifier.debugCorrectSoundPlayCount, 1,
+        reason: '命中那一刻响一次正确音');
 
     // 2. 用户接着说"专门的"（iOS 连续识别不会给 isFinal=true 的帧）。
     // 这一帧 newMatchCount 为 0["专车"上一帧已命中]，所以判过绝不能只认"新增命中"；
@@ -4708,6 +4710,8 @@ void main() {
     state = container.read(bdcNotifierProvider);
     expect(state.hasFinishedAnswering, true, reason: '用户说完停顿后才允许判过');
     expect(notifier.hasSeenAnswer, true, reason: '判过后才揭晓答案、渲染「下一词」');
+    expect(notifier.debugCorrectSoundPlayCount, 1,
+        reason: '同一句答对只响一次：停顿后判过时不得再响（它会晚于 800ms 防回声窗口）');
 
     final matched = state.wordWrapper!.asrMatchedMeaningItemParts;
     final items = state.word!.getMergedMeaningItems();

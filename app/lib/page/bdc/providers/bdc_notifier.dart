@@ -61,6 +61,20 @@ class BdcNotifier extends _$BdcNotifier {
   bool _isAnswerCorrectHandling = false;
   DateTime? _lastCorrectSoundTime;
 
+  /// 本次作答是否已经响过"正确"提示音。
+  ///
+  /// 一次作答会先后经历"命中释义"（连续识别中逐帧点亮）与"停顿后判过"两个时刻，
+  /// 两处都记着反馈音；而判过被停顿去抖推迟到 600ms 之后，早已越过 [_lastCorrectSoundTime]
+  /// 的 800ms 防回声窗口，于是同一句答对会响两次。
+  /// 这里改成显式口径：去重窗口内不重复响，且被去重吞掉的那次**不占用**标记——
+  /// 这样"先命中的那一帧确实响过"才置位，停顿后判过时自然不再重复。
+  /// 新词/重练/练习重开时复位（见 handleWord、_retryCurrentWord、练习重开处）。
+  bool _correctSoundPlayedForCurrentAnswer = false;
+
+  /// 本会话"正确"提示音实际响了几次，供测试断言一次作答只响一次。
+  @visibleForTesting
+  int debugCorrectSoundPlayCount = 0;
+
   /// 本次“呈现”的作答是否已被受理：一次呈现只受理一次作答。
   /// 在 [handleWord] 呈现新词/重练（以及练习模式重开）时复位；
   /// 流转失败时也复位（否则用户改用别的评分会登记不上凭据）。
@@ -587,6 +601,7 @@ class BdcNotifier extends _$BdcNotifier {
     _cancelPendingWordTimers();
     _isAnswerCorrectHandling = false; // 新词开始，安全重置答对锁
     _lastCorrectSoundTime = null; // 重置正确反馈音播放时间
+    _correctSoundPlayedForCurrentAnswer = false; // 新词/新环节：本次作答还没响过正确音
     _failedWordAiEvaluationsForCurrentWord.clear();
     _wordAiEvaluationCountForCurrentWord = 0;
     _isWordAiRefereeJudging = false;
@@ -771,6 +786,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     // 每次呈现（新词、下一环节、重练）都会走到这里：受理状态与待计分凭据随呈现复位
     _answerAccepted = false;
+    _correctSoundPlayedForCurrentAnswer = false; // 新一次作答：正确音可以再响一次
     _pendingGrade = null;
 
     // 本环节进度随这次呈现一起算好、一起写进 state（见 _computeGroupStepProgress 的说明）
@@ -1219,6 +1235,7 @@ class BdcNotifier extends _$BdcNotifier {
     _isPracticeMode = true;
     _isAnswerCorrectHandling = false; // 重置答对锁,否则练习模式 checkAsrResult 被 L1555 拦截,评分不更新
     _answerAccepted = false; // 练习模式重新开始作答，恢复受理资格（但练习不计分）
+    _correctSoundPlayedForCurrentAnswer = false; // 重新作答：正确音可以再响一次
     state = state.copyWith(
       hasFinishedAnswering: false,
       isPracticeMode: true,
@@ -3179,6 +3196,8 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _playCorrectSound({bool force = false}) {
+    // 一次作答只响一次：命中的那一刻已经给过反馈，停顿后判过时不再重复（见字段说明）
+    if (!force && _correctSoundPlayedForCurrentAnswer) return;
     final now = DateTime.now();
     // 防回声去抖：800ms 内不重复播。但如果是用户的主动操作（如已答对后再次默写重写提交），
     // 应强制播放反馈音，不受去抖影响。
@@ -3187,7 +3206,9 @@ class BdcNotifier extends _$BdcNotifier {
       debugPrint('⚡ [Audio-Filter] 800ms 内已播放过正确反馈音，忽略本次播放以防止回声');
       return;
     }
+    _correctSoundPlayedForCurrentAnswer = true;
     _lastCorrectSoundTime = now;
+    debugCorrectSoundPlayCount++;
     if (PlatformUtils.isIOS) {
       StudyAudioSessionController.instance.playSoundEffect('correct_ios.wav', speed: 1.0, volume: 0.3);
     } else {
