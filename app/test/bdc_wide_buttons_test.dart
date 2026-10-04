@@ -374,7 +374,7 @@ void main() {
       studyStep: StudyStep.en2Ch.json,
       showAnswerButtons: true,
       canLeaveCurrWord: true,
-      history: [mockResult],
+      history: [(result: mockResult, uiState: null)],
       historyIndex: 0,
     );
     final notifier = MockBdcNotifierForWideScreen(state, mockHasSeenAnswer: true);

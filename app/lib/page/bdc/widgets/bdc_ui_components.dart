@@ -1296,11 +1296,8 @@ extension BdcPageStateUIComponents on BdcPageState {
   /// （见 StudyBo.getBatchPhaseProgress）。
   /// 极简裸排版、无容器 —— 只为让"整组先英译汉、再整组汉译英"的顺序变得可见可预期。
   Widget _buildGroupStepIndicator() {
-    // 回看历史时不显示这条流程坐标：它描述的是"这个词现在在本组本环节的排队位置"，
-    // 而回看展示的是**那一次呈现** —— 拿现在的坐标顶替，会让一个刚点过「不认识」的词
-    // 一被回看就标上「本环节重测」（实测反馈）。界面快照按词存一份、分不清同一个词的
-    // 多次呈现，所以这里干脆不显示，而不是显示一个可能是错的坐标。
-    if (state.historyIndex != -1) return const SizedBox.shrink();
+    // 这里的坐标按"那一次呈现"给出（回看时由历史条目自带的界面状态恢复），
+    // 所以回看时照常显示 —— 用户回看就是想看到自己离开时的样子。
     final groupNo = state.groupStepNo;
     final trackName = state.groupStepTrackName;
     final position = state.groupStepPosition;

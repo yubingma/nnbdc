@@ -583,7 +583,10 @@ class BdcNotifier extends _$BdcNotifier {
             }
           }
           state = state.copyWith(
-            history: [...state.history, wordResult],
+            history: [
+              ...state.history,
+              (result: wordResult, uiState: wordUIState),
+            ],
             wordUIStates: {...state.wordUIStates, wordId: wordUIState},
           );
           // 面板参考值（todayLatestRating 等）不在这里恢复：它的唯一来源是
@@ -596,7 +599,8 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  Future<bool> handleWord(GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
+  Future<bool> handleWord(GetWordResult? getWordResult,
+      {bool isFromBatchWordList = false, WordUIState? uiStateOverride}) async {
     if (getWordResult == null) return false;
     _cancelPendingWordTimers();
     _isAnswerCorrectHandling = false; // 新词开始，安全重置答对锁
@@ -851,7 +855,15 @@ class BdcNotifier extends _$BdcNotifier {
 
     final wordId = word.id;
     if (wordId != null) _rememberCurrentStudyWord(wordId);
-    if (state.wordUIStates.containsKey(wordId)) {
+    // 呈现要用哪一份界面状态：显式指定的（退出回看回到"那次离开时的样子"）优先，
+    // 其次是历史条目自带的那一份（回看），最后才回退到按词存的那份（正常学习流程）。
+    final effectiveUiState = uiStateOverride ??
+        (state.historyIndex != -1 && state.historyIndex < state.history.length
+            ? state.history[state.historyIndex].uiState
+            : null);
+    if (effectiveUiState != null) {
+      _restoreWordState(getWordResult, uiStateOverride: effectiveUiState);
+    } else if (wordId != null && state.wordUIStates.containsKey(wordId)) {
       _restoreWordState(getWordResult);
     } else {
       meaningController.text = "";
@@ -1772,13 +1784,21 @@ class BdcNotifier extends _$BdcNotifier {
   void goToPreviousWord() async {
     if (state.history.isEmpty) return;
 
-    _saveCurrentWordState();
+    // 离开当前词去回看历史：把它此刻的样子收进"退出回看要回到的目标"，
+    // 但**不写按词的缓存** —— 同一个词可能既有历史条目、又是当前词，
+    // 写进去会把那条历史该有的样子顶掉（实测：回看被标成「本环节重测」）。
+    final leavingUiState = _buildCurrentWordUiState();
     await StudyAudioSessionController.instance.cancelPlayback();
 
     int nextIndex;
     if (state.historyIndex == -1) {
       nextIndex = state.history.length - 1;
-      state = state.copyWith(reviewReturnTarget: state.currentGetWordResult);
+      final leaving = state.currentGetWordResult;
+      if (leaving != null) {
+        state = state.copyWith(
+          reviewReturnTarget: (result: leaving, uiState: leavingUiState),
+        );
+      }
     } else if (state.historyIndex > 0) {
       nextIndex = state.historyIndex - 1;
     } else {
@@ -1786,7 +1806,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     state = state.copyWith(historyIndex: nextIndex);
-    handleWord(state.history[nextIndex]);
+    handleWord(state.history[nextIndex].result);
   }
 
   void exitReviewMode() async {
@@ -1798,11 +1818,11 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
 
-    _saveCurrentWordState();
     await StudyAudioSessionController.instance.cancelPlayback();
     
     state = state.copyWith(historyIndex: -1);
-    await handleWord(target, isFromBatchWordList: true);
+    await handleWord(target.result,
+        uiStateOverride: target.uiState, isFromBatchWordList: true);
   }
 
   /// 用户眼前的当前词：学习页每次呈现单词时记录（见 [handleWord]）。
@@ -1943,10 +1963,13 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
 
-  void _restoreWordState(GetWordResult result) {
+  /// [uiStateOverride] 由调用方指定"这一次呈现自己的界面状态"（回看历史、退出回看时用），
+  /// 不给才回退到按词存的那一份。
+  void _restoreWordState(GetWordResult result, {WordUIState? uiStateOverride}) {
     final sw = Stopwatch()..start();
     final wordId = result.learningWord?.word.id;
-    final uiState = wordId != null ? state.wordUIStates[wordId] : null;
+    final uiState = uiStateOverride ??
+        (wordId != null ? state.wordUIStates[wordId] : null);
     if (uiState != null) {
       // 按环节索引比较：相同 stepIndex 视为同环节，不同 stepIndex（如测评→巩固）只恢复选项、重置答题状态。
       //
@@ -1993,6 +2016,13 @@ class BdcNotifier extends _$BdcNotifier {
           lastFsrsRating: uiState.lastFsrsRating,
           currentAsrCandidates: uiState.currentAsrCandidates ?? [],
           hintTapCount: uiState.hintTapCount,
+          // 进度坐标也回到"那一次呈现"：回看时要能看到用户离开时的样子，
+          // 而不是按这个词现在排在哪现算（那会把刚答错的词标成「本环节重测」）
+          groupStepNo: uiState.groupStepNo,
+          groupStepPosition: uiState.groupStepPosition,
+          groupStepTotal: uiState.groupStepTotal,
+          groupStepTrackName: uiState.groupStepTrackName,
+          isGroupStepRetry: uiState.isGroupStepRetry,
           isWordMastered: false,
         );
         meaningController.text = uiState.meaningText;
@@ -2074,6 +2104,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 的纯导航，gradeRating 恒为 null，而 fsrsRating 只是该历史词早已落库的评分快照
     // （或用户刚在回看里改的看法）。旧判据会在这种纯导航里把这个词的界面状态
     // 当成"刚答错、待重练"清掉 —— 用户再点「回看」时，那个词就变成一张从没答过的新题。
+    WordUIState? leavingUiState;
     if (gradeRating == FsrsRating.again) {
       // 答错的词会留在本环节循环重练（BO 不推进环节索引，它会在本环节队尾再次出现）。
       // 它此刻"已答完"的 UI 状态若被缓存下来，等它重练时 _restoreWordState 会原样恢复
@@ -2091,7 +2122,7 @@ class BdcNotifier extends _$BdcNotifier {
       // _restoreLastWordHistory 会把它回灌进 wordUIStates，重练又变成直接显示答案。
       Prefs.remove('last_word_history_item');
     } else {
-      _saveCurrentWordState();
+      leavingUiState = _saveCurrentWordState();
     }
     _playToken++; // 取消任何待执行的自动播放延迟 callback
 
@@ -2131,21 +2162,15 @@ class BdcNotifier extends _$BdcNotifier {
           if (state.isWordMastered && lw != null) {
             await StudyBo().markWordAsMastered(lw);
             final filteredHistory = state.history
-                .where((item) => item.learningWord?.word.id != lw.word.id)
+                .where((item) => item.result.learningWord?.word.id != lw.word.id)
                 .toList();
             state = state.copyWith(history: filteredHistory);
 
             // 同步更新持久化的历史记录：取消待执行定时器，用过滤后的最后一项替换或清除
             _persistTimer?.cancel();
-            if (filteredHistory.isNotEmpty) {
-              final lastItem = filteredHistory.last;
-              final lastWordId = lastItem.learningWord?.word.id;
-              final lastUiState = lastWordId != null ? state.wordUIStates[lastWordId] : null;
-              if (lastUiState != null) {
-                _persistLastWordHistoryItemWith(lastItem, lastUiState);
-              } else {
-                Prefs.remove('last_word_history_item');
-              }
+            final lastItem = filteredHistory.isEmpty ? null : filteredHistory.last;
+            if (lastItem != null && lastItem.uiState != null) {
+              _persistLastWordHistoryItemWith(lastItem.result, lastItem.uiState!);
             } else {
               Prefs.remove('last_word_history_item');
             }
@@ -2162,7 +2187,8 @@ class BdcNotifier extends _$BdcNotifier {
             state = state.copyWith(historyIndex: -1);
             final target = state.reviewReturnTarget;
             if (target != null) {
-              final res = await handleWord(target, isFromBatchWordList: true);
+              final res = await handleWord(target.result,
+                  uiStateOverride: target.uiState, isFromBatchWordList: true);
               Global.logger.i('[PERF] Total getNextWord (history exit) cost: ${totalStopwatch.elapsedMilliseconds}ms');
               return res;
             } else {
@@ -2171,7 +2197,7 @@ class BdcNotifier extends _$BdcNotifier {
             }
           } else {
             state = state.copyWith(historyIndex: nextIndex);
-            final res = await handleWord(state.history[nextIndex]);
+            final res = await handleWord(state.history[nextIndex].result);
             Global.logger.i('[PERF] Total getNextWord (history next) cost: ${totalStopwatch.elapsedMilliseconds}ms');
             return res;
           }
@@ -2194,7 +2220,10 @@ class BdcNotifier extends _$BdcNotifier {
 
       if (gotoNext && state.currentGetWordResult != null) {
         if (!state.currentGetWordResult!.finished && !state.currentGetWordResult!.noWord) {
-          state = state.copyWith(history: [...state.history, state.currentGetWordResult!]);
+          state = state.copyWith(history: [
+            ...state.history,
+            (result: state.currentGetWordResult!, uiState: leavingUiState),
+          ]);
           _persistLastWordHistoryItem();
         }
       }
@@ -2251,33 +2280,48 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  void _saveCurrentWordState() {
+  /// 构造"当前这个词此刻的界面状态"（纯构造，不写按词缓存）。
+  /// 入历史栈、以及作为"退出回看要回到的样子"时用它。
+  WordUIState? _buildCurrentWordUiState() {
+    if (state.word?.id == null) return null;
+    return WordUIState(
+      stepIndex: state.currentGetWordResult?.stepIndex,
+      studyStep: state.studyStep,
+      hasFinishedAnswering: state.hasFinishedAnswering,
+      canLeaveCurrWord: state.canLeaveCurrWord,
+      showSentenceTranslation: state.showSentenceTranslation,
+      showSentenceWordMeaning: state.showSentenceWordMeaning,
+      selectedAnswerIndex: state.selectedAnswerIndex,
+      tabIndex: state.tabIndex,
+      currentScore: state.currentScore,
+      meaningText: meaningController.text,
+      words: state.words != null ? List<WordVo>.from(state.words!) : null,
+      correctAnswerIndex: state.correctAnswerIndex ?? 0,
+      fsrsItem: state.fsrsItem,
+      daysSinceLastReview: state.daysSinceLastReview,
+      lastFsrsRating: state.lastFsrsRating,
+      asrMatchedMeaningItemParts: state.wordWrapper != null ? List<Pair<int, int>>.from(state.wordWrapper!.asrMatchedMeaningItemParts) : null,
+      asrRevealedMeaningItemParts: state.wordWrapper != null ? List<Pair<int, int>>.from(state.wordWrapper!.asrRevealedMeaningItemParts) : null,
+      currentAsrCandidates: List<String>.from(state.currentAsrCandidates),
+      hintTapCount: state.hintTapCount,
+      // 进度坐标一起存：回看时要精确还原"用户离开时看到的样子"
+      groupStepNo: state.groupStepNo,
+      groupStepPosition: state.groupStepPosition,
+      groupStepTotal: state.groupStepTotal,
+      groupStepTrackName: state.groupStepTrackName,
+      isGroupStepRetry: state.isGroupStepRetry,
+    );
+  }
+
+  /// 保存"当前这个词此刻的界面状态"到按词的缓存，并返回它（入历史栈时要用同一份）。
+  /// 没有当前词时返回 null。
+  WordUIState? _saveCurrentWordState() {
     final sw = Stopwatch()..start();
-    if (state.word?.id != null) {
-      final uiState = WordUIState(
-        stepIndex: state.currentGetWordResult?.stepIndex,
-        studyStep: state.studyStep,
-        hasFinishedAnswering: state.hasFinishedAnswering,
-        canLeaveCurrWord: state.canLeaveCurrWord,
-        showSentenceTranslation: state.showSentenceTranslation,
-        showSentenceWordMeaning: state.showSentenceWordMeaning,
-        selectedAnswerIndex: state.selectedAnswerIndex,
-        tabIndex: state.tabIndex,
-        currentScore: state.currentScore,
-        meaningText: meaningController.text,
-        words: state.words != null ? List<WordVo>.from(state.words!) : null,
-        correctAnswerIndex: state.correctAnswerIndex ?? 0,
-        fsrsItem: state.fsrsItem,
-        daysSinceLastReview: state.daysSinceLastReview,
-        lastFsrsRating: state.lastFsrsRating,
-        asrMatchedMeaningItemParts: state.wordWrapper != null ? List<Pair<int, int>>.from(state.wordWrapper!.asrMatchedMeaningItemParts) : null,
-        asrRevealedMeaningItemParts: state.wordWrapper != null ? List<Pair<int, int>>.from(state.wordWrapper!.asrRevealedMeaningItemParts) : null,
-        currentAsrCandidates: List<String>.from(state.currentAsrCandidates),
-        hintTapCount: state.hintTapCount,
-      );
-      state = state.copyWith(wordUIStates: {...state.wordUIStates, state.word!.id!: uiState});
-      debugPrint('⚡ [PERF] _saveCurrentWordState cost: ${sw.elapsedMilliseconds}ms');
-    }
+    final uiState = _buildCurrentWordUiState();
+    if (uiState == null) return null;
+    state = state.copyWith(wordUIStates: {...state.wordUIStates, state.word!.id!: uiState});
+    debugPrint('⚡ [PERF] _saveCurrentWordState cost: ${sw.elapsedMilliseconds}ms');
+    return uiState;
   }
 
   Future<void> onAsrResult(event) async {

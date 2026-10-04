@@ -13,7 +13,7 @@ class BdcState extends Equatable {
   final bool isGettingNextWord;
   final GetWordResult? currentGetWordResult;
   final GetWordResult? learningGetWordResult;
-  final GetWordResult? reviewReturnTarget;
+  final WordPresentation? reviewReturnTarget;
   final WordVo? word;
   final WordWrapper? wordWrapper;
   final String? studyStep;
@@ -31,7 +31,7 @@ class BdcState extends Equatable {
   final bool showSentenceWordMeaning;
   final int tabIndex;
   
-  final List<GetWordResult> history;
+  final List<WordPresentation> history;
   final int historyIndex;
   final Map<String, WordUIState> wordUIStates;
   
@@ -233,7 +233,7 @@ class BdcState extends Equatable {
     bool? showSentenceTranslation,
     bool? showSentenceWordMeaning,
     int? tabIndex,
-    List<GetWordResult>? history,
+    List<WordPresentation>? history,
     int? historyIndex,
     Map<String, WordUIState>? wordUIStates,
     Object? fsrsItem = _sentinel,
@@ -299,7 +299,7 @@ class BdcState extends Equatable {
       isGettingNextWord: isGettingNextWord ?? this.isGettingNextWord,
       currentGetWordResult: currentGetWordResult == _sentinel ? this.currentGetWordResult : (currentGetWordResult as GetWordResult?),
       learningGetWordResult: learningGetWordResult == _sentinel ? this.learningGetWordResult : (learningGetWordResult as GetWordResult?),
-      reviewReturnTarget: reviewReturnTarget == _sentinel ? this.reviewReturnTarget : (reviewReturnTarget as GetWordResult?),
+      reviewReturnTarget: reviewReturnTarget == _sentinel ? this.reviewReturnTarget : (reviewReturnTarget as WordPresentation?),
       word: word == _sentinel ? this.word : (word as WordVo?),
       wordWrapper: wordWrapper == _sentinel ? this.wordWrapper : (wordWrapper as WordWrapper?),
       studyStep: studyStep == _sentinel ? this.studyStep : (studyStep as String?),
