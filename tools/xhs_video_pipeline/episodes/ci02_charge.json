@@ -1,0 +1,43 @@
+{
+  "episode": "CI02",
+  "series": "词核心图",
+  "position": "02",
+  "slogan": "一个词 · 一个意象",
+  "word": "charge",
+  "phonetic": "tʃɑrdʒ",
+  "core_art": "core_10091.jpeg",
+  "core_text": "把重量装到载体上",
+  "core_sub": "charge 只有这一个意象",
+  "accent": "#FBBF24",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": ["充电", "收费", "指控"],
+      "line": "这三个意思，有关系吗？",
+      "say": "充电、收费、指控。有什么关系？"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：把重量，装到载体上。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        { "meaning": "充电", "relation": "把电能装进物体里" },
+        { "meaning": "收费", "relation": "把金额装到账单上" },
+        { "meaning": "指控", "relation": "把罪责装到人身上" }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "next": "下集 · shock",
+      "cta": "一天一个词，关注追更",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ]
+}

@@ -386,4 +386,49 @@ void main() {
     expect(find.textContaining('下次复习: 16天后', findRichText: true), findsOneWidget,
         reason: '天数跟着那一条记录走');
   });
+
+  testWidgets('回看历史时不显示流程坐标行：本组进度与「本环节重测」都不得出现', (tester) async {
+    // 线上反馈：某个词刚点过「不认识」，切到下一个词后再回看它，它被标成「本环节重测」。
+    // 那条流程坐标描述的是"这个词现在排在本组本环节的第几位"，而回看展示的是那一次呈现，
+    // 两者不是一回事 —— 回看时整行都不显示。
+    final (testWord, mockResult) = _createTestData(stepIndex: 1);
+    final notifier = MockBdcNotifierForPanel(
+      _answeredGoodState(testWord, mockResult, FSRS().init(FsrsRating.good))
+          .copyWith(
+        historyIndex: 0,
+        groupStepNo: 1,
+        groupStepPosition: 1,
+        groupStepTotal: 3,
+        groupStepTrackName: '新词答对',
+        isGroupStepRetry: true,
+      ),
+      mockHasSeenAnswer: true,
+    );
+    await pumpPage(tester, notifier);
+
+    expect(find.textContaining('本环节重测'), findsNothing,
+        reason: '回看历史不得标「本环节重测」——那会让人以为回看就等于重测');
+    expect(find.textContaining('新词答对'), findsNothing,
+        reason: '回看历史也不显示本组本环节的排队坐标');
+  });
+
+  testWidgets('学习流程里照常显示流程坐标行（回看才隐藏）', (tester) async {
+    final (testWord, mockResult) = _createTestData(stepIndex: 1);
+    final notifier = MockBdcNotifierForPanel(
+      _answeredGoodState(testWord, mockResult, FSRS().init(FsrsRating.good))
+          .copyWith(
+        groupStepNo: 1,
+        groupStepPosition: 1,
+        groupStepTotal: 3,
+        groupStepTrackName: '新词答对',
+        isGroupStepRetry: true,
+      ),
+      mockHasSeenAnswer: true,
+    );
+    await pumpPage(tester, notifier);
+
+    expect(find.textContaining('本环节重测'), findsOneWidget,
+        reason: '正常学习时这个词确实在重测，必须标出来');
+    expect(find.textContaining('新词答对'), findsOneWidget);
+  });
 }
