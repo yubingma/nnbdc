@@ -745,6 +745,7 @@ void main() {
     await notifier.onAsrResult(jsonEncode({
       'best': '甘蕉',
       'candidates': ['甘蕉'],
+      'isFinal': true,
     }));
     
     state = container.read(bdcNotifierProvider);
@@ -3321,10 +3322,11 @@ void main() {
     expect(state.word!.spell, 'apple', reason: '初始应加载第一个词 apple');
     expect(state.hasFinishedAnswering, false);
 
-    // 1. 回答正确第一个单词 (En2Ch: 说出中文 "苹果")
+    // 1. 回答正确第一个单词 (En2Ch: 说出中文 "苹果"，说完停顿后原生发最后一段 isFinal 帧)
     await notifier.onAsrResult(jsonEncode({
       'best': '苹果',
       'candidates': ['苹果'],
+      'isFinal': true,
     }));
 
     state = container.read(bdcNotifierProvider);
@@ -4561,6 +4563,7 @@ void main() {
     await notifier.onAsrResult(jsonEncode({
       'best': '苹果',
       'candidates': ['苹果'],
+      'isFinal': true,
     }));
     state = container.read(bdcNotifierProvider);
     expect(state.hasFinishedAnswering, isTrue, reason: '前置条件：apple 已答对');
@@ -4651,6 +4654,7 @@ void main() {
     await notifier.onAsrResult(jsonEncode({
       'best': '苹果',
       'candidates': ['苹果'],
+      'isFinal': true,
     }));
     state = container.read(bdcNotifierProvider);
     await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
@@ -4690,5 +4694,56 @@ void main() {
         reason: '再次回看必须还原离开时的已答完状态，不得像重新进入答题一样要求重答');
 
     await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 英译汉连续识别的前缀帧不得抢答：说"专门的"不会被"专"命中"专车"提前判过', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    // 真实词条 special（wordId=37611）的释义，按 popularity 升序取出：
+    // 专车排在最前，专门的排在后面。这正是"说专门的却点亮专车"的现场。
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('n.', '专车'),
+      MeaningItemVo.from('n.', '特使'),
+      MeaningItemVo.from('n.', '特刊'),
+      MeaningItemVo.from('n.', '特价'),
+      MeaningItemVo.from('n.', '特色菜'),
+      MeaningItemVo.from('adj.', '专门的'),
+      MeaningItemVo.from('adj.', '特别的'),
+    ];
+    notifier.updateAsrPassRuleCache('ONE');
+
+    // 1. 连续识别的中间帧：用户刚说出一个"专"字（isFinal=false）。
+    // 它确实能对上"专车"，但绝不能据此判过——否则立刻 stopAsr，"门的"会被整个吞掉。
+    await notifier.onAsrResult(jsonEncode({
+      'best': '专',
+      'candidates': ['专'],
+      'isFinal': false,
+    }));
+    var state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false,
+        reason: '前缀帧即便命中了某个释义，也不得判过并掐断识别');
+    expect(state.wordWrapper!.asrMatchedMeaningItemParts, hasLength(1),
+        reason: '前缀帧可以实时点亮，这是识别过程中的正常反馈');
+    expect(notifier.hasSeenAnswer, false,
+        reason: '未说完不得揭晓答案（揭晓后 UI 会直接给用户看答案）');
+
+    // 2. 用户说完整句"专门的"，原生在静音断句时给出最后一段（isFinal=true）
+    await notifier.onAsrResult(jsonEncode({
+      'best': '专门的',
+      'candidates': ['专门的'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true, reason: '说完最后一段才允许判过');
+    final matched = state.wordWrapper!.asrMatchedMeaningItemParts;
+    expect(matched, contains(Pair(1, 0)),
+        reason: 'adj. 专门的（合并后是第 2 个释义项）必须被点亮');
   });
 }

@@ -2776,7 +2776,12 @@ class BdcNotifier extends _$BdcNotifier {
       // 通过条件同样已满足；若只在新增命中时才判定，用户怎么答都过不去——既不判通过、
       // 也不揭晓答案、也没有任何反馈。仍要求本次输入确实命中某个释义（重复命中已命中项也算），
       // 避免无关语句把"已达标的题"蒙过去。
-      final bool reachedPassLine = isMatch &&
+      //
+      // ⚡ 与例句环节同一纪律（见上方 isMatch 处）：语音必须等到最后一帧 isFinal 才允许判过。
+      // 连续识别过程中每一帧都是一段前缀（说"专门的"会依次吐出"专"、"专门"），
+      // 若在 isFinal=false 的前缀帧上就判过，"专"命中"专车"即算答对，
+      // 后面的"门的"会被直接掐断吞掉——用户明明在说完整的释义，却被系统抢答。
+      final bool reachedPassLine = isMatch && (!isVoice || isFinal) &&
           (result.newMatchCount > 0 ||
               inputs.any((input) => chineseInputMatchesAnyMeaning(
                   state.word!, input,
