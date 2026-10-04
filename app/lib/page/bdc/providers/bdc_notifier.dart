@@ -103,6 +103,7 @@ class BdcNotifier extends _$BdcNotifier {
   Timer? _learningTimer;
   Timer? _persistTimer;
   Timer? _checkAsrDebounceTimer;
+  Timer? _wordPassDebounceTimer;
   Timer? _wordAiRefereeDebounceTimer;
   Timer? _autoJumpTimer;
   Timer? _showWordDetailTimer;
@@ -123,6 +124,41 @@ class BdcNotifier extends _$BdcNotifier {
   /// 详情页首帧直接用它渲染，避免打开后再补拉数据、进而整体重建一次。
   WordVo? _prefetchedDetailWord;
 
+  /// 语音判过前的停顿去抖时长：连续识别里"识别文本不再更新"持续这么久，才算用户说完了。
+  ///
+  /// 为什么不能用 ASR 的最终帧：iOS 在用户停止说话时**不会**给出 `isFinal=true` 的帧
+  ///（实测"专"→"专门"→"专门的"三帧全是 isFinal=false，之后不再来帧），
+  /// 依赖最终帧会让判过永远无法触发；而 iOS 端点帧出现时又会重启识别任务。
+  /// 取 600ms：实测帧间隔约 190~220ms，600ms 足以确认已停口；
+  /// 又必须明显小于 AI 裁判的 1500ms 去抖，保证"已说对"先于"交裁判"落地。
+  /// 测试环境给一个很短的时长，测试通过等待它来观察判过（真实计时的单一代码路径）。
+  @visibleForTesting
+  static Duration wordPassSilenceDelay =
+      PlatformUtils.isUnitTest ? const Duration(milliseconds: 20) : const Duration(milliseconds: 600);
+
+  /// 用户可能已经说完：等到识别文本不再更新（停顿）后再走判题入口。
+  ///
+  /// 去抖只负责"时机"，判题与受理仍走 [checkAsrResult]（同一处收尾逻辑），
+  /// 通过 [silenceElapsed] 参数标记这次是该受理的停顿判定，从而不在入口里再次安排去抖。
+  void _scheduleWordPassOnSilence(List<String> inputs, bool passCandidate) {
+    _wordPassDebounceTimer?.cancel();
+    _wordPassDebounceTimer = null;
+    if (!passCandidate) return;
+    final String? wordIdAtSchedule = state.word?.id;
+    _wordPassDebounceTimer = Timer(wordPassSilenceDelay, () {
+      _wordPassDebounceTimer = null;
+      if (_isDisposed) return;
+      if (state.word?.id != wordIdAtSchedule) return;
+      if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+      // 用停顿时刻的最新识别文本重新走一次判题入口
+      final judgeText = _wordAccumulatedAsrText.isNotEmpty
+          ? _wordAccumulatedAsrText
+          : (inputs.isNotEmpty ? inputs.first : meaningController.text);
+      unawaited(checkAsrResult(
+          asrInput: judgeText, isVoice: true, isFinal: true, silenceElapsed: true));
+    });
+  }
+
   void _cancelPendingWordTimers() {
     _autoJumpTimer?.cancel();
     _autoJumpTimer = null;
@@ -130,6 +166,8 @@ class BdcNotifier extends _$BdcNotifier {
     _showWordDetailTimer = null;
     _checkAsrDebounceTimer?.cancel();
     _checkAsrDebounceTimer = null;
+    _wordPassDebounceTimer?.cancel();
+    _wordPassDebounceTimer = null;
     _wordAiRefereeDebounceTimer?.cancel();
     _wordAiRefereeDebounceTimer = null;
     _sentenceAiRefereeDebounceTimer?.cancel();
@@ -2480,7 +2518,7 @@ class BdcNotifier extends _$BdcNotifier {
     await onComplete();
   }
 
-  Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false}) async {
+  Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false, bool silenceElapsed = false}) async {
     if (_isDisposed) return;
     if (!state.showHandwritingBoard && (state.hasFinishedAnswering || _isAnswerCorrectHandling)) return;
     final stopwatch = Stopwatch()..start();
@@ -2774,21 +2812,29 @@ class BdcNotifier extends _$BdcNotifier {
       // 通过条件按"当前已命中总数"评估，而不是只认"本次新增命中"：同一词重新进入环节时
       // 会继承上一环节已命中的释义（见 handleWord），此时把已命中的释义重新说出，
       // 通过条件同样已满足；若只在新增命中时才判定，用户怎么答都过不去——既不判通过、
-      // 也不揭晓答案、也没有任何反馈。仍要求本次输入确实命中某个释义（重复命中已命中项也算），
-      // 避免无关语句把"已达标的题"蒙过去。
+      // 也不揭晓答案、也没有任何反馈。
       //
-      // ⚡ 与例句环节同一纪律（见上方 isMatch 处）：语音必须等到最后一帧 isFinal 才允许判过。
-      // 连续识别过程中每一帧都是一段前缀（说"专门的"会依次吐出"专"、"专门"），
-      // 若在 isFinal=false 的前缀帧上就判过，"专"命中"专车"即算答对，
-      // 后面的"门的"会被直接掐断吞掉——用户明明在说完整的释义，却被系统抢答。
-      final bool reachedPassLine = isMatch && (!isVoice || isFinal) &&
+      // ⚡ 语音必须等到用户"说完"才允许判过：连续识别中每一帧都是一段还在生长的前缀
+      //（说"专门的"会依次吐出"专"、"专门"、"专门的"），若在前缀帧上就判过，
+      // "专"命中"专车"即算答对，后面的"门的"会被直接掐断吞掉——用户明明在说完整释义，却被系统抢答。
+      // "说完了"由 [_scheduleWordPassOnSilence] 的停顿去抖给出（iOS 的最终帧并不会在用户
+      // 停止说话时到达，不能依赖它）。
+      final bool passCandidate = isMatch &&
           (result.newMatchCount > 0 ||
               inputs.any((input) => chineseInputMatchesAnyMeaning(
                   state.word!, input,
                   strict: state.isChineseDictation)));
+      if (isVoice && !silenceElapsed) {
+        // 语音：先安排"停顿"再判过；只有停顿到时重新进来的那一次才真正受理
+        _scheduleWordPassOnSilence(inputs, passCandidate);
+      }
+      final bool passNow = !isVoice || silenceElapsed;
 
       if (result.newMatchCount > 0) {
         _wordAiRefereeDebounceTimer?.cancel(); // 本地匹配命中，取消待触发的AI裁判
+        // 本句已命中，清掉累积：否则下一句识别会与这一句串接成「竞争性的 好胜的」
+        // 这种混合文本，把后一句的释义命中带偏。判过时机由停顿去抖独立把关
+        //（见 _scheduleWordPassOnSilence），不依赖这里的累积文本。
         _wordAccumulatedAsrText = "";
         _wordLastFinalAsrText = "";
         _isWordAiRefereeJudging = false;
@@ -2803,9 +2849,14 @@ class BdcNotifier extends _$BdcNotifier {
         _playCorrectSound();
       }
 
-      if (reachedPassLine &&
+      if (passNow &&
+          isMatch &&
           !state.hasFinishedAnswering &&
           !_isAnswerCorrectHandling) {
+        _wordPassDebounceTimer?.cancel();
+        _wordPassDebounceTimer = null;
+        _wordAccumulatedAsrText = "";
+        _wordLastFinalAsrText = "";
         _isAnswerCorrectHandling = true; // 立即同步上锁，防止异步 stopSession 期间重入
 
         // 仅在麦克风处于开启状态时才进行物理关麦，通过 unawaited 异步执行，绝不阻塞 UI 主帧与答对流程
@@ -4161,6 +4212,10 @@ class BdcNotifier extends _$BdcNotifier {
   /// 是否有待触发的单词 AI 裁判（防抖计时中），供测试断言调度时机。
   @visibleForTesting
   bool get hasPendingWordAiReferee => _wordAiRefereeDebounceTimer?.isActive ?? false;
+
+  /// 是否有待触发的"停顿判过"（防抖计时中），供测试断言调度时机。
+  @visibleForTesting
+  bool get hasPendingWordPass => _wordPassDebounceTimer?.isActive ?? false;
 
   /// 当用户说出中文释义但本地未命中时，触发大模型裁判防抖调度（1500ms）
   void _scheduleWordAiRefereeCheck(List<String> inputs) {

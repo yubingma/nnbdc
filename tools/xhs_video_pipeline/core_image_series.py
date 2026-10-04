@@ -27,7 +27,7 @@ from PIL import Image, ImageDraw
 from xhs_common import (
     FONT_CN, FONT_CN_BOLD, FONT_CN_REG, FONT_EN, FONT_EN_NUM, FONT_IPA,
     FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MED, FPS, H, INK, INK_DIM, INK_FAINT, OUT_DIR,
-    SFX_DIR, W, ImageLayer, Layer, duration_of, encode_video, fetch_tts,
+    SFX_DIR, W, ImageLayer, Layer, TimedLayer, duration_of, encode_video, fetch_tts,
     PHOTO_ALBUM, fetch_word_audio, fit_font, font, hex2rgb, import_to_photos,
     load_line_art, make_background,
     synth_bgm, teaser_chip,
@@ -48,6 +48,11 @@ HOOK_CARD_Y, HOOK_CARD_GAP, HOOK_LINE_Y = 1010, 140, 1424
 ART_BOX = 300              # 辐射段里核心意象的边长
 NODE_MAX_W = 252           # 单个释义节点内文字的换行宽度
 ARROW_BEND = 46            # 贝塞尔箭头的弯曲幅度
+LEAD = 0.30                # 段落开头留白，也是每条释义"画面出现 = 开口念"的对齐点
+JOIN_GAP = 0.10            # 「关联逻辑」与「就是X」两段配音之间的停顿
+NODE_MEAN_Y = 52           # 节点内：释义基线到节点顶边的距离
+NODE_REL_Y = 98            # 节点内：第一条关联文字到顶边的距离
+NODE_REL_LH = 42           # 节点内：关联文字行距
 
 # 各节点相对核心意象的偏移。三节点的 V 形排布能让三条箭头都保有足够长度——
 # 若改用同心环，左右两条箭头会被核心意象和节点本身挤成零长度。
@@ -80,12 +85,17 @@ def plan(cfg, word_dur, work):
     for si, s in enumerate(cfg["segments"]):
         guard = 0.02 + word_dur + 0.20 if s.get("word_intro") else 0.30
         if s["type"] == "radiate":
-            s["_tts"] = [fetch_tts(it["say"], work, f"{si}_{k}", **vk)
-                         for k, it in enumerate(s["items"])]
-            durs = [duration_of(p) for p in s["_tts"]]
-            # 条目均匀揭示，间隔取「最长的一条讲解 + 间隔」，保证谁都不会被下一句压住
-            s["reveal"] = s.get("reveal") or max(durs) + GAP
-            dur = guard + s["reveal"] * (len(durs) - 1) + durs[-1] + TAIL
+            # 关联逻辑与「就是X」分成两段合成：这样"念到第几个字"的时刻是精确的，
+            # 逐字高亮才能和语音真正对上，而不是按字数比例估算。
+            s["_tts"], needs = [], []
+            for k, it in enumerate(s["items"]):
+                rel = fetch_tts(it["relation"] + "，", work, f"{si}_{k}_rel", **vk)
+                mean = fetch_tts(f"就是{it['meaning']}。", work, f"{si}_{k}_mean", **vk)
+                s["_tts"].append((rel, mean))
+                needs.append(duration_of(rel) + JOIN_GAP + duration_of(mean))
+            s["_rel_dur"] = [duration_of(p[0]) for p in s["_tts"]]
+            s["reveal"] = s.get("reveal") or max(needs) + GAP
+            dur = LEAD + s["reveal"] * (len(needs) - 1) + max(needs) + TAIL
         else:
             s["_tts"] = [fetch_tts(s["say"], work, f"{si}_{s['type']}", **vk)]
             dur = guard + duration_of(s["_tts"][0]) + TAIL
@@ -109,8 +119,10 @@ def build_audio(cfg, starts, total, work, word):
             clips.append({"path": sfx, "at": t0 + 0.04, "gain": 0.24})
 
         if s["type"] == "radiate":
-            for k, tts in enumerate(s["_tts"]):
-                clips.append({"path": tts, "at": t0 + (guard if k == 0 else s["reveal"] * k)})
+            for k, (rel, mean) in enumerate(s["_tts"]):
+                at = t0 + s["reveal"] * k + LEAD
+                clips.append({"path": rel, "at": at})
+                clips.append({"path": mean, "at": at + duration_of(rel) + JOIN_GAP})
         else:
             clips.append({"path": s["_tts"][0], "at": t0 + guard})
 
@@ -230,17 +242,46 @@ def draw_arrow(d, p0, ctrl, p1, progress, color, width=5):
               fill=color)
 
 
-def radiate_node(d, cx, cy, lines, size, alpha, accent, f_meaning, f_rel, meaning):
+def node_top(cx, cy, size):
+    return cx - size[0] / 2, cy - size[1] / 2
+
+
+def radiate_node_bg(d, cx, cy, size, alpha, accent):
     w, h = size
     x0, y0 = cx - w / 2, cy - h / 2
     d.rounded_rectangle([x0, y0, x0 + w, y0 + h], radius=26,
                         fill=(255, 255, 255, int(13 * alpha)),
                         outline=accent + (int(120 * alpha),), width=2)
-    d.text((cx, y0 + 52), meaning, font=f_meaning,
-           fill=INK + (int(250 * alpha),), anchor="mm")
-    for i, t in enumerate(lines):
-        d.text((cx, y0 + 98 + 42 * i), t, font=f_rel,
-               fill=INK_DIM + (int(240 * alpha),), anchor="mm")
+
+
+def radiate_meaning(d, cx, cy, meaning, size, f_meaning, alpha, accent, spoken):
+    """释义文字。念到「就是X」时整块点亮并垫一层高亮底。"""
+    x0, y0 = node_top(cx, cy, size)
+    if spoken:
+        mw = _text_w(f_meaning, meaning)
+        d.rounded_rectangle([cx - mw / 2 - 22, y0 + NODE_MEAN_Y - 32,
+                             cx + mw / 2 + 22, y0 + NODE_MEAN_Y + 32], radius=16,
+                            fill=accent + (int(52 * alpha),))
+    d.text((cx, y0 + NODE_MEAN_Y), meaning, font=f_meaning,
+           fill=(accent if spoken else INK) + (int(252 * alpha),), anchor="mm")
+
+
+def radiate_karaoke(d, cx, cy, lines, offsets, size, text_len, f_rel, alpha,
+                    t, t0, spoken_dur):
+    """关联逻辑文字逐字点亮：念到第几个字，第几个字就变亮。"""
+    x0, y0 = node_top(cx, cy, size)
+    done = 0.0
+    if spoken_dur > 0:
+        done = min(1.0, max(0.0, (t - t0) / spoken_dur)) * text_len
+    for li, line in enumerate(lines):
+        lw = _text_w(f_rel, line)
+        x = cx - lw / 2
+        for i, ch in enumerate(line):
+            cw = _text_w(f_rel, ch)
+            hot = (offsets[li] + i) < done
+            d.text((x, y0 + NODE_REL_Y + NODE_REL_LH * li), ch, font=f_rel,
+                   fill=(INK if hot else INK_FAINT) + (int(alpha),), anchor="lm")
+            x += cw
 
 
 def hook_card(d, cx, y, text, alpha, fnt):
@@ -316,15 +357,33 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
             for i, item in enumerate(items):
                 node = nodes[i]
                 lines = wrap_cn(item["relation"], f_rel, NODE_MAX_W)
+                offsets, acc_len = [], 0
+                for ln in lines:
+                    offsets.append(acc_len)
+                    acc_len += len(ln)
                 size = node_size(item["meaning"], lines, f_meaning, f_rel)
                 p0, ctrl, p1 = arrow_geometry(node, (size[0] / 2, size[1] / 2),
                                               (art_ring.width / 2, art_ring.height / 2))
-                at = s["reveal"] * i
+                at = s["reveal"] * i + LEAD
+                rel_dur = s["_rel_dur"][i]
+                mean_at = at + rel_dur + JOIN_GAP
                 L.append(Layer(lambda d, e, dy, a=p0, c=ctrl, b=p1: draw_arrow(
                     d, a, c, b, e, accent + (235,)), at, dur=0.45, rise=0))
-                L.append(Layer(lambda d, e, dy, it=item, nd=node, ln=lines, sz=size: radiate_node(
-                    d, nd[0], nd[1] + dy, ln, sz, e, accent, f_meaning, f_rel, it["meaning"]),
-                    at + 0.18, dur=0.42, rise=26))
+                L.append(Layer(lambda d, e, dy, nd=node, sz=size: radiate_node_bg(
+                    d, nd[0], nd[1] + dy, sz, e, accent), at, dur=0.42, rise=26))
+                # at / rel_dur / mean_at 必须用默认参数绑死：它们是循环变量，
+                # 晚绑定会让所有节点的逐字高亮都按最后一条的时间走（表现为完全不高亮）。
+                L.append(TimedLayer(lambda d, e, dy, t, it=item, nd=node, sz=size, mt=mean_at:
+                                    radiate_meaning(d, nd[0], nd[1] + dy, it["meaning"],
+                                                    sz, f_meaning, e, accent,
+                                                    t >= mt),
+                                    at, dur=0.42, rise=26))
+                L.append(TimedLayer(lambda d, e, dy, t, ln=lines, off=offsets, nd=node, sz=size,
+                                    txt=item["relation"], t0=at, rd=rel_dur:
+                                    radiate_karaoke(d, nd[0], nd[1] + dy, ln, off, sz,
+                                                    len(txt), f_rel, 245 * e,
+                                                    t, t0, rd),
+                                    at, dur=0.42, rise=26))
 
         elif kind == "outro":
             nxt, cta = s["next"], s["cta"]

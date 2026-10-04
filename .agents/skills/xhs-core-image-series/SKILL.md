@@ -61,7 +61,7 @@ python3 tools/xhs_video_pipeline/fetch_core_images.py --episode tools/xhs_video_
 |---|---|---|
 | `hook` | **同时充当封面**：抛出几个毫不相干的释义制造冲突 + 提问 | **单词 + 音标 + 核心意象图 + 三个释义卡，第 0 帧就全都在**，只有提问行是后出的节拍 |
 | `core` | **念出「核心意象」这四个字**并给出那一个意象 | 词核心图放大淡入，下方「核心意象」小标 + 意象大字 |
-| `radiate` | 逐条把释义接成完整句 | 图缩到中上，释义卡散布四周，**箭头从中心逐条生长指过去** |
+| `radiate` | 逐条把释义接成完整句 | 图缩到中上，释义卡散布四周，**箭头从中心逐条生长指过去**；关联文字**逐字高亮**，念到「就是X」时释义整块点亮 |
 | `outro` | 金句（可两行）+ 下集预告 + 关注引导 | 居中大字 |
 
 > ⚠️ **小红书封面默认取视频第一帧。** 所以片头不能是"元素陆续飞入"的空场——
@@ -88,7 +88,7 @@ python3 tools/xhs_video_pipeline/fetch_core_images.py --episode tools/xhs_video_
       "line": "这三个意思，有关系吗？", "say": "春天、弹簧、泉水。有什么关系？" },
     { "type": "core", "word_intro": true, "say": "核心意象：蓄势，猛然向外迸发。" },
     { "type": "radiate", "items": [
-        { "meaning": "弹簧", "relation": "受压蓄力后，回弹复位", "say": "受压蓄力后，回弹复位，就是弹簧。" } ] },
+        { "meaning": "弹簧", "relation": "受压蓄力后，回弹复位" } ] },
     { "type": "outro", "line": "一词多义\n记住一个意象就够了", "next": "下集 · charge",
       "cta": "一天一个词，关注追更", "say": "一词多义，记住一个意象就够了。" }
   ]
@@ -101,6 +101,8 @@ python3 tools/xhs_video_pipeline/fetch_core_images.py --episode tools/xhs_video_
 - `line` 支持 `\n` 手动断行（金句用），会按最长一行自动缩字号。
 - `word_intro: true` 表示该段开头先读一遍单词，中文讲解等它读完再进来。
 - 配音音色是**单集可配**的（`voice` / `voice_model` / `voice_instructions`），不写死。
+- `radiate` 的 `items` **不写 `say`**：配音由 `relation` 和 `meaning` 自动拼成两段
+  （`"{relation}，"` 与 `"就是{meaning}。"`），见 §7 第 10 条。
 
 ## 5. 生成
 

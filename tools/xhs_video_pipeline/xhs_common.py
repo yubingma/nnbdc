@@ -261,6 +261,29 @@ class Layer:
         base.alpha_composite(layer)
 
 
+class TimedLayer:
+    """与 Layer 相同（淡入 + 上浮），但把当前时间也交给绘制函数。
+
+    逐字高亮这类效果必须知道"现在念到第几个字了"，只靠入场进度 e 是不够的。
+    """
+
+    def __init__(self, draw_fn, start, dur=0.5, rise=34):
+        self.draw_fn = draw_fn
+        self.start = start
+        self.dur = dur
+        self.rise = rise
+
+    def render(self, base, t):
+        p = (t - self.start) / self.dur
+        if p <= 0:
+            return
+        p = min(1.0, p)
+        e = 1 - (1 - p) ** 3
+        layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
+        self.draw_fn(ImageDraw.Draw(layer), e, (1 - e) * self.rise, t)
+        base.alpha_composite(layer)
+
+
 class ImageLayer:
     """带入场动画的图片层：淡入 + 上浮 + 可选的从 scale_from 放大到 1。"""
 
