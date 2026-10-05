@@ -155,9 +155,12 @@ class BdcNotifier extends _$BdcNotifier {
   /// 去抖只负责"时机"，判题与受理仍走 [checkAsrResult]（同一处收尾逻辑），
   /// 通过 [silenceElapsed] 参数标记这次是该受理的停顿判定，从而不在入口里再次安排去抖。
   void _scheduleWordPassOnSilence(List<String> inputs, bool passCandidate) {
+    // 非候选帧（识别退化成别的文本、空帧、环境噪音）**不许取消已挂起的判过**：
+    // 命中的释义只增不减，后续帧否不掉它；一旦在这里取消且不再重排，用户明明说对了
+    // 却永远等不到判过 —— 底部「下一词」不出现，卡死在当前词（线上反馈）。
+    if (!passCandidate) return;
     _wordPassDebounceTimer?.cancel();
     _wordPassDebounceTimer = null;
-    if (!passCandidate) return;
     final String? wordIdAtSchedule = state.word?.id;
     _wordPassDebounceTimer = Timer(wordPassSilenceDelay, () {
       _wordPassDebounceTimer = null;

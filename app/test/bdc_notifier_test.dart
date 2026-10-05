@@ -4774,4 +4774,55 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 50));
   });
+
+  test('BdcNotifier - 说对释义后来了无关识别帧，停顿判过不得被取消（否则「下一词」永不出现）', () async {
+    // 线上反馈：明明说对了释义，底部「下一词」却一直不出现。
+    // 根因：停顿去抖在"非候选帧"上也执行了 cancel 且不再重排 ——
+    // 命中之后只要 iOS 又吐一帧不匹配的识别结果（环境噪音 / 识别退化），
+    // 已挂起的判过就被取消，用户再怎么等都不会判过。
+    final today = AppClock.today();
+    AppClock.setClock(FakeClock(today.add(const Duration(hours: 10))));
+    addTearDown(AppClock.reset);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+    expect(state.studyStep, StudyStep.en2Ch.json, reason: '前置条件：apple 在测评环节');
+
+    // 1) 说对释义：命中 → 挂起"停顿判过"
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+      'isFinal': false,
+    }));
+    expect(notifier.hasPendingWordPass, true, reason: '前置条件：达线后挂起停顿去抖');
+
+    // 2) 紧接着来一帧不匹配的识别（环境噪音 / 识别退化）
+    await notifier.onAsrResult(jsonEncode({
+      'best': '嗯',
+      'candidates': ['嗯'],
+      'isFinal': false,
+    }));
+
+    // 3) 等停顿到点：已命中的释义必须照常判过
+    await Future.delayed(BdcNotifier.wordPassSilenceDelay * 5);
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true,
+        reason: '已命中的释义不该被后续噪音帧取消判过（线上：说对了却没有「下一词」）');
+    expect(state.canLeaveCurrWord, true, reason: '判过后才谈得上出现「下一词」');
+
+    await Future.delayed(const Duration(milliseconds: 50));
+  });
 }

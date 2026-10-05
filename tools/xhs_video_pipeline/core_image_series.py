@@ -96,6 +96,12 @@ def plan(cfg, word_dur, work):
             s["_rel_dur"] = [duration_of(p[0]) for p in s["_tts"]]
             s["reveal"] = s.get("reveal") or max(needs) + GAP
             dur = LEAD + s["reveal"] * (len(needs) - 1) + max(needs) + TAIL
+        elif s["type"] == "outro":
+            # 金句与互动提问分成两段合成，提问的出现时刻才和语音对得上
+            s["_tts"] = [fetch_tts(s["say"], work, f"{si}_quote", **vk),
+                         fetch_tts(s["ask_say"], work, f"{si}_ask", **vk)]
+            s["_ask_at"] = guard + duration_of(s["_tts"][0]) + JOIN_GAP
+            dur = s["_ask_at"] + duration_of(s["_tts"][1]) + TAIL
         else:
             s["_tts"] = [fetch_tts(s["say"], work, f"{si}_{s['type']}", **vk)]
             dur = guard + duration_of(s["_tts"][0]) + TAIL
@@ -131,6 +137,9 @@ def build_audio(cfg, starts, total, work, word):
             if sfx.exists():
                 clips.append({"path": sfx, "at": t0 + 0.04, "gain": 0.24, "kind": "sfx"})
             clips.append({"path": s["_tts"][0], "at": t0 + guard, "kind": "voice"})
+            if s["type"] == "outro":
+                clips.append({"path": s["_tts"][1], "at": t0 + s["_ask_at"],
+                              "kind": "voice"})
 
         for c in clips:
             if c.get("kind") == "word":
@@ -391,19 +400,21 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
                                     at, dur=0.42, rise=26))
 
         elif kind == "outro":
-            nxt, cta = s["next"], s["cta"]
             rows = s["line"].split("\n")
+            ask, ask_cta = s["ask"], s["ask_cta"]
+            ask_at = s["_ask_at"]
             f_q = fit_font(max(rows, key=len), FONT_CN, FONT_CN_BOLD, 88, W - 170)
+            f_ask = fit_font(ask, FONT_CN, FONT_CN_BOLD, 58, W - 170)
             for i, txt in enumerate(rows):
-                y = 762 + (i - (len(rows) - 1) / 2) * 122
+                y = 706 + (i - (len(rows) - 1) / 2) * 122
                 L.append(Layer(lambda d, e, dy, t=txt, yy=y: d.text(
                     (W / 2, yy + dy), t, font=f_q,
                     fill=accent + (int(255 * e),), anchor="mm"), 0.10, dur=0.6, rise=36))
-            L.append(Layer(lambda d, e, dy, t=nxt: teaser_chip(
-                d, W / 2, 1010 + dy, t, f_small, e), 0.95, dur=0.55))
-            L.append(Layer(lambda d, e, dy, t=cta: d.text(
-                (W / 2, 1210 + dy), t, font=f_small,
-                fill=INK_DIM + (int(235 * e),), anchor="mm"), 1.35, dur=0.55))
+            L.append(Layer(lambda d, e, dy, t=ask: d.text(
+                (W / 2, 968 + dy), t, font=f_ask,
+                fill=INK + (int(250 * e),), anchor="mm"), ask_at - 0.15, dur=0.55, rise=30))
+            L.append(Layer(lambda d, e, dy, t=ask_cta: teaser_chip(
+                d, W / 2, 1156 + dy, t, f_small, e), ask_at + 0.45, dur=0.55))
         layers_by_seg.append(L)
 
     def draw_chrome(img, t):
