@@ -159,53 +159,159 @@ def dashscope_key():
 
 # ---------------------------------------------------------------- BGM 合成
 
-def synth_bgm(dest, seconds, bpm=96):
-    """合成一条低音量 lo-fi 底噪节奏：柔和铺底和弦 + 轻 kick + 反向 hat。"""
-    sr = 44100
-    n = int(sr * seconds)
+DEFAULT_MUSIC = dict(bpm=96, scale="major", motion="cycle", weight=0.5, brightness=0.5)
+
+# 几个现成的音乐档案，供单集脚本按核心意象挑用
+MUSIC_PRESETS = {
+    "burst":  dict(bpm=104, scale="major", motion="rise",  weight=0.30, brightness=0.85),  # 蓄势迸发
+    "load":   dict(bpm=82,  scale="minor", motion="fall",  weight=0.80, brightness=0.28),  # 装载压入
+    "spin":   dict(bpm=96,  scale="major", motion="cycle", weight=0.45, brightness=0.55),  # 旋转往复
+    "cut":    dict(bpm=100, scale="minor", motion="fall",  weight=0.60, brightness=0.40),  # 切断分离
+    "soar":   dict(bpm=110, scale="major", motion="rise",  weight=0.25, brightness=0.90),  # 上升腾起
+    "press":  dict(bpm=76,  scale="minor", motion="cycle", weight=0.85, brightness=0.25),  # 持续施压
+}
+
+_NOTE = {"C": 261.63, "D": 293.66, "E": 329.63, "F": 349.23,
+         "G": 392.00, "A": 440.00, "B": 493.88}
+
+# 16 小节的和弦进行 —— 这是治"重复感"的关键：循环长度必须长过整条片子。
+# 按 96 BPM 算，一小节 2.5 秒，16 小节 = 40 秒，30~37 秒的成片基本听不到重复。
+_PROGRESSIONS = {
+    "major": [("C", "maj"), ("A", "min"), ("F", "maj"), ("G", "maj"),
+              ("A", "min"), ("F", "maj"), ("C", "maj"), ("G", "maj"),
+              ("F", "maj"), ("G", "maj"), ("E", "min"), ("A", "min"),
+              ("D", "min"), ("G", "maj"), ("C", "maj"), ("C", "maj")],
+    "minor": [("A", "min"), ("F", "maj"), ("C", "maj"), ("G", "maj"),
+              ("F", "maj"), ("C", "maj"), ("G", "maj"), ("A", "min"),
+              ("D", "min"), ("F", "maj"), ("E", "maj"), ("A", "min"),
+              ("F", "maj"), ("G", "maj"), ("A", "min"), ("A", "min")],
+}
+
+# 织体分四层，每层 4 小节推进一次：垫底 → 加低音 → 加琶音与沙锤 → 加花
+_LAYERS_PER_STAGE = 4
+
+
+def resolve_music(spec):
+    """单集脚本里的 music 可以是预设名，也可以直接给参数字典。"""
+    if not spec:
+        return dict(DEFAULT_MUSIC)
+    if isinstance(spec, str):
+        return {**DEFAULT_MUSIC, **MUSIC_PRESETS.get(spec, {})}
+    return {**DEFAULT_MUSIC, **spec}
+
+
+def synth_bgm(dest, seconds, profile=None):
+    """按「核心意象」合成背景垫乐。
+
+    防重复的四条规矩（都是踩过"听着心烦"之后定的）：
+      1. 和弦**每小节换一次**，不是每拍换一次；
+      2. 和弦进行有 **16 小节**，循环长度长过整条成片；
+      3. 和弦垫是**持续音**（慢起慢落），不是拨一下就衰减的短音；
+      4. **织体分层推进**：垫底 → 低音 → 琶音沙锤 → 加花，越到后面越满。
+
+    与意象对应的抓手：音高走向（上行=迸发/下行=压入/往复=旋转）、
+    明暗（大调/小调）、速度、重量（低频与底鼓）、亮度（泛音与沙锤）。
+    """
+    m = resolve_music(profile)
+    sr, n = 44100, int(44100 * seconds)
     out = np.zeros(n)
+    beat = 60.0 / m["bpm"]
+    bar = beat * 4
+    prog = _PROGRESSIONS[m["scale"]]
+    rng = np.random.default_rng(11)
+    n_bars = int(seconds / bar) + 2
 
-    beat = 60.0 / bpm
-    # 4 小节循环：Am - F - C - G（根音 + 五度，柔和正弦）
-    chords = [(220.0, 330.0), (174.6, 261.6), (261.6, 392.0), (196.0, 293.7)]
-    for bar in range(int(seconds / (beat * 4)) + 1):
-        for k, (f1, f2) in enumerate(chords):
-            start = (bar * 4 + k) * beat
-            i0, i1 = int(start * sr), int(min(n, (start + beat * 1.6) * sr))
-            if i0 >= n:
+    for b in range(n_bars):
+        i0 = int(b * bar * sr)
+        if i0 >= n:
+            break
+        i1 = min(n, i0 + int(bar * sr))
+        tt = np.arange(i1 - i0) / sr
+        name, quality = prog[b % len(prog)]
+        base = _NOTE[name] / 2
+        ivs = (0, 4, 7) if quality == "maj" else (0, 3, 7)
+
+        stage = b // _LAYERS_PER_STAGE
+
+        # 拨奏式和弦：快起快落，每小节两记（第 1 拍与第 3 拍）。
+        # 用户明确要"敲击声"、不要"嗡嗡声"——而嗡鸣不来自音高高低，来自**持续不断的纯音**：
+        # 三条正弦一直挂着，哪怕音高有 110Hz 以上，听感仍是风琴式的嗡鸣。
+        # 改成拨奏后，整条垫乐归入打击乐家族，和底鼓、沙锤是同一个语汇。
+        voice = 0.26 * np.sin(2 * np.pi * base * tt)
+        if stage >= 1:
+            voice += 0.18 * np.sin(2 * np.pi * base * 2 ** (ivs[1] / 12) * tt)
+        if stage >= 2:
+            voice += 0.14 * np.sin(2 * np.pi * base * 2 ** (ivs[2] / 12) * tt)
+        if stage >= 3:
+            voice += m["brightness"] * 0.06 * np.sin(2 * np.pi * base * 4 * tt)
+        for hit, gain in ((0.0, 1.0), (beat * 2, 0.55)):      # 第 3 拍再来一记轻的
+            h0 = i0 + int(hit * sr)
+            if h0 >= n:
                 continue
-            tt = np.arange(i1 - i0) / sr
-            env = np.minimum(tt / 0.25, 1.0) * np.exp(-tt * 1.1)
-            voice = 0.30 * np.sin(2 * np.pi * f1 * tt) + 0.20 * np.sin(2 * np.pi * f2 * tt)
-            voice += 0.06 * np.sin(2 * np.pi * f1 * 2 * tt)
-            out[i0:i1] += voice * env
+            h1 = min(n, h0 + len(tt))
+            th = np.arange(h1 - h0) / sr
+            env = np.minimum(th / 0.010, 1.0) * np.exp(-th * 3.8)
+            out[h0:h1] += voice[:h1 - h0] * env * gain
 
-    # 轻 kick：每小节第 1、3 拍
-    rng = np.random.default_rng(7)
+        # 第 3 层起：八分音符琶音，走向由 motion 决定
+        if stage >= 2:
+            order = ivs if m["motion"] == "rise" else (
+                ivs[::-1] if m["motion"] == "fall" else ivs + ivs[::-1])
+            for j in range(8):
+                j0 = i0 + int(j * beat / 2 * sr)
+                if j0 >= n:
+                    break
+                j1 = min(n, j0 + int(0.5 * sr))
+                tj = np.arange(j1 - j0) / sr
+                note = base * 2 * 2 ** (order[j % len(order)] / 12)
+                out[j0:j1] += 0.12 * np.sin(2 * np.pi * note * tj) * np.exp(-tj * 7)
+
+    # 底鼓：第 2 层才进（第一层只有垫音，靠"空"给后面的进入让出对比）；
+    # 重量越大越沉、越响，轻的曲子隔拍踩，重的每拍都踩
+    kick_gain = 0.20 + 0.50 * m["weight"]
+    kick_from = int(_LAYERS_PER_STAGE * bar * sr)
     for b in range(int(seconds / beat) + 1):
-        if b % 2:
+        if int(b * beat * sr) < kick_from:
+            continue
+        if m["weight"] < 0.5 and b % 2:
             continue
         i0 = int(b * beat * sr)
         ln = int(0.22 * sr)
         if i0 + ln >= n:
             break
         tt = np.arange(ln) / sr
-        out[i0:i0 + ln] += 0.5 * np.sin(2 * np.pi * (95 - 55 * tt / 0.22) * tt) * np.exp(-tt * 22)
+        f0 = 105 - 45 * m["weight"]
+        out[i0:i0 + ln] += kick_gain * np.sin(2 * np.pi * (f0 - 55 * tt / 0.22) * tt) * np.exp(-tt * 20)
 
-    # 反向 hat：八分音符反拍
-    for b in range(int(seconds / (beat / 2)) + 1):
-        if b % 2 == 0:
-            continue
-        i0 = int(b * (beat / 2) * sr)
-        ln = int(0.05 * sr)
-        if i0 + ln >= n:
-            break
-        noise = rng.normal(0, 1, ln)
-        noise = np.diff(noise, prepend=0.0)  # 简易高通
-        tt = np.arange(ln) / sr
-        out[i0:i0 + ln] += 0.05 * noise * np.exp(-tt * 90)
+    # 沙锤：第 3 层起才进，亮度越低越轻
+    if seconds > 3 * _LAYERS_PER_STAGE * bar:
+        for b in range(int(seconds / (beat / 2)) + 1):
+            if b % 2 == 0:
+                continue
+            i0 = int(b * (beat / 2) * sr)
+            if i0 < int(2 * _LAYERS_PER_STAGE * bar * sr):     # 前两层不出现
+                continue
+            ln = int(0.05 * sr)
+            if i0 + ln >= n:
+                break
+            noise = np.diff(rng.normal(0, 1, ln), prepend=0.0)
+            tt = np.arange(ln) / sr
+            out[i0:i0 + ln] += (0.02 + 0.06 * m["brightness"]) * noise * np.exp(-tt * 90)
 
-    # 柔和低通 + 淡入淡出
+    # 第 4 层起：每 4 小节末尾加一记过门，打破方整感
+    if seconds > 3 * _LAYERS_PER_STAGE * bar:
+        for b in range(3, n_bars, 4):
+            i0 = int((b * bar + 3.5 * beat) * sr)
+            ln = int(0.10 * sr)
+            if i0 + ln >= n:
+                break
+            tt = np.arange(ln) / sr
+            out[i0:i0 + ln] += 0.28 * np.sin(2 * np.pi * 300 * tt) * np.exp(-tt * 45)
+
+    # 极慢的整体呼吸（周期 13 秒），避免整条一样响
+    breath = 1.0 + 0.10 * np.sin(2 * np.pi * np.arange(n) / sr / 13.0)
+    out *= breath
+
     out = np.convolve(out, np.ones(48) / 48, mode="same")
     fade = int(sr * 0.8)
     out[:fade] *= np.linspace(0, 1, fade)
@@ -213,12 +319,11 @@ def synth_bgm(dest, seconds, bpm=96):
     peak = np.max(np.abs(out)) or 1.0
     out = out / peak * 0.5
 
-    data = (out * 32767).astype("<i2")
     with wave.open(str(dest), "wb") as f:
         f.setnchannels(1)
         f.setsampwidth(2)
         f.setframerate(sr)
-        f.writeframes(data.tobytes())
+        f.writeframes((out * 32767).astype("<i2").tobytes())
     return dest
 
 

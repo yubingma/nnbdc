@@ -18,6 +18,7 @@
 """
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -29,7 +30,7 @@ from xhs_common import (
     FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MED, FPS, H, INK, INK_DIM, INK_FAINT, OUT_DIR,
     SFX_DIR, W, ImageLayer, Layer, TimedLayer, duration_of, encode_video, fetch_tts,
     PHOTO_ALBUM, fetch_word_audio, fit_font, font, hex2rgb, import_to_photos,
-    load_line_art, make_background,
+    load_line_art, make_background, resolve_music,
     synth_bgm, teaser_chip,
 )
 
@@ -510,7 +511,16 @@ def main():
         for c in sorted(audio, key=lambda c: c["at"]):
             print(f"      {c['at']:6.2f}s → {c['at'] + duration_of(c['path']):6.2f}s  {c['path'].name}")
 
-    bgm = None if args.no_bgm else synth_bgm(TMP_DIR / ep / "bgm.wav", total + 0.5)
+    # 默认不配乐：垫乐只留人声与音效，听感更干净。想要垫乐就在单集脚本里写 music 字段。
+    bgm = None
+    if cfg.get("music") and not args.no_bgm:
+        music = resolve_music(cfg["music"])
+        tag = hashlib.md5(json.dumps(music, sort_keys=True).encode()).hexdigest()[:8]
+        bgm = synth_bgm(TMP_DIR / ep / f"bgm_{tag}.wav", total + 0.5, profile=music)
+        if not args.quiet:
+            print(f"· 配乐：{cfg['music']} → {music}")
+    elif not args.quiet:
+        print("· 配乐：无（只保留人声与箭头音效）")
     out = Path(args.out) if args.out else OUT_DIR / f"{ep}_{cfg['word']}_core.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
     render(cfg, core_art, audio, out, bgm, starts, total, quiet=args.quiet)
