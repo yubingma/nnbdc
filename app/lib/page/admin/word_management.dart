@@ -453,7 +453,22 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                                     if (_currentWord!.meaningItems != null && _currentWord!.meaningItems!.isNotEmpty)
                                       ..._currentWord!.meaningItems!.map((m) => Padding(
                                             padding: const EdgeInsets.only(bottom: 8.0),
-                                            child: Text('${m.ciXing ?? ""} ${m.meaning ?? ""}', style: TextStyle(fontSize: 16, color: textColor)),
+                                            child: Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child: Text('${m.ciXing ?? ""} ${m.meaning ?? ""}', style: TextStyle(fontSize: 16, color: textColor)),
+                                                ),
+                                                // 查词结果是该单词在所有来源下的释义项（通用词典、各本词书），标出每条释义项的出处
+                                                if (m.dict?.name != null) ...[
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    Util.getShortName(m.dict!.name!),
+                                                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
                                           )),
                                   ],
                                 ),
@@ -817,7 +832,21 @@ class _MeaningRow {
   final TextEditingController ciXing;
   final TextEditingController meaning;
 
-  _MeaningRow({this.id, required this.ciXing, required this.meaning});
+  /// 已有释义项的归属词书（只读展示）
+  final DictVo? sourceDict;
+
+  /// 新增释义项要写入的目标词书（可点选，缺省通用词典）
+  DictVo? targetDict;
+
+  _MeaningRow({
+    this.id,
+    this.sourceDict,
+    this.targetDict,
+    required this.ciXing,
+    required this.meaning,
+  });
+
+  bool get isNew => id == null;
 
   void dispose() {
     ciXing.dispose();
@@ -840,17 +869,43 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
   late final List<_MeaningRow> _rows;
   bool _isSaving = false;
 
+  /// 该单词所在的官方词书（含通用词典），新增释义项时从这里选目标词书
+  List<DictVo> _dictOptions = [];
+  bool _isLoadingDicts = false;
+
   @override
   void initState() {
     super.initState();
     _rows = (widget.word.meaningItems ?? [])
         .map((m) => _MeaningRow(
               id: m.id,
+              sourceDict: m.dict,
               ciXing: TextEditingController(text: m.ciXing ?? ''),
               meaning: TextEditingController(text: m.meaning ?? ''),
             ))
         .toList();
+    _loadDictOptions();
   }
+
+  Future<void> _loadDictOptions() async {
+    if (widget.word.id == null) return;
+    _isLoadingDicts = true;
+    try {
+      final res = await Api.client.getWordDicts(widget.word.id!);
+      if (!mounted) return;
+      setState(() => _dictOptions = res.data ?? []);
+    } catch (e) {
+      Global.logger.e("加载单词所属词书失败: $e");
+    } finally {
+      if (mounted) setState(() => _isLoadingDicts = false);
+    }
+  }
+
+  /// 新增释义项缺省归属通用词典
+  DictVo get _defaultTargetDict => _dictOptions.firstWhere(
+        (d) => d.id == Global.commonDictId,
+        orElse: () => DictVo.c2(Global.commonDictId)..name = '通用词典',
+      );
 
   @override
   void dispose() {
@@ -862,8 +917,22 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
 
   void _addRow() {
     setState(() {
-      _rows.add(_MeaningRow(ciXing: TextEditingController(), meaning: TextEditingController()));
+      _rows.add(_MeaningRow(
+        targetDict: _defaultTargetDict,
+        ciXing: TextEditingController(),
+        meaning: TextEditingController(),
+      ));
     });
+  }
+
+  Future<void> _pickTargetDict(_MeaningRow row) async {
+    final picked = await showDialog<DictVo>(
+      context: context,
+      builder: (context) => _DictPickerDialog(dicts: _dictOptions, selected: row.targetDict),
+    );
+    if (picked != null && mounted) {
+      setState(() => row.targetDict = picked);
+    }
   }
 
   void _removeRow(int index) {
@@ -871,6 +940,52 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
       _rows[index].dispose();
       _rows.removeAt(index);
     });
+  }
+
+  /// 已有释义项只读展示归属词书；新增释义项可点选目标词书
+  Widget _buildDictCell(_MeaningRow row) {
+    final String? dictName = row.isNew ? row.targetDict?.name : row.sourceDict?.name;
+    final String label = row.isNew ? '目标词书' : '归属';
+    final String name = dictName == null ? '未标注' : Util.getShortName(dictName);
+
+    if (!row.isNew) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 4, top: 4),
+        child: Text(
+          '$label · $name',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 11.5, color: Colors.grey[500]),
+        ),
+      );
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(4),
+        onTap: _isLoadingDicts ? null : () => _pickTargetDict(row),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 4, right: 6, top: 4, bottom: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  '$label · $name',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11.5, color: AppTheme.primaryColor),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(Icons.arrow_forward_ios_rounded, size: 10,
+                  color: AppTheme.primaryColor.withValues(alpha: 0.8)),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -906,11 +1021,17 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: TextField(
-                              controller: row.meaning,
-                              style: TextStyle(color: textColor, fontSize: 14),
-                              maxLines: 2,
-                              decoration: const InputDecoration(labelText: '释义'),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TextField(
+                                  controller: row.meaning,
+                                  style: TextStyle(color: textColor, fontSize: 14),
+                                  maxLines: 2,
+                                  decoration: const InputDecoration(labelText: '释义'),
+                                ),
+                                _buildDictCell(row),
+                              ],
                             ),
                           ),
                           IconButton(
@@ -949,7 +1070,7 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
     // 过滤掉词性和释义都为空的行
     final meanings = _rows
         .where((r) => r.ciXing.text.trim().isNotEmpty || r.meaning.text.trim().isNotEmpty)
-        .map((r) => MeaningItemVo(r.id, r.ciXing.text.trim(), r.meaning.text.trim(), null, null, null))
+        .map((r) => MeaningItemVo(r.id, r.ciXing.text.trim(), r.meaning.text.trim(), r.isNew ? r.targetDict : null, null, null))
         .toList();
     if (meanings.isEmpty) {
       ToastUtil.error('至少保留一条释义');
@@ -973,5 +1094,99 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+}
+
+// 目标词书选择弹层。一个单词所在的官方词书可达上百本，用关键词过滤。
+class _DictPickerDialog extends StatefulWidget {
+  final List<DictVo> dicts;
+  final DictVo? selected;
+
+  const _DictPickerDialog({required this.dicts, this.selected});
+
+  @override
+  State<_DictPickerDialog> createState() => _DictPickerDialogState();
+}
+
+class _DictPickerDialogState extends State<_DictPickerDialog> {
+  final TextEditingController _filterController = TextEditingController();
+  List<DictVo> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.dicts;
+    _filterController.addListener(_applyFilter);
+  }
+
+  @override
+  void dispose() {
+    _filterController.dispose();
+    super.dispose();
+  }
+
+  void _applyFilter() {
+    final query = _filterController.text.trim().toLowerCase();
+    setState(() {
+      _filtered = query.isEmpty
+          ? widget.dicts
+          : widget.dicts.where((d) => (d.name ?? '').toLowerCase().contains(query)).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
+    return AlertDialog(
+      title: const Text('选择目标词书'),
+      content: SizedBox(
+        width: 360,
+        height: 420,
+        child: Column(
+          children: [
+            TextField(
+              controller: _filterController,
+              style: TextStyle(color: textColor, fontSize: 14),
+              decoration: const InputDecoration(
+                hintText: '搜索词书名称',
+                prefixIcon: Icon(Icons.search, size: 18),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _filtered.isEmpty
+                  ? const Center(child: Text('没有匹配的词书', style: TextStyle(fontSize: 13)))
+                  : ListView.builder(
+                      itemCount: _filtered.length,
+                      itemBuilder: (context, index) {
+                        final dict = _filtered[index];
+                        final isSelected = widget.selected?.id == dict.id;
+                        return ListTile(
+                          dense: true,
+                          title: Text(
+                            Util.getShortName(dict.name ?? dict.id),
+                            style: TextStyle(fontSize: 14, color: textColor),
+                          ),
+                          trailing: isSelected
+                              ? Icon(Icons.check, size: 16, color: AppTheme.primaryColor)
+                              : null,
+                          onTap: () => Navigator.pop(context, dict),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+      ],
+    );
   }
 }

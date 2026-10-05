@@ -483,6 +483,14 @@ public class AdminController {
         return Result.success(wordVo);
     }
 
+    /**
+     * 该单词所在的官方词书（含通用词典），供管理端新增释义项时选择归属词书。
+     */
+    @GetMapping("/admin/getWordDicts.do")
+    public Result<List<DictVo>> getWordDicts(@RequestParam("wordId") String wordId) {
+        return Result.success(wordBo.getDictsContainingWord(wordId));
+    }
+
     // ============================================
     // 管理员例句管理API
     // ============================================

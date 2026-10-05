@@ -650,6 +650,10 @@ abstract class RestClient {
   @GET("/admin/getWord.do")
   Future<Result<WordVo>> getAdminWord(@Query("spell") String spell);
 
+  /// 该单词所在的官方词书（含通用词典），供管理端新增释义项时选择归属词书
+  @GET("/admin/getWordDicts.do")
+  Future<Result<List<DictVo>>> getWordDicts(@Query("wordId") String wordId);
+
   // 管理员例句管理API
   @GET("/admin/getWordSentences.do")
   Future<Result<List<SentenceVo>>> getWordSentences(@Query("wordId") String wordId);

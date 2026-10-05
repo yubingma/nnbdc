@@ -3,9 +3,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.PostConstruct;
@@ -18,6 +21,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import beidanci.api.model.DictVo;
 import beidanci.api.model.MeaningItemDto;
 import beidanci.api.model.MeaningItemVo;
 import beidanci.api.model.SimilarWordDto;
@@ -131,6 +135,7 @@ public class WordBo extends BaseBo<Word> {
         vo.setShortDescCn(word.getShortDescCn());
 
         List<MeaningItemDto> dtos = meaningItemBo.findMeaningsByWord(word.getId());
+        Map<String, DictVo> dictVoById = findDictVos(dtos);
         List<MeaningItemVo> itemVos = new ArrayList<>();
         for (MeaningItemDto dto : dtos) {
             MeaningItemVo itemVo = new MeaningItemVo();
@@ -140,10 +145,56 @@ public class WordBo extends BaseBo<Word> {
             itemVo.setPopularity(dto.getPopularity());
             itemVo.setPopularityPercent(dto.getPopularityPercent());
             itemVo.setOwnerId(dto.getOwnerId());
+            itemVo.setDict(dictVoById.get(dto.getDictId()));
             itemVos.add(itemVo);
         }
         vo.setMeaningItems(itemVos);
         return vo;
+    }
+
+    /**
+     * 管理端查词返回的是一个单词在所有来源下的释义项（通用词典、各本词书、用户生词本），
+     * 这里一次性查出这些释义项所属词书（或通用词典）的名称，供管理端标出每条释义项的出处。
+     */
+    private Map<String, DictVo> findDictVos(List<MeaningItemDto> meanings) {
+        Set<String> dictIds = new HashSet<>();
+        for (MeaningItemDto meaning : meanings) {
+            if (meaning.getDictId() != null) {
+                dictIds.add(meaning.getDictId());
+            }
+        }
+
+        Map<String, DictVo> dictVoById = new HashMap<>();
+        if (dictIds.isEmpty()) {
+            return dictVoById;
+        }
+
+        String sql = "SELECT id, name FROM dict WHERE id IN (:dictIds)";
+        namedParameterJdbcTemplate.query(sql, new MapSqlParameterSource("dictIds", dictIds), rs -> {
+            DictVo dictVo = new DictVo();
+            dictVo.setId(rs.getString("id"));
+            dictVo.setName(rs.getString("name"));
+            dictVoById.put(dictVo.getId(), dictVo);
+        });
+        return dictVoById;
+    }
+
+    /**
+     * 该单词所在的官方词书（含通用词典），供管理端新增释义项时选择归属词书。
+     * 用户自建词书（生词本、已掌握等）不在此列：释义项归属只有落在真正收录了该单词的官方词书上才有意义。
+     */
+    public List<DictVo> getDictsContainingWord(String wordId) {
+        String sql = "SELECT d.id, d.name FROM dict_word dw JOIN dict d ON d.id = dw.dict_id "
+                + "WHERE dw.word_id = :wordId AND d.owner_id = :sysUserId ORDER BY d.name ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("wordId", wordId);
+        params.addValue("sysUserId", Constants.SYS_USER_SYS_ID);
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            DictVo dictVo = new DictVo();
+            dictVo.setId(rs.getString("id"));
+            dictVo.setName(rs.getString("name"));
+            return dictVo;
+        });
     }
 
     private MeaningItemVo getMeaningItemVoFromList(String meaningItemId, List<MeaningItemVo> meaningItems) {
@@ -209,7 +260,9 @@ public class WordBo extends BaseBo<Word> {
                     sysDbSyncBo.logOperation("UPDATE", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
                 }
                 for (int i = 1; i < meanings.size(); i++) {
-                    newItems.add(addMeaningItem(word, ciXing, meanings.get(i), itemVo.getOwnerId()));
+                    // 分号拆出来的新释义项，沿用原释义项的归属词书
+                    String dictId = item.getDict() != null ? item.getDict().getId() : Constants.COMMON_DICT_ID;
+                    newItems.add(addMeaningItem(word, ciXing, meanings.get(i), itemVo.getOwnerId(), dictId));
                 }
             }
         }
@@ -220,8 +273,9 @@ public class WordBo extends BaseBo<Word> {
                 continue;
             }
             String ciXing = Util.sanitizeAiString(itemVo.getCiXing());
+            String dictId = itemVo.getDict() != null ? itemVo.getDict().getId() : Constants.COMMON_DICT_ID;
             for (String meaning : Util.splitMeanings(itemVo.getMeaning())) {
-                newItems.add(addMeaningItem(word, ciXing, meaning, itemVo.getOwnerId()));
+                newItems.add(addMeaningItem(word, ciXing, meaning, itemVo.getOwnerId(), dictId));
             }
         }
 
@@ -278,17 +332,17 @@ public class WordBo extends BaseBo<Word> {
     }
 
     /**
-     * 新建一条释义项并记录同步日志。释义归属通用词典，保证全员可见。
+     * 新建一条释义项并记录同步日志。释义项归属调用方指定的词书，缺省为通用词典（全员可见）。
      */
-    private MeaningItem addMeaningItem(Word word, String ciXing, String meaning, String ownerId) {
+    private MeaningItem addMeaningItem(Word word, String ciXing, String meaning, String ownerId, String dictId) {
         MeaningItem item = new MeaningItem();
         item.setCiXing(ciXing);
         item.setMeaning(meaning);
         item.setWord(word);
 
-        Dict commonDict = new Dict();
-        commonDict.setId(Constants.COMMON_DICT_ID);
-        item.setDict(commonDict);
+        Dict dict = new Dict();
+        dict.setId(dictId != null ? dictId : Constants.COMMON_DICT_ID);
+        item.setDict(dict);
 
         // 设置所有者：优先使用 Vo 传入的，否则默认为系统管理员
         User owner = new User();
