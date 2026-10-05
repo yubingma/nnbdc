@@ -245,7 +245,11 @@ class PhonemeUtil {
 
   static double _phonemeMatchCost(String p1, String p2) {
     if (p1 == p2) return 0.0;
-    const g = [{"V", "L", "B", "F", "W"}, {"L", "R", "ER", "D"}, {"B", "P"}, {"D", "T"}, {"G", "K"}, {"S", "Z"}, {"T", "CH", "SH"}, {"D", "JH"}, {"CH", "JH"}, {"JH", "R"}, {"IY", "IH", "Y"}, {"EY", "EH", "AE", "@"}, {"AA", "AH", "AO"}, {"UH", "UW", "W"}, {"OW", "OY", "AO"}, {"M", "N", "NG"}, {"Y", "@"}, {"W", "@"}, {"R", "@"}, {"L", "@"}, {"ER", "@"}, {"AH", "@"}, {"TH", "S", "T", "F"}, {"DH", "Z", "D", "V"}, {"F", "HH"}, {"OW", "UW"}];
+    // 组内音素视作近似同音（代价 0.2）。{L,R,ER} 里绝不能混入 D：L/R/ER 是流音与
+    // 儿化音，D 是爆破塞音，二者并不混淆。一旦 D 也算 0.2，"worried" vs "fearful"
+    // 这种听感差别很大的词就能靠"删掉一个辅音 + 把 L 当成 D"拼出一条极短的对齐路径，
+    // 把弱化相似度抬得虚高，合成分越过判定线（实测 61 分；收紧后 38 分）。
+    const g = [{"V", "L", "B", "F", "W"}, {"L", "R", "ER"}, {"B", "P"}, {"D", "T"}, {"G", "K"}, {"S", "Z"}, {"T", "CH", "SH"}, {"D", "JH"}, {"CH", "JH"}, {"JH", "R"}, {"IY", "IH", "Y"}, {"EY", "EH", "AE", "@"}, {"AA", "AH", "AO"}, {"UH", "UW", "W"}, {"OW", "OY", "AO"}, {"M", "N", "NG"}, {"Y", "@"}, {"W", "@"}, {"R", "@"}, {"L", "@"}, {"ER", "@"}, {"AH", "@"}, {"TH", "S", "T", "F"}, {"DH", "Z", "D", "V"}, {"F", "HH"}, {"OW", "UW"}];
     for (final gi in g) {
       if (gi.contains(p1) && gi.contains(p2)) {
         return 0.2;

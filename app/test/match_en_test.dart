@@ -272,14 +272,17 @@ JUDGE JH AH1 JH
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
 
-    test('what madelein vs watermelon - should match', () async {
+    // "what madelein"（ASR 把一个长词切成两半）与 "watermelon" 的音素对应偏弱：
+    // 原先靠混淆表里"D 与流音 L 算近似同音"这条虚假对应，分数被抬到 70 分；
+    // 收紧 {L,R,ER,D} → {L,R,ER} 后回落到 58 分，低于匹配阈值。
+    test('what madelein vs watermelon - 音素相似度低于阈值', () async {
       const String target = "watermelon";
       const String asrResult = "what madelein";
 
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('What madelein vs Watermelon score: $score');
 
-      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+      expect(score, lessThan(Constants.phonemeMatchThreshold));
     });
     
     test('didn\'t cough vs cough - should match', () async {
