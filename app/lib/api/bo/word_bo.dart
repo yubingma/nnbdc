@@ -21,6 +21,7 @@ import 'package:nnbdc/util/utils.dart';
 import '../../services/throttled_sync_service.dart';
 import 'package:nnbdc/util/local_embedding_cache.dart';
 import 'package:nnbdc/util/confusable_sort.dart';
+import 'package:nnbdc/util/spell_normalize.dart';
 
 
 const _popCountTable = [
@@ -1071,7 +1072,8 @@ class WordBo {
       result = await _searchLocalOnly(basePlusE, db, dictId);
       if (result != null) return result;
     }
-    return null;
+    // 字面拼写全部落空后，再忽略分隔符找一次：highpowered / high powered → high-powered
+    return _tryBuildLocalResultByNormalizedSpell(purifiedSpell, db, dictId);
   }
 
   Future<SearchWordResult?> _searchLocalOnly(String spell, MyDatabase db, [String? dictId]) async {
@@ -1103,6 +1105,19 @@ class WordBo {
 
   Future<SearchWordResult?> _tryBuildLocalResultBySpell(String spell, MyDatabase db, [String? dictId]) async {
     final wordQuery = db.select(db.words)..where((w) => w.spell.equals(spell));
+    return _buildLocalResultByQuery(wordQuery, db, dictId);
+  }
+
+  /// 忽略分隔符的拼写匹配：highpowered / high powered → high-powered
+  Future<SearchWordResult?> _tryBuildLocalResultByNormalizedSpell(String spell, MyDatabase db, [String? dictId]) async {
+    final wordQuery = db.select(db.words)
+      ..where((w) => SpellNormalize.equalityCondition(w.spell, spell))
+      ..orderBy([(w) => OrderingTerm(expression: w.spell)])
+      ..limit(1);
+    return _buildLocalResultByQuery(wordQuery, db, dictId);
+  }
+
+  Future<SearchWordResult?> _buildLocalResultByQuery(Selectable<Word> wordQuery, MyDatabase db, [String? dictId]) async {
     final localWord = await wordQuery.getSingleOrNull();
 
     if (localWord != null) {

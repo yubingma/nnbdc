@@ -1,6 +1,7 @@
 import 'dart:async' show Future;
 import 'dart:async';
 
+import 'package:nnbdc/util/spell_normalize.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
@@ -76,9 +77,10 @@ class LocalWordCache {
         }
       }
 
-      // 2. 拼写匹配搜索（以输入内容开头） - 优先级次之
+      // 2. 拼写前缀匹配（忽略分隔符） - 优先级次之
+      // 归一化后同前缀即命中，于是 highpowered / high powered 都能带出 high-powered
       final startWithQuery = db.select(db.words)
-        ..where((w) => w.spell.like('$searchContent%'))
+        ..where((w) => SpellNormalize.prefixCondition(w.spell, searchContent))
         ..orderBy([(w) => OrderingTerm(expression: w.spell)])
         ..limit(25);
 
