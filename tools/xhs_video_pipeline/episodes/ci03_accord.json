@@ -1,0 +1,58 @@
+{
+  "episode": "CI03",
+  "series": "词核心图",
+  "position": "03",
+  "slogan": "一个词 · 一个意象",
+  "word": "accord",
+  "phonetic": "əˈkɔrd",
+  "core_art": "core_accord.jpeg",
+  "core_text": "两心同频对齐",
+  "core_sub": "accord 只有这一个意象",
+  "accent": "#A78BFA",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "一致",
+        "协议",
+        "给予"
+      ],
+      "line": "这三个意思，有关系吗？",
+      "say": "一致、协议、给予。有什么关系？"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：两心同频，对齐。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "一致",
+          "relation": "同频同拍，步调相合"
+        },
+        {
+          "meaning": "协议",
+          "relation": "心合之后，订下约定"
+        },
+        {
+          "meaning": "给予",
+          "relation": "同心同意，故授予对方"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "say": "一词多义，记住一个意象就够了。",
+      "ask": "哪个一词多义把你折磨过？",
+      "ask_say": "哪个一词多义，把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "cta_say": "告诉我，下集就讲它。"
+    }
+  ]
+}

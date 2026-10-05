@@ -125,6 +125,19 @@ ffmpeg -y -ss 19 -i design/ui/video/CI01_spring_core.mp4 -frames:v 1 -vf scale=4
 
 ### 5.1 交付到相册（便于手机端发布）
 
+> **只导「刚做出来的那一集」。已发布过的旧集一律不要重导。**
+>
+> 用户的原话：「以后只需要导入最新的一个视频，以前的就不用管，因为我都已经在小红书发布了。
+> 重新导没有意义。」
+>
+> 原因很实在：**Photos 的脚本删除在本机不通**（见下），而同一个文件名反复重录必然产生同名副本，
+> 清不掉、只能手动删。所以**修订一条已经发布过的集数时，只出片到 `design/ui/video/`，
+> 绝对不要碰相册**——导进去只会给用户添清理负担。
+>
+> 操作上：新集首发出片后（且用户要求导入时）跑一次 `to_photos.py`；此后这条集数的任何改版
+> 都只落盘、不导入。
+
+
 ```bash
 python3 tools/xhs_video_pipeline/to_photos.py            # 导入最新一条成片
 python3 tools/xhs_video_pipeline/to_photos.py a.mp4 b.mp4

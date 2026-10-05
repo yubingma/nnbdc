@@ -3532,6 +3532,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               ),
             ),
 
+          // 挖空当前单词的英文例句：语境完整，又不泄露拼写
+          _buildClozeSentenceRow(state),
+
           // 图片 (仅对管理员开放)
           if (StudyConfig.fromCurrentUser().enableWordImage &&
               (Global.getLoggedInUser()?.isAdmin == true) &&
@@ -3711,6 +3714,43 @@ extension BdcPageStateUIComponents on BdcPageState {
           },
         ),
       ],
+    );
+  }
+
+  /// 汉译英题目区的挖空例句：取第一条含当前单词的英文例句，单词位置用下划线代替。
+  ///
+  /// 例句里没有可挖的当前单词（短语、不规则变形）时整行不显示 —— 否则等于把答案
+  /// 拼写直接印在题面上。
+  Widget _buildClozeSentenceRow(BdcState state) {
+    final word = state.currentGetWordResult?.learningWord?.word;
+    if (word == null) return const SizedBox.shrink();
+
+    String? cloze;
+    for (final SentenceVo sentence in word.sentences) {
+      final english = sentence.english;
+      if (english == null || english.trim().isEmpty) continue;
+      cloze = Util.maskWordInSentence(english, word.spell);
+      if (cloze != null) break;
+    }
+    if (cloze == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Text(
+          cloze,
+          key: const Key('ch2en_cloze_sentence'),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w400,
+            height: 1.5,
+            letterSpacing: 0.1,
+            color: context.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 

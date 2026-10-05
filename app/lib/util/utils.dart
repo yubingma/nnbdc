@@ -756,6 +756,26 @@ class Util {
     );
   }
 
+  /// 把英文例句中的目标单词（含词形变化）替换为等长下划线，做成"挖空"提示句。
+  ///
+  /// 例句里找不到该词时返回 null（短语、不规则变形都落在这里）—— 宁可不给这条提示，
+  /// 也绝不把含答案拼写的完整例句端到用户面前。
+  static String? maskWordInSentence(String sentence, String word) {
+    final forms = getAllPossibleFormsOfWord(word.toLowerCase());
+    final plain = sentence.replaceAll('<b>', '').replaceAll('</b>', '');
+    var hit = false;
+    final masked = plain.replaceAllMapped(
+      RegExp(r"[A-Za-z][A-Za-z'\-]*"),
+      (match) {
+        final token = match.group(0)!;
+        if (!forms.contains(purifySpell(token.toLowerCase()))) return token;
+        hit = true;
+        return ''.padRight(token.length, '_');
+      },
+    );
+    return hit ? masked : null;
+  }
+
   /// 显示例句中点击单词后的底部磨砂毛玻璃查词弹窗
   static Future<void> _showWordSearchBottomSheet(
     BuildContext context,
