@@ -388,9 +388,9 @@ void main() {
   });
 
   testWidgets('回看历史照常显示流程坐标行：按那一次呈现的值，而不是这个词现在的排队位置', (tester) async {
-    // 线上反馈：某个词刚点过「不认识」，切到下一个词后再回看它，它被标成「本环节重测」。
+    // 线上反馈：某个词刚点过「不认识」，切到下一个词后再回看它，它被标成「本环节重练」。
     // 根因是坐标按"这个词现在排在哪"现算。修好后回看用的是**那一次呈现**自己的界面状态：
-    // 那次是重测就显示重测，那次不是就不显示 —— 按快照给什么就显示什么。
+    // 那次是重练就显示重练，那次不是就不显示 —— 按快照给什么就显示什么。
     final (testWord, mockResult) = _createTestData(stepIndex: 1);
     final notifier = MockBdcNotifierForPanel(
       _answeredGoodState(testWord, mockResult, FSRS().init(FsrsRating.good))
@@ -406,8 +406,8 @@ void main() {
     );
     await pumpPage(tester, notifier);
 
-    expect(find.textContaining('本环节重测'), findsOneWidget,
-        reason: '那一次呈现时它确实是重测，回看照实显示（坐标由历史条目自带，不再现算）');
+    expect(find.textContaining('本环节重练'), findsOneWidget,
+        reason: '那一次呈现时它确实是重练，回看照实显示（坐标由历史条目自带，不再现算）');
     expect(find.textContaining('新词答对'), findsOneWidget,
         reason: '本组本环节的坐标同样按那一次呈现给出');
   });
@@ -427,8 +427,8 @@ void main() {
     );
     await pumpPage(tester, notifier);
 
-    expect(find.textContaining('本环节重测'), findsOneWidget,
-        reason: '正常学习时这个词确实在重测，必须标出来');
+    expect(find.textContaining('本环节重练'), findsOneWidget,
+        reason: '正常学习时这个词确实在重练，必须标出来');
     expect(find.textContaining('新词答对'), findsOneWidget);
   });
 }

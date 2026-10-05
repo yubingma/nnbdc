@@ -198,7 +198,7 @@ void main() {
     print('第 1 个词 ${first.wordId}：${first.trackName} ${first.position}/${first.total}');
     expect(first.position, 1);
     expect(first.total, wordTotal);
-    expect(first.isRetry, isFalse, reason: '第一个词是本环节首次作答，不是重测');
+    expect(first.isRetry, isFalse, reason: '第一个词是本环节首次作答，不是重练');
 
     // 点「不认识」：评分 again，不推进该词环节索引
     await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
@@ -208,7 +208,7 @@ void main() {
     expect(second.wordId, isNot(first.wordId), reason: '答错的词排到本环节队尾');
     expect(second.position, 2,
         reason: '分子按"本环节已出过题"计：见到第二个词就应前进到 2');
-    expect(second.isRetry, isFalse, reason: '没答过的词不能被标成重测');
+    expect(second.isRetry, isFalse, reason: '没答过的词不能被标成重练');
   });
 
   test('整组测评逐个点不认识：序号 1..10 逐个前进，分母恒为 10', () async {
@@ -251,6 +251,6 @@ void main() {
     expect(retry.position, wordTotal,
         reason: '错词前面已出过题，重练时仍占它当时的那一格（10/10），既不加倍也不超过分母');
     expect(retry.isRetry, isTrue,
-        reason: '本环节答错后回到队尾再答一次的，必须被标成本环节重测');
+        reason: '本环节答错后回到队尾再答一次的，必须被标成本环节重练');
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/study_track.dart';
 
 void main() {
@@ -271,7 +272,7 @@ void main() {
   });
 
   group('同环节重新出题：能否继承上一轮缓存的答题状态', () {
-    test('中断后接着答（同环节、非重测）→ 可以继承，用户只需补上剩下的', () {
+    test('中断后接着答（同环节、非重练）→ 可以继承，用户只需补上剩下的', () {
       expect(
         StudyTrack.canInheritCachedStepState(
             cachedStepIndex: 1, resultStepIndex: 1, isGroupStepRetry: false),
@@ -284,7 +285,7 @@ void main() {
       );
     });
 
-    test('本环节重测 → 一律不继承（那份缓存可能来自回看时的试答，带上就是把答案送出去）', () {
+    test('本环节重练 → 一律不继承（那份缓存可能来自回看时的试答，带上就是把答案送出去）', () {
       expect(
         StudyTrack.canInheritCachedStepState(
             cachedStepIndex: 1, resultStepIndex: 1, isGroupStepRetry: true),
@@ -308,6 +309,43 @@ void main() {
             cachedStepIndex: null, resultStepIndex: 0, isGroupStepRetry: false),
         false,
       );
+    });
+  });
+
+  group('同一天里答「忘记」的排期：次日必见', () {
+    test('测评「轻松」16 天，当天答错排 1 天（而不是按同日公式排到 8 天后）', () {
+      final fsrs = FSRS();
+      final easyItem = fsrs.init(FsrsRating.easy);
+      expect(easyItem.scheduledDays, 16);
+
+      final afterWrong = StudyTrack.sameDayStep(easyItem, FsrsRating.again);
+      expect(afterWrong.scheduledDays, 1,
+          reason: '今天没过就明天再来，不能排到 8 天后');
+      expect(afterWrong.stability, lessThan(easyItem.stability),
+          reason: '记忆参数照旧下调：该扣的分照扣，只是排期固定成明天');
+    });
+
+    test('测评「良好」当天答错同样排 1 天', () {
+      final fsrs = FSRS();
+      final afterWrong =
+          StudyTrack.sameDayStep(fsrs.init(FsrsRating.good), FsrsRating.again);
+      expect(afterWrong.scheduledDays, 1);
+    });
+
+    test('「模糊」照旧按同日公式下调（它算通过，不强制次日）', () {
+      final fsrs = FSRS();
+      final afterHard =
+          StudyTrack.sameDayStep(fsrs.init(FsrsRating.easy), FsrsRating.hard);
+      expect(afterHard.scheduledDays, greaterThan(1));
+    });
+
+    test('答对（良好/轻松）仍然不改动记忆参数与排期', () {
+      final fsrs = FSRS();
+      final easyItem = fsrs.init(FsrsRating.easy);
+      final afterGood = StudyTrack.sameDayStep(easyItem, FsrsRating.good);
+      expect(afterGood.scheduledDays, 16);
+      expect(afterGood.stability, easyItem.stability);
+      expect(afterGood.reps, easyItem.reps + 1);
     });
   });
 }

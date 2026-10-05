@@ -1702,13 +1702,16 @@ void main() {
       lapses: 0,
       state: FsrsState.learning,
     );
+    // 当天答「忘记」＝ 今天没过：按新口径排 1 天（次日必见），
+    // 不再是同日公式轻微下调算出的 8 天（见 StudyTrack.sameDayStep）
     final expectedAgainDays =
-        FSRS().next(prevItem, FsrsRating.again, 0).scheduledDays;
+        StudyTrack.sameDayStep(prevItem, FsrsRating.again).scheduledDays;
+    expect(expectedAgainDays, 1);
     notifier.updateFsrsRating(FsrsRating.again);
     state = container.read(bdcNotifierProvider);
     expect(state.lastFsrsRating, FsrsRating.again);
     expect(state.fsrsItem!.scheduledDays, expectedAgainDays,
-        reason: '改成忘记后按本次作答重算（next(测评状态, 忘记, 0)）');
+        reason: '改成忘记后按本次作答重算：当天没过就明天再见（1 天）');
 
     // 再改回模糊：必须回到 13 天（线上就是这一步没回去）
     notifier.updateFsrsRating(FsrsRating.hard);
@@ -2816,7 +2819,7 @@ void main() {
     expect(state.groupStepTotal, 0);
   });
 
-  test('BdcNotifier - 指示行随本次呈现一次到位（不残留上一环节，重测标记不等异步补写）', () async {
+  test('BdcNotifier - 指示行随本次呈现一次到位（不残留上一环节，重练标记不等异步补写）', () async {
     // 答对组配汉译英：测评答对后，同一个词会在汉译英环节再出现
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
@@ -2858,7 +2861,7 @@ void main() {
         reason: '指示行必须与本次呈现的环节一致，不能还挂着上一环节的轨道名');
     expect(state.isGroupStepRetry, false);
 
-    // 汉译英点「不认识」→ 同一个词回到本环节重练：重测标记必须当场就在
+    // 汉译英点「不认识」→ 同一个词回到本环节重练：重练标记必须当场就在
     notifier.revealAnswerAndMarkWrong(FakeBuildContext());
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
 
@@ -2866,10 +2869,10 @@ void main() {
     expect(state.studyStep, StudyStep.ch2En.json);
     expect(state.groupStepTrackName, '新词答对');
     expect(state.isGroupStepRetry, true,
-        reason: '重练标记随本次呈现一次到位，用户第一眼就该看到「本环节重测」');
+        reason: '重练标记随本次呈现一次到位，用户第一眼就该看到「本环节重练」');
   });
 
-  test('BdcNotifier - 从今日计划页重新进入学习页：本环节出题记录与"本环节重测"不得丢', () async {
+  test('BdcNotifier - 从今日计划页重新进入学习页：本环节出题记录与"本环节重练"不得丢', () async {
     final now = AppClock.now();
     // 额外插入第二个单词 word_2（本组 2 个词）
     await db.into(db.words).insert(Word(
@@ -2914,7 +2917,7 @@ void main() {
           updateTime: now,
           isExtra: false,
         ));
-    // 上个会话：word_1 在本环节被答错（今天最近一次评分 again → 拼写标红），排在队尾待重测
+    // 上个会话：word_1 在本环节被答错（今天最近一次评分 again → 拼写标红），排在队尾待重练
     await db.learningLogsDao.saveEntity(
       LearningLog(
         id: 'log_word_1_again',
@@ -2960,7 +2963,7 @@ void main() {
         reason: '重新进入学习页不是"换环节"，x/y 不能从 2/2 掉回 1/2');
     expect(state.groupStepTotal, 2);
     expect(state.isGroupStepRetry, false,
-        reason: 'word_2 尚未作答，重新进入学习页不得标"本环节重测"');
+        reason: 'word_2 尚未作答，重新进入学习页不得标"本环节重练"');
     expect(
       PhasePresentationTracker.presentedWordIds(
               groupNo: 1, trackName: '新词测评', stepIndex: 0)
@@ -2969,7 +2972,7 @@ void main() {
       reason: '本环节已出过题的记录必须保留（word_1 不能被清掉）',
     );
 
-    // 继续往下走 → 轮到答错的 word_1 重测：拼写标红 + 仍标"本环节重测"
+    // 继续往下走 → 轮到答错的 word_1 重练：拼写标红 + 仍标"本环节重练"
     notifier.acceptAnswerForTesting(FsrsRating.good);
     await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
     // 等指示器按新词重算落定（word_2 已走完本环节，分母收敛为 1）
@@ -2979,7 +2982,7 @@ void main() {
     state = container.read(bdcNotifierProvider);
     expect(state.isLatestAnswerWrongToday, isTrue, reason: '今天最近一次评分 again → 拼写标红');
     expect(state.isGroupStepRetry, true,
-        reason: '答错的词回到本环节队尾重测，必须标"本环节重测"');
+        reason: '答错的词回到本环节队尾重练，必须标"本环节重练"');
   });
 
   test('BdcNotifier - 同组两个错词轮流重练：刚重练过的那个不紧接着再出', () async {
@@ -3075,7 +3078,7 @@ void main() {
         reason: '同为待重练时按"最久没出过的先出"，刚重练过的词排在其它错词后面');
   });
 
-  test('BdcNotifier - 当前词是本环节重测且未作答：返回今日计划页再进来仍是这个词', () async {
+  test('BdcNotifier - 当前词是本环节重练且未作答：返回今日计划页再进来仍是这个词', () async {
     final now = AppClock.now();
     // 额外插入第二个单词 word_2（本组 2 个词）
     await db.into(db.words).insert(Word(
@@ -3153,15 +3156,15 @@ void main() {
     await notifier.loadData(FakeBuildContext());
     expect(container.read(bdcNotifierProvider).word!.id, 'word_1');
 
-    // 两个词都答"不认识" → 都待重练，最久没出过题的 word_1 先重测
+    // 两个词都答"不认识" → 都待重练，最久没出过题的 word_1 先重练
     await answerAgain('word_1');
     await answerAgain('word_2');
     await waitNewest('word_1');
     var state = container.read(bdcNotifierProvider);
     expect(state.word!.id, 'word_1');
-    expect(state.isGroupStepRetry, true, reason: 'word_1 本环节答错过，这次是重测');
+    expect(state.isGroupStepRetry, true, reason: 'word_1 本环节答错过，这次是重练');
 
-    // 用户在 word_1（本环节重测）上没作答，直接返回今日计划页，再点继续学习：
+    // 用户在 word_1（本环节重练）上没作答，直接返回今日计划页，再点继续学习：
     // 页面与 notifier 都是全新的（等价于重新进入学习页）
     final reentered = ProviderContainer(
       overrides: [asrProvider.overrideWithValue(mockAsr)],
@@ -3177,7 +3180,7 @@ void main() {
     state = reentered.read(bdcNotifierProvider);
     expect(state.word!.id, 'word_1',
         reason: '用户没点下一词，返回再进来必须还是眼前这个词，不能换成另一个待重练的词');
-    expect(state.isGroupStepRetry, true, reason: '它仍是本环节重测');
+    expect(state.isGroupStepRetry, true, reason: '它仍是本环节重练');
   });
 
   test('BdcNotifier - Ch2En环节发音通过后残余低分ASR帧不应覆盖通关评分', () async {
@@ -4724,10 +4727,10 @@ void main() {
         reason: '前缀帧已点亮的"专车"必须保留，不能因后续帧而丢失');
   });
 
-  test('BdcNotifier - 回看历史时不标「本环节重测」，回到学习流程才标', () async {
-    // 线上路径：某个词在测评环节点「不认识」→ 它排到本环节队尾重测；
-    // 用户切到下一个词后再点「回看」看它 —— 回看是历史浏览，不该被标成"本环节重测"，
-    // 否则用户会以为"回看就等于重测"。
+  test('BdcNotifier - 回看历史时不标「本环节重练」，回到学习流程才标', () async {
+    // 线上路径：某个词在测评环节点「不认识」→ 它排到本环节队尾重练；
+    // 用户切到下一个词后再点「回看」看它 —— 回看是历史浏览，不该被标成"本环节重练"，
+    // 否则用户会以为"回看就等于重练"。
     final today = AppClock.today();
     AppClock.setClock(FakeClock(today.add(const Duration(hours: 10))));
     addTearDown(AppClock.reset);
@@ -4748,26 +4751,26 @@ void main() {
     var state = container.read(bdcNotifierProvider);
     expect(state.word!.spell, 'apple');
 
-    // 测评环节点「不认识」→ apple 排到本环节队尾重测
+    // 测评环节点「不认识」→ apple 排到本环节队尾重练
     notifier.revealAnswerAndMarkWrong(FakeBuildContext());
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
     await _waitUntil(container, (s) => s.isGroupStepRetry);
     state = container.read(bdcNotifierProvider);
     expect(state.word!.spell, 'apple');
-    expect(state.isGroupStepRetry, true, reason: '前置条件：apple 正在本环节重测');
+    expect(state.isGroupStepRetry, true, reason: '前置条件：apple 正在本环节重练');
 
-    // 回看刚才那个词：历史浏览，不处于"现在要重测"这个流程位置
+    // 回看刚才那个词：历史浏览，不处于"现在要重练"这个流程位置
     notifier.goToPreviousWord();
     await _waitUntil(container, (s) => s.historyIndex != -1);
     state = container.read(bdcNotifierProvider);
     expect(state.isGroupStepRetry, false,
-        reason: '回看历史不得标「本环节重测」——那会让人以为回看就等于重测');
+        reason: '回看历史不得标「本环节重练」——那会让人以为回看就等于重练');
 
     // 退出回看、回到学习流程：标记必须回来
     await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
     await _waitUntil(container, (s) => s.historyIndex == -1);
     state = container.read(bdcNotifierProvider);
-    expect(state.isGroupStepRetry, true, reason: '回到学习流程后仍要标「本环节重测」');
+    expect(state.isGroupStepRetry, true, reason: '回到学习流程后仍要标「本环节重练」');
 
     await Future.delayed(const Duration(milliseconds: 50));
   });

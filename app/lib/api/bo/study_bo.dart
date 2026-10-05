@@ -1056,7 +1056,7 @@ class StudyBo {
 
     // FSRS 逻辑：当天重复评分（短期记忆）与跨天复习（长期记忆）区分
     // - 新词首次评分（stability 空/0）：init
-    // - 当天非首次评分（学习轨道巩固 / 复习轨道重测）：next(..., 0) 短期公式（可升可降）
+    // - 当天非首次评分（学习轨道巩固 / 复习轨道恢复环节）：next(..., 0) 短期公式（可升可降）
     // - 跨天首次评分（复习词测评 / 学一半词次日检验）：next(..., elapsedDays) 长期公式
     FSRSItem? nextFsrs;
     if (isGraded) {
@@ -1605,8 +1605,8 @@ class StudyBo {
   /// 注意：这只影响指示器的显示口径，不参与任何调度 —— 出题顺序仍由
   /// _calculateBatchStartIndex / _compareBatchWords 决定（整组横向混排）。
   ///
-  /// [isRetry] 为真表示当前词是**本环节的重测**：它本环节已经出过一次题（答错），
-  /// 这次是回到队尾再答一遍。学习页据此在指示里额外交代"本环节重测"。
+  /// [isRetry] 为真表示当前词是**本环节的重练**：它本环节已经出过一次题（答错），
+  /// 这次是回到队尾再答一遍。学习页据此在指示里额外交代"本环节重练"。
   ///
   /// 无法定位（当前词不在本组、或该词今天不走这个环节）时返回 null。
   Future<({int position, int total, int groupNo, String trackName, bool isRetry})?>
@@ -1718,9 +1718,9 @@ class StudyBo {
       trackName: currentTrackName,
       stepIndex: stepIndexInTrack,
     );
-    // 重测 = 本环节已产生过作答记录但答错未通过（待重练），与调度口径（_compareBatchWords）完全一致。
+    // 重练 = 本环节已产生过作答记录但答错未通过（待重练），与调度口径（_compareBatchWords）完全一致。
     // 绝不能仅凭 alreadyPresented.contains(wordId) 判定：若用户未作答即退出页面，再次进入时该词
-    // 尚未作答，绝不能被误标为"本环节重测"。
+    // 尚未作答，绝不能被误标为"本环节重练"。
     final bool isRetry =
         (firstLogs[wordId]?.logCount ?? 0) > current.learnedTimes;
 

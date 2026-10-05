@@ -728,7 +728,7 @@ class BdcNotifier extends _$BdcNotifier {
       //
       // 本会话呈现的第一个词（oldStudyStep == null）不算"换环节"：从今日计划页重新进入学习页时
       // notifier 是全新的、studyStep 还是空的，若照清不误，用户回来就会看到 x/y 从 7/10 掉回 1/10、
-      // 本环节答错待重练的词也不再标"本环节重测"。记录本来就按（组号, 轨道名, 环节序号）分桶，
+      // 本环节答错待重练的词也不再标"本环节重练"。记录本来就按（组号, 轨道名, 环节序号）分桶，
       // 真正的环节切换读的是另一个桶，无须靠清空来隔离。
       if (oldStudyStep != null && oldStudyStep != newStudyStep) {
         unawaited(PhasePresentationTracker.clear());
@@ -811,9 +811,9 @@ class BdcNotifier extends _$BdcNotifier {
       groupStepPosition: phase?.position ?? 0,
       groupStepTotal: phase?.total ?? 0,
       groupStepTrackName: phase?.trackName,
-      // 回看是历史浏览，不在"当前学习流程"里：不标「本环节重测」。
+      // 回看是历史浏览，不在"当前学习流程"里：不标「本环节重练」。
       // 那个标记的意思是"这个词刚答错、现在回到队尾重来"，只对正在学的那个词成立；
-      // 回看一个刚点过「不认识」的词时把它标出来，会让人以为"回看就等于重测"。
+      // 回看一个刚点过「不认识」的词时把它标出来，会让人以为"回看就等于重练"。
       isGroupStepRetry: state.historyIndex == -1 ? (phase?.isRetry ?? false) : false,
       isReviewWord: trackResult.isReview,
       todayLatestRating: followUpAssessment,
@@ -1005,11 +1005,11 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  /// 算好"当前这个词在本组本环节的进度"：第 N 组 · 轨道 · 环节 x/y、是否本环节重测。
+  /// 算好"当前这个词在本组本环节的进度"：第 N 组 · 轨道 · 环节 x/y、是否本环节重练。
   ///
-  /// 必须在**呈现之前**算，和这次呈现一起写进 state：指示行（含「本环节重测」）绝不能先带着
+  /// 必须在**呈现之前**算，和这次呈现一起写进 state：指示行（含「本环节重练」）绝不能先带着
   /// 上一环节的旧值出现、再被一次异步补正 —— 那个空窗里用户看到的是错的（旧轨道名、
-  /// 少了重测标记），实测重练场景下用户会以为标记丢了。
+  /// 少了重练标记），实测重练场景下用户会以为标记丢了。
   ///
   /// [stepIndex] 传入本次呈现的环节序号（已经过轨道长度夹取），与 `track[stepIndex]` 同源。
   /// 无法定位（词不在本组、或该词今天不走这个环节）时返回 null，调用方据此收起指示行。
@@ -1029,7 +1029,7 @@ class BdcNotifier extends _$BdcNotifier {
       wordId: wordId,
       step: step,
       // 这次调用就发生在"刚刚呈现这个词"的同一个时机：让指示器把本词记为已出题，
-      // 分子立刻包含它，用户才能看到 1/10 → 2/10 的前进，重测也才认得出来。
+      // 分子立刻包含它，用户才能看到 1/10 → 2/10 的前进，重练也才认得出来。
       markPresentedWord: true,
     );
     if (progress == null) return null;
@@ -1786,7 +1786,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     // 离开当前词去回看历史：把它此刻的样子收进"退出回看要回到的目标"，
     // 但**不写按词的缓存** —— 同一个词可能既有历史条目、又是当前词，
-    // 写进去会把那条历史该有的样子顶掉（实测：回看被标成「本环节重测」）。
+    // 写进去会把那条历史该有的样子顶掉（实测：回看被标成「本环节重练」）。
     final leavingUiState = _buildCurrentWordUiState();
     await StudyAudioSessionController.instance.cancelPlayback();
 
@@ -1975,7 +1975,7 @@ class BdcNotifier extends _$BdcNotifier {
       //
       // 同环节还要再区分两种情形，绝不能混为一谈：
       // - 中断后接着答（答到一半退出再回来）：把上一轮已命中的释义带过来，用户只需补上剩下的；
-      // - **本环节重测**（答错后回到队尾重来）：一律从零开始，一个字都不许带。
+      // - **本环节重练**（答错后回到队尾重来）：一律从零开始，一个字都不许带。
       //   那份快照可能来自"回看时试答"——回看是历史导航，评分不入库，但界面状态会被缓存
       //   （见 getNextWord 的 _saveCurrentWordState），带上就把已命中的释义高亮与已揭晓的
       //   答案提前泄露给用户，等于送答案。
@@ -2017,7 +2017,7 @@ class BdcNotifier extends _$BdcNotifier {
           currentAsrCandidates: uiState.currentAsrCandidates ?? [],
           hintTapCount: uiState.hintTapCount,
           // 进度坐标也回到"那一次呈现"：回看时要能看到用户离开时的样子，
-          // 而不是按这个词现在排在哪现算（那会把刚答错的词标成「本环节重测」）
+          // 而不是按这个词现在排在哪现算（那会把刚答错的词标成「本环节重练」）
           groupStepNo: uiState.groupStepNo,
           groupStepPosition: uiState.groupStepPosition,
           groupStepTotal: uiState.groupStepTotal,

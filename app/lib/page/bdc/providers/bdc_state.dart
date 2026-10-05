@@ -91,8 +91,8 @@ class BdcState extends Equatable {
   /// 见 StudyBo.getBatchPhaseProgress。
   final String? groupStepTrackName;
 
-  /// 当前词是否本环节的**重测**（本环节答错后回到队尾再答一次）。
-  /// 用于在进度指示里额外交代一句"本环节重测"，让用户与排查的人都看得出来这是重测而不是新词。
+  /// 当前词是否本环节的**重练**（本环节答错后回到队尾再答一次）。
+  /// 用于在进度指示里额外交代一句"本环节重练"，让用户与排查的人都看得出来这是重练而不是新词。
   final bool isGroupStepRetry;
 
   /// 当前词今天**最近一次作答**是否答错。

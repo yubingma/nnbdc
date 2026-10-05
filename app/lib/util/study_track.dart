@@ -104,7 +104,7 @@ class StudyTrack {
   /// 同环节重新出题时，能不能继承上一轮缓存的答题状态（已命中的释义高亮、已揭晓的答案）。
   ///
   /// - 中断后接着答（用户答到一半退出再回来）：可以继承，用户只需补上剩下的那几个；
-  /// - **本环节重测**（答错后回到队尾重来）：一律不可以 —— 那份缓存可能来自"回看时试答"
+  /// - **本环节重练**（答错后回到队尾重来）：一律不可以 —— 那份缓存可能来自"回看时试答"
   ///   （回看是历史导航、评分不入库，但界面状态会被缓存，见 getNextWord 的 _saveCurrentWordState），
   ///   继承过来等于把答案提前送给用户。
   static bool canInheritCachedStepState({
@@ -144,6 +144,20 @@ class StudyTrack {
         state: nextState ?? FsrsState.review,
       );
     }
-    return FSRS().next(prev, rating, 0, nextState: nextState);
+    final stepped = FSRS().next(prev, rating, 0, nextState: nextState);
+    if (rating != FsrsRating.again) return stepped;
+    // 当天就没通过 → **明天必须再见**：记忆参数照旧下调（该扣的分照扣），
+    // 但不按同日公式的"轻微下调"把排期排到好几天后。
+    // 实测（2026-10-04）：测评「轻松」给 16 天，当天答错只扣到 8 天后；
+    // 而同样一次「忘记」发生在隔天反而只排 2 天 —— 越"刚学就忘"排得越远，方向是反的。
+    return FSRSItem(
+      stability: stepped.stability,
+      difficulty: stepped.difficulty,
+      elapsedDays: stepped.elapsedDays,
+      scheduledDays: 1,
+      reps: stepped.reps,
+      lapses: stepped.lapses,
+      state: stepped.state,
+    );
   }
 }

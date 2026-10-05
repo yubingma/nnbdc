@@ -1327,11 +1327,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                         fontFamily: 'Roboto',
                       ),
                     ),
-                    // 本环节的重测：答错后回到队尾再答一遍。明确标出来，
-                    // 用户不会把它当成"新词怎么又出现一次"，排查时也一眼能认出这是重测。
+                    // 本环节的重练：答错后回到队尾再答一遍。明确标出来，
+                    // 用户不会把它当成"新词怎么又出现一次"，排查时也一眼能认出这是重练。
                     if (isRetry)
                       const TextSpan(
-                        text: ' · 本环节重测',
+                        text: ' · 本环节重练',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -2260,7 +2260,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         : ((state.currentGetWordResult?.stepIndex ?? 0) == 0 ? '测评结果' : '本次评分');
 
     // 只有**本次真的计了分**的作答，才谈得上"这次的评分与它推算出的复习安排"。
-    // 本环节重练（本环节重测）不计分 —— 评分不写日志、记忆状态不更新（见 StudyBo.updateCurrWord
+    // 本环节重练不计分 —— 评分不写日志、记忆状态不更新（见 StudyBo.updateCurrWord
     // 的 isGraded），此时若照常呈现这次推算的"下次复习 N 天后"，用户看到的就是不会发生的事。
     // 重练一律改走下面"呈现该词今天真实测评结果"的分支，所见严格等于已记入的事实。
     final bool hasFinishedOrPractice = !state.isGroupStepRetry &&
