@@ -43,7 +43,6 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var modelEnSentence: OnlineRecognizer? = null
     @Volatile
     private var modelZh: OnlineRecognizer? = null
-    private var sentenceBpeTokenizer: BpeTokenizer? = null
     
     // 当前使用的工作模型指针
     @Volatile
@@ -125,16 +124,16 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     }
                 }
                 "setContextualStrings" -> {
+                    // createStream(hotwords) 的契约:多条热词用 "/" 分隔(内部转成换行),
+                    // 每条热词按 modeling_unit 由 C++ 侧自行分词。bpe 模型必须下发原始单词
+                    // (如 DISCIPLINE),EncodeHotwords 会用 bpe_vocab 再编码一遍;
+                    // 若先切成 BPE 碎片下发,会被二次编码成不存在的 token 序列,热词 biasing 反而带偏识别。
                     val phrases = call.argument<List<String>>("phrases") ?: emptyList()
-                    pendingHotwords = if (sentenceBpeTokenizer != null && (currentModelType == "en_sentence" || currentModelType == "en")) {
-                        // 英文模型(基于 Zipformer BPE): Java 侧先用 BPE 分词器把短语编码为 token 序列,
-                        // 再用 "/" 分隔多个短语。createStream 会把 "/" 转 "\n",
-                        // EncodeBase 直接查 symbol_table 得到 token id(无需 C++ bpe_encoder)。
-                        phrases.map { sentenceBpeTokenizer!!.tokenize(it) }.filter { it.isNotEmpty() }.joinToString("/")
-                    } else {
-                        phrases.joinToString(" ") { it.uppercase() }
-                    }
-                    Log.i(TAG, "~~~~~ASR HOTWORDS (Tokenized): $pendingHotwords")
+                    pendingHotwords = phrases
+                        .map { it.uppercase() }
+                        .filter { it.isNotEmpty() }
+                        .joinToString("/")
+                    Log.i(TAG, "~~~~~ASR HOTWORDS: $pendingHotwords")
                     result.success(null)
                 }
                 "startMicrophone" -> {
@@ -307,11 +306,6 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
             val bpeVocabPath = copyAsset(modelDir, "bpe_vocab.txt", destDir)
 
-            if (sentenceBpeTokenizer == null) {
-                val tokensContent = java.io.File(tokensPath).readText()
-                sentenceBpeTokenizer = BpeTokenizer(tokensContent)
-            }
-
             val modelConfig = OnlineModelConfig.builder()
                 .setTransducer(OnlineTransducerModelConfig.builder()
                     .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
@@ -339,7 +333,6 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setDecodingMethod("modified_beam_search")
                 .setMaxActivePaths(8) // 适度降低搜索范围，平衡准确度与稳定性
                 .setHotwordsScore(3.0f) // 【关键优化】：微调热词权重为 3.0f，平衡口音纠偏与吞词叠词副作用。
-                .setBlankPenalty(0.5f) // 增加惩罚，减少乱码和幻觉
                 .build()
 
             modelEn = OnlineRecognizer(config)
@@ -361,9 +354,6 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val encoderPath = copyAsset(modelDir, "encoder-epoch-99-avg-1.int8.onnx", destDir)
             val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.onnx", destDir)
             val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
-
-            val tokensContent = java.io.File(tokensPath).readText()
-            sentenceBpeTokenizer = BpeTokenizer(tokensContent)
 
             // 热词需要 modeling_unit=bpe + bpe_vocab:C++ 的 EncodeHotwords 才能把
             // 原始英文短语编码为 token 序列。默认 modeling_unit=cjkchar 会按字符切分
@@ -396,7 +386,6 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setDecodingMethod("modified_beam_search")
                 .setMaxActivePaths(20)
                 .setHotwordsScore(3.0f)
-                .setBlankPenalty(0.5f)
                 .build()
 
             modelEnSentence = OnlineRecognizer(config)
@@ -442,7 +431,6 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setDecodingMethod("modified_beam_search")
                 .setMaxActivePaths(8) // 统一降低到 8
                 .setHotwordsScore(2.0f) // 大幅降低热词权重
-                .setBlankPenalty(0.5f) // 增加惩罚
                 .build()
 
             modelZh = OnlineRecognizer(config)
@@ -955,47 +943,5 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             sum += sample * sample
         }
         return if (size > 0) Math.sqrt((sum / size).toDouble()).toFloat() else 0.0f
-    }
-}
-
-class BpeTokenizer(tokensFileContent: String) {
-    private val tokenSet = HashSet<String>()
-    
-    init {
-        tokensFileContent.lines().forEach { line ->
-            val parts = line.trim().split(Regex("\\s+"))
-            if (parts.size >= 2) {
-                val token = parts[0].replace("▁", "\u2581")
-                tokenSet.add(token)
-            }
-        }
-    }
-
-    fun tokenize(text: String): String {
-        val words = text.uppercase().trim().split(Regex("[^A-Z0-9'#]+")).filter { it.isNotEmpty() }
-        val resultTokens = mutableListOf<String>()
-
-        for (word in words) {
-            val bpeWord = "\u2581$word"
-            var temp = bpeWord
-            while (temp.isNotEmpty()) {
-                var matched = false
-                for (len in temp.length downTo 1) {
-                    val sub = temp.substring(0, len)
-                    if (tokenSet.contains(sub)) {
-                        resultTokens.add(sub)
-                        temp = temp.substring(len)
-                        matched = true
-                        break
-                    }
-                }
-                if (!matched) {
-                    val singleChar = temp.substring(0, 1)
-                    resultTokens.add(singleChar)
-                    temp = temp.substring(1)
-                }
-            }
-        }
-        return resultTokens.joinToString(" ")
     }
 }
