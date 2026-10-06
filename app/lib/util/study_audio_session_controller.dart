@@ -68,17 +68,15 @@ class StudyAudioSessionController {
 
   StudyAudioSessionController._internal()
       : _asr = Asr(),
-        _audioPlayer = SoundUtil.createAudioPlayer() {
+        _audioPlayer = SoundUtil.createAudioPlayer(),
+        _asrHintPlayer = SoundUtil.createAudioPlayer() {
     _watchPlayer(_audioPlayer);
-    if (!PlatformUtils.isIOS) {
-      _asrHintPlayer = SoundUtil.createAudioPlayer();
-      _watchPlayer(_asrHintPlayer!);
-      if (!PlatformUtils.isWeb && !PlatformUtils.isTesting) {
-        const assetPath = 'assets/audio/asr_ready_hint.wav';
-        _asrHintPlayer!.setAsset(assetPath).then((_) {
-          _playerLoadedAsset[_asrHintPlayer!] = assetPath;
-        }).catchError((_) {});
-      }
+    _watchPlayer(_asrHintPlayer);
+    if (!PlatformUtils.isWeb && !PlatformUtils.isTesting) {
+      const assetPath = 'assets/audio/asr_ready_hint.wav';
+      _asrHintPlayer.setAsset(assetPath).then((_) {
+        _playerLoadedAsset[_asrHintPlayer] = assetPath;
+      }).catchError((_) {});
     }
     _asr.addStateListener(_onAsrStateChange);
   }
@@ -110,7 +108,7 @@ class StudyAudioSessionController {
   Asr _asr;
   final Tts _tts = Tts();
   final ja.AudioPlayer _audioPlayer;
-  ja.AudioPlayer? _asrHintPlayer;
+  final ja.AudioPlayer _asrHintPlayer;
   final _SessionMutex _queueLock = _SessionMutex();
   Timer? _idleTimer;
 
@@ -226,9 +224,7 @@ class StudyAudioSessionController {
     _activeMode = AudioMode.idle;
     _watchedPlayers.clear();
     _watchPlayer(_audioPlayer);
-    if (_asrHintPlayer != null) {
-      _watchPlayer(_asrHintPlayer!);
-    }
+    _watchPlayer(_asrHintPlayer);
     _logicallyFinishedPlayers.clear();
     _playerBusyUntil.clear();
     _activeCutToken.clear();
@@ -325,9 +321,6 @@ class StudyAudioSessionController {
   /// 中断当前正在进行的发音播放，并清空所有排队中的旧发音任务（用于用户点击新单词时即时抢占）
   void interruptPlayback() {
     _queueLock.cancel();
-    if (PlatformUtils.isIOS) {
-      unawaited(_asr.stopLocalAudio());
-    }
     unawaited(_stopCurrentWordSound());
     try {
       if (_audioPlayer.playing) {
@@ -607,9 +600,6 @@ class StudyAudioSessionController {
   Future<void> cancelPlayback() async {
     _logPlayerState('cancelPlayback.enter');
     _queueLock.cancel();
-    if (PlatformUtils.isIOS) {
-      await _asr.stopLocalAudio();
-    }
     await _stopCurrentWordSound();
     try {
       final isReallyPlaying = _audioPlayer.playing &&
@@ -825,7 +815,7 @@ class StudyAudioSessionController {
 
   /// 激活音频会话（幂等，已激活时为空操作）。
   ///
-  /// 音频会话的 Category 与激活态由本控制器独占管理，原生侧不再兜底（见 AppDelegate.playLocalAudio/startMicrophone），
+  /// 音频会话的 Category 与激活态由本控制器独占管理，原生侧不再兜底（见 AppDelegate.startMicrophone），
   /// 因此凡是"要用录放通道"的地方都必须先经过这里。
   Future<void> _activateSession() async {
     final session = await AudioSession.instance;
@@ -962,31 +952,6 @@ class StudyAudioSessionController {
       final loadSw = Stopwatch()..start();
       bool loaded = false;
       final cacheManager = PlatformUtils.isWeb ? null : DefaultCacheManager();
-
-      // iOS 原生短音频专用通道：直接走进程内 AVAudioPlayer，彻底绕过 AVPlayer/mediaplaybackd 跨进程 XPC 与采样率重置爆音
-      if (PlatformUtils.isIOS && !PlatformUtils.isTesting) {
-        FileInfo? fileInfo;
-        try {
-          fileInfo = await cacheManager?.getFileFromCache(soundUrl);
-        } catch (_) {}
-        var localPath = fileInfo?.file.path ?? '';
-        if (localPath.isEmpty && cacheManager != null) {
-          try {
-            final file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-            if (await file.exists() && await file.length() > 200) {
-              localPath = file.path;
-            }
-          } catch (_) {}
-        }
-        if (localPath.isNotEmpty) {
-          final playSw = Stopwatch()..start();
-          await _asr.playLocalAudio(localPath).timeout(Duration(milliseconds: playTimeoutMs));
-          _logicallyFinishedPlayers.add(player);
-          debugPrint('⏱️ [Latency-Sound] iOS 原生 AVAudioPlayer 播放完成，耗时: ${playSw.elapsedMilliseconds}ms');
-          Global.logger.d('🔊 [SessionController] playSoundByUrl 原生直放结束，总逻辑耗时: ${totalSw.elapsedMilliseconds}ms');
-          return;
-        }
-      }
 
       // 1. 尝试从本地缓存加载（带坏缓存自愈：0 字节/损坏文件自动清除）
       Future<bool> tryLoadFromCache(String filePath, String url) async {
@@ -1212,20 +1177,15 @@ class StudyAudioSessionController {
       }
     }
 
-    if (!PlatformUtils.isIOS) {
-      final hintPlayer = _asrHintPlayer;
-      if (hintPlayer != null) {
-        try {
-          const assetPath = 'assets/audio/asr_ready_hint.wav';
-          if (_playerLoadedAsset[hintPlayer] != assetPath) {
-            await hintPlayer.setAsset(assetPath);
-            _playerLoadedAsset[hintPlayer] = assetPath;
-            debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热成功');
-          }
-        } catch (e) {
-          debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热失败: $e');
-        }
+    try {
+      const assetPath = 'assets/audio/asr_ready_hint.wav';
+      if (_playerLoadedAsset[_asrHintPlayer] != assetPath) {
+        await _asrHintPlayer.setAsset(assetPath);
+        _playerLoadedAsset[_asrHintPlayer] = assetPath;
+        debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热成功');
       }
+    } catch (e) {
+      debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热失败: $e');
     }
 
     if (_sfxPool.isNotEmpty) {
@@ -1346,12 +1306,7 @@ class StudyAudioSessionController {
   Future<void> _playAsrReadyHintSound() async {
     if (PlatformUtils.isTesting) return;
     debugPrint('🔊 [SessionController] 触发 ASR 就绪提示音播放...');
-    if (PlatformUtils.isIOS) {
-      await _asr.playReadyHint();
-      return;
-    }
     final player = _asrHintPlayer;
-    if (player == null) return;
     try {
       const assetPath = 'assets/audio/asr_ready_hint.wav';
       if (_playerLoadedAsset[player] != assetPath) {
@@ -1545,14 +1500,11 @@ class StudyAudioSessionController {
     _unsubscribeMeter();
     meterLevelNotifier.dispose();
     _unwatchPlayer(_audioPlayer);
-    final hintPlayer = _asrHintPlayer;
-    if (hintPlayer != null) {
-      _unwatchPlayer(hintPlayer);
-      try {
-        hintPlayer.stop();
-        hintPlayer.dispose().catchError((_) {});
-      } catch (_) {}
-    }
+    _unwatchPlayer(_asrHintPlayer);
+    try {
+      _asrHintPlayer.stop();
+      _asrHintPlayer.dispose().catchError((_) {});
+    } catch (_) {}
     try {
       _audioPlayer.stop();
     } catch (_) {}

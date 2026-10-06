@@ -1,15 +1,16 @@
 #!/bin/bash
 
 # ==============================================================================
-# 全平台 App 构建与上传总控流水线 (iOS App Store + 华为应用市场 / 多渠道)
+# 全平台 App 构建与上传总控流水线 (iOS App Store + 华为应用市场 + 小米应用商店)
 #
 # 特性：
 # 1. 统一前置预检 (版本号、min_ver_code、工具链、全渠道凭证提前验证，避免中途报错)
 # 2. 全局单元测试只跑 1 次，严禁多渠道重复测试浪费时间
 # 3. 串行编译确保文件与配置安全，杜绝 config.dart 踩踏
-# 4. 流水线并发上传：iOS 构建完成立刻在后台启动上传，同时前台构建 Android，
+# 4. iOS 与 Android 各构建 1 次：苹果单独构建，华为与小米共用同一个 Android APK
+# 5. 流水线并发上传：iOS 构建完成立刻在后台启动上传，同时前台构建 Android，
 #    各市场构建完成后所有上传后台并发进行，彻底掩盖网络等待延迟
-# 5. 全渠道完成后自动统一打 Git Tag (v{VERSION})
+# 6. 全渠道完成后自动统一打 Git Tag (v{VERSION})
 # ==============================================================================
 
 set -e
@@ -45,6 +46,7 @@ mkdir -p "$TMP_DIR"
 # 标志与参数
 ENABLE_IOS=true
 ENABLE_HUAWEI=true
+ENABLE_XIAOMI=true
 SKIP_TESTS=false
 BUILD_ONLY=false
 UPLOAD_ONLY=false
@@ -60,6 +62,7 @@ show_usage() {
   --skip-tests          跳过全局单元测试步骤
   --skip-ios            跳过 iOS 平台的构建与上传
   --skip-huawei         跳过华为平台的构建与上传
+  --skip-xiaomi         跳过小米平台的构建与上传
   --build-only          仅构建所有平台的安装包（不上传）
   --upload-only         仅上传已有构建产物（不重新构建与测试）
   --skip-clean          iOS 构建时跳过 flutter clean
@@ -76,6 +79,9 @@ show_usage() {
 
   # 仅并发上传已构建好的包
   $0 --upload-only
+
+  # 只发国内安卓市场（跳过 iOS）
+  $0 --skip-ios
 
   # 快速发版：跳过测试与 clean
   $0 --skip-tests --skip-clean
@@ -96,6 +102,10 @@ parse_args() {
                 ;;
             --skip-huawei)
                 ENABLE_HUAWEI=false
+                shift
+                ;;
+            --skip-xiaomi)
+                ENABLE_XIAOMI=false
                 shift
                 ;;
             --build-only)
@@ -223,13 +233,17 @@ preflight_check() {
         print_info "✅ iOS 工具与凭证检查通过"
     fi
 
-    # 华为检查
-    if [ "$ENABLE_HUAWEI" = true ]; then
+    # Android 渠道共用的 Python 环境
+    if [ "$ENABLE_HUAWEI" = true ] || [ "$ENABLE_XIAOMI" = true ]; then
         local python_exec="$PROJECT_ROOT/.venv/bin/python"
         if [ ! -f "$python_exec" ]; then
             print_error "找不到 Python 虚拟环境: $python_exec"
             exit 1
         fi
+    fi
+
+    # 华为检查
+    if [ "$ENABLE_HUAWEI" = true ]; then
         if [ "$BUILD_ONLY" = false ]; then
             local hw_secret=${HUAWEI_API_CLIENT_SECRET:-$HUAWEI_CLIENT_SECRET}
             local hw_app_id=${HUAWEI_PPDC_APP_ID:-$HUAWEI_APP_ID}
@@ -241,9 +255,24 @@ preflight_check() {
         print_info "✅ 华为 Python 环境与凭证检查通过"
     fi
 
+    # 小米检查
+    if [ "$ENABLE_XIAOMI" = true ]; then
+        if [ "$BUILD_ONLY" = false ]; then
+            if [ -z "$XIAOMI_DEV_ACCOUNT" ] || [ -z "$XIAOMI_DEV_PRIVATE_KEY" ] || [ -z "$XIAOMI_DEV_PUBLIC_KEY" ]; then
+                print_error "小米上传缺少凭证！请设置 XIAOMI_DEV_ACCOUNT (登录邮箱)、XIAOMI_DEV_PRIVATE_KEY (自动发布接口私钥)、XIAOMI_DEV_PUBLIC_KEY (公钥证书 .cer 路径)"
+                exit 1
+            fi
+            if [ ! -f "$XIAOMI_DEV_PUBLIC_KEY" ]; then
+                print_error "找不到小米公钥证书文件: $XIAOMI_DEV_PUBLIC_KEY"
+                exit 1
+            fi
+        fi
+        print_info "✅ 小米 Python 环境与凭证检查通过"
+    fi
+
     # 检查是否至少启用了一个平台
-    if [ "$ENABLE_IOS" = false ] && [ "$ENABLE_HUAWEI" = false ]; then
-        print_error "未启用任何平台！请不要同时指定 --skip-ios 和 --skip-huawei。"
+    if [ "$ENABLE_IOS" = false ] && [ "$ENABLE_HUAWEI" = false ] && [ "$ENABLE_XIAOMI" = false ]; then
+        print_error "未启用任何平台！请不要同时指定 --skip-ios 和 --skip-huawei 和 --skip-xiaomi。"
         exit 1
     fi
 }
@@ -302,6 +331,15 @@ pipeline_build_and_upload() {
             BACKGROUND_LOGS+=("$huawei_log")
         fi
 
+        if [ "$ENABLE_XIAOMI" = true ]; then
+            local xiaomi_log="$TMP_DIR/upload_xiaomi_${timestamp}.log"
+            print_info "启动小米上传任务 (日志: $xiaomi_log)..."
+            bash "$SCRIPT_DIR/build-and-upload-xiaomi.sh" --upload-only > "$xiaomi_log" 2>&1 &
+            BACKGROUND_PIDS+=($!)
+            BACKGROUND_NAMES+=("小米应用商店")
+            BACKGROUND_LOGS+=("$xiaomi_log")
+        fi
+
         wait_for_uploads
         return
     fi
@@ -333,16 +371,21 @@ pipeline_build_and_upload() {
         fi
     fi
 
-    # --- 阶段 2: 华为 Android 构建 ---
-    if [ "$ENABLE_HUAWEI" = true ]; then
-        print_step "3.2 开始构建华为 Android APK (同时 iOS 正在后台上传)..."
-        local hw_build_args=("--build-only" "--skip-tests")
+    # --- 阶段 2: Android APK 构建 (华为与小米共用同一个安装包，只构建一次) ---
+    if [ "$ENABLE_HUAWEI" = true ] || [ "$ENABLE_XIAOMI" = true ]; then
+        local android_builder="huawei"
+        if [ "$ENABLE_HUAWEI" = false ]; then
+            android_builder="xiaomi"
+        fi
 
-        bash "$SCRIPT_DIR/build-and-upload-huawei.sh" "${hw_build_args[@]}"
-        print_succ "华为 Android APK 构建成功！"
+        print_step "3.2 开始构建 Android APK (同时 iOS 正在后台上传)..."
+        bash "$SCRIPT_DIR/build-and-upload-${android_builder}.sh" --build-only --skip-tests
+        print_succ "Android APK 构建成功！"
+    fi
 
-        # 若需要上传，立刻放入后台并发上传
-        if [ "$BUILD_ONLY" = false ]; then
+    # --- 阶段 3: 各 Android 渠道后台并发上传 ---
+    if [ "$BUILD_ONLY" = false ]; then
+        if [ "$ENABLE_HUAWEI" = true ]; then
             local huawei_log="$TMP_DIR/upload_huawei_${timestamp}.log"
             print_info "🚀 触发华为后台并发上传 (日志: $huawei_log)..."
             bash "$SCRIPT_DIR/build-and-upload-huawei.sh" --upload-only > "$huawei_log" 2>&1 &
@@ -350,9 +393,18 @@ pipeline_build_and_upload() {
             BACKGROUND_NAMES+=("华为应用市场")
             BACKGROUND_LOGS+=("$huawei_log")
         fi
+
+        if [ "$ENABLE_XIAOMI" = true ]; then
+            local xiaomi_log="$TMP_DIR/upload_xiaomi_${timestamp}.log"
+            print_info "🚀 触发小米后台并发上传 (日志: $xiaomi_log)..."
+            bash "$SCRIPT_DIR/build-and-upload-xiaomi.sh" --upload-only > "$xiaomi_log" 2>&1 &
+            BACKGROUND_PIDS+=($!)
+            BACKGROUND_NAMES+=("小米应用商店")
+            BACKGROUND_LOGS+=("$xiaomi_log")
+        fi
     fi
 
-    # --- 阶段 3: 等待所有后台上传任务完成 ---
+    # --- 阶段 4: 等待所有后台上传任务完成 ---
     if [ "$BUILD_ONLY" = false ]; then
         wait_for_uploads
     else

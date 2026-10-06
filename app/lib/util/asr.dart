@@ -644,38 +644,6 @@ class Asr {
     }
   }
 
-  /// 播放 ASR 就绪提示音（iOS 端通过 AudioServices 硬件级直通播放，零管线冲突零破音）
-  Future<void> playReadyHint() async {
-    if (!PlatformUtils.isAsrSupported()) {
-      return;
-    }
-    try {
-      await asrMethodChannel.invokeMethod('playReadyHint');
-    } catch (e) {
-      Global.logger.w('ASR: playReadyHint failed: $e');
-    }
-  }
-
-  /// 在 iOS 端使用进程内 AVAudioPlayer 原生播放本地音频，绕过 AVPlayer/mediaplaybackd 跨进程重置与爆音
-  Future<void> playLocalAudio(String path) async {
-    if (!PlatformUtils.isIOS || PlatformUtils.isTesting) return;
-    try {
-      await asrMethodChannel.invokeMethod('playLocalAudio', {'path': path});
-    } catch (e) {
-      Global.logger.w('ASR: playLocalAudio failed: $e');
-    }
-  }
-
-  /// 停止 iOS 原生本地音频播放
-  Future<void> stopLocalAudio() async {
-    if (!PlatformUtils.isIOS || PlatformUtils.isTesting) return;
-    try {
-      await asrMethodChannel.invokeMethod('stopLocalAudio');
-    } catch (e) {
-      Global.logger.w('ASR: stopLocalAudio failed: $e');
-    }
-  }
-
   // 为 iOS 提供上下文短语，提高目标短语的识别概率（仅提示，不强制）
   Future<void> setContextualStrings(List<String> phrases) async {
     if (!PlatformUtils.isAsrSupported()) {

@@ -12,27 +12,6 @@ import Accelerate
     
     // MARK: - Properties
     
-    // 发音播放通道：进程内常驻一套 AVAudioEngine，替代"每次发音新建一个 AVAudioPlayer"。
-    //
-    // 为什么必须常驻：真机日志显示，每个新 AVAudioPlayer 都会新建一个 AudioQueue 并
-    // 新映射一整块 10MB 共享内存（slab），播完立即解映射。反复切换「不认识/下一词」
-    // 这类连续发音场景下，这块内存反复映射会让音频实时线程不断缺页
-    //（HALS_OverloadMessage: HAL client proc exceeding io cycle budget，
-    //  45~59 次 vm_rtfault_records），连续几个 I/O 周期交付失败就是用户听到的爆音。
-    // 现在引擎与两个播放节点只建一次，之后每次发音只是 scheduleFile，不再新建
-    // AudioQueue 与共享内存。两个节点分开：发音一个、ASR 就绪提示音一个，互不打断。
-    private let audioPlaybackEngine = AVAudioEngine()
-    private let wordPlaybackNode = AVAudioPlayerNode()
-    private let hintPlaybackNode = AVAudioPlayerNode()
-    private var playbackEngineReady = false
-    private var connectedPlaybackNodes = Set<ObjectIdentifier>()
-    private var wordPlaybackGeneration = 0
-    private var wordPlaybackCompletion: FlutterResult?
-    private var wordPlaybackFile: AVAudioFile? // 持有到本次播放结束，避免文件读取被提前释放
-    private var hintPlaybackFile: AVAudioFile?
-    private var hintPlaybackGeneration = 0
-    private var lastReadyHintTime: TimeInterval = 0
-    
     // ASR 相关属性
     private var speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -204,8 +183,6 @@ import Accelerate
             name: .AVAudioEngineConfigurationChange,
             object: audioEngine
         )
-        
-        setupReadyHintSound()
         
         print(String(format: "IOS启动: didFinishLaunchingWithOptions 完成 +%.2fs", Date().timeIntervalSince(nativeStart)))
         return result
@@ -395,20 +372,6 @@ import Accelerate
             // iOS natively handles models, no-op needed
             result(nil)
             
-        case "playReadyHint":
-            playReadyHint(result: result)
-            
-        case "playLocalAudio":
-            if let args = call.arguments as? [String: Any],
-               let path = args["path"] as? String {
-                playLocalAudio(path: path, result: result)
-            } else {
-                result(FlutterError(code: "INVALID_ARGUMENTS", message: "Missing path", details: nil))
-            }
-            
-        case "stopLocalAudio":
-            stopLocalAudio(result: result)
-            
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -579,171 +542,6 @@ import Accelerate
         partialResultTimer?.invalidate()
         partialResultTimer = nil
         
-        result(nil)
-    }
-    
-    // MARK: - 常驻发音通道（AVAudioEngine + AVAudioPlayerNode）
-    
-    private func findFlutterAssetPath(_ assetPath: String) -> String? {
-        let key = FlutterDartProject.lookupKey(forAsset: assetPath)
-        if let path = Bundle.main.path(forResource: key, ofType: nil) {
-            return path
-        }
-        if let frameworkPath = Bundle.main.path(forResource: "Frameworks/App.framework/" + key, ofType: nil) {
-            return frameworkPath
-        }
-        return nil
-    }
-    
-    private func setupReadyHintSound() {
-        guard let path = findFlutterAssetPath("assets/audio/asr_ready_hint.wav") else {
-            print("IOS: [ASR] Ready hint asset not found")
-            return
-        }
-        do {
-            hintPlaybackFile = try AVAudioFile(forReading: URL(fileURLWithPath: path))
-            print("IOS: [ASR] Ready hint file loaded from \(path)")
-        } catch {
-            print("IOS: [ASR] Failed to load ready hint file: \(error)")
-        }
-    }
-    
-    /// 懒启动常驻发音引擎：节点只 attach/connect 一次，引擎只 start 一次。
-    /// 系统中断或路由变化会把引擎停掉，这里检测到就用同一条链路重启，不重建节点。
-    private func ensurePlaybackEngine(node: AVAudioPlayerNode, format: AVAudioFormat) -> Bool {
-        let key = ObjectIdentifier(node)
-        if !connectedPlaybackNodes.contains(key) {
-            audioPlaybackEngine.attach(node)
-            audioPlaybackEngine.connect(node, to: audioPlaybackEngine.mainMixerNode, format: format)
-            connectedPlaybackNodes.insert(key)
-        }
-        if playbackEngineReady {
-            if audioPlaybackEngine.isRunning { return true }
-            print("IOS: [Audio] 常驻发音引擎已停止（系统中断/路由变化），重启同一链路")
-        } else {
-            audioPlaybackEngine.prepare()
-        }
-        do {
-            try audioPlaybackEngine.start()
-        } catch {
-            print("IOS: [Audio] 常驻发音引擎启动失败: \(error)")
-            playbackEngineReady = false
-            return false
-        }
-        if !playbackEngineReady {
-            print("IOS: [Audio] 常驻发音引擎已启动（整个进程只启动一次）")
-        }
-        playbackEngineReady = true
-        return true
-    }
-
-    /// 静音停止：先把音量压到 0 再停，避免在波形中途硬切产生爆音。
-    private func stopNodeQuietly(_ node: AVAudioPlayerNode) {
-        node.volume = 0.0
-        node.stop()
-    }
-
-    /// 20ms 线性淡入（5 步）。generation 一变说明已被新的发音抢占，立刻放弃后续步进。
-    private func fadeInNode(_ node: AVAudioPlayerNode, isWordChannel: Bool, generation: Int) {
-        for step in 1...5 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.004 * Double(step)) { [weak self] in
-                guard let self = self else { return }
-                let current = isWordChannel ? self.wordPlaybackGeneration : self.hintPlaybackGeneration
-                guard current == generation else { return }
-                node.volume = Float(step) / 5.0
-            }
-        }
-    }
-
-    private func playReadyHint(result: FlutterResult) {
-        let now = Date().timeIntervalSince1970
-        if now - lastReadyHintTime < 0.3 {
-            print("IOS: [ASR] playReadyHint ignored due to debounce (\(now - lastReadyHintTime)s)")
-            result(nil)
-            return
-        }
-        lastReadyHintTime = now
-        guard let file = hintPlaybackFile else {
-            // 唯一一条"什么都听不到、日志里也没有痕迹"的分支：必须暴露出来，
-            // 否则提示音偶发不响时无从判断是没触发还是资源没就绪。
-            print("IOS: [ASR] playReadyHint 跳过：提示音文件未加载（setupReadyHintSound 未成功）")
-            result(nil)
-            return
-        }
-        guard ensurePlaybackEngine(node: hintPlaybackNode, format: file.processingFormat) else {
-            result(nil)
-            return
-        }
-        if hintPlaybackNode.isPlaying {
-            print("IOS: [ASR] Ready hint player is already playing, skipping duplicate playback")
-            result(nil)
-            return
-        }
-        hintPlaybackGeneration += 1
-        let generation = hintPlaybackGeneration
-        stopNodeQuietly(hintPlaybackNode)
-        file.framePosition = 0 // 同一份 AVAudioFile 反复调度，显式回卷到文件头
-        // 播完必须停掉节点：AVAudioPlayerNode 播完整个 schedule 后 isPlaying 仍为 true，
-        // 不停就会让下一次请求命中上面"正在播放"的判断而被永久跳过
-        //（真机表现：一个进程内只有第一次能听到提示音，之后每次都静默跳过）。
-        hintPlaybackNode.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { [weak self] _ in
-            DispatchQueue.main.async {
-                guard let self = self, self.hintPlaybackGeneration == generation else { return }
-                self.stopNodeQuietly(self.hintPlaybackNode)
-            }
-        }
-        hintPlaybackNode.volume = 0.4
-        hintPlaybackNode.play()
-        result(nil)
-    }
-    
-    private func playLocalAudio(path: String, result: @escaping FlutterResult) {
-        // 这里不碰 AVAudioSession：会话的 Category 与激活态由 Dart 侧 StudyAudioSessionController 独占管理，
-        // 播放前 Dart 已保证会话就绪。原生在起播前再配一次 Category，会把 Dart 刚切好的
-        // playback/playAndRecord 又扳回去，真机日志里表现为单词发音时路由来回抖动。
-        let url = URL(fileURLWithPath: path)
-        let file: AVAudioFile
-        do {
-            file = try AVAudioFile(forReading: url)
-        } catch {
-            print("IOS: [Audio] Failed to open local audio: \(error)")
-            result(FlutterError(code: "PLAY_FAILED", message: error.localizedDescription, details: nil))
-            return
-        }
-        guard ensurePlaybackEngine(node: wordPlaybackNode, format: file.processingFormat) else {
-            result(FlutterError(code: "PLAY_FAILED", message: "常驻发音引擎未能启动", details: nil))
-            return
-        }
-
-        // 抢占上一次发音：静音切掉，旧回调立即完成，避免 Dart 侧悬挂
-        wordPlaybackGeneration += 1
-        let generation = wordPlaybackGeneration
-        wordPlaybackCompletion?(nil)
-        wordPlaybackCompletion = nil
-        stopNodeQuietly(wordPlaybackNode)
-
-        wordPlaybackFile = file
-        wordPlaybackCompletion = result
-        wordPlaybackNode.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { [weak self] _ in
-            DispatchQueue.main.async {
-                guard let self = self, self.wordPlaybackGeneration == generation else { return }
-                self.stopNodeQuietly(self.wordPlaybackNode)
-                self.wordPlaybackFile = nil
-                self.wordPlaybackCompletion?(nil)
-                self.wordPlaybackCompletion = nil
-            }
-        }
-        wordPlaybackNode.volume = 0.0
-        wordPlaybackNode.play()
-        fadeInNode(wordPlaybackNode, isWordChannel: true, generation: generation)
-    }
-
-    private func stopLocalAudio(result: FlutterResult) {
-        wordPlaybackGeneration += 1 // 让在途的播完回调失效
-        stopNodeQuietly(wordPlaybackNode)
-        wordPlaybackFile = nil
-        wordPlaybackCompletion?(nil)
-        wordPlaybackCompletion = nil
         result(nil)
     }
     
