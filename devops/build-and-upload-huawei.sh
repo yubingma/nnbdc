@@ -17,6 +17,21 @@ PROJECT_ROOT="$SCRIPT_DIR/../app"
 UPLOAD_SCRIPT="$SCRIPT_DIR/upload_huawei.py"
 PYTHON_EXEC="$SCRIPT_DIR/../.venv/bin/python"
 
+# ==============================================================================
+# 渠道应用名的业务约束（不是技术选择，别当历史包袱删掉）
+#
+# 工信部备案登记的 APP 名称是「泡泡单词」，仓库里 strings.xml 的默认值也是它，
+# 所以小米等渠道直接构建即可，无需任何替换。
+# 但华为应用商店里「泡泡单词」已被其它开发者占用，华为渠道包只能叫「泡泡单词英语版」，
+# 因此本脚本在构建前临时替换 app_name，构建完成立即还原（与 config.dart 同一套做法）。
+# 每个渠道各自产出一份独立 APK，避免两个渠道互相覆盖同一个文件。
+# ==============================================================================
+CHANNEL_APP_NAME="泡泡单词英语版"
+STRINGS_FILE="$PROJECT_ROOT/android/app/src/main/res/values/strings.xml"
+# 备份必须放在 res/ 之外：Android 资源合并器会扫描 res/ 下所有文件，.bak 后缀会让它直接报错
+BACKUP_STRINGS_FILE="$PROJECT_ROOT/android/strings.xml.channel-bak"
+CHANNEL_APK="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release-huawei.apk"
+
 # Check for Python virtual environment
 if [ ! -f "$PYTHON_EXEC" ]; then
     echo "Error: Python ./venv not found at $PYTHON_EXEC"
@@ -245,8 +260,9 @@ build_apk() {
     echo ""
     echo "Preparing configuration..."
 
-    # 1. Backup original config
+    # 1. Backup original config 与渠道应用名
     cp "$CONFIG_FILE" "$BACKUP_CONFIG_FILE"
+    cp "$STRINGS_FILE" "$BACKUP_STRINGS_FILE"
 
     # 2. Define cleanup function to restore config
     restore_config() {
@@ -255,15 +271,25 @@ build_apk() {
             echo "Restoring original configuration..."
             mv "$BACKUP_CONFIG_FILE" "$CONFIG_FILE"
         fi
+        if [ -f "$BACKUP_STRINGS_FILE" ]; then
+            mv "$BACKUP_STRINGS_FILE" "$STRINGS_FILE"
+        fi
     }
 
     # 3. Register cleanup to run on exit or error
     trap restore_config EXIT INT TERM
 
-    # 4. Modify config to use 'prod'
+    # 4. Modify config to use 'prod'，并把应用名切成华为渠道名
     sed 's/static String profileName = ".*";/static String profileName = "prod";/' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+    sed "s|<string name=\"app_name\">[^<]*</string>|<string name=\"app_name\">${CHANNEL_APP_NAME}</string>|" "$STRINGS_FILE" > "${STRINGS_FILE}.tmp" && mv "${STRINGS_FILE}.tmp" "$STRINGS_FILE"
 
-    echo "Configuration switched to 'prod'."
+    # 替换必须真的生效：换成别的名字会被小米/华为的备案名称校验驳回，宁可现在就报错
+    if ! grep -q "<string name=\"app_name\">${CHANNEL_APP_NAME}</string>" "$STRINGS_FILE"; then
+        echo "❌ 错误: 未能把应用名替换为「${CHANNEL_APP_NAME}」，$STRINGS_FILE 的结构可能已变更"
+        exit 1
+    fi
+
+    echo "Configuration switched to 'prod'; app name switched to '${CHANNEL_APP_NAME}'."
 
     echo ""
     echo "Building Flutter APK (Release)..."
@@ -276,7 +302,10 @@ build_apk() {
         exit 1
     fi
 
-    echo "✅ Build successful: $APK_PATH"
+    # 5. 另存一份华为渠道产物：小米渠道会用不同的应用名再构建一次，同一个文件名会互相覆盖
+    cp "$APK_PATH" "$CHANNEL_APK"
+
+    echo "✅ Build successful: $CHANNEL_APK"
 
     # 构建完成安全恢复配置
     restore_config
@@ -287,7 +316,7 @@ build_apk() {
 upload_apk() {
     gather_credentials
 
-    local target_apk="${CUSTOM_APK_PATH:-$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release.apk}"
+    local target_apk="${CUSTOM_APK_PATH:-$CHANNEL_APK}"
     if [ ! -f "$target_apk" ]; then
         echo "❌ Error: APK not found at $target_apk"
         exit 1

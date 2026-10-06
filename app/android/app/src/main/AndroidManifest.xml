@@ -18,12 +18,14 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- 移除 RECEIVE_BOOT_COMPLETED：它由 WorkManager（随 ML Kit 手写识别传递引入）自带。
+         摘掉下面那个开机重排接收器后，本应用再无任何开机自启动入口，
+         该权限也随之无用（检测报告 2.2.6 判为「频繁自启动和关联启动」、3.1.3 列为未使用的过度申请权限）。 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" tools:node="remove" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
@@ -97,13 +99,17 @@
         </activity>
 
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
-            </intent-filter>
-        </receiver>
+        <!-- 刻意不声明 flutter_local_notifications 的 ScheduledNotificationBootReceiver：
+             它会在开机与应用更新后重新拉起本应用去重排闹钟，小米隐私合规检测把它判定为
+             「APP未向用户明示、应用退出后自启动」（检测报告 2.2.6，主体 com.dexterous.flutterlocalnotifications）。
+             每日提醒不依赖它 —— main.dart 每次启动都会调用 NotificationUtil.scheduleDailyReminder() 重排；
+             唯一代价是"重启手机后若一直不打开 App，当天提醒不响"。 -->
+
+        <!-- WorkManager 的组件由 ML Kit 手写识别（com.google.mlkit:digital-ink-recognition）传递引入，
+             本应用没有任何 WorkManager 任务，但它的 RescheduleReceiver 声明了 BOOT_COMPLETED /
+             TIME_SET / TIMEZONE_CHANGED，开机时会拉起应用进程，同样属于"自启动"面，故整条移除。 -->
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+            tools:node="remove" />
     </application>
 </manifest>

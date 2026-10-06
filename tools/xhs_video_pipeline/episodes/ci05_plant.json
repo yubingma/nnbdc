@@ -1,0 +1,70 @@
+{
+  "episode": "CI05",
+  "series": "词核心图",
+  "position": "05",
+  "slogan": "一个词 · 一个意象",
+  "word": "plant",
+  "phonetic": "plænt",
+  "core_art": "core_31307.jpeg",
+  "core_text": "置入基座，扎根固定",
+  "core_sub": "plant 只有这一个意象",
+  "accent": "#A3E635",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "植物",
+        "种植",
+        "培养",
+        "工厂",
+        "设备",
+        "安置"
+      ],
+      "line": "这六个意思，是同一个词",
+      "say": "植物、种植、培养、工厂、设备、安置。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：置入基座，扎根固定。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "植物",
+          "relation": "被栽入土中，扎根生长"
+        },
+        {
+          "meaning": "种植",
+          "relation": "把幼苗放进土里固定"
+        },
+        {
+          "meaning": "培养",
+          "relation": "像照料幼苗那样帮它成长"
+        },
+        {
+          "meaning": "工厂",
+          "relation": "把整套生产系统安置进去"
+        },
+        {
+          "meaning": "设备",
+          "relation": "被安置固定的机器装置"
+        },
+        {
+          "meaning": "安置",
+          "relation": "把人或物固定到某处"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它"
+    }
+  ]
+}

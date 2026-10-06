@@ -37,6 +37,16 @@ if [ -z "$PACKAGE_NAME" ]; then
     exit 1
 fi
 
+# ==============================================================================
+# 渠道应用名：小米用品信部备案登记的「泡泡单词」，即仓库里 strings.xml 的默认值。
+# 华为渠道包在 build-and-upload-huawei.sh 里被临时改成「泡泡单词英语版」（华为重名），
+# 所以这里必须先断言名字没被上一次中断的构建改脏，否则会被备案名称校验驳回。
+# 每个渠道各自产出一份独立 APK，避免两个渠道互相覆盖同一个文件。
+# ==============================================================================
+CHANNEL_APP_NAME="泡泡单词"
+STRINGS_FILE="$PROJECT_ROOT/android/app/src/main/res/values/strings.xml"
+CHANNEL_APK="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release-xiaomi.apk"
+
 # Check for Python virtual environment
 if [ ! -f "$PYTHON_EXEC" ]; then
     echo "Error: Python ./venv not found at $PYTHON_EXEC"
@@ -127,7 +137,7 @@ UPDATE_DESC="优化学习体验，修复已知问题"
 # 平板截图 1536×2048，均至少 4 张、最多 5 张、单张不超过 5MB、不得重复。
 # ==============================================================================
 STORE_ASSET_DIR="$SCRIPT_DIR/应用上架资源/xiaomi"
-APP_NAME="泡泡单词英语版"                                        # 与 APK 内 strings.xml 的 app_name 保持一致
+APP_NAME="泡泡单词"                                              # 必须与 APK 内 strings.xml 的 app_name 及工信部备案名称一致
 CATEGORY="12"                                                   # 12 = 学习教育
 KEYWORDS="背单词 英语单词 四六级 考研 雅思 默写 词库"              # 最多 8 个，每个不超过 5 个汉字
 BRIEF="以输出为核心的背单词应用"                                  # 5~16 个字符
@@ -327,10 +337,17 @@ build_apk() {
     # 3. Register cleanup to run on exit or error
     trap restore_config EXIT INT TERM
 
-    # 4. Modify config to use 'prod'
+    # 4. Modify config to use 'prod'，并断言应用名就是备案登记的那个
     sed 's/static String profileName = ".*";/static String profileName = "prod";/' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 
-    echo "Configuration switched to 'prod'."
+    if ! grep -q "<string name=\"app_name\">${CHANNEL_APP_NAME}</string>" "$STRINGS_FILE"; then
+        echo "❌ 错误: $STRINGS_FILE 里的应用名不是「${CHANNEL_APP_NAME}」。"
+        echo "   小米会拿包体内的应用名与工信部备案名称比对，不一致会被驳回。"
+        echo "   若上一次华为渠道构建被中断，strings.xml 可能留在「泡泡单词英语版」，请检查后重试。"
+        exit 1
+    fi
+
+    echo "Configuration switched to 'prod'; app name confirmed as '${CHANNEL_APP_NAME}'."
 
     echo ""
     echo "Building Flutter APK (Release)..."
@@ -343,7 +360,10 @@ build_apk() {
         exit 1
     fi
 
-    echo "✅ Build successful: $APK_PATH"
+    # 5. 另存一份小米渠道产物：华为渠道会用不同的应用名再构建一次，同一个文件名会互相覆盖
+    cp "$APK_PATH" "$CHANNEL_APK"
+
+    echo "✅ Build successful: $CHANNEL_APK"
 
     # 构建完成安全恢复配置
     restore_config
@@ -354,7 +374,7 @@ build_apk() {
 upload_apk() {
     gather_credentials
 
-    local target_apk="${CUSTOM_APK_PATH:-$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release.apk}"
+    local target_apk="${CUSTOM_APK_PATH:-$CHANNEL_APK}"
     if [ ! -f "$target_apk" ]; then
         echo "❌ Error: APK not found at $target_apk"
         exit 1

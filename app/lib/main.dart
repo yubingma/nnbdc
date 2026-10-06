@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 
 import 'package:nnbdc/api/api.dart';
@@ -219,10 +218,6 @@ void main() async {
         try {
           // 这里不再需要再次 init() 了，main() 顶部已经做过了
           logMark('首帧回调(第一帧已渲染)');
-
-          if (PlatformUtils.isAndroid) {
-            await FlutterDownloader.initialize(debug: true);
-          }
 
           // 初始化加载服务
           Api.loadingService.init();
