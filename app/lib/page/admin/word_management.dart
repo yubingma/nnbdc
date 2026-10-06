@@ -11,8 +11,10 @@ import 'package:nnbdc/config.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/local_word_cache.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
+import '../../widget/pronunciation_accent_badge.dart';
 import '../../widget/sound_wave_icon.dart';
 
 class WordManagementWidget extends StatefulWidget {
@@ -412,9 +414,31 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                                           constraints: const BoxConstraints(),
                                           padding: const EdgeInsets.all(4),
                                         ),
-                                        Text(
-                                          '[${Util.getWordDefaultPronounce(_currentWord!)}]',
-                                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                                        // 音标随口音偏好切换，点「英/美」小标即换口音并立刻试听该口音发音
+                                        ValueListenableBuilder<String>(
+                                          valueListenable: Prefs.pronunciationAccentNotifier,
+                                          builder: (context, _, __) {
+                                            final pronInfo = Util.getWordPronounceWithAccent(_currentWord!);
+                                            return Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                PronunciationAccentBadge(
+                                                  label: pronInfo.$2,
+                                                  isFallback: pronInfo.$3,
+                                                  color: AppTheme.primaryColor,
+                                                  onSwitched: (_) => _playPronunciation(),
+                                                ),
+                                                // 音标最长可达 77 字符，用 Flexible 限宽让它在窄窗口自动折行而不是撑破这一行
+                                                if (pronInfo.$1.isNotEmpty)
+                                                  Flexible(
+                                                    child: Text(
+                                                      '[${pronInfo.$1}]',
+                                                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                                                    ),
+                                                  ),
+                                              ],
+                                            );
+                                          },
                                         ),
                                         _isRegenerating
                                             ? const Padding(
