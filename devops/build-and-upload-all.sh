@@ -205,9 +205,7 @@ preflight_check() {
             exit 1
         fi
     fi
-    # 先落到变量再拼接：macOS 自带 bash 3.2 里 ${min_ver_code:-无} 紧邻 } 的多字节字符会丢首字节
-    local min_ver_code_display="${min_ver_code:-无}"
-    print_info "✅ 版本校验通过: $VERSION (min_ver_code: $min_ver_code_display)"
+    print_info "✅ 版本校验通过: $VERSION (min_ver_code: ${min_ver_code:-无})"
 
     # 基础工具
     if ! command -v flutter &> /dev/null; then

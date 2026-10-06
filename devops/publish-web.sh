@@ -149,10 +149,11 @@ for REL in "$@"; do
     fi
     # aliyun CLI 的 JSON 经 expect 的 pty 会夹带回车符；用 sed 取数字最稳（BSD grep 的 \+ 不可靠）
     TASK_ID="$(tr -d '\r' < "$TMP_DIR/refresh.log" | sed -n 's/.*RefreshTaskId[^0-9]*\([0-9][0-9]*\).*/\1/p' | head -1)"
-    # 注意：macOS 自带 bash 3.2 有个坑 —— 参数展开里紧邻 } 的多字节字符会丢首字节
-    # （例如 ${VAR:+（…）} 里的「）」会变成乱码），所以这里用 if 而不是 ${VAR:+…}
+    # 注意：macOS 自带 bash 3.2（本脚本的 #!/bin/bash）解析「裸 $VAR 紧跟中文」时，
+    # 会把该中文字符的首字节当成变量名的一部分 —— 变量展开为空、字符还被截断。
+    # 所以变量后面接中文时必须写成 ${VAR}（花括号）或补一个空格。全仓库别的脚本同理。
     if [ -n "$TASK_ID" ]; then
-        echo "        ✅ 刷新任务已提交（RefreshTaskId: $TASK_ID）"
+        echo "        ✅ 刷新任务已提交（RefreshTaskId: ${TASK_ID}）"
     else
         echo "        ✅ 刷新任务已提交"
     fi

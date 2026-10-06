@@ -173,7 +173,7 @@ if [ ! -f "$APP_DIR/pubspec.yaml" ]; then
 fi
 
 if [ ! -f "$APP_DIR/pubspec.yaml" ]; then
-    fail "无法找到 pubspec.yaml 文件。当前目录: $PWD，尝试的路径: $APP_DIR"
+    fail "无法找到 pubspec.yaml 文件。当前目录: ${PWD}，尝试的路径: $APP_DIR"
 fi
 
 log "📂 应用目录: $APP_DIR"
@@ -219,7 +219,7 @@ install_flutter_if_needed() {
       log "➡️  将改用可控的 Flutter 目录：$MANAGED_FLUTTER_ROOT"
       export FLUTTER_ROOT="$MANAGED_FLUTTER_ROOT"
     else
-      fail "现有 FLUTTER_ROOT 指向的 Flutter 不可用: $FLUTTER_ROOT（已设置 NNBDC_RESPECT_FLUTTER_ROOT，拒绝自动切换）"
+      fail "现有 FLUTTER_ROOT 指向的 Flutter 不可用: ${FLUTTER_ROOT}（已设置 NNBDC_RESPECT_FLUTTER_ROOT，拒绝自动切换）"
     fi
   fi
 
@@ -269,7 +269,7 @@ install_flutter_if_needed() {
     DETECTED_VER=$(detect_flutter_version_from_project 2>/dev/null || true)
     if [ -n "$DETECTED_VER" ]; then
       FLUTTER_TAG="$DETECTED_VER"
-      log "🏷️  从项目解析到 Flutter 版本: $FLUTTER_TAG（将优先使用该 tag）"
+      log "🏷️  从项目解析到 Flutter 版本: ${FLUTTER_TAG}（将优先使用该 tag）"
     fi
   fi
 
@@ -313,7 +313,7 @@ install_flutter_if_needed() {
     log "🔁 切换 Flutter 到 revision: $FLUTTER_GIT_REVISION"
     # shallow clone 场景下，先尝试 fetch 单个 commit
     git fetch --depth 1 origin "$FLUTTER_GIT_REVISION" || git fetch origin "$FLUTTER_GIT_REVISION" || true
-    git checkout "$FLUTTER_GIT_REVISION" || fail "无法 checkout Flutter revision: $FLUTTER_GIT_REVISION（可能是网络导致 fetch 不到该 commit）"
+    git checkout "$FLUTTER_GIT_REVISION" || fail "无法 checkout Flutter revision: ${FLUTTER_GIT_REVISION}（可能是网络导致 fetch 不到该 commit）"
   elif [ -n "$FLUTTER_CHANNEL" ]; then
     log "🔁 切换 Flutter 到 channel: $FLUTTER_CHANNEL"
     git fetch origin "$FLUTTER_CHANNEL" || true
