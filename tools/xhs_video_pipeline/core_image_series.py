@@ -46,11 +46,21 @@ HUB = (W / 2, 648)         # 核心意象（中心枢纽）位置
 WORD_Y, PHON_Y = 300, 378  # 常驻词头（首帧即出现）
 HOOK_ART, HOOK_ART_Y = 320, 700      # 片头里的核心意象
 HOOK_CARD_Y, HOOK_CARD_GAP, HOOK_LINE_Y = 1010, 140, 1424
-ART_BOX = 300              # 辐射段里核心意象的边长
-NODE_MAX_W = 252           # 单个释义节点内文字的换行宽度
+ART_BOX = 300              # 辐射段里核心意象的边长（≤4 个节点时）
+ART_BOX_MANY = 220         # 节点 ≥5 个时核心意象要缩小，给四周腾地方
+NODE_MAX_W = 252           # 单个释义节点内文字的换行宽度（≤4 个节点时）
+NODE_MAX_W_MANY = 200      # 节点 ≥5 个时收窄，避免左右两侧撞到画布边缘
+RING_CY = 944                 # 环形布局的圆心比 V 形更低：否则顶部节点会顶到单词词头
+RING_RX, RING_RY = 380, 380   # 节点 ≥5 个时绕核心意象一圈的椭圆半径
+HOOK_GRID_Y, HOOK_GRID_ROW, HOOK_GRID_COL = 1035, 145, 310   # 片头释义卡超过 3 张时改用网格
 ARROW_BEND = 46            # 贝塞尔箭头的弯曲幅度
 LEAD = 0.30                # 段落开头留白，也是每条释义"画面出现 = 开口念"的对齐点
 JOIN_GAP = 0.10            # 「关联逻辑」与「就是X」两段配音之间的停顿
+# 收尾不配音、也不逐条显现：屏幕上就那几行字，念一遍或一条条蹦出来都是在白拖时长。
+# 整屏一次性出现，够看清就走。
+OUTRO_AT = 0.00                   # 三块内容同时出现的时刻
+OUTRO_FADE = 0.15                 # 只做几乎察觉不到的软化，避免硬切的突兀感
+OUTRO_DUR = 1.20                  # 收尾总长：只留扫一眼的时间。再短就来不及看提问，钩子会失效
 NODE_MEAN_Y = 52           # 节点内：释义基线到节点顶边的距离
 NODE_REL_Y = 98            # 节点内：第一条关联文字到顶边的距离
 NODE_REL_LH = 42           # 节点内：关联文字行距
@@ -64,8 +74,9 @@ _SLOTS = {
     4: [(-380, 300), (-140, 720), (140, 720), (380, 300)],
 }
 
+# 收尾不放任何声音：那一屏只有字，再来一记盖章声是多余的。
 SFX_BY_TYPE = {"hook": "magic.mp3", "core": "bubble-pop.wav",
-               "radiate": "bubble-pop.wav", "outro": "stamp.mp3"}
+               "radiate": "bubble-pop.wav"}
 
 
 # ---------------------------------------------------------------- 时间轴规划
@@ -98,16 +109,8 @@ def plan(cfg, word_dur, work):
             s["reveal"] = s.get("reveal") or max(needs) + GAP
             dur = LEAD + s["reveal"] * (len(needs) - 1) + max(needs) + TAIL
         elif s["type"] == "outro":
-            # 收尾有三句要说：金句 / 提问 / 引导。分开合成才能各自拿到精确的出现时刻，
-            # 画面上的三块内容才和语音逐句对得上。
-            s["_tts"] = [fetch_tts(s["say"], work, f"{si}_quote", **vk),
-                         fetch_tts(s["ask_say"], work, f"{si}_ask", **vk),
-                         fetch_tts(s["cta_say"], work, f"{si}_cta", **vk)]
-            beat = guard
-            for tts in s["_tts"][:2]:
-                beat += duration_of(tts) + JOIN_GAP
-            s["_beat_at"] = beat
-            dur = beat + duration_of(s["_tts"][2]) + TAIL
+            s["_tts"] = []                      # 收尾无配音
+            dur = OUTRO_DUR
         else:
             s["_tts"] = [fetch_tts(s["say"], work, f"{si}_{s['type']}", **vk)]
             dur = guard + duration_of(s["_tts"][0]) + TAIL
@@ -139,14 +142,12 @@ def build_audio(cfg, starts, total, work, word):
                 if pop.exists():
                     clips.append({"path": pop, "at": at, "gain": 1.0, "kind": "sfx"})
         else:
-            sfx = SFX_DIR / SFX_BY_TYPE[s["type"]]
-            if sfx.exists():
+            name = SFX_BY_TYPE.get(s["type"])
+            sfx = SFX_DIR / name if name else None
+            if sfx and sfx.exists():
                 clips.append({"path": sfx, "at": t0 + 0.04, "gain": 0.24, "kind": "sfx"})
-            clips.append({"path": s["_tts"][0], "at": t0 + guard, "kind": "voice"})
-            if s["type"] == "outro":
-                ask_at = s["_beat_at"] - duration_of(s["_tts"][1]) - JOIN_GAP
-                clips.append({"path": s["_tts"][1], "at": t0 + ask_at, "kind": "voice"})
-                clips.append({"path": s["_tts"][2], "at": t0 + s["_beat_at"], "kind": "voice"})
+            if s["_tts"]:
+                clips.append({"path": s["_tts"][0], "at": t0 + guard, "kind": "voice"})
 
         for c in clips:
             if c.get("kind") == "word":
@@ -208,9 +209,17 @@ def wrap_cn(text, fnt, max_w):
 
 
 def node_positions(count):
-    """把 count 条释义散布在核心意象四周，返回各节点中心坐标。"""
+    """把 count 条释义散布在核心意象四周，返回各节点中心坐标。
+
+    ≤4 个走手工排定的 V 形（箭头长度有保证）；≥5 个改用环形均布——
+    手工排布在这么多节点下会互相打架，环形至少保证两两不重叠。
+    """
     if count in _SLOTS:
         return [(HUB[0] + dx, HUB[1] + dy) for dx, dy in _SLOTS[count]]
+    if count >= 5:
+        return [(HUB[0] + RING_RX * math.cos(math.pi / 2 + 2 * math.pi * i / count),
+                 RING_CY + RING_RY * math.sin(math.pi / 2 + 2 * math.pi * i / count))
+                for i in range(count)]
     step = math.pi / (count - 1)          # 兜底：沿下半圆均布
     return [(HUB[0] - 380 * math.cos(step * i), HUB[1] + 380 + 320 * math.sin(step * i))
             for i in range(count)]
@@ -228,14 +237,15 @@ def _rect_exit(half_w, half_h, ux, uy):
     return min(tx, ty)
 
 
-def arrow_geometry(node, node_half, art_half):
+def arrow_geometry(node, node_half, art_half, hub=None):
     """箭头贴着核心意象边框外侧起步，精确停在释义节点边框外 14px 处。"""
-    dx, dy = node[0] - HUB[0], node[1] - HUB[1]
+    hub = hub or HUB
+    dx, dy = node[0] - hub[0], node[1] - hub[1]
     dist = math.hypot(dx, dy) or 1.0
     ux, uy = dx / dist, dy / dist
     start = _rect_exit(*art_half, ux, uy) + 12
     reach = _rect_exit(*node_half, ux, uy) + 14
-    p0 = (HUB[0] + ux * start, HUB[1] + uy * start)
+    p0 = (hub[0] + ux * start, hub[1] + uy * start)
     p1 = (node[0] - ux * reach, node[1] - uy * reach)
     ctrl = ((p0[0] + p1[0]) / 2 - uy * ARROW_BEND,
             (p0[1] + p1[1]) / 2 + ux * ARROW_BEND)
@@ -333,8 +343,11 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
     f_rel = font(FONT_CN, 30, FONT_CN_REG)
     f_pct = font(FONT_LATIN, 52, FONT_LATIN_BOLD)
 
+    n_items = max((len(sg["items"]) for sg in segments if sg["type"] == "radiate"), default=0)
+    many = n_items >= 5
     art_ring = core_art.copy()
-    art_ring.thumbnail((ART_BOX, ART_BOX), Image.LANCZOS)
+    art_ring.thumbnail((ART_BOX_MANY if many else ART_BOX,) * 2, Image.LANCZOS)
+    node_max_w = NODE_MAX_W_MANY if many else NODE_MAX_W
     art_hook = core_art.copy()
     art_hook.thumbnail((HOOK_ART, HOOK_ART), Image.LANCZOS)
 
@@ -347,10 +360,25 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
             line = s["line"]
             L.append(ImageLayer(art_hook, (W / 2, HOOK_ART_Y), 0.0, dur=3.4,
                                 scale_from=0.93, glow=accent + (60,), fade_in=False))
-            for i, text in enumerate(s["cards"]):
-                L.append(Layer(lambda d, e, dy, t=text, y=HOOK_CARD_Y + HOOK_CARD_GAP * i:
-                               hook_card(d, W / 2, y + dy, t, e, f_hook),
-                               -1.0, dur=0.4, rise=0))
+            cards = s["cards"]
+            if len(cards) <= 3:                       # 三张以内沿用竖排
+                L.append(Layer(lambda d, e, dy, t=cards[0]: d.text(
+                    (W / 2, 0 + dy), "", font=f_small,
+                    fill=INK_DIM + (0,), anchor="mm"), -1.0, dur=0.4))
+                for i, text in enumerate(cards):
+                    L.append(Layer(lambda d, e, dy, t=text, y=HOOK_CARD_Y + HOOK_CARD_GAP * i:
+                                   hook_card(d, W / 2, y + dy, t, e, f_hook),
+                                   -1.0, dur=0.4, rise=0))
+            else:                                     # 四张以上改用网格，每行最多 3 张
+                rows = [cards[i:i + 3] for i in range(0, len(cards), 3)]
+                f_grid = font(FONT_CN, 68, FONT_CN_BOLD)
+                for r, row in enumerate(rows):
+                    for c, text in enumerate(row):
+                        x = W / 2 + (c - (len(row) - 1) / 2) * HOOK_GRID_COL
+                        y = HOOK_GRID_Y + r * HOOK_GRID_ROW
+                        L.append(Layer(lambda d, e, dy, t=text, xx=x, yy=y:
+                                       hook_card(d, xx, yy + dy, t, e, f_grid),
+                                       -1.0, dur=0.4, rise=0))
             L.append(Layer(lambda d, e, dy, t=line: d.text(
                 (W / 2, HOOK_LINE_Y + dy), t, font=f_small,
                 fill=INK_DIM + (int(240 * e),), anchor="mm"), 1.30, dur=0.55))
@@ -374,17 +402,19 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
             items = s["items"]
             nodes = node_positions(len(items))
             # 核心意象常驻中心，释义绕它一圈，箭头从中心逐条长出去
-            L.append(ImageLayer(art_ring, HUB, 0.05, dur=0.45, glow=accent + (70,)))
+            ring = len(items) >= 5
+            hub_pt = (HUB[0], RING_CY) if ring else HUB
+            L.append(ImageLayer(art_ring, hub_pt, 0.05, dur=0.45, glow=accent + (70,)))
             for i, item in enumerate(items):
                 node = nodes[i]
-                lines = wrap_cn(item["relation"], f_rel, NODE_MAX_W)
+                lines = wrap_cn(item["relation"], f_rel, node_max_w)
                 offsets, acc_len = [], 0
                 for ln in lines:
                     offsets.append(acc_len)
                     acc_len += len(ln)
                 size = node_size(item["meaning"], lines, f_meaning, f_rel)
                 p0, ctrl, p1 = arrow_geometry(node, (size[0] / 2, size[1] / 2),
-                                              (art_ring.width / 2, art_ring.height / 2))
+                                              (art_ring.width / 2, art_ring.height / 2), hub=hub_pt)
                 at = s["reveal"] * i + LEAD
                 rel_dur = s["_rel_dur"][i]
                 mean_at = at + rel_dur + JOIN_GAP
@@ -409,20 +439,18 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
         elif kind == "outro":
             rows = s["line"].split("\n")
             ask, cta = s["ask"], s["cta"]
-            cta_at = s["_beat_at"]
-            ask_at = cta_at - duration_of(s["_tts"][1]) - JOIN_GAP
             f_q = fit_font(max(rows, key=len), FONT_CN, FONT_CN_BOLD, 88, W - 170)
             f_ask = fit_font(ask, FONT_CN, FONT_CN_BOLD, 58, W - 170)
             for i, txt in enumerate(rows):
                 y = 706 + (i - (len(rows) - 1) / 2) * 122
                 L.append(Layer(lambda d, e, dy, t=txt, yy=y: d.text(
                     (W / 2, yy + dy), t, font=f_q,
-                    fill=accent + (int(255 * e),), anchor="mm"), 0.10, dur=0.6, rise=36))
+                    fill=accent + (int(255 * e),), anchor="mm"), OUTRO_AT, dur=OUTRO_FADE, rise=0))
             L.append(Layer(lambda d, e, dy, t=ask: d.text(
                 (W / 2, 968 + dy), t, font=f_ask,
-                fill=INK + (int(250 * e),), anchor="mm"), ask_at - 0.15, dur=0.55, rise=30))
+                fill=INK + (int(250 * e),), anchor="mm"), OUTRO_AT, dur=OUTRO_FADE, rise=0))
             L.append(Layer(lambda d, e, dy, t=cta: teaser_chip(
-                d, W / 2, 1156 + dy, t, f_small, e), cta_at - 0.15, dur=0.55))
+                d, W / 2, 1156 + dy, t, f_small, e), OUTRO_AT, dur=OUTRO_FADE))
         layers_by_seg.append(L)
 
     def draw_chrome(img, t):

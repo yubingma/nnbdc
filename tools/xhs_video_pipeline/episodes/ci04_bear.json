@@ -1,0 +1,70 @@
+{
+  "episode": "CI04",
+  "series": "词核心图",
+  "position": "04",
+  "slogan": "一个词 · 一个意象",
+  "word": "bear",
+  "phonetic": "bɛr",
+  "core_art": "core_bear.png",
+  "core_text": "扛住重量，带着走",
+  "core_sub": "bear 只有这一个意象",
+  "accent": "#38BDF8",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "熊",
+        "承受",
+        "支撑",
+        "携带",
+        "结果",
+        "具有"
+      ],
+      "line": "这六个意思，是同一个词",
+      "say": "熊、承受、支撑、携带、结果、具有。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：扛住重量，带着走。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "熊",
+          "relation": "一辈子扛着自己体重的野兽"
+        },
+        {
+          "meaning": "承受",
+          "relation": "把压下来的重量接住"
+        },
+        {
+          "meaning": "支撑",
+          "relation": "从下面托住不让它塌"
+        },
+        {
+          "meaning": "携带",
+          "relation": "扛着东西一起走"
+        },
+        {
+          "meaning": "结果",
+          "relation": "枝头扛出果实"
+        },
+        {
+          "meaning": "具有",
+          "relation": "身上带着名号"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它"
+    }
+  ]
+}

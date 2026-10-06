@@ -121,11 +121,18 @@ class BdcNotifier extends _$BdcNotifier {
   Timer? _wordAiRefereeDebounceTimer;
   Timer? _autoJumpTimer;
   Timer? _showWordDetailTimer;
-  final Set<String> _failedWordAiEvaluationsForCurrentWord = {};
+  /// 本词已被裁判判错的答案 → 上次给出的判错说明。同一个答案再次出现时直接重讲，
+  /// 不再重复烧裁判额度。
+  final Map<String, String> _failedWordAiEvaluationsForCurrentWord = {};
   int _wordAiEvaluationCountForCurrentWord = 0;
   bool _isWordAiRefereeJudging = false;
   String _wordAccumulatedAsrText = "";
   String _wordLastFinalAsrText = "";
+  /// 中英（ch2En）环节最近一帧原生识别出的整段转写。同一个识别请求内它是持续累积的
+  ///（用户每重试一次就在尾部加长一次），不能当作"用户这一次说的词"。
+  String _ch2EnSessionAsrText = "";
+  /// 中英（ch2En）环节已经交付裁判判过的那一段整段转写，作为"本轮新增"的切分基线。
+  String _ch2EnJudgedAsrText = "";
 
   Timer? _sentenceAiRefereeDebounceTimer;
   final Set<String> _failedSentenceAiEvaluationsForCurrentWord = {};
@@ -614,6 +621,8 @@ class BdcNotifier extends _$BdcNotifier {
     _isWordAiRefereeJudging = false;
     _wordAccumulatedAsrText = "";
     _wordLastFinalAsrText = "";
+    _ch2EnSessionAsrText = "";
+    _ch2EnJudgedAsrText = "";
 
     _failedSentenceAiEvaluationsForCurrentWord.clear();
     _sentenceAiEvaluationCountForCurrentWord = 0;
@@ -2450,14 +2459,21 @@ class BdcNotifier extends _$BdcNotifier {
 
         if (resultData != null && resultData.containsKey('candidates')) {
           if (state.studyStep == StudyStep.ch2En.json) {
-            final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidates, state.word!.spell);
+            // 原生识别在同一个识别请求内是持续累积的：用户每重试一次，整段就在尾部加长一次
+            //（线上实况重试四次后整段为 "Precisely strictly strictly accurately"）。
+            // 只把"已交付裁判的前缀"之后的新增部分当作本轮答案，否则每一次重试都会把之前
+            // 判错的老答案一起送进音素判定与裁判，用户永远被第一次说的那个词绑住。
+            if (candidates.isNotEmpty) _ch2EnSessionAsrText = candidates.first;
+            final roundCandidates = _stripJudgedCh2EnAsrPrefix(candidates);
+            if (roundCandidates.isEmpty) return; // 本帧没有新发音，不重复判定
+            final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(roundCandidates, state.word!.spell);
             if (_isDisposed || state.isGettingNextWord || state.word?.id != currentWordId) return;
             // await 音素计算期间可能并发完成了答对处理，二次守卫防止低分覆盖
             if ((state.hasFinishedAnswering || _isAnswerCorrectHandling) && !_isPracticeMode) {
               return;
             }
             processedResult = AsrUtil.preprocessEnglish(result.text, state.word!.spell);
-            _updateState(state.copyWith(currentScore: result.score, currentAsrCandidates: candidates), tag: 'asr-result');
+            _updateState(state.copyWith(currentScore: result.score, currentAsrCandidates: roundCandidates), tag: 'asr-result');
           } else {
             // 单词英中模式：支持跨端点（Endpoint reset）分段增量拼接
             final rawBest = best.trim();
@@ -4293,6 +4309,18 @@ class BdcNotifier extends _$BdcNotifier {
   @visibleForTesting
   bool get hasPendingWordPass => _wordPassDebounceTimer?.isActive ?? false;
 
+  /// 同一个答案在这个词上已经判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
+  /// 返回 true 表示"已判过、已提示"，调用方不要再发起裁判。
+  bool _remindAlreadyJudgedAnswer(String cleanInput) {
+    final String? previous = _failedWordAiEvaluationsForCurrentWord[cleanInput];
+    if (previous == null) return false;
+    ToastUtil.info(
+      previous.isNotEmpty ? previous : '这个答案刚刚已经判过了，换一个试试',
+      autoCloseDuration: const Duration(seconds: 4),
+    );
+    return true;
+  }
+
   /// 当用户说出中文释义但本地未命中时，触发大模型裁判防抖调度（1500ms）
   void _scheduleWordAiRefereeCheck(List<String> inputs) {
     _wordAiRefereeDebounceTimer?.cancel();
@@ -4303,13 +4331,13 @@ class BdcNotifier extends _$BdcNotifier {
     final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
     if (cleanInput.length < 2) return; // 避免单字/助词杂音（如“啊/嗯”）浪费大模型Token
 
-    // 过滤同词已判错的文本
-    if (_failedWordAiEvaluationsForCurrentWord.contains(cleanInput)) return;
-
     // 单词请求频次上限
     if (_wordAiEvaluationCountForCurrentWord >= 5) return;
 
     _wordAiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
+      // 同一个答案刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
+      // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。
+      if (_remindAlreadyJudgedAnswer(cleanInput)) return;
       await _evaluateWordWithAiReferee(cleanInput,
           rawInput: asrText, candidates: inputs, autoScheduled: true);
     });
@@ -4427,7 +4455,7 @@ class BdcNotifier extends _$BdcNotifier {
         final ratingResult = _calculateRating("AI裁判");
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       } else {
-        _failedWordAiEvaluationsForCurrentWord.add(cleanInput);
+        _failedWordAiEvaluationsForCurrentWord[cleanInput] = explanation;
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);
         final confusableHint = AiRefereeUtil.confusableWordHint(
@@ -4467,6 +4495,42 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+  /// 中英（ch2En）环节：剥掉已经交给裁判判过的识别前缀，只留本轮新增的发音文本。
+  ///
+  /// 语音识别在同一个识别请求内是**持续累积**的：用户每重试一次，整段转写就在尾部加长
+  /// 一次（线上实况重试四次后整段为 "Precisely strictly strictly accurately"）。
+  /// [_ch2EnJudgedAsrText] 记录已经交付裁判的那一段，这里按词做最长公共前缀切分，让本地
+  /// 音素判定与 AI 裁判都只看"用户这一次说的是什么"，而不是整段历史。
+  ///
+  /// 识别请求本身被重启（用户停顿到系统句末）时整段会从头开始，与基线没有公共前缀，
+  /// 此时整段都作为本轮新增返回——正是期望行为。返回空表示本帧没有任何新发音。
+  List<String> _stripJudgedCh2EnAsrPrefix(List<String> candidates) {
+    if (_ch2EnJudgedAsrText.isEmpty) return candidates;
+    final judgedTokens = _asrWordTokens(_ch2EnJudgedAsrText);
+    if (judgedTokens.isEmpty) return candidates;
+
+    final round = <String>[];
+    for (final candidate in candidates) {
+      final tokens = _asrWordTokens(candidate);
+      int common = 0;
+      while (common < judgedTokens.length &&
+          common < tokens.length &&
+          tokens[common] == judgedTokens[common]) {
+        common++;
+      }
+      final fresh = tokens.sublist(common);
+      if (fresh.isNotEmpty) round.add(fresh.join(' '));
+    }
+    return round;
+  }
+
+  /// 把识别文本切成小写词元，用于比对"哪一段已经判过"。
+  static List<String> _asrWordTokens(String text) => text
+      .toLowerCase()
+      .split(RegExp(r"[^a-z0-9']+"))
+      .where((token) => token.isNotEmpty)
+      .toList();
+
   /// 当用户说英文停顿一小段时间后，触发单词中英（ch2En）大模型发音与同义词智能裁判
   void _scheduleCh2EnAiRefereeCheck(List<String> inputs) {
     _wordAiRefereeDebounceTimer?.cancel();
@@ -4480,14 +4544,26 @@ class BdcNotifier extends _$BdcNotifier {
     final cleanInput = rawInput.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
     if (cleanInput.length < 2) return;
 
-    if (_failedWordAiEvaluationsForCurrentWord.contains(cleanInput)) return;
-    if (_wordAiEvaluationCountForCurrentWord >= 5) return;
+    // 本次停顿覆盖到的整段识别文本：裁判往返期间用户可能已经开口说下一个词，基线必须
+    // 推进到这里，而不是推进到回调执行时的最新整段——否则等待期间说的词会被当成已判过
+    // 而永久吞掉。
+    final String judgedUpToAsrText = _ch2EnSessionAsrText;
 
     _wordAiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
       if (_isDisposed) return;
       if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
-      if (_isWordAiRefereeJudging) return;
+      if (_isWordAiRefereeJudging) return; // 上一次裁判还在途：本帧留给下一轮，基线不动
       if (state.word?.id != word.id) return;
+
+      // 用户停口了，本轮尝试到此为止：基线推进到本次覆盖的整段。这一步与"本次是否真的
+      // 发起裁判"无关——即便答案已判过、或裁判额度已用尽，下一轮也必须只算新增发音，
+      // 否则用户之后说出的正确发音会被前面的错误历史拖住音素分而永远判不过。
+      _ch2EnJudgedAsrText = judgedUpToAsrText;
+
+      // 同一个词刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
+      // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。
+      if (_remindAlreadyJudgedAnswer(cleanInput)) return;
+      if (_wordAiEvaluationCountForCurrentWord >= 5) return;
 
       await _evaluateCh2EnWithAiReferee(
         cleanInput,
@@ -4591,7 +4667,7 @@ class BdcNotifier extends _$BdcNotifier {
         final ratingResult = _calculateRating("AI裁判");
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       } else {
-        _failedWordAiEvaluationsForCurrentWord.add(cleanInput);
+        _failedWordAiEvaluationsForCurrentWord[cleanInput] = explanation;
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);
         if (isSynonym && explanation.isNotEmpty) {

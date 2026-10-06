@@ -491,7 +491,10 @@ def encode_video(frames, total_frames, total_seconds, audio, out_path,
         filt.append(f"[{len(audio) + 1}:a]volume={bgm_gain},"
                     f"aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[abgm]")
         mix.append("[abgm]")
-    filt.append("".join(mix) + f"amix=inputs={len(mix)}:duration=longest:normalize=0[aout]")
+    # 末尾一定要 apad：amix 只混到最后一条音频结束为止，若结尾几秒本来就没声音
+    # （比如收尾段既无配音也无音效），音轨会比视频短一截，容器里就是两条长度不等的流。
+    # 补静音到全片长度，再由 -t 统一裁齐。
+    filt.append("".join(mix) + f"amix=inputs={len(mix)}:duration=longest:normalize=0,apad[aout]")
 
     cmd += ["-filter_complex", ";".join(filt), "-map", "0:v", "-map", "[aout]",
             "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p",

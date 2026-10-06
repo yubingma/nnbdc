@@ -3249,6 +3249,150 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
   });
 
+  /// 把本词的学习步骤配成 Ch2En 测评并起好容器（中英环节的语音用例共用）。
+  Future<ProviderContainer> setupCh2EnContainer(MockAsr mockAsr) async {
+    await (db.delete(db.userStudySteps)..where((uss) => uss.userId.equals(testUser.id))).go();
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          scope: 'new',
+          group: 'check',
+          studyStep: 'Ch2En',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    // 用例含 1.5s 以上的真实等待：必须持有监听，避免 autoDispose 在等待期间销毁 notifier
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    expect(container.read(bdcNotifierProvider).studyStep, 'Ch2En');
+    return container;
+  }
+
+  /// 从裁判请求里取出"用户说了什么"（prompt 中的 User's Speech-to-Text Input 一行）。
+  String refereeUserInput(String messagesJson) =>
+      RegExp(r"User's Speech-to-Text Input: ([^\\]+)")
+          .firstMatch(messagesJson)
+          ?.group(1)
+          ?.trim() ??
+      '';
+
+  test('BdcNotifier - 中英环节重试只把本轮新增的发音送审，历史错词不重复送', () async {
+    final container = await setupCh2EnContainer(MockAsr());
+
+    final refereeInputs = <String>[];
+    AiRefereeUtil.aiChatOverride = (messagesJson, userId) async {
+      refereeInputs.add(refereeUserInput(messagesJson));
+      return Result('200', '', true)..data = '{"isCorrect": false}';
+    };
+    addTearDown(() => AiRefereeUtil.aiChatOverride = null);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+
+    // 第 1 次尝试：说 precisely（目标词的同义词，本地音素不命中）
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'Precisely',
+      'candidates': ['Precisely'],
+      'isFinal': false,
+    }));
+    await Future.delayed(const Duration(milliseconds: 1700));
+    expect(refereeInputs, ['Precisely'], reason: '第一次尝试原样送审');
+
+    // 第 2 次尝试：原生识别在同一个识别请求内把整段累积成 "Precisely strictly"
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'Precisely strictly',
+      'candidates': ['Precisely strictly'],
+      'isFinal': false,
+    }));
+    expect(container.read(bdcNotifierProvider).currentAsrCandidates, ['strictly'],
+        reason: '第二帧只应把新增的 strictly 当作本轮答案');
+    await Future.delayed(const Duration(milliseconds: 1700));
+    expect(refereeInputs, ['Precisely', 'strictly'],
+        reason: '第二次送审的必须是本轮新增的 strictly，不能把历史整段一起送去');
+
+    // 第 3 次尝试：整段再累积一个词
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'Precisely strictly accurately',
+      'candidates': ['Precisely strictly accurately'],
+      'isFinal': false,
+    }));
+    await Future.delayed(const Duration(milliseconds: 1700));
+    expect(refereeInputs, ['Precisely', 'strictly', 'accurately']);
+
+    // 原生识别请求自然重启（用户停顿到句末）后整段从头开始：新整段必须全部算作本轮新增，
+    // 不能被当成"已经判过"而吞掉。
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'apple',
+      'candidates': ['apple'],
+      'isFinal': false,
+    }));
+    expect(container.read(bdcNotifierProvider).hasFinishedAnswering, true,
+        reason: '识别会话重启后说对目标词，必须照常判过');
+  });
+
+  test('BdcNotifier - 中英环节重复说同一个错词不再重复请教裁判', () async {
+    final container = await setupCh2EnContainer(MockAsr());
+
+    final refereeInputs = <String>[];
+    AiRefereeUtil.aiChatOverride = (messagesJson, userId) async {
+      refereeInputs.add(refereeUserInput(messagesJson));
+      return Result('200', '', true)
+        ..data = '{"isCorrect": false, "explanation": "发音与目标词不符"}';
+    };
+    addTearDown(() => AiRefereeUtil.aiChatOverride = null);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+
+    // 第 1 次：说 strictly，判错并记入"本词已判错的答案"
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'strictly',
+      'candidates': ['strictly'],
+      'isFinal': false,
+    }));
+    await Future.delayed(const Duration(milliseconds: 1700));
+    expect(refereeInputs, ['strictly']);
+
+    // 第 2 次：又说一次 strictly（整段累积成 "strictly strictly"）。
+    // 重复提示走 ToastUtil.info，纯单元测试没有 ToastificationWrapper 会抛断言错误，
+    // 用一个隔离的 zone 接住它，再断言"没有第二次请教大模型"。
+    final asyncErrors = <Object>[];
+    await runZonedGuarded(() async {
+      await notifier.onAsrResult(jsonEncode({
+        'best': 'strictly strictly',
+        'candidates': ['strictly strictly'],
+        'isFinal': false,
+      }));
+      await Future.delayed(const Duration(milliseconds: 1700));
+    }, (error, stack) => asyncErrors.add(error));
+
+    expect(refereeInputs, ['strictly'], reason: '同一个答案刚判过错，不得再次请教大模型');
+    expect(
+        asyncErrors.every((e) => '$e'.contains('Toastification is not initialized')), isTrue,
+        reason: '唯一允许的异步异常是测试环境没有提示条容器');
+
+    // 重复提示同样算作"本轮尝试已结束"：接着说出的新词，本轮新增只能是这个新词，
+    // 不能被前面的历史拖住（裁判额度用尽时走的是同一条路，只是不发起请求）。
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'strictly strictly accurately',
+      'candidates': ['strictly strictly accurately'],
+      'isFinal': false,
+    }));
+    expect(container.read(bdcNotifierProvider).currentAsrCandidates, ['accurately'],
+        reason: '基线必须随本轮尝试一起推进，新词不能被历史整段拖住');
+    await Future.delayed(const Duration(milliseconds: 1700));
+    expect(refereeInputs, ['strictly', 'accurately']);
+  });
+
   test('BdcNotifier - 前一个单词答对后快速点击下一词，自动跳转定时器应被取消，新词不应被误判答对', () async {
     final now = AppClock.now();
     // 额外插入第二个单词 word_2
