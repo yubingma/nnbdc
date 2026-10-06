@@ -1232,10 +1232,24 @@ class WordListPageState extends State<WordListPage>
               ),
               // 底部的按钮，固定在页面底部
               if (args.injectedBtn != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 24.0),
-                  child: args.injectedBtn,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // 与背单词页「下一词」落在同一个位置：iPad 等宽屏贴右下角（离屏幕右缘 28px），
+                    // 手机窄屏保持居中。宽屏居中会让按钮停在双手拇指都够不到的屏幕中段。
+                    // 28px = 页面已内缩的 rightPadding + 这里补足的差额。
+                    final isWide = constraints.maxWidth >= 560;
+                    return Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.fromLTRB(
+                        16.0,
+                        12.0,
+                        isWide ? (28.0 - rightPadding) : 16.0,
+                        24.0,
+                      ),
+                      alignment: isWide ? Alignment.centerRight : null,
+                      child: args.injectedBtn,
+                    );
+                  },
                 ),
             ],
           ),

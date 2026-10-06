@@ -1,26 +1,30 @@
 #!/usr/bin/env node
 
 /**
- * 应用商店截图生成器（App Store iPhone 6.5" / App Store iPad 13" / 华为应用市场 / 横排概览图）
+ * 应用商店截图生成器（App Store iPhone 6.5" / App Store iPad 13" / 华为应用市场 / 小米应用商店 / 横排概览图）
  *
- * 四路产物，共用同一套暖橙视觉语言（苹果与华为同一份原型，iPad 是宽屏版原型）：
+ * 五路产物，共用同一套暖橙视觉语言（苹果与华为、小米共用同一份原型，iPad 与小米平板是宽屏版原型）：
  *   apple    1242×2688（9:19.5）→ design/ui/png/app_store_iphone_6.5/
  *   ipad     2048×2732（3:4）   → design/ui/png/app_store_ipad_13/
  *   huawei   450×800（9:16）   → devops/应用上架资源/huawei/
+ *   xiaomi   手机 1080×1920（9:16）+ 平板 1536×2048（3:4）
+ *                               → devops/应用上架资源/xiaomi/手机/ 与 /平板/
  *   overview 7 张横排概览图     → design/ui/png/app_store_minimal_clean_overview.png
  *
  * 实现要点：
  * 1. 每次只显示一张海报并让画布正好等于卡片，截图即成品，不做任何裁切；
  * 2. 小尺寸产物（华为 450×800）以 3 倍渲染后降采样，保证小字号锐利；
  *    App Store 尺寸本身就是 3.18 倍交付尺寸，直接以交付分辨率渲染，不放大不缩水；
+ *    小米沿用华为的 9:16 版面（450×800），按 2.4 倍渲染即得 1080×1920，同样不放大不缩水；
  * 3. 关闭全部动画，保证每次渲染结果完全一致；
  * 4. Chrome 截完图不会自行退出，按进程组整体回收，避免残留进程拖慢机器。
  *
  * 用法：
- *   node design/ui/render_app_store_screens.js            # apple + ipad + huawei 全部
+ *   node design/ui/render_app_store_screens.js            # apple + ipad + huawei + xiaomi 全部
  *   node design/ui/render_app_store_screens.js apple
  *   node design/ui/render_app_store_screens.js ipad
  *   node design/ui/render_app_store_screens.js huawei
+ *   node design/ui/render_app_store_screens.js xiaomi
  *   node design/ui/render_app_store_screens.js overview
  */
 
@@ -80,6 +84,28 @@ const TARGETS = {
     aspect: 'huawei',
     device: 'punch',
     outDir: path.join(ROOT, 'devops', '应用上架资源', 'huawei'),
+  },
+  // 小米应用商店手机槽 1080×1920（9:16）：版面沿用华为的 450×800，按 2.4 倍渲染正好 1080×1920
+  xiaomiPhone: {
+    srcHtml: SRC_PHONE_HTML,
+    width: 1080,
+    height: 1920,
+    canvasWidth: 450,
+    canvasHeight: 800,
+    aspect: 'huawei',
+    device: 'punch',
+    outDir: path.join(ROOT, 'devops', '应用上架资源', 'xiaomi', '手机'),
+  },
+  // 小米应用商店平板槽 1536×2048（3:4）：版面沿用 iPad 的 1024×1366，按 1.5 倍渲染
+  xiaomiPad: {
+    srcHtml: SRC_IPAD_HTML,
+    width: 1536,
+    height: 2048,
+    canvasWidth: 1024,
+    canvasHeight: 1366,
+    aspect: 'ipad',
+    device: 'ipad',
+    outDir: path.join(ROOT, 'devops', '应用上架资源', 'xiaomi', '平板'),
   },
 };
 
@@ -278,6 +304,10 @@ function main() {
     apple: () => renderTarget(TARGETS.apple, TARGETS.apple.width / TARGETS.apple.canvasWidth),
     ipad: () => renderTarget(TARGETS.ipad, TARGETS.ipad.width / TARGETS.ipad.canvasWidth),
     huawei: () => renderTarget(TARGETS.huawei, HUAWEI_SUPERSAMPLE),
+    xiaomi: () => {
+      renderTarget(TARGETS.xiaomiPhone, TARGETS.xiaomiPhone.width / TARGETS.xiaomiPhone.canvasWidth);
+      renderTarget(TARGETS.xiaomiPad, TARGETS.xiaomiPad.width / TARGETS.xiaomiPad.canvasWidth);
+    },
     overview: renderOverview,
   };
   if (what === 'all') {
@@ -285,7 +315,7 @@ function main() {
   } else if (jobs[what]) {
     jobs[what]();
   } else {
-    console.error(`❌ 未知目标「${what}」，可选：all / apple / ipad / huawei / overview`);
+    console.error(`❌ 未知目标「${what}」，可选：all / apple / ipad / huawei / xiaomi / overview`);
     process.exit(1);
   }
   console.log('\n🎉 完成。');

@@ -136,14 +136,17 @@ def build_app_info(args, synchro_type, fallback_app_name):
         missing = [name for name, value in required if not value]
         if missing:
             raise SystemExit(f"❌ 首次新增应用缺少上架素材参数: {', '.join(missing)}")
-        if len(args.screenshot) < 3:
-            raise SystemExit("❌ 首次新增应用至少需要 3 张手机截图 (--screenshot，可重复传入)")
+        if len(args.screenshot) < 4:
+            raise SystemExit("❌ 首次新增应用至少需要 4 张手机截图 (--screenshot，可重复传入)")
+        if args.suitable_type in ("1", "2") and len(args.pad_screenshot) < 4:
+            raise SystemExit("❌ 设备发布类型含平板时至少需要 4 张平板截图 (--pad-screenshot)")
         app_info.update({
             "category": int(args.category),
             "keyWords": args.keywords,
             "desc": args.desc,
             "brief": args.brief,
             "privacyUrl": args.privacy_url,
+            "suitableType": int(args.suitable_type),
         })
     else:
         if not args.update_desc:
@@ -163,9 +166,18 @@ def push_app(args, synchro_type, app_name):
         files["icon"] = args.icon
         for index, path in enumerate(args.screenshot, start=1):
             files[f"screenshot_{index}"] = path
+        for index, path in enumerate(args.pad_screenshot, start=1):
+            files[f"screenshot_pad_{index}"] = path
 
     request_data = compact_json({"userName": args.account, "synchroType": synchro_type, "appInfo": app_info})
     print(f"   同步类型: {synchro_type} ({'新增应用' if synchro_type == 0 else '更新版本'})")
+    if synchro_type == 0:
+        print(f"   应用名称: {app_info['appName']} / 分类: {app_info['category']} / 关键词: {app_info['keyWords']}")
+        print(f"   一句话简介({len(app_info['brief'])}字): {app_info['brief']}")
+        print(f"   应用介绍 {len(app_info['desc'])} 字 / 隐私政策: {app_info['privacyUrl']}")
+        print(f"   设备类型: {app_info['suitableType']} / 手机截图 {len(args.screenshot)} 张 / "
+              f"平板截图 {len(args.pad_screenshot)} 张")
+        print(f"   图标: {args.icon}")
     print(f"   安装包: {args.apk} ({os.path.getsize(args.apk) / (1024 * 1024):.2f} MB)，开始上传...")
 
     response = call_api("/dev/push", request_data, args.private_key, args.public_key, files)
@@ -190,7 +202,11 @@ def main():
     parser.add_argument("--privacy-url", help="隐私政策链接，首次新增时必填")
     parser.add_argument("--icon", help="应用图标文件，首次新增时必填")
     parser.add_argument("--screenshot", action="append", default=[],
-                        help="手机截图文件，首次新增时至少 3 张，可重复传入")
+                        help="手机截图文件，首次新增时至少 4 张，可重复传入")
+    parser.add_argument("--suitable-type", default="0", choices=["0", "1", "2"],
+                        help="设备发布类型：0=手机，1=平板，2=手机和平板（首次新增时生效）")
+    parser.add_argument("--pad-screenshot", action="append", default=[],
+                        help="平板截图文件，设备发布类型含平板时至少 4 张，可重复传入")
     args = parser.parse_args()
 
     response = query_app(args)

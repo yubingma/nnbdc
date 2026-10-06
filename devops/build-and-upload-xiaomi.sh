@@ -117,14 +117,63 @@ ACCOUNT=""
 PRIVATE_KEY=""
 PUBLIC_KEY=""
 UPDATE_DESC="优化学习体验，修复已知问题"
-APP_NAME=""
-CATEGORY=""
-KEYWORDS=""
-APP_DESC=""
-BRIEF=""
-PRIVACY_URL=""
-ICON=""
-SCREENSHOTS=()
+
+# ==============================================================================
+# 首次新增应用（synchroType=0）用的上架素材
+#
+# 只在小米商店第一次收录这个包名时用得到（接口查询回 create=true、updateVersion=false）。
+# 一旦首个版本提交成功，这个包名此后只会走「更新版本」，本节内容不再参与。
+# 小米的硬性规格：图标 512×512 PNG 且与 APK 内图标一致；手机截图 1080×1920、
+# 平板截图 1536×2048，均至少 4 张、最多 5 张、单张不超过 5MB、不得重复。
+# ==============================================================================
+STORE_ASSET_DIR="$SCRIPT_DIR/应用上架资源/xiaomi"
+APP_NAME="泡泡单词英语版"                                        # 与 APK 内 strings.xml 的 app_name 保持一致
+CATEGORY="12"                                                   # 12 = 学习教育
+KEYWORDS="背单词 英语单词 四六级 考研 雅思 默写 词库"              # 最多 8 个，每个不超过 5 个汉字
+BRIEF="以输出为核心的背单词应用"                                  # 5~16 个字符
+PRIVACY_URL="https://www.nnbdc.com/privacy_android.html"
+ICON="$STORE_ASSET_DIR/icon-512x512.png"
+SUITABLE_TYPE="2"                                               # 0=手机 1=平板 2=手机和平板
+MOBILE_SHOT_DIR="$STORE_ASSET_DIR/手机"
+PAD_SHOT_DIR="$STORE_ASSET_DIR/平板"
+# 截图上限 5 张，按文件名顺序取前 5 张（渲染脚本产出 7 张，供人工挑选）
+MOBILE_SHOTS_ALL=( "$MOBILE_SHOT_DIR"/*.png )
+PAD_SHOTS_ALL=( "$PAD_SHOT_DIR"/*.png )
+SCREENSHOTS=( "${MOBILE_SHOTS_ALL[@]:0:5}" )
+PAD_SCREENSHOTS=( "${PAD_SHOTS_ALL[@]:0:5}" )
+SHOTS_FROM_CLI=false
+PAD_SHOTS_FROM_CLI=false
+APP_DESC=$(cat <<'EOF'
+产品定位
+泡泡单词是一款以"输出"为核心的英语单词学习应用。我们不做"看图选词"式的选择题记忆，而是要求用户在每一个单词上完成真实的产出——把英文写出来、把释义写出来、把单词念出来，以此确认自己是否真的记住。
+记忆方式
+· 英译汉 / 汉译英：看英文写中文释义，看中文拼写英文单词。
+· 例句英译汉 / 例句汉译英：在句子语境中理解单词，而不是孤立记词。
+· 手写默写：支持在屏幕上直接手写中文释义或英文单词，兼容键盘与手写混合输入。判题时对大小写、标点、连字符等形式差异予以容错，对释义内容严格判定。
+· 语音答题：支持语音输入作答与跟读评分，可切换单词发音口音。
+复习机制
+· FSRS 智能复习：基于自由间隔重复算法，为每个单词单独计算复习时间，并根据你的作答反馈动态调整。
+· 复习分布图：把每天的复习量摊平展示，帮助避免复习任务堆积。
+学习规划
+· 每日学习计划：可自定义每日新词数量、每批单词数量与学习环节组合。
+· 三十天打卡记录：以日历形式记录每日学习情况。
+· 生词本：答错的单词自动进入生词本，便于集中巩固。
+词库
+· 内置中高考、四六级、考研、托福、雅思等常用词库。
+· 支持导入自定义词表，可按需建立个人专属词库。
+其他功能
+· 闲时听雨：以音频形式连续播放词单，适合通勤、运动等场景。
+· 单词 PK：实时对战答题模式，答错的单词自动加入生词本。
+· 荣耀勋章墙：记录学习成就，支持生成成就海报。
+· 自测默写本：支持将词单导出为 PDF，用于打印或在平板上复习。
+· 深色 / 浅色主题、字体大小调节。
+· 支持多设备登录与学习数据同步。
+适用人群
+准备中高考、四六级、考研及出国留学考试的学生，以及需要长期积累专业词汇的学习者。学习数据仅用于学习进度与统计展示，具体见隐私政策。
+关于收费
+泡泡单词免费下载使用，基础功能免费。会员可用于解除每日学习词量上限、解锁全部官方词库及词库导入等功能。具体权益以应用内购买页面说明为准。
+EOF
+)
 
 show_usage() {
     cat << EOF
@@ -152,7 +201,9 @@ show_usage() {
   --brief TEXT            一句话简介
   --privacy-url URL       隐私政策链接
   --icon PATH             应用图标文件
-  --screenshot PATH       手机截图文件，至少 3 张，可重复传入
+  --screenshot PATH       手机截图文件，至少 4 张，可重复传入
+  --suitable-type N       设备发布类型: 0=手机 1=平板 2=手机和平板 (默认: $SUITABLE_TYPE)
+  --pad-screenshot PATH   平板截图文件，含平板时至少 4 张，可重复传入
 EOF
 }
 
@@ -171,7 +222,16 @@ parse_args() {
             --brief)          BRIEF="$2"; shift 2 ;;
             --privacy-url)    PRIVACY_URL="$2"; shift 2 ;;
             --icon)           ICON="$2"; shift 2 ;;
-            --screenshot)     SCREENSHOTS+=("$2"); shift 2 ;;
+            --screenshot)
+                # 命令行给了截图就整批用命令行的，不与默认的那 5 张混在一起
+                if [ "$SHOTS_FROM_CLI" = false ]; then SCREENSHOTS=(); SHOTS_FROM_CLI=true; fi
+                SCREENSHOTS+=("$2"); shift 2
+                ;;
+            --suitable-type)  SUITABLE_TYPE="$2"; shift 2 ;;
+            --pad-screenshot)
+                if [ "$PAD_SHOTS_FROM_CLI" = false ]; then PAD_SCREENSHOTS=(); PAD_SHOTS_FROM_CLI=true; fi
+                PAD_SCREENSHOTS+=("$2"); shift 2
+                ;;
             --query-only)     QUERY_ONLY=true; shift ;;
             --skip-tests)     SKIP_TESTS=true; shift ;;
             --build-only)     BUILD_ONLY=true; shift ;;
@@ -310,6 +370,10 @@ upload_apk() {
     if [ -n "$ICON" ];        then extra_args+=(--icon "$ICON"); fi
     for shot in "${SCREENSHOTS[@]}"; do
         extra_args+=(--screenshot "$shot")
+    done
+    extra_args+=(--suitable-type "$SUITABLE_TYPE")
+    for shot in "${PAD_SCREENSHOTS[@]}"; do
+        extra_args+=(--pad-screenshot "$shot")
     done
 
     echo ""
