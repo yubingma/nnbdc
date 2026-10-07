@@ -3810,7 +3810,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 11),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

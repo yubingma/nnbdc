@@ -26,10 +26,6 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
   ];
 
   static String _getStepIndexLabel(int index) {
-    const nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-    if (index >= 0 && index < nums.length) {
-      return '环节${nums[index]}';
-    }
     return '环节 ${index + 1}';
   }
 
