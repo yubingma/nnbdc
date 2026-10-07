@@ -2754,7 +2754,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
 
 class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, CollisionCallbacks {
   // 基准下落速度(px/s)，实际速度再乘以屏幕缩放比例；触底时间估算必须复用同一常量
-  static const double fallSpeed = 28.0;
+  static const double fallSpeed = 18.0;
 
   static TextPaint _buildTextPaint(Color color, {FontWeight weight = FontWeight.w300}) {
     final scale = 1.0; // 初值，实际大小在 onGameResize 中按场地高度自适应
