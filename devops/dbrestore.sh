@@ -3,10 +3,12 @@
 # 容器名: pg
 # 备份文件路径从宿主机传入容器
 
+set -o pipefail
+
 # 检查参数
 if [ $# -eq 0 ]; then
     echo "用法: $0 <备份文件路径>"
-    echo "示例: $0 /var/nnbdc/dbdump/bdc_20241218-123456.sql"
+    echo "示例: $0 /var/nnbdc/dbdump/bdc_20241218-123456.sql.gz"
     exit 1
 fi
 
@@ -39,8 +41,8 @@ else
     echo "数据库 $DB_NAME 已存在"
 fi
 
-# 使用容器内的 psql 命令，从宿主机文件读取并执行
-cat "$BACKUP_FILE" | docker exec -i pg psql -U$DB_USER $DB_NAME
+# 使用容器内的 psql 命令，从宿主机解压后读取并执行
+gunzip -c "$BACKUP_FILE" | docker exec -i pg psql -U$DB_USER $DB_NAME
 
 if [ $? -eq 0 ]; then
     echo "数据库还原完成"

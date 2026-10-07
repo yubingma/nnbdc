@@ -45,6 +45,9 @@ GAP = 0.45                 # 两条释义讲解之间的最小间隔
 HUB = (W / 2, 648)         # 核心意象（中心枢纽）位置
 WORD_Y, PHON_Y = 300, 378  # 常驻词头（首帧即出现）
 HOOK_ART, HOOK_ART_Y = 320, 700      # 片头里的核心意象
+# 收尾也放一次核心意象：这一屏是记忆锚点，把图重新摆出来，"记住一个意象"这话才有指代对象
+OUTRO_ART, OUTRO_ART_Y = 190, 530
+OUTRO_QUOTE_Y, OUTRO_ASK_Y, OUTRO_CHIP_Y = 760, 1015, 1185
 HOOK_CARD_Y, HOOK_CARD_GAP, HOOK_LINE_Y = 1010, 140, 1424
 ART_BOX = 300              # 辐射段里核心意象的边长（≤4 个节点时）
 ART_BOX_MANY = 220         # 节点 ≥5 个时核心意象要缩小，给四周腾地方
@@ -455,16 +458,20 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
             ask, cta = s["ask"], s["cta"]
             f_q = fit_font(max(rows, key=len), FONT_CN, FONT_CN_BOLD, 88, W - 170)
             f_ask = fit_font(ask, FONT_CN, FONT_CN_BOLD, 58, W - 170)
+            art_outro = core_art.copy()
+            art_outro.thumbnail((OUTRO_ART, OUTRO_ART), Image.LANCZOS)
+            L.append(ImageLayer(art_outro, (W / 2, OUTRO_ART_Y), OUTRO_AT,
+                                dur=OUTRO_FADE, glow=accent + (80,)))
             for i, txt in enumerate(rows):
-                y = 706 + (i - (len(rows) - 1) / 2) * 122
+                y = OUTRO_QUOTE_Y + (i - (len(rows) - 1) / 2) * 122
                 L.append(Layer(lambda d, e, dy, t=txt, yy=y: d.text(
                     (W / 2, yy + dy), t, font=f_q,
                     fill=accent + (int(255 * e),), anchor="mm"), OUTRO_AT, dur=OUTRO_FADE, rise=0))
             L.append(Layer(lambda d, e, dy, t=ask: d.text(
-                (W / 2, 968 + dy), t, font=f_ask,
+                (W / 2, OUTRO_ASK_Y + dy), t, font=f_ask,
                 fill=INK + (int(250 * e),), anchor="mm"), OUTRO_AT, dur=OUTRO_FADE, rise=0))
             L.append(Layer(lambda d, e, dy, t=cta: teaser_chip(
-                d, W / 2, 1156 + dy, t, f_small, e), OUTRO_AT, dur=OUTRO_FADE))
+                d, W / 2, OUTRO_CHIP_Y + dy, t, f_small, e), OUTRO_AT, dur=OUTRO_FADE))
         layers_by_seg.append(L)
 
     def draw_chrome(img, t):
