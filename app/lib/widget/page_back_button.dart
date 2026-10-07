@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../global.dart';
 
 /// 页面级返回箭头（纯净无底圈，与「单词详情」「成长之路」的返回风格一致）。
 ///
@@ -15,7 +18,18 @@ class PageBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkResponse(
       radius: 20,
-      onTap: () => Navigator.of(context).pop(),
+      onTap: () {
+        // TODO(临时诊断)：定位「点返回后 go_router 路由表为空」的崩溃，定位后删除
+        final GoRouter router = GoRouter.of(context);
+        final List<RouteMatchBase> matches =
+            router.routerDelegate.currentConfiguration.matches;
+        Global.logger.d('[返回诊断] '
+            'matchedLocation=${GoRouterState.of(context).matchedLocation} '
+            'matchList长度=${matches.length} '
+            '各段路由=${matches.map((RouteMatchBase m) => m.route is GoRoute ? (m.route as GoRoute).path : m.runtimeType.toString()).toList()} '
+            'navigatorCanPop=${Navigator.of(context).canPop()}');
+        Navigator.of(context).pop();
+      },
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: Icon(Icons.arrow_back_ios_new_rounded, size: size, color: color),
