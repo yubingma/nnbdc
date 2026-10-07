@@ -1408,59 +1408,57 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required VoidCallback onPressed,
   }) {
     final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
-    final buttonColor = hasWallpaper
-        ? const Color(0xFF10B981)
-        : (isDarkMode ? themeConfig.primaryColor : themeConfig.primaryLightColor);
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        gradient: hasWallpaper
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xEE10B981), Color(0xF2059669)],
-              )
-            : null,
-        color: hasWallpaper ? null : buttonColor,
-        boxShadow: [
-          BoxShadow(
-            color: hasWallpaper
-                ? const Color(0xFF10B981).withValues(alpha: 0.35)
-                : buttonColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          minimumSize: const Size(0, 0),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-        ),
-        onPressed: onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // 与"开始学习/继续学习"主按钮同一枚箭头：这里是接着学未完成的加量批次，不是新增单词
-            const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15.5,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-                color: Colors.white,
-              ),
+    final actionColor = hasWallpaper
+        ? Colors.white
+        : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                    color: actionColor,
+                    shadows: hasWallpaper
+                        ? const [
+                            Shadow(
+                              color: Colors.black45,
+                              blurRadius: 8,
+                              offset: Offset(0, 1.5),
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 18,
+                  color: actionColor,
+                  shadows: hasWallpaper
+                      ? const [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 8,
+                            offset: Offset(0, 1.5),
+                          ),
+                        ]
+                      : null,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1573,358 +1571,357 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
-    final buttonColor = hasWallpaper
-        ? const Color(0xFF10B981)
-        : (isDarkMode ? themeConfig.primaryColor : themeConfig.primaryLightColor);
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        gradient: hasWallpaper
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xEE10B981), Color(0xF2059669)],
-              )
-            : null,
-        color: hasWallpaper ? null : buttonColor,
-        boxShadow: [
-          BoxShadow(
-            color: hasWallpaper
-                ? const Color(0xFF10B981).withValues(alpha: 0.35)
-                : buttonColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              // 按钮高度由"内容 + 固定 padding"自适应决定，而不是写死 height：
-              // iPad 等大屏字体度量偏大时文字行高随之变高，按钮自动变高，文字不会被 ClipRRect 裁掉
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              minimumSize: const Size(0, 0),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-            ),
-        onPressed: () async {
-          if (_isPreparingStudy) return;
-          if (_newCheckStep == null) {
-            ToastUtil.error('请选择测评环节');
-            return;
-          }
+    final actionColor = hasWallpaper
+        ? Colors.white
+        : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () async {
+            if (_isPreparingStudy) return;
+            if (_newCheckStep == null) {
+              ToastUtil.error('请选择测评环节');
+              return;
+            }
 
-          // 必须等今日计划准备完成再进入学习页：跨天重置就发生在准备流程里，
-          // 计划没就绪就进去，昨天残留的进度会被当成"今日已完成"而直接跳打卡页。
-          if (_loadFuture != null || prepareResult == null) {
-            setState(() => _isPreparingStudy = true);
-            await _awaitPlanReady();
-            if (!mounted) return;
-            setState(() => _isPreparingStudy = false);
-          }
+            // 必须等今日计划准备完成再进入学习页：跨天重置就发生在准备流程里，
+            // 计划没就绪就进去，昨天残留的进度会被当成"今日已完成"而直接跳打卡页。
+            if (_loadFuture != null || prepareResult == null) {
+              setState(() => _isPreparingStudy = true);
+              await _awaitPlanReady();
+              if (!mounted) return;
+              setState(() => _isPreparingStudy = false);
+            }
 
-          if (!(user?.todayStudyStarted ?? false)) {
-            final shouldStart = await showDialog<bool>(
-              context: context,
-              barrierColor: Colors.black.withValues(alpha: 0.35),
-              builder: (ctx) {
-                final dialogThemeStyle = ctx.watch<DarkMode>().themeStyle;
-                final dialogConfig = AppThemeConfig.of(dialogThemeStyle);
-                final isDarkMode = dialogThemeStyle.isDark;
-                final cardBorder = isDarkMode
-                    ? Colors.white.withValues(alpha: 0.16)
-                    : Colors.white.withValues(alpha: 0.88);
-                final textMain = dialogConfig.textPrimary;
-                final textSub = dialogConfig.textSecondary;
-                final subtleBg = isDarkMode
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.white.withValues(alpha: 0.45);
-                final accentColor = dialogConfig.primaryColor;
-                final primarySoft = isDarkMode
-                    ? accentColor.withValues(alpha: 0.18)
-                    : accentColor.withValues(alpha: 0.12);
-                final amberColor = const Color(0xFFF59E0B);
+            if (!(user?.todayStudyStarted ?? false)) {
+              final shouldStart = await showDialog<bool>(
+                context: context,
+                barrierColor: Colors.black.withValues(alpha: 0.35),
+                builder: (ctx) {
+                  final dialogThemeStyle = ctx.watch<DarkMode>().themeStyle;
+                  final dialogConfig = AppThemeConfig.of(dialogThemeStyle);
+                  final isDarkMode = dialogThemeStyle.isDark;
+                  final cardBorder = isDarkMode
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : Colors.white.withValues(alpha: 0.88);
+                  final textMain = dialogConfig.textPrimary;
+                  final textSub = dialogConfig.textSecondary;
+                  final subtleBg = isDarkMode
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.white.withValues(alpha: 0.45);
+                  final accentColor = dialogConfig.primaryColor;
+                  final primarySoft = isDarkMode
+                      ? accentColor.withValues(alpha: 0.18)
+                      : accentColor.withValues(alpha: 0.12);
+                  final amberColor = const Color(0xFFF59E0B);
 
-                return Dialog(
-                  backgroundColor: Colors.transparent,
-                  insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: isDarkMode
-                                ? [
-                                    const Color(0xFF1C2230).withValues(alpha: 0.84),
-                                    const Color(0xFF121722).withValues(alpha: 0.78),
-                                  ]
-                                : [
-                                    Colors.white.withValues(alpha: 0.82),
-                                    Colors.white.withValues(alpha: 0.70),
-                                  ],
-                          ),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: cardBorder, width: 1.2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.08),
-                              blurRadius: 30,
-                              offset: const Offset(0, 14),
+                  return Dialog(
+                    backgroundColor: Colors.transparent,
+                    insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: isDarkMode
+                                  ? [
+                                      const Color(0xFF1C2230).withValues(alpha: 0.84),
+                                      const Color(0xFF121722).withValues(alpha: 0.78),
+                                    ]
+                                  : [
+                                      Colors.white.withValues(alpha: 0.82),
+                                      Colors.white.withValues(alpha: 0.70),
+                                    ],
                             ),
-                          ],
-                        ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // 顶部火箭图标展台
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            color: primarySoft,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: cardBorder, width: 1),
-                          ),
-                          child: Icon(
-                            Icons.rocket_launch_rounded,
-                            size: 26,
-                            color: accentColor,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // 标题
-                        Text(
-                          '开启今日学习旅程',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: textMain,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        // 副标题
-                        Text(
-                          '准备好专注背单词了吗？',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: textSub,
-                            height: 1.45,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // 锁定规则提示微卡片
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: subtleBg,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: cardBorder, width: 0.8),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.info_outline_rounded,
-                                size: 16,
-                                color: amberColor,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: cardBorder, width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.08),
+                                blurRadius: 30,
+                                offset: const Offset(0, 14),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '一旦开启，今日的单词量与测评环节将锁定生效，助你保持专注节奏。',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: textSub,
-                                    height: 1.45,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 顶部火箭图标展台
+                              Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  color: primarySoft,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(color: cardBorder, width: 1),
                                 ),
+                                child: Icon(
+                                  Icons.rocket_launch_rounded,
+                                  size: 26,
+                                  color: accentColor,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 标题
+                              Text(
+                                '开启今日学习旅程',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: textMain,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // 副标题
+                              Text(
+                                '准备好专注背单词了吗？',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: textSub,
+                                  height: 1.45,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 锁定规则提示微卡片
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: subtleBg,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: cardBorder, width: 0.8),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline_rounded,
+                                      size: 16,
+                                      color: amberColor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        '一旦开启，今日的单词量与测评环节将锁定生效，助你保持专注节奏。',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: textSub,
+                                          height: 1.45,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+
+                              // 双操作按钮
+                              Row(
+                                children: [
+                                  // 取消按钮
+                                  Expanded(
+                                    flex: 1,
+                                    child: SizedBox(
+                                      height: 44,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: subtleBg,
+                                          foregroundColor: textSub,
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(22),
+                                            side: BorderSide(color: cardBorder, width: 1),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                        onPressed: () => Navigator.of(ctx).pop(false),
+                                        child: Text(
+                                          '稍等修改',
+                                          style: TextStyle(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: textSub,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+
+                                  // 确认按钮
+                                  Expanded(
+                                    flex: 1,
+                                    child: SizedBox(
+                                      height: 44,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: accentColor,
+                                          foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                                          elevation: 2,
+                                          shadowColor: accentColor.withValues(alpha: 0.35),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(22),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                        onPressed: () => Navigator.of(ctx).pop(true),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              '马上开始',
+                                              style: TextStyle(
+                                                fontSize: 13.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Icon(
+                                              Icons.arrow_forward_rounded,
+                                              size: 14,
+                                              color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 22),
-
-                        // 双操作按钮
-                        Row(
-                          children: [
-                            // 取消按钮
-                            Expanded(
-                              flex: 1,
-                              child: SizedBox(
-                                height: 44,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: subtleBg,
-                                    foregroundColor: textSub,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(22),
-                                      side: BorderSide(color: cardBorder, width: 1),
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                  onPressed: () => Navigator.of(ctx).pop(false),
-                                  child: Text(
-                                    '稍等修改',
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: textSub,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-
-                            // 确认按钮
-                            Expanded(
-                              flex: 1,
-                              child: SizedBox(
-                                height: 44,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: accentColor,
-                                    foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-                                    elevation: 2,
-                                    shadowColor: accentColor.withValues(alpha: 0.35),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(22),
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                  onPressed: () => Navigator.of(ctx).pop(true),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '马上开始',
-                                        style: TextStyle(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w800,
-                                          color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Icon(
-                                        Icons.arrow_forward_rounded,
-                                        size: 14,
-                                        color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
+                  );
+                },
+              );
 
-            if (shouldStart != true) {
-              return;
-            }
-          }
-
-          if (user != null) {
-            try {
-              await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
-              final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
-              if (dbUser != null) {
-                // 只标记"今日已开始学习"。绝不能在这里写 lastLearningDate：它是跨天重置的标记，
-                // 而本页的按钮在今日计划就绪之前就可能被点到，抢先把标记写成今天会让跨天重置被整段跳过，
-                // 昨日残留的进度随即被当成"今日已完成"而直接放行打卡（见 prepareTodayStudy / getWord 的跨天判据）。
-                // 计划就绪时 prepareTodayStudy 早已把 lastLearningDate 写成今天，此处的写入本就是多余的。
-                await MyDatabase.instance.usersDao.saveUser(dbUser.copyWith(todayStudyStarted: true), true);
+              if (shouldStart != true) {
+                return;
               }
-              await Global.loadUserFromDb();
-
-              unawaited(() async {
-                try {
-                  ThrottledDbSyncService().requestSync(immediate: true);
-                } catch (e) {
-                  Global.logger.e('开始学习发起网络同步失败: $e');
-                }
-              }());
-            } catch (e, st) {
-              Global.logger.e('记录开始学习状态失败', error: e, stackTrace: st);
             }
-          }
-          await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
-          if (!mounted) return;
-          if (PlatformUtils.isIOS || PlatformUtils.isAndroid) {
-            unawaited(Asr().warmupMicrophone());
-          }
-          context.push('/bdc').then((value) {
-            if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
-          });
-        },
-        child: _isPreparingStudy
-            ? const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 17,
-                    height: 17,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
+
+            if (user != null) {
+              try {
+                await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
+                final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
+                if (dbUser != null) {
+                  await MyDatabase.instance.usersDao.saveUser(dbUser.copyWith(todayStudyStarted: true), true);
+                }
+                await Global.loadUserFromDb();
+
+                unawaited(() async {
+                  try {
+                    ThrottledDbSyncService().requestSync(immediate: true);
+                  } catch (e) {
+                    Global.logger.e('开始学习发起网络同步失败: $e');
+                  }
+                }());
+              } catch (e, st) {
+                Global.logger.e('记录开始学习状态失败', error: e, stackTrace: st);
+              }
+            }
+            await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
+            if (!mounted) return;
+            if (PlatformUtils.isIOS || PlatformUtils.isAndroid) {
+              unawaited(Asr().warmupMicrophone());
+            }
+            context.push('/bdc').then((value) {
+              if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 18),
+            child: _isPreparingStudy
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(actionColor),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '正在准备今日计划…',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: actionColor,
+                          shadows: hasWallpaper
+                              ? const [
+                                  Shadow(
+                                    color: Colors.black45,
+                                    blurRadius: 8,
+                                    offset: Offset(0, 1.5),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        user?.todayStudyStarted == true ? '继续学习' : '开始学习',
+                        style: TextStyle(
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: actionColor,
+                          shadows: hasWallpaper
+                            ? const [
+                                Shadow(
+                                  color: Colors.black45,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 1.5),
+                                ),
+                              ]
+                            : null,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 18,
+                        color: actionColor,
+                        shadows: hasWallpaper
+                            ? const [
+                                Shadow(
+                                  color: Colors.black45,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 1.5),
+                                ),
+                              ]
+                            : null,
+                      ),
+                    ],
                   ),
-                  SizedBox(width: 9),
-                  Text(
-                    '正在准备今日计划…',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    user?.todayStudyStarted == true ? '继续学习' : '开始学习',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                ],
-              ),
+          ),
+        ),
       ),
     );
   }
