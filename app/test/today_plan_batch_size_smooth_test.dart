@@ -200,10 +200,8 @@ void main() {
       findsOneWidget,
     );
 
-    // 点击保存设置（先确保滚动至可见区域）
-    await tester.ensureVisible(find.text('保存设置'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('保存设置'));
+    // 关闭高级学习设置弹窗（触发即改即生效的自动保存 Auto-Save）
+    await tester.tap(find.byIcon(Icons.close_rounded));
     await tester.pumpAndSettle();
 
     // 验证持久化配置中的 batchSize 已更新为 200，且 effectiveBatchSize 为 200

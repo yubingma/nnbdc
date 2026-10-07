@@ -2548,11 +2548,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final initialWordsPerDay = user?.effectiveWordsPerDay ?? 20;
     int selectedWordsPerDay = initialWordsPerDay;
     double wordsPerDayDragAccumulator = 0;
-    int selected = config.minNewWordsPerDay.clamp(0, selectedWordsPerDay);
+    final initialMinNewWords = config.minNewWordsPerDay;
+    int selected = initialMinNewWords.clamp(0, selectedWordsPerDay);
     // 每组单词数独立于每日计划词数，上限统一对齐为 500
     const batchSizeLimit = StudyConfig.maxBatchSize;
+    final initialBatchSize = config.batchSize;
     int selectedBatchSize =
-        config.batchSize.clamp(1, batchSizeLimit);
+        initialBatchSize.clamp(1, batchSizeLimit);
     // 常用经典科学心流梯度（5档），整齐对称且自适应
     const batchSizeChips = [5, 10, 20, 30, 50];
     double dragAccumulator = 0;
@@ -3384,64 +3386,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ],
                         ],
                       ),
-                      const SizedBox(height: 20),
-
-                      // 底部对称行动条
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 44,
-                              child: TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(),
-                                style: TextButton.styleFrom(
-                                  backgroundColor: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.08)
-                                      : Colors.white.withValues(alpha: 0.40),
-                                  foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF475569),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: const Text('取消', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: SizedBox(
-                              height: 44,
-                              child: ElevatedButton(
-                                onPressed: isStarted
-                                    ? null
-                                    : () async {
-                                        if (selectedWordsPerDay != initialWordsPerDay) {
-                                          user!.wordsPerDay = selectedWordsPerDay;
-                                          await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, selectedWordsPerDay);
-                                          await Global.loadUserFromDb();
-                                          ThrottledDbSyncService().requestSync();
-                                        }
-                                        config.minNewWordsPerDay = selected;
-                                        config.batchSize = selectedBatchSize;
-                                        await config.saveToCurrentUser();
-                                        if (ctx.mounted) Navigator.of(ctx).pop();
-                                        loadData(forceSupplement: true);
-                                      },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: EdgeInsets.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: const Center(
-                                  child: Text('保存设置', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white)),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -3454,6 +3398,28 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     },
   );
+
+  // 弹窗关闭后自动保存（Auto-Save：即改即生效）
+  if (!isStarted) {
+    final hasWordsChanged = selectedWordsPerDay != initialWordsPerDay;
+    final hasConfigChanged = selected != initialMinNewWords || selectedBatchSize != initialBatchSize;
+    if (hasWordsChanged || hasConfigChanged) {
+      if (hasWordsChanged) {
+        user!.wordsPerDay = selectedWordsPerDay;
+        await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, selectedWordsPerDay);
+        await Global.loadUserFromDb();
+        ThrottledDbSyncService().requestSync();
+      }
+      if (hasConfigChanged) {
+        config.minNewWordsPerDay = selected;
+        config.batchSize = selectedBatchSize;
+        await config.saveToCurrentUser();
+      }
+      if (mounted) {
+        loadData(forceSupplement: true);
+      }
+    }
+  }
 }
 
   /// 弹出精确定制数字输入框（支持自定义标题、范围与单位）
