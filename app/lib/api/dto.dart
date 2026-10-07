@@ -361,6 +361,43 @@ class WordCoreImageDto {
   Map<String, dynamic> toJson() => _$WordCoreImageDtoToJson(this);
 }
 
+/// 单词的常用短语搭配（柯林斯词典来源），单词详情页展示用。
+@JsonSerializable()
+@CustomDateTimeConverter()
+class WordPhraseDto {
+  String id;
+  String wordId;
+  String phrase;
+  String? partOfSpeech;
+  String? meaningCn;
+  String? meaningEn;
+  String? exampleEn;
+  String? exampleCn;
+  String source;
+  int displayIndex;
+  DateTime? createTime;
+  DateTime? updateTime;
+
+  WordPhraseDto({
+    required this.id,
+    required this.wordId,
+    required this.phrase,
+    this.partOfSpeech,
+    this.meaningCn,
+    this.meaningEn,
+    this.exampleEn,
+    this.exampleCn,
+    required this.source,
+    this.displayIndex = 0,
+    this.createTime,
+    this.updateTime,
+  });
+
+  factory WordPhraseDto.fromJson(Map<String, dynamic> json) => _$WordPhraseDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$WordPhraseDtoToJson(this);
+}
+
 // 系统数据DTO
 @JsonSerializable()
 class SystemDataDto {

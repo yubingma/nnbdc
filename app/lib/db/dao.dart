@@ -3049,4 +3049,3 @@ class WordCoreImagesDao extends DatabaseAccessor<MyDatabase> with _$WordCoreImag
     return (delete(wordCoreImages)..where((t) => t.id.equals(id))).go();
   }
 }
-

@@ -24,6 +24,7 @@ import beidanci.service.po.SysDbLog;
 import beidanci.service.po.SysDbVersion;
 import beidanci.service.po.Dict;
 import beidanci.service.po.WordCoreImage;
+import beidanci.service.po.WordPhrase;
 import beidanci.api.model.DictDto;
 import beidanci.api.model.Ownerable;
 import beidanci.service.util.JsonUtils;
@@ -260,6 +261,60 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
      * @param fromVersion 起始版本号（不包含）
      * @return 增量日志列表，按版本号升序排列
      */
+    /**
+     * 获取同步日志：增量日志 + 客户端明确缺失的整表数据。
+     *
+     * 客户端在「版本号已是最新、但本地某张系统表为空」时会带上 missingTables
+     * （典型场景：老版本客户端把新加的系统表当成未知表跳过，却照样推进了版本号）。
+     * 只补这几张表，避免为了补一张小表而重新下发整包全量 —— 全量里含词核心图
+     * 等大表，约 3 万条、17MB，而单词短语搭配本身只有约 2000 条、817KB。
+     */
+    public List<SysDbLogDto> getSysDbLogs(int fromVersion, List<String> missingTables) {
+        List<SysDbLogDto> logs = getSysDbLogs(fromVersion);
+        if (missingTables == null || missingTables.isEmpty()) {
+            return logs;
+        }
+        int currentVersion = getSysDbVersion();
+        for (String table : missingTables) {
+            List<SysDbLogDto> full = generateTableFullLogs(table, currentVersion);
+            if (!full.isEmpty()) {
+                log.info("按需补表: {} 下发 {} 条日志", table, full.size());
+            }
+            logs.addAll(full);
+        }
+        return logs;
+    }
+
+    /**
+     * 按表名生成该表的全量日志。
+     *
+     * 未登记的表名一律返回空：客户端传错或传了不支持的表时，宁可少发也不能下发无关数据。
+     * 今后新增系统表时，在这里补一个分支即可获得「按需补表」能力。
+     */
+    private List<SysDbLogDto> generateTableFullLogs(String table, int version) {
+        switch (table) {
+            case "dict_group":
+                return generateDictGroupLogs(version);
+            case "group_and_dict_link":
+                return generateGroupAndDictLinkLogs(version);
+            case "dict":
+                return generateDictLogs(version);
+            case "cigen":
+                return generateCigenLogs(version);
+            case "cigen_word_link":
+                return generateCigenWordLinkLogs(version);
+            case "pca_projection_config":
+                return generatePcaProjectionConfigLogs(version);
+            case "word_core_image":
+                return generateWordCoreImageLogs(version);
+            case "word_phrase":
+                return generateWordPhraseLogs(version);
+            default:
+                log.warn("按需补表: 未登记的表名 {}，已忽略", table);
+                return new ArrayList<>();
+        }
+    }
+
     public List<SysDbLogDto> getSysDbLogs(int fromVersion) {
         int currentVersion = getSysDbVersion();
 
@@ -330,9 +385,32 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         // 8. WordCoreImages（单词一词多义核心意象，全量同步有效成功的记录）
         logs.addAll(generateWordCoreImageLogs(currentVersion));
 
+        // 9. WordPhrases（单词的常用短语搭配）
+        logs.addAll(generateWordPhraseLogs(currentVersion));
+
         // sentence/word_image/word_shortdesc_chinese的数据, 不需要全量同步, 因为数据量太大,
         // 而且用户下载所需词书的时候, 已经包含所需的这些数据了
 
+        return logs;
+    }
+
+    private List<SysDbLogDto> generateWordPhraseLogs(int version) {
+        String sql = "SELECT * FROM word_phrase";
+        List<WordPhrase> list = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, new EntityRowMapper<>(WordPhrase.class));
+        List<SysDbLogDto> logs = new ArrayList<>();
+        Date now = new Date();
+        for (WordPhrase phrase : list) {
+            SysDbLogDto dto = new SysDbLogDto();
+            dto.setId(Util.uuid());
+            dto.setVersion(version);
+            dto.setOperate("INSERT");
+            dto.setTblName("word_phrase");
+            dto.setRecordId(phrase.getId());
+            dto.setRecord(JsonUtils.toJson(phrase));
+            dto.setCreateTime(phrase.getCreateTime() != null ? phrase.getCreateTime() : now);
+            dto.setUpdateTime(phrase.getUpdateTime() != null ? phrase.getUpdateTime() : now);
+            logs.add(dto);
+        }
         return logs;
     }
 

@@ -548,7 +548,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         Column(
           children: [
             // 回看横幅参与正常布局（不再用 Positioned 悬浮覆盖）：横幅多高，下方内容就下移多少，
-            // 「返回/掌握/报错」这一行永远落在横幅之下 —— 大字号下横幅变高同样压不到按钮。
+            // 「返回/掌握/更多」这一行永远落在横幅之下 —— 大字号下横幅变高同样压不到按钮。
             if (state.historyIndex != -1) _buildReviewBanner(),
             Expanded(
               child: GestureDetector(

@@ -129,12 +129,6 @@ class StashedNavMenuDialog {
                                 onTap: () {
                                   Navigator.pop(dialogCtx);
                                   HapticFeedback.lightImpact();
-                                  // TODO(临时诊断)：定位「点返回后 go_router 路由表为空」的崩溃，定位后删除
-                                  final GoRouter diagRouter = GoRouter.of(context);
-                                  Global.logger.d('[进入诊断-快捷菜单] '
-                                      '关闭弹窗后matchList长度=${diagRouter.routerDelegate.currentConfiguration.matches.length} '
-                                      'navigatorCanPop=${Navigator.of(context).canPop()} '
-                                      '即将push=${tab.routePath}');
                                   context.push(tab.routePath);
                                 },
                                 child: Container(

@@ -349,7 +349,7 @@ void main() {
         reason: '不得展示本次重练推算出的、不会生效的下次复习天数');
   });
 
-  testWidgets('回看模式横幅必须参与布局，不得遮挡顶部「返回/掌握/报错」按钮', (tester) async {
+  testWidgets('回看模式横幅必须参与布局，不得遮挡顶部「返回/掌握/更多」按钮', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
     // 真机状态栏高度：横幅此前用 Positioned 悬浮在页面顶部，
@@ -397,5 +397,51 @@ void main() {
         reason: '回看横幅底边必须落在顶部按钮行之上，否则会盖住「掌握」按钮');
     expect(bannerRect.bottom, lessThanOrEqualTo(backLabelRect.top),
         reason: '回看横幅底边必须落在顶部按钮行之上，否则会盖住「返回」按钮');
+  });
+
+  testWidgets('查词、报错、学习设置收进右上角弹出菜单，不再和「掌握」挤在同一排', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final (testWord, mockResult) = _createTestData();
+    final wordWrapper = WordWrapper(testWord, null);
+    final state = const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockResult,
+      wordWrapper: wordWrapper,
+      studyStep: StudyStep.en2Ch.json,
+      showAnswerButtons: true,
+      canLeaveCurrWord: true,
+    );
+    final notifier = MockBdcNotifierForWideScreen(state, mockHasSeenAnswer: true);
+
+    await tester.pumpWidget(_buildPageWithNotifier(notifier));
+    await tester.pumpAndSettle();
+
+    // 顶栏只留答题动作「掌握」和一个「更多」
+    expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget,
+        reason: '「掌握」是顶栏唯一的答题动作，必须留在明面上');
+    expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget);
+    expect(find.text('报错'), findsNothing, reason: '报错不得再直接暴露在顶栏');
+    expect(find.text('查词'), findsNothing, reason: '查词不得再直接暴露在顶栏');
+    expect(find.text('设置'), findsNothing, reason: '设置不得再直接暴露在顶栏');
+
+    // 三个动作都在弹出菜单里，且设置写全成「学习设置」
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('查词'), findsOneWidget);
+    expect(find.text('报错'), findsOneWidget);
+    expect(find.text('学习设置'), findsOneWidget);
+
+    // 菜单里的「报错」接的仍是原来那个报错弹窗
+    await tester.tap(find.text('报错'));
+    await tester.pumpAndSettle();
+    expect(find.text('问题反馈'), findsOneWidget,
+        reason: '菜单只是换了个入口，弹窗本身不许换');
   });
 }

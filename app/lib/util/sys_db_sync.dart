@@ -35,26 +35,35 @@ Future<void> syncSysDb() async {
     }
     int remoteVersion = remoteVersionResult.data!;
 
-    // 3. 版本一致，无需同步
+    // 3. 版本一致，检查是否缺表
     Global.logger.i("📊 系统数据同步检查 - 本地: $localVersion, 远程: $remoteVersion");
+    // 本地缺失的系统表清单。版本号已是最新却缺表，说明这些表是后加的，被老版本客户端
+    // 当成「未知的系统数据表」跳过了（跳过却照样把版本号推到了最新）。
+    // 按表名向服务端补拉，不触发整包全量：全量含词核心图等大表约 3 万条 17MB，
+    // 而单词短语搭配本身只有约 2000 条 817KB。
+    final missingTables = <String>[];
     if (localVersion == remoteVersion) {
-      // 容错: 如果版本一致，但表里实际上缺少系统词书、词根主表或关系数据，可能是异常中止导致的，强制从头拉取
       var sysDicts = await (db.select(db.dicts)..where((d) => d.ownerId.equals('15118'))).get();
       var anyCigen = await (db.select(db.cigens)..limit(1)).getSingleOrNull();
       var anyLink = await (db.select(db.cigenWordLinks)..limit(1)).getSingleOrNull();
+      var anyWordPhrase = await (db.select(db.wordPhrases)..limit(1)).getSingleOrNull();
 
-      if (localVersion > 0 && (sysDicts.isEmpty || anyCigen == null || anyLink == null)) {
-        Global.logger.w("⚠️ 系统数据版本为 $localVersion 但本地缺少系统词书或词根/关系数据(Cigen为空: ${anyCigen == null}, Link为空: ${anyLink == null})，触发全量重新同步！");
-        localVersion = 0;
+      if (sysDicts.isEmpty) missingTables.add('dict');
+      if (anyCigen == null) missingTables.add('cigen');
+      if (anyLink == null) missingTables.add('cigen_word_link');
+      if (anyWordPhrase == null) missingTables.add('word_phrase');
+
+      if (localVersion > 0 && missingTables.isNotEmpty) {
+        Global.logger.w("⚠️ 系统数据版本为 $localVersion 但本地缺少这些系统表: $missingTables，向服务端按需补拉");
       } else {
         Global.logger.i("✅ 系统数据已是最新 - 版本: $localVersion");
         return;
       }
     }
 
-    // 4. 拉取增量日志
-    Global.logger.i("📥 开始拉取系统数据增量 - 本地: $localVersion, 远程: $remoteVersion");
-    var logsResult = await Api.client.getNewSysDbLogs(localVersion);
+    // 4. 拉取增量日志（本地缺表时附带缺失表清单，服务端会额外补上这几张表的全量）
+    Global.logger.i("📥 开始拉取系统数据增量 - 本地: $localVersion, 远程: $remoteVersion, 补表: $missingTables");
+    var logsResult = await Api.client.getNewSysDbLogs(localVersion, missingTables.join(','));
     if (!logsResult.success) {
       Global.logger.e("❌ 获取系统数据日志失败: ${logsResult.msg}");
       return;
@@ -266,6 +275,14 @@ Future<void> applySysDbLogs(List<SysDbLogDto> logs) async {
             await db.wordCoreImagesDao.saveEntity(entity);
             Global.logger.i('🖼️ [同步核心意象] 成功更新: ${entity.word}');
           }
+        } else if (log.tblName == 'word_phrase') {
+          // 单词的常用短语搭配
+          if (log.operate == 'DELETE') {
+            await (db.delete(db.wordPhrases)..where((t) => t.id.equals(log.recordId))).go();
+          } else {
+            WordPhrase entity = WordPhrase.fromJson(entityJson);
+            await db.into(db.wordPhrases).insertOnConflictUpdate(entity);
+          }
         } else {
           Global.logger.w('未知的系统数据表: ${log.tblName}');
         }
@@ -314,6 +331,7 @@ int _getSysTablePriority(String tblName) {
     case 'cigen_word_link':
     case 'sentence':
     case 'word_image':
+    case 'word_phrase':
       return 2; // 关联子表
     default:
       return 3;

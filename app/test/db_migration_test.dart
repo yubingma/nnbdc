@@ -226,7 +226,7 @@ void main() {
       );
 
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 58);
+      expect(version.data.values.first, 59);
     } finally {
       await db.close();
       MyDatabase.setInstanceForTesting(null);
@@ -258,7 +258,7 @@ void main() {
 
       // 修复失败也要推进版本，否则每次启动都会重跑同一个必失败的迁移
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 58);
+      expect(version.data.values.first, 59);
     } finally {
       await db.close();
       MyDatabase.setInstanceForTesting(null);

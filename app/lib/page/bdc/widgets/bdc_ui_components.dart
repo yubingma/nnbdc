@@ -1,5 +1,19 @@
 part of '../bdc.dart';
 
+/// 学习页右上角「更多」菜单里的三个动作。
+/// 图标与文案只在这里定义一次，PopupMenuButton 回传的就是枚举本身，
+/// 分派时 switch 由编译器保证三个分支都被处理 —— 不会出现"点了没反应"的静默失败。
+enum _StudyTopMoreAction {
+  searchWord(Icons.search_rounded, '查词'),
+  reportError(Icons.feedback_outlined, '报错'),
+  studySetting(Icons.settings_outlined, '学习设置');
+
+  const _StudyTopMoreAction(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
+}
+
 extension BdcPageStateUIComponents on BdcPageState {
   // 终极性能优化：UI组件库在读取全局 state 时屏蔽所有高频字段，防止题目区闪烁，并在回调中安全读取
   BdcState get state => _activeState ?? ref.read(bdcNotifierProvider);
@@ -1415,25 +1429,72 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
                 ),
 
-                // 报错按钮
-                _buildTopActionButton(
-                  icon: Icons.feedback_outlined,
-                  label: '报错',
-                  onTap: () => showErrorReportDlg(),
-                ),
-
-                // 查词按钮
-                _buildTopActionButton(
-                  icon: Icons.search_rounded,
-                  onTap: () => context.push('/search'),
-                ),
-
-                // 设置按钮
-                _buildTopActionButton(
-                  icon: Icons.settings_outlined,
-                  onTap: () => showSettingDlg(),
-                ),
+                // 更多：查词 / 报错 / 学习设置都收在这一层后面。
+                // 它们原先和「掌握」同排、间距只有 6 像素，想查词却点到「掌握」的代价太大。
+                _buildTopMoreMenu(),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 右上角「更多」弹出菜单：查词、报错、学习设置。
+  /// 弹层风格沿用学习页自己的圆角下拉（dialogs/bdc_dialogs.dart 的 _buildOptionPopupMenu）。
+  Widget _buildTopMoreMenu() {
+    final isDark = _cachedIsDarkMode;
+    return PopupMenuButton<_StudyTopMoreAction>(
+      padding: EdgeInsets.zero,
+      position: PopupMenuPosition.under,
+      elevation: 6,
+      color: isDark ? const Color(0xFF1C2127) : const Color(0xFFF8FAFC),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onSelected: (action) {
+        switch (action) {
+          case _StudyTopMoreAction.searchWord:
+            context.push('/search');
+          case _StudyTopMoreAction.reportError:
+            showErrorReportDlg();
+          case _StudyTopMoreAction.studySetting:
+            showSettingDlg();
+        }
+      },
+      itemBuilder: (BuildContext _) =>
+          _StudyTopMoreAction.values.map(_buildTopMoreMenuItem).toList(),
+      // 触发器与同排的「掌握」共用一套裸图标排布：不裹药丸、不加描边
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        child: Icon(
+          Icons.more_vert_rounded,
+          color: isDark ? const Color(0xFFCBD5E1) : context.textSecondary,
+          size: 15,
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<_StudyTopMoreAction> _buildTopMoreMenuItem(
+      _StudyTopMoreAction action) {
+    final isDark = _cachedIsDarkMode;
+    return PopupMenuItem<_StudyTopMoreAction>(
+      value: action,
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(
+        children: [
+          Icon(
+            action.icon,
+            size: 15,
+            color: isDark ? const Color(0xFF94A3B8) : context.textSecondary,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            action.label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: isDark ? const Color(0xFFE2E8F0) : context.textPrimary,
             ),
           ),
         ],

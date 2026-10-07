@@ -51,6 +51,8 @@ part 'db.g.dart';
   PcaProjectionConfigs,
   UserBadges,
   WordCoreImages,
+  // 单词常用短语搭配（柯林斯词典来源，单词详情页展示）
+  WordPhrases,
 ], daos: [
   UsersDao,
   LocalParamsDao,
@@ -90,6 +92,17 @@ part 'db.g.dart';
 ])
 class MyDatabase extends _$MyDatabase {
   MyDatabase(super.e);
+
+  /// 查询某个单词的常用短语搭配，按展示顺序排列。
+  ///
+  /// 不单独建 DAO 类：drift 只有在 mixin 已生成时才会把新类识别为 DAO，
+  /// 而 mixin 又要在识别出 DAO 后才生成，新增 DAO 会卡在这个死锁里。
+  Future<List<WordPhrase>> getWordPhrasesByWordId(String wordId) {
+    return (select(wordPhrases)
+          ..where((t) => t.wordId.equals(wordId))
+          ..orderBy([(t) => OrderingTerm.asc(t.displayIndex)]))
+        .get();
+  }
 
   static MyDatabase? _instance;
   static String? _dbFilePathCache;
@@ -268,7 +281,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 58;
+  int get schemaVersion => 59;
 
   @override
   MigrationStrategy get migration {
@@ -479,6 +492,10 @@ class MyDatabase extends _$MyDatabase {
           // 从版本 57 升级到版本 58：新建记忆守护兽养成状态表
           if (from < 58) {
             await m.createTable(userPetStates);
+          }
+          // 从版本 58 升级到版本 59：新建单词常用短语搭配表
+          if (from < 59) {
+            await m.createTable(wordPhrases);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -1751,6 +1768,7 @@ class MyDatabase extends _$MyDatabase {
       dictGroups, groupAndDictLinks, userStudySteps, dakas, userOpers,
       userCowDungLogs, userWrongWords, sysDbVersion, localExceptions,
       wordCoreImages,
+      wordPhrases,
     ];
 
     int fixedCount = 0;

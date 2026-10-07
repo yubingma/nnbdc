@@ -597,7 +597,8 @@ abstract class RestClient {
 
   @GET("/getSysDbLogs.do")
   Future<Result<List<SysDbLogDto>>> getNewSysDbLogs(
-      @Query("fromVersion") int fromVersion);
+      @Query("fromVersion") int fromVersion,
+      @Query("missingTables") String missingTables);
 
   @GET("/getUserBaseData.do")
   Future<Result<UserBaseDataVo>> getUserBaseData(

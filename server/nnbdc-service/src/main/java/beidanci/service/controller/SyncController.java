@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,8 +68,17 @@ public class SyncController {
      */
     @GetMapping("/getSysDbLogs.do")
     public Result<List<SysDbLogDto>> getNewSysDbLogs(
-            @RequestParam("fromVersion") int fromVersion) {
-        List<SysDbLogDto> logs = sysDbLogBo.getSysDbLogs(fromVersion);
+            @RequestParam("fromVersion") int fromVersion,
+            @RequestParam(value = "missingTables", required = false) String missingTables) {
+        List<String> tables = new ArrayList<>();
+        if (StringUtils.isNotBlank(missingTables)) {
+            for (String table : missingTables.split(",")) {
+                if (StringUtils.isNotBlank(table)) {
+                    tables.add(table.trim());
+                }
+            }
+        }
+        List<SysDbLogDto> logs = sysDbLogBo.getSysDbLogs(fromVersion, tables);
         return Result.success(logs);
     }
 

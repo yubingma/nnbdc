@@ -161,6 +161,7 @@ class WordDetailPageState extends State<WordDetailPage>
 
   late WordDetailPageArgs args;
   Future<List<SentenceVo>>? _sentencesFuture;
+  Future<List<WordPhrase>>? _wordPhrasesFuture;
 
   int _lastTabIndex = 0;
 
@@ -311,6 +312,10 @@ class WordDetailPageState extends State<WordDetailPage>
     if (_sentencesFuture == null && GoRouterState.of(context).extra != null) {
       _sentencesFuture = args.word.getSentences();
     }
+    if (_wordPhrasesFuture == null && GoRouterState.of(context).extra != null) {
+      _wordPhrasesFuture =
+          MyDatabase.instance.getWordPhrasesByWordId(args.word.id!);
+    }
 
     // 学习流程已把单词基础数据（拼写 / 音标 / 释义）随参数传入：
     // 这种情况首帧直接渲染真实内容，扩展数据（例句 / 形近 / 同根 / 意象）随后台补齐，
@@ -424,6 +429,8 @@ class WordDetailPageState extends State<WordDetailPage>
       isWrongWord = args.isThisAnswerWrong;
 
       _sentencesFuture = args.word.getSentences();
+      _wordPhrasesFuture =
+          MyDatabase.instance.getWordPhrasesByWordId(args.word.id!);
 
       final wordId = args.word.id;
       final cigenLinks = args.word.cigenWordLinks;
@@ -3396,6 +3403,38 @@ class WordDetailPageState extends State<WordDetailPage>
             ),
             const SizedBox(height: 10),
 
+            // 常用短语搭配（词典收录的固定搭配，与可独立背诵的短语词条不是一回事）
+            FutureBuilder<List<WordPhrase>>(
+              future: _wordPhrasesFuture,
+              builder: (context, snapshot) {
+                final phrases = snapshot.data ?? const <WordPhrase>[];
+                if (phrases.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < phrases.length; i++) ...[
+                      if (i > 0)
+                        Divider(
+                          height: 20,
+                          thickness: 0.5,
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.055),
+                        ),
+                      _buildPhraseItem(phrases[i], isDarkMode, subtitleColor),
+                    ],
+                    Divider(
+                      height: 28,
+                      thickness: 0.5,
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.08),
+                    ),
+                  ],
+                );
+              },
+            ),
+
             // 例句内容或空状态
             FutureBuilder<List<SentenceVo>>(
               future: _sentencesFuture,
@@ -3439,6 +3478,76 @@ class WordDetailPageState extends State<WordDetailPage>
           ],
         ),
       ],
+    );
+  }
+
+  /// 一条常用短语搭配：短语 + 词性 + 中文释义 + 例句
+  Widget _buildPhraseItem(
+      WordPhrase phrase, bool isDarkMode, Color subtitleColor) {
+    final mainColor =
+        isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: Text(
+                  phrase.phrase,
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                    color: mainColor,
+                  ),
+                ),
+              ),
+              if ((phrase.partOfSpeech ?? '').isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Text(
+                  phrase.partOfSpeech!,
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: subtitleColor.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if ((phrase.meaningCn ?? '').isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              phrase.meaningCn!,
+              style: TextStyle(
+                fontFamily: 'NotoSansSC',
+                fontSize: 13.5,
+                height: 1.45,
+                color: subtitleColor,
+              ),
+            ),
+          ],
+          if ((phrase.exampleEn ?? '').isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              phrase.exampleEn!,
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 12.5,
+                height: 1.4,
+                fontStyle: FontStyle.italic,
+                color: subtitleColor.withValues(alpha: 0.75),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

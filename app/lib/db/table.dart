@@ -798,3 +798,25 @@ class WordCoreImages extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// 单词的常用短语搭配（柯林斯词典来源）。
+///
+/// 是单词的附属参考内容，在单词详情页展示；与 word 表里 spell 含空格的
+/// 「短语词条」（可独立背诵的学习单元）不是一回事。
+class WordPhrases extends Table {
+  TextColumn get id => text()(); // 32位 UUID 主键
+  TextColumn get wordId => text()();
+  TextColumn get phrase => text()();
+  TextColumn get partOfSpeech => text().nullable()();
+  TextColumn get meaningCn => text().nullable()();
+  TextColumn get meaningEn => text().nullable()();
+  TextColumn get exampleEn => text().nullable()();
+  TextColumn get exampleCn => text().nullable()();
+  TextColumn get source => text()();
+  IntColumn get displayIndex => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
