@@ -915,9 +915,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   Text(
                     '${(progress * 100).toInt()}%',
                     style: TextStyle(
-                      color: textPrimary,
+                      color: textMuted,
                       fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w500,
                       fontFamily: 'Roboto',
                     ),
                   ),
@@ -1070,9 +1070,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               Text(
                 '${(progress * 100).round()}%',
                 style: TextStyle(
-                  color: hasWallpaper ? Colors.white : themeConfig.textSecondary,
+                  color: hasWallpaper ? Colors.white70 : themeConfig.textMuted,
                   fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w500,
                   fontFamily: 'Roboto',
                 ),
               ),
@@ -1140,17 +1140,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (dotColor != null) ...[
-                  Container(
-                    width: 5.5,
-                    height: 5.5,
-                    decoration: BoxDecoration(
-                      color: dotColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                ],
                 Text(
                   label,
                   style: TextStyle(
