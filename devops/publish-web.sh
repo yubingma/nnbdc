@@ -129,7 +129,14 @@ for REL in "$@"; do
     fi
 
     # 源站立即核对，确认覆盖成功（失败要立刻暴露，不能等到 CDN 校验才含糊）
-    ORIGIN_MD5="$(curl -s -m 20 "http://$SERVER_HOST/$REL" -H "Host: $SITE_HOST" | md5 -q)"
+    rm -f "$TMP_DIR/origin.body"
+    ORIGIN_CODE="$(curl -s -o "$TMP_DIR/origin.body" -w '%{http_code}' -m 20 "http://$SERVER_HOST/$REL" -H "Host: $SITE_HOST" 2>/dev/null || true)"
+    if [ "$ORIGIN_CODE" != "200" ]; then
+        echo "❌ 源站请求失败（HTTP ${ORIGIN_CODE:-无响应}），无法确认上传结果"
+        FAILED=1
+        continue
+    fi
+    ORIGIN_MD5="$(md5_of "$TMP_DIR/origin.body")"
     if [ "$ORIGIN_MD5" != "$LOCAL_MD5" ]; then
         echo "❌ 源站内容与本地不一致（上传未生效），期望 ${LOCAL_MD5:0:12}，实际 ${ORIGIN_MD5:0:12}"
         FAILED=1
@@ -159,22 +166,37 @@ for REL in "$@"; do
     fi
 
     # --- 3. 校验公网内容 ---
+    # 必须把两种情况分开报：节点不可达（请求层失败）与内容是旧版（缓存层未生效）。
+    # 否则 CDN 节点抖动会被误读成"刷新没生效"，把人带到错误的方向上。
     echo "  [3/3] 校验公网内容 $URL ..."
     OK=false
+    LAST_STATUS="尚未探测"
     for i in $(seq 1 "$VERIFY_RETRIES"); do
         sleep "$VERIFY_WAIT"
-        REMOTE_MD5="$(curl -s -m 20 "$URL" | md5 -q)"
-        if [ "$REMOTE_MD5" = "$LOCAL_MD5" ]; then
-            echo "        ✅ 公网已生效（第 ${i} 次探测，md5 ${REMOTE_MD5:0:12}）"
-            OK=true
-            break
+        rm -f "$TMP_DIR/remote.body"
+        RESP="$(curl -s -o "$TMP_DIR/remote.body" -w '%{http_code} %{remote_ip}' -m 20 "$URL" 2>/dev/null || true)"
+        CODE="${RESP%% *}"
+        NODE="${RESP##* }"
+        if [ "$CODE" = "200" ]; then
+            REMOTE_MD5="$(md5_of "$TMP_DIR/remote.body")"
+            if [ "$REMOTE_MD5" = "$LOCAL_MD5" ]; then
+                echo "        ✅ 公网已生效（第 ${i} 次探测，节点 ${NODE}，md5 ${REMOTE_MD5:0:12}）"
+                OK=true
+                break
+            fi
+            LAST_STATUS="HTTP 200 但内容仍是旧版（md5 ${REMOTE_MD5:0:12}，节点 ${NODE}）—— 属于 CDN 刷新尚未完成"
+        else
+            LAST_STATUS="请求失败（HTTP ${CODE:-无响应}，节点 ${NODE:-未知}）—— 属于 CDN 节点不可达，不是刷新没生效"
         fi
     done
 
     if [ "$OK" != true ]; then
-        echo "❌ 公网内容与本地不一致：期望 ${LOCAL_MD5:0:12}，实际 ${REMOTE_MD5:0:12}"
-        echo "   可能原因：CDN 刷新尚未完成、或该 URL 命中了不同的缓存键。"
-        echo "   处理：稍后重跑本命令，或到阿里云 CDN 控制台确认刷新任务 $TASK_ID 的状态。"
+        echo "❌ 公网校验未通过，最近一次结果：${LAST_STATUS}"
+        echo "   已确认的事实：源站内容正确（本轮已核对 md5），CDN 刷新任务已提交（任务号 ${TASK_ID:-未知}）。"
+        echo "   排查方向："
+        echo "     1) 提示「节点不可达」时，重跑本命令或换个网络再试；若长期只有部分节点可用，"
+        echo "        把不可达节点 IP 提给阿里云 CDN 支持（可用 dig +short $SITE_HOST 收集）。"
+        echo "     2) 提示「内容仍是旧版」时，等 1~2 分钟后重跑，或到 CDN 控制台查看刷新任务状态。"
         FAILED=1
     fi
 done
