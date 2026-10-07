@@ -789,9 +789,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           const SizedBox(height: 16),
         ],
 
-        // 双列对称纯粹排版数据（新词 | 旧词）
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        // 双列对称纯粹排版数据（新词 | 旧词：与下方进度条 250 宽度严格对齐，宽屏/平板居中紧凑对称）
+        SizedBox(
+          width: 250,
           child: Row(
             children: [
               _buildStatItem('新词', newWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
