@@ -199,9 +199,11 @@ void main() {
       expect(find.text('每组单词数'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: '${width.toInt()}dp 大档下对话框文字溢出');
 
-      // 关键：锁定提示必须完整可见，不允许被省略号截成"今日学习已开始，设置暂…"
-      const locked = '学习已开始，设置暂时锁定';
-      expect(find.text(locked), findsNWidgets(2), reason: '两处设置项都要显示完整锁定提示');
+      // 关键：对话框内两处设置项应展示锁定胶囊(size: 13)，且整页无文字截断
+      final dialogLocks = find.byWidgetPredicate(
+        (w) => w is Icon && w.icon == Icons.lock_outline_rounded && w.size == 13.0,
+      );
+      expect(dialogLocks, findsNWidgets(2), reason: '对话框内两处设置项都要显示锁定胶囊');
       final over = _overflowingTexts(tester);
       expect(over, isEmpty, reason: '这些文字被截断了(源文本: $over)');
     });

@@ -25,6 +25,14 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
     'ChSentence2En',
   ];
 
+  static String _getStepIndexLabel(int index) {
+    const nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+    if (index >= 0 && index < nums.length) {
+      return '环节${nums[index]}';
+    }
+    return '环节 ${index + 1}';
+  }
+
   bool _isLoading = true;
 
   String _newCheckStep = 'En2Ch';
@@ -120,10 +128,10 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                   Padding(
                     padding: const EdgeInsets.only(left: 4, bottom: 18),
                     child: Text(
-                      '新词/旧词设置不同的学习轨道，可节约学习时间。',
+                      '新词/旧词设置不同的学习轨道，节约学习时间。',
                       style: TextStyle(
-                        fontSize: 13,
-                        height: 1.5,
+                        fontSize: 12,
+                        height: 1.4,
                         color: isDarkMode ? Colors.white54 : const Color(0xFF64748B),
                       ),
                     ),
@@ -437,7 +445,7 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        '步骤 ${index + 1}',
+                        _getStepIndexLabel(index),
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: titleColor),
                       ),
                     ),

@@ -84,46 +84,33 @@ class StudyDateRulesPage extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: primaryColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
+                          color: primaryColor.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(9),
                         ),
-                        child: Icon(Icons.nightlight_round, size: 20, color: primaryColor),
+                        child: Icon(Icons.nightlight_round, size: 18, color: primaryColor),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '以凌晨 03:00 作为日期切换点',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '关照深夜深度学习的作息习惯',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          '凌晨 03:00 跨天',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                            letterSpacing: -0.2,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Text(
-                    '本应用专为深度学习者量身定制：每日以凌晨 03:00 判定跨天。若您在凌晨 3 点前背诵单词，所有学习进度、连胜与打卡记录仍将完整归属于前一天的计划中，无需赶在午夜前匆忙打卡。',
+                    '每日以凌晨 03:00 判定跨天。凌晨 3 点前学习打卡，均计入前一天。',
                     style: TextStyle(
                       fontSize: 13.5,
-                      height: 1.6,
+                      height: 1.5,
                       color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
                     ),
                   ),
@@ -131,7 +118,7 @@ class StudyDateRulesPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // 实时状态对照卡片
             Container(
@@ -139,41 +126,30 @@ class StudyDateRulesPage extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: isDarkMode ? const Color(0xFF161C26) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
                   width: 1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.04),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.schedule_rounded, size: 16, color: primaryColor),
-                      const SizedBox(width: 8),
-                      Text(
-                        '当前时间与学习日期对照',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    '实时对照',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                    ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
 
                   _buildInfoRow(
-                    label: '当前系统时间',
+                    label: '系统时间',
                     valueWidget: DynamicClockText(
+                      showBusinessDate: false,
+                      textAlign: TextAlign.end,
                       style: TextStyle(
                         fontFamily: 'Roboto',
                         fontSize: 13,
@@ -183,17 +159,17 @@ class StudyDateRulesPage extends StatelessWidget {
                     ),
                     isDarkMode: isDarkMode,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   _buildInfoRow(
-                    label: '归属学习日期',
+                    label: '归属日期',
                     value: businessDateStr,
                     isDarkMode: isDarkMode,
                     highlight: true,
                     highlightColor: primaryColor,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   _buildInfoRow(
-                    label: '设备所在时区',
+                    label: '当前时区',
                     value: '$timeZoneName (UTC$offsetSign$offsetHours)',
                     isDarkMode: isDarkMode,
                   ),
@@ -201,50 +177,37 @@ class StudyDateRulesPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // 多时区漫游规则说明卡片
+            // 时区规则说明卡片
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: isDarkMode ? const Color(0xFF161C26) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
                   width: 1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.04),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.public_rounded, size: 16, color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7)),
-                      const SizedBox(width: 8),
-                      Text(
-                        '跨时区漫游同步规则',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                          color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
                   Text(
-                    '当您出行旅居至其他时区时，应用将自动根据设备本地时间计算学习天，进度采用单向正向推进机制，杜绝因时区切换导致进度倒退或数据回滚，确保全球同步万无一失。',
+                    '时区漫游',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '跨时区按设备本地时间计算，进度单向推进，不会倒退。',
                     style: TextStyle(
                       fontSize: 13,
-                      height: 1.55,
+                      height: 1.5,
                       color: isDarkMode ? Colors.white60 : const Color(0xFF475569),
                     ),
                   ),
@@ -286,18 +249,22 @@ class StudyDateRulesPage extends StatelessWidget {
               color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
             ),
           ),
+          const SizedBox(width: 8),
           if (valueWidget != null)
-            valueWidget
+            Flexible(child: valueWidget)
           else if (value != null)
-            Text(
-              value,
-              style: TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 13,
-                fontWeight: highlight ? FontWeight.w700 : FontWeight.w600,
-                color: highlight
-                    ? (highlightColor ?? (isDarkMode ? Colors.white : Colors.black))
-                    : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
+            Flexible(
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 13,
+                  fontWeight: highlight ? FontWeight.w700 : FontWeight.w600,
+                  color: highlight
+                      ? (highlightColor ?? (isDarkMode ? Colors.white : Colors.black))
+                      : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
+                ),
               ),
             ),
         ],

@@ -7,10 +7,14 @@ import 'package:nnbdc/util/date_utils.dart' as app_date;
 /// 动态局部刷新的时间与业务学习日期显示组件
 class DynamicClockText extends StatefulWidget {
   final TextStyle style;
+  final bool showBusinessDate;
+  final TextAlign? textAlign;
 
   const DynamicClockText({
     super.key,
     required this.style,
+    this.showBusinessDate = true,
+    this.textAlign,
   });
 
   @override
@@ -43,11 +47,19 @@ class _DynamicClockTextState extends State<DynamicClockText> {
 
   @override
   Widget build(BuildContext context) {
-    final businessDateStr = DateFormat('yyyy-MM-dd').format(app_date.DateUtils.businessDate(_currentTime));
     final timeStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(_currentTime);
+    if (!widget.showBusinessDate) {
+      return Text(
+        timeStr,
+        style: widget.style,
+        textAlign: widget.textAlign,
+      );
+    }
+    final businessDateStr = DateFormat('yyyy-MM-dd').format(app_date.DateUtils.businessDate(_currentTime));
     return Text(
       '$timeStr ($businessDateStr)',
       style: widget.style,
+      textAlign: widget.textAlign,
     );
   }
 }

@@ -3014,65 +3014,56 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      '今日最少新词',
-                                      style: TextStyle(
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () => _showMinNewWordsExplanationDialog(ctx),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: Icon(
-                                          Icons.help_outline_rounded,
-                                          size: 16,
-                                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 3),
                                 Text(
-                                  isStarted ? '学习已开始，设置暂时锁定' : '优先保证每天的新词输入量',
+                                  '今日最少新词',
                                   style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => _showMinNewWordsExplanationDialog(ctx),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Icon(
+                                      Icons.help_outline_rounded,
+                                      size: 16,
+                                      color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           if (isStarted)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-                              decoration: BoxDecoration(
-                                color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$selected 词',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => ToastUtil.info('今日学习已开始，设置暂时锁定'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$selected 词',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDarkMode ? Colors.white70 : Colors.black87,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                         ],
@@ -3222,48 +3213,43 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '每组单词数',
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                  ),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: isStarted ? () => ToastUtil.info('今日学习已开始，设置暂时锁定') : null,
+                              child: Text(
+                                '每组单词数',
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                                 ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  isStarted ? '学习已开始，设置暂时锁定' : '一组学完再进下一组，组越大打断越少',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                           if (isStarted)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-                              decoration: BoxDecoration(
-                                color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$selectedBatchSize 词',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => ToastUtil.info('今日学习已开始，设置暂时锁定'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$selectedBatchSize 词',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDarkMode ? Colors.white70 : Colors.black87,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                         ],
@@ -3415,7 +3401,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         },
                         isDarkMode: isDarkMode,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 2),
                       _buildAdvancedMenuNavigationItem(
                         title: '学习日期说明',
                         onTap: () {
@@ -3431,26 +3417,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '背景画报',
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  '纯净意境摄影，随心切换专注心境',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              '背景画报',
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                              ),
                             ),
                           ),
                         ],
@@ -3831,40 +3804,30 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required VoidCallback onTap,
     required bool isDarkMode,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.025),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.07) : Colors.black.withValues(alpha: 0.05),
-          width: 0.8,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                  ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 13,
-                  color: isDarkMode ? Colors.white30 : Colors.black26,
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: isDarkMode ? Colors.white30 : Colors.black26,
+              ),
+            ],
           ),
         ),
       ),
