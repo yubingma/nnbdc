@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
+import '../widget/page_back_button.dart';
 import '../widget/sound_wave_icon.dart';
 
 class SearchPage extends StatefulWidget {
@@ -423,6 +424,9 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         _focusNode.hasFocus ? themeConfig.primaryColor : themeConfig.cardBorder;
     final accentColor = themeConfig.primaryColor;
     final textMain = themeConfig.textPrimary;
+    // 本页既内嵌在首页底栏，也会被「我」页面的功能收纳入口 push 成独立路由；
+    // 只有独立打开时才有可返回的上一页，此时补出返回箭头。
+    final canPop = Navigator.of(context).canPop();
 
     return AppScaffold(
       vibrancy: PageVibrancy.search,
@@ -432,6 +436,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         elevation: 0,
         titleSpacing: 0,
         automaticallyImplyLeading: false,
+        leading: canPop ? PageBackButton(color: textMain) : null,
+        leadingWidth: canPop ? 40 : 0,
         title: Container(
           height: 46,
           margin: const EdgeInsets.symmetric(horizontal: 14),

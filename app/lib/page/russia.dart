@@ -64,7 +64,7 @@ class RussiaPageState extends State<RussiaPage> {
     if (args == null || args is! List || args.length < 2) {
       Future.delayed(Duration.zero, () {
         if (!mounted) return;
-        context.push('/index', extra: IndexPageArgs(3));
+        context.go('/index', extra: IndexPageArgs(3));
       });
       return false;
     }
@@ -104,10 +104,11 @@ class RussiaPageState extends State<RussiaPage> {
       SocketIoClient.instance.removeSocketStatusListener(
         _DisconnectListener(myGame, this),
       );
-    }
 
-    if (leaveGameWhenDispose) {
-      myGame.leaveGame();
+      // 只有真正进过游戏，才有"离开游戏"这回事（myGame 此时才已初始化）
+      if (leaveGameWhenDispose) {
+        myGame.leaveGame();
+      }
     }
 
     // 断开socket连接

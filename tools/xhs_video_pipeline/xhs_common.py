@@ -31,6 +31,17 @@ W, H = 1080, 1920
 FPS = 30
 
 # 视觉设计令牌
+# 两套配色。画面元素（底色 / 文字 / 线条）跟着主题翻；**强调色 accent 两套通用，不翻**。
+# dark 直接复用下面这三个常量，所以 root_series.py 那条旧系列不写 theme 时行为完全不变。
+THEMES = {
+    "dark": dict(bg_top=(13, 16, 21), bg_bottom=(7, 8, 11),
+                 ink=(242, 246, 250), ink_dim=(138, 148, 163), ink_faint=(86, 94, 108),
+                 glow=0.16, glow2=0.05, art=(255, 255, 255), phon=(150, 200, 235)),
+    "light": dict(bg_top=(250, 249, 246), bg_bottom=(236, 234, 229),
+                  ink=(24, 27, 32), ink_dim=(104, 112, 126), ink_faint=(156, 164, 176),
+                  glow=0.13, glow2=0.05, art=(22, 24, 28), phon=(62, 110, 158)),
+}
+
 BG_TOP = (13, 16, 21)
 BG_BOTTOM = (7, 8, 11)
 INK = (242, 246, 250)
@@ -329,10 +340,11 @@ def synth_bgm(dest, seconds, profile=None):
 
 # ---------------------------------------------------------------- 画面资产
 
-def load_line_art(path, box, floor=34, gain=1.7):
-    """把白底黑线的词核心图转成「透明底 + 白色线条」的 RGBA，并裁掉白边。
+def load_line_art(path, box, theme="dark", floor=34, gain=1.7):
+    """把白底黑线的词核心图转成「透明底 + 纯色线条」的 RGBA，并裁掉白边。
 
-    用亮度当 alpha：线越黑，反相后越亮，最终越不透明。这样它可以直接叠在深色画布上。
+    用亮度当 alpha：线越黑，反相后越亮，最终越不透明。**蒙版与主题无关，
+    换主题只换线条颜色**——深色底用白线，浅色底用黑线。
     """
     gray = Image.open(path).convert("L")
     mask = ImageOps.invert(gray).point(           # 黑线 → 白线
@@ -341,7 +353,7 @@ def load_line_art(path, box, floor=34, gain=1.7):
     if bbox:
         mask = mask.crop(bbox)
     mask.thumbnail((box, box), Image.LANCZOS)
-    art = Image.new("RGBA", mask.size, (255, 255, 255, 0))
+    art = Image.new("RGBA", mask.size, THEMES[theme]["art"] + (0,))
     art.putalpha(mask)
     return art
 
@@ -436,31 +448,32 @@ class ImageLayer:
         return halo
 
 
-def make_background(accent):
-    """深空底色 + 顶部品牌光晕 + 细腻噪点，整集静态复用。"""
+def make_background(accent, theme="dark"):
+    """底色 + 顶部品牌光晕 + 细腻噪点，整集静态复用。底色与光晕强度跟主题走。"""
+    th = THEMES[theme]
     yy = np.linspace(0, 1, H)[:, None]
     bg = np.zeros((H, W, 3), dtype=np.float64)
     for c in range(3):
-        bg[:, :, c] = (BG_TOP[c] * (1 - yy) + BG_BOTTOM[c] * yy)
+        bg[:, :, c] = (th["bg_top"][c] * (1 - yy) + th["bg_bottom"][c] * yy)
 
     yy2 = np.arange(H)[:, None]
     xx2 = np.arange(W)[None, :]
     dist = np.sqrt((xx2 - W * 0.5) ** 2 + (yy2 - H * 0.22) ** 2)
     glow = np.clip(1 - dist / (W * 1.05), 0, 1) ** 2.2
     for c in range(3):
-        bg[:, :, c] += glow * accent[c] * 0.16
+        bg[:, :, c] += glow * accent[c] * th["glow"]
 
     dist2 = np.sqrt((xx2 - W * 0.5) ** 2 + (yy2 - H * 1.02) ** 2)
     glow2 = np.clip(1 - dist2 / (W * 0.95), 0, 1) ** 2.5
     for c in range(3):
-        bg[:, :, c] += glow2 * accent[c] * 0.05
+        bg[:, :, c] += glow2 * accent[c] * th["glow2"]
 
     rng = np.random.default_rng(11)
     bg += rng.normal(0, 2.2, bg.shape)
     return Image.fromarray(np.clip(bg, 0, 255).astype(np.uint8)).convert("RGBA")
 
 
-def teaser_chip(d, cx, y, text, fnt, alpha):
+def teaser_chip(d, cx, y, text, fnt, alpha, ink=None):
     """胶囊标签：片头承诺与片尾下集预告共用。"""
     if not text:
         return
@@ -469,7 +482,7 @@ def teaser_chip(d, cx, y, text, fnt, alpha):
     d.rounded_rectangle([cx - hw, y - 48, cx + hw, y + 48], radius=48,
                         fill=(255, 255, 255, int(16 * alpha)),
                         outline=INK_FAINT + (int(150 * alpha),), width=2)
-    d.text((cx, y), text, font=fnt, fill=INK + (int(230 * alpha),), anchor="mm")
+    d.text((cx, y), text, font=fnt, fill=(ink or INK) + (int(230 * alpha),), anchor="mm")
 
 
 def encode_video(frames, total_frames, total_seconds, audio, out_path,

@@ -16,6 +16,7 @@ import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/widget/desk_section.dart';
 import 'package:nnbdc/widget/dict_book_icon.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
+import 'package:nnbdc/widget/page_back_button.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
@@ -151,6 +152,9 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final textColor = themeConfig.textPrimary;
     final textSubColor = themeConfig.textSecondary;
     final isDarkMode = themeStyle.isDark;
+    // 本页既内嵌在首页底栏，也会被「我」页面的功能收纳入口 push 成独立路由；
+    // 只有独立打开时才有可返回的上一页，此时补出返回箭头。
+    final canPop = Navigator.of(context).canPop();
 
     return AppScaffold(
       vibrancy: PageVibrancy.wordLists,
@@ -170,14 +174,22 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '词表总览',
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.3,
-                          ),
+                        Row(
+                          children: [
+                            if (canPop) ...[
+                              PageBackButton(color: textColor, size: 19),
+                              const SizedBox(width: 2),
+                            ],
+                            Text(
+                              '词表总览',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(

@@ -27,7 +27,7 @@ from PIL import Image, ImageDraw
 
 from xhs_common import (
     FONT_CN, FONT_CN_BOLD, FONT_CN_REG, FONT_EN, FONT_EN_NUM, FONT_IPA,
-    FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MED, FPS, H, INK, INK_DIM, INK_FAINT, OUT_DIR,
+    FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MED, FPS, H, OUT_DIR, THEMES,
     SFX_DIR, W, ImageLayer, Layer, TimedLayer, duration_of, encode_video, fetch_tts,
     PHOTO_ALBUM, fetch_word_audio, fit_font, font, hex2rgb, import_to_photos,
     load_line_art, make_background, resolve_music,
@@ -307,7 +307,7 @@ def radiate_node_bg(d, cx, cy, size, alpha, accent):
                         outline=accent + (int(120 * alpha),), width=2)
 
 
-def radiate_meaning(d, cx, cy, meaning, size, f_meaning, alpha, accent, spoken):
+def radiate_meaning(d, cx, cy, meaning, size, f_meaning, alpha, accent, spoken, pal):
     """释义文字。念到「就是X」时整块点亮并垫一层高亮底。"""
     x0, y0 = node_top(cx, cy, size)
     if spoken:
@@ -316,11 +316,11 @@ def radiate_meaning(d, cx, cy, meaning, size, f_meaning, alpha, accent, spoken):
                              cx + mw / 2 + 22, y0 + NODE_MEAN_Y + 32], radius=16,
                             fill=accent + (int(52 * alpha),))
     d.text((cx, y0 + NODE_MEAN_Y), meaning, font=f_meaning,
-           fill=(accent if spoken else INK) + (int(252 * alpha),), anchor="mm")
+           fill=(accent if spoken else pal["ink"]) + (int(252 * alpha),), anchor="mm")
 
 
 def radiate_karaoke(d, cx, cy, lines, offsets, size, text_len, f_rel, alpha,
-                    t, t0, spoken_dur):
+                    t, t0, spoken_dur, pal):
     """关联逻辑文字逐字点亮：念到第几个字，第几个字就变亮。"""
     x0, y0 = node_top(cx, cy, size)
     done = 0.0
@@ -333,24 +333,26 @@ def radiate_karaoke(d, cx, cy, lines, offsets, size, text_len, f_rel, alpha,
             cw = _text_w(f_rel, ch)
             hot = (offsets[li] + i) < done
             d.text((x, y0 + NODE_REL_Y + NODE_REL_LH * li), ch, font=f_rel,
-                   fill=(INK if hot else INK_FAINT) + (int(alpha),), anchor="lm")
+                   fill=(pal["ink"] if hot else pal["ink_faint"]) + (int(alpha),), anchor="lm")
             x += cw
 
 
-def hook_card(d, cx, y, text, alpha, fnt):
+def hook_card(d, cx, y, text, alpha, fnt, pal):
     bbox = fnt.getbbox(text)
     w = (bbox[2] - bbox[0]) + 130
+    # 卡片底色 = 主题文字色兑一点透明度：深色主题下是白色薄雾，浅色主题下是黑色薄雾
     d.rounded_rectangle([cx - w / 2, y - 68, cx + w / 2, y + 68], radius=30,
-                        fill=(255, 255, 255, int(14 * alpha)),
-                        outline=INK_FAINT + (int(130 * alpha),), width=2)
-    d.text((cx, y), text, font=fnt, fill=INK + (int(248 * alpha),), anchor="mm")
+                        fill=pal["ink"] + (int(14 * alpha),),
+                        outline=pal["ink_faint"] + (int(130 * alpha),), width=2)
+    d.text((cx, y), text, font=fnt, fill=pal["ink"] + (int(248 * alpha),), anchor="mm")
 
 
 # ---------------------------------------------------------------- 渲染
 
 def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False):
     accent = hex2rgb(cfg.get("accent", "#6EE7B7"))
-    bg = make_background(accent)
+    pal = THEMES[cfg.get("theme", "dark")]
+    bg = make_background(accent, cfg.get("theme", "dark"))
     segments = cfg["segments"]
 
     f_series = font(FONT_CN, 32, FONT_CN_REG)
@@ -386,10 +388,10 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
             if len(cards) <= 3:                       # 三张以内沿用竖排
                 L.append(Layer(lambda d, e, dy, t=cards[0]: d.text(
                     (W / 2, 0 + dy), "", font=f_small,
-                    fill=INK_DIM + (0,), anchor="mm"), -1.0, dur=0.4))
+                    fill=pal["ink_dim"] + (0,), anchor="mm"), -1.0, dur=0.4))
                 for i, text in enumerate(cards):
                     L.append(Layer(lambda d, e, dy, t=text, y=HOOK_CARD_Y + HOOK_CARD_GAP * i:
-                                   hook_card(d, W / 2, y + dy, t, e, f_hook),
+                                   hook_card(d, W / 2, y + dy, t, e, f_hook, pal),
                                    -1.0, dur=0.4, rise=0))
             else:                                     # 四张以上改用网格
                 per_row = 3 if len(cards) >= 5 else 2  # 4 张排成 2+2，3+1 会很不平衡
@@ -400,11 +402,11 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
                         x = W / 2 + (c - (len(row) - 1) / 2) * HOOK_GRID_COL
                         y = HOOK_GRID_Y + r * HOOK_GRID_ROW
                         L.append(Layer(lambda d, e, dy, t=text, xx=x, yy=y:
-                                       hook_card(d, xx, yy + dy, t, e, f_grid),
+                                       hook_card(d, xx, yy + dy, t, e, f_grid, pal),
                                        -1.0, dur=0.4, rise=0))
             L.append(Layer(lambda d, e, dy, t=line: d.text(
                 (W / 2, HOOK_LINE_Y + dy), t, font=f_small,
-                fill=INK_DIM + (int(240 * e),), anchor="mm"), 1.30, dur=0.55))
+                fill=pal["ink_dim"] + (int(240 * e),), anchor="mm"), 1.30, dur=0.55))
 
         elif kind == "core":
             core_label, core_text = "核心意象", cfg["core_text"]
@@ -413,13 +415,13 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
                                 rise=26, scale_from=0.82, glow=accent + (90,)))
             L.append(Layer(lambda d, e, dy, t=core_label: d.text(
                 (W / 2, 1130 + dy), t, font=f_label,
-                fill=INK_DIM + (int(245 * e),), anchor="mm"), dur * 0.36, dur=0.5))
+                fill=pal["ink_dim"] + (int(245 * e),), anchor="mm"), dur * 0.36, dur=0.5))
             L.append(Layer(lambda d, e, dy, t=core_text: d.text(
                 (W / 2, 1250 + dy), t, font=f_core_cn,
                 fill=accent + (int(255 * e),), anchor="mm"), dur * 0.36 + 0.15, dur=0.55, rise=30))
             L.append(Layer(lambda d, e, dy, t=sub: d.text(
                 (W / 2, 1390 + dy), t, font=f_small,
-                fill=INK_FAINT + (int(235 * e),), anchor="mm"), dur * 0.62, dur=0.55))
+                fill=pal["ink_faint"] + (int(235 * e),), anchor="mm"), dur * 0.62, dur=0.55))
 
         elif kind == "radiate":
             items = s["items"]
@@ -450,13 +452,13 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
                 L.append(TimedLayer(lambda d, e, dy, t, it=item, nd=node, sz=size, mt=mean_at:
                                     radiate_meaning(d, nd[0], nd[1] + dy, it["meaning"],
                                                     sz, f_meaning, e, accent,
-                                                    t >= mt),
+                                                    t >= mt, pal),
                                     at, dur=0.42, rise=26))
                 L.append(TimedLayer(lambda d, e, dy, t, ln=lines, off=offsets, nd=node, sz=size,
                                     txt=item["relation"], t0=at, rd=rel_dur:
                                     radiate_karaoke(d, nd[0], nd[1] + dy, ln, off, sz,
                                                     len(txt), f_rel, 245 * e,
-                                                    t, t0, rd),
+                                                    t, t0, rd, pal),
                                     at, dur=0.42, rise=26))
 
         elif kind == "outro":
@@ -475,22 +477,22 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
                     fill=accent + (int(255 * e),), anchor="mm"), OUTRO_AT, dur=OUTRO_FADE, rise=0))
             L.append(Layer(lambda d, e, dy, t=ask: d.text(
                 (W / 2, OUTRO_ASK_Y + dy), t, font=f_ask,
-                fill=INK + (int(250 * e),), anchor="mm"), OUTRO_AT, dur=OUTRO_FADE, rise=0))
+                fill=pal["ink"] + (int(250 * e),), anchor="mm"), OUTRO_AT, dur=OUTRO_FADE, rise=0))
             L.append(Layer(lambda d, e, dy, t=cta: teaser_chip(
-                d, W / 2, OUTRO_CHIP_Y + dy, t, f_small, e), OUTRO_AT, dur=OUTRO_FADE))
+                d, W / 2, OUTRO_CHIP_Y + dy, t, f_small, e, pal["ink"]), OUTRO_AT, dur=OUTRO_FADE))
         layers_by_seg.append(L)
 
     def draw_chrome(img, t):
         d = ImageDraw.Draw(img)
         d.text((80, 146), f"{cfg['series']} · {cfg['episode']}", font=f_series,
-               fill=INK_FAINT, anchor="lm")
+               fill=pal["ink_faint"], anchor="lm")
         d.text((W - 80, 146), cfg.get("position", ""), font=f_idx,
-               fill=INK_FAINT, anchor="rm")
+               fill=pal["ink_faint"], anchor="rm")
         # 单词拼写与音标全集常驻：封面取第一帧，这里必须是全不透明
         d.text((W / 2, WORD_Y), cfg["word"], font=f_word_hdr,
-               fill=INK + (240,), anchor="mm")
+               fill=pal["ink"] + (240,), anchor="mm")
         d.text((W / 2, PHON_Y), cfg["phonetic"], font=f_phon_hdr,
-               fill=(150, 200, 235) + (220,), anchor="mm")
+               fill=pal["phon"] + (220,), anchor="mm")
 
         # 进度条 + 百分比：数字会一路涨到 100%，是留住观众看到最后的主要钩子
         prog = min(1.0, t / total)
@@ -501,7 +503,7 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
         d.text((bar_l - 40, bar_y), f"{int(prog * 100)}%", font=f_pct,
                fill=accent + (255,), anchor="rm")
         d.rounded_rectangle([bar_l, bar_y - bar_h // 2, bar_r, bar_y + bar_h // 2],
-                            radius=bar_h // 2, fill=(255, 255, 255, 20))
+                            radius=bar_h // 2, fill=pal["ink"] + (20,))
         head = bar_l + (bar_r - bar_l) * prog
         if prog > 0.004:
             d.rounded_rectangle([bar_l, bar_y - bar_h // 2, head, bar_y + bar_h // 2],
@@ -509,7 +511,7 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
             d.ellipse([head - bar_h, bar_y - bar_h, head + bar_h, bar_y + bar_h],
                       fill=accent + (90,))
         d.text((W / 2, bar_y - 92), cfg["slogan"], font=f_small,
-               fill=INK_FAINT, anchor="mm")
+               fill=pal["ink_faint"], anchor="mm")
 
     n_frames = int(round(total * FPS))
 
@@ -549,7 +551,7 @@ def main():
         art_path = CORE_IMG_DIR / art_path
     if not art_path.exists():
         raise SystemExit(f"找不到词核心图：{art_path}")
-    core_art = load_line_art(art_path, box=620)
+    core_art = load_line_art(art_path, box=620, theme=cfg.get("theme", "dark"))
     vk = voice_kwargs(cfg)
     print(f"· {ep} 《{cfg['series']}》 {cfg['word']} = {cfg['core_text']}"
           f"（词核心图 {core_art.width}×{core_art.height}）")

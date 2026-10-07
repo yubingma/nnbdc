@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
 import '../theme/app_theme_background.dart';
 import '../widget/frosted_glass_card.dart';
+import '../widget/page_back_button.dart';
 import '../util/error_handler.dart';
 
 class GamePage extends StatefulWidget {
@@ -392,6 +393,9 @@ class _GamePageState extends State<GamePage> {
     final textColor = themeConfig.textPrimary;
     final textSubColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
+    // 本页既内嵌在首页底栏，也会被「我」页面的功能收纳入口 push 成独立路由；
+    // 只有独立打开时才有可返回的上一页，此时补出返回箭头。
+    final canPop = Navigator.of(context).canPop();
 
     if (Global.isGuest) {
       return Scaffold(
@@ -494,14 +498,22 @@ class _GamePageState extends State<GamePage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '单词PK大厅',
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.5,
-                              ),
+                            Row(
+                              children: [
+                                if (canPop) ...[
+                                  PageBackButton(color: textColor),
+                                  const SizedBox(width: 2),
+                                ],
+                                Text(
+                                  '单词PK大厅',
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 3),
                             Text(
