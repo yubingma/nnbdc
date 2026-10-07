@@ -171,12 +171,12 @@ void main() {
     expect(find.text('每组单词数'), findsOneWidget);
 
     // 验证每组单词数的快捷药丸为经典 5 档：5, 10, 20, 30, 50（即使当日词数为 20）
-    expect(find.text('50'), findsOneWidget, reason: '50词药丸应存在，不受当日词数20的限制');
+    expect(find.text('50'), findsWidgets, reason: '50词药丸应存在，不受当日词数20的限制');
     expect(find.text('200'), findsNothing, reason: '绝不应出现突兀的当日词数快捷标签');
 
-    // 验证“今日最少新词”与“每组单词数”均具有对称的编辑小笔图标
+    // 验证“今日单词数”、“今日最少新词”与“每组单词数”均具有对称的编辑小笔图标
     final editIcons = find.byIcon(Icons.edit_outlined);
-    expect(editIcons, findsNWidgets(2), reason: '上下两个设置项均应展示对称统一的编辑小笔图标');
+    expect(editIcons, findsNWidgets(3), reason: '三个设置项均应展示对称统一的编辑小笔图标');
     await tester.tap(editIcons.last);
     await tester.pumpAndSettle();
 
@@ -200,7 +200,9 @@ void main() {
       findsOneWidget,
     );
 
-    // 点击保存设置
+    // 点击保存设置（先确保滚动至可见区域）
+    await tester.ensureVisible(find.text('保存设置'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('保存设置'));
     await tester.pumpAndSettle();
 

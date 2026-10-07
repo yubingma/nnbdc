@@ -152,29 +152,13 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           StashedNavMenuDialog.show(context);
         },
         child: Container(
-          height: 54,
+          height: 50,
+          alignment: Alignment.center,
           decoration: const BoxDecoration(color: Colors.transparent),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                tab.icon,
-                color: isSelected ? selectedColor : unselectedColor,
-                size: isSelected ? 24 : 22,
-              ),
-              const SizedBox(height: 3),
-              Text(
-                tab.label,
-                style: TextStyle(
-                  color: isSelected ? selectedColor : unselectedColor,
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  fontFamily: 'NotoSansSC',
-                  height: 1.2,
-                  letterSpacing: 0.4,
-                ),
-              ),
-            ],
+          child: Icon(
+            tab.icon,
+            color: isSelected ? selectedColor : unselectedColor,
+            size: isSelected ? 24 : 22,
           ),
         ),
       ),
@@ -229,9 +213,8 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                 ),
                 child: SafeArea(
                   top: false,
-                  child: Container(
-                    height: 52,
-                    padding: const EdgeInsets.only(top: 2),
+                  child: SizedBox(
+                    height: 50,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: visibleTabs.map((tab) {

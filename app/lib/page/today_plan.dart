@@ -729,11 +729,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
 
     final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
-    final isStarted = user?.todayStudyStarted == true;
 
-    // 今日已打卡：圆环就从"装饰性目标环"变成一枚印章——加内侧发丝圈、垫一层极淡印油，
-    // 环心的"目标已锁定"换成微微倾斜的"今日已打卡"。词数仍留在环心，印章只是把已完成的
-    // 事实盖上去，不抢走这一天到底背了多少词。
+    // 今日已打卡：展示一枚倾斜的"今日已打卡"精致印章
     final isDakaStamped = hasDakaToday;
 
     // 印章上的年·月·日：用逻辑日期（AppClock）而不是系统时间，与打卡/跨天口径一致
@@ -741,122 +738,56 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final String stampDate =
         '${stampDay.year}.${stampDay.month.toString().padLeft(2, '0')}.${stampDay.day.toString().padLeft(2, '0')}';
 
-    final textPrimary = hasWallpaper ? Colors.white : themeConfig.textPrimary;
     final textMuted = hasWallpaper ? Colors.white70 : themeConfig.textMuted;
     final progressColor = hasWallpaper ? const Color(0xFF10B981) : themeConfig.primaryColor;
 
     final content = Column(
       children: [
-        // 环心今日目标词数（外圈仅为装饰性锚点环）
-        SizedBox(
-          width: 128,
-          height: 128,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              if (isDakaStamped)
-                // 已打卡：这枚章交给画笔去"盖"——墨迹的浓淡、断口、飞白都不是描边能表达的
-                SizedBox(
-                  width: 128,
-                  height: 128,
-                  child: CustomPaint(
-                    painter: _DakaSealPainter(
-                      color: DakaSealColors.forDark(isDarkMode || hasWallpaper),
-                      isDark: isDarkMode || hasWallpaper,
-                    ),
+        // 已打卡印章（仅在打卡后展示，未打卡时保持纯粹极简）
+        if (isDakaStamped) ...[
+          SizedBox(
+            width: 116,
+            height: 116,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CustomPaint(
+                  size: const Size(116, 116),
+                  painter: _DakaSealPainter(
+                    color: DakaSealColors.forDark(isDarkMode || hasWallpaper),
+                    isDark: isDarkMode || hasWallpaper,
                   ),
                 ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: isStarted
-                    ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
-                    : () => _showWordsSelectionBottomSheet(),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${user?.effectiveWordsPerDay ?? 0}',
-                      style: TextStyle(
-                        color: textPrimary,
-                        fontSize: hasWallpaper ? 38 : 34,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Roboto',
-                        letterSpacing: -1.2,
-                        height: 1.0,
-                        shadows: hasWallpaper
-                            ? const [
-                                Shadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 2)),
-                              ]
-                            : null,
+                Transform.rotate(
+                  angle: -6 * math.pi / 180,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _DakaSealText(
+                        key: const Key('today_plan_daka_seal_text'),
+                        text: '今日已打卡',
+                        color: DakaSealColors.forDark(isDarkMode || hasWallpaper)
+                            .withValues(alpha: isDarkMode || hasWallpaper ? 0.96 : 0.94),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '今日',
-                          style: TextStyle(
-                            color: textMuted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        if (isStarted) ...[
-                          const SizedBox(width: 3),
-                          Icon(
-                            Icons.lock_outline_rounded,
-                            size: 11.5,
-                            color: textMuted,
-                          ),
-                        ] else ...[
-                          const SizedBox(width: 2),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 13,
-                            color: textMuted,
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (isDakaStamped) ...[
-                      const SizedBox(height: 4),
-                      // 整枚章微微歪着；印面文字与日期都由画笔逐字"盖"上去
-                      Transform.rotate(
-                        angle: -6 * math.pi / 180,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _DakaSealText(
-                              key: const Key('today_plan_daka_seal_text'),
-                              text: '今日已打卡',
-                              color: DakaSealColors.forDark(isDarkMode || hasWallpaper)
-                                  .withValues(alpha: isDarkMode || hasWallpaper ? 0.96 : 0.94),
-                            ),
-                            const SizedBox(height: 3),
-                            _DakaSealText(
-                              key: const Key('today_plan_daka_seal_date'),
-                              text: stampDate,
-                              color: DakaSealColors.forDark(isDarkMode || hasWallpaper)
-                                  .withValues(alpha: isDarkMode || hasWallpaper ? 0.85 : 0.80),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 1.1,
-                              seed: 20260913,
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 3),
+                      _DakaSealText(
+                        key: const Key('today_plan_daka_seal_date'),
+                        text: stampDate,
+                        color: DakaSealColors.forDark(isDarkMode || hasWallpaper)
+                            .withValues(alpha: isDarkMode || hasWallpaper ? 0.85 : 0.80),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.1,
+                        seed: 20260913,
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-
-        const SizedBox(height: 14),
+          const SizedBox(height: 16),
+        ],
 
         // 双列对称纯粹排版数据（新词 | 旧词）
         Padding(
@@ -1113,232 +1044,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  void _showWordsSelectionBottomSheet() {
-    final darkMode = context.read<DarkMode>();
-    final isDarkMode = darkMode.isDarkMode;
-    final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
-    final primaryColor = themeConfig.primaryColor;
-    final currentValue = user?.effectiveWordsPerDay ?? 20;
-    final wordOptions = const [2, 3, 5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.15),
-      isScrollControlled: true,
-      builder: (ctx) {
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isDarkMode
-                      ? [
-                          const Color(0xB8161B26),
-                          const Color(0x9910141D),
-                        ]
-                      : [
-                          const Color(0x66FFFFFF),
-                          const Color(0x4DFFFFFF),
-                        ],
-                ),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border(
-                  top: BorderSide(
-                    color: isDarkMode
-                        ? const Color(0x33FFFFFF)
-                        : const Color(0x80FFFFFF),
-                    width: 1.2,
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, -6),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 顶部居中精致拖拽把手
-                      Center(
-                        child: Container(
-                          width: 36,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // 标题栏（主副标题 + 轻圆关闭按钮）
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '选择每日学习词数',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '根据每天的时间节奏定制专注目标',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
-                                ),
-                              ),
-                            ],
-                          ),
-                          GestureDetector(
-                            onTap: () => Navigator.pop(ctx),
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 16,
-                                color: isDarkMode ? Colors.white60 : Colors.black54,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 4 列规整网格
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: wordOptions.length,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 9,
-                          crossAxisSpacing: 9,
-                          childAspectRatio: 1.9,
-                        ),
-                        itemBuilder: (context, index) {
-                          final v = wordOptions[index];
-                          final isSelected = v == currentValue;
-                          final isRestricted = !UserPrivilegeManager.isDailyWordsAllowed(v);
-
-                          return GestureDetector(
-                            onTap: () async {
-                              if (isRestricted) {
-                                ToastUtil.info('开通会员可选择更多单词数量');
-                                return;
-                              }
-                              Navigator.pop(ctx);
-                              setState(() {
-                                user!.wordsPerDay = v;
-                                dataLoaded = false;
-                              });
-                              await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, v);
-                              await Global.loadUserFromDb();
-                              ThrottledDbSyncService().requestSync();
-                              loadData(forceSupplement: false);
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? primaryColor
-                                    : (isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.05)
-                                        : Colors.white.withValues(alpha: 0.35)),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? Colors.transparent
-                                      : (isDarkMode
-                                          ? const Color(0x20FFFFFF)
-                                          : const Color(0x80FFFFFF)),
-                                  width: 1,
-                                ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: primaryColor.withValues(alpha: 0.32),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    '$v',
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
-                                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                                      fontSize: 15,
-                                      fontFamily: 'Roboto',
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    '词',
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white.withValues(alpha: 0.88)
-                                          : (isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                  if (isRestricted) ...[
-                                    const SizedBox(width: 3),
-                                    Icon(
-                                      Icons.workspace_premium_rounded,
-                                      color: isSelected ? Colors.white : Colors.amber,
-                                      size: 12,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 6),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   /// 加量主按钮（首页"继续学习（加量）"/"再来一组"）
   Widget _buildExtraStudyButton(
@@ -2839,8 +2545,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final primaryColor = themeConfig.primaryColor;
     final isStarted = user?.todayStudyStarted == true;
     final config = StudyConfig.fromCurrentUser();
-    final wordsPerDay = user?.effectiveWordsPerDay ?? 20;
-    int selected = config.minNewWordsPerDay.clamp(0, wordsPerDay);
+    final initialWordsPerDay = user?.effectiveWordsPerDay ?? 20;
+    int selectedWordsPerDay = initialWordsPerDay;
+    double wordsPerDayDragAccumulator = 0;
+    int selected = config.minNewWordsPerDay.clamp(0, selectedWordsPerDay);
     // 每组单词数独立于每日计划词数，上限统一对齐为 500
     const batchSizeLimit = StudyConfig.maxBatchSize;
     int selectedBatchSize =
@@ -2865,6 +2573,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       pageBuilder: (ctx, _, __) {
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
+          void handleSelectWordsPerDay(int v) {
+            if (!UserPrivilegeManager.isDailyWordsAllowed(v)) {
+              ToastUtil.info('开通会员可选择更多单词数量');
+              return;
+            }
+            setDialogState(() {
+              selectedWordsPerDay = v;
+              if (selected > selectedWordsPerDay) {
+                selected = selectedWordsPerDay;
+              }
+            });
+          }
+
           return Dialog(
             backgroundColor: Colors.transparent,
             insetPadding: const EdgeInsets.symmetric(horizontal: 28),
@@ -2960,7 +2681,221 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                       const SizedBox(height: 18),
 
-                      // 设置项说明与锁定标签
+                      // 1. 今日单词数（第一项配置）
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '今日单词数',
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                              ),
+                            ),
+                          ),
+                          if (isStarted)
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => ToastUtil.info('今日学习已开始，设置暂时锁定'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$selectedWordsPerDay 词',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDarkMode ? Colors.white70 : Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      if (!isStarted) ...[
+                        const SizedBox(height: 14),
+
+                        // 步进调节条
+                        Container(
+                          height: 52,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.white.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.white.withValues(alpha: 0.65),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              _buildAdvancedStepBtn(
+                                icon: Icons.remove_rounded,
+                                enabled: selectedWordsPerDay > 2,
+                                onTap: () => setDialogState(() {
+                                  selectedWordsPerDay = (selectedWordsPerDay - 1).clamp(2, 500);
+                                  if (selected > selectedWordsPerDay) {
+                                    selected = selectedWordsPerDay;
+                                  }
+                                }),
+                                isDarkMode: isDarkMode,
+                                isLargeRange: true,
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () async {
+                                    final inputVal = await _showCustomNumberInputDialog(
+                                      parentContext: ctx,
+                                      title: '自定义今日单词数',
+                                      unit: '词',
+                                      min: 2,
+                                      max: 500,
+                                      subtitle: '范围 2 ~ 500 词',
+                                      currentValue: selectedWordsPerDay,
+                                      primaryColor: primaryColor,
+                                      isDarkMode: isDarkMode,
+                                    );
+                                    if (inputVal != null) {
+                                      if (!UserPrivilegeManager.isDailyWordsAllowed(inputVal)) {
+                                        ToastUtil.info('开通会员可选择更多单词数量');
+                                        return;
+                                      }
+                                      setDialogState(() {
+                                        selectedWordsPerDay = inputVal;
+                                        if (selected > selectedWordsPerDay) {
+                                          selected = selectedWordsPerDay;
+                                        }
+                                      });
+                                    }
+                                  },
+                                  onHorizontalDragStart: (_) {
+                                    wordsPerDayDragAccumulator = 0;
+                                  },
+                                  onHorizontalDragUpdate: (details) {
+                                    wordsPerDayDragAccumulator += details.primaryDelta ?? 0;
+                                    if (wordsPerDayDragAccumulator.abs() >= 8.0) {
+                                      final dir = wordsPerDayDragAccumulator > 0 ? 1 : -1;
+                                      wordsPerDayDragAccumulator = 0;
+                                      final next = (selectedWordsPerDay + dir).clamp(2, 500);
+                                      if (next != selectedWordsPerDay) {
+                                        if (next > selectedWordsPerDay && !UserPrivilegeManager.isDailyWordsAllowed(next)) {
+                                          return;
+                                        }
+                                        HapticFeedback.selectionClick();
+                                        setDialogState(() {
+                                          selectedWordsPerDay = next;
+                                          if (selected > selectedWordsPerDay) {
+                                            selected = selectedWordsPerDay;
+                                          }
+                                        });
+                                      }
+                                    }
+                                  },
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        RichText(
+                                          text: TextSpan(
+                                            children: [
+                                              TextSpan(
+                                                text: '$selectedWordsPerDay',
+                                                style: TextStyle(
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontFamily: 'Roboto',
+                                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                                ),
+                                              ),
+                                              TextSpan(
+                                                text: ' 词',
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          size: 13,
+                                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              _buildAdvancedStepBtn(
+                                icon: Icons.add_rounded,
+                                enabled: selectedWordsPerDay < 500,
+                                onTap: () {
+                                  final next = (selectedWordsPerDay + 1).clamp(2, 500);
+                                  if (!UserPrivilegeManager.isDailyWordsAllowed(next)) {
+                                    ToastUtil.info('开通会员可选择更多单词数量');
+                                    return;
+                                  }
+                                  setDialogState(() {
+                                    selectedWordsPerDay = next;
+                                  });
+                                },
+                                isDarkMode: isDarkMode,
+                                isLargeRange: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 2 行 × 3 列 规整快捷药丸标签（5, 10, 20, 30, 50, 100）
+                        Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(child: _buildAdvancedQuickChip('5词', 5, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _buildAdvancedQuickChip('10词', 10, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _buildAdvancedQuickChip('20词', 20, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(child: _buildAdvancedQuickChip('30词', 30, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _buildAdvancedQuickChip('50词', 50, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _buildAdvancedQuickChip('100词', 100, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 22),
+
+                      // 2. 今日最少新词
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -3044,9 +2979,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               _buildAdvancedStepBtn(
                                 icon: Icons.remove_rounded,
                                 enabled: selected > 0,
-                                onTap: () => setDialogState(() => selected = (selected - 1).clamp(0, wordsPerDay)),
+                                onTap: () => setDialogState(() => selected = (selected - 1).clamp(0, selectedWordsPerDay)),
                                 isDarkMode: isDarkMode,
-                                isLargeRange: wordsPerDay > 30,
+                                isLargeRange: selectedWordsPerDay > 30,
                               ),
                               Expanded(
                                 child: GestureDetector(
@@ -3055,12 +2990,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                     final inputVal = await _showMinNewWordsInputDialog(
                                       ctx,
                                       selected,
-                                      wordsPerDay,
+                                      selectedWordsPerDay,
                                       primaryColor,
                                       isDarkMode,
                                     );
                                     if (inputVal != null) {
-                                      setDialogState(() => selected = inputVal.clamp(0, wordsPerDay));
+                                      setDialogState(() => selected = inputVal.clamp(0, selectedWordsPerDay));
                                     }
                                   },
                                   onHorizontalDragStart: (_) {
@@ -3071,7 +3006,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                     if (minNewWordsDragAccumulator.abs() >= 8.0) {
                                       final dir = minNewWordsDragAccumulator > 0 ? 1 : -1;
                                       minNewWordsDragAccumulator = 0;
-                                      final next = (selected + dir).clamp(0, wordsPerDay);
+                                      final next = (selected + dir).clamp(0, selectedWordsPerDay);
                                       if (next != selected) {
                                         HapticFeedback.selectionClick();
                                         setDialogState(() => selected = next);
@@ -3122,10 +3057,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               ),
                               _buildAdvancedStepBtn(
                                 icon: Icons.add_rounded,
-                                enabled: selected < wordsPerDay,
-                                onTap: () => setDialogState(() => selected = (selected + 1).clamp(0, wordsPerDay)),
+                                enabled: selected < selectedWordsPerDay,
+                                onTap: () => setDialogState(() => selected = (selected + 1).clamp(0, selectedWordsPerDay)),
                                 isDarkMode: isDarkMode,
-                                isLargeRange: wordsPerDay > 30,
+                                isLargeRange: selectedWordsPerDay > 30,
                               ),
                             ],
                           ),
@@ -3139,19 +3074,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               children: [
                                 Expanded(child: _buildAdvancedQuickChip('不限制', 0, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode)),
                                 const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('5词', 5, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: wordsPerDay >= 5)),
+                                Expanded(child: _buildAdvancedQuickChip('5词', 5, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay >= 5)),
                                 const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('10词', 10, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: wordsPerDay >= 10)),
+                                Expanded(child: _buildAdvancedQuickChip('10词', 10, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay >= 10)),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                Expanded(child: _buildAdvancedQuickChip('20词', 20, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: wordsPerDay >= 20)),
+                                Expanded(child: _buildAdvancedQuickChip('20词', 20, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay >= 20)),
                                 const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('30词', 30, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: wordsPerDay >= 30)),
+                                Expanded(child: _buildAdvancedQuickChip('30词', 30, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay >= 30)),
                                 const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('全学新词', wordsPerDay, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: wordsPerDay > 0)),
+                                Expanded(child: _buildAdvancedQuickChip('全学新词', selectedWordsPerDay, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay > 0)),
                               ],
                             ),
                           ],
@@ -3479,6 +3414,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 onPressed: isStarted
                                     ? null
                                     : () async {
+                                        if (selectedWordsPerDay != initialWordsPerDay) {
+                                          user!.wordsPerDay = selectedWordsPerDay;
+                                          await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, selectedWordsPerDay);
+                                          await Global.loadUserFromDb();
+                                          ThrottledDbSyncService().requestSync();
+                                        }
                                         config.minNewWordsPerDay = selected;
                                         config.batchSize = selectedBatchSize;
                                         await config.saveToCurrentUser();

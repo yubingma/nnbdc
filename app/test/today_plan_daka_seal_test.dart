@@ -225,19 +225,24 @@ void main() {
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
   });
 
-  testWidgets('今日未打卡：环心不显示冗余"目标已锁定"文字但显示锁标，不得出现印章文案', (tester) async {
+  testWidgets('今日未打卡：主页保持极简不显示印章文案，今日单词数移入高级设置后锁定显示在弹窗内', (tester) async {
     await seedTodayPlan(dakaed: false);
     await pumpTodayPlan(tester);
-    await pumpUntil(tester, find.byIcon(Icons.lock_outline_rounded));
+    await pumpUntil(tester, find.text('新词'));
 
     expect(find.text('目标已锁定'), findsNothing, reason: '学习已开始后不再展示冗余的"目标已锁定"文字');
-    expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets, reason: '词上方显示锁标');
     expect(find.byKey(const Key('today_plan_daka_seal_text')), findsNothing,
         reason: '还没打卡就不能盖已打卡的章');
     expect(find.byKey(const Key('today_plan_daka_seal_date')), findsNothing,
         reason: '还没打卡就没有盖章日期');
     expect(find.textContaining('加量已完成'), findsNothing,
         reason: '今天没有加量批次，就不该出现加量进度');
+
+    // 打开右上角高级设置弹窗，校验今日单词数锁定标签
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('今日单词数'), findsOneWidget);
+    expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets, reason: '高级设置弹窗内展示锁定标');
 
     await tester.pump(const Duration(seconds: 60));
   });

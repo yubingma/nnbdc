@@ -195,15 +195,16 @@ void main() {
       await tester.tapAt(tester.getCenter(find.byIcon(Icons.tune_rounded).first));
       await tester.pumpAndSettle();
 
-      expect(find.text('今日最少新词'), findsOneWidget, reason: '对话框必须真的打开');
+      expect(find.text('今日单词数'), findsOneWidget, reason: '对话框必须真的打开并包含今日单词数');
+      expect(find.text('今日最少新词'), findsOneWidget);
       expect(find.text('每组单词数'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: '${width.toInt()}dp 大档下对话框文字溢出');
 
-      // 关键：对话框内两处设置项应展示锁定胶囊(size: 13)，且整页无文字截断
+      // 关键：对话框内三处设置项应展示锁定胶囊(size: 13)，且整页无文字截断
       final dialogLocks = find.byWidgetPredicate(
         (w) => w is Icon && w.icon == Icons.lock_outline_rounded && w.size == 13.0,
       );
-      expect(dialogLocks, findsNWidgets(2), reason: '对话框内两处设置项都要显示锁定胶囊');
+      expect(dialogLocks, findsNWidgets(3), reason: '对话框内三处设置项都要显示锁定胶囊');
       final over = _overflowingTexts(tester);
       expect(over, isEmpty, reason: '这些文字被截断了(源文本: $over)');
     });
