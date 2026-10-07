@@ -225,12 +225,13 @@ void main() {
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
   });
 
-  testWidgets('今日未打卡：环心维持"目标已锁定"，不得出现印章文案', (tester) async {
+  testWidgets('今日未打卡：环心不显示冗余"目标已锁定"文字但显示锁标，不得出现印章文案', (tester) async {
     await seedTodayPlan(dakaed: false);
     await pumpTodayPlan(tester);
-    await pumpUntil(tester, find.text('目标已锁定'));
+    await pumpUntil(tester, find.byIcon(Icons.lock_outline_rounded));
 
-    expect(find.text('目标已锁定'), findsOneWidget);
+    expect(find.text('目标已锁定'), findsNothing, reason: '学习已开始后不再展示冗余的"目标已锁定"文字');
+    expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets, reason: '词上方显示锁标');
     expect(find.byKey(const Key('today_plan_daka_seal_text')), findsNothing,
         reason: '还没打卡就不能盖已打卡的章');
     expect(find.byKey(const Key('today_plan_daka_seal_date')), findsNothing,

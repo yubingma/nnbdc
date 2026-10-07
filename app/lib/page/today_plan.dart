@@ -790,8 +790,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   children: [
                     Row(
                       mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           '${user?.effectiveWordsPerDay ?? 0}',
@@ -810,33 +809,60 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '词',
-                          style: TextStyle(
-                            color: hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white70 : themeConfig.textSecondary),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                        if (isStarted)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 10,
+                                  color: textMuted,
+                                ),
+                                const SizedBox(height: 1.5),
+                                Text(
+                                  '词',
+                                  style: TextStyle(
+                                    color: hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white70 : themeConfig.textSecondary),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2.5),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '词',
+                                  style: TextStyle(
+                                    color: hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white70 : themeConfig.textSecondary),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.0,
+                                  ),
+                                ),
+                                const SizedBox(width: 2),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 13,
+                                  color: hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white70 : themeConfig.textSecondary),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (!isStarted) ...[
-                          const SizedBox(width: 2),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 13,
-                            color: hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white70 : themeConfig.textSecondary),
-                          ),
-                        ] else ...[
-                          const SizedBox(width: 2),
-                          Icon(
-                            Icons.lock_outline_rounded,
-                            size: 11,
-                            color: textMuted,
-                          ),
-                        ],
                       ],
                     ),
-                    const SizedBox(height: 3),
-                    if (isDakaStamped)
+                    if (isDakaStamped) ...[
+                      const SizedBox(height: 3),
                       // 整枚章微微歪着；印面文字与日期都由画笔逐字"盖"上去
                       Transform.rotate(
                         angle: -6 * math.pi / 180,
@@ -862,10 +888,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                           ],
                         ),
-                      )
-                    else
+                      ),
+                    ] else if (!isStarted) ...[
+                      const SizedBox(height: 3),
                       Text(
-                        isStarted ? '目标已锁定' : '点击调整目标',
+                        '点击调整目标',
                         style: TextStyle(
                           color: textMuted,
                           fontSize: 11,
@@ -873,6 +900,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           letterSpacing: 0.2,
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
