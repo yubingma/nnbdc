@@ -491,14 +491,19 @@ def encode_video(frames, total_frames, total_seconds, audio, out_path,
         filt.append(f"[{len(audio) + 1}:a]volume={bgm_gain},"
                     f"aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[abgm]")
         mix.append("[abgm]")
-    # 末尾一定要 apad：amix 只混到最后一条音频结束为止，若结尾几秒本来就没声音
-    # （比如收尾段既无配音也无音效），音轨会比视频短一截，容器里就是两条长度不等的流。
-    # 补静音到全片长度，再由 -t 统一裁齐。
-    filt.append("".join(mix) + f"amix=inputs={len(mix)}:duration=longest:normalize=0,apad[aout]")
+    # 末尾补静音到全片长度：amix 只混到最后一条音频结束为止，若结尾几秒本来就没声音
+    # （比如收尾段只有金句配音），音轨会比视频短一截，容器里就是两条长度不等的流。
+    #
+    # 必须用 apad=whole_dur 而不是裸 apad：**裸 apad 会无上限地补静音**，只能靠输出端 -t 截断，
+    # 而 -t 并不可靠——实际出过一次音频补到 706 秒、文件 304MB 的事故（视频端被正确截断、
+    # 音频端没有）。whole_dur 让滤波器自己产出有界流，不依赖下游兜底。
+    filt.append("".join(mix) +
+                f"amix=inputs={len(mix)}:duration=longest:normalize=0,"
+                f"apad=whole_dur={total_seconds:.3f}[aout]")
 
     cmd += ["-filter_complex", ";".join(filt), "-map", "0:v", "-map", "[aout]",
             "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p",
-            "-r", str(FPS), "-t", f"{total_seconds:.3f}",
+            "-r", str(FPS),
             "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(out_path)]
 
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -519,6 +524,20 @@ def encode_video(frames, total_frames, total_seconds, audio, out_path,
         code = proc.wait()
     if code != 0:
         raise SystemExit(f"ffmpeg 合成失败，退出码 {code}\n{err[-4000:]}")
+
+    # 出货前核对两条流的长度。图与音都已由构造保证有界，一旦不等就是上游出了问题——
+    # 宁可当场报错，也不要交付残次品：实际出过一次音轨被补到 706 秒、文件 304MB 的事故，
+    # 而当时没有任何检查，残次品就这么落盘并导进了相册。
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,duration",
+         "-of", "csv=p=0", str(out_path)],
+        capture_output=True, text=True, check=True).stdout
+    for line in probe.strip().splitlines():
+        kind, _, dur = line.partition(",")
+        if abs(float(dur) - total_seconds) > 0.35:
+            raise SystemExit(
+                f"合成结果时长不符：{out_path.name} 的 {kind} 流是 {float(dur):.2f}s，"
+                f"应为 {total_seconds:.2f}s。")
     return out_path
 
 

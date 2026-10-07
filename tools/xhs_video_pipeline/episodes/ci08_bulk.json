@@ -1,0 +1,61 @@
+{
+  "episode": "CI08",
+  "series": "词核心图",
+  "position": "08",
+  "slogan": "一个词 · 一个意象",
+  "word": "bulk",
+  "phonetic": "bʌlk",
+  "core_art": "core_bulk.png",
+  "core_text": "聚成一大团",
+  "core_sub": "bulk 只有这一个意象",
+  "accent": "#2DD4BF",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "体积",
+        "大部分",
+        "大批",
+        "扩大"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "体积、大部分、大批、扩大。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：聚成一大团。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "体积",
+          "relation": "一堆东西占的地方"
+        },
+        {
+          "meaning": "大部分",
+          "relation": "整堆里占得最多的那份"
+        },
+        {
+          "meaning": "大批",
+          "relation": "一次就堆来很多"
+        },
+        {
+          "meaning": "扩大",
+          "relation": "把这一团弄大"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ]
+}

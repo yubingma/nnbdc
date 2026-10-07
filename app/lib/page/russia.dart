@@ -1690,7 +1690,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     final double h = curr.height > 0 ? curr.height : calculateWordHeight(uiScale);
     final remain = (dwTop - h) - curr.y;
     
-    final double v = 35.0 * uiScale; // px/s，与下落速度(DroppingWordSprite.update)保持严格一致
+    final double v = DroppingWordSprite.fallSpeed * uiScale; // px/s，与下落速度(DroppingWordSprite.update)保持严格一致
     final double etaSec = remain > 0 ? (remain / v) : 0.0;
     // 转换毫秒，并引入较明显的网络补偿（如 120ms），抵消双向延迟
     // 这对于高叠（各词生命周期极短）情况至关重要，能让 server 提前触发下一词下发
@@ -2753,6 +2753,9 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
 }
 
 class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, CollisionCallbacks {
+  // 基准下落速度(px/s)，实际速度再乘以屏幕缩放比例；触底时间估算必须复用同一常量
+  static const double fallSpeed = 28.0;
+
   static TextPaint _buildTextPaint(Color color, {FontWeight weight = FontWeight.w300}) {
     final scale = 1.0; // 初值，实际大小在 onGameResize 中按场地高度自适应
     return TextPaint(style: TextStyle(color: color, fontSize: 22 * scale, fontWeight: weight, fontFamily: 'NotoSansSC'));
@@ -2833,8 +2836,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
     super.update(dt);
     if (!isDead && !game._wordFrozen) {
       // 按屏幕缩放比例调整下落速度，保证不同屏幕用时一致
-      // 提升基础下落速度（从 20 提升到 35），增加游戏紧凑感
-      final double speed = 35.0 * game.uiScale;
+      final double speed = DroppingWordSprite.fallSpeed * game.uiScale;
       y += speed * dt;
       // 轻微左右摆动
       _t += dt;

@@ -1,0 +1,61 @@
+{
+  "episode": "CI09",
+  "series": "词核心图",
+  "position": "09",
+  "slogan": "一个词 · 一个意象",
+  "word": "rack",
+  "phonetic": "ræk",
+  "core_art": "core_rack.png",
+  "core_text": "用架子绷紧撑住",
+  "core_sub": "rack 只有这一个意象",
+  "accent": "#818CF8",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "行李架",
+        "齿条",
+        "折磨",
+        "榨取"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "行李架、齿条、折磨、榨取。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：用架子绷紧撑住。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "行李架",
+          "relation": "一层托住箱包的格架"
+        },
+        {
+          "meaning": "齿条",
+          "relation": "一条带齿的直杆"
+        },
+        {
+          "meaning": "折磨",
+          "relation": "拷问台把人绷直拉开"
+        },
+        {
+          "meaning": "榨取",
+          "relation": "绷到极限，把东西挤出来"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ]
+}

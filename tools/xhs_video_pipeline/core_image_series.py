@@ -97,7 +97,7 @@ def voice_kwargs(cfg):
 
 
 def plan(cfg, word_dur, work):
-    """按配音实际时长反推每段长度，就地写回 dur / reveal，并返回段落起点。"""
+    """按配音实际时长反推每段长度，就地写回 dur / _at，并返回段落起点。"""
     vk = voice_kwargs(cfg)
     starts, clock = [], 0.0
     for si, s in enumerate(cfg["segments"]):
@@ -112,8 +112,14 @@ def plan(cfg, word_dur, work):
                 s["_tts"].append((rel, mean))
                 needs.append(duration_of(rel) + JOIN_GAP + duration_of(mean))
             s["_rel_dur"] = [duration_of(p[0]) for p in s["_tts"]]
-            s["reveal"] = s.get("reveal") or max(needs) + GAP
-            dur = LEAD + s["reveal"] * (len(needs) - 1) + max(needs) + TAIL
+            # 每条念完就上下一条，不做等距。等距要用「最长那条」当统一间隔，
+            # 只要有一条被念慢了（TTS 并不稳定：同样 7 个字实测有 1.60s 也有 4.08s），
+            # 四条之间的空档会全被它撑开，白拖好几秒。
+            at, s["_at"] = LEAD, []
+            for need in needs:
+                s["_at"].append(at)
+                at += need + GAP
+            dur = at - GAP + TAIL
         elif s["type"] == "outro":
             s["_tts"] = [fetch_tts(s["say"], work, f"{si}_quote", **vk)]   # 只念金句
             dur = guard + duration_of(s["_tts"][0]) + OUTRO_TAIL
@@ -141,7 +147,7 @@ def build_audio(cfg, starts, total, work, word):
             # 这声音只有 0.08s，音量给低了根本听不出来。
             pop = SFX_DIR / SFX_BY_TYPE["radiate"]
             for k, (rel, mean) in enumerate(s["_tts"]):
-                at = t0 + s["reveal"] * k + LEAD
+                at = t0 + s["_at"][k]
                 clips.append({"path": rel, "at": at, "kind": "voice"})
                 clips.append({"path": mean, "at": at + duration_of(rel) + JOIN_GAP,
                               "kind": "voice"})
@@ -432,7 +438,7 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
                 size = node_size(item["meaning"], lines, f_meaning, f_rel)
                 p0, ctrl, p1 = arrow_geometry(node, (size[0] / 2, size[1] / 2),
                                               (art_ring.width / 2, art_ring.height / 2), hub=hub_pt)
-                at = s["reveal"] * i + LEAD
+                at = s["_at"][i]
                 rel_dur = s["_rel_dur"][i]
                 mean_at = at + rel_dur + JOIN_GAP
                 L.append(Layer(lambda d, e, dy, a=p0, c=ctrl, b=p1: draw_arrow(
