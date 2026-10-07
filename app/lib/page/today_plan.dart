@@ -811,7 +811,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         const SizedBox(width: 4),
                         if (isStarted)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 2),
+                            padding: const EdgeInsets.only(bottom: 6.5),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -836,7 +836,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           )
                         else
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 2.5),
+                            padding: const EdgeInsets.only(bottom: 5.5),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.center,
