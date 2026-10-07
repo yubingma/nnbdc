@@ -848,6 +848,15 @@
                 <div class="nav-item-title">底栏定制与功能收纳系统</div>
                 <div class="nav-item-cat">我页面收纳区 · 长按快捷气泡</div>
               </a>
+
+              <a href="#idea-ui-001" class="nav-item" data-id="idea-ui-001">
+                <div class="nav-item-header">
+                  <span class="nav-item-id" style="color: var(--accent-aurora);">UI #001</span>
+                  <span class="nav-dot dot-aurora"></span>
+                </div>
+                <div class="nav-item-title">今日计划 · 极简壁纸画报美学</div>
+                <div class="nav-item-cat">对标不背单词 · 学习轨道退后 · 留白呼吸</div>
+              </a>
             </div>
 
             <div class="nav-group" style="margin-top: 6px;">
@@ -1874,6 +1883,67 @@
             <div class="actions-footer">
               <span class="action-link" onclick="copyIdeaMarkdown('idea-nav-001')">复制摘要 Markdown</span>
             </div>
+          <!-- UI 美学与交互架构 #001: 今日学习计划页面画报化与配置收纳 -->
+          <article class="idea-card" id="idea-ui-001">
+            <div class="idea-header">
+              <div>
+                <div class="idea-id-date">
+                  <span class="idea-id" style="color: var(--accent-aurora);">UI #001</span>
+                  <span>•</span>
+                  <span>2026-10-07</span>
+                  <span>•</span>
+                  <span>现代排版与画报美学</span>
+                </div>
+                <h2 class="idea-title">今日学习计划：对标「不背单词」极简壁纸画报美学与低频配置收纳</h2>
+              </div>
+              <span class="badge-status status-evaluating">原型就绪 · 待确认</span>
+            </div>
+
+            <div class="tags-container">
+              <span class="tag" style="color: var(--accent-aurora); border-color: rgba(110, 231, 183, 0.2);">#对标不背单词</span>
+              <span class="tag">#壁纸即主角</span>
+              <span class="tag">#排版驱动Typography</span>
+              <span class="tag">#零多余容器</span>
+              <span class="tag">#学习轨道收纳</span>
+              <span class="tag">#留白呼吸感</span>
+              <span class="tag">#HTML原型已就绪</span>
+            </div>
+
+            <div class="idea-body">
+              <div class="idea-quote" style="border-left-color: var(--accent-aurora); background: rgba(110, 231, 183, 0.05);">
+                “把主页做成壁纸画报：让壁纸成为第一主角，大面积留白让自然风景自由呼吸。UI 元素退后为极简的悬浮排版与单一黄金行动点；长期霸占主屏近 50% 面积的低频「学习轨道」收进设置抽屉。”
+              </div>
+
+              <div class="section-title">四大核心改造支点</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 视觉重心归位（壁纸主角率 75%+）</strong>
+                  <p>告别中间厚重的整块大面板切割。屏幕 75% 以上空间留给高清摄影壁纸，搭配全局极淡暗角微光，保持光影景深与文字通透。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 低频设置后撤（学习轨道移入抽屉）</strong>
+                  <p>「新词/旧词学习轨道」测评流转规则属于低频偏好（设定后数月不改），收纳至右上角设置按钮呼出的毛玻璃半屏抽屉中，不挤占常态主页。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>③ 纯排版驱动（Typography-driven）</strong>
+                  <p>今日目标词数采用挺拔的 Roboto 64pt 大字号数字，悬浮于光影之上，搭配 3.5px 极细微透胶囊进度条，告别臃肿的“盒中盒”。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>④ 唯一黄金行动点（开始/继续学习）</strong>
+                  <p>底部保留一枚微透翡翠磨砂大胶囊按钮，背光微透出壁纸底色，触手可及，心流无干扰。</p>
+                </div>
+              </div>
+
+              <div class="section-title">原型交付与真机图</div>
+              <div class="principle-box">
+                • <strong>HTML 交互原型</strong>：<a href="ui/today_plan_wallpaper_prototype.html" target="_blank" style="color: var(--accent-aurora); text-decoration: underline;">design/ui/today_plan_wallpaper_prototype.html</a>（支持 4 款壁纸切换、新旧对比模式、轨道设置抽屉交互）<br/>
+                • <strong>真机高清效果图</strong>：<code>design/ui/png/today_plan_wallpaper_prototype.png</code>（iPhone 16 Pro 钛金属双层中框真机模具）
+              </div>
+            </div>
+
+            <div class="actions-footer">
+              <span class="action-link" onclick="copyIdeaMarkdown('idea-ui-001')">复制摘要 Markdown</span>
+            </div>
           </article>
 
         </div> <!-- /.ideas-feed -->
@@ -1886,7 +1956,13 @@
   <script>
     function copyIdeaMarkdown(id) {
       let text = '';
-      if (id === 'idea-006') {
+      if (id === 'idea-ui-001') {
+        text = `### 今日学习计划：对标「不背单词」极简壁纸画报美学与低频配置收纳
+- **核心逻辑**：壁纸成为第一主角（75%+ 留白），UI 元素退后为极简悬浮排版。
+- **低频配置收纳**：常驻占用近 50% 面积的「学习轨道」收进右上角设置抽屉。
+- **排版驱动**：Roboto 64pt 大数字、3.5px 极细胶囊进度条、微透翡翠磨砂主按钮。
+- **原型交付**：已生成 design/ui/today_plan_wallpaper_prototype.html 与真机高清图。`;
+      } else if (id === 'idea-006') {
         text = `### 沉浸式 AI 对话与实时使用：角色扮演语音陪练（Speak-to-Use Roleplay）
 - **核心逻辑**：每学完一组单词，AI 语音助手立刻扮演具体角色（面试官/咖啡师/海关人员），强制或引导用户在对话中主动用出刚学的 3~5 个词。
 - **认知痛点**：再认（Recognition）≠ 提取（Retrieval），背了一万词仍是哑巴英语，只有主动输出才能焊死神经连接。

@@ -28,7 +28,9 @@ import 'package:nnbdc/page/word_list/import_from_scan_page.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/page/admin/page_viewer.dart';
 import 'package:nnbdc/page/reminder_settings.dart';
+import 'package:nnbdc/page/study_date_rules.dart';
 import 'package:nnbdc/page/study_stats.dart';
+import 'package:nnbdc/page/study_track_settings.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/test.dart';
 import 'services/dialog_service.dart';
@@ -77,5 +79,7 @@ final goRouter = GoRouter(
     GoRoute(path: '/reminder_settings', builder: (context, state) => const ReminderSettingsPage()),
     GoRoute(path: '/subscription', builder: (context, state) => const SubscriptionPage()),
     GoRoute(path: '/page_viewer', builder: (context, state) => const PageViewerPage()),
+    GoRoute(path: '/study_track_settings', builder: (context, state) => const StudyTrackSettingsPage()),
+    GoRoute(path: '/study_date_rules', builder: (context, state) => const StudyDateRulesPage()),
   ],
 );

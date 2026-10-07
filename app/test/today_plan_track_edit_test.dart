@@ -11,6 +11,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nnbdc/page/study_track_settings.dart';
 
 /// 今日计划页"学习轨道"调整入口的回归测试。
 ///
@@ -146,6 +147,7 @@ void main() {
     }
   }
 
+
   Future<void> pumpTodayPlan(WidgetTester tester) async {
     await tester.pumpWidget(
       ChangeNotifierProvider<DarkMode>.value(
@@ -156,35 +158,41 @@ void main() {
       ),
     );
 
-    for (int i = 0; i < 400 && find.text('新词测评').evaluate().isEmpty; i++) {
+    for (int i = 0; i < 400 && find.byIcon(Icons.tune_rounded).evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    expect(find.text('新词测评'), findsOneWidget, reason: '今日计划页应已就绪并展示新词轨道');
+    // 点击右上角设置菜单入口展开高级设置弹窗
+    await tester.tap(find.byIcon(Icons.tune_rounded).first);
+    await tester.pumpAndSettle();
   }
 
-  testWidgets('每条轨道自带调整入口：点哪一行就只编辑那条轨道，无需切换轨道 tab', (tester) async {
+  testWidgets('今日计划高级设置弹窗提供学习轨道设置与学习日期说明的独立导航入口', (tester) async {
     await seedUser();
     await pumpTodayPlan(tester);
 
-    // 1. 点"旧词"那一行，必须直接进旧词轨道，且视线里不得出现新词轨道的任何入口
-    await tester.ensureVisible(find.text('旧词测评'));
-    await tester.tap(find.text('旧词测评'));
+    expect(find.text('学习轨道设置'), findsOneWidget, reason: '高级学习设置菜单应展示学习轨道设置入口');
+    expect(find.text('学习日期说明'), findsOneWidget, reason: '高级学习设置菜单应展示学习日期说明入口');
+    expect(find.text('新词测评'), findsNothing, reason: '主菜单弹窗内不应再内嵌冗长的轨道编辑，已抽离至二级页面');
+  });
+
+  testWidgets('学习轨道二级页面独立展示新词轨道与旧词轨道设置', (tester) async {
+    await seedUser();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<DarkMode>.value(
+        value: DarkMode(),
+        child: const MaterialApp(
+          home: StudyTrackSettingsPage(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('旧词轨道'), findsOneWidget, reason: '编辑卡片应明示正在编辑旧词轨道');
-    expect(find.text('新词轨道'), findsNothing, reason: '编辑旧词轨道时不得出现新词轨道，否则用户又要在两者之间切换');
-    expect(find.text('完成'), findsOneWidget, reason: '编辑态应提供收起编辑的出口');
-
-    // 2. 完成后点"新词"那一行，必须直接进新词轨道
-    await tester.tap(find.text('完成'));
-    await tester.pumpAndSettle();
-    expect(find.text('新词测评'), findsOneWidget, reason: '完成后应回到两条轨道的显示态');
-
-    await tester.ensureVisible(find.text('新词测评'));
-    await tester.tap(find.text('新词测评'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('新词轨道'), findsOneWidget, reason: '编辑卡片应明示正在编辑新词轨道');
-    expect(find.text('旧词轨道'), findsNothing, reason: '编辑新词轨道时不得出现旧词轨道，否则用户又要在两者之间切换');
+    expect(find.text('学习轨道设置'), findsOneWidget);
+    expect(find.text('新词轨道'), findsOneWidget);
+    expect(find.text('旧词轨道'), findsOneWidget);
+    expect(find.text('测评环节'), findsNWidgets(2), reason: '新词和旧词各有一个测评环节设置');
+    expect(find.text('答对后环节'), findsNWidgets(2));
+    expect(find.text('答错后环节'), findsNWidgets(2));
   });
 }

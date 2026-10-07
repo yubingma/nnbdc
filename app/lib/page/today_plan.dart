@@ -40,7 +40,6 @@ import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
-import 'package:nnbdc/widget/study_date_explanation_dialog.dart';
 import 'package:provider/provider.dart';
 
 class TodayPlanPage extends StatefulWidget {
@@ -64,6 +63,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   bool _isSyncingFromCloud = false;
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
+
+  /// 背景壁纸
+  String _wallpaperPath = 'assets/images/scenes/mist.jpg';
 
   /// 点击"开始学习"后正在等待今日计划就绪：按钮据此给出"准备中"反馈，
   /// 避免计划准备期间（重装/换端后要等云端数据落地）点击后毫无动静。
@@ -134,6 +136,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   @override
   void initState() {
     super.initState();
+    _wallpaperPath = Prefs.read<String>('today_plan_wallpaper') ?? 'assets/images/wallpaper/tree.jpg';
     // 首页初始化时强制关停 ASR，同时在后台静默预加载语音识别模型，避免点击“开始学习”进入单词页面时因加载模型而产生阻塞卡顿
     Asr().stopMicrophone();
     unawaited(Asr().preloadModels());
@@ -545,6 +548,106 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     if (mounted) setState(() {});
   }
 
+  Widget _buildBackground(bool isDarkMode, AppThemeStyle themeStyle) {
+    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    if (!hasWallpaper) {
+      return AppThemeBackground(
+        isDarkMode: isDarkMode,
+        themeStyle: themeStyle,
+        config: PageVibrancy.todayPlan,
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          _wallpaperPath,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return AppThemeBackground(
+              isDarkMode: isDarkMode,
+              themeStyle: themeStyle,
+              config: PageVibrancy.todayPlan,
+            );
+          },
+        ),
+        // 微渐变暗角光幕：顶部保护顶栏，底部保护仪表盘与按钮，中部通透
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.45),
+                Colors.black.withValues(alpha: 0.06),
+                Colors.black.withValues(alpha: 0.42),
+                Colors.black.withValues(alpha: 0.78),
+              ],
+              stops: const [0.0, 0.32, 0.68, 1.0],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTopFloatingHeader(AppThemeConfig themeConfig, bool isDarkMode, bool hasWallpaper) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (_isSyncingFromCloud) ...[
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white54 : Colors.black45),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        // 右侧高级设置按钮（微透晶莹小圆钮，呼应全页毛玻璃）
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _showAdvancedSettingsDialog,
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: hasWallpaper
+                  ? Colors.white.withValues(alpha: 0.16)
+                  : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.65)),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: hasWallpaper
+                    ? Colors.white.withValues(alpha: 0.28)
+                    : (isDarkMode ? Colors.white.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.24)),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: hasWallpaper ? 0.25 : (isDarkMode ? 0.2 : 0.04)),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.tune_rounded,
+              size: 19,
+              color: hasWallpaper ? Colors.white : themeConfig.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final darkModeState = context.watch<DarkMode>();
@@ -558,11 +661,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       body: Stack(
         children: [
           Positioned.fill(
-            child: AppThemeBackground(
-              isDarkMode: isDarkMode,
-              themeStyle: themeStyle,
-              config: PageVibrancy.todayPlan,
-            ),
+            child: _buildBackground(isDarkMode, themeStyle),
           ),
           (!dataLoaded)
               ? Center(
@@ -596,142 +695,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   bottom: false,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
                       return SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(24, 12, 24, 96),
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            // 减去上下 padding(12+96=108)，让内容恰好铺满视口，底栏悬浮不挡卡片
                             minHeight: constraints.maxHeight - 108,
                           ),
                           child: Column(
-                            // 内容高度不足视口时，将各组均匀铺开占满整屏
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            // 不用 IntrinsicHeight：ConstrainedBox(minHeight) 已让 Column 撑满
-                            // 视口并分发 spaceBetween；而内建高度量算会触发懒加载视口
-                            // (ReorderableListView/RenderShrinkWrappingViewport) 拒绝返回内建尺寸而崩溃。
                             children: [
-                              // 极简顶栏（TODAY'S MISSION + 今日学习计划 + 右侧高级设置图标）
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            "TODAY'S MISSION",
-                                            style: TextStyle(
-                                              fontSize: 10.5,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.8,
-                                              color: themeConfig.textMuted,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            (user?.continuousDakaDayCount ?? 0) > 0
-                                                ? '⚡️ ${user!.continuousDakaDayCount}天连胜'
-                                                : '✨ 今日专注',
-                                            style: TextStyle(
-                                              fontSize: 10.5,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.2,
-                                              color: themeConfig.primaryDarkColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '今日学习计划',
-                                            style: TextStyle(
-                                              color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                                              fontSize: 21,
-                                              fontWeight: FontWeight.w700,
-                                              letterSpacing: -0.3,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          GestureDetector(
-                                            onTap: () => StudyDateExplanationDialog.show(context),
-                                            child: Icon(
-                                              Icons.help_outline_rounded,
-                                              size: 16,
-                                              color: themeConfig.textSecondary.withValues(alpha: 0.45),
-                                            ),
-                                          ),
-                                          if (_isSyncingFromCloud) ...[
-                                            const SizedBox(width: 8),
-                                            SizedBox(
-                                              width: 12,
-                                              height: 12,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 1.8,
-                                                valueColor: AlwaysStoppedAnimation<Color>(
-                                                  isDarkMode ? Colors.white54 : Colors.black45,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  // 右侧高级设置按钮（微透晶莹小圆钮，呼应全页毛玻璃）
-                                  GestureDetector(
-                                    onTap: () => _showAdvancedSettingsDialog(),
-                                    child: Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: isDarkMode
-                                            ? Colors.white.withValues(alpha: 0.08)
-                                            : Colors.white.withValues(alpha: 0.65),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: isDarkMode
-                                              ? Colors.white.withValues(alpha: 0.10)
-                                              : Colors.white.withValues(alpha: 0.24),
-                                          width: 1,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        Icons.tune_rounded,
-                                        size: 17,
-                                        color: themeConfig.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 22),
-
-                              // 核心大仪表盘
+                              _buildTopFloatingHeader(themeConfig, isDarkMode, hasWallpaper),
                               renderMissionCard(),
-
-                              const SizedBox(height: 22),
-
-                              // 学习轨道区域
-                              renderStudySteps(),
-
-                              const SizedBox(height: 20),
-
                             ],
                           ),
                         ),
@@ -749,6 +726,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final themeStyle = darkModeState.themeStyle;
     final isDarkMode = themeStyle.isDark;
     final themeConfig = AppThemeConfig.of(themeStyle);
+    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
 
     final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
     final isStarted = user?.todayStudyStarted == true;
@@ -763,279 +741,292 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final String stampDate =
         '${stampDay.year}.${stampDay.month.toString().padLeft(2, '0')}.${stampDay.day.toString().padLeft(2, '0')}';
 
-    final textPrimary = themeConfig.textPrimary;
-    final textMuted = themeConfig.textMuted;
+    final textPrimary = hasWallpaper ? Colors.white : themeConfig.textPrimary;
+    final textMuted = hasWallpaper ? Colors.white70 : themeConfig.textMuted;
+    final progressColor = hasWallpaper ? const Color(0xFF10B981) : themeConfig.primaryColor;
 
-    return FrostedGlassCard.primary(
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-      child: Column(
-        children: [
-          // 环心今日目标词数（外圈仅为装饰性锚点环）
-          SizedBox(
-            width: 128,
-            height: 128,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // 装饰性锚点环：纯主题色极淡描边，刻意不含任何进度语义。
-                // 环心「500 词 🔒」是左重右轻的组合（大数字 + 小单位），整组居中
-                // 会让大数字自身的中心落到圆心左侧；一圈对称的环把它锚回圆心，消除重心失稳。
-                // 若这里再画进度弧，就会与下方细进度条表达同一个值，环退化为冗余空壳。
-                // 尺寸：172 时环占屏宽 41%、内圈空六成，显得虚大。收到 128 后占屏宽 31%；
-                // 注意约束来自环心的「宽度」而非高度——172/140/128 下内容角点距圆心恒为
-                // 55.5pt，故数字须同步收缩（46 → 34），角点才留得住余量。
-                // 描边按外径 5% 取 6.5。
-                if (isDakaStamped)
-                  // 已打卡：这枚章交给画笔去"盖"——墨迹的浓淡、断口、飞白都不是描边能表达的
-                  SizedBox(
-                    width: 128,
-                    height: 128,
-                    child: CustomPaint(
-                      painter: _DakaSealPainter(
-                        color: DakaSealColors.forDark(isDarkMode),
-                        isDark: isDarkMode,
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    width: 128,
-                    height: 128,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.14),
-                        width: 6.5,
-                      ),
+    final content = Column(
+      children: [
+        // 环心今日目标词数（外圈仅为装饰性锚点环）
+        SizedBox(
+          width: 128,
+          height: 128,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (isDakaStamped)
+                // 已打卡：这枚章交给画笔去"盖"——墨迹的浓淡、断口、飞白都不是描边能表达的
+                SizedBox(
+                  width: 128,
+                  height: 128,
+                  child: CustomPaint(
+                    painter: _DakaSealPainter(
+                      color: DakaSealColors.forDark(isDarkMode || hasWallpaper),
+                      isDark: isDarkMode || hasWallpaper,
                     ),
                   ),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: isStarted
-                      ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
-                      : () => _showWordsSelectionBottomSheet(),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            '${user?.effectiveWordsPerDay ?? 0}',
-                            style: TextStyle(
-                              color: textPrimary,
-                              fontSize: 34,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Roboto',
-                              letterSpacing: -1.2,
-                              height: 1.0,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '词',
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (!isStarted) ...[
-                            const SizedBox(width: 2),
-                            Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 13,
-                              color: isDarkMode ? Colors.white70 : themeConfig.textSecondary,
-                            ),
-                          ] else ...[
-                            const SizedBox(width: 2),
-                            Icon(
-                              Icons.lock_outline_rounded,
-                              size: 11,
-                              color: textMuted,
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      if (isDakaStamped)
-                        // 整枚章微微歪着；印面文字与日期都由画笔逐字"盖"上去
-                        Transform.rotate(
-                          angle: -6 * math.pi / 180,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _DakaSealText(
-                                key: const Key('today_plan_daka_seal_text'),
-                                text: '今日已打卡',
-                                color: DakaSealColors.forDark(isDarkMode)
-                                    .withValues(alpha: isDarkMode ? 0.96 : 0.94),
-                              ),
-                              const SizedBox(height: 3),
-                              _DakaSealText(
-                                key: const Key('today_plan_daka_seal_date'),
-                                text: stampDate,
-                                color: DakaSealColors.forDark(isDarkMode)
-                                    .withValues(alpha: isDarkMode ? 0.85 : 0.80),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 1.1,
-                                seed: 20260913,
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        Text(
-                          isStarted ? '目标已锁定' : '点击调整目标',
-                          style: TextStyle(
-                            color: textMuted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // 优雅极细胶囊进度条
-          SizedBox(
-            width: 250,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '已完成 $_completedStepCount / $_totalStepCount 步',
-                      style: TextStyle(
-                        color: textMuted,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '${(progress * 100).toInt()}%',
-                      style: TextStyle(
-                        color: textPrimary,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Roboto',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(100),
-                  child: LinearProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
-                    minHeight: 3.5,
-                    backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
-                    valueColor: AlwaysStoppedAnimation<Color>(themeConfig.primaryColor),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // 双列对称纯粹排版数据（新词 | 旧词，带语义微色标）
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _buildStatItem('新词', newWordCount ?? 0, themeConfig.primaryColor),
+                )
+              else
                 Container(
-                  width: 0.8,
-                  height: 32,
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
-                ),
-                _buildStatItem('旧词', oldWordCount ?? 0, themeConfig.primaryColor),
-              ],
-            ),
-          ),
-
-          // 任务量未满提示条：居中温润微光胶囊（告别生硬全宽横幅）
-          if (prepareResult != null &&
-              prepareResult!.success &&
-              (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
-              !_hasTriedSupplement)
-            Padding(
-              padding: const EdgeInsets.only(top: 14),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => loadData(forceSupplement: true),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
-                    decoration: BoxDecoration(
-                      color: themeConfig.warmAccentColor.withValues(alpha: isDarkMode ? 0.16 : 0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: themeConfig.warmAccentColor.withValues(alpha: isDarkMode ? 0.28 : 0.18),
-                        width: 0.8,
-                      ),
+                  width: 128,
+                  height: 128,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: hasWallpaper
+                          ? Colors.white.withValues(alpha: 0.20)
+                          : themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.14),
+                      width: 6.5,
                     ),
-                    child: Row(
+                  ),
+                ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: isStarted
+                    ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
+                    : () => _showWordsSelectionBottomSheet(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: themeConfig.warmAccentColor,
-                          size: 13.5,
-                        ),
-                        const SizedBox(width: 6),
                         Text(
-                          '单词量未满',
+                          '${user?.effectiveWordsPerDay ?? 0}',
                           style: TextStyle(
-                            color: isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '点击补充 ›',
-                          style: TextStyle(
-                            fontSize: 11.5,
+                            color: textPrimary,
+                            fontSize: hasWallpaper ? 38 : 34,
                             fontWeight: FontWeight.w700,
-                            color: themeConfig.warmAccentColor,
+                            fontFamily: 'Roboto',
+                            letterSpacing: -1.2,
+                            height: 1.0,
+                            shadows: hasWallpaper
+                                ? const [
+                                    Shadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 2)),
+                                  ]
+                                : null,
                           ),
                         ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '词',
+                          style: TextStyle(
+                            color: hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white70 : themeConfig.textSecondary),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (!isStarted) ...[
+                          const SizedBox(width: 2),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 13,
+                            color: hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white70 : themeConfig.textSecondary),
+                          ),
+                        ] else ...[
+                          const SizedBox(width: 2),
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            size: 11,
+                            color: textMuted,
+                          ),
+                        ],
                       ],
                     ),
+                    const SizedBox(height: 3),
+                    if (isDakaStamped)
+                      // 整枚章微微歪着；印面文字与日期都由画笔逐字"盖"上去
+                      Transform.rotate(
+                        angle: -6 * math.pi / 180,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _DakaSealText(
+                              key: const Key('today_plan_daka_seal_text'),
+                              text: '今日已打卡',
+                              color: DakaSealColors.forDark(isDarkMode || hasWallpaper)
+                                  .withValues(alpha: isDarkMode || hasWallpaper ? 0.96 : 0.94),
+                            ),
+                            const SizedBox(height: 3),
+                            _DakaSealText(
+                              key: const Key('today_plan_daka_seal_date'),
+                              text: stampDate,
+                              color: DakaSealColors.forDark(isDarkMode || hasWallpaper)
+                                  .withValues(alpha: isDarkMode || hasWallpaper ? 0.85 : 0.80),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 1.1,
+                              seed: 20260913,
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Text(
+                        isStarted ? '目标已锁定' : '点击调整目标',
+                        style: TextStyle(
+                          color: textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // 优雅极细胶囊进度条
+        SizedBox(
+          width: 250,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '已完成 $_completedStepCount / $_totalStepCount 步',
+                    style: TextStyle(
+                      color: textMuted,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).toInt()}%',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  minHeight: 3.5,
+                  backgroundColor: hasWallpaper
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
+                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // 双列对称纯粹排版数据（新词 | 旧词，带语义微色标）
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              _buildStatItem('新词', newWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
+              Container(
+                width: 0.8,
+                height: 32,
+                color: hasWallpaper
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
+              ),
+              _buildStatItem('旧词', oldWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
+            ],
+          ),
+        ),
+
+        // 任务量未满提示条：居中温润微光胶囊（告别生硬全宽横幅）
+        if (prepareResult != null &&
+            prepareResult!.success &&
+            (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
+            !_hasTriedSupplement)
+          Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => loadData(forceSupplement: true),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
+                  decoration: BoxDecoration(
+                    color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
+                        .withValues(alpha: isDarkMode || hasWallpaper ? 0.20 : 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
+                          .withValues(alpha: isDarkMode || hasWallpaper ? 0.35 : 0.18),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                        size: 13.5,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '单词量未满',
+                        style: TextStyle(
+                          color: hasWallpaper ? const Color(0xFFFDE68A) : (isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '点击补充 ›',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
+          ),
 
-          // 加量批次的进度：它有自己的口径（不计入今日计划），所以单独一条更细、更淡的进度，
-          // 把"加量了多少词、学到哪儿了"讲清楚，又不跟计划的进度抢视线
-          if (_extraTotalCount > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: _buildExtraProgress(themeConfig, isDarkMode),
-            ),
+        // 加量批次的进度：它有自己的口径（不计入今日计划）
+        if (_extraTotalCount > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: _buildExtraProgress(themeConfig, isDarkMode),
+          ),
 
-          const SizedBox(height: 18),
+        const SizedBox(height: 18),
 
-          // 主操作按钮
-          (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
-              ? renderErrorActions()
-              : renderStartButton(),
-        ],
-      ),
+        // 主操作按钮
+        (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
+            ? renderErrorActions()
+            : renderStartButton(),
+
+
+      ],
+    );
+
+    if (hasWallpaper) {
+      return content;
+    }
+
+    return FrostedGlassCard.primary(
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      child: content,
     );
   }
 
@@ -1045,6 +1036,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final int total = _extraTotalCount;
     final int completed = _extraCompletedCount;
     final double progress = total > 0 ? completed / total : 0.0;
+    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
 
     return SizedBox(
       width: 250,
@@ -1056,7 +1048,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               Text(
                 '加量已完成 $completed / $total 词',
                 style: TextStyle(
-                  color: themeConfig.textMuted,
+                  color: hasWallpaper ? Colors.white70 : themeConfig.textMuted,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1064,7 +1056,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               Text(
                 '${(progress * 100).round()}%',
                 style: TextStyle(
-                  color: themeConfig.textSecondary,
+                  color: hasWallpaper ? Colors.white : themeConfig.textSecondary,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Roboto',
@@ -1078,11 +1070,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 3.5,
-              backgroundColor: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.04),
+              backgroundColor: hasWallpaper
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : (isDarkMode
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.04)),
               valueColor: AlwaysStoppedAnimation<Color>(
-                themeConfig.primaryColor.withValues(alpha: 0.55),
+                hasWallpaper ? const Color(0xFF34D399) : themeConfig.primaryColor.withValues(alpha: 0.55),
               ),
             ),
           ),
@@ -1094,8 +1088,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Widget _buildStatItem(String label, int count, [Color? dotColor]) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final textMuted = themeConfig.textMuted;
-    final valueColor = dotColor ?? themeConfig.textPrimary;
+    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    final textMuted = hasWallpaper ? Colors.white60 : themeConfig.textMuted;
+    final valueColor = dotColor ?? (hasWallpaper ? Colors.white : themeConfig.textPrimary);
 
     return Expanded(
       child: GestureDetector(
@@ -1120,6 +1115,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 fontFamily: 'Roboto',
                 letterSpacing: -0.8,
                 height: 1.1,
+                shadows: hasWallpaper
+                    ? const [
+                        Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 1)),
+                      ]
+                    : null,
               ),
             ),
             const SizedBox(height: 4),
@@ -1393,15 +1393,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required String label,
     required VoidCallback onPressed,
   }) {
-    final buttonColor = isDarkMode ? themeConfig.primaryColor : themeConfig.primaryLightColor;
+    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    final buttonColor = hasWallpaper
+        ? const Color(0xFF10B981)
+        : (isDarkMode ? themeConfig.primaryColor : themeConfig.primaryLightColor);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(25),
-        color: buttonColor,
+        gradient: hasWallpaper
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xEE10B981), Color(0xF2059669)],
+              )
+            : null,
+        color: hasWallpaper ? null : buttonColor,
         boxShadow: [
           BoxShadow(
-            color: buttonColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
+            color: hasWallpaper
+                ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                : buttonColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1478,6 +1490,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final themeStyle = darkModeState.themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
+    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
 
     final bool planFinished =
         _totalStepCount > 0 && _completedStepCount >= _totalStepCount;
@@ -1497,21 +1510,28 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: themeConfig.subtleBg,
+                color: hasWallpaper
+                    ? Colors.white.withValues(alpha: 0.16)
+                    : themeConfig.subtleBg,
                 borderRadius: BorderRadius.circular(26),
                 border: Border.all(
-                  color: themeConfig.cardBorder,
+                  color: hasWallpaper
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : themeConfig.cardBorder,
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_rounded, color: themeConfig.primaryColor, size: 20),
+                  Icon(Icons.check_circle_rounded,
+                      color: hasWallpaper ? const Color(0xFF34D399) : themeConfig.primaryColor, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     '今日目标已达成',
                     style: TextStyle(
-                      color: isDarkMode ? themeConfig.primaryColor : themeConfig.textPrimary,
+                      color: hasWallpaper
+                          ? Colors.white
+                          : (isDarkMode ? themeConfig.primaryColor : themeConfig.textPrimary),
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
@@ -1524,11 +1544,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               key: const Key('today_plan_extra_again_btn'),
               onPressed: _startExtraStudy,
               icon: Icon(Icons.add_circle_outline_rounded,
-                  size: 17, color: themeConfig.primaryColor),
+                  size: 17, color: hasWallpaper ? const Color(0xFF34D399) : themeConfig.primaryColor),
               label: Text(
                 '再来一组',
                 style: TextStyle(
-                  color: themeConfig.primaryColor,
+                  color: hasWallpaper ? const Color(0xFF34D399) : themeConfig.primaryColor,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1539,15 +1559,26 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
-    final buttonColor = isDarkMode ? themeConfig.primaryColor : themeConfig.primaryLightColor;
+    final buttonColor = hasWallpaper
+        ? const Color(0xFF10B981)
+        : (isDarkMode ? themeConfig.primaryColor : themeConfig.primaryLightColor);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(25),
-        color: buttonColor,
+        gradient: hasWallpaper
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xEE10B981), Color(0xF2059669)],
+              )
+            : null,
+        color: hasWallpaper ? null : buttonColor,
         boxShadow: [
           BoxShadow(
-            color: buttonColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
+            color: hasWallpaper
+                ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                : buttonColor.withValues(alpha: isDarkMode ? 0.22 : 0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1950,9 +1981,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  Widget renderStudySteps() {
+  Widget renderStudySteps({
+    String? currentEditingScope,
+    void Function(String scope)? onTapScope,
+    VoidCallback? onDone,
+    VoidCallback? onMutated,
+  }) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final editingScope = _editingTrackScope;
+    final editingScope = currentEditingScope ?? _editingTrackScope;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1977,15 +2013,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           curve: Curves.easeOutCubic,
           alignment: Alignment.topCenter,
           child: editingScope == null
-              ? _buildTrackDisplayCard(isDarkMode)
-              : _buildTrackEditCard(editingScope, isDarkMode),
+              ? _buildTrackDisplayCard(isDarkMode, onTapScope: onTapScope)
+              : _buildTrackEditCard(editingScope, isDarkMode, onDone: onDone, onMutated: onMutated),
         ),
       ],
     );
   }
 
   /// 【显示模式】—— 一体化毛玻璃分组卡：纯排版驱动，无盒中盒、无流程导线
-  Widget _buildTrackDisplayCard(bool isDarkMode) {
+  Widget _buildTrackDisplayCard(bool isDarkMode, {void Function(String scope)? onTapScope}) {
     return FrostedGlassCard(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
       child: Column(
@@ -1997,6 +2033,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             correctSteps: _newCorrectSteps,
             wrongSteps: _newWrongSteps,
             isDarkMode: isDarkMode,
+            onTap: onTapScope != null ? () => onTapScope('new') : null,
           ),
           // 发丝分割线（极细、不抢戏）
           Container(height: 0.6, color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.055)),
@@ -2007,6 +2044,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             correctSteps: _reviewCorrectSteps,
             wrongSteps: _reviewWrongSteps,
             isDarkMode: isDarkMode,
+            onTap: onTapScope != null ? () => onTapScope('review') : null,
           ),
         ],
       ),
@@ -2021,6 +2059,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required List<String> correctSteps,
     required List<String> wrongSteps,
     required bool isDarkMode,
+    VoidCallback? onTap,
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
@@ -2034,7 +2073,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _editingTrackScope = scope),
+      onTap: onTap ?? () => setState(() => _editingTrackScope = scope),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
@@ -2201,7 +2240,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 【编辑模式】—— 只编辑 scope 指定的那一条轨道，顶部明示轨道名并提供「完成」收起
-  Widget _buildTrackEditCard(String scope, bool isDarkMode) {
+  Widget _buildTrackEditCard(
+    String scope,
+    bool isDarkMode, {
+    VoidCallback? onDone,
+    VoidCallback? onMutated,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -2256,7 +2300,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   ),
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () => setState(() => _editingTrackScope = null),
+                    onTap: onDone ?? () => setState(() => _editingTrackScope = null),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -2276,7 +2320,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ],
               ),
               const SizedBox(height: 14),
-              _buildReviewStepsInfoCard(scope: scope, isDarkMode: isDarkMode),
+              _buildReviewStepsInfoCard(scope: scope, isDarkMode: isDarkMode, onMutated: onMutated),
             ],
           ),
         ),
@@ -2285,7 +2329,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 规则编辑配置内容（测评下拉 + 答对/答错环节列表与拖拽）
-  Widget _buildReviewStepsInfoCard({required String scope, required bool isDarkMode}) {
+  Widget _buildReviewStepsInfoCard({
+    required String scope,
+    required bool isDarkMode,
+    VoidCallback? onMutated,
+  }) {
     final textColor = isDarkMode ? Colors.white : const Color(0xFF111827);
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
@@ -2297,19 +2345,30 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     List<String> correctSteps() => isNew ? _newCorrectSteps : _reviewCorrectSteps;
     List<String> wrongSteps() => isNew ? _newWrongSteps : _reviewWrongSteps;
 
-    void setCheck(String v) => setState(() {
-          if (isNew) {
-            _newCheckStep = v;
-          } else {
-            _reviewCheckStep = v;
-          }
-        });
-    void mutateCorrect(void Function(List<String>) fn) => setState(() {
-          fn(isNew ? _newCorrectSteps : _reviewCorrectSteps);
-        });
-    void mutateWrong(void Function(List<String>) fn) => setState(() {
-          fn(isNew ? _newWrongSteps : _reviewWrongSteps);
-        });
+    void setCheck(String v) {
+      setState(() {
+        if (isNew) {
+          _newCheckStep = v;
+        } else {
+          _reviewCheckStep = v;
+        }
+      });
+      onMutated?.call();
+    }
+
+    void mutateCorrect(void Function(List<String>) fn) {
+      setState(() {
+        fn(isNew ? _newCorrectSteps : _reviewCorrectSteps);
+      });
+      onMutated?.call();
+    }
+
+    void mutateWrong(void Function(List<String>) fn) {
+      setState(() {
+        fn(isNew ? _newWrongSteps : _reviewWrongSteps);
+      });
+      onMutated?.call();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2388,7 +2447,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           steps: correctSteps(),
           allStepNames: allStepNames,
           isDarkMode: isDarkMode,
-          onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: true),
+          onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: true, onMutated: onMutated),
           onRemove: (s) {
             mutateCorrect((list) => list.remove(s));
             unawaited(saveReviewConfig(scope));
@@ -2413,7 +2472,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           steps: wrongSteps(),
           allStepNames: allStepNames,
           isDarkMode: isDarkMode,
-          onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: false),
+          onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: false, onMutated: onMutated),
           onRemove: (s) {
             mutateWrong((list) => list.remove(s));
             unawaited(saveReviewConfig(scope));
@@ -2598,7 +2657,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 分支"添加环节"：弹窗列出该分支未添加的环节
   Future<void> _pickReviewStepForBranch(
       String scope, List<String> allStepNames,
-      {required bool isCorrect}) async {
+      {required bool isCorrect, VoidCallback? onMutated}) async {
     final isNew = scope == 'new';
     final current = isCorrect
         ? (isNew ? _newCorrectSteps : _reviewCorrectSteps)
@@ -2784,6 +2843,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           (isNew ? _newWrongSteps : _reviewWrongSteps).add(picked);
         }
       });
+      onMutated?.call();
       unawaited(saveReviewConfig(scope));
     }
   }
@@ -2896,10 +2956,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         width: 1.2,
                       ),
                     ),
-                    child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                       // 顶部标题行
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -3340,6 +3402,129 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ),
                         ],
                       ],
+                      const SizedBox(height: 18),
+
+                      // 3. 学习轨道与规则说明入口
+                      _buildAdvancedMenuNavigationItem(
+                        title: '学习轨道设置',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          context.push('/study_track_settings').then((_) {
+                            if (mounted) loadData();
+                          });
+                        },
+                        isDarkMode: isDarkMode,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildAdvancedMenuNavigationItem(
+                        title: '学习日期说明',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          context.push('/study_date_rules');
+                        },
+                        isDarkMode: isDarkMode,
+                      ),
+                      const SizedBox(height: 18),
+
+                      // 4. 背景画报配置
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '背景画报',
+                                  style: TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  '纯净意境摄影，随心切换专注心境',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // 4款壁纸快速切换药丸标签
+                      Row(
+                        children: [
+                          for (int i = 0; i < 4; i++) ...[
+                            if (i > 0) const SizedBox(width: 8),
+                            Builder(
+                              builder: (ctx) {
+                                final options = const [
+                                  {'name': '旷野', 'path': 'assets/images/wallpaper/tree.jpg'},
+                                  {'name': '晨雾', 'path': 'assets/images/scenes/mist.jpg'},
+                                  {'name': '湖光', 'path': 'assets/images/scenes/river.jpg'},
+                                  {'name': '夏夜', 'path': 'assets/images/scenes/night.jpg'},
+                                  {'name': '经典', 'path': 'none'},
+                                ];
+                                final item = options[i];
+                                final isSelected = _wallpaperPath == item['path'];
+                                return Expanded(
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () async {
+                                      final selectedPath = item['path']!;
+                                      await Prefs.write('today_plan_wallpaper', selectedPath);
+                                      setDialogState(() {
+                                        _wallpaperPath = selectedPath;
+                                      });
+                                      if (mounted) {
+                                        setState(() {
+                                          _wallpaperPath = selectedPath;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? primaryColor
+                                            : (isDarkMode
+                                                ? Colors.white.withValues(alpha: 0.06)
+                                                : Colors.black.withValues(alpha: 0.04)),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? primaryColor
+                                              : (isDarkMode
+                                                  ? Colors.white.withValues(alpha: 0.08)
+                                                  : Colors.black.withValues(alpha: 0.06)),
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          item['name']!,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
                       const SizedBox(height: 20),
 
                       // 底部对称行动条
@@ -3394,6 +3579,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                     ],
                   ),
+                ),
                 ),
               ),
             ),
@@ -3637,6 +3823,51 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       currentValue: currentValue,
       primaryColor: primaryColor,
       isDarkMode: isDarkMode,
+    );
+  }
+
+  Widget _buildAdvancedMenuNavigationItem({
+    required String title,
+    required VoidCallback onTap,
+    required bool isDarkMode,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.025),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.07) : Colors.black.withValues(alpha: 0.05),
+          width: 0.8,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 13,
+                  color: isDarkMode ? Colors.white30 : Colors.black26,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

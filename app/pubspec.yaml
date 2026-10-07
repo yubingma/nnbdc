@@ -148,6 +148,7 @@ flutter:
     - pubspec.yaml
     - assets/images/
     - assets/images/scenes/
+    - assets/images/wallpaper/
     # 注意：资源目录声明只递归一层。assets/images/ 只覆盖它直接包含的文件与
     # 「一层子目录里直接包含的文件」，像 images/pet/moods/ 这种第二层子目录必须
     # 单独声明，否则整个目录会被静默跳过——代码报「Asset not found」而编译毫无提示。
