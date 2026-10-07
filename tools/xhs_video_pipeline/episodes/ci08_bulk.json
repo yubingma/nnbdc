@@ -5,8 +5,8 @@
   "slogan": "一个词 · 一个意象",
   "word": "bulk",
   "phonetic": "bʌlk",
-  "core_art": "core_bulk.png",
-  "core_text": "聚成一大团",
+  "core_art": "core_8946.jpeg",
+  "core_text": "聚成庞大主体团块",
   "core_sub": "bulk 只有这一个意象",
   "accent": "#2DD4BF",
   "voice": "Pip",
@@ -18,35 +18,40 @@
       "cards": [
         "体积",
         "大部分",
-        "大批",
-        "扩大"
+        "大量",
+        "扩大",
+        "夸大"
       ],
-      "line": "这四个意思，是同一个词",
-      "say": "体积、大部分、大批、扩大。"
+      "line": "这五个意思，是同一个词",
+      "say": "体积、大部分、大量、扩大、夸大。"
     },
     {
       "type": "core",
       "word_intro": true,
-      "say": "核心意象：聚成一大团。"
+      "say": "核心意象：聚成庞大主体团块。"
     },
     {
       "type": "radiate",
       "items": [
         {
           "meaning": "体积",
-          "relation": "一堆东西占的地方"
+          "relation": "大团占的空间规模"
         },
         {
           "meaning": "大部分",
-          "relation": "整堆里占得最多的那份"
+          "relation": "大团占住主要部分"
         },
         {
-          "meaning": "大批",
-          "relation": "一次就堆来很多"
+          "meaning": "大量",
+          "relation": "大团的数量呈现明显"
         },
         {
           "meaning": "扩大",
-          "relation": "把这一团弄大"
+          "relation": "使团块变大增厚"
+        },
+        {
+          "meaning": "夸大",
+          "relation": "把小团夸说成大团"
         }
       ]
     },

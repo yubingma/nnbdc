@@ -11,7 +11,12 @@
     python3 tools/xhs_video_pipeline/fetch_core_images.py spring charge run
     python3 tools/xhs_video_pipeline/fetch_core_images.py --episode tools/xhs_video_pipeline/episodes/ci01_spring.json
 
-只读：仅 SELECT 本地库 + scp 拉取远程文件，绝不写生产库、绝不在服务器上留东西。
+只读：仅 SELECT 生产库 + scp 拉取远程文件，绝不写生产库、绝不在服务器上留东西。
+
+**必须查生产库，不能查本机的 `bdc`。** 本机的 `bdc` 只是开发库副本、比生产库旧：
+生产库里早就跑过的词，开发库里可能连一条记录都没有。这一点实际踩过——
+`rack` / `bulk` 因此被误判成"库里没有"，白做了两份手工分析与配图，
+而生产库里它们分别是「拉紧绷直成框架」和「聚成庞大主体团块」，分支还更全。
 """
 
 import argparse
@@ -38,13 +43,36 @@ def profile_value(name):
     return None
 
 
+def prod_sql(sql):
+    """在生产库上跑一条只读 SQL，返回原始文本。
+
+    SQL 走 stdin 传给容器里的 psql，避免两层 shell 的引号地狱。
+    """
+    user = profile_value("PROD_DB_SSH_USER") or "root"
+    host = profile_value("PROD_DB_SSH_HOST")
+    password = profile_value("nnbdc_server_pwd") or profile_value("PROD_DB_SSH_PASSWORD")
+    if not (host and password):
+        raise SystemExit("缺少生产服务器连接信息（~/.zprofile 的 PROD_DB_SSH_HOST / nnbdc_server_pwd）")
+    if not shutil.which("sshpass"):
+        raise SystemExit("未安装 sshpass：brew install sshpass")
+    opts = ["-o", "StrictHostKeyChecking=no",
+            "-o", "PreferredAuthentications=password", "-o", "PubkeyAuthentication=no"]
+    r = subprocess.run(
+        ["sshpass", "-e", "ssh", *opts, f"{user}@{host}",
+         "docker exec -i pg psql -U myb -d bdc -t -A -F '\t' -f -"],
+        input=sql.encode(), env={**os.environ, "SSHPASS": password}, capture_output=True)
+    if r.returncode != 0:
+        # 不静默回落到本地开发库：那正是当初出错的根源
+        raise SystemExit(f"生产库查询失败：{r.stderr.decode()[-400:]}")
+    return r.stdout.decode()
+
+
 def lookup(words):
-    """查本地 bdc 库，返回 {单词: 服务器文件名}。"""
+    """查**生产库**，返回 {单词: 服务器文件名}。"""
     quoted = ",".join("'" + w.replace("'", "''") + "'" for w in words)
     sql = (f"select word, image_url from word_core_image "
            f"where word in ({quoted}) and image_url is not null and image_url <> ''")
-    out = subprocess.run(["psql", "-d", "bdc", "-t", "-A", "-F", "\t", "-c", sql],
-                         check=True, capture_output=True).stdout.decode()
+    out = prod_sql(sql)
     found = {}
     for line in out.strip().splitlines():
         if "\t" in line:

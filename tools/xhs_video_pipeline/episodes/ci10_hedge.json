@@ -1,0 +1,62 @@
+{
+  "episode": "CI10",
+  "series": "词核心图",
+  "position": "10",
+  "slogan": "一个词 · 一个意象",
+  "word": "hedge",
+  "phonetic": "hɛdʒ",
+  "core_art": "core_20721.jpeg",
+  "core_text": "设障围护",
+  "core_sub": "hedge 只有这一个意象",
+  "accent": "#059669",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "树篱",
+        "防护",
+        "对冲",
+        "回避"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "树篱、防护、对冲、回避。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：设障围护。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "树篱",
+          "relation": "实物围挡，圈出边界"
+        },
+        {
+          "meaning": "防护",
+          "relation": "屏障挡住外界侵扰"
+        },
+        {
+          "meaning": "对冲",
+          "relation": "给风险也设一道屏障"
+        },
+        {
+          "meaning": "回避",
+          "relation": "躲在屏障后不直面"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "theme": "light"
+}

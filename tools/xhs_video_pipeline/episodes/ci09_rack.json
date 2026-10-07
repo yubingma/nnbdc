@@ -5,8 +5,8 @@
   "slogan": "一个词 · 一个意象",
   "word": "rack",
   "phonetic": "ræk",
-  "core_art": "core_rack.png",
-  "core_text": "用架子绷紧撑住",
+  "core_art": "core_33199.jpeg",
+  "core_text": "拉紧绷直成框架",
   "core_sub": "rack 只有这一个意象",
   "accent": "#818CF8",
   "voice": "Pip",
@@ -19,34 +19,39 @@
         "行李架",
         "齿条",
         "折磨",
+        "变形",
         "榨取"
       ],
-      "line": "这四个意思，是同一个词",
-      "say": "行李架、齿条、折磨、榨取。"
+      "line": "这五个意思，是同一个词",
+      "say": "行李架、齿条、折磨、变形、榨取。"
     },
     {
       "type": "core",
       "word_intro": true,
-      "say": "核心意象：用架子绷紧撑住。"
+      "say": "核心意象：拉紧绷直，成框架。"
     },
     {
       "type": "radiate",
       "items": [
         {
           "meaning": "行李架",
-          "relation": "一层托住箱包的格架"
+          "relation": "木条搭成承物框架"
         },
         {
           "meaning": "齿条",
-          "relation": "一条带齿的直杆"
+          "relation": "绷直的带齿长条"
         },
         {
           "meaning": "折磨",
-          "relation": "拷问台把人绷直拉开"
+          "relation": "拷问台把身体拉紧"
+        },
+        {
+          "meaning": "变形",
+          "relation": "受力拉扭而走形"
         },
         {
           "meaning": "榨取",
-          "relation": "绷到极限，把东西挤出来"
+          "relation": "拉紧压榨挤出东西"
         }
       ]
     },
