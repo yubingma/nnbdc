@@ -56,11 +56,12 @@ HOOK_GRID_Y, HOOK_GRID_ROW, HOOK_GRID_COL = 1035, 145, 310   # 片头释义卡�
 ARROW_BEND = 46            # 贝塞尔箭头的弯曲幅度
 LEAD = 0.30                # 段落开头留白，也是每条释义"画面出现 = 开口念"的对齐点
 JOIN_GAP = 0.10            # 「关联逻辑」与「就是X」两段配音之间的停顿
-# 收尾不配音、也不逐条显现：屏幕上就那几行字，念一遍或一条条蹦出来都是在白拖时长。
-# 整屏一次性出现，够看清就走。
+# 收尾：整屏一次性出现（不逐条显现），金句**要念出来**，提问与引导不念。
+# 金句是整屏唯一的记忆锚点，不念的话这屏一闪而过、等于白做；提问与引导则不需要念——
+# 屏幕上写着，念一遍只是拖时间。所以这一屏的时长由金句的实际配音长度决定。
 OUTRO_AT = 0.00                   # 三块内容同时出现的时刻
 OUTRO_FADE = 0.15                 # 只做几乎察觉不到的软化，避免硬切的突兀感
-OUTRO_DUR = 1.20                  # 收尾总长：只留扫一眼的时间。再短就来不及看提问，钩子会失效
+OUTRO_TAIL = 0.45                 # 金句念完后再留一点，让视线有余裕扫完提问
 NODE_MEAN_Y = 52           # 节点内：释义基线到节点顶边的距离
 NODE_REL_Y = 98            # 节点内：第一条关联文字到顶边的距离
 NODE_REL_LH = 42           # 节点内：关联文字行距
@@ -111,8 +112,8 @@ def plan(cfg, word_dur, work):
             s["reveal"] = s.get("reveal") or max(needs) + GAP
             dur = LEAD + s["reveal"] * (len(needs) - 1) + max(needs) + TAIL
         elif s["type"] == "outro":
-            s["_tts"] = []                      # 收尾无配音
-            dur = OUTRO_DUR
+            s["_tts"] = [fetch_tts(s["say"], work, f"{si}_quote", **vk)]   # 只念金句
+            dur = guard + duration_of(s["_tts"][0]) + OUTRO_TAIL
         else:
             s["_tts"] = [fetch_tts(s["say"], work, f"{si}_{s['type']}", **vk)]
             dur = guard + duration_of(s["_tts"][0]) + TAIL
