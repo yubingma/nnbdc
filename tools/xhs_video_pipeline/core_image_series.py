@@ -51,7 +51,7 @@ ART_BOX_MANY = 220         # 节点 ≥5 个时核心意象要缩小，给四周
 NODE_MAX_W = 252           # 单个释义节点内文字的换行宽度（≤4 个节点时）
 NODE_MAX_W_MANY = 200      # 节点 ≥5 个时收窄，避免左右两侧撞到画布边缘
 RING_CY = 944                 # 环形布局的圆心比 V 形更低：否则顶部节点会顶到单词词头
-RING_RX, RING_RY = 380, 380   # 节点 ≥5 个时绕核心意象一圈的椭圆半径
+RING_RX, RING_RY = 380, 380   # 节点 ≥4 个时绕核心意象一圈的椭圆半径
 HOOK_GRID_Y, HOOK_GRID_ROW, HOOK_GRID_COL = 1035, 145, 310   # 片头释义卡超过 3 张时改用网格
 ARROW_BEND = 46            # 贝塞尔箭头的弯曲幅度
 LEAD = 0.30                # 段落开头留白，也是每条释义"画面出现 = 开口念"的对齐点
@@ -71,8 +71,10 @@ _SLOTS = {
     1: [(0, 700)],
     2: [(-380, 352), (380, 352)],
     3: [(-380, 352), (0, 752), (380, 352)],
-    4: [(-380, 300), (-140, 720), (140, 720), (380, 300)],
 }
+# 4 个及以上一律走环形：手工排的 4 节点版本（2+2）会让底部两个节点左右重叠，
+# 而且节点宽度随关联文字长短变化，手工排布没法自适应。
+RING_FROM = 4
 
 # 收尾不放任何声音：那一屏只有字，再来一记盖章声是多余的。
 SFX_BY_TYPE = {"hook": "magic.mp3", "core": "bubble-pop.wav",
@@ -208,6 +210,16 @@ def wrap_cn(text, fnt, max_w):
     return lines
 
 
+def uses_ring(count):
+    """节点数 ≥ RING_FROM 时走环形布局。
+
+    节点位置与核心意象位置**必须共用这一个判断**——曾经两处各写一遍（这里写 RING_FROM、
+    渲染处写死 5），结果 4 个节点时出现「节点按环形排在 944、核心意象却还留在 V 形的 648」，
+    顶部节点直接压住了核心意象。判断只留一处，就不会再错位。
+    """
+    return count >= RING_FROM
+
+
 def node_positions(count):
     """把 count 条释义散布在核心意象四周，返回各节点中心坐标。
 
@@ -216,7 +228,7 @@ def node_positions(count):
     """
     if count in _SLOTS:
         return [(HUB[0] + dx, HUB[1] + dy) for dx, dy in _SLOTS[count]]
-    if count >= 5:
+    if uses_ring(count):
         return [(HUB[0] + RING_RX * math.cos(math.pi / 2 + 2 * math.pi * i / count),
                  RING_CY + RING_RY * math.sin(math.pi / 2 + 2 * math.pi * i / count))
                 for i in range(count)]
@@ -335,7 +347,7 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
     f_idx = font(FONT_LATIN, 38, FONT_LATIN_MED)
     f_small = font(FONT_CN, 34, FONT_CN_REG)
     f_label = font(FONT_CN, 40, FONT_CN_REG)
-    f_word_hdr = font(FONT_EN, 88, FONT_EN_NUM)
+    f_word_hdr = fit_font(cfg["word"], FONT_EN, FONT_EN_NUM, 88, W - 200)
     f_phon_hdr = font(FONT_IPA, 38)
     f_hook = font(FONT_CN, 96, FONT_CN_BOLD)
     f_core_cn = font(FONT_CN, 78, FONT_CN_BOLD)
@@ -344,7 +356,7 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
     f_pct = font(FONT_LATIN, 52, FONT_LATIN_BOLD)
 
     n_items = max((len(sg["items"]) for sg in segments if sg["type"] == "radiate"), default=0)
-    many = n_items >= 5
+    many = uses_ring(n_items)
     art_ring = core_art.copy()
     art_ring.thumbnail((ART_BOX_MANY if many else ART_BOX,) * 2, Image.LANCZOS)
     node_max_w = NODE_MAX_W_MANY if many else NODE_MAX_W
@@ -369,8 +381,9 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
                     L.append(Layer(lambda d, e, dy, t=text, y=HOOK_CARD_Y + HOOK_CARD_GAP * i:
                                    hook_card(d, W / 2, y + dy, t, e, f_hook),
                                    -1.0, dur=0.4, rise=0))
-            else:                                     # 四张以上改用网格，每行最多 3 张
-                rows = [cards[i:i + 3] for i in range(0, len(cards), 3)]
+            else:                                     # 四张以上改用网格
+                per_row = 3 if len(cards) >= 5 else 2  # 4 张排成 2+2，3+1 会很不平衡
+                rows = [cards[i:i + per_row] for i in range(0, len(cards), per_row)]
                 f_grid = font(FONT_CN, 68, FONT_CN_BOLD)
                 for r, row in enumerate(rows):
                     for c, text in enumerate(row):
@@ -402,7 +415,7 @@ def render(cfg, core_art, audio, out_path, bgm_path, starts, total, quiet=False)
             items = s["items"]
             nodes = node_positions(len(items))
             # 核心意象常驻中心，释义绕它一圈，箭头从中心逐条长出去
-            ring = len(items) >= 5
+            ring = uses_ring(len(items))
             hub_pt = (HUB[0], RING_CY) if ring else HUB
             L.append(ImageLayer(art_ring, hub_pt, 0.05, dur=0.45, glow=accent + (70,)))
             for i, item in enumerate(items):

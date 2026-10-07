@@ -1,0 +1,60 @@
+{
+  "episode": "CI07",
+  "series": "词核心图",
+  "position": "07",
+  "slogan": "一个词 · 一个意象",
+  "word": "chest",
+  "phonetic": "tʃɛst",
+  "core_art": "core_10238.jpeg",
+  "core_text": "围合起来装东西",
+  "core_sub": "chest 只有这一个意象",
+  "accent": "#F97316",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "胸部",
+        "箱子",
+        "金库",
+        "衣柜"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "胸部、箱子、金库、衣柜。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：围合起来，装东西。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "胸部",
+          "relation": "肋骨围出的护心小屋"
+        },
+        {
+          "meaning": "箱子",
+          "relation": "四面围合，有盖能开"
+        },
+        {
+          "meaning": "金库",
+          "relation": "围起来专门放钱"
+        },
+        {
+          "meaning": "衣柜",
+          "relation": "立式柜子，专放衣服"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它"
+    }
+  ]
+}

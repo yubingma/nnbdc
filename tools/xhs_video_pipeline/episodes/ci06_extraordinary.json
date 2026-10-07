@@ -1,0 +1,60 @@
+{
+  "episode": "CI06",
+  "series": "词核心图",
+  "position": "06",
+  "slogan": "一个词 · 一个意象",
+  "word": "extraordinary",
+  "phonetic": "ɪkˈstrɔːrdəneri",
+  "core_art": "core_16581.jpeg",
+  "core_text": "越出普通边界",
+  "core_sub": "extraordinary 只有这一个意象",
+  "accent": "#FB7185",
+  "voice": "Pip",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "非凡的",
+        "离奇的",
+        "临时的",
+        "特派的"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "非凡的、离奇的、临时的、特派的。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：越出普通边界。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "非凡的",
+          "relation": "好到越出普通水准"
+        },
+        {
+          "meaning": "离奇的",
+          "relation": "怪到越出普通常理"
+        },
+        {
+          "meaning": "临时的",
+          "relation": "排在正常日程之外"
+        },
+        {
+          "meaning": "特派的",
+          "relation": "不在常规编制之内"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它"
+    }
+  ]
+}
