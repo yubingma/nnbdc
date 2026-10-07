@@ -51,24 +51,43 @@ void main() {
   Future<void> seedUser() async {
     const userId = 'test_user_align';
     const dictId = 'mock_dict_1';
-    Global.currentUserId = userId;
 
     final user = User(
       id: userId,
+      userName: 'mock_user',
+      password: '',
+      nickName: 'Tester',
+      email: '',
+      gameScore: 0,
+      dakaScore: 0,
+      learnedDays: 1,
+      learningFinished: false,
+      inviteAwardTaken: false,
+      isSuperAdmin: false,
+      isAdmin: false,
+      isInputor: false,
+      cowDung: 0,
+      throwDiceChance: 0,
       wordsPerDay: 10,
-      dakaDays: 0,
-      dictId: dictId,
-      lastSyncTime: now,
+      dakaDayCount: 0,
+      masteredWordsCount: 0,
+      maxContinuousDakaDayCount: 0,
+      continuousDakaDayCount: 0,
+      todayStudyStarted: true,
+      lastLearningDate: now,
+      totalLearningSeconds: 0,
+      todayLearningSeconds: 0,
       createTime: now,
       updateTime: now,
     );
     await db.usersDao.saveUser(user, false);
+    Global.currentUserId = userId;
     Global.updateUserCache(user);
     await Prefs.write('currentUserId', userId);
 
     await db.into(db.dicts).insert(Dict(
           id: dictId,
-          name: '测试词书',
+          name: '四级核心词汇',
           wordCount: 10,
           isShared: false,
           isReady: true,
@@ -88,6 +107,40 @@ void main() {
           createTime: now,
           updateTime: now,
         ));
+    for (int i = 1; i <= 10; i++) {
+      final wordId = 'word_$i';
+      await db.into(db.words).insert(Word(
+            id: wordId,
+            spell: 'apple_$i',
+            popularity: 100,
+            createTime: now,
+            updateTime: now,
+          ));
+      await db.into(db.dictWords).insert(DictWord(
+            dictId: dictId,
+            wordId: wordId,
+            seq: i,
+            unit: 0,
+            createTime: now,
+            updateTime: now,
+          ));
+      await db.into(db.learningWords).insert(LearningWord(
+            userId: userId,
+            wordId: wordId,
+            addTime: now,
+            addDay: 1,
+            batchId: 1,
+            stability: 0.0,
+            isTodayNewWord: i <= 5,
+            learnedTimes: 0,
+            todayLearnedTimes: 0,
+            lastLearningDate: now,
+            learningOrder: 0,
+            createTime: now,
+            updateTime: now,
+            isExtra: false,
+          ));
+    }
   }
 
   testWidgets('平板宽屏下新词旧词区域与进度条的宽度严格等于250且左右边缘完全对齐', (tester) async {
