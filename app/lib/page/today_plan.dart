@@ -765,20 +765,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       isDark: isDarkMode || hasWallpaper,
                     ),
                   ),
-                )
-              else
-                Container(
-                  width: 128,
-                  height: 128,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: hasWallpaper
-                          ? Colors.white.withValues(alpha: 0.20)
-                          : themeConfig.primaryColor.withValues(alpha: isDarkMode ? 0.22 : 0.14),
-                      width: 6.5,
-                    ),
-                  ),
                 ),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
