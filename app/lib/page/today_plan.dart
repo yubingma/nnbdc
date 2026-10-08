@@ -693,6 +693,47 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+                      final int planTotalWords = _planWords.length;
+                      final int planCompletedWords = _planCompletedCount;
+                      final double planProgress = planTotalWords > 0 ? (planCompletedWords / planTotalWords) : 0.0;
+                      final bool isDakaStamped = hasDakaToday;
+                      final DateTime stampDay = AppClock.today();
+                      final String stampDate =
+                          '${stampDay.year}.${stampDay.month.toString().padLeft(2, '0')}.${stampDay.day.toString().padLeft(2, '0')}';
+
+                      if (hasWallpaper) {
+                        return SafeArea(
+                          bottom: true,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                _buildTopFloatingHeader(themeConfig, isDarkMode, hasWallpaper),
+                                SizedBox(height: (constraints.maxHeight * 0.04).clamp(6.0, 32.0)),
+                                _buildStatusIsland(
+                                  themeConfig: themeConfig,
+                                  isDarkMode: isDarkMode,
+                                  isDakaStamped: isDakaStamped,
+                                  stampDate: stampDate,
+                                  planTotalWords: planTotalWords,
+                                ),
+                                const Spacer(),
+                                _buildWallpaperBottomTaskIsland(
+                                  themeConfig: themeConfig,
+                                  isDarkMode: isDarkMode,
+                                  isDakaStamped: isDakaStamped,
+                                  stampDate: stampDate,
+                                  planTotalWords: planTotalWords,
+                                  planCompletedWords: planCompletedWords,
+                                  planProgress: planProgress,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
                       return SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(24, 12, 24, 96),
@@ -702,7 +743,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               _buildTopFloatingHeader(themeConfig, isDarkMode, hasWallpaper),
                               renderMissionCard(),
@@ -715,6 +756,432 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ),
         ],
       ),
+    );
+  }
+
+  /// 壁纸模式下的中心「打卡/日程岛」：高透圆角磨砂卡（对标「不背单词」日历签到卡）
+  Widget _buildStatusIsland({
+    required AppThemeConfig themeConfig,
+    required bool isDarkMode,
+    required bool isDakaStamped,
+    required String stampDate,
+    required int planTotalWords,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        toTodayWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            width: 138,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? const Color(0x6018202F)
+                  : Colors.white.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.20),
+                width: 0.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isDakaStamped) ...[
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 24,
+                    color: Color(0xFF10B981),
+                  ),
+                  const SizedBox(height: 6),
+                  Semantics(
+                    container: true,
+                    key: const Key('today_plan_daka_seal_text'),
+                    label: '今日已打卡',
+                    excludeSemantics: true,
+                    child: Text(
+                      '今日已打卡',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                  Semantics(
+                    container: true,
+                    key: const Key('today_plan_daka_seal_date'),
+                    label: stampDate,
+                    child: const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 3),
+                  ExcludeSemantics(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          stampDate,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+                            fontFamily: 'Roboto',
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$planTotalWords 词 · 100%',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                            fontFamily: 'Roboto',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 22,
+                    color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '今日目标',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    stampDate,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '目标 $planTotalWords 词',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 任务量未满提示条
+  Widget _buildSupplementNoticeBar(AppThemeConfig themeConfig, bool isDarkMode, bool hasWallpaper) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 2),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => loadData(forceSupplement: true),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
+                  .withValues(alpha: isDarkMode || hasWallpaper ? 0.20 : 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
+                    .withValues(alpha: isDarkMode || hasWallpaper ? 0.35 : 0.18),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                  size: 13,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '单词量未满',
+                  style: TextStyle(
+                    color: hasWallpaper ? const Color(0xFFFDE68A) : (isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '点击补充 ›',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 壁纸模式下的底部「双任务岛与主操作」：扁平横向磨砂卡（对标「不背单词」Learn & Review）
+  Widget _buildWallpaperBottomTaskIsland({
+    required AppThemeConfig themeConfig,
+    required bool isDarkMode,
+    required bool isDakaStamped,
+    required String stampDate,
+    required int planTotalWords,
+    required int planCompletedWords,
+    required double planProgress,
+  }) {
+    final textMuted = isDarkMode ? Colors.white70 : const Color(0xFF475569);
+    final countColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 左右并排双毛玻璃任务卡片（对标「不背单词」Learn & Review 结构）
+        Row(
+          children: [
+            // 左卡片：新词
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  toTodayNewWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      height: 68,
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? const Color(0x6018202F) : Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.20),
+                          width: 0.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 12,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '新词',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${newWordCount ?? 0}',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Roboto',
+                              letterSpacing: -0.5,
+                              color: countColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // 右卡片：旧词
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      height: 68,
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? const Color(0x6018202F) : Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.20),
+                          width: 0.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 12,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '旧词',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${oldWordCount ?? 0}',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Roboto',
+                              letterSpacing: -0.5,
+                              color: countColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        // 任务量未满提示条（如有）
+        if (prepareResult != null &&
+            prepareResult!.success &&
+            (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
+            !_hasTriedSupplement) ...[
+          const SizedBox(height: 8),
+          _buildSupplementNoticeBar(themeConfig, isDarkMode, true),
+        ],
+
+        // 进度展示
+        if (!isDakaStamped) ...[
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: SizedBox(
+              width: 220,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '已完成 $planCompletedWords / $planTotalWords 词',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white70 : Colors.white.withValues(alpha: 0.85),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          shadows: const [
+                            Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 1)),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${(planProgress * 100).round()}%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Roboto',
+                          shadows: [
+                            Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 1)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(100),
+                    child: Container(
+                      height: 3,
+                      width: double.infinity,
+                      color: Colors.white.withValues(alpha: 0.16),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: planProgress.clamp(0.0, 1.0),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.all(Radius.circular(100)),
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF34D399)],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ] else if (_extraTotalCount > 0) ...[
+          const SizedBox(height: 8),
+          Center(
+            child: _buildExtraProgress(themeConfig, isDarkMode),
+          ),
+        ],
+
+        const SizedBox(height: 8),
+
+        // 主操作按钮
+        (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
+            ? renderErrorActions()
+            : renderStartButton(),
+      ],
     );
   }
 
@@ -768,57 +1235,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   prepareResult!.success &&
                   (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
                   !_hasTriedSupplement)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10, bottom: 2),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => loadData(forceSupplement: true),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
-                        decoration: BoxDecoration(
-                          color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
-                              .withValues(alpha: isDarkMode || hasWallpaper ? 0.20 : 0.08),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
-                                .withValues(alpha: isDarkMode || hasWallpaper ? 0.35 : 0.18),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
-                              size: 13.5,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '单词量未满',
-                              style: TextStyle(
-                                color: hasWallpaper ? const Color(0xFFFDE68A) : (isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor),
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '点击补充 ›',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                _buildSupplementNoticeBar(themeConfig, isDarkMode, hasWallpaper),
 
               const SizedBox(height: 16),
 
@@ -943,16 +1360,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       ],
     );
 
-    // 整个文字与操作区域统一使用毛玻璃卡片（FrostedGlassCard）包裹：
-    // 在有壁纸时提供通透磨砂底与微光边框，让文字排版高度聚焦，避免背景纹理干扰
+    // 除了经典壁纸外，其他壁纸直接平铺展示文字内容，移除外层卡片框框
+    if (hasWallpaper) {
+      return SizedBox(
+        width: double.infinity,
+        child: content,
+      );
+    }
+
+    // 经典背景模式：保留毛玻璃主卡片包裹
     return FrostedGlassCard.primary(
       padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
-      bgColor: hasWallpaper
-          ? (isDarkMode ? const Color(0xB818202F) : Colors.black.withValues(alpha: 0.25))
-          : null,
-      borderColor: hasWallpaper
-          ? Colors.white.withValues(alpha: 0.12)
-          : null,
       child: content,
     );
   }

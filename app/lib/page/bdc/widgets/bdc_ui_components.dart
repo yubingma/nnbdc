@@ -3458,17 +3458,17 @@ extension BdcPageStateUIComponents on BdcPageState {
     final double itemVerticalGap;
 
     if (count <= 1) {
-      meaningFontSize = 26.0;
-      cixingFontSize = 17.0;
-      itemVerticalGap = 6.0;
+      meaningFontSize = 15.5;
+      cixingFontSize = 12.5;
+      itemVerticalGap = 3.0;
     } else if (count == 2) {
-      meaningFontSize = 20.0;
-      cixingFontSize = 14.5;
-      itemVerticalGap = 6.0;
+      meaningFontSize = 14.5;
+      cixingFontSize = 12.0;
+      itemVerticalGap = 3.0;
     } else {
-      meaningFontSize = 17.0;
-      cixingFontSize = 13.0;
-      itemVerticalGap = 5.0;
+      meaningFontSize = 13.5;
+      cixingFontSize = 11.5;
+      itemVerticalGap = 2.5;
     }
 
     String cleanMeaning(String? raw) {
@@ -3531,7 +3531,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                           fontWeight: FontWeight.w600,
                           color: meaningColor,
                           height: 1.35,
-                          letterSpacing: -0.3,
+                          letterSpacing: 0.0,
                         ),
                       ),
                     ),
@@ -3583,7 +3583,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                               fontWeight: FontWeight.w600,
                               color: meaningColor,
                               height: 1.4,
-                              letterSpacing: -0.2,
+                              letterSpacing: 0.0,
                             ),
                           ),
                         ),
