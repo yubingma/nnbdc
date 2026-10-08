@@ -404,10 +404,14 @@ class BdcNotifier extends _$BdcNotifier {
       if (!PlatformUtils.isIOS) {
         preloadFuture = asr.preloadModels();
       }
-      // 预加载音素字典，延迟 1.5 秒等转场与首帧渲染完毕后再低优加载，避免阻塞进入页面首帧与过渡动画
-      Timer(const Duration(milliseconds: 1500), () {
-        PhonemeUtil.load();
-      });
+      // 预热音素词典：等转场与首帧渲染完成、且 ASR 模型预载结束后再开始，
+      // 避免"模型加载"与"音素词典解析（两个 isolate、峰值内存上百 MB）"两个内存尖峰叠加。
+      // 纯预热：失败/超时都不影响作答（判定链路按拼写相似度降级，见 PhonemeUtil.ensureReady）。
+      unawaited(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        if (preloadFuture != null) await preloadFuture;
+        await PhonemeUtil.load();
+      }());
 
       if (context.mounted && needPreload && preloadFuture != null) {
         // 延迟 150ms 显示加载弹窗，如果在这期间模型预载完成了，就完全不弹窗，给用户最极致的流畅体验！

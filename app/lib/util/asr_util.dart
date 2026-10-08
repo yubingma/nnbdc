@@ -296,8 +296,9 @@ class AsrUtil {
       }
     }
 
-    // 预加载音素库（以防万一）
-    await PhonemeUtil.load();
+    // 音素词典只是"锦上添花"：有界等待，拿不到就按拼写相似度降级
+    // （见 calculateOverallSimilarity 的降级分支），绝不允许它把本轮判定无限期挂住。
+    await PhonemeUtil.ensureReady();
 
     // 构建评分输入：对每个候选计算相似分。当目标为单字且候选含空格时，
     // 额外对拼接版（去掉空格）也计算一次，取两者中的最高分。

@@ -1,29 +1,74 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/edit_distance.dart';
 
 class PhonemeUtil {
   static const String _assetPath = 'assets/cmudict.dict';
-  static Completer<void>? _loadCompleter;
+
+  /// 判定链路等待音素词典的上限。真机实测健康加载要 4~5 秒（>50KB 的资源会另起 isolate
+  /// 做 UTF-8 解码，解析再起一个 isolate），这里留足余量。
+  static const Duration loadTimeout = Duration(seconds: 20);
+
   static bool _loaded = false;
+
+  /// 本次会话已认定音素词典不可用（加载失败或超时）。判定链路据此直接按拼写相似度降级，
+  /// 不必每帧重等一遍超时；后台加载若最终成功，[_loaded] 会把它重新打开。
+  static bool _unavailable = false;
+
+  /// 进行中的加载，结束后清空 —— 失败/停摆不会被永久缓存成"永远加载中"。
+  static Future<void>? _loading;
+
   static final Map<String, List<List<String>>> _wordToPhonemeVariants = {};
   static final RegExp _digitRegExp = RegExp(r'\d+'), _lowerAlphaRegExp = RegExp(r'[a-z]');
 
+  /// 音素词典是否已就绪。
+  static bool get isReady => _loaded;
+
+  /// 预热音素词典：幂等，可在页面初始化时提前调用。永不抛出（失败只记日志）。
   static Future<void> load() async {
     if (_loaded) return;
-    if (_loadCompleter != null) return _loadCompleter!.future;
-    _loadCompleter = Completer<void>();
+    await _ensureLoading();
+  }
+
+  /// 判定链路专用：有界等待音素词典就绪，返回是否可用。
+  /// 绝不抛出、绝不永久阻塞 —— 这是"说了半天没反应"这类静默故障的根治点。
+  static Future<bool> ensureReady({Duration timeout = loadTimeout}) async {
+    if (_loaded) return true;
+    if (_unavailable) return false;
+    try {
+      await _ensureLoading().timeout(timeout);
+      return _loaded;
+    } on TimeoutException {
+      _unavailable = true;
+      Global.logger.e('PhonemeUtil: 音素词典等待 ${timeout.inMilliseconds}ms 仍未就绪，'
+          '本次会话发音比对降级为拼写比对（后台加载仍在继续，若最终成功会自动恢复）');
+      return false;
+    }
+  }
+
+  static Future<void> _ensureLoading() {
+    return _loading ??= _doLoad().whenComplete(() => _loading = null);
+  }
+
+  /// 真正的加载：永不抛出。失败时置 [_unavailable] 并打日志。
+  /// （过去这里只做静默 completeError：一次停摆就让整条发音判定链路无声卡死，
+  /// 而且日志里没有任何线索。）
+  static Future<void> _doLoad() async {
+    final sw = Stopwatch()..start();
     try {
       final content = await rootBundle.loadString(_assetPath);
       // 在后台 Isolate 中解析，避免阻塞主线程
       final parsedData = await compute(_parseInIsolate, content);
       _wordToPhonemeVariants.addAll(parsedData);
       _loaded = true;
-      _loadCompleter!.complete();
+      Global.logger.i('PhonemeUtil: 音素词典就绪，共 ${_wordToPhonemeVariants.length} 词，'
+          '耗时 ${sw.elapsedMilliseconds}ms');
     } catch (e, st) {
-      _loadCompleter!.completeError(e, st);
-      _loadCompleter = null;
+      _unavailable = true;
+      Global.logger.e('PhonemeUtil: 音素词典加载失败（耗时 ${sw.elapsedMilliseconds}ms），'
+          '本次会话发音比对降级为拼写比对: $e', stackTrace: st);
     }
   }
 
@@ -46,7 +91,11 @@ class PhonemeUtil {
   }
 
   static Future<List<List<String>>> lookup(String word) async {
-    if (!_loaded) await load();
+    // 词典未就绪时按"无音素"处理；是否值得等待由 ensureReady 有界决定，绝不在这里无限期挂住。
+    if (!_loaded) {
+      final ready = await ensureReady();
+      if (!ready) return const [];
+    }
     String key = word.trim().toLowerCase().replaceAll(RegExp(r'\(.*?\)'), '');
     if (key.isEmpty) return const [];
     if (_wordToPhonemeVariants.containsKey(key)) return _wordToPhonemeVariants[key]!;

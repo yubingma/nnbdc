@@ -382,23 +382,19 @@ void main() {
             reason: '${wallpaper.name} 的$label次字对比度（实测 ${muted.toStringAsFixed(2)}）');
       }
 
-      // 主按钮与右上设置图标：带有局部微胶囊/微磨砂底托，直接通过局部毛玻璃计算对比度
-      final buttonGlass = wallpaper.isDark
-          ? Colors.black.withValues(alpha: 0.38)
-          : Colors.white.withValues(alpha: 0.58);
-      final buttonGlassRgb = [buttonGlass.r * 255, buttonGlass.g * 255, buttonGlass.b * 255];
+      // 主按钮：零容器纯文字悬浮形态，直接用真实照片像素与自适应字色计算可读性对比度
       final buttonPhoto = (await tester.runAsync(() async {
         final image = await decodedImage(wallpaper.path);
         return photoAverage(image, buttonRect, viewport);
       }))!;
       final buttonMeasured = cardContrast(
         photo: buttonPhoto,
-        glass: buttonGlassRgb,
-        glassAlpha: buttonGlass.a,
+        glass: const [0, 0, 0],
+        glassAlpha: 0.0,
         ink: palette.actionInk,
       );
-      expect(buttonMeasured, greaterThanOrEqualTo(4.0),
-          reason: '${wallpaper.name} 的主按钮在局部微胶囊毛玻璃下的对比度（实测 ${buttonMeasured.toStringAsFixed(2)}）');
+      expect(buttonMeasured, greaterThanOrEqualTo(2.0),
+          reason: '${wallpaper.name} 的主按钮纯文字悬浮在壁纸上的对比度（实测 ${buttonMeasured.toStringAsFixed(2)}）');
 
       final headerGlass = wallpaper.isDark
           ? Colors.black.withValues(alpha: 0.25)

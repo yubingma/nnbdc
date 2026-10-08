@@ -26,6 +26,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/learning_service.dart';
@@ -60,6 +61,7 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('石韵', 'assets/images/wallpaper/stone.jpg', isDark: true),
   PlanWallpaper('水趣', 'assets/images/wallpaper/kitty_blue.jpg', isDark: true),
   PlanWallpaper('粉梦', 'assets/images/wallpaper/kitty_pink.jpg', isDark: false),
+  PlanWallpaper('绿荫', 'assets/images/wallpaper/tree_green.jpg', isDark: false),
   // 经典 = 不用照片，走主题底，卡片与字色整套跟 App 主题（isDark 不参与）
   PlanWallpaper('经典', 'none', isDark: false),
 ];
@@ -178,7 +180,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         : 'assets/images/wallpaper/kitty_pink.jpg';
     // 首页初始化时强制关停 ASR，同时在后台静默预加载语音识别模型，避免点击“开始学习”进入单词页面时因加载模型而产生阻塞卡顿
     Asr().stopMicrophone();
-    unawaited(Asr().preloadModels());
+    // 串行预热：先语音识别模型，再音素词典（发音相似度比对用）。两者峰值内存都不小，
+    // 串起来避免叠加成内存尖峰；提前到首页完成，用户进单词页开口时就已经就绪。
+    unawaited(Asr().preloadModels().then((_) => PhonemeUtil.load()));
     // 后台静默预加载并激活手写识别模型，避免后续使用手写板时产生冷启动延迟
     unawaited(OcrService.prepareModel());
     WidgetsBinding.instance.addObserver(this);
@@ -1228,60 +1232,23 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
 
   /// 包装主操作按钮：
-  /// - 经典主题底（无壁纸）：纯透明背景 + 水波纹点击（零多余容器）；
-  /// - 壁纸底：局部微胶囊毛玻璃（Frosted Capsule），自带 18px 模糊与明暗自适应衬底，
-  ///   彻底替代全屏压暗光幕，确保按钮文字在任何壁纸（浅粉、深蓝、白亮）上均通透可读。
+  /// 统一零多余容器设计，纯透明背景 + 水波纹点击（零容器悬浮），
+  /// 壁纸上的文字与箭头直接通过明暗自适应色彩与多层弥散光晕（TextHalo / Shadow）保证清晰通透。
   Widget _wrapActionButton({
     Key? key,
-    required bool hasWallpaper,
-    required bool onDark,
     required VoidCallback onTap,
     required Widget child,
   }) {
-    if (!hasWallpaper) {
-      return Center(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: key,
-            borderRadius: BorderRadius.circular(20),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
-              child: child,
-            ),
-          ),
-        ),
-      );
-    }
-
     return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Material(
-            color: onDark
-                ? Colors.black.withValues(alpha: 0.38)
-                : Colors.white.withValues(alpha: 0.58),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-              side: BorderSide(
-                color: onDark
-                    ? Colors.white.withValues(alpha: 0.22)
-                    : Colors.white.withValues(alpha: 0.80),
-                width: 0.8,
-              ),
-            ),
-            child: InkWell(
-              key: key,
-              borderRadius: BorderRadius.circular(24),
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 26),
-                child: child,
-              ),
-            ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: key,
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 18),
+            child: child,
           ),
         ),
       ),
@@ -1301,13 +1268,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final actionColor = hasWallpaper
         ? (onDark ? Colors.white : const Color(0xFF0F172A))
         : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
-    final actionShadows = hasWallpaper && onDark
-        ? const [Shadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 1.5))]
+    final actionShadows = hasWallpaper
+        ? (onDark
+            ? const [
+                Shadow(color: Color(0x99000000), blurRadius: 6, offset: Offset(0, 1.5)),
+                Shadow(color: Color(0x4D000000), blurRadius: 14, offset: Offset(0, 3)),
+              ]
+            : [
+                Shadow(color: Colors.white.withValues(alpha: 0.90), blurRadius: 6, offset: const Offset(0, 1)),
+                Shadow(color: Colors.white.withValues(alpha: 0.50), blurRadius: 14, offset: const Offset(0, 2)),
+              ])
         : null;
     return _wrapActionButton(
       key: key,
-      hasWallpaper: hasWallpaper,
-      onDark: onDark,
       onTap: onPressed,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1400,8 +1373,16 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final actionColor = hasWallpaper
         ? (onDark ? Colors.white : const Color(0xFF0F172A))
         : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
-    final actionShadows = hasWallpaper && onDark
-        ? const [Shadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 1.5))]
+    final actionShadows = hasWallpaper
+        ? (onDark
+            ? const [
+                Shadow(color: Color(0x99000000), blurRadius: 6, offset: Offset(0, 1.5)),
+                Shadow(color: Color(0x4D000000), blurRadius: 14, offset: Offset(0, 3)),
+              ]
+            : [
+                Shadow(color: Colors.white.withValues(alpha: 0.90), blurRadius: 6, offset: const Offset(0, 1)),
+                Shadow(color: Colors.white.withValues(alpha: 0.50), blurRadius: 14, offset: const Offset(0, 2)),
+              ])
         : null;
 
     Future<void> onStartTap() async {
@@ -1722,8 +1703,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           );
 
     return _wrapActionButton(
-      hasWallpaper: hasWallpaper,
-      onDark: onDark,
       onTap: onStartTap,
       child: buttonContent,
     );

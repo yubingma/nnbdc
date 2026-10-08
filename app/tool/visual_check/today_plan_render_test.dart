@@ -358,4 +358,18 @@ void main() {
         wallpaper: 'assets/images/wallpaper/kitty_pink.jpg',
         darkTheme: true);
   });
+
+  testWidgets('渲染 绿荫（大树草地）· 浅色主题', (tester) async {
+    await renderCase(tester,
+        name: '14_tree_green_light',
+        wallpaper: 'assets/images/wallpaper/tree_green.jpg',
+        darkTheme: false);
+  });
+
+  testWidgets('渲染 绿荫（大树草地）· 深色主题', (tester) async {
+    await renderCase(tester,
+        name: '15_tree_green_dark',
+        wallpaper: 'assets/images/wallpaper/tree_green.jpg',
+        darkTheme: true);
+  });
 }
