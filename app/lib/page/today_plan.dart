@@ -985,8 +985,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      height: 68,
-                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                      constraints: const BoxConstraints(minHeight: 62),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       decoration: BoxDecoration(
                         color: isDarkMode ? const Color(0x6018202F) : Colors.white.withValues(alpha: 0.22),
                         borderRadius: BorderRadius.circular(18),
@@ -1046,8 +1046,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   child: BackdropFilter(
                     filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      height: 68,
-                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                      constraints: const BoxConstraints(minHeight: 62),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       decoration: BoxDecoration(
                         color: isDarkMode ? const Color(0x6018202F) : Colors.white.withValues(alpha: 0.22),
                         borderRadius: BorderRadius.circular(18),
