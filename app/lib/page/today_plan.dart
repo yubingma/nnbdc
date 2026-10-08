@@ -878,52 +878,104 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
               const SizedBox(height: 16),
 
-              // 3. 优雅极细胶囊进度条（第一进度条：步数与进度）
-              Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '已完成 $_completedStepCount / $_totalStepCount 步',
-                        style: TextStyle(
-                          color: textMuted,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
+              // 3. 学习进度展示（方案 A：主次分流）
+              // 当进入加量阶段时，主计划已 100% 达成，收拢为透亮轻灵的达成状态行，消除与加量进度条的"双轨撞车"感
+              if (_extraTotalCount > 0)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 13.5,
+                          color: hasWallpaper
+                              ? const Color(0xFF34D399)
+                              : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669)),
                         ),
-                      ),
-                      Text(
-                        '${(progress * 100).toInt()}%',
-                        style: TextStyle(
-                          color: textMuted,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Roboto',
+                        const SizedBox(width: 5),
+                        Text(
+                          '今日计划已达成',
+                          style: TextStyle(
+                            color: textMuted,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(100),
-                    child: LinearProgressIndicator(
-                      value: progress.clamp(0.0, 1.0),
-                      minHeight: 3.5,
-                      backgroundColor: hasWallpaper
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
-                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                      ],
                     ),
-                  ),
-                ],
-              ),
+                    Text(
+                      '$_totalStepCount 步 · 100%',
+                      style: TextStyle(
+                        color: textMuted.withValues(alpha: 0.75),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Roboto',
+                      ),
+                    ),
+                  ],
+                )
+              else
+                // 常规学习阶段：展示主力步数进度条（微光渐变胶囊轨）
+                Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '已完成 $_completedStepCount / $_totalStepCount 步',
+                          style: TextStyle(
+                            color: textMuted,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${(progress * 100).toInt()}%',
+                          style: TextStyle(
+                            color: hasWallpaper ? Colors.white : (isDarkMode ? Colors.white : themeConfig.textPrimary),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Roboto',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(100),
+                      child: Container(
+                        height: 3.5,
+                        width: double.infinity,
+                        color: hasWallpaper
+                            ? Colors.white.withValues(alpha: 0.12)
+                            : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress.clamp(0.0, 1.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              gradient: LinearGradient(
+                                colors: hasWallpaper
+                                    ? const [Color(0xFF10B981), Color(0xFF34D399)]
+                                    : [progressColor, progressColor.withValues(alpha: 0.85)],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
 
-        // 加量批次的进度：它有自己的口径（不计入今日计划）
+        // 加量批次的进度：作为加量阶段唯一的主力动态进度条，配以高质感翡翠微光胶囊轨
         if (_extraTotalCount > 0) ...[
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           SizedBox(
             width: 250,
             child: _buildExtraProgress(themeConfig, isDarkMode),
@@ -953,13 +1005,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 加量批次进度条：数量（x / y 词）与进度（百分比 + 细胶囊条）一次讲清。
-  /// 用同一套排版与轨宽，只把墨色压淡一档：它是打卡后的"额外"，不该压过今日计划。
+  /// 加量批次进度条：高质感微光渐变胶囊轨
   Widget _buildExtraProgress(AppThemeConfig themeConfig, bool isDarkMode) {
     final int total = _extraTotalCount;
     final int completed = _extraCompletedCount;
     final double progress = total > 0 ? completed / total : 0.0;
     final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    final accentGreen = hasWallpaper
+        ? const Color(0xFF34D399)
+        : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669));
 
     return SizedBox(
       width: 250,
@@ -979,9 +1033,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               Text(
                 '${(progress * 100).round()}%',
                 style: TextStyle(
-                  color: hasWallpaper ? Colors.white70 : themeConfig.textMuted,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
+                  color: accentGreen,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
                   fontFamily: 'Roboto',
                 ),
               ),
@@ -990,16 +1044,37 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(100),
-            child: LinearProgressIndicator(
-              value: progress.clamp(0.0, 1.0),
-              minHeight: 3.5,
-              backgroundColor: hasWallpaper
-                  ? Colors.white.withValues(alpha: 0.15)
+            child: Container(
+              height: 3.5,
+              width: double.infinity,
+              color: hasWallpaper
+                  ? Colors.white.withValues(alpha: 0.12)
                   : (isDarkMode
                       ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.black.withValues(alpha: 0.04)),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                hasWallpaper ? const Color(0xFF34D399) : themeConfig.primaryColor.withValues(alpha: 0.55),
+                      : Colors.black.withValues(alpha: 0.05)),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: progress.clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    gradient: LinearGradient(
+                      colors: hasWallpaper
+                          ? const [Color(0xFF10B981), Color(0xFF34D399)]
+                          : (isDarkMode
+                              ? const [Color(0xFF059669), Color(0xFF34D399)]
+                              : [themeConfig.primaryColor, themeConfig.primaryColor.withValues(alpha: 0.85)]),
+                    ),
+                    boxShadow: hasWallpaper
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF34D399).withValues(alpha: 0.35),
+                              blurRadius: 4,
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
               ),
             ),
           ),
