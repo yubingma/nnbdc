@@ -144,6 +144,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   List<LearningWord> get _extraWords =>
       (_todayWords ?? const <LearningWord>[]).where((w) => w.isExtra).toList();
 
+  /// 加量批次里的新词数：跟在新词数字后面显示成「5+3」，一眼看出今天额外加了几个
+  int get _extraNewCount => _extraWords.where((w) => w.isTodayNewWord).length;
+
+  /// 加量批次里的旧词数
+  int get _extraOldCount => _extraWords.length - _extraNewCount;
+
   /// 近期已下载/尝试下载的词书 ID 集合（防止导入后异步可见性延迟导致的循环）
   static final Map<String, DateTime> _recentlyDownloadedAt = {};
   static const Duration _reDownloadCooldown = Duration(seconds: 30);
@@ -1065,6 +1071,41 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
+  /// 任务卡上的数字：有加量批次时跟一个更小的「+N」（今天额外追加的那一组），
+  /// 让「今天的量」一眼看全，而不是只看到一个不含加量的计划数。
+  Widget _buildTaskCount({
+    required int count,
+    required int extraCount,
+    required Key extraKey,
+    required Color color,
+    required List<Shadow> glow,
+  }) {
+    final numberStyle = TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Roboto',
+      letterSpacing: -0.5,
+      color: color,
+      shadows: glow,
+    );
+    if (extraCount <= 0) {
+      return Text('$count', style: numberStyle);
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text('$count', style: numberStyle),
+        Text(
+          '+$extraCount',
+          key: extraKey,
+          style: numberStyle.copyWith(fontSize: 15, letterSpacing: -0.3),
+        ),
+      ],
+    );
+  }
+
   /// 底部「双任务岛与主操作」：扁平横向磨砂卡（对标「不背单词」Learn & Review）
   Widget _buildBottomTaskIsland({
     required AppThemeConfig themeConfig,
@@ -1118,16 +1159,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            '${newWordCount ?? 0}',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Roboto',
-                              letterSpacing: -0.5,
-                              color: countColor,
-                              shadows: ink.glow,
-                            ),
+                          _buildTaskCount(
+                            count: newWordCount ?? 0,
+                            extraCount: _extraNewCount,
+                            extraKey: const Key('today_plan_extra_new_count'),
+                            color: countColor,
+                            glow: ink.glow,
                           ),
                         ],
                       ),
@@ -1172,16 +1209,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            '${oldWordCount ?? 0}',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Roboto',
-                              letterSpacing: -0.5,
-                              color: countColor,
-                              shadows: ink.glow,
-                            ),
+                          _buildTaskCount(
+                            count: oldWordCount ?? 0,
+                            extraCount: _extraOldCount,
+                            extraKey: const Key('today_plan_extra_old_count'),
+                            color: countColor,
+                            glow: ink.glow,
                           ),
                         ],
                       ),
@@ -1248,7 +1281,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.3,
                     color: actionColor,
@@ -1629,7 +1662,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Text(
                         '正在准备今日计划…',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                           color: actionColor,
@@ -1645,7 +1678,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Text(
                         user?.todayStudyStarted == true ? '继续学习' : '开始学习',
                         style: TextStyle(
-                          fontSize: 16.5,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                           color: actionColor,

@@ -248,6 +248,23 @@ void main() {
     await tester.pump(const Duration(seconds: 60));
   });
 
+  testWidgets('加量批次的词数用 +N 跟在新词/旧词数字后面', (tester) async {
+    await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
+    await pumpTodayPlan(tester);
+    await pumpUntil(tester, find.text('继续学习（加量）'));
+
+    // 加量词按自己算新词还是旧词并进对应那张卡，两个键只会命中一个
+    final extraTags = [
+      find.byKey(const Key('today_plan_extra_new_count')),
+      find.byKey(const Key('today_plan_extra_old_count')),
+    ].where((f) => f.evaluate().isNotEmpty).toList();
+    expect(extraTags, hasLength(1), reason: '加量 5 个词要并进新词或旧词的数字里，不会两处都加');
+    expect(tester.widget<Text>(extraTags.single).data, '+5',
+        reason: '加量 5 个词就以 +5 跟在计划数字后面（例如「5+5」）');
+
+    await tester.pump(const Duration(seconds: 60));
+  });
+
   testWidgets('学完加量批次后广播 TodayStudyListChangedEvent：计划页必须刷新到最新进度，不能停在旧快照',
       (tester) async {
     await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
