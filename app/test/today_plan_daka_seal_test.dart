@@ -13,9 +13,9 @@ import 'package:nnbdc/util/prefs.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 今日计划页"今日已打卡"印章的回归测试。
+/// 今日计划页"已打卡"印章的回归测试。
 ///
-/// 已打卡时：目标环中心的"目标已锁定"换成微微倾斜的"今日已打卡"（环变印章），
+/// 已打卡时：目标环中心换成微微倾斜的"已打卡"印章（下面跟当天日期），
 /// 未打卡时：环心仍是"目标已锁定"，不得出现印章文案。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -196,7 +196,7 @@ void main() {
     }
   }
 
-  testWidgets('今日已打卡：环心盖上"今日已打卡"印章，并有未学完的加量批次时主按钮为"继续学习（加量）"',
+  testWidgets('今日已打卡：环心盖上"已打卡"印章，并有未学完的加量批次时主按钮为"继续学习（加量）"',
       (tester) async {
     // 印面文字是逐字画出来的（不是 Text），断言走承载它的 Key 与语义标签
     final semantics = tester.ensureSemantics();
@@ -211,7 +211,7 @@ void main() {
     await pumpUntil(tester, seal);
 
     expect(seal, findsOneWidget, reason: '今天打过卡，环心要盖上印章');
-    expect(tester.getSemantics(seal).label, '今日已打卡', reason: '印章上写的必须是"今日已打卡"');
+    expect(tester.getSemantics(seal).label, '已打卡', reason: '印章上写"已打卡"即可，日期就在下面');
     expect(sealDate, findsOneWidget, reason: '印章上要有年月日的日期');
     expect(tester.getSemantics(sealDate).label, dateLabel, reason: '日期要是今天（逻辑日期）');
     expect(find.text('目标已锁定'), findsNothing, reason: '印章态不再重复讲"目标已锁定"');
@@ -259,8 +259,8 @@ void main() {
       find.byKey(const Key('today_plan_extra_old_count')),
     ].where((f) => f.evaluate().isNotEmpty).toList();
     expect(extraTags, hasLength(1), reason: '加量 5 个词要并进新词或旧词的数字里，不会两处都加');
-    expect(tester.widget<Text>(extraTags.single).data, '+5',
-        reason: '加量 5 个词就以 +5 跟在计划数字后面（例如「5+5」）');
+    expect(tester.widget<Text>(extraTags.single).data, ' + 5',
+        reason: '加量 5 个词就以「 + 5」跟在计划数字后面（例如「5 + 5」，加号左右各留一个空格）');
 
     await tester.pump(const Duration(seconds: 60));
   });

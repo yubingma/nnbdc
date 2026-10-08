@@ -663,7 +663,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               color: hasWallpaper
                   ? (onDark ? Colors.white.withValues(alpha: 0.90) : const Color(0xFF0F172A))
                   : themeConfig.textSecondary,
-              shadows: hasWallpaper ? _canvasGlow(onDark) : null,
             ),
           ),
         ),
@@ -818,12 +817,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 卡片文字三档（主/次/弱）+ 字上光晕：玻璃保持通透，可读性靠「选对字色 + 一层很淡的光晕」兜住。
+  /// 卡片文字三档（主/次/弱）：玻璃保持通透，可读性只靠「按照片挑字色」这一件事。
   ///
   /// [belowScrim] 表示这块内容永远压在屏幕最底部的暗角光幕上（底部双任务卡）：那里永远是深底，
   /// 一律白字黑影最稳（实测 3.9~10.4，换深色字只剩 1.7~4.6）；中心岛浮在照片中段，
   /// 明暗完全由照片决定，只能按照片明暗档取色。
-  ({Color primary, Color muted, Color faint, List<Shadow> glow}) _cardInk({
+  ({Color primary, Color muted, Color faint}) _cardInk({
     required bool hasWallpaper,
     required bool onDark,
     bool belowScrim = false,
@@ -833,7 +832,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         primary: onDark ? Colors.white : const Color(0xFF0F172A),
         muted: onDark ? Colors.white70 : const Color(0xFF475569),
         faint: onDark ? Colors.white60 : const Color(0xFF64748B),
-        glow: const <Shadow>[],
       );
     }
     return (belowScrim || onDark)
@@ -841,20 +839,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             primary: Colors.white,
             muted: Colors.white.withValues(alpha: 0.82),
             faint: Colors.white.withValues(alpha: 0.72),
-            glow: _canvasGlow(true),
           )
         : (
             primary: const Color(0xFF0F172A),
             muted: const Color(0xFF334155),
             faint: const Color(0xFF334155),
-            glow: _canvasGlow(false),
           );
   }
-
-  /// 直接画在照片上的文字/图标光晕：暗底用黑影把白字托起来，亮底用白光把深字压下去。
-  List<Shadow> _canvasGlow(bool onDark) => onDark
-      ? const [Shadow(color: Colors.black45, blurRadius: 6, offset: Offset(0, 1))]
-      : [Shadow(color: Colors.white.withValues(alpha: 0.85), blurRadius: 6, offset: const Offset(0, 1))];
 
   /// 中心「打卡/日程岛」：高透圆角磨砂卡（对标「不背单词」日历签到卡）
   Widget _buildStatusIsland({
@@ -894,22 +885,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     Icons.check_circle_rounded,
                     size: 24,
                     color: sealColor,
-                    shadows: ink.glow,
                   ),
                   const SizedBox(height: 6),
                   Semantics(
                     container: true,
                     key: const Key('today_plan_daka_seal_text'),
-                    label: '今日已打卡',
+                    label: '已打卡',
                     excludeSemantics: true,
                     child: Text(
-                      '今日已打卡',
+                      '已打卡',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: ink.primary,
                         letterSpacing: -0.2,
-                        shadows: ink.glow,
                       ),
                     ),
                   ),
@@ -931,18 +920,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             fontWeight: FontWeight.w500,
                             color: ink.muted,
                             fontFamily: 'Roboto',
-                            shadows: ink.glow,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$planTotalWords 词 · 100%',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: ink.faint,
-                            fontFamily: 'Roboto',
-                            shadows: ink.glow,
                           ),
                         ),
                       ],
@@ -953,7 +930,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     Icons.calendar_today_rounded,
                     size: 22,
                     color: ink.muted,
-                    shadows: ink.glow,
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -963,7 +939,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       fontWeight: FontWeight.w700,
                       color: ink.primary,
                       letterSpacing: -0.2,
-                      shadows: ink.glow,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -974,7 +949,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       fontWeight: FontWeight.w500,
                       color: ink.muted,
                       fontFamily: 'Roboto',
-                      shadows: ink.glow,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -985,7 +959,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       fontWeight: FontWeight.w500,
                       color: ink.faint,
                       fontFamily: 'Roboto',
-                      shadows: ink.glow,
                     ),
                   ),
                 ],
@@ -1078,29 +1051,26 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required int extraCount,
     required Key extraKey,
     required Color color,
-    required List<Shadow> glow,
   }) {
-    final numberStyle = TextStyle(
+    const numberStyle = TextStyle(
       fontSize: 22,
       fontWeight: FontWeight.w700,
       fontFamily: 'Roboto',
       letterSpacing: -0.5,
-      color: color,
-      shadows: glow,
     );
     if (extraCount <= 0) {
-      return Text('$count', style: numberStyle);
+      return Text('$count', style: numberStyle.copyWith(color: color));
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
-        Text('$count', style: numberStyle),
+        Text('$count', style: numberStyle.copyWith(color: color)),
         Text(
-          '+$extraCount',
+          ' + $extraCount',
           key: extraKey,
-          style: numberStyle.copyWith(fontSize: 15, letterSpacing: -0.3),
+          style: numberStyle.copyWith(fontSize: 15, letterSpacing: -0.3, color: color),
         ),
       ],
     );
@@ -1155,7 +1125,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
                               color: textMuted,
-                              shadows: ink.glow,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -1164,7 +1133,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             extraCount: _extraNewCount,
                             extraKey: const Key('today_plan_extra_new_count'),
                             color: countColor,
-                            glow: ink.glow,
                           ),
                         ],
                       ),
@@ -1205,7 +1173,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
                               color: textMuted,
-                              shadows: ink.glow,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -1214,7 +1181,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             extraCount: _extraOldCount,
                             extraKey: const Key('today_plan_extra_old_count'),
                             color: countColor,
-                            glow: ink.glow,
                           ),
                         ],
                       ),

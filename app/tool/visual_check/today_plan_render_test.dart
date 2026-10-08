@@ -272,7 +272,7 @@ void main() {
     final finalState = tester.state<TodayPlanPageState>(find.byType(TodayPlanPage));
     debugPrint('RENDER dataLoaded=${finalState.dataLoaded} '
         'island=${find.text('今日目标').evaluate().length} '
-        'seal=${find.text('今日已打卡').evaluate().length} '
+        'seal=${find.text('已打卡').evaluate().length} '
         'start=${find.text('开始学习').evaluate().length} '
         'cont=${find.text('继续学习').evaluate().length}');
     await tester.pump(const Duration(milliseconds: 300));
