@@ -267,10 +267,12 @@ void main() {
     // future 永不完成，计划页只能靠这个事件刷新，否则会一直显示旧快照
     // （完成页说"加量完成"，计划页却说"还有加量没学"，还会给一个点进去就被弹回的入口）
     EventBus.publishTodayStudyListChanged(const TodayStudyListChangedEvent());
-    await pumpUntil(tester, find.text('加量已完成 5 / 5 词'));
+    await pumpUntil(tester, find.text('加量已完成'));
 
-    expect(find.text('加量已完成 5 / 5 词'), findsOneWidget,
-        reason: '收到事件后必须重算加量进度');
+    expect(find.text('加量已完成'), findsOneWidget,
+        reason: '收到事件后必须重算加量进度并展示加量完成状态');
+    expect(find.text('5 词 · 100%'), findsNWidgets(2),
+        reason: '主计划打卡与加量完成均以对称的"5 词 · 100%"文字行取代进度条');
     expect(find.text('继续学习（加量）'), findsNothing,
         reason: '加量已学完，不能再给"继续学习（加量）"入口');
 

@@ -74,6 +74,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Future<void>? _loadFuture;
   int _completedStepCount = 0;
   int _totalStepCount = 0;
+  int _planCompletedCount = 0;
   List<LearningWord>? _todayWords;
 
   /// 今日加量批次的词数（打卡后额外追加的那一组）。
@@ -400,6 +401,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         todayWordCount = 0;
         _completedStepCount = 0;
         _totalStepCount = 0;
+        _planCompletedCount = 0;
         return true;
       }
 
@@ -481,6 +483,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     if (_todayWords == null) {
       _totalStepCount = 0;
       _completedStepCount = 0;
+      _planCompletedCount = 0;
       return;
     }
 
@@ -527,10 +530,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 今日计划进度（严格排除加量词，保证打卡后不会因加量而回落）
     _totalStepCount = 0;
     _completedStepCount = 0;
+    _planCompletedCount = 0;
     for (final word in _planWords) {
       final trackLen = trackLenOf(word);
       _totalStepCount += trackLen;
-      _completedStepCount += word.getCompletedSteps(_masteredWordIds, trackLen);
+      final completedSteps = word.getCompletedSteps(_masteredWordIds, trackLen);
+      _completedStepCount += completedSteps;
+      if (completedSteps >= trackLen) {
+        _planCompletedCount++;
+      }
     }
 
     // 加量批次的口径：这一组一共多少词、学完了多少（主按钮是否换成"继续学习（加量）"也据此判定）
@@ -608,36 +616,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           ),
           const SizedBox(width: 12),
         ],
-        // 右侧高级设置按钮（微透晶莹小圆钮，呼应全页毛玻璃）
+        // 右侧高级设置按钮（遵循极简规范：零多余容器，纯矢量图标轻灵悬浮呈现）
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: _showAdvancedSettingsDialog,
-          child: Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: hasWallpaper
-                  ? Colors.white.withValues(alpha: 0.16)
-                  : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.65)),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: hasWallpaper
-                    ? Colors.white.withValues(alpha: 0.28)
-                    : (isDarkMode ? Colors.white.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.24)),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: hasWallpaper ? 0.25 : (isDarkMode ? 0.2 : 0.04)),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
             child: Icon(
               Icons.tune_rounded,
-              size: 19,
-              color: hasWallpaper ? Colors.white : themeConfig.textSecondary,
+              size: 22,
+              color: hasWallpaper
+                  ? Colors.white.withValues(alpha: 0.90)
+                  : themeConfig.textSecondary,
+              shadows: hasWallpaper
+                  ? const [
+                      Shadow(
+                        color: Colors.black45,
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ]
+                  : null,
             ),
           ),
         ),
@@ -726,95 +725,40 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final themeConfig = AppThemeConfig.of(themeStyle);
     final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
 
-    final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
+    final int planTotalWords = _planWords.length;
+    final int planCompletedWords = _planCompletedCount;
+    final double planProgress = planTotalWords > 0 ? (planCompletedWords / planTotalWords) : 0.0;
 
-    // 今日已打卡：展示一枚倾斜的"今日已打卡"精致印章
+    // 今日已打卡状态
     final isDakaStamped = hasDakaToday;
 
-    // 印章上的年·月·日：用逻辑日期（AppClock）而不是系统时间，与打卡/跨天口径一致
+    // 打卡日期：用逻辑日期（AppClock）而不是系统时间，与打卡/跨天口径一致
     final DateTime stampDay = AppClock.today();
     final String stampDate =
         '${stampDay.year}.${stampDay.month.toString().padLeft(2, '0')}.${stampDay.day.toString().padLeft(2, '0')}';
 
     final textMuted = hasWallpaper ? Colors.white70 : themeConfig.textMuted;
     final progressColor = hasWallpaper ? const Color(0xFF10B981) : themeConfig.primaryColor;
-    // 打卡达成状态色：选用温润清新的翡翠成功绿（Emerald Green），传递积极达成感，避免红色的警示意味
-    final dakaSuccessColor = hasWallpaper
-        ? const Color(0xFF34D399)
-        : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669));
 
     final content = Column(
       children: [
         // 数据指标与第一进度条整体区块（宽 250，居中对称）
-        // 未打卡态：新词与旧词两列之间为发丝细线
-        // 已打卡态：极简文字排版（Typography-driven），在中轴线两数字之间呈现「今日已打卡」与日期
         SizedBox(
           width: 250,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 1. 双列对称纯粹排版数据（新词 | 中间打卡信息或细线 | 旧词）
+              // 1. 双列对称纯粹排版数据（新词 | 发丝细线 | 旧词，彻底移除中轴线文字，保持绝对极简）
               Row(
                 children: [
                   _buildStatItem('新词', newWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
-                  if (isDakaStamped)
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          height: 31,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '今日已打卡',
-                                key: const Key('today_plan_daka_seal_text'),
-                                style: TextStyle(
-                                  color: dakaSuccessColor,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                  height: 1.1,
-                                  shadows: hasWallpaper
-                                      ? const [
-                                          Shadow(color: Colors.black45, blurRadius: 3, offset: Offset(0, 1)),
-                                        ]
-                                      : null,
-                                ),
-                              ),
-                              const SizedBox(height: 2.5),
-                              Text(
-                                stampDate,
-                                key: const Key('today_plan_daka_seal_date'),
-                                style: TextStyle(
-                                  color: dakaSuccessColor.withValues(alpha: 0.82),
-                                  fontSize: 9.0,
-                                  fontWeight: FontWeight.w500,
-                                  fontFamily: 'Roboto',
-                                  letterSpacing: 0.8,
-                                  height: 1.1,
-                                  shadows: hasWallpaper
-                                      ? const [
-                                          Shadow(color: Colors.black45, blurRadius: 3, offset: Offset(0, 1)),
-                                        ]
-                                      : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const SizedBox(height: 16),
-                      ],
-                    )
-                  else
-                    Container(
-                      width: 0.8,
-                      height: 32,
-                      color: hasWallpaper
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
-                    ),
+                  Container(
+                    width: 0.8,
+                    height: 32,
+                    color: hasWallpaper
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
+                  ),
                   _buildStatItem('旧词', oldWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
                 ],
               ),
@@ -878,9 +822,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
               const SizedBox(height: 16),
 
-              // 3. 学习进度展示（方案 A：主次分流）
-              // 当进入加量阶段时，主计划已 100% 达成，收拢为透亮轻灵的达成状态行，消除与加量进度条的"双轨撞车"感
-              if (_extraTotalCount > 0)
+              // 3. 学习进度展示（全部统一为单词数量计算）
+              // 已打卡态：主计划已达成，收拢为轻灵优雅的达成标记行，消除与加量进度条的"双轨撞车"感
+              if (isDakaStamped)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -896,17 +840,25 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          '今日计划已达成',
+                          '今日已打卡',
+                          key: const Key('today_plan_daka_seal_text'),
                           style: TextStyle(
-                            color: textMuted,
+                            color: hasWallpaper
+                                ? const Color(0xFF34D399)
+                                : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669)),
                             fontSize: 11.5,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
+                        Semantics(
+                          key: const Key('today_plan_daka_seal_date'),
+                          label: stampDate,
+                          child: const SizedBox.shrink(),
                         ),
                       ],
                     ),
                     Text(
-                      '$_totalStepCount 步 · 100%',
+                      '$planTotalWords 词 · 100%',
                       style: TextStyle(
                         color: textMuted.withValues(alpha: 0.75),
                         fontSize: 11,
@@ -917,14 +869,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   ],
                 )
               else
-                // 常规学习阶段：展示主力步数进度条（微光渐变胶囊轨）
+                // 未打卡态（常规学习阶段）：展示主力单词进度条（微光渐变胶囊轨）
                 Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '已完成 $_completedStepCount / $_totalStepCount 步',
+                          '已完成 $planCompletedWords / $planTotalWords 词',
                           style: TextStyle(
                             color: textMuted,
                             fontSize: 11.5,
@@ -932,7 +884,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ),
                         ),
                         Text(
-                          '${(progress * 100).toInt()}%',
+                          '${(planProgress * 100).round()}%',
                           style: TextStyle(
                             color: hasWallpaper ? Colors.white : (isDarkMode ? Colors.white : themeConfig.textPrimary),
                             fontSize: 12,
@@ -953,7 +905,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
                         child: FractionallySizedBox(
                           alignment: Alignment.centerLeft,
-                          widthFactor: progress.clamp(0.0, 1.0),
+                          widthFactor: planProgress.clamp(0.0, 1.0),
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(100),
@@ -1005,15 +957,53 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 加量批次进度条：高质感微光渐变胶囊轨
+  /// 加量批次进度条：高质感微光渐变胶囊轨（学完后收拢为达成文字行，与主计划打卡态一致）
   Widget _buildExtraProgress(AppThemeConfig themeConfig, bool isDarkMode) {
     final int total = _extraTotalCount;
     final int completed = _extraCompletedCount;
     final double progress = total > 0 ? completed / total : 0.0;
+    final bool isExtraFinished = total > 0 && completed >= total;
     final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    final textMuted = hasWallpaper ? Colors.white60 : themeConfig.textMuted;
     final accentGreen = hasWallpaper
         ? const Color(0xFF34D399)
         : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669));
+
+    if (isExtraFinished) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.check_circle_rounded,
+                size: 13.5,
+                color: accentGreen,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                '加量已完成',
+                style: TextStyle(
+                  color: accentGreen,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '$total 词 · 100%',
+            style: TextStyle(
+              color: textMuted.withValues(alpha: 0.75),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Roboto',
+            ),
+          ),
+        ],
+      );
+    }
 
     return SizedBox(
       width: 250,
@@ -1141,6 +1131,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Widget _buildExtraStudyButton(
     AppThemeConfig themeConfig,
     bool isDarkMode, {
+    Key? key,
     required String label,
     required VoidCallback onPressed,
   }) {
@@ -1152,6 +1143,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          key: key,
           borderRadius: BorderRadius.circular(20),
           onTap: onPressed,
           child: Padding(
@@ -1245,66 +1237,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         _totalStepCount > 0 && _completedStepCount >= _totalStepCount;
 
     if (hasDakaToday && planFinished) {
-      return Column(
-        children: [
-          if (_pendingExtraWordCount > 0)
-            _buildExtraStudyButton(
-              themeConfig,
-              isDarkMode,
-              label: '继续学习（加量）',
-              onPressed: _resumeExtraStudy,
-            )
-          else ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: hasWallpaper
-                    ? Colors.white.withValues(alpha: 0.16)
-                    : themeConfig.subtleBg,
-                borderRadius: BorderRadius.circular(26),
-                border: Border.all(
-                  color: hasWallpaper
-                      ? Colors.white.withValues(alpha: 0.25)
-                      : themeConfig.cardBorder,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: hasWallpaper ? const Color(0xFF34D399) : themeConfig.primaryColor, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    '今日目标已达成',
-                    style: TextStyle(
-                      color: hasWallpaper
-                          ? Colors.white
-                          : (isDarkMode ? themeConfig.primaryColor : themeConfig.textPrimary),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextButton.icon(
-              key: const Key('today_plan_extra_again_btn'),
-              onPressed: _startExtraStudy,
-              icon: Icon(Icons.add_circle_outline_rounded,
-                  size: 17, color: hasWallpaper ? const Color(0xFF34D399) : themeConfig.primaryColor),
-              label: Text(
-                '再来一组',
-                style: TextStyle(
-                  color: hasWallpaper ? const Color(0xFF34D399) : themeConfig.primaryColor,
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ],
+      if (_pendingExtraWordCount > 0) {
+        return _buildExtraStudyButton(
+          themeConfig,
+          isDarkMode,
+          label: '继续学习（加量）',
+          onPressed: _resumeExtraStudy,
+        );
+      }
+      return _buildExtraStudyButton(
+        themeConfig,
+        isDarkMode,
+        key: const Key('today_plan_extra_again_btn'),
+        label: '再来一组（加量）',
+        onPressed: _startExtraStudy,
       );
     }
 
