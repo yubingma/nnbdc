@@ -31,9 +31,6 @@ void main() {
   late MyDatabase db;
   final now = AppClock.now();
 
-  // 与 today_plan.dart 的 _buildBackground 一致：照片上那层黑色暗角光幕
-  const List<double> scrimStops = [0.0, 0.32, 0.68, 1.0];
-  const List<double> scrimAlphas = [0.45, 0.06, 0.42, 0.78];
 
   setUpAll(() {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -278,49 +275,18 @@ void main() {
     return (hi + 0.05) / (lo + 0.05);
   }
 
-  double scrimAlphaAt(double t) {
-    for (int i = 0; i < scrimStops.length - 1; i++) {
-      final t0 = scrimStops[i];
-      final t1 = scrimStops[i + 1];
-      if (t <= t0) return scrimAlphas[i];
-      if (t <= t1) {
-        final k = (t - t0) / (t1 - t0);
-        return scrimAlphas[i] * (1 - k) + scrimAlphas[i + 1] * k;
-      }
-    }
-    return scrimAlphas.last;
-  }
-
-  /// 直接压在照片上的字（按钮/顶栏图标）：只有暗角光幕，没有玻璃托底。
-  double photoContrast({
-    required List<double> photo,
-    required double screenYRatio,
-    required Color ink,
-  }) {
-    final scrim = scrimAlphaAt(screenYRatio);
-    final bg = photo.map((c) => c * (1 - scrim)).toList();
-    final inked = List<double>.generate(
-      3,
-      (i) => bg[i] * (1 - ink.a) + [ink.r * 255, ink.g * 255, ink.b * 255][i] * ink.a,
-    );
-    return contrastRatio(relativeLuminance(bg), relativeLuminance(inked));
-  }
-
-  /// 照片 → 暗角光幕 → 玻璃后的卡片亮度，再算与字色的对比度。
+  /// 照片 → 组件局部毛玻璃后的卡片/胶囊亮度，再算与字色的对比度。
   double cardContrast({
     required List<double> photo,
-    required double screenYRatio,
     required List<double> glass,
     required double glassAlpha,
     required Color ink,
   }) {
-    final scrim = scrimAlphaAt(screenYRatio);
-    final bg = photo.map((c) => c * (1 - scrim)).toList();
     final card = List<double>.generate(
       3,
-      (i) => bg[i] * (1 - glassAlpha) + glass[i] * glassAlpha,
+      (i) => photo[i] * (1 - glassAlpha) + glass[i] * glassAlpha,
     );
-    // 半透明的字色（如暗底的白色 82%）要先合成到卡片上，再算对比度
+    // 半透明的字色（如暗底的白色 85%）要先合成到卡片上，再算对比度
     final inked = List<double>.generate(
       3,
       (i) => card[i] * (1 - ink.a) + [ink.r * 255, ink.g * 255, ink.b * 255][i] * ink.a,
@@ -328,27 +294,26 @@ void main() {
     return contrastRatio(relativeLuminance(card), relativeLuminance(inked));
   }
 
-  /// 1. 取色只认照片明暗：App 主题反过来也不许改字色（这正是「石韵」糊字的根因）。
+  /// 1. 取色与卡片玻璃：按壁纸明暗档挑选字色与局部磨砂底托
   for (final wallpaper in planWallpapers.where((w) => w.path != 'none')) {
     for (final darkTheme in [false, true]) {
       testWidgets(
-          '${wallpaper.name}（${wallpaper.isDark ? '暗底照片' : '亮底照片'}）+ ${darkTheme ? '深色主题' : '浅色主题'}：玻璃保持原样，只有字色跟照片走',
+          '${wallpaper.name}（${wallpaper.isDark ? '暗底照片' : '亮底照片'}）+ ${darkTheme ? '深色主题' : '浅色主题'}：壁纸保持原画亮度，字色与卡片底色自适应',
           (tester) async {
         await seedTodayPlan();
         await pumpTodayPlan(tester, wallpaper: wallpaper.path, darkTheme: darkTheme);
 
         final palette = renderedPalette(tester);
-        // 玻璃只跟 App 主题（原来的通透磨砂），绝不随照片改透明度
-        final expectedGlass = darkTheme
-            ? const Color(0x6018202F)
-            : Colors.white.withValues(alpha: 0.22);
-        expect(palette.islandGlass, expectedGlass, reason: '中心岛玻璃保持原来的通透度');
-        expect(palette.cardGlass, expectedGlass, reason: '任务卡玻璃保持原来的通透度');
-        // 字色才是为了看清而动的部分
+        final expectedGlass = wallpaper.isDark
+            ? (darkTheme ? const Color(0x6018202F) : Colors.black.withValues(alpha: 0.28))
+            : Colors.white.withValues(alpha: 0.45);
+        expect(palette.islandGlass, expectedGlass, reason: '中心岛玻璃底色自适应壁纸');
+        expect(palette.cardGlass, expectedGlass, reason: '任务卡玻璃底色自适应壁纸');
+        // 字色根据壁纸明暗档自适应
         expect(palette.islandInk, wallpaper.isDark ? Colors.white : const Color(0xFF0F172A),
             reason: '中心岛浮在照片中段，字色跟照片明暗档');
-        expect(palette.cardInk, Colors.white.withValues(alpha: 0.82),
-            reason: '底部任务卡永远压在暗角光幕上，一律白色系（这里是卡上的次级标签）');
+        expect(palette.cardInk, wallpaper.isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF334155),
+            reason: '底部任务卡字色跟照片明暗档');
 
         await tester.pump(const Duration(seconds: 60));
       });
@@ -396,19 +361,16 @@ void main() {
           final image = await decodedImage(wallpaper.path);
           return photoAverage(image, rect, viewport);
         }))!;
-        final yRatio = rect.center.dy / viewport.height;
         final glassRgb = [glass.r * 255, glass.g * 255, glass.b * 255];
 
         final primary = cardContrast(
           photo: photo,
-          screenYRatio: yRatio,
           glass: glassRgb,
           glassAlpha: glass.a,
           ink: primaryInk,
         );
         final muted = cardContrast(
           photo: photo,
-          screenYRatio: yRatio,
           glass: glassRgb,
           glassAlpha: glass.a,
           ink: mutedInk,
@@ -420,24 +382,40 @@ void main() {
             reason: '${wallpaper.name} 的$label次字对比度（实测 ${muted.toStringAsFixed(2)}）');
       }
 
-      // 直接压在照片上的两处前景没有玻璃托底：底部按钮永远在暗角光幕里，顶栏图标跟着照片明暗
-      for (final (rect, ink, threshold, label) in [
-        (buttonRect, palette.actionInk, 5.0, '主按钮'),
-        // 图标是非文本图形，按 WCAG 1.4.11 的 3:1 收口（且它还带一层光晕）
-        (headerRect, palette.headerInk, 3.0, '右上设置图标'),
-      ]) {
-        final photo = (await tester.runAsync(() async {
-          final image = await decodedImage(wallpaper.path);
-          return photoAverage(image, rect, viewport);
-        }))!;
-        final measured = photoContrast(
-          photo: photo,
-          screenYRatio: rect.center.dy / viewport.height,
-          ink: ink,
-        );
-        expect(measured, greaterThanOrEqualTo(threshold),
-            reason: '${wallpaper.name} 的$label在照片上的对比度（实测 ${measured.toStringAsFixed(2)}）');
-      }
+      // 主按钮与右上设置图标：带有局部微胶囊/微磨砂底托，直接通过局部毛玻璃计算对比度
+      final buttonGlass = wallpaper.isDark
+          ? Colors.black.withValues(alpha: 0.38)
+          : Colors.white.withValues(alpha: 0.58);
+      final buttonGlassRgb = [buttonGlass.r * 255, buttonGlass.g * 255, buttonGlass.b * 255];
+      final buttonPhoto = (await tester.runAsync(() async {
+        final image = await decodedImage(wallpaper.path);
+        return photoAverage(image, buttonRect, viewport);
+      }))!;
+      final buttonMeasured = cardContrast(
+        photo: buttonPhoto,
+        glass: buttonGlassRgb,
+        glassAlpha: buttonGlass.a,
+        ink: palette.actionInk,
+      );
+      expect(buttonMeasured, greaterThanOrEqualTo(4.0),
+          reason: '${wallpaper.name} 的主按钮在局部微胶囊毛玻璃下的对比度（实测 ${buttonMeasured.toStringAsFixed(2)}）');
+
+      final headerGlass = wallpaper.isDark
+          ? Colors.black.withValues(alpha: 0.25)
+          : Colors.white.withValues(alpha: 0.50);
+      final headerGlassRgb = [headerGlass.r * 255, headerGlass.g * 255, headerGlass.b * 255];
+      final headerPhoto = (await tester.runAsync(() async {
+        final image = await decodedImage(wallpaper.path);
+        return photoAverage(image, headerRect, viewport);
+      }))!;
+      final headerMeasured = cardContrast(
+        photo: headerPhoto,
+        glass: headerGlassRgb,
+        glassAlpha: headerGlass.a,
+        ink: palette.headerInk,
+      );
+      expect(headerMeasured, greaterThanOrEqualTo(3.0),
+          reason: '${wallpaper.name} 的右上设置图标在局部微磨砂托底下的对比度（实测 ${headerMeasured.toStringAsFixed(2)}）');
     }
 
     await tester.pump(const Duration(seconds: 60));

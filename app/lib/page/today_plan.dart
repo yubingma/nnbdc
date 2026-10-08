@@ -1262,7 +1262,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Material(
             color: onDark
-                ? Colors.black.withValues(alpha: 0.32)
+                ? Colors.black.withValues(alpha: 0.38)
                 : Colors.white.withValues(alpha: 0.58),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
@@ -3481,10 +3481,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           // 选项与明暗档同源：planWallpapers 是壁纸的唯一登记处
                           const options = planWallpapers;
 
-                          Widget buildPill(PlanWallpaper item) {
-                            final isSelected = _wallpaperPath == item.path;
-                            return Expanded(
-                              child: GestureDetector(
+                          return Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: options.map((item) {
+                              final isSelected = _wallpaperPath == item.path;
+                              return GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: () async {
                                   final selectedPath = item.path;
@@ -3499,7 +3501,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                   }
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? primaryColor
@@ -3509,55 +3511,25 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: isSelected
-                                        ? primaryColor
-                                        : (isDarkMode
-                                            ? Colors.white.withValues(alpha: 0.08)
-                                            : Colors.black.withValues(alpha: 0.06)),
+                                          ? primaryColor
+                                          : (isDarkMode
+                                              ? Colors.white.withValues(alpha: 0.08)
+                                              : Colors.black.withValues(alpha: 0.06)),
                                     ),
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      item.name,
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
-                                      ),
+                                  child: Text(
+                                    item.name,
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          }
-
-                          return Column(
-                            children: [
-                              Row(
-                                children: [
-                                  buildPill(options[0]),
-                                  const SizedBox(width: 8),
-                                  buildPill(options[1]),
-                                  const SizedBox(width: 8),
-                                  buildPill(options[2]),
-                                  const SizedBox(width: 8),
-                                  buildPill(options[3]),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  buildPill(options[4]),
-                                  const SizedBox(width: 8),
-                                  buildPill(options[5]),
-                                  const SizedBox(width: 8),
-                                  buildPill(options[6]),
-                                  const SizedBox(width: 8),
-                                  buildPill(options[7]),
-                                ],
-                              ),
-                            ],
+                              );
+                            }).toList(),
                           );
                         },
                       ),
