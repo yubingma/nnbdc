@@ -281,7 +281,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 59;
+  int get schemaVersion => 60;
 
   @override
   MigrationStrategy get migration {
@@ -497,6 +497,10 @@ class MyDatabase extends _$MyDatabase {
           if (from < 59) {
             await m.createTable(wordPhrases);
           }
+          // 从版本 59 升级到版本 60：订正 learning_words 中历史遗留的非法难度数据 (difficulty = 0)
+          if (from < 60) {
+            await _fixIllegalLearningWordDifficulty();
+          }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
@@ -538,6 +542,9 @@ class MyDatabase extends _$MyDatabase {
 
         // 确保 user_study_steps 拥有 scope 列 (防止开发中间版本遗漏迁移)
         await _ensureUserStudyStepsHasScope();
+
+        // 确保 learning_words 中不存在非法的 difficulty = 0 历史脏数据
+        await _fixIllegalLearningWordDifficulty();
       },
     );
   }
@@ -1954,6 +1961,30 @@ class MyDatabase extends _$MyDatabase {
       }
     } catch (e, st) {
       Global.logger.e('检查/补齐 user_study_steps scope 列异常: $e', error: e, stackTrace: st);
+    }
+  }
+
+  /// 订正 learning_words 中历史遗留的非法难度数据 (difficulty = 0 或 < 1.0)
+  Future<void> _fixIllegalLearningWordDifficulty() async {
+    try {
+      // 1. 历史已掌握/毕业词 (stability 为 180.0 或 120.0，但 difficulty 遗留为 0 或 < 1): 赋中等基准难度 5.0
+      await customStatement('''
+        UPDATE learning_words 
+        SET difficulty = 5.0 
+        WHERE (stability = 180.0 OR stability = 120.0) 
+          AND (difficulty IS NULL OR difficulty < 1.0);
+      ''');
+
+      // 2. 存量未学新词 (reps = 0 且 stability <= 0.0，但 difficulty 误填为 0 或 < 1): 重置为 NULL 符合新词标准
+      await customStatement('''
+        UPDATE learning_words 
+        SET stability = NULL, difficulty = NULL 
+        WHERE (difficulty = 0.0 OR (difficulty IS NOT NULL AND difficulty < 1.0))
+          AND (stability = 0.0 OR stability IS NULL)
+          AND (reps = 0 OR reps IS NULL);
+      ''');
+    } catch (e) {
+      Global.logger.w('订正本地 learning_words 非法难度数据失败: $e');
     }
   }
 }

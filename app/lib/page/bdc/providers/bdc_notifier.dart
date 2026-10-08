@@ -1471,8 +1471,8 @@ class BdcNotifier extends _$BdcNotifier {
               .difference(app_date.DateUtils.businessDate(lw.lastLearningDate!))
               .inDays;
       FSRSItem nextItem;
-      if (lw.stability == null || lw.stability == 0.0) {
-        // 新词：init 预览
+      if (lw.stability == null || lw.stability == 0.0 || lw.difficulty == null || lw.difficulty! < 1.0) {
+        // 新词或存量无合法难度词：init 预览
         nextItem = fsrs.init(rating);
       } else {
         final prevItem = FSRSItem(
@@ -2339,7 +2339,10 @@ class BdcNotifier extends _$BdcNotifier {
   Future<void> onAsrResult(event) async {
     // 引导遮挡页面期间一律丢弃识别结果：引导弹出的那一瞬，原生端可能仍有排队事件返回，
     // 放任其进入判定会让"没打算答题"的一句话变成作答（与例句环节的遗留事件隔离同理）。
-    if (_isDisposed || state.isGettingNextWord || _isGuideShowing) return;
+    if (_isDisposed || state.isGettingNextWord || _isGuideShowing) {
+      debugPrint('🔎 [ASR-DIAG] drop@2342 disposed=$_isDisposed getting=${state.isGettingNextWord} guide=$_isGuideShowing');
+      return;
+    }
     final currentWordId = state.word?.id;
     final int pttRoundAtEntry = _pttRoundToken;
     String processedResult = "";
@@ -2370,6 +2373,11 @@ class BdcNotifier extends _$BdcNotifier {
       final repeatPattern = RegExp(r'\b([a-zA-Z])(\s+\1){2,}\b', caseSensitive: false);
       best = best.replaceAll(repeatPattern, '').trim();
       candidates = candidates.map((c) => c.replaceAll(repeatPattern, '').trim()).toList();
+
+      debugPrint('🔎 [ASR-DIAG] enter step=${state.studyStep} finished=${state.hasFinishedAnswering} '
+          'correctHandling=$_isAnswerCorrectHandling practice=$_isPracticeMode '
+          'getNext=${state.isGettingNextWord} showHw=${state.showHandwritingBoard} '
+          'judged=[$_ch2EnJudgedAsrText] best=[$best] score=${state.currentScore}');
 
       final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
                               state.studyStep == StudyStep.chSentence2En.json;
@@ -2454,6 +2462,7 @@ class BdcNotifier extends _$BdcNotifier {
         // 单词环节：若当前题目已答完（或正在执行答对过渡）且非主动练习模式，
         // 忽略关麦过渡期间到达的残余尾部 ASR 帧，避免尾音低分篡改通关评分。
         if ((state.hasFinishedAnswering || _isAnswerCorrectHandling) && !_isPracticeMode) {
+          debugPrint('🔎 [ASR-DIAG] drop@2464 finished=${state.hasFinishedAnswering} correctHandling=$_isAnswerCorrectHandling');
           return;
         }
 
@@ -2465,8 +2474,13 @@ class BdcNotifier extends _$BdcNotifier {
             // 判错的老答案一起送进音素判定与裁判，用户永远被第一次说的那个词绑住。
             if (candidates.isNotEmpty) _ch2EnSessionAsrText = candidates.first;
             final roundCandidates = _stripJudgedCh2EnAsrPrefix(candidates);
-            if (roundCandidates.isEmpty) return; // 本帧没有新发音，不重复判定
+            if (roundCandidates.isEmpty) {
+              debugPrint('🔎 [ASR-DIAG] drop@2476 strip-empty candidates=$candidates judged=[$_ch2EnJudgedAsrText]');
+              return; // 本帧没有新发音，不重复判定
+            }
+            debugPrint('🔎 [ASR-DIAG] to-phoneme round=$roundCandidates target=${state.word!.spell}');
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(roundCandidates, state.word!.spell);
+            debugPrint('🔎 [ASR-DIAG] phoneme-done score=${result.score} text=${result.text}');
             if (_isDisposed || state.isGettingNextWord || state.word?.id != currentWordId) return;
             // await 音素计算期间可能并发完成了答对处理，二次守卫防止低分覆盖
             if ((state.hasFinishedAnswering || _isAnswerCorrectHandling) && !_isPracticeMode) {
@@ -3181,7 +3195,7 @@ class BdcNotifier extends _$BdcNotifier {
         daysSinceLastReview = AppClock.today().difference(app_date.DateUtils.businessDate(lw.lastLearningDate!)).inDays;
       }
       final int days = daysSinceLastReview;
-      if (lw.stability == null || lw.stability == 0.0) {
+      if (lw.stability == null || lw.stability == 0.0 || lw.difficulty == null || lw.difficulty! < 1.0) {
         nextItem = fsrs.init(rating);
       } else {
         final prevItem = FSRSItem(

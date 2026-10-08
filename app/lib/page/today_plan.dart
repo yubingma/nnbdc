@@ -3318,73 +3318,96 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                       const SizedBox(height: 12),
 
-                      // 4款壁纸快速切换药丸标签
-                      Row(
-                        children: [
-                          for (int i = 0; i < 4; i++) ...[
-                            if (i > 0) const SizedBox(width: 8),
-                            Builder(
-                              builder: (ctx) {
-                                final options = const [
-                                  {'name': '旷野', 'path': 'assets/images/wallpaper/tree.jpg'},
-                                  {'name': '晨雾', 'path': 'assets/images/scenes/mist.jpg'},
-                                  {'name': '湖光', 'path': 'assets/images/scenes/river.jpg'},
-                                  {'name': '夏夜', 'path': 'assets/images/scenes/night.jpg'},
-                                  {'name': '经典', 'path': 'none'},
-                                ];
-                                final item = options[i];
-                                final isSelected = _wallpaperPath == item['path'];
-                                return Expanded(
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () async {
-                                      final selectedPath = item['path']!;
-                                      await Prefs.write('today_plan_wallpaper', selectedPath);
-                                      setDialogState(() {
-                                        _wallpaperPath = selectedPath;
-                                      });
-                                      if (mounted) {
-                                        setState(() {
-                                          _wallpaperPath = selectedPath;
-                                        });
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                      decoration: BoxDecoration(
+                      // 背景画报快速切换药丸标签（两行三列，对称极简）
+                      Builder(
+                        builder: (ctx) {
+                          const options = [
+                            {'name': '旷野', 'path': 'assets/images/wallpaper/tree.jpg'},
+                            {'name': '竹韵', 'path': 'assets/images/wallpaper/bamboo.jpg'},
+                            {'name': '枫韵', 'path': 'assets/images/wallpaper/maple.jpg'},
+                            {'name': '晨雾', 'path': 'assets/images/scenes/mist.jpg'},
+                            {'name': '湖光', 'path': 'assets/images/scenes/river.jpg'},
+                            {'name': '夏夜', 'path': 'assets/images/scenes/night.jpg'},
+                            {'name': '经典', 'path': 'none'},
+                          ];
+
+                          Widget buildPill(Map<String, String> item) {
+                            final isSelected = _wallpaperPath == item['path'];
+                            return Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () async {
+                                  final selectedPath = item['path']!;
+                                  await Prefs.write('today_plan_wallpaper', selectedPath);
+                                  setDialogState(() {
+                                    _wallpaperPath = selectedPath;
+                                  });
+                                  if (mounted) {
+                                    setState(() {
+                                      _wallpaperPath = selectedPath;
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? primaryColor
+                                        : (isDarkMode
+                                            ? Colors.white.withValues(alpha: 0.06)
+                                            : Colors.black.withValues(alpha: 0.04)),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? primaryColor
+                                          : (isDarkMode
+                                              ? Colors.white.withValues(alpha: 0.08)
+                                              : Colors.black.withValues(alpha: 0.06)),
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      item['name']!,
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                         color: isSelected
-                                            ? primaryColor
-                                            : (isDarkMode
-                                                ? Colors.white.withValues(alpha: 0.06)
-                                                : Colors.black.withValues(alpha: 0.04)),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? primaryColor
-                                              : (isDarkMode
-                                                  ? Colors.white.withValues(alpha: 0.08)
-                                                  : Colors.black.withValues(alpha: 0.06)),
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          item['name']!,
-                                          style: TextStyle(
-                                            fontSize: 12.5,
-                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                            color: isSelected
-                                                ? Colors.white
-                                                : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
-                                          ),
-                                        ),
+                                            ? Colors.white
+                                            : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
                                       ),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                          ],
-                        ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  buildPill(options[0]),
+                                  const SizedBox(width: 8),
+                                  buildPill(options[1]),
+                                  const SizedBox(width: 8),
+                                  buildPill(options[2]),
+                                  const SizedBox(width: 8),
+                                  buildPill(options[3]),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  buildPill(options[4]),
+                                  const SizedBox(width: 8),
+                                  buildPill(options[5]),
+                                  const SizedBox(width: 8),
+                                  buildPill(options[6]),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),

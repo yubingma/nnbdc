@@ -1061,9 +1061,13 @@ class StudyBo {
     FSRSItem? nextFsrs;
     if (isGraded) {
       final fsrs = FSRS();
-      if (currWord.stability == null || currWord.stability == 0.0) {
-        if (currWord.stability == 0.0) {
-           Global.logger.w('发现存量数据 stability 为 0.0, wordId: ${currWord.wordId}, 将视同新词执行 init');
+      final bool hasInvalidFsrs = currWord.stability == null ||
+          currWord.stability == 0.0 ||
+          currWord.difficulty == null ||
+          currWord.difficulty! < 1.0;
+      if (hasInvalidFsrs) {
+        if (currWord.stability == 0.0 || (currWord.difficulty != null && currWord.difficulty! < 1.0)) {
+           Global.logger.w('发现存量数据 FSRS 参数不合法 (stability: ${currWord.stability}, difficulty: ${currWord.difficulty}), wordId: ${currWord.wordId}, 将视同新词执行 init');
         }
         // 新词首次评分；若已是当天最后一个评分环节，直接转 review/relearning，
         // 与同日评分分支的 state 判据对称（防止学完的词次日被"学一半"判定误抓）

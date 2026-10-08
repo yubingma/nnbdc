@@ -1,0 +1,67 @@
+{
+  "episode": "CI11",
+  "series": "词核心图",
+  "position": "11",
+  "slogan": "一个词 · 一个意象",
+  "word": "scale",
+  "phonetic": "skeɪl",
+  "core_art": "core_35332.jpeg",
+  "core_text": "等距切分成层阶",
+  "core_sub": "scale 只有这一个意象",
+  "accent": "#7C3AED",
+  "voice": "2号",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "规模",
+        "刻度",
+        "音阶",
+        "攀登",
+        "鳞"
+      ],
+      "line": "这五个意思，是同一个词",
+      "say": "规模、刻度、音阶、攀登、鳞。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：等距切分，成层阶。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "规模",
+          "relation": "刻度覆盖的整体大小"
+        },
+        {
+          "meaning": "刻度",
+          "relation": "表面切出的等距刻痕"
+        },
+        {
+          "meaning": "音阶",
+          "relation": "声音按层级阶梯排布"
+        },
+        {
+          "meaning": "攀登",
+          "relation": "沿层阶一级级向上"
+        },
+        {
+          "meaning": "鳞",
+          "relation": "表面排列的薄片层"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "theme": "dark"
+}
