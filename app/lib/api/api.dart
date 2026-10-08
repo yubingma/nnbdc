@@ -723,6 +723,10 @@ abstract class RestClient {
   @GET("/admin/checkLearningProgressConsistency.do")
   Future<Result<SystemHealthCheckResult>> checkLearningProgressConsistency();
 
+  /// 检查学习数据认知难度合法性与完整性
+  @GET("/admin/checkLearningWordDifficultyIntegrity.do")
+  Future<Result<SystemHealthCheckResult>> checkLearningWordDifficultyIntegrity();
+
   /// 管理后台：查看客户端上报的异常日志（含客户端平台与版本号），按时间倒序取最近若干条
   @GET("/admin/getSysErrors.do")
   Future<Result<List<SysErrorVo>>> getSysErrors();

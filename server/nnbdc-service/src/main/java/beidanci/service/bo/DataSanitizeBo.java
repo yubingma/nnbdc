@@ -79,6 +79,12 @@ public class DataSanitizeBo {
     private static volatile int wordImageSanitizeFixedCount = 0;
     private static volatile String wordImageSanitizeLog = "";
 
+    private static volatile boolean isWordPhoneticSanitizing = false;
+    private static volatile int wordPhoneticSanitizeTotal = 0;
+    private static volatile int wordPhoneticSanitizeProcessed = 0;
+    private static volatile int wordPhoneticSanitizeFixedCount = 0;
+    private static volatile String wordPhoneticSanitizeLog = "";
+
     private static volatile boolean isMeaningSanitizing = false;
     private static volatile int meaningSanitizeTotal = 0;
     private static volatile int meaningSanitizeProcessed = 0;
@@ -105,12 +111,43 @@ public class DataSanitizeBo {
 
     // 数据规范性检查相关的 SQL 条件片段
     // 音标：判定条件必须与 Util.sanitizePhonetic 的修复范围严格一致，否则会出现"洗完仍报脏"的假告警。
-    // 脏形态 = 首尾包裹了 / [ ［ ] ］、尾部残留逗号、或 JSON 转义残留的反斜杠。
-    private static final String DIRTY_WORD_PHONETIC_SQL_WHERE = 
-        "(btrim(pronounce) ~ '^[/\\[［]' OR btrim(pronounce) ~ '[/\\]］]$' OR btrim(pronounce) ~ '[,，]$' OR pronounce ~ '\\\\') " +
-        "OR (btrim(british_pronounce) ~ '^[/\\[［]' OR btrim(british_pronounce) ~ '[/\\]］]$' OR btrim(british_pronounce) ~ '[,，]$' OR british_pronounce ~ '\\\\') " +
-        "OR (btrim(america_pronounce) ~ '^[/\\[［]' OR btrim(america_pronounce) ~ '[/\\]］]$' OR btrim(america_pronounce) ~ '[,，]$' OR america_pronounce ~ '\\\\')";
-    
+    // 脏形态 = 首尾空白、首尾包裹了 / [ ［ 【 ] ］ 】、尾部残留逗号、全角逗号、错位的长音符/冒号、
+    // 或 JSON 转义残留的反斜杠。
+    // 长音符/冒号只能跟在元音后面，其它位置属于错位噪声；与 Util.MISPLACED_LENGTH_MARK_PATTERN 一一对应
+    private static final String MISPLACED_LENGTH_MARK_REGEX = "(^|[^aeiouæɛɪʊʌɔəɜɚɝɒɑ])[:ː]+";
+
+    // 音标的合法字符集：IPA 主体字符 + 修饰符 + 分隔标点。
+    // 白名单之外的一切字符（西里尔字母、中文、阿拉伯数字、大写字母、全角符号、私用区乱码等）
+    // 都是无法机械修复的非法内容，只能暴露给人工订正——所以它不在 DIRTY 条件里，另行单独告警。
+    // 注意：字符类里的 - 必须放在最后，否则 /- 与后面的组合符号会连成意外的区间。
+    private static final String PHONETIC_LEGAL_CHARS =
+            "a-zæðŋɡɑɒɔəɜɛɪɚɝɵʃʒθʊʌʧʤʎʏʁɹçxy" + "ːˈˌ:" + " .,;'()/"
+                    + "\u0303\u0329\u032c\u0323\u035f" + "-";
+
+    // 该字符集要嵌进 SQL 的单引号字符串，撇号必须写成两个
+    private static final String PHONETIC_LEGAL_CHARS_IN_SQL = PHONETIC_LEGAL_CHARS.replace("'", "''");
+
+    private static final String DIRTY_WORD_PHONETIC_SQL_WHERE = String.join(" OR ",
+            dirtyPhonetic("pronounce"), dirtyPhonetic("british_pronounce"), dirtyPhonetic("america_pronounce"));
+
+    private static final String INVALID_WORD_PHONETIC_SQL_WHERE = String.join(" OR ",
+            invalidPhonetic("pronounce"), invalidPhonetic("british_pronounce"), invalidPhonetic("america_pronounce"));
+
+    private static String dirtyPhonetic(String col) {
+        return "(" + col + " <> btrim(" + col + ")"
+                + " OR btrim(" + col + ") ~ '^[/\\[［]'"
+                + " OR btrim(" + col + ") ~ '[/\\]］]$'"
+                + " OR " + col + " ~ '[【】]'"
+                + " OR btrim(" + col + ") ~ '[,，]$'"
+                + " OR " + col + " ~ '，'"
+                + " OR btrim(" + col + ") ~ '" + MISPLACED_LENGTH_MARK_REGEX + "'"
+                + " OR " + col + " ~ '\\\\')";
+    }
+
+    private static String invalidPhonetic(String col) {
+        return "btrim(" + col + ") ~ '[^" + PHONETIC_LEGAL_CHARS_IN_SQL + "]'";
+    }
+
     private static final String DIRTY_MEANING_SQL_WHERE = 
         "(meaning ~ '[,，]\\s*$') OR (ci_xing ~ '[,，]\\s*$')";
 
@@ -317,6 +354,70 @@ public class DataSanitizeBo {
         }
     }
 
+    /**
+     * 单独清洗单词音标（后台异步线程执行，规范化音标格式并生成同步日志）。
+     * <p>
+     * 与全量清洗分开：全量清洗还会顺带改动例句、释义项，并逐张校验三万多张配图，
+     * 只想订正音标时不该牵连这些数据。
+     */
+    public SystemHealthFixResult sanitizeWordPhoneticsOnly() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isWordPhoneticSanitizing) {
+            errors.add("音标清洗任务正在后台运行中，请勿重复触发。");
+            fixed.add(String.format("当前进度: %d/%d。详情: %s",
+                    wordPhoneticSanitizeProcessed, wordPhoneticSanitizeTotal, wordPhoneticSanitizeLog));
+            return new SystemHealthFixResult(0, errors, fixed);
+        }
+
+        isWordPhoneticSanitizing = true;
+        wordPhoneticSanitizeTotal = 0;
+        wordPhoneticSanitizeProcessed = 0;
+        wordPhoneticSanitizeFixedCount = 0;
+        wordPhoneticSanitizeLog = "准备扫描单词音标...";
+
+        new Thread(() -> {
+            try {
+                wordPhoneticSanitizeLog = "正在查询需要修复的音标...";
+                int count = sanitizeWordPhoneticsCore();
+                wordPhoneticSanitizeFixedCount = count;
+                wordPhoneticSanitizeLog = String.format("清洗完成，共修复 %d 个单词的音标格式。", count);
+                logger.info("单词音标清洗完成: 修复数={}", count);
+            } catch (Exception e) {
+                logger.error("执行单词音标清洗异常", e);
+                wordPhoneticSanitizeLog = "清洗过程中出错: " + e.getMessage();
+            } finally {
+                isWordPhoneticSanitizing = false;
+            }
+        }).start();
+
+        fixed.add("音标清洗任务已成功在后台启动。");
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    /**
+     * 获取音标清洗状态及进度
+     */
+    public SystemHealthFixResult getWordPhoneticSanitizeStatus() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (isWordPhoneticSanitizing) {
+            fixed.add(String.format("当前进度: %d/%d。已修复: %d 条。详情: %s",
+                    wordPhoneticSanitizeProcessed, wordPhoneticSanitizeTotal, wordPhoneticSanitizeFixedCount, wordPhoneticSanitizeLog));
+            return new SystemHealthFixResult(1, errors, fixed);
+        } else {
+            if (wordPhoneticSanitizeTotal > 0) {
+                fixed.add(String.format("音标清洗完成。总扫描: %d 条，共修复 %d 条音标格式。",
+                        wordPhoneticSanitizeTotal, wordPhoneticSanitizeFixedCount));
+            } else {
+                fixed.add("任务未运行。");
+            }
+            return new SystemHealthFixResult(0, errors, fixed);
+        }
+    }
+
     private void executeWordImageSanitization() {
         try {
             wordImageSanitizeLog = "正在查询单词配图列表...";
@@ -379,10 +480,17 @@ public class DataSanitizeBo {
         List<String> errors = new ArrayList<>();
 
         try {
-            // 1. 检查单词音标
+            // 1. 检查单词音标（可自动修复的脏格式）
             int wordCount = countDirtyRecords("word", DIRTY_WORD_PHONETIC_SQL_WHERE);
             if (wordCount > 0) {
-                issues.add(new SystemHealthIssue("音标不规范", String.format("发现 %d 个单词的音标包含斜线、方括号或以逗号结尾", wordCount), "data_sanitization"));
+                issues.add(new SystemHealthIssue("音标不规范", String.format("发现 %d 个单词的音标含首尾空白、斜线/方括号包裹、多余逗号或错位的长音符", wordCount), "data_sanitization"));
+            }
+
+            // 音标里的非法字符无法机械修复（西里尔字母、中文、数字、全角符号、私用区乱码等），
+            // 必须暴露出来人工订正，绝不能静默改写成猜测值。
+            int invalidPhoneticCount = countDirtyRecords("word", INVALID_WORD_PHONETIC_SQL_WHERE);
+            if (invalidPhoneticCount > 0) {
+                issues.add(new SystemHealthIssue("音标含非法字符", String.format("发现 %d 个单词的音标含非音标字符（西里尔字母、中文、数字、全角符号、乱码等），无法自动修复，需人工订正", invalidPhoneticCount), "data_sanitization"));
             }
 
             // 2. 检查释义项
@@ -505,11 +613,23 @@ public class DataSanitizeBo {
         return count;
     }
     private int sanitizeWordPhonetics(List<String> fixed) throws Exception {
+        int count = sanitizeWordPhoneticsCore();
+        if (count > 0) fixed.add(String.format("修复了 %d 个单词的音标格式。", count));
+        return count;
+    }
+
+    /**
+     * 音标清洗的核心逻辑：按 {@link #DIRTY_WORD_PHONETIC_SQL_WHERE} 找出脏音标并规范化，逐条写同步日志。
+     * 全量清洗与"只清洗音标"共用这一段。
+     */
+    private int sanitizeWordPhoneticsCore() throws Exception {
         int count = 0;
-        // 查找可能需要修复的单词：音标包含斜线、方括号，或以逗号结尾
+        // 查找可能需要修复的单词：首尾空白、包裹符号、多余逗号、错位的长音符
         String sql = "SELECT id, spell, pronounce, british_pronounce, america_pronounce FROM word WHERE " + DIRTY_WORD_PHONETIC_SQL_WHERE;
-        
+
         List<Map<String, Object>> words = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
+        wordPhoneticSanitizeTotal = words.size();
+        wordPhoneticSanitizeProcessed = 0;
         for (Map<String, Object> map : words) {
             String id = (String) map.get("id");
             String p = (String) map.get("pronounce");
@@ -531,9 +651,9 @@ public class DataSanitizeBo {
                 sysDbSyncBo.logOperation(wordBo.toDto(word), "UPDATE", "word", id, JsonUtils.toJson(wordBo.toDto(word)));
                 count++;
             }
+            wordPhoneticSanitizeProcessed++;
             dataSanitizeProcessed++;
         }
-        if (count > 0) fixed.add(String.format("修复了 %d 个单词的音标格式。", count));
         return count;
     }
 

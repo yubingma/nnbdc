@@ -211,9 +211,19 @@ class DataIntegrityChecker {
       onProgress?.call(14, '检查学习进度与学习记录是否自洽...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
+      // 15. 检查学习数据认知难度指标(difficulty)是否合法
+      onProgress?.call(15, '检查学习数据认知难度...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer15 = Stopwatch()..start();
+      await _checkLearningWordDifficulty(result, userId);
+      timer15.stop();
+      Global.logger.d('✓ 检查学习数据认知难度: ${timer15.elapsedMilliseconds}ms');
+      onProgress?.call(15, '检查学习数据认知难度...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(14, '检查完成！', result: result);
+      onProgress?.call(15, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
     } catch (e, stackTrace) {
       stopwatch.stop();
@@ -749,6 +759,16 @@ class DataIntegrityChecker {
         }
       }
 
+      // 修复学习数据认知难度指标异常
+      if (checkResult.hasIssue('learning_word_difficulty')) {
+        try {
+          await _fixLearningWordDifficulty(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复学习数据认知难度时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复学习数据认知难度失败: $e');
+        }
+      }
+
       // 系统级字典（主要是通用词典 ID=0）如果有数据不完整的问题
       if (checkResult.hasIssue('common_dict_integrity')) {
         try {
@@ -911,12 +931,7 @@ class DataIntegrityChecker {
     return fixResult;
   }
 
-  /// 修复"学习进度多于学习记录"（用户在体检页显式确认后才会执行）。
-  ///
-  /// 与体检页其他修复项的区别：这一项只做**下调**（把进度改回今天的记录条数），
-  /// 而且修复前必须先把现场上报服务端，修复结果也写日志——
-  /// 这样数据即使被改小，服务端仍然留有"谁、哪个词、改前改后是多少"的可追溯记录，
-  /// 不会因为本地修好了就查不到。
+  /// 修复"学习进度与学习记录不一致"（用户在体检页显式确认后才会执行）。
   Future<void> _fixStudyProgressConsistency(IntegrityFixResult fixResult, String userId) async {
     final violations = await scanTodayStudyConsistency(
       userId: userId,
@@ -942,11 +957,11 @@ class DataIntegrityChecker {
         continue;
       }
       if (!repair.changed) {
-        fixResult.addFixed('"${repair.spell}" 无需修复：今日进度 ${repair.progressAfter} 与学习记录条数一致');
+        fixResult.addFixed('"${repair.spell}" 无需修复：今日进度 ${repair.progressAfter} 已自洽');
         continue;
       }
       fixResult.addFixed('已修复 "${repair.spell}" 的今日进度：'
-          '${repair.progressBefore} → ${repair.progressAfter}（对齐今日 ${repair.logCount} 条学习记录）');
+          '${repair.progressBefore} → ${repair.progressAfter}（今日记录 ${repair.logCount} 条）');
       // 修复结果也上报一次：让服务端知道这条不一致已经被处理掉，便于核对告警与终态
       await _reportStudyProgressRepair(userId, repair);
     }
@@ -1064,12 +1079,12 @@ class DataIntegrityChecker {
   /// 检查今天的学习进度与学习记录是否自洽。
   ///
   /// 判定口径与服务端只读体检、客户端上报探针同源：
-  /// 某词「今日环节进度」不得大于它今天的评分流水条数。
-  /// 进度多出来说明同一次作答被重复推进了环节，该词会被夹在最后一个环节反复出题，
-  /// 用户看到的画面是答案已揭晓却没有可前进的出口。
+  /// 1. 不变式 1：某词「今日评分流水」不得大于「今日环节进度」（否则说明同一次作答被重复计分）。
+  /// 2. 不变式 2：某词「今日环节进度」不得大于「轨道长度上限」（否则说明环节被多推进越界）。
+  /// 正常情况下，今日进度 >= 流水条数（因末尾 List 环节不评分、提前掌握毕业）且未超轨道上限，属于正常学完。
   ///
   /// 这一项**可以修复**，但只走用户显式确认那条路径（见 `_fixStudyProgressConsistency`）：
-  /// 修复仅把"今日进度"下调到今天的学习记录条数，不动学习记录、不动记忆参数。
+  /// 修复将越界进度截断回轨道上限（正常学完），或将落后进度与实际流水对齐，不动学习记录、不动记忆参数。
   Future<void> _checkStudyProgressConsistency(IntegrityCheckResult result, String userId) async {
     try {
       final violations = await scanTodayStudyConsistency(
@@ -1080,11 +1095,11 @@ class DataIntegrityChecker {
 
       final details = violations
           .take(10)
-          .map((v) => '"${v.spell}" (ID: ${v.wordId})：今日进度 ${v.progress}，'
-              '今日学习记录 ${v.actualLogCount} 条')
+          .map((v) => v.rule == StudyConsistencyRule.progressExceedsTrack
+              ? '"${v.spell}" (ID: ${v.wordId})：今日进度 ${v.progress} 超过轨道上限 ${v.trackLenMax}'
+              : '"${v.spell}" (ID: ${v.wordId})：今日流水 ${v.actualLogCount} 条超出今日进度 ${v.progress}')
           .join('\n');
-      var description = '今天有 ${violations.length} 个单词的学习进度与学习记录对不上'
-          '（进度多于记录，同一次作答被重复推进了环节，这些词可能被反复出题）。';
+      var description = '今天有 ${violations.length} 个单词的学习进度与学习记录对不上。';
       if (details.isNotEmpty) {
         description += '\n示例：\n$details';
         if (violations.length > 10) {
@@ -1092,7 +1107,7 @@ class DataIntegrityChecker {
         }
       }
       description += '\n该问题明天会自动复位，也可以点"一键自动修复"立即修好：'
-          '修复只把"今天的环节进度"改回与记录条数一致，不删除任何学习记录、不影响记忆进度与复习安排。';
+          '修复会将越界进度截断至正常学完上限或对齐实际流水，不删除任何学习记录、不影响记忆进度与复习安排。';
 
       result.addIssue(
         '学习进度与学习记录不一致',
@@ -1772,6 +1787,76 @@ class DataIntegrityChecker {
         await _db.cigenWordLinksDao.insertEntities(links);
       }
     });
+  }
+
+  /// 检查学习数据认知难度指标(difficulty)合法性与完整性
+  Future<void> _checkLearningWordDifficulty(IntegrityCheckResult result, String userId) async {
+    try {
+      // 1. 检查 difficulty = 0 或合法范围越界 (< 1.0) 的记录
+      final invalidRows = await _db.customSelect(
+        'SELECT count(*) as count FROM learning_words '
+        'WHERE user_id = ? AND (difficulty = 0.0 OR (difficulty IS NOT NULL AND difficulty < 1.0))',
+        variables: [Variable.withString(userId)],
+      ).getSingle();
+      final invalidCount = invalidRows.read<int>('count');
+
+      // 2. 检查历史已掌握词 (stability IN (180, 120)) 却缺失合法难度的记录
+      final missingMasteredRows = await _db.customSelect(
+        'SELECT count(*) as count FROM learning_words '
+        'WHERE user_id = ? AND (stability = 180.0 OR stability = 120.0) AND (difficulty IS NULL OR difficulty < 1.0)',
+        variables: [Variable.withString(userId)],
+      ).getSingle();
+      final missingMasteredCount = missingMasteredRows.read<int>('count');
+
+      final totalAbnormal = invalidCount + missingMasteredCount;
+      if (totalAbnormal > 0) {
+        result.addIssue(
+          '学习数据认知难度异常',
+          '发现 $totalAbnormal 条学习单词记录认知难度(difficulty)异常或缺失 (越界/为零: $invalidCount, 历史掌握词缺失: $missingMasteredCount)',
+          'learning_word_difficulty',
+        );
+      }
+    } catch (e, stack) {
+      Global.logger.e('检查学习数据认知难度时出错', error: e, stackTrace: stack);
+      result.addError('检查学习数据认知难度时出错: $e');
+    }
+  }
+
+  /// 修复学习数据认知难度指标(difficulty)
+  Future<void> _fixLearningWordDifficulty(IntegrityFixResult fixResult, String userId) async {
+    try {
+      // 1. 历史已掌握/毕业词 (stability 为 180.0 或 120.0，但 difficulty 遗留为 0 或 < 1): 赋中等基准难度 5.0
+      await _db.customStatement(
+        'UPDATE learning_words '
+        'SET difficulty = 5.0 '
+        'WHERE user_id = ? AND (stability = 180.0 OR stability = 120.0) '
+        '  AND (difficulty IS NULL OR difficulty < 1.0)',
+        [userId],
+      );
+
+      // 2. 存量未学新词 (reps = 0 且 stability <= 0.0，但 difficulty 误填为 0 或 < 1): 重置为 NULL 符合新词标准
+      await _db.customStatement(
+        'UPDATE learning_words '
+        'SET stability = NULL, difficulty = NULL '
+        'WHERE user_id = ? AND (difficulty = 0.0 OR (difficulty IS NOT NULL AND difficulty < 1.0)) '
+        '  AND (stability = 0.0 OR stability IS NULL) '
+        '  AND (reps = 0 OR reps IS NULL)',
+        [userId],
+      );
+
+      // 3. 兜底其余残存非法难度 (< 1.0)
+      await _db.customStatement(
+        'UPDATE learning_words '
+        'SET difficulty = 5.0 '
+        'WHERE user_id = ? AND difficulty IS NOT NULL AND difficulty < 1.0',
+        [userId],
+      );
+
+      fixResult.addFixed('已成功订正并重置本地异常难度的学习数据');
+    } catch (e, stack) {
+      Global.logger.e('修复学习数据认知难度时出错', error: e, stackTrace: stack);
+      fixResult.addError('修复学习数据认知难度失败: $e');
+    }
   }
 }
 

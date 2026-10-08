@@ -124,92 +124,91 @@ void main() {
   });
 
   group('judgeStudyConsistency', () {
-    test('进度与流水条数相等时自洽', () {
-      expect(judgeStudyConsistency(progress: 3, actualLogCount: 3), isNull);
+    test('进度与流水条数相等且未超轨道时自洽', () {
+      expect(judgeStudyConsistency(progress: 3, actualLogCount: 3, trackLenMax: 3), isNull);
     });
 
-    test('流水条数多于进度时不算客户端不自洽（重复写流水由服务端体检发现）', () {
-      // 例如 3 条流水但进度只有 1：这类"流水多于进度"的方向不在这里判，
-      // 避免与服务端的判定口径冲突产生两套标准
-      expect(judgeStudyConsistency(progress: 1, actualLogCount: 3), isNull);
+    test('进度大于流水条数（如走完List或提前掌握）且未超轨道时属于正常合法状态', () {
+      // 走完 List 环节：流水 2 条，进度 3，未超轨道 3
+      expect(judgeStudyConsistency(progress: 3, actualLogCount: 2, trackLenMax: 3), isNull);
+      // 首答掌握提前毕业：流水 1 条，进度 3，未超轨道 3
+      expect(judgeStudyConsistency(progress: 3, actualLogCount: 1, trackLenMax: 3), isNull);
     });
 
-    test('进度大于流水条数时命中 progressExceedsLogs', () {
-      // 线上真实形态：3 条流水、进度被推到 4
+    test('流水条数多于进度时命中 logsExceedProgress', () {
+      // 重复计分写了多条流水
       expect(
-        judgeStudyConsistency(progress: 4, actualLogCount: 3),
-        StudyConsistencyRule.progressExceedsLogs,
-      );
-      expect(
-        judgeStudyConsistency(progress: 2, actualLogCount: 1),
-        StudyConsistencyRule.progressExceedsLogs,
+        judgeStudyConsistency(progress: 1, actualLogCount: 2, trackLenMax: 3),
+        StudyConsistencyRule.logsExceedProgress,
       );
     });
 
-    test('进度不为 0 但今天没有任何流水时命中', () {
+    test('进度超过轨道上限时命中 progressExceedsTrack', () {
+      // 轨道上限 3，被多推进到 4
       expect(
-        judgeStudyConsistency(progress: 1, actualLogCount: 0),
-        StudyConsistencyRule.progressExceedsLogs,
+        judgeStudyConsistency(progress: 4, actualLogCount: 3, trackLenMax: 3),
+        StudyConsistencyRule.progressExceedsTrack,
       );
     });
 
     test('进度为 0 且有流水时不报（跨天复位后的正常状态）', () {
-      // 线上实测：八成告警是这一形态——用户上一个业务日学过，跨天复位把进度清零，
-      // 而查询窗口还看得到昨天的流水。它不是缺陷，不该报。
-      expect(judgeStudyConsistency(progress: 0, actualLogCount: 4), isNull);
-      expect(judgeStudyConsistency(progress: 0, actualLogCount: 1), isNull);
+      expect(judgeStudyConsistency(progress: 0, actualLogCount: 4, trackLenMax: 3), isNull);
+      expect(judgeStudyConsistency(progress: 0, actualLogCount: 1, trackLenMax: 3), isNull);
     });
 
     test('进度为 0 且没有流水时自洽（新词还没答过）', () {
-      expect(judgeStudyConsistency(progress: 0, actualLogCount: 0), isNull);
+      expect(judgeStudyConsistency(progress: 0, actualLogCount: 0, trackLenMax: 3), isNull);
     });
   });
 
   group('judgeTodayWord', () {
     test('自洽时返回 null', () {
       expect(
-        judgeTodayWord(progress: 2, actualLogCount: 2, wordId: '15407'),
+        judgeTodayWord(progress: 2, actualLogCount: 2, wordId: '15407', trackLenMax: 3),
         isNull,
       );
     });
 
-    test('不自洽时带出单词与数值', () {
+    test('进度越界时带出单词与数值', () {
       final violation =
-          judgeTodayWord(progress: 4, actualLogCount: 3, wordId: '15407', spell: 'electronic');
+          judgeTodayWord(progress: 4, actualLogCount: 3, wordId: '15407', spell: 'electronic', trackLenMax: 3);
 
       expect(violation, isNotNull);
       expect(violation!.wordId, '15407');
       expect(violation.spell, 'electronic');
       expect(violation.progress, 4);
       expect(violation.actualLogCount, 3);
-      expect(violation.rule, StudyConsistencyRule.progressExceedsLogs);
+      expect(violation.trackLenMax, 3);
+      expect(violation.rule, StudyConsistencyRule.progressExceedsTrack);
     });
 
-    test('拿不到拼写时退回词 ID，不产生空标签', () {
-      final violation = judgeTodayWord(progress: 1, actualLogCount: 0, wordId: '15407');
+    test('流水多于进度时命中 logsExceedProgress', () {
+      final violation = judgeTodayWord(progress: 1, actualLogCount: 2, wordId: '15407', trackLenMax: 3);
 
-      expect(violation!.spell, '15407');
+      expect(violation!.rule, StudyConsistencyRule.logsExceedProgress);
+      expect(violation.spell, '15407');
     });
   });
 
   group('StudyConsistencyViolation.toMessage', () {
     test('上报文本带规则标识、实体、实际值、期望值与客户端版本', () {
       const violation = StudyConsistencyViolation(
-        rule: StudyConsistencyRule.progressExceedsLogs,
+        rule: StudyConsistencyRule.progressExceedsTrack,
         wordId: '15407',
         spell: 'electronic',
         progress: 4,
         actualLogCount: 3,
+        trackLenMax: 3,
       );
 
       final message = violation.toMessage('26092401');
 
-      expect(message.contains('progress_gt_logs'), isTrue,
+      expect(message.contains('progress_gt_track'), isTrue,
           reason: '必须带稳定规则标识，服务端按它聚合告警: $message');
       expect(message.contains('electronic (15407)'), isTrue,
           reason: '必须带单词与实体 ID: $message');
       expect(message.contains('progress=4'), isTrue, reason: '必须带实际值: $message');
-      expect(message.contains('businessDayLogs=3'), isTrue, reason: '必须带实际值: $message');
+      expect(message.contains('trackLenMax=3'), isTrue, reason: '必须带实际值: $message');
       expect(message.contains('期望值'), isTrue, reason: '必须写清期望值: $message');
       expect(message.contains('26092401'), isTrue,
           reason: '必须带客户端版本，坏数据往往是单版本集中的: $message');
@@ -217,11 +216,12 @@ void main() {
 
     test('上报文本不携带单词释义等学习内容', () {
       const violation = StudyConsistencyViolation(
-        rule: StudyConsistencyRule.progressExceedsLogs,
+        rule: StudyConsistencyRule.progressExceedsTrack,
         wordId: '15407',
         spell: 'electronic',
         progress: 4,
         actualLogCount: 3,
+        trackLenMax: 3,
       );
 
       final message = violation.toMessage('26092401');

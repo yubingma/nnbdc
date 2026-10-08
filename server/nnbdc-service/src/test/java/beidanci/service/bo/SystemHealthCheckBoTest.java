@@ -47,12 +47,12 @@ public class SystemHealthCheckBoTest {
     }
 
     @Test
-    public void 今日进度多于评分流水时提示环节被重复推进() {
-        // 线上真实形态：3 条流水、进度被推到 4，客户端把越界环节夹回最后一个环节反复出题
+    public void 进度超过轨道长度时提示环节被多推进() {
+        // 线上真实形态：轨道长度 3、进度被推到 4，客户端把越界环节夹回最后一个环节反复出题
         SystemHealthIssue issue = SystemHealthCheckBo.buildLearningProgressIssue(
-                "user_1", "纪白", "15407", "electronic", 3, 4, 4);
+                "user_1", "纪白", "15407", "electronic", 3, 4, 3);
 
-        assertTrue(issue.getDescription().contains("重复推进了环节"),
+        assertTrue(issue.getDescription().contains("环节被多推进"),
                 "应提示环节被多推进: " + issue.getDescription());
         assertTrue(issue.getDescription().contains("反复出题"),
                 "应说明该词会被反复出题: " + issue.getDescription());
@@ -173,7 +173,7 @@ public class SystemHealthCheckBoTest {
         LearningProgressRepairItem item = SystemHealthCheckBo.buildLearningProgressRepairItem(
                 "user_1", "纪白", "15407", "electronic", 4, 3, 2, staleProgressUpdate(), "26021901");
 
-        assertTrue(item.getDiagnosis().contains("重复推进了环节"), item.getDiagnosis());
+        assertTrue(item.getDiagnosis().contains("环节被多推进"), item.getDiagnosis());
         assertTrue(item.getDiagnosis().contains("进度超过轨道长度"), item.getDiagnosis());
         assertTrue(issue.getDescription().endsWith(item.getDiagnosis()),
                 "体检说明里那句诊断应与逐词明细一致，不能两处各写一套: " + issue.getDescription());

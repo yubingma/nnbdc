@@ -183,7 +183,7 @@ public class SystemHealthCheckBo {
                     + "       count(*) AS today_log_count, lw.today_learned_times, lw.update_time, "
                     + "       ver.client_version, "
                     + "       GREATEST(COALESCE(nullif(new_max.max_len, 0), 0), "
-                    + "                COALESCE(nullif(rev_max.max_len, 0), 0)) AS track_len_max "
+                    + "                COALESCE(nullif(rev_max.max_len, 0), 0)) + 1 AS track_len_max "
                     + "FROM learning_log l "
                     + "JOIN learning_word lw ON lw.user_id = l.user_id AND lw.word_id = l.word_id "
                     + "LEFT JOIN \"user\" u ON u.id = l.user_id "
@@ -222,13 +222,14 @@ public class SystemHealthCheckBo {
                     + "        GROUP BY user_id "
                     + "    ) t GROUP BY user_id "
                     + ") rev_max ON rev_max.user_id = l.user_id "
-                    + "WHERE l.create_time >= a.anchor - make_interval(hours => 24) "
+                    + "WHERE l.create_time >= ((date_trunc('day', (a.anchor AT TIME ZONE 'Asia/Shanghai') - interval '3 hours') + interval '3 hours') AT TIME ZONE 'Asia/Shanghai') "
+                    + "  AND l.create_time < ((date_trunc('day', (a.anchor AT TIME ZONE 'Asia/Shanghai') - interval '3 hours') + interval '27 hours') AT TIME ZONE 'Asia/Shanghai') "
                     + "  AND l.create_time >= now() - make_interval(hours => :maxLookbackHours) "
                     + "GROUP BY l.user_id, u.nick_name, l.word_id, w.spell, lw.today_learned_times, "
                     + "         lw.update_time, ver.client_version, new_max.max_len, rev_max.max_len "
                     + "HAVING lw.today_learned_times > 0 AND (count(*) > lw.today_learned_times "
                     + "    OR lw.today_learned_times > "
-                    + "       GREATEST(COALESCE(new_max.max_len, 0), COALESCE(rev_max.max_len, 0))) "
+                    + "       GREATEST(COALESCE(new_max.max_len, 0), COALESCE(rev_max.max_len, 0)) + 1) "
                     + "ORDER BY count(*) - lw.today_learned_times DESC, l.user_id, l.word_id "
                     + "LIMIT :auditLimit";
 
@@ -349,7 +350,8 @@ public class SystemHealthCheckBo {
         String sql = "SELECT count(*) FROM learning_log l "
                 + "JOIN (SELECT MAX(create_time) AS anchor FROM learning_log WHERE user_id = :userId) a ON 1=1 "
                 + "WHERE l.user_id = :userId AND l.word_id = :wordId "
-                + "  AND l.create_time >= a.anchor - make_interval(hours => 24) "
+                + "  AND l.create_time >= ((date_trunc('day', (a.anchor AT TIME ZONE 'Asia/Shanghai') - interval '3 hours') + interval '3 hours') AT TIME ZONE 'Asia/Shanghai') "
+                + "  AND l.create_time < ((date_trunc('day', (a.anchor AT TIME ZONE 'Asia/Shanghai') - interval '3 hours') + interval '27 hours') AT TIME ZONE 'Asia/Shanghai') "
                 + "  AND l.create_time >= now() - make_interval(hours => :maxLookbackHours)";
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("userId", userId)
@@ -359,7 +361,7 @@ public class SystemHealthCheckBo {
         return count == null ? 0 : count;
     }
 
-    /** 该用户当前配置下轨道长度上限（新词/复习取更长的一条） */
+    /** 该用户当前配置下轨道长度上限（新词/复习取更长的一条，加上末尾固定的 List 浏览环节） */
     private int trackLenMaxOf(String userId) {
         String sql = "SELECT GREATEST("
                 + "  COALESCE((SELECT MAX(check_len + correct_len + wrong_len) FROM ("
@@ -374,7 +376,7 @@ public class SystemHealthCheckBo {
                 + "             SUM(CASE WHEN group_name = 'wrong' THEN 1 ELSE 0 END) AS wrong_len"
                 + "      FROM user_study_step WHERE user_id = :userId AND scope = 'review' AND state = 'Active'"
                 + "      GROUP BY user_id) t), 0)"
-                + ")";
+                + ") + 1";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         Integer maxLen = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
         return maxLen == null ? 0 : maxLen;
@@ -386,7 +388,7 @@ public class SystemHealthCheckBo {
      * <p>四条护栏缺一不可：
      * <ol>
      * <li>进度必须真的超过轨道长度 —— 说明该词今天已经把整条轨道走完、多出来的那一格是重复推进。
-     * 只"比流水多一条"但没超轨道长度的，很可能是同步滞后，不动。</li>
+     * 只"比流水多一条"但没超轨道长度的，属于包含 List 浏览环节或提前掌握的正常合法状态，不动。</li>
      * <li>今天必须有评分流水 —— 否则没有可靠依据判断该整成几。</li>
      * <li>目标值必须小于当前值 —— 只下调，绝不把进度往上补。</li>
      * <li>进度行必须已经"凉"了（{@value #REPAIR_MIN_STALE_HOURS} 小时内没被更新过）——
@@ -426,18 +428,12 @@ public class SystemHealthCheckBo {
         if (todayLogCount > todayLearnedTimes) {
             desc.append("评分流水多于今日进度，说明同一次作答被重复写了学习记录");
         }
-        if (todayLearnedTimes > todayLogCount) {
-            if (desc.length() > 0) {
-                desc.append("。");
-            }
-            desc.append("今日进度多于评分流水，说明同一次作答被重复推进了环节，"
-                    + "该词会被夹在最后一个环节反复出题、答案揭晓后没有可前进的出口");
-        }
         if (todayLearnedTimes > trackLenMax) {
             if (desc.length() > 0) {
                 desc.append("。");
             }
-            desc.append("进度超过轨道长度，环节被多推进");
+            desc.append("进度超过轨道长度，环节被多推进，"
+                    + "该词会被夹在最后一个环节反复出题、答案揭晓后没有可前进的出口");
         }
         return desc.toString();
     }
@@ -710,6 +706,40 @@ public class SystemHealthCheckBo {
     }
 
     /**
+     * 检查学习单词认知难度指标(difficulty)的合法性与完整性
+     */
+    public SystemHealthCheckResult checkLearningWordDifficultyIntegrity() {
+        List<SystemHealthIssue> issues = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        try {
+            // 1. 检查 difficulty = 0 或合法范围越界 (< 1.0) 的记录
+            String sqlInvalid = "SELECT count(*) FROM learning_word WHERE difficulty = 0 OR (difficulty IS NOT NULL AND difficulty < 1.0)";
+            Integer invalidCount = namedParameterJdbcTemplate.queryForObject(sqlInvalid, new MapSqlParameterSource(), Integer.class);
+
+            // 2. 检查历史已掌握词 (stability IN (180, 120)) 却缺失合法难度的记录
+            String sqlMissingMasteredDiff = "SELECT count(*) FROM learning_word WHERE (stability = 180.0 OR stability = 120.0) AND (difficulty IS NULL OR difficulty < 1.0)";
+            Integer missingMasteredCount = namedParameterJdbcTemplate.queryForObject(sqlMissingMasteredDiff, new MapSqlParameterSource(), Integer.class);
+
+            int totalAbnormal = (invalidCount != null ? invalidCount : 0) + (missingMasteredCount != null ? missingMasteredCount : 0);
+            if (totalAbnormal > 0) {
+                issues.add(new SystemHealthIssue(
+                        "learning_word_difficulty",
+                        "WARNING",
+                        String.format("发现 %d 条学习单词记录的认知难度(difficulty)异常或缺失 (越界/为零: %d, 历史掌握词缺失: %d)",
+                                totalAbnormal,
+                                invalidCount != null ? invalidCount : 0,
+                                missingMasteredCount != null ? missingMasteredCount : 0)
+                ));
+            }
+        } catch (Exception e) {
+            errors.add("检查学习单词认知难度指标时出错: " + e.getMessage());
+        }
+
+        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
+    /**
      * 自动修复系统问题
      */
     public SystemHealthFixResult autoFixSystemIssues(List<String> issueTypes) {
@@ -729,13 +759,14 @@ public class SystemHealthCheckBo {
                     case "missing_raw_word_dict", "missing_user_dict" -> fixedCount += fixMissingUserDicts(fixed);
                     case "word_image_integrity" -> fixedCount += fixWordImageIntegrity(fixed);
                     case "sentence_audio_integrity" -> fixedCount += fixSentenceAudioIntegrity(fixed);
+                    case "learning_word_difficulty" -> fixedCount += fixLearningWordDifficulty(fixed);
                     // 没有对应修复动作的问题类型（例如只读体检项 learning_progress_inconsistent）：
                     // 无事可做，静默跳过。报"未知类型"会把只读体检的发现误报成修复失败。
                     default -> {
                     }
                 }
                 // fixedCount += fixLearningProgress(fixed);
-                            }
+            }
         } catch (Exception e) {
             errors.add("自动修复过程中出错: " + e.getMessage());
         }
@@ -1568,6 +1599,42 @@ public class SystemHealthCheckBo {
             org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复失败", e);
         }
         return fixedCount;
+    }
+
+    /**
+     * 修复学习单词认知难度指标(difficulty)
+     */
+    private int fixLearningWordDifficulty(List<String> fixed) {
+        int totalFixed = 0;
+        try {
+            // 1. 修复历史已掌握词：难度设为 5.0
+            String sqlMastered = "UPDATE learning_word " +
+                    "SET difficulty = 5.0 " +
+                    "WHERE (stability = 180.0 OR stability = 120.0) " +
+                    "  AND (difficulty IS NULL OR difficulty < 1.0)";
+            int countMastered = namedParameterJdbcTemplate.update(sqlMastered, new MapSqlParameterSource());
+
+            // 2. 修复未学新词：重置为 NULL
+            String sqlNew = "UPDATE learning_word " +
+                    "SET stability = NULL, difficulty = NULL " +
+                    "WHERE (stability = 0.0 OR reps = 0) " +
+                    "  AND (difficulty IS NULL OR difficulty < 1.0)";
+            int countNew = namedParameterJdbcTemplate.update(sqlNew, new MapSqlParameterSource());
+
+            // 3. 兜底其余非法难度 (< 1.0)
+            String sqlOther = "UPDATE learning_word " +
+                    "SET difficulty = 5.0 " +
+                    "WHERE difficulty IS NOT NULL AND difficulty < 1.0";
+            int countOther = namedParameterJdbcTemplate.update(sqlOther, new MapSqlParameterSource());
+
+            totalFixed = countMastered + countNew + countOther;
+            fixed.add(String.format("成功修复学习单词认知难度：已订正 %d 条历史掌握词难度为 5.0，重置 %d 条未学新词难度，兜底修正 %d 条越界难度记录。",
+                    countMastered, countNew, countOther));
+        } catch (Exception e) {
+            logger.error("修复学习单词认知难度指标失败", e);
+            fixed.add("修复学习单词认知难度指标失败: " + e.getMessage());
+        }
+        return totalFixed;
     }
 
 }

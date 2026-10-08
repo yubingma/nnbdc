@@ -76,6 +76,12 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 由用户显式确认后只下调"今日进度"，并会把修复结果上报服务端。
       'readonly': true
     },
+    {
+      'id': 15,
+      'title': '学习数据认知难度',
+      'step': 15,
+      'category': 'learning_word_difficulty',
+    },
     {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
     {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
     {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
@@ -906,6 +912,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 14. 检查学习进度与学习记录一致性（服务端只读，修复入口在用户端体检页）
       await _checkLearningProgressConsistency(result, 14);
 
+      // 15. 检查学习数据认知难度
+      await _checkLearningWordDifficulty(result, 15);
+
       // 8. 检查网络连接
       await _checkNetworkConnectivity(result, 8);
 
@@ -1325,6 +1334,53 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         'learning_progress_inconsistent',
         stackTrace: stackTrace.toString(),
         logMessage: '学习进度与学习记录一致性检查: $e',
+      );
+      setState(() {
+        _checkStates[step] = 'failed';
+      });
+    }
+  }
+
+  Future<void> _checkLearningWordDifficulty(
+      SystemHealthResult result, int step) async {
+    setState(() {
+      _checkStates[step] = false; // 进行中
+    });
+
+    try {
+      final apiResult = await Api.client.checkLearningWordDifficultyIntegrity();
+
+      if (apiResult.success && apiResult.data != null) {
+        final data = apiResult.data!;
+
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
+          for (final issue in data.issues) {
+            result.addIssue(
+                issue.type, issue.description, 'learning_word_difficulty');
+          }
+          setState(() {
+            _checkStates[step] = 'failed';
+          });
+        } else {
+          setState(() {
+            _checkStates[step] = true; // 通过
+          });
+        }
+      } else {
+        result.addIssue(
+            '学习数据认知难度', 'API调用失败: ${apiResult.msg}', 'learning_word_difficulty');
+        setState(() {
+          _checkStates[step] = 'failed';
+        });
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('检查学习数据认知难度时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '学习数据认知难度',
+        '检查学习数据认知难度时出错: $e',
+        'learning_word_difficulty',
+        stackTrace: stackTrace.toString(),
+        logMessage: '学习数据认知难度检查: $e',
       );
       setState(() {
         _checkStates[step] = 'failed';

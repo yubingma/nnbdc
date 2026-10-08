@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/data_integrity_checker.dart';
 import 'package:nnbdc/util/fsrs.dart';
 
 void main() {
@@ -134,5 +135,54 @@ void main() {
     final item = FSRS().init(FsrsRating.good);
     expect(item.difficulty, inInclusiveRange(1.0, 10.0));
     expect(item.stability, greaterThan(0.0));
+  });
+
+  test('DataIntegrityChecker 健康检查与自动修复：能发现 learning_word_difficulty 并在 autoFix 时完成修复', () async {
+    final now = AppClock.now();
+    // 插入包含异常难度的数据
+    await db.into(db.learningWords).insert(LearningWordsCompanion.insert(
+          userId: 'test_user_health',
+          wordId: 'word_dirty_1',
+          addTime: now,
+          addDay: 1,
+          learningOrder: 0,
+          stability: const Value(180.0),
+          difficulty: const Value(0.0),
+          reps: const Value(0),
+          lapses: const Value(0),
+          state: const Value(0),
+          isTodayNewWord: false,
+          learnedTimes: 0,
+          createTime: now,
+        ));
+    await db.into(db.learningWords).insert(LearningWordsCompanion.insert(
+          userId: 'test_user_health',
+          wordId: 'word_dirty_2',
+          addTime: now,
+          addDay: 1,
+          learningOrder: 0,
+          stability: const Value(0.0),
+          difficulty: const Value(0.0),
+          reps: const Value(0),
+          lapses: const Value(0),
+          state: const Value(0),
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          createTime: now,
+        ));
+
+    final checker = DataIntegrityChecker();
+    final checkResult = IntegrityCheckResult();
+    checkResult.addIssue('学习数据认知难度异常', '测试发现异常', 'learning_word_difficulty');
+
+    final fixResult = await checker.autoFix(checkResult, 'test_user_health');
+    expect(fixResult.hasFixed, isTrue);
+
+    final w1 = await db.learningWordsDao.getById('test_user_health', 'word_dirty_1');
+    expect(w1!.difficulty, 5.0);
+
+    final w2 = await db.learningWordsDao.getById('test_user_health', 'word_dirty_2');
+    expect(w2!.difficulty, isNull);
+    expect(w2.stability, isNull);
   });
 }

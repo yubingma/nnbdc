@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -12,7 +11,6 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
-import 'package:nnbdc/widget/daka_stamp_badge.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -740,199 +738,217 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     final textMuted = hasWallpaper ? Colors.white70 : themeConfig.textMuted;
     final progressColor = hasWallpaper ? const Color(0xFF10B981) : themeConfig.primaryColor;
+    // 打卡达成状态色：选用温润清新的翡翠成功绿（Emerald Green），传递积极达成感，避免红色的警示意味
+    final dakaSuccessColor = hasWallpaper
+        ? const Color(0xFF34D399)
+        : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669));
 
     final content = Column(
       children: [
-        // 已打卡印章（仅在打卡后展示，未打卡时保持纯粹极简）
-        if (isDakaStamped) ...[
-          SizedBox(
-            width: 116,
-            height: 116,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: const Size(116, 116),
-                  painter: _DakaSealPainter(
-                    color: DakaSealColors.forDark(isDarkMode || hasWallpaper),
-                    isDark: isDarkMode || hasWallpaper,
-                  ),
-                ),
-                Transform.rotate(
-                  angle: -6 * math.pi / 180,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _DakaSealText(
-                        key: const Key('today_plan_daka_seal_text'),
-                        text: '今日已打卡',
-                        color: DakaSealColors.forDark(isDarkMode || hasWallpaper)
-                            .withValues(alpha: isDarkMode || hasWallpaper ? 0.96 : 0.94),
-                      ),
-                      const SizedBox(height: 3),
-                      _DakaSealText(
-                        key: const Key('today_plan_daka_seal_date'),
-                        text: stampDate,
-                        color: DakaSealColors.forDark(isDarkMode || hasWallpaper)
-                            .withValues(alpha: isDarkMode || hasWallpaper ? 0.85 : 0.80),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1.1,
-                        seed: 20260913,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-
-        // 双列对称纯粹排版数据（新词 | 旧词：与下方进度条 250 宽度严格对齐，宽屏/平板居中紧凑对称）
+        // 数据指标与第一进度条整体区块（宽 250，居中对称）
+        // 未打卡态：新词与旧词两列之间为发丝细线
+        // 已打卡态：极简文字排版（Typography-driven），在中轴线两数字之间呈现「今日已打卡」与日期
         SizedBox(
           width: 250,
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildStatItem('新词', newWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
-              Container(
-                width: 0.8,
-                height: 32,
-                color: hasWallpaper
-                    ? Colors.white.withValues(alpha: 0.15)
-                    : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
-              ),
-              _buildStatItem('旧词', oldWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
-            ],
-          ),
-        ),
-
-        // 任务量未满提示条：居中温润微光胶囊（告别生硬全宽横幅）
-        if (prepareResult != null &&
-            prepareResult!.success &&
-            (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
-            !_hasTriedSupplement)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => loadData(forceSupplement: true),
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
-                  decoration: BoxDecoration(
-                    color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
-                        .withValues(alpha: isDarkMode || hasWallpaper ? 0.20 : 0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
-                          .withValues(alpha: isDarkMode || hasWallpaper ? 0.35 : 0.18),
+              // 1. 双列对称纯粹排版数据（新词 | 中间打卡信息或细线 | 旧词）
+              Row(
+                children: [
+                  _buildStatItem('新词', newWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
+                  if (isDakaStamped)
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 31,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '今日已打卡',
+                                key: const Key('today_plan_daka_seal_text'),
+                                style: TextStyle(
+                                  color: dakaSuccessColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                  height: 1.1,
+                                  shadows: hasWallpaper
+                                      ? const [
+                                          Shadow(color: Colors.black45, blurRadius: 3, offset: Offset(0, 1)),
+                                        ]
+                                      : null,
+                                ),
+                              ),
+                              const SizedBox(height: 2.5),
+                              Text(
+                                stampDate,
+                                key: const Key('today_plan_daka_seal_date'),
+                                style: TextStyle(
+                                  color: dakaSuccessColor.withValues(alpha: 0.82),
+                                  fontSize: 9.0,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Roboto',
+                                  letterSpacing: 0.8,
+                                  height: 1.1,
+                                  shadows: hasWallpaper
+                                      ? const [
+                                          Shadow(color: Colors.black45, blurRadius: 3, offset: Offset(0, 1)),
+                                        ]
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const SizedBox(height: 16),
+                      ],
+                    )
+                  else
+                    Container(
                       width: 0.8,
+                      height: 32,
+                      color: hasWallpaper
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
+                    ),
+                  _buildStatItem('旧词', oldWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
+                ],
+              ),
+
+              // 2. 任务量未满提示条：居中温润微光胶囊（如有）
+              if (prepareResult != null &&
+                  prepareResult!.success &&
+                  (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
+                  !_hasTriedSupplement)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 2),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => loadData(forceSupplement: true),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
+                        decoration: BoxDecoration(
+                          color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
+                              .withValues(alpha: isDarkMode || hasWallpaper ? 0.20 : 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
+                                .withValues(alpha: isDarkMode || hasWallpaper ? 0.35 : 0.18),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                              size: 13.5,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '单词量未满',
+                              style: TextStyle(
+                                color: hasWallpaper ? const Color(0xFFFDE68A) : (isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '点击补充 ›',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                ),
+
+              const SizedBox(height: 16),
+
+              // 3. 优雅极细胶囊进度条（第一进度条：步数与进度）
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
-                        size: 13.5,
-                      ),
-                      const SizedBox(width: 6),
                       Text(
-                        '单词量未满',
+                        '已完成 $_completedStepCount / $_totalStepCount 步',
                         style: TextStyle(
-                          color: hasWallpaper ? const Color(0xFFFDE68A) : (isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor),
+                          color: textMuted,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(width: 6),
                       Text(
-                        '点击补充 ›',
+                        '${(progress * 100).toInt()}%',
                         style: TextStyle(
+                          color: textMuted,
                           fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Roboto',
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-          ),
-
-        const SizedBox(height: 20),
-
-        // 优雅极细胶囊进度条（置于继续学习操作正上方）
-        SizedBox(
-          width: 250,
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '已完成 $_completedStepCount / $_totalStepCount 步',
-                    style: TextStyle(
-                      color: textMuted,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '${(progress * 100).toInt()}%',
-                    style: TextStyle(
-                      color: textMuted,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Roboto',
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(100),
+                    child: LinearProgressIndicator(
+                      value: progress.clamp(0.0, 1.0),
+                      minHeight: 3.5,
+                      backgroundColor: hasWallpaper
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
+                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: LinearProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  minHeight: 3.5,
-                  backgroundColor: hasWallpaper
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
-                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                ),
               ),
             ],
           ),
         ),
 
         // 加量批次的进度：它有自己的口径（不计入今日计划）
-        if (_extraTotalCount > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 14),
+        if (_extraTotalCount > 0) ...[
+          const SizedBox(height: 14),
+          SizedBox(
+            width: 250,
             child: _buildExtraProgress(themeConfig, isDarkMode),
           ),
+        ],
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
         // 主操作按钮
         (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
             ? renderErrorActions()
             : renderStartButton(),
-
-
       ],
     );
 
-    if (hasWallpaper) {
-      return content;
-    }
-
+    // 整个文字与操作区域统一使用毛玻璃卡片（FrostedGlassCard）包裹：
+    // 在有壁纸时提供通透磨砂底与微光边框，让文字排版高度聚焦，避免背景纹理干扰
     return FrostedGlassCard.primary(
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+      bgColor: hasWallpaper
+          ? (isDarkMode ? const Color(0xB818202F) : Colors.black.withValues(alpha: 0.25))
+          : null,
+      borderColor: hasWallpaper
+          ? Colors.white.withValues(alpha: 0.12)
+          : null,
       child: content,
     );
   }
@@ -4065,350 +4081,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 }
 }
 
-/// 「今日已打卡」印章的画笔：
-/// 呈现真实盖印的金石朱砂印泥质感 —— 环体浑然一体、饱满沉稳，
-/// 边缘具有天然连续的纸张受墨有机微糙（绝无径向百叶窗棱纹），
-/// 伴有自然通透的朱砂飞白微尘，兼具手工盖印温度与极简端庄。
-///
-/// 随机数用固定种子：微糙纹理每次重建保持完全一致，避免刷新/热重载时晃动。
-class _DakaSealPainter extends CustomPainter {
-  _DakaSealPainter({required this.color, required this.isDark});
 
-  final Color color;
-  final bool isDark;
-
-  static const int _seed = 20260912;
-
-  /// 章面印油底韵
-  double get _washAlpha => isDark ? 0.10 : 0.065;
-  /// 外圈粗环（饱满沉稳的金石朱砂墨色）
-  double get _ringAlpha => isDark ? 0.88 : 0.90;
-  /// 内圈发丝线（纤细温润的朱红线）
-  double get _innerAlpha => isDark ? 0.78 : 0.80;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Offset center = size.center(Offset.zero);
-    final math.Random random = math.Random(_seed);
-
-    // 允许通过 clear 混合模式擦出极微弱的天然印迹飞白微孔
-    canvas.saveLayer(Offset.zero & size, Paint());
-
-    // 1. 印油底：中心略润、边缘渐淡的通透微雾
-    canvas.drawCircle(
-      center,
-      size.width / 2 - 3,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            color.withValues(alpha: _washAlpha),
-            color.withValues(alpha: _washAlpha * 0.3),
-          ],
-          stops: const [0.65, 1],
-        ).createShader(Rect.fromCircle(center: center, radius: size.width / 2)),
-    );
-
-    // 2. 双线边框：外粗内细。
-    // 采用连续有机闭合 Path 一次性填充，环体 100% 浑然一体，绝无任何径向拼接缝或百叶窗棱纹；
-    // 边缘经平滑滤波生成天然平缓的微毛羽起伏，真实还原金石印章盖在宣纸上的微糙边缘。
-    _drawOrganicRing(
-      canvas,
-      center,
-      random,
-      radius: 60.7,
-      width: 6.5,
-      alpha: _ringAlpha,
-      jitterAmount: 0.65,
-      points: 180,
-    );
-
-    _drawOrganicRing(
-      canvas,
-      center,
-      random,
-      radius: 54.0,
-      width: 1.2,
-      alpha: _innerAlpha,
-      jitterAmount: 0.28,
-      points: 120,
-    );
-
-    // 3. 环上自然的微飞白（极克制，仅 2 处微小沙眼，真实不破损）
-    final Paint eraser = Paint()..blendMode = BlendMode.clear;
-    for (int i = 0; i < 2; i++) {
-      final double angle = random.nextDouble() * 2 * math.pi;
-      final double r = 57.5 + (random.nextDouble() - 0.5) * 6.0;
-      canvas.drawCircle(
-        center + Offset(math.cos(angle) * r, math.sin(angle) * r),
-        0.35 + random.nextDouble() * 0.35,
-        eraser,
-      );
-    }
-
-    // 4. 章面飞白朱砂墨粒：适度点缀，主要散布在留白区，核心文字区通透清爽
-    final Paint grain = Paint();
-    for (int i = 0; i < 24; i++) {
-      final double angle = random.nextDouble() * 2 * math.pi;
-      double r = math.sqrt(random.nextDouble()) * (size.width / 2 - 10);
-      if (r < 22 && random.nextDouble() < 0.75) {
-        r = 24 + random.nextDouble() * (size.width / 2 - 34);
-      }
-      grain.color = color.withValues(
-        alpha: _ringAlpha * (0.16 + random.nextDouble() * 0.38),
-      );
-      canvas.drawCircle(
-        center + Offset(math.cos(angle) * r, math.sin(angle) * r),
-        0.35 + random.nextDouble() * 0.55,
-        grain,
-      );
-    }
-
-    canvas.restore();
-  }
-
-  /// 绘制连续有机的微毛糙圆环：
-  /// - 环体为完整的闭合填充面（Fill Path），彻底杜绝由短截线端点产生的径向条纹/百叶窗棱纹；
-  /// - 外缘与内缘分别采样并经过三次平滑滤波，形成连贯温润的天然手工金石微毛边。
-  void _drawOrganicRing(
-    Canvas canvas,
-    Offset center,
-    math.Random random, {
-    required double radius,
-    required double width,
-    required double alpha,
-    required double jitterAmount,
-    required int points,
-  }) {
-    final List<double> rawOut = List.generate(
-      points,
-      (_) => (random.nextDouble() - 0.5) * jitterAmount,
-    );
-    final List<double> rawIn = List.generate(
-      points,
-      (_) => (random.nextDouble() - 0.5) * jitterAmount,
-    );
-
-    // 循环加权平滑滤波：消除尖锐折角，保留圆润有机的微毛糙起伏
-    final List<double> smoothOut = List<double>.filled(points, 0);
-    final List<double> smoothIn = List<double>.filled(points, 0);
-    for (int i = 0; i < points; i++) {
-      final int p1 = (i - 1 + points) % points;
-      final int n1 = (i + 1) % points;
-      final int p2 = (i - 2 + points) % points;
-      final int n2 = (i + 2) % points;
-      smoothOut[i] = 0.1 * rawOut[p2] + 0.25 * rawOut[p1] + 0.3 * rawOut[i] + 0.25 * rawOut[n1] + 0.1 * rawOut[n2];
-      smoothIn[i] = 0.1 * rawIn[p2] + 0.25 * rawIn[p1] + 0.3 * rawIn[i] + 0.25 * rawIn[n1] + 0.1 * rawIn[n2];
-    }
-
-    final double halfW = width / 2;
-    final double step = 2 * math.pi / points;
-
-    // 构建外边界多边形
-    final Path outerPath = Path();
-    for (int i = 0; i < points; i++) {
-      final double angle = i * step;
-      final double r = radius + halfW + smoothOut[i];
-      final double x = center.dx + math.cos(angle) * r;
-      final double y = center.dy + math.sin(angle) * r;
-      if (i == 0) {
-        outerPath.moveTo(x, y);
-      } else {
-        outerPath.lineTo(x, y);
-      }
-    }
-    outerPath.close();
-
-    // 构建内边界多边形
-    final Path innerPath = Path();
-    for (int i = 0; i < points; i++) {
-      final double angle = i * step;
-      final double r = radius - halfW + smoothIn[i];
-      final double x = center.dx + math.cos(angle) * r;
-      final double y = center.dy + math.sin(angle) * r;
-      if (i == 0) {
-        innerPath.moveTo(x, y);
-      } else {
-        innerPath.lineTo(x, y);
-      }
-    }
-    innerPath.close();
-
-    // 镂空差集：得到完整连贯的单一面环
-    final Path ringPath = Path.combine(PathOperation.difference, outerPath, innerPath);
-
-    final Paint fillPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = color.withValues(alpha: alpha);
-
-    canvas.drawPath(ringPath, fillPaint);
-  }
-
-  @override
-  bool shouldRepaint(_DakaSealPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.isDark != isDark;
-}
-
-/// 印面文字（「今日已打卡」与日期）：逐字生动呈现。
-///
-/// 保留手工盖印的自然微倾角、微位移与受墨深浅起伏，字形边缘带有细腻实墨微润，
-/// 并伴有极微细的笔画自然飞白，既清晰可读又具盖印韵味。
-class _DakaSealText extends StatelessWidget {
-  const _DakaSealText({
-    super.key,
-    required this.text,
-    required this.color,
-    this.fontSize = 11.5,
-    this.fontWeight = FontWeight.w700,
-    this.letterSpacing = 1.2,
-    this.seed = 20260912,
-  });
-
-  final String text;
-  final Color color;
-  final double fontSize;
-  final FontWeight fontWeight;
-  final double letterSpacing;
-
-  /// 抖动的随机种子：两行字用不同种子，免得两行抖得一模一样
-  final int seed;
-
-  @override
-  Widget build(BuildContext context) {
-    // 字体族必须沿用外层主题：画笔不走 Text 的样式继承，不接就会掉成豆腐块
-    final TextStyle inherited = DefaultTextStyle.of(context).style.copyWith(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          letterSpacing: letterSpacing,
-        );
-    // 先用一次真实排版量出这行字该占的位置，画笔再照着这个尺寸把字盖进去
-    final TextPainter ruler = TextPainter(
-      text: TextSpan(text: text, style: inherited),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return Semantics(
-      label: text,
-      container: true, // 自成一个语义节点：画出来的字读屏也要能读到
-      child: SizedBox(
-        width: ruler.width,
-        height: ruler.height,
-        child: CustomPaint(
-          painter: _DakaSealTextPainter(
-            text: text,
-            base: inherited,
-            color: color,
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-            letterSpacing: letterSpacing,
-            seed: seed,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DakaSealTextPainter extends CustomPainter {
-  _DakaSealTextPainter({
-    required this.text,
-    required this.base,
-    required this.color,
-    required this.fontSize,
-    required this.fontWeight,
-    required this.letterSpacing,
-    required this.seed,
-  });
-
-  final String text;
-
-  /// 外层（主题）的字体样式：逐字重排时只借用字体族，字号字重由印章自己定
-  final TextStyle base;
-
-  final Color color;
-  final double fontSize;
-  final FontWeight fontWeight;
-  final double letterSpacing;
-  final int seed;
-
-  /// 逐字微位移（±）：控制在极其自然生动的幅度内
-  double get _jitterX => fontSize * 0.022;
-  double get _jitterY => fontSize * 0.025;
-
-  /// 单字微倾角（±，弧度）≈ ±1.0°，表现手工盖印的生动感
-  static const double _tiltRange = 0.036;
-
-  /// 最淡的一笔保留 86% 的墨：既有受墨浓淡层次，又绝对清晰
-  static const double _minInk = 0.86;
-
-  /// 单字排版。[alpha] 是这一笔的浓淡；solid 模糊模拟纸张受墨边缘微润
-  TextPainter _glyph(String char, double alpha) {
-    final Paint ink = Paint()
-      ..color = color.withValues(alpha: color.a * alpha)
-      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.solid, 0.22);
-    return TextPainter(
-      text: TextSpan(
-        text: char,
-        style: TextStyle(
-          fontFamily: base.fontFamily,
-          fontFamilyFallback: base.fontFamilyFallback,
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          letterSpacing: 0,
-          foreground: ink,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final math.Random random = math.Random(seed);
-    final List<String> chars = text.split('');
-    final List<TextPainter> glyphs = chars.map((c) => _glyph(c, 1)).toList();
-    final double totalWidth = glyphs.fold<double>(0, (sum, g) => sum + g.width) +
-        letterSpacing * chars.length;
-
-    canvas.saveLayer(Offset.zero & size, Paint());
-
-    double x = (size.width - totalWidth) / 2;
-    for (int i = 0; i < chars.length; i++) {
-      final TextPainter glyph = glyphs[i];
-      final Offset jitter = Offset(
-        (random.nextDouble() * 2 - 1) * _jitterX,
-        (random.nextDouble() * 2 - 1) * _jitterY,
-      );
-      final double tilt = (random.nextDouble() - 0.5) * _tiltRange;
-      final double alpha = _minInk + random.nextDouble() * (1 - _minInk);
-
-      canvas.save();
-      canvas.translate(x + jitter.dx, size.height / 2 + jitter.dy);
-      canvas.rotate(tilt);
-      _glyph(chars[i], alpha).paint(canvas, Offset(0, -glyph.height / 2));
-      canvas.restore();
-
-      x += glyph.width + letterSpacing;
-    }
-
-    // 少量自然的文字笔画微飞白（仅 2 处微小沙眼，丰富印面质感而不破坏字形）
-    final Paint eraser = Paint()..blendMode = BlendMode.clear;
-    for (int i = 0; i < 2; i++) {
-      canvas.drawCircle(
-        Offset(random.nextDouble() * size.width, random.nextDouble() * size.height),
-        0.2 + random.nextDouble() * 0.35,
-        eraser,
-      );
-    }
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_DakaSealTextPainter oldDelegate) =>
-      oldDelegate.text != text ||
-      oldDelegate.color != color ||
-      oldDelegate.base != base ||
-      oldDelegate.fontSize != fontSize;
-}
 
 /// 支持长按平滑加速连续步进的轻量按键
 class _ContinuousStepButton extends StatefulWidget {

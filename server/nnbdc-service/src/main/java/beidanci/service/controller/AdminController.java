@@ -253,6 +253,11 @@ public class AdminController {
         return Result.success(systemHealthCheckBo.checkLearningProgressConsistency());
     }
 
+    @GetMapping("/admin/checkLearningWordDifficultyIntegrity.do")
+    public Result<SystemHealthCheckResult> checkLearningWordDifficultyIntegrity() {
+        return Result.success(systemHealthCheckBo.checkLearningWordDifficultyIntegrity());
+    }
+
     /**
      * 管理后台用：查看客户端上报的异常日志（sys_error），含上报客户端的平台与版本号。
      * 只读，按时间倒序取最近若干条。
@@ -322,6 +327,16 @@ public class AdminController {
     @GetMapping("/admin/getWordImageSanitizeStatus.do")
     public Result<SystemHealthFixResult> getWordImageSanitizeStatus() {
         return Result.success(dataSanitizeBo.getWordImageSanitizeStatus());
+    }
+
+    @PostMapping("/admin/sanitizeWordPhonetics.do")
+    public Result<SystemHealthFixResult> sanitizeWordPhonetics() {
+        return Result.success(dataSanitizeBo.sanitizeWordPhoneticsOnly());
+    }
+
+    @GetMapping("/admin/getWordPhoneticSanitizeStatus.do")
+    public Result<SystemHealthFixResult> getWordPhoneticSanitizeStatus() {
+        return Result.success(dataSanitizeBo.getWordPhoneticSanitizeStatus());
     }
 
     @PostMapping("/admin/sanitizeWordPopularity.do")

@@ -131,13 +131,19 @@ void main() {
     }
   }
 
-  StudyConsistencyViolation violationOf({required int progress, required int logs}) {
+  StudyConsistencyViolation violationOf({
+    required int progress,
+    required int logs,
+    StudyConsistencyRule rule = StudyConsistencyRule.progressExceedsTrack,
+    int trackLenMax = 3,
+  }) {
     return StudyConsistencyViolation(
-      rule: StudyConsistencyRule.progressExceedsLogs,
+      rule: rule,
       wordId: wordId,
       spell: 'electronic',
       progress: progress,
       actualLogCount: logs,
+      trackLenMax: trackLenMax,
     );
   }
 
@@ -146,73 +152,67 @@ void main() {
     return row!.todayLearnedTimes;
   }
 
-  test('进度多于记录时下调到记录条数，且不动任何学习记录', () async {
+  test('进度越界时截断至轨道长度上限，且不动任何学习记录', () async {
     await givenLearningWord(4);
     await givenLogs(3);
 
     final repair = await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(progress: 4, logs: 3),
+      violation: violationOf(progress: 4, logs: 3, trackLenMax: 3),
       expectedProgress: 4,
       now: now,
+      trackLenMax: 3,
     );
 
     expect(repair, isNotNull);
     expect(repair!.changed, isTrue);
     expect(repair.progressBefore, 4);
-    expect(repair.progressAfter, 3, reason: '改完必须等于今天的记录条数');
+    expect(repair.progressAfter, 3, reason: '越界截断至轨道上限 3，标为学完');
     expect(await currentProgress(), 3);
 
     final logs = await db.learningLogsDao.getInBusinessDay(userId, wordIds: [wordId]);
     expect(logs.length, 3, reason: '修复不得删除或修改任何学习记录');
   });
 
-  test('进度已等于记录条数时不改数据', () async {
-    await givenLearningWord(3);
-    await givenLogs(3);
-
-    final repair = await repairStudyConsistency(
-      userId: userId,
-      violation: violationOf(progress: 3, logs: 3),
-      expectedProgress: 3,
-      now: now,
-    );
-
-    expect(repair, isNotNull);
-    expect(repair!.changed, isFalse);
-    expect(await currentProgress(), 3);
-  });
-
-  test('进度少于记录条数时只降不升，不做任何调整', () async {
-    // 多设备场景：本机只看到 2 条记录，但进度是 1；往上补齐会把用户没在本机做过的环节放行
+  test('流水多于进度时将进度对齐流水条数', () async {
     await givenLearningWord(1);
     await givenLogs(2);
 
     final repair = await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(progress: 1, logs: 2),
+      violation: violationOf(
+        progress: 1,
+        logs: 2,
+        rule: StudyConsistencyRule.logsExceedProgress,
+        trackLenMax: 3,
+      ),
       expectedProgress: 1,
       now: now,
+      trackLenMax: 3,
     );
 
     expect(repair, isNotNull);
-    expect(repair!.changed, isFalse);
-    expect(await currentProgress(), 1, reason: '只降不升：不得把进度往上补齐');
+    expect(repair!.changed, isTrue);
+    expect(repair.progressBefore, 1);
+    expect(repair.progressAfter, 2, reason: '对齐已作答的 2 条流水');
+    expect(await currentProgress(), 2);
   });
 
-  test('今天没有任何记录时不改数据（没有可靠依据）', () async {
-    await givenLearningWord(2);
+  test('进度与轨道长度一致且未超轨道时不改数据', () async {
+    await givenLearningWord(3);
+    await givenLogs(3);
 
     final repair = await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(progress: 2, logs: 0),
-      expectedProgress: 2,
+      violation: violationOf(progress: 3, logs: 3, trackLenMax: 3),
+      expectedProgress: 3,
       now: now,
+      trackLenMax: 3,
     );
 
     expect(repair, isNotNull);
     expect(repair!.changed, isFalse);
-    expect(await currentProgress(), 2);
+    expect(await currentProgress(), 3);
   });
 
   test('确认时看到的进度已变化则放弃修复（按过期前提改数据会改错）', () async {

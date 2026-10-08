@@ -1330,11 +1330,22 @@ public class Util {
     }
 
     /**
+     * 长音符/冒号只能跟在元音后面表示长音，出现在其它位置的都是错位噪声
+     * （如 {@code ˈmæntl:}、{@code dɪsˈhɑrtn:d}、{@code ˌmætn:ˈe}）。
+     */
+    private static final Pattern MISPLACED_LENGTH_MARK_PATTERN =
+            Pattern.compile("(^|[^aeiouæɛɪʊʌɔəɜɚɝɒɑ])[:ː]+");
+
+    /**
      * 规范化音标。
      * <p>
      * 音标的规范形态是"裸音标"（如 {@code ˈæpl}）：客户端在展示时会统一自行添加方括号，
-     * 因此首尾的 {@code / [ ［ ] ］} 包裹、尾部残留的逗号、以及 JSON 转义残留的反斜杠都属于脏数据。
+     * 因此首尾的 {@code / [ ［ 【 ] ］ 】} 包裹、首尾空白、尾部残留的逗号、全角逗号、
+     * 错位的长音符/冒号、以及 JSON 转义残留的反斜杠都属于脏数据。
      * 判定脏数据的 SQL 条件必须与本方法的修复范围严格一致，否则会出现"洗完仍报脏"的假告警。
+     * <p>
+     * 本方法只做机械可判定的规范化，不猜内容：含西里尔字母、中文、私用区乱码等非法字符的音标
+     * 不在修复范围内（那需要人工订正，由 DataSanitizeBo 单独暴露告警）。
      */
     public static String sanitizePhonetic(String s) {
         if (s == null) return null;
@@ -1344,6 +1355,12 @@ public class Util {
         // 移除首尾的斜线和方括号包裹
         while (s.startsWith("/") || s.startsWith("[") || s.startsWith("［")) s = s.substring(1).trim();
         while (s.endsWith("/") || s.endsWith("]") || s.endsWith("］")) s = s.substring(0, s.length() - 1).trim();
+        // 全角黑括号是纯包裹噪声，出现在任意位置都直接删除（如 ˈkɔntækt 【lenz】）
+        s = s.replace("【", "").replace("】", "");
+        // 并列变体音标的分隔符统一为半角逗号
+        s = s.replace("，", ",");
+        // 删除出现在元音之外的长音符/冒号
+        s = MISPLACED_LENGTH_MARK_PATTERN.matcher(s).replaceAll("$1");
         return s;
     }
 }

@@ -84,6 +84,12 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       // 修复动作仅把"今日进度"下调到今天的学习记录条数（不动学习记录、不动记忆参数），
       // 且修复前会先把现场上报服务端，便于事后追根因。
     },
+    {
+      'id': 15,
+      'title': '学习数据认知难度指标',
+      'step': 15,
+      'category': 'learning_word_difficulty',
+    },
   ];
 
   @override
