@@ -275,8 +275,8 @@ void main() {
         reason: '按钮必须完整落在底栏上方，否则会被透明底栏吞掉点击');
     expect(rect.height, greaterThanOrEqualTo(48.0),
         reason: '主按钮命中区要够高（≈52），不能是个小细条');
-    expect(navTop - rect.bottom, greaterThanOrEqualTo(16.0),
-        reason: '按钮下沿到底栏命中区要留安全距离，避免误触底栏按钮');
+    expect(navTop - rect.bottom, greaterThanOrEqualTo(12.0),
+        reason: '按钮下沿到底栏命中区至少留 12（最初那版的值），再低就贴到误触区了');
 
     final hit = tester.hitTestOnBinding(tester.getCenter(button));
     expect(hit.path.map((e) => e.target), contains(tester.renderObject(button)),

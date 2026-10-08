@@ -60,7 +60,7 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('竹韵', 'assets/images/wallpaper/bamboo.jpg', isDark: true),
   PlanWallpaper('枫韵', 'assets/images/wallpaper/maple.jpg', isDark: false),
   PlanWallpaper('石韵', 'assets/images/wallpaper/stone.jpg', isDark: true),
-  PlanWallpaper('童趣', 'assets/images/wallpaper/kitty.jpg', isDark: true),
+  PlanWallpaper('童趣', 'assets/images/wallpaper/kitty.jpg', isDark: false),
   PlanWallpaper('晨雾', 'assets/images/scenes/mist.jpg', isDark: false),
   PlanWallpaper('湖光', 'assets/images/scenes/river.jpg', isDark: true),
   PlanWallpaper('夏夜', 'assets/images/scenes/night.jpg', isDark: true),
@@ -731,8 +731,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       //
                       // 底部必须给悬浮底栏让位：底栏（透明也一样）占着屏幕最底部且吞掉那一整块点击，
                       // 内容不让开，"开始学习/继续学习"就会被压在底栏下面点不到。
-                      // 多让 20：主按钮下沿与底栏命中区之间留出安全距离，又不像 28 那样悬得过高。
-                      final double bottomInset = widget.bottomNavReserve + 20;
+                      // 多让 16：主按钮下沿与底栏命中区之间留一点安全距离，按钮整体压得更低、离底栏更近。
+                      final double bottomInset = widget.bottomNavReserve + 16;
                       // 字色档：跟壁纸照片的明暗走（无壁纸时等于 App 主题），不与玻璃底色脱钩
                       final bool onDark = _wallpaperIsDark ?? isDarkMode;
                       return SingleChildScrollView(
