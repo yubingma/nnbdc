@@ -150,12 +150,12 @@ class BdcNotifier extends _$BdcNotifier {
   /// 为什么不能用 ASR 的最终帧：iOS 在用户停止说话时**不会**给出 `isFinal=true` 的帧
   ///（实测"专"→"专门"→"专门的"三帧全是 isFinal=false，之后不再来帧），
   /// 依赖最终帧会让判过永远无法触发；而 iOS 端点帧出现时又会重启识别任务。
-  /// 取 600ms：实测帧间隔约 190~220ms，600ms 足以确认已停口；
-  /// 又必须明显小于 AI 裁判的 1500ms 去抖，保证"已说对"先于"交裁判"落地。
+  /// 取 300ms：实测帧间隔约 190~220ms，300ms 既留出了大于 1 帧间隔的安全冗余防止连续吐字抢答，
+  /// 又能使停口后「下一词」按钮快速呈现，消除迟滞感；同时明显小于 AI 裁判的 1500ms 去抖。
   /// 测试环境给一个很短的时长，测试通过等待它来观察判过（真实计时的单一代码路径）。
   @visibleForTesting
   static Duration wordPassSilenceDelay =
-      PlatformUtils.isUnitTest ? const Duration(milliseconds: 20) : const Duration(milliseconds: 600);
+      PlatformUtils.isUnitTest ? const Duration(milliseconds: 20) : const Duration(milliseconds: 300);
 
   /// 用户可能已经说完：等到识别文本不再更新（停顿）后再走判题入口。
   ///

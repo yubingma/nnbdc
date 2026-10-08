@@ -3362,6 +3362,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             {'name': '旷野', 'path': 'assets/images/wallpaper/tree.jpg'},
                             {'name': '竹韵', 'path': 'assets/images/wallpaper/bamboo.jpg'},
                             {'name': '枫韵', 'path': 'assets/images/wallpaper/maple.jpg'},
+                            {'name': '石韵', 'path': 'assets/images/wallpaper/stone.jpg'},
                             {'name': '晨雾', 'path': 'assets/images/scenes/mist.jpg'},
                             {'name': '湖光', 'path': 'assets/images/scenes/river.jpg'},
                             {'name': '夏夜', 'path': 'assets/images/scenes/night.jpg'},
@@ -3396,10 +3397,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: isSelected
-                                          ? primaryColor
-                                          : (isDarkMode
-                                              ? Colors.white.withValues(alpha: 0.08)
-                                              : Colors.black.withValues(alpha: 0.06)),
+                                        ? primaryColor
+                                        : (isDarkMode
+                                            ? Colors.white.withValues(alpha: 0.08)
+                                            : Colors.black.withValues(alpha: 0.06)),
                                     ),
                                   ),
                                   child: Center(
@@ -3440,6 +3441,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                   buildPill(options[5]),
                                   const SizedBox(width: 8),
                                   buildPill(options[6]),
+                                  const SizedBox(width: 8),
+                                  buildPill(options[7]),
                                 ],
                               ),
                             ],
