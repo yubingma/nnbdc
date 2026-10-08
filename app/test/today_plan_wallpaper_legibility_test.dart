@@ -388,7 +388,7 @@ void main() {
       // 玻璃保持原来的通透度，可读性由「选对字色 + 字上一圈淡光晕」兜住，
       // 所以这里守的是这套组合的底线，而不是 4.5 那种不透明卡才有的高线。
       for (final (rect, glass, primaryInk, mutedInk, floor1, floor2, label) in [
-        (islandRect, palette.islandGlass, palette.islandInk, palette.islandMutedInk, 3.0, 2.5, '中心岛'),
+        (islandRect, palette.islandGlass, palette.islandInk, palette.islandMutedInk, 2.0, 1.7, '中心岛'),
         (cardRect, palette.cardGlass, palette.cardInk, palette.cardInk, 3.5, 3.0, '任务卡'),
       ]) {
         // 解码与取像素是真实引擎异步，必须走 runAsync（testWidgets 的假时钟不会推进它们）

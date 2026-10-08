@@ -353,4 +353,14 @@ void main() {
         darkTheme: false,
         wordsPerDay: 20);
   });
+
+  testWidgets('渲染 童趣 · 浅色主题', (tester) async {
+    await renderCase(tester,
+        name: '10_kitty_light', wallpaper: 'assets/images/wallpaper/kitty.jpg', darkTheme: false);
+  });
+
+  testWidgets('渲染 童趣 · 深色主题', (tester) async {
+    await renderCase(tester,
+        name: '11_kitty_dark', wallpaper: 'assets/images/wallpaper/kitty.jpg', darkTheme: true);
+  });
 }

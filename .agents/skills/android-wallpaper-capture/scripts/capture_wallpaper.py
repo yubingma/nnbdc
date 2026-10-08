@@ -121,9 +121,9 @@ def update_today_plan_options(name, title, asset_path):
         return
 
     # 查找 options 数组
-    marker = "{'name': '旷野', 'path': 'assets/images/wallpaper/tree.jpg'},"
+    marker = "PlanWallpaper('旷野', 'assets/images/wallpaper/tree.jpg', isDark: true),"
     if marker in content:
-        new_entry = f"\n                            {{'name': '{title}', 'path': '{asset_path}'}},"
+        new_entry = f"\n  PlanWallpaper('{title}', '{asset_path}', isDark: true),"
         new_content = content.replace(marker, marker + new_entry)
         with open(TODAY_PLAN_DART, "w", encoding="utf-8") as f:
             f.write(new_content)
