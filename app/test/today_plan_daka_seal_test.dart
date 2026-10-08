@@ -217,9 +217,10 @@ void main() {
     expect(find.text('目标已锁定'), findsNothing, reason: '印章态不再重复讲"目标已锁定"');
     expect(find.text('继续学习（加量）'), findsOneWidget,
         reason: '还有未学完的加量批次时，主按钮是继续学习，而不是让人以为要新增单词');
-    expect(find.text('加量已完成 2 / 5 词'), findsOneWidget,
-        reason: '卡片里要同时讲清加量的数量（2 / 5 词）');
-    expect(find.text('40%'), findsOneWidget, reason: '以及加量自己的进度（40%）');
+    expect(find.textContaining('加量已完成'), findsNothing,
+        reason: '进度条彻底移除，不再挤占底部空间');
+    expect(find.textContaining('已完成'), findsNothing,
+        reason: '计划内进度条也已移除，页面上不该再有"已完成 x / y 词"');
 
     semantics.dispose();
     await tester.pump(const Duration(seconds: 60)); // 放掉节流同步等后台任务
@@ -251,7 +252,7 @@ void main() {
       (tester) async {
     await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
     await pumpTodayPlan(tester);
-    await pumpUntil(tester, find.text('加量已完成 2 / 5 词'));
+    await pumpUntil(tester, find.text('继续学习（加量）'));
     expect(find.text('继续学习（加量）'), findsOneWidget,
         reason: '进入学习页之前，计划页停在"还有 3 个加量词没学"');
 
@@ -267,12 +268,10 @@ void main() {
     // future 永不完成，计划页只能靠这个事件刷新，否则会一直显示旧快照
     // （完成页说"加量完成"，计划页却说"还有加量没学"，还会给一个点进去就被弹回的入口）
     EventBus.publishTodayStudyListChanged(const TodayStudyListChangedEvent());
-    await pumpUntil(tester, find.text('加量已完成'));
+    await pumpUntil(tester, find.text('再来一组（加量）'));
 
-    expect(find.text('加量已完成'), findsOneWidget,
-        reason: '收到事件后必须重算加量进度并展示加量完成状态');
-    expect(find.text('5 词 · 100%'), findsNWidgets(2),
-        reason: '主计划打卡与加量完成均以对称的"5 词 · 100%"文字行取代进度条');
+    expect(find.text('再来一组（加量）'), findsOneWidget,
+        reason: '收到事件后必须重算加量批次并展示再来一组按钮');
     expect(find.text('继续学习（加量）'), findsNothing,
         reason: '加量已学完，不能再给"继续学习（加量）"入口');
 

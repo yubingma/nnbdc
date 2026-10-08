@@ -40,8 +40,42 @@ import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 
+/// 今日计划页可选背景。
+///
+/// [isDark] 是这张照片的明暗档：卡片只是一层半透明玻璃，字色必须与玻璃成套取色。
+/// 只按 App 主题取色的话，遇到明暗和主题相反的照片就会糊字——浅色主题配宝蓝底的「石韵」，
+/// 深色字压在宝石蓝玻璃上基本看不清。暗底 = 深色玻璃 + 白字，亮底 = 乳白玻璃 + 深色字。
+class PlanWallpaper {
+  const PlanWallpaper(this.name, this.path, {required this.isDark});
+
+  final String name;
+  final String path;
+
+  /// 照片是不是暗底（暗底配白字，亮底配深色字）。
+  final bool isDark;
+}
+
+const List<PlanWallpaper> planWallpapers = [
+  PlanWallpaper('旷野', 'assets/images/wallpaper/tree.jpg', isDark: true),
+  PlanWallpaper('竹韵', 'assets/images/wallpaper/bamboo.jpg', isDark: true),
+  PlanWallpaper('枫韵', 'assets/images/wallpaper/maple.jpg', isDark: false),
+  PlanWallpaper('石韵', 'assets/images/wallpaper/stone.jpg', isDark: true),
+  PlanWallpaper('晨雾', 'assets/images/scenes/mist.jpg', isDark: false),
+  PlanWallpaper('湖光', 'assets/images/scenes/river.jpg', isDark: true),
+  PlanWallpaper('夏夜', 'assets/images/scenes/night.jpg', isDark: true),
+  // 经典 = 不用照片，走主题底，卡片与字色整套跟 App 主题（isDark 不参与）
+  PlanWallpaper('经典', 'none', isDark: false),
+];
+
 class TodayPlanPage extends StatefulWidget {
-  const TodayPlanPage({super.key});
+  const TodayPlanPage({super.key, this.bottomNavReserve = 0});
+
+  /// 外壳悬浮底栏占用的高度（底栏内容 + 底部安全区），由 IndexPage 注入。
+  ///
+  /// 页面自己问不出来：外壳的 Scaffold 开着 extendBody，会把 body 的 MediaQuery 底部内边距剥成 0。
+  /// 而底栏虽然透明，却实打实占着屏幕最底部那一整块并吞掉点击，所以页面底部必须让开这么多，
+  /// "开始学习/继续学习"才不会压在底栏下面点不到。
+  final double bottomNavReserve;
 
   @override
   TodayPlanPageState createState() {
@@ -74,7 +108,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Future<void>? _loadFuture;
   int _completedStepCount = 0;
   int _totalStepCount = 0;
-  int _planCompletedCount = 0;
   List<LearningWord>? _todayWords;
 
   /// 今日加量批次的词数（打卡后额外追加的那一组）。
@@ -401,7 +434,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         todayWordCount = 0;
         _completedStepCount = 0;
         _totalStepCount = 0;
-        _planCompletedCount = 0;
         return true;
       }
 
@@ -483,7 +515,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     if (_todayWords == null) {
       _totalStepCount = 0;
       _completedStepCount = 0;
-      _planCompletedCount = 0;
       return;
     }
 
@@ -530,15 +561,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 今日计划进度（严格排除加量词，保证打卡后不会因加量而回落）
     _totalStepCount = 0;
     _completedStepCount = 0;
-    _planCompletedCount = 0;
     for (final word in _planWords) {
       final trackLen = trackLenOf(word);
       _totalStepCount += trackLen;
       final completedSteps = word.getCompletedSteps(_masteredWordIds, trackLen);
       _completedStepCount += completedSteps;
-      if (completedSteps >= trackLen) {
-        _planCompletedCount++;
-      }
     }
 
     // 加量批次的口径：这一组一共多少词、学完了多少（主按钮是否换成"继续学习（加量）"也据此判定）
@@ -598,7 +625,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  Widget _buildTopFloatingHeader(AppThemeConfig themeConfig, bool isDarkMode, bool hasWallpaper) {
+  Widget _buildTopFloatingHeader(AppThemeConfig themeConfig, bool hasWallpaper, bool onDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -610,7 +637,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             child: CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation<Color>(
-                hasWallpaper ? Colors.white70 : (isDarkMode ? Colors.white54 : Colors.black45),
+                hasWallpaper
+                    ? (onDark ? Colors.white70 : const Color(0xFF334155))
+                    : (onDark ? Colors.white54 : Colors.black45),
               ),
             ),
           ),
@@ -626,17 +655,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               Icons.tune_rounded,
               size: 22,
               color: hasWallpaper
-                  ? Colors.white.withValues(alpha: 0.90)
+                  ? (onDark ? Colors.white.withValues(alpha: 0.90) : const Color(0xFF0F172A))
                   : themeConfig.textSecondary,
-              shadows: hasWallpaper
-                  ? const [
-                      Shadow(
-                        color: Colors.black45,
-                        blurRadius: 4,
-                        offset: Offset(0, 1),
-                      ),
-                    ]
-                  : null,
+              shadows: hasWallpaper ? _canvasGlow(onDark) : null,
             ),
           ),
         ),
@@ -694,59 +715,56 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     builder: (context, constraints) {
                       final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
                       final int planTotalWords = _planWords.length;
-                      final int planCompletedWords = _planCompletedCount;
-                      final double planProgress = planTotalWords > 0 ? (planCompletedWords / planTotalWords) : 0.0;
                       final bool isDakaStamped = hasDakaToday;
                       final DateTime stampDay = AppClock.today();
                       final String stampDate =
                           '${stampDay.year}.${stampDay.month.toString().padLeft(2, '0')}.${stampDay.day.toString().padLeft(2, '0')}';
 
-                      if (hasWallpaper) {
-                        return SafeArea(
-                          bottom: true,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                _buildTopFloatingHeader(themeConfig, isDarkMode, hasWallpaper),
-                                SizedBox(height: (constraints.maxHeight * 0.04).clamp(6.0, 32.0)),
-                                _buildStatusIsland(
-                                  themeConfig: themeConfig,
-                                  isDarkMode: isDarkMode,
-                                  isDakaStamped: isDakaStamped,
-                                  stampDate: stampDate,
-                                  planTotalWords: planTotalWords,
-                                ),
-                                const Spacer(),
-                                _buildWallpaperBottomTaskIsland(
-                                  themeConfig: themeConfig,
-                                  isDarkMode: isDarkMode,
-                                  isDakaStamped: isDakaStamped,
-                                  stampDate: stampDate,
-                                  planTotalWords: planTotalWords,
-                                  planCompletedWords: planCompletedWords,
-                                  planProgress: planProgress,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-
+                      // 壁纸底与主题底共用这一套布局：顶部悬浮设置 / 中心目标岛 / 底部双任务岛 + 主按钮，
+                      // 两种背景只差卡片那一层皮肤（见 _cardSkin），结构与间距完全一致。
+                      //
+                      // 底部必须给悬浮底栏让位：底栏（透明也一样）占着屏幕最底部且吞掉那一整块点击，
+                      // 内容不让开，"开始学习/继续学习"就会被压在底栏下面点不到。
+                      // 多让 20：主按钮下沿与底栏命中区之间留出安全距离，又不像 28 那样悬得过高。
+                      final double bottomInset = widget.bottomNavReserve + 20;
+                      // 字色档：跟壁纸照片的明暗走（无壁纸时等于 App 主题），不与玻璃底色脱钩
+                      final bool onDark = _wallpaperIsDark ?? isDarkMode;
                       return SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 96),
+                        padding: EdgeInsets.fromLTRB(20, 8, 20, bottomInset),
                         child: ConstrainedBox(
+                          // 内容比屏幕矮时撑满视口：顶部区块留在设计位置、底部任务岛贴住底栏上沿；
+                          // 内容比屏幕高时（小屏/横屏/大字号）整页滚动，按钮始终滚得到。
                           constraints: BoxConstraints(
-                            minHeight: constraints.maxHeight - 108,
+                            minHeight: (constraints.maxHeight - 8 - bottomInset).clamp(0.0, double.infinity),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              _buildTopFloatingHeader(themeConfig, isDarkMode, hasWallpaper),
-                              renderMissionCard(),
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildTopFloatingHeader(themeConfig, hasWallpaper, onDark),
+                                  SizedBox(height: (constraints.maxHeight * 0.12).clamp(60.0, 110.0)),
+                                  _buildStatusIsland(
+                                    hasWallpaper: hasWallpaper,
+                                    isDarkMode: isDarkMode,
+                                    onDark: onDark,
+                                    isDakaStamped: isDakaStamped,
+                                    stampDate: stampDate,
+                                    planTotalWords: planTotalWords,
+                                  ),
+                                  // 放不下而滚动时的最小间距，避免中心岛与任务岛贴在一起
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
+                              _buildBottomTaskIsland(
+                                themeConfig: themeConfig,
+                                hasWallpaper: hasWallpaper,
+                                isDarkMode: isDarkMode,
+                                onDark: onDark,
+                              ),
                             ],
                           ),
                         ),
@@ -759,14 +777,91 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 壁纸模式下的中心「打卡/日程岛」：高透圆角磨砂卡（对标「不背单词」日历签到卡）
-  Widget _buildStatusIsland({
-    required AppThemeConfig themeConfig,
+  /// 当前壁纸照片的明暗档；「经典」（无壁纸）返回 null，表示卡片与字色整套跟 App 主题走。
+  bool? get _wallpaperIsDark {
+    if (_wallpaperPath.isEmpty || _wallpaperPath == 'none') return null;
+    for (final wallpaper in planWallpapers) {
+      if (wallpaper.path == _wallpaperPath) return wallpaper.isDark;
+    }
+    assert(false, '壁纸「$_wallpaperPath」没有登记明暗档，请补进 planWallpapers');
+    // 未登记的陌生照片按暗底处理：深色玻璃 + 白字压在任何照片上都不会糊
+    return true;
+  }
+
+  /// 卡片玻璃（保持原来的通透磨砂观感，不随照片改透明度）：
+  /// 壁纸底沿用最初的透光白 22% / 深色 #6018202F，经典主题底用全站统一卡片色。
+  ({Color bg, Color border, BoxShadow shadow}) _cardGlass({
+    required bool hasWallpaper,
     required bool isDarkMode,
+  }) {
+    if (!hasWallpaper) {
+      return (
+        bg: context.pageCardBg(PageVibrancy.todayPlan),
+        border: context.cardBorder,
+        shadow: context.pageCardShadow(PageVibrancy.todayPlan),
+      );
+    }
+    return (
+      bg: isDarkMode ? const Color(0x6018202F) : Colors.white.withValues(alpha: 0.22),
+      border: Colors.white.withValues(alpha: 0.20),
+      shadow: BoxShadow(
+        color: Colors.black.withValues(alpha: 0.04),
+        blurRadius: 14,
+        offset: const Offset(0, 4),
+      ),
+    );
+  }
+
+  /// 卡片文字三档（主/次/弱）+ 字上光晕：玻璃保持通透，可读性靠「选对字色 + 一层很淡的光晕」兜住。
+  ///
+  /// [belowScrim] 表示这块内容永远压在屏幕最底部的暗角光幕上（底部双任务卡）：那里永远是深底，
+  /// 一律白字黑影最稳（实测 3.9~10.4，换深色字只剩 1.7~4.6）；中心岛浮在照片中段，
+  /// 明暗完全由照片决定，只能按照片明暗档取色。
+  ({Color primary, Color muted, Color faint, List<Shadow> glow}) _cardInk({
+    required bool hasWallpaper,
+    required bool onDark,
+    bool belowScrim = false,
+  }) {
+    if (!hasWallpaper) {
+      return (
+        primary: onDark ? Colors.white : const Color(0xFF0F172A),
+        muted: onDark ? Colors.white70 : const Color(0xFF475569),
+        faint: onDark ? Colors.white60 : const Color(0xFF64748B),
+        glow: const <Shadow>[],
+      );
+    }
+    return (belowScrim || onDark)
+        ? (
+            primary: Colors.white,
+            muted: Colors.white.withValues(alpha: 0.82),
+            faint: Colors.white.withValues(alpha: 0.72),
+            glow: _canvasGlow(true),
+          )
+        : (
+            primary: const Color(0xFF0F172A),
+            muted: const Color(0xFF334155),
+            faint: const Color(0xFF334155),
+            glow: _canvasGlow(false),
+          );
+  }
+
+  /// 直接画在照片上的文字/图标光晕：暗底用黑影把白字托起来，亮底用白光把深字压下去。
+  List<Shadow> _canvasGlow(bool onDark) => onDark
+      ? const [Shadow(color: Colors.black45, blurRadius: 6, offset: Offset(0, 1))]
+      : [Shadow(color: Colors.white.withValues(alpha: 0.85), blurRadius: 6, offset: const Offset(0, 1))];
+
+  /// 中心「打卡/日程岛」：高透圆角磨砂卡（对标「不背单词」日历签到卡）
+  Widget _buildStatusIsland({
+    required bool hasWallpaper,
+    required bool isDarkMode,
+    required bool onDark,
     required bool isDakaStamped,
     required String stampDate,
     required int planTotalWords,
   }) {
+    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode);
+    final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
+    final sealColor = onDark ? const Color(0xFF34D399) : const Color(0xFF059669);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -780,30 +875,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             width: 138,
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
             decoration: BoxDecoration(
-              color: isDarkMode
-                  ? const Color(0x6018202F)
-                  : Colors.white.withValues(alpha: 0.22),
+              color: skin.bg,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.20),
-                width: 0.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              border: Border.all(color: skin.border, width: 0.5),
+              boxShadow: [skin.shadow],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (isDakaStamped) ...[
-                  const Icon(
+                  Icon(
                     Icons.check_circle_rounded,
                     size: 24,
-                    color: Color(0xFF10B981),
+                    color: sealColor,
+                    shadows: ink.glow,
                   ),
                   const SizedBox(height: 6),
                   Semantics(
@@ -816,8 +901,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                        color: ink.primary,
                         letterSpacing: -0.2,
+                        shadows: ink.glow,
                       ),
                     ),
                   ),
@@ -837,8 +923,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
-                            color: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+                            color: ink.muted,
                             fontFamily: 'Roboto',
+                            shadows: ink.glow,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -847,8 +934,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
-                            color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                            color: ink.faint,
                             fontFamily: 'Roboto',
+                            shadows: ink.glow,
                           ),
                         ),
                       ],
@@ -858,7 +946,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   Icon(
                     Icons.calendar_today_rounded,
                     size: 22,
-                    color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
+                    color: ink.muted,
+                    shadows: ink.glow,
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -866,8 +955,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                      color: ink.primary,
                       letterSpacing: -0.2,
+                      shadows: ink.glow,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -876,8 +966,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: isDarkMode ? Colors.white70 : const Color(0xFF475569),
+                      color: ink.muted,
                       fontFamily: 'Roboto',
+                      shadows: ink.glow,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -886,8 +977,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
-                      color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                      color: ink.faint,
                       fontFamily: 'Roboto',
+                      shadows: ink.glow,
                     ),
                   ),
                 ],
@@ -900,7 +992,28 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 任务量未满提示条
-  Widget _buildSupplementNoticeBar(AppThemeConfig themeConfig, bool isDarkMode, bool hasWallpaper) {
+  Widget _buildSupplementNoticeBar(AppThemeConfig themeConfig, bool hasWallpaper, bool onDark) {
+    // 琥珀胶囊也要跟着照片明暗走：暗底用浅琥珀字，亮底换成深琥珀字，否则亮照片上整条都是糊的
+    final Color noticeAccent;
+    final Color noticeInk;
+    final double noticeBgAlpha;
+    final double noticeBorderAlpha;
+    if (!hasWallpaper) {
+      noticeAccent = themeConfig.warmAccentColor;
+      noticeInk = onDark ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor;
+      noticeBgAlpha = onDark ? 0.20 : 0.08;
+      noticeBorderAlpha = onDark ? 0.35 : 0.18;
+    } else if (onDark) {
+      noticeAccent = const Color(0xFFF59E0B);
+      noticeInk = const Color(0xFFFDE68A);
+      noticeBgAlpha = 0.20;
+      noticeBorderAlpha = 0.35;
+    } else {
+      noticeAccent = const Color(0xFFB45309);
+      noticeInk = const Color(0xFF92400E);
+      noticeBgAlpha = 0.28;
+      noticeBorderAlpha = 0.45;
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 2),
       child: Material(
@@ -911,12 +1024,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
-                  .withValues(alpha: isDarkMode || hasWallpaper ? 0.20 : 0.08),
+              color: noticeAccent.withValues(alpha: noticeBgAlpha),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: (hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor)
-                    .withValues(alpha: isDarkMode || hasWallpaper ? 0.35 : 0.18),
+                color: noticeAccent.withValues(alpha: noticeBorderAlpha),
                 width: 0.8,
               ),
             ),
@@ -925,14 +1036,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               children: [
                 Icon(
                   Icons.info_outline_rounded,
-                  color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                  color: noticeAccent,
                   size: 13,
                 ),
                 const SizedBox(width: 5),
                 Text(
                   '单词量未满',
                   style: TextStyle(
-                    color: hasWallpaper ? const Color(0xFFFDE68A) : (isDarkMode ? const Color(0xFFFED7AA) : themeConfig.warmAccentColor),
+                    color: noticeInk,
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -943,7 +1054,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: hasWallpaper ? const Color(0xFFF59E0B) : themeConfig.warmAccentColor,
+                    color: noticeAccent,
                   ),
                 ),
               ],
@@ -954,18 +1065,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 壁纸模式下的底部「双任务岛与主操作」：扁平横向磨砂卡（对标「不背单词」Learn & Review）
-  Widget _buildWallpaperBottomTaskIsland({
+  /// 底部「双任务岛与主操作」：扁平横向磨砂卡（对标「不背单词」Learn & Review）
+  Widget _buildBottomTaskIsland({
     required AppThemeConfig themeConfig,
+    required bool hasWallpaper,
     required bool isDarkMode,
-    required bool isDakaStamped,
-    required String stampDate,
-    required int planTotalWords,
-    required int planCompletedWords,
-    required double planProgress,
+    required bool onDark,
   }) {
-    final textMuted = isDarkMode ? Colors.white70 : const Color(0xFF475569);
-    final countColor = isDarkMode ? Colors.white : const Color(0xFF0F172A);
+    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode);
+    final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark, belowScrim: true);
+    final textMuted = ink.muted;
+    final countColor = ink.primary;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -988,19 +1098,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       constraints: const BoxConstraints(minHeight: 62),
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? const Color(0x6018202F) : Colors.white.withValues(alpha: 0.22),
+                        color: skin.bg,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.20),
-                          width: 0.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        border: Border.all(color: skin.border, width: 0.5),
+                        boxShadow: [skin.shadow],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1013,6 +1114,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
                               color: textMuted,
+                              shadows: ink.glow,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -1024,6 +1126,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               fontFamily: 'Roboto',
                               letterSpacing: -0.5,
                               color: countColor,
+                              shadows: ink.glow,
                             ),
                           ),
                         ],
@@ -1049,19 +1152,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       constraints: const BoxConstraints(minHeight: 62),
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? const Color(0x6018202F) : Colors.white.withValues(alpha: 0.22),
+                        color: skin.bg,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.20),
-                          width: 0.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        border: Border.all(color: skin.border, width: 0.5),
+                        boxShadow: [skin.shadow],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1074,6 +1168,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
                               color: textMuted,
+                              shadows: ink.glow,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -1085,6 +1180,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               fontFamily: 'Roboto',
                               letterSpacing: -0.5,
                               color: countColor,
+                              shadows: ink.glow,
                             ),
                           ),
                         ],
@@ -1103,79 +1199,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
             !_hasTriedSupplement) ...[
           const SizedBox(height: 8),
-          _buildSupplementNoticeBar(themeConfig, isDarkMode, true),
+          _buildSupplementNoticeBar(themeConfig, hasWallpaper, onDark),
         ],
 
-        // 进度展示
-        if (!isDakaStamped) ...[
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: SizedBox(
-              width: 220,
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '已完成 $planCompletedWords / $planTotalWords 词',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.white70 : Colors.white.withValues(alpha: 0.85),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          shadows: const [
-                            Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 1)),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '${(planProgress * 100).round()}%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Roboto',
-                          shadows: [
-                            Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 1)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(100),
-                    child: Container(
-                      height: 3,
-                      width: double.infinity,
-                      color: Colors.white.withValues(alpha: 0.16),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: planProgress.clamp(0.0, 1.0),
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            borderRadius: BorderRadius.all(Radius.circular(100)),
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF10B981), Color(0xFF34D399)],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ] else if (_extraTotalCount > 0) ...[
-          const SizedBox(height: 8),
-          Center(
-            child: _buildExtraProgress(themeConfig, isDarkMode),
-          ),
-        ],
-
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
 
         // 主操作按钮
         (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
@@ -1185,363 +1212,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  Widget renderMissionCard() {
-    final darkModeState = context.watch<DarkMode>();
-    final themeStyle = darkModeState.themeStyle;
-    final isDarkMode = themeStyle.isDark;
-    final themeConfig = AppThemeConfig.of(themeStyle);
-    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
-
-    final int planTotalWords = _planWords.length;
-    final int planCompletedWords = _planCompletedCount;
-    final double planProgress = planTotalWords > 0 ? (planCompletedWords / planTotalWords) : 0.0;
-
-    // 今日已打卡状态
-    final isDakaStamped = hasDakaToday;
-
-    // 打卡日期：用逻辑日期（AppClock）而不是系统时间，与打卡/跨天口径一致
-    final DateTime stampDay = AppClock.today();
-    final String stampDate =
-        '${stampDay.year}.${stampDay.month.toString().padLeft(2, '0')}.${stampDay.day.toString().padLeft(2, '0')}';
-
-    final textMuted = hasWallpaper ? Colors.white70 : themeConfig.textMuted;
-    final progressColor = hasWallpaper ? const Color(0xFF10B981) : themeConfig.primaryColor;
-
-    final content = Column(
-      children: [
-        // 数据指标与第一进度条整体区块（宽 250，居中对称）
-        SizedBox(
-          width: 250,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 1. 双列对称纯粹排版数据（新词 | 发丝细线 | 旧词，彻底移除中轴线文字，保持绝对极简）
-              Row(
-                children: [
-                  _buildStatItem('新词', newWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
-                  Container(
-                    width: 0.8,
-                    height: 32,
-                    color: hasWallpaper
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
-                  ),
-                  _buildStatItem('旧词', oldWordCount ?? 0, hasWallpaper ? Colors.white : themeConfig.primaryColor),
-                ],
-              ),
-
-              // 2. 任务量未满提示条：居中温润微光胶囊（如有）
-              if (prepareResult != null &&
-                  prepareResult!.success &&
-                  (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
-                  !_hasTriedSupplement)
-                _buildSupplementNoticeBar(themeConfig, isDarkMode, hasWallpaper),
-
-              const SizedBox(height: 16),
-
-              // 3. 学习进度展示（全部统一为单词数量计算）
-              // 已打卡态：主计划已达成，收拢为轻灵优雅的达成标记行，消除与加量进度条的"双轨撞车"感
-              if (isDakaStamped)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 13.5,
-                          color: hasWallpaper
-                              ? const Color(0xFF34D399)
-                              : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669)),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '今日已打卡',
-                          key: const Key('today_plan_daka_seal_text'),
-                          style: TextStyle(
-                            color: hasWallpaper
-                                ? const Color(0xFF34D399)
-                                : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669)),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Semantics(
-                          key: const Key('today_plan_daka_seal_date'),
-                          label: stampDate,
-                          child: const SizedBox.shrink(),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '$planTotalWords 词 · 100%',
-                      style: TextStyle(
-                        color: textMuted.withValues(alpha: 0.75),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'Roboto',
-                      ),
-                    ),
-                  ],
-                )
-              else
-                // 未打卡态（常规学习阶段）：展示主力单词进度条（微光渐变胶囊轨）
-                Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '已完成 $planCompletedWords / $planTotalWords 词',
-                          style: TextStyle(
-                            color: textMuted,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          '${(planProgress * 100).round()}%',
-                          style: TextStyle(
-                            color: hasWallpaper ? Colors.white : (isDarkMode ? Colors.white : themeConfig.textPrimary),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Roboto',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(100),
-                      child: Container(
-                        height: 3.5,
-                        width: double.infinity,
-                        color: hasWallpaper
-                            ? Colors.white.withValues(alpha: 0.12)
-                            : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: planProgress.clamp(0.0, 1.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
-                              gradient: LinearGradient(
-                                colors: hasWallpaper
-                                    ? const [Color(0xFF10B981), Color(0xFF34D399)]
-                                    : [progressColor, progressColor.withValues(alpha: 0.85)],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        ),
-
-        // 加量批次的进度：作为加量阶段唯一的主力动态进度条，配以高质感翡翠微光胶囊轨
-        if (_extraTotalCount > 0) ...[
-          const SizedBox(height: 12),
-          SizedBox(
-            width: 250,
-            child: _buildExtraProgress(themeConfig, isDarkMode),
-          ),
-        ],
-
-        const SizedBox(height: 18),
-
-        // 主操作按钮
-        (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
-            ? renderErrorActions()
-            : renderStartButton(),
-      ],
-    );
-
-    // 除了经典壁纸外，其他壁纸直接平铺展示文字内容，移除外层卡片框框
-    if (hasWallpaper) {
-      return SizedBox(
-        width: double.infinity,
-        child: content,
-      );
-    }
-
-    // 经典背景模式：保留毛玻璃主卡片包裹
-    return FrostedGlassCard.primary(
-      padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
-      child: content,
-    );
-  }
-
-  /// 加量批次进度条：高质感微光渐变胶囊轨（学完后收拢为达成文字行，与主计划打卡态一致）
-  Widget _buildExtraProgress(AppThemeConfig themeConfig, bool isDarkMode) {
-    final int total = _extraTotalCount;
-    final int completed = _extraCompletedCount;
-    final double progress = total > 0 ? completed / total : 0.0;
-    final bool isExtraFinished = total > 0 && completed >= total;
-    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
-    final textMuted = hasWallpaper ? Colors.white60 : themeConfig.textMuted;
-    final accentGreen = hasWallpaper
-        ? const Color(0xFF34D399)
-        : (isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669));
-
-    if (isExtraFinished) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.check_circle_rounded,
-                size: 13.5,
-                color: accentGreen,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                '加量已完成',
-                style: TextStyle(
-                  color: accentGreen,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          Text(
-            '$total 词 · 100%',
-            style: TextStyle(
-              color: textMuted.withValues(alpha: 0.75),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Roboto',
-            ),
-          ),
-        ],
-      );
-    }
-
-    return SizedBox(
-      width: 250,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '加量已完成 $completed / $total 词',
-                style: TextStyle(
-                  color: hasWallpaper ? Colors.white70 : themeConfig.textMuted,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                '${(progress * 100).round()}%',
-                style: TextStyle(
-                  color: accentGreen,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Roboto',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(100),
-            child: Container(
-              height: 3.5,
-              width: double.infinity,
-              color: hasWallpaper
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : (isDarkMode
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.black.withValues(alpha: 0.05)),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: progress.clamp(0.0, 1.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                    gradient: LinearGradient(
-                      colors: hasWallpaper
-                          ? const [Color(0xFF10B981), Color(0xFF34D399)]
-                          : (isDarkMode
-                              ? const [Color(0xFF059669), Color(0xFF34D399)]
-                              : [themeConfig.primaryColor, themeConfig.primaryColor.withValues(alpha: 0.85)]),
-                    ),
-                    boxShadow: hasWallpaper
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF34D399).withValues(alpha: 0.35),
-                              blurRadius: 4,
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, int count, [Color? dotColor]) {
-    final themeStyle = context.watch<DarkMode>().themeStyle;
-    final themeConfig = AppThemeConfig.of(themeStyle);
-    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
-    final textMuted = hasWallpaper ? Colors.white60 : themeConfig.textMuted;
-    final valueColor = dotColor ?? (hasWallpaper ? Colors.white : themeConfig.textPrimary);
-
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          if (label == '今日总词') {
-            toTodayWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-          } else if (label == '新词') {
-            toTodayNewWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-          } else if (label == '旧词') {
-            toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-          }
-        },
-        child: Column(
-          children: [
-            Text(
-              '$count',
-              style: TextStyle(
-                color: valueColor,
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Roboto',
-                letterSpacing: -0.8,
-                height: 1.1,
-                shadows: hasWallpaper
-                    ? const [
-                        Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 1)),
-                      ]
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: textMuted,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
 
 
@@ -1554,9 +1224,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required VoidCallback onPressed,
   }) {
     final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    // 主按钮压在屏幕最底部，那里永远有暗角光幕压深（实测白字对比度 7.9~19.9），
+    // 所以壁纸底一律白字 + 黑影：跟着亮底照片改深色字的话，按钮区只剩 1.0~2.3，等于看不见。
     final actionColor = hasWallpaper
         ? Colors.white
         : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
+    final actionShadows = hasWallpaper
+        ? const [Shadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 1.5))]
+        : null;
     return Center(
       child: Material(
         color: Colors.transparent,
@@ -1565,7 +1240,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           borderRadius: BorderRadius.circular(20),
           onTap: onPressed,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1577,15 +1252,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.3,
                     color: actionColor,
-                    shadows: hasWallpaper
-                        ? const [
-                            Shadow(
-                              color: Colors.black45,
-                              blurRadius: 8,
-                              offset: Offset(0, 1.5),
-                            ),
-                          ]
-                        : null,
+                    shadows: actionShadows,
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -1593,15 +1260,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   Icons.arrow_forward_rounded,
                   size: 18,
                   color: actionColor,
-                  shadows: hasWallpaper
-                      ? const [
-                          Shadow(
-                            color: Colors.black45,
-                            blurRadius: 8,
-                            offset: Offset(0, 1.5),
-                          ),
-                        ]
-                      : null,
+                  shadows: actionShadows,
                 ),
               ],
             ),
@@ -1672,9 +1331,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
+    // 同上：底部按钮永远压在暗角光幕上，壁纸底一律白字 + 黑影
     final actionColor = hasWallpaper
         ? Colors.white
         : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
+    final actionShadows = hasWallpaper
+        ? const [Shadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 1.5))]
+        : null;
     return Center(
       child: Material(
         color: Colors.transparent,
@@ -1947,7 +1610,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             });
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 18),
+            // 纵向 15：主按钮命中区高度 ≈52，误触底栏的概率更低
+            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 18),
             child: _isPreparingStudy
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1969,15 +1633,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                           color: actionColor,
-                          shadows: hasWallpaper
-                              ? const [
-                                  Shadow(
-                                    color: Colors.black45,
-                                    blurRadius: 8,
-                                    offset: Offset(0, 1.5),
-                                  ),
-                                ]
-                              : null,
+                          shadows: actionShadows,
                         ),
                       ),
                     ],
@@ -1993,15 +1649,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                           color: actionColor,
-                          shadows: hasWallpaper
-                            ? const [
-                                Shadow(
-                                  color: Colors.black45,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 1.5),
-                                ),
-                              ]
-                            : null,
+                          shadows: actionShadows,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -2009,15 +1657,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         Icons.arrow_forward_rounded,
                         size: 18,
                         color: actionColor,
-                        shadows: hasWallpaper
-                            ? const [
-                                Shadow(
-                                  color: Colors.black45,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 1.5),
-                                ),
-                              ]
-                            : null,
+                        shadows: actionShadows,
                       ),
                     ],
                   ),
@@ -3755,13 +3395,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                       const SizedBox(height: 18),
 
-                      // 4. 背景画报配置
+                      // 4. 本页背景配置
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Text(
-                              '背景画报',
+                              '本页背景',
                               style: TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
@@ -3773,27 +3413,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                       const SizedBox(height: 12),
 
-                      // 背景画报快速切换药丸标签（两行三列，对称极简）
+                      // 本页背景快速切换药丸标签（两行三列，对称极简）
                       Builder(
                         builder: (ctx) {
-                          const options = [
-                            {'name': '旷野', 'path': 'assets/images/wallpaper/tree.jpg'},
-                            {'name': '竹韵', 'path': 'assets/images/wallpaper/bamboo.jpg'},
-                            {'name': '枫韵', 'path': 'assets/images/wallpaper/maple.jpg'},
-                            {'name': '石韵', 'path': 'assets/images/wallpaper/stone.jpg'},
-                            {'name': '晨雾', 'path': 'assets/images/scenes/mist.jpg'},
-                            {'name': '湖光', 'path': 'assets/images/scenes/river.jpg'},
-                            {'name': '夏夜', 'path': 'assets/images/scenes/night.jpg'},
-                            {'name': '经典', 'path': 'none'},
-                          ];
+                          // 选项与明暗档同源：planWallpapers 是壁纸的唯一登记处
+                          const options = planWallpapers;
 
-                          Widget buildPill(Map<String, String> item) {
-                            final isSelected = _wallpaperPath == item['path'];
+                          Widget buildPill(PlanWallpaper item) {
+                            final isSelected = _wallpaperPath == item.path;
                             return Expanded(
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: () async {
-                                  final selectedPath = item['path']!;
+                                  final selectedPath = item.path;
                                   await Prefs.write('today_plan_wallpaper', selectedPath);
                                   setDialogState(() {
                                     _wallpaperPath = selectedPath;
@@ -3823,7 +3455,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                   ),
                                   child: Center(
                                     child: Text(
-                                      item['name']!,
+                                      item.name,
                                       style: TextStyle(
                                         fontSize: 12.5,
                                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,

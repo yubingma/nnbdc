@@ -113,10 +113,18 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     }
   }
 
+  /// 底栏内容高度（不含底部安全区，安全区由底栏自己的 SafeArea 补上）
+  static const double navBarContentHeight = 50;
+
   Widget _buildPageForTab(NavTabKey tab) {
     switch (tab) {
       case NavTabKey.study:
-        return const TodayPlanPage();
+        // 壁纸模式下内容铺到屏幕最底部，必须把底栏占位交给页面：
+        // 底栏虽然透明，却占着屏幕最底部那一整块并吞掉点击，
+        // 页面不让开，"开始学习/继续学习"就会被压在底栏下面点不到。
+        return TodayPlanPage(
+          bottomNavReserve: navBarContentHeight + MediaQuery.viewPaddingOf(context).bottom,
+        );
       case NavTabKey.wordLists:
         return const WordListsPage();
       case NavTabKey.search:
@@ -152,7 +160,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           StashedNavMenuDialog.show(context);
         },
         child: Container(
-          height: 50,
+          height: navBarContentHeight,
           alignment: Alignment.center,
           decoration: const BoxDecoration(color: Colors.transparent),
           child: Icon(
@@ -191,44 +199,56 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
               visibleTabs.isEmpty ? 0 : visibleTabs.length - 1,
             );
 
-        // 呼吸级超薄透光磨砂
-        final navBg = isDarkMode
-            ? const Color(0x66101E1A)
-            : Colors.white.withValues(alpha: 0.18);
-        final borderTopColor = isDarkMode
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.05);
+        // 今日计划页底栏完全透明（与壁纸/内容区浑然一体），其他页面保留透光磨砂
+        final isStudyTab = activeTab == NavTabKey.study;
 
-        final customBottomNav = ClipRect(
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-            child: GestureDetector(
-              onLongPress: () {
-                StashedNavMenuDialog.show(context);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: navBg,
-                  border: Border(top: BorderSide(color: borderTopColor, width: 0.5)),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SizedBox(
-                    height: 50,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: visibleTabs.map((tab) {
-                        return _buildCustomNavItem(
-                          tab,
-                          tab == activeTab,
-                          themeConfig,
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
+        final navBg = isStudyTab
+            ? Colors.transparent
+            : (isDarkMode
+                ? const Color(0x66101E1A)
+                : Colors.white.withValues(alpha: 0.18));
+        final borderTopColor = isStudyTab
+            ? Colors.transparent
+            : (isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.05));
+
+        final navContent = Container(
+          decoration: BoxDecoration(
+            color: navBg,
+            border: isStudyTab
+                ? null
+                : Border(top: BorderSide(color: borderTopColor, width: 0.5)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: navBarContentHeight,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: visibleTabs.map((tab) {
+                  return _buildCustomNavItem(
+                    tab,
+                    tab == activeTab,
+                    themeConfig,
+                  );
+                }).toList(),
               ),
             ),
+          ),
+        );
+
+        final customBottomNav = ClipRect(
+          child: GestureDetector(
+            onLongPress: () {
+              StashedNavMenuDialog.show(context);
+            },
+            child: isStudyTab
+                ? navContent
+                : BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+                    child: navContent,
+                  ),
           ),
         );
 
