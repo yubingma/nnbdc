@@ -3497,104 +3497,72 @@ extension BdcPageStateUIComponents on BdcPageState {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (count <= 1)
-            for (final item in displayItems)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: itemVerticalGap),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
+          // 释义与挖空例句统一放置在最大宽 420 的左对齐块中，确保例句左边缘与释义行左边缘严格对齐
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Table(
+                  defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
+                  columnWidths: {
+                    0: hasCixingItems
+                        ? const IntrinsicColumnWidth()
+                        : const FixedColumnWidth(0),
+                    1: const FlexColumnWidth(),
+                  },
                   children: [
-                    if ((item.ciXing ?? '').trim().isNotEmpty) ...[
-                      Text(
-                        (item.ciXing ?? '').trim(),
-                        maxLines: 1,
-                        softWrap: false,
-                        style: TextStyle(
-                          color: cixingColor,
-                          fontSize: cixingFontSize,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Roboto',
-                          letterSpacing: 0.2,
-                        ),
+                    for (final item in displayItems)
+                      TableRow(
+                        children: [
+                          if (hasCixingItems)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                right: 8,
+                                top: itemVerticalGap,
+                                bottom: itemVerticalGap,
+                              ),
+                              child: Text(
+                                (item.ciXing ?? '').trim(),
+                                maxLines: 1,
+                                softWrap: false,
+                                style: TextStyle(
+                                  color: cixingColor,
+                                  fontSize: cixingFontSize,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Roboto',
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            )
+                          else
+                            const SizedBox.shrink(),
+                          Padding(
+                            padding:
+                                EdgeInsets.symmetric(vertical: itemVerticalGap),
+                            child: Text(
+                              cleanMeaning(item.meaning),
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: meaningFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: meaningColor,
+                                height: 1.4,
+                                letterSpacing: 0.0,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                    ],
-                    Flexible(
-                      child: Text(
-                        cleanMeaning(item.meaning),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: meaningFontSize,
-                          fontWeight: FontWeight.w600,
-                          color: meaningColor,
-                          height: 1.35,
-                          letterSpacing: 0.0,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
-              )
-          else
-            // 多项时：整组居中，使用 Table 原生弹性列自动匹配最宽词性，天然垂直对齐成列，彻底根除换行与魔数宽度
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Table(
-                defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                columnWidths: const {
-                  0: IntrinsicColumnWidth(),
-                  1: FlexColumnWidth(),
-                },
-                children: [
-                  for (final item in displayItems)
-                    TableRow(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(
-                            right: 8,
-                            top: itemVerticalGap,
-                            bottom: itemVerticalGap,
-                          ),
-                          child: Text(
-                            (item.ciXing ?? '').trim(),
-                            maxLines: 1,
-                            softWrap: false,
-                            style: TextStyle(
-                              color: cixingColor,
-                              fontSize: cixingFontSize,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Roboto',
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: itemVerticalGap),
-                          child: Text(
-                            cleanMeaning(item.meaning),
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontSize: meaningFontSize,
-                              fontWeight: FontWeight.w600,
-                              color: meaningColor,
-                              height: 1.4,
-                              letterSpacing: 0.0,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
+                // 挖空当前单词的英文例句：语境完整，又不泄露拼写，左侧与释义行严格对齐
+                _buildClozeSentenceRow(state),
+              ],
             ),
-
-          // 挖空当前单词的英文例句：语境完整，又不泄露拼写
-          _buildClozeSentenceRow(state),
+          ),
 
           // 图片 (仅对管理员开放)
           if (StudyConfig.fromCurrentUser().enableWordImage &&
@@ -3797,12 +3765,12 @@ extension BdcPageStateUIComponents on BdcPageState {
 
     return Padding(
       padding: const EdgeInsets.only(top: 14),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
+      child: SizedBox(
+        width: double.infinity,
         child: Text(
           cloze,
           key: const Key('ch2en_cloze_sentence'),
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.start,
           style: TextStyle(
             fontSize: 14.5,
             fontWeight: FontWeight.w400,

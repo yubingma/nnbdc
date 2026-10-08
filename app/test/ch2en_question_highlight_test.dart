@@ -169,4 +169,29 @@ void main() {
     expect(find.byKey(const Key('ch2en_cloze_sentence')), findsNothing,
         reason: '挖不到当前单词就整行不显示，不能把完整例句端出来');
   });
+
+  testWidgets('汉译英题目区：例句左侧与释义行左侧严格对齐', (tester) async {
+    final (testWord, mockGetWordResult) = _createTestData(sentences: [
+      SentenceVo('s_1', 'They had to testword the whole plan.',
+          '他们不得不放弃整个计划。', null, null, 'tts', 0, 0, UserVo.c2('u1')),
+    ]);
+
+    await tester.pumpWidget(_buildPage(const BdcState().copyWith(
+      dataLoaded: true,
+      word: testWord,
+      currentGetWordResult: mockGetWordResult,
+      studyStep: StudyStep.ch2En.json,
+    )));
+    await tester.pump();
+
+    final clozeFinder = find.byKey(const Key('ch2en_cloze_sentence'));
+    expect(clozeFinder, findsOneWidget);
+    final clozeText = tester.widget<Text>(clozeFinder);
+    expect(clozeText.textAlign, TextAlign.start, reason: '例句应采用左对齐');
+
+    final clozeLeft = tester.getTopLeft(clozeFinder).dx;
+    final cixingLeft = tester.getTopLeft(find.text('n.')).dx;
+    expect(clozeLeft, equals(cixingLeft),
+        reason: '例句左边缘必须与释义条目（词性）左边缘严格平齐');
+  });
 }

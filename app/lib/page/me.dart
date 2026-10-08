@@ -2170,6 +2170,18 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             },
                           ),
                           _buildMenuTile(
+                            icon: Icons.privacy_tip_outlined,
+                            iconColor: const Color(0xFF64748B),
+                            title: '隐私政策',
+                            onTap: () => context.push('/privacy'),
+                          ),
+                          _buildMenuTile(
+                            icon: Icons.description_outlined,
+                            iconColor: const Color(0xFF64748B),
+                            title: '用户协议',
+                            onTap: () => context.push('/protocol'),
+                          ),
+                          _buildMenuTile(
                             icon: Icons.no_accounts_outlined,
                             isDestructive: true,
                             iconColor: const Color(0xFFEF4444),
