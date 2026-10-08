@@ -172,7 +172,7 @@ void main() {
     // 页面在 initState 里读壁纸设置，必须先落盘再 pump
     await Prefs.write(
       'today_plan_wallpaper',
-      wallpaper ? 'assets/images/wallpaper/tree.jpg' : 'none',
+      wallpaper ? 'assets/images/wallpaper/kitty_pink.jpg' : 'none',
     );
 
     await tester.pumpWidget(

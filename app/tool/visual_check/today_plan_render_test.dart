@@ -322,45 +322,40 @@ void main() {
         extraDone: 2);
   });
 
-  testWidgets('渲染 枫韵 · 浅色主题（亮底照片）', (tester) async {
+  testWidgets('渲染 竹韵 · 浅色主题', (tester) async {
     await renderCase(tester,
-        name: '04_fengyun_light', wallpaper: 'assets/images/wallpaper/maple.jpg', darkTheme: false);
-  });
-
-  testWidgets('渲染 晨雾 · 深色主题（亮底照片 + 深色主题）', (tester) async {
-    await renderCase(tester,
-        name: '05_chenwu_dark', wallpaper: 'assets/images/scenes/mist.jpg', darkTheme: true);
-  });
-
-  testWidgets('渲染 旷野 · 浅色主题（暗底照片 + 浅色主题）', (tester) async {
-    await renderCase(tester,
-        name: '06_kuangye_light', wallpaper: 'assets/images/wallpaper/tree.jpg', darkTheme: false);
-  });
-
-  testWidgets('渲染 湖光 · 浅色主题（中心岛最弱的一档）', (tester) async {
-    await renderCase(tester,
-        name: '09_huguang_light', wallpaper: 'assets/images/scenes/river.jpg', darkTheme: false);
+        name: '04_zhuyun_light', wallpaper: 'assets/images/wallpaper/bamboo.jpg', darkTheme: false);
   });
 
   testWidgets('渲染 经典（主题底）· 浅色主题', (tester) async {
     await renderCase(tester, name: '07_classic_light', wallpaper: 'none', darkTheme: false);
   });
 
-  testWidgets('渲染 枫韵 · 浅色主题（任务量未满提示条）', (tester) async {
+  testWidgets('渲染 水趣（蓝猫）· 浅色主题', (tester) async {
     await renderCase(tester,
-        name: '08_fengyun_notice',
-        wallpaper: 'assets/images/wallpaper/maple.jpg',
-        darkTheme: false,
-        wordsPerDay: 20);
+        name: '10_kitty_blue_light',
+        wallpaper: 'assets/images/wallpaper/kitty_blue.jpg',
+        darkTheme: false);
   });
 
-  testWidgets('渲染 童趣 · 浅色主题', (tester) async {
+  testWidgets('渲染 水趣（蓝猫）· 深色主题', (tester) async {
     await renderCase(tester,
-        name: '10_kitty_light', wallpaper: 'assets/images/wallpaper/kitty.jpg', darkTheme: false);
+        name: '11_kitty_blue_dark',
+        wallpaper: 'assets/images/wallpaper/kitty_blue.jpg',
+        darkTheme: true);
   });
 
-  testWidgets('渲染 童趣 · 深色主题', (tester) async {
+  testWidgets('渲染 粉梦（粉猫）· 浅色主题', (tester) async {
     await renderCase(tester,
-        name: '11_kitty_dark', wallpaper: 'assets/images/wallpaper/kitty.jpg', darkTheme: true);
+        name: '12_kitty_pink_light',
+        wallpaper: 'assets/images/wallpaper/kitty_pink.jpg',
+        darkTheme: false);
+  });
+
+  testWidgets('渲染 粉梦（粉猫）· 深色主题', (tester) async {
+    await renderCase(tester,
+        name: '13_kitty_pink_dark',
+        wallpaper: 'assets/images/wallpaper/kitty_pink.jpg',
+        darkTheme: true);
   });
 }

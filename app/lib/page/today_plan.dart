@@ -56,14 +56,10 @@ class PlanWallpaper {
 }
 
 const List<PlanWallpaper> planWallpapers = [
-  PlanWallpaper('旷野', 'assets/images/wallpaper/tree.jpg', isDark: true),
   PlanWallpaper('竹韵', 'assets/images/wallpaper/bamboo.jpg', isDark: true),
-  PlanWallpaper('枫韵', 'assets/images/wallpaper/maple.jpg', isDark: false),
   PlanWallpaper('石韵', 'assets/images/wallpaper/stone.jpg', isDark: true),
-  PlanWallpaper('童趣', 'assets/images/wallpaper/kitty.jpg', isDark: false),
-  PlanWallpaper('晨雾', 'assets/images/scenes/mist.jpg', isDark: false),
-  PlanWallpaper('湖光', 'assets/images/scenes/river.jpg', isDark: true),
-  PlanWallpaper('夏夜', 'assets/images/scenes/night.jpg', isDark: true),
+  PlanWallpaper('水趣', 'assets/images/wallpaper/kitty_blue.jpg', isDark: true),
+  PlanWallpaper('粉梦', 'assets/images/wallpaper/kitty_pink.jpg', isDark: false),
   // 经典 = 不用照片，走主题底，卡片与字色整套跟 App 主题（isDark 不参与）
   PlanWallpaper('经典', 'none', isDark: false),
 ];
@@ -98,7 +94,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   bool _isLoadingData = false;
 
   /// 背景壁纸
-  String _wallpaperPath = 'assets/images/scenes/mist.jpg';
+  String _wallpaperPath = 'assets/images/wallpaper/kitty_pink.jpg';
 
   /// 点击"开始学习"后正在等待今日计划就绪：按钮据此给出"准备中"反馈，
   /// 避免计划准备期间（重装/换端后要等云端数据落地）点击后毫无动静。
@@ -175,7 +171,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   @override
   void initState() {
     super.initState();
-    _wallpaperPath = Prefs.read<String>('today_plan_wallpaper') ?? 'assets/images/wallpaper/tree.jpg';
+    final savedWallpaper = Prefs.read<String>('today_plan_wallpaper');
+    final validPaths = planWallpapers.map((w) => w.path).toSet();
+    _wallpaperPath = (savedWallpaper != null && validPaths.contains(savedWallpaper))
+        ? savedWallpaper
+        : 'assets/images/wallpaper/kitty_pink.jpg';
     // 首页初始化时强制关停 ASR，同时在后台静默预加载语音识别模型，避免点击“开始学习”进入单词页面时因加载模型而产生阻塞卡顿
     Asr().stopMicrophone();
     unawaited(Asr().preloadModels());
@@ -598,41 +598,23 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.asset(
-          _wallpaperPath,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return AppThemeBackground(
-              isDarkMode: isDarkMode,
-              themeStyle: themeStyle,
-              config: PageVibrancy.todayPlan,
-            );
-          },
-        ),
-        // 微渐变暗角光幕：顶部保护顶栏，底部保护仪表盘与按钮，中部通透
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withValues(alpha: 0.45),
-                Colors.black.withValues(alpha: 0.06),
-                Colors.black.withValues(alpha: 0.42),
-                Colors.black.withValues(alpha: 0.78),
-              ],
-              stops: const [0.0, 0.32, 0.68, 1.0],
-            ),
-          ),
-        ),
-      ],
+    return Image.asset(
+      _wallpaperPath,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return AppThemeBackground(
+          isDarkMode: isDarkMode,
+          themeStyle: themeStyle,
+          config: PageVibrancy.todayPlan,
+        );
+      },
     );
   }
 
   Widget _buildTopFloatingHeader(AppThemeConfig themeConfig, bool hasWallpaper, bool onDark) {
+    final iconColor = hasWallpaper
+        ? (onDark ? Colors.white.withValues(alpha: 0.95) : const Color(0xFF0F172A))
+        : themeConfig.textSecondary;
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -652,18 +634,47 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           ),
           const SizedBox(width: 12),
         ],
-        // 右侧高级设置按钮（遵循极简规范：零多余容器，纯矢量图标轻灵悬浮呈现）
+        // 右侧高级设置按钮（遵循极简规范：零多余容器，纯矢量图标悬浮呈现；壁纸底附带局部微磨砂托底，几何盒模型严格 38x38 对齐）
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: _showAdvancedSettingsDialog,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Icon(
-              Icons.tune_rounded,
-              size: 22,
-              color: hasWallpaper
-                  ? (onDark ? Colors.white.withValues(alpha: 0.90) : const Color(0xFF0F172A))
-                  : themeConfig.textSecondary,
+          child: SizedBox(
+            width: 38,
+            height: 38,
+            child: Center(
+              child: hasWallpaper
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: onDark
+                                ? Colors.black.withValues(alpha: 0.25)
+                                : Colors.white.withValues(alpha: 0.50),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: onDark
+                                  ? Colors.white.withValues(alpha: 0.20)
+                                  : Colors.white.withValues(alpha: 0.70),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.tune_rounded,
+                            size: 20,
+                            color: iconColor,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      Icons.tune_rounded,
+                      size: 22,
+                      color: iconColor,
+                    ),
             ),
           ),
         ),
@@ -799,6 +810,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   ({Color bg, Color border, BoxShadow shadow}) _cardGlass({
     required bool hasWallpaper,
     required bool isDarkMode,
+    bool onDark = true,
   }) {
     if (!hasWallpaper) {
       return (
@@ -808,8 +820,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
     return (
-      bg: isDarkMode ? const Color(0x6018202F) : Colors.white.withValues(alpha: 0.22),
-      border: Colors.white.withValues(alpha: 0.20),
+      bg: onDark
+          ? (isDarkMode ? const Color(0x6018202F) : Colors.black.withValues(alpha: 0.28))
+          : Colors.white.withValues(alpha: 0.45),
+      border: onDark
+          ? Colors.white.withValues(alpha: 0.20)
+          : Colors.white.withValues(alpha: 0.70),
       shadow: BoxShadow(
         color: Colors.black.withValues(alpha: 0.04),
         blurRadius: 14,
@@ -818,15 +834,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 卡片文字三档（主/次/弱）：玻璃保持通透，可读性只靠「按照片挑字色」这一件事。
-  ///
-  /// [belowScrim] 表示这块内容永远压在屏幕最底部的暗角光幕上（底部双任务卡）：那里永远是深底，
-  /// 一律白字黑影最稳（实测 3.9~10.4，换深色字只剩 1.7~4.6）；中心岛浮在照片中段，
-  /// 明暗完全由照片决定，只能按照片明暗档取色。
+  /// 卡片文字三档（主/次/弱）：
+  /// 可读性由「壁纸明暗档挑字色 + 局部磨砂底托」保障，彻底去除对全屏暗幕的依赖。
   ({Color primary, Color muted, Color faint}) _cardInk({
     required bool hasWallpaper,
     required bool onDark,
-    bool belowScrim = false,
   }) {
     if (!hasWallpaper) {
       return (
@@ -835,16 +847,16 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         faint: onDark ? Colors.white60 : const Color(0xFF64748B),
       );
     }
-    return (belowScrim || onDark)
+    return onDark
         ? (
             primary: Colors.white,
-            muted: Colors.white.withValues(alpha: 0.82),
+            muted: Colors.white.withValues(alpha: 0.85),
             faint: Colors.white.withValues(alpha: 0.72),
           )
         : (
             primary: const Color(0xFF0F172A),
             muted: const Color(0xFF334155),
-            faint: const Color(0xFF334155),
+            faint: const Color(0xFF475569),
           );
   }
 
@@ -857,7 +869,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required String stampDate,
     required int planTotalWords,
   }) {
-    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode);
+    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark);
     final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
     final sealColor = onDark ? const Color(0xFF34D399) : const Color(0xFF059669);
     return GestureDetector(
@@ -1084,8 +1096,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required bool isDarkMode,
     required bool onDark,
   }) {
-    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode);
-    final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark, belowScrim: true);
+    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark);
+    final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
     final textMuted = ink.muted;
     final countColor = ink.primary;
 
@@ -1215,6 +1227,67 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
 
 
+  /// 包装主操作按钮：
+  /// - 经典主题底（无壁纸）：纯透明背景 + 水波纹点击（零多余容器）；
+  /// - 壁纸底：局部微胶囊毛玻璃（Frosted Capsule），自带 18px 模糊与明暗自适应衬底，
+  ///   彻底替代全屏压暗光幕，确保按钮文字在任何壁纸（浅粉、深蓝、白亮）上均通透可读。
+  Widget _wrapActionButton({
+    Key? key,
+    required bool hasWallpaper,
+    required bool onDark,
+    required VoidCallback onTap,
+    required Widget child,
+  }) {
+    if (!hasWallpaper) {
+      return Center(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: key,
+            borderRadius: BorderRadius.circular(20),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
+              child: child,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Material(
+            color: onDark
+                ? Colors.black.withValues(alpha: 0.32)
+                : Colors.white.withValues(alpha: 0.58),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(
+                color: onDark
+                    ? Colors.white.withValues(alpha: 0.22)
+                    : Colors.white.withValues(alpha: 0.80),
+                width: 0.8,
+              ),
+            ),
+            child: InkWell(
+              key: key,
+              borderRadius: BorderRadius.circular(24),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 26),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 加量主按钮（首页"继续学习（加量）"/"再来一组"）
   Widget _buildExtraStudyButton(
     AppThemeConfig themeConfig,
@@ -1224,48 +1297,40 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required VoidCallback onPressed,
   }) {
     final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
-    // 主按钮压在屏幕最底部，那里永远有暗角光幕压深（实测白字对比度 7.9~19.9），
-    // 所以壁纸底一律白字 + 黑影：跟着亮底照片改深色字的话，按钮区只剩 1.0~2.3，等于看不见。
+    final onDark = _wallpaperIsDark ?? isDarkMode;
     final actionColor = hasWallpaper
-        ? Colors.white
+        ? (onDark ? Colors.white : const Color(0xFF0F172A))
         : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
-    final actionShadows = hasWallpaper
+    final actionShadows = hasWallpaper && onDark
         ? const [Shadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 1.5))]
         : null;
-    return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          key: key,
-          borderRadius: BorderRadius.circular(20),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.3,
-                    color: actionColor,
-                    shadows: actionShadows,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 18,
-                  color: actionColor,
-                  shadows: actionShadows,
-                ),
-              ],
+    return _wrapActionButton(
+      key: key,
+      hasWallpaper: hasWallpaper,
+      onDark: onDark,
+      onTap: onPressed,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+              color: actionColor,
+              shadows: actionShadows,
             ),
           ),
-        ),
+          const SizedBox(width: 6),
+          Icon(
+            Icons.arrow_forward_rounded,
+            size: 18,
+            color: actionColor,
+            shadows: actionShadows,
+          ),
+        ],
       ),
     );
   }
@@ -1331,24 +1396,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
-    // 同上：底部按钮永远压在暗角光幕上，壁纸底一律白字 + 黑影
+    final onDark = _wallpaperIsDark ?? isDarkMode;
     final actionColor = hasWallpaper
-        ? Colors.white
+        ? (onDark ? Colors.white : const Color(0xFF0F172A))
         : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
-    final actionShadows = hasWallpaper
+    final actionShadows = hasWallpaper && onDark
         ? const [Shadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 1.5))]
         : null;
-    return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () async {
-            if (_isPreparingStudy) return;
-            if (_newCheckStep == null) {
-              ToastUtil.error('请选择测评环节');
-              return;
-            }
+
+    Future<void> onStartTap() async {
+      if (_isPreparingStudy) return;
+      if (_newCheckStep == null) {
+        ToastUtil.error('请选择测评环节');
+        return;
+      }
 
             // 必须等今日计划准备完成再进入学习页：跨天重置就发生在准备流程里，
             // 计划没就绪就进去，昨天残留的进度会被当成"今日已完成"而直接跳打卡页。
@@ -1608,62 +1669,63 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             context.push('/bdc').then((value) {
               if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
             });
-          },
-          child: Padding(
-            // 纵向 15：主按钮命中区高度 ≈52，误触底栏的概率更低
-            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 18),
-            child: _isPreparingStudy
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(actionColor),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '正在准备今日计划…',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          color: actionColor,
-                          shadows: actionShadows,
-                        ),
-                      ),
-                    ],
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        user?.todayStudyStarted == true ? '继续学习' : '开始学习',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          color: actionColor,
-                          shadows: actionShadows,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 18,
-                        color: actionColor,
-                        shadows: actionShadows,
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
+          }
+
+    final buttonContent = _isPreparingStudy
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(actionColor),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '正在准备今日计划…',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: actionColor,
+                  shadows: actionShadows,
+                ),
+              ),
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                user?.todayStudyStarted == true ? '继续学习' : '开始学习',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: actionColor,
+                  shadows: actionShadows,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: actionColor,
+                shadows: actionShadows,
+              ),
+            ],
+          );
+
+    return _wrapActionButton(
+      hasWallpaper: hasWallpaper,
+      onDark: onDark,
+      onTap: onStartTap,
+      child: buttonContent,
     );
   }
 
