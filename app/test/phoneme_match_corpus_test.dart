@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/util/phoneme_asset.dart';
 
 /// 音素相似度打分的判别力基准：这个分数只衡量"两个词的发音有多像"。
 ///
@@ -16,7 +17,7 @@ import 'package:nnbdc/util/asr_util.dart';
 ///
 /// 本用例从两侧钉住这条打分线的判别力：发音差别大的词必须落在阈值线下，
 /// 而真实口音与识别近似必须仍然达到阈值（实测量值见各断言）。
-/// 音素数据逐字取自 `app/assets/cmudict.dict`。
+/// 音素数据逐字取自 cmudict 源数据 `app/tool/phoneme/cmudict.dict`。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -25,8 +26,8 @@ void main() {
         .setMockMessageHandler('flutter/assets', (ByteData? message) async {
       if (message == null) return null;
       final String key = utf8.decode(message.buffer.asUint8List());
-      if (key == 'assets/cmudict.dict') {
-        const String content = '''
+      if (key == 'assets/cmudict.pho') {
+        return ByteData.sublistView(encodePhonemeAsset(parseCmudictText('''
 worried W ER1 IY0 D
 fearful F IH1 R F AH0 L
 helpful HH EH1 L P F AH0 L
@@ -60,8 +61,7 @@ glass G L AE1 S
 grass G R AE1 S
 play P L EY1
 pray P R EY1
-''';
-        return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
+''')));
       }
       return null;
     });

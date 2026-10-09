@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/util/phoneme_asset.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 
@@ -15,13 +16,12 @@ void main() {
       (ByteData? message) async {
         if (message == null) return null;
         final String key = utf8.decode(message.buffer.asUint8List());
-        if (key == 'assets/cmudict.dict') {
-          final String content = '''
+        if (key == 'assets/cmudict.pho') {
+          return ByteData.sublistView(encodePhonemeAsset(parseCmudictText('''
 CHARGE CH AA1 R JH
 JUDGE JH AH1 JH
 TWELVE T W EH1 L V
-''';
-          return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
+''')));
         }
         return null; // Fallback for other assets
       },

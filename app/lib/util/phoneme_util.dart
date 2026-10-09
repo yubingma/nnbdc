@@ -1,14 +1,14 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/edit_distance.dart';
+import 'package:nnbdc/util/phoneme_asset.dart';
 
 class PhonemeUtil {
-  static const String _assetPath = 'assets/cmudict.dict';
+  static const String _assetPath = 'assets/cmudict.pho';
 
-  /// 判定链路等待音素词典的上限。真机实测健康加载要 4~5 秒（>50KB 的资源会另起 isolate
-  /// 做 UTF-8 解码，解析再起一个 isolate），这里留足余量。
+  /// 判定链路等待音素词典的上限。资源是预编译的紧凑查表格式，加载本身只要几十毫秒
+  /// （无 UTF-8 解码 isolate、无解析 isolate），这里的余量是留给极端内存压力下的兜底。
   static const Duration loadTimeout = Duration(seconds: 20);
 
   static bool _loaded = false;
@@ -20,7 +20,7 @@ class PhonemeUtil {
   /// 进行中的加载，结束后清空 —— 失败/停摆不会被永久缓存成"永远加载中"。
   static Future<void>? _loading;
 
-  static final Map<String, List<List<String>>> _wordToPhonemeVariants = {};
+  static PhonemeAsset? _asset;
   static final RegExp _digitRegExp = RegExp(r'\d+'), _lowerAlphaRegExp = RegExp(r'[a-z]');
 
   /// 音素词典是否已就绪。
@@ -53,41 +53,22 @@ class PhonemeUtil {
   }
 
   /// 真正的加载：永不抛出。失败时置 [_unavailable] 并打日志。
-  /// （过去这里只做静默 completeError：一次停摆就让整条发音判定链路无声卡死，
-  /// 而且日志里没有任何线索。）
+  /// 用 `rootBundle.load`（拿 ByteData）而不是 `loadString`：后者对 >50KB 的资源会另起
+  /// isolate 做 UTF-8 解码，而紧凑资源是二进制查表格式，本来就不需要解码，更不需要解析。
   static Future<void> _doLoad() async {
     final sw = Stopwatch()..start();
     try {
-      final content = await rootBundle.loadString(_assetPath);
-      // 在后台 Isolate 中解析，避免阻塞主线程
-      final parsedData = await compute(_parseInIsolate, content);
-      _wordToPhonemeVariants.addAll(parsedData);
+      final data = await rootBundle.load(_assetPath);
+      final asset = PhonemeAsset.fromBytes(data);
+      _asset = asset;
       _loaded = true;
-      Global.logger.i('PhonemeUtil: 音素词典就绪，共 ${_wordToPhonemeVariants.length} 词，'
+      Global.logger.i('PhonemeUtil: 音素词典就绪，共 ${asset.wordCount} 词，'
           '耗时 ${sw.elapsedMilliseconds}ms');
     } catch (e, st) {
       _unavailable = true;
       Global.logger.e('PhonemeUtil: 音素词典加载失败（耗时 ${sw.elapsedMilliseconds}ms），'
           '本次会话发音比对降级为拼写比对: $e', stackTrace: st);
     }
-  }
-
-  // 必须是顶级函数或静态函数才能用于 compute
-  static Map<String, List<List<String>>> _parseInIsolate(String content) {
-    final Map<String, List<List<String>>> data = {};
-    for (var line in content.split('\n')) {
-      line = line.trim();
-      if (line.isEmpty || line.startsWith(';') || line.startsWith('#')) continue;
-      final parts = line.split(RegExp(r'\s+'));
-      if (parts.length < 2) continue;
-      var head = parts.first;
-      final pn = head.indexOf('(');
-      if (pn > 0 && head.endsWith(')')) head = head.substring(0, pn);
-      data
-          .putIfAbsent(head.toLowerCase(), () => [])
-          .add(parts.sublist(1).map((a) => a.replaceAll(RegExp(r'\d+'), '')).toList());
-    }
-    return data;
   }
 
   static Future<List<List<String>>> lookup(String word) async {
@@ -98,12 +79,13 @@ class PhonemeUtil {
     }
     String key = word.trim().toLowerCase().replaceAll(RegExp(r'\(.*?\)'), '');
     if (key.isEmpty) return const [];
-    if (_wordToPhonemeVariants.containsKey(key)) return _wordToPhonemeVariants[key]!;
+    final direct = _asset!.variantsOf(key);
+    if (direct != null) return direct;
     final words = key.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     if (words.length > 1 && words.length <= 5) {
       List<List<String>> combined = [[]];
       for (final w in words) {
-        final variants = _wordToPhonemeVariants[w];
+        final variants = _asset!.variantsOf(w);
         if (variants == null || variants.isEmpty) return const [];
         List<List<String>> nextCombined = [];
         for (final cv in combined) {

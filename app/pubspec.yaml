@@ -163,7 +163,8 @@ flutter:
     - assets/video/
     - assets/video/scenes/
     - assets/fonts/
-    - assets/cmudict.dict
+    # 音素词典（预编译紧凑查表格式），由 `dart run tool/phoneme/compile_cmudict.dart` 生成
+    - assets/cmudict.pho
     - assets/db/initial.sqlite.gz
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
