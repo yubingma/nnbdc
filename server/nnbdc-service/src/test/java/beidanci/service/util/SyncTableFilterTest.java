@@ -85,9 +85,9 @@ public class SyncTableFilterTest {
                 log("cigen"),
                 log("user_pet_state"));
 
-        List<SysDbLogDto> kept = SyncTableFilter.filter(logs, "dict,cigen", 0, SysDbLogDto::getTblName);
+        List<SysDbLogDto> kept = SyncTableFilter.filter(logs, "dict,cigen", 0, dto -> dto.getTblName());
 
-        assertEquals(List.of("dict", "cigen"), kept.stream().map(SysDbLogDto::getTblName).toList());
+        assertEquals(List.of("dict", "cigen"), kept.stream().map(dto -> dto.getTblName()).toList());
     }
 
     private static SysDbLogDto log(String table) {

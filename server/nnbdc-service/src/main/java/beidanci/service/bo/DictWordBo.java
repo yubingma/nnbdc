@@ -400,7 +400,9 @@ public class DictWordBo extends BaseBo<DictWord> {
         }
         sql.append(" ORDER BY word_id ASC LIMIT :limit");
         params.addValue("limit", limit);
-        return namedParameterJdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> rs.getString("word_id"));
+        String querySql = Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params,
+                (rs, rowNum) -> Objects.requireNonNull(rs.getString("word_id")));
     }
 
     /** 某词书当前的关联单词总数（权威值） */

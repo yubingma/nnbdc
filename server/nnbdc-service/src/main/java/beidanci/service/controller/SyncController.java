@@ -68,7 +68,7 @@ public class SyncController {
             return Set.of();
         }
         return Arrays.stream(tables.split(","))
-                .map(String::trim)
+                .map(s -> s.trim())
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toSet());
     }
@@ -99,7 +99,7 @@ public class SyncController {
         List<SysDbLogDto> logs = sysDbLogBo.getSysDbLogs(fromVersion, tables);
         // 只下发该客户端认识的表：老客户端遇到不认识的新表会中断整次同步
         logs = SyncTableFilter.filter(logs, supportedTables(request), clientVersion(request),
-                SysDbLogDto::getTblName);
+                dbLog -> dbLog.getTblName());
         return Result.success(logs);
     }
 
@@ -143,7 +143,7 @@ public class SyncController {
 
         // 只下发该客户端认识的表：老客户端遇到不认识的新表会中断整次同步
         logs = SyncTableFilter.filter(logs, supportedTables(request), clientVersion(request),
-                UserDbLogDto::getTblName);
+                dbLog -> dbLog.getTblName());
 
         // 如果客户端不支持例句练习环节，过滤掉相关同步日志，防老前端崩溃
         String supportedSteps = request.getHeader("X-Supported-Steps");
