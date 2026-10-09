@@ -2,6 +2,7 @@ package beidanci.service.util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -19,8 +20,9 @@ import org.apache.commons.lang3.StringUtils;
  *     不需要人工维护第二份），服务端按声明放行；</li>
  * <li>没声明的是老客户端，按其 {@code X-Client-Version}（verCode）与
  *     {@link #INTRODUCED_IN}（每张新增表首次获得客户端支持的版本）比对放行；</li>
- * <li>未登记的表 = 2026-08-20（线上 minVerCode=26082001）之前就存在的老表，
- *     在网老包必然都认识。</li>
+ * <li>既没声明、又不在 {@link #INTRODUCED_IN} 里的表，只有 {@link #BASELINE_TABLES}
+ *     （最老在网客户端就认识的基础表）才发；**其它一律不发**——这样新增表忘了登记版本号时，
+ *     后果只是「中间版本暂时收不到」，绝不会把老包打挂。</li>
  * </ol>
  */
 public final class SyncTableFilter {
@@ -32,11 +34,24 @@ public final class SyncTableFilter {
     public static final String CLIENT_VERSION_HEADER = "X-Client-Version";
 
     /**
+     * 基础表：2026-08-20 版客户端的 remoteTableNameToLocal 映射表集合。
+     *
+     * 线上 ver.json 的 minVerCode=26082001，比它更老的客户端会被强制升级，所以这个集合是
+     * 所有在网老包必然认识的表。此集合**只减不增**：新增表一律不要加进来。
+     */
+    private static final Set<String> BASELINE_TABLES = Set.of(
+            "book_mark", "cigen", "cigen_word_link", "daka", "dict", "dict_group", "dict_word",
+            "group_and_dict_link", "learning_dict", "learning_log", "learning_word", "mastered_word",
+            "meaning_item", "pca_projection_config", "sentence", "user", "user_cow_dung_log",
+            "user_oper", "user_study_daily_stat", "user_study_step", "user_wrong_word", "word",
+            "word_image");
+
+    /**
      * 新增同步表 → 首次支持它的客户端 verCode。
      *
-     * 新表上线时**必须**在这里登记：在对应客户端版本发布之前，先登记成
-     * {@link Integer#MAX_VALUE}（任何老客户端都不发），版本发布后再改成真实的 verCode。
-     * 漏登记会让老客户端收到不认识的新表，整次同步直接失败。
+     * 登记是可选的「提前放行」：登记后，已经在线但版本较新的客户端（例如 26.09.24）在升级到
+     * 支持该表的版本之前，仍能继续收到这张表的数据；不登记则只有声明支持它的新客户端能收到，
+     * 老包同样安全。客户端版本尚未发布时，若已登记必须写 {@link Integer#MAX_VALUE}。
      *
      * 取值由客户端映射表（app/lib/util/utils.dart 的 remoteTableNameToLocal）进入各版本的
      * 时间确定，可用 {@code git show <版本提交>:app/lib/util/utils.dart} 核对。
@@ -55,7 +70,7 @@ public final class SyncTableFilter {
      *
      * @param table                 后端表名
      * @param supportedTablesHeader 客户端声明的表清单，逗号分隔；为空表示未声明的老客户端
-     * @param clientVersion         客户端 verCode；解析不出（老包 / "NONE"）按 0 处理，只放行未登记的老表
+     * @param clientVersion         客户端 verCode；解析不出（老包 / "NONE"）按 0 处理
      */
     public static boolean isSupported(String table, String supportedTablesHeader, int clientVersion) {
         if (StringUtils.isNotBlank(supportedTablesHeader)) {
@@ -67,7 +82,10 @@ public final class SyncTableFilter {
             return false;
         }
         Integer introducedIn = INTRODUCED_IN.get(table);
-        return introducedIn == null || introducedIn <= clientVersion;
+        if (introducedIn != null) {
+            return introducedIn <= clientVersion;
+        }
+        return BASELINE_TABLES.contains(table);
     }
 
     /** 过滤掉该客户端不认识的表的同步日志 */

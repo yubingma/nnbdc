@@ -50,6 +50,15 @@ public class SyncTableFilterTest {
     }
 
     @Test
+    public void 基线之外且未登记的新表任何老客户端都不发() {
+        // 关键安全边界：新表忘了登记版本号时，后果只能是「中间版本暂时收不到」，绝不能打挂老包
+        for (int ver : new int[] {0, 26082001, 26091702, 26092401, 26100201, 26100601}) {
+            assertFalse(SyncTableFilter.isSupported("brand_new_table", null, ver), "ver=" + ver);
+            assertFalse(SyncTableFilter.isSupported("game_hall", null, ver), "ver=" + ver);
+        }
+    }
+
+    @Test
     public void 声明了能力清单的客户端按清单放行() {
         String declared = "dict,word_phrase,user_pet_state";
 

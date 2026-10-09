@@ -53,7 +53,7 @@
 - **故障物理**：客户端的「后端表名 → 本地表」映射（`app/lib/util/utils.dart` 的 `_remoteToLocalTables`）是随安装包发布的常量。服务端一旦下发老包不认识的新表，老包就会抛「不支持的后端表名」并中断**整次**同步（用户数据同步也一并停摆）。历史事故：`game_hall`、`word_phrase`、`user_pet_state`。
 - 新增一张同步表，以下三件事必须同时做完：
   1. **客户端**：补映射 + 本地表 + schema 迁移 + 下行应用分支（这是新客户端认识它的唯一来源）。
-  2. **服务端闸门**：在 `beidanci.service.util.SyncTableFilter.INTRODUCED_IN` 登记「表名 → 首次支持它的客户端 verCode」；对应客户端版本尚未发布前先登记 `Integer.MAX_VALUE`（任何老客户端都不发），版本发布后再改成真实 verCode。**漏登记 = 老包再次被整表打挂。**
+  2. **服务端闸门**：默认已安全——既不在基线老表清单、又没登记过的新表，一律不下发给未声明能力的客户端（`SyncTableFilter.BASELINE_TABLES` / `INTRODUCED_IN`）。若想让「已在线但版本比新包旧」的客户端也提前收到这张表（例如发布前就在用的 26.09.24 用户），再在 `INTRODUCED_IN` 登记「表名 → 首次支持它的客户端 verCode」；对应版本尚未发布时登记 `Integer.MAX_VALUE`。漏登记只会让这些中间版本暂时收不到，不会再打挂老包。
   3. **按表补拉（如需）**：服务端补整表补发分支（系统表 `SysDbSyncBo.generateTableFullLogs`，用户表 `UserDbSyncBo.generateUserTableLogs`），并把表名加进客户端探测清单（`findMissingSystemTables` / `findMissingUserTables`），这样老包升级后能把当年整表跳过的数据自动补回来。
 - 客户端处理下行日志时，遇到不认识的后端表必须**跳过该表并告警**，严禁抛异常中断整次同步。
 - 判断客户端认识哪些表，只能依据它声明的 `X-Supported-Tables`（新包自动上报）或 `X-Client-Version` 版本闸门；严禁默认「服务端有的表客户端都认识」。

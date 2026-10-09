@@ -72,6 +72,41 @@ void main() {
       expect(await findMissingSystemTables(), isNot(contains('word_phrase')));
       expect(await findMissingUserTables(), isNot(contains('user_pet_state')));
     });
+
+    test('每张支持同步的表都必须明确表态：可整表补拉，或明确不补拉', () async {
+      // 空库时两个探测函数会返回全部参与整表补拉的表
+      final probed = <String>{
+        ...await findMissingSystemTables(),
+        ...await findMissingUserTables(),
+      };
+
+      // 明确不参与整表补拉的表：
+      // - user / dict_word / meaning_item / book_mark / mastered_word：本地必然有数据，
+      //   或服务端 UserDbSyncBo.generateUserTableLogs 根本没有整表补发分支
+      // - word / sentence / word_image：数据量太大，只跟着词书下载走
+      const noBackfillNeeded = <String>{
+        'user',
+        'dict_word',
+        'meaning_item',
+        'book_mark',
+        'mastered_word',
+        'word',
+        'sentence',
+        'word_image',
+      };
+
+      final undecided = Util.supportedRemoteTableNames
+          .where((table) => !probed.contains(table) && !noBackfillNeeded.contains(table))
+          .toList();
+
+      expect(
+        undecided,
+        isEmpty,
+        reason: '新增同步表后必须二选一：加进 findMissingSystemTables / findMissingUserTables'
+            '（老包升级后能把当年跳过的数据补回来），或加进本测试的 noBackfillNeeded 白名单（明确不补拉）。'
+            '漏选不会报错，但会让升级用户静默少数据：$undecided',
+      );
+    });
   });
 
   group('应用系统数据日志', () {
