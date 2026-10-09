@@ -1682,6 +1682,7 @@ class DataIntegrityChecker {
           popularity: w.popularity,
           shortDesc: w.shortDesc,
           shortDescCn: w.shortDescCn,
+          enDefinition: w.enDefinition,
           longDesc: w.longDesc,
           groupInfo: w.groupInfo,
           createTime: w.createTime,

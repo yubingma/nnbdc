@@ -93,4 +93,15 @@ public class Msg extends UuidPo {
     public void setClientType(ClientType clientType) {
         this.clientType = clientType;
     }
+
+    @Column(name = "tag", length = 32)
+    private String tag;
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
 }

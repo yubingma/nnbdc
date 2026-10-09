@@ -112,4 +112,14 @@ public class MsgVo extends Vo {
     public void setClientType(ClientType clientType) {
         this.clientType = clientType;
     }
+
+    private String tag;
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
 }

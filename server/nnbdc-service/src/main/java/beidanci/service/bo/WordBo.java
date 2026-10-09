@@ -133,6 +133,7 @@ public class WordBo extends BaseBo<Word> {
         vo.setPronounce(word.getPronounce());
         vo.setShortDesc(word.getShortDesc());
         vo.setShortDescCn(word.getShortDescCn());
+        vo.setEnDefinition(word.getEnDefinition());
 
         List<MeaningItemDto> dtos = meaningItemBo.findMeaningsByWord(word.getId());
         Map<String, DictVo> dictVoById = findDictVos(dtos);
@@ -691,6 +692,7 @@ public class WordBo extends BaseBo<Word> {
         dto.setGroupInfo(word.getGroupInfo());
         dto.setShortDesc(word.getShortDesc());
         dto.setShortDescCn(word.getShortDescCn());
+        dto.setEnDefinition(word.getEnDefinition());
         dto.setLongDesc(word.getLongDesc());
         dto.setEmbedding1bit(word.getEmbedding1bit());
         dto.setCreateTime(word.getCreateTime());

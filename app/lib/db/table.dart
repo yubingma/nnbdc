@@ -295,6 +295,9 @@ class Words extends Table {
   /// 「深度讲解」的中文译文（服务端 word.short_desc_cn 同步而来）
   TextColumn get shortDescCn => text().nullable()();
 
+  /// 分词性简明英英释义
+  TextColumn get enDefinition => text().nullable()();
+
   TextColumn get spell => text()();
 
   BlobColumn get embedding1bit => blob().nullable()();

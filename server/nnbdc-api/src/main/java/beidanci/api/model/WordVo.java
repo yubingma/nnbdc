@@ -23,6 +23,7 @@ public class WordVo extends UuidVo {
     private String groupInfo;
     private String shortDesc;
     private String shortDescCn;
+    private String enDefinition;
     private String longDesc;
     private String meaningStr;
     private byte[] embedding1bit;
@@ -215,6 +216,14 @@ public class WordVo extends UuidVo {
 
     public void setShortDescCn(String shortDescCn) {
         this.shortDescCn = shortDescCn;
+    }
+
+    public String getEnDefinition() {
+        return enDefinition;
+    }
+
+    public void setEnDefinition(String enDefinition) {
+        this.enDefinition = enDefinition;
     }
 
     public String getSound() {

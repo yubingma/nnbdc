@@ -17,6 +17,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import beidanci.api.model.ClientType;
 import beidanci.api.model.MsgType;
@@ -393,12 +394,13 @@ public class MsgBo extends BaseBo<Msg> {
      */
     public int cleanupOldAdvice(int daysAge) {
         Date threshold = new Date(System.currentTimeMillis() - (long) daysAge * 24 * 60 * 60 * 1000);
-        String sql = "DELETE FROM msg WHERE msg_type = :msgType AND create_time < :threshold";
+        // 保护被打上标签（如“需求”）的宝贵反馈，防止被批量清理误删
+        String sql = "DELETE FROM msg WHERE msg_type = :msgType AND (tag IS NULL OR tag = '') AND create_time < :threshold";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("msgType", MsgType.Advice.toString());
         params.addValue("threshold", threshold);
         int deletedCount = namedParameterJdbcTemplate.update(sql, params);
-        logger.info("清理了 {} 条 {} 天前的意见建议消息", deletedCount, daysAge);
+        logger.info("清理了 {} 条 {} 天前未打标的意见建议消息", deletedCount, daysAge);
         return deletedCount;
     }
 
@@ -412,5 +414,21 @@ public class MsgBo extends BaseBo<Msg> {
         MapSqlParameterSource params = new MapSqlParameterSource("id", msgId);
         namedParameterJdbcTemplate.update(sql, params);
         logger.info("已删除消息: msgId={}", msgId);
+    }
+
+    /**
+     * 更新消息的管理员业务标签（如“需求”，传入空或 null 则清空标签）
+     *
+     * @param msgId 消息ID
+     * @param tag 标签文本
+     */
+    public void updateMsgTag(String msgId, String tag) {
+        String normalizedTag = StringUtils.hasText(tag) ? tag.trim() : null;
+        String sql = "UPDATE msg SET tag = :tag WHERE id = :id";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("id", msgId);
+        params.addValue("tag", normalizedTag);
+        namedParameterJdbcTemplate.update(sql, params);
+        logger.info("已更新消息标签: msgId={}, tag={}", msgId, normalizedTag);
     }
 }

@@ -74,13 +74,14 @@ class WordDto {
   final String? pronounce;
   final String? shortDesc;
   final String? shortDescCn;
+  final String? enDefinition;
   final String spell;
   final String? embedding1bit;
   final DateTime createTime;
   final DateTime updateTime;
 
   WordDto(this.id, this.americaPronounce, this.britishPronounce, this.groupInfo, this.longDesc, this.popularity, this.pronounce, this.shortDesc,
-      this.spell, this.createTime, this.updateTime, [this.embedding1bit, this.shortDescCn]);
+      this.spell, this.createTime, this.updateTime, [this.embedding1bit, this.shortDescCn, this.enDefinition]);
 
   factory WordDto.fromJson(Map<String, dynamic> json) {
     json['updateTime'] ??= json['createTime'];

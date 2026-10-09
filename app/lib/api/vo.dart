@@ -566,6 +566,9 @@ class WordVo {
 
   /// 「深度讲解」的中文译文（与 images 一样不走构造函数，避免改动全部构造点）
   String? shortDescCn;
+
+  /// 分词性简明英英释义
+  String? enDefinition;
   String? meaningStr;
   DateTime? createTime;
   DateTime? updateTime;
@@ -1569,9 +1572,10 @@ class MsgVo {
   DateTime createTime;
   bool viewed;
   UserVo toUser;
+  String? tag;
 
   MsgVo(this.id, this.fromUserName, this.fromUserNickName, this.toUserName, this.toUserNickName, this.content, this.createTimeForDisplay,
-      this.msgType, this.clientType, this.fromUser, this.toUser, this.createTime, this.viewed);
+      this.msgType, this.clientType, this.fromUser, this.toUser, this.createTime, this.viewed, [this.tag]);
 
   factory MsgVo.fromJson(Map<String, dynamic> json) => _$MsgVoFromJson(json);
 

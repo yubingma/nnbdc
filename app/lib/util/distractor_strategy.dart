@@ -490,6 +490,7 @@ WordVo _buildWordVo(Word word, List<MeaningItemVo> meaningItems) => WordVo.c2(wo
   ..id = word.id
   ..shortDesc = word.shortDesc
   ..shortDescCn = word.shortDescCn
+  ..enDefinition = word.enDefinition
   ..longDesc = word.longDesc
   ..pronounce = word.pronounce
   ..americaPronounce = word.americaPronounce

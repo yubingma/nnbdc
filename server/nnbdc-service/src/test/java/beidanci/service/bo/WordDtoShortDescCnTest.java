@@ -23,6 +23,7 @@ public class WordDtoShortDescCnTest {
         word.setPopularity(5);
         word.setShortDesc("A flaw in something is a defect.");
         word.setShortDescCn("某物上的瑕疵就是 defect（缺陷）。");
+        word.setEnDefinition("n. an imperfection or flaw");
         word.setEmbedding1bit(new byte[] {1, 2, 3});
         return word;
     }
@@ -33,6 +34,7 @@ public class WordDtoShortDescCnTest {
 
         assertTrue(dto.getShortDescCn().contains("defect"));
         assertTrue(dto.getShortDesc().startsWith("A flaw in something"));
+        assertTrue(dto.getEnDefinition().contains("imperfection"));
         assertTrue(dto.getEmbedding1bit().length == 3, "整行下发必须带向量，否则客户端本地向量被刷空");
     }
 
@@ -41,7 +43,9 @@ public class WordDtoShortDescCnTest {
         String json = JsonUtils.toJson(new WordBo().toDto(buildWord()));
 
         assertTrue(json.contains("\"shortDescCn\""), "客户端按 shortDescCn 读取，字段名不得改");
+        assertTrue(json.contains("\"enDefinition\""), "客户端按 enDefinition 读取，字段名不得改");
         assertTrue(json.contains("某物上的瑕疵就是 defect（缺陷）。"));
         assertFalse(json.contains("short_desc_cn"), "下发 JSON 用驼峰，不得泄漏数据库列名");
+        assertFalse(json.contains("en_definition"), "下发 JSON 用驼峰，不得泄漏数据库列名");
     }
 }

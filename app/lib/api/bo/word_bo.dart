@@ -860,6 +860,7 @@ class WordBo {
         ..id = localWord.id
         ..shortDesc = localWord.shortDesc
         ..shortDescCn = localWord.shortDescCn
+        ..enDefinition = localWord.enDefinition
         ..longDesc = localWord.longDesc
         ..pronounce = localWord.pronounce
         ..americaPronounce = localWord.americaPronounce
@@ -942,6 +943,7 @@ class WordBo {
             ..id = similarWord.id
             ..shortDesc = similarWord.shortDesc
             ..shortDescCn = similarWord.shortDescCn
+            ..enDefinition = similarWord.enDefinition
             ..longDesc = similarWord.longDesc
             ..pronounce = similarWord.pronounce
             ..americaPronounce = similarWord.americaPronounce
@@ -1125,6 +1127,7 @@ class WordBo {
         ..id = localWord.id
         ..shortDesc = localWord.shortDesc
         ..shortDescCn = localWord.shortDescCn
+        ..enDefinition = localWord.enDefinition
         ..longDesc = localWord.longDesc
         ..pronounce = localWord.pronounce
         ..americaPronounce = localWord.americaPronounce
@@ -1349,7 +1352,9 @@ class WordBo {
             ..id = word.id
             ..shortDesc = word.shortDesc
           ..shortDescCn = word.shortDescCn
+          ..enDefinition = word.enDefinition
             ..shortDescCn = word.shortDescCn
+            ..enDefinition = word.enDefinition
             ..longDesc = word.longDesc
             ..pronounce = word.pronounce
             ..americaPronounce = word.americaPronounce
@@ -1441,7 +1446,9 @@ class WordBo {
             ..id = word.id
             ..shortDesc = word.shortDesc
           ..shortDescCn = word.shortDescCn
+          ..enDefinition = word.enDefinition
             ..shortDescCn = word.shortDescCn
+            ..enDefinition = word.enDefinition
             ..longDesc = word.longDesc
             ..pronounce = word.pronounce
             ..americaPronounce = word.americaPronounce
@@ -1534,7 +1541,9 @@ class WordBo {
             ..id = word.id
             ..shortDesc = word.shortDesc
           ..shortDescCn = word.shortDescCn
+          ..enDefinition = word.enDefinition
             ..shortDescCn = word.shortDescCn
+            ..enDefinition = word.enDefinition
             ..longDesc = word.longDesc
             ..pronounce = word.pronounce
             ..americaPronounce = word.americaPronounce
@@ -1658,6 +1667,7 @@ class WordBo {
           ..id = word.id
           ..shortDesc = word.shortDesc
           ..shortDescCn = word.shortDescCn
+          ..enDefinition = word.enDefinition
           ..longDesc = word.longDesc
           ..pronounce = word.pronounce
           ..americaPronounce = word.americaPronounce
@@ -1718,6 +1728,7 @@ class WordBo {
             ..id = wordEntry.id
             ..shortDesc = wordEntry.shortDesc
             ..shortDescCn = wordEntry.shortDescCn
+            ..enDefinition = wordEntry.enDefinition
             ..longDesc = wordEntry.longDesc
             ..pronounce = wordEntry.pronounce
             ..americaPronounce = wordEntry.americaPronounce
@@ -1905,6 +1916,7 @@ class WordBo {
             ..pronounce = wordEntry.pronounce
             ..shortDesc = wordEntry.shortDesc
             ..shortDescCn = wordEntry.shortDescCn
+            ..enDefinition = wordEntry.enDefinition
             ..longDesc = wordEntry.longDesc
             ..groupInfo = wordEntry.groupInfo;
           List<MeaningItemVo> meaningItemVos = [];
@@ -2775,6 +2787,7 @@ class WordBo {
           ..id = word.id
           ..shortDesc = word.shortDesc
           ..shortDescCn = word.shortDescCn
+          ..enDefinition = word.enDefinition
           ..longDesc = word.longDesc
           ..pronounce = word.pronounce
           ..americaPronounce = word.americaPronounce
@@ -3139,7 +3152,9 @@ class WordBo {
             ..id = word.id
             ..shortDesc = word.shortDesc
           ..shortDescCn = word.shortDescCn
+          ..enDefinition = word.enDefinition
             ..shortDescCn = word.shortDescCn
+            ..enDefinition = word.enDefinition
             ..longDesc = word.longDesc
             ..pronounce = word.pronounce
             ..americaPronounce = word.americaPronounce

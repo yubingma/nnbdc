@@ -281,7 +281,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 60;
+  int get schemaVersion => 61;
 
   @override
   MigrationStrategy get migration {
@@ -500,6 +500,10 @@ class MyDatabase extends _$MyDatabase {
           // 从版本 59 升级到版本 60：订正 learning_words 中历史遗留的非法难度数据 (difficulty = 0)
           if (from < 60) {
             await _fixIllegalLearningWordDifficulty();
+          }
+          // 从版本 60 升级到版本 61：words 增加分词性简明英英释义列
+          if (from < 61) {
+            await m.addColumn(words, words.enDefinition);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志

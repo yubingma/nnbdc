@@ -194,6 +194,7 @@ class RootFamilyWordsProvider with WordsProvider {
       ..pronounce = entry.pronounce
       ..shortDesc = entry.shortDesc
       ..shortDescCn = entry.shortDescCn
+      ..enDefinition = entry.enDefinition
       ..longDesc = entry.longDesc
       ..groupInfo = entry.groupInfo;
     wordVo.meaningItems =

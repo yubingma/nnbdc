@@ -97,6 +97,7 @@ class ConfusableWordsProvider with WordsProvider {
           ..pronounce = wordEntry.pronounce
           ..shortDesc = wordEntry.shortDesc
           ..shortDescCn = wordEntry.shortDescCn
+          ..enDefinition = wordEntry.enDefinition
           ..longDesc = wordEntry.longDesc
           ..groupInfo = wordEntry.groupInfo;
         wordVo.meaningItems = mItems

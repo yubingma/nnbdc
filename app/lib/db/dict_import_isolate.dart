@@ -214,6 +214,7 @@ Future<void> _runImport({
               pronounce: w.pronounce,
               shortDesc: w.shortDesc,
               shortDescCn: w.shortDescCn,
+              enDefinition: w.enDefinition,
               spell: w.spell,
               embedding1bit: w.embedding1bit != null ? base64Decode(w.embedding1bit!) : null,
               createTime: w.createTime,

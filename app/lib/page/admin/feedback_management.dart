@@ -163,6 +163,11 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('确定要删除指定天数以前的意见建议吗？此操作不可撤销。'),
+            const SizedBox(height: 8),
+            Text(
+              '（提示：系统已自动保护所有被标记为「需求」的记录，不会被删除）',
+              style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: daysController,
@@ -281,6 +286,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                     m.toUser,
                     m.createTime,
                     true,
+                    m.tag,
                   )
                 : m)
             .toList();
@@ -406,6 +412,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   Widget _buildFilterTabs() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final reqCount = _messages.where((m) => m.tag == '需求').length;
 
     return Container(
       width: double.infinity,
@@ -416,6 +423,11 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         child: Row(
           children: [
             _buildFilterChip('全部', 'all'),
+            const SizedBox(width: 8),
+            _buildFilterChip(
+              reqCount > 0 ? '💡 需求 ($reqCount)' : '💡 需求',
+              'requirement',
+            ),
             const SizedBox(width: 8),
             _buildFilterChip('永久会员', 'premium'),
             const SizedBox(width: 8),
@@ -429,6 +441,8 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _membershipFilter == value;
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isReq = value == 'requirement';
+    final activeColor = isReq ? const Color(0xFFF59E0B) : context.primaryColor;
 
     return FilterChip(
       label: Text(
@@ -445,7 +459,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
           _membershipFilter = value;
         });
       },
-      selectedColor: context.primaryColor,
+      selectedColor: activeColor,
       backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[100],
       checkmarkColor: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -453,7 +467,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? context.primaryColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+          color: isSelected ? activeColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
           width: 0.5,
         ),
       ),
@@ -470,7 +484,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         autofocus: true,
         style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
         decoration: InputDecoration(
-          hintText: '搜索昵称、用户、内容...',
+          hintText: '搜索昵称、用户、内容、标签...',
           hintStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
           prefixIcon: Icon(Icons.search, color: context.primaryColor),
           suffixIcon: _searchQuery.isNotEmpty
@@ -503,11 +517,15 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 
   Widget _buildMessageList() {
     final filtered = _messages.where((m) {
-      // 1. 会员状态筛选
-      if (_membershipFilter != 'all') {
+      // 1. 标签与会员状态筛选
+      if (_membershipFilter == 'requirement') {
+        if (m.tag != '需求') return false;
+      } else if (_membershipFilter == 'premium') {
         final bool isPremium = m.fromUser.premiumOverrideEnabled == true;
-        if (_membershipFilter == 'premium' && !isPremium) return false;
-        if (_membershipFilter == 'normal' && isPremium) return false;
+        if (!isPremium) return false;
+      } else if (_membershipFilter == 'normal') {
+        final bool isPremium = m.fromUser.premiumOverrideEnabled == true;
+        if (isPremium) return false;
       }
 
       // 2. 全文搜索筛选
@@ -516,6 +534,9 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
       // 准备所有可见字段的搜索字符串
       final visibleStrings = <String>[];
       visibleStrings.add(m.content);
+      if (m.tag != null) {
+        visibleStrings.add(m.tag!);
+      }
       visibleStrings.add(m.fromUser.nickName ?? "");
       visibleStrings.add(m.fromUser.userName ?? "");
       visibleStrings.add(m.fromUser.email ?? "");
@@ -629,6 +650,35 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                               const SizedBox(width: 4),
                               const Icon(Icons.verified, size: 16, color: Color(0xFF2196F3)),
                             ],
+                            if (message.tag != null && message.tag!.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.lightbulb, size: 11, color: Color(0xFFF59E0B)),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      message.tag!,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFF59E0B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         Row(
@@ -694,6 +744,25 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                       ),
                     ),
                     TextButton.icon(
+                      onPressed: () => _toggleRequirementTag(message),
+                      icon: Icon(
+                        message.tag == '需求' ? Icons.lightbulb : Icons.lightbulb_outline,
+                        size: 16,
+                        color: message.tag == '需求'
+                            ? const Color(0xFFF59E0B)
+                            : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                      ),
+                      label: Text(
+                        message.tag == '需求' ? '已是需求' : '标为需求',
+                        style: TextStyle(
+                          color: message.tag == '需求'
+                              ? const Color(0xFFF59E0B)
+                              : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                          fontWeight: message.tag == '需求' ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
                       onPressed: () => _setAsPermanentMemberForUser(message.fromUser),
                       icon: Icon(
                         message.fromUser.premiumOverrideEnabled == true ? Icons.star : Icons.star_border,
@@ -730,6 +799,26 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         ),
       ),
     );
+  }
+
+  Future<void> _toggleRequirementTag(MsgVo message) async {
+    final bool isRequirement = message.tag == '需求';
+    final String? newTag = isRequirement ? null : '需求';
+    final adminUserId = Global.getLoggedInUser()?.id ?? "";
+
+    try {
+      final res = await Api.client.setMsgTag(message.id, newTag, adminUserId);
+      if (res.success) {
+        setState(() {
+          message.tag = newTag;
+        });
+        ToastUtil.success(isRequirement ? '已取消需求标签' : '已标记为需求');
+      } else {
+        ToastUtil.error(res.msg ?? '操作失败');
+      }
+    } catch (e) {
+      ToastUtil.error('打标失败: $e');
+    }
   }
 
   Future<void> _deleteMessage(MsgVo message) async {
@@ -1199,6 +1288,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                 m.toUser,
                 m.createTime,
                 true,
+                m.tag,
               );
             }
             return m;

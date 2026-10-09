@@ -573,6 +573,13 @@ abstract class RestClient {
       @Field("toUserId") String toUserId,
       @Field("adminUserId") String adminUserId);
 
+  @POST("/setMsgTag.do")
+  @FormUrlEncoded()
+  Future<Result> setMsgTag(
+      @Field("msgId") String msgId,
+      @Field("tag") String? tag,
+      @Field("adminUserId") String adminUserId);
+
   @GET("/getUserDbLogsFromVersion.do")
   Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(
       @Query("fromVersion") int fromVersion,

@@ -189,4 +189,25 @@ public class MsgController {
         msgBo.deleteMsg(msgId);
         return Result.success(null);
     }
+
+    /**
+     * 设置消息业务标签（如“需求”，管理员功能）
+     *
+     * @param msgId 消息ID
+     * @param tag 标签名称（传空则清空标签）
+     * @param adminUserId 管理员ID
+     * @return 操作结果
+     */
+    @PostMapping("/setMsgTag.do")
+    public Result<Void> setMsgTag(@RequestParam(name = "msgId") String msgId,
+                                  @RequestParam(name = "tag", required = false) String tag,
+                                  @RequestParam(name = "adminUserId") String adminUserId) {
+        User adminUser = userBo.findById(adminUserId);
+        if (adminUser == null || !adminUser.getIsAdmin()) {
+            return Result.fail("管理员权限不足");
+        }
+
+        msgBo.updateMsgTag(msgId, tag);
+        return Result.success(null);
+    }
 }

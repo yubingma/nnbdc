@@ -886,6 +886,7 @@ class WordDetailPageState extends State<WordDetailPage>
           ..id = localWord.id
           ..shortDesc = localWord.shortDesc
           ..shortDescCn = localWord.shortDescCn
+          ..enDefinition = localWord.enDefinition
           ..longDesc = localWord.longDesc
           ..pronounce = localWord.pronounce
           ..americaPronounce = localWord.americaPronounce
@@ -2112,11 +2113,14 @@ class WordDetailPageState extends State<WordDetailPage>
 
   Widget _buildMeaningSection(bool isDarkMode) {
     final mergedItems = args.word.getMergedMeaningItems();
+    final enDefWidget = _buildEnDefinitionRows(isDarkMode);
+
+    Widget? cnWidget;
     if (mergedItems.isNotEmpty) {
       final cixingColor =
           isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
-      return Table(
+      cnWidget = Table(
         defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         columnWidths: const {
@@ -2163,24 +2167,110 @@ class WordDetailPageState extends State<WordDetailPage>
             ),
         ],
       );
+    } else {
+      final fallbackMeaning = args.word.getMeaningStr();
+      if (fallbackMeaning.isNotEmpty) {
+        cnWidget = Text.rich(
+          TextSpan(
+            children: _buildTextSpans(fallbackMeaning),
+          ),
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.45,
+            color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+          ),
+        );
+      }
     }
 
-    // Fallback: 如果结构化释义项为空，直接以高亮解析展示完整释义字符串
-    final fallbackMeaning = args.word.getMeaningStr();
-    if (fallbackMeaning.isNotEmpty) {
-      return Text.rich(
-        TextSpan(
-          children: _buildTextSpans(fallbackMeaning),
-        ),
-        style: TextStyle(
-          fontSize: 14,
-          height: 1.45,
-          color: isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-        ),
+    if (cnWidget != null && enDefWidget != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          cnWidget,
+          const SizedBox(height: 4),
+          enDefWidget,
+        ],
       );
     }
+    return cnWidget ?? enDefWidget ?? const SizedBox.shrink();
+  }
 
-    return const SizedBox.shrink();
+  Widget? _buildEnDefinitionRows(bool isDarkMode) {
+    final enDef = args.word.enDefinition?.trim();
+    if (enDef == null || enDef.isEmpty) return null;
+
+    final cixingColor =
+        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final enTextColor =
+        isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
+    final lines = enDef
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final line in lines)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: _buildSingleEnDefinitionRow(line, cixingColor, enTextColor),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSingleEnDefinitionRow(
+      String line, Color cixingColor, Color enTextColor) {
+    final match =
+        RegExp(r'^([a-zA-Z]+\.)\s+(.+)$', caseSensitive: false).firstMatch(line);
+    if (match != null) {
+      final pos = match.group(1)!;
+      final text = match.group(2)!;
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Text(
+              pos,
+              maxLines: 1,
+              softWrap: false,
+              style: TextStyle(
+                color: cixingColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Roboto',
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.45,
+                color: enTextColor,
+                fontFamily: 'Roboto',
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return Text(
+      line,
+      style: TextStyle(
+        fontSize: 13.5,
+        height: 1.45,
+        color: enTextColor,
+        fontFamily: 'Roboto',
+      ),
+    );
   }
 
   Widget _buildTabItem(String label, int count) {
