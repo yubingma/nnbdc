@@ -129,6 +129,19 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         return -1;
       } else if (yearA == null && yearB != null) {
         return 1;
+      } else {
+        // 两者均无显式年份：按创建时间 createTime 排序（新上线词书优先）
+        final timeA = a.createTime;
+        final timeB = b.createTime;
+        if (timeA != null && timeB != null && !timeA.isAtSameMomentAs(timeB)) {
+          return order == DictSortOrder.newestFirst
+              ? timeB.compareTo(timeA)
+              : timeA.compareTo(timeB);
+        } else if (timeA != null && timeB == null) {
+          return order == DictSortOrder.newestFirst ? -1 : 1;
+        } else if (timeA == null && timeB != null) {
+          return order == DictSortOrder.newestFirst ? 1 : -1;
+        }
       }
     }
 
@@ -141,9 +154,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   String _getSortOrderTitle(DictSortOrder order) {
     switch (order) {
       case DictSortOrder.newestFirst:
-        return '最新年份优先';
+        return '最新优先';
       case DictSortOrder.oldestFirst:
-        return '旧版年份优先';
+        return '旧版优先';
       case DictSortOrder.nameAsc:
         return '名称默认排序';
     }
@@ -240,6 +253,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             vo.shortName = getShortName(dict.name);
             vo.wordCount = dict.wordCount;
             vo.visible = true;
+            vo.createTime = dict.createTime;
             vo.updateTime = dict.updateTime;
             vo.baseDictId = dict.baseDictId;
             results.add(vo);
@@ -366,6 +380,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             var vo = DictVo.c2(dbDict.id, dbDict.wordCount);
             vo.name = dbDict.name;
             vo.shortName = Util.getShortName(dbDict.name);
+            vo.createTime = dbDict.createTime;
             vo.baseDictId = dbDict.baseDictId;
             return vo;
           }
@@ -1884,14 +1899,14 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             itemBuilder: (context) => [
               _buildSortMenuItem(
                 order: DictSortOrder.newestFirst,
-                title: '最新年份优先',
-                subtitle: '如 2027、2026 优先',
+                title: '最新优先',
+                subtitle: '年份与创建时间倒序',
                 themeConfig: themeConfig,
               ),
               _buildSortMenuItem(
                 order: DictSortOrder.oldestFirst,
-                title: '旧版年份优先',
-                subtitle: '如 2024、2025 优先',
+                title: '旧版优先',
+                subtitle: '年份与创建时间正序',
                 themeConfig: themeConfig,
               ),
               _buildSortMenuItem(

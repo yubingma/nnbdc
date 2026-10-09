@@ -9,7 +9,7 @@
   "core_text": "置于面前",
   "core_sub": "present 只有这一个意象",
   "accent": "#F43F5E",
-  "voice": "2号",
+  "voice": "3号",
   "voice_model": "qwen3-tts-flash",
   "segments": [
     {

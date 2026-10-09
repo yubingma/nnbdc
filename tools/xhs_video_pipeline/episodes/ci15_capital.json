@@ -9,7 +9,7 @@
   "core_text": "头即顶端首要",
   "core_sub": "capital 只有这一个意象",
   "accent": "#FACC15",
-  "voice": "4号",
+  "voice": "1号",
   "voice_model": "qwen3-tts-flash",
   "segments": [
     {
