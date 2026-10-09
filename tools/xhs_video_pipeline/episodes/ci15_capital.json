@@ -1,0 +1,62 @@
+{
+  "episode": "CI15",
+  "series": "词核心图",
+  "position": "15",
+  "slogan": "一个词 · 一个意象",
+  "word": "capital",
+  "phonetic": "ˈkæpɪtl",
+  "core_art": "core_9518.jpeg",
+  "core_text": "头即顶端首要",
+  "core_sub": "capital 只有这一个意象",
+  "accent": "#FACC15",
+  "voice": "4号",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "首都",
+        "资本",
+        "大写字母",
+        "重要的"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "首都、资本、大写字母、重要的。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：头，即顶端首要。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "首都",
+          "relation": "国家政权的首要之城"
+        },
+        {
+          "meaning": "资本",
+          "relation": "能生利的本金之头"
+        },
+        {
+          "meaning": "大写字母",
+          "relation": "字母群里居首的那个"
+        },
+        {
+          "meaning": "重要的",
+          "relation": "占据首要或顶尖位置"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "theme": "dark"
+}

@@ -1,0 +1,62 @@
+{
+  "episode": "CI13",
+  "series": "词核心图",
+  "position": "13",
+  "slogan": "一个词 · 一个意象",
+  "word": "board",
+  "phonetic": "bɔrd",
+  "core_art": "core_8215.jpeg",
+  "core_text": "平直承载板面",
+  "core_sub": "board 只有这一个意象",
+  "accent": "#0EA5E9",
+  "voice": "4号",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "木板",
+        "登上",
+        "董事会",
+        "膳食"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "木板、登上、董事会、膳食。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：平直承载的板面。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "木板",
+          "relation": "板面最直接的实体"
+        },
+        {
+          "meaning": "登上",
+          "relation": "脚踏上船板或车板"
+        },
+        {
+          "meaning": "董事会",
+          "relation": "围着一张桌子议事的人"
+        },
+        {
+          "meaning": "膳食",
+          "relation": "餐桌旁供应的饭食"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "theme": "dark"
+}

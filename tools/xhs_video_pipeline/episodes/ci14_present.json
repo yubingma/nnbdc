@@ -1,0 +1,62 @@
+{
+  "episode": "CI14",
+  "series": "词核心图",
+  "position": "14",
+  "slogan": "一个词 · 一个意象",
+  "word": "present",
+  "phonetic": "ˈprɛznt / prɪˈzɛnt",
+  "core_art": "core_32085.jpeg",
+  "core_text": "置于面前",
+  "core_sub": "present 只有这一个意象",
+  "accent": "#F43F5E",
+  "voice": "2号",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "现在",
+        "礼物",
+        "出席",
+        "呈现"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "现在、礼物、出席、呈现。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：置于面前。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "现在",
+          "relation": "时间来到眼前这一刻"
+        },
+        {
+          "meaning": "礼物",
+          "relation": "递到对方面前之物"
+        },
+        {
+          "meaning": "出席",
+          "relation": "人出现在现场眼前"
+        },
+        {
+          "meaning": "呈现",
+          "relation": "使事物出现在眼前"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "theme": "dark"
+}

@@ -1,0 +1,67 @@
+{
+  "episode": "CI12",
+  "series": "词核心图",
+  "position": "12",
+  "slogan": "一个词 · 一个意象",
+  "word": "pitch",
+  "phonetic": "pɪtʃ",
+  "core_art": "core_31238.jpeg",
+  "core_text": "猛力钉入固定一点",
+  "core_sub": "pitch 只有这一个意象",
+  "accent": "#EC4899",
+  "voice": "1号",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "音高",
+        "投掷",
+        "沥青",
+        "球场",
+        "搭帐篷"
+      ],
+      "line": "这五个意思，是同一个词",
+      "say": "音高、投掷、沥青、球场、搭帐篷。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：猛力钉入，固定一点。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "音高",
+          "relation": "把声音钉在音准点上"
+        },
+        {
+          "meaning": "投掷",
+          "relation": "猛力抛出并落在定点"
+        },
+        {
+          "meaning": "沥青",
+          "relation": "黏稠物把路面粘住固定"
+        },
+        {
+          "meaning": "球场",
+          "relation": "把活动区钉定在地面"
+        },
+        {
+          "meaning": "搭帐篷",
+          "relation": "用桩钉牢支撑起来"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "theme": "dark"
+}

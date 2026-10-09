@@ -14,6 +14,7 @@ import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/pinyin.dart';
 import 'package:nnbdc/services/user_privilege_manager.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -34,6 +35,12 @@ import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
 import '../theme/app_theme_background.dart';
 
+enum DictSortOrder {
+  newestFirst, // 最新年份优先
+  oldestFirst, // 旧版年份优先
+  nameAsc,     // 名称默认排序
+}
+
 class SelectBookPage extends StatefulWidget {
   const SelectBookPage({super.key});
 
@@ -46,6 +53,8 @@ class SelectBookPage extends StatefulWidget {
 class SelectBookPageState extends State<SelectBookPage> with TickerProviderStateMixin {
   // E2E集成测试时可将其设置为true以跳过下载步骤
   static bool skipDownloadInTest = false;
+  static const String _dictSortOrderPrefKey = 'dict_sort_order';
+  DictSortOrder _sortOrder = DictSortOrder.newestFirst;
   List<DictGroupVo>? dictGroups;
   List<DictVo>? customDicts;
   Set<DictVo>? selectedDictVos;
@@ -93,9 +102,63 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     return chars.every((char) => targetLower.contains(char));
   }
 
+  int? _extractYear(String? name) {
+    if (name == null || name.isEmpty) return null;
+    final match = RegExp(r'(?:20|19)\d{2}').firstMatch(name);
+    if (match != null) {
+      return int.tryParse(match.group(0)!);
+    }
+    return null;
+  }
+
+  int _compareDicts(DictVo a, DictVo b, DictSortOrder order) {
+    final nameA = a.shortName ?? a.name ?? '';
+    final nameB = b.shortName ?? b.name ?? '';
+
+    if (order == DictSortOrder.newestFirst || order == DictSortOrder.oldestFirst) {
+      final yearA = _extractYear(nameA);
+      final yearB = _extractYear(nameB);
+
+      if (yearA != null && yearB != null) {
+        if (yearA != yearB) {
+          return order == DictSortOrder.newestFirst
+              ? yearB.compareTo(yearA)
+              : yearA.compareTo(yearB);
+        }
+      } else if (yearA != null && yearB == null) {
+        return -1;
+      } else if (yearA == null && yearB != null) {
+        return 1;
+      }
+    }
+
+    return nameA.toLowerCase().compareTo(nameB.toLowerCase());
+  }
+
+  @visibleForTesting
+  int compareDictsForTest(DictVo a, DictVo b, DictSortOrder order) => _compareDicts(a, b, order);
+
+  String _getSortOrderTitle(DictSortOrder order) {
+    switch (order) {
+      case DictSortOrder.newestFirst:
+        return '最新年份优先';
+      case DictSortOrder.oldestFirst:
+        return '旧版年份优先';
+      case DictSortOrder.nameAsc:
+        return '名称默认排序';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    final savedOrder = Prefs.read<String>(_dictSortOrderPrefKey);
+    if (savedOrder != null) {
+      _sortOrder = DictSortOrder.values.firstWhere(
+        (e) => e.name == savedOrder,
+        orElse: () => DictSortOrder.newestFirst,
+      );
+    }
     selectedDictVos = {};
     initialSelectedDictVos = {};
     dictGroups = [];
@@ -474,6 +537,14 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       (_searchText.isEmpty || _fuzzyMatch(b.name, searchLower) || _fuzzyMatch(b.shortName, searchLower))
     ).toList();
 
+    visibleBooks.sort((a, b) {
+      if (isCustom) {
+        if (a.name == '生词本') return -1;
+        if (b.name == '生词本') return 1;
+      }
+      return _compareDicts(a, b, _sortOrder);
+    });
+
     if (visibleBooks.isEmpty) {
       final isSearching = _searchText.trim().isNotEmpty;
       final showCreateHint = isCustom && !isSearching;
@@ -554,13 +625,14 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                         Flexible(
                           child: Text(
                             bookTitle,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 14.5,
                               fontWeight: FontWeight.w600,
                               color: themeConfig.textPrimary,
                               letterSpacing: -0.1,
+                              height: 1.25,
                             ),
                           ),
                         ),
@@ -1652,8 +1724,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             ),
           ),
         ),
-        actions: const [
-          SizedBox(width: 16),
+        actions: [
+          _buildSortButton(themeConfig, isDarkMode),
+          const SizedBox(width: 14),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(44),
@@ -1719,7 +1792,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     return Container(
       key: _searchKey,
       height: 38,
-      margin: const EdgeInsets.only(bottom: 2),
+      margin: const EdgeInsets.only(left: 6, right: 6, bottom: 2),
       decoration: BoxDecoration(
         color: context.cardBg,
         borderRadius: BorderRadius.circular(19),
@@ -1773,6 +1846,131 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 9),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSortButton(AppThemeConfig themeConfig, bool isDarkMode) {
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            popupMenuTheme: PopupMenuThemeData(
+              color: context.cardBg,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(
+                  color: themeConfig.cardBorder,
+                  width: 1,
+                ),
+              ),
+              elevation: 4,
+            ),
+          ),
+          child: PopupMenuButton<DictSortOrder>(
+            initialValue: _sortOrder,
+            tooltip: '词书排序（当前：${_getSortOrderTitle(_sortOrder)}）',
+            padding: EdgeInsets.zero,
+            offset: const Offset(0, 42),
+            onSelected: (order) {
+              if (_sortOrder != order) {
+                setState(() {
+                  _sortOrder = order;
+                });
+                Prefs.write(_dictSortOrderPrefKey, order.name);
+              }
+            },
+            itemBuilder: (context) => [
+              _buildSortMenuItem(
+                order: DictSortOrder.newestFirst,
+                title: '最新年份优先',
+                subtitle: '如 2027、2026 优先',
+                themeConfig: themeConfig,
+              ),
+              _buildSortMenuItem(
+                order: DictSortOrder.oldestFirst,
+                title: '旧版年份优先',
+                subtitle: '如 2024、2025 优先',
+                themeConfig: themeConfig,
+              ),
+              _buildSortMenuItem(
+                order: DictSortOrder.nameAsc,
+                title: '名称默认排序',
+                subtitle: '首字母/自然顺序',
+                themeConfig: themeConfig,
+              ),
+            ],
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.cardBg,
+                border: Border.all(
+                  color: themeConfig.cardBorder,
+                  width: 1,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.swap_vert_rounded,
+                  size: 18,
+                  color: _sortOrder == DictSortOrder.newestFirst
+                      ? themeConfig.primaryColor
+                      : themeConfig.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<DictSortOrder> _buildSortMenuItem({
+    required DictSortOrder order,
+    required String title,
+    required String subtitle,
+    required AppThemeConfig themeConfig,
+  }) {
+    final isSelected = _sortOrder == order;
+    return PopupMenuItem<DictSortOrder>(
+      value: order,
+      height: 52,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? themeConfig.primaryColor : themeConfig.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: themeConfig.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isSelected)
+            Icon(
+              Icons.check_rounded,
+              size: 17,
+              color: themeConfig.primaryColor,
+            ),
+        ],
       ),
     );
   }
