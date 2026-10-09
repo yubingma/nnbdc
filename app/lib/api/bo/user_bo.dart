@@ -450,8 +450,9 @@ class UserBo {
     return await Api.client.saveErrorReport(word, content, getClientType().name, userId, imageFiles);
   }
 
-  Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(int fromVersion, String userId) async =>
-      Api.client.getDbLogsFromVersion(fromVersion, userId);
+  Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(
+          int fromVersion, String userId, String missingTables) async =>
+      Api.client.getDbLogsFromVersion(fromVersion, userId, missingTables);
 
   Future<Result<int>> syncUserDb(int expectedServerDbVersion, String userId, List<UserDbLogDto> logs) async =>
       Api.client.syncUserDb(expectedServerDbVersion, userId, logs);

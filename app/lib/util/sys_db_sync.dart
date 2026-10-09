@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:drift/drift.dart' show TableInfo;
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/db/db.dart';
@@ -37,21 +38,9 @@ Future<void> syncSysDb() async {
 
     // 3. 版本一致，检查是否缺表
     Global.logger.i("📊 系统数据同步检查 - 本地: $localVersion, 远程: $remoteVersion");
-    // 本地缺失的系统表清单。版本号已是最新却缺表，说明这些表是后加的，被老版本客户端
-    // 当成「未知的系统数据表」跳过了（跳过却照样把版本号推到了最新）。
-    // 按表名向服务端补拉，不触发整包全量：全量含词核心图等大表约 3 万条 17MB，
-    // 而单词短语搭配本身只有约 2000 条 817KB。
     final missingTables = <String>[];
     if (localVersion == remoteVersion) {
-      var sysDicts = await (db.select(db.dicts)..where((d) => d.ownerId.equals('15118'))).get();
-      var anyCigen = await (db.select(db.cigens)..limit(1)).getSingleOrNull();
-      var anyLink = await (db.select(db.cigenWordLinks)..limit(1)).getSingleOrNull();
-      var anyWordPhrase = await (db.select(db.wordPhrases)..limit(1)).getSingleOrNull();
-
-      if (sysDicts.isEmpty) missingTables.add('dict');
-      if (anyCigen == null) missingTables.add('cigen');
-      if (anyLink == null) missingTables.add('cigen_word_link');
-      if (anyWordPhrase == null) missingTables.add('word_phrase');
+      missingTables.addAll(await findMissingSystemTables());
 
       if (localVersion > 0 && missingTables.isNotEmpty) {
         Global.logger.w("⚠️ 系统数据版本为 $localVersion 但本地缺少这些系统表: $missingTables，向服务端按需补拉");
@@ -77,8 +66,9 @@ Future<void> syncSysDb() async {
       addDownloadCount(remoteLogs.length);
       Map<String, dynamic> dDetails = {};
       for (var log in remoteLogs) {
-        String tblName = Util.remoteTableNameToLocal(log.tblName);
-        if (tblName == 'IGNORED') continue; // 表已删除，跳过
+        final tblName = Util.remoteTableNameToLocal(log.tblName);
+        // 不认识 / 已删除的表：跳过统计即可，绝不能让它中断整次同步
+        if (tblName == null || tblName == 'IGNORED') continue;
         dDetails.putIfAbsent(tblName, () => <String, dynamic>{});
         dDetails[tblName][log.operate] = (dDetails[tblName][log.operate] as int? ?? 0) + 1;
       }
@@ -108,6 +98,36 @@ Future<void> syncSysDb() async {
     Global.logger.e("❌ 系统数据同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
     rethrow;
   }
+}
+
+/// 找出本地为空、且服务端能整表补拉的系统表（返回后端表名）。
+///
+/// 本地为空即说明这批数据从没同步成功过：典型场景是老客户端把不认识的新表整表跳过，
+/// 却照样把本地版本号推到了最新；升级后本函数能识别这张表了，就点名让服务端补发全量。
+/// 只列服务端 SysDbSyncBo.generateTableFullLogs 登记过的表；word/dict_word/meaning_item/
+/// sentence/word_image 数据量太大，只能跟着词书下载，不能整表补拉。
+Future<List<String>> findMissingSystemTables() async {
+  final db = MyDatabase.instance;
+  final backfillableTables = <String, TableInfo>{
+    'dict_group': db.dictGroups,
+    'group_and_dict_link': db.groupAndDictLinks,
+    'cigen': db.cigens,
+    'cigen_word_link': db.cigenWordLinks,
+    'pca_projection_config': db.pcaProjectionConfigs,
+    'word_core_image': db.wordCoreImages,
+    'word_phrase': db.wordPhrases,
+  };
+
+  final missing = <String>[];
+  // 系统词书要按归属者判断：本地可能有用户自建词书，不能只看表是否为空
+  final sysDicts = await (db.select(db.dicts)..where((d) => d.ownerId.equals('15118'))).get();
+  if (sysDicts.isEmpty) missing.add('dict');
+
+  for (final entry in backfillableTables.entries) {
+    final any = await (db.select(entry.value)..limit(1)).getSingleOrNull();
+    if (any == null) missing.add(entry.key);
+  }
+  return missing;
 }
 
 /// 应用系统数据日志到本地数据库。

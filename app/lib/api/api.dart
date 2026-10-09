@@ -15,6 +15,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/loading_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:retrofit/http.dart' as http;
 import 'package:retrofit/retrofit.dart';
 
@@ -205,6 +206,8 @@ class CustomInterceptors extends Interceptor {
     Global.activeRequestCount.value++;
     // 声明客户端支持的学习步骤列表，供后端执行版本兼容过滤
     options.headers['X-Supported-Steps'] = 'En2Ch,Ch2En,EnSentence2Ch,ChSentence2En,List';
+    // 声明客户端支持同步的表清单（直接从表名映射导出），供后端只下发本客户端认识的表
+    options.headers['X-Supported-Tables'] = Util.supportedRemoteTableNames.join(',');
     return super.onRequest(options, handler);
   }
 
@@ -572,7 +575,9 @@ abstract class RestClient {
 
   @GET("/getUserDbLogsFromVersion.do")
   Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(
-      @Query("fromVersion") int fromVersion, @Query("userId") String userId);
+      @Query("fromVersion") int fromVersion,
+      @Query("userId") String userId,
+      @Query("missingTables") String missingTables);
 
   @POST("/syncUserDb2Back.do")
   @http.Headers(<String, dynamic>{

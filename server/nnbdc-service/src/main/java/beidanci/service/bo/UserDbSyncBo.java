@@ -1420,12 +1420,290 @@ public class UserDbSyncBo {
     }
 
     /**
+     * 生成某个用户的全部同步日志（按表拆分）。
+     *
+     * wantedTables 为 null 时生成所有表，供首次全量同步使用；否则只生成其中指定的表，
+     * 供升级后的客户端「按表补拉」：老客户端把不认识的新表整表跳过了，升级后点名要这批历史数据。
+     */
+    private List<UserDbLogDto> generateUserTableLogs(String userId, int userDbVersion, User user,
+            Set<String> wantedTables) {
+        List<UserDbLogDto> logs = new ArrayList<>();
+
+        if (wanted(wantedTables, "user")) {
+            // 1. 本人记录 (users)
+            // 获取最新版本的 user 记录（user 变量在 1086 行已定义）
+            if (user != null) {
+                UserDto userDto = user.toDto();
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "user",
+                        userDto.getId(), JsonUtils.toJson(userDto),
+                        userDto.getCreateTime(),
+                        userDto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "dict")) {
+            // 2. 用户词典 (dict)
+            List<DictDto> ownDictDtos = dictBo.getDictDtosOfUser(userId);
+            for (DictDto dictDto : ownDictDtos) {
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "dict",
+                        dictDto.getId(), JsonUtils.toJson(dictDto),
+                        dictDto.getCreateTime(),
+                        dictDto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "learning_word")) {
+            // 2. 学习中单词 (learning_word)
+            List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
+            for (LearningWordDto learningWord : learningWords) {
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "learning_word",
+                        learningWord.getUserId() + "-" + learningWord.getWordId(), JsonUtils.toJson(learningWord),
+                        learningWord.getCreateTime(),
+                        learningWord.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "learning_dict")) {
+            // 3. 用户选择的词书 (learning_dict)
+            List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);
+            for (LearningDictDto learningDict : learningDicts) {
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "learning_dict",
+                        learningDict.getUserId() + "-" + learningDict.getDictId(), JsonUtils.toJson(learningDict),
+                        learningDict.getCreateTime(),
+                        learningDict.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "user_study_step")) {
+            // 生成用户学习步骤全量日志
+            List<UserStudyStepDto> userStudyStepDtos = userStudyStepBo.getUserStudyStepDtosOfUser(userId);
+            for (UserStudyStepDto stepDto : userStudyStepDtos) {
+                // 创建日志条目
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_study_step",
+                        userId + "-" + stepDto.getScope() + "-" + stepDto.getGroup() + "-" + stepDto.getStudyStep(),
+                        JsonUtils.toJson(stepDto),
+                        stepDto.getCreateTime(),
+                        stepDto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "daka")) {
+            // 生成用户打卡记录全量日志
+            List<DakaDto> dakaDtos = dakaBo.getDakaDtosOfUser(userId);
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+            for (DakaDto dakaDto : dakaDtos) {
+                // 创建日志条目
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "daka",
+                        userId + "-" + dateFormat.format(dakaDto.getForLearningDate()),
+                        JsonUtils.toJson(dakaDto),
+                        dakaDto.getCreateTime(),
+                        dakaDto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "user_oper")) {
+            // 生成用户操作记录全量日志
+            List<UserOperDto> userOperDtos = userOperBo.getUserOperDtosOfUser(userId);
+            for (UserOperDto operDto : userOperDtos) {
+                // 创建日志条目
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_oper",
+                        operDto.getId(),
+                        JsonUtils.toJson(operDto),
+                        operDto.getCreateTime(),
+                        operDto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "user_wrong_word")) {
+            // 生成用户错词(user_wrong_word)全量日志
+            List<WrongWordDto> wrongWordDtos = wrongWordBo.getWrongWordDtosOfUser(userId);
+            for (WrongWordDto wrongWordDto : wrongWordDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_wrong_word",
+                        userId + "-" + wrongWordDto.getWordId(),
+                        JsonUtils.toJson(wrongWordDto),
+                        wrongWordDto.getCreateTime(),
+                        wrongWordDto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "dict_word")) {
+            // 生成用户生词本(dict_word)全量日志
+            List<DictWordDto> dictWordDtos = dictWordBo.getDictWordDtosOfUser(userId);
+            for (DictWordDto dictWordDto : dictWordDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "dict_word",
+                        dictWordDto.getDictId() + "-" + dictWordDto.getWordId(),
+                        JsonUtils.toJson(dictWordDto),
+                        dictWordDto.getCreateTime(),
+                        dictWordDto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "meaning_item")) {
+            List<DictDto> ownDictDtos = dictBo.getDictDtosOfUser(userId);
+            // 生成用户自定义词典的释义(meaning_item)全量日志
+            for (DictDto dictDto : ownDictDtos) {
+                List<MeaningItemDto> meaningItemDtos = meaningItemBo.getMeaningItemsOfDict(dictDto.getId());
+                for (MeaningItemDto meaningItemDto : meaningItemDtos) {
+                    UserDbLogDto log = new UserDbLogDto(
+                            Util.uuid(),
+                            userId,
+                            userDbVersion,
+                            "INSERT",
+                            "meaning_item",
+                            meaningItemDto.getId(),
+                            JsonUtils.toJson(meaningItemDto),
+                            meaningItemDto.getCreateTime(),
+                            meaningItemDto.getUpdateTime());
+                    logs.add(log);
+                }
+            }
+        }
+
+            // mastered_word 全量日志已不再需要：已掌握单词现在作为 dict + dict_word 同步
+
+        if (wanted(wantedTables, "user_cow_dung_log")) {
+            // 生成用户魔法泡泡日志(user_cow_dung_log)全量日志
+            List<UserCowDungLogDto> userCowDungLogDtos = userCowDungLogBo.getUserCowDungLogDtosOfUser(userId);
+            for (UserCowDungLogDto dto : userCowDungLogDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_cow_dung_log",
+                        dto.getId(),
+                        JsonUtils.toJson(dto),
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "learning_log")) {
+            // 生成用户的记忆历史全量日志
+            List<LearningLogDto> learningLogDtos = learningLogBo.getLearningLogDtosOfUser(userId);
+            for (LearningLogDto dto : learningLogDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "learning_log",
+                        dto.getId(),
+                        JsonUtils.toJson(dto),
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "user_study_daily_stat")) {
+            // 生成用户每日学习统计全量日志
+            List<UserStudyDailyStatDto> statsDtos = userStudyDailyStatBo.getStatsDtosOfUser(userId);
+            SimpleDateFormat statsDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            for (UserStudyDailyStatDto dto : statsDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_study_daily_stat",
+                        userId + "|" + statsDateFormat.format(dto.getDate()),
+                        JsonUtils.toJson(dto),
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "user_badge")) {
+            // 生成用户勋章全量日志
+            List<UserBadgeDto> userBadgeDtos = userBadgeBo.getUserBadgeDtosOfUser(userId);
+            for (UserBadgeDto dto : userBadgeDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_badge",
+                        dto.getId(),
+                        JsonUtils.toJson(dto),
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        if (wanted(wantedTables, "user_pet_state")) {
+            // 生成守护兽养成状态全量日志（每个用户至多一行）
+            // 增量同步只覆盖"变更"，新设备首次全量拉取必须带上它，否则换设备后投喂进度会丢
+            UserPetStateDto petStateDto = userPetStateBo.toDtoOfUser(userId);
+            if (petStateDto != null) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_pet_state",
+                        petStateDto.getId(),
+                        JsonUtils.toJson(petStateDto),
+                        petStateDto.getCreateTime(),
+                        petStateDto.getUpdateTime());
+                logs.add(log);
+            }
+        }
+
+        return logs;
+    }
+
+    /** 某张表是否在本次要求的表集合内（null = 全部） */
+    private static boolean wanted(Set<String> wantedTables, String table) {
+        return wantedTables == null || wantedTables.contains(table);
+    }
+
+    /**
      * 获取用户数据库日志
      *
      * @param fromVersion 从此版本开始，不包括此版本
+     * @param missingTables 客户端点名的表：升级后要补回此前因不认识而整表跳过的数据，无则为空
      * @return
      */
-    public List<UserDbLogDto> getUserDbLogsFromVersion(String userId, int fromVersion) {
+    public List<UserDbLogDto> getUserDbLogsFromVersion(String userId, int fromVersion,
+            Set<String> missingTables) {
         User user = userBo.findById(userId);
 
         // 如果用户不存在，则返回空列表（这种情况可能发生在客户端未登录到后端时，指定要同步的用户（用户可能是前端首先创建的））
@@ -1437,8 +1715,9 @@ public class UserDbSyncBo {
         int userDbVersion = userDbVersionDao.getUserDbVersion(jdbcTemplate, userId);
         logger.info("查询用户数据库日志: serverVersion={}, clientFromVersion={}", userDbVersion, fromVersion);
 
-        // 1. 如果前后端版本一致，无需任何同步
-        if (userDbVersion <= fromVersion && fromVersion > 0) {
+        // 1. 如果前后端版本一致、且本次没有点名要补的表，无需任何同步
+        if (userDbVersion <= fromVersion && fromVersion > 0
+                && (missingTables == null || missingTables.isEmpty())) {
             logger.info("前后端版本一致且不为0，无需同步");
             return new ArrayList<>();
         }
@@ -1469,234 +1748,7 @@ public class UserDbSyncBo {
 
         if (needsFullSync) {
             // 生成全量日志
-            List<UserDbLogDto> logs = new ArrayList<>();
-
-            // 1. 本人记录 (users)
-            // 获取最新版本的 user 记录（user 变量在 1086 行已定义）
-            if (user != null) {
-                UserDto userDto = user.toDto();
-                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "user",
-                        userDto.getId(), JsonUtils.toJson(userDto),
-                        userDto.getCreateTime(),
-                        userDto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 2. 用户词典 (dict)
-            List<DictDto> ownDictDtos = dictBo.getDictDtosOfUser(userId);
-            for (DictDto dictDto : ownDictDtos) {
-                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "dict",
-                        dictDto.getId(), JsonUtils.toJson(dictDto),
-                        dictDto.getCreateTime(),
-                        dictDto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 2. 学习中单词 (learning_word)
-            List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
-            for (LearningWordDto learningWord : learningWords) {
-                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "learning_word",
-                        learningWord.getUserId() + "-" + learningWord.getWordId(), JsonUtils.toJson(learningWord),
-                        learningWord.getCreateTime(),
-                        learningWord.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 3. 用户选择的词书 (learning_dict)
-            List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);
-            for (LearningDictDto learningDict : learningDicts) {
-                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "learning_dict",
-                        learningDict.getUserId() + "-" + learningDict.getDictId(), JsonUtils.toJson(learningDict),
-                        learningDict.getCreateTime(),
-                        learningDict.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户学习步骤全量日志
-            List<UserStudyStepDto> userStudyStepDtos = userStudyStepBo.getUserStudyStepDtosOfUser(userId);
-            for (UserStudyStepDto stepDto : userStudyStepDtos) {
-                // 创建日志条目
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "user_study_step",
-                        userId + "-" + stepDto.getScope() + "-" + stepDto.getGroup() + "-" + stepDto.getStudyStep(),
-                        JsonUtils.toJson(stepDto),
-                        stepDto.getCreateTime(),
-                        stepDto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户打卡记录全量日志
-            List<DakaDto> dakaDtos = dakaBo.getDakaDtosOfUser(userId);
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-            for (DakaDto dakaDto : dakaDtos) {
-                // 创建日志条目
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "daka",
-                        userId + "-" + dateFormat.format(dakaDto.getForLearningDate()),
-                        JsonUtils.toJson(dakaDto),
-                        dakaDto.getCreateTime(),
-                        dakaDto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户操作记录全量日志
-            List<UserOperDto> userOperDtos = userOperBo.getUserOperDtosOfUser(userId);
-            for (UserOperDto operDto : userOperDtos) {
-                // 创建日志条目
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "user_oper",
-                        operDto.getId(),
-                        JsonUtils.toJson(operDto),
-                        operDto.getCreateTime(),
-                        operDto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户错词(user_wrong_word)全量日志
-            List<WrongWordDto> wrongWordDtos = wrongWordBo.getWrongWordDtosOfUser(userId);
-            for (WrongWordDto wrongWordDto : wrongWordDtos) {
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "user_wrong_word",
-                        userId + "-" + wrongWordDto.getWordId(),
-                        JsonUtils.toJson(wrongWordDto),
-                        wrongWordDto.getCreateTime(),
-                        wrongWordDto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户生词本(dict_word)全量日志
-            List<DictWordDto> dictWordDtos = dictWordBo.getDictWordDtosOfUser(userId);
-            for (DictWordDto dictWordDto : dictWordDtos) {
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "dict_word",
-                        dictWordDto.getDictId() + "-" + dictWordDto.getWordId(),
-                        JsonUtils.toJson(dictWordDto),
-                        dictWordDto.getCreateTime(),
-                        dictWordDto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户自定义词典的释义(meaning_item)全量日志
-            for (DictDto dictDto : ownDictDtos) {
-                List<MeaningItemDto> meaningItemDtos = meaningItemBo.getMeaningItemsOfDict(dictDto.getId());
-                for (MeaningItemDto meaningItemDto : meaningItemDtos) {
-                    UserDbLogDto log = new UserDbLogDto(
-                            Util.uuid(),
-                            userId,
-                            userDbVersion,
-                            "INSERT",
-                            "meaning_item",
-                            meaningItemDto.getId(),
-                            JsonUtils.toJson(meaningItemDto),
-                            meaningItemDto.getCreateTime(),
-                            meaningItemDto.getUpdateTime());
-                    logs.add(log);
-                }
-            }
-
-            // mastered_word 全量日志已不再需要：已掌握单词现在作为 dict + dict_word 同步
-
-            // 生成用户魔法泡泡日志(user_cow_dung_log)全量日志
-            List<UserCowDungLogDto> userCowDungLogDtos = userCowDungLogBo.getUserCowDungLogDtosOfUser(userId);
-            for (UserCowDungLogDto dto : userCowDungLogDtos) {
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "user_cow_dung_log",
-                        dto.getId(),
-                        JsonUtils.toJson(dto),
-                        dto.getCreateTime(),
-                        dto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户的记忆历史全量日志
-            List<LearningLogDto> learningLogDtos = learningLogBo.getLearningLogDtosOfUser(userId);
-            for (LearningLogDto dto : learningLogDtos) {
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "learning_log",
-                        dto.getId(),
-                        JsonUtils.toJson(dto),
-                        dto.getCreateTime(),
-                        dto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户每日学习统计全量日志
-            List<UserStudyDailyStatDto> statsDtos = userStudyDailyStatBo.getStatsDtosOfUser(userId);
-            SimpleDateFormat statsDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            for (UserStudyDailyStatDto dto : statsDtos) {
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "user_study_daily_stat",
-                        userId + "|" + statsDateFormat.format(dto.getDate()),
-                        JsonUtils.toJson(dto),
-                        dto.getCreateTime(),
-                        dto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成用户勋章全量日志
-            List<UserBadgeDto> userBadgeDtos = userBadgeBo.getUserBadgeDtosOfUser(userId);
-            for (UserBadgeDto dto : userBadgeDtos) {
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "user_badge",
-                        dto.getId(),
-                        JsonUtils.toJson(dto),
-                        dto.getCreateTime(),
-                        dto.getUpdateTime());
-                logs.add(log);
-            }
-
-            // 生成守护兽养成状态全量日志（每个用户至多一行）
-            // 增量同步只覆盖"变更"，新设备首次全量拉取必须带上它，否则换设备后投喂进度会丢
-            UserPetStateDto petStateDto = userPetStateBo.toDtoOfUser(userId);
-            if (petStateDto != null) {
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "user_pet_state",
-                        petStateDto.getId(),
-                        JsonUtils.toJson(petStateDto),
-                        petStateDto.getCreateTime(),
-                        petStateDto.getUpdateTime());
-                logs.add(log);
-            }
+            List<UserDbLogDto> logs = new ArrayList<>(generateUserTableLogs(userId, userDbVersion, user, null));
 
             // 打印全量同步日志分类统计（便于定位日志量过大的原因）
             // 注意：tblName 需要与客户端同步消费的表名保持一致
@@ -1753,7 +1805,7 @@ public class UserDbSyncBo {
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("userId", userId);
             params.addValue("fromVersion", fromVersion);
-            List<UserDbLogDto> logs = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            List<UserDbLogDto> logs = new ArrayList<>(namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
                 UserDbLogDto log = new UserDbLogDto();
                 log.setId(rs.getString("id"));
                 log.setUserId(rs.getString("user_id"));
@@ -1765,7 +1817,16 @@ public class UserDbSyncBo {
                 log.setCreateTime(rs.getTimestamp("create_time"));
                 log.setUpdateTime(rs.getTimestamp("update_time"));
                 return log;
-            });
+            }));
+
+            // 客户端点名要补的表：补下发它们的全量（升级后补回此前整表被跳过的数据）
+            if (missingTables != null && !missingTables.isEmpty()) {
+                List<UserDbLogDto> backfillLogs = generateUserTableLogs(userId, userDbVersion, user,
+                        missingTables);
+                logs.addAll(backfillLogs);
+                logger.info("按需补表(用户数据): 点名 {} 张表, 实际下发 {} 条日志", missingTables.size(),
+                        backfillLogs.size());
+            }
 
             logger.info("进行增量同步, 共生成{}条同步日志, 服务端/客户端数据版本号为{}", logs.size(),
                     userDbVersion + "-" + fromVersion);

@@ -375,10 +375,20 @@ bool _isSyncUserDbRunning = false;
 Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backendChanges, int backendDbVersion, String userId) async {
   final stopwatch = Stopwatch()..start();
   try {
-    // 把后端日志中的表名转化为前端的格式
+    // 把后端日志中的表名转化为前端的格式。
+    // 不认识的后端表（本客户端比服务端旧，服务端按 X-Supported-Tables 过滤后理论上不该出现，
+    // 这里是兜底）直接丢弃这一条，绝不能让它中断整次同步。
+    final knownBackendChanges = <UserDbLogDto>[];
     for (var change in backendChanges) {
-      change.tblName = Util.remoteTableNameToLocal(change.tblName);
+      final localTableName = Util.remoteTableNameToLocal(change.tblName);
+      if (localTableName == null) {
+        Global.logger.w('⚠️ 忽略不认识的后端表: ${change.tblName}, ID: ${change.recordId}');
+        continue;
+      }
+      change.tblName = localTableName;
+      knownBackendChanges.add(change);
     }
+    backendChanges = knownBackendChanges;
 
     // 把本地日志按表名分组并统计
     var tableStats = <String, int>{};
@@ -998,6 +1008,35 @@ Future<void> repairInvalidBookMarkNames(String userId) async {
   }
 }
 
+/// 找出本地为空、且服务端能整表补发的用户表（返回后端表名）。
+///
+/// 典型场景：老客户端不认识某张新表（例如守护兽养成状态），整表跳过却照样把版本号推到了最新，
+/// 升级后本地这张表是空的，于是点名让服务端把这批历史数据补发一次。
+/// 只列服务端 UserDbSyncBo.generateUserTableLogs 覆盖、且本地空缺有意义的小表；
+/// users/dict/dict_word/meaning_item 要么本地必然有数据、要么跟着词书下载走，不在此列。
+Future<List<String>> findMissingUserTables() async {
+  final db = MyDatabase.instance;
+  final backfillableTables = <String, TableInfo>{
+    'user_badge': db.userBadges,
+    'user_pet_state': db.userPetStates,
+    'user_study_daily_stat': db.userStudyDailyStats,
+    'learning_dict': db.learningDicts,
+    'user_study_step': db.userStudySteps,
+    'user_oper': db.userOpers,
+    'user_wrong_word': db.userWrongWords,
+    'user_cow_dung_log': db.userCowDungLogs,
+    'learning_log': db.learningLogs,
+    'learning_word': db.learningWords,
+    'daka': db.dakas,
+  };
+  final missing = <String>[];
+  for (final entry in backfillableTables.entries) {
+    final any = await (db.select(entry.value)..limit(1)).getSingleOrNull();
+    if (any == null) missing.add(entry.key);
+  }
+  return missing;
+}
+
 // 同步指定用户的用户数据库
 Future<void> syncUserDb(String userId) async {
   if (_isSyncUserDbRunning) {
@@ -1039,9 +1078,16 @@ Future<void> syncUserDb(String userId) async {
 
     Global.logger.i("✅ 获取本地变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}");
 
+    // 本地为空、且服务端能整表补发的用户表：升级后把此前因不认识而整表跳过的数据补回来。
+    // 全量同步（本地版本号为 0）本来就带所有表，不需要点名补拉。
+    final missingTables = localDbVersion > 0 ? await findMissingUserTables() : <String>[];
+    if (missingTables.isNotEmpty) {
+      Global.logger.w("⚠️ 用户数据本地缺少这些表: $missingTables，向服务端按需补拉");
+    }
+
     // 与后端同步用户数据库
-    if (localDbVersion != remoteDbVersion || localLogs.isNotEmpty) {
-      var result1 = await Api.client.getDbLogsFromVersion(localDbVersion, userId);
+    if (localDbVersion != remoteDbVersion || localLogs.isNotEmpty || missingTables.isNotEmpty) {
+      var result1 = await Api.client.getDbLogsFromVersion(localDbVersion, userId, missingTables.join(','));
       if (result1.success) {
         List<UserDbLogDto> remoteLogs = result1.data!;
         Global.logger.i("✅ 获取远程变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
@@ -1059,7 +1105,9 @@ Future<void> syncUserDb(String userId) async {
         
         Map<String, dynamic> dDetails = {};
         for (var log in remoteLogs) {
-          String tblName = Util.remoteTableNameToLocal(log.tblName);
+          final tblName = Util.remoteTableNameToLocal(log.tblName);
+          // 不认识的后端表：跳过统计即可，绝不能让它中断整次同步
+          if (tblName == null || tblName == 'IGNORED') continue;
           dDetails.putIfAbsent(tblName, () => <String, dynamic>{});
           dDetails[tblName][log.operate] = (dDetails[tblName][log.operate] as int? ?? 0) + 1;
         }

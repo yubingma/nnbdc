@@ -1053,46 +1053,56 @@ class Util {
   }
 
   /// 将服务端表名转换为本地表名, 比如 learning_word -> learningWords
-  static String remoteTableNameToLocal(String remoteTableName) {
-    // 特殊情况处理
-    Map<String, String> specialMappings = {
-      'daka': 'dakas',
-      'user_study_step': 'userStudySteps',
-      'user_oper': 'userOpers',
-      'learning_word': 'learningWords',
-      'learning_dict': 'learningDicts',
-      'user': 'users',
-      'users': 'users', // 兼容历史异常数据
-      'book_mark': 'bookMarks',
-      'mastered_word': 'masteredWords',
-      'user_cow_dung_log': 'userCowDungLogs',
-      'user_pet_state': 'userPetStates',
-      'user_wrong_word': 'userWrongWords',
-      'dict_word': 'dictWords',
-      'dict': 'dicts',
-      'meaning_item': 'meaningItems',
-      'learning_log': 'learningLogs',
-      'word': 'words',
-      'dict_group': 'dictGroups',
-      'group_and_dict_link': 'groupAndDictLinks',
-      'cigen': 'cigens',
-      'cigen_word_link': 'cigenWordLinks',
-      'sentence': 'sentences',
-      'word_image': 'wordImages',
-      'user_study_daily_stat': 'userStudyDailyStats',
-      'pca_projection_config': 'pcaProjectionConfigs',
-      'user_badge': 'userBadges',
-      'word_core_image': 'wordCoreImages',
-      'word_phrase': 'wordPhrases',
-      // word_shortdesc_chinese 表已删除，映射到特殊标记而不是实际表，同步时将被跳过
-      'word_shortdesc_chinese': 'IGNORED',
-    };
-
-    if (specialMappings.containsKey(remoteTableName)) {
-      return specialMappings[remoteTableName]!;
-    }
-    throw Exception('不支持的后端表名: $remoteTableName');
+  /// 将服务端表名转换为本地表名, 比如 learning_word -> learningWords。
+  ///
+  /// 返回 null 表示**本客户端不认识这张表**：调用方必须跳过这张表的数据，绝不能让它
+  /// 中断整次同步（服务端会按 X-Supported-Tables 只下发本客户端认识的表，这里是兜底）。
+  static String? remoteTableNameToLocal(String remoteTableName) {
+    return _remoteToLocalTables[remoteTableName];
   }
+
+  /// 本客户端支持同步的后端表清单（服务端据此只下发这些表，避免老包收到不认识的新表）。
+  ///
+  /// 直接从 [remoteTableNameToLocal] 的映射表导出，新增同步表只需改映射表一处。
+  static final List<String> supportedRemoteTableNames = _remoteToLocalTables.entries
+      .where((entry) => entry.value != 'IGNORED' && entry.key != 'users')
+      .map((entry) => entry.key)
+      .toList()
+    ..sort();
+
+  /// 服务端表名 → 本地表名
+  static const Map<String, String> _remoteToLocalTables = {
+    'daka': 'dakas',
+    'user_study_step': 'userStudySteps',
+    'user_oper': 'userOpers',
+    'learning_word': 'learningWords',
+    'learning_dict': 'learningDicts',
+    'user': 'users',
+    'users': 'users', // 兼容历史异常数据
+    'book_mark': 'bookMarks',
+    'mastered_word': 'masteredWords',
+    'user_cow_dung_log': 'userCowDungLogs',
+    'user_pet_state': 'userPetStates',
+    'user_wrong_word': 'userWrongWords',
+    'dict_word': 'dictWords',
+    'dict': 'dicts',
+    'meaning_item': 'meaningItems',
+    'learning_log': 'learningLogs',
+    'word': 'words',
+    'dict_group': 'dictGroups',
+    'group_and_dict_link': 'groupAndDictLinks',
+    'cigen': 'cigens',
+    'cigen_word_link': 'cigenWordLinks',
+    'sentence': 'sentences',
+    'word_image': 'wordImages',
+    'user_study_daily_stat': 'userStudyDailyStats',
+    'pca_projection_config': 'pcaProjectionConfigs',
+    'user_badge': 'userBadges',
+    'word_core_image': 'wordCoreImages',
+    'word_phrase': 'wordPhrases',
+    // word_shortdesc_chinese 表已删除，映射到特殊标记而不是实际表，同步时将被跳过
+    'word_shortdesc_chinese': 'IGNORED',
+  };
 
   /// 把对象转化为json字符串
   static String toJson(Object object) {

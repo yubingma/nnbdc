@@ -2,7 +2,9 @@ package beidanci.service.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
@@ -31,6 +33,7 @@ import beidanci.service.bo.SysDbSyncBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.exception.DbVersionNotMatchException;
 import beidanci.service.exception.RawWordDataErrorException;
+import beidanci.service.util.SyncTableFilter;
 import beidanci.util.CountingOutputStream;
 
 @RestController
@@ -48,6 +51,27 @@ public class SyncController {
 
     @Autowired
     private SysErrorBo sysErrorBo;
+
+    /** 客户端声明的支持表清单（新客户端才有） */
+    private static String supportedTables(HttpServletRequest request) {
+        return request.getHeader(SyncTableFilter.SUPPORTED_TABLES_HEADER);
+    }
+
+    /** 客户端 verCode（老客户端没有该头或为 "NONE"，解析为 0） */
+    private static int clientVersion(HttpServletRequest request) {
+        return SyncTableFilter.parseClientVersion(request.getHeader(SyncTableFilter.CLIENT_VERSION_HEADER));
+    }
+
+    /** 解析客户端点名的表清单（逗号分隔） */
+    private static Set<String> parseTables(String tables) {
+        if (StringUtils.isBlank(tables)) {
+            return Set.of();
+        }
+        return Arrays.stream(tables.split(","))
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
+    }
 
     /**
      * 获取系统数据版本号（静态元数据 + UGC内容）
@@ -69,16 +93,13 @@ public class SyncController {
     @GetMapping("/getSysDbLogs.do")
     public Result<List<SysDbLogDto>> getNewSysDbLogs(
             @RequestParam("fromVersion") int fromVersion,
-            @RequestParam(value = "missingTables", required = false) String missingTables) {
-        List<String> tables = new ArrayList<>();
-        if (StringUtils.isNotBlank(missingTables)) {
-            for (String table : missingTables.split(",")) {
-                if (StringUtils.isNotBlank(table)) {
-                    tables.add(table.trim());
-                }
-            }
-        }
+            @RequestParam(value = "missingTables", required = false) String missingTables,
+            HttpServletRequest request) {
+        List<String> tables = new ArrayList<>(parseTables(missingTables));
         List<SysDbLogDto> logs = sysDbLogBo.getSysDbLogs(fromVersion, tables);
+        // 只下发该客户端认识的表：老客户端遇到不认识的新表会中断整次同步
+        logs = SyncTableFilter.filter(logs, supportedTables(request), clientVersion(request),
+                SysDbLogDto::getTblName);
         return Result.success(logs);
     }
 
@@ -100,6 +121,7 @@ public class SyncController {
     @GetMapping("/getUserDbLogsFromVersion.do")
     public void getDbLogsFromVersion(@RequestParam("fromVersion") int fromVersion,
             @RequestParam("userId") String userId,
+            @RequestParam(value = "missingTables", required = false) String missingTables,
             HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         // 设置响应类型，让 Spring Boot 自动处理 chunked 传输
@@ -116,8 +138,12 @@ public class SyncController {
         log.info("开始查询用户数据库日志, userId: {}, localDbVersion: {}", userId, fromVersion);
 
         // 查询用户数据库增量日志
-        List<UserDbLogDto> logs = syncBo.getUserDbLogsFromVersion(userId, fromVersion);
+        List<UserDbLogDto> logs = syncBo.getUserDbLogsFromVersion(userId, fromVersion, parseTables(missingTables));
         log.info("用户数据库增量日志查询完成, 数量: {}", logs.size());
+
+        // 只下发该客户端认识的表：老客户端遇到不认识的新表会中断整次同步
+        logs = SyncTableFilter.filter(logs, supportedTables(request), clientVersion(request),
+                UserDbLogDto::getTblName);
 
         // 如果客户端不支持例句练习环节，过滤掉相关同步日志，防老前端崩溃
         String supportedSteps = request.getHeader("X-Supported-Steps");
