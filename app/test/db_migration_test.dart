@@ -183,16 +183,28 @@ void main() {
         contains('user_pet_states'),
       );
 
+      // v58 → v59: 新建单词常用短语搭配表
+      expect(
+        tables.map((row) => row.read<String>('name')),
+        contains('word_phrases'),
+      );
+
       // v55 → v56: words 补上「深度讲解」中文译文列，且老单词数据仍在
       final wordColumns = await db.customSelect("PRAGMA table_info('words')").get();
       expect(
         wordColumns.map((row) => row.read<String>('name')),
         contains('short_desc_cn'),
       );
+      // v60 → v61: words 补上分词性简明英英释义列
+      expect(
+        wordColumns.map((row) => row.read<String>('name')),
+        contains('en_definition'),
+      );
       final word = await (db.select(db.words)..where((w) => w.id.equals('w1'))).getSingleOrNull();
       expect(word, isNotNull, reason: '迁移不得丢失已有单词行');
       expect(word!.shortDesc, 'A flaw in something is a defect.');
       expect(word.shortDescCn, isNull, reason: '新列对老数据应为空，等待服务端下发译文');
+      expect(word.enDefinition, isNull, reason: '新列对老数据应为空，等待服务端下发');
 
       // v56 → v57: 同秒的重复日志被删除（只留最早那条），被污染的记忆字段按日志真值回填
       final repairedLogs = await (db.select(db.learningLogs)
@@ -226,7 +238,7 @@ void main() {
       );
 
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 59);
+      expect(version.data.values.first, db.schemaVersion);
     } finally {
       await db.close();
       MyDatabase.setInstanceForTesting(null);
@@ -258,7 +270,7 @@ void main() {
 
       // 修复失败也要推进版本，否则每次启动都会重跑同一个必失败的迁移
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.data.values.first, 59);
+      expect(version.data.values.first, db.schemaVersion);
     } finally {
       await db.close();
       MyDatabase.setInstanceForTesting(null);
