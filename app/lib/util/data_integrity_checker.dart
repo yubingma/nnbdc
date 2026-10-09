@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
@@ -21,6 +22,59 @@ import 'package:nnbdc/socket_io.dart';
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
 
+/// 词书单词 ID 对账结果
+class DictIdDiff {
+  /// 服务端有、本地没有（要补）
+  final List<String> missing;
+
+  /// 本地有、服务端没有（要清）
+  final List<String> extra;
+
+  DictIdDiff(this.missing, this.extra);
+}
+
+/// 按 (dictId, wordId) 对账：算出本地缺的和本地多余的。
+///
+/// 刻意不依赖 seq —— 服务端删词会让后面的 seq 整体前移、管理员修复还会全量重排，
+/// 序号既不是身份，也不能当跨请求游标。
+DictIdDiff diffDictWordIds(Set<String> serverIds, Set<String> localIds) {
+  return DictIdDiff(
+    serverIds.difference(localIds).toList()..sort(),
+    localIds.difference(serverIds).toList()..sort(),
+  );
+}
+
+/// 系统词书分页补齐的结果
+class SystemDictRepairResult {
+  final String dictId;
+
+  /// 服务端权威总条数
+  int serverTotal = 0;
+
+  /// 补齐前本地条数
+  int localBefore = 0;
+
+  /// 本次补回的单词数
+  int fetched = 0;
+
+  /// 本次清掉的"服务端已不存在"的关联数
+  int removed = 0;
+
+  /// 本次结束后仍缺的单词数
+  int remaining = 0;
+
+  String? error;
+
+  SystemDictRepairResult(this.dictId);
+
+  bool get success => error == null;
+
+  String summary() => success
+      ? '词书 $dictId: 服务端 $serverTotal 条, 本地原 $localBefore 条, 本次补 $fetched 条, '
+          '清多余 $removed 条, 仍缺 $remaining 条'
+      : '词书 $dictId: 分页补齐失败 - $error';
+}
+
 /// 数据完整性检查器
 class DataIntegrityChecker {
   static final DataIntegrityChecker _instance = DataIntegrityChecker._internal();
@@ -31,6 +85,10 @@ class DataIntegrityChecker {
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
   /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
   MyDatabase get _db => MyDatabase.instance;
+
+  /// 自动修复（应用启动时后台跑）每次最多补多少个单词：补不完的留给下次启动接着补。
+  /// 进度天然来自本地数据，所以不需要额外记录断点；限制单次时长与流量。
+  static const int _autoRepairMaxWords = 2000;
 
   /// 执行完整的数据完整性检查
   Future<IntegrityCheckResult> performFullCheck() async {
@@ -704,7 +762,10 @@ class DataIntegrityChecker {
 
   /// 自动修复发现的问题
   /// [userId] 当前登录用户 ID，用于权限验证
-  Future<IntegrityFixResult> autoFix(IntegrityCheckResult checkResult, String userId) async {
+  /// [maxWordsPerDict] 每本词书本次最多补多少个单词（null = 补到不剩）。
+  /// 自动修复传默认上限（每次启动补一点、不占满流量），用户手动点"一键修复"时传 null 一次补完。
+  Future<IntegrityFixResult> autoFix(IntegrityCheckResult checkResult, String userId,
+      {int? maxWordsPerDict = _autoRepairMaxWords}) async {
     final fixResult = IntegrityFixResult();
 
     try {
@@ -721,7 +782,7 @@ class DataIntegrityChecker {
       // 修复单词数量不匹配问题
       if (checkResult.hasIssue('dict_word_count')) {
         try {
-          await _fixDictWordCounts(fixResult, userId);
+          await _fixDictWordCounts(fixResult, userId, maxWordsPerDict: maxWordsPerDict);
         } catch (e, stack) {
           Global.logger.e('修复单词数量时发生中断性错误', error: e, stackTrace: stack);
           fixResult.addError('修复单词数量失败: $e');
@@ -769,133 +830,13 @@ class DataIntegrityChecker {
         }
       }
 
-      // 系统级字典（主要是通用词典 ID=0）如果有数据不完整的问题
+      // 系统词书（含通用词典 ID=0）数据不完整：按 (dictId, wordId) 对账、分页补齐
       if (checkResult.hasIssue('common_dict_integrity')) {
-        try {
-          Global.logger.i('💡 [修复] 检测到系统通用词典数据不完整，正在启动专项修复流程...');
-
-          // 1. 物理清理本地同步或导入残留的“幽灵关联”（在 words 表中该 word_id 已经不存在的 dict_words 关联）
-          await _db.customStatement(
-            'DELETE FROM dict_words WHERE dict_id = ? AND word_id NOT IN (SELECT id FROM words)',
-            [Global.commonDictId],
-          );
-          Global.logger.i('💡 [修复] 已物理清除本地通用词典中的幽灵单词关联记录');
-
-          // 2. 靶向查找通用词典中“名存实亡”缺少释义项的单词，并向云端靶向补全
-          final selectMissingQuery = 'SELECT word_id FROM dict_words dw WHERE dw.dict_id = ? AND NOT EXISTS (SELECT 1 FROM meaning_items mi WHERE mi.word_id = dw.word_id AND mi.dict_id = ?)';
-          final missingRows = await _db.customSelect(selectMissingQuery, variables: [
-            Variable.withString(Global.commonDictId),
-            Variable.withString(Global.commonDictId),
-          ]).get();
-          final missingWordIds = missingRows.map((r) => r.read<String>('word_id')).toList();
-
-          if (missingWordIds.isNotEmpty) {
-            Global.logger.i('💡 [修复] 发现通用词典有 ${missingWordIds.length} 个单词缺少释义项，开始点对点云端补件...');
-            String jsonStr = jsonEncode(missingWordIds);
-            final response = await Api.client.getFallbackWordsData(jsonStr);
-            if (response.success && response.data != null) {
-              final data = response.data!.data;
-              int cleanedCount = 0;
-              int mCount = 0, sCount = 0;
-              final healedWordIds = <String>{};
-
-              await _db.transaction(() async {
-                // 恢复 MeaningItem
-                final mList = data['meaningItems'] as List<dynamic>? ?? [];
-                for (final item in mList) {
-                  final Map<String, dynamic> mMap = Map<String, dynamic>.from(item as Map);
-                  final m = MeaningItem.fromJson(mMap);
-                  await _db.meaningItemsDao.insertEntity(m, false);
-                  mCount++;
-                  if (m.wordId.isNotEmpty) {
-                    healedWordIds.add(m.wordId);
-                  }
-                }
-
-                // 恢复 Sentence
-                final sList = data['sentences'] as List<dynamic>? ?? [];
-                for (final item in sList) {
-                  final Map<String, dynamic> sMap = Map<String, dynamic>.from(item as Map);
-                  final s = Sentence.fromJson(sMap);
-                  await _db.sentencesDao.insertEntity(s);
-                  sCount++;
-                }
-
-                // 物理清理云端确认不存在/无任何数据的幽灵单词
-                for (final wordId in missingWordIds) {
-                  if (!healedWordIds.contains(wordId)) {
-                    await (_db.dictWordsDao.delete(_db.dictWords)
-                          ..where((dw) => dw.dictId.equals(Global.commonDictId) & dw.wordId.equals(wordId)))
-                        .go();
-                    // 若无其他词典引用且无学习进度，一并清理 words 孤儿记录
-                    final otherRefs = await (_db.dictWordsDao.select(_db.dictWords)
-                          ..where((dw) => dw.wordId.equals(wordId)))
-                        .get();
-                    if (otherRefs.isEmpty) {
-                      await (_db.wordsDao.delete(_db.words)..where((w) => w.id.equals(wordId))).go();
-                    }
-                    cleanedCount++;
-                    Global.logger.i('💡 [修复] 已物理清理本地幽灵孤儿单词: $wordId');
-                  }
-                }
-              });
-              if (mCount > 0) {
-                fixResult.addFixed('成功靶向缝合了 ${healedWordIds.length} 个通用词典缺失单词的释义数据！(包含 $mCount 条释义，$sCount 条例句)');
-              }
-              if (cleanedCount > 0) {
-                fixResult.addFixed('成功清理了 $cleanedCount 个云端已不存在的历史幽灵残留单词！');
-              }
-            } else {
-              fixResult.addError('请求云端补全通用词典释义数据失败: ${response.msg}');
-            }
-          }
-
-          // 3. 校准更新本地词书的 wordCount 元数据
-          final actualCount = await _db.dictWordsDao.getDictWordCount(Global.commonDictId);
-          await _db.dictsDao.updateWordCount(Global.commonDictId, true);
-          Global.logger.i('💡 [修复] 通用词典 wordCount 元数据已成功核准对齐为：$actualCount');
-
-          final commonDict = await _db.dictsDao.findById(Global.commonDictId);
-          if (commonDict != null) {
-            // 重新获取关联列表，核准真正的序号连续性
-            final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
-                  ..where((dw) => dw.dictId.equals(Global.commonDictId))
-                  ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
-                .get();
-
-            int fromSeq = 1;
-            // 寻找第一个真实的断层
-            for (int i = 0; i < wordsList.length; i++) {
-              if (wordsList[i].seq != i + 1) {
-                fromSeq = i + 1;
-                break;
-              }
-              if (i == wordsList.length - 1) {
-                fromSeq = wordsList.length + 1;
-              }
-            }
-
-            if (fromSeq <= commonDict.wordCount) {
-              Global.logger.i('💡 [修复] 通用词典缺失序号范围: $fromSeq - ${commonDict.wordCount}，开始增量拉取修复...');
-              final response = await Api.client.getDictResRange(
-                Global.commonDictId,
-                fromSeq,
-                commonDict.wordCount,
-              );
-
-              if (response.success && response.data != null) {
-                await _importDictRes(response.data!);
-                fixResult.addFixed('系统通用词典已通过增量修复（Range: $fromSeq - ${commonDict.wordCount}）成功修复！');
-              } else {
-                fixResult.addError('系统通用词典增量修复拉取失败: ${response.msg}');
-              }
-            } else {
-              fixResult.addFixed('系统通用词典序号检查与元数据对齐全部通过。');
-            }
-          }
-        } catch (e, stack) {
-          Global.logger.e('修复通用系统数据时发生中断性错误', error: e, stackTrace: stack);
-          fixResult.addError('修复通用系统数据失败: $e');
+        final repair = await repairSystemDictContent(Global.commonDictId, maxWords: maxWordsPerDict);
+        if (repair.success) {
+          fixResult.addFixed(repair.summary());
+        } else {
+          fixResult.addError(repair.summary());
         }
       }
 
@@ -1271,6 +1212,92 @@ class DataIntegrityChecker {
   }
 
   /// 修复词典单词序号
+  /// 系统词书自愈：按 (dictId, wordId) 对账，分页补齐本地缺失的单词 / 释义 / 例句。
+  ///
+  /// 为什么需要它：通用词典这类系统内容此前只有"随包预置库 + 系统增量日志（只保留 10 天）"
+  /// 两个来路，而系统数据的全量同步刻意不含 word/dict_word/meaning_item，所以预置库快照与
+  /// 日志流一旦错开（打包打在批量导入中途、设备长期离线、中途同步失败），这段数据就永久缺失，
+  /// 健康检查再怎么点修复也补不回来。这里改成以服务端权威 ID 清单为准，缺多少补多少。
+  ///
+  /// [maxWords] 限制本次最多补多少个单词（null = 补到不剩）：未补完的部分留给下次运行。
+  Future<SystemDictRepairResult> repairSystemDictContent(String dictId, {int? maxWords}) async {
+    final result = SystemDictRepairResult(dictId);
+    try {
+      // 1. 服务端权威 ID 清单。必须整本取完才允许算"本地多余"，
+      //    否则中途失败会把有效行当成幽灵行删掉。
+      const pageSize = 5000;
+      final serverIds = <String>{};
+      String after = '';
+      while (true) {
+        final res = await Api.client.getDictWordIds(dictId, after, pageSize);
+        if (!res.success || res.data == null) {
+          result.error = res.msg ?? '拉取服务端单词清单失败';
+          return result;
+        }
+        final page = (res.data!.data['wordIds'] as List<dynamic>? ?? const [])
+            .map((e) => e.toString())
+            .toList();
+        serverIds.addAll(page);
+        final next = res.data!.data['nextAfter'] as String?;
+        if (page.length < pageSize || next == null || next.isEmpty) break;
+        after = next;
+      }
+      result.serverTotal = serverIds.length;
+
+      final localIds = await _localDictWordIds(dictId);
+      result.localBefore = localIds.length;
+      final diff = diffDictWordIds(serverIds, localIds);
+      final toFetch = (maxWords == null || diff.missing.length <= maxWords)
+          ? diff.missing
+          : diff.missing.sublist(0, maxWords);
+
+      // 2. 清掉服务端已经不存在的关联（幽灵行），否则条数永远对不上
+      const deleteBatch = 500;
+      for (var i = 0; i < diff.extra.length; i += deleteBatch) {
+        final batch = diff.extra.sublist(i, math.min(i + deleteBatch, diff.extra.length));
+        await (_db.delete(_db.dictWords)
+              ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.isIn(batch)))
+            .go();
+        result.removed += batch.length;
+      }
+
+      // 3. 分批把缺的内容拉回来（词书关联 + 单词本体 + 释义 + 例句）
+      const fetchBatch = 200;
+      for (var i = 0; i < toFetch.length; i += fetchBatch) {
+        final batch = toFetch.sublist(i, math.min(i + fetchBatch, toFetch.length));
+        final res = await Api.client.getDictContentByWordIds(dictId, jsonEncode(batch));
+        if (!res.success || res.data == null) {
+          result.error = res.msg ?? '拉取词书补件失败';
+          return result;
+        }
+        await _importDictRes(res.data!);
+        result.fetched += batch.length;
+      }
+
+      result.remaining = serverIds.difference(await _localDictWordIds(dictId)).length;
+      // 4. 只有真的补齐了，才把本地元数据对齐成实际条数；
+      //    没补完就必须保留服务端的权威总数，否则健康检查会被"对齐"骗过去、再也不会继续补。
+      if (result.remaining == 0) {
+        await _db.dictsDao.updateWordCount(dictId, false);
+      }
+      Global.logger.i('📚 [系统词书自愈] ${result.summary()}');
+      return result;
+    } catch (e, stackTrace) {
+      result.error = '$e';
+      Global.logger.e('系统词书分页补齐失败: $dictId', error: e, stackTrace: stackTrace);
+      return result;
+    }
+  }
+
+  /// 本地某本词书已有的单词 ID 集合
+  Future<Set<String>> _localDictWordIds(String dictId) async {
+    final rows = await _db
+        .customSelect('SELECT word_id FROM dict_words WHERE dict_id = ?',
+            variables: [Variable.withString(dictId)])
+        .get();
+    return rows.map((r) => r.read<String>('word_id')).toSet();
+  }
+
   Future<void> _fixDictWordSequences(IntegrityFixResult fixResult, String currentUserId) async {
     try {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
@@ -1306,22 +1333,37 @@ class DataIntegrityChecker {
   }
 
   /// 修复词典单词数量
-  Future<void> _fixDictWordCounts(IntegrityFixResult fixResult, String currentUserId) async {
+  Future<void> _fixDictWordCounts(IntegrityFixResult fixResult, String currentUserId,
+      {int? maxWordsPerDict}) async {
     try {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
 
       for (final dict in allDicts) {
-        // 安全验证：只修复当前用户的词典
+        final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
+        if (dict.wordCount == actualCount) continue;
+
+        // 通用词典的数据不完整由 common_dict_integrity 分支统一处理，这里跳过避免重复补一遍
+        if (dict.id == Global.commonDictId) continue;
+
+        // 系统词书：条数对不上说明本地内容缺失（或残留幽灵行），按 (dictId, wordId) 对账分页补齐
+        if (dict.ownerId == Global.sysUserId) {
+          final repair = await repairSystemDictContent(dict.id, maxWords: maxWordsPerDict);
+          if (repair.success) {
+            fixResult.addFixed(repair.summary());
+          } else {
+            fixResult.addError(repair.summary());
+          }
+          continue;
+        }
+
+        // 用户自建词书只校准元数据；别人的词书一律不碰
         if (dict.ownerId != currentUserId) {
           Global.logger.w('⚠️ 跳过非当前用户的词典：dictId=${dict.id}, ownerId=${dict.ownerId}, currentUserId=$currentUserId');
           continue;
         }
 
-        final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
-        if (dict.wordCount != actualCount) {
-          await _db.dictsDao.updateWordCount(dict.id, true);
-          fixResult.addFixed('修复词典 "${dict.name}" 单词数量：$actualCount');
-        }
+        await _db.dictsDao.updateWordCount(dict.id, true);
+        fixResult.addFixed('修复词典 "${dict.name}" 单词数量：$actualCount');
       }
     } catch (e, stack) {
       Global.logger.e('修复词典单词数量时出错', error: e, stackTrace: stack);
@@ -1644,6 +1686,7 @@ class DataIntegrityChecker {
           groupInfo: w.groupInfo,
           createTime: w.createTime,
           updateTime: w.updateTime,
+          embedding1bit: w.embedding1bit == null ? null : base64Decode(w.embedding1bit!),
         )).toList();
         await _db.wordsDao.insertEntities(words);
       }

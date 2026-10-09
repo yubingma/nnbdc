@@ -2,6 +2,7 @@ package beidanci.service.bo;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.*;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.UserDbVersionDao;
 import beidanci.service.po.*;
 import beidanci.util.Constants;
@@ -915,6 +917,76 @@ public class SystemHealthCheckBo {
         data.put("sentences", sentences);
         data.put("unrecognizedWordIds", unrecognizedWordIds);
         return data;
+    }
+
+    /**
+     * 系统词书自愈：按单词 ID 批次打包返回内容（词书关联 + 单词本体 + 释义 + 例句）。
+     *
+     * <p>只按 word_id 取数（{@code dict_word} 主键 (dict_id, word_id)、{@code meaning_item.word_id}
+     * 有索引），完全不依赖 seq。客户端先分页对账拿到缺失的 wordId，再分批调本接口补齐，
+     * 于是"新装 / 重装 / 长期离线"的设备都能自己长回完整数据，不再要求随包预置库刚好完整。
+     */
+    public DictRes getDictContentByWordIds(String dictId, List<String> wordIds) {
+        List<String> ids = wordIds == null ? new ArrayList<>()
+                : wordIds.stream().filter(id -> id != null && !id.isEmpty()).distinct().collect(Collectors.toList());
+
+        List<DictWordDto> dictWords = new ArrayList<>();
+        List<WordDto> words = new ArrayList<>();
+        List<MeaningItemDto> meaningItems = new ArrayList<>();
+        List<SentenceDto> sentences = new ArrayList<>();
+
+        if (!ids.isEmpty()) {
+            MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId).addValue("wordIds", ids);
+
+            String dictWordSql = "SELECT dict_id, word_id, seq, unit, create_time, update_time FROM dict_word "
+                    + "WHERE dict_id = :dictId AND word_id IN (:wordIds)";
+            dictWords.addAll(namedParameterJdbcTemplate.query(dictWordSql, params, (rs, rowNum) -> {
+                DictWordDto dto = new DictWordDto();
+                dto.setDictId(rs.getString("dict_id"));
+                dto.setWordId(rs.getString("word_id"));
+                dto.setSeq(rs.getInt("seq"));
+                dto.setUnit(rs.getInt("unit"));
+                dto.setCreateTime(rs.getTimestamp("create_time"));
+                dto.setUpdateTime(rs.getTimestamp("update_time"));
+                return dto;
+            }));
+
+            String wordSql = "SELECT * FROM word WHERE id IN (:wordIds)";
+            for (Word word : namedParameterJdbcTemplate.query(wordSql, params, new EntityRowMapper<>(Word.class))) {
+                words.add(wordBo.toDto(word));
+            }
+
+            String meaningSql = "SELECT * FROM meaning_item WHERE dict_id = :dictId AND word_id IN (:wordIds)";
+            List<MeaningItem> meanings = namedParameterJdbcTemplate.query(meaningSql, params,
+                    new EntityRowMapper<>(MeaningItem.class));
+            for (MeaningItem meaning : meanings) {
+                meaningItems.add(meaningItemBo.toDto(meaning));
+            }
+
+            List<String> meaningIds = new ArrayList<>();
+            for (MeaningItem meaning : meanings) {
+                meaningIds.add(meaning.getId());
+            }
+            if (!meaningIds.isEmpty()) {
+                String sentenceSql = "SELECT * FROM sentence WHERE meaning_item_id IN (:meaningIds)";
+                List<Sentence> found = namedParameterJdbcTemplate.query(sentenceSql,
+                        new MapSqlParameterSource("meaningIds", meaningIds), new EntityRowMapper<>(Sentence.class));
+                for (Sentence sentence : found) {
+                    sentences.add(sentenceBo.toDto(sentence));
+                }
+            }
+
+            logger.info("【系统词书自愈】dictId={}, 请求 {} 个单词, 返回关联 {} / 单词 {} / 释义 {} / 例句 {}",
+                    dictId, ids.size(), dictWords.size(), words.size(), meaningItems.size(), sentences.size());
+        }
+
+        DictRes res = new DictRes();
+        res.setDict(dictBo.toDto(dictBo.findById(dictId)));
+        res.setDictWords(dictWords);
+        res.setWords(words);
+        res.setMeaningItems(meaningItems);
+        res.setSentences(sentences);
+        return res;
     }
 
     /**

@@ -384,6 +384,34 @@ public class DictWordBo extends BaseBo<DictWord> {
     }
 
     /**
+     * 按 word_id 游标分页取某词书的单词 ID（keyset 分页，走主键 (dict_id, word_id)）。
+     *
+     * 刻意不用 seq：服务端删词会让后面的 seq 整体前移、管理员修复还会全量重排，
+     * 序号既不能当身份，也不能当跨请求游标。客户端据此做 (dictId, wordId) 对账。
+     *
+     * @param afterWordId 上一页最后一条 word_id，null/空表示从头开始
+     */
+    public List<String> getWordIdsPage(String dictId, String afterWordId, int limit) {
+        StringBuilder sql = new StringBuilder("SELECT word_id FROM dict_word WHERE dict_id = :dictId");
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        if (afterWordId != null && !afterWordId.isEmpty()) {
+            sql.append(" AND word_id > :afterWordId");
+            params.addValue("afterWordId", afterWordId);
+        }
+        sql.append(" ORDER BY word_id ASC LIMIT :limit");
+        params.addValue("limit", limit);
+        return namedParameterJdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> rs.getString("word_id"));
+    }
+
+    /** 某词书当前的关联单词总数（权威值） */
+    public int countDictWords(String dictId) {
+        String sql = "SELECT count(*) FROM dict_word WHERE dict_id = :dictId";
+        Integer count = namedParameterJdbcTemplate.queryForObject(sql,
+                new MapSqlParameterSource("dictId", dictId), Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    /**
      * 获取用户所有生词的DTO列表，用于全量同步
      */
     public List<DictWordDto> getDictWordDtosOfUser(String userId) {

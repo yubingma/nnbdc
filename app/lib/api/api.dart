@@ -706,11 +706,16 @@ abstract class RestClient {
   @FormUrlEncoded()
   Future<Result<JsonMap>> getFallbackWordsData(@Field("wordIds") String wordIdsJson);
 
-  @GET("/api/getDictResRange.do")
-  Future<Result<DictRes>> getDictResRange(
-      @Query("dictId") String dictId,
-      @Query("fromSeq") int fromSeq,
-      @Query("toSeq") int toSeq);
+  // 系统词书自愈：分页取某本词书的单词 ID 清单（只给 ID，不传序号）
+  @GET("/api/getDictWordIds.do")
+  Future<Result<JsonMap>> getDictWordIds(
+      @Query("dictId") String dictId, @Query("after") String after, @Query("limit") int limit);
+
+  // 系统词书自愈：按单词 ID 批次取内容（词书关联 / 单词本体 / 释义 / 例句）
+  @POST("/api/getDictContentByWordIds.do")
+  @FormUrlEncoded()
+  Future<Result<DictRes>> getDictContentByWordIds(
+      @Field("dictId") String dictId, @Field("wordIds") String wordIdsJson);
 
   @GET("/admin/checkUserDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkUserDictIntegrity();

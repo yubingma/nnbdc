@@ -779,7 +779,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     try {
       // 使用本地数据完整性检查器进行修复
       final checker = DataIntegrityChecker();
-      final fixResult = await checker.autoFix(_checkResult!, currentUser.id);
+      final fixResult = await checker.autoFix(_checkResult!, currentUser.id, maxWordsPerDict: null);
 
       // 在异步操作完成后处理 UI
       if (mounted) _handleFixResult(fixResult);
@@ -910,7 +910,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       }
 
       final checker = DataIntegrityChecker();
-      final fixResult = await checker.autoFix(_checkResult!, currentUser.id);
+      final fixResult = await checker.autoFix(_checkResult!, currentUser.id, maxWordsPerDict: null);
 
       setState(() {
         _isRunning = false;
