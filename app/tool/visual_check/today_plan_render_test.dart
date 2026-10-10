@@ -302,29 +302,29 @@ void main() {
     await tester.pump(const Duration(seconds: 60));
   }
 
-  testWidgets('渲染 石韵 · 浅色主题（用户报的问题图）', (tester) async {
+  testWidgets('渲染 琥珀 · 浅色主题', (tester) async {
     await renderCase(tester,
-        name: '01_shiyun_light', wallpaper: 'assets/images/wallpaper/stone.jpg', darkTheme: false);
+        name: '01_amber_light', wallpaper: 'assets/images/wallpaper/amber.jpg', darkTheme: false);
   });
 
-  testWidgets('渲染 石韵 · 深色主题', (tester) async {
+  testWidgets('渲染 琥珀 · 深色主题', (tester) async {
     await renderCase(tester,
-        name: '02_shiyun_dark', wallpaper: 'assets/images/wallpaper/stone.jpg', darkTheme: true);
+        name: '02_amber_dark', wallpaper: 'assets/images/wallpaper/amber.jpg', darkTheme: true);
   });
 
-  testWidgets('渲染 石韵 · 已打卡（印章 + 继续学习按钮）', (tester) async {
+  testWidgets('渲染 琥珀 · 已打卡（印章 + 继续学习按钮）', (tester) async {
     await renderCase(tester,
-        name: '03_shiyun_daka',
-        wallpaper: 'assets/images/wallpaper/stone.jpg',
+        name: '03_amber_daka',
+        wallpaper: 'assets/images/wallpaper/amber.jpg',
         darkTheme: false,
         dakaed: true,
         extraWords: 5,
         extraDone: 2);
   });
 
-  testWidgets('渲染 琥珀 · 浅色主题', (tester) async {
+  testWidgets('渲染 星砂 · 浅色主题', (tester) async {
     await renderCase(tester,
-        name: '04_amber_light', wallpaper: 'assets/images/wallpaper/amber.jpg', darkTheme: false);
+        name: '04_star_sand_light', wallpaper: 'assets/images/wallpaper/star_sand.jpg', darkTheme: false);
   });
 
   testWidgets('渲染 经典（主题底）· 浅色主题', (tester) async {
