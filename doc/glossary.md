@@ -355,6 +355,14 @@
 | 例句点评 | `sentence_chinese_remark` | 对例句翻译的点评与纠错 | |
 | 配图投票 | 客户端 `voted_word_images` / 服务端 `info_vote_log` | 单词配图的有用/无用投票 | 两端表名不同 |
 
+### 4.8 客户端设置与系统权限
+
+| 标准叫法 | 代码标识 | 人话解释 | 注意 |
+|---|---|---|---|
+| 学习提醒 | `app/lib/page/reminder_settings.dart`，路由 `/reminder_settings` | 每天定时提醒用户背单词的本地通知，入口在「我」页的「设置与工具」卡片里 | 用户口中的「通知设置」大多指它；页面标题只有「学习提醒设置」，没有「通知」二字 |
+| 通知权限 | `Permission.notification`（permission_handler） | 系统是否允许本 App 弹通知，由系统弹框授予 | iOS 必须在 `app/ios/Podfile` 声明 `PERMISSION_NOTIFICATIONS=1`，漏声明时状态恒为「已关闭」且永不弹框 |
+| 权限宏 | `app/ios/Podfile` 中 `GCC_PREPROCESSOR_DEFINITIONS` 里的 `PERMISSION_xxx=1` | 告诉 permission_handler_apple 要编译哪些权限的处理代码 | 漏一个宏不会编译报错，只会让该权限在 iOS 上永远返回「已拒绝」 |
+
 ---
 
 ## 五、协作流程用语

@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import "package:go_router/go_router.dart";
 import "package:nnbdc/util/prefs.dart";
 import 'package:nnbdc/api/bo/study_bo.dart';
@@ -57,13 +57,31 @@ class PlanWallpaper {
 }
 
 const List<PlanWallpaper> planWallpapers = [
+  // 第 1 排：质感光影与水韵
   PlanWallpaper('星砂', 'assets/images/wallpaper/star_sand.jpg', isDark: true),
   PlanWallpaper('琥珀', 'assets/images/wallpaper/amber.jpg', isDark: true),
   PlanWallpaper('水趣', 'assets/images/wallpaper/kitty_blue.jpg', isDark: true),
   PlanWallpaper('粉梦', 'assets/images/wallpaper/kitty_pink.jpg', isDark: false),
+  // 第 2 排：自然生机与旷野
   PlanWallpaper('绿荫', 'assets/images/wallpaper/tree_green.jpg', isDark: false),
-  // 经典 = 不用照片，走主题底，卡片与字色整套跟 App 主题（isDark 不参与）
+  PlanWallpaper('旷野', 'assets/images/wallpaper/tree.jpg', isDark: true),
+  PlanWallpaper('枫韵', 'assets/images/wallpaper/maple.jpg', isDark: true),
+  PlanWallpaper('湖光', 'assets/images/scenes/river.jpg', isDark: true),
+  // 第 3 排：晨昏静谧场景
+  PlanWallpaper('晨雾', 'assets/images/scenes/mist.jpg', isDark: false),
+  PlanWallpaper('夏夜', 'assets/images/scenes/night.jpg', isDark: true),
+  PlanWallpaper('翠竹', 'assets/images/bg.jpg', isDark: true),
+  PlanWallpaper('墨松', 'assets/images/bg2.jpg', isDark: true),
+  // 第 4 排：山原温润色调
+  PlanWallpaper('青川', 'assets/images/bg3.jpg', isDark: false),
+  PlanWallpaper('金晖', 'assets/images/bg4.jpg', isDark: false),
+  PlanWallpaper('麦浪', 'assets/images/bg5.jpg', isDark: false),
+  PlanWallpaper('暮山', 'assets/images/bg6.jpg', isDark: true),
+  // 第 5 排：原野、素简、经典与随机（最后一个固定为随机）
+  PlanWallpaper('芳原', 'assets/images/bg7.jpg', isDark: true),
+  PlanWallpaper('素简', 'assets/images/1.jpg', isDark: true),
   PlanWallpaper('经典', 'none', isDark: false),
+  PlanWallpaper('随机', 'random', isDark: true),
 ];
 
 class TodayPlanPage extends StatefulWidget {
@@ -95,8 +113,29 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
 
-  /// 背景壁纸
+  /// 背景壁纸（支持 'random' 与 'none' 及具体图片路径）
   String _wallpaperPath = 'assets/images/wallpaper/kitty_pink.jpg';
+
+  /// 当壁纸设置为 'random' 时用于实际渲染的具体壁纸路径
+  String? _randomResolvedPath;
+
+  /// 从具体壁纸列表中随机抽取一张真实壁纸
+  String _pickRandomWallpaper() {
+    final concreteWallpapers = planWallpapers
+        .where((w) => w.path != 'random' && w.path != 'none')
+        .toList();
+    if (concreteWallpapers.isEmpty) return 'assets/images/wallpaper/star_sand.jpg';
+    final randomIndex = math.Random().nextInt(concreteWallpapers.length);
+    return concreteWallpapers[randomIndex].path;
+  }
+
+  /// 实际参与渲染与明暗判定的有效壁纸路径
+  String get _effectiveWallpaperPath {
+    if (_wallpaperPath == 'random') {
+      return _randomResolvedPath ??= _pickRandomWallpaper();
+    }
+    return _wallpaperPath;
+  }
 
   /// 点击"开始学习"后正在等待今日计划就绪：按钮据此给出"准备中"反馈，
   /// 避免计划准备期间（重装/换端后要等云端数据落地）点击后毫无动静。
@@ -178,6 +217,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     _wallpaperPath = (savedWallpaper != null && validPaths.contains(savedWallpaper))
         ? savedWallpaper
         : 'assets/images/wallpaper/kitty_pink.jpg';
+    if (_wallpaperPath == 'random') {
+      _randomResolvedPath = _pickRandomWallpaper();
+    }
     // 首页初始化时强制关停 ASR，同时在后台静默预加载语音识别模型，避免点击“开始学习”进入单词页面时因加载模型而产生阻塞卡顿
     Asr().stopMicrophone();
     // 串行预热：先语音识别模型，再音素词典（发音相似度比对用）。两者峰值内存都不小，
@@ -593,7 +635,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   Widget _buildBackground(bool isDarkMode, AppThemeStyle themeStyle) {
-    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    final effectivePath = _effectiveWallpaperPath;
+    final hasWallpaper = effectivePath.isNotEmpty && effectivePath != 'none';
     if (!hasWallpaper) {
       return AppThemeBackground(
         isDarkMode: isDarkMode,
@@ -603,7 +646,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
 
     return Image.asset(
-      _wallpaperPath,
+      effectivePath,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         return AppThemeBackground(
@@ -800,11 +843,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 当前壁纸照片的明暗档；「经典」（无壁纸）返回 null，表示卡片与字色整套跟 App 主题走。
   bool? get _wallpaperIsDark {
-    if (_wallpaperPath.isEmpty || _wallpaperPath == 'none') return null;
+    final effectivePath = _effectiveWallpaperPath;
+    if (effectivePath.isEmpty || effectivePath == 'none') return null;
     for (final wallpaper in planWallpapers) {
-      if (wallpaper.path == _wallpaperPath) return wallpaper.isDark;
+      if (wallpaper.path == effectivePath) return wallpaper.isDark;
     }
-    assert(false, '壁纸「$_wallpaperPath」没有登记明暗档，请补进 planWallpapers');
     // 未登记的陌生照片按暗底处理：深色玻璃 + 白字压在任何照片上都不会糊
     return true;
   }
@@ -2673,28 +2716,16 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
   }
 
-  /// 弹出"高级设置"对话框，可配置今日最少新词数量与每组单词数
+  /// 弹出"高级设置"对话框
   void _showAdvancedSettingsDialog() async {
     final darkMode = context.read<DarkMode>();
     final isDarkMode = darkMode.isDarkMode;
     final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
     final primaryColor = themeConfig.primaryColor;
-    final isStarted = user?.todayStudyStarted == true;
     final config = StudyConfig.fromCurrentUser();
-    final initialWordsPerDay = user?.effectiveWordsPerDay ?? 20;
-    int selectedWordsPerDay = initialWordsPerDay;
-    double wordsPerDayDragAccumulator = 0;
-    final initialMinNewWords = config.minNewWordsPerDay;
-    int selected = initialMinNewWords.clamp(0, selectedWordsPerDay);
-    // 每组单词数独立于每日计划词数，上限统一对齐为 500
-    const batchSizeLimit = StudyConfig.maxBatchSize;
-    final initialBatchSize = config.batchSize;
-    int selectedBatchSize =
-        initialBatchSize.clamp(1, batchSizeLimit);
-    // 常用经典科学心流梯度（5档），整齐对称且自适应
-    const batchSizeChips = [5, 10, 20, 30, 50];
-    double dragAccumulator = 0;
-    double minNewWordsDragAccumulator = 0;
+    final wordsPerDay = user?.effectiveWordsPerDay ?? 20;
+    final minNewWordsDesc = config.minNewWordsPerDay == 0 ? '不限制' : '${config.minNewWordsPerDay}词';
+    final planSummary = '$wordsPerDay 词/天 · 新词$minNewWordsDesc · ${config.batchSize} 词/组';
 
     await showGeneralDialog(
       context: context,
@@ -2711,1080 +2742,252 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       pageBuilder: (ctx, _, __) {
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
-          void handleSelectWordsPerDay(int v) {
-            if (!UserPrivilegeManager.isDailyWordsAllowed(v)) {
-              ToastUtil.info('开通会员可选择更多单词数量');
-              return;
-            }
-            setDialogState(() {
-              selectedWordsPerDay = v;
-              if (selected > selectedWordsPerDay) {
-                selected = selectedWordsPerDay;
-              }
-            });
-          }
-
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: BackdropFilter(
-                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDarkMode
-                            ? [
-                                const Color(0xB8161B26),
-                                const Color(0x9E10141D),
-                              ]
-                            : [
-                                const Color(0xB8FFFFFF),
-                                const Color(0x9EFFFFFF),
-                              ],
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isDarkMode
-                            ? const Color(0x33FFFFFF)
-                            : const Color(0x80FFFFFF),
-                        width: 1.2,
-                      ),
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                      blurRadius: 28,
+                      offset: const Offset(0, 10),
                     ),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      // 顶部标题行
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(Icons.tune_rounded, size: 18, color: primaryColor),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                '高级学习设置',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                          GestureDetector(
-                            onTap: () => Navigator.pop(ctx),
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 16,
-                                color: isDarkMode ? Colors.white60 : Colors.black54,
-                              ),
-                            ),
-                          ),
-                        ],
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: isDarkMode
+                              ? [
+                                  const Color(0xB8161B26),
+                                  const Color(0x9E10141D),
+                                ]
+                              : [
+                                  const Color(0xB8FFFFFF),
+                                  const Color(0x9EFFFFFF),
+                                ],
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: isDarkMode
+                              ? const Color(0x33FFFFFF)
+                              : const Color(0x80FFFFFF),
+                          width: 1.2,
+                        ),
                       ),
-                      const SizedBox(height: 18),
-
-                      // 1. 今日单词数（第一项配置）
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '今日单词数',
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w700,
-                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                              ),
-                            ),
-                          ),
-                          if (isStarted)
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => ToastUtil.info('今日学习已开始，设置暂时锁定'),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 顶部标题行
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
                                   children: [
-                                    Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
-                                    const SizedBox(width: 4),
+                                    Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color: primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(Icons.tune_rounded, size: 18, color: primaryColor),
+                                    ),
+                                    const SizedBox(width: 10),
                                     Text(
-                                      '$selectedWordsPerDay 词',
+                                      '高级学习设置',
                                       style: TextStyle(
-                                        fontSize: 13,
+                                        fontSize: 16,
                                         fontWeight: FontWeight.w700,
-                                        color: isDarkMode ? Colors.white70 : Colors.black87,
+                                        color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                        letterSpacing: -0.2,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
+                                GestureDetector(
+                                  onTap: () => Navigator.pop(ctx),
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 16,
+                                      color: isDarkMode ? Colors.white60 : Colors.black54,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                        ],
-                      ),
+                            const SizedBox(height: 16),
 
-                      if (!isStarted) ...[
-                        const SizedBox(height: 14),
-
-                        // 步进调节条
-                        Container(
-                          height: 52,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.white.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.white.withValues(alpha: 0.65),
-                              width: 1,
+                            // 1. 每日计划与词量设置（二级设置入口）
+                            _buildAdvancedMenuNavigationItem(
+                              title: '每日计划与词量设置',
+                              subtitle: planSummary,
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                context.push('/study_plan_settings').then((_) {
+                                  if (mounted) loadData(forceSupplement: true);
+                                });
+                              },
+                              isDarkMode: isDarkMode,
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildAdvancedStepBtn(
-                                icon: Icons.remove_rounded,
-                                enabled: selectedWordsPerDay > 2,
-                                onTap: () => setDialogState(() {
-                                  selectedWordsPerDay = (selectedWordsPerDay - 1).clamp(2, 500);
-                                  if (selected > selectedWordsPerDay) {
-                                    selected = selectedWordsPerDay;
-                                  }
-                                }),
-                                isDarkMode: isDarkMode,
-                                isLargeRange: true,
-                              ),
-                              Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () async {
-                                    final inputVal = await _showCustomNumberInputDialog(
-                                      parentContext: ctx,
-                                      title: '自定义今日单词数',
-                                      unit: '词',
-                                      min: 2,
-                                      max: 500,
-                                      subtitle: '范围 2 ~ 500 词',
-                                      currentValue: selectedWordsPerDay,
-                                      primaryColor: primaryColor,
-                                      isDarkMode: isDarkMode,
-                                    );
-                                    if (inputVal != null) {
-                                      if (!UserPrivilegeManager.isDailyWordsAllowed(inputVal)) {
-                                        ToastUtil.info('开通会员可选择更多单词数量');
-                                        return;
+                            const SizedBox(height: 2),
+
+                            // 2. 学习轨道设置
+                            _buildAdvancedMenuNavigationItem(
+                              title: '学习轨道设置',
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                context.push('/study_track_settings').then((_) {
+                                  if (mounted) loadData();
+                                });
+                              },
+                              isDarkMode: isDarkMode,
+                            ),
+                            const SizedBox(height: 2),
+
+                            // 3. 学习日期说明
+                            _buildAdvancedMenuNavigationItem(
+                              title: '学习日期说明',
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                context.push('/study_date_rules');
+                              },
+                              isDarkMode: isDarkMode,
+                            ),
+                            const SizedBox(height: 18),
+
+                            // 4. 本页背景配置
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '本页背景',
+                                    style: TextStyle(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            // 本页背景快速切换药丸标签（5排每排4个，对称极简）
+                            Builder(
+                              builder: (ctx) {
+                                const options = planWallpapers;
+
+                                Widget buildPill(PlanWallpaper item) {
+                                  final isSelected = _wallpaperPath == item.path;
+                                  return GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () async {
+                                      final selectedPath = item.path;
+                                      if (selectedPath == 'random') {
+                                        _randomResolvedPath = _pickRandomWallpaper();
                                       }
+                                      await Prefs.write('today_plan_wallpaper', selectedPath);
                                       setDialogState(() {
-                                        selectedWordsPerDay = inputVal;
-                                        if (selected > selectedWordsPerDay) {
-                                          selected = selectedWordsPerDay;
-                                        }
+                                        _wallpaperPath = selectedPath;
                                       });
-                                    }
-                                  },
-                                  onHorizontalDragStart: (_) {
-                                    wordsPerDayDragAccumulator = 0;
-                                  },
-                                  onHorizontalDragUpdate: (details) {
-                                    wordsPerDayDragAccumulator += details.primaryDelta ?? 0;
-                                    if (wordsPerDayDragAccumulator.abs() >= 8.0) {
-                                      final dir = wordsPerDayDragAccumulator > 0 ? 1 : -1;
-                                      wordsPerDayDragAccumulator = 0;
-                                      final next = (selectedWordsPerDay + dir).clamp(2, 500);
-                                      if (next != selectedWordsPerDay) {
-                                        if (next > selectedWordsPerDay && !UserPrivilegeManager.isDailyWordsAllowed(next)) {
-                                          return;
-                                        }
-                                        HapticFeedback.selectionClick();
-                                        setDialogState(() {
-                                          selectedWordsPerDay = next;
-                                          if (selected > selectedWordsPerDay) {
-                                            selected = selectedWordsPerDay;
-                                          }
+                                      if (mounted) {
+                                        setState(() {
+                                          _wallpaperPath = selectedPath;
                                         });
                                       }
-                                    }
-                                  },
-                                  child: Center(
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        RichText(
-                                          text: TextSpan(
-                                            children: [
-                                              TextSpan(
-                                                text: '$selectedWordsPerDay',
-                                                style: TextStyle(
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.w800,
-                                                  fontFamily: 'Roboto',
-                                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                                ),
-                                              ),
-                                              TextSpan(
-                                                text: ' 词',
-                                                style: TextStyle(
-                                                  fontSize: 12.5,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                                ),
-                                              ),
-                                            ],
+                                    },
+                                    child: Container(
+                                      height: 35,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? primaryColor
+                                            : (isDarkMode
+                                                ? Colors.white.withValues(alpha: 0.06)
+                                                : Colors.black.withValues(alpha: 0.04)),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? primaryColor
+                                              : (isDarkMode
+                                                  ? Colors.white.withValues(alpha: 0.08)
+                                                  : Colors.black.withValues(alpha: 0.06)),
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          item.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
                                           ),
                                         ),
-                                        const SizedBox(width: 5),
-                                        Icon(
-                                          Icons.edit_outlined,
-                                          size: 13,
-                                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ),
-                              _buildAdvancedStepBtn(
-                                icon: Icons.add_rounded,
-                                enabled: selectedWordsPerDay < 500,
-                                onTap: () {
-                                  final next = (selectedWordsPerDay + 1).clamp(2, 500);
-                                  if (!UserPrivilegeManager.isDailyWordsAllowed(next)) {
-                                    ToastUtil.info('开通会员可选择更多单词数量');
-                                    return;
-                                  }
-                                  setDialogState(() {
-                                    selectedWordsPerDay = next;
-                                  });
-                                },
-                                isDarkMode: isDarkMode,
-                                isLargeRange: true,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                                  );
+                                }
 
-                        // 2 行 × 3 列 规整快捷药丸标签（5, 10, 20, 30, 50, 100）
-                        Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(child: _buildAdvancedQuickChip('5词', 5, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('10词', 10, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('20词', 20, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(child: _buildAdvancedQuickChip('30词', 30, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('50词', 50, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('100词', 100, selectedWordsPerDay, handleSelectWordsPerDay, primaryColor, isDarkMode)),
-                              ],
+                                return Column(
+                                  children: [
+                                    for (int row = 0; row < 5; row++) ...[
+                                      if (row > 0) const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          for (int col = 0; col < 4; col++) ...[
+                                            if (col > 0) const SizedBox(width: 8),
+                                            Expanded(
+                                              child: buildPill(options[row * 4 + col]),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                );
+                              },
                             ),
                           ],
                         ),
-                      ],
-                      const SizedBox(height: 22),
-
-                      // 2. 今日最少新词
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Text(
-                                  '今日最少新词',
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => _showMinNewWordsExplanationDialog(ctx),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(4.0),
-                                    child: Icon(
-                                      Icons.help_outline_rounded,
-                                      size: 16,
-                                      color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (isStarted)
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => ToastUtil.info('今日学习已开始，设置暂时锁定'),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '$selected 词',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDarkMode ? Colors.white70 : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
                       ),
-
-                      if (!isStarted) ...[
-                        const SizedBox(height: 14),
-
-                        // 步进调节条
-                        Container(
-                          height: 52,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.white.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.white.withValues(alpha: 0.65),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildAdvancedStepBtn(
-                                icon: Icons.remove_rounded,
-                                enabled: selected > 0,
-                                onTap: () => setDialogState(() => selected = (selected - 1).clamp(0, selectedWordsPerDay)),
-                                isDarkMode: isDarkMode,
-                                isLargeRange: selectedWordsPerDay > 30,
-                              ),
-                              Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () async {
-                                    final inputVal = await _showMinNewWordsInputDialog(
-                                      ctx,
-                                      selected,
-                                      selectedWordsPerDay,
-                                      primaryColor,
-                                      isDarkMode,
-                                    );
-                                    if (inputVal != null) {
-                                      setDialogState(() => selected = inputVal.clamp(0, selectedWordsPerDay));
-                                    }
-                                  },
-                                  onHorizontalDragStart: (_) {
-                                    minNewWordsDragAccumulator = 0;
-                                  },
-                                  onHorizontalDragUpdate: (details) {
-                                    minNewWordsDragAccumulator += details.primaryDelta ?? 0;
-                                    if (minNewWordsDragAccumulator.abs() >= 8.0) {
-                                      final dir = minNewWordsDragAccumulator > 0 ? 1 : -1;
-                                      minNewWordsDragAccumulator = 0;
-                                      final next = (selected + dir).clamp(0, selectedWordsPerDay);
-                                      if (next != selected) {
-                                        HapticFeedback.selectionClick();
-                                        setDialogState(() => selected = next);
-                                      }
-                                    }
-                                  },
-                                  child: Center(
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        RichText(
-                                          text: TextSpan(
-                                            children: [
-                                              TextSpan(
-                                                text: selected == 0 ? '不限制' : '$selected',
-                                                style: TextStyle(
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.w800,
-                                                  fontFamily: selected == 0 ? null : 'Roboto',
-                                                  color: selected == 0
-                                                      ? (isDarkMode ? Colors.white70 : const Color(0xFF334155))
-                                                      : (isDarkMode ? Colors.white : const Color(0xFF0F172A)),
-                                                ),
-                                              ),
-                                              if (selected > 0)
-                                                TextSpan(
-                                                  text: ' 词',
-                                                  style: TextStyle(
-                                                    fontSize: 12.5,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Icon(
-                                          Icons.edit_outlined,
-                                          size: 13,
-                                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              _buildAdvancedStepBtn(
-                                icon: Icons.add_rounded,
-                                enabled: selected < selectedWordsPerDay,
-                                onTap: () => setDialogState(() => selected = (selected + 1).clamp(0, selectedWordsPerDay)),
-                                isDarkMode: isDarkMode,
-                                isLargeRange: selectedWordsPerDay > 30,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // 2 行 × 3 列 规整快捷药丸标签
-                        Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(child: _buildAdvancedQuickChip('不限制', 0, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('5词', 5, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay >= 5)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('10词', 10, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay >= 10)),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(child: _buildAdvancedQuickChip('20词', 20, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay >= 20)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('30词', 30, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay >= 30)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _buildAdvancedQuickChip('全学新词', selectedWordsPerDay, selected, (v) => setDialogState(() => selected = v), primaryColor, isDarkMode, enabled: selectedWordsPerDay > 0)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 22),
-
-                      // 每组单词数：整组横向推进时一组容纳多少词
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: isStarted ? () => ToastUtil.info('今日学习已开始，设置暂时锁定') : null,
-                              child: Text(
-                                '每组单词数',
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (isStarted)
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => ToastUtil.info('今日学习已开始，设置暂时锁定'),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.lock_outline_rounded, size: 13, color: isDarkMode ? Colors.white54 : Colors.black45),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '$selectedBatchSize 词',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDarkMode ? Colors.white70 : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-
-                      if (!isStarted) ...[
-                        const SizedBox(height: 14),
-
-                        // 步进调节条（支持长按加速、横向滑动与点击精确输入）
-                        Container(
-                          height: 52,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.white.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.white.withValues(alpha: 0.65),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildAdvancedStepBtn(
-                                icon: Icons.remove_rounded,
-                                enabled: selectedBatchSize > 1,
-                                onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize - 1).clamp(1, batchSizeLimit)),
-                                isDarkMode: isDarkMode,
-                                isLargeRange: true,
-                              ),
-                              Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () async {
-                                    final inputVal = await _showBatchSizeInputDialog(
-                                      ctx,
-                                      selectedBatchSize,
-                                      primaryColor,
-                                      isDarkMode,
-                                    );
-                                    if (inputVal != null) {
-                                      setDialogState(() => selectedBatchSize = inputVal.clamp(1, batchSizeLimit));
-                                    }
-                                  },
-                                  onHorizontalDragStart: (_) {
-                                    dragAccumulator = 0;
-                                  },
-                                  onHorizontalDragUpdate: (details) {
-                                    dragAccumulator += details.primaryDelta ?? 0;
-                                    final threshold = selectedBatchSize > 50 ? 6.0 : 8.0;
-                                    if (dragAccumulator.abs() >= threshold) {
-                                      final dir = dragAccumulator > 0 ? 1 : -1;
-                                      final step = selectedBatchSize > 100
-                                          ? dir * 5
-                                          : (selectedBatchSize > 30 ? dir * 2 : dir);
-                                      dragAccumulator = 0;
-                                      final next = (selectedBatchSize + step).clamp(1, batchSizeLimit);
-                                      if (next != selectedBatchSize) {
-                                        HapticFeedback.selectionClick();
-                                        setDialogState(() => selectedBatchSize = next);
-                                      }
-                                    }
-                                  },
-                                  child: Center(
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        RichText(
-                                          text: TextSpan(
-                                            children: [
-                                              TextSpan(
-                                                text: '$selectedBatchSize',
-                                                style: TextStyle(
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.w800,
-                                                  fontFamily: 'Roboto',
-                                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                                ),
-                                              ),
-                                              TextSpan(
-                                                text: ' 词/组',
-                                                style: TextStyle(
-                                                  fontSize: 12.5,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Icon(
-                                          Icons.edit_outlined,
-                                          size: 13,
-                                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              _buildAdvancedStepBtn(
-                                icon: Icons.add_rounded,
-                                enabled: selectedBatchSize < batchSizeLimit,
-                                onTap: () => setDialogState(() => selectedBatchSize = (selectedBatchSize + 1).clamp(1, batchSizeLimit)),
-                                isDarkMode: isDarkMode,
-                                isLargeRange: true,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // 快捷药丸标签（不超过当日计划词数的档位）
-                        if (batchSizeChips.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              for (int i = 0; i < batchSizeChips.length; i++) ...[
-                                if (i > 0) const SizedBox(width: 8),
-                                Expanded(
-                                  child: _buildAdvancedQuickChip(
-                                    '${batchSizeChips[i]}词',
-                                    batchSizeChips[i],
-                                    selectedBatchSize,
-                                    (v) => setDialogState(() => selectedBatchSize = v),
-                                    primaryColor,
-                                    isDarkMode,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ],
-                      const SizedBox(height: 18),
-
-                      // 3. 学习轨道与规则说明入口
-                      _buildAdvancedMenuNavigationItem(
-                        title: '学习轨道设置',
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          context.push('/study_track_settings').then((_) {
-                            if (mounted) loadData();
-                          });
-                        },
-                        isDarkMode: isDarkMode,
-                      ),
-                      const SizedBox(height: 2),
-                      _buildAdvancedMenuNavigationItem(
-                        title: '学习日期说明',
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          context.push('/study_date_rules');
-                        },
-                        isDarkMode: isDarkMode,
-                      ),
-                      const SizedBox(height: 18),
-
-                      // 4. 本页背景配置
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '本页背景',
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w700,
-                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // 本页背景快速切换药丸标签（两行三列，对称极简）
-                      Builder(
-                        builder: (ctx) {
-                          // 选项与明暗档同源：planWallpapers 是壁纸的唯一登记处
-                          const options = planWallpapers;
-
-                          return Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: options.map((item) {
-                              final isSelected = _wallpaperPath == item.path;
-                              return GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () async {
-                                  final selectedPath = item.path;
-                                  await Prefs.write('today_plan_wallpaper', selectedPath);
-                                  setDialogState(() {
-                                    _wallpaperPath = selectedPath;
-                                  });
-                                  if (mounted) {
-                                    setState(() {
-                                      _wallpaperPath = selectedPath;
-                                    });
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? primaryColor
-                                        : (isDarkMode
-                                            ? Colors.white.withValues(alpha: 0.06)
-                                            : Colors.black.withValues(alpha: 0.04)),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? primaryColor
-                                          : (isDarkMode
-                                              ? Colors.white.withValues(alpha: 0.08)
-                                              : Colors.black.withValues(alpha: 0.06)),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    item.name,
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-                ),
               ),
-            ),
-          ),
-          );
-        },
-      );
-    },
-  );
-
-  // 弹窗关闭后自动保存（Auto-Save：即改即生效）
-  if (!isStarted) {
-    final hasWordsChanged = selectedWordsPerDay != initialWordsPerDay;
-    final hasConfigChanged = selected != initialMinNewWords || selectedBatchSize != initialBatchSize;
-    if (hasWordsChanged || hasConfigChanged) {
-      if (hasWordsChanged) {
-        user!.wordsPerDay = selectedWordsPerDay;
-        await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, selectedWordsPerDay);
-        await Global.loadUserFromDb();
-        ThrottledDbSyncService().requestSync();
-      }
-      if (hasConfigChanged) {
-        config.minNewWordsPerDay = selected;
-        config.batchSize = selectedBatchSize;
-        await config.saveToCurrentUser();
-      }
-      if (mounted) {
-        loadData(forceSupplement: true);
-      }
-    }
-  }
-}
-
-  /// 弹出精确定制数字输入框（支持自定义标题、范围与单位）
-  Future<int?> _showCustomNumberInputDialog({
-    required BuildContext parentContext,
-    required String title,
-    required String unit,
-    required int min,
-    required int max,
-    required String subtitle,
-    required int currentValue,
-    required Color primaryColor,
-    required bool isDarkMode,
-  }) {
-    final textController = TextEditingController(text: '$currentValue');
-    textController.selection = TextSelection(
-      baseOffset: 0,
-      extentOffset: textController.text.length,
-    );
-    String? errorText;
-
-    return showGeneralDialog<int>(
-      context: parentContext,
-      barrierDismissible: true,
-      barrierLabel: title,
-      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.18),
-      transitionDuration: const Duration(milliseconds: 200),
-      transitionBuilder: (context, anim1, anim2, child) {
-        return ScaleTransition(
-          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
-          child: child,
+            );
+          },
         );
       },
-      pageBuilder: (ctx, _, __) => StatefulBuilder(
-        builder: (ctx, setInputState) {
-          void submit() {
-            final text = textController.text.trim();
-            final val = int.tryParse(text);
-            if (val == null || val < min || val > max) {
-              setInputState(() {
-                errorText = '请输入 $min ~ $max 之间的整数';
-              });
-              return;
-            }
-            Navigator.of(ctx).pop(val);
-          }
-
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 40),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDarkMode
-                            ? [
-                                const Color(0xB8161B26),
-                                const Color(0x9E10141D),
-                              ]
-                            : [
-                                const Color(0xB8FFFFFF),
-                                const Color(0x9EFFFFFF),
-                              ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isDarkMode
-                            ? const Color(0x33FFFFFF)
-                            : const Color(0x80FFFFFF),
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDarkMode ? Colors.white38 : const Color(0xFF64748B),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: textController,
-                          autofocus: true,
-                          keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.done,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            fontFamily: 'Roboto',
-                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                          ),
-                          decoration: InputDecoration(
-                            hintText: '输入数量',
-                            suffixText: unit,
-                            suffixStyle: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                            ),
-                            errorText: errorText,
-                            filled: true,
-                            fillColor: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.06)
-                                : Colors.white.withValues(alpha: 0.40),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: primaryColor, width: 1.5),
-                            ),
-                          ),
-                          onSubmitted: (_) => submit(),
-                        ),
-                        const SizedBox(height: 18),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 40,
-                                child: TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(),
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.08)
-                                        : Colors.white.withValues(alpha: 0.40),
-                                    foregroundColor: isDarkMode ? Colors.white70 : const Color(0xFF475569),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  child: const Text('取消', style: TextStyle(fontWeight: FontWeight.w600)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: SizedBox(
-                                height: 40,
-                                child: ElevatedButton(
-                                  onPressed: submit,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryColor,
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  child: const Text('确定', style: TextStyle(fontWeight: FontWeight.w700)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  /// 弹出每组单词数精确定制输入框（支持 1 ~ 500）
-  Future<int?> _showBatchSizeInputDialog(
-    BuildContext parentContext,
-    int currentValue,
-    Color primaryColor,
-    bool isDarkMode,
-  ) {
-    return _showCustomNumberInputDialog(
-      parentContext: parentContext,
-      title: '自定义每组单词数',
-      unit: '词/组',
-      min: 1,
-      max: StudyConfig.maxBatchSize,
-      subtitle: '范围 1 ~ ${StudyConfig.maxBatchSize} 词/组',
-      currentValue: currentValue,
-      primaryColor: primaryColor,
-      isDarkMode: isDarkMode,
-    );
-  }
-
-  /// 弹出今日最少新词精确定制输入框（支持 0 ~ wordsPerDay）
-  Future<int?> _showMinNewWordsInputDialog(
-    BuildContext parentContext,
-    int currentValue,
-    int wordsPerDay,
-    Color primaryColor,
-    bool isDarkMode,
-  ) {
-    return _showCustomNumberInputDialog(
-      parentContext: parentContext,
-      title: '自定义今日最少新词',
-      unit: '词',
-      min: 0,
-      max: wordsPerDay,
-      subtitle: '范围 0 ~ $wordsPerDay 词 (0 为不限制)',
-      currentValue: currentValue,
-      primaryColor: primaryColor,
-      isDarkMode: isDarkMode,
     );
   }
 
   Widget _buildAdvancedMenuNavigationItem({
     required String title,
+    String? subtitle,
     required VoidCallback onTap,
     required bool isDarkMode,
   }) {
@@ -3792,20 +2995,40 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 11),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                      ),
+                    ),
+                    if (subtitle != null && subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: isDarkMode ? Colors.white38 : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
+              const SizedBox(width: 8),
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 13,
@@ -3817,466 +3040,5 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       ),
     );
   }
-
-  Widget _buildAdvancedStepBtn({
-    required IconData icon,
-    required bool enabled,
-    required VoidCallback onTap,
-    required bool isDarkMode,
-    bool isLargeRange = false,
-  }) {
-    return _ContinuousStepButton(
-      icon: icon,
-      enabled: enabled,
-      onStep: onTap,
-      isDarkMode: isDarkMode,
-      isLargeRange: isLargeRange,
-    );
-  }
-
-  Widget _buildAdvancedQuickChip(
-    String label,
-    int value,
-    int selectedValue,
-    ValueChanged<int> onSelect,
-    Color primaryColor,
-    bool isDarkMode, {
-    bool enabled = true,
-  }) {
-    final isSelected = enabled && value == selectedValue;
-
-    // 解析是否为 "数字 + 单位" 结构（如 "5词", "10词"）
-    final match = RegExp(r'^(\d+)(.*)$').firstMatch(label);
-    final hasNumericValue = match != null;
-    final numPart = hasNumericValue ? match.group(1)! : label;
-    final unitPart = hasNumericValue ? match.group(2)! : '';
-
-    return GestureDetector(
-      onTap: enabled ? () => onSelect(value) : null,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        height: 36,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: !enabled
-              ? (isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.white.withValues(alpha: 0.15))
-              : isSelected
-                  ? primaryColor
-                  : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.35)),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: !enabled
-                ? Colors.transparent
-                : isSelected
-                    ? Colors.transparent
-                    : (isDarkMode ? const Color(0x20FFFFFF) : const Color(0x80FFFFFF)),
-            width: 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: primaryColor.withValues(alpha: 0.32),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: hasNumericValue
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    numPart,
-                    style: TextStyle(
-                      fontFamily: 'Roboto',
-                      fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                      color: !enabled
-                          ? (isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1))
-                          : isSelected
-                              ? Colors.white
-                              : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
-                    ),
-                  ),
-                  if (unitPart.isNotEmpty) ...[
-                    const SizedBox(width: 2),
-                    Text(
-                      unitPart,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: !enabled
-                            ? (isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1))
-                            : isSelected
-                                ? Colors.white.withValues(alpha: 0.88)
-                                : (isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
-                      ),
-                    ),
-                  ],
-                ],
-              )
-            : Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: !enabled
-                      ? (isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1))
-                      : isSelected
-                          ? Colors.white
-                          : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
-                ),
-              ),
-      ),
-    );
-  }
-
-  /// 弹出今日最少新词规则说明（作用与负面效果说明）
-  void _showMinNewWordsExplanationDialog(BuildContext parentCtx) {
-    final darkMode = parentCtx.read<DarkMode>();
-    final isDarkMode = darkMode.isDarkMode;
-    final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
-    final primaryColor = themeConfig.primaryColor;
-
-    showGeneralDialog<void>(
-      context: parentCtx,
-      barrierDismissible: true,
-      barrierLabel: '今日最少新词规则说明',
-      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.18),
-      transitionDuration: const Duration(milliseconds: 200),
-      transitionBuilder: (context, anim1, anim2, child) {
-        return ScaleTransition(
-          scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
-          child: child,
-        );
-      },
-      pageBuilder: (ctx, _, __) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-                blurRadius: 28,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDarkMode
-                        ? [
-                            const Color(0xB8161B26),
-                            const Color(0x9E10141D),
-                          ]
-                        : [
-                            const Color(0xB8FFFFFF),
-                            const Color(0x9EFFFFFF),
-                          ],
-                  ),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: isDarkMode
-                        ? const Color(0x33FFFFFF)
-                        : const Color(0x80FFFFFF),
-                    width: 1.2,
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  // 顶部标题行（含右上角关闭按钮）
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: primaryColor.withValues(alpha: isDarkMode ? 0.20 : 0.10),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(Icons.help_outline_rounded, size: 18, color: primaryColor),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '今日最少新词规则说明',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => Navigator.pop(ctx),
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 16,
-                            color: isDarkMode ? Colors.white60 : Colors.black54,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 设置作用区块（轻量通透排版，无多余边框容器）
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF059669).withValues(alpha: isDarkMode ? 0.18 : 0.10),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF059669)),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  '设置作用',
-                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '系统默认根据记忆遗忘曲线优先安排复习。当待复习词较多时，今日配额可能全部被复习词占满。设置此项后，系统每天会强制保留至少指定数量的新词，保障背词进度稳步向前。',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.5,
-                          color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Container(
-                      height: 0.5,
-                      color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
-                    ),
-                  ),
-
-                  // 潜在负面效果区块
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444).withValues(alpha: isDarkMode ? 0.18 : 0.10),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.warning_rounded, size: 12, color: Color(0xFFDC2626)),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  '潜在负面效果',
-                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '每日总词量是固定的，强行增加新词会挤占当天本该复习的单词名额。被挤占的复习词会被延期推迟，若长期新词比例过高，会导致前置单词复习不及时、遗忘率上升，并造成复习负荷滚雪球式积压。',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.5,
-                          color: isDarkMode ? Colors.white70 : const Color(0xFF334155),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-
-                  // 确认按钮
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: EdgeInsets.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '我知道了',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            height: 1.1,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
 }
 
-
-
-/// 支持长按平滑加速连续步进的轻量按键
-class _ContinuousStepButton extends StatefulWidget {
-  final IconData icon;
-  final bool enabled;
-  final VoidCallback onStep;
-  final bool isDarkMode;
-  final bool isLargeRange;
-
-  const _ContinuousStepButton({
-    required this.icon,
-    required this.enabled,
-    required this.onStep,
-    required this.isDarkMode,
-    this.isLargeRange = false,
-  });
-
-  @override
-  State<_ContinuousStepButton> createState() => _ContinuousStepButtonState();
-}
-
-class _ContinuousStepButtonState extends State<_ContinuousStepButton> {
-  Timer? _initialTimer;
-  Timer? _periodicTimer;
-  int _ticks = 0;
-
-  void _startContinuousStep() {
-    if (!widget.enabled) return;
-    HapticFeedback.selectionClick();
-    widget.onStep();
-    _stopContinuousStep();
-
-    _initialTimer = Timer(const Duration(milliseconds: 320), () {
-      _periodicTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-        if (!mounted || !widget.enabled) {
-          _stopContinuousStep();
-          return;
-        }
-        _ticks++;
-        if (_ticks < 10) {
-          // 初始精细微调（约 100ms 触发一次）
-          if (_ticks % 2 == 0) {
-            widget.onStep();
-            HapticFeedback.selectionClick();
-          }
-        } else if (_ticks < 26) {
-          // 加速阶段（约 50ms 触发一次）
-          widget.onStep();
-          if (_ticks % 2 == 0) HapticFeedback.selectionClick();
-        } else {
-          // 高速飞跃阶段
-          final repeat = widget.isLargeRange ? (_ticks > 50 ? 5 : 2) : 1;
-          for (int i = 0; i < repeat; i++) {
-            widget.onStep();
-          }
-          if (_ticks % 3 == 0) HapticFeedback.selectionClick();
-        }
-      });
-    });
-  }
-
-  void _stopContinuousStep() {
-    _initialTimer?.cancel();
-    _initialTimer = null;
-    _periodicTimer?.cancel();
-    _periodicTimer = null;
-    _ticks = 0;
-  }
-
-  @override
-  void dispose() {
-    _stopContinuousStep();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: widget.enabled ? (_) => _startContinuousStep() : null,
-      onTapUp: (_) => _stopContinuousStep(),
-      onTapCancel: () => _stopContinuousStep(),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: widget.enabled
-              ? (widget.isDarkMode ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.70))
-              : (widget.isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white.withValues(alpha: 0.20)),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: widget.enabled && !widget.isDarkMode
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
-        ),
-        child: Icon(
-          widget.icon,
-          size: 20,
-          color: widget.enabled
-              ? (widget.isDarkMode ? Colors.white : const Color(0xFF1E293B))
-              : (widget.isDarkMode ? Colors.white24 : Colors.black26),
-        ),
-      ),
-    );
-  }
-}

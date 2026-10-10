@@ -1818,6 +1818,28 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                   ),
                                 ),
                               ],
+                              // 卡片收起时把「学习提醒」的状态提到卡头：入口被折叠后，
+                              // 用户按「通知」找设置时至少能在这里看到提醒开着还是关着
+                              if (!_isSettingsExpanded) ...[
+                                Icon(
+                                  Icons.alarm_rounded,
+                                  size: 13,
+                                  color: subtitleColor.withValues(alpha: 0.65),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _reminderStatusText(),
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w400,
+                                    letterSpacing: 0.1,
+                                    color: subtitleColor.withValues(alpha: 0.65),
+                                    fontFamily: 'NotoSansSC',
+                                    fontFamilyFallback: AppTheme.sansSerifFallback,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                              ],
                               Text(
                                 _isSettingsExpanded ? '收起' : '展开',
                                 style: TextStyle(
@@ -1912,9 +1934,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             icon: Icons.alarm_rounded,
                             iconColor: const Color(0xFFF59E0B),
                             title: '学习提醒',
-                            trailingText: NotificationUtil.isReminderEnabled()
-                                ? '每天 ${NotificationUtil.getReminderHour().toString().padLeft(2, '0')}:${NotificationUtil.getReminderMinute().toString().padLeft(2, '0')}'
-                                : '已关闭',
+                            trailingText: _reminderStatusText(),
                             onTap: () async {
                               await context.push('/reminder_settings');
                               if (mounted) setState(() {});
@@ -3115,6 +3135,17 @@ class MePageState extends State<MePage> implements RefreshableTab {
         builder: (context) => const HealthCheckPage(),
       ),
     );
+  }
+
+  /// 学习提醒状态文案：「每天 HH:mm」或「已关闭」。
+  /// 折叠卡头部与展开后的「学习提醒」行共用这一个口径，避免两处各写一遍时间格式化。
+  String _reminderStatusText() {
+    if (!NotificationUtil.isReminderEnabled()) {
+      return '已关闭';
+    }
+    final hour = NotificationUtil.getReminderHour().toString().padLeft(2, '0');
+    final minute = NotificationUtil.getReminderMinute().toString().padLeft(2, '0');
+    return '每天 $hour:$minute';
   }
 
   // 菜单项组件 (对标「不背单词」极简排版风：零多余底盒，纯净裸露矢量图标)

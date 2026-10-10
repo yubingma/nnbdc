@@ -257,7 +257,7 @@ void main() {
     await tester.pump();
     await tester.pump(Duration.zero);
     // 壁纸解码是真实引擎异步，必须让真实事件循环跑起来，否则照片永远出不来
-    if (wallpaper != 'none') {
+    if (wallpaper != 'none' && wallpaper != 'random') {
       await tester.runAsync(() async {
         await precacheImage(AssetImage(wallpaper), tester.element(find.byType(MaterialApp)));
         await Future<void>.delayed(const Duration(milliseconds: 400));
@@ -343,6 +343,11 @@ void main() {
         name: '11_kitty_blue_dark',
         wallpaper: 'assets/images/wallpaper/kitty_blue.jpg',
         darkTheme: true);
+  });
+
+  testWidgets('渲染 随机 · 浅色主题', (tester) async {
+    await renderCase(tester,
+        name: '12_random_light', wallpaper: 'random', darkTheme: false);
   });
 
   testWidgets('渲染 粉梦（粉猫）· 浅色主题', (tester) async {

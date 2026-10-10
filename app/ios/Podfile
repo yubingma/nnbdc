@@ -83,12 +83,15 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       config.build_settings['ENABLE_BITCODE'] = 'NO'
 
-      # 配置 permission_handler 权限宏，使得 iOS 真机和模拟器可以正常弹出相应权限申请框
+      # 配置 permission_handler 权限宏，使得 iOS 真机和模拟器可以正常弹出相应权限申请框。
+      # PERMISSION_NOTIFICATIONS 缺失时，permission_handler_apple 会把「通知」当成未知权限编译，
+      # 导致 Permission.notification.status 恒为 denied、request() 恒为 permanentlyDenied。
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',
         'PERMISSION_CAMERA=1',
         'PERMISSION_PHOTOS=1',
         'PERMISSION_MICROPHONE=1',
+        'PERMISSION_NOTIFICATIONS=1',
       ]
     end
 
