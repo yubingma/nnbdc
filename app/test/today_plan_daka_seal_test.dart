@@ -239,11 +239,11 @@ void main() {
     expect(find.textContaining('加量已完成'), findsNothing,
         reason: '今天没有加量批次，就不该出现加量进度');
 
-    // 打开右上角高级设置弹窗，校验今日单词数锁定标签
+    // 打开右上角高级设置弹窗，校验高级设置菜单正常打开
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pumpAndSettle();
-    expect(find.text('今日单词数'), findsOneWidget);
-    expect(find.byIcon(Icons.lock_outline_rounded), findsWidgets, reason: '高级设置弹窗内展示锁定标');
+    expect(find.text('高级学习设置'), findsOneWidget);
+    expect(find.text('每日计划与词量设置'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 60));
   });

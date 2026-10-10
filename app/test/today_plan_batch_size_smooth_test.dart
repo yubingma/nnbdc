@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/page/study_plan_settings.dart';
 import 'package:nnbdc/page/today_plan.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/state.dart';
@@ -152,31 +153,25 @@ void main() {
       ChangeNotifierProvider<DarkMode>.value(
         value: DarkMode(),
         child: const MaterialApp(
-          home: TodayPlanPage(),
+          home: StudyPlanSettingsPage(),
         ),
       ),
     );
-
-    // 等待主页右上角高级设置图标就绪
-    for (int i = 0; i < 400 && find.byIcon(Icons.tune_rounded).evaluate().isEmpty; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-
-    expect(find.byIcon(Icons.tune_rounded), findsWidgets);
-    await tester.tapAt(tester.getCenter(find.byIcon(Icons.tune_rounded).first));
     await tester.pumpAndSettle();
 
-    // 验证高级学习设置弹窗打开
-    expect(find.text('高级学习设置'), findsOneWidget);
+    // 验证学习计划设置页面打开
+    expect(find.text('学习计划设置'), findsOneWidget);
     expect(find.text('每组单词数'), findsOneWidget);
 
     // 验证每组单词数的快捷药丸为经典 5 档：5, 10, 20, 30, 50（即使当日词数为 20）
-    expect(find.text('50'), findsWidgets, reason: '50词药丸应存在，不受当日词数20的限制');
-    expect(find.text('200'), findsNothing, reason: '绝不应出现突兀的当日词数快捷标签');
+    expect(find.text('50词'), findsWidgets, reason: '50词药丸应存在，不受当日词数20的限制');
+    expect(find.text('200词'), findsNothing, reason: '绝不应出现突兀的当日词数快捷标签');
 
     // 验证“今日单词数”、“今日最少新词”与“每组单词数”均具有对称的编辑小笔图标
     final editIcons = find.byIcon(Icons.edit_outlined);
     expect(editIcons, findsNWidgets(3), reason: '三个设置项均应展示对称统一的编辑小笔图标');
+    await tester.ensureVisible(editIcons.last);
+    await tester.pumpAndSettle();
     await tester.tap(editIcons.last);
     await tester.pumpAndSettle();
 
@@ -200,8 +195,8 @@ void main() {
       findsOneWidget,
     );
 
-    // 关闭高级学习设置弹窗（触发即改即生效的自动保存 Auto-Save）
-    await tester.tap(find.byIcon(Icons.close_rounded));
+    // 点击返回按钮退出页面（触发即改即生效的保存）
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
     await tester.pumpAndSettle();
 
     // 验证持久化配置中的 batchSize 已更新为 200，且 effectiveBatchSize 为 200
