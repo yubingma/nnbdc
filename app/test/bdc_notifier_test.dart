@@ -3625,6 +3625,38 @@ void main() {
     expect(st.dictationRequiredCount, 0, reason: '通过后复位进度');
   });
 
+  test('BdcNotifier - 中文默写键盘重复提交同一答案仍要判题（显式提交不能被静默去重）', () async {
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('n.', '悲剧;灾难;惨案'),
+    ];
+    // 通过线设为"全部释义都要答对"：只写对一个释义时手写板必须保持打开
+    notifier.updateAsrPassRuleCache('ALL');
+
+    notifier.openChineseDictation();
+    notifier.updateMeaningTextWithoutCheck('悲剧');
+    await notifier.checkAsrResult();
+    var st = container.read(bdcNotifierProvider);
+    expect(st.dictationMatchedCount, 1);
+    expect(st.showHandwritingBoard, true, reason: '未达通过线应保持在默写界面');
+
+    // 用户又点了一次「提交」（输入框文本没变）：必须再走一次判题。
+    // 用"清空上一轮命中记录"作为探针——只有真的重新判题，它才会被重新命中；
+    // 若被"文本相同"去重直接 return，用户看到的就是"点了提交毫无反应"。
+    st.wordWrapper!.asrMatchedMeaningItemParts.clear();
+    await notifier.checkAsrResult();
+    st = container.read(bdcNotifierProvider);
+    expect(st.wordWrapper!.asrMatchedMeaningItemParts.length, 1,
+        reason: '中文默写的每次显式提交都必须真实判题，不能因"文本与上次相同"被静默吞掉');
+  });
+
   test('BdcNotifier - 每次进入全屏拼写/默写界面时底部输入框保证为空白', () async {
     final mockAsr = MockAsr();
     final container = ProviderContainer(

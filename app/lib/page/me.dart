@@ -1821,10 +1821,10 @@ class MePageState extends State<MePage> implements RefreshableTab {
                               // 卡片收起时把「学习提醒」的状态提到卡头：入口被折叠后，
                               // 用户按「通知」找设置时至少能在这里看到提醒开着还是关着
                               if (!_isSettingsExpanded) ...[
-                                Icon(
+                                const Icon(
                                   Icons.alarm_rounded,
                                   size: 13,
-                                  color: subtitleColor.withValues(alpha: 0.65),
+                                  color: Color(0xFFF59E0B),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(

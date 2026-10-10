@@ -2699,7 +2699,10 @@ class BdcNotifier extends _$BdcNotifier {
             _handlingChinese.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '')) {
           return;
         }
-      } else {
+      } else if (!state.isChineseDictation) {
+        // 中文默写不走这里：它的判题只由用户显式「提交」触发（输入框 listener 在默写下直接
+        // 不判题，见 build 里的 isChineseDictation 分支），不存在防抖自动判题的重入；
+        // 用户重复提交同一份答案必须照常判题并给反馈，否则他会以为"提交按钮坏了"。
         if (inputText.toLowerCase() == _handlingChinese.toLowerCase()) return;
       }
     }
@@ -3018,9 +3021,23 @@ class BdcNotifier extends _$BdcNotifier {
           !_isAnswerCorrectHandling) {
         if (state.isChineseDictation) {
           // 中文默写（手写）判错：保持手写板打开，提示用户答案不正确/未写完整、可重写。
-          // 不退出手写板、不触发 AI 裁判——默写要求完整写出释义，走严格匹配，
-          // 避免"写了个女就静默返回、用户不知道对错"的困惑体验。
-          ToastUtil.error('答案不正确或未写完整，请重写');
+          // 不退出手写板——默写要求完整写出释义，走严格匹配。
+          //
+          // 本次"没有新增命中"不等于"答案不对"：用户可能是把已经答对过的释义又写了一遍
+          //（通过线未达时很常见）。此时照样弹"答案不正确"就是在冤枉用户，让人以为提交坏了。
+          // 先独立判一次本次答案是否命中了任意释义，只有真的对不上才提示重写；
+          // 命中过则给一句进度反馈，保证每次点「提交」都有明确动静（用户反馈"点了没反应"）。
+          final bool hitAnyMeaning = inputs.any((input) =>
+              chineseInputMatchesAnyMeaning(state.word!, input, strict: true));
+          if (hitAnyMeaning) {
+            final int matched = state.dictationMatchedCount;
+            final int required = state.dictationRequiredCount;
+            ToastUtil.info(required > 0
+                ? '已答对 $matched/$required，继续写出其他释义'
+                : '这个释义已经答对了，继续写出其他释义');
+          } else {
+            ToastUtil.error('答案不正确或未写完整，请重写');
+          }
           return;
         }
         // 本地只要命中过释义，就不再回落 AI 裁判：本次没有"新增"命中往往只是

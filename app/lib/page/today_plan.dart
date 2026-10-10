@@ -119,20 +119,50 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 当壁纸设置为 'random' 时用于实际渲染的具体壁纸路径
   String? _randomResolvedPath;
 
-  /// 从具体壁纸列表中随机抽取一张真实壁纸
-  String _pickRandomWallpaper() {
+  /// 获取并确定今日的随机壁纸路径（按业务天固定，跨天自动轮换）
+  String _resolveDailyRandomWallpaper({bool forceNew = false}) {
     final concreteWallpapers = planWallpapers
         .where((w) => w.path != 'random' && w.path != 'none')
+        .map((w) => w.path)
         .toList();
     if (concreteWallpapers.isEmpty) return 'assets/images/wallpaper/star_sand.jpg';
-    final randomIndex = math.Random().nextInt(concreteWallpapers.length);
-    return concreteWallpapers[randomIndex].path;
+
+    final today = app_date.DateUtils.businessDate(AppClock.now());
+    final todayKey = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final cachedDate = Prefs.read<String>('today_plan_daily_random_wallpaper_date');
+    final cachedPath = Prefs.read<String>('today_plan_daily_random_wallpaper_path');
+
+    if (!forceNew && cachedDate == todayKey && cachedPath != null && concreteWallpapers.contains(cachedPath)) {
+      return cachedPath;
+    }
+
+    // 随机抽取一张（如果有多张可选，优先避开上一张）
+    final pool = (concreteWallpapers.length > 1 && cachedPath != null)
+        ? concreteWallpapers.where((p) => p != cachedPath).toList()
+        : concreteWallpapers;
+    final chosen = pool[math.Random().nextInt(pool.length)];
+
+    Prefs.write('today_plan_daily_random_wallpaper_date', todayKey);
+    Prefs.write('today_plan_daily_random_wallpaper_path', chosen);
+    return chosen;
+  }
+
+  /// 检查并按需更新跨天的每日随机壁纸
+  void _checkAndUpdateDailyWallpaper() {
+    if (_wallpaperPath == 'random') {
+      final current = _resolveDailyRandomWallpaper();
+      if (_randomResolvedPath != current) {
+        setState(() {
+          _randomResolvedPath = current;
+        });
+      }
+    }
   }
 
   /// 实际参与渲染与明暗判定的有效壁纸路径
   String get _effectiveWallpaperPath {
     if (_wallpaperPath == 'random') {
-      return _randomResolvedPath ??= _pickRandomWallpaper();
+      return _randomResolvedPath ??= _resolveDailyRandomWallpaper();
     }
     return _wallpaperPath;
   }
@@ -218,7 +248,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         ? savedWallpaper
         : 'assets/images/wallpaper/kitty_pink.jpg';
     if (_wallpaperPath == 'random') {
-      _randomResolvedPath = _pickRandomWallpaper();
+      _randomResolvedPath = _resolveDailyRandomWallpaper();
     }
     // 首页初始化时强制关停 ASR，同时在后台静默预加载语音识别模型，避免点击“开始学习”进入单词页面时因加载模型而产生阻塞卡顿
     Asr().stopMicrophone();
@@ -290,6 +320,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       Global.logger.d('App resumed, refreshing Today Plan...');
+      _checkAndUpdateDailyWallpaper();
       // 恢复时如果数据已加载，则尝试静默刷新以处理跨天逻辑
       if (mounted && dataLoaded && !_isLoadingData) {
         loadData();
@@ -310,6 +341,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   Future<void> loadData({bool forceSupplement = false, bool isReturnFromStudy = false}) async {
+    _checkAndUpdateDailyWallpaper();
     if (!forceSupplement) {
       _hasTriedSupplement = false;
     }
@@ -2905,7 +2937,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                     onTap: () async {
                                       final selectedPath = item.path;
                                       if (selectedPath == 'random') {
-                                        _randomResolvedPath = _pickRandomWallpaper();
+                                        _randomResolvedPath = _resolveDailyRandomWallpaper(forceNew: true);
                                       }
                                       await Prefs.write('today_plan_wallpaper', selectedPath);
                                       setDialogState(() {

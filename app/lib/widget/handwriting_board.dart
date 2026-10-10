@@ -129,13 +129,10 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   Future<void> _finalizeChain = Future.value();
 
   /// 本轮作答是否有过识别失败（超时/底层报错）。识别失败的字不在答案里，
-  /// 此时提交只能得到"未写完整"，必须拦下判题并提示重写。重写/键盘接管时复位。
+  /// 此时提交只能得到"未写完整"，必须拦下判题并提示重写。
+  /// 它只描述【当前这一轮】作答：一旦画布清空、用户重新落笔开始新一轮，本标记即作废
+  /// （见 [_handleStartWriting]），否则一次偶发识别失败会永远拦住后续所有提交。
   bool _answerHasRecognitionFailure = false;
-
-  /// 最后一次交给上层判题的答案文本。内容没变就说明本次提交没有新增内容
-  /// （典型是同一份答案连点「提交」）：直接忽略，避免同一帧内并发判题 N 次、
-  /// 弹出 N 条一模一样的提示。重写/键盘接管/答案变化时自然失效。
-  String? _lastSubmittedAnswer;
 
   void _handleWritingArea(Size size) {
     _writingAreaSize = size;
@@ -181,9 +178,12 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   /// 落笔：本次手写作答的第一笔（画布上还没有任何待判定内容）落下时，
   /// 把输入框里已有文本（键盘输入/更早的回显）记作答案前缀，后续回显与判题都带上它，
   /// 于是"打字 → 手写"切换时键盘已打好的内容不会丢。
+  /// 同时宣告"新一轮作答开始"：上一轮的识别失败标记属于上一轮，必须在此作废，
+  /// 否则用户重写后点「提交」会被上一轮的结论一直拦住（历史问题：一次识别超时后怎么点都提交不上去）。
   void _handleStartWriting() {
     if (widget.cellCount > 1 && !hasInk) {
       _prefixText = widget.onReadCurrentText?.call() ?? '';
+      _answerHasRecognitionFailure = false;
     }
     widget.onStartWriting?.call();
   }
@@ -358,9 +358,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _cellPauseTimer?.cancel();
     _canvasKey.currentState?._controller.clear();
     _lines.clear();
-    // 本轮作答作废：识别失败标记与提交去重记录一并复位（重写后同样的内容要能重新判题）
+    // 本轮作答作废：识别失败标记一并复位（重写后同样的内容要能重新判题）
     _answerHasRecognitionFailure = false;
-    _lastSubmittedAnswer = null;
     if (widget.cellCount > 1) {
       // 分格模式：重写 = 全部清空，包括答案前缀、已识别序列、当前格文本、当前格高亮
       _prefixText = '';
@@ -397,9 +396,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     _prefixText = '';
     _recognizedChars = [];
     _currentCellText = '';
-    // 键盘接管输入框 = 本轮手写作答作废：识别失败标记与提交去重记录一并复位
+    // 键盘接管输入框 = 本轮手写作答作废：识别失败标记一并复位
     _answerHasRecognitionFailure = false;
-    _lastSubmittedAnswer = null;
     if (widget.cellCount > 1) {
       clearBoardSilently();
     }
@@ -449,20 +447,26 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     // 保留 _recognizedChars 是为了让提交失败后用户能直接续写（与键盘"补字再交"一致），
     // 否则已写对的内容会从答案里消失、输入框也会在下次停笔回显时突然缩水。
     if (widget.cellCount > 1) {
+      // 一次点击只判一次：识别/判题进行中再点「提交」直接忽略（按钮同时显示识别中）。
+      // 绝不能按"答案内容是否与上次相同"来去重——那是跨轮次的粘性状态，用户回退/重写后
+      // 交出一份与上次相同的答案时会被静默吞掉，表现为"写好了点提交毫无反应"。
+      if (_isRecognizing) return;
+      if (mounted) setState(() => _isRecognizing = true);
       _finalizeAndClearCurrentCellSync();
       await _finalizeChain; // 等待所有已排队的逐格识别（含本次当前格）按顺序完成
+      if (mounted) setState(() => _isRecognizing = false);
       if (_answerHasRecognitionFailure) {
         // 有字没识别出来：答案本身是残缺的，判题只会得到"未写完整"，提示重写
         widget.onRecognizeFailed?.call();
         return;
       }
-      _submitForJudging(_answerText);
+      widget.onRecognized(_answerText);
       return;
     }
 
     // 单格（英文拼写）：整块识别
     if (_lines.isEmpty) {
-      _submitForJudging("");
+      widget.onRecognized("");
       return;
     }
     final int currentVersion = ++_recognitionVersion;
@@ -480,18 +484,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
         widget.onRecognizeFailed?.call();
         return;
       }
-      _submitForJudging(result);
+      widget.onRecognized(result);
     }
-  }
-
-  /// 把本次答案交给上层判题，并做提交去重：
-  /// 答案与上一次提交完全相同时（同一份答案连点「提交」）不再重复判题——
-  /// 多次点击本会各自 await 同一条识别链，链一结束就在同一帧内并发判题 N 次，
-  /// 弹出 N 条一模一样的提示（历史问题：一次"识别中"期间连点提交，提示成批涌出）。
-  void _submitForJudging(String answer) {
-    if (answer == _lastSubmittedAnswer) return;
-    _lastSubmittedAnswer = answer;
-    widget.onRecognized(answer);
   }
 
   @override
@@ -668,6 +662,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
 
   /// 手写画布底部的操作按钮（重写/回退/提交/关闭/提示）
   /// 采用主题感知的柔光薄雾胶囊，替代原先生硬的灰色药丸，保持与整体极简美学一致。
+  /// [busy] 为 true 时按钮显示识别中并屏蔽点击：提交后到判题落地之间有最长 5 秒的识别等待，
+  /// 没有即时反馈用户只会反复点击并以为"提交没反应"。
   Widget _buildCanvasControlButton({
     required double left,
     required double top,
@@ -680,16 +676,19 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
     required Color foreground,
     required Color background,
     required Color border,
+    bool busy = false,
   }) {
     return Positioned(
       left: left,
       top: top,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
+        onTap: busy
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                onTap();
+              },
         child: ClipRRect(
           borderRadius: BorderRadius.circular(height / 2),
           child: BackdropFilter(
@@ -712,7 +711,14 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, color: foreground, size: 20),
+                  SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: busy
+                        ? CircularProgressIndicator(
+                            strokeWidth: 2, color: foreground)
+                        : Icon(icon, color: foreground, size: 20),
+                  ),
                   const SizedBox(height: 3),
                   Text(
                     label,
@@ -799,15 +805,16 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         // 让操作按钮在底部操作栏内垂直居中（操作栏高度 = zoneHeight + bottomMargin + 10）
         final double zoneTop = height - zoneHeight - bottomMargin - 10 + (bottomMargin + 10) / 2;
 
-        // 底部操作按钮（自左向右）。中文默写（手动提交）额外增加「提交」按钮。
-        final List<({IconData icon, String label, VoidCallback onTap})> controls = [
-          (icon: Icons.delete_sweep_outlined, label: '重写', onTap: _handleRewrite),
-          (icon: Icons.undo_outlined, label: '回退', onTap: _handleUndo),
+        // 底部操作按钮（自左向右）。中文默写（手动提交）额外增加「提交」按钮，
+        // 识别/判题进行中它显示识别中并屏蔽点击（一次点击只判一次，用户也看得见"提交已受理"）。
+        final List<({IconData icon, String label, VoidCallback onTap, bool busy})> controls = [
+          (icon: Icons.delete_sweep_outlined, label: '重写', onTap: _handleRewrite, busy: false),
+          (icon: Icons.undo_outlined, label: '回退', onTap: _handleUndo, busy: false),
           if (widget.manualSubmit)
-            (icon: Icons.check, label: '提交', onTap: _handleSubmit),
-          (icon: Icons.close, label: '关闭', onTap: () => widget.onCancel?.call()),
+            (icon: Icons.check, label: '提交', onTap: _handleSubmit, busy: widget.isRecognizing),
+          (icon: Icons.close, label: '关闭', onTap: () => widget.onCancel?.call(), busy: false),
           if (hasHint)
-            (icon: Icons.lightbulb_outline, label: '提示', onTap: () => widget.onHint?.call()),
+            (icon: Icons.lightbulb_outline, label: '提示', onTap: () => widget.onHint?.call(), busy: false),
         ];
 
         const double controlGap = 10;
@@ -962,6 +969,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     icon: controls[i].icon,
                     label: controls[i].label,
                     onTap: controls[i].onTap,
+                    busy: controls[i].busy,
                     isDark: isDark,
                     foreground: controlFg,
                     background: controlBg,

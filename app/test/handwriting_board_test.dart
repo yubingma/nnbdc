@@ -8,11 +8,13 @@ import 'package:provider/provider.dart';
 
 /// 中文默写（分格手写）与「提交」判据的回归测试。
 ///
-/// 覆盖三件事：
+/// 覆盖：
 /// 1. [HandwritingBoardState.hasInk]：上层用它决定「提交/回退」是走手写还是作用于输入框，
 ///    因此"落笔 → true、清空 → false"必须准确；
 /// 2. 提交后不能清空已识别序列：续写必须是追加，否则已写对的内容会从答案里消失；
-/// 3. "打字 → 手写"切换时，输入框已有文本作为答案前缀并入，键盘内容不丢且不重复。
+/// 3. "打字 → 手写"切换时，输入框已有文本作为答案前缀并入，键盘内容不丢且不重复；
+/// 4. 用户重写后点「提交」必须重新判题：回合性的去重/失败标记绝不能跨轮次残留
+///   （历史反馈："写好了，点提交，没有反应"）。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -22,13 +24,20 @@ void main() {
   late List<String> recognized;
   late List<String> previews;
 
+  /// 识别通道是否处于故障态：用于验证"一次识别失败不会永久拦住后续提交"
+  late bool recognitionFails;
+
   setUp(() {
     recognized = <String>[];
     previews = <String>[];
+    recognitionFails = false;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
       switch (call.method) {
         case 'recognizeHandwriting':
+          if (recognitionFails) {
+            throw PlatformException(code: 'timeout', message: '识别超时');
+          }
           return recognizedChar;
         default:
           return null;
@@ -47,6 +56,7 @@ void main() {
     bool Function()? onSubmit,
     bool Function()? onUndoRequest,
     VoidCallback? onUndo,
+    VoidCallback? onRecognizeFailed,
     String Function()? onReadCurrentText,
   }) async {
     await tester.pumpWidget(ChangeNotifierProvider<DarkMode>.value(
@@ -64,6 +74,7 @@ void main() {
               manualSubmit: true,
               onRecognized: recognized.add,
               onRecognizedPreview: previews.add,
+              onRecognizeFailed: onRecognizeFailed,
               onCancel: () {},
               onSubmit: onSubmit,
               onUndoRequest: onUndoRequest,
@@ -221,5 +232,46 @@ void main() {
     await tapSubmit(tester);
     expect(recognized.last, '悲$recognizedChar难$recognizedChar',
         reason: '重新捕获输入框文本作前缀，既不丢键盘内容也不重复旧前缀');
+  });
+
+  testWidgets('回退删字后重写同样的字再提交，必须重新判题', (tester) async {
+    final key = GlobalKey<HandwritingBoardState>();
+    await pumpBoard(tester, key);
+
+    await drawStroke(tester);
+    await tapSubmit(tester);
+    expect(recognized.length, 1, reason: '首次提交应判题');
+
+    // 用户点「回退」删掉写错的字（画布与已定稿序列都清空）
+    await tester.tap(find.text('回退'));
+    await tester.pump();
+    expect(key.currentState!.hasInk, false, reason: '回退后画布与已定稿序列都应为空');
+
+    // 重写同一个字：识别结果与上次完全相同
+    await drawStroke(tester);
+    await tapSubmit(tester);
+    expect(recognized.length, 2,
+        reason: '重写是一轮新的作答，提交必须重新判题，不能被上一次的答案去重静默吞掉');
+  });
+
+  testWidgets('一次识别失败后重写，识别恢复时必须能正常提交', (tester) async {
+    final key = GlobalKey<HandwritingBoardState>();
+    int recognizeFailedNotices = 0;
+    await pumpBoard(tester, key,
+        onRecognizeFailed: () => recognizeFailedNotices++);
+
+    // 第一次识别超时失败：不应判题，且必须让上层提示"识别失败"
+    recognitionFails = true;
+    await drawStroke(tester);
+    await tapSubmit(tester);
+    expect(recognized, isEmpty, reason: '识别失败时答案残缺，不能判题');
+    expect(recognizeFailedNotices, 1, reason: '识别失败必须让用户看得见');
+
+    // 识别恢复正常，用户重写这个字
+    recognitionFails = false;
+    await drawStroke(tester);
+    await tapSubmit(tester);
+    expect(recognized, [recognizedChar],
+        reason: '识别已恢复，重写后必须能提交；上一轮的失败标记不能跨轮次一直拦住提交');
   });
 }
