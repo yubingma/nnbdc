@@ -20,9 +20,11 @@ import 'package:uuid/uuid.dart';
 import '../api/vo.dart';
 import '../config.dart';
 import '../global.dart';
+import '../page/word_detail.dart';
 import '../theme/app_theme.dart';
 import '../widget/sound_wave_icon.dart';
 import 'app_clock.dart';
+import 'package:go_router/go_router.dart';
 
 class Util {
   /// 某些文件命中含有单词拼写（如单词的声音文件，例句声音文件），所以需要对单词的一些特殊字符做处理
@@ -776,6 +778,22 @@ class Util {
     return hit ? masked : null;
   }
 
+  /// 根据拼写本地查词并弹出磨砂毛玻璃半屏详情弹窗
+  static Future<void> showWordSearchBottomSheetBySpell(
+    BuildContext context,
+    String spell,
+  ) async {
+    final cleanSpell = Util.purifySpell(spell.trim());
+    if (cleanSpell.isEmpty) return;
+    final searchResult = await _searchWordWithVariants(cleanSpell);
+    if (!context.mounted) return;
+    if (searchResult.word != null) {
+      await _showWordSearchBottomSheet(context, searchResult);
+    } else {
+      ToastUtil.info('未在词库中找到: $spell');
+    }
+  }
+
   /// 显示例句中点击单词后的底部磨砂毛玻璃查词弹窗
   static Future<void> _showWordSearchBottomSheet(
     BuildContext context,
@@ -1358,15 +1376,43 @@ class _WordSearchBottomSheetContentState extends State<_WordSearchBottomSheetCon
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Flexible(
-                              child: Text(
-                                widget.word.spell,
-                                style: const TextStyle(
-                                  color: Global.highlight,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 22,
-                                  letterSpacing: -0.2,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  Navigator.of(context).pop();
+                                  context.push(
+                                    '/word_detail',
+                                    extra: WordDetailPageArgs(
+                                      widget.word,
+                                      false,
+                                      null,
+                                      false,
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        widget.word.spell,
+                                        style: const TextStyle(
+                                          color: Global.highlight,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 22,
+                                          letterSpacing: -0.2,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_outward_rounded,
+                                      size: 15,
+                                      color: context.textSecondary.withValues(alpha: 0.6),
+                                    ),
+                                  ],
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 8),

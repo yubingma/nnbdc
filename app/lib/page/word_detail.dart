@@ -2991,6 +2991,84 @@ class WordDetailPageState extends State<WordDetailPage>
     );
   }
 
+  static final RegExp _markdownWordReplacerRegex = RegExp(
+    r'(```[\s\S]*?```)|(`[^`\n]+`)|(https?://[^\s)]+)|(\[[^\]]+\]\([^\)]+\))|(\b[a-zA-Z]{2,}\b)',
+  );
+
+  static String _linkifyEnglishWordsInMarkdown(String markdown) {
+    return markdown.replaceAllMapped(_markdownWordReplacerRegex, (match) {
+      if (match.group(1) != null ||
+          match.group(2) != null ||
+          match.group(3) != null ||
+          match.group(4) != null) {
+        return match.group(0)!;
+      }
+      final word = match.group(5);
+      if (word != null) {
+        return '[$word](word:$word)';
+      }
+      return match.group(0)!;
+    });
+  }
+
+  Widget _buildWordClickableText(
+    BuildContext context,
+    String text, {
+    required TextStyle defaultStyle,
+    required Color wordColor,
+    VoidCallback? onNonWordTap,
+  }) {
+    final matches = RegExp(r'\b[a-zA-Z]{2,}\b').allMatches(text);
+    if (matches.isEmpty) {
+      return Text(text, style: defaultStyle);
+    }
+
+    final spans = <InlineSpan>[];
+    int lastEnd = 0;
+    for (final match in matches) {
+      if (match.start > lastEnd) {
+        final nonWord = text.substring(lastEnd, match.start);
+        spans.add(TextSpan(
+          text: nonWord,
+          style: defaultStyle,
+          recognizer: onNonWordTap != null
+              ? (TapGestureRecognizer()..onTap = onNonWordTap)
+              : null,
+        ));
+      }
+      final word = match.group(0)!;
+      spans.add(TextSpan(
+        text: word,
+        style: defaultStyle.copyWith(
+          fontWeight: FontWeight.w700,
+          color: wordColor,
+          decoration: TextDecoration.underline,
+          decorationStyle: TextDecorationStyle.dashed,
+          decorationColor: wordColor.withValues(alpha: 0.6),
+        ),
+        recognizer: TapGestureRecognizer()
+          ..onTap = () {
+            Util.showWordSearchBottomSheetBySpell(context, word);
+          },
+      ));
+      lastEnd = match.end;
+    }
+    if (lastEnd < text.length) {
+      final nonWord = text.substring(lastEnd);
+      spans.add(TextSpan(
+        text: nonWord,
+        style: defaultStyle,
+        recognizer: onNonWordTap != null
+            ? (TapGestureRecognizer()..onTap = onNonWordTap)
+            : null,
+      ));
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
+    );
+  }
+
   Widget _buildChatMessageWidget(ChatMessage msg, bool isDarkMode) {
     final isAssistant = msg.role == MessageRole.assistant;
 
@@ -3087,11 +3165,14 @@ class WordDetailPageState extends State<WordDetailPage>
                           color: Colors.grey))
                 else if (isAssistant) ...[
                   MarkdownBody(
-                    data: mainContent,
+                    data: _linkifyEnglishWordsInMarkdown(mainContent),
                     selectable: true,
                     onTapLink: (text, href, title) {
                       if (href != null && href.startsWith('suggest:')) {
                         _sendChatMessage(text);
+                      } else if (href != null && href.startsWith('word:')) {
+                        final spell = href.substring(5);
+                        Util.showWordSearchBottomSheetBySpell(context, spell);
                       }
                     },
                     styleSheet: MarkdownStyleSheet(
@@ -3128,8 +3209,16 @@ class WordDetailPageState extends State<WordDetailPage>
                         color: context.primaryColor,
                       ),
                       a: TextStyle(
-                        color: context.primaryColor,
+                        color: isDarkMode
+                            ? const Color(0xFF38BDF8)
+                            : context.primaryColor,
                         fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                        decorationStyle: TextDecorationStyle.dashed,
+                        decorationColor: (isDarkMode
+                                ? const Color(0xFF38BDF8)
+                                : context.primaryColor)
+                            .withValues(alpha: 0.6),
                       ),
                       listBullet: TextStyle(
                         fontSize: 14,
@@ -3202,15 +3291,20 @@ class WordDetailPageState extends State<WordDetailPage>
                                   ),
                                   const SizedBox(width: 6),
                                   Flexible(
-                                    child: Text(
+                                    child: _buildWordClickableText(
+                                      context,
                                       suggest,
-                                      style: TextStyle(
+                                      defaultStyle: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                         color: context.isDarkMode
                                             ? context.primaryColor
                                             : context.textPrimary,
                                       ),
+                                      wordColor: isDarkMode
+                                          ? const Color(0xFF38BDF8)
+                                          : context.primaryColor,
+                                      onNonWordTap: () => _sendChatMessage(suggest),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
@@ -3228,10 +3322,21 @@ class WordDetailPageState extends State<WordDetailPage>
                     ),
                   ],
                 ] else
-                  SelectableText(
-                    msg.content,
-                    style: const TextStyle(
-                        color: Colors.white, fontSize: 14, height: 1.4),
+                  GestureDetector(
+                    onLongPress: () {
+                      Clipboard.setData(ClipboardData(text: msg.content));
+                      ToastUtil.info('已复制');
+                    },
+                    child: _buildWordClickableText(
+                      context,
+                      msg.content,
+                      defaultStyle: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                      wordColor: Colors.white,
+                    ),
                   ),
               ],
             ),
