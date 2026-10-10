@@ -3657,6 +3657,48 @@ void main() {
         reason: '中文默写的每次显式提交都必须真实判题，不能因"文本与上次相同"被静默吞掉');
   });
 
+  test('BdcNotifier - 中文默写写近义表达时交大模型裁判，认可即判通过并退出默写界面', () async {
+    // 大模型裁判认可用户写的近义表达
+    AiRefereeUtil.aiChatOverride = (messagesJson, userId) async =>
+        Result('200', '', true)
+          ..data = '{"isCorrect": true, "intendedMeaning": "苹果"}';
+    addTearDown(() => AiRefereeUtil.aiChatOverride = null);
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [asrProvider.overrideWithValue(mockAsr)],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    container.read(bdcNotifierProvider).wordWrapper!.word.meaningItems = [
+      MeaningItemVo.from('n.', '苹果;梨子'),
+    ];
+    notifier.updateAsrPassRuleCache('ALL');
+
+    notifier.openChineseDictation();
+    // 先按释义原文写对一个（未达通过线，板子保持打开）
+    await notifier.checkAsrResult(asrInput: '苹果', isVoice: false);
+    var st = container.read(bdcNotifierProvider);
+    expect(st.showHandwritingBoard, true, reason: '只写对一个释义不应退出默写界面');
+    expect(st.hasFinishedAnswering, false);
+
+    // 第二个释义用户写的是意思相近的"平安果"：本地严格匹配必然对不上 → 立即交大模型裁判。
+    // 注意此时本地已命中过 1 个释义，裁判结果绝不能被"历史上命中过"误当成"已被本地理解"丢弃。
+    await notifier.checkAsrResult(asrInput: '平安果', isVoice: false);
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+
+    st = container.read(bdcNotifierProvider);
+    expect(st.hasFinishedAnswering, true, reason: '裁判认可意思相近应判通过');
+    expect(st.showHandwritingBoard, false, reason: '通过后必须退出手写板');
+    expect(st.isChineseDictation, false, reason: '通过后必须复位中文默写标记');
+  });
+
   test('BdcNotifier - 每次进入全屏拼写/默写界面时底部输入框保证为空白', () async {
     final mockAsr = MockAsr();
     final container = ProviderContainer(

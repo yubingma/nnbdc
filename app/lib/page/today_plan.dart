@@ -62,9 +62,9 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('琥珀', 'assets/images/wallpaper/amber.jpg', isDark: true),
   PlanWallpaper('水趣', 'assets/images/wallpaper/kitty_blue.jpg', isDark: true),
   PlanWallpaper('粉梦', 'assets/images/wallpaper/kitty_pink.jpg', isDark: false),
-  // 第 2 排：自然生机与旷野
+  // 第 2 排：自然生机与流光
   PlanWallpaper('绿荫', 'assets/images/wallpaper/tree_green.jpg', isDark: false),
-  PlanWallpaper('旷野', 'assets/images/wallpaper/tree.jpg', isDark: true),
+  PlanWallpaper('流光', 'assets/images/wallpaper/halo.jpg', isDark: true),
   PlanWallpaper('枫韵', 'assets/images/wallpaper/maple.jpg', isDark: true),
   PlanWallpaper('湖光', 'assets/images/scenes/river.jpg', isDark: true),
   // 第 3 排：晨昏静谧场景
@@ -76,7 +76,7 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('青川', 'assets/images/bg3.jpg', isDark: false),
   PlanWallpaper('金晖', 'assets/images/bg4.jpg', isDark: false),
   PlanWallpaper('麦浪', 'assets/images/bg5.jpg', isDark: false),
-  PlanWallpaper('暮山', 'assets/images/bg6.jpg', isDark: true),
+  PlanWallpaper('暮山', 'assets/images/bg6.jpg', isDark: false),
   // 第 5 排：原野、素简、经典与随机（最后一个固定为随机）
   PlanWallpaper('芳原', 'assets/images/bg7.jpg', isDark: true),
   PlanWallpaper('素简', 'assets/images/1.jpg', isDark: true),

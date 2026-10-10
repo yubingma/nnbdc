@@ -3021,12 +3021,14 @@ class BdcNotifier extends _$BdcNotifier {
           !_isAnswerCorrectHandling) {
         if (state.isChineseDictation) {
           // 中文默写（手写）判错：保持手写板打开，提示用户答案不正确/未写完整、可重写。
-          // 不退出手写板——默写要求完整写出释义，走严格匹配。
+          // 不退出手写板——本地严格匹配仍要求写出释义本身。
           //
           // 本次"没有新增命中"不等于"答案不对"：用户可能是把已经答对过的释义又写了一遍
           //（通过线未达时很常见）。此时照样弹"答案不正确"就是在冤枉用户，让人以为提交坏了。
-          // 先独立判一次本次答案是否命中了任意释义，只有真的对不上才提示重写；
-          // 命中过则给一句进度反馈，保证每次点「提交」都有明确动静（用户反馈"点了没反应"）。
+          // 先独立判一次本次答案是否命中了任意释义：
+          //   命中过 → 给一句进度反馈，保证每次点「提交」都有明确动静；
+          //   完全没命中 → 很可能写的是意思相近的近义表达，立即交大模型裁判兜底；
+          //               裁判不接手时才明确判错。
           final bool hitAnyMeaning = inputs.any((input) =>
               chineseInputMatchesAnyMeaning(state.word!, input, strict: true));
           if (hitAnyMeaning) {
@@ -3035,7 +3037,7 @@ class BdcNotifier extends _$BdcNotifier {
             ToastUtil.info(required > 0
                 ? '已答对 $matched/$required，继续写出其他释义'
                 : '这个释义已经答对了，继续写出其他释义');
-          } else {
+          } else if (!_scheduleWordAiRefereeCheck(inputs, immediate: true)) {
             ToastUtil.error('答案不正确或未写完整，请重写');
           }
           return;
@@ -4356,38 +4358,63 @@ class BdcNotifier extends _$BdcNotifier {
     return true;
   }
 
-  /// 当用户说出中文释义但本地未命中时，触发大模型裁判防抖调度（1500ms）
-  void _scheduleWordAiRefereeCheck(List<String> inputs) {
+  /// 本地一个释义都没命中时，把用户的中文答案交给大模型裁判兜底。
+  ///
+  /// 语音"说中文"用默认的 1500ms 停顿防抖（识别帧会持续涌入，必须等用户说完）；
+  /// 中文默写是用户主动点「提交」，[immediate] 为 true 时立即发起，不再白等 1.5 秒。
+  ///
+  /// 返回 true 表示裁判已接手；返回 false 表示裁判不接（状态不允许/答案太短不值得烧额度/
+  /// 本词频次已用尽），此时调用方必须自己给出判错反馈——否则用户点了「提交」将毫无动静。
+  bool _scheduleWordAiRefereeCheck(List<String> inputs, {bool immediate = false}) {
     _wordAiRefereeDebounceTimer?.cancel();
-    if (state.hasFinishedAnswering || _isAnswerCorrectHandling || _isWordAiRefereeJudging) return;
-    if (state.studyStep != StudyStep.en2Ch.json) return;
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling || _isWordAiRefereeJudging) return false;
+    if (state.studyStep != StudyStep.en2Ch.json) return false;
 
     final String asrText = inputs.isNotEmpty ? inputs.first : meaningController.text;
     final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
-    if (cleanInput.length < 2) return; // 避免单字/助词杂音（如“啊/嗯”）浪费大模型Token
+    if (cleanInput.length < 2) return false; // 避免单字/助词杂音（如“啊/嗯”）浪费大模型Token
 
     // 单词请求频次上限
-    if (_wordAiEvaluationCountForCurrentWord >= 5) return;
+    if (_wordAiEvaluationCountForCurrentWord >= 5) return false;
 
-    _wordAiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
-      // 同一个答案刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
-      // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。
-      if (_remindAlreadyJudgedAnswer(cleanInput)) return;
-      await _evaluateWordWithAiReferee(cleanInput,
-          rawInput: asrText, candidates: inputs, autoScheduled: true);
-    });
+    // 发起时的已命中释义数：等待裁判期间若本地新增命中，说明回答已被本地理解，裁判结果作废
+    final int matchedCountAtSchedule =
+        state.wordWrapper?.asrMatchedMeaningItemParts.length ?? 0;
+
+    if (immediate) {
+      unawaited(_runWordAiReferee(cleanInput, asrText, inputs, matchedCountAtSchedule));
+    } else {
+      _wordAiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
+        await _runWordAiReferee(cleanInput, asrText, inputs, matchedCountAtSchedule);
+      });
+    }
+    return true;
+  }
+
+  Future<void> _runWordAiReferee(String cleanInput, String asrText,
+      List<String> inputs, int matchedCountAtSchedule) async {
+    // 同一个答案刚判过错：不再重复烧裁判额度，把上次的判错说明再讲一遍。
+    // 只能放在停顿回调里——调度入口每一帧识别都会进一次，提示会刷屏。
+    if (_remindAlreadyJudgedAnswer(cleanInput)) return;
+    await _evaluateWordWithAiReferee(cleanInput,
+        rawInput: asrText,
+        candidates: inputs,
+        autoScheduled: true,
+        matchedCountAtSchedule: matchedCountAtSchedule);
   }
 
   /// 执行单词中文释义大模型智能裁决
   ///
-  /// [autoScheduled] 为 true 表示这是等待用户停顿后自动触发的兜底裁判（而非用户显式请求）：
-  /// 它在等待期间若本地已识别命中释义，则结果作废——见下方落地守卫。
+  /// [autoScheduled] 为 true 表示这是自动触发的兜底裁判（而非用户显式请求）：
+  /// 它在等待期间若本地**新增**命中了释义，则结果作废——见下方落地守卫。
+  /// [matchedCountAtSchedule] 是发起裁判那一刻已命中的释义数，用于判断"新增"。
   Future<void> _evaluateWordWithAiReferee(
     String cleanInput, {
     String? rawInput,
     List<String>? candidates,
     BuildContext? context,
     bool autoScheduled = false,
+    int matchedCountAtSchedule = 0,
   }) async {
     if (_isDisposed || _isWordAiRefereeJudging) return;
     if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
@@ -4399,6 +4426,8 @@ class BdcNotifier extends _$BdcNotifier {
     if (user == null) return;
 
     final checkWordId = word.id;
+    // 本次裁判是否替中文默写兜底：决定认可后要不要关手写板、判错后要不要明确提示
+    final bool forChineseDictation = state.isChineseDictation;
     _isWordAiRefereeJudging = true;
     _wordAiEvaluationCountForCurrentWord++;
     wordWrapper.isAiEvaluating = true;
@@ -4428,11 +4457,16 @@ class BdcNotifier extends _$BdcNotifier {
         return;
       }
 
-      // 自动兜底裁判在等待大模型期间，本地可能已经命中释义（例如用户接着说出了
+      // 自动兜底裁判在等待大模型期间，本地可能**新增**命中释义（例如用户接着说出了
       // 可识别的释义，或 ASR 收尾帧补齐了答案）。此时回答已被本地理解，
       // 绝不能再由 AI 裁判整词放行，否则会越过"答对半数/全部"的通过门槛。
-      if (autoScheduled && (state.wordWrapper?.asrMatchedMeaningItemParts.isNotEmpty ?? false)) {
-        Global.logger.d('~~~~~[AI裁判-单词] 等待期间本地已命中释义，丢弃自动裁判结果');
+      // 判据必须是"命中数比发起裁判时更多"，而不是"命中集合非空"：中文默写常常是在
+      // 已答对部分释义后，再用近义表达去写另一个释义，此时非空是常态，按非空丢弃
+      // 会让裁判结论悄无声息地作废，用户看到的就是"点了提交没反应"。
+      if (autoScheduled &&
+          (state.wordWrapper?.asrMatchedMeaningItemParts.length ?? 0) >
+              matchedCountAtSchedule) {
+        Global.logger.d('~~~~~[AI裁判-单词] 等待期间本地新增命中释义，丢弃自动裁判结果');
         wordWrapper.isAiEvaluating = false;
         if (state.isAiEvaluating) {
           state = state.copyWith(isAiEvaluating: false);
@@ -4488,6 +4522,19 @@ class BdcNotifier extends _$BdcNotifier {
           );
         }
         final ratingResult = _calculateRating("AI裁判");
+        if (forChineseDictation) {
+          // 中文默写：用户写的近义表达被裁判认可 → 与本地命中同样收尾
+          //（关手写板、复位默写标记、走正常答对流程），不能把默写界面继续留在屏幕上。
+          await _handleSpellingSuccessTransition(onComplete: () async {
+            state = state.copyWith(
+              isChineseDictation: false,
+              dictationMatchedCount: 0,
+              dictationRequiredCount: 0,
+            );
+            _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+          });
+          return;
+        }
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       } else {
         _failedWordAiEvaluationsForCurrentWord[cleanInput] = explanation;
@@ -4505,6 +4552,10 @@ class BdcNotifier extends _$BdcNotifier {
         } else if (context != null && context.mounted) {
           await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
           if (!_isDisposed) _handleTabChangeForAsr();
+        } else if (forChineseDictation) {
+          // 中文默写是用户主动点「提交」：裁判不认可也必须明确告诉他"不对、请重写"，
+          // 否则判题结论只留在后台，用户看到的就是"点了提交没反应"。
+          ToastUtil.error('答案不正确或未写完整，请重写');
         }
       }
     } catch (e, st) {
@@ -4513,7 +4564,7 @@ class BdcNotifier extends _$BdcNotifier {
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);
       }
-      if (context != null && context.mounted) {
+      if ((context != null && context.mounted) || forChineseDictation) {
         ToastUtil.error("AI 裁判开小差了，请重试");
       }
     } finally {

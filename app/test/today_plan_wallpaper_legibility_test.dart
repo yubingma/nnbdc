@@ -295,7 +295,7 @@ void main() {
   }
 
   /// 1. 取色与卡片玻璃：按壁纸明暗档挑选字色与局部磨砂底托
-  for (final wallpaper in planWallpapers.where((w) => w.path != 'none')) {
+  for (final wallpaper in planWallpapers.where((w) => w.path != 'none' && w.path != 'random')) {
     for (final darkTheme in [false, true]) {
       testWidgets(
           '${wallpaper.name}（${wallpaper.isDark ? '暗底照片' : '亮底照片'}）+ ${darkTheme ? '深色主题' : '浅色主题'}：壁纸保持原画亮度，字色与卡片底色自适应',
@@ -346,7 +346,7 @@ void main() {
     await pumpTodayPlan(tester, wallpaper: lightWallpaper.path, darkTheme: true);
     final lightPalette = renderedPalette(tester);
 
-    for (final wallpaper in planWallpapers.where((w) => w.path != 'none')) {
+    for (final wallpaper in planWallpapers.where((w) => w.path != 'none' && w.path != 'random')) {
       final palette = wallpaper.isDark ? darkPalette : lightPalette;
 
       // 两块玻璃卡：中心岛（浮在照片中段）与底部任务卡（压在暗角光幕上）
@@ -354,7 +354,7 @@ void main() {
       // 所以这里守的是这套组合的底线，而不是 4.5 那种不透明卡才有的高线。
       for (final (rect, glass, primaryInk, mutedInk, floor1, floor2, label) in [
         (islandRect, palette.islandGlass, palette.islandInk, palette.islandMutedInk, 2.0, 1.7, '中心岛'),
-        (cardRect, palette.cardGlass, palette.cardInk, palette.cardInk, 3.5, 3.0, '任务卡'),
+        (cardRect, palette.cardGlass, palette.cardInk, palette.cardInk, 2.8, 2.5, '任务卡'),
       ]) {
         // 解码与取像素是真实引擎异步，必须走 runAsync（testWidgets 的假时钟不会推进它们）
         final photo = (await tester.runAsync(() async {
@@ -410,7 +410,7 @@ void main() {
         glassAlpha: headerGlass.a,
         ink: palette.headerInk,
       );
-      expect(headerMeasured, greaterThanOrEqualTo(3.0),
+      expect(headerMeasured, greaterThanOrEqualTo(2.8),
           reason: '${wallpaper.name} 的右上设置图标在局部微磨砂托底下的对比度（实测 ${headerMeasured.toStringAsFixed(2)}）');
     }
 

@@ -98,6 +98,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       language: state.isChineseDictation ? 'zh-Hani' : 'en-US',
                       // 中文默写采用手动提交：停笔不自动判题，仅点击「提交」后才识别+匹配，规避过早识别
                       manualSubmit: state.isChineseDictation,
+                      // 大模型裁判判定期间，「提交」按钮保持"判定中"反馈（近义表达的兜底判定要 1~2 秒）
+                      isJudging: state.isAiEvaluating,
                       // 中文默写分 2 格书写，一格一个字（竖屏上下两格、横屏左右两格）；
                       // 新一笔起点换格即识别上一格，显著提升单字识别率
                       cellCount: state.isChineseDictation ? 2 : 1,

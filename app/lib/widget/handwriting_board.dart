@@ -43,6 +43,7 @@ class HandwritingBoard extends StatefulWidget {
     this.onRewrite,
     this.language = 'en-US',
     this.manualSubmit = false,
+    this.isJudging = false,
     this.cellCount = 1,
     this.onRecognizedPreview,
     this.onCellIdle,
@@ -83,6 +84,11 @@ class HandwritingBoard extends StatefulWidget {
   /// 正式识别+匹配判题；但停笔达到防抖时间后会做"当前格预览识别"并回显到输入框（不判题、不清空），
   /// 让用户边写边看到当前格识别结果。键盘输入不受此影响。
   final bool manualSubmit;
+
+  /// 上层判题进行中（例如中文默写把"意思相近"的答案交大模型裁判判定）。
+  /// 此时「提交」按钮同样显示判定中并屏蔽点击：从点击提交到大模型返回有 1~2 秒，
+  /// 没有这个反馈用户只会以为"提交没反应"而反复点击。
+  final bool isJudging;
 
   /// 分格书写数量。>1 时（中文默写）画布横向均分为 [cellCount] 个格子，每个格子写一个汉字，
   /// "第一笔进入另一个格子"即视为开始写下一个字——识别上一格、清空上一格，显著提升单字识别率；
@@ -538,7 +544,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                 _HandwritingCanvas(
                   key: _canvasKey,
                   lines: _lines,
-                  isRecognizing: _isRecognizing,
+                  isRecognizing: _isRecognizing || widget.isJudging,
                   onRewrite: _clear,
                   onUndo: _incrementVersion,
                   onRecognize: _recognize,
