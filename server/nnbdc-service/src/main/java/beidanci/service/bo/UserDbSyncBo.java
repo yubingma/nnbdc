@@ -763,6 +763,19 @@ public class UserDbSyncBo {
                         }
                     }
 
+                    boolean isMigrated = false;
+                    if (dict == null) {
+                        // 检查当前用户下是否已存在同名自建词书（解决主键分裂/离线同名创建冲突）
+                        Dict existingSameName = dictBo.findByOwnerIdAndName(ownerId, name);
+                        if (existingSameName != null) {
+                            logger.info("同步检测到自建词书同名冲突，将主键由 [{}] 迁移对齐为客户端ID [{}]，词书名=[{}], ownerId=[{}]",
+                                    existingSameName.getId(), dictDto.getId(), name, ownerId);
+                            dictBo.migrateDictId(existingSameName.getId(), dictDto.getId());
+                            dict = dictBo.findById(dictDto.getId());
+                            isMigrated = true;
+                        }
+                    }
+
                     if (dict == null) {
                         // 创建新词书
                         dict = new Dict();
@@ -788,7 +801,14 @@ public class UserDbSyncBo {
                         dict.setIsShared(dictDto.getIsShared());
                         dict.setIsReady(dictDto.getIsReady());
                         dict.setVisible(dictDto.getVisible());
-                        dict.setWordCount(dictDto.getWordCount());
+                        // 若经历了主键迁移，保留旧词书已有的实际单词数，防止被客户端刚建的 0 冲刷
+                        if (isMigrated) {
+                            Long actualWords = dictBo.getDictWordCount(dict.getId());
+                            int clientCount = dictDto.getWordCount() != null ? dictDto.getWordCount() : 0;
+                            dict.setWordCount((int) Math.max(actualWords != null ? actualWords : 0L, clientCount));
+                        } else {
+                            dict.setWordCount(dictDto.getWordCount());
+                        }
                         dict.setPopularityLimit(dictDto.getPopularityLimit());
                         dict.setEditable(dictDto.getEditable() != null ? dictDto.getEditable() : false);
                         dict.setUpdateTime(dictDto.getUpdateTime());

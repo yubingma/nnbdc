@@ -231,6 +231,48 @@ public class DictBo extends BaseBo<Dict> {
         return results.isEmpty() ? null : results.get(0);
     }
 
+    public Dict findByOwnerIdAndName(String ownerId, String name) {
+        String sql = "SELECT * FROM dict WHERE owner_id = :ownerId AND name = :name LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("ownerId", ownerId);
+        params.addValue("name", name);
+        List<Dict> results = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Dict.class));
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    /**
+     * 将已存在的词书主键 ID 迁移对齐为新的 ID，并级联更新所有外键子表引用
+     */
+    public void migrateDictId(String oldId, String newId) {
+        if (oldId.equals(newId)) {
+            return;
+        }
+        Dict oldDict = findById(oldId);
+        if (oldDict == null) {
+            throw new IllegalArgumentException("待迁移词书不存在: " + oldId);
+        }
+
+        // 1. 临时重命名旧词书，释放 (owner_id, name) 唯一索引
+        String tempName = oldDict.getName() + "_migrating_" + Util.uuid().substring(0, 8);
+        jdbcTemplate.update("UPDATE dict SET name = ? WHERE id = ?", tempName, oldId);
+
+        // 2. 插入新 ID 的词书记录（保留原名称与全部属性）
+        jdbcTemplate.update(
+                "INSERT INTO dict (id, name, owner_id, is_shared, is_ready, word_count, visible, domain, popularity_limit, editable, deletable, base_dict_id, sort_alg, description, create_time, update_time) " +
+                        "SELECT ?, ?, owner_id, is_shared, is_ready, word_count, visible, domain, popularity_limit, editable, deletable, base_dict_id, sort_alg, description, create_time, update_time FROM dict WHERE id = ?",
+                newId, oldDict.getName(), oldId);
+
+        // 3. 级联迁移所有引用旧 ID 的子表
+        jdbcTemplate.update("UPDATE dict_word SET dict_id = ? WHERE dict_id = ?", newId, oldId);
+        jdbcTemplate.update("UPDATE learning_dict SET dict_id = ? WHERE dict_id = ?", newId, oldId);
+        jdbcTemplate.update("UPDATE meaning_item SET dict_id = ? WHERE dict_id = ?", newId, oldId);
+        jdbcTemplate.update("UPDATE group_and_dict_link SET dict_id = ? WHERE dict_id = ?", newId, oldId);
+
+        // 4. 删除旧记录
+        jdbcTemplate.update("DELETE FROM dict WHERE id = ?", oldId);
+        log.info("成功完成词书主键迁移: oldId=[{}] -> newId=[{}], name=[{}]", oldId, newId, oldDict.getName());
+    }
+
     public Dict getRawWordDict(User user) {
         // 注意：BaseDao.pagedQuery 不支持用关联对象字段（owner）作为查询条件，否则会触发 fail-fast。
         // 生词本按“owner_id + name=生词本”唯一定位。
