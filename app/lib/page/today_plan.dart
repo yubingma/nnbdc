@@ -68,7 +68,7 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('竹韵', 'assets/images/wallpaper/bamboo.jpg', isDark: false),
   PlanWallpaper('绚光', 'assets/images/wallpaper/aurora.jpg', isDark: true),
   // 第 3 排：晨昏静谧场景
-  PlanWallpaper('晨雾', 'assets/images/scenes/mist.jpg', isDark: false),
+  PlanWallpaper('清雅', 'assets/images/wallpaper/vase.jpg', isDark: false),
   PlanWallpaper('夏夜', 'assets/images/scenes/night.jpg', isDark: true),
   PlanWallpaper('翠竹', 'assets/images/bg.jpg', isDark: true),
   PlanWallpaper('墨松', 'assets/images/bg2.jpg', isDark: true),
