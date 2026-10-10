@@ -57,7 +57,7 @@ class PlanWallpaper {
 }
 
 const List<PlanWallpaper> planWallpapers = [
-  PlanWallpaper('竹韵', 'assets/images/wallpaper/bamboo.jpg', isDark: true),
+  PlanWallpaper('琥珀', 'assets/images/wallpaper/amber.jpg', isDark: true),
   PlanWallpaper('石韵', 'assets/images/wallpaper/stone.jpg', isDark: true),
   PlanWallpaper('水趣', 'assets/images/wallpaper/kitty_blue.jpg', isDark: true),
   PlanWallpaper('粉梦', 'assets/images/wallpaper/kitty_pink.jpg', isDark: false),

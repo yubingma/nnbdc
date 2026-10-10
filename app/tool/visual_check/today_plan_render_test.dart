@@ -322,9 +322,9 @@ void main() {
         extraDone: 2);
   });
 
-  testWidgets('渲染 竹韵 · 浅色主题', (tester) async {
+  testWidgets('渲染 琥珀 · 浅色主题', (tester) async {
     await renderCase(tester,
-        name: '04_zhuyun_light', wallpaper: 'assets/images/wallpaper/bamboo.jpg', darkTheme: false);
+        name: '04_amber_light', wallpaper: 'assets/images/wallpaper/amber.jpg', darkTheme: false);
   });
 
   testWidgets('渲染 经典（主题底）· 浅色主题', (tester) async {
