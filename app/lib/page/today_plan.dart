@@ -74,7 +74,7 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('孤帆', 'assets/images/wallpaper/sailboat.jpg', isDark: true),
   // 第 4 排：山原温润色调
   PlanWallpaper('琉璃', 'assets/images/wallpaper/glaze.jpg', isDark: true),
-  PlanWallpaper('金晖', 'assets/images/bg4.jpg', isDark: false),
+  PlanWallpaper('秋林', 'assets/images/wallpaper/autumn.jpg', isDark: false),
   PlanWallpaper('麦浪', 'assets/images/bg5.jpg', isDark: false),
   PlanWallpaper('暮山', 'assets/images/bg6.jpg', isDark: false),
   // 第 5 排：原野、素简、经典与随机（最后一个固定为随机）
