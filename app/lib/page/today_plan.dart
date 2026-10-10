@@ -79,7 +79,7 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('雄关', 'assets/images/wallpaper/great_wall.jpg', isDark: true),
   // 第 5 排：原野、素简、经典与随机（最后一个固定为随机）
   PlanWallpaper('青峦', 'assets/images/wallpaper/azure_peak.jpg', isDark: false),
-  PlanWallpaper('禅石', 'assets/images/wallpaper/zen_stone.jpg', isDark: true),
+  PlanWallpaper('微光', 'assets/images/wallpaper/glimmer.jpg', isDark: false),
   PlanWallpaper('经典', 'none', isDark: false),
   PlanWallpaper('随机', 'random', isDark: true),
 ];
