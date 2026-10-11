@@ -108,6 +108,7 @@ class GameProjectile {
   final double targetX;
   final double targetY;
   double progress = 0.0;
+  final int targetCount;
 
   GameProjectile.needle({
     required this.x,
@@ -116,7 +117,8 @@ class GameProjectile {
     required this.targetY,
   })  : type = ProjectileType.needle,
         startX = x,
-        startY = y;
+        startY = y,
+        targetCount = 0;
 
   GameProjectile.mine({
     required this.startX,
@@ -125,13 +127,15 @@ class GameProjectile {
     required this.targetY,
   })  : type = ProjectileType.mine,
         x = startX,
-        y = startY;
+        y = startY,
+        targetCount = 0;
 
   GameProjectile.rewardMine({
     required this.startX,
     required this.startY,
     required this.targetX,
     required this.targetY,
+    required this.targetCount,
   })  : type = ProjectileType.rewardMine,
         x = startX,
         y = startY;
@@ -141,6 +145,7 @@ class GameProjectile {
     required this.startY,
     required this.targetX,
     required this.targetY,
+    required this.targetCount,
   })  : type = ProjectileType.rewardNeedle,
         x = startX,
         y = startY;
@@ -219,9 +224,15 @@ class RussiaPageState extends State<RussiaPage>
   double opponentShake = 0.0;
   bool opponentStarted = false;
   int opponentTotalScore = 0;
+  int opponentCowDung = 0;
   int opponentWinCount = 0;
   int opponentLostCount = 0;
   int opponentScoreAdjust = 0;
+  int opponentCowDungAdjust = 0;
+  int opponentMaxCombo = 0;
+  int opponentCurrentCombo = 0;
+  int opponentAnswerCount = 0;
+  int _selectedResultPlayerIndex = 0; // 0: 我方结算数据, 1: 对方结算数据
 
   // 当前目标词与泡泡
   WordVo? currWord;
@@ -232,6 +243,7 @@ class RussiaPageState extends State<RussiaPage>
   final List<GameProjectile> projectiles = [];
   final List<AmbientBubble> ambientBubbles = [];
   int nextBubbleId = 0;
+  Offset? _lastPoppedBubblePos;
   bool hasMistakeInCurrentWord = false;
 
   // 10 格对战血条生命系统（每答错/受击一次扣 1 格，10 格耗尽战败）
@@ -448,6 +460,7 @@ class RussiaPageState extends State<RussiaPage>
               opponentNickName = info.nickName;
             }
             opponentTotalScore = info.score;
+            opponentCowDung = info.cowDung;
             opponentWinCount = info.winCount;
             opponentLostCount = info.lostCount;
           });
@@ -523,13 +536,37 @@ class RussiaPageState extends State<RussiaPage>
       if (!mounted) return;
       final int propsType = data[0] as int;
       final int count = data[1] as int;
-      setState(() {
-        if (propsType == 0) {
-          attackProps = count;
-        } else {
-          purgeProps = count;
-        }
-      });
+
+      final mediaQuery = MediaQuery.maybeOf(context);
+      final size = mediaQuery?.size ?? const Size(390, 844);
+      final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
+      final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
+      final double startX = _lastPoppedBubblePos?.dx ?? (size.width * 0.5);
+      final double startY = _lastPoppedBubblePos?.dy ?? (size.height * 0.4);
+
+      if (propsType == 0) {
+        // 水雷奖励：飞向右下角水雷道具槽，落地后精准同步库存
+        final double mineTargetX = size.width - 36.0;
+        final double mineTargetY = size.height - bottomBarHeight * 0.5;
+        projectiles.add(GameProjectile.rewardMine(
+          startX: startX,
+          startY: startY,
+          targetX: mineTargetX,
+          targetY: mineTargetY,
+          targetCount: count,
+        ));
+      } else {
+        // 飞针奖励：飞向左下角飞针道具槽，落地后精准同步库存
+        final double needleTargetX = 36.0;
+        final double needleTargetY = size.height - bottomBarHeight * 0.5;
+        projectiles.add(GameProjectile.rewardNeedle(
+          startX: startX,
+          startY: startY,
+          targetX: needleTargetX,
+          targetY: needleTargetY,
+          targetCount: count,
+        ));
+      }
     });
 
     socket.off('propsUsed');
@@ -614,10 +651,13 @@ class RussiaPageState extends State<RussiaPage>
       if (!mounted || data == null || data is! List || data.isEmpty) return;
       final String uId = data[0]?.toString() ?? '';
       final int sDelta = (data.length > 1 && data[1] is int) ? data[1] as int : 0;
+      final int cDelta = (data.length > 2 && data[2] is int) ? data[2] as int : 0;
       if (uId == opponentUserId) {
         setState(() {
           opponentScoreAdjust = sDelta;
+          opponentCowDungAdjust = cDelta;
           opponentTotalScore = max(0, opponentTotalScore + sDelta);
+          opponentCowDung = max(0, opponentCowDung + cDelta);
         });
       }
     });
@@ -679,6 +719,11 @@ class RussiaPageState extends State<RussiaPage>
       scoreAdjust = 0;
       cowDungAdjust = 0;
       opponentScoreAdjust = 0;
+      opponentCowDungAdjust = 0;
+      opponentMaxCombo = 0;
+      opponentCurrentCombo = 0;
+      opponentAnswerCount = 0;
+      _selectedResultPlayerIndex = 0;
       _wrongWordsInGame.clear();
       myHp = maxHp;
       opponentHp = maxHp;
@@ -693,6 +738,7 @@ class RussiaPageState extends State<RussiaPage>
       bubbles.clear();
       particles.clear();
       floatingTexts.clear();
+      _lastPoppedBubblePos = null;
     });
 
     // 索取第一个单词
@@ -774,7 +820,12 @@ class RussiaPageState extends State<RussiaPage>
   void _handleWordB(dynamic data) {
     try {
       final answerResult = data[0].toString();
+      opponentAnswerCount++;
       if (answerResult == 'true') {
+        opponentCurrentCombo++;
+        if (opponentCurrentCombo > opponentMaxCombo) {
+          opponentMaxCombo = opponentCurrentCombo;
+        }
         setState(() {
           opponentScore += 10;
         });
@@ -786,6 +837,8 @@ class RussiaPageState extends State<RussiaPage>
           text: '+10',
           color: const Color(0xFFF97316),
         ));
+      } else {
+        opponentCurrentCombo = 0;
       }
     } catch (_) {}
   }
@@ -799,6 +852,7 @@ class RussiaPageState extends State<RussiaPage>
       myStarted = false;
       opponentStarted = false;
       isShowingResult = true;
+      _selectedResultPlayerIndex = 0;
       isWonInLastGame = !amILoser;
       if (amILoser) {
         myLostCount++;
@@ -1082,7 +1136,7 @@ class RussiaPageState extends State<RussiaPage>
           ));
         }
         if (p.progress >= 1.0) {
-          attackProps++;
+          attackProps = p.targetCount;
           mineSlotScale = 1.45; // 触发左下角水雷槽果冻弹跳
           _createBurstParticles(p.targetX, p.targetY, const Color(0xFFF97316), count: 20);
           floatingTexts.add(FloatingText(
@@ -1112,7 +1166,7 @@ class RussiaPageState extends State<RussiaPage>
           ));
         }
         if (p.progress >= 1.0) {
-          purgeProps++;
+          purgeProps = p.targetCount;
           needleSlotScale = 1.45; // 触发右下角飞针槽果冻弹跳
           _createBurstParticles(p.targetX, p.targetY, const Color(0xFF34D399), count: 20);
           floatingTexts.add(FloatingText(
@@ -1159,6 +1213,7 @@ class RussiaPageState extends State<RussiaPage>
 
   void _onCorrectWordTapped(BubbleItem b) {
     b.isPopping = true;
+    _lastPoppedBubblePos = Offset(b.x, b.y);
     HapticFeedback.mediumImpact();
     _createBurstParticles(b.x, b.y, b.baseColor, count: 16);
 
@@ -1176,42 +1231,14 @@ class RussiaPageState extends State<RussiaPage>
         myMaxCombo = myCombo;
       }
 
-      // 连对奖励战术道具（每连对 3 次随机奖励水雷或飞针，从当前爆破的泡泡飞向底部道具区）
+      // 连对达到 3 的倍数时，在爆破泡泡处浮现醒目提示
       if (myCombo % 3 == 0) {
-        final mediaQuery = MediaQuery.maybeOf(context);
-        final size = mediaQuery?.size ?? const Size(390, 844);
-        final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
-        final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
-        final double needleTargetX = 36.0;
-        final double needleTargetY = size.height - bottomBarHeight * 0.5;
-        final double mineTargetX = size.width - 36.0;
-        final double mineTargetY = size.height - bottomBarHeight * 0.5;
-
-        // 在爆破泡泡处浮现醒目提示，告知用户道具来源于连击！
         floatingTexts.add(FloatingText(
           x: b.x,
           y: b.y - 32,
           text: '🔥 $myCombo 连对! 道具掉落',
           color: const Color(0xFFFBBF24),
         ));
-
-        if (rand.nextBool()) {
-          // 获得治愈飞针：从当前爆破泡泡飞向左下角飞针道具区，飞抵后入库
-          projectiles.add(GameProjectile.rewardNeedle(
-            startX: b.x,
-            startY: b.y,
-            targetX: needleTargetX,
-            targetY: needleTargetY,
-          ));
-        } else {
-          // 获得重力水雷：从当前爆破泡泡飞向右下角水雷道具区，飞抵后入库
-          projectiles.add(GameProjectile.rewardMine(
-            startX: b.x,
-            startY: b.y,
-            targetX: mineTargetX,
-            targetY: mineTargetY,
-          ));
-        }
       }
 
       final String comboBonus = myCombo > 1 ? ' Combo x$myCombo!' : '';
@@ -1251,8 +1278,8 @@ class RussiaPageState extends State<RussiaPage>
     b.isPopping = true;
     myScore = max(0, myScore - 5);
 
-    // 戳错干扰词泡泡：播放低沉发钝的哑泡闷音 (speed: 0.50, volume: 0.60)，与正确清脆破裂形成鲜明反差
-    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 0.50, volume: 0.60);
+    // 戳错干扰词泡泡：播放专属的低沉低音提示音 bubble-wrong.wav，与正确时的高频清脆泡泡爆破音 bubble-pop.wav 形成鲜明反差
+    StudyAudioSessionController.instance.playSoundEffect('bubble-wrong.wav', speed: 1.0, volume: 0.55);
     _applyDamage(1, '答错 -1 HP!');
     _createBurstParticles(b.x, b.y, const Color(0xFFEF4444), count: 14);
     HapticFeedback.mediumImpact();
@@ -1460,49 +1487,67 @@ class RussiaPageState extends State<RussiaPage>
                       Expanded(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            final double totalWidth = constraints.maxWidth;
+                            // 预留左侧头像(26px)与右侧 VS 勋章(26px)的物理遮挡避让边距
+                            const double leftInset = 26.0;
+                            const double rightInset = 26.0;
+                            final double effectiveWidth = max(0.0, constraints.maxWidth - leftInset - rightInset);
                             final double ratio = (myHp / maxHp).clamp(0.0, 1.0);
                             return Stack(
                               children: [
-                                // 空血槽底色（深蓝暗黑）
+                                // 空血槽底色（深蓝暗黑，铺满整个半槽）
                                 Container(
-                                  color: const Color(0xFF0B172D).withValues(alpha: 0.9),
+                                  color: const Color(0xFF071224),
                                 ),
-                                // 翡翠绿活跃生命条（从左向中心充满，掉血退缩）
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeOutCubic,
-                                    width: totalWidth * ratio,
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [Color(0xFF34D399), Color(0xFF059669)],
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // 10 等分微弱刻度分割线
-                                Row(
-                                  children: List.generate(maxHp, (i) => Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          right: BorderSide(
-                                            color: Colors.white.withValues(alpha: 0.15),
-                                            width: 1.0,
+                                // 安全可见区间内的活跃生命条与刻度线
+                                Positioned(
+                                  left: leftInset,
+                                  right: rightInset,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Stack(
+                                    children: [
+                                      // 翡翠绿活跃生命条（贴左端头像，向中心充满，掉血时右端靠近 VS 处露出缺口）
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 300),
+                                          curve: Curves.easeOutCubic,
+                                          width: effectiveWidth * ratio,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.horizontal(
+                                              left: const Radius.circular(3),
+                                              right: Radius.circular(ratio >= 1.0 ? 3 : 2),
+                                            ),
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF34D399), Color(0xFF059669)],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  )),
+                                      // 10 等分刻度分割线（精准分布在有效可见区内）
+                                      Row(
+                                        children: List.generate(maxHp, (i) => Expanded(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              border: Border(
+                                                right: BorderSide(
+                                                  color: Colors.white.withValues(alpha: 0.18),
+                                                  width: 1.0,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        )),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 // 中央生命值与爱心图标
                                 Positioned.fill(
                                   child: Padding(
-                                    padding: const EdgeInsets.only(left: 24, right: 28),
+                                    padding: const EdgeInsets.only(left: leftInset, right: rightInset),
                                     child: Center(
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -1539,49 +1584,67 @@ class RussiaPageState extends State<RussiaPage>
                       Expanded(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            final double totalWidth = constraints.maxWidth;
+                            // 预留左侧 VS 勋章(26px)与右侧对手头像(26px)的物理遮挡避让边距
+                            const double leftInset = 26.0;
+                            const double rightInset = 26.0;
+                            final double effectiveWidth = max(0.0, constraints.maxWidth - leftInset - rightInset);
                             final double ratio = (opponentHp / maxHp).clamp(0.0, 1.0);
                             return Stack(
                               children: [
-                                // 空血槽底色（深蓝暗黑）
+                                // 空血槽底色（深蓝暗黑，铺满整个半槽）
                                 Container(
-                                  color: const Color(0xFF0B172D).withValues(alpha: 0.9),
+                                  color: const Color(0xFF071224),
                                 ),
-                                // 橙红活跃生命条（向右中心充满，掉血退缩）
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeOutCubic,
-                                    width: totalWidth * ratio,
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // 10 等分微弱刻度分割线
-                                Row(
-                                  children: List.generate(maxHp, (i) => Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          left: BorderSide(
-                                            color: Colors.white.withValues(alpha: 0.15),
-                                            width: 1.0,
+                                // 安全可见区间内的活跃生命条与刻度线
+                                Positioned(
+                                  left: leftInset,
+                                  right: rightInset,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Stack(
+                                    children: [
+                                      // 橙红活跃生命条（贴右端对手头像，向中心充满，掉血时左端靠近 VS 处露出缺口）
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 300),
+                                          curve: Curves.easeOutCubic,
+                                          width: effectiveWidth * ratio,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.horizontal(
+                                              left: Radius.circular(ratio >= 1.0 ? 3 : 2),
+                                              right: const Radius.circular(3),
+                                            ),
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  )),
+                                      // 10 等分刻度分割线（精准分布在有效可见区内）
+                                      Row(
+                                        children: List.generate(maxHp, (i) => Expanded(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              border: Border(
+                                                left: BorderSide(
+                                                  color: Colors.white.withValues(alpha: 0.18),
+                                                  width: 1.0,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        )),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 // 中央生命值与爱心图标
                                 Positioned.fill(
                                   child: Padding(
-                                    padding: const EdgeInsets.only(left: 28, right: 24),
+                                    padding: const EdgeInsets.only(left: leftInset, right: rightInset),
                                     child: Center(
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -2145,8 +2208,6 @@ class RussiaPageState extends State<RussiaPage>
   /// 游戏结算与用户分数面板
   Widget _buildResultDialog(Size size) {
     final bool isWon = (isWonInLastGame == true);
-    final int totalMatches = myWinCount + myLostCount;
-    final double winRate = totalMatches > 0 ? (myWinCount * 100.0 / totalMatches) : 0.0;
     final String myDisplayScore = '$myScore';
     final String oppDisplayScore = '$opponentScore';
 
@@ -2247,77 +2308,119 @@ class RussiaPageState extends State<RussiaPage>
                       children: [
                         Row(
                           children: [
-                            // 我方对决得分
+                            // 我方对决得分（点击可切换查看我方结算数据）
                             Expanded(
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                              child: InkWell(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _selectedResultPlayerIndex = 0;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: (_selectedResultPlayerIndex == 0)
+                                        ? const Color(0xFF38BDF8).withValues(alpha: 0.12)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: (_selectedResultPlayerIndex == 0)
+                                          ? const Color(0xFF38BDF8).withValues(alpha: 0.35)
+                                          : Colors.transparent,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: Column(
                                     children: [
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF38BDF8),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Flexible(
-                                        child: Text(
-                                          myNickName.isEmpty ? '我方' : myNickName,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF7DD3FC),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF38BDF8),
+                                              shape: BoxShape.circle,
+                                            ),
                                           ),
-                                          overflow: TextOverflow.ellipsis,
+                                          const SizedBox(width: 5),
+                                          Flexible(
+                                            child: Text(
+                                              myNickName.isEmpty ? '我方' : myNickName,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: (_selectedResultPlayerIndex == 0)
+                                                    ? const Color(0xFF38BDF8)
+                                                    : const Color(0xFF7DD3FC),
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (_selectedResultPlayerIndex == 0) ...[
+                                            const SizedBox(width: 4),
+                                            const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF38BDF8)),
+                                          ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                                        textBaseline: TextBaseline.alphabetic,
+                                        children: [
+                                          Text(
+                                            myDisplayScore,
+                                            style: const TextStyle(
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                              fontFeatures: [FontFeature.tabularFigures()],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '分',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.white.withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: (myHp > 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.18),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          myHp > 0 ? '❤️ 残余 $myHp HP' : '💔 0 HP',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: myHp > 0 ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
+                                          ),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
+                                      const SizedBox(height: 3),
                                       Text(
-                                        myDisplayScore,
-                                        style: const TextStyle(
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.white,
-                                          fontFeatures: [FontFeature.tabularFigures()],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        '分',
+                                        (_selectedResultPlayerIndex == 0) ? '● 正在查看' : '点击查看数据',
                                         style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white.withValues(alpha: 0.6),
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                          color: (_selectedResultPlayerIndex == 0)
+                                              ? const Color(0xFF38BDF8)
+                                              : Colors.white.withValues(alpha: 0.35),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: (myHp > 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.18),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      myHp > 0 ? '❤️ 残余 $myHp HP' : '💔 0 HP',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: myHp > 0 ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
 
@@ -2339,77 +2442,119 @@ class RussiaPageState extends State<RussiaPage>
                               ),
                             ),
 
-                            // 对手对决得分
+                            // 对手对决得分（点击可切换查看对手结算数据）
                             Expanded(
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                              child: InkWell(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _selectedResultPlayerIndex = 1;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: (_selectedResultPlayerIndex == 1)
+                                        ? const Color(0xFFF97316).withValues(alpha: 0.12)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: (_selectedResultPlayerIndex == 1)
+                                          ? const Color(0xFFF97316).withValues(alpha: 0.35)
+                                          : Colors.transparent,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: Column(
                                     children: [
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFF97316),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Flexible(
-                                        child: Text(
-                                          opponentNickName.isEmpty ? '对手' : opponentNickName,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFFFDBA74),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFF97316),
+                                              shape: BoxShape.circle,
+                                            ),
                                           ),
-                                          overflow: TextOverflow.ellipsis,
+                                          const SizedBox(width: 5),
+                                          Flexible(
+                                            child: Text(
+                                              opponentNickName.isEmpty ? '对手' : opponentNickName,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: (_selectedResultPlayerIndex == 1)
+                                                    ? const Color(0xFFF97316)
+                                                    : const Color(0xFFFDBA74),
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (_selectedResultPlayerIndex == 1) ...[
+                                            const SizedBox(width: 4),
+                                            const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFFF97316)),
+                                          ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                                        textBaseline: TextBaseline.alphabetic,
+                                        children: [
+                                          Text(
+                                            oppDisplayScore,
+                                            style: TextStyle(
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white.withValues(alpha: 0.85),
+                                              fontFeatures: const [FontFeature.tabularFigures()],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '分',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.white.withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: (opponentHp > 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.18),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          opponentHp > 0 ? '❤️ 残余 $opponentHp HP' : '💔 0 HP',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: opponentHp > 0 ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        (_selectedResultPlayerIndex == 1) ? '● 正在查看' : '点击查看数据',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                          color: (_selectedResultPlayerIndex == 1)
+                                              ? const Color(0xFFF97316)
+                                              : Colors.white.withValues(alpha: 0.35),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Text(
-                                        oppDisplayScore,
-                                        style: TextStyle(
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.white.withValues(alpha: 0.85),
-                                          fontFeatures: const [FontFeature.tabularFigures()],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        '分',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white.withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: (opponentHp > 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.18),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      opponentHp > 0 ? '❤️ 残余 $opponentHp HP' : '💔 0 HP',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: opponentHp > 0 ? const Color(0xFF6EE7B7) : const Color(0xFFFCA5A5),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           ],
@@ -2419,40 +2564,50 @@ class RussiaPageState extends State<RussiaPage>
                         Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
                         const SizedBox(height: 10),
 
-                        // 局内数据高光（最高连击、答题数）
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            Row(
+                        // 局内数据高光（联动展示当前选中玩家的最高连击、作答数）
+                        Builder(
+                          builder: (context) {
+                            final bool isViewingSelf = (_selectedResultPlayerIndex == 0);
+                            final int highlightCombo = isViewingSelf ? myMaxCombo : opponentMaxCombo;
+                            final int highlightAnswers = isViewingSelf ? myWordIndex : opponentAnswerCount;
+                            final String ownerTag = isViewingSelf ? '我方' : (opponentNickName.isEmpty ? '对手' : opponentNickName);
+                            final Color ownerColor = isViewingSelf ? const Color(0xFF38BDF8) : const Color(0xFFF97316);
+
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                const Icon(Icons.bolt_rounded, size: 14, color: Color(0xFFFBBF24)),
-                                const SizedBox(width: 3),
-                                Text(
-                                  '最高连击 $myMaxCombo',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.bolt_rounded, size: 14, color: Color(0xFFFBBF24)),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '$ownerTag最高连击 $highlightCombo',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.white.withValues(alpha: 0.75),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Container(width: 1, height: 10, color: Colors.white.withValues(alpha: 0.15)),
+                                Row(
+                                  children: [
+                                    Icon(Icons.my_location_rounded, size: 13, color: ownerColor),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$ownerTag作答 $highlightAnswers 题',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.white.withValues(alpha: 0.75),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
-                            ),
-                            Container(width: 1, height: 10, color: Colors.white.withValues(alpha: 0.15)),
-                            Row(
-                              children: [
-                                const Icon(Icons.my_location_rounded, size: 13, color: Color(0xFF38BDF8)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '作答 $myWordIndex 题',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -2460,59 +2615,183 @@ class RussiaPageState extends State<RussiaPage>
 
                   const SizedBox(height: 12),
 
-                  // 3. 用户总天梯积分与资产卡片（Rank & Asset Growth）
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.04),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                    ),
-                    child: Column(
-                      children: [
-                        // 天梯总积分与变动
-                        _buildStatRow(
-                          icon: Icons.military_tech_rounded,
-                          iconColor: const Color(0xFFFBBF24),
-                          label: '天梯总积分',
-                          valueText: '$myTotalScore',
-                          deltaText: scoreAdjust >= 0 ? '+$scoreAdjust' : '$scoreAdjust',
-                          isPositive: scoreAdjust >= 0,
-                          showDelta: true,
-                        ),
-                        const SizedBox(height: 8),
-                        Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
-                        const SizedBox(height: 8),
+                  // 3. 用户总天梯积分与资产卡片（支持点击切换查看我方或对手结算数据）
+                  Builder(
+                    builder: (context) {
+                      final bool isViewingSelf = (_selectedResultPlayerIndex == 0);
+                      final int displayTotalScore = isViewingSelf ? myTotalScore : opponentTotalScore;
+                      final int displayScoreAdjust = isViewingSelf ? scoreAdjust : opponentScoreAdjust;
+                      final int displayCowDung = isViewingSelf ? myCowDung : opponentCowDung;
+                      final int displayCowDungAdjust = isViewingSelf ? cowDungAdjust : opponentCowDungAdjust;
+                      final int displayWinCount = isViewingSelf ? myWinCount : opponentWinCount;
+                      final int displayLostCount = isViewingSelf ? myLostCount : opponentLostCount;
+                      final int displayTotalMatches = displayWinCount + displayLostCount;
+                      final double displayWinRate = displayTotalMatches > 0
+                          ? (displayWinCount * 100.0 / displayTotalMatches)
+                          : 0.0;
+                      final String targetName = isViewingSelf ? '我方' : (opponentNickName.isEmpty ? '对手' : opponentNickName);
+                      final Color themeColor = isViewingSelf ? const Color(0xFF38BDF8) : const Color(0xFFF97316);
 
-                        // 魔法泡泡资产与变动
-                        _buildStatRow(
-                          icon: Icons.bubble_chart_rounded,
-                          iconColor: const Color(0xFF38BDF8),
-                          label: '魔法泡泡',
-                          valueText: '$myCowDung',
-                          deltaText: cowDungAdjust >= 0 ? '+$cowDungAdjust' : '$cowDungAdjust',
-                          isPositive: cowDungAdjust >= 0,
-                          showDelta: true,
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: themeColor.withValues(alpha: 0.20)),
                         ),
-                        const SizedBox(height: 8),
-                        Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
-                        const SizedBox(height: 8),
+                        child: Column(
+                          children: [
+                            // 顶部视角切换药丸 Bar
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      isViewingSelf ? Icons.person_rounded : Icons.sports_esports_rounded,
+                                      size: 14,
+                                      color: themeColor,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      '【$targetName】结算数据',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: themeColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.06),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  padding: const EdgeInsets.all(2),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          HapticFeedback.selectionClick();
+                                          setState(() => _selectedResultPlayerIndex = 0);
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: isViewingSelf ? const Color(0xFF38BDF8) : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            '我方',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: isViewingSelf ? Colors.black : Colors.white.withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          HapticFeedback.selectionClick();
+                                          setState(() => _selectedResultPlayerIndex = 1);
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: !isViewingSelf ? const Color(0xFFF97316) : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            '对方',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: !isViewingSelf ? Colors.white : Colors.white.withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
+                            const SizedBox(height: 8),
 
-                        // 战绩胜率
-                        _buildStatRow(
-                          icon: Icons.leaderboard_rounded,
-                          iconColor: const Color(0xFFA78BFA),
-                          label: '排位战绩',
-                          valueText: '${winRate.toStringAsFixed(1)}%',
-                          subValueText: '$myWinCount胜 / $myLostCount负',
-                          showDelta: false,
+                            // 天梯总积分与变动
+                            _buildStatRow(
+                              icon: Icons.military_tech_rounded,
+                              iconColor: const Color(0xFFFBBF24),
+                              label: '天梯总积分',
+                              valueText: '$displayTotalScore',
+                              deltaText: displayScoreAdjust >= 0 ? '+$displayScoreAdjust' : '$displayScoreAdjust',
+                              isPositive: displayScoreAdjust >= 0,
+                              showDelta: true,
+                            ),
+                            const SizedBox(height: 8),
+                            Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
+                            const SizedBox(height: 8),
+
+                            // 魔法泡泡资产与变动
+                            _buildStatRow(
+                              icon: Icons.bubble_chart_rounded,
+                              iconColor: const Color(0xFF38BDF8),
+                              label: '魔法泡泡',
+                              valueText: '$displayCowDung',
+                              deltaText: displayCowDungAdjust >= 0 ? '+$displayCowDungAdjust' : '$displayCowDungAdjust',
+                              isPositive: displayCowDungAdjust >= 0,
+                              showDelta: true,
+                            ),
+                            const SizedBox(height: 8),
+                            Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
+                            const SizedBox(height: 8),
+
+                            // 战绩胜率
+                            _buildStatRow(
+                              icon: Icons.leaderboard_rounded,
+                              iconColor: const Color(0xFFA78BFA),
+                              label: '排位战绩',
+                              valueText: '${displayWinRate.toStringAsFixed(1)}%',
+                              subValueText: '$displayWinCount胜 / $displayLostCount负',
+                              showDelta: false,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
 
-                  // 4. 生词本与零失误贴心提示
-                  if (_wrongWordsInGame.isNotEmpty)
+                  // 4. 生词本与零失误贴心提示 / 对方视角友好提示
+                  if (_selectedResultPlayerIndex == 1)
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF97316).withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.22)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFFFB923C)),
+                          const SizedBox(width: 6),
+                          Text(
+                            '点击上方【我方】即可随时切回自己的结算数据',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: const Color(0xFFFDBA74).withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (_wrongWordsInGame.isNotEmpty)
                     Container(
                       margin: const EdgeInsets.only(top: 10),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
