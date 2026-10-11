@@ -681,6 +681,16 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
                     : (isDarkMode ? const Color(0x20FFFFFF) : Colors.black.withValues(alpha: 0.04)),
             width: 1,
           ),
+          // 纯白实底卡片上白边不可见，选中态改用主题色外发光把药丸托起来。
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: primaryColor.withValues(alpha: 0.32),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,

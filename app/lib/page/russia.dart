@@ -190,6 +190,7 @@ class RussiaPageState extends State<RussiaPage>
   late int? exceptRoom;
   Map<String, dynamic>? extraArgs;
   bool isExercise = false;
+  bool _showOpponentJoinedBanner = true;
 
   // 房间与通信状态
   int? roomId;
@@ -399,7 +400,14 @@ class RussiaPageState extends State<RussiaPage>
     socket.off('enterReady');
     socket.on('enterReady', (data) {
       if (!mounted) return;
-      if (isPlaying) return;
+      if (isPlaying) {
+        if (isExercise && opponentUserId.isNotEmpty) {
+          setState(() {
+            _showOpponentJoinedBanner = true;
+          });
+        }
+        return;
+      }
       setState(() {
         gameState = 'ready';
         isPlaying = false;
@@ -434,6 +442,9 @@ class RussiaPageState extends State<RussiaPage>
               ? incomingNickName
               : '对手';
           opponentStarted = false;
+          if (isExercise && isPlaying) {
+            _showOpponentJoinedBanner = true;
+          }
         });
       }
     });
@@ -485,6 +496,7 @@ class RussiaPageState extends State<RussiaPage>
           opponentNickName = '等待对手加入...';
           opponentStarted = false;
           opponentScore = 0;
+          _showOpponentJoinedBanner = false;
           if (gameState == 'ready') {
             gameState = 'waiting';
           }
@@ -704,13 +716,44 @@ class RussiaPageState extends State<RussiaPage>
       setState(() {
         myStarted = true;
         isExercise = true;
+        _showOpponentJoinedBanner = true;
       });
       sendUserCmd('START_EXERCISE', []);
     }
   }
 
+  /// 终止练习并立即开始双人比赛
+  void _stopExerciseAndStartGame() {
+    if (!mounted) return;
+    setState(() {
+      isExercise = false;
+      myStarted = true;
+      _showOpponentJoinedBanner = false;
+      // 清空单人练习的下落气泡和动画
+      bubbles.clear();
+      projectiles.clear();
+      particles.clear();
+      floatingTexts.clear();
+      currWord = null;
+    });
+
+    // 向服务端发送开始比赛指令
+    sendUserCmd('START_GAME', []);
+
+    // 若对手尚未准备（例如真人还未点击开始），切换到等待就绪状态界面；
+    // 若对手已就绪（如机器人或已点开始的真人），服务端收到后会立即下发 BEGIN，
+    // 客户端监听到 BEGIN 会重新调用 _onGameBegin() 开始正式对战。
+    if (!opponentStarted) {
+      setState(() {
+        isPlaying = false;
+        gameState = 'ready';
+      });
+    }
+  }
+
   void _onGameBegin() {
     setState(() {
+      _showOpponentJoinedBanner = false;
       myScore = 0;
       opponentScore = 0;
       myCombo = 0;
@@ -1406,6 +1449,28 @@ class RussiaPageState extends State<RussiaPage>
                             color: Colors.white.withValues(alpha: 0.95),
                           ),
                         ),
+                        if (isExercise) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFF34D399).withValues(alpha: 0.6),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: const Text(
+                              '练习模式',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF6EE7B7),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1429,6 +1494,15 @@ class RussiaPageState extends State<RussiaPage>
               right: 20,
               child: _buildVsStatusBar(),
             ),
+
+            // 3.1 练习模式下新对手加入浮动提示横幅
+            if (isExercise && isPlaying && opponentUserId.isNotEmpty && _showOpponentJoinedBanner)
+              Positioned(
+                top: topPadding + 130,
+                left: 16,
+                right: 16,
+                child: _buildExerciseOpponentJoinedBanner(),
+              ),
 
             // 4. 等待/开始游戏浮层
             if (!isPlaying && !isShowingResult)
@@ -1739,39 +1813,49 @@ class RussiaPageState extends State<RussiaPage>
                 ),
               ),
 
-              // 4. 正中央圆形大勋章徽标（VS）
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF0284C7), Color(0xFF034A9E)],
+              // 4. 正中央圆形大勋章徽标（VS 或 练习模式）
+              GestureDetector(
+                onTap: () {
+                  if (isExercise && opponentUserId.isNotEmpty) {
+                    _stopExerciseAndStartGame();
+                  }
+                },
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: isExercise
+                          ? const [Color(0xFF0D9488), Color(0xFF047857)]
+                          : const [Color(0xFF0284C7), Color(0xFF034A9E)],
+                    ),
+                    border: Border.all(color: Colors.white, width: 2.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isExercise ? const Color(0xFF2DD4BF) : const Color(0xFF38BDF8))
+                            .withValues(alpha: 0.65),
+                        blurRadius: 10,
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFF032B69).withValues(alpha: 0.5),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  border: Border.all(color: Colors.white, width: 2.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF38BDF8).withValues(alpha: 0.65),
-                      blurRadius: 10,
-                    ),
-                    BoxShadow(
-                      color: const Color(0xFF032B69).withValues(alpha: 0.5),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'VS',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
+                  child: Center(
+                    child: Text(
+                      isExercise ? '练习' : 'VS',
+                      style: TextStyle(
+                        fontSize: isExercise ? 14 : 16,
+                        fontWeight: FontWeight.w900,
+                        fontStyle: isExercise ? FontStyle.normal : FontStyle.italic,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
@@ -1860,6 +1944,143 @@ class RussiaPageState extends State<RussiaPage>
       ],
     );
   }
+
+  /// 练习模式下当有新对手进入时的顶部通知胶囊横幅
+  Widget _buildExerciseOpponentJoinedBanner() {
+    final bool isReady = opponentStarted;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A).withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0284C7).withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF0284C7).withValues(alpha: 0.3),
+              border: Border.all(color: const Color(0xFF38BDF8), width: 1.2),
+            ),
+            child: const Icon(
+              Icons.person_add_alt_1_rounded,
+              color: Color(0xFF38BDF8),
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        opponentNickName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      '已加入',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  isReady ? '对手已就绪，可随时开赛' : '等待对手准备中...',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: isReady ? const Color(0xFF34D399) : Colors.white60,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: _stopExerciseAndStartGame,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEA580C).withValues(alpha: 0.4),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16),
+                  SizedBox(width: 2),
+                  Text(
+                    '终止练习 开始比赛',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _showOpponentJoinedBanner = false;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              child: const Icon(
+                Icons.close_rounded,
+                color: Colors.white54,
+                size: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTargetPromptCard() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

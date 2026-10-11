@@ -572,11 +572,13 @@ public class ReadyState extends RoomState {
         playData1.getPropsCounts()[0] = 0;
         playData1.getPropsCounts()[1] = 0;
         playData1.setStackRows(0);
+        playData1.setExercise(false);
         playData2.setMatchStarted(false);
         playData2.setCorrectCount(0);
         playData2.getPropsCounts()[0] = 0;
         playData2.getPropsCounts()[1] = 0;
         playData2.setStackRows(0);
+        playData2.setExercise(false);
 
         // 复位游戏状态
         gameOverProcessor.reset();
