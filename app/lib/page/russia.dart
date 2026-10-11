@@ -1191,9 +1191,9 @@ class RussiaPageState extends State<RussiaPage>
     HapticFeedback.mediumImpact();
     _createBurstParticles(b.x, b.y, b.baseColor, count: 16);
 
-    // 用户在泡泡中戳中了正确的英文单词：停止中文 TTS 并播放清脆泡泡破裂音效 (bubble-pop.wav)
+    // 用户在泡泡中戳中了正确的英文单词：停止中文 TTS 并播放清脆上扬升调音效 (speed: 1.15)
     _tts.stop();
-    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.0, volume: 1.0);
+    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.15, volume: 0.85);
 
     final bool isFirstTrySuccess = !hasMistakeInCurrentWord;
 
@@ -1280,10 +1280,11 @@ class RussiaPageState extends State<RussiaPage>
     b.isPopping = true;
     myScore = max(0, myScore - 5);
 
-    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 0.9, volume: 0.8);
+    // 戳错干扰词泡泡：播放低沉发钝的哑泡闷音 (speed: 0.50, volume: 0.60)，与正确清脆破裂形成鲜明反差
+    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 0.50, volume: 0.60);
     _applyDamage(1, '答错 -1 HP!');
     _createBurstParticles(b.x, b.y, const Color(0xFFEF4444), count: 14);
-    HapticFeedback.lightImpact();
+    HapticFeedback.mediumImpact();
 
     // 1. 将误认的干扰词精准收录至生词本
     _wrongWordsInGame.add(b.word);
