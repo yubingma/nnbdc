@@ -738,15 +738,15 @@ class RussiaPageState extends State<RussiaPage>
     hasMistakeInCurrentWord = false;
     if (currWord == null) return;
 
-    final roundOptions = [currWord!.spell, ...distractorWords.take(3)]..shuffle(rand);
-    // 4 个均分横向泳道，确保横向分散绝不粘连
-    final slotXOffsets = [0.18, 0.39, 0.61, 0.82]..shuffle(rand);
+    final roundOptions = [currWord!.spell, ...distractorWords.take(2)]..shuffle(rand);
+    // 3 个均分居中横向泳道，与左右道具槽及屏幕边缘保持绝对安全距离
+    final slotXOffsets = [0.29, 0.50, 0.71]..shuffle(rand);
     // 上升速度梯度：有快有慢，拉开层次
-    final speeds = [36.0, 44.0, 52.0, 60.0]..shuffle(rand);
+    final speeds = [38.0, 48.0, 58.0]..shuffle(rand);
 
-    for (int i = 0; i < roundOptions.length && i < 4; i++) {
-      const double radius = 47.0; // 饱满的梦幻大泡泡
-      final double baseX = size.width * slotXOffsets[i] + (rand.nextDouble() - 0.5) * 8.0;
+    for (int i = 0; i < roundOptions.length && i < 3; i++) {
+      const double radius = 48.0; // 饱满梦幻大泡泡，排版更舒适
+      final double baseX = size.width * slotXOffsets[i] + (rand.nextDouble() - 0.5) * 6.0;
       // 几乎同时在屏幕底部浮现，仅保留极微小 0~10px 自然落差
       final double startY = size.height + radius + 10.0 + rand.nextDouble() * 10.0;
       final Color color = bubbleColors[i % bubbleColors.length];
