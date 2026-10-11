@@ -16,7 +16,6 @@ import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/page/privacy.dart';
 import 'package:nnbdc/page/protocol.dart';
 import 'package:nnbdc/page/russia.dart';
-import 'package:nnbdc/page/bubble_battle_preview.dart';
 import 'package:nnbdc/page/search.dart';
 import 'package:nnbdc/page/select_book.dart';
 import 'package:nnbdc/page/word_detail.dart';
@@ -62,7 +61,6 @@ final goRouter = GoRouter(
     GoRoute(path: '/walkman', builder: (context, state) => const WalkmanPage()),
     GoRoute(path: '/game', builder: (context, state) => const GamePage()),
     GoRoute(path: '/russia', builder: (context, state) => const RussiaPage()),
-    GoRoute(path: '/bubble_battle_preview', builder: (context, state) => const BubbleBattlePreviewPage()),
     GoRoute(path: '/word_detail', builder: (context, state) => const WordDetailPage()),
     GoRoute(path: '/word_list', builder: (context, state) => const WordListPage()),
     GoRoute(path: '/import_from_book', builder: (context, state) => ImportFromBookPage(wordModifier: state.extra as WordModifier)),

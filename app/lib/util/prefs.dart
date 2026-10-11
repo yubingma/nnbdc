@@ -163,8 +163,8 @@ class Prefs {
   static final ValueNotifier<bool> fullScreenNotifier =
       ValueNotifier<bool>(isFullScreen);
 
-  /// 读取全屏模式偏好，默认关闭 (false)
-  static bool get isFullScreen => read<bool>(fullScreenModePref) ?? false;
+  /// 读取全屏模式偏好，默认开启
+  static bool get isFullScreen => read<bool>(fullScreenModePref) ?? true;
 
   /// 设置全屏模式偏好并立即应用
   static Future<bool> setFullScreen(bool enabled) async {

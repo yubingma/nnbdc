@@ -56,9 +56,9 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       await Prefs.init();
 
-      // 默认全屏为 false
-      expect(Prefs.isFullScreen, isFalse);
-      expect(Prefs.fullScreenNotifier.value, isFalse);
+      // 默认全屏为 true
+      expect(Prefs.isFullScreen, isTrue);
+      expect(Prefs.fullScreenNotifier.value, isTrue);
 
       // 设置为 true
       await Prefs.setFullScreen(true);
