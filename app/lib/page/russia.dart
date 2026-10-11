@@ -15,6 +15,7 @@ import '../db/db.dart';
 import '../global.dart';
 import '../services/throttled_sync_service.dart';
 import '../util/app_clock.dart';
+import '../util/prefs.dart';
 import 'index.dart';
 
 /// 泡泡实体
@@ -241,6 +242,8 @@ class RussiaPageState extends State<RussiaPage>
   @override
   void initState() {
     super.initState();
+    // 游戏页面进入沉浸式粘性全屏模式（隐藏系统状态栏与底部手势条，达到沉浸式视觉）
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _initAmbientBubbles();
     _tts.init();
     LoadingUtils.disableApiLoading();
@@ -280,6 +283,8 @@ class RussiaPageState extends State<RussiaPage>
     sendUserCmd('LEAVE_HALL', []);
     SocketIoClient.instance.disconnect();
     LoadingUtils.enableApiLoading();
+    // 退出游戏，恢复系统全局 UI 模式
+    Prefs.applyFullScreenMode();
     super.dispose();
   }
 
@@ -863,7 +868,7 @@ class RussiaPageState extends State<RussiaPage>
 
     final mediaQuery = MediaQuery.maybeOf(context);
     final size = mediaQuery?.size ?? const Size(390, 844);
-    final topPadding = mediaQuery?.padding.top ?? 44.0;
+    final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
     final double barrierY = topPadding + 195.0;
 
     // 水波相位与氛围微泡漂浮（全局活跃）
@@ -1175,7 +1180,7 @@ class RussiaPageState extends State<RussiaPage>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final topPadding = MediaQuery.of(context).padding.top;
+    final topPadding = max(MediaQuery.of(context).padding.top, 16.0);
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
