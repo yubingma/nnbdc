@@ -749,7 +749,7 @@ public class AiBo {
                 
             com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam param = com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam.builder()
                 .apiKey(apiKey)
-                .model("qwen-vl-plus")
+                .model(aiProperties.getImageReviewModel())
                 .message(userMessage)
                 .build();
                 

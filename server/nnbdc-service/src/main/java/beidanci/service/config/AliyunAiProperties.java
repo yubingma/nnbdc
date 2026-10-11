@@ -30,6 +30,13 @@ public class AliyunAiProperties {
      */
     private String voice = "longxiaochun";
 
+    /**
+     * 配图审核使用的视觉模型 (如 qwen3-vl-plus)。
+     * 做成可配置是因为模型会下线/改名：2026-10 之前用 qwen-vl-plus，该模型在百炼下线后
+     * 每次审核都返回 "Model not exist"，配图审核整体失效，换模型不该再改代码。
+     */
+    private String imageReviewModel = "qwen3-vl-plus";
+
     public String getApiKey() {
         return apiKey;
     }
@@ -60,6 +67,14 @@ public class AliyunAiProperties {
 
     public void setVoice(String voice) {
         this.voice = voice;
+    }
+
+    public String getImageReviewModel() {
+        return imageReviewModel;
+    }
+
+    public void setImageReviewModel(String imageReviewModel) {
+        this.imageReviewModel = imageReviewModel;
     }
 
     /**

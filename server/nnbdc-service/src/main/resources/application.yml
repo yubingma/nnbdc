@@ -84,6 +84,7 @@ aliyun:
     text-model: deepseek-flash # 文本处理模型，DeepSeek 官方 V4.1 Flash。配置为 deepseek 前缀的模型时将路由至 DeepSeek 官方 API
     tts-model: cosyvoice-v3-flash # 语音合成模型，指定为阿里云百炼的 cosyvoice-v3-flash
     voice: longanyang # 语音合成发音人角色名（如 longanyang）
+    image-review-model: qwen3-vl-plus # 配图审核用的视觉模型（qwen-vl-plus 已在百炼下线，调用会返回 Model not exist）
 
 # 短信验证码配置
 sms:
