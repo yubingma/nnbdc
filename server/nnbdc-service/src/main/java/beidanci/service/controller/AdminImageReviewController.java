@@ -168,7 +168,7 @@ public class AdminImageReviewController {
         try {
             List<WordImageDto> images = new ArrayList<>(wordBo.getWordImagesOfDict(dictId));
             // 按 id 排序，游标才有确定的先后顺序
-            images.sort(Comparator.comparing(WordImageDto::getId));
+            images.sort((a, b) -> a.getId().compareTo(b.getId()));
             if (cursor != null) {
                 final String from = cursor;
                 images.removeIf(image -> image.getId().compareTo(from) <= 0);
