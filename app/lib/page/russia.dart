@@ -1487,67 +1487,49 @@ class RussiaPageState extends State<RussiaPage>
                       Expanded(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            // 预留左侧头像(26px)与右侧 VS 勋章(26px)的物理遮挡避让边距
-                            const double leftInset = 26.0;
-                            const double rightInset = 26.0;
-                            final double effectiveWidth = max(0.0, constraints.maxWidth - leftInset - rightInset);
+                            final double totalWidth = constraints.maxWidth;
                             final double ratio = (myHp / maxHp).clamp(0.0, 1.0);
                             return Stack(
                               children: [
-                                // 空血槽底色（深蓝暗黑，铺满整个半槽）
+                                // 空血槽底色（深蓝暗黑）
                                 Container(
-                                  color: const Color(0xFF071224),
+                                  color: const Color(0xFF0B172D).withValues(alpha: 0.9),
                                 ),
-                                // 安全可见区间内的活跃生命条与刻度线
-                                Positioned(
-                                  left: leftInset,
-                                  right: rightInset,
-                                  top: 0,
-                                  bottom: 0,
-                                  child: Stack(
-                                    children: [
-                                      // 翡翠绿活跃生命条（贴左端头像，向中心充满，掉血时右端靠近 VS 处露出缺口）
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 300),
-                                          curve: Curves.easeOutCubic,
-                                          width: effectiveWidth * ratio,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.horizontal(
-                                              left: const Radius.circular(3),
-                                              right: Radius.circular(ratio >= 1.0 ? 3 : 2),
-                                            ),
-                                            gradient: const LinearGradient(
-                                              colors: [Color(0xFF34D399), Color(0xFF059669)],
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                            ),
+                                // 翡翠绿活跃生命条（从左向中心充满，掉血退缩）
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeOutCubic,
+                                    width: totalWidth * ratio,
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Color(0xFF34D399), Color(0xFF059669)],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // 10 等分微弱刻度分割线
+                                Row(
+                                  children: List.generate(maxHp, (i) => Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          right: BorderSide(
+                                            color: Colors.white.withValues(alpha: 0.15),
+                                            width: 1.0,
                                           ),
                                         ),
                                       ),
-                                      // 10 等分刻度分割线（精准分布在有效可见区内）
-                                      Row(
-                                        children: List.generate(maxHp, (i) => Expanded(
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              border: Border(
-                                                right: BorderSide(
-                                                  color: Colors.white.withValues(alpha: 0.18),
-                                                  width: 1.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        )),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  )),
                                 ),
                                 // 中央生命值与爱心图标
                                 Positioned.fill(
                                   child: Padding(
-                                    padding: const EdgeInsets.only(left: leftInset, right: rightInset),
+                                    padding: const EdgeInsets.only(left: 24, right: 28),
                                     child: Center(
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -1584,67 +1566,49 @@ class RussiaPageState extends State<RussiaPage>
                       Expanded(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            // 预留左侧 VS 勋章(26px)与右侧对手头像(26px)的物理遮挡避让边距
-                            const double leftInset = 26.0;
-                            const double rightInset = 26.0;
-                            final double effectiveWidth = max(0.0, constraints.maxWidth - leftInset - rightInset);
+                            final double totalWidth = constraints.maxWidth;
                             final double ratio = (opponentHp / maxHp).clamp(0.0, 1.0);
                             return Stack(
                               children: [
-                                // 空血槽底色（深蓝暗黑，铺满整个半槽）
+                                // 空血槽底色（深蓝暗黑）
                                 Container(
-                                  color: const Color(0xFF071224),
+                                  color: const Color(0xFF0B172D).withValues(alpha: 0.9),
                                 ),
-                                // 安全可见区间内的活跃生命条与刻度线
-                                Positioned(
-                                  left: leftInset,
-                                  right: rightInset,
-                                  top: 0,
-                                  bottom: 0,
-                                  child: Stack(
-                                    children: [
-                                      // 橙红活跃生命条（贴右端对手头像，向中心充满，掉血时左端靠近 VS 处露出缺口）
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 300),
-                                          curve: Curves.easeOutCubic,
-                                          width: effectiveWidth * ratio,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.horizontal(
-                                              left: Radius.circular(ratio >= 1.0 ? 3 : 2),
-                                              right: const Radius.circular(3),
-                                            ),
-                                            gradient: const LinearGradient(
-                                              colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                            ),
+                                // 橙红活跃生命条（向右中心充满，掉血退缩）
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeOutCubic,
+                                    width: totalWidth * ratio,
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // 10 等分微弱刻度分割线
+                                Row(
+                                  children: List.generate(maxHp, (i) => Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          left: BorderSide(
+                                            color: Colors.white.withValues(alpha: 0.15),
+                                            width: 1.0,
                                           ),
                                         ),
                                       ),
-                                      // 10 等分刻度分割线（精准分布在有效可见区内）
-                                      Row(
-                                        children: List.generate(maxHp, (i) => Expanded(
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              border: Border(
-                                                left: BorderSide(
-                                                  color: Colors.white.withValues(alpha: 0.18),
-                                                  width: 1.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        )),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  )),
                                 ),
                                 // 中央生命值与爱心图标
                                 Positioned.fill(
                                   child: Padding(
-                                    padding: const EdgeInsets.only(left: leftInset, right: rightInset),
+                                    padding: const EdgeInsets.only(left: 28, right: 24),
                                     child: Center(
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -1658,7 +1622,7 @@ class RussiaPageState extends State<RussiaPage>
                                               letterSpacing: 0.5,
                                               shadows: [
                                                 Shadow(
-                                                  color: Color(0xFF032B69),
+                                                  color: Color(0xFF7C2D12),
                                                   blurRadius: 4,
                                                   offset: Offset(0, 1),
                                                 ),
