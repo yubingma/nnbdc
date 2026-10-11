@@ -42,9 +42,6 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
 
-  # 线性图标库（Lucide）：统一 24 网格、2px 圆头笔宽，底部导航栏等处的图标由此而来。
-  lucide_icons_flutter: ^3.1.24
-
   flutter_svg: ^2.0.14
   simple_animations: ^5.1.0
   email_validator: ^3.0.0
@@ -153,6 +150,10 @@ flutter:
     - assets/images/
     - assets/images/scenes/
     - assets/images/wallpaper/
+    # 底部导航栏等处的线性图标（Lucide 原版 SVG，24 网格 / 2px 圆头笔宽）。
+    # 走资源而不是图标字体：Lucide 的 pub 包会连带 6 档字重、共 2.9MB 的 ttf
+    # 一起进安装包——Flutter 的图标裁剪只处理代码里真正引用过的字体家族。
+    - assets/images/nav/
     # 注意：资源目录声明只递归一层。assets/images/ 只覆盖它直接包含的文件与
     # 「一层子目录里直接包含的文件」，像 images/pet/moods/ 这种第二层子目录必须
     # 单独声明，否则整个目录会被静默跳过——代码报「Asset not found」而编译毫无提示。

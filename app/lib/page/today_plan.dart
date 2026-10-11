@@ -84,6 +84,13 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('随机', 'random', isDark: true),
 ];
 
+/// 今日计划页此刻真正压在身下的那张壁纸的明暗档；null 表示「经典」（无壁纸），
+/// 此时整套配色跟 App 主题走。
+///
+/// 外壳底栏在今日计划页是整条透明的，图标直接压在照片上，所以它必须跟这张照片
+/// 同明暗。底栏自己拿不到照片，只能由持有照片的本页单向发布、由底栏订阅消费。
+final ValueNotifier<bool?> planWallpaperIsDark = ValueNotifier<bool?>(null);
+
 class TodayPlanPage extends StatefulWidget {
   const TodayPlanPage({super.key, this.bottomNavReserve = 0});
 
@@ -785,6 +792,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final themeConfig = AppThemeConfig.of(themeStyle);
     final backgroundColor = isDarkMode ? const Color(0xFF090B10) : const Color(0xFFF9FAFB);
 
+    _publishWallpaperIsDark();
+
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Stack(
@@ -886,6 +895,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         ],
       ),
     );
+  }
+
+  /// 把当前壁纸的明暗档交给外壳底栏（见 [planWallpaperIsDark]）。
+  ///
+  /// 只能在当前帧画完之后发布：本页 build 期间直接改这个值，会同步通知到作为
+  /// 祖先的底栏并让它 markNeedsBuild，Flutter 会当场报
+  /// 「setState() or markNeedsBuild() called during build」。
+  void _publishWallpaperIsDark() {
+    final isDark = _wallpaperIsDark;
+    if (planWallpaperIsDark.value == isDark) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      planWallpaperIsDark.value = isDark;
+    });
   }
 
   /// 当前壁纸照片的明暗档；「经典」（无壁纸）返回 null，表示卡片与字色整套跟 App 主题走。

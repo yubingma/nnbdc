@@ -8,6 +8,7 @@ import 'package:nnbdc/page/word_lists.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/widget/nav_stash_widgets.dart';
+import 'package:nnbdc/widget/nav_tab_icon.dart';
 import 'package:provider/provider.dart';
 
 import 'game.dart'; 
@@ -37,6 +38,13 @@ class IndexPage extends StatefulWidget {
 class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   NavTabKey _currentTab = NavTabKey.study;
   NavTabKey? _lastProcessedTabFromExtra;
+
+  /// 底栏要同时跟着「哪些 Tab 被收进抽屉」和「今日计划那张壁纸的明暗」两处变，
+  /// 合成一个 Listenable 一次订阅。
+  late final Listenable _navBarSources = Listenable.merge([
+    Prefs.hiddenBottomNavKeysNotifier,
+    planWallpaperIsDark,
+  ]);
 
   int get currentIndex {
     final visibleTabs = NavTabKey.getVisibleTabs(
@@ -116,6 +124,52 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   /// 底栏内容高度（不含底部安全区，安全区由底栏自己的 SafeArea 补上）
   static const double navBarContentHeight = 50;
 
+  /// 底栏图标一律 24 网格定尺：选中态只换墨色、不换尺寸。
+  /// 原先选中 24、未选中 22，来回切 Tab 时整排图标会跟着一跳一跳。
+  static const double navBarIconSize = 24;
+
+  /// 底栏图标的墨色。
+  ///
+  /// 今日计划页的底栏是整条透明的，图标直接压在壁纸照片上，颜色必须跟照片明暗
+  /// 同进同退：暗底照片配白图标、亮底照片配深墨图标，并各带一层反向柔光描边，
+  /// 否则石板灰或主题色原色会直接糊进照片里。选中态取主题色的亮档/深档，而不是
+  /// 主题色原色——原色是给浅色页面底调的中间调，压在照片上要么太暗、要么太浅。
+  ///
+  /// [wallpaperIsDark] 为 null 表示此刻底栏底下没有照片（不在今日计划页，或今日
+  /// 计划用的是「经典」无壁纸），沿用 App 主题原本的一套。
+  ({Color selected, Color unselected, Shadow? shadow}) _navBarInk(
+    AppThemeConfig themeConfig,
+    bool? wallpaperIsDark,
+  ) {
+    if (wallpaperIsDark == null) {
+      return (
+        selected: themeConfig.primaryColor,
+        unselected: themeConfig.textNeutral,
+        shadow: null,
+      );
+    }
+    if (wallpaperIsDark) {
+      return (
+        selected: themeConfig.primaryLightColor,
+        unselected: Colors.white.withValues(alpha: 0.62),
+        shadow: Shadow(
+          color: Colors.black.withValues(alpha: 0.45),
+          blurRadius: 5,
+          offset: const Offset(0, 1),
+        ),
+      );
+    }
+    return (
+      selected: themeConfig.primaryDarkColor,
+      unselected: const Color(0xFF1E293B).withValues(alpha: 0.58),
+      shadow: Shadow(
+        color: Colors.white.withValues(alpha: 0.85),
+        blurRadius: 5,
+        offset: const Offset(0, 1),
+      ),
+    );
+  }
+
   Widget _buildPageForTab(NavTabKey tab) {
     switch (tab) {
       case NavTabKey.study:
@@ -140,9 +194,9 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     NavTabKey tab,
     bool isSelected,
     AppThemeConfig themeConfig,
+    bool? wallpaperIsDark,
   ) {
-    final selectedColor = themeConfig.primaryColor;
-    final unselectedColor = themeConfig.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final ink = _navBarInk(themeConfig, wallpaperIsDark);
 
     return Expanded(
       child: GestureDetector(
@@ -163,10 +217,11 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           height: navBarContentHeight,
           alignment: Alignment.center,
           decoration: const BoxDecoration(color: Colors.transparent),
-          child: Icon(
+          child: NavTabIcon(
             tab.icon,
-            color: isSelected ? selectedColor : unselectedColor,
-            size: isSelected ? 24 : 22,
+            color: isSelected ? ink.selected : ink.unselected,
+            size: navBarIconSize,
+            shadow: ink.shadow,
           ),
         ),
       ),
@@ -179,9 +234,11 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
 
-    return ValueListenableBuilder<List<String>>(
-      valueListenable: Prefs.hiddenBottomNavKeysNotifier,
-      builder: (context, hiddenKeys, child) {
+    return ListenableBuilder(
+      listenable: _navBarSources,
+      builder: (context, child) {
+        final hiddenKeys = Prefs.hiddenBottomNavKeysNotifier.value;
+        final wallpaperIsDark = planWallpaperIsDark.value;
         final isGuest = Global.isGuest;
         final visibleTabs = NavTabKey.getVisibleTabs(
           isGuest: isGuest,
@@ -231,6 +288,8 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                     tab,
                     tab == activeTab,
                     themeConfig,
+                    // 只有今日计划页的底栏底下是照片，其余页面底栏带磨砂底，跟主题走
+                    isStudyTab ? wallpaperIsDark : null,
                   );
                 }).toList(),
               ),

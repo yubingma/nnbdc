@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart';
-
 /// 底部导航栏 Tab 语义配置
+///
+/// 图标统一取自 Lucide（24 网格 / 2px 圆头笔宽，见 `assets/images/nav/`）。原先混用了
+/// Material 的 filled 字形与 rounded 字形两套体系，5 枚图标墨迹覆盖率从 16% 到 45%
+/// 不等，并排放在底栏里大小肉眼可见地不齐——换图标时务必继续沿用同一套。
 enum NavTabKey {
   study(
     key: 'study',
     label: '学习',
-    icon: Icons.school,
+    icon: 'assets/images/nav/graduation-cap.svg',
     canHide: false,
     routePath: '/index',
     description: '每日背词核心主页',
@@ -13,7 +15,7 @@ enum NavTabKey {
   wordLists(
     key: 'word_lists',
     label: '词表',
-    icon: Icons.library_books,
+    icon: 'assets/images/nav/library-big.svg',
     canHide: true,
     routePath: '/word_lists',
     description: '词书进度与选书桌',
@@ -21,7 +23,7 @@ enum NavTabKey {
   search(
     key: 'search',
     label: '查词',
-    icon: Icons.search_rounded,
+    icon: 'assets/images/nav/search.svg',
     canHide: true,
     routePath: '/search',
     description: '快速查词与权威词典',
@@ -29,7 +31,7 @@ enum NavTabKey {
   game(
     key: 'game',
     label: '比赛',
-    icon: Icons.sports_esports,
+    icon: 'assets/images/nav/gamepad-2.svg',
     canHide: true,
     routePath: '/game',
     description: '排位对战与消除竞技',
@@ -37,7 +39,7 @@ enum NavTabKey {
   me(
     key: 'me',
     label: '我',
-    icon: Icons.person_rounded,
+    icon: 'assets/images/nav/circle-user.svg',
     canHide: false,
     routePath: '/index',
     description: '个人中心与功能收纳',
@@ -45,7 +47,10 @@ enum NavTabKey {
 
   final String key;
   final String label;
-  final IconData icon;
+
+  /// 图标的 SVG 资源路径。
+  final String icon;
+
   final bool canHide;
   final String routePath;
   final String description;

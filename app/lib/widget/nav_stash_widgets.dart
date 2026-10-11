@@ -8,6 +8,7 @@ import 'package:nnbdc/page/walkman_launcher.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
+import 'package:nnbdc/widget/nav_tab_icon.dart';
 
 /// 1. 长按底栏弹出的快捷收纳菜单（基于 flutter-frosted-glass 规范）
 class StashedNavMenuDialog {
@@ -100,7 +101,7 @@ class StashedNavMenuDialog {
                       _buildQuickAction(
                         context,
                         isDarkMode: isDarkMode,
-                        icon: Icons.headphones_rounded,
+                        icon: 'assets/images/nav/headphones.svg',
                         title: '随身听',
                         subtitle: '不用看屏幕，随时接着听',
                         onTap: () {
@@ -195,7 +196,7 @@ class StashedNavMenuDialog {
   static Widget _buildQuickAction(
     BuildContext context, {
     required bool isDarkMode,
-    required IconData icon,
+    required String icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
@@ -228,7 +229,7 @@ class StashedNavMenuDialog {
                   color: primaryColor.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 18, color: primaryColor),
+                child: NavTabIcon(icon, size: 18, color: primaryColor),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -432,7 +433,7 @@ class _NavBarCustomizationSheetState extends State<NavBarCustomizationSheet> {
                       color: primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(tab.icon, size: 20, color: primaryColor),
+                    child: NavTabIcon(tab.icon, size: 20, color: primaryColor),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -614,7 +615,7 @@ class StashedFeaturesCard extends StatelessWidget {
                                     color: primaryColor.withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(tab.icon, size: 20, color: primaryColor),
+                                  child: NavTabIcon(tab.icon, size: 20, color: primaryColor),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
