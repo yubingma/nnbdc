@@ -321,6 +321,26 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
         _healthStatusMessage = '不健康 (发现 ${_healthIssuesList.length} 个完整性问题)';
       }
 
+      // 4.6 致命缺陷拦截：母版库必须带出品时刻的同步版本号 (sys_db_version)。
+      // 缺这一行时，新设备首轮同步会走「版本 0 全量」，而服务端的全量日志按体积设计不含
+      // word_image 等明细表，母版库里所有已被服务端删除的明细行将永远无法收敛
+      // （历史事故：2026-09-24 版母版库漏带版本号，新装机永久残留已删配图）。
+      // 这类缺陷随包发出去就是全体新用户的永久脏数据，所以直接拒绝导出，不允许"提示一下照样出包"。
+      if (healthResult.hasIssue('sys_db_version_integrity')) {
+        Global.logger.e('❌ 母版库缺少系统数据版本号 (sys_db_version)，已拒绝导出压缩包');
+        setState(() {
+          _isProcessing = false;
+          _statusMessage = '制作失败：母版库缺少系统数据版本号 (sys_db_version)，已拒绝导出';
+        });
+        ToastUtil.error('缺少 sys_db_version，已拒绝导出母版库');
+
+        // 失败后恢复环境
+        Api.useProdUrl = false;
+        Api.resetClient();
+        ThrottledDbSyncService().resume();
+        return;
+      }
+
       // 5. 获取概要信息
       setState(() => _statusMessage = '正在获取数据库统计信息...');
       await _getDbSummary();

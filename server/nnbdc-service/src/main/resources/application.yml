@@ -65,6 +65,8 @@ aliyun:
     access-key-id: ${aliyun_access_key_id}
     access-key-secret: ${aliyun_access_key_secret}
     region-id: cn-hangzhou
+    # 客户端取图的对外地址前缀，删除配图后按它拼 URL 刷新 CDN 缓存
+    image-base-url: ${cdn_image_base_url:https://www.nnbdc.com/img/}
   email:
     access-key-id: ${aliyun_access_key_id}
     access-key-secret: ${aliyun_access_key_secret}

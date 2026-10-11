@@ -39,6 +39,40 @@ if [ ! -f "$SOURCE_UNCOMPRESSED" ] && [ ! -f "$SOURCE_GZ" ]; then
     exit 1
 fi
 
+# 校验源库必须带出品时刻的系统数据版本号 (sys_db_version)。
+# 缺这一行时新设备首轮同步会走「版本 0 全量」，而服务端全量日志按体积设计不含 word_image 等明细表，
+# 母版库里已被服务端删除的明细行将永远无法收敛（历史事故：2026-09-24 版随包母版库漏带版本号，
+# 新装机永久残留已删配图）。详见 doc/glossary.md 的「黄金母版库」。
+if ! command -v sqlite3 > /dev/null; then
+    echo "❌ 错误: 本机没有 sqlite3，无法校验母版库的 sys_db_version，拒绝部署。"
+    exit 1
+fi
+
+CHECK_TMP_DIR=""
+CHECK_DB="$SOURCE_UNCOMPRESSED"
+if [ ! -f "$CHECK_DB" ]; then
+    CHECK_TMP_DIR="$(mktemp -d)"
+    CHECK_DB="$CHECK_TMP_DIR/check.sqlite"
+    gzip -dc "$SOURCE_GZ" > "$CHECK_DB"
+fi
+SYS_DB_VERSION="$(sqlite3 "$CHECK_DB" "SELECT version FROM sys_db_version WHERE id='singleton';")"
+if [ -n "$CHECK_TMP_DIR" ]; then
+    rm -rf "$CHECK_TMP_DIR"
+fi
+
+case "$SYS_DB_VERSION" in
+    ''|*[!0-9]*)
+        echo "❌ 错误: 母版库的 sys_db_version 缺失或非法 (当前值: '${SYS_DB_VERSION}')，拒绝部署。"
+        echo "💡 提示: 在黄金母版工具里确认「同步最新系统数据与版本号」这一步有没有失败（同步失败时版本号写不进去）。"
+        exit 1
+        ;;
+esac
+if [ "$SYS_DB_VERSION" -le 0 ]; then
+    echo "❌ 错误: 母版库的 sys_db_version 为 $SYS_DB_VERSION，拒绝部署。"
+    exit 1
+fi
+echo "✅ 系统数据版本号校验通过: sys_db_version=$SYS_DB_VERSION"
+
 # 确保输出目录存在
 mkdir -p "$APP_ASSETS_DB_DIR"
 

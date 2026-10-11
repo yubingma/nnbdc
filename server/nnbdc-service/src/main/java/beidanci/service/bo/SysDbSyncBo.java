@@ -1,10 +1,13 @@
 package beidanci.service.bo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -38,6 +41,21 @@ import beidanci.service.util.Util;
 @Transactional(rollbackFor = Throwable.class)
 public class SysDbSyncBo extends BaseBo<SysDbLog> {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SysDbSyncBo.class);
+
+    /**
+     * 不做内容全量下发、但必须补发删除的「明细表」。
+     *
+     * 这些表的数据量太大（动辄几万条），内容统一走随包母版库 + 词书下载；
+     * 客户端本地一旦经「首次全量同步」把版本号推到最新，此前的删除日志就再也不会下发，
+     * 于是快照里那些「服务端已经删掉的行」会永久残留（历史事故：2026-09-24 版母版库缺
+     * sys_db_version，新装机永久残留已删配图）。这里只补 DELETE，体积可忽略。
+     *
+     * 注意：墓碑只能覆盖 sys_db_log 的日志保留期（cleanOldLogs 只留 10 天），
+     * 比保留期更早的删除无法补发 —— 根治办法是母版库必须带出品时刻的 sys_db_version。
+     */
+    private static final Set<String> TOMBSTONE_TABLES = new LinkedHashSet<>(
+            Arrays.asList("dict_word", "meaning_item", "sentence", "word", "word_image"));
+
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
@@ -388,9 +406,35 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         // 9. WordPhrases（单词的常用短语搭配）
         logs.addAll(generateWordPhraseLogs(currentVersion));
 
-        // sentence/word_image/word_shortdesc_chinese的数据, 不需要全量同步, 因为数据量太大,
-        // 而且用户下载所需词书的时候, 已经包含所需的这些数据了
+        // 10. 明细表的删除墓碑：这些表的内容不做全量下发（客户端靠随包母版库预置 + 词书下载拿到），
+        // 但删除必须补发，否则一份没有版本号的母版库快照里已被服务端删除的行永远无法收敛
+        // （历史事故：2026-09-24 版母版库缺 sys_db_version，新装机永久残留已删配图）。
+        logs.addAll(generateDetailTableTombstones(currentVersion));
 
+        return logs;
+    }
+
+    /**
+     * 生成明细表在日志保留期内的删除墓碑（只含 DELETE，不含任何内容）。
+     *
+     * 取每张表每个主键在库日志里的最后一条，只有它仍是 DELETE 才下发 —— 与增量同步的
+     * Compaction 同一口径，被删掉又重新插入的同主键记录不会被误删。
+     */
+    private List<SysDbLogDto> generateDetailTableTombstones(int version) {
+        String sql = "SELECT s.* FROM sys_db_log s INNER JOIN ( "
+                + "  SELECT tbl_name, record_id, MAX(version) AS last_v FROM sys_db_log "
+                + "  WHERE tbl_name IN (:tables) GROUP BY tbl_name, record_id "
+                + ") m ON s.version = m.last_v AND s.operate = 'DELETE'";
+        MapSqlParameterSource params = new MapSqlParameterSource("tables", TOMBSTONE_TABLES);
+        List<SysDbLog> rows = namedParameterJdbcTemplate.query(sql, params,
+                new EntityRowMapper<>(SysDbLog.class));
+        List<SysDbLogDto> logs = new ArrayList<>();
+        for (SysDbLog row : rows) {
+            SysDbLogDto dto = toDto(row);
+            dto.setVersion(version);
+            logs.add(dto);
+        }
+        log.info("首次全量同步补发明细表删除墓碑: {} 条, 表={}", logs.size(), TOMBSTONE_TABLES);
         return logs;
     }
 

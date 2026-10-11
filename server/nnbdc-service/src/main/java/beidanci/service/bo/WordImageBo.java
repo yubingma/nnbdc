@@ -1,6 +1,8 @@
 package beidanci.service.bo;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
@@ -16,11 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.Result;
 import beidanci.api.model.EventType;
+import beidanci.service.config.AliyunCdnProperties;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.Event;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.po.WordImage;
+import beidanci.service.util.CdnUtil;
 import beidanci.service.util.SysParamUtil;
 
 @Service
@@ -50,6 +54,12 @@ public class WordImageBo extends BaseBo<WordImage> {
 
     @Autowired
     SysDbSyncBo sysDbLogBo;
+
+    @Autowired
+    CdnUtil cdnUtil;
+
+    @Autowired
+    AliyunCdnProperties cdnProperties;
 
     @Autowired
     AiBo aiBo;
@@ -177,20 +187,11 @@ public class WordImageBo extends BaseBo<WordImage> {
             // 解析结果
             if (aiResultJson.contains("DELETE")) {
                 log.info("🚫 图片审核失败，执行删除: imageId={}, word={}, result={}", wordImageId, spell, aiResultJson);
-                // 删除文件
-                File file = new File(absolutePath);
-                if (file.exists()) {
-                    file.delete();
+                // 走与手动删除同一条删除链路：事件清理、同步日志、词书版本、物理文件、CDN 缓存刷新
+                Result<Object> deleteResult = deleteWordImage(wordImageId, null, false);
+                if (!deleteResult.isSuccess()) {
+                    log.error("图片审核不通过但删除失败: imageId={}, msg={}", wordImageId, deleteResult.getMsg());
                 }
-
-                // 从 DB 删除 (不抛出异常以防回滚)
-                deleteEntity(image);
-
-                // 书写删除日志给客户端同步
-                sysDbLogBo.logOperation(image, "DELETE", "word_image", wordImageId, "{}");
-
-                // 联动刷新词书版本
-                dictBo.updateDictsUpdateTimeByWord(image.getWord().getId());
             } else {
                 log.info("✅ 图片审核通过: imageId={}, word={}", wordImageId, spell);
                 image.setStatus(STATUS_APPROVED);
@@ -248,12 +249,44 @@ public class WordImageBo extends BaseBo<WordImage> {
         dictBo.updateDictsUpdateTimeByWord(wordId);
 
         // 删除图片文件
-        File imageFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + image.getImageFile());
+        String imageFileName = image.getImageFile();
+        File imageFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + imageFileName);
         if (!imageFile.delete()) {
             imageFile.deleteOnExit();
         }
 
+        // 源站删了文件不等于客户端取不到图：客户端取图走 CDN，CDN 上的旧副本必须主动刷新
+        refreshImageCdn(imageFileName);
+
         return new Result<>(true, null, null);
+    }
+
+    /**
+     * 刷新一张配图在 CDN 上的缓存。
+     *
+     * 客户端按 {@code imgBaseUrl + word/文件名} 取图，走的是 CDN；只删源站磁盘文件时，
+     * CDN 上仍缓存着旧副本（实测可留 29 天），用户手里只要还有这张图的记录就照样能显示。
+     * 所以删除配图必须按客户端实际请求的地址主动刷新。
+     *
+     * 刷新失败不回滚本次删除（图片记录与物理文件已删），但必须留下错误日志暴露出来。
+     */
+    private void refreshImageCdn(String imageFileName) {
+        String url;
+        try {
+            URI base = new URI(cdnProperties.getImageBaseUrl());
+            // 文件名可能含空格、感叹号、逗号等（实测 4748 个文件名带空格），
+            // 必须按 URI 规则转义，才能和客户端 Uri.encodeFull 请求的地址一致
+            url = new URI(base.getScheme(), base.getAuthority(), base.getPath() + "word/" + imageFileName, null)
+                    .toASCIIString();
+        } catch (URISyntaxException e) {
+            log.error("配图 CDN 地址配置非法，无法刷新缓存: base={}, imageFile={}", cdnProperties.getImageBaseUrl(),
+                    imageFileName, e);
+            return;
+        }
+        String result = cdnUtil.refreshUrl(url);
+        if (!"OK".equals(result)) {
+            log.error("配图 CDN 缓存刷新失败: url={}, result={}", url, result);
+        }
     }
     
     public void deleteAllImagesOfWord(String wordId, User user) {
