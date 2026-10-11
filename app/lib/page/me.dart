@@ -1912,6 +1912,26 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             },
                           ),
                           _buildMenuTile(
+                            icon: Icons.fullscreen_rounded,
+                            iconColor: const Color(0xFF8B5CF6),
+                            title: '全屏模式',
+                            trailing: ValueListenableBuilder<bool>(
+                              valueListenable: Prefs.fullScreenNotifier,
+                              builder: (context, isFullScreen, _) {
+                                return Transform.scale(
+                                  scale: 0.82,
+                                  alignment: Alignment.centerRight,
+                                  child: Switch.adaptive(
+                                    value: isFullScreen,
+                                    activeTrackColor: context.primaryColor,
+                                    onChanged: (val) => Prefs.setFullScreen(val),
+                                  ),
+                                );
+                              },
+                            ),
+                            onTap: () => Prefs.toggleFullScreen(),
+                          ),
+                          _buildMenuTile(
                             icon: Icons.graphic_eq_rounded,
                             iconColor: const Color(0xFF14B8A6),
                             title: '发音口音',

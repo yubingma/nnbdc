@@ -206,6 +206,8 @@ class WalkmanPageState extends State<WalkmanPage> {
   @override
   void initState() {
     super.initState();
+    // 随身听页面始终保持沉浸全屏模式，不受全局设置影响
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
@@ -570,8 +572,8 @@ class WalkmanPageState extends State<WalkmanPage> {
       saveCurrentPosition(currWordIndex, currentWord);
     }
 
-    // 退出全屏并恢复默认方向设置
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    // 退出随身听，恢复外部界面的系统 UI 显示模式（如全局未开启全屏则恢复常规状态栏）
+    Prefs.applyFullScreenMode();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
@@ -1948,8 +1950,8 @@ class WalkmanPageState extends State<WalkmanPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 全屏
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+    // 随身听始终独享沉浸全屏
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     return AppScaffold(
       vibrancy: PageVibrancy.walkman,

@@ -501,6 +501,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         // 应用恢复时，重新连接必要的服务
         Global.logger.d('应用恢复前台，触发数据库同步');
         ThrottledDbSyncService().requestSync();
+        if (Prefs.isFullScreen) {
+          Prefs.applyFullScreenMode();
+        }
         break;
       case AppLifecycleState.detached:
         // 应用即将关闭时，确保资源清理

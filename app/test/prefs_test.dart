@@ -51,5 +51,33 @@ void main() {
       expect(Prefs.read<double>('double_key'), 3.14);
       expect(Prefs.read<bool>('bool_key'), true);
     });
+
+    test('全屏模式偏好读写、翻转与通知器测试', () async {
+      SharedPreferences.setMockInitialValues({});
+      await Prefs.init();
+
+      // 默认全屏为 false
+      expect(Prefs.isFullScreen, isFalse);
+      expect(Prefs.fullScreenNotifier.value, isFalse);
+
+      // 设置为 true
+      await Prefs.setFullScreen(true);
+      expect(Prefs.isFullScreen, isTrue);
+      expect(Prefs.fullScreenNotifier.value, isTrue);
+
+      // 快速翻转为 false
+      final toggled = await Prefs.toggleFullScreen();
+      expect(toggled, isFalse);
+      expect(Prefs.isFullScreen, isFalse);
+      expect(Prefs.fullScreenNotifier.value, isFalse);
+
+      // 模拟再次启动时恢复持久化状态为 true
+      SharedPreferences.setMockInitialValues({
+        Prefs.fullScreenModePref: true,
+      });
+      await Prefs.init();
+      expect(Prefs.isFullScreen, isTrue);
+      expect(Prefs.fullScreenNotifier.value, isTrue);
+    });
   });
 }

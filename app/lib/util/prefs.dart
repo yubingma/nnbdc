@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
@@ -12,7 +13,9 @@ class Prefs {
     _prefs = await SharedPreferences.getInstance();
     pronunciationAccentNotifier.value = pronunciationAccent;
     hiddenBottomNavKeysNotifier.value = hiddenBottomNavKeys;
+    fullScreenNotifier.value = isFullScreen;
     await _migrateFromGetStorage();
+    await applyFullScreenMode();
   }
 
   /// 一次性迁移逻辑：从 GetStorage.gs 文件读取旧数据并存入 SharedPreferences
@@ -151,5 +154,46 @@ class Prefs {
     final ok = await write(hiddenBottomNavKeysPref, keys);
     hiddenBottomNavKeysNotifier.value = List<String>.unmodifiable(keys);
     return ok;
+  }
+
+  /// 全屏模式偏好键
+  static const String fullScreenModePref = 'full_screen_mode';
+
+  /// 全屏模式响应式通知器
+  static final ValueNotifier<bool> fullScreenNotifier =
+      ValueNotifier<bool>(isFullScreen);
+
+  /// 读取全屏模式偏好，默认关闭 (false)
+  static bool get isFullScreen => read<bool>(fullScreenModePref) ?? false;
+
+  /// 设置全屏模式偏好并立即应用
+  static Future<bool> setFullScreen(bool enabled) async {
+    final ok = await write(fullScreenModePref, enabled);
+    if (fullScreenNotifier.value != enabled) {
+      fullScreenNotifier.value = enabled;
+    }
+    await applyFullScreenMode(enabled);
+    return ok;
+  }
+
+  /// 快速切换全屏模式
+  static Future<bool> toggleFullScreen() async {
+    final next = !isFullScreen;
+    await setFullScreen(next);
+    return next;
+  }
+
+  /// 应用全屏状态到系统 UI（方案 A：沉浸式粘性全屏 SystemUiMode.immersiveSticky）
+  static Future<void> applyFullScreenMode([bool? enabled]) async {
+    final isFull = enabled ?? isFullScreen;
+    try {
+      if (isFull) {
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      } else {
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      }
+    } catch (e) {
+      Global.logger.w('应用全屏模式失败: $e');
+    }
   }
 }
