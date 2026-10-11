@@ -44,6 +44,9 @@ class FakeBookMarkProvider implements BookMarkProvider {
   FakeBookMarkProvider([this._bookMark]);
 
   @override
+  String? get bookMarkName => null;
+
+  @override
   Future<BookMarkVo?> getBookMark() async => _bookMark;
 
   @override

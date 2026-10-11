@@ -1,3 +1,4 @@
+import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/sort_alg.dart';
@@ -12,7 +13,8 @@ import 'package:nnbdc/util/word_util.dart';
 /// 同根词词表：聚合用户**学习词书范围**内共享同一词根/词缀（cigen）的单词，
 /// 按词根分族展示（每族 ≥2 个词，一词多根只归属优先级最高的词根）。
 /// 词表内每组由「组头（词根 + 分类 + 含义 + 词数）」与族内单词共用同一组号，
-/// 复用词表页既有的分组卡片渲染。纯浏览视图：不落库、不产生 DbLog、不触发同步。
+/// 复用词表页既有的分组卡片渲染。纯浏览视图：词表内容不落库，
+/// 浏览位置作为书签保留（与形近词一致），退出后可恢复、随身听可据此续播。
 class RootFamilyWordsProvider with WordsProvider {
   /// 注意：不要缓存 `MyDatabase.instance`。
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
@@ -275,18 +277,39 @@ class RootFamilyWordsProgressProvider implements WordProgressProvider {
   }
 }
 
-/// 同根词书签：只保存在内存中（不写 book_marks 表、不产生 DbLog、不触发同步），
-/// 会话内返回词表可恢复到上次位置，退出后不保留——与"纯浏览虚拟词表"语义一致。
+/// 同根词书签：与形近词一样落库（book_marks 表），浏览位置跨会话保留，
+/// 随身听也能据此认出「上次听的是同根词」并续播。
 class RootFamilyWordsBookMarkProvider implements BookMarkProvider {
-  BookMarkVo? _bookMark;
+  @override
+  String get bookMarkName => 'root_family_words_list';
 
   @override
-  Future<BookMarkVo?> getBookMark() async => _bookMark;
+  Future<BookMarkVo?> getBookMark() async {
+    final result = await BookmarkBo().getBookMark(bookMarkName);
+    return result.data;
+  }
 
   @override
   Future<bool> saveBookMark(BookMarkVo bookMark) async {
-    _bookMark = bookMark;
-    return true;
+    try {
+      final userId = Global.getLoggedInUser()?.id;
+      if (userId == null) {
+        Global.logger.e('保存同根词书签失败：用户未登录');
+        return false;
+      }
+
+      final result = await BookmarkBo().saveBookMark(
+        bookMarkName,
+        bookMark.spell,
+        bookMark.position,
+        userId,
+        sortAlg: bookMark.sortAlg,
+      );
+      return result.success;
+    } catch (e) {
+      Global.logger.e('保存同根词书签异常: $e');
+      return false;
+    }
   }
 }
 

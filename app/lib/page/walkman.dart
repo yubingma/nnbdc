@@ -27,7 +27,7 @@ import '../util/tts.dart';
 import '../util/prefs.dart';
 import '../widget/app_scaffold.dart';
 import '../widget/theme_select_dialog.dart';
-import 'index.dart';
+import 'walkman_launcher.dart';
 
 /// 随身听自然沉浸场景（动态微动态背景 + 原版高保真环境白噪音）
 enum WalkmanScene {
@@ -139,7 +139,8 @@ class WalkmanPageState extends State<WalkmanPage> {
 
   Timer? playWordTimer;
   bool dataLoaded = false;
-  WalkmanParams? params; // 改为可空类型，在checkArgs中验证
+  /// 这次要听的数据源：由词表页面上下文传入，或按续播规则自己决定（见 loadData）
+  WalkmanParams? params;
   String bookMarkSortAlg = WordSortAlg.original.code; // 词表当前排序，推进书签时原样沿用
   final Map<int, WordWrapper> _wordCache = {};
   final Set<int> _loadingPages = {};
@@ -188,20 +189,6 @@ class WalkmanPageState extends State<WalkmanPage> {
 
   bool get _isPresetAmbientVolume =>
       [0.35, 0.65, 1.0].any((vol) => (ambientVolume - vol).abs() < 0.04);
-
-  Future<bool> checkArgs() async {
-    final extra = GoRouterState.of(context).extra;
-    if (extra == null) {
-      Future.delayed(Duration.zero, () {
-        // 延迟到下一个tick执行，避免导航冲突
-        if (!mounted) return;
-        context.push('/index', extra: IndexPageArgs(4));
-      });
-      return false;
-    }
-    params = extra as WalkmanParams?;
-    return true;
-  }
 
   @override
   void initState() {
@@ -493,21 +480,18 @@ class WalkmanPageState extends State<WalkmanPage> {
     try {
       // 沿用词表当前的排序：随身听只推进位置，不能把词表排序改回默认
       await params!.bookMarkProvider!.saveBookMark(BookMarkVo(index, word.word.spell, bookMarkSortAlg));
+      // 记下这次收听的数据源，下次独立打开随身听时从它续播
+      await WalkmanLauncher.remember(params!.bookMarkProvider!.bookMarkName);
     } catch (e) {
       Global.logger.w('保存随身听当前位置失败: $e');
     }
   }
 
   Future<void> loadData() async {
-    if (!await checkArgs()) {
-      return;
-    }
+    // 有词表页面上下文就用它；否则（独立启动、调试入口）按续播规则自己决定听什么
+    final extra = GoRouterState.of(context).extra;
+    params = extra is WalkmanParams ? extra : await WalkmanLauncher.resolveParams();
     await loadConfig();
-    // 确保params已初始化
-    if (params == null) {
-      Global.logger.e('Walkman: params为空，无法加载数据');
-      return;
-    }
 
     // 确定起始位置，并记住词表当前的排序（推进书签时要沿用，否则会把词表排序改回默认）
     int startPos = 0;

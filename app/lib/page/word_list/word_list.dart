@@ -181,6 +181,12 @@ abstract class WordProgressProvider {
 }
 
 abstract class BookMarkProvider {
+  /// 该书签的名字：既是书签行的唯一标识，也是随身听识别「上次收听的数据源」的依据。
+  ///
+  /// 返回 null 表示该数据源的书签不持久化（如内存书签、随批次动态变化的书签），
+  /// 随身听无法据此续播，只能回落今日任务。
+  String? get bookMarkName;
+
   Future<BookMarkVo?> getBookMark();
 
   Future<bool> saveBookMark(BookMarkVo bookMark);
@@ -2894,28 +2900,7 @@ class WordListPageState extends State<WordListPage>
         });
         break;
         case menuWalkman:
-        if (studyMode ==
-        WordListStudyMode.speakChinese ||
-        studyMode ==
-        WordListStudyMode.speakEnglish) {
-        asr.stopMicrophone();
-        asr.reset();
-        }
-        if (!context.mounted) return;
-        int? initialIndex;
-        if (controller.bookMark != null) {
-        initialIndex = controller.bookMark!.position;
-        }
-        context.push('/walkman',
-        extra:
-        WalkmanParams(args.wordsProvider,
-        bookMarkProvider: args.bookMarkProvider,
-        initialWordIndex: initialIndex)).then((_) {
-        // 随身听播放中会把书签一路推进，返回词表时同步到它停留的位置
-        _syncBookMarkAfterWalkman();
-        });
-
-
+        _openWalkman();
         break;
         case menuAiStory:
         _generateAiStory();
@@ -2942,6 +2927,27 @@ class WordListPageState extends State<WordListPage>
           });
         }
       }
+    });
+  }
+
+  /// 打开随身听：沿用当前词表的数据源与书签位置
+  void _openWalkman() {
+    if (studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish) {
+      asr.stopMicrophone();
+      asr.reset();
+    }
+    if (!context.mounted) return;
+    int? initialIndex;
+    if (controller.bookMark != null) {
+      initialIndex = controller.bookMark!.position;
+    }
+    context.push('/walkman',
+        extra: WalkmanParams(args.wordsProvider,
+            bookMarkProvider: args.bookMarkProvider,
+            initialWordIndex: initialIndex)).then((_) {
+      // 随身听播放中会把书签一路推进，返回词表时同步到它停留的位置
+      _syncBookMarkAfterWalkman();
     });
   }
 
@@ -3477,6 +3483,15 @@ class WordListPageState extends State<WordListPage>
                         ),
                         onPressed: _showAddWordDialog,
                       ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.headphones_rounded,
+                        size: 22,
+                        color: themeConfig.textPrimary,
+                      ),
+                      tooltip: '随身听',
+                      onPressed: _openWalkman,
+                    ),
                     IconButton(
                       key: _menuKey,
                       icon: Icon(

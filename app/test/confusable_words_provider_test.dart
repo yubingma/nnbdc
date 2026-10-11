@@ -398,7 +398,7 @@ void main() {
       // 确认写入了 bookMarks 表且 bookMarkName 正确
       final rows = await (db.select(db.bookMarks)).get();
       expect(rows.length, 1);
-      expect(rows.first.bookMarkName, ConfusableWordsBookMarkProvider.bookMarkName);
+      expect(rows.first.bookMarkName, ConfusableWordsBookMarkProvider().bookMarkName);
       expect(rows.first.position, 48);
       expect(rows.first.spell, 'oak');
       expect(rows.first.id.length, 32); // 规范标准的 32 位 UUID

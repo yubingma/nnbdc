@@ -26,6 +26,9 @@ class _NoWordProvider with WordsProvider {
 
 class _NoBookMarkProvider implements BookMarkProvider {
   @override
+  String? get bookMarkName => null;
+
+  @override
   Future<BookMarkVo?> getBookMark() async => null;
 
   @override

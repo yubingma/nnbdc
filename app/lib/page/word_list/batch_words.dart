@@ -121,6 +121,10 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
 
   StageWordsBookMarkProvider({this.batchId, this.batchStartIndex});
 
+  /// 书签名随当前批次异步算出，且批次本身是学习过程中的临时分组，随身听不据此续播
+  @override
+  String? get bookMarkName => null;
+
   Future<String> _getBookMarkName() async {
     int? finalBatchId = batchId;
     int? finalStartIndex = batchStartIndex;

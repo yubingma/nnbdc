@@ -125,7 +125,8 @@ class MasteredWordsProgressProvider implements WordProgressProvider {
 }
 
 class MasteredWordsBookMarkProvider implements BookMarkProvider {
-  static const String bookMarkName = 'mastered_words_list';
+  @override
+  String get bookMarkName => 'mastered_words_list';
 
   @override
   Future<BookMarkVo?> getBookMark() async {

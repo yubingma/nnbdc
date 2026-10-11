@@ -35,6 +35,9 @@ class MockBookMarkProvider implements BookMarkProvider {
   BookMarkVo? _bookMark;
   MockBookMarkProvider([this._bookMark]);
 
+  @override
+  String? get bookMarkName => 'mock_words_list';
+
   /// 当前已保存的书签（供测试断言）
   BookMarkVo? get saved => _bookMark;
 

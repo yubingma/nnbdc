@@ -229,7 +229,8 @@ class ConfusableWordsProgressProvider implements WordProgressProvider {
 }
 
 class ConfusableWordsBookMarkProvider implements BookMarkProvider {
-  static const String bookMarkName = 'confusable_words_list';
+  @override
+  String get bookMarkName => 'confusable_words_list';
 
   @override
   Future<BookMarkVo?> getBookMark() async {

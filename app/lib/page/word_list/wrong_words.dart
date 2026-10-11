@@ -94,6 +94,7 @@ class WrongWordsBookMarkProvider implements BookMarkProvider {
 
   WrongWordsBookMarkProvider({this.isHistory = false});
 
+  @override
   String get bookMarkName => isHistory ? 'history_wrong_words_list' : 'wrong_words_list';
 
   @override

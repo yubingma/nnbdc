@@ -12,7 +12,7 @@ import 'package:nnbdc/util/word_util.dart';
 import 'package:toastification/toastification.dart';
 
 /// 同根词词表 Provider 测试：组头行 + 族内词组装、组号连续性、切片、
-/// 有效成员不足时整族跳过、只读语义与内存书签。
+/// 有效成员不足时整族跳过、只读语义与书签落库。
 void main() {
   late MyDatabase db;
   final now = AppClock.now();
@@ -349,7 +349,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    test('书签为内存态：保存后可读回，不写数据库', () async {
+    test('书签落库：保存后可读回，且写入 book_marks 表', () async {
       final provider = RootFamilyWordsBookMarkProvider();
       expect(await provider.getBookMark(), isNull);
 
@@ -359,8 +359,10 @@ void main() {
       final loaded = await provider.getBookMark();
       expect(loaded!.position, 3);
       expect(loaded.spell, 'respect');
-      // 未落库：book_marks 表为空
-      expect(await db.select(db.bookMarks).get(), isEmpty);
+      // 落库：与形近词一致，浏览位置跨会话保留，随身听据此认出「上次听的是同根词」
+      final rows = await db.select(db.bookMarks).get();
+      expect(rows.length, 1);
+      expect(rows.first.bookMarkName, provider.bookMarkName);
     });
   });
 }

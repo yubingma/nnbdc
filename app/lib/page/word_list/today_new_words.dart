@@ -74,7 +74,8 @@ class TodayNewWordsProgressProvider implements WordProgressProvider {
 }
 
 class TodayNewWordsBookMarkProvider implements BookMarkProvider {
-  static const String bookMarkName = 'today_new_words_list';
+  @override
+  String get bookMarkName => 'today_new_words_list';
 
   @override
   Future<BookMarkVo?> getBookMark() async {

@@ -104,7 +104,8 @@ class LearningWordsProgressProvider implements WordProgressProvider {
 }
 
 class LearningWordsBookMarkProvider implements BookMarkProvider {
-  static const String bookMarkName = 'learning_words_list';
+  @override
+  String get bookMarkName => 'learning_words_list';
 
   /// 注意：不要缓存 `MyDatabase.instance`。
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，

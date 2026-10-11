@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/model/nav_tab_config.dart';
+import 'package:nnbdc/page/walkman_launcher.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/frosted_glass_card.dart';
@@ -95,104 +96,48 @@ class StashedNavMenuDialog {
                       ),
                       const SizedBox(height: 12),
 
-                      // 被收纳的功能列表
-                      if (stashedTabs.isEmpty)
+                      // 快捷功能：不常驻底栏，但值得一步直达
+                      _buildQuickAction(
+                        context,
+                        isDarkMode: isDarkMode,
+                        icon: Icons.headphones_rounded,
+                        title: '随身听',
+                        subtitle: '不用看屏幕，随时接着听',
+                        onTap: () {
+                          Navigator.pop(dialogCtx);
+                          HapticFeedback.lightImpact();
+                          WalkmanLauncher.open(context);
+                        },
+                      ),
+
+                      // 被用户移出底栏的导航按钮
+                      if (stashedTabs.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline_rounded,
-                                size: 32,
-                                color: Theme.of(context).primaryColor.withValues(alpha: 0.6),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '所有功能已在底栏常驻',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
-                            ],
+                          padding: const EdgeInsets.only(top: 6, bottom: 6),
+                          child: Text(
+                            '已移出底栏',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              fontFamily: 'NotoSansSC',
+                            ),
                           ),
-                        )
-                      else
+                        ),
+                      if (stashedTabs.isNotEmpty)
                         ...stashedTabs.map((tab) {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(14),
-                                onTap: () {
-                                  Navigator.pop(dialogCtx);
-                                  HapticFeedback.lightImpact();
-                                  context.push(tab.routePath);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                                  decoration: BoxDecoration(
-                                    color: isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.05)
-                                        : const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: isDarkMode
-                                          ? Colors.white.withValues(alpha: 0.06)
-                                          : const Color(0xFFE2E8F0),
-                                      width: 0.6,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(7),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.12),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          tab.icon,
-                                          size: 18,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              tab.label,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                                                fontFamily: 'NotoSansSC',
-                                              ),
-                                            ),
-                                            Text(
-                                              tab.description,
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                                fontFamily: 'NotoSansSC',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.chevron_right_rounded,
-                                        size: 18,
-                                        color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                            child: _buildQuickAction(
+                              context,
+                              isDarkMode: isDarkMode,
+                              icon: tab.icon,
+                              title: tab.label,
+                              subtitle: tab.description,
+                              onTap: () {
+                                Navigator.pop(dialogCtx);
+                                HapticFeedback.lightImpact();
+                                context.push(tab.routePath);
+                              },
                             ),
                           );
                         }),
@@ -243,6 +188,82 @@ class StashedNavMenuDialog {
           ),
         );
       },
+    );
+  }
+
+  /// 收纳菜单里的一个功能条目：圆形图标 + 标题/副标题 + 右箭头
+  static Widget _buildQuickAction(
+    BuildContext context, {
+    required bool isDarkMode,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final primaryColor = Theme.of(context).primaryColor;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.05)
+                : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : const Color(0xFFE2E8F0),
+              width: 0.6,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 18, color: primaryColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                        fontFamily: 'NotoSansSC',
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        fontFamily: 'NotoSansSC',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

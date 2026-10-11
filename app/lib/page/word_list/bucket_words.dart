@@ -85,11 +85,16 @@ class BucketWordsProgressProvider implements WordProgressProvider {
 
 class BucketWordsBookMarkProvider implements BookMarkProvider {
   final int bucketKey;
-  late final String bookMarkName;
 
-  BucketWordsBookMarkProvider(this.bucketKey) {
-    bookMarkName = 'bucket_words_list_$bucketKey';
-  }
+  /// 书签名前缀：随身听据此认出「上次收听的是一个生词本桶」，并反解出桶号
+  static const String namePrefix = 'bucket_words_list_';
+
+  static String nameFor(int bucketKey) => '$namePrefix$bucketKey';
+
+  BucketWordsBookMarkProvider(this.bucketKey);
+
+  @override
+  String get bookMarkName => nameFor(bucketKey);
 
   @override
   Future<BookMarkVo?> getBookMark() async {

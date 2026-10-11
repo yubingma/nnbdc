@@ -306,16 +306,22 @@ class DictWordsProgressProvider implements WordProgressProvider {
 
 class DictWordsBookMarkProvider implements BookMarkProvider {
   DictVo dict;
-  late final String bookMarkName;
+
+  /// 书签名前后缀：随身听据此认出「上次收听的是某本词书」，并反解出词书 id
+  static const String namePrefix = 'dict_';
+  static const String nameSuffix = '_words_list';
+
+  static String nameFor(String dictId) => namePrefix + dictId + nameSuffix;
 
   /// 注意：不要缓存 `MyDatabase.instance`。
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
   /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
   MyDatabase get _db => MyDatabase.instance;
 
-  DictWordsBookMarkProvider(this.dict) {
-    bookMarkName = 'dict_${dict.id}_words_list';
-  }
+  DictWordsBookMarkProvider(this.dict);
+
+  @override
+  String get bookMarkName => nameFor(dict.id);
 
   @override
   Future<BookMarkVo?> getBookMark() async {
