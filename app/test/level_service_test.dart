@@ -28,7 +28,7 @@ void main() {
 
   group('判定结果(不含 UI)', () {
     test('跨段返回 promotion', () async {
-      // 毛毛虫(0-7) -> 蜗牛(8-19)
+      // 小蜜蜂(0-7) -> 蜗牛(8-19)
       final advance = await LevelService().checkProgress(oldWordCount: 7, newWordCount: 8);
 
       expect(advance, isNotNull);

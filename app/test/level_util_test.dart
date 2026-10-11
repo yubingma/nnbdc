@@ -14,8 +14,8 @@ void main() {
     });
 
     test('按词数定位段位', () {
-      expect(LevelUtil.getLevelByWordCount(0).name, '毛毛虫');
-      expect(LevelUtil.getLevelByWordCount(7).name, '毛毛虫');
+      expect(LevelUtil.getLevelByWordCount(0).name, '小蜜蜂');
+      expect(LevelUtil.getLevelByWordCount(7).name, '小蜜蜂');
       expect(LevelUtil.getLevelByWordCount(8).name, '蜗牛');
       expect(LevelUtil.getLevelByWordCount(120).name, '乌龟');
       expect(LevelUtil.getLevelByWordCount(9999).name, '蓝鲸');
