@@ -1752,20 +1752,22 @@ public class UserDbSyncBo {
         boolean needsFullSync = false;
         if (fromVersion == 0) {
             needsFullSync = true;
-        } else if (!hasVersionLogs(userId, fromVersion + 1)) {
-            // 连下一条日志都找不到，必然需要全量同步（可能是日志断档或被清理）
-            needsFullSync = true;
-        } else {
-            // 检查下一条日志的时间是否过旧
-            Date firstLogTime = getFirstLogTimeAfterVersion(userId, fromVersion);
-            Date tenDaysAgo = new Date(System.currentTimeMillis() - 10L * 24 * 60 * 60 * 1000);
-            if (firstLogTime != null && firstLogTime.before(tenDaysAgo)) {
+        } else if (fromVersion < userDbVersion) {
+            if (!hasVersionLogs(userId, fromVersion + 1)) {
+                // 连下一条日志都找不到，必然需要全量同步（可能是日志断档或被清理）
                 needsFullSync = true;
             } else {
-                // 日志没过旧，最后才检查条数，避免无条件执行耗时查询
-                // 由于实施了 SQL Compaction，2000 条原始记录合并后压力很小
-                if (getIncrementalLogCount(userId, fromVersion) > 2000) {
+                // 检查下一条日志的时间是否过旧
+                Date firstLogTime = getFirstLogTimeAfterVersion(userId, fromVersion);
+                Date tenDaysAgo = new Date(System.currentTimeMillis() - 10L * 24 * 60 * 60 * 1000);
+                if (firstLogTime != null && firstLogTime.before(tenDaysAgo)) {
                     needsFullSync = true;
+                } else {
+                    // 日志没过旧，最后才检查条数，避免无条件执行耗时查询
+                    // 由于实施了 SQL Compaction，2000 条原始记录合并后压力很小
+                    if (getIncrementalLogCount(userId, fromVersion) > 2000) {
+                        needsFullSync = true;
+                    }
                 }
             }
         }
@@ -1820,30 +1822,35 @@ public class UserDbSyncBo {
 
             return logs;
         } else { // 增量同步 (SQL 层面进行 Compaction 优化，防止 N+1 子查询导致的大数据量超时)
-            String sql = "SELECT s.* FROM user_db_log s " +
-                    "INNER JOIN ( " +
-                    "  SELECT tbl_name, record_id, MAX(version) as last_v " +
-                    "  FROM user_db_log " +
-                    "  WHERE user_id = :userId AND version > :fromVersion " +
-                    "  GROUP BY tbl_name, record_id " +
-                    ") m ON s.user_id = :userId AND s.tbl_name = m.tbl_name AND s.record_id = m.record_id AND s.version = m.last_v " +
-                    "ORDER BY s.version ASC";
-            MapSqlParameterSource params = new MapSqlParameterSource();
-            params.addValue("userId", userId);
-            params.addValue("fromVersion", fromVersion);
-            List<UserDbLogDto> logs = new ArrayList<>(namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
-                UserDbLogDto log = new UserDbLogDto();
-                log.setId(rs.getString("id"));
-                log.setUserId(rs.getString("user_id"));
-                log.setVersion(rs.getInt("version"));
-                log.setOperate(rs.getString("operate"));
-                log.setTblName(rs.getString("tbl_name"));
-                log.setRecordId(rs.getString("record_id"));
-                log.setRecord(rs.getString("record"));
-                log.setCreateTime(rs.getTimestamp("create_time"));
-                log.setUpdateTime(rs.getTimestamp("update_time"));
-                return log;
-            }));
+            List<UserDbLogDto> logs;
+            if (fromVersion < userDbVersion) {
+                String sql = "SELECT s.* FROM user_db_log s " +
+                        "INNER JOIN ( " +
+                        "  SELECT tbl_name, record_id, MAX(version) as last_v " +
+                        "  FROM user_db_log " +
+                        "  WHERE user_id = :userId AND version > :fromVersion " +
+                        "  GROUP BY tbl_name, record_id " +
+                        ") m ON s.user_id = :userId AND s.tbl_name = m.tbl_name AND s.record_id = m.record_id AND s.version = m.last_v " +
+                        "ORDER BY s.version ASC";
+                MapSqlParameterSource params = new MapSqlParameterSource();
+                params.addValue("userId", userId);
+                params.addValue("fromVersion", fromVersion);
+                logs = new ArrayList<>(namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+                    UserDbLogDto log = new UserDbLogDto();
+                    log.setId(rs.getString("id"));
+                    log.setUserId(rs.getString("user_id"));
+                    log.setVersion(rs.getInt("version"));
+                    log.setOperate(rs.getString("operate"));
+                    log.setTblName(rs.getString("tbl_name"));
+                    log.setRecordId(rs.getString("record_id"));
+                    log.setRecord(rs.getString("record"));
+                    log.setCreateTime(rs.getTimestamp("create_time"));
+                    log.setUpdateTime(rs.getTimestamp("update_time"));
+                    return log;
+                }));
+            } else {
+                logs = new ArrayList<>();
+            }
 
             // 客户端点名要补的表：补下发它们的全量（升级后补回此前整表被跳过的数据）
             if (missingTables != null && !missingTables.isEmpty()) {

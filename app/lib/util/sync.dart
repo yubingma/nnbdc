@@ -23,6 +23,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/pca_projection_service.dart';
 import 'package:nnbdc/util/study_consistency_checker.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/util/prefs.dart';
 
 export 'package:nnbdc/util/sys_db_sync.dart' show syncSysDb;
 
@@ -1099,7 +1100,7 @@ Future<void> repairInvalidBookMarkNames(String userId) async {
 /// 升级后本地这张表是空的，于是点名让服务端把这批历史数据补发一次。
 /// 只列服务端 UserDbSyncBo.generateUserTableLogs 覆盖、且本地空缺有意义的小表；
 /// users/dict/dict_word/meaning_item 要么本地必然有数据、要么跟着词书下载走，不在此列。
-Future<List<String>> findMissingUserTables() async {
+Future<List<String>> findMissingUserTables([String? userId]) async {
   final db = MyDatabase.instance;
   final backfillableTables = <String, TableInfo>{
     'user_badge': db.userBadges,
@@ -1114,8 +1115,15 @@ Future<List<String>> findMissingUserTables() async {
     'learning_word': db.learningWords,
     'daka': db.dakas,
   };
+
+  // 如果指定了 userId，过滤掉该用户已探测/已补拉过的表，避免对用户在服务端本来就为 0 条的空表无休止重复索要
+  final probed = userId != null
+      ? (Prefs.getStringList('probed_missing_user_tables_$userId') ?? const <String>[]).toSet()
+      : const <String>{};
+
   final missing = <String>[];
   for (final entry in backfillableTables.entries) {
+    if (probed.contains(entry.key)) continue;
     final any = await (db.select(entry.value)..limit(1)).getSingleOrNull();
     if (any == null) missing.add(entry.key);
   }
@@ -1165,7 +1173,7 @@ Future<void> syncUserDb(String userId) async {
 
     // 本地为空、且服务端能整表补发的用户表：升级后把此前因不认识而整表跳过的数据补回来。
     // 全量同步（本地版本号为 0）本来就带所有表，不需要点名补拉。
-    final missingTables = localDbVersion > 0 ? await findMissingUserTables() : <String>[];
+    final missingTables = localDbVersion > 0 ? await findMissingUserTables(userId) : <String>[];
     if (missingTables.isNotEmpty) {
       Global.logger.w("⚠️ 用户数据本地缺少这些表: $missingTables，向服务端按需补拉");
     }
@@ -1200,6 +1208,13 @@ Future<void> syncUserDb(String userId) async {
 
         await doSyncUserDb(localLogs, remoteLogs, remoteDbVersion, userId);
         
+        // 记录本次已探测补拉过的表，避免后续常规同步对空表无休止重复索要
+        if (missingTables.isNotEmpty) {
+          final probed = (Prefs.getStringList('probed_missing_user_tables_$userId') ?? <String>[]).toSet();
+          probed.addAll(missingTables);
+          await Prefs.write('probed_missing_user_tables_$userId', probed.toList());
+        }
+
         // 动态推导并纠正打卡天数统计，防止多端数据冲突
         try {
           await UserBo().updateAndSyncUserDakaStats(userId);

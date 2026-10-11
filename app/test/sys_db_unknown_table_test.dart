@@ -7,6 +7,8 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/sync.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nnbdc/util/prefs.dart';
 
 /// 回归：老客户端遇到不认识的后端表，绝不能中断整次同步，而应只跳过这张表；
 /// 升级后（本客户端认识了这张表）又能凭「本地表为空」把当年跳过的数据点名补回来。
@@ -14,6 +16,7 @@ import 'package:nnbdc/util/utils.dart';
 /// 线上真实事故：服务端下发 word_phrase / user_pet_state 日志，老包在
 /// Util.remoteTableNameToLocal 上抛「不支持的后端表名」异常，整次同步（含用户数据）直接失败。
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('表名映射', () {
     test('不认识的后端表返回 null，而不是抛异常', () {
       expect(Util.remoteTableNameToLocal('game_hall'), isNull);
@@ -71,6 +74,17 @@ void main() {
 
       expect(await findMissingSystemTables(), isNot(contains('word_phrase')));
       expect(await findMissingUserTables(), isNot(contains('user_pet_state')));
+    });
+
+    test('对于已探测补拉过的用户表，即便本地为空也不再重复索要', () async {
+      SharedPreferences.setMockInitialValues({
+        'probed_missing_user_tables_u1': ['user_pet_state', 'user_badge'],
+      });
+      await Prefs.init();
+
+      final missing = await findMissingUserTables('u1');
+      expect(missing, isNot(contains('user_pet_state')));
+      expect(missing, isNot(contains('user_badge')));
     });
 
     test('每张支持同步的表都必须明确表态：可整表补拉，或明确不补拉', () async {
