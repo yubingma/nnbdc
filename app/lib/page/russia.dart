@@ -88,25 +88,6 @@ class FloatingText {
   });
 }
 
-/// 空气区石化死泡泡
-class DeadBubbleItem {
-  final int id;
-  final String word;
-  double x;
-  double y;
-  final double radius;
-  bool isPopping = false;
-  double popProgress = 0.0;
-
-  DeadBubbleItem({
-    required this.id,
-    required this.word,
-    required this.x,
-    required this.y,
-    this.radius = 26.0,
-  });
-}
-
 /// 弹道类型
 enum ProjectileType { needle, mine }
 
@@ -120,14 +101,12 @@ class GameProjectile {
   final double targetX;
   final double targetY;
   double progress = 0.0;
-  DeadBubbleItem? targetBubble;
 
   GameProjectile.needle({
     required this.x,
     required this.y,
     required this.targetX,
     required this.targetY,
-    this.targetBubble,
   })  : type = ProjectileType.needle,
         startX = x,
         startY = y;
@@ -213,15 +192,15 @@ class RussiaPageState extends State<RussiaPage>
   final List<BubbleItem> bubbles = [];
   final List<PopParticle> particles = [];
   final List<FloatingText> floatingTexts = [];
-  final List<DeadBubbleItem> deadBubbles = [];
   final List<GameProjectile> projectiles = [];
   final List<AmbientBubble> ambientBubbles = [];
   int nextBubbleId = 0;
+  bool hasMistakeInCurrentWord = false;
 
-  // 水面惩罚线系统
-  static const double baseWaterY = 140.0;
-  double waterSurfaceY = baseWaterY;
-  double targetWaterSurfaceY = baseWaterY;
+  // 10 格对战血条生命系统（每答错/受击一次扣 1 格，10 格耗尽战败）
+  static const int maxHp = 10;
+  int myHp = maxHp;
+  int opponentHp = maxHp;
   double wavePhase = 0.0;
 
   final Random rand = Random();
@@ -513,21 +492,18 @@ class RussiaPageState extends State<RussiaPage>
       if (fromUserId != myUserId) {
         // 对手使用了道具
         if (propsType == 0) {
-          // 对方对我发射了水雷！
-          _applyWaterPenalty(40.0);
-          HapticFeedback.heavyImpact();
-          floatingTexts.add(FloatingText(
-            x: MediaQuery.of(context).size.width * 0.5,
-            y: waterSurfaceY + 20,
-            text: '💥 对手砸来重力水雷！海面下沉 40px',
-            color: const Color(0xFFEF4444),
-          ));
+          // 对手对我发射了水雷！我方生命扣 1 格
+          _applyDamage(1, '💥 遭受对手水雷轰击！-1 HP');
         } else {
+          // 对手使用了飞针治愈自己！对手生命加 1 格
+          setState(() {
+            opponentHp = min(maxHp, opponentHp + 1);
+          });
           floatingTexts.add(FloatingText(
-            x: 80,
-            y: 90,
-            text: '对手净化了死泡！',
-            color: const Color(0xFF38BDF8),
+            x: 70,
+            y: 120,
+            text: '💖 对手治愈 +1 HP',
+            color: const Color(0xFFFBBF24),
           ));
         }
       }
@@ -633,6 +609,8 @@ class RussiaPageState extends State<RussiaPage>
       opponentScore = 0;
       myCombo = 0;
       myWordIndex = 0;
+      myHp = maxHp;
+      opponentHp = maxHp;
       attackProps = 1;
       purgeProps = 1;
       isPlaying = true;
@@ -640,13 +618,10 @@ class RussiaPageState extends State<RussiaPage>
       isShowingResult = false;
       myStarted = false;
       opponentStarted = false;
-      deadBubbles.clear();
       projectiles.clear();
       bubbles.clear();
       particles.clear();
       floatingTexts.clear();
-      waterSurfaceY = baseWaterY;
-      targetWaterSurfaceY = baseWaterY;
     });
 
     // 索取第一个单词
@@ -727,18 +702,22 @@ class RussiaPageState extends State<RussiaPage>
 
   void _spawnBubblesForRound(Size size) {
     bubbles.clear();
+    hasMistakeInCurrentWord = false;
     if (currWord == null) return;
 
     final roundOptions = [currWord!.spell, ...distractorWords.take(3)]..shuffle(rand);
-    // 采用交错错落的 X 位置，防止左右挤压
-    final slotXOffsets = [0.22, 0.72, 0.38, 0.65]..shuffle(rand);
+    // 4 个均分横向泳道，确保横向分散绝不粘连
+    final slotXOffsets = [0.18, 0.39, 0.61, 0.82]..shuffle(rand);
+    // 上升速度梯度：有快有慢，拉开层次
+    final speeds = [36.0, 44.0, 52.0, 60.0]..shuffle(rand);
 
     for (int i = 0; i < roundOptions.length && i < 4; i++) {
-      final double baseX = size.width * slotXOffsets[i] + (rand.nextDouble() - 0.5) * 16.0;
       const double radius = 47.0; // 饱满的梦幻大泡泡
+      final double baseX = size.width * slotXOffsets[i] + (rand.nextDouble() - 0.5) * 8.0;
+      // 几乎同时在屏幕底部浮现，仅保留极微小 0~10px 自然落差
+      final double startY = size.height + radius + 10.0 + rand.nextDouble() * 10.0;
       final Color color = bubbleColors[i % bubbleColors.length];
-      final double speed = 36.0 + rand.nextDouble() * 20.0;
-      final double startY = size.height + 40.0 + i * 85.0 + rand.nextDouble() * 25.0;
+      final double speed = speeds[i] + (rand.nextDouble() - 0.5) * 4.0;
 
       bubbles.add(BubbleItem(
         id: nextBubbleId++,
@@ -749,71 +728,95 @@ class RussiaPageState extends State<RussiaPage>
         baseX: baseX,
         radius: radius,
         speed: speed,
-        swingAmplitude: 7.0 + rand.nextDouble() * 5.0,
-        swingFreq: 1.1 + rand.nextDouble() * 0.6,
+        swingAmplitude: 5.0 + rand.nextDouble() * 4.0,
+        swingFreq: 1.0 + rand.nextDouble() * 0.5,
         phase: rand.nextDouble() * 2 * pi,
         baseColor: color,
       ));
     }
   }
 
-  void _updateWaterPressure(Size size) {
-    targetWaterSurfaceY = min(size.height * 0.72, baseWaterY + deadBubbles.length * 30.0);
-  }
+  void _applyDamage(int amount, [String reason = '答错 -1 HP!']) {
+    if (!isPlaying) return;
+    setState(() {
+      myHp = max(0, myHp - amount);
+      myCombo = 0;
+    });
+    HapticFeedback.heavyImpact();
+    // 向服务端上报当前堆叠行数（堆叠 10 行淘汰，即 10 - myHp）
+    sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
 
-  void _applyWaterPenalty(double delta) {
-    myCombo = 0;
-    targetWaterSurfaceY = min(MediaQuery.of(context).size.height * 0.72, targetWaterSurfaceY + delta);
-    HapticFeedback.lightImpact();
-  }
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final size = mediaQuery?.size ?? const Size(390, 844);
 
-  void _addDeadBubble(String word, Size size) {
-    myCombo = 0;
-    deadBubbles.add(DeadBubbleItem(
-      id: nextBubbleId++,
-      word: word,
-      x: size.width * 0.5,
-      y: waterSurfaceY - 30.0,
+    floatingTexts.add(FloatingText(
+      x: size.width * 0.72,
+      y: 95,
+      text: reason,
+      color: const Color(0xFFEF4444),
     ));
-    _updateWaterPressure(size);
-    sendUserCmd('REPORT_STACK_ROWS', [deadBubbles.length]);
+
+    // 血条消耗完战败
+    if (myHp <= 0) {
+      sendUserCmd('GAME_OVER', ['A']);
+    }
   }
 
   bool _firePurgeNeedle(Size size) {
-    if (deadBubbles.isEmpty) {
+    if (myHp >= maxHp) {
       floatingTexts.add(FloatingText(
-        x: size.width * 0.5,
-        y: waterSurfaceY - 20,
-        text: '水面已无死泡负担!',
+        x: size.width * 0.72,
+        y: 95,
+        text: '生命值已满格！',
         color: const Color(0xFF38BDF8),
       ));
       return false;
     }
-    final target = deadBubbles.first;
-    projectiles.add(GameProjectile.needle(
-      x: target.x,
-      y: size.height - 120,
-      targetX: target.x,
-      targetY: target.y,
-      targetBubble: target,
-    ));
+    setState(() {
+      purgeProps = max(0, purgeProps - 1);
+      myHp = min(maxHp, myHp + 1);
+    });
+    sendUserCmd('USE_PROPS', [1]);
+    sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
     HapticFeedback.mediumImpact();
+
+    // 治愈光针弹道（直奔我方顶部血条）
+    projectiles.add(GameProjectile.needle(
+      x: size.width * 0.75,
+      y: size.height - 120,
+      targetX: size.width * 0.75,
+      targetY: 80,
+    ));
+
+    floatingTexts.add(FloatingText(
+      x: size.width * 0.72,
+      y: 95,
+      text: '💖 飞针治愈 +1 HP!',
+      color: const Color(0xFF34D399),
+    ));
     return true;
   }
 
   void _fireAttackMine(Size size) {
+    setState(() {
+      attackProps = max(0, attackProps - 1);
+      opponentHp = max(0, opponentHp - 1);
+    });
+    sendUserCmd('USE_PROPS', [0]);
+    HapticFeedback.heavyImpact();
+
+    // 弧线水雷弹道（轰击对手顶部血条区）
     projectiles.add(GameProjectile.mine(
       startX: size.width * 0.5,
       startY: size.height - 120,
-      targetX: 52,
-      targetY: 52,
+      targetX: size.width * 0.25,
+      targetY: 80,
     ));
-    sendUserCmd('USE_PROPS', [0]);
-    HapticFeedback.heavyImpact();
+
     floatingTexts.add(FloatingText(
-      x: size.width * 0.5,
-      y: size.height - 160,
-      text: '🚀 水雷出膛 轰击对手!',
+      x: size.width * 0.28,
+      y: 95,
+      text: '🚀 水雷轰击 对手 -1 HP!',
       color: const Color(0xFFF87171),
     ));
   }
@@ -844,20 +847,11 @@ class RussiaPageState extends State<RussiaPage>
       return;
     }
 
-    // 1. 水面波浪与平滑下沉
-    waterSurfaceY += (targetWaterSurfaceY - waterSurfaceY) * min(1.0, dt * 6.0);
-
-    // 触底死亡线判定
-    if (waterSurfaceY >= size.height * 0.74) {
-      sendUserCmd('GAME_OVER', ['A']);
-      return;
-    }
-
     if (opponentShake > 0) {
       opponentShake = max(0.0, opponentShake - dt);
     }
 
-    // 2. 泡泡软斥力防重叠
+    // 1. 泡泡软斥力防重叠
     for (int i = 0; i < bubbles.length; i++) {
       for (int j = i + 1; j < bubbles.length; j++) {
         final b1 = bubbles[i];
@@ -880,7 +874,7 @@ class RussiaPageState extends State<RussiaPage>
       }
     }
 
-    // 3. 泡泡物理运动与越界判定
+    // 2. 泡泡物理运动与出界判定
     bool targetWordExpired = false;
     for (int i = bubbles.length - 1; i >= 0; i--) {
       final b = bubbles[i];
@@ -900,18 +894,13 @@ class RussiaPageState extends State<RussiaPage>
       b.y -= b.speed * dt;
       b.x += sin(elapsed.inMilliseconds / 1000.0 * b.swingFreq + b.phase) * (b.swingAmplitude * 0.05);
 
-      if (b.y - b.radius <= waterSurfaceY) {
+      // 飘至顶部出界
+      if (b.y + b.radius < 95.0) {
         if (b.isTarget) {
           targetWordExpired = true;
-          _addDeadBubble(b.word, size);
-          floatingTexts.add(FloatingText(
-            x: b.x,
-            y: waterSurfaceY + 20,
-            text: '漏词！死泡堆积压顶',
-            color: const Color(0xFFEF4444),
-          ));
+          _applyDamage(1, '漏答 -1 HP!');
         }
-        _createBurstParticles(b.x, waterSurfaceY, b.baseColor, count: 6);
+        _createBurstParticles(b.x, 95.0, b.baseColor, count: 6);
         bubbles.removeAt(i);
       }
     }
@@ -920,41 +909,13 @@ class RussiaPageState extends State<RussiaPage>
       sendUserCmd('GET_NEXT_WORD', [myWordIndex++, 'false', currWord!.spell]);
     }
 
-    // 4. 空气区死泡整齐排布
-    final int deadCount = deadBubbles.length;
-    for (int i = 0; i < deadCount; i++) {
-      final db = deadBubbles[i];
-      final int cols = min(5, max(1, deadCount));
-      final int colIndex = i % 5;
-      final int rowIndex = i ~/ 5;
-      final double colWidth = (size.width - 60) / cols;
-      db.x = 30 + colIndex * colWidth + colWidth / 2;
-      db.y = waterSurfaceY - 26.0 - rowIndex * 40.0;
-
-      if (db.isPopping) {
-        db.popProgress += dt * 6.0;
-        if (db.popProgress >= 1.0) {
-          deadBubbles.removeAt(i);
-          _updateWaterPressure(size);
-          break;
-        }
-      }
-    }
-
-    // 5. 弹道飞行物更新
+    // 3. 弹道飞行物更新
     for (int i = projectiles.length - 1; i >= 0; i--) {
       final p = projectiles[i];
       if (p.type == ProjectileType.needle) {
         p.y -= 750.0 * dt;
         if (p.y <= p.targetY) {
-          p.targetBubble?.isPopping = true;
-          _createBurstParticles(p.targetX, p.targetY, const Color(0xFF94A3B8), count: 14);
-          floatingTexts.add(FloatingText(
-            x: p.targetX,
-            y: p.targetY - 15,
-            text: '💥 死泡破裂！海面抬升',
-            color: const Color(0xFF38BDF8),
-          ));
+          _createBurstParticles(p.targetX, p.targetY, const Color(0xFF34D399), count: 12);
           projectiles.removeAt(i);
         }
       } else if (p.type == ProjectileType.mine) {
@@ -964,12 +925,6 @@ class RussiaPageState extends State<RussiaPage>
         if (p.progress >= 1.0) {
           _createBurstParticles(p.targetX, p.targetY, const Color(0xFFEF4444), count: 18);
           opponentShake = 0.4;
-          floatingTexts.add(FloatingText(
-            x: 100,
-            y: 50,
-            text: '💥 对手水面被砸低 40px！',
-            color: const Color(0xFFF87171),
-          ));
           projectiles.removeAt(i);
         }
       }
@@ -998,53 +953,91 @@ class RussiaPageState extends State<RussiaPage>
 
   void _onCorrectWordTapped(BubbleItem b) {
     b.isPopping = true;
-    myScore += 10;
-    myCombo++;
-
     HapticFeedback.mediumImpact();
     _createBurstParticles(b.x, b.y, b.baseColor, count: 16);
 
-    final mediaQuery = MediaQuery.maybeOf(context);
-    final size = mediaQuery?.size ?? const Size(390, 844);
+    final bool isFirstTrySuccess = !hasMistakeInCurrentWord;
 
-    if (myCombo >= 2 && deadBubbles.isNotEmpty) {
-      _firePurgeNeedle(size);
-    }
+    if (isFirstTrySuccess) {
+      // 只有第一次直接选对，才算真正的答对！
+      myScore += 10;
+      myCombo++;
 
-    final String comboBonus = myCombo > 1 ? ' Combo x$myCombo!' : '';
-    floatingTexts.add(FloatingText(
-      x: b.x,
-      y: b.y - 15,
-      text: '+10$comboBonus',
-      color: const Color(0xFF38BDF8),
-    ));
+      // 连对奖励战术道具（每连对 3 次随机奖励水雷或飞针）
+      if (myCombo % 3 == 0) {
+        if (rand.nextBool()) {
+          purgeProps++;
+          floatingTexts.add(FloatingText(
+            x: b.x,
+            y: b.y - 35,
+            text: '连击奖励: 治愈飞针+1!',
+            color: const Color(0xFF34D399),
+          ));
+        } else {
+          attackProps++;
+          floatingTexts.add(FloatingText(
+            x: b.x,
+            y: b.y - 35,
+            text: '连击奖励: 重力水雷+1!',
+            color: const Color(0xFFF87171),
+          ));
+        }
+      }
 
-    // 向服务端上报答对并拉取下一词
-    if (currWord != null) {
-      sendUserCmd('GET_NEXT_WORD', [myWordIndex++, 'true', currWord!.spell]);
+      final String comboBonus = myCombo > 1 ? ' Combo x$myCombo!' : '';
+      floatingTexts.add(FloatingText(
+        x: b.x,
+        y: b.y - 15,
+        text: '+10$comboBonus',
+        color: const Color(0xFF38BDF8),
+      ));
+
+      // 向服务端上报答对并拉取下一词
+      if (currWord != null) {
+        sendUserCmd('GET_NEXT_WORD', [myWordIndex++, 'true', currWord!.spell]);
+      }
+    } else {
+      // 之前点错过干扰词，靠排除法最终点对：本题算答错，不计入得分与 Combo
+      myCombo = 0;
+      floatingTexts.add(FloatingText(
+        x: b.x,
+        y: b.y - 15,
+        text: '排除完成 (算错题)',
+        color: const Color(0xFFFBBF24),
+      ));
+
+      // 向服务端上报答错并拉取下一词
+      if (currWord != null) {
+        sendUserCmd('GET_NEXT_WORD', [myWordIndex++, 'false', currWord!.spell]);
+      }
     }
   }
 
   void _onWrongWordTapped(BubbleItem b) {
-    b.isWrongJiggle = true;
-    b.jiggleProgress = 0.0;
+    // 标记本题已发生错选，后续即便点对也是排除法算错
+    hasMistakeInCurrentWord = true;
+
+    // 戳破当前选错的干扰词泡泡，避免重复点击
+    b.isPopping = true;
     myScore = max(0, myScore - 5);
 
-    final mediaQuery = MediaQuery.maybeOf(context);
-    final size = mediaQuery?.size ?? const Size(390, 844);
-    _addDeadBubble(b.word, size);
+    _applyDamage(1, '答错 -1 HP!');
+    _createBurstParticles(b.x, b.y, const Color(0xFFEF4444), count: 14);
+    HapticFeedback.lightImpact();
 
+    // 1. 将误认的干扰词精准收录至生词本
+    WordBo().addRawWord(b.word, '游戏错选');
+    // 2. 将当前本题目标词也收录至生词本
     if (currWord != null) {
-      // 错词自动入生词本
       WordBo().addRawWord(currWord!.spell, '游戏');
-      sendUserCmd('GET_NEXT_WORD', [myWordIndex++, 'false', currWord!.spell]);
     }
 
+    // 不切换下一词，允许用户继续点击剩余泡泡直到点对为止！
     floatingTexts.add(FloatingText(
       x: b.x,
       y: b.y - 10,
-      text: '-5 答错石化下沉!',
-      color: const Color(0xFFEF4444),
+      text: '生词本收录: ${b.word}',
+      color: const Color(0xFFF87171),
     ));
   }
 
@@ -1104,47 +1097,45 @@ class RussiaPageState extends State<RussiaPage>
                   bubbles: bubbles,
                   particles: particles,
                   floatingTexts: floatingTexts,
-                  deadBubbles: deadBubbles,
                   projectiles: projectiles,
-                  waterSurfaceY: waterSurfaceY,
-                  wavePhase: wavePhase,
+                  ambientBubbles: ambientBubbles,
                 ),
               ),
             ),
 
             // 2. 顶部导航与房间控制
             Positioned(
-              top: topPadding + 6,
+              top: topPadding + 4,
               left: 12,
               right: 12,
               child: Row(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white, size: 20),
+                        color: Colors.white, size: 22),
                     onPressed: () {
                       context.pop();
                     },
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
+                      color: Colors.black.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.bubble_chart_rounded, color: Color(0xFF38BDF8), size: 14),
+                        const Icon(Icons.bubble_chart_rounded, color: Color(0xFF38BDF8), size: 13),
                         const SizedBox(width: 4),
                         Text(
                           '${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: Colors.white.withValues(alpha: 0.95),
                           ),
                         ),
                       ],
@@ -1163,20 +1154,20 @@ class RussiaPageState extends State<RussiaPage>
               ),
             ),
 
-            // 3. 顶部对战拉锯栏
+            // 3. 顶部对战拉锯栏（药丸比分仪表盘）
             Positioned(
               top: topPadding + 44,
-              left: 16,
-              right: 16,
+              left: 20,
+              right: 20,
               child: _buildVsStatusBar(),
             ),
 
             // 4. 当前目标词提示（仅中文释义）
             if (isPlaying && currWord != null)
               Positioned(
-                top: topPadding + 112,
-                left: 30,
-                right: 30,
+                top: topPadding + 134,
+                left: 28,
+                right: 28,
                 child: _buildTargetPromptCard(),
               ),
 
@@ -1206,128 +1197,372 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
-  /// 顶部对战双方 HUD
+  /// 顶部对战药丸比分仪表盘（对标参考设计：左橙右蓝药丸条 + 居中大勋章徽标 + 头像与下方昵称）
   Widget _buildVsStatusBar() {
     final bool hasOpponent = opponentUserId.isNotEmpty;
     final bool isBot = opponentUserId.startsWith('bot_');
 
-    return Container(
-      height: 58,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(29),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // 左侧：对手（受击左右抖动）
-          Transform.translate(
-            offset: Offset(opponentShake > 0 ? sin(opponentShake * 40) * 6 : 0, 0),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: hasOpponent
-                      ? const Color(0xFFF97316)
-                      : Colors.white.withValues(alpha: 0.15),
-                  child: Icon(
-                    isBot
-                        ? Icons.smart_toy_rounded
-                        : (hasOpponent ? Icons.person_rounded : Icons.person_outline),
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          opponentNickName,
-                          style: TextStyle(
-                              fontSize: 10.5,
-                              color: Colors.white.withValues(alpha: 0.85),
-                              fontWeight: FontWeight.w600),
-                        ),
-                        if (opponentStarted) ...[
-                          const SizedBox(width: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.25),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: const Color(0xFF10B981), width: 0.5),
-                            ),
-                            child: const Text('已就绪',
-                                style: TextStyle(color: Color(0xFF34D399), fontSize: 9, fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ],
-                    ),
-                    Text(
-                      '$opponentScore',
-                      style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFFFB923C),
-                          fontWeight: FontWeight.w900),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 58,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 1. 中间连接的药丸比分横条（左橙右蓝长槽）
+              Container(
+                height: 38,
+                margin: const EdgeInsets.symmetric(horizontal: 22),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(19),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.95), width: 2.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF032B69).withValues(alpha: 0.4),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // 中间 VS 徽标（生存淘汰制，无需多余倒计时）
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0284C7), Color(0xFF0EA5E9)],
-              ),
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
-                  blurRadius: 10,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(17),
+                  child: Row(
+                    children: [
+                      // 左半段：橙红对手生命槽（10 格比例）
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final double totalWidth = constraints.maxWidth;
+                            final double ratio = (opponentHp / maxHp).clamp(0.0, 1.0);
+                            return Stack(
+                              children: [
+                                // 空血槽底色（深蓝暗黑）
+                                Container(
+                                  color: const Color(0xFF0B172D).withValues(alpha: 0.9),
+                                ),
+                                // 橙红活跃生命条（向中心充满，掉血退缩）
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeOutCubic,
+                                    width: totalWidth * ratio,
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // 10 等分微弱刻度分割线
+                                Row(
+                                  children: List.generate(maxHp, (i) => Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          right: BorderSide(
+                                            color: Colors.white.withValues(alpha: 0.15),
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )),
+                                ),
+                                // 中央生命值与爱心图标
+                                Positioned.fill(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 24, right: 28),
+                                    child: Center(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.favorite_rounded, color: Colors.white, size: 14),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '$opponentHp / $maxHp',
+                                            style: const TextStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                              letterSpacing: 0.5,
+                                              shadows: [
+                                                Shadow(
+                                                  color: Color(0xFF032B69),
+                                                  blurRadius: 4,
+                                                  offset: Offset(0, 1),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      // 右半段：翡翠绿我方生命槽（10 格比例）
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final double totalWidth = constraints.maxWidth;
+                            final double ratio = (myHp / maxHp).clamp(0.0, 1.0);
+                            return Stack(
+                              children: [
+                                // 空血槽底色（深蓝暗黑）
+                                Container(
+                                  color: const Color(0xFF0B172D).withValues(alpha: 0.9),
+                                ),
+                                // 翡翠绿活跃生命条（向中心充满，掉血退缩）
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeOutCubic,
+                                    width: totalWidth * ratio,
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Color(0xFF34D399), Color(0xFF059669)],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // 10 等分微弱刻度分割线
+                                Row(
+                                  children: List.generate(maxHp, (i) => Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          left: BorderSide(
+                                            color: Colors.white.withValues(alpha: 0.15),
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )),
+                                ),
+                                // 中央生命值与爱心图标
+                                Positioned.fill(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 28, right: 24),
+                                    child: Center(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '$myHp / $maxHp',
+                                            style: const TextStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                              letterSpacing: 0.5,
+                                              shadows: [
+                                                Shadow(
+                                                  color: Color(0xFF032B69),
+                                                  blurRadius: 4,
+                                                  offset: Offset(0, 1),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          const Icon(Icons.favorite_rounded, color: Colors.white, size: 14),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            child: const Center(
-              child: Text(
-                'VS',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.white,
+              ),
+
+              // 2. 左侧突出对手圆形头像
+              Positioned(
+                left: 0,
+                child: Transform.translate(
+                  offset: Offset(opponentShake > 0 ? sin(opponentShake * 40) * 6 : 0, 0),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF032B69).withValues(alpha: 0.45),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      backgroundColor: hasOpponent ? const Color(0xFFEA580C) : const Color(0xFF64748B),
+                      child: Icon(
+                        isBot
+                            ? Icons.smart_toy_rounded
+                            : (hasOpponent ? Icons.face_rounded : Icons.person_outline),
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+
+              // 3. 右侧突出我方圆形头像
+              Positioned(
+                right: 0,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF032B69).withValues(alpha: 0.45),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const CircleAvatar(
+                        backgroundColor: Color(0xFF0284C7),
+                        child: Icon(
+                          Icons.face_5_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                    // 参考设计同款「我」角标
+                    Positioned(
+                      bottom: -2,
+                      right: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: const Text(
+                          '我',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 4. 正中央圆形大勋章徽标（VS）
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF0284C7), Color(0xFF034A9E)],
+                  ),
+                  border: Border.all(color: Colors.white, width: 2.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF38BDF8).withValues(alpha: 0.65),
+                      blurRadius: 10,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF032B69).withValues(alpha: 0.5),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text(
+                    'VS',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
+        ),
 
-          const Spacer(),
+        const SizedBox(height: 4),
 
-          // 右侧：我方
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
+        // 5. 下方左右对应的昵称与准备状态
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
             children: [
+              // 对手昵称
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    opponentNickName,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.95),
+                      shadows: [
+                        Shadow(
+                          color: const Color(0xFF032B69).withValues(alpha: 0.8),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (opponentStarted) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text('已就绪',
+                          style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ],
+              ),
+              const Spacer(),
+              // 我方昵称
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1335,56 +1570,51 @@ class RussiaPageState extends State<RussiaPage>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                        color: const Color(0xFF10B981),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: const Color(0xFF10B981), width: 0.5),
                       ),
                       child: const Text('已就绪',
-                          style: TextStyle(color: Color(0xFF34D399), fontSize: 9, fontWeight: FontWeight.bold)),
+                          style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 4),
                   ],
                   Text(
                     myNickName.isNotEmpty ? myNickName : '我方',
                     style: TextStyle(
-                        fontSize: 10.5,
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontWeight: FontWeight.w600),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.95),
+                      shadows: [
+                        Shadow(
+                          color: const Color(0xFF032B69).withValues(alpha: 0.8),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              Text(
-                '$myScore',
-                style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF38BDF8),
-                    fontWeight: FontWeight.w900),
-              ),
             ],
           ),
-          const SizedBox(width: 8),
-          const CircleAvatar(
-            radius: 18,
-            backgroundColor: Color(0xFF0284C7),
-            child: Icon(Icons.face, color: Colors.white, size: 20),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   /// 目标词提示卡片（仅中文释义）
   Widget _buildTargetPromptCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8.5),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.45),
+        color: const Color(0xFF02245C).withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.35)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: const Color(0xFF032B69).withValues(alpha: 0.35),
             blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -1398,7 +1628,7 @@ class RussiaPageState extends State<RussiaPage>
             '请戳破对应英文：',
             style: TextStyle(
                 fontSize: 12.5,
-                color: Colors.white.withValues(alpha: 0.8),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w500),
           ),
           Flexible(
@@ -1408,7 +1638,7 @@ class RussiaPageState extends State<RussiaPage>
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFFFBBF24),
+                color: Color(0xFFFDE047),
                 letterSpacing: 0.5,
               ),
             ),
@@ -1537,7 +1767,7 @@ class RussiaPageState extends State<RussiaPage>
                   const Text('🚀', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 6),
                   Text(
-                    '砸水雷压对手 ($attackProps)',
+                    '重力水雷 (-1对手血) ($attackProps)',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,
@@ -1554,13 +1784,7 @@ class RussiaPageState extends State<RussiaPage>
           child: GestureDetector(
             onTap: () {
               if (purgeProps > 0) {
-                final success = _firePurgeNeedle(size);
-                if (success) {
-                  setState(() {
-                    purgeProps--;
-                  });
-                  sendUserCmd('USE_PROPS', [1]);
-                }
+                _firePurgeNeedle(size);
               } else {
                 floatingTexts.add(FloatingText(
                   x: size.width * 0.7,
@@ -1588,10 +1812,10 @@ class RussiaPageState extends State<RussiaPage>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('🎯', style: TextStyle(fontSize: 18)),
+                  const Text('💖', style: TextStyle(fontSize: 18)),
                   const SizedBox(width: 6),
                   Text(
-                    '戳死泡抬海面 ($purgeProps)',
+                    '治愈飞针 (+1自己血) ($purgeProps)',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,
@@ -1647,8 +1871,8 @@ class RussiaPageState extends State<RussiaPage>
               const SizedBox(height: 8),
               Text(
                 isWon
-                    ? '已击沉对手海面！游戏分 ${scoreAdjust >= 0 ? "+$scoreAdjust" : scoreAdjust}, 魔法泡泡 ${cowDungAdjust >= 0 ? "+$cowDungAdjust" : cowDungAdjust}'
-                    : '海面被死泡压沉淘汰。错误单词已自动收录至生词本！',
+                    ? '已击溃对手生命！游戏分 ${scoreAdjust >= 0 ? "+$scoreAdjust" : scoreAdjust}, 魔法泡泡 ${cowDungAdjust >= 0 ? "+$cowDungAdjust" : cowDungAdjust}'
+                    : '生命值耗尽战败。错误单词已自动收录至生词本！',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1700,64 +1924,55 @@ class RussiaPageState extends State<RussiaPage>
   }
 }
 
-/// 海底世界与泡泡高保真绘制器
+/// 海底世界与超写实通透泡泡高保真绘制器
 class _UnderseaScenePainter extends CustomPainter {
   final List<BubbleItem> bubbles;
   final List<PopParticle> particles;
   final List<FloatingText> floatingTexts;
-  final List<DeadBubbleItem> deadBubbles;
   final List<GameProjectile> projectiles;
-  final double waterSurfaceY;
-  final double wavePhase;
+  final List<AmbientBubble> ambientBubbles;
 
   _UnderseaScenePainter({
     required this.bubbles,
     required this.particles,
     required this.floatingTexts,
-    required this.deadBubbles,
     required this.projectiles,
-    required this.waterSurfaceY,
-    required this.wavePhase,
+    required this.ambientBubbles,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. 深海渐变背景
+    // 1. 蔚蓝通透明亮的海水渐变背景（与参考设计同款高饱和梦幻蔚蓝）
     final Rect fullRect = Offset.zero & size;
     final bgPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Color(0xFF042654),
-          Color(0xFF021B3D),
-          Color(0xFF010E24),
+          Color(0xFF299BF6), // 顶部浅海透光蓝
+          Color(0xFF1473E6), // 中层清澈蔚蓝
+          Color(0xFF094EBE), // 下层深蔚蓝
+          Color(0xFF063B96), // 海底沉稳海蓝
         ],
-        stops: [0.0, 0.45, 1.0],
+        stops: [0.0, 0.32, 0.70, 1.0],
       ).createShader(fullRect);
     canvas.drawRect(fullRect, bgPaint);
 
-    // 2. 透光光束
-    final lightRayPaint = Paint()
-      ..color = Colors.cyanAccent.withValues(alpha: 0.04)
-      ..style = PaintingStyle.fill;
-    final rayPath = Path()
-      ..moveTo(size.width * 0.1, 0)
-      ..lineTo(size.width * 0.4, 0)
-      ..lineTo(size.width * 0.65, size.height)
-      ..lineTo(size.width * 0.25, size.height)
-      ..close();
-    canvas.drawPath(rayPath, lightRayPaint);
+    // 2. 穿透海面的多道丁达尔阳光光束（Sun Rays / God Rays）
+    _drawSunRays(canvas, size);
 
-    // 3. 海床剪影
-    _drawSeabed(canvas, size);
+    // 3. 散落漂浮的微小氛围气泡
+    _drawAmbientBubbles(canvas);
 
-    // 4. 上升彩色泡泡
+    // 4. 海底珊瑚礁岩石与海草植被（参考设计同款插画剪影）
+    _drawSeabedAndWeeds(canvas, size);
+
+    // 5. 上升的超拟真梦幻彩色通透泡泡
     for (final b in bubbles) {
       _drawBubble(canvas, b);
     }
 
-    // 5. 爆破飞溅水珠粒子
+    // 6. 爆破飞溅水珠微粒
     for (final p in particles) {
       final particlePaint = Paint()
         ..color = p.color.withValues(alpha: (p.life / p.maxLife).clamp(0.0, 1.0))
@@ -1765,30 +1980,22 @@ class _UnderseaScenePainter extends CustomPainter {
       canvas.drawCircle(Offset(p.x, p.y), p.radius, particlePaint);
     }
 
-    // 6. 水面波浪与空气区
-    _drawWaterSurface(canvas, size);
-
-    // 7. 空气区死泡堆叠
-    for (final db in deadBubbles) {
-      _drawDeadBubble(canvas, db);
-    }
-
-    // 8. 弹道飞行物
+    // 7. 弹道飞行物
     for (final p in projectiles) {
       _drawProjectile(canvas, p);
     }
 
-    // 9. 飘字动效
+    // 10. 飘字动效
     for (final ft in floatingTexts) {
       final textSpan = TextSpan(
         text: ft.text,
         style: TextStyle(
           color: ft.color.withValues(alpha: ft.life.clamp(0.0, 1.0)),
-          fontSize: 16,
+          fontSize: 16.5,
           fontWeight: FontWeight.w900,
           shadows: [
             Shadow(
-              color: Colors.black.withValues(alpha: 0.8),
+              color: const Color(0xFF032B69).withValues(alpha: 0.8),
               blurRadius: 4,
             ),
           ],
@@ -1802,14 +2009,158 @@ class _UnderseaScenePainter extends CustomPainter {
     }
   }
 
+  /// 绘制穿透海面的丁达尔太阳光束（God Rays）
+  void _drawSunRays(Canvas canvas, Size size) {
+    // 光束 1：偏左主光束
+    final ray1 = Path()
+      ..moveTo(size.width * 0.15, 0)
+      ..lineTo(size.width * 0.38, 0)
+      ..lineTo(size.width * 0.62, size.height * 0.88)
+      ..lineTo(size.width * 0.28, size.height * 0.88)
+      ..close();
+    final p1 = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.13),
+          Colors.cyanAccent.withValues(alpha: 0.05),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.45, 1.0],
+      ).createShader(Offset.zero & size);
+    canvas.drawPath(ray1, p1);
+
+    // 光束 2：中央次光束
+    final ray2 = Path()
+      ..moveTo(size.width * 0.48, 0)
+      ..lineTo(size.width * 0.65, 0)
+      ..lineTo(size.width * 0.95, size.height * 0.75)
+      ..lineTo(size.width * 0.72, size.height * 0.75)
+      ..close();
+    final p2 = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.10),
+          Colors.cyanAccent.withValues(alpha: 0.04),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.4, 1.0],
+      ).createShader(Offset.zero & size);
+    canvas.drawPath(ray2, p2);
+
+    // 光束 3：左上纤细斜束
+    final ray3 = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width * 0.16, 0)
+      ..lineTo(size.width * 0.32, size.height * 0.6)
+      ..lineTo(size.width * 0.10, size.height * 0.6)
+      ..close();
+    final p3 = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.08),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawPath(ray3, p3);
+  }
+
+  /// 绘制散落的微小氛围气泡
+  void _drawAmbientBubbles(Canvas canvas) {
+    for (final ab in ambientBubbles) {
+      final center = Offset(ab.x, ab.y);
+      // 微光外圈
+      final rimPaint = Paint()
+        ..color = Colors.white.withValues(alpha: ab.alpha * 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0;
+      canvas.drawCircle(center, ab.radius, rimPaint);
+
+      // 半透明微泡内芯
+      final fillPaint = Paint()
+        ..color = Colors.white.withValues(alpha: ab.alpha * 0.25)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(center, ab.radius, fillPaint);
+
+      // 微小高光点
+      final dotPaint = Paint()
+        ..color = Colors.white.withValues(alpha: ab.alpha)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(
+        Offset(ab.x - ab.radius * 0.35, ab.y - ab.radius * 0.35),
+        max(0.6, ab.radius * 0.3),
+        dotPaint,
+      );
+    }
+  }
+
+  /// 绘制海底珊瑚礁岩石与多层水草
+  void _drawSeabedAndWeeds(Canvas canvas, Size size) {
+    // 1. 右侧远景深蓝珊瑚岩石层
+    final bgRockPath = Path()
+      ..moveTo(size.width * 0.42, size.height)
+      ..quadraticBezierTo(size.width * 0.60, size.height - 85, size.width * 0.82, size.height - 68)
+      ..quadraticBezierTo(size.width * 0.94, size.height - 55, size.width, size.height - 62)
+      ..lineTo(size.width, size.height)
+      ..close();
+    final bgRockPaint = Paint()
+      ..color = const Color(0xFF073A8A).withValues(alpha: 0.85)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(bgRockPath, bgRockPaint);
+
+    // 2. 右侧近景湖蓝珊瑚岩石层
+    final fgRockPath = Path()
+      ..moveTo(size.width * 0.52, size.height)
+      ..quadraticBezierTo(size.width * 0.68, size.height - 58, size.width * 0.85, size.height - 46)
+      ..quadraticBezierTo(size.width * 0.95, size.height - 35, size.width, size.height - 40)
+      ..lineTo(size.width, size.height)
+      ..close();
+    final fgRockPaint = Paint()
+      ..color = const Color(0xFF0C4CA4).withValues(alpha: 0.95)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(fgRockPath, fgRockPaint);
+
+    // 3. 左侧主要海草丛（深蓝水草，优雅起伏弯曲）
+    _drawWeedStem(canvas, Offset(size.width * 0.05, size.height), 120.0, -18.0, const Color(0xFF08418E));
+    _drawWeedStem(canvas, Offset(size.width * 0.08, size.height), 95.0, 12.0, const Color(0xFF0A4B9E));
+    _drawWeedStem(canvas, Offset(size.width * 0.13, size.height), 110.0, -10.0, const Color(0xFF073880));
+
+    // 4. 右侧岩石缝隙中的水草（参考截图右下角）
+    _drawWeedStem(canvas, Offset(size.width * 0.68, size.height), 70.0, 14.0, const Color(0xFF0B50A8));
+    _drawWeedStem(canvas, Offset(size.width * 0.73, size.height), 55.0, -8.0, const Color(0xFF0D5BBF));
+  }
+
+  /// 绘制单个海草叶片
+  void _drawWeedStem(Canvas canvas, Offset base, double height, double curveOffset, Color color) {
+    final Path path = Path();
+    final double midY = base.dy - height * 0.55;
+    final double topY = base.dy - height;
+
+    path.moveTo(base.dx - 3, base.dy);
+    path.quadraticBezierTo(base.dx + curveOffset, midY, base.dx + curveOffset * 0.6, topY);
+    path.quadraticBezierTo(base.dx + curveOffset + 4, midY + 4, base.dx + 4, base.dy);
+    path.close();
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, paint);
+  }
+
+  /// 绘制超拟真通透高光彩色泡泡（1:1 对标参考设计）
   void _drawBubble(Canvas canvas, BubbleItem b) {
     if (b.isPopping) {
-      final scale = 1.0 + b.popProgress * 0.4;
+      final scale = 1.0 + b.popProgress * 0.45;
       final alpha = (1.0 - b.popProgress).clamp(0.0, 1.0);
       final popPaint = Paint()
-        ..color = b.baseColor.withValues(alpha: alpha * 0.6)
+        ..color = Colors.white.withValues(alpha: alpha * 0.75)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0;
+        ..strokeWidth = 2.5;
       canvas.drawCircle(Offset(b.x, b.y), b.radius * scale, popPaint);
       return;
     }
@@ -1818,7 +2169,7 @@ class _UnderseaScenePainter extends CustomPainter {
     double scaleY = 1.0;
     if (b.isWrongJiggle) {
       final phase = b.jiggleProgress * pi * 4;
-      final delta = sin(phase) * 0.18 * (1.0 - b.jiggleProgress);
+      final delta = sin(phase) * 0.16 * (1.0 - b.jiggleProgress);
       scaleX = 1.0 + delta;
       scaleY = 1.0 - delta;
     }
@@ -1827,52 +2178,92 @@ class _UnderseaScenePainter extends CustomPainter {
     canvas.translate(b.x, b.y);
     canvas.scale(scaleX, scaleY);
 
-    final bubbleRect = Rect.fromCircle(center: Offset.zero, radius: b.radius);
+    final double r = b.radius;
+    final bubbleRect = Rect.fromCircle(center: Offset.zero, radius: r);
+
+    // 1. 泡泡球体内部：极度通透微彩渐变（透出深蓝海水，具有肥皂泡般的轻盈质感）
     final bodyPaint = Paint()
       ..shader = RadialGradient(
-        center: const Alignment(-0.35, -0.35),
+        center: const Alignment(-0.25, -0.25),
         radius: 0.95,
         colors: [
-          Colors.white.withValues(alpha: 0.35),
-          b.baseColor.withValues(alpha: 0.18),
-          b.baseColor.withValues(alpha: 0.35),
-          b.baseColor.withValues(alpha: 0.65),
+          Colors.white.withValues(alpha: 0.12),
+          b.baseColor.withValues(alpha: 0.08),
+          b.baseColor.withValues(alpha: 0.22),
+          b.baseColor.withValues(alpha: 0.45),
         ],
-        stops: const [0.0, 0.4, 0.8, 1.0],
+        stops: const [0.0, 0.45, 0.8, 1.0],
       ).createShader(bubbleRect);
-    canvas.drawCircle(Offset.zero, b.radius, bodyPaint);
+    canvas.drawCircle(Offset.zero, r, bodyPaint);
 
+    // 2. 彩色薄膜辉光环（Rim Ring & Film Glow）
     final rimPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.55)
+      ..color = Colors.white.withValues(alpha: 0.65)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8;
-    canvas.drawCircle(Offset.zero, b.radius, rimPaint);
+    canvas.drawCircle(Offset.zero, r, rimPaint);
 
-    final highlightPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
-    final highlightRect = Rect.fromCenter(
-      center: Offset(-b.radius * 0.32, -b.radius * 0.32),
-      width: b.radius * 0.32,
-      height: b.radius * 0.16,
+    final colorRimPaint = Paint()
+      ..color = b.baseColor.withValues(alpha: 0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.2;
+    canvas.drawCircle(Offset.zero, r - 0.5, colorRimPaint);
+
+    // 3. 左上方主高光月牙弧（Primary Crescent Highlight，核心高光）
+    final highlightPath = Path();
+    final double hlR = r * 0.82;
+    highlightPath.addArc(
+      Rect.fromCircle(center: Offset.zero, radius: hlR),
+      -pi * 0.82,
+      pi * 0.36,
     );
-    canvas.save();
-    canvas.rotate(-pi / 4);
-    canvas.drawOval(highlightRect, highlightPaint);
-    canvas.restore();
+    final hlPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.90)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = max(2.5, r * 0.075);
+    canvas.drawPath(highlightPath, hlPaint);
 
+    // 4. 主高光旁的小点高光（Secondary Highlight Dot）
+    final dotPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.92)
+      ..style = PaintingStyle.fill;
+    final double dotAngle = -pi * 0.38;
+    final double dotDist = r * 0.78;
+    canvas.drawCircle(
+      Offset(cos(dotAngle) * dotDist, sin(dotAngle) * dotDist),
+      max(1.8, r * 0.05),
+      dotPaint,
+    );
+
+    // 5. 右下方次环境反光弧（Rim Reflection，模拟水下漫反射）
+    final bottomRimPath = Path();
+    final double btmR = r * 0.84;
+    bottomRimPath.addArc(
+      Rect.fromCircle(center: Offset.zero, radius: btmR),
+      pi * 0.15,
+      pi * 0.28,
+    );
+    final btmPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = max(1.5, r * 0.045);
+    canvas.drawPath(bottomRimPath, btmPaint);
+
+    // 6. 泡泡中心单词（纯白、粗体、高对比度）
     final textSpan = TextSpan(
       text: b.word,
       style: TextStyle(
         color: Colors.white,
-        fontSize: b.radius > 45 ? 14 : 12.5,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.3,
+        fontSize: r >= 44 ? 17 : 15,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.2,
         shadows: [
           Shadow(
-            color: Colors.black.withValues(alpha: 0.6),
+            color: const Color(0xFF032B69).withValues(alpha: 0.7),
             blurRadius: 4,
-            offset: const Offset(0, 1),
+            offset: const Offset(0, 1.5),
           ),
         ],
       ),
@@ -1881,7 +2272,7 @@ class _UnderseaScenePainter extends CustomPainter {
       text: textSpan,
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
-    )..layout(maxWidth: b.radius * 1.8);
+    )..layout(maxWidth: r * 1.85);
 
     textPainter.paint(
       canvas,
@@ -1889,56 +2280,6 @@ class _UnderseaScenePainter extends CustomPainter {
     );
 
     canvas.restore();
-  }
-
-  void _drawDeadBubble(Canvas canvas, DeadBubbleItem db) {
-    if (db.isPopping) {
-      final scale = 1.0 + db.popProgress * 0.5;
-      final alpha = (1.0 - db.popProgress).clamp(0.0, 1.0);
-      final popPaint = Paint()
-        ..color = const Color(0xFF94A3B8).withValues(alpha: alpha * 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5;
-      canvas.drawCircle(Offset(db.x, db.y), db.radius * scale, popPaint);
-      return;
-    }
-
-    final center = Offset(db.x, db.y);
-    final rect = Rect.fromCircle(center: center, radius: db.radius);
-    final deadPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.3, -0.3),
-        radius: 0.9,
-        colors: [
-          const Color(0xFF64748B),
-          const Color(0xFF334155),
-          const Color(0xFF0F172A),
-        ],
-      ).createShader(rect);
-    canvas.drawCircle(center, db.radius, deadPaint);
-
-    final rimPaint = Paint()
-      ..color = const Color(0xFF94A3B8).withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawCircle(center, db.radius, rimPaint);
-
-    final textSpan = TextSpan(
-      text: db.word,
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.75),
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        decoration: TextDecoration.lineThrough,
-        decorationColor: Colors.redAccent,
-      ),
-    );
-    final tp = TextPainter(
-      text: textSpan,
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: db.radius * 1.8);
-    tp.paint(canvas, Offset(db.x - tp.width / 2, db.y - tp.height / 2));
   }
 
   void _drawProjectile(Canvas canvas, GameProjectile p) {
@@ -1966,60 +2307,6 @@ class _UnderseaScenePainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(p.x + 8, p.y - 8), 3.5, sparkPaint);
     }
-  }
-
-  void _drawWaterSurface(Canvas canvas, Size size) {
-    final Path wavePath = Path();
-    wavePath.moveTo(0, 0);
-    wavePath.lineTo(0, waterSurfaceY);
-
-    const int waveSteps = 24;
-    for (int i = 0; i <= waveSteps; i++) {
-      final double x = size.width * (i / waveSteps);
-      final double waveOffset = sin(wavePhase + (i / waveSteps) * 4 * pi) * 6.0;
-      wavePath.lineTo(x, waterSurfaceY + waveOffset);
-    }
-
-    wavePath.lineTo(size.width, 0);
-    wavePath.close();
-
-    final surfacePaint = Paint()
-      ..color = const Color(0xFF010A17).withValues(alpha: 0.88);
-    canvas.drawPath(wavePath, surfacePaint);
-
-    final waveLinePath = Path();
-    waveLinePath.moveTo(0, waterSurfaceY);
-    for (int i = 0; i <= waveSteps; i++) {
-      final double x = size.width * (i / waveSteps);
-      final double waveOffset = sin(wavePhase + (i / waveSteps) * 4 * pi) * 6.0;
-      waveLinePath.lineTo(x, waterSurfaceY + waveOffset);
-    }
-    final waveLinePaint = Paint()
-      ..color = Colors.cyanAccent.withValues(alpha: 0.75)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5;
-    canvas.drawPath(waveLinePath, waveLinePaint);
-  }
-
-  void _drawSeabed(Canvas canvas, Size size) {
-    final seabedPaint = Paint()
-      ..color = const Color(0xFF010915)
-      ..style = PaintingStyle.fill;
-
-    final seabedPath = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(0, size.height - 40)
-      ..quadraticBezierTo(size.width * 0.25, size.height - 65, size.width * 0.5, size.height - 45)
-      ..quadraticBezierTo(size.width * 0.75, size.height - 25, size.width, size.height - 50)
-      ..lineTo(size.width, size.height)
-      ..close();
-    canvas.drawPath(seabedPath, seabedPaint);
-
-    final weedPaint = Paint()
-      ..color = const Color(0xFF031A26).withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size.width * 0.15, size.height - 30), 24, weedPaint);
-    canvas.drawCircle(Offset(size.width * 0.82, size.height - 35), 28, weedPaint);
   }
 
   @override
