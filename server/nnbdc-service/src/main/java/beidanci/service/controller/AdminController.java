@@ -339,16 +339,6 @@ public class AdminController {
         return Result.success(dataSanitizeBo.getWordPhoneticSanitizeStatus());
     }
 
-    @PostMapping("/admin/sanitizeWordPopularity.do")
-    public Result<SystemHealthFixResult> sanitizeWordPopularity() {
-        return Result.success(dataSanitizeBo.sanitizeWordPopularity());
-    }
-
-    @GetMapping("/admin/getWordPopularitySanitizeStatus.do")
-    public Result<SystemHealthFixResult> getWordPopularitySanitizeStatus() {
-        return Result.success(dataSanitizeBo.getWordPopularitySanitizeStatus());
-    }
-
     @PostMapping("/admin/translateShortDescCn.do")
     public Result<SystemHealthFixResult> translateShortDescCn(
             @RequestParam(value = "limit", required = false) Integer limit) {

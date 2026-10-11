@@ -19,18 +19,15 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   bool _isSanitizing = false;
   bool _isChecking = false;
   bool _isImageSanitizing = false;
-  bool _isPopularitySanitizing = false;
   bool _isMeaningSanitizing = false;
   bool _isAbbreviationSoundRegenerating = false;
   bool _isShortDescCnTranslating = false;
   SystemHealthFixResult? _fixResult;
   SystemHealthCheckResult? _checkResult;
-  SystemHealthFixResult? _popularityFixResult;
   SystemHealthFixResult? _imageFixResult;
   SystemHealthFixResult? _meaningFixResult;
   SystemHealthFixResult? _abbreviationSoundResult;
   SystemHealthFixResult? _shortDescCnResult;
-  Timer? _statusTimer;
   Timer? _imageStatusTimer;
   Timer? _meaningStatusTimer;
   Timer? _dataStatusTimer;
@@ -40,7 +37,6 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   @override
   void initState() {
     super.initState();
-    _checkInitialPopularitySanitizeStatus();
     _checkInitialWordImageSanitizeStatus();
     _checkInitialMeaningSanitizeStatus();
     _checkInitialDataSanitizeStatus();
@@ -50,7 +46,6 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
 
   @override
   void dispose() {
-    _statusTimer?.cancel();
     _imageStatusTimer?.cancel();
     _meaningStatusTimer?.cancel();
     _dataStatusTimer?.cancel();
@@ -105,117 +100,6 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     });
   }
 
-  Future<void> _checkInitialPopularitySanitizeStatus() async {
-    try {
-      final res = await Api.client.getWordPopularitySanitizeStatus();
-      if (!mounted) return;
-      if (res.success && res.data != null) {
-        final isRunning = res.data!.fixedCount == 1;
-        if (isRunning) {
-          setState(() {
-            _isPopularitySanitizing = true;
-            _popularityFixResult = res.data;
-          });
-          _startPollingPopularityStatus();
-        }
-      }
-    } catch (e) {
-      // Ignore initial check error
-    }
-  }
-
-  void _startPollingPopularityStatus() {
-    _statusTimer?.cancel();
-    _statusTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      try {
-        final res = await Api.client.getWordPopularitySanitizeStatus();
-        if (!mounted) return;
-        if (res.success && res.data != null) {
-          final isRunning = res.data!.fixedCount == 1;
-          setState(() {
-            _popularityFixResult = res.data;
-            _isPopularitySanitizing = isRunning;
-          });
-          if (!isRunning) {
-            timer.cancel();
-            ToastUtil.success('单词常用度清洗完成');
-          }
-        }
-      } catch (e) {
-        // Ignore background errors
-      }
-    });
-  }
-
-  Future<void> _runWordPopularitySanitizing() async {
-    if (_isSanitizing || _isChecking || _isPopularitySanitizing) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('常用度数据清洗确认'),
-        content: const Text(
-            '该操作将启动后台异步任务，对通用词书的所有单词进行释义常用度清洗与补全：\n'
-            '1. 从海词(dict.cn)查询并解析释义频率占比。\n'
-            '2. 通过 AI 模型将现有释义与海词百分比释义进行语义对齐。\n'
-            '3. 自动补全缺失的高频释义（频率 >= 10%）并配套生成例句及发音。\n'
-            '4. 重新计算并排序释义的 popularity 序号。\n\n'
-            '是否立即开始？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            child: const Text('开始', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-    if (!mounted) return;
-
-    setState(() {
-      _isPopularitySanitizing = true;
-      _popularityFixResult = null;
-    });
-
-    try {
-      final res = await LoadingUtils.withApiLoading(operation: () async {
-        return await Api.client.sanitizeWordPopularity();
-      });
-
-      if (!mounted) return;
-
-      if (res.success) {
-        setState(() {
-          _popularityFixResult = res.data;
-        });
-        ToastUtil.success('常用度清洗任务已在后台启动');
-        _startPollingPopularityStatus();
-      } else {
-        ToastUtil.error('启动失败: ${res.msg}');
-        setState(() {
-          _isPopularitySanitizing = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ToastUtil.error('发生错误: $e');
-        setState(() {
-          _isPopularitySanitizing = false;
-        });
-      }
-    }
-  }
-
   Future<void> _checkInitialMeaningSanitizeStatus() async {
     try {
       final res = await Api.client.getMeaningSeparatorSanitizeStatus();
@@ -263,7 +147,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Future<void> _runMeaningSanitizing() async {
-    if (_isSanitizing || _isChecking || _isPopularitySanitizing || _isImageSanitizing || _isMeaningSanitizing) {
+    if (_isSanitizing || _isChecking || _isImageSanitizing || _isMeaningSanitizing) {
       return;
     }
 
@@ -369,7 +253,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Future<void> _runDataSanitizing() async {
-    if (_isSanitizing || _isChecking || _isMeaningSanitizing || _isPopularitySanitizing || _isImageSanitizing) {
+    if (_isSanitizing || _isChecking || _isMeaningSanitizing || _isImageSanitizing) {
       return;
     }
 
@@ -485,7 +369,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Future<void> _runAbbreviationSoundRegenerating() async {
-    if (_isSanitizing || _isChecking || _isMeaningSanitizing || _isPopularitySanitizing || _isImageSanitizing || _isAbbreviationSoundRegenerating) {
+    if (_isSanitizing || _isChecking || _isMeaningSanitizing || _isImageSanitizing || _isAbbreviationSoundRegenerating) {
       return;
     }
 
@@ -602,7 +486,6 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
         _isSanitizing ||
         _isChecking ||
         _isMeaningSanitizing ||
-        _isPopularitySanitizing ||
         _isImageSanitizing ||
         _isAbbreviationSoundRegenerating) {
       return;
@@ -716,7 +599,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Future<void> _runWordImageSanitizing() async {
-    if (_isSanitizing || _isChecking || _isPopularitySanitizing || _isImageSanitizing) return;
+    if (_isSanitizing || _isChecking || _isImageSanitizing) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -801,7 +684,6 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             if (_checkResult != null) _buildCheckResultCard(isDarkMode),
             if (_fixResult != null) _buildFixResultCard(isDarkMode),
             if (_imageFixResult != null) _buildWordImageFixResultCard(isDarkMode),
-            if (_popularityFixResult != null) _buildPopularityFixResultCard(isDarkMode),
             if (_meaningFixResult != null) _buildMeaningFixResultCard(isDarkMode),
             if (_abbreviationSoundResult != null) _buildAbbreviationSoundResultCard(isDarkMode),
             if (_shortDescCnResult != null) _buildShortDescCnResultCard(isDarkMode),
@@ -814,7 +696,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Widget _buildActionButtons() {
-    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isPopularitySanitizing || _isMeaningSanitizing || _isAbbreviationSoundRegenerating || _isShortDescCnTranslating;
+    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isMeaningSanitizing || _isAbbreviationSoundRegenerating || _isShortDescCnTranslating;
     return Center(
       child: Column(
         children: [
@@ -858,21 +740,6 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.purple[800],
                 side: BorderSide(color: Colors.purple[800]!),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: 220,
-            height: 50,
-            child: OutlinedButton.icon(
-              onPressed: isAnyRunning ? null : _runWordPopularitySanitizing,
-              icon: Icon(_isPopularitySanitizing ? Icons.hourglass_empty : Icons.auto_awesome),
-              label: Text(_isPopularitySanitizing ? '正在清洗常用度...' : '清洗释义常用度'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.teal[800],
-                side: BorderSide(color: Colors.teal[800]!),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               ),
             ),
@@ -952,8 +819,6 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             _buildBulletPoint('自动移除音标首尾的 /、[、] 等符号。'),
             _buildBulletPoint('清理单词、释义、词性及例句末尾残留的逗号。'),
             _buildBulletPoint('清理损坏或无效的单词配图（如非图片文件、404错误HTML等）。'),
-            _buildBulletPoint('同步海词(dict.cn)释义频率占比，更新释义常用度。'),
-            _buildBulletPoint('自动对齐并补全缺失的高频释义（频率 >= 10%）并配套生成例句与发音。'),
             _buildBulletPoint('清洗释义项中非法的分号分隔：近义合并为一条，异义拆成多条独立释义项。'),
             _buildBulletPoint('重生成 sb/sth 这类占位缩写的发音：按 somebody/something 展开后再合成，避免逐字母朗读。'),
             _buildBulletPoint('修复后的数据将生成同步日志，确保客户端数据一致。'),
@@ -1107,53 +972,6 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               const SizedBox(height: 15),
               const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
               ..._imageFixResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPopularityFixResultCard(bool isDarkMode) {
-    if (_popularityFixResult == null) return const SizedBox.shrink();
-    
-    return Card(
-      elevation: 2,
-      color: isDarkMode ? Colors.teal.withValues(alpha: 0.1) : Colors.teal[50],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.teal.withValues(alpha: 0.3)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  _isPopularitySanitizing ? Icons.hourglass_top : Icons.done_all, 
-                  color: Colors.teal
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  _isPopularitySanitizing ? '常用度清洗执行中' : '常用度清洗完成报告', 
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal)
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
-            ..._popularityFixResult!.fixed.map((msg) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                _isPopularitySanitizing ? msg : '✓ $msg', 
-                style: const TextStyle(fontSize: 14)
-              ),
-            )),
-            if (_popularityFixResult!.errors.isNotEmpty) ...[
-              const SizedBox(height: 15),
-              const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-              ..._popularityFixResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
             ],
           ],
         ),

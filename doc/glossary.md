@@ -321,6 +321,7 @@
 | 同步冲突排查 | `user_db_issue` | 端云同步冲突与异常记录 | |
 | 增量同步 | — | 只传变化的部分，不传全量 | |
 | 缩体删除日志 | `user_db_log.record` 只写 `{"id": …}` 的 DELETE 日志 | 一次性修复批量删除学习记录时，为避免单次同步请求超过服务端 5MB 限制，删除日志只带主键 | 客户端收到后必须按 id 直接删本地行，**禁止整体反序列化成实体**；见 `app/lib/util/sync.dart:531`、`app/lib/util/learning_log_repair.dart:164` |
+| 黄金母版库（简称母版库） | 随包资源 `app/assets/db/initial.sqlite.gz`；制作工具 `app/lib/page/admin/golden_master_tool.dart` + `devops/golden_db_maker/make_golden_db.sh` | 随安装包发布的预置 SQLite 数据库，全新安装时由 `app/lib/db/db.dart:232` 直接解压使用，免去首屏下载通用词典 | **必须携带出品时刻的 `sys_db_version`**：它决定客户端首轮同步从哪个版本起步。这一行缺失时客户端按版本 0 走「首次全量同步」，而该分支按体积设计不含 `word_image` 等明细表（`server/nnbdc-service/src/main/java/beidanci/service/bo/SysDbSyncBo.java:391`），母版库里所有已被服务端删除的明细行将永远无法收敛 |
 
 ### 4.6 运营、社交与小游戏
 
@@ -353,6 +354,7 @@
 | AI 情境故事 | `ai_story` | DeepSeek 生成的串记多词短文 | |
 | 原声例句 | `sentence` / `sentence_chinese` | 英文原句 + 音频 + 中文翻译 | |
 | 例句点评 | `sentence_chinese_remark` | 对例句翻译的点评与纠错 | |
+| 单词配图 | 客户端 `word_images` / 服务端 `word_image`，图片文件走 `https://www.nnbdc.com/img/word/<image_file>` | 单词详情页词条下方那张图（作者上传 + AI 审核），一个单词最多 2 张 | 与「词核心图 `word_core_image`」不是一回事：配图存在服务端数据库和磁盘上，客户端的 `word_images` 行只是"这个词有哪几张图"的索引 |
 | 配图投票 | 客户端 `voted_word_images` / 服务端 `info_vote_log` | 单词配图的有用/无用投票 | 两端表名不同 |
 
 ### 4.8 客户端设置与系统权限
