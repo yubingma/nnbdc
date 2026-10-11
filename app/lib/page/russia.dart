@@ -830,6 +830,8 @@ class RussiaPageState extends State<RussiaPage>
 
     final mediaQuery = MediaQuery.maybeOf(context);
     final size = mediaQuery?.size ?? const Size(390, 844);
+    final topPadding = mediaQuery?.padding.top ?? 44.0;
+    final double barrierY = topPadding + 195.0;
 
     // 水波相位与氛围微泡漂浮（全局活跃）
     wavePhase += dt * 2.2;
@@ -894,13 +896,15 @@ class RussiaPageState extends State<RussiaPage>
       b.y -= b.speed * dt;
       b.x += sin(elapsed.inMilliseconds / 1000.0 * b.swingFreq + b.phase) * (b.swingAmplitude * 0.05);
 
-      // 飘至顶部出界
-      if (b.y + b.radius < 95.0) {
+      // 触及能量警戒线：泡泡顶端触碰即碰撞爆破，绝不侵入上方 UI 区域
+      if (b.y - b.radius <= barrierY) {
         if (b.isTarget) {
           targetWordExpired = true;
           _applyDamage(1, '漏答 -1 HP!');
+          _createBurstParticles(b.x, barrierY, const Color(0xFFEF4444), count: 14);
+        } else {
+          _createBurstParticles(b.x, barrierY, b.baseColor, count: 8);
         }
-        _createBurstParticles(b.x, 95.0, b.baseColor, count: 6);
         bubbles.removeAt(i);
       }
     }
@@ -1099,6 +1103,7 @@ class RussiaPageState extends State<RussiaPage>
                   floatingTexts: floatingTexts,
                   projectiles: projectiles,
                   ambientBubbles: ambientBubbles,
+                  barrierY: topPadding + 195.0,
                 ),
               ),
             ),
@@ -1931,6 +1936,7 @@ class _UnderseaScenePainter extends CustomPainter {
   final List<FloatingText> floatingTexts;
   final List<GameProjectile> projectiles;
   final List<AmbientBubble> ambientBubbles;
+  final double barrierY;
 
   _UnderseaScenePainter({
     required this.bubbles,
@@ -1938,6 +1944,7 @@ class _UnderseaScenePainter extends CustomPainter {
     required this.floatingTexts,
     required this.projectiles,
     required this.ambientBubbles,
+    required this.barrierY,
   });
 
   @override
@@ -1967,7 +1974,10 @@ class _UnderseaScenePainter extends CustomPainter {
     // 4. 海底珊瑚礁岩石与海草植被（参考设计同款插画剪影）
     _drawSeabedAndWeeds(canvas, size);
 
-    // 5. 上升的超拟真梦幻彩色通透泡泡
+    // 5. 题目卡片下方的晶莹微光能量警戒线（天花板防护屏障）
+    _drawEnergyBarrier(canvas, size);
+
+    // 6. 上升的超拟真梦幻彩色通透泡泡
     for (final b in bubbles) {
       _drawBubble(canvas, b);
     }
@@ -2307,6 +2317,54 @@ class _UnderseaScenePainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(p.x + 8, p.y - 8), 3.5, sparkPaint);
     }
+  }
+
+  /// 绘制题目卡片下方的晶莹微光能量警戒线（防冲顶天花板屏障）
+  void _drawEnergyBarrier(Canvas canvas, Size size) {
+    if (barrierY <= 0) return;
+
+    // 1. 柔和发光光晕（模糊微光带，两端渐隐）
+    final glowPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          Colors.transparent,
+          const Color(0xFF38BDF8).withValues(alpha: 0.15),
+          const Color(0xFF38BDF8).withValues(alpha: 0.35),
+          const Color(0xFF38BDF8).withValues(alpha: 0.15),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+      ).createShader(Rect.fromLTWH(0, barrierY - 4, size.width, 8))
+      ..strokeWidth = 7.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(size.width * 0.06, barrierY), Offset(size.width * 0.94, barrierY), glowPaint);
+
+    // 2. 核心纤细青白能量流线
+    final linePaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          Colors.transparent,
+          Colors.white.withValues(alpha: 0.4),
+          Colors.white.withValues(alpha: 0.85),
+          Colors.white.withValues(alpha: 0.4),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+      ).createShader(Rect.fromLTWH(0, barrierY - 1, size.width, 2))
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(size.width * 0.08, barrierY), Offset(size.width * 0.92, barrierY), linePaint);
+
+    // 3. 左右两侧微小能量晶体端点（高雅微光水滴点缀）
+    final anchorPaint = Paint()
+      ..color = const Color(0xFF38BDF8).withValues(alpha: 0.8)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(size.width * 0.08, barrierY), 2.2, anchorPaint);
+    canvas.drawCircle(Offset(size.width * 0.92, barrierY), 2.2, anchorPaint);
   }
 
   @override
