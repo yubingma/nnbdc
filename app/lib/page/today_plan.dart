@@ -2991,19 +2991,31 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                     child: Container(
                                       height: 35,
                                       decoration: BoxDecoration(
+                                        // 奶白玉块配方：白 35% 底提亮，再压白 50% 细描边当高光；
+                                        // 选中态实心主题色、去描边、加主题色外发光。
                                         color: isSelected
                                             ? primaryColor
                                             : (isDarkMode
-                                                ? Colors.white.withValues(alpha: 0.06)
-                                                : Colors.black.withValues(alpha: 0.04)),
+                                                ? Colors.white.withValues(alpha: 0.05)
+                                                : Colors.white.withValues(alpha: 0.35)),
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
                                           color: isSelected
-                                              ? primaryColor
+                                              ? Colors.transparent
                                               : (isDarkMode
-                                                  ? Colors.white.withValues(alpha: 0.08)
-                                                  : Colors.black.withValues(alpha: 0.06)),
+                                                  ? const Color(0x20FFFFFF)
+                                                  : const Color(0x80FFFFFF)),
+                                          width: 1,
                                         ),
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: primaryColor.withValues(alpha: 0.32),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ]
+                                            : null,
                                       ),
                                       child: Center(
                                         child: Text(

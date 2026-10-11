@@ -40,32 +40,36 @@ public class GameOverProcessor {
     }
 
     public void processGameOverCmd(UserVo user, UserCmd userCmd) throws IllegalAccessException {
-        if (loser == null) {
-            // 判断那个玩家失败了
-            String loserTag = userCmd.getArgs()[0];
-            assert (loserTag.equals("A") || loserTag.equals("B"));
-            if (loserTag.equals("A")) {
-                loser = user;
-            } else {
-                loser = room.getAnotherUser(user);
-            }
+        // 判断哪个玩家失败了
+        String loserTag = userCmd.getArgs()[0];
+        assert (loserTag.equals("A") || loserTag.equals("B"));
+        UserVo theLoser = loserTag.equals("A") ? user : room.getAnotherUser(user);
+        handleLoser(theLoser);
+    }
 
-            UserGameData userPlayData = room.getUserPlayData(user);
-            if (userPlayData.isExercise()) {
-                room.sendEventToUser(user, "loser", loser.getId());
-                log.info(String.format("[%s]练习结束, loserTag:[%s]", Util.getNickNameOfUser(loser), loserTag));
-            } else {
-                room.broadcastEvent("loser", loser.getId());
-                log.info(String.format("[%s]触顶，判为失败, loserTag:[%s]", Util.getNickNameOfUser(loser), loserTag));
-            }
+    public synchronized void handleLoser(UserVo theLoser) throws IllegalAccessException {
+        if (theLoser == null || loser != null) {
+            return;
+        }
+        loser = theLoser;
 
-            // 根据胜负情况对两位玩家的积分进行调整（包含机器人对局，保持一致体验）
-            // 检查房间中是否有任何玩家处于练习状态，如果有则不调整积分
-            boolean anyUserInExercise = room.getUsers().values().stream()
-                    .anyMatch(u -> u.isExercise());
-            if (!anyUserInExercise) {
-                UserVo winer = room.getAnotherUser(loser);
-                // 直接使用本地逻辑进行积分与魔法泡泡结算（已改为使用新会话，避免currentSession问题）
+        UserGameData userPlayData = room.getUserPlayData(loser);
+        if (userPlayData != null && userPlayData.isExercise()) {
+            room.sendEventToUser(loser, "loser", loser.getId());
+            log.info(String.format("[%s]练习结束, 判为失败", Util.getNickNameOfUser(loser)));
+        } else {
+            room.broadcastEvent("loser", loser.getId());
+            log.info(String.format("[%s]生命耗尽/触顶，判为失败", Util.getNickNameOfUser(loser)));
+        }
+
+        // 根据胜负情况对两位玩家的积分进行调整（包含机器人对局，保持一致体验）
+        // 检查房间中是否有任何玩家处于练习状态，如果有则不调整积分
+        boolean anyUserInExercise = room.getUsers().values().stream()
+                .anyMatch(u -> u.isExercise());
+        if (!anyUserInExercise) {
+            UserVo winer = room.getAnotherUser(loser);
+            if (winer != null) {
+                // 直接使用本地逻辑进行积分与魔法泡泡结算
                 adjustUserScore(winer, loser);
             }
         }

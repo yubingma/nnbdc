@@ -990,6 +990,11 @@ class RussiaPageState extends State<RussiaPage>
     sendUserCmd('USE_PROPS', [0]);
     HapticFeedback.heavyImpact();
 
+    // 对手血条消耗完战败
+    if (opponentHp <= 0) {
+      sendUserCmd('GAME_OVER', ['B']);
+    }
+
     // 弧线水雷弹道（从右下角水雷小图标轰击右侧对手顶部血条区）
     final mediaQuery = MediaQuery.maybeOf(context);
     final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;

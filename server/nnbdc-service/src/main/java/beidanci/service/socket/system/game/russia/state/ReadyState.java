@@ -252,6 +252,16 @@ public class ReadyState extends RoomState {
                 .info(String.format("🧱 玩家[%s] %s，堆叠+1 => %d",
                         Util.getNickNameOfUser(user), reason, pd.getStackRows()));
 
+        // 如果堆叠达到 10 行（生命值耗尽淘汰），立即判定该玩家为失败者
+        if (pd.getStackRows() >= 10) {
+            try {
+                gameOverProcessor.handleLoser(user);
+            } catch (IllegalAccessException e) {
+                LoggerFactory.getLogger(ReadyState.class).error("处理游戏淘汰失败", e);
+            }
+            return;
+        }
+
         // 如果是机器人触底，强制立即进行下一次答题动作（Force False），解决高叠时的同步延迟
         if (botUserObj != null && user.getId().equals(botUserObj.getId())) {
             triggerBotAnswer(false);
@@ -416,6 +426,9 @@ public class ReadyState extends RoomState {
                     if (another != null) {
                         UserGameData opp = room.getUserPlayData(another);
                         opp.setStackRows(opp.getStackRows() + 1);
+                        if (opp.getStackRows() >= 10) {
+                            gameOverProcessor.handleLoser(another);
+                        }
                     }
                 } else if (props == 1) {
                     playData.setStackRows(Math.max(0, playData.getStackRows() - 1));
@@ -435,6 +448,9 @@ public class ReadyState extends RoomState {
             if (args.length >= 1) {
                 int selfRows = Integer.parseInt(args[0]);
                 room.getUserPlayData(user).setStackRows(selfRows);
+                if (selfRows >= 10) {
+                    gameOverProcessor.handleLoser(user);
+                }
             }
             // 不再接收/处理对手行数，仅接收 A 玩家自身行数
         } catch (NumberFormatException ignored) {
