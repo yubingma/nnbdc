@@ -74,9 +74,44 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       await Prefs.init();
 
-      await WalkmanLauncher.remember(null);
+      await WalkmanLauncher.remember(null, null);
 
       expect(Prefs.read<String>(WalkmanLauncher.lastSourceKey), isNull);
+    });
+
+    test('回落今日任务时带上词表名称', () async {
+      SharedPreferences.setMockInitialValues({});
+      await Prefs.init();
+
+      final params = await WalkmanLauncher.resolveParams();
+
+      expect(params.title, '今日单词');
+    });
+
+    test('上次的数据源已认不出来时，名称也跟着回落今日任务', () async {
+      SharedPreferences.setMockInitialValues({
+        WalkmanLauncher.lastSourceKey: 'some_removed_words_list',
+        WalkmanLauncher.lastSourceTitleKey: '某个已消失的词表',
+      });
+      await Prefs.init();
+
+      final params = await WalkmanLauncher.resolveParams();
+
+      expect(params.wordsProvider, isA<TodayWordsProvider>());
+      expect(params.title, '今日单词');
+    });
+
+    test('数据源仍然有效时，词表名称原样带过来', () async {
+      SharedPreferences.setMockInitialValues({
+        WalkmanLauncher.lastSourceKey: 'root_family_words_list',
+        WalkmanLauncher.lastSourceTitleKey: '同根词',
+      });
+      await Prefs.init();
+
+      final params = await WalkmanLauncher.resolveParams();
+
+      expect(params.wordsProvider, isA<RootFamilyWordsProvider>());
+      expect(params.title, '同根词');
     });
   });
 }

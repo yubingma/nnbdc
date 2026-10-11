@@ -57,8 +57,6 @@ public class ReadyState extends RoomState {
     private TimerTask botAutoStartTask = null;
     // 机器人延迟开始游戏的定时任务
     private TimerTask botDelayStartTask = null;
-    // 记录机器人上次的堆叠行数，用于检测是否被攻击
-    private int botLastStackRows = 0;
     // 机器人使用道具的延迟任务（避免立即反击, 显得更真实）
     private TimerTask botPropsDelayTask = null;
 
@@ -109,14 +107,13 @@ public class ReadyState extends RoomState {
             // 正确率：人类越强，机器人越强 [0.45, 0.95]
             double correctRate = Math.min(0.95, Math.max(0.45, 0.45 + botWinRatio * 0.5));
             UserGameData botData = room.getUserPlayData(botUserObj);
-            int currentStackRows = botData.getStackRows();
 
             // --- 自动使用道具（添加延迟，模拟人类反应时间） ---
             final UserGameData currentBotData = botData;
-            
-            // 1. 进攻逻辑（加一行道具 - 索引0）：有就用，带点延迟
+
+            // 1. 进攻逻辑（水雷/加一行 - 索引0）：有就发射轰击人类，带点随机延迟
             if (currentBotData.getPropsCounts()[0] > 0) {
-                long attackDelay = 200L + (long) (Math.random() * 800L);
+                long attackDelay = 400L + (long) (Math.random() * 1000L);
                 fallTimer.schedule(new TimerTask() {
                     @Override
                     public void run() {
@@ -129,16 +126,16 @@ public class ReadyState extends RoomState {
                                 propsCmd.setCmd("USE_PROPS");
                                 propsCmd.setArgs(new String[] { "0" });
                                 room.processUserCmd(botUserObj, propsCmd);
-                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了道具[加一行](攻击)");
+                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了水雷道具(轰击人类玩家)");
                             }
                         } catch (Exception ignored) {}
                     }
                 }, attackDelay);
             }
 
-            // 2. 自救逻辑（减一行道具 - 索引1）：被攻击时使用
-            if (currentStackRows > botLastStackRows && currentBotData.getPropsCounts()[1] > 0 && botPropsDelayTask == null) {
-                long delayMs = 300L + (long) (Math.random() * 1700L);
+            // 2. 自救逻辑（飞针/减一行 - 索引1）：有就自救治愈，带点随机延迟
+            if (currentBotData.getPropsCounts()[1] > 0 && botPropsDelayTask == null) {
+                long delayMs = 500L + (long) (Math.random() * 1300L);
                 botPropsDelayTask = new TimerTask() {
                     @Override
                     public void run() {
@@ -147,14 +144,14 @@ public class ReadyState extends RoomState {
                                 cancel();
                                 return;
                             }
-                            if (currentBotData.getPropsCounts()[1] > 0 && currentBotData.getStackRows() > 0) {
+                            if (currentBotData.getPropsCounts()[1] > 0) {
                                 UserCmd propsCmd = new UserCmd(userBo);
                                 propsCmd.setUserId(botUserObj.getId());
                                 propsCmd.setSystem("russia");
                                 propsCmd.setCmd("USE_PROPS");
                                 propsCmd.setArgs(new String[] { "1" });
                                 room.processUserCmd(botUserObj, propsCmd);
-                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了道具[减一行](处突)");
+                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了飞针道具(自救治愈)");
                             }
                             botPropsDelayTask = null;
                         } catch (Exception ignored) {
@@ -163,7 +160,6 @@ public class ReadyState extends RoomState {
                 };
                 fallTimer.schedule(botPropsDelayTask, delayMs);
             }
-            botLastStackRows = currentStackRows;
 
             // 答题逻辑
             boolean isCorrect = (correct != null) ? correct
@@ -576,8 +572,6 @@ public class ReadyState extends RoomState {
         fallTasks.clear();
         // 清空堆叠标记，避免上一局游戏状态影响新游戏
         stackAddedOnce.clear();
-        // 重置机器人道具相关状态
-        botLastStackRows = 0;
         if (botPropsDelayTask != null) {
             botPropsDelayTask.cancel();
             botPropsDelayTask = null;

@@ -159,12 +159,29 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
   }
 
-  /// 实际参与渲染与明暗判定的有效壁纸路径
+  /// 当前是否为宽屏形态（iPad/平板/桌面/横屏等，宽高比 >= 0.62 或宽度 >= 600）。
+  /// 手机壁纸资源在宽屏下会被拉伸变形，因此宽屏下强制仅生效经典（无壁纸）背景。
+  bool get _isWideScreen {
+    final size = MediaQuery.sizeOf(context);
+    return size.width / size.height >= 0.62 || size.width >= 600;
+  }
+
+  /// 实际参与渲染与明暗判定的有效壁纸路径。
+  /// 宽屏形态下壁纸资源未适配，强制仅生效经典（无壁纸）。
   String get _effectiveWallpaperPath {
+    if (_isWideScreen) {
+      return 'none';
+    }
     if (_wallpaperPath == 'random') {
       return _randomResolvedPath ??= _resolveDailyRandomWallpaper();
     }
     return _wallpaperPath;
+  }
+
+  /// 当前是否有有效壁纸（非经典且非空）
+  bool get _hasEffectiveWallpaper {
+    final path = _effectiveWallpaperPath;
+    return path.isNotEmpty && path != 'none';
   }
 
   /// 点击"开始学习"后正在等待今日计划就绪：按钮据此给出"准备中"反馈，
@@ -667,9 +684,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   Widget _buildBackground(bool isDarkMode, AppThemeStyle themeStyle) {
-    final effectivePath = _effectiveWallpaperPath;
-    final hasWallpaper = effectivePath.isNotEmpty && effectivePath != 'none';
-    if (!hasWallpaper) {
+    if (!_hasEffectiveWallpaper) {
       return AppThemeBackground(
         isDarkMode: isDarkMode,
         themeStyle: themeStyle,
@@ -678,7 +693,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
 
     return Image.asset(
-      effectivePath,
+      _effectiveWallpaperPath,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         return AppThemeBackground(
@@ -809,7 +824,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   bottom: false,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+                      final hasWallpaper = _hasEffectiveWallpaper;
                       final int planTotalWords = _planWords.length;
                       final bool isDakaStamped = hasDakaToday;
                       final DateTime stampDay = AppClock.today();
@@ -1338,7 +1353,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required String label,
     required VoidCallback onPressed,
   }) {
-    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    final hasWallpaper = _hasEffectiveWallpaper;
     final onDark = _wallpaperIsDark ?? isDarkMode;
     final actionColor = hasWallpaper
         ? (onDark ? Colors.white : const Color(0xFF0F172A))
@@ -1421,7 +1436,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final themeStyle = darkModeState.themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final isDarkMode = themeStyle.isDark;
-    final hasWallpaper = _wallpaperPath.isNotEmpty && _wallpaperPath != 'none';
+    final hasWallpaper = _hasEffectiveWallpaper;
 
     final bool planFinished =
         _totalStepCount > 0 && _completedStepCount >= _totalStepCount;
@@ -2925,16 +2940,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                             const SizedBox(height: 12),
 
-                            // 本页背景快速切换药丸标签（5排每排4个，对称极简）
+                            // 本页背景快速切换药丸标签（宽屏下对用户隐藏手机壁纸，只保留经典）
                             Builder(
                               builder: (ctx) {
-                                const options = planWallpapers;
-
-                                Widget buildPill(PlanWallpaper item) {
-                                  final isSelected = _wallpaperPath == item.path;
+                                Widget buildPill(PlanWallpaper item, {bool? forceSelected, VoidCallback? customOnTap}) {
+                                  final isSelected = forceSelected ?? (_wallpaperPath == item.path);
                                   return GestureDetector(
                                     behavior: HitTestBehavior.opaque,
-                                    onTap: () async {
+                                    onTap: customOnTap ?? () async {
                                       final selectedPath = item.path;
                                       if (selectedPath == 'random') {
                                         _randomResolvedPath = _resolveDailyRandomWallpaper(forceNew: true);
@@ -2984,6 +2997,46 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                   );
                                 }
 
+                                if (_isWideScreen) {
+                                  final classicItem = planWallpapers.firstWhere(
+                                    (w) => w.path == 'none',
+                                    orElse: () => const PlanWallpaper('经典', 'none', isDark: false),
+                                  );
+                                  return Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 80,
+                                        child: buildPill(
+                                          classicItem,
+                                          forceSelected: true,
+                                          customOnTap: () async {
+                                            await Prefs.write('today_plan_wallpaper', 'none');
+                                            setDialogState(() {
+                                              _wallpaperPath = 'none';
+                                            });
+                                            if (mounted) {
+                                              setState(() {
+                                                _wallpaperPath = 'none';
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          '壁纸仅适配手机竖屏，宽屏暂仅支持经典背景',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                const options = planWallpapers;
                                 return Column(
                                   children: [
                                     for (int row = 0; row < 5; row++) ...[

@@ -114,11 +114,15 @@ class WalkmanParams {
   BookMarkProvider? bookMarkProvider;
   int? initialWordIndex;
 
-  WalkmanParams(this.wordsProvider, {this.bookMarkProvider, this.initialWordIndex});
+  /// 当前词表名称（如「今日新词」「考研高频词汇」），仅用于页面顶部的轻量标识
+  String? title;
+
+  WalkmanParams(this.wordsProvider,
+      {this.bookMarkProvider, this.initialWordIndex, this.title});
 
   @override
   String toString() {
-    return 'WalkmanParams{wordsProvider: $wordsProvider, bookMarkProvider: $bookMarkProvider, initialWordIndex: $initialWordIndex}';
+    return 'WalkmanParams{wordsProvider: $wordsProvider, bookMarkProvider: $bookMarkProvider, initialWordIndex: $initialWordIndex, title: $title}';
   }
 }
 
@@ -480,8 +484,9 @@ class WalkmanPageState extends State<WalkmanPage> {
     try {
       // 沿用词表当前的排序：随身听只推进位置，不能把词表排序改回默认
       await params!.bookMarkProvider!.saveBookMark(BookMarkVo(index, word.word.spell, bookMarkSortAlg));
-      // 记下这次收听的数据源，下次独立打开随身听时从它续播
-      await WalkmanLauncher.remember(params!.bookMarkProvider!.bookMarkName);
+      // 记下这次收听的数据源与名称，下次独立打开随身听时从它续播
+      await WalkmanLauncher.remember(
+          params!.bookMarkProvider!.bookMarkName, params!.title);
     } catch (e) {
       Global.logger.w('保存随身听当前位置失败: $e');
     }
@@ -1067,6 +1072,36 @@ class WalkmanPageState extends State<WalkmanPage> {
     });
   }
 
+  /// 当前词表名称：一行极小的淡色标注，让用户知道自己在听哪一本
+  Widget _renderSourceTitle() {
+    final title = params?.title;
+    if (title == null) return const SizedBox.shrink();
+    final hasScene = currentScene != WalkmanScene.none;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.3,
+          color: mutedLabelColor(hasScene).withValues(alpha: 0.55),
+          fontFamily: 'NotoSansSC',
+          shadows: hasScene
+              ? [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    offset: const Offset(0, 1),
+                    blurRadius: 6,
+                  ),
+                ]
+              : null,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
   Widget _renderTopBar() {
     final themeConfig = context.themeConfig;
     final isDark = context.isDarkMode;
@@ -1251,21 +1286,19 @@ class WalkmanPageState extends State<WalkmanPage> {
             ),
           ),
 
-        // 1. 主内容与触控手势区
+        // 1. 主内容与触控手势区：手动模式点屏幕听下一个词、左右甩动切词（打开设置只走右上角按钮）
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {
-              toggleSettingPanel();
-            },
+            // 只有手动模式（停下来等人切）才响应点击；自动连播时点屏幕不做事，避免误触跳词
+            onTap: playInterval == maxIntValue ? _switchToNextWord : null,
             onHorizontalDragEnd: (DragEndDetails details) async {
               if (totalWordCount <= 0) return;
-              // 向左滑动, 播放下一个单词
+              // 向左甩：播放下一个单词
               if (details.velocity.pixelsPerSecond.dx <= -500) {
-                int nextIdx = (currWordIndex + 1) % totalWordCount;
-                _handleWordSwitch(nextIdx);
+                _switchToNextWord();
               }
-              // 向右滑动, 播放上一个单词
+              // 向右甩：播放上一个单词
               else if (details.velocity.pixelsPerSecond.dx >= 500) {
                 int prevIdx = currWordIndex >= 1 ? currWordIndex - 1 : totalWordCount - 1;
                 _handleWordSwitch(prevIdx);
@@ -1282,6 +1315,7 @@ class WalkmanPageState extends State<WalkmanPage> {
               child: Column(
                 children: [
                   _renderTopBar(),
+                  _renderSourceTitle(),
                   Expanded(
                     child: Center(
                       child: SingleChildScrollView(
@@ -1634,7 +1668,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                                 playInterval = maxIntValue;
                                 saveConfig();
                               });
-                              ToastUtil.info('手指向左滑动，播放下一单词');
+                              ToastUtil.info('点击屏幕或向左滑动，播放下一单词');
                             },
                           ),
                         ],
@@ -1906,6 +1940,12 @@ class WalkmanPageState extends State<WalkmanPage> {
   }
 
   // 统一处理单词切换，确保响应迅速
+  /// 切到下一个词（手动模式点屏幕、或向左甩动时共用）
+  void _switchToNextWord() {
+    if (totalWordCount <= 0) return;
+    _handleWordSwitch((currWordIndex + 1) % totalWordCount);
+  }
+
   Future<void> _handleWordSwitch(int newIndex) async {
     // 1. 立即打断当前发音：作废进行中的播放代次并掐断物理播放器 (TTS 和 Just Audio)
     await _interruptPlayback();

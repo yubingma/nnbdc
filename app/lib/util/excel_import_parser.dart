@@ -1,5 +1,15 @@
 import 'dart:math' as math;
 
+/// 单次导入最多解析的行数（含表头行），超出部分丢弃并提示用户。
+///
+/// 上限兜住两件事：超大表格一次性转成内存矩阵会撑爆内存；
+/// 也要避免个别用户一次把海量词条灌进服务端。
+const int maxImportRows = 10000;
+
+/// 把读到的表格截断到 [maxImportRows] 行以内（未超限时原样返回）。
+List<List<String>> limitImportRows(List<List<String>> rows) =>
+    rows.length > maxImportRows ? rows.sublist(0, maxImportRows) : rows;
+
 /// 导入行在预览阶段的状态。
 enum ExcelRowStatus {
   /// 可导入（词库已收录且词表中不存在）

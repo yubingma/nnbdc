@@ -43,8 +43,6 @@ class ImportFromExcelPage extends StatefulWidget {
 }
 
 class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
-  static const int _maxRows = 5000;
-
   /// 预览列表最多渲染的行数（导入不受此限制）。
   static const int _maxPreviewRows = 300;
 
@@ -218,11 +216,11 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
     try {
       final parsed = await compute(_parseXlsxBytes, bytes);
       final rows = parsed['rows'] as List<List<String>>;
-      if (rows.length > _maxRows) {
-        ToastUtil.info('表格超过 $_maxRows 行，仅解析前 $_maxRows 行');
+      if (rows.length > maxImportRows) {
+        ToastUtil.info('表格超过 $maxImportRows 行，仅解析前 $maxImportRows 行');
       }
       _sheetName = parsed['sheet'] as String;
-      _worksheetRows = rows.length > _maxRows ? rows.sublist(0, _maxRows) : rows;
+      _worksheetRows = limitImportRows(rows);
       _mapping = null;
       await _rebuildRows();
     } on FormatException catch (e) {

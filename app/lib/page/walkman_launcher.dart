@@ -27,14 +27,20 @@ class WalkmanLauncher {
   /// 「上次收听的数据源」在本地偏好里的键
   static const String lastSourceKey = 'walkman_last_source';
 
+  /// 上次收听数据源的展示名，随身听顶部要显示它
+  static const String lastSourceTitleKey = 'walkman_last_source_title';
+
   /// 已落盘的数据源，避免随身听每推进一个词就写一次本地偏好
   static String? _remembered;
 
-  /// 记下本次收听的数据源，供下次续播
-  static Future<void> remember(String? bookMarkName) async {
+  /// 记下本次收听的数据源与名称，供下次续播
+  static Future<void> remember(String? bookMarkName, String? title) async {
     if (bookMarkName == null || bookMarkName == _remembered) return;
     if (await Prefs.write(lastSourceKey, bookMarkName)) {
       _remembered = bookMarkName;
+    }
+    if (title != null) {
+      await Prefs.write(lastSourceTitleKey, title);
     }
   }
 
@@ -54,10 +60,14 @@ class WalkmanLauncher {
     final last = Prefs.read<String>(lastSourceKey);
     if (last != null) {
       final resumed = await _resume(last);
-      if (resumed != null) return resumed;
+      if (resumed != null) {
+        // 展示名沿用上次记录的那一个，与用户当时在词表页看到的标题一致
+        resumed.title ??= Prefs.read<String>(lastSourceTitleKey);
+        return resumed;
+      }
     }
     return WalkmanParams(TodayWordsProvider(),
-        bookMarkProvider: TodayWordsBookMarkProvider());
+        bookMarkProvider: TodayWordsBookMarkProvider(), title: '今日单词');
   }
 
   /// 按书签名重建数据源；返回 null 表示这个名字已经没有对应的词表可听了

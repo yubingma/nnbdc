@@ -335,4 +335,29 @@ void main() {
       expect(hits.containsKey('unknown'), isFalse);
     });
   });
+
+  group('单次导入行数上限', () {
+    test('上限是 10000 行（含表头行）', () {
+      expect(maxImportRows, 10000);
+    });
+
+    test('超过上限截断到前 10000 行，未超限则原样返回', () {
+      final overLimit = List.generate(maxImportRows + 1, (i) => ['word$i', 'n. 释义$i', 'n.', '1']);
+      final limited = limitImportRows(overLimit);
+
+      expect(limited.length, maxImportRows);
+      expect(limited.first.first, 'word0');
+      expect(limited.last.first, 'word${maxImportRows - 1}');
+
+      final exact = List.generate(maxImportRows, (i) => ['word$i']);
+      expect(limitImportRows(exact).length, maxImportRows);
+      expect(limitImportRows(exact).last.first, 'word${maxImportRows - 1}');
+
+      final small = [
+        ['单词', '释义'],
+        ['ability', 'n. 能力'],
+      ];
+      expect(limitImportRows(small), small);
+    });
+  });
 }

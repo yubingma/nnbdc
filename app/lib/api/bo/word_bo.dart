@@ -2163,6 +2163,16 @@ class WordBo {
     return results;
   }
 
+  /// 每个用户可创建的自定义词书数量上限。
+  ///
+  /// 「生词本」「已掌握」是账号初始化时生成的两本系统词书，不计入其中。
+  /// 线上实测自建书最多的一人是 17 本、绝大多数用户 0~2 本，30 本足够用；
+  /// 设上限是为了挡住个别用户无限建书把服务端数据撑大。
+  static const int maxCustomDictCount = 30;
+
+  /// 「生词本」「已掌握」由账号初始化生成，不算用户自建词书。
+  static bool isSystemOwnedDictName(String? name) => name == '生词本' || name == '已掌握';
+
   /// 创建自定义词典
   Future<Result<String>> createCustomDict(String name, String ownerId) async {
     final db = MyDatabase.instance;
@@ -2171,6 +2181,13 @@ class WordBo {
       final existing = await (db.select(db.dicts)..where((d) => d.ownerId.equals(ownerId) & d.name.equals(name))).getSingleOrNull();
       if (existing != null) {
         return Result("ERROR", "已存在同名词典", false);
+      }
+
+      // 数量上限：只数用户自建词书，系统词书不计入
+      final ownedDicts = await (db.select(db.dicts)..where((d) => d.ownerId.equals(ownerId))).get();
+      final customCount = ownedDicts.where((d) => !isSystemOwnedDictName(d.name)).length;
+      if (customCount >= maxCustomDictCount) {
+        return Result("ERROR", "自定义词书最多 $maxCustomDictCount 本，请先删除不再使用的词书", false);
       }
 
       final id = Util.uuid();

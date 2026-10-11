@@ -8,6 +8,8 @@ import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/tts.dart';
+import 'package:nnbdc/util/utils.dart';
 import '../api/vo.dart';
 import '../db/db.dart';
 import '../global.dart';
@@ -89,9 +91,14 @@ class FloatingText {
 }
 
 /// 弹道类型
-enum ProjectileType { needle, mine }
+enum ProjectileType {
+  needle,       // 使用道具：飞针直奔血条
+  mine,         // 使用道具：水雷弧线轰击血条
+  rewardMine,   // 获得道具：水雷能量球飞向左下角道具区
+  rewardNeedle, // 获得道具：飞针能量球飞向右下角道具区
+}
 
-/// 飞行弹道
+/// 飞行弹道与战利品光球
 class GameProjectile {
   final ProjectileType type;
   double x;
@@ -117,6 +124,24 @@ class GameProjectile {
     required this.targetX,
     required this.targetY,
   })  : type = ProjectileType.mine,
+        x = startX,
+        y = startY;
+
+  GameProjectile.rewardMine({
+    required this.startX,
+    required this.startY,
+    required this.targetX,
+    required this.targetY,
+  })  : type = ProjectileType.rewardMine,
+        x = startX,
+        y = startY;
+
+  GameProjectile.rewardNeedle({
+    required this.startX,
+    required this.startY,
+    required this.targetX,
+    required this.targetY,
+  })  : type = ProjectileType.rewardNeedle,
         x = startX,
         y = startY;
 }
@@ -176,8 +201,8 @@ class RussiaPageState extends State<RussiaPage>
   int myScore = 0;
   int myCombo = 0;
   int myWordIndex = 0;
-  int attackProps = 1;
-  int purgeProps = 1;
+  int attackProps = 0;
+  int purgeProps = 0;
   bool myStarted = false;
 
   String opponentUserId = '';
@@ -203,6 +228,8 @@ class RussiaPageState extends State<RussiaPage>
   int opponentHp = maxHp;
   double wavePhase = 0.0;
 
+  final Tts _tts = Tts();
+
   final Random rand = Random();
   final List<Color> bubbleColors = const [
     Color(0xFF38BDF8), // 晶莹透天蓝
@@ -215,6 +242,7 @@ class RussiaPageState extends State<RussiaPage>
   void initState() {
     super.initState();
     _initAmbientBubbles();
+    _tts.init();
     LoadingUtils.disableApiLoading();
     SocketIoClient.instance.connect();
     SocketIoClient.instance.setInRussiaGame(true);
@@ -246,6 +274,7 @@ class RussiaPageState extends State<RussiaPage>
   @override
   void dispose() {
     _ticker.dispose();
+    _tts.stop();
     SocketIoClient.instance.setInRussiaGame(false);
     _cleanupSocketListeners();
     sendUserCmd('LEAVE_HALL', []);
@@ -611,8 +640,8 @@ class RussiaPageState extends State<RussiaPage>
       myWordIndex = 0;
       myHp = maxHp;
       opponentHp = maxHp;
-      attackProps = 1;
-      purgeProps = 1;
+      attackProps = 0;
+      purgeProps = 0;
       isPlaying = true;
       gameState = 'playing';
       isShowingResult = false;
@@ -655,10 +684,13 @@ class RussiaPageState extends State<RussiaPage>
       final size = mediaQuery?.size ?? const Size(390, 844);
       _spawnBubblesForRound(size);
 
-      // 延迟朗读正确发音
+      // 题目区是中文释义，使用本地 TTS 朗读中文，避免朗读英文泄题
       Future.delayed(const Duration(milliseconds: 60), () {
         if (mounted && isPlaying && currWord != null) {
-          StudyAudioSessionController.instance.playWordSound(currWord!);
+          final meaning = Util.pureMeaningStr(currWord!);
+          if (meaning.isNotEmpty) {
+            _tts.speak(meaning);
+          }
         }
       });
     } catch (e) {
@@ -684,6 +716,7 @@ class RussiaPageState extends State<RussiaPage>
   }
 
   void _handleLoser(String loserId) {
+    _tts.stop();
     final bool amILoser = (loserId == myUserId);
     setState(() {
       isPlaying = false;
@@ -780,10 +813,10 @@ class RussiaPageState extends State<RussiaPage>
     sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
     HapticFeedback.mediumImpact();
 
-    // 治愈光针弹道（直奔我方顶部血条）
+    // 治愈光针弹道（从右下角飞针小图标射向我方顶部血条）
     projectiles.add(GameProjectile.needle(
-      x: size.width * 0.75,
-      y: size.height - 120,
+      x: size.width - 40,
+      y: size.height - 70,
       targetX: size.width * 0.75,
       targetY: 80,
     ));
@@ -805,10 +838,10 @@ class RussiaPageState extends State<RussiaPage>
     sendUserCmd('USE_PROPS', [0]);
     HapticFeedback.heavyImpact();
 
-    // 弧线水雷弹道（轰击对手顶部血条区）
+    // 弧线水雷弹道（从左下角水雷小图标轰击对手顶部血条区）
     projectiles.add(GameProjectile.mine(
-      startX: size.width * 0.5,
-      startY: size.height - 120,
+      startX: 40,
+      startY: size.height - 70,
       targetX: size.width * 0.25,
       targetY: 80,
     ));
@@ -931,6 +964,38 @@ class RussiaPageState extends State<RussiaPage>
           opponentShake = 0.4;
           projectiles.removeAt(i);
         }
+      } else if (p.type == ProjectileType.rewardMine) {
+        p.progress += dt * 2.2;
+        p.x = p.startX + (p.targetX - p.startX) * p.progress;
+        p.y = p.startY + (p.targetY - p.startY) * p.progress - sin(p.progress * pi) * 60.0;
+        if (p.progress >= 1.0) {
+          attackProps++;
+          _createBurstParticles(p.targetX, p.targetY, const Color(0xFFF97316), count: 14);
+          floatingTexts.add(FloatingText(
+            x: p.targetX,
+            y: p.targetY - 28,
+            text: '+1',
+            color: const Color(0xFFF97316),
+          ));
+          HapticFeedback.lightImpact();
+          projectiles.removeAt(i);
+        }
+      } else if (p.type == ProjectileType.rewardNeedle) {
+        p.progress += dt * 2.2;
+        p.x = p.startX + (p.targetX - p.startX) * p.progress;
+        p.y = p.startY + (p.targetY - p.startY) * p.progress - sin(p.progress * pi) * 60.0;
+        if (p.progress >= 1.0) {
+          purgeProps++;
+          _createBurstParticles(p.targetX, p.targetY, const Color(0xFF34D399), count: 14);
+          floatingTexts.add(FloatingText(
+            x: p.targetX,
+            y: p.targetY - 28,
+            text: '+1',
+            color: const Color(0xFF34D399),
+          ));
+          HapticFeedback.lightImpact();
+          projectiles.removeAt(i);
+        }
       }
     }
 
@@ -960,6 +1025,12 @@ class RussiaPageState extends State<RussiaPage>
     HapticFeedback.mediumImpact();
     _createBurstParticles(b.x, b.y, b.baseColor, count: 16);
 
+    // 用户在泡泡中戳中了正确的英文单词：停止中文 TTS 并播放英文原声，强化听觉记忆与反馈
+    _tts.stop();
+    if (currWord != null) {
+      StudyAudioSessionController.instance.playWordSound(currWord!);
+    }
+
     final bool isFirstTrySuccess = !hasMistakeInCurrentWord;
 
     if (isFirstTrySuccess) {
@@ -967,22 +1038,42 @@ class RussiaPageState extends State<RussiaPage>
       myScore += 10;
       myCombo++;
 
-      // 连对奖励战术道具（每连对 3 次随机奖励水雷或飞针）
+      // 连对奖励战术道具（每连对 3 次随机奖励水雷或飞针，生成飞向左右道具区光球动画）
       if (myCombo % 3 == 0) {
+        final mediaQuery = MediaQuery.maybeOf(context);
+        final size = mediaQuery?.size ?? const Size(390, 844);
+        final bottomPadding = mediaQuery?.padding.bottom ?? 20.0;
+        final double mineTargetX = 42.0;
+        final double mineTargetY = size.height - bottomPadding - 48.0;
+        final double needleTargetX = size.width - 42.0;
+        final double needleTargetY = size.height - bottomPadding - 48.0;
+
         if (rand.nextBool()) {
-          purgeProps++;
+          // 获得治愈飞针：从当前爆破的泡泡飞向右下角飞针道具区，飞抵后入库
+          projectiles.add(GameProjectile.rewardNeedle(
+            startX: b.x,
+            startY: b.y,
+            targetX: needleTargetX,
+            targetY: needleTargetY,
+          ));
           floatingTexts.add(FloatingText(
             x: b.x,
             y: b.y - 35,
-            text: '连击奖励: 治愈飞针+1!',
+            text: '连击奖励: 飞针入库!',
             color: const Color(0xFF34D399),
           ));
         } else {
-          attackProps++;
+          // 获得重力水雷：从当前爆破的泡泡飞向左下角水雷道具区，飞抵后入库
+          projectiles.add(GameProjectile.rewardMine(
+            startX: b.x,
+            startY: b.y,
+            targetX: mineTargetX,
+            targetY: mineTargetY,
+          ));
           floatingTexts.add(FloatingText(
             x: b.x,
             y: b.y - 35,
-            text: '连击奖励: 重力水雷+1!',
+            text: '连击奖励: 水雷入库!',
             color: const Color(0xFFF87171),
           ));
         }
@@ -1182,14 +1273,19 @@ class RussiaPageState extends State<RussiaPage>
                 child: _buildWaitingOverlay(),
               ),
 
-            // 6. 底部战术道具栏
-            if (isPlaying)
+            // 6. 底部战术道具：左侧对敌水雷、右侧自救飞针（微型小图标置于两翼，中间完全空出留给上升气泡）
+            if (isPlaying) ...[
               Positioned(
-                bottom: bottomPadding + 14,
-                left: 16,
-                right: 16,
-                child: _buildPropsBar(size),
+                bottom: bottomPadding + 20,
+                left: 18,
+                child: _buildAttackMineProp(size),
               ),
+              Positioned(
+                bottom: bottomPadding + 20,
+                right: 18,
+                child: _buildPurgeNeedleProp(size),
+              ),
+            ],
 
             // 7. 结算弹窗
             if (isShowingResult)
@@ -1730,109 +1826,195 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
-  /// 底部道具操作栏
-  Widget _buildPropsBar(Size size) {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              if (attackProps > 0) {
-                setState(() {
-                  attackProps--;
-                });
-                _fireAttackMine(size);
-              } else {
-                floatingTexts.add(FloatingText(
-                  x: size.width * 0.3,
-                  y: size.height - 100,
-                  text: '连击即可获得水雷!',
-                  color: Colors.white70,
-                ));
-              }
-            },
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFDC2626), Color(0xFFEA580C)],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.red.withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+  /// 左侧给对手用的战术道具小图标（重力水雷）
+  Widget _buildAttackMineProp(Size size) {
+    final bool hasProp = attackProps > 0;
+    return GestureDetector(
+      onTap: () {
+        if (hasProp) {
+          _fireAttackMine(size);
+        } else {
+          floatingTexts.add(FloatingText(
+            x: 55,
+            y: size.height - 120,
+            text: '连对3次可得水雷!',
+            color: Colors.white70,
+          ));
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: hasProp
+                        ? const [Color(0xFFDC2626), Color(0xFF991B1B)]
+                        : [
+                            const Color(0xFF1E293B).withValues(alpha: 0.8),
+                            const Color(0xFF0F172A).withValues(alpha: 0.8),
+                          ],
                   ),
-                ],
+                  border: Border.all(
+                    color: hasProp
+                        ? const Color(0xFFF87171)
+                        : Colors.white.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                  boxShadow: hasProp
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFFDC2626).withValues(alpha: 0.5),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: const Center(
+                  child: Text('🚀', style: TextStyle(fontSize: 22)),
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('🚀', style: TextStyle(fontSize: 18)),
-                  const SizedBox(width: 6),
-                  Text(
-                    '重力水雷 (-1对手血) ($attackProps)',
+              Positioned(
+                right: -4,
+                top: -3,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: hasProp ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white, width: 1),
+                  ),
+                  child: Text(
+                    '$attackProps',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                ],
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '水雷 -1对手血',
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: hasProp ? Colors.white : Colors.white54,
+              shadows: const [
+                Shadow(color: Colors.black87, blurRadius: 4),
+              ],
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              if (purgeProps > 0) {
-                _firePurgeNeedle(size);
-              } else {
-                floatingTexts.add(FloatingText(
-                  x: size.width * 0.7,
-                  y: size.height - 100,
-                  text: '连击即可获得飞针!',
-                  color: Colors.white70,
-                ));
-              }
-            },
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0284C7), Color(0xFF06B6D4)],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.cyan.withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+        ],
+      ),
+    );
+  }
+
+  /// 右侧给自己加血的战术道具小图标（治愈飞针）
+  Widget _buildPurgeNeedleProp(Size size) {
+    final bool hasProp = purgeProps > 0;
+    return GestureDetector(
+      onTap: () {
+        if (hasProp) {
+          _firePurgeNeedle(size);
+        } else {
+          floatingTexts.add(FloatingText(
+            x: size.width - 55,
+            y: size.height - 120,
+            text: '连对3次可得飞针!',
+            color: Colors.white70,
+          ));
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: hasProp
+                        ? const [Color(0xFF059669), Color(0xFF047857)]
+                        : [
+                            const Color(0xFF1E293B).withValues(alpha: 0.8),
+                            const Color(0xFF0F172A).withValues(alpha: 0.8),
+                          ],
                   ),
-                ],
+                  border: Border.all(
+                    color: hasProp
+                        ? const Color(0xFF34D399)
+                        : Colors.white.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                  boxShadow: hasProp
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF059669).withValues(alpha: 0.5),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [],
+                ),
+                child: const Center(
+                  child: Text('💖', style: TextStyle(fontSize: 22)),
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('💖', style: TextStyle(fontSize: 18)),
-                  const SizedBox(width: 6),
-                  Text(
-                    '治愈飞针 (+1自己血) ($purgeProps)',
+              Positioned(
+                right: -4,
+                top: -3,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: hasProp ? const Color(0xFF10B981) : const Color(0xFF64748B),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white, width: 1),
+                  ),
+                  child: Text(
+                    '$purgeProps',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                ],
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '飞针 +1自己血',
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: hasProp ? Colors.white : Colors.white54,
+              shadows: const [
+                Shadow(color: Colors.black87, blurRadius: 4),
+              ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -2307,7 +2489,7 @@ class _UnderseaScenePainter extends CustomPainter {
         ..color = Colors.white
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(p.x, p.y - 10), 3.0, glowPaint);
-    } else {
+    } else if (p.type == ProjectileType.mine) {
       final minePaint = Paint()
         ..color = const Color(0xFFDC2626)
         ..style = PaintingStyle.fill;
@@ -2316,6 +2498,38 @@ class _UnderseaScenePainter extends CustomPainter {
         ..color = const Color(0xFFFBBF24)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(p.x + 8, p.y - 8), 3.5, sparkPaint);
+    } else if (p.type == ProjectileType.rewardMine) {
+      // 获得道具水雷：璀璨橙红微光光球，带有柔和光晕和晶亮核心
+      final outerGlow = Paint()
+        ..color = const Color(0xFFEA580C).withValues(alpha: 0.45)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(p.x, p.y), 14.0, outerGlow);
+
+      final corePaint = Paint()
+        ..color = const Color(0xFFDC2626)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(p.x, p.y), 8.5, corePaint);
+
+      final sparkPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(p.x - 2, p.y - 2), 3.0, sparkPaint);
+    } else if (p.type == ProjectileType.rewardNeedle) {
+      // 获得道具飞针：晶莹翡翠绿微光光球，带有治愈光晕与晶亮核心
+      final outerGlow = Paint()
+        ..color = const Color(0xFF10B981).withValues(alpha: 0.45)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(p.x, p.y), 14.0, outerGlow);
+
+      final corePaint = Paint()
+        ..color = const Color(0xFF059669)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(p.x, p.y), 8.5, corePaint);
+
+      final sparkPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(p.x - 2, p.y - 2), 3.0, sparkPaint);
     }
   }
 

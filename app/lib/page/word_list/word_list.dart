@@ -2945,7 +2945,8 @@ class WordListPageState extends State<WordListPage>
     context.push('/walkman',
         extra: WalkmanParams(args.wordsProvider,
             bookMarkProvider: args.bookMarkProvider,
-            initialWordIndex: initialIndex)).then((_) {
+            initialWordIndex: initialIndex,
+            title: args.appBarTitle)).then((_) {
       // 随身听播放中会把书签一路推进，返回词表时同步到它停留的位置
       _syncBookMarkAfterWalkman();
     });

@@ -841,6 +841,27 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       return;
     }
 
+    // 数量上限：已建满时先告知，避免用户白填一次名称
+    final customCount = (customDicts ?? const <DictVo>[])
+        .where((d) => !WordBo.isSystemOwnedDictName(d.name))
+        .length;
+    if (customCount >= WordBo.maxCustomDictCount) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('自定义词书数量已达上限'),
+          content: Text('最多可以创建 ${WordBo.maxCustomDictCount} 本自定义词书，请先在「自定义」里删除不再使用的词书。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('知道了'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final TextEditingController controller = TextEditingController();
     await showDialog(
       context: context,
