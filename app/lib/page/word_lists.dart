@@ -11,6 +11,7 @@ import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
+import 'package:nnbdc/page/word_list/difficult_words.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/page_vibrancy.dart';
 import 'package:nnbdc/widget/desk_section.dart';
@@ -461,6 +462,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
     final historyWrongList = _findListByName('历史错词');
+    final difficultWordList = _findListByName('我的难词');
     final confusableList = _findListByName('形近词');
     final rootFamilyList = _findListByName('同根词');
 
@@ -468,6 +470,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final hasHistoryWrong = historyWrongCount > 0;
     final historyWrongColor = hasHistoryWrong
         ? (isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B))
+        : themeConfig.textSecondary.withValues(alpha: 0.45);
+
+    final difficultWordCount = difficultWordList?.wordCount ?? 0;
+    final hasDifficultWord = difficultWordCount > 0;
+    final difficultWordColor = hasDifficultWord
+        ? (isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706))
         : themeConfig.textSecondary.withValues(alpha: 0.45);
 
     return Column(
@@ -484,6 +492,18 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           countText: '$historyWrongCount 词',
           onTap: () {
             toHistoryWrongWordsListPage()?.then((_) => loadData());
+          },
+        ),
+        const SizedBox(height: 10),
+        _buildHorizontalWordListCard(
+          isDarkMode: isDarkMode,
+          icon: Icons.psychology_alt_rounded,
+          iconColor: difficultWordColor,
+          title: '我的难词',
+          subtitle: '累计答错 3 次及以上 · 攻坚克难',
+          countText: '$difficultWordCount 词',
+          onTap: () {
+            toDifficultWordsListPage()?.then((_) => loadData());
           },
         ),
         const SizedBox(height: 10),

@@ -1089,11 +1089,17 @@ public class UserDbSyncBo {
             switch (operation) {
                 case "INSERT" -> wrongWordBo.createIfAbsent(wrongWord);
                 case "UPDATE" -> {
-                    // 检查记录是否存在，不存在则创建
                     WrongWord existingForUpdate = wrongWordBo.findById(wrongWord.getId());
                     if (existingForUpdate == null) {
                         wrongWordBo.createEntity(wrongWord);
                     } else {
+                        // 老客户端上报未带新字段时保留已有值，防止老客户端上行将计数重置为默认值
+                        if (wrongWordDto.getWrongCount() == null) {
+                            wrongWord.setWrongCount(existingForUpdate.getWrongCount());
+                        }
+                        if (wrongWordDto.getInWrongBook() == null) {
+                            wrongWord.setInWrongBook(existingForUpdate.getInWrongBook());
+                        }
                         wrongWordBo.updateEntity(wrongWord);
                     }
                 }

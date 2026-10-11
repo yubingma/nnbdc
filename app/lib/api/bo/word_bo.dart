@@ -2785,6 +2785,7 @@ class WordBo {
       if (word != null) {
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
+          ..wrongCount = wrongWord.wrongCount
           ..shortDesc = word.shortDesc
           ..shortDescCn = word.shortDescCn
           ..enDefinition = word.enDefinition
@@ -2810,7 +2811,7 @@ class WordBo {
   Future<void> backfillWrongWordsIfNeeded(String userId) async {
     try {
       final db = MyDatabase.instance;
-      final backfillKey = 'backfill_wrong_words_v1_$userId';
+      final backfillKey = 'backfill_wrong_words_v2_$userId';
       final hasBackfilled = await db.localParamsDao.getValue(backfillKey) == 'true';
       if (!hasBackfilled) {
         await db.userWrongWordsDao.backfillFromLearningLogs(userId);
@@ -2818,6 +2819,35 @@ class WordBo {
       }
     } catch (e) {
       Global.logger.e('历史错词回填检查异常: $e');
+    }
+  }
+
+  /// 获取用户的「我的难词」（累计答错3次及以上）
+  Future<List<WordVo>> getDifficultWords(String userId) async {
+    try {
+      await backfillWrongWordsIfNeeded(userId);
+      final db = MyDatabase.instance;
+      final user = await db.usersDao.getUserById(userId);
+      if (user == null) {
+        throw Exception('用户不存在');
+      }
+      final wrongWords = await db.userWrongWordsDao.getDifficultWords(userId);
+      return await _convertWrongWordsToWordVos(wrongWords, userId);
+    } catch (e, stackTrace) {
+      Global.logger.e('获取我的难词失败: $e', stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  /// 获取用户的「我的难词」总数
+  Future<int> getDifficultWordsCount(String userId) async {
+    try {
+      await backfillWrongWordsIfNeeded(userId);
+      final db = MyDatabase.instance;
+      return await db.userWrongWordsDao.getDifficultWordsCount(userId);
+    } catch (e) {
+      Global.logger.e('获取我的难词数量失败: $e');
+      return 0;
     }
   }
 
@@ -3066,6 +3096,8 @@ class WordBo {
       wordLists.add(WordList("形近词", await getConfusableGroupCount(user.id)));
       // 同根词：词表组数（每一组为一个共享词根/词缀且范围内至少 2 个词的族）
       wordLists.add(WordList("同根词", await getRootFamilyGroupCount(user.id)));
+      // 我的难词：累计答错 3 次及以上单词数
+      wordLists.add(WordList("我的难词", await db.userWrongWordsDao.getDifficultWordsCount(user.id)));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
     } catch (e, stackTrace) {
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);

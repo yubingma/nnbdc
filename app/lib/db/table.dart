@@ -646,6 +646,10 @@ class UserCowDungLogs extends Table {
 class UserWrongWords extends Table {
   TextColumn get userId => text()();
   TextColumn get wordId => text()();
+  /// 累计答错次数（达到3次及以上自动归入我的难词）
+  IntColumn get wrongCount => integer().withDefault(const Constant(1))();
+  /// 是否保留在错题本中（从错题本移出时置为false，累计答错计数仍永久保留）
+  BoolColumn get inWrongBook => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createTime => dateTime()();
   DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 

@@ -643,6 +643,18 @@ class UserDbLogsDao extends DatabaseAccessor<MyDatabase> with _$UserDbLogsDaoMix
   Future<void> deleteUserDbLogs(String userId) async {
     await (delete(userDbLogs)..where((lg) => lg.userId.equals(userId))).go();
   }
+
+  /// 按日志 ID 批量删除。
+  ///
+  /// 分批上传时每批成功后只能删掉这一批的日志行：整表删除会把还没上传的批次一起清掉。
+  /// 单条 SQL 的 IN 参数规模与项目内其他批量查询保持一致（见 WordBo.matchWordIdsBySpells）。
+  Future<void> deleteUserDbLogsByIds(List<String> ids) async {
+    const batchSize = 400;
+    for (var i = 0; i < ids.length; i += batchSize) {
+      final end = i + batchSize < ids.length ? i + batchSize : ids.length;
+      await (delete(userDbLogs)..where((lg) => lg.id.isIn(ids.sublist(i, end)))).go();
+    }
+  }
 }
 
 @DriftAccessor(tables: [UserDbVersions])
@@ -2383,24 +2395,54 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
     }
   }
 
+  /// 记录一次答题错误（每次答题错了一次即调用一次，无论跨天与否，自增 wrongCount，并保留在错题本中）
+  Future<UserWrongWord> recordWrongAnswer(String userId, String wordId, {bool genLog = true}) async {
+    final now = AppClock.now();
+    final entity = await getEntity(userId, wordId);
+    late final UserWrongWord target;
+    if (entity == null) {
+      target = UserWrongWord(
+        userId: userId,
+        wordId: wordId,
+        wrongCount: 1,
+        inWrongBook: true,
+        createTime: now,
+        updateTime: now,
+      );
+    } else {
+      target = entity.copyWith(
+        wrongCount: entity.wrongCount + 1,
+        inWrongBook: true,
+        updateTime: now,
+      );
+    }
+    await saveEntity(target, genLog);
+    return target;
+  }
+
   Future<List<UserWrongWord>> getTodayWrongWords(String userId) async {
     final now = AppClock.now();
     final start = DateUtils.businessDayStart(now);
     final end = DateUtils.businessDayEnd(now);
 
     return (select(userWrongWords)
-          ..where((uw) => uw.userId.equals(userId) & uw.createTime.isBiggerOrEqualValue(start) & uw.createTime.isSmallerThanValue(end))
+          ..where((uw) =>
+              uw.userId.equals(userId) &
+              uw.inWrongBook.equals(true) &
+              uw.createTime.isBiggerOrEqualValue(start) &
+              uw.createTime.isSmallerThanValue(end))
           ..orderBy([(uw) => OrderingTerm(expression: uw.createTime, mode: OrderingMode.desc)]))
         .get();
   }
 
-  /// 获取用户的历史错词（不包含今日错词，仅包含今日之前做错的词，按最新出错时间倒序）
+  /// 获取用户的历史错词（不包含今日错词，仅包含今日之前做错且未从错题本移出的词，按最新出错时间倒序）
   Future<List<UserWrongWord>> getHistoryWrongWords(String userId) async {
     final now = AppClock.now();
     final start = DateUtils.businessDayStart(now);
     return (select(userWrongWords)
           ..where((uw) =>
               uw.userId.equals(userId) &
+              uw.inWrongBook.equals(true) &
               coalesce([uw.updateTime, uw.createTime]).isSmallerThanValue(start))
           ..orderBy([
             (uw) => OrderingTerm(
@@ -2410,13 +2452,14 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
         .get();
   }
 
-  /// 获取用户的历史错词总数（不包含今日错词）
+  /// 获取用户的历史错词总数（不包含今日错词，仅统计留在错题本中的词）
   Future<int> getHistoryWrongWordsCount(String userId) async {
     final now = AppClock.now();
     final start = DateUtils.businessDayStart(now);
     final query = selectOnly(userWrongWords)
       ..addColumns([userWrongWords.wordId.count(distinct: true)])
       ..where(userWrongWords.userId.equals(userId) &
+          userWrongWords.inWrongBook.equals(true) &
           coalesce([userWrongWords.updateTime, userWrongWords.createTime]).isSmallerThanValue(start));
     final row = await query.getSingle();
     return row.read(userWrongWords.wordId.count(distinct: true)) ?? 0;
@@ -2425,7 +2468,7 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
   /// 获取用户的所有错词（全量错题本）
   Future<List<UserWrongWord>> getAllWrongWords(String userId) async {
     return (select(userWrongWords)
-          ..where((uw) => uw.userId.equals(userId))
+          ..where((uw) => uw.userId.equals(userId) & uw.inWrongBook.equals(true))
           ..orderBy([
             (uw) => OrderingTerm(
                 expression: coalesce([uw.updateTime, uw.createTime]),
@@ -2438,62 +2481,101 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
   Future<int> getAllWrongWordsCount(String userId) async {
     final query = selectOnly(userWrongWords)
       ..addColumns([userWrongWords.wordId.count(distinct: true)])
-      ..where(userWrongWords.userId.equals(userId));
+      ..where(userWrongWords.userId.equals(userId) & userWrongWords.inWrongBook.equals(true));
     final row = await query.getSingle();
     return row.read(userWrongWords.wordId.count(distinct: true)) ?? 0;
   }
 
-  /// 从错题本中移除某个错词
+  /// 获取用户的「我的难词」列表（累计答错3次及以上，按答错次数从多到少、最新出错时间倒序）
+  Future<List<UserWrongWord>> getDifficultWords(String userId) async {
+    return (select(userWrongWords)
+          ..where((uw) => uw.userId.equals(userId) & uw.wrongCount.isBiggerOrEqualValue(3))
+          ..orderBy([
+            (uw) => OrderingTerm(expression: uw.wrongCount, mode: OrderingMode.desc),
+            (uw) => OrderingTerm(expression: uw.updateTime, mode: OrderingMode.desc),
+          ]))
+        .get();
+  }
+
+  /// 获取用户的「我的难词」总数（累计答错3次及以上）
+  Future<int> getDifficultWordsCount(String userId) async {
+    final query = selectOnly(userWrongWords)
+      ..addColumns([userWrongWords.wordId.count(distinct: true)])
+      ..where(userWrongWords.userId.equals(userId) & userWrongWords.wrongCount.isBiggerOrEqualValue(3));
+    final row = await query.getSingle();
+    return row.read(userWrongWords.wordId.count(distinct: true)) ?? 0;
+  }
+
+  /// 从错题本中移除某个错词（保留行记录与 wrongCount，将 inWrongBook 置为 false）
   Future<bool> removeWrongWord(String userId, String wordId, {bool genLog = true}) async {
     final entity = await getEntity(userId, wordId);
     if (entity != null) {
-      await deleteEntity(entity, genLog);
+      final updated = entity.copyWith(
+        inWrongBook: false,
+        updateTime: AppClock.now(),
+      );
+      await saveEntity(updated, genLog);
       return true;
     }
     return false;
   }
 
   /// 从历史学习评级日志(learning_logs)中提取所有做错过的单词(rating == 1)，回填到 userWrongWords 表
+  /// 并将历史做错次数赋给 wrongCount，确保老用户存量难词平滑无感呈现
   Future<int> backfillFromLearningLogs(String userId) async {
     final db = attachedDatabase;
     try {
-      // 1. 查询 learning_logs 中该用户所有 rating == 1 的不同 wordId 以及最新做错时间
-      final wrongLogsQuery = db.selectOnly(db.learningLogs, distinct: true)
-        ..addColumns([db.learningLogs.wordId, db.learningLogs.createTime.max()])
+      // 1. 查询 learning_logs 中该用户所有 rating == 1 的不同 wordId、累计做错次数以及最新做错时间
+      final wrongLogsQuery = db.selectOnly(db.learningLogs)
+        ..addColumns([db.learningLogs.wordId, db.learningLogs.id.count(), db.learningLogs.createTime.max()])
         ..where(db.learningLogs.userId.equals(userId) & db.learningLogs.rating.equals(1))
         ..groupBy([db.learningLogs.wordId]);
       final wrongLogRows = await wrongLogsQuery.get();
       if (wrongLogRows.isEmpty) return 0;
 
-      // 2. 查出当前 userWrongWords 已有的 wordId 集合，避免重复插入
-      final existingWords = await (selectOnly(userWrongWords)
-            ..addColumns([userWrongWords.wordId])
-            ..where(userWrongWords.userId.equals(userId)))
+      // 2. 查出当前 userWrongWords 已有记录映射
+      final existingWords = await (select(userWrongWords)
+            ..where((uw) => uw.userId.equals(userId)))
           .get();
-      final existingSet = existingWords.map((r) => r.read(userWrongWords.wordId)!).toSet();
+      final existingMap = {for (final e in existingWords) e.wordId: e};
 
-      int insertedCount = 0;
+      int affectedCount = 0;
       for (final row in wrongLogRows) {
         final wordId = row.read(db.learningLogs.wordId);
-        if (wordId == null || existingSet.contains(wordId)) continue;
+        if (wordId == null) continue;
+        final failCount = row.read(db.learningLogs.id.count()) ?? 1;
         final lastWrongTime = row.read(db.learningLogs.createTime.max()) ?? AppClock.now();
+        final existing = existingMap[wordId];
 
-        final entry = UserWrongWord(
-          userId: userId,
-          wordId: wordId,
-          createTime: lastWrongTime,
-          updateTime: lastWrongTime,
-        );
-        await into(userWrongWords).insert(entry, mode: InsertMode.insertOrIgnore);
-        await DbLogUtil.logOperation(userId, 'INSERT', 'userWrongWords', '$userId-$wordId', entry);
-        insertedCount++;
+        if (existing == null) {
+          final entry = UserWrongWord(
+            userId: userId,
+            wordId: wordId,
+            wrongCount: failCount,
+            inWrongBook: true,
+            createTime: lastWrongTime,
+            updateTime: lastWrongTime,
+          );
+          await into(userWrongWords).insert(entry, mode: InsertMode.insertOrIgnore);
+          await DbLogUtil.logOperation(userId, 'INSERT', 'userWrongWords', '$userId-$wordId', entry);
+          affectedCount++;
+        } else if (existing.wrongCount < failCount) {
+          // 存量错词的计数低于历史流水真实记录的次数，补齐计数
+          final updated = existing.copyWith(
+            wrongCount: failCount,
+            updateTime: lastWrongTime.isAfter(existing.updateTime) ? lastWrongTime : existing.updateTime,
+          );
+          await update(userWrongWords).replace(updated);
+          await DbLogUtil.logOperation(userId, 'UPDATE', 'userWrongWords', '$userId-$wordId', updated);
+          affectedCount++;
+        }
       }
 
-      if (insertedCount > 0) {
+      if (affectedCount > 0) {
         ThrottledDbSyncService().requestSync();
-        Global.logger.i('✅ 成功从 learning_logs 回填 $insertedCount 个历史错词到 userWrongWords');
+        Global.logger.i('✅ 成功从 learning_logs 回填/更新 $affectedCount 个历史错词计数到 userWrongWords');
       }
-      return insertedCount;
+      return affectedCount;
     } catch (e) {
       Global.logger.e('从 learning_logs 回填错词失败: $e');
       return 0;

@@ -30,6 +30,8 @@ void main() {
         UserWrongWord(
           userId: userId,
           wordId: 'word_yesterday',
+          wrongCount: 1,
+          inWrongBook: true,
           createTime: yesterday,
           updateTime: yesterday,
         ),
@@ -41,6 +43,8 @@ void main() {
         UserWrongWord(
           userId: userId,
           wordId: 'word_today',
+          wrongCount: 1,
+          inWrongBook: true,
           createTime: now,
           updateTime: now,
         ),
@@ -74,6 +78,8 @@ void main() {
         UserWrongWord(
           userId: userId,
           wordId: 'word_remove_me',
+          wrongCount: 1,
+          inWrongBook: true,
           createTime: now,
           updateTime: now,
         ),
@@ -180,6 +186,8 @@ void main() {
         UserWrongWord(
           userId: userId,
           wordId: 'word_saved_across_days',
+          wrongCount: 1,
+          inWrongBook: true,
           createTime: yesterday,
           updateTime: yesterday,
         ),
@@ -193,6 +201,76 @@ void main() {
       final wrongWords = await database.userWrongWordsDao.getAllWrongWords(userId);
       expect(wrongWords.length, 1);
       expect(wrongWords.first.wordId, 'word_saved_across_days');
+    });
+
+    test('我的难词：recordWrongAnswer 无论跨天与否每次答错均累加，满3次进入难词', () async {
+      const userId = 'user_difficult_001';
+      const wordId = 'word_difficult_1';
+
+      // 1. 首次答错：wrongCount 为 1，还不是难词
+      final w1 = await database.userWrongWordsDao.recordWrongAnswer(userId, wordId, genLog: false);
+      expect(w1.wrongCount, 1);
+      expect(await database.userWrongWordsDao.getDifficultWordsCount(userId), 0);
+
+      // 2. 第二次答错（同天重练或同天后续环节）：wrongCount 为 2
+      final w2 = await database.userWrongWordsDao.recordWrongAnswer(userId, wordId, genLog: false);
+      expect(w2.wrongCount, 2);
+      expect(await database.userWrongWordsDao.getDifficultWordsCount(userId), 0);
+
+      // 3. 第三次答错（跨天或同天）：wrongCount 为 3，达到难词门槛
+      final w3 = await database.userWrongWordsDao.recordWrongAnswer(userId, wordId, genLog: false);
+      expect(w3.wrongCount, 3);
+      expect(await database.userWrongWordsDao.getDifficultWordsCount(userId), 1);
+
+      final diffList = await database.userWrongWordsDao.getDifficultWords(userId);
+      expect(diffList.length, 1);
+      expect(diffList.first.wordId, wordId);
+      expect(diffList.first.wrongCount, 3);
+
+      // 4. 从错题本移出后，inWrongBook 变 false，但我的难词依然保留该词与计数
+      await database.userWrongWordsDao.removeWrongWord(userId, wordId, genLog: false);
+      final afterRemoveHistory = await database.userWrongWordsDao.getHistoryWrongWords(userId);
+      expect(afterRemoveHistory.any((w) => w.wordId == wordId), false); // 错题本中已移出
+
+      final afterRemoveDifficult = await database.userWrongWordsDao.getDifficultWords(userId);
+      expect(afterRemoveDifficult.length, 1); // 难词库仍然保留
+      expect(afterRemoveDifficult.first.wordId, wordId);
+      expect(afterRemoveDifficult.first.wrongCount, 3);
+    });
+
+    test('从 learning_logs 回填时能够准确计算累计做错次数并识别难词', () async {
+      const userId = 'user_backfill_diff';
+      const wordId = 'word_repeat_wrong';
+      final now = AppClock.now();
+
+      // 在 learning_logs 插入 3 条 rating == 1 (Again)
+      for (int i = 0; i < 3; i++) {
+        await database.learningLogsDao.saveEntity(
+          LearningLog(
+            id: 'log_$i',
+            userId: userId,
+            wordId: wordId,
+            rating: 1, // Again
+            stability: 1.0,
+            difficulty: 5.0,
+            elapsedDays: i,
+            scheduledDays: 1,
+            createTime: now.subtract(Duration(days: 3 - i)),
+            updateTime: now.subtract(Duration(days: 3 - i)),
+          ),
+          false,
+        );
+      }
+
+      // 执行回填
+      final affected = await database.userWrongWordsDao.backfillFromLearningLogs(userId);
+      expect(affected, 1);
+
+      // 验证回填后该词直接成为难词，wrongCount = 3
+      final diffWords = await database.userWrongWordsDao.getDifficultWords(userId);
+      expect(diffWords.length, 1);
+      expect(diffWords.first.wordId, wordId);
+      expect(diffWords.first.wrongCount, 3);
     });
   });
 }

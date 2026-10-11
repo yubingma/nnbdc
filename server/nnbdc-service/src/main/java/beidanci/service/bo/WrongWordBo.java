@@ -81,13 +81,17 @@ public class WrongWordBo extends BaseBo<WrongWord> {
      * 获取用户所有错词的DTO列表，用于全量同步
      */
     public List<WrongWordDto> getWrongWordDtosOfUser(String userId) {
-        String sql = "SELECT user_id, word_id, create_time, update_time FROM user_wrong_word WHERE user_id = :userId ORDER BY create_time";
+        String sql = "SELECT user_id, word_id, wrong_count, in_wrong_book, create_time, update_time FROM user_wrong_word WHERE user_id = :userId ORDER BY create_time";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<WrongWordDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             WrongWordDto dto = new WrongWordDto();
             dto.setUserId(rs.getString("user_id"));
             dto.setWordId(rs.getString("word_id"));
+            int wrongCount = rs.getInt("wrong_count");
+            dto.setWrongCount(rs.wasNull() ? 1 : wrongCount);
+            boolean inWrongBook = rs.getBoolean("in_wrong_book");
+            dto.setInWrongBook(rs.wasNull() ? true : inWrongBook);
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;

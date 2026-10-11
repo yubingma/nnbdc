@@ -745,7 +745,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       await _validateCoreData(userId);
     });
 
-    // 事务B：将本地变更上传到服务端（独立于事务A，失败不影响已保存的数据）
+    // 事务B：将本地变更分批上传到服务端（独立于事务A，失败不影响已保存的数据）
     if (localToBackend.isNotEmpty) {
       assert(!_isSyncingToServer, "⚠️ [CONCURRENCY ERROR] 检测到同一个客户端正在并发向网络发送同步上传请求！");
       if (_isSyncingToServer) {
@@ -755,18 +755,36 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
       _isSyncingToServer = true;
       try {
-        Result<int> result = await Api.client.syncUserDb(backendDbVersion, userId, localToBackend);
-        if (!result.success) {
-          Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}（本地数据已保存，将在下次同步时重试）");
-        } else {
-          // 上传成功，更新本地版本号 + 清空本地日志
-          backendDbVersion = result.data!;
-          await db.transaction(() async {
-            final now = AppClock.now();
-            await db.userDbVersionsDao
-                .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
-            await db.userDbLogsDao.deleteUserDbLogs(userId);
-          });
+        // 本次同步读到的本地日志行里，没有进入上传清单的那些（被同键的新日志覆盖，或被服务端更新的数据覆盖）
+        // 在合并阶段就已经作废：先删掉，避免它们在下一次同步里又被当成本地变更重新上传。
+        final uploadIds = {for (final log in localToBackend) log.id};
+        final obsoleteIds = localChanges.map((log) => log.id).where((id) => !uploadIds.contains(id)).toList();
+        if (obsoleteIds.isNotEmpty) {
+          Global.logger.d('🧹 本次同步已作废 ${obsoleteIds.length} 条本地日志行（已被新日志或服务端数据覆盖）');
+          await db.userDbLogsDao.deleteUserDbLogsByIds(obsoleteIds);
+        }
+
+        // 上传清单按体积分批串行上传：单次请求体超过服务端上限时会被整批拒收，
+        // 而本地日志又删不掉，会让这个用户之后的所有数据都同步不出去。
+        final allUploaded = await uploadLogsInBatches(
+          logs: localToBackend,
+          startVersion: backendDbVersion,
+          upload: (expectedVersion, batch) => Api.client.syncUserDb(expectedVersion, userId, batch),
+          onBatchUploaded: (newVersion, batch) async {
+            backendDbVersion = newVersion;
+            // 每批成功后立刻存版本号 + 只删这一批的日志；未发送或失败的批次原样留着，下次同步接着发
+            await db.transaction(() async {
+              final now = AppClock.now();
+              await db.userDbVersionsDao
+                  .saveEntity(UserDbVersion(userId: userId, version: newVersion, createTime: now, updateTime: now));
+              await db.userDbLogsDao.deleteUserDbLogsByIds([for (final log in batch) log.id]);
+            });
+          },
+        );
+
+        if (allUploaded) {
+          // 全部批次都已被服务端接收：清掉本次同步消费掉的本地日志行
+          await db.userDbLogsDao.deleteUserDbLogsByIds([for (final log in localChanges) log.id]);
         }
       } finally {
         _isSyncingToServer = false;
@@ -777,7 +795,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     }
 
     stopwatch.stop();
-    Global.logger.i("✅ 用户数据库同步操作完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 成功: $successCount, 失败: $failCount");
+    Global.logger.i("✅ 用户数据库同步操作完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 成功: $successCount, 失败: $failCount, 云端版本: $backendDbVersion");
     if (failCount > 0) {
       Global.logger.w("⚠️ 注意：同步过程中跳过了 $failCount 条解析失败的记录。建议检查网络或联系客服。");
     }
@@ -787,6 +805,73 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'doSyncUserDb', showToast: false);
     rethrow;
   }
+}
+
+/// 单批上传的请求体预算（字节）。服务端 nginx 限制请求体 5MB，留出一倍余量。
+const int _uploadBatchMaxBytes = 2 * 1024 * 1024;
+
+/// 单批上传的日志条数上限：服务端按批开事务，批太大会把事务拖长。
+const int _uploadBatchMaxCount = 3000;
+
+/// 把待上传日志按**请求体真实字节数**与条数切成若干批。
+///
+/// 只从前往后连续切分，批次顺序即上传顺序：清单本身的顺序承载着"父表先于子表"的依赖关系，
+/// 打乱顺序会让服务端外键校验失败。单条日志本身超过 [maxBytes] 时只能单独成批，不做拆分。
+List<List<UserDbLogDto>> splitLogsForUpload(
+  List<UserDbLogDto> logs, {
+  int maxBytes = _uploadBatchMaxBytes,
+  int maxCount = _uploadBatchMaxCount,
+}) {
+  final batches = <List<UserDbLogDto>>[];
+  var current = <UserDbLogDto>[];
+  // JSON 数组的方括号，保证按本地口径算出的字节数与真实请求体一致
+  var currentBytes = 2;
+
+  for (final log in logs) {
+    final itemBytes = utf8.encode(jsonEncode(log.toJson())).length + (current.isEmpty ? 0 : 1);
+    if (current.isNotEmpty && (currentBytes + itemBytes > maxBytes || current.length >= maxCount)) {
+      batches.add(current);
+      current = <UserDbLogDto>[];
+      currentBytes = 2;
+    }
+    current.add(log);
+    currentBytes += itemBytes;
+  }
+  if (current.isNotEmpty) batches.add(current);
+  return batches;
+}
+
+/// 分批串行上传待上传日志。返回是否所有批次都成功。
+///
+/// - 批次必须串行：[upload] 的 expectedVersion 取上一批成功后返回的新版本号，服务端据此校验顺序；
+/// - 每批成功后立刻回调 [onBatchUploaded]，由调用方保存新版本号并**只删掉这一批**的本地日志；
+/// - 某批失败即停止，后续批次会在下一次同步时重试；[upload] 抛出的异常照常抛出，不吞掉。
+Future<bool> uploadLogsInBatches({
+  required List<UserDbLogDto> logs,
+  required int startVersion,
+  required Future<Result<int>> Function(int expectedVersion, List<UserDbLogDto> batch) upload,
+  required Future<void> Function(int newVersion, List<UserDbLogDto> batch) onBatchUploaded,
+  int maxBytes = _uploadBatchMaxBytes,
+  int maxCount = _uploadBatchMaxCount,
+}) async {
+  final batches = splitLogsForUpload(logs, maxBytes: maxBytes, maxCount: maxCount);
+  if (batches.length > 1) {
+    Global.logger.i('📦 待上传日志共 ${logs.length} 条，切成 ${batches.length} 批串行上传');
+  }
+
+  var version = startVersion;
+  for (var i = 0; i < batches.length; i++) {
+    final batch = batches[i];
+    final result = await upload(version, batch);
+    if (!result.success) {
+      Global.logger.e('❌ 第 ${i + 1}/${batches.length} 批上传失败（${batch.length} 条）: ${result.msg}'
+          '（本地数据已保存，剩余批次将在下次同步时重试）');
+      return false;
+    }
+    version = result.data!;
+    await onBatchUploaded(version, batch);
+  }
+  return true;
 }
 
 /// 处理删除用户某个表所有记录的操作

@@ -1050,8 +1050,8 @@ class StudyBo {
     // 仅首次作答计分：重练只判对错，不再算 FSRS、不写日志、不计数
     final bool isGraded = isFirstAttempt && fsrsRating != null;
 
-    if (isGraded && fsrsRating == FsrsRating.again) {
-      // 若评分是 Again (答错), 则保存错词
+    if (fsrsRating == FsrsRating.again) {
+      // 若评分是 Again (答错), 则累加答错计数并保存错词（无论首答还是重练答错均计入做错次数）
       await saveWrongWord(currWord, db, user, now);
     }
 
@@ -1375,32 +1375,9 @@ class StudyBo {
     User user,
     DateTime now,
   ) async {
-    // 将当前错误的单词添加到错词表
-    Global.logger.d('添加错词到错词表: wordId=${wrongWord.wordId}');
-
-    // 检查该单词是否已经在错词表中，避免重复添加
-    final existingWrongWord = await db.userWrongWordsDao.getEntity(user.id, wrongWord.wordId);
-
-    if (existingWrongWord == null) {
-      // 将错词添加到错词表
-      final userWrongWord = UserWrongWord(
-        userId: user.id,
-        wordId: wrongWord.wordId,
-        createTime: now,
-        updateTime: now,
-      );
-      await db.userWrongWordsDao.saveEntity(userWrongWord, true);
-      Global.logger.d('错词添加到错词表成功: ${wrongWord.wordId}');
-    } else {
-      // 更新错词的时间，表示再次答错
-      await db.userWrongWordsDao.saveEntity(
-          existingWrongWord.copyWith(
-            createTime: now, // 纯 DateTime?
-            updateTime: now,
-          ),
-          true);
-      Global.logger.d('错词已存在，更新时间: ${wrongWord.wordId}');
-    }
+    // 记录答错：存在则自增 wrong_count，不存在则初始化为 1
+    Global.logger.d('添加/更新错词记录: wordId=${wrongWord.wordId}');
+    await db.userWrongWordsDao.recordWrongAnswer(user.id, wrongWord.wordId, genLog: true);
 
     // 观察者模式：发射具象的“产生了新错词”事件
     Global.logger.d('[EventBus Debug] 准备发射 NewWrongWordEvent, wordId=${wrongWord.wordId}');

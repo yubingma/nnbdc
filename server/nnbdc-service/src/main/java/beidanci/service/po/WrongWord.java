@@ -26,6 +26,12 @@ public class WrongWord extends Po {
     @Column(name = "user_id")
     private User user;
 
+    @Column(name = "wrong_count")
+    private Integer wrongCount = 1;
+
+    @Column(name = "in_wrong_book")
+    private Boolean inWrongBook = true;
+
     /**
      * default constructor
      */
@@ -56,6 +62,22 @@ public class WrongWord extends Po {
         this.user = user;
     }
 
+    public Integer getWrongCount() {
+        return wrongCount;
+    }
+
+    public void setWrongCount(Integer wrongCount) {
+        this.wrongCount = wrongCount;
+    }
+
+    public Boolean getInWrongBook() {
+        return inWrongBook;
+    }
+
+    public void setInWrongBook(Boolean inWrongBook) {
+        this.inWrongBook = inWrongBook;
+    }
+
     public WordVo getWord(WordCache wordCache) throws IOException, ParseException, InvalidMeaningFormatException, EmptySpellException {
         return wordCache.getWordById(id.getWordId(), new String[]{
                 "SynonymVo.meaningItem", "SynonymVo.word",  "similarWords", "DictVo.dictWords"});
@@ -68,6 +90,8 @@ public class WrongWord extends Po {
         WrongWordId id = new WrongWordId(dto.getUserId(), dto.getWordId());
         WrongWord wrongWord = new WrongWord();
         wrongWord.setId(id);
+        wrongWord.setWrongCount(dto.getWrongCount() != null ? dto.getWrongCount() : 1);
+        wrongWord.setInWrongBook(dto.getInWrongBook() != null ? dto.getInWrongBook() : true);
         if (dto.getCreateTime() != null) {
             wrongWord.setCreateTime(dto.getCreateTime());
         }

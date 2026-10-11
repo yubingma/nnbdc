@@ -27,20 +27,51 @@ class ModeComponents {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            word.word.spell,
-            softWrap: false,
-            style: TextStyle(
-              color: spellColor,
-              fontSize: 16.5,
-              fontWeight: FontWeight.w700,
-              height: 1.25,
-              letterSpacing: -0.2,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  word.word.spell,
+                  softWrap: false,
+                  style: TextStyle(
+                    color: spellColor,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
             ),
-          ),
+            if (word.word.wrongCount != null && word.word.wrongCount! >= 3) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: (isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706)).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: (isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706)).withValues(alpha: 0.35),
+                    width: 0.8,
+                  ),
+                ),
+                child: Text(
+                  '错${word.word.wrongCount}次',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                    height: 1.1,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         if (word.word.mergedPronounce.isNotEmpty) ...[
           const SizedBox(height: 3),

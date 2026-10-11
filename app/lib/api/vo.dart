@@ -569,6 +569,9 @@ class WordVo {
 
   /// 分词性简明英英释义
   String? enDefinition;
+
+  /// 累计答错次数（展示难词/错词时使用）
+  int? wrongCount;
   String? meaningStr;
   DateTime? createTime;
   DateTime? updateTime;
