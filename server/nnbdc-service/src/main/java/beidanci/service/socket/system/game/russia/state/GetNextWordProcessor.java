@@ -85,18 +85,21 @@ public final class GetNextWordProcessor {
             if (wordIndex < words.size()) {
                 wordObj = words.get(wordIndex);
             } else {
-                // 随机选择一个单词
+                // 随机选择目标单词
                 WordVo word = room.getHall().getWordRandomly(null);
 
-                // 随机选择其他两个单词的意思，用以迷惑用户
+                // 随机选择 3 个不重复的干扰单词（用以生成泡泡选项）
                 WordVo word2 = room.getHall().getWordRandomly(word);
                 WordVo word3 = room.getHall().getWordRandomly(word);
-                String[] meanings = new String[]{word2.getMeaningStr(), word3.getMeaningStr()};
+                WordVo word4 = room.getHall().getWordRandomly(word);
+                String[] meanings = new String[]{word2.getMeaningStr(), word3.getMeaningStr(), word4.getMeaningStr()};
+                String[] distractorSpells = new String[]{word2.getSpell(), word3.getSpell(), word4.getSpell()};
 
                 // 单词的发音
                 String soundUrl = Utils.getFileNameOfWordSound(word.getSpell());
 
-                wordObj = new Object[]{word, meanings, soundUrl};
+                // wordObj: [0] targetWord, [1] meanings, [2] soundUrl, [3] distractorSpells
+                wordObj = new Object[]{word, meanings, soundUrl, distractorSpells};
                 words.add(wordObj);
 
             }

@@ -777,7 +777,16 @@
                 </svg>
                 <span>产品玩法与体验</span>
               </div>
-              <a href="#idea-007" class="nav-item active" data-id="idea-007">
+              <a href="#idea-008" class="nav-item active" data-id="idea-008">
+                <div class="nav-item-header">
+                  <span class="nav-item-id" style="color: var(--accent-aurora);">IDEA #008</span>
+                  <span class="nav-dot dot-aurora"></span>
+                </div>
+                <div class="nav-item-title">海底泡泡升空对战 · 戳泡爆破与海面下沉压顶</div>
+                <div class="nav-item-cat">品牌名副其实 · 全屏戳泡 · 空间压缩惩罚</div>
+              </a>
+
+              <a href="#idea-007" class="nav-item" data-id="idea-007">
                 <div class="nav-item-header">
                   <span class="nav-item-id">IDEA #007</span>
                   <span class="nav-dot dot-amber"></span>
@@ -898,8 +907,73 @@
               </svg>
               <span>第一节 · 产品功能与玩法构想（Product & Gameplay）</span>
             </div>
-            <span class="feed-section-tag">7 IDEAS</span>
+            <span class="feed-section-tag">8 IDEAS</span>
           </div>
+
+          <!-- 创意 #008: 海底泡泡升空对战 · 戳泡爆破与海面下沉压顶 -->
+          <article class="idea-card" id="idea-008">
+            <div class="idea-header">
+              <div>
+                <div class="idea-id-date">
+                  <span class="idea-id" style="color: var(--accent-aurora);">IDEA #008</span>
+                  <span>•</span>
+                  <span>2026-10-11</span>
+                  <span>•</span>
+                  <span>对战玩法与机制革新</span>
+                </div>
+                <h2 class="idea-title">海底泡泡升空对战：全屏戳泡爆破与海面下沉压顶（取代传统俄罗斯方块掉落模式）</h2>
+              </div>
+              <span class="badge-status status-evaluating" style="background: rgba(110, 231, 183, 0.12); color: var(--accent-aurora); border-color: rgba(110, 231, 183, 0.3);">原型试玩中</span>
+            </div>
+
+            <div class="tags-container">
+              <span class="tag" style="color: var(--accent-aurora); border-color: rgba(110, 231, 183, 0.2);">#泡泡单词</span>
+              <span class="tag">#深海泡泡</span>
+              <span class="tag">#全屏戳泡</span>
+              <span class="tag">#海面下沉压迫</span>
+              <span class="tag">#多巴胺爆破</span>
+              <span class="tag">#品牌心智统一</span>
+              <span class="tag">#Flutter实验版已落地</span>
+            </div>
+
+            <div class="idea-body">
+              <div class="idea-quote" style="border-left-color: var(--accent-aurora); background: rgba(110, 231, 183, 0.05);">
+                “与其让方块死气沉沉地从上往下掉、像垃圾一样堆积压迫，不如让晶莹剔透的彩色气泡从蔚蓝海底缓缓浮升。戳破泡泡‘啵’的一声，是生机、是向上、是真正名副其实的‘泡泡单词’。”
+              </div>
+
+              <div class="section-title">核心痛点与灵感起源</div>
+              <div class="principle-box" style="background: rgba(110, 231, 183, 0.04); border-color: rgba(110, 231, 183, 0.16); color: #d1fae5;">
+                <strong style="color: var(--accent-aurora);">历史包袱：</strong>现有游戏沿用了俄罗斯方块模板（<code>russia.dart</code>），死板狭窄的双长条分屏、单词生硬下坠堆叠，既无泡泡质感，又给用户带来‘死线逼近、垃圾堆积’的压抑感。<br/>
+                <strong style="color: var(--accent-aurora);">品牌天作之合：</strong>产品叫‘泡泡单词’，游戏却是个方块游戏。改造成‘海底彩色气泡升腾’，不仅完美契合品牌名称，而且‘向上升腾、轻盈浮现’传递了积极美好的心理寓意。
+              </div>
+
+              <div class="section-title">四大核心博弈机制（完美解决慢速躺赢与惩罚直观性）</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 纯中文释义出题（4 泡泳道防粘连）</strong>
+                  <p>顶部卡片仅展示中文释义（如“夏天”），不暴露英文；屏幕仅上升 4 个泡泡（1 正确 + 3 干扰），起迷惑作用。泡泡横向固定在 4 条独立泳道，带轻微正弦波浮动并具备防重叠排斥力，告别误触。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 空气区死泡堆积（海面被重力压沉）</strong>
+                  <p>答错或漏掉的目标词不再凭空消失，而是化作灰暗石化的“死泡泡”堆在海面上方的空气区（带划线被判死刑）。死泡泡越多，重力将海面压得越低，生存水域急剧压缩，直观可见危险度。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>③ 连击金针破死泡（抬升水位化险为夷）</strong>
+                  <p>达成连击（Combo ≥ 2）或使用净化飞针道具时，系统自动向上发射一道耀眼的金针，直刺空气区死泡泡！死泡应声破裂，海面瞬间回弹抬高，为快手答题者提供强烈的翻盘救赎快感。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>④ 快攻砸水雷压制（彻底防止对手慢速躺赢）</strong>
+                  <p>答题快、连击多的优势转化为攻击道具（重力水雷）。点击后划出一道深海抛物线直轰对手空气区，强制把对手海面砸低 40px 并震颤，让慢速答题或故意拖延的对手承受灭顶之灾，形成激烈的竞速博弈！</p>
+                </div>
+              </div>
+
+              <div class="section-title">已落地双端体验入口</div>
+              <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;">
+                ✅ <strong>Flutter App 内体验</strong>：已加入路由 <code>/bubble_battle_preview</code>，并已在「单词PK大厅（<code>page/game.dart</code>）」顶部置顶横幅卡片，含完整金针净化、水雷轰击、死泡堆叠与物理排斥。<br/>
+                ✅ <strong>Mac 浏览器独立体验</strong>：已生成无需启动 Flutter 环境的 HTML5 原型 <code>design/ui/bubble_battle_preview.html</code>，支持鼠标点击戳泡、战术道具释放、Web Audio 合成音效（爆破音、金针穿云音、水雷轰击音）。
+              </p>
+            </div>
+          </article>
 
           <!-- 创意 #007: 记忆守护兽 · 打卡泡泡喂养与裂变 -->
           <article class="idea-card" id="idea-007">
@@ -1982,6 +2056,12 @@
 - **核心逻辑**：对战中向对手施放，使对方接下来的答题混淆选项全部来自当前单词的「形近词」释义。
 - **认知痛点**：打破常规随机选项的简单排除法，逼出真正的精准辨析能力，大幅增加失误与犹豫率。
 - **机制与实现**：持续 2~3 题，复用编辑距离 ≤ 2 的形近词体系，支持无缝降级兜底。`;
+      } else if (id === 'idea-008') {
+        text = `### 海底泡泡升空对战：全屏戳泡爆破与海面下沉压顶（取代传统俄罗斯方块掉落模式）
+- **核心逻辑**：告别压抑的俄罗斯方块下坠模式，彩色晶莹半透明泡泡从深海升腾，名副其实契合「泡泡单词」。
+- **全屏交互**：废弃死板的底部5选1按钮，全屏直接点击戳破目标气泡，伴随清脆水声爆破与水珠飞溅粒子反馈。
+- **失误惩罚**：将原方块千斤顶抬升/死词堆积高度变小的机制，转化为「波浪海面下沉压顶」，可用垂直行程收窄，反应时间急剧压缩。
+- **落地验证**：已在 App 内上线实验抢先版路由 /bubble_battle_preview，并提供 HTML5 独立交互原型。`;
       } else if (id === 'idea-007') {
         text = `### 记忆守护兽：打卡泡泡 · 裂变喂养 · 进化解锁技能
 - **核心逻辑**：把打卡天数这种冷数字，换成一只会饿、会闹、会因为你回来而进化的活物。
