@@ -2,8 +2,8 @@ package beidanci.api.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,8 +85,8 @@ public class WordVo extends UuidVo {
             return null;
         }
 
-        // 释义合并
-        Map<String, List<MeaningItemVo>> meaningItemsByCixing = new HashMap<>(); // 用于把相同词性的释义收集在一起
+        // 释义合并（采用保持插入顺序的 LinkedHashMap 与 LinkedHashSet，严格保持词性与释义的 popularity 优先级顺序）
+        Map<String, List<MeaningItemVo>> meaningItemsByCixing = new LinkedHashMap<>(); // 用于把相同词性的释义收集在一起
         for (MeaningItemVo meaningItemVo : meaningItems) {
             String ciXing = meaningItemVo.getCiXing();
             ciXing = StringUtils.isEmpty(ciXing) ? "" : ciXing;
@@ -100,7 +100,7 @@ public class WordVo extends UuidVo {
         List<MeaningItemVo> mergedMeaningItems = new ArrayList<>();
         for (Map.Entry<String, List<MeaningItemVo>> entry : meaningItemsByCixing.entrySet()) {
             String ciXing = entry.getKey();
-            Set<String> meanings = new HashSet<>();
+            Set<String> meanings = new LinkedHashSet<>();
             for (MeaningItemVo meaningItemVo : entry.getValue()) {
                 String[] parts = meaningItemVo.getMeaning().split(";|；");
                 meanings.addAll(Arrays.asList(parts));

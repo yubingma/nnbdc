@@ -48,7 +48,7 @@ public class ReadyState extends RoomState {
         if (isPlaying) {
             return true;
         }
-        return room.getUsers().values().stream().anyMatch(UserGameData::isExercise);
+        return room.getUsers().values().stream().anyMatch(u -> u != null && u.isExercise());
     }
 
     // 前端上报下落触底 ETA 的调度器与任务表（按用户）
