@@ -359,6 +359,7 @@ class RussiaPageState extends State<RussiaPage>
     socket.off('enterWait');
     socket.on('enterWait', (data) {
       if (!mounted) return;
+      if (isPlaying) return;
       setState(() {
         gameState = 'waiting';
         isPlaying = false;
@@ -373,6 +374,7 @@ class RussiaPageState extends State<RussiaPage>
     socket.off('enterReady');
     socket.on('enterReady', (data) {
       if (!mounted) return;
+      if (isPlaying) return;
       setState(() {
         gameState = 'ready';
         isPlaying = false;
@@ -622,7 +624,8 @@ class RussiaPageState extends State<RussiaPage>
   }
 
   void _handleStartButtonClicked() {
-    if (gameState == 'ready') {
+    final bool hasOpponent = opponentUserId.isNotEmpty || gameState == 'ready';
+    if (hasOpponent) {
       setState(() {
         myStarted = true;
         isExercise = false;
@@ -725,8 +728,14 @@ class RussiaPageState extends State<RussiaPage>
     final bool amILoser = (loserId == myUserId);
     setState(() {
       isPlaying = false;
+      gameState = (opponentUserId.isNotEmpty) ? 'ready' : 'waiting';
+      myStarted = false;
+      opponentStarted = false;
       isShowingResult = true;
       isWonInLastGame = !amILoser;
+      bubbles.clear();
+      projectiles.clear();
+      floatingTexts.clear();
     });
 
     if (amILoser) {
@@ -743,17 +752,22 @@ class RussiaPageState extends State<RussiaPage>
     hasMistakeInCurrentWord = false;
     if (currWord == null) return;
 
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
+    final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
+    final double bottomBarTopY = size.height - bottomBarHeight;
+
     final roundOptions = [currWord!.spell, ...distractorWords.take(2)]..shuffle(rand);
-    // 3 个均分居中横向泳道，与左右道具槽及屏幕边缘保持绝对安全距离
-    final slotXOffsets = [0.29, 0.50, 0.71]..shuffle(rand);
+    // 3 个均分居中横向泳道，与左右道具槽及屏幕边缘保持优雅距离
+    final slotXOffsets = [0.26, 0.50, 0.74]..shuffle(rand);
     // 上升速度梯度：有快有慢，拉开层次
     final speeds = [38.0, 48.0, 58.0]..shuffle(rand);
 
     for (int i = 0; i < roundOptions.length && i < 3; i++) {
       const double radius = 48.0; // 饱满梦幻大泡泡，排版更舒适
       final double baseX = size.width * slotXOffsets[i] + (rand.nextDouble() - 0.5) * 6.0;
-      // 几乎同时在屏幕底部浮现，仅保留极微小 0~10px 自然落差
-      final double startY = size.height + radius + 10.0 + rand.nextDouble() * 10.0;
+      // 从底栏上边缘直接探出一半：圆心置于上边缘微靠上位置，上半球与主体文字立即露在底栏上方海水中
+      final double startY = bottomBarTopY - 2.0 + (rand.nextDouble() - 0.5) * 4.0;
       final Color color = bubbleColors[i % bubbleColors.length];
       final double speed = speeds[i] + (rand.nextDouble() - 0.5) * 4.0;
 
@@ -819,9 +833,12 @@ class RussiaPageState extends State<RussiaPage>
     HapticFeedback.mediumImpact();
 
     // 治愈光针弹道（从右下角飞针小图标射向我方顶部血条）
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
+    final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
     projectiles.add(GameProjectile.needle(
-      x: size.width - 40,
-      y: size.height - 70,
+      x: size.width - 36,
+      y: size.height - bottomBarHeight * 0.5,
       targetX: size.width * 0.75,
       targetY: 80,
     ));
@@ -844,9 +861,12 @@ class RussiaPageState extends State<RussiaPage>
     HapticFeedback.heavyImpact();
 
     // 弧线水雷弹道（从左下角水雷小图标轰击对手顶部血条区）
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
+    final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
     projectiles.add(GameProjectile.mine(
-      startX: 40,
-      startY: size.height - 70,
+      startX: 36,
+      startY: size.height - bottomBarHeight * 0.5,
       targetX: size.width * 0.25,
       targetY: 80,
     ));
@@ -869,7 +889,7 @@ class RussiaPageState extends State<RussiaPage>
     final mediaQuery = MediaQuery.maybeOf(context);
     final size = mediaQuery?.size ?? const Size(390, 844);
     final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
-    final double barrierY = topPadding + 195.0;
+    final double barrierY = topPadding + 130.0;
 
     // 水波相位与氛围微泡漂浮（全局活跃）
     wavePhase += dt * 2.2;
@@ -1047,11 +1067,12 @@ class RussiaPageState extends State<RussiaPage>
       if (myCombo % 3 == 0) {
         final mediaQuery = MediaQuery.maybeOf(context);
         final size = mediaQuery?.size ?? const Size(390, 844);
-        final bottomPadding = mediaQuery?.padding.bottom ?? 20.0;
-        final double mineTargetX = 42.0;
-        final double mineTargetY = size.height - bottomPadding - 48.0;
-        final double needleTargetX = size.width - 42.0;
-        final double needleTargetY = size.height - bottomPadding - 48.0;
+        final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
+        final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
+        final double mineTargetX = 36.0;
+        final double mineTargetY = size.height - bottomBarHeight * 0.5;
+        final double needleTargetX = size.width - 36.0;
+        final double needleTargetY = size.height - bottomBarHeight * 0.5;
 
         if (rand.nextBool()) {
           // 获得治愈飞针：从当前爆破的泡泡飞向右下角飞针道具区，飞抵后入库
@@ -1199,7 +1220,7 @@ class RussiaPageState extends State<RussiaPage>
                   floatingTexts: floatingTexts,
                   projectiles: projectiles,
                   ambientBubbles: ambientBubbles,
-                  barrierY: topPadding + 195.0,
+                  barrierY: topPadding + 130.0,
                 ),
               ),
             ),
@@ -1263,34 +1284,20 @@ class RussiaPageState extends State<RussiaPage>
               child: _buildVsStatusBar(),
             ),
 
-            // 4. 当前目标词提示（仅中文释义）
-            if (isPlaying && currWord != null)
-              Positioned(
-                top: topPadding + 134,
-                left: 28,
-                right: 28,
-                child: _buildTargetPromptCard(),
-              ),
-
-            // 5. 等待/开始游戏浮层
+            // 4. 等待/开始游戏浮层
             if (!isPlaying && !isShowingResult)
               Positioned.fill(
                 child: _buildWaitingOverlay(),
               ),
 
-            // 6. 底部战术道具：左侧对敌水雷、右侧自救飞针（微型小图标置于两翼，中间完全空出留给上升气泡）
-            if (isPlaying) ...[
+            // 5. 底部整合控制与题目栏：左侧水雷道具 + 中间中文释义题目 + 右侧飞针道具
+            if (isPlaying)
               Positioned(
-                bottom: bottomPadding + 20,
-                left: 18,
-                child: _buildAttackMineProp(size),
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: _buildBottomBar(size, bottomPadding),
               ),
-              Positioned(
-                bottom: bottomPadding + 20,
-                right: 18,
-                child: _buildPurgeNeedleProp(size),
-              ),
-            ],
 
             // 7. 结算弹窗
             if (isShowingResult)
@@ -1707,48 +1714,70 @@ class RussiaPageState extends State<RussiaPage>
       ],
     );
   }
-
-  /// 目标词提示卡片（仅中文释义）
   Widget _buildTargetPromptCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      alignment: Alignment.center,
+      child: Text(
+        currWord?.meaningStr ?? '',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFFFDE047),
+          letterSpacing: 0.3,
+          shadows: [
+            Shadow(
+              color: Color(0xFF032B69),
+              blurRadius: 6,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 底部整合操作与题目栏：左侧水雷道具 + 中间中文释义题目 + 右侧飞针道具
+  Widget _buildBottomBar(Size size, double bottomPadding) {
+    final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
+    return Container(
+      height: bottomBarHeight,
+      padding: EdgeInsets.only(
+        left: 14,
+        right: 14,
+        top: 5,
+        bottom: max(bottomPadding, 8.0),
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF02245C).withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.2),
+        color: const Color(0xFF031634).withValues(alpha: 0.90),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+        border: Border(
+          top: BorderSide(
+            color: Colors.cyanAccent.withValues(alpha: 0.35),
+            width: 1.2,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF032B69).withValues(alpha: 0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 18),
+          _buildAttackMineProp(size),
           const SizedBox(width: 8),
-          Text(
-            '请戳破对应英文：',
-            style: TextStyle(
-                fontSize: 12.5,
-                color: Colors.white.withValues(alpha: 0.9),
-                fontWeight: FontWeight.w500),
+          Expanded(
+            child: _buildTargetPromptCard(),
           ),
-          Flexible(
-            child: Text(
-              currWord?.meaningStr ?? '',
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFFFDE047),
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
+          const SizedBox(width: 8),
+          _buildPurgeNeedleProp(size),
         ],
       ),
     );
@@ -1835,6 +1864,7 @@ class RussiaPageState extends State<RussiaPage>
   Widget _buildAttackMineProp(Size size) {
     final bool hasProp = attackProps > 0;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         if (hasProp) {
           _fireAttackMine(size);
@@ -1847,79 +1877,62 @@ class RussiaPageState extends State<RussiaPage>
           ));
         }
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: hasProp
-                        ? const [Color(0xFFDC2626), Color(0xFF991B1B)]
-                        : [
-                            const Color(0xFF1E293B).withValues(alpha: 0.8),
-                            const Color(0xFF0F172A).withValues(alpha: 0.8),
-                          ],
-                  ),
-                  border: Border.all(
-                    color: hasProp
-                        ? const Color(0xFFF87171)
-                        : Colors.white.withValues(alpha: 0.2),
-                    width: 1.5,
-                  ),
-                  boxShadow: hasProp
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFFDC2626).withValues(alpha: 0.5),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: const Center(
-                  child: Text('🚀', style: TextStyle(fontSize: 22)),
-                ),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: hasProp
+                    ? const [Color(0xFFDC2626), Color(0xFF991B1B)]
+                    : [
+                        const Color(0xFF1E293B).withValues(alpha: 0.8),
+                        const Color(0xFF0F172A).withValues(alpha: 0.8),
+                      ],
               ),
-              Positioned(
-                right: -4,
-                top: -3,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: hasProp ? const Color(0xFFEF4444) : const Color(0xFF64748B),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white, width: 1),
-                  ),
-                  child: Text(
-                    '$attackProps',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+              border: Border.all(
+                color: hasProp
+                    ? const Color(0xFFF87171)
+                    : Colors.white.withValues(alpha: 0.25),
+                width: 1.5,
               ),
-            ],
+              boxShadow: hasProp
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: const Center(
+              child: Text('🚀', style: TextStyle(fontSize: 20)),
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '水雷 -1对手血',
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-              color: hasProp ? Colors.white : Colors.white54,
-              shadows: const [
-                Shadow(color: Colors.black87, blurRadius: 4),
-              ],
+          Positioned(
+            right: -3,
+            top: -2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1),
+              decoration: BoxDecoration(
+                color: hasProp ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+              child: Text(
+                '$attackProps',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ),
         ],
@@ -1931,6 +1944,7 @@ class RussiaPageState extends State<RussiaPage>
   Widget _buildPurgeNeedleProp(Size size) {
     final bool hasProp = purgeProps > 0;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         if (hasProp) {
           _firePurgeNeedle(size);
@@ -1943,79 +1957,62 @@ class RussiaPageState extends State<RussiaPage>
           ));
         }
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: hasProp
-                        ? const [Color(0xFF059669), Color(0xFF047857)]
-                        : [
-                            const Color(0xFF1E293B).withValues(alpha: 0.8),
-                            const Color(0xFF0F172A).withValues(alpha: 0.8),
-                          ],
-                  ),
-                  border: Border.all(
-                    color: hasProp
-                        ? const Color(0xFF34D399)
-                        : Colors.white.withValues(alpha: 0.2),
-                    width: 1.5,
-                  ),
-                  boxShadow: hasProp
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFF059669).withValues(alpha: 0.5),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: const Center(
-                  child: Text('💖', style: TextStyle(fontSize: 22)),
-                ),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: hasProp
+                    ? const [Color(0xFF059669), Color(0xFF047857)]
+                    : [
+                        const Color(0xFF1E293B).withValues(alpha: 0.8),
+                        const Color(0xFF0F172A).withValues(alpha: 0.8),
+                      ],
               ),
-              Positioned(
-                right: -4,
-                top: -3,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: hasProp ? const Color(0xFF10B981) : const Color(0xFF64748B),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white, width: 1),
-                  ),
-                  child: Text(
-                    '$purgeProps',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+              border: Border.all(
+                color: hasProp
+                    ? const Color(0xFF34D399)
+                    : Colors.white.withValues(alpha: 0.25),
+                width: 1.5,
               ),
-            ],
+              boxShadow: hasProp
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF059669).withValues(alpha: 0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: const Center(
+              child: Text('💖', style: TextStyle(fontSize: 20)),
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '飞针 +1自己血',
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-              color: hasProp ? Colors.white : Colors.white54,
-              shadows: const [
-                Shadow(color: Colors.black87, blurRadius: 4),
-              ],
+          Positioned(
+            right: -3,
+            top: -2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1),
+              decoration: BoxDecoration(
+                color: hasProp ? const Color(0xFF10B981) : const Color(0xFF64748B),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+              child: Text(
+                '$purgeProps',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ),
         ],

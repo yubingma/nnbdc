@@ -45,7 +45,10 @@ public class ReadyState extends RoomState {
      * 检查游戏是否正在进行中
      */
     public boolean isGamePlaying() {
-        return isPlaying;
+        if (isPlaying) {
+            return true;
+        }
+        return room.getUsers().values().stream().anyMatch(UserGameData::isExercise);
     }
 
     // 前端上报下落触底 ETA 的调度器与任务表（按用户）
@@ -365,6 +368,7 @@ public class ReadyState extends RoomState {
                 gameOverProcessor.reset();
                 // 清空堆叠标记
                 stackAddedOnce.clear();
+                isPlaying = true;
                 startExerciseProcessor.process(user, userCmd);
             }
             case "GAME_OVER" -> {
