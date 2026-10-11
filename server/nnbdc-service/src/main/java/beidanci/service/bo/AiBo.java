@@ -714,11 +714,16 @@ public class AiBo {
      * 调用视觉大模型进行配图审核
      * @param wordSpell 对应的单词
      * @param absoluteImagePath 图片的绝对路径
-     * @return 包含 {"action": "DELETE", "reason": "xxx"} 或 {"action": "KEEP"} 的 JSON 字符串
+     * @return 包含 {"action": "DELETE", "reason": "xxx"} 或 {"action": "KEEP"} 的 JSON 字符串；
+     *         审核没做成（没配 Key、调用异常、返回不可解析）时返回 <b>null</b>，由调用方保持「审核中」等待重试。
+     *         以前这里失败会返回 {"action":"KEEP"}，等于把"没审成"当成"审核通过"，配图会直接发给用户看。
      */
     public String reviewImage(String wordSpell, String absoluteImagePath) {
         String apiKey = aiProperties.getApiKey();
-        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) return "{\"action\":\"KEEP\"}";
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            logger.error("配图审核没有配置 AI API Key，拿不到结论（配图保持审核中）");
+            return null;
+        }
         try {
             logger.info("开始审图: word={}, path={}", wordSpell, absoluteImagePath);
             Object conv = Class.forName("com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversation").getDeclaredConstructor().newInstance();
@@ -772,8 +777,8 @@ public class AiBo {
             logger.info("审图清理结果: " + jsonResult);
             return jsonResult;
         } catch (Exception e) {
-            logger.error("审图异常: " + absoluteImagePath, e);
-            return "{\"action\":\"KEEP\"}";
+            logger.error("审图异常，拿不到结论: " + absoluteImagePath, e);
+            return null;
         }
     }
 

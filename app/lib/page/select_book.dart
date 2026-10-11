@@ -1528,6 +1528,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             authorId: image.authorId ?? "",
             ownerId: image.ownerId ?? "",
             wordId: image.wordId, // 确保 wordId 是字符串
+            status: image.status,
+            auditReason: image.auditReason,
             createTime: image.createTime,
             updateTime: image.updateTime));
         await yieldToUiIfNeeded(100, i); // 更频繁地让出UI

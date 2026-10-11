@@ -288,6 +288,8 @@ Future<void> _runImport({
               authorId: im.authorId ?? "",
               ownerId: im.ownerId ?? "",
               wordId: im.wordId,
+              status: im.status,
+              auditReason: im.auditReason,
               createTime: im.createTime,
               updateTime: im.updateTime));
 

@@ -192,7 +192,7 @@ public class SystemController {
             wordBo.getSimilarWordsOfDictBySeqRange(dictId, fromSeq, toSeq),
             synonymBo.getSynonymsOfDictBySeqRange(dictId, fromSeq, toSeq),
             sentenceBo.getSentencesOfDictBySeqRange(dictId, fromSeq, toSeq),
-            wordBo.getWordImagesOfDictBySeqRange(dictId, fromSeq, toSeq),
+            wordBo.getApprovedWordImagesOfDictBySeqRange(dictId, fromSeq, toSeq),
             wordCoreImageBo.getWordCoreImagesOfDictBySeqRange(dictId, fromSeq, toSeq),
             cigenBo.getAllCigenDtos(),
             cigenBo.getCigenWordLinkDtosOfDictBySeqRange(dictId, fromSeq, toSeq)

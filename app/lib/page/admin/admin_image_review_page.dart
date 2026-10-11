@@ -17,7 +17,6 @@ class AdminImageReviewPage extends StatefulWidget {
 
 class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
   final TextEditingController _dictIdController = TextEditingController(text: '0');
-  bool _autoDelete = false;
 
   Map<String, dynamic>? _taskStatus;
   Timer? _pollingTimer;
@@ -70,12 +69,11 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
     try {
       final response = await Api.dio.post('$_baseUrl/admin/image/startBatchReview.do', queryParameters: {
         'dictId': dictId,
-        'autoDelete': _autoDelete,
         'userId': Global.getLoggedInUser()?.id,
       });
       final res = response.data;
       if (res['success'] == true) {
-        ToastUtil.success('成功启动后台审核任务');
+        ToastUtil.success(res['data'] ?? '已启动后台审核任务');
         _fetchStatus();
       } else {
         ToastUtil.error('启动失败: ${res['msg']}');
@@ -102,42 +100,6 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
     }
   }
 
-  Future<void> _bulkDeleteMarked() async {
-    if (_taskStatus == null || (_taskStatus!['markedImages'] as List).isEmpty) {
-      ToastUtil.info('没有待删除的标记图片');
-      return;
-    }
-
-    bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('批量删除'),
-        content: Text('您确定要删除这 ${(_taskStatus!['markedImages'] as List).length} 张被确认为不合格的配图吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red))),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        final response = await Api.dio.post('$_baseUrl/admin/image/deleteMarked.do', queryParameters: {
-          'userId': Global.getLoggedInUser()?.id,
-        });
-        final res = response.data;
-        if (res['success'] == true) {
-          ToastUtil.success('成功删除了 ${res['data']} 张图片');
-          _fetchStatus();
-        } else {
-          ToastUtil.error('删除失败: ${res['msg']}');
-        }
-      } catch (e) {
-        ToastUtil.error('请求异常: $e');
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
@@ -147,7 +109,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
     final String statusMsg = _taskStatus?['statusMsg'] ?? '任务未启动';
     final int total = _taskStatus?['totalImages'] ?? 0;
     final int current = _taskStatus?['currentIndex'] ?? 0;
-    final List marked = _taskStatus?['markedImages'] ?? [];
+    final String? savedProgress = _taskStatus?['savedProgress'];
     final List deleted = _taskStatus?['deletedImages'] ?? [];
 
     return Scaffold(
@@ -157,15 +119,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
             leading: IconButton(
               onPressed: () => Navigator.pop(context),
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-            ),
-            actions: [
-              if (marked.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.delete_sweep, color: Colors.white),
-                  tooltip: '一键删除建议删除项',
-                  onPressed: _bulkDeleteMarked,
-                )
-            ]),
+            )),
         body: Column(
           children: [
             Container(
@@ -185,16 +139,6 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
                           isDense: true,
                         ),
                       )),
-                      const SizedBox(width: 8),
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _autoDelete,
-                            onChanged: isRunning ? null : (v) => setState(() => _autoDelete = v!),
-                          ),
-                          const Text('扫描时自动删除\n不合格配图', style: TextStyle(fontSize: 12)),
-                        ],
-                      ),
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
                         onPressed: () {
@@ -228,14 +172,21 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('状态: $statusMsg${isRunning ? ' ($current / $total)' : ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text('状态: $statusMsg${isRunning ? ' ($current / $total)' : ''}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 4),
-                              Text('已查出建议删除: ${marked.length}    本次已自动/手动删除: ${deleted.length}',
+                              Text('本次已删除: ${deleted.length}    判定为删的图当场就删，服务重启不会丢',
                                   style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                              if (!isRunning && savedProgress != null) ...[
+                                const SizedBox(height: 4),
+                                Text(savedProgress, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                              ],
                             ],
                           ),
                         ),
-                        if (isRunning && total > 0) CircularProgressIndicator(value: current / total, backgroundColor: Colors.grey[300]),
+                        if (isRunning && total > 0)
+                          CircularProgressIndicator(
+                              value: current / total, backgroundColor: Colors.grey[300]),
                       ],
                     ),
                   )
@@ -243,36 +194,26 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
               ),
             ),
             Expanded(
-              child: DefaultTabController(
-                length: 2,
-                child: Column(
-                  children: [
-                    TabBar(
-                      labelColor: AppTheme.primaryColor,
-                      unselectedLabelColor: Colors.grey,
-                      indicatorColor: AppTheme.primaryColor,
-                      tabs: [
-                        Tab(text: '建议删除 (${marked.length})'),
-                        Tab(text: '已删除 (${deleted.length})'),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: Row(
+                      children: [
+                        Text('本次已删除 (${deleted.length})',
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _buildImageList(marked, false, isDarkMode),
-                          _buildImageList(deleted, true, isDarkMode),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  Expanded(child: _buildImageList(deleted, isDarkMode)),
+                ],
               ),
             )
           ],
         ));
   }
 
-  Widget _buildImageList(List items, bool isAlreadyDeleted, bool isDarkMode) {
+  Widget _buildImageList(List items, bool isDarkMode) {
     if (items.isEmpty) {
       return const Center(child: Text('暂无数据', style: TextStyle(color: Colors.grey)));
     }
@@ -282,15 +223,14 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
       padding: const EdgeInsets.all(16),
       itemBuilder: (context, index) {
         final img = items[index];
-        final cardColor = isDarkMode ? Colors.grey[800]! : (isAlreadyDeleted ? Colors.grey[100]! : Colors.red.withValues(alpha: 0.05));
-        final borderColor = isAlreadyDeleted ? Colors.transparent : Colors.red.withValues(alpha: 0.3);
+        final cardColor = isDarkMode ? Colors.grey[800]! : Colors.grey[100]!;
 
         return Card(
           elevation: 0,
           margin: const EdgeInsets.only(bottom: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: borderColor),
+            side: const BorderSide(color: Colors.transparent),
           ),
           color: cardColor,
           child: Padding(
@@ -299,7 +239,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Opacity(
-                  opacity: isAlreadyDeleted ? 0.3 : 1.0,
+                  opacity: 0.3,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Builder(
@@ -326,19 +266,19 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(img['spell'] ?? '未知单词',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          decoration: isAlreadyDeleted ? TextDecoration.lineThrough : null,
+                          decoration: TextDecoration.lineThrough,
                         )),
                     const SizedBox(height: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(isAlreadyDeleted ? '已删除' : '建议删除',
-                            style: TextStyle(color: isAlreadyDeleted ? Colors.grey : Colors.red, fontWeight: FontWeight.bold)),
+                        const Text('已删除',
+                            style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
-                        Text(img['reason'] ?? '', style: TextStyle(color: isAlreadyDeleted ? Colors.grey : Colors.red, fontSize: 13)),
+                        Text(img['reason'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 13)),
                       ],
                     )
                   ],

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -524,8 +525,29 @@ public class WordBo extends BaseBo<Word> {
         return getWordImagesOfDictBySeqRange(dictId, null, null);
     }
 
+    /**
+     * 下发给客户端的配图：只给已通过审核的。
+     *
+     * 词书资源到了客户端会变成"这个词有几张配图"的本地索引，审核中的图一旦进去就再也收不回来
+     * （客户端不会重新拉词书），所以未通过的图一张都不能下发。
+     */
+    public List<WordImageDto> getApprovedWordImagesOfDict(String dictId) {
+        return onlyApproved(getWordImagesOfDict(dictId));
+    }
+
+    /** 下发给客户端的配图（按 seq 区间）：只给已通过审核的，见 {@link #getApprovedWordImagesOfDict} */
+    public List<WordImageDto> getApprovedWordImagesOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        return onlyApproved(getWordImagesOfDictBySeqRange(dictId, fromSeq, toSeq));
+    }
+
+    private static List<WordImageDto> onlyApproved(List<WordImageDto> images) {
+        return images.stream()
+                .filter(image -> WordImageBo.STATUS_APPROVED.equals(image.getStatus()))
+                .collect(Collectors.toList());
+    }
+
     public List<WordImageDto> getWordImagesOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
-        StringBuilder sql = new StringBuilder("SELECT id, foot, hand, image_file, author_id, word_id, create_time, update_time FROM word_image wi WHERE wi.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
+        StringBuilder sql = new StringBuilder("SELECT id, foot, hand, image_file, author_id, word_id, status, create_time, update_time FROM word_image wi WHERE wi.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         if (fromSeq != null) {
             sql.append(" AND dw.seq >= :fromSeq");
@@ -550,6 +572,7 @@ public class WordBo extends BaseBo<Word> {
             String wordIdStr = rs.getString("word_id");
             assert wordIdStr != null;
             wordImageDto.setWordId(wordIdStr);
+            wordImageDto.setStatus(rs.getString("status"));
             wordImageDto.setCreateTime(rs.getTimestamp("create_time"));
             wordImageDto.setUpdateTime(rs.getTimestamp("update_time"));
             return wordImageDto;

@@ -212,10 +212,14 @@ class WordImageDto {
   final String? authorId;
   final String? ownerId;
   final String wordId;
+
+  /// 审核状态：APPROVED 已通过 / PENDING 审核中。服务端只下发已通过的图，这里跟着一起带回来
+  final String? status;
+  final String? auditReason;
   final DateTime createTime;
   final DateTime updateTime;
 
-  WordImageDto(this.id, this.imageFile, this.foot, this.hand, this.authorId, this.ownerId, this.wordId, this.createTime, this.updateTime);
+  WordImageDto(this.id, this.imageFile, this.foot, this.hand, this.authorId, this.ownerId, this.wordId, this.createTime, this.updateTime, {this.status, this.auditReason});
 
   factory WordImageDto.fromJson(Map<String, dynamic> json) {
     json['updateTime'] ??= json['createTime'];

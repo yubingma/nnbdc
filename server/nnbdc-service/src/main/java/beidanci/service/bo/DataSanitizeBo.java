@@ -3,9 +3,11 @@ package beidanci.service.bo;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -65,6 +67,9 @@ public class DataSanitizeBo {
     private static volatile int wordImageSanitizeProcessed = 0;
     private static volatile int wordImageSanitizeFixedCount = 0;
     private static volatile String wordImageSanitizeLog = "";
+
+    /** 孤儿配图文件（磁盘有、数据库无记录）只有超过这个年龄才清，避免误删刚上传、还没入库的文件 */
+    private static final long ORPHAN_FILE_MIN_AGE_MILLIS = 60 * 60 * 1000L;
 
     private static volatile boolean isWordPhoneticSanitizing = false;
     private static volatile int wordPhoneticSanitizeTotal = 0;
@@ -446,11 +451,61 @@ public class DataSanitizeBo {
                     wordImageSanitizeLog = String.format("正在扫描配图文件 (%d/%d)...", wordImageSanitizeProcessed, wordImageSanitizeTotal);
                 }
             }
-            wordImageSanitizeLog = String.format("清洗完成，扫描 %d 条，共清理 %d 条损坏或无效配图。", wordImageSanitizeTotal, wordImageSanitizeFixedCount);
+            wordImageSanitizeLog = String.format("清洗完成，扫描 %d 条记录，共清理 %d 条损坏或无效配图。", wordImageSanitizeTotal, wordImageSanitizeFixedCount);
             logger.info("单词配图清洗完成: 总数={}, 清理数={}", wordImageSanitizeTotal, wordImageSanitizeFixedCount);
+
+            // 顺带把"磁盘上有文件、数据库里没有记录"的孤儿文件也清掉
+            int orphanRemoved = sanitizeOrphanImageFiles(wordImageDir);
+            if (orphanRemoved > 0) {
+                wordImageSanitizeFixedCount += orphanRemoved;
+                wordImageSanitizeLog = String.format("清洗完成，扫描 %d 条记录，清理 %d 条损坏或无效配图，清理 %d 个没有记录的孤儿文件。",
+                        wordImageSanitizeTotal, wordImageSanitizeFixedCount - orphanRemoved, orphanRemoved);
+            }
         } catch (Exception e) {
             logger.error("执行单词配图清洗异常", e);
             wordImageSanitizeLog = "清洗过程中出错: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 清理"磁盘上有文件、数据库里已经没有对应记录"的孤儿配图文件。
+     *
+     * 配图清洗一直只从数据库出发看文件在不在，反过来的孤儿文件没有任何人管：数据库里没记录
+     * 不等于取不到图，公网上（CDN 上）照样能把它拉下来。这里拿目录里的文件和数据库记录求差集，
+     * 逐张删文件并刷新 CDN 缓存。
+     *
+     * 只清创建时间超过 1 小时的文件：上传是"先落文件、再入库"，刚写下去的文件可能还没来得及
+     * 变成记录，不能误删。
+     */
+    private int sanitizeOrphanImageFiles(File wordImageDir) {
+        try {
+            Set<String> knownFileNames = new HashSet<>(namedParameterJdbcTemplate
+                    .queryForList("SELECT image_file FROM word_image", new MapSqlParameterSource(), String.class));
+            File[] files = wordImageDir.listFiles();
+            if (files == null) {
+                return 0;
+            }
+
+            long cutoff = System.currentTimeMillis() - ORPHAN_FILE_MIN_AGE_MILLIS;
+            int removed = 0;
+            for (File file : files) {
+                if (!file.isFile() || knownFileNames.contains(file.getName()) || file.lastModified() > cutoff) {
+                    continue;
+                }
+                try {
+                    wordImageBo.deleteImageFile(file.getName());
+                    removed++;
+                } catch (Exception e) {
+                    logger.error("清理孤儿配图文件失败: " + file.getName(), e);
+                }
+            }
+            if (removed > 0) {
+                logger.info("孤儿配图文件清理完成: 删除 {} 个（磁盘有文件、数据库无记录）", removed);
+            }
+            return removed;
+        } catch (Exception e) {
+            logger.error("扫描孤儿配图文件失败", e);
+            return 0;
         }
     }
 

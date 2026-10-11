@@ -214,8 +214,8 @@ public class ResController {
             List<SentenceDto> sentences = sentenceBo.getSentencesOfDict(dictId);
             logger.info("例句查询完成, 数量: {}", sentences.size());
 
-            // 查询图片
-            List<WordImageDto> images = wordBo.getWordImagesOfDict(dictId);
+            // 查询图片（只下发已通过审核的，审核中的图不能进客户端）
+            List<WordImageDto> images = wordBo.getApprovedWordImagesOfDict(dictId);
             logger.info("单词图片查询完成, 数量: {}", images.size());
 
             // 查询核心意象（仅已成功生成的记录）

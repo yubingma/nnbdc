@@ -292,6 +292,9 @@ class PicSearchPageState extends State<PicSearchPage> {
                                                 wordImageDto.authorId ?? "",
                                             ownerId: wordImageDto.ownerId ?? "",
                                             wordId: wordImageDto.wordId,
+                                            status: wordImageDto.status,
+                                            auditReason:
+                                                wordImageDto.auditReason,
                                             createTime: wordImageDto.createTime,
                                             updateTime: wordImageDto.updateTime,
                                           ));

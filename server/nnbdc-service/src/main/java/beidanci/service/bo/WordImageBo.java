@@ -4,7 +4,9 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
@@ -25,6 +27,7 @@ import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.po.WordImage;
 import beidanci.service.util.CdnUtil;
+import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
 
 @Service
@@ -172,47 +175,97 @@ public class WordImageBo extends BaseBo<WordImage> {
     }
 
     /**
-     * 异步审核图片逻辑
+     * 异步审核图片逻辑（上传后立即触发）
      */
     @org.springframework.scheduling.annotation.Async
-    public void asyncReviewImage(String wordImageId, String spell, String imageFile) {
-        log.info("📢 开始异步审核图片: imageId={}, word={}", wordImageId, spell);
-        try {
-            WordImage image = findById(wordImageId);
-            if (image == null) return;
+    public void asyncReviewImage(String wordImageId, String spell, String imageFile) throws IllegalAccessException {
+        reviewImageAndApply(wordImageId, spell, imageFile);
+    }
 
+    /**
+     * 送 AI 审一张配图并按结论处理：
+     * <ul>
+     * <li>判删（action=DELETE）→ 走 {@link #deleteWordImage} 删除；</li>
+     * <li>判过（action=KEEP）→ 置为 APPROVED 并下发同步日志，客户端这时才看得到这张图；</li>
+     * <li>没结论（AI 调用失败/返回解析不出来）→ 保持 PENDING，交给 {@link #reviewStuckPendingImages} 稍后重试。</li>
+     * </ul>
+     *
+     * 以前审核失败会直接置为 APPROVED，等于"审都没审就发给用户看"；现在宁可让它停在审核中，
+     * 也不能把没审过的图放出去。
+     *
+     * @return AI 的原始结论（含 action / reason）；没结论时返回 null
+     */
+    public Map<String, Object> reviewImageAndApply(String wordImageId, String spell, String imageFile)
+            throws IllegalAccessException {
+        if (spell == null || spell.trim().isEmpty()) {
+            // 没有单词就无从判断这张图合不合适，宁可留在审核中，也不能拿"null"去让 AI 猜
+            log.error("配图对应的单词查不到，跳过审核: imageId={}", wordImageId);
+            return null;
+        }
+        log.info("📢 开始审核图片: imageId={}, word={}", wordImageId, spell);
+        WordImage image = findById(wordImageId);
+        if (image == null) {
+            return null;
+        }
+        Map<String, Object> verdict;
+        try {
             String absolutePath = sysParamUtil.getImageBaseDir() + "/word/" + imageFile;
             String aiResultJson = aiBo.reviewImage(spell, absolutePath);
-
-            // 解析结果
-            if (aiResultJson.contains("DELETE")) {
-                log.info("🚫 图片审核失败，执行删除: imageId={}, word={}, result={}", wordImageId, spell, aiResultJson);
-                // 走与手动删除同一条删除链路：事件清理、同步日志、词书版本、物理文件、CDN 缓存刷新
-                Result<Object> deleteResult = deleteWordImage(wordImageId, null, false);
-                if (!deleteResult.isSuccess()) {
-                    log.error("图片审核不通过但删除失败: imageId={}, msg={}", wordImageId, deleteResult.getMsg());
-                }
-            } else {
-                log.info("✅ 图片审核通过: imageId={}, word={}", wordImageId, spell);
-                image.setStatus(STATUS_APPROVED);
-                updateEntity(image);
-
-                // 更新日志，提醒客户端该图片已变为 APPROVED（其实目前客户端只展示已通过的，所以这里的 update 也很关键）
-                sysDbLogBo.logOperation(image, "UPDATE", "word_image", wordImageId, toJsonForLog(image));
+            if (aiResultJson == null) {
+                log.error("❌ 审图没拿到结论（AI 调用失败），保持审核中等待重试: imageId={}, word={}", wordImageId, spell);
+                return null;
             }
+            verdict = JsonUtils.parseAiMap(aiResultJson);
         } catch (Exception e) {
-            log.error("❌ 异步审核图片过程发生异常: " + wordImageId, e);
-            // 容错：如果审核过程挂了，保险起见暂时将其设为 APPROVED 或者继续保持 PENDING 等待下次补审
-            // 考虑用户体验，这里设为 APPROVED
-            try {
-                WordImage image = findById(wordImageId);
-                if (image != null) {
-                    image.setStatus(STATUS_APPROVED);
-                    updateEntity(image);
-                    sysDbLogBo.logOperation(image, "UPDATE", "word_image", wordImageId, toJsonForLog(image));
-                }
-            } catch (Exception ignore) {}
+            log.error("❌ 审图过程异常，保持审核中等待重试: imageId=" + wordImageId, e);
+            return null;
         }
+
+        String action = verdict.get("action") == null ? null : String.valueOf(verdict.get("action"));
+        if ("DELETE".equals(action)) {
+            log.info("🚫 图片审核不通过，执行删除: imageId={}, word={}, 原因={}", wordImageId, spell, verdict.get("reason"));
+            Result<Object> deleteResult = deleteWordImage(wordImageId, null, false);
+            if (!deleteResult.isSuccess()) {
+                log.error("图片审核不通过但删除失败: imageId={}, msg={}", wordImageId, deleteResult.getMsg());
+            }
+            return verdict;
+        }
+        if ("KEEP".equals(action)) {
+            log.info("✅ 图片审核通过: imageId={}, word={}", wordImageId, spell);
+            image.setStatus(STATUS_APPROVED);
+            updateEntity(image);
+            // 通过之后才下发，客户端这时才拿到这张图（未通过的图不下发，见 SysDbSyncBo.logOperation 的闸门）
+            sysDbLogBo.logOperation(image, "UPDATE", "word_image", wordImageId, toJsonForLog(image));
+            return verdict;
+        }
+
+        log.error("❌ 审图返回无法识别的结论，保持审核中等待重试: imageId={}, word={}, 返回={}", wordImageId, spell, verdict);
+        return null;
+    }
+
+    /**
+     * 重新送审卡在「审核中」的配图。
+     *
+     * 上传时的异步审核可能因服务重启、进程被杀而半途而废，那张图就会永远停在 PENDING
+     * （实测有卡了两周多的图），既不通过也不删除。这里按"审核中且超过指定时长"把它们捞出来重审。
+     *
+     * @param olderThanMinutes 只重审创建时间早于「现在 - 该分钟数」的图，避免打断正在进行的审核
+     * @return 本次实际送审的条数
+     */
+    public int reviewStuckPendingImages(int olderThanMinutes, int limit) throws IllegalAccessException {
+        Date cutoff = new Date(System.currentTimeMillis() - olderThanMinutes * 60_000L);
+        String sql = "SELECT wi.id, wi.image_file, w.spell FROM word_image wi JOIN word w ON w.id = wi.word_id "
+                + "WHERE wi.status = ? AND wi.create_time < ? ORDER BY wi.create_time LIMIT ?";
+        List<Object[]> rows = getJdbcTemplate().query(sql,
+                (rs, rowNum) -> new Object[] { rs.getString("id"), rs.getString("image_file"), rs.getString("spell") },
+                STATUS_PENDING, cutoff, limit);
+        for (Object[] row : rows) {
+            reviewImageAndApply((String) row[0], (String) row[2], (String) row[1]);
+        }
+        if (!rows.isEmpty()) {
+            log.info("🔁 自动重审卡在审核中的配图: {} 条", rows.size());
+        }
+        return rows.size();
     }
 
     public Result<Object> deleteWordImage(String imageId, User user, boolean checkPermission) {
@@ -248,27 +301,31 @@ public class WordImageBo extends BaseBo<WordImage> {
         // 联动刷新词书版本
         dictBo.updateDictsUpdateTimeByWord(wordId);
 
-        // 删除图片文件
-        String imageFileName = image.getImageFile();
-        File imageFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + imageFileName);
-        if (!imageFile.delete()) {
-            imageFile.deleteOnExit();
-        }
-
-        // 源站删了文件不等于客户端取不到图：客户端取图走 CDN，CDN 上的旧副本必须主动刷新
-        refreshImageCdn(imageFileName);
+        // 删除物理文件并刷新 CDN
+        deleteImageFile(image.getImageFile());
 
         return new Result<>(true, null, null);
     }
 
     /**
+     * 删掉一张配图的物理文件，并刷新它在 CDN 上的缓存。
+     *
+     * 客户端取图走 CDN（imgBaseUrl + word/文件名），只删源站磁盘文件时 CDN 上仍缓存着旧副本
+     * （实测可留 29 天），用户手里只要还有这张图的记录就照样能显示，所以必须主动刷新。
+     * 配图记录被删除、以及磁盘上有文件但数据库里已无对应记录（孤儿文件）时，都走这里。
+     */
+    public void deleteImageFile(String imageFileName) {
+        File imageFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + imageFileName);
+        if (!imageFile.delete()) {
+            imageFile.deleteOnExit();
+        }
+        refreshImageCdn(imageFileName);
+    }
+
+    /**
      * 刷新一张配图在 CDN 上的缓存。
      *
-     * 客户端按 {@code imgBaseUrl + word/文件名} 取图，走的是 CDN；只删源站磁盘文件时，
-     * CDN 上仍缓存着旧副本（实测可留 29 天），用户手里只要还有这张图的记录就照样能显示。
-     * 所以删除配图必须按客户端实际请求的地址主动刷新。
-     *
-     * 刷新失败不回滚本次删除（图片记录与物理文件已删），但必须留下错误日志暴露出来。
+     * 刷新失败不回滚删除动作（图片记录与物理文件已删），但必须留下错误日志暴露出来。
      */
     private void refreshImageCdn(String imageFileName) {
         String url;

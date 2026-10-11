@@ -27,6 +27,7 @@ import beidanci.service.po.SysDbLog;
 import beidanci.service.po.SysDbVersion;
 import beidanci.service.po.Dict;
 import beidanci.service.po.WordCoreImage;
+import beidanci.service.po.WordImage;
 import beidanci.service.po.WordPhrase;
 import beidanci.api.model.DictDto;
 import beidanci.api.model.Ownerable;
@@ -79,6 +80,13 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
                 Assert.isTrue(beidanci.util.Constants.SYS_USER_SYS_ID.equals(ownerId),
                     "SECURITY ALERT: Attempted to log private data to global sync log! table=" + table + ", ownerId=" + ownerId);
             }
+        }
+        // 还在审核中的配图不下发给客户端：审核通过之后（状态变成 APPROVED）才发。
+        // 删除日志照发，否则上传者本机那条"审核中"的记录删不掉。
+        if ("word_image".equals(table) && !"DELETE".equals(operate) && entity instanceof WordImage
+                && WordImageBo.STATUS_PENDING.equals(((WordImage) entity).getStatus())) {
+            log.debug("配图还在审核中，暂不下发同步日志: recordId={}, operate={}", recordId, operate);
+            return;
         }
         self.logOperation(operate, table, recordId, record);
     }
