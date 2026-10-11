@@ -9,7 +9,6 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/tts.dart';
-import 'package:nnbdc/util/utils.dart';
 import '../api/vo.dart';
 import '../db/db.dart';
 import '../global.dart';
@@ -741,27 +740,35 @@ class RussiaPageState extends State<RussiaPage>
     }
   }
 
-  /// 提取用于 TTS 朗读的第一个纯中文释义（截取第一个分号/逗号前的内容，精简干练）
-  String _getFirstMeaningForTts(WordVo word) {
-    if (word.meaningItems != null && word.meaningItems!.isNotEmpty) {
-      for (final item in word.meaningItems!) {
-        final m = item.meaning?.trim() ?? '';
-        if (m.isNotEmpty) {
-          final first = m.split(RegExp(r'[;；,，/、\n]')).firstWhere(
-                (p) => p.trim().isNotEmpty,
-                orElse: () => m,
-              );
-          final clean = first.trim();
-          if (clean.isNotEmpty) return clean;
+  /// 提取用于 TTS 朗读的第一个纯中文释义（与底部题目展示文本严格对齐，截取第一个分号/逗号前的核心词）
+  static String extractFirstMeaningForTts(WordVo word) {
+    // 严格以界面底栏实际展示的文本源（meaningStr 或 getMeaningStr）为基准，确保“所见即所读”
+    final raw = (word.meaningStr != null && word.meaningStr!.trim().isNotEmpty)
+        ? word.meaningStr!
+        : word.getMeaningStr();
+    if (raw.trim().isEmpty) return '';
+
+    // 按分号或换行切分为各个主要释义块
+    final segments = raw.split(RegExp(r'[;；\n]'));
+    for (var seg in segments) {
+      // 1. 去除中英文圆括号、方括号及其中说明（如“（表示惊喜、得意等）”、“[C]”、“【名】”）
+      seg = seg.replaceAll(RegExp(r'[\(（\[【].*?[\)）\]】]'), '');
+      // 2. 去除词性前缀（如“n. ”、“vt.&vi. ”、“adj. ”等）
+      seg = seg.replaceAll(RegExp(r'^(?:\s*[a-zA-Z&/]+\.\s*)+'), '');
+      // 3. 若块内含逗号、顿号、斜杠，提取第一个微释义
+      final subItems = seg.split(RegExp(r'[,，/、]'));
+      for (var sub in subItems) {
+        sub = sub.replaceAll(RegExp(r'^(?:\s*[a-zA-Z&/]+\.\s*)+'), '').trim();
+        if (sub.isNotEmpty) {
+          return sub;
         }
       }
     }
-    final pure = Util.pureMeaningStr(word);
-    final firstLine = pure.split('\n').firstWhere((l) => l.trim().isNotEmpty, orElse: () => '');
-    if (firstLine.isEmpty) return '';
-    final parts = firstLine.split(RegExp(r'[;；,，/、]'));
-    final first = parts.firstWhere((p) => p.trim().isNotEmpty, orElse: () => firstLine);
-    return first.trim();
+    return '';
+  }
+
+  String _getFirstMeaningForTts(WordVo word) {
+    return extractFirstMeaningForTts(word);
   }
 
   void _handleWordB(dynamic data) {
