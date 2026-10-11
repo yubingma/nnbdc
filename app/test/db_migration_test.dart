@@ -58,6 +58,13 @@ const String _v51UserStudyDailyStatsDdl = r'''
 CREATE TABLE IF NOT EXISTS "user_study_daily_stats" ("user_id" TEXT NOT NULL, "date" INTEGER NOT NULL, "study_seconds" INTEGER NOT NULL DEFAULT 0, "review_count" INTEGER NOT NULL DEFAULT 0, "day_status" TEXT NULL, "create_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("user_id", "date"))
 ''';
 
+/// v51 的 user_wrong_words 建表语句, 取自随包发布的母版库。
+/// v61 → v62 迁移要给这张表补 wrong_count 与 in_wrong_book 列, 因此夹具必须包含它,
+/// 否则迁移会因缺表失败并触发删库重建(用户数据丢失)。
+const String _v51UserWrongWordsDdl = r'''
+CREATE TABLE IF NOT EXISTS "user_wrong_words" ("user_id" TEXT NOT NULL, "word_id" TEXT NOT NULL, "create_time" INTEGER NOT NULL, "update_time" INTEGER NOT NULL DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)), PRIMARY KEY ("user_id", "word_id"))
+''';
+
 void main() {
   late Directory tempDir;
   late File dbFile;
@@ -86,6 +93,7 @@ void main() {
     raw.execute(_v51UserDbLogsDdl);
     raw.execute(_v51DictsDdl);
     raw.execute(_v51UserStudyDailyStatsDdl);
+    raw.execute(_v51UserWrongWordsDdl);
     raw.execute(
       "INSERT INTO words (id, spell, popularity, short_desc, create_time, update_time) "
       "VALUES ('w1', 'defect', 5, 'A flaw in something is a defect.', 1, 1)",
@@ -205,6 +213,13 @@ void main() {
       expect(word!.shortDesc, 'A flaw in something is a defect.');
       expect(word.shortDescCn, isNull, reason: '新列对老数据应为空，等待服务端下发译文');
       expect(word.enDefinition, isNull, reason: '新列对老数据应为空，等待服务端下发');
+
+      // v61 → v62: user_wrong_words 补上累计做错次数与错题本留存状态列
+      final userWrongWordColumns = await db.customSelect("PRAGMA table_info('user_wrong_words')").get();
+      expect(
+        userWrongWordColumns.map((row) => row.read<String>('name')),
+        containsAll(['wrong_count', 'in_wrong_book']),
+      );
 
       // v56 → v57: 同秒的重复日志被删除（只留最早那条），被污染的记忆字段按日志真值回填
       final repairedLogs = await (db.select(db.learningLogs)
