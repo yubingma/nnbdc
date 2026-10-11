@@ -89,11 +89,13 @@ public class GameHallBo extends BaseBo<GameHall> {
         List<String> wordIds = words.stream().map(w -> w.getId()).collect(Collectors.toList());
         Map<String, List<MeaningItemVo>> meaningItemsByWordId = new HashMap<>();
         if (!wordIds.isEmpty()) {
-            // 优先查询通用词典的释义项（dictId = '0'）
-            String meaningSql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time FROM meaning_item " +
-                    "WHERE word_id IN (:wordIds) AND dict_id = '0' ORDER BY popularity ASC";
-            MapSqlParameterSource meaningParams = new MapSqlParameterSource("wordIds", wordIds);
-            List<MeaningItemDto> commonMeaningItems = namedParameterJdbcTemplate.query(meaningSql, meaningParams, (rs, rowNum) -> {
+            // 1. 优先查询当前大厅正版词书集合（dictIds）的专属释义项（教材审定释义）
+            String hallDictMeaningSql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time FROM meaning_item " +
+                    "WHERE word_id IN (:wordIds) AND dict_id IN (:dictIds) ORDER BY popularity ASC NULLS LAST, create_time ASC";
+            MapSqlParameterSource hallMeaningParams = new MapSqlParameterSource();
+            hallMeaningParams.addValue("wordIds", wordIds);
+            hallMeaningParams.addValue("dictIds", dictIds);
+            List<MeaningItemDto> hallMeaningItems = namedParameterJdbcTemplate.query(hallDictMeaningSql, hallMeaningParams, (rs, rowNum) -> {
                 MeaningItemDto dto = new MeaningItemDto();
                 dto.setId(rs.getString("id"));
                 dto.setCiXing(rs.getString("ci_xing"));
@@ -107,9 +109,7 @@ public class GameHallBo extends BaseBo<GameHall> {
                 dto.setOwnerId(rs.getString("owner_id"));
                 return dto;
             });
-            
-            // 转换为 MeaningItemVo 并按 wordId 分组
-            for (MeaningItemDto dto : commonMeaningItems) {
+            for (MeaningItemDto dto : hallMeaningItems) {
                 MeaningItemVo vo = new MeaningItemVo();
                 vo.setId(dto.getId());
                 vo.setCiXing(dto.getCiXing());
@@ -117,14 +117,47 @@ public class GameHallBo extends BaseBo<GameHall> {
                 vo.setOwnerId(dto.getOwnerId());
                 meaningItemsByWordId.computeIfAbsent(dto.getWordId(), k -> new ArrayList<>()).add(vo);
             }
-            
-            // 对于没有通用释义的单词，从任意词典中取一条作为兜底
-            Set<String> wordsWithCommonMeaning = new HashSet<>(meaningItemsByWordId.keySet());
-            List<String> wordsWithoutCommonMeaning = wordIds.stream()
-                    .filter(wordId -> !wordsWithCommonMeaning.contains(wordId))
+
+            // 2. 对于大厅词书中没有专属释义的单词，从通用词典（dictId = '0'）查询
+            Set<String> wordsWithHallMeaning = new HashSet<>(meaningItemsByWordId.keySet());
+            List<String> pendingWordIds = wordIds.stream()
+                    .filter(wordId -> !wordsWithHallMeaning.contains(wordId))
                     .collect(Collectors.toList());
-            if (!wordsWithoutCommonMeaning.isEmpty()) {
-                List<MeaningItemDto> fallbackMeaningItems = meaningItemBo.getOneMeaningPerWordFromAnyDict(wordsWithoutCommonMeaning);
+            if (!pendingWordIds.isEmpty()) {
+                String commonMeaningSql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time FROM meaning_item " +
+                        "WHERE word_id IN (:pendingWordIds) AND dict_id = '0' ORDER BY popularity ASC NULLS LAST, create_time ASC";
+                MapSqlParameterSource commonMeaningParams = new MapSqlParameterSource("pendingWordIds", pendingWordIds);
+                List<MeaningItemDto> commonMeaningItems = namedParameterJdbcTemplate.query(commonMeaningSql, commonMeaningParams, (rs, rowNum) -> {
+                    MeaningItemDto dto = new MeaningItemDto();
+                    dto.setId(rs.getString("id"));
+                    dto.setCiXing(rs.getString("ci_xing"));
+                    dto.setMeaning(rs.getString("meaning"));
+                    dto.setWordId(rs.getString("word_id"));
+                    dto.setDictId(rs.getString("dict_id"));
+                    Integer popularity = rs.getObject("popularity", Integer.class);
+                    dto.setPopularity(popularity != null ? popularity : 999);
+                    dto.setCreateTime(rs.getTimestamp("create_time"));
+                    dto.setUpdateTime(rs.getTimestamp("update_time"));
+                    dto.setOwnerId(rs.getString("owner_id"));
+                    return dto;
+                });
+                for (MeaningItemDto dto : commonMeaningItems) {
+                    MeaningItemVo vo = new MeaningItemVo();
+                    vo.setId(dto.getId());
+                    vo.setCiXing(dto.getCiXing());
+                    vo.setMeaning(dto.getMeaning());
+                    vo.setOwnerId(dto.getOwnerId());
+                    meaningItemsByWordId.computeIfAbsent(dto.getWordId(), k -> new ArrayList<>()).add(vo);
+                }
+            }
+
+            // 3. 对于仍未命中通用释义的单词，从任意词典中取一条作为兜底
+            Set<String> wordsWithMeaning = new HashSet<>(meaningItemsByWordId.keySet());
+            List<String> wordsWithoutMeaning = wordIds.stream()
+                    .filter(wordId -> !wordsWithMeaning.contains(wordId))
+                    .collect(Collectors.toList());
+            if (!wordsWithoutMeaning.isEmpty()) {
+                List<MeaningItemDto> fallbackMeaningItems = meaningItemBo.getOneMeaningPerWordFromAnyDict(wordsWithoutMeaning);
                 for (MeaningItemDto dto : fallbackMeaningItems) {
                     MeaningItemVo vo = new MeaningItemVo();
                     vo.setId(dto.getId());

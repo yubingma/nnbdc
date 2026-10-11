@@ -120,8 +120,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
 
+  /// 新用户（本地从未选过壁纸）的默认壁纸：琥珀（暗底照片，底栏会自动改配白图标）。
+  static const String _defaultWallpaperPath = 'assets/images/wallpaper/amber.jpg';
+
   /// 背景壁纸（支持 'random' 与 'none' 及具体图片路径）
-  String _wallpaperPath = 'assets/images/wallpaper/kitty_pink.jpg';
+  String _wallpaperPath = _defaultWallpaperPath;
 
   /// 当壁纸设置为 'random' 时用于实际渲染的具体壁纸路径
   String? _randomResolvedPath;
@@ -270,7 +273,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final validPaths = planWallpapers.map((w) => w.path).toSet();
     _wallpaperPath = (savedWallpaper != null && validPaths.contains(savedWallpaper))
         ? savedWallpaper
-        : 'assets/images/wallpaper/kitty_pink.jpg';
+        : _defaultWallpaperPath;
     if (_wallpaperPath == 'random') {
       _randomResolvedPath = _resolveDailyRandomWallpaper();
     }
