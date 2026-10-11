@@ -199,29 +199,36 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     final ink = _navBarInk(themeConfig, wallpaperIsDark);
 
     return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          if (_currentTab == tab) return;
-          Asr().stopMicrophone();
-          setState(() {
-            _currentTab = tab;
-          });
-          _checkRefreshTab(tab);
-        },
-        onLongPress: () {
-          // 长按任意底栏项，弹出功能收纳快捷菜单
-          StashedNavMenuDialog.show(context);
-        },
-        child: Container(
-          height: navBarContentHeight,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(color: Colors.transparent),
-          child: NavTabIcon(
-            tab.icon,
-            color: isSelected ? ink.selected : ink.unselected,
-            size: navBarIconSize,
-            shadow: ink.shadow,
+      // 底栏只有图标、没有文字，必须显式给出语义标签：
+      // 否则读屏软件念不出这一排按钮各自是什么，自动化也无从定位。
+      child: Semantics(
+        label: tab.label,
+        button: true,
+        selected: isSelected,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            if (_currentTab == tab) return;
+            Asr().stopMicrophone();
+            setState(() {
+              _currentTab = tab;
+            });
+            _checkRefreshTab(tab);
+          },
+          onLongPress: () {
+            // 长按任意底栏项，弹出功能收纳快捷菜单
+            StashedNavMenuDialog.show(context);
+          },
+          child: Container(
+            height: navBarContentHeight,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(color: Colors.transparent),
+            child: NavTabIcon(
+              tab.icon,
+              color: isSelected ? ink.selected : ink.unselected,
+              size: navBarIconSize,
+              shadow: ink.shadow,
+            ),
           ),
         ),
       ),

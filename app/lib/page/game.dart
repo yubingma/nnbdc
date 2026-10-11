@@ -569,7 +569,130 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
 
-
+                // 2. 泡泡升空全新模式试玩入口
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () => context.push('/bubble_battle_preview'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDarkMode
+                                ? [
+                                    const Color(0xFF0C2442),
+                                    const Color(0xFF0F355C)
+                                  ]
+                                : [
+                                    const Color(0xFFE0F2FE),
+                                    const Color(0xFFBAE6FD)
+                                  ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF38BDF8).withValues(alpha: 0.4),
+                                    blurRadius: 8,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.bubble_chart_rounded,
+                                color: Colors.white,
+                                size: 26,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '泡泡升空对战 · 实验抢先版',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800,
+                                          color: isDarkMode
+                                              ? const Color(0xFFF0F9FF)
+                                              : const Color(0xFF0369A1),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF59E0B),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Text(
+                                          'NEW',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '从海底升腾的彩色泡泡 · 全屏戳泡爆破与海面下沉压迫体验',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: isDarkMode
+                                          ? const Color(0xFF94A3B8)
+                                          : const Color(0xFF075985),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 15,
+                              color: isDarkMode
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF0369A1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
                 // 3. 主内容区域
                 SliverToBoxAdapter(
