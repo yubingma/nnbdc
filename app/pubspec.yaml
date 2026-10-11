@@ -42,6 +42,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
 
+  # 线性图标库（Lucide）：统一 24 网格、2px 圆头笔宽，底部导航栏等处的图标由此而来。
+  lucide_icons_flutter: ^3.1.24
+
   flutter_svg: ^2.0.14
   simple_animations: ^5.1.0
   email_validator: ^3.0.0

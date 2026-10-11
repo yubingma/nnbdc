@@ -35,11 +35,13 @@ class WalkmanLauncher {
 
   /// 记下本次收听的数据源与名称，供下次续播
   static Future<void> remember(String? bookMarkName, String? title) async {
-    if (bookMarkName == null || bookMarkName == _remembered) return;
-    if (await Prefs.write(lastSourceKey, bookMarkName)) {
-      _remembered = bookMarkName;
+    if (bookMarkName != null && bookMarkName != _remembered) {
+      if (await Prefs.write(lastSourceKey, bookMarkName)) {
+        _remembered = bookMarkName;
+      }
     }
-    if (title != null) {
+    // 名称单独判断：同一个数据源的名称也会变（兜底名 → 词表页里的精确标题），不能跟着数据源一起跳过
+    if (title != null && title != Prefs.read<String>(lastSourceTitleKey)) {
       await Prefs.write(lastSourceTitleKey, title);
     }
   }
@@ -61,8 +63,9 @@ class WalkmanLauncher {
     if (last != null) {
       final resumed = await _resume(last);
       if (resumed != null) {
-        // 展示名沿用上次记录的那一个，与用户当时在词表页看到的标题一致
-        resumed.title ??= Prefs.read<String>(lastSourceTitleKey);
+        // 名称优先用上次在词表页看到的标题（词书短名、熟练度区间名这类动态标题只有入口知道），
+        // 没有记录时（老版本升级上来、或首次从收纳盒进入）用 _resume 兜底的名字，不留空白
+        resumed.title = Prefs.read<String>(lastSourceTitleKey) ?? resumed.title;
         return resumed;
       }
     }
@@ -80,9 +83,10 @@ class WalkmanLauncher {
           bookMarkName.length - DictWordsBookMarkProvider.nameSuffix.length);
       final dict = await MyDatabase.instance.dictsDao.findById(dictId);
       if (dict == null) return null;
-      final dictVo = DictVo.c2(dict.id);
+      final dictVo = DictVo.c2(dict.id)..name = dict.name;
       return WalkmanParams(DictWordsProvider(dictVo),
-          bookMarkProvider: DictWordsBookMarkProvider(dictVo));
+          bookMarkProvider: DictWordsBookMarkProvider(dictVo),
+          title: dict.name);
     }
 
     // 生词本桶：书签名里带着桶号
@@ -91,25 +95,26 @@ class WalkmanLauncher {
           .substring(BucketWordsBookMarkProvider.namePrefix.length));
       if (bucketKey == null) return null;
       return WalkmanParams(BucketWordsProvider(bucketKey),
-          bookMarkProvider: BucketWordsBookMarkProvider(bucketKey));
+          bookMarkProvider: BucketWordsBookMarkProvider(bucketKey),
+          title: bucketKey == 9999 ? '新词库' : '生词本');
     }
 
-    // 固定数据源：书签名与数据源一一对应，只认书签名，不重写一份名字表
-    final fixed = <MapEntry<BookMarkProvider, WordsProvider>>[
-      MapEntry(TodayWordsBookMarkProvider(), TodayWordsProvider()),
-      MapEntry(TodayNewWordsBookMarkProvider(), TodayNewWordsProvider()),
-      MapEntry(TodayOldWordsBookMarkProvider(), TodayOldWordsProvider()),
-      MapEntry(LearningWordsBookMarkProvider(), LearningWordsProvider()),
-      MapEntry(MasteredWordsBookMarkProvider(), MasteredWordsProvider()),
-      MapEntry(ConfusableWordsBookMarkProvider(), ConfusableWordsProvider()),
-      MapEntry(RootFamilyWordsBookMarkProvider(), RootFamilyWordsProvider()),
-      MapEntry(WrongWordsBookMarkProvider(), WrongWordsProvider()),
-      MapEntry(WrongWordsBookMarkProvider(isHistory: true),
-          WrongWordsProvider(isHistory: true)),
+    // 固定数据源：书签名 ↔ 数据源 ↔ 兜底展示名写在一起，新增数据源时不会漏配名字
+    final fixed = <(BookMarkProvider, WordsProvider, String)>[
+      (TodayWordsBookMarkProvider(), TodayWordsProvider(), '今日单词'),
+      (TodayNewWordsBookMarkProvider(), TodayNewWordsProvider(), '今日新词'),
+      (TodayOldWordsBookMarkProvider(), TodayOldWordsProvider(), '今日旧词'),
+      (LearningWordsBookMarkProvider(), LearningWordsProvider(), '学习中'),
+      (MasteredWordsBookMarkProvider(), MasteredWordsProvider(), '已掌握'),
+      (ConfusableWordsBookMarkProvider(), ConfusableWordsProvider(), '形近词'),
+      (RootFamilyWordsBookMarkProvider(), RootFamilyWordsProvider(), '同根词'),
+      (WrongWordsBookMarkProvider(), WrongWordsProvider(), '错词'),
+      (WrongWordsBookMarkProvider(isHistory: true),
+          WrongWordsProvider(isHistory: true), '历史错词'),
     ];
-    for (final entry in fixed) {
-      if (entry.key.bookMarkName == bookMarkName) {
-        return WalkmanParams(entry.value, bookMarkProvider: entry.key);
+    for (final (mark, words, title) in fixed) {
+      if (mark.bookMarkName == bookMarkName) {
+        return WalkmanParams(words, bookMarkProvider: mark, title: title);
       }
     }
     return null;

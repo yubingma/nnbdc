@@ -109,9 +109,21 @@ void main() {
       await Prefs.init();
 
       final params = await WalkmanLauncher.resolveParams();
-
       expect(params.wordsProvider, isA<RootFamilyWordsProvider>());
       expect(params.title, '同根词');
+    });
+
+    test('只有数据源、没有名称记录时（老版本升级上来），名称必须能兜底', () async {
+      SharedPreferences.setMockInitialValues({
+        WalkmanLauncher.lastSourceKey: 'root_family_words_list',
+        // 刻意不写 lastSourceTitleKey：旧版本只会记下数据源，没有名称这一列
+      });
+      await Prefs.init();
+
+      final params = await WalkmanLauncher.resolveParams();
+
+      expect(params.wordsProvider, isA<RootFamilyWordsProvider>());
+      expect(params.title, isNotNull);
     });
   });
 }
