@@ -901,12 +901,12 @@ class RussiaPageState extends State<RussiaPage>
     sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
     HapticFeedback.mediumImpact();
 
-    // 治愈光针弹道（从右下角飞针小图标射向左侧我方顶部血条）
+    // 治愈光针弹道（从左下角飞针小图标射向左侧我方顶部血条）
     final mediaQuery = MediaQuery.maybeOf(context);
     final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
     final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
     projectiles.add(GameProjectile.needle(
-      x: size.width - 36,
+      x: 36,
       y: size.height - bottomBarHeight * 0.5,
       targetX: size.width * 0.25,
       targetY: 80,
@@ -929,12 +929,12 @@ class RussiaPageState extends State<RussiaPage>
     sendUserCmd('USE_PROPS', [0]);
     HapticFeedback.heavyImpact();
 
-    // 弧线水雷弹道（从左下角水雷小图标轰击右侧对手顶部血条区）
+    // 弧线水雷弹道（从右下角水雷小图标轰击右侧对手顶部血条区）
     final mediaQuery = MediaQuery.maybeOf(context);
     final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
     final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
     projectiles.add(GameProjectile.mine(
-      startX: 36,
+      startX: size.width - 36,
       startY: size.height - bottomBarHeight * 0.5,
       targetX: size.width * 0.75,
       targetY: 80,
@@ -1084,7 +1084,7 @@ class RussiaPageState extends State<RussiaPage>
             text: '+1 💣',
             color: const Color(0xFFF97316),
           ));
-          StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.3, volume: 0.12);
+          StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.35, volume: 0.04);
           HapticFeedback.mediumImpact();
           projectiles.removeAt(i);
         }
@@ -1114,7 +1114,7 @@ class RussiaPageState extends State<RussiaPage>
             text: '+1 💖',
             color: const Color(0xFF34D399),
           ));
-          StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.3, volume: 0.12);
+          StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.35, volume: 0.04);
           HapticFeedback.mediumImpact();
           projectiles.removeAt(i);
         }
@@ -1175,10 +1175,10 @@ class RussiaPageState extends State<RussiaPage>
         final size = mediaQuery?.size ?? const Size(390, 844);
         final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
         final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
-        final double mineTargetX = 36.0;
-        final double mineTargetY = size.height - bottomBarHeight * 0.5;
-        final double needleTargetX = size.width - 36.0;
+        final double needleTargetX = 36.0;
         final double needleTargetY = size.height - bottomBarHeight * 0.5;
+        final double mineTargetX = size.width - 36.0;
+        final double mineTargetY = size.height - bottomBarHeight * 0.5;
 
         // 在爆破泡泡处浮现醒目提示，告知用户道具来源于连击！
         floatingTexts.add(FloatingText(
@@ -1189,7 +1189,7 @@ class RussiaPageState extends State<RussiaPage>
         ));
 
         if (rand.nextBool()) {
-          // 获得治愈飞针：从当前爆破泡泡飞向右下角飞针道具区，飞抵后入库
+          // 获得治愈飞针：从当前爆破泡泡飞向左下角飞针道具区，飞抵后入库
           projectiles.add(GameProjectile.rewardNeedle(
             startX: b.x,
             startY: b.y,
@@ -1197,7 +1197,7 @@ class RussiaPageState extends State<RussiaPage>
             targetY: needleTargetY,
           ));
         } else {
-          // 获得重力水雷：从当前爆破泡泡飞向左下角水雷道具区，飞抵后入库
+          // 获得重力水雷：从当前爆破泡泡飞向右下角水雷道具区，飞抵后入库
           projectiles.add(GameProjectile.rewardMine(
             startX: b.x,
             startY: b.y,
@@ -1847,7 +1847,7 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
-  /// 底部整合操作与题目栏：左侧水雷道具 + 中间中文释义题目 + 右侧飞针道具
+  /// 底部整合操作与题目栏：左侧飞针道具（治愈我方） + 中间中文释义题目 + 右侧水雷道具（攻击对手）
   Widget _buildBottomBar(Size size, double bottomPadding) {
     final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
     return Container(
@@ -1878,13 +1878,13 @@ class RussiaPageState extends State<RussiaPage>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildAttackMineProp(size),
+          _buildPurgeNeedleProp(size),
           const SizedBox(width: 8),
           Expanded(
             child: _buildTargetPromptCard(),
           ),
           const SizedBox(width: 8),
-          _buildPurgeNeedleProp(size),
+          _buildAttackMineProp(size),
         ],
       ),
     );
@@ -1967,7 +1967,7 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
-  /// 左侧给对手用的战术道具小图标（重力水雷）
+  /// 右侧给对手用的战术道具小图标（重力水雷）
   Widget _buildAttackMineProp(Size size) {
     final bool hasProp = attackProps > 0;
     return Transform.scale(
@@ -1980,7 +1980,7 @@ class RussiaPageState extends State<RussiaPage>
             _fireAttackMine(size);
           } else {
             floatingTexts.add(FloatingText(
-              x: 55,
+              x: size.width - 55,
               y: size.height - 120,
               text: '连对3次可得水雷!',
               color: Colors.white70,
@@ -2051,7 +2051,7 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
-  /// 右侧给自己加血的战术道具小图标（治愈飞针）
+  /// 左侧给自己加血的战术道具小图标（治愈飞针）
   Widget _buildPurgeNeedleProp(Size size) {
     final bool hasProp = purgeProps > 0;
     return Transform.scale(
@@ -2064,7 +2064,7 @@ class RussiaPageState extends State<RussiaPage>
             _firePurgeNeedle(size);
           } else {
             floatingTexts.add(FloatingText(
-              x: size.width - 55,
+              x: 55,
               y: size.height - 120,
               text: '连对3次可得飞针!',
               color: Colors.white70,
