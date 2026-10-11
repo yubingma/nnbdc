@@ -524,49 +524,13 @@ class RussiaPageState extends State<RussiaPage>
       if (!mounted) return;
       final int propsType = data[0] as int;
       final int count = data[1] as int;
-      final int currentCount = (propsType == 0) ? attackProps : purgeProps;
-
-      if (count > currentCount) {
-        final mediaQuery = MediaQuery.maybeOf(context);
-        final size = mediaQuery?.size ?? const Size(390, 844);
-        final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
-        final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
-        final double targetX = (propsType == 0) ? 36.0 : size.width - 36.0;
-        final double targetY = size.height - bottomBarHeight * 0.5;
-        final double startX = size.width * 0.5;
-        final double startY = size.height * 0.42;
-
-        floatingTexts.add(FloatingText(
-          x: startX,
-          y: startY - 24,
-          text: '🔥 连击奖励! 获得【${propsType == 0 ? "重力水雷" : "净化飞针"}】',
-          color: const Color(0xFFFBBF24),
-        ));
-
+      setState(() {
         if (propsType == 0) {
-          projectiles.add(GameProjectile.rewardMine(
-            startX: startX,
-            startY: startY,
-            targetX: targetX,
-            targetY: targetY,
-          ));
+          attackProps = count;
         } else {
-          projectiles.add(GameProjectile.rewardNeedle(
-            startX: startX,
-            startY: startY,
-            targetX: targetX,
-            targetY: targetY,
-          ));
+          purgeProps = count;
         }
-      } else {
-        setState(() {
-          if (propsType == 0) {
-            attackProps = count;
-          } else {
-            purgeProps = count;
-          }
-        });
-      }
+      });
     });
 
     socket.off('propsUsed');
@@ -1120,7 +1084,7 @@ class RussiaPageState extends State<RussiaPage>
             text: '+1 💣',
             color: const Color(0xFFF97316),
           ));
-          StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.25, volume: 0.15);
+          StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.3, volume: 0.12);
           HapticFeedback.mediumImpact();
           projectiles.removeAt(i);
         }
@@ -1150,7 +1114,7 @@ class RussiaPageState extends State<RussiaPage>
             text: '+1 💖',
             color: const Color(0xFF34D399),
           ));
-          StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.25, volume: 0.15);
+          StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.3, volume: 0.12);
           HapticFeedback.mediumImpact();
           projectiles.removeAt(i);
         }
@@ -1191,9 +1155,9 @@ class RussiaPageState extends State<RussiaPage>
     HapticFeedback.mediumImpact();
     _createBurstParticles(b.x, b.y, b.baseColor, count: 16);
 
-    // 用户在泡泡中戳中了正确的英文单词：停止中文 TTS 并播放清脆上扬升调音效 (speed: 1.15)
+    // 用户在泡泡中戳中了正确的英文单词：停止中文 TTS 并播放轻盈清脆升调音效 (speed: 1.15, volume: 0.45)
     _tts.stop();
-    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.15, volume: 0.85);
+    StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.15, volume: 0.45);
 
     final bool isFirstTrySuccess = !hasMistakeInCurrentWord;
 
