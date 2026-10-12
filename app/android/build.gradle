@@ -38,13 +38,31 @@ subprojects {
 }
 
 // 钉死第三方插件声明的动态版本依赖。
-// 有的插件把 androidx.test:runner 写成 "1.2+" 这种动态版本，而动态版本必须联网查
-// "有哪些可用版本"才能解析：网络不畅时整条依赖解析会挂在连接超时上，而且构建结果不可复现。
+// 动态版本（"1.2+"、"3.3+"、"+"）必须联网问"有哪些可用版本"才能解析：网络不畅时整条依赖解析会挂在
+// 连接超时上，而且构建结果不可复现。曾实测单次构建因此从 1.5 分钟恶化到 20 分钟。
+//
+// 来源一：Flutter SDK 的 integration_test 插件
+//         (/Volumes/ssd/dev/flutter/packages/integration_test/android/build.gradle.kts:56-58)
+//         api("androidx.test:runner:1.2+")、api("androidx.test:rules:1.2+")、
+//         api("androidx.test.espresso:espresso-core:3.3+")
+//         Flutter 官方在该文件 :51 自注 TODO 承认这三条不该进 release 构建（flutter/flutter#56591）。
+// 来源二：umeng_common_sdk 插件 (android/build.gradle:40-41)
+//         api 'com.umeng.umsdk:common:+'、api 'com.umeng.umsdk:asms:+'
+//
+// 一律钉死为本地已缓存、且当前实际生效的版本，既不改动构建产物，也不再触发任何联网查询。
+def pinnedDynamicVersions = [
+        'androidx.test:runner'                : '1.7.0',
+        'androidx.test:rules'                 : '1.2.0',
+        'androidx.test.espresso:espresso-core': '3.3.0',
+        'com.umeng.umsdk:common'              : '10.0.1',
+        'com.umeng.umsdk:asms'                : '1.8.7.2',
+]
 subprojects {
     configurations.all {
         resolutionStrategy.eachDependency { details ->
-            if (details.requested.group == 'androidx.test' && details.requested.name == 'runner') {
-                details.useVersion '1.7.0'
+            def pinned = pinnedDynamicVersions["${details.requested.group}:${details.requested.name}"]
+            if (pinned != null) {
+                details.useVersion pinned
             }
         }
     }

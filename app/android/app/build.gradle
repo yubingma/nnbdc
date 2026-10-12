@@ -118,7 +118,10 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version "3.22.1+" // use available version
+            // 必须写死版本，不能用 "3.22.1+"：带 + 号会让 AGP 把它当动态版本依赖去解析，
+            // 遍历所有仓库拉 maven-metadata.xml，网络不畅时单次构建能多耗十几分钟。
+            // 3.22.1 是 AGP 8.x 的官方配套版本，本机与 CI 的 Android SDK 均已自带。
+            version "3.22.1"
         }
     }
 
