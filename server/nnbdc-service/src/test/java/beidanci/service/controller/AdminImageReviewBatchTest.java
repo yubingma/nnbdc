@@ -38,7 +38,6 @@ import beidanci.service.util.JsonUtils;
  * 前者会凭空多删一张配图，后者会让那张图永远没人审。这里用 100 张图（跨两个批次）钉住：
  * 每张恰好审一次、计数按批次正确累加、游标停在批次边界上。
  */
-@SuppressWarnings("null")
 public class AdminImageReviewBatchTest {
 
     private static final int IMAGE_COUNT = 100;
