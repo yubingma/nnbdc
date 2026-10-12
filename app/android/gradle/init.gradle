@@ -41,12 +41,13 @@ if (disableInit) {
         repos.mavenCentral()
         repos.gradlePluginPortal()
 
-        // 官方源作为兜底。
-        // 注意：本机/部分网络对 dl.google.com 是"连接被黑洞"（不是快速拒绝），
-        // 一旦落到这里，Gradle 会一直卡在连接超时上、整个构建挂住，
-        // 所以这里不再加 google()：google 仓库已由上面的阿里云镜像完整代理。
-        // 如果哪天换到能直连 Google 的网络、且确实需要官方源，再把这行打开。
-        // repos.google()
+        // 官方 Google 仓库。
+        // 本地/国内网络对 dl.google.com 可能是"连接被黑洞"（不是快速拒绝），一旦落到它上面，
+        // Gradle 会一直卡在连接超时上、整个构建挂住，所以本地不加（google 仓库已由上面的阿里云镜像代理）。
+        // CI（GITHUB_ACTIONS）网络正常，必须加上：androidx / AGP 等依赖要有它才能解析。
+        if (isCI) {
+            repos.google()
+        }
     }
 
     // 尽量早：对 Settings 生效（覆盖 pluginManagement / dependencyResolutionManagement）
