@@ -2,9 +2,12 @@ package beidanci.service.bo;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
@@ -263,6 +266,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
      * 对一个单词在特定词典下的一组释义项按认知规律进行常用度归一化（规范 popularity 与 popularity_percent）
      * 1. 单释义：popularity = 1, popularity_percent = 100
      * 2. 多释义：彻底消除并列，popularity 从 1 开始严格递增；杜绝 null 或 0 裸奔
+     *
+     * <p>只在各个元素的原位置写回这两个字段，<b>绝不改变传入列表的顺序</b>。词书导入等调用方依赖列表
+     * 顺序与另一份数据（AI 返回的义项）一一对应，一旦重排，释义就会与例句、同义词张冠李戴。
      */
     public static void normalizePopularities(List<MeaningItem> items) {
         if (items == null || items.isEmpty()) {
@@ -275,31 +281,22 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             return;
         }
 
-        // 检查是否所有项都已经具备合法的非空百分比且总和在 90~100 之间
-        boolean hasValidPcts = true;
-        int totalPct = 0;
-        for (MeaningItem item : items) {
-            if (item.getPopularityPercent() == null || item.getPopularityPercent() <= 0) {
-                hasValidPcts = false;
-                break;
-            }
-            totalPct += item.getPopularityPercent();
+        int total = items.size();
+        Integer[] percents = new Integer[total];
+        Integer[] popularities = new Integer[total];
+        for (int i = 0; i < total; i++) {
+            percents[i] = items.get(i).getPopularityPercent();
+            popularities[i] = items.get(i).getPopularity();
         }
 
-        if (hasValidPcts && totalPct >= 90 && totalPct <= 100) {
-            // 已有合法的百分比分布：按百分比降序排序，并彻底消除并列（强制按 1, 2, 3... 重新赋权）
-            items.sort((a, b) -> Integer.compare(b.getPopularityPercent(), a.getPopularityPercent()));
-            for (int i = 0; i < items.size(); i++) {
-                items.get(i).setPopularity(i + 1);
-            }
-            return;
-        }
-
-        // 否则按原有顺序分配主导常用度与百分比
-        for (int i = 0; i < items.size(); i++) {
+        int[] ranks = resolveRanks(percents, popularities);
+        boolean keepPercent = isTrustedPercentDistribution(percents);
+        for (int i = 0; i < total; i++) {
             MeaningItem item = items.get(i);
-            item.setPopularity(i + 1);
-            item.setPopularityPercent(calculateDefaultPercent(i, items.size()));
+            item.setPopularity(ranks[i]);
+            if (!keepPercent) {
+                item.setPopularityPercent(calculateDefaultPercent(ranks[i] - 1, total));
+            }
         }
     }
 
@@ -317,29 +314,71 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             return;
         }
 
-        boolean hasValidPcts = true;
-        int totalPct = 0;
-        for (MeaningItemDto dto : dtos) {
-            if (dto.getPopularityPercent() == null || dto.getPopularityPercent() <= 0) {
-                hasValidPcts = false;
-                break;
-            }
-            totalPct += dto.getPopularityPercent();
+        int total = dtos.size();
+        Integer[] percents = new Integer[total];
+        Integer[] popularities = new Integer[total];
+        for (int i = 0; i < total; i++) {
+            percents[i] = dtos.get(i).getPopularityPercent();
+            popularities[i] = dtos.get(i).getPopularity();
         }
 
-        if (hasValidPcts && totalPct >= 90 && totalPct <= 100) {
-            dtos.sort((a, b) -> Integer.compare(b.getPopularityPercent(), a.getPopularityPercent()));
-            for (int i = 0; i < dtos.size(); i++) {
-                dtos.get(i).setPopularity(i + 1);
-            }
-            return;
-        }
-
-        for (int i = 0; i < dtos.size(); i++) {
+        int[] ranks = resolveRanks(percents, popularities);
+        boolean keepPercent = isTrustedPercentDistribution(percents);
+        for (int i = 0; i < total; i++) {
             MeaningItemDto dto = dtos.get(i);
-            dto.setPopularity(i + 1);
-            dto.setPopularityPercent(calculateDefaultPercent(i, dtos.size()));
+            dto.setPopularity(ranks[i]);
+            if (!keepPercent) {
+                dto.setPopularityPercent(calculateDefaultPercent(ranks[i] - 1, total));
+            }
         }
+    }
+
+    /**
+     * 算出每个传入位置的名次（1-based，名次越小越常用）。
+     * 判据优先级：可信的常用度百分比降序 → 可信的热度升序 → 传入顺序。
+     * 排序稳定，因此判据并列时保持传入顺序。
+     */
+    private static int[] resolveRanks(Integer[] percents, Integer[] popularities) {
+        int total = percents.length;
+        Integer[] order = new Integer[total];
+        for (int i = 0; i < total; i++) {
+            order[i] = i;
+        }
+
+        if (isTrustedPercentDistribution(percents)) {
+            Arrays.sort(order, Comparator.comparingInt((Integer i) -> percents[i]).reversed());
+        } else if (isTrustedPopularityOrder(popularities)) {
+            Arrays.sort(order, Comparator.comparingInt(i -> popularities[i]));
+        }
+
+        int[] ranks = new int[total];
+        for (int i = 0; i < total; i++) {
+            ranks[order[i]] = i + 1;
+        }
+        return ranks;
+    }
+
+    /** 是否是一份可信的常用度百分比分布：全部非空、为正，且合计落在 90~100。 */
+    private static boolean isTrustedPercentDistribution(Integer[] percents) {
+        int totalPct = 0;
+        for (Integer pct : percents) {
+            if (pct == null || pct <= 0) {
+                return false;
+            }
+            totalPct += pct;
+        }
+        return totalPct >= 90 && totalPct <= 100;
+    }
+
+    /** 热度是否可信：全部为正且互不重复；出现并列时无法判定先后，退回传入顺序。 */
+    private static boolean isTrustedPopularityOrder(Integer[] popularities) {
+        Set<Integer> seen = new HashSet<>();
+        for (Integer popularity : popularities) {
+            if (popularity == null || popularity <= 0 || !seen.add(popularity)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

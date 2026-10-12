@@ -2,6 +2,7 @@ package beidanci.service.bo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -135,5 +136,58 @@ public class MeaningItemBoPopularityTest {
         assertEquals(80, dto1.getPopularityPercent());
         assertEquals(2, dto2.getPopularity());
         assertEquals(20, dto2.getPopularityPercent());
+    }
+
+    @Test
+    public void testNormalizeKeepsListOrder() {
+        // 归一化只写回热度与百分比，绝不重排传入列表：
+        // 词书导入依赖该顺序与 AI 返回的义项一一对应，重排会让释义配上别人的例句与同义词。
+        MeaningItem lowPct = new MeaningItem();
+        lowPct.setPopularityPercent(10);
+
+        MeaningItem highPct = new MeaningItem();
+        highPct.setPopularityPercent(60);
+
+        MeaningItem midPct = new MeaningItem();
+        midPct.setPopularityPercent(30);
+
+        List<MeaningItem> list = Arrays.asList(lowPct, highPct, midPct);
+        MeaningItemBo.normalizePopularities(list);
+
+        assertSame(lowPct, list.get(0));
+        assertSame(highPct, list.get(1));
+        assertSame(midPct, list.get(2));
+
+        assertEquals(3, lowPct.getPopularity());
+        assertEquals(1, highPct.getPopularity());
+        assertEquals(2, midPct.getPopularity());
+
+        assertEquals(10, lowPct.getPopularityPercent());
+        assertEquals(60, highPct.getPopularityPercent());
+        assertEquals(30, midPct.getPopularityPercent());
+    }
+
+    @Test
+    public void testNormalizeFallsBackToPopularityWhenPercentMissing() {
+        // 百分比整体缺位时，必须按 AI 判定的热度排先后，而不是按 AI 返回数组的先后
+        MeaningItem third = new MeaningItem();
+        third.setPopularity(3);
+
+        MeaningItem first = new MeaningItem();
+        first.setPopularity(1);
+
+        MeaningItem second = new MeaningItem();
+        second.setPopularity(2);
+
+        List<MeaningItem> list = Arrays.asList(third, first, second);
+        MeaningItemBo.normalizePopularities(list);
+
+        assertEquals(1, first.getPopularity());
+        assertEquals(2, second.getPopularity());
+        assertEquals(3, third.getPopularity());
+
+        assertEquals(75, first.getPopularityPercent());
+        assertEquals(20, second.getPopularityPercent());
+        assertEquals(5, third.getPopularityPercent());
     }
 }
