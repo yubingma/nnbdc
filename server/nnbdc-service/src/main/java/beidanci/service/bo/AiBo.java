@@ -25,6 +25,8 @@ import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
 
+import com.alibaba.dashscope.exception.ApiException;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -716,6 +718,8 @@ public class AiBo {
      * @param absoluteImagePath 图片的绝对路径
      * @return 包含 {"action": "DELETE", "reason": "xxx"} 或 {"action": "KEEP"} 的 JSON 字符串；
      *         审核没做成（没配 Key、调用异常、返回不可解析）时返回 <b>null</b>，由调用方保持「审核中」等待重试。
+     *         平台**确定性拒收**（内容安全拦截、图片本身不合法）时返回 {"action":"DELETE"} —— 这类图重试多少次
+     *         都是同一个结果，必须直接判删，不能挂着等重审。
      *         以前这里失败会返回 {"action":"KEEP"}，等于把"没审成"当成"审核通过"，配图会直接发给用户看。
      */
     public String reviewImage(String wordSpell, String absoluteImagePath) {
@@ -777,9 +781,49 @@ public class AiBo {
             logger.info("审图清理结果: " + jsonResult);
             return jsonResult;
         } catch (Exception e) {
+            String platformReject = platformRejectReason(platformErrorMessage(e));
+            if (platformReject != null) {
+                // 平台对这张图是确定性拒收，重试多少次都是同一个结果，直接判删；
+                // 以前一律当作"没结论"挂着等重审，这类图会永久卡在审核中，既通不过也删不掉。
+                logger.warn("审图被平台确定性拒收，直接判删: path={}, 原因={}", absoluteImagePath, platformReject);
+                Map<String, Object> verdict = new HashMap<>();
+                verdict.put("action", "DELETE");
+                verdict.put("reason", platformReject);
+                return JsonUtils.toJson(verdict);
+            }
             logger.error("审图异常，拿不到结论: " + absoluteImagePath, e);
             return null;
         }
+    }
+
+    /** 从异常链里取出百炼的报错文本（ApiException 的 message 是带 code 的 JSON） */
+    private static String platformErrorMessage(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof ApiException && t.getMessage() != null) {
+                return t.getMessage();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 平台对这张图的**确定性拒收**原因；不是确定性拒收（限流、超时、网络抖动）时返回 null，
+     * 由调用方保持「审核中」等待重审。
+     *
+     * 实测 2026-10-12：一次全量重审里 474 次失败全部是 DataInspectionFailed（内容安全拦截），
+     * 241 张图因此永久卡在"审不出结论"的状态，既通不过也删不掉。
+     */
+    static String platformRejectReason(String platformMessage) {
+        if (platformMessage == null) {
+            return null;
+        }
+        if (platformMessage.contains("DataInspectionFailed")) {
+            return "平台内容安全检测未通过（这类图重试也不会通过）";
+        }
+        if (platformMessage.contains("InvalidParameter")) {
+            return "图片本身不合法，平台无法识别（尺寸或格式超出模型要求，重试也不会通过）";
+        }
+        return null;
     }
 
     /**

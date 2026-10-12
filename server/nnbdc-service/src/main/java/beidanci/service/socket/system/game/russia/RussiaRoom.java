@@ -83,6 +83,11 @@ public class RussiaRoom {
      */
     private final Hall hall;
 
+    /**
+     * 本房间这一局固定使用的用词池：进房间时锁定，跨零点也不换题源
+     */
+    private final HallWordPool wordPool;
+
     public RussiaRoom(UserVo user, Hall hall, WordCache wordCache, WordBo wordBo, UserGameBo userGameBo,
                       DictWordBo dictWordBo, UserSorter userSorter, SysParamBo sysParamBo, UserBo userBo,
                       LearningDictBo selectedDictBo, DictBo dictBo) {
@@ -94,6 +99,7 @@ public class RussiaRoom {
                       LearningDictBo selectedDictBo, DictBo dictBo, boolean privateRoom) {
         this.roomId = roomSerialNo.incrementAndGet();
         this.hall = hall;
+        this.wordPool = hall.getWordPool();
         this.wordCache = wordCache;
         this.wordBo = wordBo;
         this.userGameBo = userGameBo;
@@ -357,6 +363,10 @@ public class RussiaRoom {
 
     public boolean isPrivateRoom() {
         return privateRoom;
+    }
+
+    public HallWordPool getWordPool() {
+        return wordPool;
     }
 
     public UserGameData getUserPlayData(UserVo user) {

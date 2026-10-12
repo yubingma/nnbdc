@@ -197,9 +197,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
      * 返回插入的行数。
      */
     public int supplementCommonMeanings() {
-        String sql = "INSERT INTO meaning_item (id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time) "
+        String sql = "INSERT INTO meaning_item (id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, popularity_percent, create_time, update_time) "
                 +
-                "SELECT REPLACE(gen_random_uuid()::text, '-', ''), mi.ci_xing, mi.meaning, mi.word_id, '0', '15118', mi.popularity, NOW(), NOW() "
+                "SELECT REPLACE(gen_random_uuid()::text, '-', ''), mi.ci_xing, mi.meaning, mi.word_id, '0', '15118', mi.popularity, COALESCE(mi.popularity_percent, 100), NOW(), NOW() "
                 +
                 "FROM meaning_item mi " +
                 "LEFT JOIN meaning_item cm ON cm.word_id = mi.word_id AND cm.dict_id = '0' " +
@@ -225,6 +225,65 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
                 ")";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("word_id"));
+    }
+
+    /**
+     * 对一个单词的一组释义项按认知规律进行常用度归一化（规范 popularity 与 popularity_percent）
+     * 1. 单释义：popularity = 1, popularity_percent = 100
+     * 2. 多释义：popularity 从 1 开始连续递增；popularity_percent 倾斜分配主导核心义项，杜绝 null 裸奔
+     */
+    public static void normalizePopularities(List<MeaningItem> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        if (items.size() == 1) {
+            MeaningItem item = items.get(0);
+            item.setPopularity(1);
+            item.setPopularityPercent(100);
+            return;
+        }
+
+        // 检查是否所有项都已经具备合法的非空百分比且总和在 90~100 之间
+        boolean hasValidPcts = true;
+        int totalPct = 0;
+        for (MeaningItem item : items) {
+            if (item.getPopularityPercent() == null || item.getPopularityPercent() < 0) {
+                hasValidPcts = false;
+                break;
+            }
+            totalPct += item.getPopularityPercent();
+        }
+        if (hasValidPcts && totalPct >= 90 && totalPct <= 100) {
+            // 已有合法的百分比分布，确保 popularity 严格递增即可
+            for (int i = 0; i < items.size(); i++) {
+                if (items.get(i).getPopularity() == null || items.get(i).getPopularity() <= 0) {
+                    items.get(i).setPopularity(i + 1);
+                }
+            }
+            return;
+        }
+
+        // 否则按顺序分配主导常用度与百分比
+        for (int i = 0; i < items.size(); i++) {
+            MeaningItem item = items.get(i);
+            item.setPopularity(i + 1);
+            if (items.size() == 2) {
+                item.setPopularityPercent(i == 0 ? 80 : 20);
+            } else if (items.size() == 3) {
+                item.setPopularityPercent(i == 0 ? 75 : (i == 1 ? 20 : 5));
+            } else {
+                if (i == 0) {
+                    item.setPopularityPercent(70);
+                } else if (i == 1) {
+                    item.setPopularityPercent(18);
+                } else if (i == 2) {
+                    item.setPopularityPercent(8);
+                } else {
+                    int remaining = Math.max(1, 4 / (items.size() - 3));
+                    item.setPopularityPercent(remaining);
+                }
+            }
+        }
     }
 
     /**
@@ -255,7 +314,8 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
                 insertParams.addValue("ciXing", meaning.get("cixing") != null ? meaning.get("cixing") : "");
                 insertParams.addValue("meaning", meaning.get("meaning") != null ? meaning.get("meaning") : "");
                 insertParams.addValue("popularity", i + 1);
-                insertParams.addValue("popularityPercent", null);
+                int pct = (meanings.size() == 1) ? 100 : (i == 0 ? 80 : (i == 1 ? 15 : 5));
+                insertParams.addValue("popularityPercent", pct);
                 insertParams.addValue("createTime", now);
                 insertParams.addValue("updateTime", now);
                 namedParameterJdbcTemplate.update(insertSql, insertParams);
@@ -275,8 +335,10 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         params.addValue("ownerId", dto.getOwnerId() != null ? dto.getOwnerId() : "15118");
         params.addValue("ciXing", dto.getCiXing() != null ? dto.getCiXing() : "");
         params.addValue("meaning", dto.getMeaning() != null ? dto.getMeaning() : "");
-        params.addValue("popularity", dto.getPopularity());
-        params.addValue("popularityPercent", dto.getPopularityPercent());
+        int popularity = dto.getPopularity() > 0 ? dto.getPopularity() : 1;
+        int popularityPercent = (dto.getPopularityPercent() != null && dto.getPopularityPercent() > 0) ? dto.getPopularityPercent() : 100;
+        params.addValue("popularity", popularity);
+        params.addValue("popularityPercent", popularityPercent);
         params.addValue("createTime", dto.getCreateTime() != null ? new Timestamp(dto.getCreateTime().getTime()) : new Timestamp(System.currentTimeMillis()));
         params.addValue("updateTime", dto.getUpdateTime() != null ? new Timestamp(dto.getUpdateTime().getTime()) : new Timestamp(System.currentTimeMillis()));
         namedParameterJdbcTemplate.update(insertSql, params);

@@ -1,6 +1,8 @@
 package beidanci.service.bo;
 import javax.annotation.PostConstruct;
 
+import java.time.LocalDate;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +25,7 @@ import beidanci.api.model.WordVo;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.Dict;
+import beidanci.service.socket.system.game.russia.HallWordSampler;
 import beidanci.service.po.DictGroup;
 import beidanci.service.po.GameHall;
 import beidanci.service.po.Word;
@@ -42,6 +45,10 @@ public class GameHallBo extends BaseBo<GameHall> {
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
+    public List<GameHall> findAllHalls() {
+        return queryAll(null, false);
+    }
+
     public GameHallVo getGameHallVoById(String id) {
         GameHall gameHall = findById(id);
         GameHallVo vo = PoVoUtils.makeVo(gameHall, GameHallVo.class,
@@ -56,12 +63,17 @@ public class GameHallBo extends BaseBo<GameHall> {
     private MeaningItemBo meaningItemBo;
 
     /**
-     * 获游戏大厅所包含的单词书中的所有单词
+     * 取游戏大厅今天要用的单词。
      *
-     * @param id
-     * @return
+     * 大厅的词来自一组词书，量可以很大，所以不是每次都把全量装进内存：
+     * 每天最多用 2000 个词，厅里词数不足 2000 就全都要（抽样规则见 {@link HallWordSampler}，
+     * 同一天同一个大厅结果固定，跨天换一批）。
+     *
+     * @param id  大厅 id
+     * @param day 业务日期（自然日）
+     * @return 拼写 -&gt; 单词
      */
-    public Map<String/*spell*/, WordVo> getGameHallWords(String id) {
+    public Map<String/*spell*/, WordVo> getGameHallWords(String id, LocalDate day) {
         GameHall gameHall = findById(id);
         DictGroup dictGroup = gameHall.getDictGroup();
         
@@ -78,15 +90,24 @@ public class GameHallBo extends BaseBo<GameHall> {
         if (dictIds.isEmpty()) {
             return new HashMap<>();
         }
+        // 先只把词 id 捞出来（轻），按今天的抽样结果决定要加载哪些词，再连释义一起查
+        List<String> allWordIds = namedParameterJdbcTemplate.queryForList(
+                "SELECT DISTINCT dw.word_id FROM dict_word dw WHERE dw.dict_id IN (:dictIds)",
+                new MapSqlParameterSource("dictIds", dictIds), String.class);
+        List<String> wordIds = HallWordSampler.pickWordIds(allWordIds, day, id);
+        if (wordIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
         String sql = "SELECT DISTINCT w.* FROM word w " +
                 "INNER JOIN dict_word dw ON dw.word_id = w.id " +
-                "WHERE dw.dict_id IN (:dictIds)";
+                "WHERE dw.dict_id IN (:dictIds) AND w.id IN (:wordIds)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictIds", dictIds);
+        params.addValue("wordIds", wordIds);
         List<Word> words = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(Word.class));
 
-        // 批量加载所有单词的 meaningItems
-        List<String> wordIds = words.stream().map(w -> w.getId()).collect(Collectors.toList());
+        // 批量加载这些单词的 meaningItems
         Map<String, List<MeaningItemVo>> meaningItemsByWordId = new HashMap<>();
         if (!wordIds.isEmpty()) {
             // 1. 优先查询当前大厅正版词书集合（dictIds）的专属释义项（教材审定释义）

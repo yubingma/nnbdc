@@ -2,15 +2,18 @@ package beidanci.service.socket.system.game.russia.state;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import beidanci.api.model.*;
 import beidanci.service.socket.UserCmd;
+import beidanci.service.socket.system.game.russia.HallWordPool;
 import beidanci.service.socket.system.game.russia.RussiaRoom;
 import beidanci.service.socket.system.game.russia.UserGameData;
 import beidanci.service.util.Util;
@@ -24,6 +27,12 @@ public final class GetNextWordProcessor {
      * 不必每答一题就往返一次，短暂断链也不会中断出题。
      */
     public static final int PACK_SIZE = 50;
+
+    /**
+     * 挑词时最多重试几次去避开已用过的拼写。池子比一包还小时（例如大厅只有 30 个词）
+     * 本来就避不开，试有限次就接受重复，不在这里死循环。
+     */
+    private static final int MAX_PICK_RETRY = 20;
 
     private final RussiaRoom room;
     public GetNextWordProcessor(RussiaRoom room) {
@@ -95,8 +104,13 @@ public final class GetNextWordProcessor {
             int fromIndex = Math.max(0, Integer.parseInt(userCmd.getArgs()[0]));
             List<Object[]> pack;
             synchronized (words) {
+                // 这一包里已经用过的拼写（这段可能之前已经生成过一部分）
+                Set<String> usedInPack = new HashSet<>();
+                for (int i = fromIndex; i < words.size(); i++) {
+                    usedInPack.add(((WordVo) words.get(i)[0]).getSpell());
+                }
                 while (words.size() < fromIndex + PACK_SIZE) {
-                    words.add(buildWordObj());
+                    words.add(buildWordObj(usedInPack));
                 }
                 pack = new ArrayList<>(words.subList(fromIndex, fromIndex + PACK_SIZE));
             }
@@ -168,24 +182,44 @@ public final class GetNextWordProcessor {
             if (wordIndex < words.size()) {
                 return words.get(wordIndex);
             }
-            Object[] wordObj = buildWordObj();
+            Object[] wordObj = buildWordObj(new HashSet<>());
             words.add(wordObj);
             return wordObj;
         }
     }
 
     /**
-     * 随机选一个目标单词 + 3 个互不相同的干扰单词，组装成下发给客户端的单词对象。
+     * 组一个词条：目标词 + 3 个互不相同的干扰词，词都取自本房间锁定的当日词池。
+     * 用到的拼写会加进 usedSpells，这样同一个词包里不会重复出同一个词。
      */
-    private Object[] buildWordObj() {
-        WordVo word = room.getHall().getWordRandomly(null);
-        WordVo word2 = room.getHall().getWordRandomly(word);
-        WordVo word3 = room.getHall().getWordRandomly(word);
-        WordVo word4 = room.getHall().getWordRandomly(word);
+    private Object[] buildWordObj(Set<String> usedSpells) {
+        WordVo word = pickWordAvoiding(usedSpells);
+        usedSpells.add(word.getSpell());
+        WordVo word2 = pickWordAvoiding(usedSpells);
+        usedSpells.add(word2.getSpell());
+        WordVo word3 = pickWordAvoiding(usedSpells);
+        usedSpells.add(word3.getSpell());
+        WordVo word4 = pickWordAvoiding(usedSpells);
+        usedSpells.add(word4.getSpell());
+
         String[] meanings = new String[]{word2.getMeaningStr(), word3.getMeaningStr(), word4.getMeaningStr()};
         String[] distractorSpells = new String[]{word2.getSpell(), word3.getSpell(), word4.getSpell()};
         String soundUrl = Utils.getFileNameOfWordSound(word.getSpell());
         return new Object[]{word, meanings, soundUrl, distractorSpells};
+    }
+
+    /**
+     * 从当日词池里随机取一个不在 usedSpells 里的词；试有限次仍避不开就接受重复。
+     */
+    private WordVo pickWordAvoiding(Set<String> usedSpells) {
+        HallWordPool pool = room.getWordPool();
+        for (int i = 0; i < MAX_PICK_RETRY; i++) {
+            WordVo word = pool.getWordRandomly(null);
+            if (!usedSpells.contains(word.getSpell())) {
+                return word;
+            }
+        }
+        return pool.getWordRandomly(null);
     }
 
     /**

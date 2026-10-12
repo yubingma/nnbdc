@@ -174,6 +174,9 @@ public class AdminImageReviewController {
      * 送审是多路并发的（见 {@link #REVIEW_CONCURRENCY}）。以前是一张一张串行、每张之间还空等
      * 800 毫秒，3 万多张要跑将近 18 个小时，而其中四成时间纯粹是睡掉的。
      *
+     * 判删只删记录和物理文件，CDN 缓存**不在删的那一刻刷**：一轮会删几千张，逐张刷 URL 会被
+     * 阿里云每天 2000 条的配额卡死（实测 2026-10-12 打满后全线失败），改成本轮收尾刷一次目录。
+     *
      * @param resume 上次的进度（为空表示这一轮从头开始）
      */
     private void runBatchReview(String dictId, ReviewProgress resume) {
@@ -182,6 +185,7 @@ public class AdminImageReviewController {
         int deleted = resume == null ? 0 : resume.deletedCount;
         int undecided = resume == null ? 0 : resume.undecidedCount;
         int approvedThisRun = 0;
+        int deletedThisRun = 0;
         AtomicInteger handled = new AtomicInteger();
         ExecutorService pool = Executors.newFixedThreadPool(REVIEW_CONCURRENCY);
         try {
@@ -226,9 +230,10 @@ public class AdminImageReviewController {
                         undecided++;
                     } else if ("DELETE".equals(String.valueOf(verdict.get("action")))) {
                         deleted++;
+                        deletedThisRun++;
                         Word word = wordBo.findById(image.getWordId());
-                        currentTask.deletedImages
-                                .add(buildDeletedInfo(image, word == null ? null : word.getSpell(), verdict));
+                        currentTask.addDeletedImage(
+                                buildDeletedInfo(image, word == null ? null : word.getSpell(), verdict));
                     } else {
                         approvedThisRun++;
                     }
@@ -259,14 +264,19 @@ public class AdminImageReviewController {
         } finally {
             pool.shutdown();
             currentTask.isRunning = false;
+            if (deletedThisRun > 0) {
+                // 逐张刷 URL 会被阿里云每天 2000 条的刷新配额卡死，收尾统一刷一次配图目录
+                wordImageBo.refreshWordImageCdnDirectory();
+            }
         }
     }
 
     /** 送一张配图给 AI 审，并按结论落库：判删当场删、判过置为已通过、没结论就留在审核中等重审 */
     private Map<String, Object> reviewOneImage(WordImageDto image) throws IllegalAccessException {
         Word word = wordBo.findById(image.getWordId());
+        // CDN 缓存刷新推迟到本轮收尾统一做，避免逐张刷新打爆阿里云的每日 URL 刷新配额
         return wordImageBo.reviewImageAndApply(image.getId(), word == null ? null : word.getSpell(),
-                image.getImageFile());
+                image.getImageFile(), true);
     }
 
     private Map<String, Object> buildDeletedInfo(WordImageDto image, String spell, Map<String, Object> verdict) {
@@ -360,15 +370,33 @@ public class AdminImageReviewController {
     }
 
     public static class AdminImageReviewTask {
+        /** 明细最多留这么多条，超出的丢掉（总数仍记在 deletedCount 里） */
+        private static final int MAX_DELETED_DETAIL = 50;
+
         public boolean isRunning = false;
         public int totalImages = 0;
         public int currentIndex = 0;
         public String statusMsg = "等待中";
         public String dictId;
-        /** 本次已删除的配图（含 AI 给的理由）；只在内存里，服务重启后清空，逐条删除记录在服务端日志里可查 */
+        /** 本次已删除的配图总数 */
+        public int deletedCount = 0;
+        /**
+         * 本次已删除配图的最近若干条明细（含 AI 给的理由），只在内存里，服务重启后清空。
+         *
+         * 明细**不保留全部**：一轮会删几千张，把每张的判删理由都堆进状态响应，管理页每 2 秒轮询
+         * 一次就要拉两兆的 JSON（实测留到 1900 条时响应体已经 841KB）。完整清单在服务端日志里可查。
+         */
         public List<Map<String, Object>> deletedImages = new ArrayList<>();
         /** 落库的上次进度摘要，不在跑的时候给页面看 */
         public String savedProgress;
+
+        public void addDeletedImage(Map<String, Object> info) {
+            deletedCount++;
+            deletedImages.add(info);
+            if (deletedImages.size() > MAX_DELETED_DETAIL) {
+                deletedImages.remove(0);
+            }
+        }
 
         public void reset() {
             isRunning = false;
@@ -376,6 +404,7 @@ public class AdminImageReviewController {
             currentIndex = 0;
             statusMsg = "等待中";
             dictId = null;
+            deletedCount = 0;
             deletedImages.clear();
             savedProgress = null;
         }

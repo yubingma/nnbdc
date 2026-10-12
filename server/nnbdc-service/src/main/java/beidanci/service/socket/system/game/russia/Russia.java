@@ -24,6 +24,7 @@ import beidanci.service.bo.WordBo;
 import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
+import beidanci.service.po.GameHall;
 import beidanci.service.socket.SocketService;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.MySystem;
@@ -92,17 +93,8 @@ public class Russia implements MySystem {
                     if (userCmd.getArgs()[1] != null && !userCmd.getArgs()[1].equals("")
                             && !userCmd.getArgs()[1].equals("undefined")) {
                         exceptRoom = Integer.parseInt(userCmd.getArgs()[1]);
-                    }       Hall hall;
-                    synchronized (gameHalls) {
-                        hall = gameHalls.get(hallId);
-                        if (hall == null) {
-                            hall = new Hall(hallId, this, socketService, wordCache, wordBo, userGameBo, rawWordBo,
-                                    userSorter, gameHallBo, sysParamBo, dictWordBo, userBo, selectedDictBo, dictBo);
-                            // 构造完成后再启动定时任务，避免 this-escape
-                            hall.startMonitoring();
-                            gameHalls.put(hallId, hall);
-                        }
-                    }       // 用户进入游戏大厅
+                    }       Hall hall = getOrCreateHall(hallId);
+                    // 用户进入游戏大厅
                     Hall currHall = users.get(user);
                     if (currHall != null) {
                         log.warn(String.format("用户[%s]试图进入大厅，但他目前已在[%s]大厅, 强制他从目前大厅退出。", user.getDisplayNickName(),
@@ -115,15 +107,7 @@ public class Russia implements MySystem {
                     // hallId
                     String hallId = userCmd.getArgs()[0];
                     Hall hall;
-                    synchronized (gameHalls) {
-                        hall = gameHalls.get(hallId);
-                        if (hall == null) {
-                            hall = new Hall(hallId, this, socketService, wordCache, wordBo, userGameBo, rawWordBo,
-                                    userSorter, gameHallBo, sysParamBo, dictWordBo, userBo, selectedDictBo, dictBo);
-                            hall.startMonitoring();
-                            gameHalls.put(hallId, hall);
-                        }
-                    }
+                    hall = getOrCreateHall(hallId);
                     leaveCurrentRoom(user, hall);
                     hall.createPrivateRoomForUser(user);
                     users.put(user, hall);
@@ -132,15 +116,7 @@ public class Russia implements MySystem {
                     String hallId = userCmd.getArgs()[0];
                     int roomId = Integer.parseInt(userCmd.getArgs()[1]);
                     Hall hall;
-                    synchronized (gameHalls) {
-                        hall = gameHalls.get(hallId);
-                        if (hall == null) {
-                            hall = new Hall(hallId, this, socketService, wordCache, wordBo, userGameBo, rawWordBo,
-                                    userSorter, gameHallBo, sysParamBo, dictWordBo, userBo, selectedDictBo, dictBo);
-                            hall.startMonitoring();
-                            gameHalls.put(hallId, hall);
-                        }
-                    }
+                    hall = getOrCreateHall(hallId);
                     leaveCurrentRoom(user, hall);
                     boolean ok = hall.joinRoomById(user, roomId);
                     if (!ok) {
@@ -174,6 +150,54 @@ public class Russia implements MySystem {
         // 用户回到游戏里了：如果上一局是断线判负的，把结果补发给他（那时他不在线，发不出去）。
         // 不要求他此刻还在大厅里——恰恰是被判负的人已经不在大厅了，才会需要这条补发。
         socketService.sendGameResultNotice(user);
+    }
+
+    /**
+     * 取大厅对象，没有就建一个。建厅只是登记，词池在第一次用到时才按当天抽样加载。
+     */
+    private Hall getOrCreateHall(String hallId)
+            throws IOException, InvalidMeaningFormatException, EmptySpellException, ParseException {
+        synchronized (gameHalls) {
+            Hall hall = gameHalls.get(hallId);
+            if (hall == null) {
+                hall = new Hall(hallId, this, SocketService.getInstance(), wordCache, wordBo, userGameBo,
+                        rawWordBo, userSorter, gameHallBo, sysParamBo, dictWordBo, userBo, selectedDictBo, dictBo);
+                hall.startMonitoring();
+                gameHalls.put(hallId, hall);
+            }
+            return hall;
+        }
+    }
+
+    /**
+     * 把库里所有游戏大厅的"当日用词池"准备好。幂等：池子日期已经对的大厅是纯内存判断，立刻返回。
+     *
+     * 只能在后台线程调用——每个大厅要 0.4~1.8 秒（词书分组递归加载 + 释义批量查询），
+     * 放在 socket 事件循环上会连累同一线程上的其他玩家。
+     *
+     * @param reason 触发原因，只用于日志
+     */
+    public void prepareAllWordPools(String reason) {
+        List<GameHall> halls;
+        try {
+            halls = gameHallBo.findAllHalls();
+        } catch (Exception e) {
+            log.error(String.format("读取游戏大厅列表失败，本次跳过用词池准备（%s）", reason), e);
+            return;
+        }
+
+        long startAll = System.currentTimeMillis();
+        int prepared = 0;
+        for (GameHall gameHall : halls) {
+            try {
+                getOrCreateHall(gameHall.getId()).getWordPool();
+                prepared++;
+            } catch (Exception e) {
+                log.error(String.format("准备大厅[%s]的用词池失败（%s）", gameHall.getHallName(), reason), e);
+            }
+        }
+        log.info(String.format("游戏大厅用词池准备完成（%s）：%d 个大厅，总耗时 %dms",
+                reason, prepared, System.currentTimeMillis() - startAll));
     }
 
     @Override

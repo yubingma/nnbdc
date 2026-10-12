@@ -1,6 +1,7 @@
 package beidanci.service.socket.system.game.russia;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +46,10 @@ public class Hall {
     private final SocketService socketService;
     private final String name;
     private final String id;
-    private List<WordVo> wordList;
+    /**
+     * 当天的用词池：同一天内不变，跨天换一批（惰性重建见 {@link #getWordPool()}）
+     */
+    private volatile HallWordPool wordPool;
 
     public MySystem getSystem() {
         return system;
@@ -100,11 +104,7 @@ public class Hall {
         GameHall gameHall = gameHallBo.findById(id, true);
         this.name = gameHall.getHallName();
 
-        logger.info(String.format("正在初始化大厅[%s]", name));
-        long startTime = System.currentTimeMillis();
-        generateWordList();
-        long endTime = System.currentTimeMillis();
-        logger.info(String.format("大厅[%s]初始化完成，共有[%d]个单词，耗时[%d]ms", name, wordList.size(), endTime - startTime));
+        logger.info(String.format("大厅[%s]已创建（词池在第一次用到时按当天抽样加载）", name));
     }
 
     /**
@@ -122,13 +122,42 @@ public class Hall {
      * @throws ParseException
      * @throws IOException
      */
-    private void generateWordList()
-            throws IOException, InvalidMeaningFormatException, EmptySpellException, ParseException {
-        // 获取该游戏大厅所包含的单词书中的所有单词
-        Map<String, WordVo> words = gameHallBo.getGameHallWords(id);
+    /**
+     * 取当天的用词池。跨天时自动换成新一天的（这是轮转的唯一判定来源；
+     * 零点定时任务只是提前触发它，见 {@link #rotateWordPoolForNewDay()}）。
+     *
+     * 房间会持有拿到的池对象用到底，所以跨零点的对局不会中途换题源；
+     * 旧池由还在用它的房间持有，最后一个房间打完自然回收。
+     */
+    public HallWordPool getWordPool() {
+        LocalDate today = LocalDate.now();
+        HallWordPool pool = wordPool;
+        if (pool != null && pool.getDay().equals(today)) {
+            return pool;
+        }
+        synchronized (this) {
+            pool = wordPool;
+            if (pool != null && pool.getDay().equals(today)) {
+                return pool;
+            }
+            long startTime = System.currentTimeMillis();
+            Map<String, WordVo> words = gameHallBo.getGameHallWords(id, today);
+            HallWordPool newPool = new HallWordPool(today, new ArrayList<>(words.values()));
+            wordPool = newPool;
+            logger.info(String.format("大厅[%s]的当日词池已就绪：用词[%d]个，日期[%s]，耗时[%d]ms",
+                    name, newPool.size(), today, System.currentTimeMillis() - startTime));
+            return newPool;
+        }
+    }
 
-        assert (wordList == null);
-        wordList = new ArrayList<>(words.values());
+    /**
+     * 零点轮转：把已加载的大厅换成新一天的用词池。幂等，真正的日期判定在 {@link #getWordPool()} 里。
+     */
+    public void rotateWordPoolForNewDay() {
+        HallWordPool pool = wordPool;
+        if (pool != null && !pool.getDay().equals(LocalDate.now())) {
+            getWordPool();
+        }
     }
 
     /**
@@ -304,27 +333,6 @@ public class Hall {
 
     public String getName() {
         return name;
-    }
-
-    /**
-     * 随机选出一个单词，且与指定单词不同
-     *
-     * @param otherThan
-     * @return
-     */
-    public WordVo getWordRandomly(WordVo otherThan) {
-        int randomIndex = (int) (wordList.size() * Math.random());
-        assert (randomIndex <= wordList.size());
-        randomIndex = randomIndex == wordList.size() ? 0 : randomIndex;
-        WordVo word = wordList.get(randomIndex);
-
-        if (otherThan != null && otherThan.getSpell().equalsIgnoreCase(word.getSpell())) {
-            randomIndex++;
-            randomIndex = randomIndex == wordList.size() ? 0 : randomIndex;
-            word = wordList.get(randomIndex);
-        }
-
-        return word;
     }
 
     /**

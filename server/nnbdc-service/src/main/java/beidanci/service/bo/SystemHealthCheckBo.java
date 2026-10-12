@@ -1434,12 +1434,17 @@ public class SystemHealthCheckBo {
                 for (MeaningItemDto mDto : candidates) {
                     boolean copied = false;
                     // 拷贝来源若用分号挤进了多个义项，同样按约定拆成多条独立释义项
-                    for (String part : Util.splitMeanings(mDto.getMeaning())) {
+                    List<String> copyParts = Util.splitMeanings(mDto.getMeaning());
+                    for (int i = 0; i < copyParts.size(); i++) {
+                        String part = copyParts.get(i);
                         try {
                             mDto.setId(Util.uuid());
                             mDto.setMeaning(part);
                             mDto.setDictId(commonDictId);
                             mDto.setOwnerId(Constants.SYS_USER_SYS_ID);
+                            mDto.setPopularity(i + 1);
+                            int pct = (copyParts.size() == 1) ? (mDto.getPopularityPercent() != null ? mDto.getPopularityPercent() : 100) : (i == 0 ? 80 : (i == 1 ? 15 : 5));
+                            mDto.setPopularityPercent(pct);
                             mDto.setCreateTime(new java.util.Date());
                             mDto.setUpdateTime(new java.util.Date());
 
@@ -1501,8 +1506,9 @@ public class SystemHealthCheckBo {
                             String meaning = (String) map.get("meaning");
                             logger.info(String.format("【健康检查】AI 为单词 [%s] 生成了释义: %s", spell, meaning));
 
-                            // AI 偶发违约：一条释义里用分号挤进了多个义项，按约定拆成多条独立释义项
-                            for (String part : Util.splitMeanings(meaning)) {
+                            List<String> aiParts = Util.splitMeanings(meaning);
+                            for (int i = 0; i < aiParts.size(); i++) {
+                                String part = aiParts.get(i);
                                 MeaningItemDto newMeaning = new MeaningItemDto();
                                 newMeaning.setId(Util.uuid());
                                 newMeaning.setWordId(wordId);
@@ -1510,7 +1516,9 @@ public class SystemHealthCheckBo {
                                 newMeaning.setCiXing(ciXing);
                                 newMeaning.setMeaning(part);
                                 newMeaning.setOwnerId(Constants.SYS_USER_SYS_ID);
-                                newMeaning.setPopularity(1);
+                                newMeaning.setPopularity(i + 1);
+                                int pct = (aiParts.size() == 1) ? 100 : (i == 0 ? 80 : (i == 1 ? 15 : 5));
+                                newMeaning.setPopularityPercent(pct);
                                 newMeaning.setCreateTime(new java.util.Date());
                                 newMeaning.setUpdateTime(new java.util.Date());
 

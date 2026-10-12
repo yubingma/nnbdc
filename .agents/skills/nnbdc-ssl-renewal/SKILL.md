@@ -23,12 +23,14 @@ whenToUse: 用户提到"SSL 证书快过期"、"阿里云证书告警"、"back.n
 ## 2. 自动续期链路（cron → 脚本）
 
 ```bash
-# root crontab
-0 3 1 * * /root/renew-cert.sh >> /var/log/certbot-renew.log 2>&1
+# root crontab（2026-10-12 起改为每天执行，原来错写成每月 1 号）
+0 3 * * * /root/renew-cert.sh >> /var/log/certbot-renew.log 2>&1
 ```
 `/root/renew-cert.sh`：① Docker 内 `certbot renew --webroot -w /webroot`（HTTP-01）→ ② 成功则 `docker exec nginx nginx -s reload` → ③ 调 `/etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh` 把 `live/nnbdc.com` 证书上传到 `www.nnbdc.com` CDN。
 
 **关键坑**：这条链路（证书签发 + LE 反向校验域名）都依赖大陆↔LE 跨境网络；它不稳定 → 续期静默失败，误以为"定时任务坏了"。
+
+**节律坑（2026-10-12 修掉）**：原为 `0 3 1 * *`（每月 1 号），而 certbot 只在距到期 ≤30 天时才真正续期。证书 12-02 到期时，11-01 执行距到期还有 31.75 天 → 仍判 `not yet due`；真正第一次尝试要等到 **12-01**，那时距到期只剩 1.75 天。若那天跨境不通（2026-06-01、2026-09-01 都失败过），下次 cron 要等到次年 1-01，证书会整整失效一个月——这就是历史上"到期证书失效"的物理根因。改成每天执行后，容错窗口由 1 天扩到 30 天。
 
 ## 3. 诊断（生产环境默认只读）
 
@@ -127,7 +129,7 @@ done
 
 - 生产环境**默认只读**；涉及证书部署/替换/上传 CDN/改 nginx 需**用户明确授权**。
 - **不要**在对话/输出里回显 AccessKey Secret 或私钥明文；一律 `source ~/.nnbdc_aliyun_creds`。
-- `~/.zprofile` 里那把旧 AccessKey（`aliyun_access_key_id`）**已被阿里云判"泄露风险"**：在 RAM 删除/禁用，并替换服务器 `aliyun-cdn.sh` 硬编码的旧 key。
+- `~/.zprofile` 里那把旧 AccessKey（`aliyun_access_key_id`，ID 前缀 `LTAI5tFX`）**已被阿里云判"泄露风险"**：在 RAM 删除/禁用，并替换服务器 `aliyun-cdn.sh` 硬编码的旧 key。✅ **2026-10-12 已完成替换**：服务器 `aliyun-cdn.sh` 第 6/7 行已换成 `~/.nnbdc_aliyun_creds` 那把（ID 前缀 `LTAI5t7H`），旧版备份在 `aliyun-cdn.sh.bak.20261012`；但 `~/.zprofile` 里那把旧 key 本身**尚未在 RAM 里删除/禁用**，仍待处理。
 - 私钥副本（`/root/certdeploy`、`/tmp/acmehome`）处理完务必删除；`archive/*/privkey*.pem` 保持 `root:root 600`。
 - 若用户决定把 RAM 子账号 key 存进 `~/.nnbdc_aliyun_creds` 留作长期自动续期 → 就别删；否则处理完禁用/删除。
 
@@ -142,3 +144,13 @@ done
 
 - `www.nnbdc.com` / `back.nnbdc.com` 证书均有效至 **2026-12-02**；归档版本 nnbdc.com=v9、back.nnbdc.com=v10；nginx 已 reload、CDN 已更新（`ServerCertificateStatus:on`）。
 - 下次到期提醒 ≈ **2026-11-02**，届时按本 skill 处理；优先考虑切到方案 B（阿里云证书）根治。
+
+## 9. 2026-10-12 巡检结论与改动
+
+- **巡检结果**：两张证书仍是 2026-09-03 签发、**2026-12-02 到期（剩 50 天）**；公网呈现正确（`www` 由 CDN、`back` 由源站 nginx，issuer=`Let's Encrypt YR2`）。cron 与 crond 均正常。
+- **历史失败记录**（`/var/log/certbot-renew.log`）：2026-06-01 `nnbdc.com` 挑战失败（`Some challenges have failed`，HTTP-01 webroot）；**2026-09-01 两张证书都因连 `acme-v02.api.letsencrypt.org` 超时 45 秒失败**（跨境断链），靠 09-03 手工 DNS-01 补签才续到 12-02；2026-10-01 正常（`not yet due`）。
+- **改动 1**：cron 由 `0 3 1 * *` 改为 `0 3 * * *`，备份 `/root/crontab.bak.20261012`。
+- **改动 2**：`aliyun-cdn.sh` 的旧 key 换成 `~/.nnbdc_aliyun_creds` 那把，实测上传 CDN 成功，备份 `aliyun-cdn.sh.bak.20261012`。
+- **全链路演练**：手动执行 `renew-cert.sh` 通过（certbot `not due` → nginx reload → 新 key 上传 CDN 成功，`RequestId: 01A1308A-B385-5FA0-9819-EA3CAA254228`）。
+- 巡检时实测服务器到 LE 连通性为 **HTTP 200（通的）**，说明跨境链路是**时通时断**而非永久不通——这正是必须靠"每天跑"来兜住的原因。
+- **待办**：① `~/.zprofile` 里那把被判泄露的旧 key 需在 RAM 删除/禁用；② 11-02 之后留意自动续期是否真的签下来（每天都有机会）；③ 建议切方案 B（阿里云免费 DV 证书）彻底摆脱跨境。

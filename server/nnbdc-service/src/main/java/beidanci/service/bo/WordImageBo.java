@@ -197,6 +197,16 @@ public class WordImageBo extends BaseBo<WordImage> {
      */
     public Map<String, Object> reviewImageAndApply(String wordImageId, String spell, String imageFile)
             throws IllegalAccessException {
+        return reviewImageAndApply(wordImageId, spell, imageFile, false);
+    }
+
+    /**
+     * @param deferCdnRefresh 判删时是否把 CDN 缓存刷新推迟给调用方去做。批量审核传 true：一轮会删几千张，
+     *                        逐张刷 URL 会被阿里云每天 2000 条的 URL 刷新配额卡死，改由任务收尾统一刷一次
+     *                        目录（见 {@link #refreshWordImageCdnDirectory}）。
+     */
+    public Map<String, Object> reviewImageAndApply(String wordImageId, String spell, String imageFile,
+            boolean deferCdnRefresh) throws IllegalAccessException {
         if (spell == null || spell.trim().isEmpty()) {
             // 没有单词就无从判断这张图合不合适，宁可留在审核中，也不能拿"null"去让 AI 猜
             log.error("配图对应的单词查不到，跳过审核: imageId={}", wordImageId);
@@ -224,7 +234,7 @@ public class WordImageBo extends BaseBo<WordImage> {
         String action = verdict.get("action") == null ? null : String.valueOf(verdict.get("action"));
         if ("DELETE".equals(action)) {
             log.info("🚫 图片审核不通过，执行删除: imageId={}, word={}, 原因={}", wordImageId, spell, verdict.get("reason"));
-            Result<Object> deleteResult = deleteWordImage(wordImageId, null, false);
+            Result<Object> deleteResult = deleteWordImage(wordImageId, null, false, deferCdnRefresh);
             if (!deleteResult.isSuccess()) {
                 log.error("图片审核不通过但删除失败: imageId={}, msg={}", wordImageId, deleteResult.getMsg());
             }
@@ -269,6 +279,15 @@ public class WordImageBo extends BaseBo<WordImage> {
     }
 
     public Result<Object> deleteWordImage(String imageId, User user, boolean checkPermission) {
+        return deleteWordImage(imageId, user, checkPermission, false);
+    }
+
+    /**
+     * @param deferCdnRefresh 是否把 CDN 缓存刷新推迟给调用方，见
+     *                        {@link #reviewImageAndApply(String, String, String, boolean)}
+     */
+    public Result<Object> deleteWordImage(String imageId, User user, boolean checkPermission,
+            boolean deferCdnRefresh) {
         WordImage image = findById(imageId);
         if (image == null) {
             return new Result<>(true, null, null);
@@ -302,7 +321,7 @@ public class WordImageBo extends BaseBo<WordImage> {
         dictBo.updateDictsUpdateTimeByWord(wordId);
 
         // 删除物理文件并刷新 CDN
-        deleteImageFile(image.getImageFile());
+        deleteImageFile(image.getImageFile(), deferCdnRefresh);
 
         return new Result<>(true, null, null);
     }
@@ -315,11 +334,45 @@ public class WordImageBo extends BaseBo<WordImage> {
      * 配图记录被删除、以及磁盘上有文件但数据库里已无对应记录（孤儿文件）时，都走这里。
      */
     public void deleteImageFile(String imageFileName) {
+        deleteImageFile(imageFileName, false);
+    }
+
+    /**
+     * @param deferCdnRefresh 是否把 CDN 缓存刷新推迟给调用方，见
+     *                        {@link #reviewImageAndApply(String, String, String, boolean)}
+     */
+    public void deleteImageFile(String imageFileName, boolean deferCdnRefresh) {
         File imageFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + imageFileName);
         if (!imageFile.delete()) {
             imageFile.deleteOnExit();
         }
-        refreshImageCdn(imageFileName);
+        if (!deferCdnRefresh) {
+            refreshImageCdn(imageFileName);
+        }
+    }
+
+    /**
+     * 刷一次整个配图目录（`img/word/`）的 CDN 缓存。
+     *
+     * 批量审核一轮会删掉几千张配图，逐张刷 URL 会被阿里云每天 2000 条的 URL 刷新配额卡死
+     * （实测 2026-10-12：21:12 打满 2000 条后全线报 QuotaExceeded.Refresh，之后删掉的 1100 多张
+     * 图的旧副本一直留在 CDN 上）。目录刷新是另一份独立的配额（100 条/天），一次就能把这些残留全清掉，
+     * 代价是整个配图目录的缓存失效、下次访问集中回源一次。
+     */
+    public void refreshWordImageCdnDirectory() {
+        try {
+            URI base = new URI(cdnProperties.getImageBaseUrl());
+            String dirUrl = new URI(base.getScheme(), base.getAuthority(), base.getPath() + "word/", null)
+                    .toASCIIString();
+            String result = cdnUtil.refreshDirectory(dirUrl);
+            if (!"OK".equals(result)) {
+                log.error("配图目录 CDN 缓存刷新失败: url={}, result={}", dirUrl, result);
+            } else {
+                log.info("配图目录 CDN 缓存刷新已提交: {}", dirUrl);
+            }
+        } catch (URISyntaxException e) {
+            log.error("配图目录 CDN 地址配置非法: base={}", cdnProperties.getImageBaseUrl(), e);
+        }
     }
 
     /**

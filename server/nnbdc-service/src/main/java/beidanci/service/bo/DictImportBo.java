@@ -932,7 +932,22 @@ public class DictImportBo {
             meaning.setCiXing(Util.sanitizeAiString(pos));
             
             meaning.setMeaning(Util.sanitizeAiString(am.meaning));
-            meaning.setPopularity(aiResult.popularity != null && aiResult.popularity > i ? aiResult.popularity - i : 1);
+            
+            // 常用度与常用度百分比规范化赋权（严格杜绝倒挂与 NULL 裸奔）
+            int pop = (am.popularity != null && am.popularity > 0) ? am.popularity : (i + 1);
+            meaning.setPopularity(pop);
+            
+            Integer popPct = am.popularityPercent;
+            if (popPct == null || popPct < 0) {
+                if (aiResult.meanings.size() == 1) {
+                    popPct = 100;
+                } else if (aiResult.meanings.size() == 2) {
+                    popPct = (i == 0) ? 80 : 20;
+                } else {
+                    popPct = (i == 0) ? 75 : (i == 1 ? 15 : Math.max(1, 10 / Math.max(1, aiResult.meanings.size() - 2)));
+                }
+            }
+            meaning.setPopularityPercent(popPct);
             
             User owner = new User();
             owner.setId(ownerId != null ? ownerId : Constants.SYS_USER_SYS_ID);
@@ -1024,9 +1039,11 @@ public class DictImportBo {
                 "1. Generate a list of 'meanings'. Each meaning MUST represent a distinct part of speech (pos) or distinct sense.\n" +
                 "2. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
                 "3. 'meaning' field MUST be in Chinese. Group closely related translations using COMMAS (e.g., '有, 拥有'), DO NOT use semicolons. Separate drastically different concepts into distinct meaning items.\n" +
-                "4. For EACH meaning item, provide EXACTLY ONE highly practical, natural, and grammatically PERFECT example sentence (sentenceEn & sentenceCn).\n" +
-                "5. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese translation respectively.\n" +
-                "6. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
+                "4. 'popularity': Assign ranking from 1 onwards (1, 2, 3...) strictly ordered by common everyday usage frequency (most primary/common meaning is 1, rare/specialized meaning is placed last).\n" +
+                "5. 'popularityPercent': Integer percentage of usage in daily communication. All meaning items MUST sum to 95-100. Primary core meaning MUST have dominant share (e.g. 70-90%). Rare meanings get 0-2%. A single meaning word MUST be 100.\n" +
+                "6. For EACH meaning item, provide EXACTLY ONE highly practical, natural, and grammatically PERFECT example sentence (sentenceEn & sentenceCn).\n" +
+                "7. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese translation respectively.\n" +
+                "8. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
                 imageRule;
         
         if (sentenceRequirement != null && !sentenceRequirement.trim().isEmpty()) {
@@ -1047,7 +1064,7 @@ public class DictImportBo {
         }
 
         if (manualMeaning == null) {
-            userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 1-10, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"中文意思1\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}. " +
+            userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 1-10, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"中文意思1\", \"popularity\": 1, \"popularityPercent\": 80, \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}. " +
                     "provide at most 3 common synonyms per meaning.");
         } else {
             userPrompt.append(String.format("CRITICAL AND TOTAL RESTRICTION: The user has provided an EXCLUSIVE manual meaning: '%s' for the word '%s'. " +
@@ -1057,7 +1074,7 @@ public class DictImportBo {
                             "DO NOT under any circumstances generate multiple entries in the 'meanings' array unless the provided text explicitly contains multiple distinct senses. " +
                             "Treat this manual meaning as the absolute, single, and only source for the dictionary entry.", 
                     manualMeaning, spell));
-            userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": " + Constants.DEFAULT_POPULARITY_LIMIT + ", \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
+            userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": " + Constants.DEFAULT_POPULARITY_LIMIT + ", \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"popularity\": 1, \"popularityPercent\": 100, \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
         }
 
         Map<String, Object> map = null;
@@ -1099,6 +1116,8 @@ public class DictImportBo {
                 am.meaning = (String) mObj.get("meaning");
                 am.sentenceEn = (String) mObj.get("sentenceEn");
                 am.sentenceCn = (String) mObj.get("sentenceCn");
+                am.popularity = (Integer) mObj.get("popularity");
+                am.popularityPercent = (Integer) mObj.get("popularityPercent");
                 
                 @SuppressWarnings("unchecked")
                 List<String> syn = (List<String>) mObj.get("synonyms");
@@ -1121,6 +1140,8 @@ public class DictImportBo {
         public String sentenceEn;
         public String sentenceCn;
         public List<String> synonyms;
+        public Integer popularity;
+        public Integer popularityPercent;
     }
 
     public static class AiResult {

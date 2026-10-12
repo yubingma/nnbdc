@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,7 +75,7 @@ public class AdminImageReviewBatchTest {
         Word word = new Word();
         word.setSpell("probe");
         when(wordBo.findById(any())).thenReturn(word);
-        when(wordImageBo.reviewImageAndApply(any(), any(), any()))
+        when(wordImageBo.reviewImageAndApply(any(), any(), any(), anyBoolean()))
                 .thenAnswer(invocation -> verdictOf(invocation.getArgument(0)));
     }
 
@@ -82,7 +84,7 @@ public class AdminImageReviewBatchTest {
         review();
 
         ArgumentCaptor<String> idCaptor = ArgumentCaptor.forClass(String.class);
-        verify(wordImageBo, times(IMAGE_COUNT)).reviewImageAndApply(idCaptor.capture(), any(), any());
+        verify(wordImageBo, times(IMAGE_COUNT)).reviewImageAndApply(idCaptor.capture(), any(), any(), anyBoolean());
 
         Set<String> expected = new HashSet<>();
         for (int i = 0; i < IMAGE_COUNT; i++) {
@@ -121,8 +123,51 @@ public class AdminImageReviewBatchTest {
         AdminImageReviewController.AdminImageReviewTask task = currentTask();
         assertEquals("本轮审完：共审 100 张，删除 10 张，通过 80 张，无结论 10 张", task.statusMsg);
         assertEquals(IMAGE_COUNT, task.currentIndex);
+        assertEquals(10, task.deletedCount);
         assertEquals(10, task.deletedImages.size());
         assertFalse(task.isRunning);
+    }
+
+    @Test
+    public void testDeletedDetailListIsCapped() throws Exception {
+        Mockito.reset(wordImageBo);
+        when(wordImageBo.reviewImageAndApply(any(), any(), any(), anyBoolean())).thenAnswer(invocation -> {
+            Map<String, Object> delete = new HashMap<>();
+            delete.put("action", "DELETE");
+            delete.put("reason", "全部判删");
+            return delete;
+        });
+
+        review();
+
+        AdminImageReviewController.AdminImageReviewTask task = currentTask();
+        // 总数照实记，明细只留最近 50 条：不然状态响应体会随判删数一路膨胀（实测 1900 条时已 841KB）
+        assertEquals(IMAGE_COUNT, task.deletedCount);
+        assertEquals(50, task.deletedImages.size());
+        assertEquals(imageId(IMAGE_COUNT - 50), task.deletedImages.get(0).get("imageId"));
+    }
+
+    @Test
+    public void testDirectoryRefreshOnceWhenImagesDeleted() throws Exception {
+        review();
+
+        // 本轮判删了 10 张，收尾必须刷一次配图目录：逐张刷 URL 会打爆阿里云每天 2000 条的刷新配额
+        verify(wordImageBo, times(1)).refreshWordImageCdnDirectory();
+    }
+
+    @Test
+    public void testNoDirectoryRefreshWhenNothingDeleted() throws Exception {
+        Mockito.reset(wordImageBo);
+        when(wordImageBo.reviewImageAndApply(any(), any(), any(), anyBoolean())).thenAnswer(invocation -> {
+            Map<String, Object> keep = new HashMap<>();
+            keep.put("action", "KEEP");
+            return keep;
+        });
+
+        review();
+
+        // 一张都没删，就不该白占一次 CDN 目录刷新配额
+        verify(wordImageBo, never()).refreshWordImageCdnDirectory();
     }
 
     /** 个位是 3 的判删、是 7 的 AI 没给结论、其余判过 */

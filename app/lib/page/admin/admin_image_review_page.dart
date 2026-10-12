@@ -110,6 +110,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
     final int total = _taskStatus?['totalImages'] ?? 0;
     final int current = _taskStatus?['currentIndex'] ?? 0;
     final String? savedProgress = _taskStatus?['savedProgress'];
+    final int deletedCount = _taskStatus?['deletedCount'] ?? 0;
     final List deleted = _taskStatus?['deletedImages'] ?? [];
 
     return Scaffold(
@@ -175,7 +176,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
                               Text('状态: $statusMsg${isRunning ? ' ($current / $total)' : ''}',
                                   style: const TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 4),
-                              Text('本次已删除: ${deleted.length}    判定为删的图当场就删，服务重启不会丢',
+                              Text('本次已删除: $deletedCount 张    判定为删的图当场就删，服务重启不会丢',
                                   style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                               if (!isRunning && savedProgress != null) ...[
                                 const SizedBox(height: 4),
@@ -200,7 +201,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     child: Row(
                       children: [
-                        Text('本次已删除 (${deleted.length})',
+                        Text('本次已删除 $deletedCount 张（下面只列最近 ${deleted.length} 条）',
                             style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),

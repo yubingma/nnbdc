@@ -281,6 +281,25 @@ public class WordBo extends BaseBo<Word> {
             }
         }
 
+        // 4. 对该词的所有当前有效释义重新做常用度与百分比归一化（守住单义100%、多义主导递减的认知规律）
+        List<MeaningItem> currentItems = meaningItemBo.findEntitiesByWord(word.getId());
+        if (currentItems != null && !currentItems.isEmpty()) {
+            Map<String, Integer> oldPops = new HashMap<>();
+            Map<String, Integer> oldPcts = new HashMap<>();
+            for (MeaningItem item : currentItems) {
+                oldPops.put(item.getId(), item.getPopularity());
+                oldPcts.put(item.getId(), item.getPopularityPercent());
+            }
+            MeaningItemBo.normalizePopularities(currentItems);
+            for (MeaningItem item : currentItems) {
+                if (!Objects.equals(item.getPopularity(), oldPops.get(item.getId()))
+                        || !Objects.equals(item.getPopularityPercent(), oldPcts.get(item.getId()))) {
+                    meaningItemBo.updateEntity(item);
+                    sysDbSyncBo.logOperation("UPDATE", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
+                }
+            }
+        }
+
         // 更新单词的拼写
         String oldSpell = word.getSpell();
         word.setSpell(wordVo.getSpell());
@@ -351,6 +370,7 @@ public class WordBo extends BaseBo<Word> {
         owner.setId(ownerId != null ? ownerId : Constants.SYS_USER_SYS_ID);
         item.setOwner(owner);
         item.setPopularity(1);
+        item.setPopularityPercent(100);
 
         meaningItemBo.createEntity(item);
         sysDbSyncBo.logOperation("INSERT", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
