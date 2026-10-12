@@ -4,414 +4,393 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泡泡单词</title>
-    <!-- Favicon 配置 - 多尺寸支持，已去除留白，添加版本参数避免缓存 -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico?v=20251123">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=20251123">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=20251123">
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon.png?v=20251123">
-    <meta name="msapplication-TileImage" content="favicon.png?v=20251123">
+    <title>下载泡泡单词（NNBDC）· Android 版</title>
+    <meta name="description" content="下载泡泡单词（NNBDC）Android 版安装包。一个词一个意象的背单词应用，支持 Android 5.0 及以上系统。">
+    <meta name="keywords" content="泡泡单词下载,NNBDC,背单词App,Android,牛牛背单词">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <style>
+        :root {
+            --brand: #2563EB;
+            --brand-strong: #1D4ED8;
+            --ink: #0B1220;
+            --ink-2: #4B5768;
+            --ink-3: #8B96A5;
+            --line: rgba(11, 18, 32, 0.08);
+            --soft: #F5F7FA;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+        html {
+            -webkit-text-size-adjust: 100%;
         }
 
-        .container {
-            max-width: 1200px;
+        body {
+            font-family: var(--font);
+            color: var(--ink);
+            background: #fff;
+            line-height: 1.75;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .wrap {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 24px;
             width: 100%;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 60px;
-            color: white;
+        /* ---------- 导航 ---------- */
+        .nav {
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.82);
+            -webkit-backdrop-filter: saturate(180%) blur(16px);
+            backdrop-filter: saturate(180%) blur(16px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
 
-        .header h1 {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            font-weight: 700;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-
-        .download-cards {
+        .nav-inner {
             display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 30px;
-            margin-bottom: 40px;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
         }
 
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 40px 30px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 16.5px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .brand img {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
+
+        .back {
+            font-size: 14.5px;
+            color: var(--ink-2);
+        }
+
+        .back:hover {
+            color: var(--brand);
+        }
+
+        /* ---------- 主体 ---------- */
+        .stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            width: 380px;
-            max-width: 100%;
+            padding: 72px 24px 88px;
         }
 
-        .card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        .eyebrow {
+            font-size: 12.5px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--brand);
         }
 
-        .card-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 25px;
+        .stage h1 {
+            margin-top: 16px;
+            font-size: clamp(30px, 5vw, 46px);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+        }
+
+        .lede {
+            margin-top: 18px;
+            max-width: 520px;
+            font-size: 16.5px;
+            color: var(--ink-2);
+        }
+
+        .dl-card {
+            margin-top: 48px;
+            width: 100%;
+            max-width: 460px;
+            background: var(--soft);
+            border-radius: 26px;
+            padding: 44px 36px 36px;
+        }
+
+        .dl-icon {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 22px;
+            border-radius: 18px;
+            background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            color: white;
+            box-shadow: 0 4px 14px rgba(11, 18, 32, 0.07);
         }
 
-        .card h2 {
-            font-size: 1.8rem;
-            margin-bottom: 15px;
-            color: #333;
+        .dl-icon svg {
+            width: 34px;
+            height: 34px;
+            fill: #3DDC84;
         }
 
-        .card p {
-            color: #666;
-            margin-bottom: 25px;
-            line-height: 1.6;
+        .dl-card h2 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
         }
 
-        .download-btn {
-            display: inline-block;
-            padding: 15px 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 50px;
+        .ver {
+            margin-top: 8px;
+            font-size: 14.5px;
+            color: var(--ink-2);
+        }
+
+        .ver b {
+            color: var(--ink);
             font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .download-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        .btn {
+            display: inline-block;
+            margin-top: 24px;
+            padding: 14px 42px;
+            border-radius: 999px;
+            background: var(--brand);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.22);
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
         }
 
-        .beta-btn {
-            font-size: 0.9rem;
-            color: #667eea;
-            text-decoration: none;
+        .btn:hover {
+            background: var(--brand-strong);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+        }
+
+        .beta {
+            margin-top: 18px;
+            font-size: 14px;
+            color: var(--ink-2);
+        }
+
+        .beta a {
+            color: var(--brand);
             font-weight: 500;
-            transition: all 0.2s ease;
         }
 
-        .beta-btn:hover {
-            color: #5a67d8;
+        .beta a:hover {
             text-decoration: underline;
         }
 
-        .footer {
-            text-align: center;
-            color: white;
-            margin-top: 40px;
-            opacity: 0.8;
+        .tips {
+            margin: 30px 0 0;
+            padding: 22px 0 0;
+            border-top: 1px solid var(--line);
+            list-style: none;
+            text-align: left;
+            font-size: 13.5px;
+            color: var(--ink-2);
         }
 
+        .tips li {
+            position: relative;
+            padding-left: 16px;
+            margin-bottom: 9px;
+        }
 
+        .tips li:last-child {
+            margin-bottom: 0;
+        }
 
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
+        .tips li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--ink-3);
+        }
+
+        /* ---------- 页脚 ---------- */
+        footer {
+            border-top: 1px solid var(--line);
+            background: var(--soft);
+            padding: 32px 0;
+            font-size: 13px;
+            color: var(--ink-2);
+        }
+
+        .foot-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px 28px;
+            flex-wrap: wrap;
+        }
+
+        .foot-links {
+            display: flex;
+            gap: 10px 24px;
+            flex-wrap: wrap;
+        }
+
+        .foot-links a:hover {
+            color: var(--brand);
+        }
+
+        @media (max-width: 560px) {
+            .stage {
+                padding: 48px 20px 64px;
             }
 
-            .header p {
-                font-size: 1rem;
-            }
-        }
-
-        /* 平台图标 SVG 样式 */
-        .card-icon svg {
-            width: 50px;
-            height: 50px;
-        }
-
-        .card-icon svg path {
-            stroke: none;
-        }
-
-        /* 动画效果 */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+            .dl-card {
+                padding: 34px 24px 28px;
             }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            .foot-inner {
+                justify-content: center;
+                text-align: center;
             }
-        }
-
-        .card {
-            animation: fadeInUp 0.6s ease forwards;
-        }
-
-        .card:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-
-        .card:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .card:nth-child(3) {
-            animation-delay: 0.3s;
-        }
-
-        .card:nth-child(4) {
-            animation-delay: 0.4s;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>泡泡单词</h1>
-            <p style="font-size: 0.9rem; margin-bottom: 10px; opacity: 0.85;">原牛牛背单词</p>
-            <p>选择适合您设备的版本进行下载</p>
+
+<nav class="nav">
+    <div class="wrap nav-inner">
+        <a href="index.html" class="brand">
+            <img src="favicon-32x32.png" alt="泡泡单词">
+            泡泡单词
+        </a>
+        <a href="index.html" class="back">返回首页</a>
+    </div>
+</nav>
+
+<main class="stage">
+    <p class="eyebrow">下载</p>
+    <h1>下载泡泡单词</h1>
+    <p class="lede">一个词一个意象的背单词应用。当前提供 Android 版，支持 Android 5.0 及以上系统。</p>
+
+    <div class="dl-card">
+        <div class="dl-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5" />
+            </svg>
         </div>
+        <h2>Android 版</h2>
+        <p class="ver">最新版本 <b id="stable-ver">26.09.24</b></p>
+        <a id="main-download" class="btn" href="https://www.nnbdc.com/app/nnbdc-android.apk"
+            download="nnbdc-android.apk">立即下载</a>
+        <p class="beta" id="beta-row" hidden>
+            想尝鲜？<a id="beta-link" href="https://www.nnbdc.com/app/latest/nnbdc-android.apk"
+                download="nnbdc-android-beta.apk">测试版 <span id="beta-ver"></span></a>，可能不稳定
+        </p>
+        <ul class="tips">
+            <li>安装包约 400 MB（内含离线词典），建议在 Wi-Fi 环境下载。</li>
+            <li>下载完成后点开安装包安装；首次安装需允许「安装未知来源应用」。</li>
+            <li>安装后登录账号即可开始，学习进度会保存在云端。</li>
+        </ul>
+    </div>
+</main>
 
-        <div class="download-cards">
-            <!-- Android 卡片 -->
-            <div class="card">
-                <div class="card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <path fill="white"
-                            d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5" />
-                    </svg>
-                </div>
-                <h2>Android 版</h2>
-                <p>支持 Android 5.0 及以上版本</p>
-                <a href="https://www.nnbdc.com/app/nnbdc-android.apk" class="download-btn"
-                    download="nnbdc-android.apk">立即下载</a>
-                    
-                <div class="beta-container" style="display: none; margin-top: 15px;">
-                    <a href="https://www.nnbdc.com/app/latest/nnbdc-android.apk" class="beta-btn"
-                        download="nnbdc-android-beta.apk">
-                        ✨ 获取最新测试版 <span class="beta-ver-text"></span>
-                    </a>
-                </div>
-            </div>
-            <!-- Windows 卡片 -->
-            <div class="card" style="display: none;">
-                <div class="card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <path fill="white"
-                            d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
-                    </svg>
-                </div>
-                <h2>Windows 版</h2>
-                <p>支持 Windows 10 及以上版本</p>
-                <a href="https://www.nnbdc.com/app/nnbdc-windows.zip" class="download-btn"
-                    download="nnbdc-windows.zip">立即下载</a>
-                    
-                <div class="beta-container" style="display: none; margin-top: 15px; margin-bottom: 10px;">
-                    <a href="https://www.nnbdc.com/app/latest/nnbdc-windows.zip" class="beta-btn"
-                        download="nnbdc-windows-beta.zip">
-                        ✨ 获取最新测试版 <span class="beta-ver-text"></span>
-                    </a>
-                </div>
-                <p style="margin-top: 10px; font-size: 0.85rem; color: #999;">下载后请解压 zip 文件，运行 nnbdc-setup.exe 进行安装</p>
-            </div>
-
-            <!-- macOS 卡片 -->
-            <div class="card" style="display: none;">
-                <div class="card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <path
-                            d="M14.94 5.19A4.38 4.38 0 0 0 16 2a4.44 4.44 0 0 0-3 1.52 4.17 4.17 0 0 0-1 3.09 3.69 3.69 0 0 0 2.94-1.42m2.52 7.44a4.51 4.51 0 0 1 2.16-3.81 4.66 4.66 0 0 0-3.66-2c-1.56-.16-3 .91-3.83.91s-2-.89-3.3-.87A4.92 4.92 0 0 0 4.69 9.39C2.93 12.45 4.24 17 6 19.47c.8 1.21 1.8 2.58 3.12 2.53s1.75-.82 3.28-.82 2 .82 3.3.79 2.22-1.24 3.06-2.45a11 11 0 0 0 1.38-2.85 4.41 4.41 0 0 1-2.68-4.05z" />
-                    </svg>
-                </div>
-                <h2>macOS 版</h2>
-                <p>支持 macOS 10.15 及以上版本</p>
-                <a href="#" class="download-btn" onclick="downloadApp('macos')" style="background: #007AFF;">App Store
-                    下载</a>
-                <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                    <p>通过 App Store 下载，享受自动更新</p>
-                </div>
-            </div>
-
-            <!-- Linux 卡片 -->
-            <div class="card" style="display: none;">
-                <div class="card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                        <!-- 身体（白色） -->
-                        <ellipse cx="50" cy="55" rx="28" ry="35" fill="white" />
-                        <!-- 头部（圆形白色） -->
-                        <circle cx="50" cy="30" r="22" fill="white" />
-                        <!-- 左眼（白色大圆） -->
-                        <circle cx="42" cy="28" r="6" fill="white" opacity="0.4" />
-                        <!-- 左眼瞳孔 -->
-                        <circle cx="42" cy="28" r="2.5" fill="white" />
-                        <!-- 右眼（白色大圆） -->
-                        <circle cx="58" cy="28" r="6" fill="white" opacity="0.4" />
-                        <!-- 右眼瞳孔 -->
-                        <circle cx="58" cy="28" r="2.5" fill="white" />
-                        <!-- 嘴巴（白色，短而宽） -->
-                        <ellipse cx="50" cy="36" rx="5" ry="2" fill="white" />
-                        <!-- 左脚（白色大脚蹼） -->
-                        <ellipse cx="40" cy="85" rx="10" ry="8" fill="white" />
-                        <!-- 右脚（白色大脚蹼） -->
-                        <ellipse cx="60" cy="85" rx="10" ry="8" fill="white" />
-                    </svg>
-                </div>
-                <h2>Linux 版</h2>
-                <p>支持 Ubuntu 18.04 及以上版本</p>
-                <a href="https://www.nnbdc.com/app/nnbdc-linux.AppImage" class="download-btn"
-                    download="nnbdc-linux.AppImage">立即下载</a>
-                    
-                <div class="beta-container" style="display: none; margin-top: 15px;">
-                    <a href="https://www.nnbdc.com/app/latest/nnbdc-linux.AppImage" class="beta-btn"
-                        download="nnbdc-linux-beta.AppImage">
-                        ✨ 获取最新测试版 <span class="beta-ver-text"></span>
-                    </a>
-                </div>
-            </div>
-
-
-        </div>
-
-        <div class="footer">
-            <p>© 2025 泡泡单词. 保留所有权利.</p>
-            <p style="margin-top: 10px;">
-                <a href="https://beian.miit.gov.cn/" target="_blank"
-                    style="color: white; text-decoration: none; opacity: 0.8;">蜀ICP备12032137号-1</a>
-            </p>
+<footer>
+    <div class="wrap foot-inner">
+        <p>Copyright © 2025 成都三马捷科技有限公司. All rights reserved.</p>
+        <div class="foot-links">
+            <a href="index.html">首页</a>
+            <a href="protocol.html">用户协议</a>
+            <a href="privacy.html">隐私政策</a>
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">蜀ICP备12032137号-1</a>
         </div>
     </div>
+</footer>
 
-    <script>
-        // 获取版本号并更新下载链接
-        async function loadVersionAndUpdateLinks() {
-            const timestamp = new Date().getTime();
-            let stableVerCode = null;
-            
-            // 1. 获取正式版版本信息
-            try {
-                const response = await fetch('app/ver.json?t=' + timestamp);
-                if (response.ok) {
-                    const data = await response.json();
-                    stableVerCode = data.verCode;
-                    updateLinks('.download-btn[href]', stableVerCode);
-                }
-            } catch (error) {
-                console.warn('获取正式版本信息失败:', error);
-            }
+<script>
+    // 读取版本信息：正式版号写进页面并加到下载链接上，有更新的测试版才显示尝鲜入口
+    async function loadVersions() {
+        const t = Date.now();
+        let stableVerCode = null;
 
-            // 2. 获取测试版(latest目录)版本信息
-            try {
-                const betaResponse = await fetch('app/latest/ver.json?t=' + timestamp);
-                if (betaResponse.ok) {
-                    const betaData = await betaResponse.json();
-                    
-                    // 如果测试版本和正式版本不一致，才显示测试版入口
-                    if (betaData.verCode && betaData.verCode !== stableVerCode) {
-                        updateLinks('.beta-btn[href]', betaData.verCode);
-                        
-                        // 在按钮上展示测试版版本号
-                        document.querySelectorAll('.beta-ver-text').forEach(el => {
-                            el.textContent = '(v' + betaData.verCode + ')';
-                        });
-                        
-                        // 显示隐藏的测试版容器
-                        document.querySelectorAll('.beta-container').forEach(el => {
-                            el.style.display = 'block';
-                        });
-                    }
+        try {
+            const res = await fetch('app/ver.json?t=' + t);
+            if (res.ok) {
+                const data = await res.json();
+                stableVerCode = data.verCode;
+                if (data.verName) {
+                    document.getElementById('stable-ver').textContent = data.verName;
                 }
-            } catch (error) {
-                console.warn('获取测试版本信息失败:', error);
+                addVersionParam('main-download', stableVerCode);
             }
+        } catch (err) {
+            console.warn('获取正式版本信息失败:', err);
         }
 
-        // 更新下载链接，添加版本参数
-        function updateLinks(selector, verCode) {
-            const buttons = document.querySelectorAll(selector);
-            buttons.forEach(function (button) {
-                const originalHref = button.getAttribute('href');
-                if (originalHref && originalHref.startsWith('http')) {
-                    const separator = originalHref.includes('?') ? '&' : '?';
-                    const newHref = originalHref + separator + 'ver=' + verCode;
-                    button.setAttribute('href', newHref);
+        try {
+            const res = await fetch('app/latest/ver.json?t=' + t);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.verCode && data.verCode !== stableVerCode) {
+                    addVersionParam('beta-link', data.verCode);
+                    document.getElementById('beta-ver').textContent = data.verName || ('v' + data.verCode);
+                    document.getElementById('beta-row').hidden = false;
                 }
-            });
-        }
-
-        // 保留函数以支持可能的其他用途，但主要下载已改为直接链接
-        function downloadApp(platform) {
-            // 在这里配置实际的下载链接
-            const downloadLinks = {
-                'windows-installer': 'https://www.nnbdc.com/app/nnbdc-setup.exe',
-                'macos': 'macappstore://itunes.apple.com/app/nnbdc-macos-appstore.zip',
-                "linux": "https://www.nnbdc.com/app/nnbdc-linux.AppImage",
-                'android': 'https://www.nnbdc.com/app/nnbdc-android.apk'
-            };
-
-            const link = downloadLinks[platform];
-
-            if (link) {
-                // 直接跳转，让浏览器处理下载，更可靠
-                window.location.href = link;
             }
+        } catch (err) {
+            console.warn('获取测试版本信息失败:', err);
         }
+    }
 
-        // 页面加载完成后执行
-        document.addEventListener('DOMContentLoaded', function () {
-            // 加载版本号并更新下载链接
-            loadVersionAndUpdateLinks();
+    function addVersionParam(id, verCode) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const href = el.getAttribute('href');
+        if (href && href.startsWith('http')) {
+            el.setAttribute('href', href + (href.includes('?') ? '&' : '?') + 'ver=' + verCode);
+        }
+    }
 
-            // 为所有下载链接添加点击事件监听，确保下载完整性
-            const downloadButtons = document.querySelectorAll('.download-btn[download], .beta-btn[download]');
-            downloadButtons.forEach(function (button) {
-                button.addEventListener('click', function (e) {
-                    // 添加下载开始提示
-                    const originalText = this.textContent;
-                    this.textContent = '正在下载...';
-                    this.style.opacity = '0.7';
-                    this.style.pointerEvents = 'none';
+    // 点击后给个反馈，避免安装包较大时用户以为没反应
+    document.getElementById('main-download').addEventListener('click', function () {
+        const el = this;
+        const original = el.textContent;
+        el.textContent = '准备下载…';
+        setTimeout(function () {
+            el.textContent = original;
+        }, 3000);
+    });
 
-                    // 恢复按钮状态（如果下载失败）
-                    setTimeout(function () {
-                        button.textContent = originalText;
-                        button.style.opacity = '1';
-                        button.style.pointerEvents = 'auto';
-                    }, 3000);
-                });
-            });
-        });
-    </script>
+    document.addEventListener('DOMContentLoaded', loadVersions);
+</script>
 </body>
 
 </html>

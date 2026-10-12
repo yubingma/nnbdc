@@ -976,7 +976,7 @@ public class DictImportBo {
                 sentence.setChinese(Util.sanitizeAiString(am.sentenceCn));
                 
                 sentence.setWordMeaning(Util.sanitizeAiString(am.meaning));
-                sentence.setPartOfSpeech(Util.sanitizeAiString(pos));
+                sentence.setPartOfSpeech(meaning.getCiXing());
                 
                 sentence.setMeaningItem(meaning);
                 sentence.setNeedTts(true); // 标记需要生成音频
@@ -986,8 +986,8 @@ public class DictImportBo {
                     sentence.setTtsVoice(preferredVoices);
                 }
                 sentence.setEnglishDigest(Util.makeSentenceDigest(am.sentenceEn));
-                sentence.setAuthor(owner);
-                sentence.setOwner(owner);
+                sentence.setAuthor(meaning.getOwner());
+                sentence.setOwner(meaning.getOwner());
                 sentenceBo.createEntity(sentence);
                 stats.addedSentenceCount++;
                 stats.addedAudioCount++; // 统计例句音频资源
@@ -1068,7 +1068,8 @@ public class DictImportBo {
                             "IT IS STRICTLY FORBIDDEN to add any other unrelated meanings, senses, or parts of speech from your own knowledge. " +
                             "For example, if the manual meaning is a simple noun, generate ONLY one entry with 'pos': 'n.'. " +
                             "DO NOT under any circumstances generate multiple entries in the 'meanings' array unless the provided text explicitly contains multiple distinct senses. " +
-                            "Treat this manual meaning as the absolute, single, and only source for the dictionary entry.", 
+                            "Treat this manual meaning as the absolute, single, and only source for the dictionary entry.",
+                    manualMeaning, spell));
             userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": " + Constants.DEFAULT_POPULARITY_LIMIT + ", \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"popularity\": 1, \"popularityPercent\": 100, \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}. (If multiple distinct senses are explicitly present, assign popularity strictly increasing as 1, 2, 3... and popularityPercent descending summing to 100).");
         }
 

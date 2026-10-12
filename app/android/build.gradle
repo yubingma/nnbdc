@@ -21,11 +21,13 @@ allprojects {
             maven { url 'https://jitpack.io' }
             maven { url 'https://storage.flutter-io.cn' }
             mavenCentral()
-            google()
             // 添加额外的 Maven 仓库以提高依赖解析成功率
             maven { url 'https://repo1.maven.org/maven2/' }
-            maven { url 'https://maven.google.com' }
-            maven { url 'https://repo.umeng.com/repository/sdk' }
+            // 注意：这里刻意不放 google() / maven.google.com / repo.umeng.com。
+            // 这三个源在部分网络下是不可达的（连接被黑洞，不是快速拒绝），
+            // 一旦落到它们上面，Gradle 会一直卡在连接超时上，整条依赖解析挂住；
+            // google 仓库已由上面的阿里云镜像完整代理，不需要再兜底。
+            // 等哪天这些源恢复可达，可以再加回来。
         }
     }
 }
@@ -33,6 +35,19 @@ allprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+
+// 钉死第三方插件声明的动态版本依赖。
+// 有的插件把 androidx.test:runner 写成 "1.2+" 这种动态版本，而动态版本必须联网查
+// "有哪些可用版本"才能解析：网络不畅时整条依赖解析会挂在连接超时上，而且构建结果不可复现。
+subprojects {
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'androidx.test' && details.requested.name == 'runner') {
+                details.useVersion '1.7.0'
+            }
+        }
+    }
 }
 
 // 为所有子项目配置 Kotlin 编译器选项，允许使用已弃用的 API
