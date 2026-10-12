@@ -124,6 +124,11 @@ jobs:
       # Android 构建所需的环境变量
       KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      # app/pubspec.lock 记录的是国内镜像源(pub.flutter-io.cn)，这里必须与之一致：
+      # 否则 pub 认为 lock 里的包不在默认源(pub.dev)上，会整体丢弃 lock 重新解析，
+      # 静默升级依赖 —— 2026-10-11 正是这样把 image 升到 4.11.0(需要 archive>=4.4.0 的
+      # ZLibDecoder.decodeLazy)，而 pdf 3.12.0 把 archive 压在 <4.1.0，导致四个平台全部编译失败。
+      PUB_HOSTED_URL: https://pub.flutter-io.cn
     steps:
       # 拉取代码
       - name: Checkout code
@@ -251,7 +256,9 @@ jobs:
       - name: Flutter Pub Get
         run: |
           cd app
-          flutter pub get
+          # --enforce-lockfile：解析结果与 pubspec.lock 不一致时直接报错，
+          # 避免再出现"CI 悄悄换掉依赖版本、本地/线上却看不出来"的情况。
+          flutter pub get --enforce-lockfile
           # 验证 retrofit 版本
           flutter pub deps | grep -E "retrofit|retrofit_generator" || true
 

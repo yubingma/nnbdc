@@ -110,6 +110,12 @@ dependencies:
   file_picker: ^11.0.2
   flutter_slidable: ^4.0.3
   archive: ^4.0.9
+  # image 仅被 pdf/image_network 间接依赖，这里显式给出上限：
+  # image 4.11.x 的 png_decoder 调用了 archive 4.4.0 才提供的 ZLibDecoder.decodeLazy，
+  # 但它自身只声明 archive ^4.0.9；而 pdf 3.12.0 把 archive 压在 <4.1.0 之内，
+  # 因此"取最新"的解析必然落到 image 4.11.0 + archive 4.0.9 这个编译不过的组合。
+  # 待 pdf(>=3.13.1)/xml(7.x)/Dart(>=3.11) 一并升级后再放开此上限。
+  image: ">=4.8.0 <4.11.0"
   xml: ^6.5.0
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
