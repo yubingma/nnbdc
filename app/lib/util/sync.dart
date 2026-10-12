@@ -50,6 +50,27 @@ class SyncDataSecurityException extends SyncCoreException {
   SyncDataSecurityException(super.message);
 }
 
+/// 服务端同步版本号与客户端携带的期望版本号不一致时抛出的异常。
+///
+/// 这是并发同步下的正常现象（服务端版本已向前推进），不是故障：
+/// 收到后应重新获取版本号与增量日志再同步一次，而不是当成错误上报告警。
+class DbVersionNotMatchException implements Exception {
+  final String message;
+  DbVersionNotMatchException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// 服务端返回的「同步版本号不匹配」业务错误码（HTTP 200，非 500）
+const String kDbVersionNotMatchCode = 'DB_VERSION_NOT_MATCH';
+
+/// 服务端是否因「同步版本号不匹配」而拒绝了这次上传。
+///
+/// 服务端用 200 + 这个错误码表达并发同步下的版本号过期（不再是 500），
+/// 客户端据此重新取版本号重试，而不是把它当成故障上报。
+@visibleForTesting
+bool isDbVersionNotMatch(Result result) => result.code == kDbVersionNotMatchCode;
+
 // 当前同步日志ID，用于记录同步统计信息
 String? _currentSyncLogId;
 int _uploadCount = 0;
@@ -770,7 +791,15 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
         final allUploaded = await uploadLogsInBatches(
           logs: localToBackend,
           startVersion: backendDbVersion,
-          upload: (expectedVersion, batch) => Api.client.syncUserDb(expectedVersion, userId, batch),
+          upload: (expectedVersion, batch) async {
+            final result = await Api.client.syncUserDb(expectedVersion, userId, batch);
+            // 服务端在并发同步时可能已把版本号推到我们期望值之后。
+            // 这不是错误：抛出后由 syncUserDb 重新取版本号与增量日志再同步一次。
+            if (isDbVersionNotMatch(result)) {
+              throw DbVersionNotMatchException(result.msg ?? '服务端同步版本号已变化，需要重取版本号重试');
+            }
+            return result;
+          },
           onBatchUploaded: (newVersion, batch) async {
             backendDbVersion = newVersion;
             // 每批成功后立刻存版本号 + 只删这一批的日志；未发送或失败的批次原样留着，下次同步接着发
@@ -1131,7 +1160,9 @@ Future<List<String>> findMissingUserTables([String? userId]) async {
 }
 
 // 同步指定用户的用户数据库
-Future<void> syncUserDb(String userId) async {
+//
+// [retried] 仅供本函数自用：服务端版本号不匹配时重跑一次，避免无限递归。
+Future<void> syncUserDb(String userId, {bool retried = false}) async {
   if (_isSyncUserDbRunning) {
     Global.logger.w("⚠️ [CONCURRENCY SHIELD] 拦截到并发的 syncUserDb 请求，用户: $userId 的同步已在运行中");
     return;
@@ -1235,6 +1266,13 @@ Future<void> syncUserDb(String userId) async {
     }
   } catch (e, stackTrace) {
     stopwatch.stop();
+    // 服务端同步版本号已向前推进：重新读取本地版本号与增量日志再同步一次。
+    // 这是并发同步下的自愈路径，不是失败，所以不上报、不告警；重跑一次仍不匹配才按真失败处理。
+    if (e is DbVersionNotMatchException && !retried) {
+      Global.logger.w("⚠️ 服务端同步版本号已变化，重新获取版本号与增量日志后重试一次: $e");
+      await syncUserDb(userId, retried: true);
+      return;
+    }
     Global.logger.e("❌ 同步用户数据库失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
     // 不再调用 ErrorHandler 显示错误提示，只抛出异常让上层处理
     // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncUserDb', showToast: true);

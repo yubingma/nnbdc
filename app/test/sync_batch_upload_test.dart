@@ -224,4 +224,38 @@ void main() {
       expect(localVersion, 53);
     });
   });
+
+  group('版本号不匹配（DB_VERSION_NOT_MATCH）', () {
+    /// 与 sync.dart 里 doSyncUserDb 的 upload 闭包同构：
+    /// 命中「版本号不匹配」抛异常，其余结果原样返回交由 uploadLogsInBatches 按失败处理。
+    Future<Result<int>> uploadOnce(Result<int> serverResult) async {
+      if (isDbVersionNotMatch(serverResult)) {
+        throw DbVersionNotMatchException(serverResult.msg ?? '版本号已变化');
+      }
+      return serverResult;
+    }
+
+    test('服务端返回该错误码时识别为版本号不匹配', () {
+      expect(isDbVersionNotMatch(Result<int>('DB_VERSION_NOT_MATCH', '期望版本[1]，当前版本[2]', false)), isTrue);
+    });
+
+    test('成功应答与其它业务错误码都不算版本号不匹配', () {
+      expect(isDbVersionNotMatch(Result<int>('0000', null, true)), isFalse);
+      expect(isDbVersionNotMatch(Result<int>('DICT_WORD_ORDER_INVALID', '词书顺序异常', false)), isFalse);
+      expect(isDbVersionNotMatch(Result<int>('0001', '普通失败', false)), isFalse);
+    });
+
+    test('命中版本号不匹配时抛出异常，中断本次上传', () async {
+      await expectLater(
+        uploadOnce(Result<int>('DB_VERSION_NOT_MATCH', '期望版本[1]，当前版本[2]', false)),
+        throwsA(isA<DbVersionNotMatchException>()),
+      );
+    });
+
+    test('其它失败不抛异常，仍按普通失败返回给 uploadLogsInBatches', () async {
+      final result = await uploadOnce(Result<int>('0001', '服务端拒收', false));
+      expect(result.success, isFalse);
+      expect(result.code, '0001');
+    });
+  });
 }

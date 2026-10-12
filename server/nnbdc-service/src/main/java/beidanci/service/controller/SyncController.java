@@ -230,14 +230,12 @@ public class SyncController {
      * @param logs                    用户本地库修改日志
      * @param expectedServerDbVersion 期望的服务端数据库版本（如不匹配，则本次同步失败）
      * @param userId                  用户ID，用于在客户端未登录时指定要同步的用户
-     * @return 服务端数据库最新版本, 如果为null，表示同步失败
-     * @throws DbVersionNotMatchException
+     * @return 服务端数据库最新版本；版本不匹配时返回业务错误码 DB_VERSION_NOT_MATCH
      */
     @PostMapping("/syncUserDb2Back.do")
     public Result<Integer> syncUserDb2Back(@RequestParam("expectedServerDbVersion") int expectedServerDbVersion,
             @RequestParam("userId") String userId,
-            @RequestBody ArrayList<UserDbLogDto> logs)
-            throws DbVersionNotMatchException {
+            @RequestBody ArrayList<UserDbLogDto> logs) {
         try {
             int lastVersion = syncBo.syncUserDb2Back(userId, expectedServerDbVersion, logs);
             return Result.success(lastVersion);
@@ -245,6 +243,12 @@ public class SyncController {
             log.warn("同步用户数据时发生词书数据异常，将通知客户端重做全量词书同步: userId=[{}], error=[{}]", userId, e.getMessage());
             syncBo.recordDictWordOrderIssue(userId, e.getMessage());
             return new Result<>("DICT_WORD_ORDER_INVALID", e.getMessage(), null);
+        } catch (DbVersionNotMatchException e) {
+            // 版本不匹配是并发同步下的正常现象，不是服务端故障：
+            // 用 200 + 业务错误码返回，让客户端据此立即重取版本号重试，
+            // 而不是走 500 异常路径被当成 CLIENT_SYNC_ERROR 误发告警邮件。
+            log.warn("同步用户数据的版本号已过期，通知客户端重取版本号重试: userId=[{}], error=[{}]", userId, e.getMessage());
+            return new Result<>("DB_VERSION_NOT_MATCH", e.getMessage(), null);
         }
     }
 
