@@ -1400,7 +1400,7 @@ class MePageState extends State<MePage> implements RefreshableTab {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '艾宾浩斯记忆云图',
+                                    'FSRS 记忆排期',
                                     style: TextStyle(
                                       color: subtitleColor,
                                       fontSize: 11,
