@@ -14,6 +14,7 @@ import '../db/db.dart';
 import '../global.dart';
 import '../services/throttled_sync_service.dart';
 import '../util/app_clock.dart';
+import '../util/word_pack_queue.dart';
 import '../util/prefs.dart';
 import 'index.dart';
 
@@ -247,6 +248,16 @@ class RussiaPageState extends State<RussiaPage>
   Offset? _lastPoppedBubblePos;
   bool hasMistakeInCurrentWord = false;
 
+  // 本地出题用的单词包：服务端一次性下发一串单词，手机本地依次出题，
+  // 不再每答一题就往返一次，短暂断链也不影响出题
+  final WordPackQueue _wordPack = WordPackQueue();
+
+  // 断线期间排队等待补发的指令（重连后按序发出去，不静默丢弃）
+  final List<Map<String, dynamic>> _pendingUserCmds = [];
+
+  // 长连接状态监听：断线提示 + 重连后恢复对局
+  late final _GameSocketStatusListener _socketStatusListener;
+
   // 10 格对战血条生命系统（每答错/受击一次扣 1 格，10 格耗尽战败）
   static const int maxHp = 10;
   int myHp = maxHp;
@@ -273,6 +284,8 @@ class RussiaPageState extends State<RussiaPage>
     LoadingUtils.disableApiLoading();
     SocketIoClient.instance.connect();
     SocketIoClient.instance.setInRussiaGame(true);
+    _socketStatusListener = _GameSocketStatusListener(this);
+    SocketIoClient.instance.registerSocketStatusListener(_socketStatusListener);
 
     _ticker = createTicker(_onTick)..start();
   }
@@ -303,6 +316,7 @@ class RussiaPageState extends State<RussiaPage>
     _ticker.dispose();
     _tts.stop();
     SocketIoClient.instance.setInRussiaGame(false);
+    SocketIoClient.instance.removeSocketStatusListener(_socketStatusListener);
     _cleanupSocketListeners();
     sendUserCmd('LEAVE_HALL', []);
     SocketIoClient.instance.disconnect();
@@ -352,13 +366,33 @@ class RussiaPageState extends State<RussiaPage>
 
   void sendUserCmd(String cmd, List<dynamic> args) {
     final socket = SocketIoClient.instance.socket;
-    if (!socket.connected) return;
-
-    socket.emit('userCmd', {
+    final payload = {
       'system': 'russia',
       'cmd': cmd,
       'args': args,
-    });
+    };
+    if (!socket.connected) {
+      // 断线期间不静默丢弃：排队，等重连后补发
+      _pendingUserCmds.add(payload);
+      Global.logger.w('SocketIoClient: 连接已断开，指令[$cmd]排队等待重连补发');
+      return;
+    }
+
+    socket.emit('userCmd', payload);
+  }
+
+  /// 重连后把断线期间排队的指令按序补发出去
+  void _flushPendingUserCmds() {
+    if (_pendingUserCmds.isEmpty) return;
+    final socket = SocketIoClient.instance.socket;
+    if (!socket.connected) return;
+
+    final queue = List<Map<String, dynamic>>.from(_pendingUserCmds);
+    _pendingUserCmds.clear();
+    Global.logger.d('SocketIoClient: 重连后补发 ${queue.length} 条排队指令');
+    for (final payload in queue) {
+      socket.emit('userCmd', payload);
+    }
   }
 
   void _enterRoom() {
@@ -531,10 +565,22 @@ class RussiaPageState extends State<RussiaPage>
       }
     });
 
-    socket.off('wordA');
-    socket.on('wordA', (data) {
+    socket.off('wordPack');
+    socket.on('wordPack', (data) {
       if (!mounted || !isPlaying) return;
-      _handleWordA(data);
+      _handleWordPack(data);
+    });
+
+    socket.off('gameNotInProgress');
+    socket.on('gameNotInProgress', (data) {
+      if (!mounted) return;
+      _handleGameNotInProgress(data?.toString() ?? '');
+    });
+
+    socket.off('forceClose');
+    socket.on('forceClose', (data) {
+      if (!mounted) return;
+      _handleForceClose(data?.toString() ?? '');
     });
 
     socket.off('wordB');
@@ -691,7 +737,9 @@ class RussiaPageState extends State<RussiaPage>
       'leaveRoom',
       'userStarted',
       'sysCmd',
-      'wordA',
+      'wordPack',
+      'gameNotInProgress',
+      'forceClose',
       'wordB',
       'giveProps',
       'propsUsed',
@@ -784,11 +832,54 @@ class RussiaPageState extends State<RussiaPage>
       _lastPoppedBubblePos = null;
     });
 
-    // 索取第一个单词
-    sendUserCmd('GET_NEXT_WORD', [myWordIndex++, '', '']);
+    // 新一局开打：清空上一局的单词包与排队指令，向服务端领一整包单词
+    _wordPack.reset();
+    _pendingUserCmds.clear();
+    _requestWordPack(myWordIndex);
   }
 
-  void _handleWordA(dynamic data) {
+  /// 向服务端要一段单词包（从 fromIndex 开始的连续若干词）：开局、预取、词包用尽时各要一次
+  void _requestWordPack(int fromIndex) {
+    _wordPack.markRequested(fromIndex);
+    sendUserCmd('GET_WORD_PACK', [fromIndex]);
+  }
+
+  /// 服务端下发的单词包：data = [起始索引, [单词对象, ...]]
+  void _handleWordPack(dynamic data) {
+    _wordPack.accept((data[0] as num).toInt(), List<dynamic>.from(data[1] as List));
+    _playNextWordFromPack();
+  }
+
+  /// 从本地单词包取下一题出题；本地没词了就向服务端补一包
+  void _playNextWordFromPack() {
+    if (!mounted || !isPlaying) return;
+
+    // 当前这一题还没答完，不要插队出下一题
+    if (currWord != null) return;
+
+    final entry = _wordPack.wordAt(myWordIndex);
+    if (entry != null) {
+      _applyWordEntry(entry);
+    }
+
+    final requestFrom = _wordPack.packRequestFor(myWordIndex);
+    if (requestFrom != null) {
+      // 断线时会排队，重连后自动补发
+      sendUserCmd('GET_WORD_PACK', [requestFrom]);
+    }
+  }
+
+  /// 上报本题答题结果（单向上报，不等服务端回词），并立刻用本地词包出下一题
+  void _reportAnswer(String answerResult) {
+    final word = currWord;
+    if (word == null) return;
+    final int wordIndex = myWordIndex++;
+    sendUserCmd('ANSWER', [wordIndex, answerResult, word.spell]);
+    currWord = null;
+    _playNextWordFromPack();
+  }
+
+  void _applyWordEntry(dynamic data) {
     try {
       final wordVo = WordVo.fromJson(data[0]);
       currWord = wordVo;
@@ -796,7 +887,7 @@ class RussiaPageState extends State<RussiaPage>
       // 提取干扰词
       distractorWords.clear();
       if (data.length >= 4 && data[3] is List) {
-        // 服务端新增的 3 个干扰词拼写
+        // 服务端下发的 3 个干扰词拼写
         final list = data[3] as List;
         for (final item in list) {
           distractorWords.add(item.toString());
@@ -825,7 +916,7 @@ class RussiaPageState extends State<RussiaPage>
         }
       });
     } catch (e) {
-      Global.logger.e('解析 wordA 出错: $e');
+      Global.logger.e('解析单词出错: $e');
     }
   }
 
@@ -918,6 +1009,55 @@ class RussiaPageState extends State<RussiaPage>
       StudyAudioSessionController.instance.playBlockingSound('victory.mp3', timeoutMs: 2000);
       HapticFeedback.mediumImpact();
     }
+  }
+
+  /// 长连接断开：提示用户，但本地有单词包，出题不受影响，继续把这一局打下去
+  void _onSocketDisconnected() {
+    if (!mounted || !isPlaying) return;
+    ToastUtil.error('网络连接中断，正在自动重连…');
+  }
+
+  /// 长连接重连成功：补发断线期间排队的指令，并重新要一包词
+  /// （服务端若已无本局对局，会回 gameNotInProgress 让界面明确退出）
+  void _onSocketReconnected() {
+    if (!mounted || !isPlaying) return;
+    _flushPendingUserCmds();
+    // 断线前在途的那一包可能已经丢了，重连后必须重新要一次
+    _wordPack.forgetRequested();
+    _requestWordPack(myWordIndex);
+  }
+
+  /// 服务端明确告知"你已经不在这一局里了"（断线太久被判负、房间已解散等）。
+  /// 必须退出对战界面，绝不允许停在一个永远等不到单词的空壳界面上。
+  void _handleGameNotInProgress(String cmd) {
+    _pendingUserCmds.clear();
+    if (!isPlaying) return;
+    Global.logger.w('SocketIoClient: 服务端已无本局对局，退出对战界面（触发指令[$cmd]）');
+    _exitBattleScreen('本局已结束，请重新开始');
+  }
+
+  /// 本连接被服务端顶掉（同一账号在别处登录）：退出对战界面
+  void _handleForceClose(String reason) {
+    _pendingUserCmds.clear();
+    Global.logger.w('SocketIoClient: 连接被服务端关闭: $reason');
+    if (!isPlaying) return;
+    _exitBattleScreen(reason.isEmpty ? '连接已被关闭' : '连接已被关闭：$reason');
+  }
+
+  void _exitBattleScreen(String message) {
+    _tts.stop();
+    setState(() {
+      isPlaying = false;
+      gameState = 'waiting';
+      myStarted = false;
+      opponentStarted = false;
+      isShowingResult = false;
+      currWord = null;
+      bubbles.clear();
+      projectiles.clear();
+    });
+    ToastUtil.error(message);
+    if (mounted) context.pop();
   }
 
   void _spawnBubblesForRound(Size size) {
@@ -1146,7 +1286,7 @@ class RussiaPageState extends State<RussiaPage>
     }
 
     if (targetWordExpired && currWord != null) {
-      sendUserCmd('GET_NEXT_WORD', [myWordIndex++, 'false', currWord!.spell]);
+      _reportAnswer('false');
     }
 
     // 3. 弹道飞行物更新
@@ -1297,10 +1437,8 @@ class RussiaPageState extends State<RussiaPage>
         color: const Color(0xFF38BDF8),
       ));
 
-      // 向服务端上报答对并拉取下一词
-      if (currWord != null) {
-        sendUserCmd('GET_NEXT_WORD', [myWordIndex++, 'true', currWord!.spell]);
-      }
+      // 向服务端上报答对，并立刻用本地词包出下一题
+      _reportAnswer('true');
     } else {
       // 之前点错过干扰词，靠排除法最终点对：本题算答错，不计入得分与 Combo
       myCombo = 0;
@@ -1311,10 +1449,8 @@ class RussiaPageState extends State<RussiaPage>
         color: const Color(0xFFFBBF24),
       ));
 
-      // 向服务端上报答错并拉取下一词
-      if (currWord != null) {
-        sendUserCmd('GET_NEXT_WORD', [myWordIndex++, 'false', currWord!.spell]);
-      }
+      // 向服务端上报答错，并立刻用本地词包出下一题
+      _reportAnswer('false');
     }
   }
 
@@ -3636,4 +3772,18 @@ class _UnderseaScenePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _UnderseaScenePainter oldDelegate) => true;
+}
+
+/// 对战页对长连接状态的反应：断线只提示，重连后补发指令并恢复对局，
+/// 让"网络抖一下"不再等于"这一局废了"
+class _GameSocketStatusListener implements SocketStatusListener {
+  _GameSocketStatusListener(this.page);
+
+  final RussiaPageState page;
+
+  @override
+  void onConnected() => page._onSocketReconnected();
+
+  @override
+  void onDisconnected() => page._onSocketDisconnected();
 }

@@ -23,6 +23,14 @@ public interface MySystem {
 
     void onUserLeaveHall(UserVo user, Hall hall);
 
+    /**
+     * 该用户是否正处于一局进行中的对局。
+     * 用户断线后重新连上来时，据此决定是"接管这一局继续打"还是按离场处理。
+     */
+    default boolean isUserInPlayingGame(UserVo user) {
+        return false;
+    }
+
     List<UserVo> getIdleUsers(UserVo except, int count);
 
     String getName();

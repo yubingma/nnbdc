@@ -216,6 +216,12 @@ class SocketIoClient {
     socketEventListeners.add(listener);
   }
 
+  /// 注册长连接状态监听（断线/重连），例如对战页据此补发指令、恢复对局
+  void registerSocketStatusListener(SocketStatusListener listener) {
+    if (_disposed) return;
+    socketStatusListeners.add(listener);
+  }
+
   /// 清理所有资源，防止内存泄漏
   void dispose() {
     if (_disposed) return;

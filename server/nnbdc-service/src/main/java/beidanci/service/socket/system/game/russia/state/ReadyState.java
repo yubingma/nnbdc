@@ -202,6 +202,28 @@ public class ReadyState extends RoomState {
         botTimer.schedule(botActionTask, delayMs);
     }
 
+    /**
+     * 答题上报的公共处理：取消该用户的触底计时；若答错，则堆叠+1（同一单词最多+1）。
+     * 老协议 GET_NEXT_WORD 与新协议 ANSWER 共用这段逻辑。
+     */
+    private void processAnswerReport(UserVo user, UserCmd userCmd) {
+        cancelFallTask(user);
+        String[] args = userCmd.getArgs();
+        if (args == null || args.length < 2 || !"false".equals(args[1])) {
+            return;
+        }
+        String word = (args.length >= 3 && args[2] != null) ? args[2] : "";
+        if (word.isEmpty()) {
+            try {
+                int wIdx = Integer.parseInt(args[0]);
+                // 老协议里当前命令针对的是下一题，词拼写取自上一题
+                word = getNextWordProcessor.getSpellByIndex(wIdx - 1);
+            } catch (NumberFormatException ignored) {
+                /* 安静忽略 */ }
+        }
+        tryAddStackOnce(user, word.isEmpty() ? "答错[]" : ("答错[" + word + "]"));
+    }
+
     private void scheduleFallTask(UserVo user, long etaMs) {
         // 取消旧任务
         cancelFallTask(user);
@@ -354,24 +376,16 @@ public class ReadyState extends RoomState {
     public void processUserCmd(UserVo user, UserCmd userCmd) throws IllegalAccessException {
         switch (userCmd.getCmd()) {
             case "GET_NEXT_WORD" -> {
-                // 收到答题，取消该用户的触底计时；若答错，则堆叠+1（同一单词最多+1）
-                cancelFallTask(user);
-                String[] args = userCmd.getArgs();
-                if (args != null && args.length >= 2 && "false".equals(args[1])) {
-                    String word = (args.length >= 3 && args[2] != null) ? args[2] : "";
-                    if (word.isEmpty()) {
-                        try {
-                            int wIdx = Integer.parseInt(args[0]);
-                            // 取上一题的单词（当前 GET_NEXT_WORD 针对的是下一题）
-                            word = getNextWordProcessor.getSpellByIndex(wIdx - 1);
-                        } catch (NumberFormatException ignored) {
-                            /* 安静忽略 */ }
-                    }
-                    String reason = word.isEmpty() ? "答错[]" : ("答错[" + word + "]");
-                    tryAddStackOnce(user, reason);
-                }
+                // 老协议：客户端每答一题就要一次词，服务端回 wordA（仅为兼容旧安装包保留）
+                processAnswerReport(user, userCmd);
                 getNextWordProcessor.processGetNextWordCmd(user, userCmd);
             }
+            case "ANSWER" -> {
+                // 新协议：客户端本地出题，答题结果只做单向上报，服务端不回 wordA
+                processAnswerReport(user, userCmd);
+                getNextWordProcessor.processAnswerCmd(user, userCmd);
+            }
+            case "GET_WORD_PACK" -> getNextWordProcessor.processGetWordPackCmd(user, userCmd);
             case "START_EXERCISE" -> {
                 // 单人练习命令
                 getNextWordProcessor.reset();

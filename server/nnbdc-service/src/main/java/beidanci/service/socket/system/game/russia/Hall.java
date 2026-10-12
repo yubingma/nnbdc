@@ -265,6 +265,14 @@ public class Hall {
         logger.info(String.format("%s 离开游戏大厅 %s", Util.getNickNameOfUser(user), name));
     }
 
+    /**
+     * 该用户是否正处于一局进行中的对局（正式对战或单人练习都算）。
+     */
+    public boolean isUserInPlayingGame(UserVo user) {
+        RussiaRoom room = getRoomOfUser(user);
+        return room != null && room.getState() instanceof ReadyState readyState && readyState.isGamePlaying();
+    }
+
     public void processUserCmd(UserVo user, UserCmd userCmd) throws IllegalAccessException {
         if (userCmd.getCmd().equals("LEAVE_HALL")) {
             userLeave(user);

@@ -248,8 +248,17 @@ public class SocketService {
 
                 // 关闭用户其他的连接，因为只允许一个用户有一个连接
                 if (disconnectExistingConnectionOfUser(user, client, "一个用户不允许多个连接")) {
-                    broadcastUserOffline(user);
-                    onUserLogout(user);
+                    // 如果该用户正打着一局，那么这次"新连接"就是他自己的断线重连：
+                    // 对局必须保留并交接到新连接上，绝不能当成离场（否则会白判负、白扣分，
+                    // 而结算事件又发不出去，客户端会永远停在对战界面不再出单词）
+                    MySystem russia = systems.get(MySystem.SYSTEM_RUSSIA);
+                    if (russia != null && russia.isUserInPlayingGame(user)) {
+                        log.info(String.format("用户[%s]断线重连，已把进行中的对局交接到新连接",
+                                Util.getNickNameOfUser(user)));
+                    } else {
+                        broadcastUserOffline(user);
+                        onUserLogout(user);
+                    }
                 }
 
                 // 保存用户相关信息到缓存

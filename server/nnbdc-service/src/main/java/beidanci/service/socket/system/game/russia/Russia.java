@@ -169,9 +169,18 @@ public class Russia implements MySystem {
                     if (hall != null) {
                         hall.processUserCmd(user, userCmd);
                     } else {
+                        // 客户端并不知道自己已经不在对局里了（例如断线期间被判负、房间已解散），
+                        // 必须明确告知它，否则它会一直停在"对战中"界面等一个永远不会来的单词
                         log.warn(String.format("用户[%s]尚未进入大厅，就开始发送命令[%s]", user.getDisplayNickName(), userCmd.getCmd()));
+                        socketService.sendEventToUser(user, "gameNotInProgress", userCmd.getCmd());
                     }                      }
         }
+    }
+
+    @Override
+    public boolean isUserInPlayingGame(UserVo user) {
+        Hall hall = getHallOfUser(user);
+        return hall != null && hall.isUserInPlayingGame(user);
     }
 
     private Hall getHallOfUser(UserVo user) {
