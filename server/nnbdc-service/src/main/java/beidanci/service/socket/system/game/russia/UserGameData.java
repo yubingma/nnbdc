@@ -11,6 +11,8 @@ public class UserGameData {
     public UserGameData(String userId) {
         this.userId = userId;
         lastOperationTime = System.currentTimeMillis();
+        lastAnswerAtMs = lastOperationTime;
+        disconnectedSinceMs = -1;
     }
 
     private final String userId;
@@ -50,6 +52,47 @@ public class UserGameData {
      * 注意：这是服务端近似值，未考虑前端道具清行等情况，仅作机器人思考时间的上界估计。
      */
     private int stackRows;
+
+    /**
+     * 服务端最后一次收到该用户答题上报的时刻（毫秒）。
+     * 两次答题间隔明显超过一道题的最长下落时间，说明客户端长时间没在出题
+     * （例如退到后台被挂起），服务端据此把漏掉的题按漏答补扣。
+     */
+    private long lastAnswerAtMs;
+
+    /**
+     * 本次断线的起点（毫秒）；-1 表示当前在线。
+     */
+    private long disconnectedSinceMs;
+
+    /**
+     * 本局累计断线时长（毫秒）。反复断线重连不能无限刷新宽限，所以要累计封顶。
+     */
+    private long totalDisconnectedMs;
+
+    public long getLastAnswerAtMs() {
+        return lastAnswerAtMs;
+    }
+
+    public void setLastAnswerAtMs(long lastAnswerAtMs) {
+        this.lastAnswerAtMs = lastAnswerAtMs;
+    }
+
+    public long getDisconnectedSinceMs() {
+        return disconnectedSinceMs;
+    }
+
+    public void setDisconnectedSinceMs(long disconnectedSinceMs) {
+        this.disconnectedSinceMs = disconnectedSinceMs;
+    }
+
+    public long getTotalDisconnectedMs() {
+        return totalDisconnectedMs;
+    }
+
+    public void setTotalDisconnectedMs(long totalDisconnectedMs) {
+        this.totalDisconnectedMs = totalDisconnectedMs;
+    }
 
     public long getLastOperationTime() {
         return lastOperationTime;

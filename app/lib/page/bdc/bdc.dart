@@ -16,6 +16,7 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -44,6 +45,7 @@ import '../../util/phase_presentation_tracker.dart';
 import '../../util/prefs.dart';
 import '../../util/utils.dart';
 import '../../widget/handwriting_board.dart';
+import '../../widget/data_missing_guide.dart';
 import '../../widget/learning_history_dialog.dart';
 import '../../widget/pronunciation_accent_badge.dart';
 import '../../widget/sound_wave_icon.dart';
@@ -511,6 +513,18 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
                 textAlign: TextAlign.center,
               ),
             ],
+          ),
+        );
+      }
+
+      // 通用释义缺失：重试必然再次失败，只能靠补数据或重建本地数据解决
+      final cause = state.loadErrorCause;
+      if (cause is MissingCommonMeaningException) {
+        return Center(
+          child: MissingMeaningGuide(
+            wordSpell: cause.spell,
+            onRetry: () => ref.read(bdcNotifierProvider.notifier).loadData(context),
+            onBack: () => Navigator.of(context).pop(),
           ),
         );
       }

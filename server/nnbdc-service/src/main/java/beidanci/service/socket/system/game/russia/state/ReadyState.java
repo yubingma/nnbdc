@@ -16,6 +16,7 @@ import beidanci.service.bo.UserBo;
 import beidanci.service.bo.UserGameBo;
 import beidanci.service.bo.WordBo;
 import beidanci.service.po.SysParam;
+import beidanci.service.socket.SocketService;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.game.russia.RussiaRoom;
 import beidanci.service.socket.system.game.russia.UserGameData;
@@ -29,6 +30,7 @@ import beidanci.service.util.Util;
  * @author Administrator
  */
 public class ReadyState extends RoomState {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ReadyState.class);
 
     private final GetNextWordProcessor getNextWordProcessor;
     private final GameOverProcessor gameOverProcessor;
@@ -50,6 +52,24 @@ public class ReadyState extends RoomState {
         }
         return room.getUsers().values().stream().anyMatch(u -> u != null && u.isExercise());
     }
+
+    /**
+     * 一道题允许的最长答题间隔。客户端的气泡到顶会自动上报一次漏答，
+     * 所以在正常出题的情况下，两次答题上报的间隔一定会小于气泡升到顶的时间。
+     * 明显超过这个间隔，说明客户端根本没在出题（例如退到后台被系统挂起）——
+     * 这跟"漏答"是同一个物理事实，按漏答补扣。
+     */
+    private static final long MAX_ANSWER_GAP_MS = 60 * 1000;
+
+    /**
+     * 单次断线的宽限时长。传输层断开不等于用户走了，先给这段时间等他回来接管对局。
+     */
+    private static final long DISCONNECT_GRACE_MS = 60 * 1000;
+
+    /**
+     * 一局里累计可以断线的总时长。允许重连，但不允许"断 59 秒、回 1 秒"反复刷新宽限来拖住对手。
+     */
+    private static final long MAX_TOTAL_DISCONNECT_MS = 90 * 1000;
 
     // 前端上报下落触底 ETA 的调度器与任务表（按用户）
     private final Timer fallTimer = new Timer(true);
@@ -224,6 +244,122 @@ public class ReadyState extends RoomState {
         tryAddStackOnce(user, word.isEmpty() ? "答错[]" : ("答错[" + word + "]"));
     }
 
+    /**
+     * 防挂起推演：客户端还连着，却长时间没有上报任何答题，说明它根本没在出题
+     * （最常见的是被切到后台，渲染与定时器被系统挂起，气泡停在原地不动）。
+     * 这跟"气泡到顶漏答"是同一个物理事实，所以按漏答补扣，不是新增惩罚。
+     * 断线期间不推演——那是网络问题，走断线宽限，不能误伤真正网络不稳的用户。
+     */
+    private void applyAnswerGapPenalty(UserVo user) {
+        UserGameData playData = room.getUserPlayData(user);
+        if (playData == null || playData.getDisconnectedSinceMs() >= 0) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        long gap = now - playData.getLastAnswerAtMs();
+        playData.setLastAnswerAtMs(now);
+        if (gap <= MAX_ANSWER_GAP_MS) {
+            return;
+        }
+        int missed = (int) Math.min(gap / MAX_ANSWER_GAP_MS, 10);
+        addStackRows(user, missed, String.format("客户端%.0f秒未出题", gap / 1000.0));
+    }
+
+    /**
+     * 连接断了：先进入宽限，保留对局等他重连接管，并把"对手暂时掉线"告诉还在线的一方。
+     */
+    public void markUserDisconnected(UserVo user) {
+        UserGameData playData = room.getUserPlayData(user);
+        if (playData == null || playData.getDisconnectedSinceMs() >= 0) {
+            return;
+        }
+        playData.setDisconnectedSinceMs(System.currentTimeMillis());
+        cancelFallTask(user);
+        log.info(String.format("玩家[%s]连接中断，保留对局等待重连（单次宽限%.0f秒、单局累计上限%.0f秒）",
+                Util.getNickNameOfUser(user), DISCONNECT_GRACE_MS / 1000.0, MAX_TOTAL_DISCONNECT_MS / 1000.0));
+        UserVo opponent = room.getAnotherUser(user);
+        if (opponent != null) {
+            room.sendEventToUser(opponent, "opponentOffline", (int) (DISCONNECT_GRACE_MS / 1000));
+        }
+    }
+
+    /**
+     * 用户重连接管对局。
+     *
+     * @return true 表示接管成功、对局继续；false 表示本局累计断线已超上限、不能再接管
+     */
+    public boolean markUserReconnected(UserVo user) {
+        UserGameData playData = room.getUserPlayData(user);
+        if (playData == null || playData.getDisconnectedSinceMs() < 0) {
+            return true;
+        }
+        long disconnectedMs = System.currentTimeMillis() - playData.getDisconnectedSinceMs();
+        playData.setDisconnectedSinceMs(-1);
+        playData.setTotalDisconnectedMs(playData.getTotalDisconnectedMs() + disconnectedMs);
+        // 断线这段时间不算"客户端挂起"，否则重连后会被答题间隔再扣一次
+        playData.setLastAnswerAtMs(System.currentTimeMillis());
+
+        if (playData.getTotalDisconnectedMs() > MAX_TOTAL_DISCONNECT_MS) {
+            log.info(String.format("玩家[%s]本局累计断线%.0f秒，超过上限%.0f秒，不再接管",
+                    Util.getNickNameOfUser(user), playData.getTotalDisconnectedMs() / 1000.0,
+                    MAX_TOTAL_DISCONNECT_MS / 1000.0));
+            return false;
+        }
+        log.info(String.format("玩家[%s]重连成功，本局累计断线%.0f秒，对局继续",
+                Util.getNickNameOfUser(user), playData.getTotalDisconnectedMs() / 1000.0));
+        UserVo opponent = room.getAnotherUser(user);
+        if (opponent != null) {
+            room.sendEventToUser(opponent, "opponentOnline", null);
+        }
+        return true;
+    }
+
+    /**
+     * 该用户是否已经不在这场对局里了：连接断了，或者长时间没有任何命令。
+     * 用于判断"另一方是不是也早就掉线了"。
+     */
+    public boolean isUserGone(UserVo user) {
+        UserGameData playData = room.getUserPlayData(user);
+        if (playData == null) {
+            return true;
+        }
+        return playData.getDisconnectedSinceMs() >= 0
+                || System.currentTimeMillis() - playData.getLastOperationTime() > MAX_ANSWER_GAP_MS;
+    }
+
+    /**
+     * 本局作废（双方都掉线）：不判负、不计分，只把对局关掉。
+     */
+    @Override
+    public void voidGame() {
+        isPlaying = false;
+        for (UserVo u : room.getUsers().keySet()) {
+            cancelFallTask(u);
+        }
+        stackAddedOnce.clear();
+    }
+
+    /**
+     * 按漏答给用户补扣堆叠行数，并把服务端的权威行数同步给客户端校正血条。
+     */
+    private void addStackRows(UserVo user, int rows, String reason) {
+        if (rows <= 0) {
+            return;
+        }
+        UserGameData playData = room.getUserPlayData(user);
+        playData.setStackRows(playData.getStackRows() + rows);
+        log.info(String.format("🧱 玩家[%s] %s，堆叠+%d => %d",
+                Util.getNickNameOfUser(user), reason, rows, playData.getStackRows()));
+        room.sendEventToUser(user, "stackSync", new Object[]{playData.getStackRows(), reason});
+        if (playData.getStackRows() >= 10) {
+            try {
+                gameOverProcessor.handleLoser(user);
+            } catch (IllegalAccessException e) {
+                log.error("处理游戏淘汰失败", e);
+            }
+        }
+    }
+
     private void scheduleFallTask(UserVo user, long etaMs) {
         // 取消旧任务
         cancelFallTask(user);
@@ -382,6 +518,8 @@ public class ReadyState extends RoomState {
             }
             case "ANSWER" -> {
                 // 新协议：客户端本地出题，答题结果只做单向上报，服务端不回 wordA
+                // 顺便推演"客户端是不是根本没在出题"（退到后台挂起）
+                applyAnswerGapPenalty(user);
                 processAnswerReport(user, userCmd);
                 getNextWordProcessor.processAnswerCmd(user, userCmd);
             }
@@ -392,6 +530,7 @@ public class ReadyState extends RoomState {
                 gameOverProcessor.reset();
                 // 清空堆叠标记
                 stackAddedOnce.clear();
+                resetAnswerTiming(room.getUserPlayData(user));
                 isPlaying = true;
                 startExerciseProcessor.process(user, userCmd);
             }
@@ -461,8 +600,12 @@ public class ReadyState extends RoomState {
             String[] args = userCmd.getArgs();
             if (args.length >= 1) {
                 int selfRows = Integer.parseInt(args[0]);
-                room.getUserPlayData(user).setStackRows(selfRows);
-                if (selfRows >= 10) {
+                UserGameData playData = room.getUserPlayData(user);
+                // 服务端自己按时间推演出来的行数更严时，以服务端为准：
+                // 客户端报的是"它看见的漏答"，服务端推演的是"按时间它应该漏掉的"，
+                // 同一个事实取更严的一方，客户端收到 stackSync 后会把血条校正过来。
+                playData.setStackRows(Math.max(playData.getStackRows(), selfRows));
+                if (playData.getStackRows() >= 10) {
                     gameOverProcessor.handleLoser(user);
                 }
             }
@@ -579,20 +722,36 @@ public class ReadyState extends RoomState {
     /**
      * 开始游戏的核心逻辑（提取为独立方法，便于在延迟回调中复用）
      */
+    /**
+     * 复位一名玩家在本局里的状态（新一局开打时调用）。
+     */
+    private void resetUserGameData(UserGameData playData) {
+        playData.setMatchStarted(false);
+        playData.setCorrectCount(0);
+        playData.getPropsCounts()[0] = 0;
+        playData.getPropsCounts()[1] = 0;
+        playData.setStackRows(0);
+        playData.setExercise(false);
+        resetAnswerTiming(playData);
+    }
+
+    /**
+     * 复位答题计时基准：新的一局（或新开的单人练习）必须从现在开始计时，
+     * 否则开局第一题的间隔会把"在房间里等对手的那几分钟"算成挂起，凭空扣血。
+     */
+    private void resetAnswerTiming(UserGameData playData) {
+        playData.setDisconnectedSinceMs(-1);
+        playData.setTotalDisconnectedMs(0);
+        playData.setLastAnswerAtMs(System.currentTimeMillis());
+    }
+
+    /**
+     * 开始游戏的核心逻辑（提取为独立方法，便于在延迟回调中复用）
+     */
     private void startGame(UserVo user1, UserVo user2, UserGameData playData1, UserGameData playData2) {
         // 复位用户的游戏状态信息
-        playData1.setMatchStarted(false);
-        playData1.setCorrectCount(0);
-        playData1.getPropsCounts()[0] = 0;
-        playData1.getPropsCounts()[1] = 0;
-        playData1.setStackRows(0);
-        playData1.setExercise(false);
-        playData2.setMatchStarted(false);
-        playData2.setCorrectCount(0);
-        playData2.getPropsCounts()[0] = 0;
-        playData2.getPropsCounts()[1] = 0;
-        playData2.setStackRows(0);
-        playData2.setExercise(false);
+        resetUserGameData(playData1);
+        resetUserGameData(playData2);
 
         // 复位游戏状态
         gameOverProcessor.reset();
@@ -678,7 +837,22 @@ public class ReadyState extends RoomState {
         // 游戏正在进行中，用户退出，判为输家，另一方判为赢家
         if (isPlaying) {
             assert (room.getUsers().size() == 1);
-            UserVo winer = room.getUsers().keySet().iterator().next();
+            UserVo remaining = room.getUsers().keySet().iterator().next();
+            if (isUserGone(remaining)) {
+                // 对手早就掉线了，是我等不下去自己走的：判掉线方负（照常扣分），
+                // 我这一局不背锅，否则"先断网拖着、等对手走人"就能白拿一胜
+                log.info(String.format("玩家[%s]掉线期间对手[%s]离开本局，判掉线方负",
+                        Util.getNickNameOfUser(remaining), Util.getNickNameOfUser(user)));
+                room.broadcastEvent("loser", remaining.getId());
+                gameOverProcessor.adjustUserScore(user, remaining);
+                SocketService.getInstance().noticeGameResult(remaining.getId(),
+                        "上一局因断线时间过长被判负，积分已按战败结算");
+                isPlaying = false;
+                stackAddedOnce.clear();
+                room.broadcastUsersInfo();
+                return;
+            }
+            UserVo winer = remaining;
             UserVo loser = user;
             room.broadcastEvent("loser", loser.getId());
             gameOverProcessor.adjustUserScore(winer, loser);

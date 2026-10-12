@@ -4,7 +4,7 @@
 >
 > - **生效方式**：`AGENTS.md` 已引用本表，强制生效。
 > - **维护规则**：只增不删；改了叫法必须保留旧名（标「已弃用（原叫 X）」），否则历史文档会读不懂。
-> - **更新日期**：2026-10-10
+> - **更新日期**：2026-10-12
 
 ---
 
@@ -340,7 +340,12 @@
 | 支付订单 | `pay_order` | 微信 / 支付宝 / 苹果 IAP 流水 | |
 | 兑换码 | `promo_redemption` / `promo_activity` | 营销活动与核销记录 | |
 | 站内信 | `msg` | 系统通知 / 同桌消息 / 活动提醒 | |
-| 意见建议 | `feature_request`（含 vote / report） | 用户需求与点赞投票 | |
+| 客服会话 | `msg`，`msg_type = Advice` | 用户在「意见建议 / 客服」里和客服的一整段聊天；一个用户一条会话，会话里有许多条用户提的消息（`Advice`）和管理员的回复（`AdviceReply`） | 管理端「意见建议」页原来按单条消息平铺，同一用户的多条消息各占一行，这是已知的不便。**会话是按用户收纳聊天内容的组织单位，不是需求单位** |
+| 消息级需求 | `msg.tag = '需求'`（标记字段见 `server/db_upgrade/v74_add_tag_to_msg.sql`，索引 `idx_msg_tag`；处理状态 `msg.req_status` 见 `server/db_upgrade/v80_add_req_status_to_msg.sql`，索引 `idx_msg_req_status`） | 管理员在客服会话里把用户的**某一条具体消息**标记为需求，并给它一个处理状态：`VOTING` 投票中 / `IN_PROGRESS` 开发中 / `REJECTED` 已拒绝 / `COMPLETED` 已完成 | **需求挂在被标记的那条消息上**，不挂在会话上、也不挂在用户上；一次会话里用户说了几件事，是需求就标那几条。状态档位与「需求（feature_request）」的 `FeatureRequestStatus` 完全一致，但两套数据各自独立 |
+| 需求待办 | 管理端「意见建议」里的「需求待办」一屏 | 消息级需求与需求墙需求合在一起看的待办列表：来源「客服会话」的点进去落到聊天里那条消息，来源「需求墙」的点进去看原需求 | 一屏看两边、处理各走各的：会话里的需求用 `updateRequirementStatus.do`，需求墙的走需求墙管理页 |
+| 被引用消息 | `msg.reply_to_id`（见 `server/db_upgrade/v79_add_reply_to_id_to_msg.sql`，索引 `idx_msg_reply_to`） | 管理员回复时指明"我这句话是回你哪一条"；回复气泡里的引用块显示的就是被引用消息 | 只允许一层引用，引用不能再被引用；已被引用的消息不允许删除，必须先删引用它的回复 |
+| 反馈截图 | `msg.content` 内嵌的 `【报错图片】["目录/文件名", …]` 标记 | 用户提意见、报错时随消息一起发上来的手机截图 | 与「单词配图」不是一回事：配图属于单词，随包展示；截图属于某一条具体消息 |
+| 意见建议 | `feature_request`（含 vote / report） | 用户需求与点赞投票 | ⚠️ 名字与「意见建议 / 客服」页面撞车，但**是两套独立数据**：`feature_request` 走需求墙与投票，客服聊天走 `msg`；引用时一律说「需求（feature_request）」或「客服会话」 |
 | 社区 | `forum`（含 post / reply） | 交流板块与帖子 | |
 | 封面上镜量 | thumbnail size | 封面在小红书「发现」页双列瀑布流里的实际显示宽度，约 178 CSS px；1080 宽的设计稿到这里只剩约 1/6 | 判断文字能不能读，一律按这个尺寸算，不看设计稿原尺寸 |
 | 视觉锚点 | visual anchor | 一张封面里，在封面上镜量下最先抓住眼睛的那一个元素。**一张封面只允许一个** | ⚠️ 与 4.3 的「锚点」（形近词表的出发点）不是一回事，指代时写全「视觉锚点」 |
@@ -361,6 +366,9 @@
 | 例句点评 | `sentence_chinese_remark` | 对例句翻译的点评与纠错 | |
 | 单词配图 | 客户端 `word_images` / 服务端 `word_image`，图片文件走 `https://www.nnbdc.com/img/word/<image_file>` | 单词详情页词条下方那张图（作者上传 + AI 审核），一个单词最多 2 张 | 与「词核心图 `word_core_image`」不是一回事：配图存在服务端数据库和磁盘上，客户端的 `word_images` 行只是"这个词有哪几张图"的索引 |
 | 配图投票 | 客户端 `voted_word_images` / 服务端 `info_vote_log` | 单词配图的有用/无用投票 | 两端表名不同 |
+| 通用释义缺失 | 客户端 `MissingCommonMeaningException`（`app/lib/api/bo/word_bo.dart`） | 某个词在学习词书里没有定制释义、本地又没有通用释义（`dict_id = '0'`），学习页取不到任何释义而报的错 | 判据与 `WordBo.getWordMeaningItems` 同源；体检第 8 项「正在学习单词的释义完整性」按同一判据检查，可用「一键自动修复」从云端补回。给用户的出路是「修复数据（数据健康检查）」和「清空本地数据重新同步」 |
+| 本机缺释义引导面板 | 客户端 `MissingMeaningGuide`（`app/lib/widget/data_missing_guide.dart`） | 「通用释义缺失」时，学习页与单词详情页错误态展示的引导面板 | 只给「修复数据」和「清空本地数据重新同步」两条出路，因为单纯重试必然再次失败 |
+| 清空本地数据重建 | 客户端 `showRebuildDatabaseDialog`（`app/lib/widget/rebuild_database_dialog.dart`） | 先把数据备份到云端，再清空本地库，然后回登录页重新登录 | 用户口中的「清空本地数据」就是它；界面上标题是「确认重建数据库」，需要二次确认 |
 
 ### 4.8 客户端设置与系统权限
 

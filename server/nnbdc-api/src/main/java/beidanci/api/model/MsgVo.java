@@ -122,4 +122,56 @@ public class MsgVo extends Vo {
     public void setTag(String tag) {
         this.tag = tag;
     }
+
+    private String replyToId;
+
+    public String getReplyToId() {
+        return replyToId;
+    }
+
+    public void setReplyToId(String replyToId) {
+        this.replyToId = replyToId;
+    }
+
+    private AdviceRequirementStatus reqStatus;
+
+    public AdviceRequirementStatus getReqStatus() {
+        return reqStatus;
+    }
+
+    public void setReqStatus(AdviceRequirementStatus reqStatus) {
+        this.reqStatus = reqStatus;
+    }
+
+    // 下面三个字段是「被引用消息」的快照，供界面画引用块，不对应数据库字段。
+    // 命名刻意避开 replyToMessage：那个名字会被 PoVoUtils 当成实体关联去递归拷贝。
+    private String quotedMsgId;
+
+    private MsgType quotedMsgType;
+
+    private String quotedContent;
+
+    public String getQuotedMsgId() {
+        return quotedMsgId;
+    }
+
+    public void setQuotedMsgId(String quotedMsgId) {
+        this.quotedMsgId = quotedMsgId;
+    }
+
+    public MsgType getQuotedMsgType() {
+        return quotedMsgType;
+    }
+
+    public void setQuotedMsgType(MsgType quotedMsgType) {
+        this.quotedMsgType = quotedMsgType;
+    }
+
+    public String getQuotedContent() {
+        return quotedContent;
+    }
+
+    public void setQuotedContent(String quotedContent) {
+        this.quotedContent = quotedContent;
+    }
 }

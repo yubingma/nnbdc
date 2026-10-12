@@ -112,6 +112,10 @@ class BdcState extends Equatable {
 
   final String? loadError;
 
+  /// 产生 [loadError] 的原始错误对象（本地异常 / 服务端消息等）。
+  /// 界面据此分辨错误的种类（例如通用释义缺失），给出对应的处理出路。
+  final Object? loadErrorCause;
+
   final bool isSelectModePreferred;
   final bool isSentenceSelectModePreferred;
 
@@ -193,6 +197,7 @@ class BdcState extends Equatable {
     this.highlightedWordImg,
     this.isWordImageEdited = false,
     this.loadError,
+    this.loadErrorCause,
     this.isSelectModePreferred = false,
     this.isSentenceSelectModePreferred = false,
     this.isPttPressed = false,
@@ -282,6 +287,7 @@ class BdcState extends Equatable {
     Object? highlightedWordImg = _sentinel,
     bool? isWordImageEdited,
     Object? loadError = _sentinel,
+    Object? loadErrorCause = _sentinel,
     bool? isSelectModePreferred,
     bool? isSentenceSelectModePreferred,
     bool? isPttPressed,
@@ -369,6 +375,7 @@ class BdcState extends Equatable {
       highlightedWordImg: highlightedWordImg == _sentinel ? this.highlightedWordImg : (highlightedWordImg as WordImageVo?),
       isWordImageEdited: isWordImageEdited ?? this.isWordImageEdited,
       loadError: loadError == _sentinel ? this.loadError : (loadError as String?),
+      loadErrorCause: loadErrorCause == _sentinel ? this.loadErrorCause : loadErrorCause,
       isSelectModePreferred: isSelectModePreferred ?? this.isSelectModePreferred,
       isSentenceSelectModePreferred: isSentenceSelectModePreferred ?? this.isSentenceSelectModePreferred,
       isPttPressed: isPttPressed ?? this.isPttPressed,
@@ -456,6 +463,7 @@ class BdcState extends Equatable {
     highlightedWordImg,
     isWordImageEdited,
     loadError,
+    loadErrorCause,
     isSelectModePreferred,
     isSentenceSelectModePreferred,
     isPttPressed,

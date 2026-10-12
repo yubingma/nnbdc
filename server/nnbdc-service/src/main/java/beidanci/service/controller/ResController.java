@@ -2,11 +2,13 @@ package beidanci.service.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.awt.image.BufferedImage;
 import java.security.MessageDigest;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -336,11 +338,21 @@ public class ResController {
         }
     }
 
+    /**
+     * 上传图片。
+     *
+     * @param size 目标尺寸。mode=contain 时表示长边上限（超出才等比缩小，手机截图不会被压扁）；
+     *             mode=cover 时表示强制缩放到 size×size 的正方形
+     * @param mode contain 等比缩放（默认）/ cover 裁成正方形。旧客户端不传 mode，按 contain 处理
+     * @param dir  图片目录，例如 word / avatar / error_report / advice
+     */
     @PostMapping(value = "/uploadImg.do")
     public Result<String> uploadImg(@RequestParam("file") MultipartFile file, @RequestParam("userId") String userId,
             @RequestParam(value = "size", required = false, defaultValue = "200") int size,
-            @RequestParam(value = "dir", required = false, defaultValue = "word") String dir) throws Exception {
-        logger.info("收到图片上传请求, userId: {}, 文件名: {}, 大小: {}, 目标尺寸: {}, 目录: {}", userId, file.getOriginalFilename(), file.getSize(), size, dir);
+            @RequestParam(value = "dir", required = false, defaultValue = "word") String dir,
+            @RequestParam(value = "mode", required = false, defaultValue = "contain") String mode) throws Exception {
+        logger.info("收到图片上传请求, userId: {}, 文件名: {}, 大小: {}, 目标尺寸: {}, 目录: {}, 模式: {}",
+                userId, file.getOriginalFilename(), file.getSize(), size, dir, mode);
 
         if (file.getSize() > 1024 * 1024) {
             return Result.fail("图片大小不能超过 1MB");
@@ -372,12 +384,11 @@ public class ResController {
         String fileName = baseName + "." + ext;
         File targetFile = new File(sysParamUtil.getImageBaseDir() + "/" + dir + "/" + fileName);
 
-        // 通过图像缩放生成大图
-        int targetWidth = size;
-        int targetHeight = size;
+        // 按模式算出真实的目标宽高：contain 保长边上限，cover 是正方形
+        int[] targetSize = resolveTargetSize(tempTargetFile, size, mode);
         try {
             if (fmt != null && MyImage.canWriteFormat(fmt)) {
-                MyImage.resizeImage(tempTargetFile, targetFile, targetWidth, targetHeight, fmt, true);
+                MyImage.resizeImage(tempTargetFile, targetFile, targetSize[0], targetSize[1], fmt, false);
             } else {
                 org.apache.commons.io.FileUtils.copyFile(tempTargetFile, targetFile);
             }
@@ -391,5 +402,38 @@ public class ResController {
         }
 
         return Result.success(dir + "/" + fileName);
+    }
+
+    /**
+     * 算出这次上传实际要写出的宽度与高度。
+     *
+     * 老的写法是宽高都取 size，等于把任何图都压成正方形——手机截图是竖长条，
+     * 压完字全糊在一起，根本看不清。现在默认按长边等比缩小，只有明确要正方形时才裁。
+     */
+    private int[] resolveTargetSize(File sourceFile, int size, String mode) {
+        if ("cover".equalsIgnoreCase(mode)) {
+            return new int[] { size, size };
+        }
+
+        BufferedImage image = null;
+        try {
+            image = ImageIO.read(sourceFile);
+        } catch (IOException e) {
+            logger.warn("读取图片尺寸失败，按原图保存: {}", sourceFile.getName(), e);
+        }
+        if (image == null) {
+            return new int[] { size, size };
+        }
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+        int maxEdge = Math.max(width, height);
+        if (maxEdge <= size) {
+            // 已经比长边上限还小，保持原样，不做放大
+            return new int[] { width, height };
+        }
+
+        double factor = (double) size / maxEdge;
+        return new int[] { (int) Math.round(width * factor), (int) Math.round(height * factor) };
     }
 }

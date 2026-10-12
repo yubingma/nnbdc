@@ -270,7 +270,7 @@ public class Hall {
      */
     public boolean isUserInPlayingGame(UserVo user) {
         RussiaRoom room = getRoomOfUser(user);
-        return room != null && room.getState() instanceof ReadyState readyState && readyState.isGamePlaying();
+        return room != null && room.isUserPlaying(user);
     }
 
     public void processUserCmd(UserVo user, UserCmd userCmd) throws IllegalAccessException {

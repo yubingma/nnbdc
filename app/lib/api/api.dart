@@ -458,7 +458,8 @@ abstract class RestClient {
   @POST("/sendAdvice.do")
   @FormUrlEncoded()
   Future<Result<UserVo?>> sendAdvice(@Field("content") String content,
-      @Field("clientType") String clientType, @Query("userId") String userId);
+      @Field("clientType") String clientType, @Query("userId") String userId,
+      {@Field("imageFiles") String? imageFiles});
 
   // 系统/公共词书资源（可走 CDN）
   @GET("/res/getSysDictResById.do")
@@ -571,6 +572,23 @@ abstract class RestClient {
   Future<Result> replyAdvice(
       @Field("content") String content,
       @Field("toUserId") String toUserId,
+      @Field("adminUserId") String adminUserId,
+      {@Field("replyToId") String? replyToId, @Field("imageFiles") String? imageFiles});
+
+  /// 客服会话摘要：一个用户一行，带未读条数与含需求条数
+  @GET("/getAdviceSessions.do")
+  Future<List<AdviceSessionVo>> getAdviceSessions({@Query("limit") int? limit});
+
+  /// 消息级需求列表（管理员功能）
+  @GET("/getAdviceRequirements.do")
+  Future<Result<List<AdviceRequirementVo>>> getAdviceRequirements({@Query("status") String? status});
+
+  /// 更新消息级需求的处理状态（管理员功能）
+  @POST("/updateRequirementStatus.do")
+  @FormUrlEncoded()
+  Future<Result> updateRequirementStatus(
+      @Field("msgId") String msgId,
+      @Field("status") String status,
       @Field("adminUserId") String adminUserId);
 
   @POST("/setMsgTag.do")

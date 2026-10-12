@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import beidanci.api.Result;
+import beidanci.api.model.AdviceRequirementStatus;
+import beidanci.api.model.AdviceRequirementVo;
+import beidanci.api.model.AdviceSessionVo;
 import beidanci.api.model.MsgCountVo;
 import beidanci.api.model.MsgVo;
 import beidanci.api.model.UserVo;
@@ -34,21 +37,19 @@ public class MsgController {
 
     @PostMapping("/sendAdvice.do")
     @ResponseBody
-    public Result<UserVo> sendAdvice(String content, String clientType, String userId) throws Exception {
-        System.out.println("DEBUG: MsgController.sendAdvice - content: " + content);
-        System.out.println("DEBUG: MsgController.sendAdvice - clientType: " + clientType);
-        System.out.println("DEBUG: MsgController.sendAdvice - userId: " + userId);
-        
-        if (StringUtils.isEmpty(content.trim())) {
+    public Result<UserVo> sendAdvice(String content, String clientType, String userId,
+                                     @RequestParam(name = "imageFiles", required = false) String imageFiles)
+            throws Exception {
+        if (StringUtils.isEmpty(content == null ? null : content.trim())) {
             return Result.fail("内容不得为空");
         }
-        
+
         User loggedInUser = userBo.findById(userId);
         if (loggedInUser == null) {
             return Result.fail("用户未登录");
         }
-        
-        User updatedUser = msgBo.sendAdvice(content, clientType, loggedInUser);
+
+        User updatedUser = msgBo.sendAdvice(content, clientType, loggedInUser, imageFiles);
         UserVo userVo = null;
         if (updatedUser != null) {
             userVo = PoVoUtils.makeVo(updatedUser, UserVo.class,
@@ -77,6 +78,8 @@ public class MsgController {
 
         List<MsgVo> vos = PoVoUtils.makeVos(msgs, MsgVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
                 "StudyGroupVo.users", "StudyGroupVo.managers", "studyGroupPosts", "userGames"});
+        // 引用回复要在界面上画出“这句话是在回哪一句”，一次把被引用消息的正文带上，不必再发请求
+        msgBo.fillQuotedMessages(vos);
         shrinkUserInfoForMsgVos(vos);
         return vos;
     }
@@ -133,22 +136,29 @@ public class MsgController {
     @PostMapping("/replyAdvice.do")
     public Result<Void> replyAdvice(@RequestParam(name = "content") String content,
                                    @RequestParam(name = "toUserId") String toUserId,
-                                   @RequestParam(name = "adminUserId") String adminUserId) throws IllegalAccessException {
+                                   @RequestParam(name = "adminUserId") String adminUserId,
+                                   @RequestParam(name = "replyToId", required = false) String replyToId,
+                                   @RequestParam(name = "imageFiles", required = false) String imageFiles)
+            throws IllegalAccessException {
         if (StringUtils.isEmpty(content.trim())) {
             return Result.fail("回复内容不得为空");
         }
-        
+
         User toUser = userBo.findById(toUserId);
         if (toUser == null) {
             return Result.fail("目标用户不存在");
         }
-        
+
         User adminUser = userBo.findById(adminUserId);
         if (adminUser == null || !adminUser.getIsAdmin()) {
             return Result.fail("管理员权限不足");
         }
-        
-        msgBo.replyAdvice(content, toUser, userBo);
+
+        try {
+            msgBo.replyAdvice(content, toUser, userBo, replyToId, imageFiles);
+        } catch (IllegalArgumentException e) {
+            return Result.fail(e.getMessage());
+        }
         return Result.success(null);
     }
 
@@ -186,7 +196,11 @@ public class MsgController {
             return Result.fail("管理员权限不足");
         }
 
-        msgBo.deleteMsg(msgId);
+        try {
+            msgBo.deleteMsg(msgId);
+        } catch (IllegalArgumentException e) {
+            return Result.fail(e.getMessage());
+        }
         return Result.success(null);
     }
 
@@ -208,6 +222,65 @@ public class MsgController {
         }
 
         msgBo.updateMsgTag(msgId, tag);
+        return Result.success(null);
+    }
+
+    /**
+     * 获取客服会话摘要（管理员功能）：一个用户一行，带未读条数与含需求条数。
+     * 管理端首屏用它取代“先拉全量意见建议再在客户端按人平铺”。
+     */
+    @GetMapping("/getAdviceSessions.do")
+    public List<AdviceSessionVo> getAdviceSessions(
+            @RequestParam(name = "limit", required = false, defaultValue = "200") int limit) {
+        return msgBo.getAdviceSessions(limit);
+    }
+
+    /**
+     * 获取消息级需求列表（管理员功能）
+     *
+     * @param status 需求状态（VOTING/IN_PROGRESS/REJECTED/COMPLETED），不传表示全部
+     */
+    @GetMapping("/getAdviceRequirements.do")
+    public Result<List<AdviceRequirementVo>> getAdviceRequirements(
+            @RequestParam(name = "status", required = false) String status) {
+        AdviceRequirementStatus reqStatus = null;
+        if (StringUtils.isNotEmpty(status)) {
+            try {
+                reqStatus = AdviceRequirementStatus.valueOf(status.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return Result.fail("无法识别的需求状态: " + status);
+            }
+        }
+        return Result.success(msgBo.getAdviceRequirements(reqStatus));
+    }
+
+    /**
+     * 更新消息级需求的处理状态（管理员功能）
+     *
+     * @param msgId 被标记为需求的那条消息ID
+     * @param status 目标状态（VOTING/IN_PROGRESS/REJECTED/COMPLETED）
+     */
+    @PostMapping("/updateRequirementStatus.do")
+    public Result<Void> updateRequirementStatus(@RequestParam(name = "msgId") String msgId,
+                                                @RequestParam(name = "status") String status,
+                                                @RequestParam(name = "adminUserId") String adminUserId) {
+        User adminUser = userBo.findById(adminUserId);
+        if (adminUser == null || !adminUser.getIsAdmin()) {
+            return Result.fail("管理员权限不足");
+        }
+
+        AdviceRequirementStatus reqStatus;
+        try {
+            reqStatus = AdviceRequirementStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return Result.fail("无法识别的需求状态: " + status);
+        }
+
+        try {
+            msgBo.updateRequirementStatus(msgId, reqStatus);
+        } catch (IllegalArgumentException e) {
+            return Result.fail(e.getMessage());
+        }
         return Result.success(null);
     }
 }

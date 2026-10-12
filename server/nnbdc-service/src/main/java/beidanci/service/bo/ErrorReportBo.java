@@ -65,10 +65,8 @@ public class ErrorReportBo extends BaseBo<ErrorReport> {
         createEntity(errorReport);
 
         String advice = String.format("单词报错，单词[%s], 报错内容[%s]", spell, content);
-        if (imageFiles != null && !imageFiles.trim().isEmpty()) {
-            advice += "\n【报错图片】" + imageFiles;
-        }
-        msgBo.sendAdvice(advice, clientType, user);
+        // 图片标记由 MsgBo 统一拼装，客服会话与单词报错共用同一种写法
+        msgBo.sendAdvice(advice, clientType, user, imageFiles);
 
         return Result.success(String.valueOf(errorReport.getId()), content);
     }

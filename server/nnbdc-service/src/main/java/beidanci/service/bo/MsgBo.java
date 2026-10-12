@@ -1,12 +1,12 @@
 package beidanci.service.bo;
-import javax.annotation.PostConstruct;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import beidanci.api.model.AdviceRequirementStatus;
+import beidanci.api.model.AdviceRequirementVo;
+import beidanci.api.model.AdviceSessionVo;
 import beidanci.api.model.ClientType;
 import beidanci.api.model.MsgType;
+import beidanci.api.model.MsgVo;
 import beidanci.api.model.PagedResults;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
@@ -35,6 +39,15 @@ import beidanci.util.Constants;
 @Transactional(rollbackFor = Throwable.class)
 public class MsgBo extends BaseBo<Msg> {
     private static final Logger logger = LoggerFactory.getLogger(MsgBo.class);
+
+    /**
+     * 消息正文里标记图片名列表的分隔标记，格式：换行 + 该标记 + JSON 数组，例如
+     * 【报错图片】["advice/xxx.jpg"]。单词报错与客服会话共用同一种写法。
+     */
+    public static final String IMAGE_FILES_MARKER = "【报错图片】";
+
+    /** 消息级需求的标签值 */
+    public static final String REQUIREMENT_TAG = "需求";
 
     @Autowired
     UserBo userBo;
@@ -252,13 +265,22 @@ public class MsgBo extends BaseBo<Msg> {
     }
 
     public User sendAdvice(String content, String clientType, User fromUser) {
+        return sendAdvice(content, clientType, fromUser, null);
+    }
+
+    /**
+     * 收下用户的一条意见建议。用户可以随消息附上截图，图片由客户端先调 uploadImg.do 上传，
+     * 这里只收图片名列表（形如 ["advice/xxx.jpg"]）。
+     */
+    public User sendAdvice(String content, String clientType, User fromUser, String imageFiles) {
+        String storedContent = appendImageFiles(content, imageFiles);
         PromoActivity activity = (promoActivityBo != null && content != null && !content.trim().isEmpty())
                 ? promoActivityBo.findMatchingActivityInContent(content)
                 : null;
 
         if (activity != null) {
             // 用户输入了活动兑换码，记录意见建议
-            createMsg(content, MsgType.Advice, clientType, fromUser, userBo.getSysUser_sys(false));
+            createMsg(storedContent, MsgType.Advice, clientType, fromUser, userBo.getSysUser_sys(false));
 
             String replyMsg;
             Date now = new Date();
@@ -300,53 +322,85 @@ public class MsgBo extends BaseBo<Msg> {
                 }
             }
 
-            replyAdvice(replyMsg, fromUser, userBo);
+            // 兑换码的自动回复是针对用户刚发的那句话，不是针对某条历史消息，因此不带引用
+            replyAdvice(replyMsg, fromUser, userBo, null, null);
             // 命中兑换码不发送邮件给客服，避免干扰
             return updatedUser;
         }
 
-        createMsg(content, MsgType.Advice, clientType, fromUser, userBo.getSysUser_sys(false));
-        Util.sendEmailToNnbdcCustomerSerivce(String.format("来自[%s]的意见", fromUser.getNickName()), content);
+        createMsg(storedContent, MsgType.Advice, clientType, fromUser, userBo.getSysUser_sys(false));
+        Util.sendEmailToNnbdcCustomerSerivce(String.format("来自[%s]的意见", fromUser.getNickName()), storedContent);
         return null;
     }
 
-    public void replyAdvice(String content, User toUser, UserBo userBo) {
-        createMsg(content, MsgType.AdviceReply, userBo.getSysUser_sys(false), toUser);
+    /**
+     * 把图片名列表追加到消息正文末尾，格式与单词报错保持一致（【报错图片】+ JSON 数组），
+     * 这样两端的解析工具只需要认识一种写法。没有图片时正文原样返回。
+     */
+    private String appendImageFiles(String content, String imageFiles) {
+        if (imageFiles == null || imageFiles.trim().isEmpty()) {
+            return content;
+        }
+        return content + "\n" + IMAGE_FILES_MARKER + imageFiles.trim();
+    }
+
+    /**
+     * 管理员回复某个用户的意见，可随回复附上截图。
+     *
+     * @param referenceMsgId 被回复的那条消息ID，为空表示不是针对某条消息的回复；
+     *                       非空时必须真实存在、且确实是该用户发给客服的消息，否则直接拒绝
+     * @param imageFiles 随回复一起发出去的截图名列表（JSON 数组），由本方法统一拼进正文
+     */
+    public void replyAdvice(String content, User toUser, UserBo userBo, String referenceMsgId, String imageFiles) {
+        Msg referenceMsg = null;
+        if (StringUtils.hasText(referenceMsgId)) {
+            referenceMsg = findById(referenceMsgId);
+            if (referenceMsg == null) {
+                throw new IllegalArgumentException("被回复的消息不存在，可能已被删除");
+            }
+            if (referenceMsg.getFromUser() == null || !toUser.getId().equals(referenceMsg.getFromUser().getId())) {
+                throw new IllegalArgumentException("被回复的消息不属于该用户，拒绝回复");
+            }
+        }
+
+        Msg msg = createMsg(appendImageFiles(content, imageFiles), MsgType.AdviceReply,
+                userBo.getSysUser_sys(false), toUser);
+        if (referenceMsg != null) {
+            msg.setReplyToId(referenceMsg.getId());
+            try {
+                updateEntity(msg);
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException("写入被引用消息失败: msgId=" + msg.getId(), e);
+            }
+        }
 
         // 向用户推送通知，告知最新的消息数量情况
         SocketService.getInstance().sendPersistentMsgCountToUser(userBo.getUserVoById(toUser.getId()));
     }
 
-    public void createMsg(String content, MsgType msgType, String clientType, User fromUser, User toUser) {
+    public Msg createMsg(String content, MsgType msgType, String clientType, User fromUser, User toUser) {
         Msg msg = new Msg(msgType);
         msg.setFromUser(fromUser);
         msg.setToUser(toUser);
         msg.setContent(content);
         msg.setViewed(false);
         msg.setCreateTime(new Date());
-        
-        // 设置客户端类型
-        System.out.println("DEBUG: 接收到的clientType参数: " + clientType);
-        if (clientType != null && !clientType.trim().isEmpty()) {
+
+        if (StringUtils.hasText(clientType)) {
             try {
-                ClientType clientTypeEnum = ClientType.valueOf(clientType);
-                msg.setClientType(clientTypeEnum);
-                System.out.println("DEBUG: 成功设置clientType: " + clientTypeEnum);
+                msg.setClientType(ClientType.valueOf(clientType));
             } catch (IllegalArgumentException e) {
-                // 如果客户端类型无效，设置为null
-                System.out.println("DEBUG: clientType无效: " + clientType + ", 错误: " + e.getMessage());
-                msg.setClientType(null);
+                // 客户端类型无效时留空，不阻断消息落库
+                logger.warn("无效的客户端类型: {}", clientType);
             }
-        } else {
-            System.out.println("DEBUG: clientType为空或null");
         }
-        
+
         createEntity(msg);
-        System.out.println("DEBUG: 消息已保存，clientType: " + msg.getClientType());
+        return msg;
     }
 
-    public void createMsg(String content, MsgType msgType, User fromUser, User toUser) {
-        createMsg(content, msgType, null, fromUser, toUser);
+    public Msg createMsg(String content, MsgType msgType, User fromUser, User toUser) {
+        return createMsg(content, msgType, null, fromUser, toUser);
     }
 
     /**
@@ -394,8 +448,9 @@ public class MsgBo extends BaseBo<Msg> {
      */
     public int cleanupOldAdvice(int daysAge) {
         Date threshold = new Date(System.currentTimeMillis() - (long) daysAge * 24 * 60 * 60 * 1000);
-        // 保护被打上标签（如“需求”）的宝贵反馈，防止被批量清理误删
-        String sql = "DELETE FROM msg WHERE msg_type = :msgType AND (tag IS NULL OR tag = '') AND create_time < :threshold";
+        // 保护两类消息不被批量清理误删：打了标签（如“需求”）的宝贵反馈，以及已经被回复引用的消息
+        String sql = "DELETE FROM msg WHERE msg_type = :msgType AND (tag IS NULL OR tag = '')"
+                + " AND reply_to_id IS NULL AND create_time < :threshold";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("msgType", MsgType.Advice.toString());
         params.addValue("threshold", threshold);
@@ -405,11 +460,19 @@ public class MsgBo extends BaseBo<Msg> {
     }
 
     /**
-     * 删除指定消息
+     * 删除指定消息。已经被回复引用的消息不允许删除——引用块会指向一条不存在的消息，
+     * 用户看到的将是“原消息已删除”，等于悄悄丢掉了上下文。要求先删引用它的回复。
      *
      * @param msgId 消息ID
      */
     public void deleteMsg(String msgId) {
+        String referenceSql = "SELECT COUNT(*) FROM msg WHERE reply_to_id = :id";
+        Long referenceCount = namedParameterJdbcTemplate.queryForObject(referenceSql,
+                new MapSqlParameterSource("id", msgId), Long.class);
+        if (referenceCount != null && referenceCount > 0) {
+            throw new IllegalArgumentException("该消息已被 " + referenceCount + " 条回复引用，请先删除引用它的回复");
+        }
+
         String sql = "DELETE FROM msg WHERE id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource("id", msgId);
         namedParameterJdbcTemplate.update(sql, params);
@@ -417,18 +480,227 @@ public class MsgBo extends BaseBo<Msg> {
     }
 
     /**
-     * 更新消息的管理员业务标签（如“需求”，传入空或 null 则清空标签）
+     * 更新消息的管理员业务标签（如“需求”，传入空或 null 则清空标签）。
+     *
+     * 标记为需求时同时给它一个初始处理状态（投票中），取消标记时把状态一并清掉，
+     * 两者不允许出现一个有一个没有的中间状态。
      *
      * @param msgId 消息ID
      * @param tag 标签文本
      */
     public void updateMsgTag(String msgId, String tag) {
         String normalizedTag = StringUtils.hasText(tag) ? tag.trim() : null;
-        String sql = "UPDATE msg SET tag = :tag WHERE id = :id";
+
+        if (REQUIREMENT_TAG.equals(normalizedTag)) {
+            String sql = "UPDATE msg SET tag = :tag,"
+                    + " req_status = COALESCE(req_status, :initialStatus) WHERE id = :id";
+            MapSqlParameterSource params = new MapSqlParameterSource();
+            params.addValue("id", msgId);
+            params.addValue("tag", normalizedTag);
+            params.addValue("initialStatus", AdviceRequirementStatus.VOTING.toString());
+            namedParameterJdbcTemplate.update(sql, params);
+        } else {
+            String sql = "UPDATE msg SET tag = :tag, req_status = NULL WHERE id = :id";
+            MapSqlParameterSource params = new MapSqlParameterSource();
+            params.addValue("id", msgId);
+            params.addValue("tag", normalizedTag);
+            namedParameterJdbcTemplate.update(sql, params);
+        }
+
+        logger.info("已更新消息标签: msgId={}, tag={}", msgId, normalizedTag);
+    }
+
+    /**
+     * 更新消息级需求的处理状态（管理员功能）。
+     *
+     * @param msgId 消息ID
+     * @param reqStatus 目标状态
+     */
+    public void updateRequirementStatus(String msgId, AdviceRequirementStatus reqStatus) {
+        Msg msg = findById(msgId);
+        if (msg == null) {
+            throw new IllegalArgumentException("需求对应的消息不存在，可能已被删除");
+        }
+        if (!REQUIREMENT_TAG.equals(msg.getTag())) {
+            throw new IllegalArgumentException("这条消息没有被标记为需求，无法设置需求状态");
+        }
+
+        String sql = "UPDATE msg SET req_status = :reqStatus WHERE id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", msgId);
-        params.addValue("tag", normalizedTag);
+        params.addValue("reqStatus", reqStatus.toString());
         namedParameterJdbcTemplate.update(sql, params);
-        logger.info("已更新消息标签: msgId={}, tag={}", msgId, normalizedTag);
+        logger.info("已更新需求状态: msgId={}, reqStatus={}", msgId, reqStatus);
+    }
+
+    /**
+     * 客服会话摘要（管理员功能）：一个用户一行，带未读条数与含需求条数。
+     *
+     * 一次查询拿到全部统计，避免管理端先拉全量意见建议再在客户端按人平铺。
+     *
+     * @param limit 最多返回多少个会话（按最后一条消息时间倒序，取最近有互动的）
+     */
+    public List<AdviceSessionVo> getAdviceSessions(int limit) {
+        String sql = "SELECT u.id AS user_id, u.user_name AS user_name, u.nick_name AS nick_name,"
+                + " u.wechat_avatar AS wechat_avatar, u.premium_override_enabled AS premium,"
+                + " s.unviewed_count, s.total_count, s.requirement_count,"
+                + " SUBSTRING(s.last_content FROM 1 FOR 60) AS last_content,"
+                + " s.last_msg_type, s.last_create_time"
+                + " FROM ("
+                + "   SELECT from_user_id,"
+                + "     COUNT(*) FILTER (WHERE viewed = false) AS unviewed_count,"
+                + "     COUNT(*) AS total_count,"
+                + "     COUNT(*) FILTER (WHERE tag = :requirementTag) AS requirement_count,"
+                + "     MAX(create_time) AS last_create_time,"
+                + "     (ARRAY_AGG(content ORDER BY create_time DESC, id DESC))[1] AS last_content,"
+                + "     (ARRAY_AGG(msg_type ORDER BY create_time DESC, id DESC))[1] AS last_msg_type"
+                + "   FROM msg WHERE msg_type = :msgType AND to_user_id = :sysUserId"
+                + "   GROUP BY from_user_id"
+                + " ) s JOIN \"user\" u ON u.id = s.from_user_id"
+                + " ORDER BY s.unviewed_count DESC, s.last_create_time DESC"
+                + " LIMIT :limit";
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("msgType", MsgType.Advice.toString());
+        params.addValue("sysUserId", Constants.SYS_USER_SYS_ID);
+        params.addValue("requirementTag", REQUIREMENT_TAG);
+        params.addValue("limit", limit);
+
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            AdviceSessionVo vo = new AdviceSessionVo();
+            vo.setUserId(rs.getString("user_id"));
+            vo.setUserName(rs.getString("user_name"));
+            vo.setNickName(rs.getString("nick_name"));
+            vo.setWechatAvatar(rs.getString("wechat_avatar"));
+            vo.setPremium(rs.getBoolean("premium"));
+            vo.setUnviewedCount(rs.getInt("unviewed_count"));
+            vo.setTotalCount(rs.getInt("total_count"));
+            vo.setRequirementCount(rs.getInt("requirement_count"));
+            vo.setLastContent(rs.getString("last_content"));
+            vo.setLastMsgType(toMsgType(rs.getString("last_msg_type")));
+            vo.setLastCreateTime(rs.getTimestamp("last_create_time"));
+            return vo;
+        });
+    }
+
+    /**
+     * 消息级需求列表（管理员功能）：被标记为需求的消息，按状态筛选。
+     *
+     * @param reqStatus 目标状态，传 null 表示不筛选
+     */
+    public List<AdviceRequirementVo> getAdviceRequirements(AdviceRequirementStatus reqStatus) {
+        String sql = "SELECT m.id, m.content, m.req_status, m.create_time, m.client_type, m.from_user_id,"
+                + " u.user_name, u.nick_name, u.wechat_avatar, u.premium_override_enabled"
+                + " FROM msg m JOIN \"user\" u ON u.id = m.from_user_id"
+                + " WHERE m.tag = :requirementTag";
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("requirementTag", REQUIREMENT_TAG);
+        if (reqStatus != null) {
+            sql += " AND m.req_status = :reqStatus";
+            params.addValue("reqStatus", reqStatus.toString());
+        }
+        sql += " ORDER BY m.create_time DESC";
+
+        List<AdviceRequirementVo> vos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            AdviceRequirementVo vo = new AdviceRequirementVo();
+            vo.setId(rs.getString("id"));
+            vo.setContent(rs.getString("content"));
+            vo.setReqStatus(toRequirementStatus(rs.getString("req_status")));
+            vo.setCreateTime(rs.getTimestamp("create_time"));
+            vo.setClientType(toClientType(rs.getString("client_type")));
+            vo.setUserId(rs.getString("from_user_id"));
+            vo.setUserName(rs.getString("user_name"));
+            vo.setNickName(rs.getString("nick_name"));
+            vo.setWechatAvatar(rs.getString("wechat_avatar"));
+            vo.setPremium(rs.getBoolean("premium_override_enabled"));
+            return vo;
+        });
+
+        // 需求列表也要能按状态分栏筛选，状态为空的旧标记按“投票中”兜住，避免出现无状态卡片
+        for (AdviceRequirementVo vo : vos) {
+            if (vo.getReqStatus() == null) {
+                vo.setReqStatus(AdviceRequirementStatus.VOTING);
+            }
+        }
+        return vos;
+    }
+
+    /**
+     * 查出一些消息分别引用了哪条消息，把被引用消息的类型与正文填进 VO，供界面画引用块。
+     * 被引用的消息已经不存在时不填（界面会显示“原消息已删除”），不允许静默当成没有引用。
+     */
+    public void fillQuotedMessages(List<MsgVo> vos) {
+        if (vos == null || vos.isEmpty()) {
+            return;
+        }
+
+        Set<String> quotedIds = new HashSet<>();
+        for (MsgVo vo : vos) {
+            if (StringUtils.hasText(vo.getReplyToId())) {
+                quotedIds.add(vo.getReplyToId());
+            }
+        }
+        if (quotedIds.isEmpty()) {
+            return;
+        }
+
+        String sql = "SELECT * FROM msg WHERE id IN (:ids)";
+        List<Msg> quotedMsgs = namedParameterJdbcTemplate.query(sql,
+                new MapSqlParameterSource("ids", quotedIds), new EntityRowMapper<>(Msg.class));
+
+        Map<String, Msg> quotedMap = new HashMap<>();
+        for (Msg quoted : quotedMsgs) {
+            quotedMap.put(quoted.getId(), quoted);
+        }
+
+        for (MsgVo vo : vos) {
+            if (!StringUtils.hasText(vo.getReplyToId())) {
+                continue;
+            }
+            Msg quoted = quotedMap.get(vo.getReplyToId());
+            if (quoted == null) {
+                continue;
+            }
+            vo.setQuotedMsgId(quoted.getId());
+            vo.setQuotedMsgType(quoted.getMsgType());
+            vo.setQuotedContent(quoted.getContent());
+        }
+    }
+
+    private MsgType toMsgType(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            return MsgType.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            logger.warn("无法识别的消息类型: {}", value);
+            return null;
+        }
+    }
+
+    private ClientType toClientType(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            return ClientType.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            logger.warn("无法识别的客户端类型: {}", value);
+            return null;
+        }
+    }
+
+    private AdviceRequirementStatus toRequirementStatus(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            return AdviceRequirementStatus.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            logger.warn("无法识别的需求状态: {}", value);
+            return null;
+        }
     }
 }

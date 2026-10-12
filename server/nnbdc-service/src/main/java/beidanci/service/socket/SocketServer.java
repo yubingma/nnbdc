@@ -68,8 +68,11 @@ public class SocketServer {
                     SocketIOClient socketClient = socketClientData.getSocketIOClient();
                     Date lastHeartBeatTime = socketClientData.getLastHeartBeatTime();
 
-                    // 15秒没有听到客户端心跳，即杀掉连接
-                    if (new Date().getTime() - lastHeartBeatTime.getTime() > 15 * 1000) {
+                    // 60秒没有听到客户端心跳，即杀掉连接。
+                    // 这个判定会连带把该用户进行中的对局判负，因此绝不能比传输层自己的
+                    // pingTimeout(60秒)更严：客户端已经在本地出题，一次几十秒的移动网络抖动
+                    // 不该让这一局白白丢掉（用户重连上来时会接管对局继续打）。
+                    if (new Date().getTime() - lastHeartBeatTime.getTime() > 60 * 1000) {
                         log.debug(String.format("心跳超时，关闭连接: %s|%s", socketClient.getRemoteAddress(),
                                 socketClient.getSessionId()));
                         socketClient.disconnect();

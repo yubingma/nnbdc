@@ -28,6 +28,7 @@ import beidanci.service.socket.SocketService;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.MySystem;
 import beidanci.service.socket.system.game.russia.state.ReadyState;
+import beidanci.service.socket.system.game.russia.state.RoomState;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.UserSorter;
 
@@ -175,6 +176,11 @@ public class Russia implements MySystem {
                         socketService.sendEventToUser(user, "gameNotInProgress", userCmd.getCmd());
                     }                      }
         }
+
+        // 用户回到游戏里了：如果上一局是断线判负的，把结果补发给他（那时他不在线，发不出去）
+        if (getHallOfUser(user) != null) {
+            socketService.sendGameResultNotice(user);
+        }
     }
 
     @Override
@@ -190,6 +196,10 @@ public class Russia implements MySystem {
 
     @Override
     public void onConnectionBroken(UserVo user, String reason) throws IllegalAccessException {
+        // 心跳都停了：断线宽限已经到点（传输层断开时给的那段宽限也一并到期），按断线判负
+        if (trySettleDisconnectLoss(user)) {
+            return;
+        }
         Hall hall = getHallOfUser(user);
         if (hall != null) {
             hall.userLeave(user);
@@ -199,11 +209,101 @@ public class Russia implements MySystem {
 
     @Override
     public void onUserLogout(UserVo user) throws IllegalAccessException {
+        // 传输层断了不等于用户走了：正在打的那一局先进入宽限，保留对局等他重连接管
+        if (putUserIntoDisconnectGrace(user)) {
+            return;
+        }
         Hall hall = getHallOfUser(user);
         if (hall != null) {
             hall.userLeave(user);
         }
         users.remove(user);
+    }
+
+    @Override
+    public boolean onUserReconnected(UserVo user) {
+        Hall hall = getHallOfUser(user);
+        RussiaRoom room = (hall == null) ? null : hall.getRoomOfUser(user);
+        RoomState state = (room == null) ? null : room.getState();
+        if (!(state instanceof ReadyState readyState) || !readyState.isGamePlaying()) {
+            return false;
+        }
+        if (readyState.markUserReconnected(user)) {
+            return true;
+        }
+        // 本局累计断线已超上限：不能再接管，按断线判负
+        log.info(String.format("玩家[%s]本局累计断线超过上限，不再接管对局",
+                user.getDisplayNickName()));
+        try {
+            settleDisconnectLoss(user);
+        } catch (IllegalAccessException e) {
+            log.error("断线判负失败", e);
+        }
+        return false;
+    }
+
+    /**
+     * 正在打的那一局让用户进入断线宽限（保留对局、不判负）。
+     *
+     * @return true 表示已进入宽限（调用方不要再按离场处理）
+     */
+    private boolean putUserIntoDisconnectGrace(UserVo user) {
+        Hall hall = getHallOfUser(user);
+        RussiaRoom room = (hall == null) ? null : hall.getRoomOfUser(user);
+        RoomState state = (room == null) ? null : room.getState();
+        if (state instanceof ReadyState readyState && readyState.isGamePlaying()) {
+            readyState.markUserDisconnected(user);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 断线宽限到点：按断线判负。
+     *
+     * @return true 表示确实结算了一局（调用方不要再按普通离场处理，本方法内部已经处理完）
+     */
+    private boolean trySettleDisconnectLoss(UserVo user) throws IllegalAccessException {
+        Hall hall = getHallOfUser(user);
+        RussiaRoom room = (hall == null) ? null : hall.getRoomOfUser(user);
+        RoomState state = (room == null) ? null : room.getState();
+        if (!(state instanceof ReadyState readyState) || !readyState.isGamePlaying()) {
+            return false;
+        }
+        settleDisconnectLoss(user);
+        return true;
+    }
+
+    /**
+     * 按断线判负结算这一局：对手判赢，他判输（照常扣分）。
+     * 若对手也早就掉线了，则本局作废、双方都不计分——否则先超时的一方白输，
+     * 纯看两个定时器谁先到，对用户毫无道理可讲。
+     */
+    private void settleDisconnectLoss(UserVo loser) throws IllegalAccessException {
+        Hall hall = getHallOfUser(loser);
+        if (hall == null) {
+            users.remove(loser);
+            return;
+        }
+        RussiaRoom room = hall.getRoomOfUser(loser);
+        RoomState state = (room == null) ? null : room.getState();
+        UserVo opponent = (room == null) ? null : room.getAnotherUser(loser);
+
+        if (opponent != null && state instanceof ReadyState readyState && readyState.isUserGone(opponent)) {
+            log.info(String.format("玩家[%s]与对手[%s]都已掉线，本局作废、不计分",
+                    loser.getDisplayNickName(), opponent.getDisplayNickName()));
+            readyState.voidGame();
+            hall.userLeave(loser);
+            hall.userLeave(opponent);
+            return;
+        }
+
+        log.info(String.format("玩家[%s]断线超过宽限，判负", loser.getDisplayNickName()));
+        SocketService.getInstance().noticeGameResult(loser.getId(),
+                "上一局因断线时间过长被判负，积分已按战败结算");
+
+        // 正常情况由房间状态里的判负逻辑完成扣分；作废情况下 isPlaying 已置 false，不会再结算
+        hall.userLeave(loser);
     }
 
     @Override

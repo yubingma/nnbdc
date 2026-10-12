@@ -29,6 +29,7 @@ import '../util/study_config.dart';
 import '../services/user_privilege_manager.dart';
 import '../util/utils.dart';
 import '../widget/pronunciation_accent_badge.dart';
+import '../widget/data_missing_guide.dart';
 import '../widget/sound_wave_icon.dart';
 import 'bdc/widgets/word_images_widget.dart';
 import 'bdc/widgets/word_core_image_card.dart';
@@ -113,6 +114,9 @@ class WordDetailPageState extends State<WordDetailPage>
   bool _isLoadingNextWord = false;
   bool hasError = false;
   String? errorMessage;
+
+  /// 触发 [hasError] 的原始错误对象，用于分辨错误种类（例如通用释义缺失）并给出对应出路。
+  Object? _loadErrorCause;
   final Map<String, Future<bool>> _voteFutures = {};
 
   Future<bool> _getVoteFuture(SentenceVo sentence) {
@@ -388,6 +392,7 @@ class WordDetailPageState extends State<WordDetailPage>
             setState(() {
               hasError = true;
               errorMessage = '加载单词详情失败';
+              _loadErrorCause = e;
             });
           }
           return;
@@ -3150,6 +3155,17 @@ class WordDetailPageState extends State<WordDetailPage>
                             letterSpacing: 0.2,
                           ),
                         ),
+                        const SizedBox(width: 6),
+                        // 生成合成内容显式标识（《人工智能生成合成内容标识办法》）
+                        Text(
+                          'AI生成',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w400,
+                            color: context.themeConfig.textMuted,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -4835,9 +4851,22 @@ class WordDetailPageState extends State<WordDetailPage>
     return spans;
   }
 
+  /// 加载失败后的重试：清掉错误现场再重新拉一次。
+  void _retryLoad() {
+    setState(() {
+      hasError = false;
+      errorMessage = null;
+      _loadErrorCause = null;
+      dataLoaded = false;
+      _extraDataLoaded = false;
+    });
+    loadData();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (hasError) {
+      final cause = _loadErrorCause;
       return Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -4847,39 +4876,34 @@ class WordDetailPageState extends State<WordDetailPage>
           title: const Text('加载失败'),
         ),
         body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline,
-                  size: 48, color: Colors.redAccent),
-              const SizedBox(height: 12),
-              Text(errorMessage ?? '发生错误',
-                  style: const TextStyle(fontSize: 16)),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('返回'),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        hasError = false;
-                        errorMessage = null;
-                        dataLoaded = false;
-                        _extraDataLoaded = false;
-                      });
-                      loadData();
-                    },
-                    child: const Text('重试'),
-                  ),
-                ],
-              )
-            ],
-          ),
+          child: cause is MissingCommonMeaningException
+              // 通用释义缺失：重试必然再次失败，只能靠补数据或重建本地数据解决
+              ? MissingMeaningGuide(wordSpell: cause.spell, onRetry: _retryLoad)
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 48, color: Colors.redAccent),
+                    const SizedBox(height: 12),
+                    Text(errorMessage ?? '发生错误',
+                        style: const TextStyle(fontSize: 16)),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('返回'),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: _retryLoad,
+                          child: const Text('重试'),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
         ),
       );
     }

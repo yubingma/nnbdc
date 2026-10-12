@@ -363,6 +363,20 @@ public class RussiaRoom {
         return users.get(user);
     }
 
+    /**
+     * 该用户是否正在这一局里玩：正式对战，或还没等到对手的单人练习都算。
+     */
+    public boolean isUserPlaying(UserVo user) {
+        UserGameData playData = users.get(user);
+        if (playData == null) {
+            return false;
+        }
+        if (playData.isExercise()) {
+            return true;
+        }
+        return state instanceof ReadyState readyState && readyState.isGamePlaying();
+    }
+
     public Map<UserVo, UserGameData> getUsers() {
         return users;
     }

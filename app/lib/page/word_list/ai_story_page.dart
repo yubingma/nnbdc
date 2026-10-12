@@ -66,7 +66,8 @@ class AiStoryPage extends StatelessWidget {
             icon: const Icon(Icons.copy_rounded, color: Colors.white),
             tooltip: '复制全文',
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: storyContent));
+              // 复制/导出时保留显式标识（《人工智能生成合成内容标识办法》第九条）
+              Clipboard.setData(ClipboardData(text: 'AI生成\n$storyContent'));
               ToastUtil.info('已复制到剪贴板');
             },
           ),
@@ -80,6 +81,8 @@ class AiStoryPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _aiGeneratedLabel(context),
+                const SizedBox(height: 18),
                 for (var i = 0; i < blocks.length; i++) ...[
                   if (i > 0) ...[
                     const SizedBox(height: 22),
@@ -161,6 +164,27 @@ class AiStoryPage extends StatelessWidget {
       fontSize: 17,
       height: 1.75,
       color: config.textPrimary,
+    );
+  }
+
+  /// AI 生成内容显式标识，置于文本起始位置（《人工智能生成合成内容标识办法》）
+  Widget _aiGeneratedLabel(BuildContext context) {
+    final config = context.themeConfig;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.auto_awesome, size: 12, color: config.textMuted),
+        const SizedBox(width: 4),
+        Text(
+          'AI生成',
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w400,
+            color: config.textMuted,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
     );
   }
 

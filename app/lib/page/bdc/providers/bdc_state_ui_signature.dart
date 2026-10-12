@@ -1,3 +1,5 @@
+import 'package:nnbdc/api/bo/word_bo.dart';
+
 import 'bdc_state.dart';
 
 /// 专为顶层 BdcPage 刷新优化的轻量级签名对象，剔除了 ASR 等高频更新字段和极其昂贵的深层集合比对。
@@ -25,6 +27,9 @@ class BdcStateUiSignature {
   final bool buttonsEnabled;
   final bool isKeyboardVisible;
   final String? loadError;
+
+  /// 当前错误是不是「通用释义缺失」：它决定错误页渲染哪一种界面（引导面板 vs 普通重试页）。
+  final bool isMissingCommonMeaningError;
   final int progressBarTapCount;
   final bool showAnswerButtons;
   final double slideDirection;
@@ -67,6 +72,7 @@ class BdcStateUiSignature {
         buttonsEnabled = s.buttonsEnabled,
         isKeyboardVisible = s.isKeyboardVisible,
         loadError = s.loadError,
+        isMissingCommonMeaningError = s.loadErrorCause is MissingCommonMeaningException,
         progressBarTapCount = s.progressBarTapCount,
         showAnswerButtons = s.showAnswerButtons,
         slideDirection = s.slideDirection,
@@ -111,6 +117,7 @@ class BdcStateUiSignature {
         buttonsEnabled == other.buttonsEnabled &&
         isKeyboardVisible == other.isKeyboardVisible &&
         loadError == other.loadError &&
+        isMissingCommonMeaningError == other.isMissingCommonMeaningError &&
         progressBarTapCount == other.progressBarTapCount &&
         showAnswerButtons == other.showAnswerButtons &&
         slideDirection == other.slideDirection &&
@@ -154,6 +161,7 @@ class BdcStateUiSignature {
         buttonsEnabled,
         isKeyboardVisible,
         loadError,
+        isMissingCommonMeaningError,
         progressBarTapCount,
         showAnswerButtons,
         slideDirection,

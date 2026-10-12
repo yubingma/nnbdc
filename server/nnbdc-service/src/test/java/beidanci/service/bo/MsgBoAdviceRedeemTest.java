@@ -34,16 +34,17 @@ public class MsgBoAdviceRedeemTest {
 
         msgBo = new MsgBo() {
             @Override
-            public void createMsg(String content, MsgType msgType, String clientType, User fromUser, User toUser) {
+            public Msg createMsg(String content, MsgType msgType, String clientType, User fromUser, User toUser) {
                 Msg msg = new Msg(msgType);
                 msg.setContent(content);
                 msg.setFromUser(fromUser);
                 msg.setToUser(toUser);
                 createdMsgs.add(msg);
+                return msg;
             }
 
             @Override
-            public void replyAdvice(String content, User toUser, UserBo userBo) {
+            public void replyAdvice(String content, User toUser, UserBo userBo, String referenceMsgId, String imageFiles) {
                 createMsg(content, MsgType.AdviceReply, null, sysUser, toUser);
             }
         };

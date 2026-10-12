@@ -12,6 +12,7 @@ import beidanci.service.bo.UserGameBo;
 import beidanci.service.bo.WordBo;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.game.russia.RussiaRoom;
+import beidanci.service.socket.system.game.russia.UserGameData;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.UserSorter;
 
@@ -39,10 +40,18 @@ public class WaitState extends RoomState {
     public void processUserCmd(UserVo user, UserCmd userCmd) throws IllegalAccessException {
         switch (userCmd.getCmd()) {
             case "GET_NEXT_WORD" -> getNextWordProcessor.processGetNextWordCmd(user, userCmd);
+            // 新协议：单人练习时房间还没等到对手，也要能在本地出题
+            case "ANSWER" -> getNextWordProcessor.processAnswerCmd(user, userCmd);
+            case "GET_WORD_PACK" -> getNextWordProcessor.processGetWordPackCmd(user, userCmd);
             case "START_EXERCISE" -> {
                 // 单人练习命令
                 getNextWordProcessor.reset();
                 gameOverProcessor.reset();
+                // 练习从这里开始计时，避免把"在房间里等对手的时间"算成挂起扣血
+                UserGameData playData = room.getUserPlayData(user);
+                playData.setDisconnectedSinceMs(-1);
+                playData.setTotalDisconnectedMs(0);
+                playData.setLastAnswerAtMs(System.currentTimeMillis());
                 startExerciseProcessor.process(user, userCmd);
             }
             case "GAME_OVER" -> gameOverProcessor.processGameOverCmd(user, userCmd);

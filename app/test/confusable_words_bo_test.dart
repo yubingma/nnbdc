@@ -594,8 +594,9 @@ void main() {
 
       final wordBo = WordBo();
       expect(wordBo.getConfusableMeaningsInBatch({'w_missing'}, userId),
-          throwsA(isA<Exception>()));
-      expect(wordBo.getWordMeaningItems('w_missing', userId), throwsA(isA<Exception>()));
+          throwsA(isA<MissingCommonMeaningException>()));
+      expect(wordBo.getWordMeaningItems('w_missing', userId),
+          throwsA(isA<MissingCommonMeaningException>()));
     });
 
     test('空 wordIds 输入返回空 Map', () async {

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>意见建议与客服会话升级方案（按用户组织 + 引用回复 + 聊天中发截图）</title>
+<style>
+  :root{
+    --ink:#1b2430; --ink-2:#41505f; --muted:#6b7a89; --line:#e3e8ee;
+    --bg:#f7f9fb; --card:#ffffff; --accent:#2f7cf6; --accent-soft:#eaf2fe;
+    --warn:#c2410c; --warn-soft:#fff4ec; --ok:#0f7a52; --ok-soft:#eaf7f1;
+    --danger:#c02626; --danger-soft:#fdecec; --code-bg:#f2f5f8;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  code,pre,.mono{font-family:ui-monospace,monospace;}
+  code{background:var(--code-bg); padding:1px 5px; border-radius:5px; font-size:12.5px; color:#2b3a4a;}
+  .wrap{max-width:960px; margin:0 auto; padding:48px 28px 96px;}
+  header h1{font-size:26px; line-height:1.4; margin:0 0 10px; letter-spacing:-.4px;}
+  header .sub{color:var(--muted); font-size:13.5px;}
+  .lead{
+    margin:26px 0 34px; padding:18px 20px; background:var(--accent-soft);
+    border-left:3px solid var(--accent); border-radius:0 10px 10px 0; font-size:15.5px;
+  }
+  h2{font-size:19px; margin:44px 0 14px; letter-spacing:-.2px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+  h3{font-size:15.5px; margin:26px 0 10px; color:var(--ink-2);}
+  p{margin:10px 0;}
+  ul,ol{margin:10px 0; padding-left:22px;}
+  li{margin:5px 0;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin:14px 0;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:760px){.grid2{grid-template-columns:1fr}}
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px; background:var(--card);}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top;}
+  th{background:#eef2f6; font-weight:600; color:var(--ink-2);}
+  .tag{display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap;}
+  .t-bad{background:var(--danger-soft); color:var(--danger);}
+  .t-warn{background:var(--warn-soft); color:var(--warn);}
+  .t-ok{background:var(--ok-soft); color:var(--ok);}
+  .t-info{background:var(--accent-soft); color:var(--accent);}
+  .note{background:var(--warn-soft); border:1px solid #f6d9c4; border-radius:10px; padding:14px 16px; margin:14px 0;}
+  .note strong{color:var(--warn);}
+  .law{background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px;}
+  /* 手机示意 */
+  .phones{display:flex; gap:22px; flex-wrap:wrap; margin:18px 0 6px;}
+  .phone{
+    width:270px; background:#111820; border-radius:26px; padding:9px; box-shadow:0 12px 30px rgba(16,24,32,.18);
+  }
+  .screen{background:#f4f6f9; border-radius:19px; overflow:hidden; height:430px; display:flex; flex-direction:column;}
+  .sbar{height:22px; display:flex; align-items:center; justify-content:space-between; padding:0 10px;
+        font-size:9.5px; color:#5a6673; background:#fff; border-bottom:1px solid #eef1f4;}
+  .sbar .dot{width:42px; height:9px; background:#111820; border-radius:99px;}
+  .shead{background:#fff; padding:8px 12px 9px; border-bottom:1px solid #eef1f4;}
+  .shead .ttl{font-size:13px; font-weight:700; letter-spacing:-.2px;}
+  .shead .cap{font-size:9.5px; color:var(--muted); margin-top:2px;}
+  .sbody{flex:1; overflow:hidden; padding:9px 10px; display:flex; flex-direction:column; gap:6px;}
+  .bubble{padding:6px 9px; border-radius:11px; font-size:10.5px; line-height:1.5; max-width:82%;}
+  .b-user{align-self:flex-start; background:#fff; border:1px solid #e6ebf1;}
+  .b-me{align-self:flex-end; background:var(--accent); color:#fff;}
+  .quote{border-left:2px solid #c9d6e4; padding-left:6px; margin-bottom:4px; color:#7b8794; font-size:9.5px;}
+  .b-me .quote{border-left-color:rgba(255,255,255,.6); color:rgba(255,255,255,.85);}
+  .thumbs{display:flex; gap:4px; margin-top:5px;}
+  .thumb{width:34px; height:34px; border-radius:5px; background:linear-gradient(135deg,#c7d5e4,#93a8be);}
+  .rowitem{background:#fff; border:1px solid #e6ebf1; border-radius:9px; padding:7px 9px;}
+  .rowitem .nm{font-size:10.5px; font-weight:700; display:flex; align-items:center; gap:4px;}
+  .rowitem .lv{font-size:9.5px; color:var(--muted); margin-top:2px;}
+  .badge{background:var(--danger); color:#fff; font-size:8.5px; padding:0 5px; border-radius:99px; font-weight:700;}
+  .inpbar{margin-top:auto; background:#fff; border-top:1px solid #eef1f4; padding:7px 9px; display:flex; gap:6px; align-items:center;}
+  .inpbar .fake{flex:1; height:20px; border-radius:99px; background:#eff3f7;}
+  .inpbar .plus{width:20px; height:20px; border-radius:99px; background:#eff3f7; display:flex; align-items:center; justify-content:center; font-size:13px; color:#5a6673;}
+  .inpbar .send{width:20px; height:20px; border-radius:99px; background:var(--accent);}
+  .legend{font-size:12.5px; color:var(--muted); margin-top:6px;}
+  footer{margin-top:56px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:12.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>意见建议与客服会话升级方案</h1>
+  <div class="sub">按用户组织会话 · 对某一条请求引用回复 · 聊天中上传截图 ｜ 出稿日期 2026-10-12</div>
+</header>
+
+<div class="lead">
+  一句话结论：你要的三件事都成立，而且第二件（对某一条请求回复）和第三件（聊天中发截图）在现有代码里都有能直接复用的底子，不需要新建大表或新开上传通道；第一件（按用户组织）要改的是服务端的取数方式（现在一次拉全量、平铺），不是界面画法。
+</div>
+
+<h2>一、我是怎么理解你的需求的</h2>
+
+<p>你打开的是管理端的「意见建议」，看到的是<strong>一条消息一张卡片</strong>的长列表，于是有三个不舒服的地方，我逐条对应到你要的动作：</p>
+
+<table>
+  <thead><tr><th style="width:34%">你的话</th><th style="width:33%">我理解成</th><th>判断依据</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>「按照用户来组织，把一个用户的所有聊天内容收在一起」</td>
+      <td>管理端首页从<strong>消息列表</strong>改成<strong>客服会话列表</strong>（组织维度）：一个用户一行，显示最后一条内容、时间、未读数、含需求的条数；点进去才看这个人和客服的完整聊天</td>
+      <td>现在 <code>app/lib/page/admin/feedback_management.dart:518</code> 把 <code>Advice</code> 消息一张一张平铺；同一个人今天发的三条意见就是三张卡片。点进去之后的聊天记录其实已经是按人聚合的（同文件 <code>:1237</code> 调 <code>getLastestMsgsBetweenUserAndSys</code>），缺的只是"首页这一步"</td>
+    </tr>
+    <tr>
+      <td>「用户往往会在聊天过程中多次提出多个请求，希望直接对用户的某个请求进行回复」</td>
+      <td>回复不再是"对着这个人发一句话"，而是<strong>挂在你选中的那一条用户消息上</strong>；用户端看到这条回复时，气泡上方带一个引用块，明确显示"这是在回你哪一句"</td>
+      <td>用户端 <code>app/lib/page/msg.dart</code> 是自由聊天：用户想说几条就说几条，一条一条发。管理员现在的回复（<code>app/lib/page/admin/feedback_management.dart:1635</code> 的 <code>replyAdvice</code>）和用户原话之间没有任何指向关系，两句不同的请求被一句笼统回复盖住，用户根本对不上号</td>
+    </tr>
+    <tr>
+      <td>「希望在聊天过程中支持上传截图」</td>
+      <td>「意见建议 / 客服」的输入框旁边加一个加号：能从相册选、能直接拍照、一次最多几张，发送时把图一起发上去，用户端和管理端都能在气泡里看到这些图</td>
+      <td>现在只有<strong>单词报错</strong>能带图（<code>app/lib/page/bdc/dialogs/bdc_dialogs.dart:891</code> 走 <code>uploadImg</code>，服务端 <code>server/nnbdc-service/src/main/java/beidanci/service/bo/ErrorReportBo.java:69</code> 把图名拼进意见正文）；客服聊天本身一个字都没提图片，用户想发截图没有入口</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>先说一个必须分清的坑：项目里「意见」有两套数据</h3>
+<div class="note">
+  <strong>客服会话（msg）和需求（feature_request）是两套东西，不要混。</strong>
+  <ul>
+    <li>用户在「意见建议 / 客服」（<code>app/lib/page/me.dart:1967</code> 入口 → <code>app/lib/page/msg.dart</code>）说的话，落在 <code>msg</code> 表，类型是 <code>Advice</code>。</li>
+    <li>用户在「需求墙 / 功能投票」（<code>app/lib/page/me.dart:2152</code> 入口 → <code>app/lib/page/feature_request_wall.dart</code>）发的需求，落在 <code>feature_request</code> 表，带点赞（<code>vote</code>）和举报（<code>report</code>）。</li>
+    <li>两者之间唯一的桥，是管理员在客服会话里给某条消息打一个「需求」标签（<code>server/db_upgrade/v74_add_tag_to_msg.sql</code>，界面 <code>app/lib/page/admin/feedback_management.dart:804</code>），然后按这个标签筛出来看。</li>
+  </ul>
+  本方案<strong>只动客服会话这一套</strong>（你说的"聊天内容"就是它）；需求墙（<code>app/lib/page/admin/feature_request_management.dart</code>）不动。这一段已经按项目规矩补进了 <code>doc/glossary.md</code> 的 4.6 节。
+</div>
+
+<h2>二、现状：一次点评一条消息，是怎么走完的</h2>
+
+<h3>2.1 用户发一条意见的完整环节</h3>
+<ol>
+  <li>用户在 <code>app/lib/page/msg.dart:133</code> 调 <code>sendAdvice.do</code>；InputBar 里只有文字这一个入口，没有选图入口（输入区画法见同文件 <code>:377</code>）。</li>
+  <li>服务端 <code>server/nnbdc-service/src/main/java/beidanci/service/controller/MsgController.java:33</code> 收下，转给 <code>MsgBo.sendAdvice</code>。</li>
+  <li><code>msgBo.sendAdvice</code>（<code>server/nnbdc-service/src/main/java/beidanci/service/bo/MsgBo.java:254</code>）先拿正文去比对兑换码；命中就自动回一条并结束。</li>
+  <li>没命中兑换码：写入一条 <code>msg_type = Advice</code> 的记录，同时给客服邮箱发一封通知邮件（同文件 <code>:308</code>）。</li>
+  <li>管理员在管理端「意见建议」（入口 <code>app/lib/page/admin.dart:436</code>）里看到这条消息的卡片。</li>
+</ol>
+
+<h3>2.2 管理员点开一条消息之后</h3>
+<ol>
+  <li>先把这条置为已读（<code>app/lib/page/admin/feedback_management.dart:592</code>）。</li>
+  <li>拉这个用户和系统的最近 50 条聊天（同文件 <code>:1237</code>），其中发给客服的未读一起置为已读（<code>:1256</code>）。</li>
+  <li>底部输入框发一条回复（同文件 <code>:1626</code>），服务端 <code>MsgBo.replyAdvice</code>（<code>server/nnbdc-service/src/main/java/beidanci/service/bo/MsgBo.java:313</code>）写一条 <code>AdviceReply</code>，并通过长连接把未读消息数推给用户。</li>
+</ol>
+
+<h3>2.3 三个已经看得到的毛病（方案要一并解决）</h3>
+<table>
+  <thead><tr><th style="width:26%">毛病</th><th style="width:37%">表现</th><th>代码位置</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="tag t-bad">必须改</span> 首屏全量拉取 + 内存平铺</td>
+      <td>管理端一进页面就把<strong>所有人的全部意见</strong>拉下来（还顺带把每条消息的完整用户对象带上），再在客户端排序、筛选、搜索。意见一多，首屏就慢，而且同一个人占很多行</td>
+      <td><code>app/lib/page/admin/feedback_management.dart:224</code>、服务端 <code>server/nnbdc-service/src/main/java/beidanci/service/bo/MsgBo.java:378</code></td>
+    </tr>
+    <tr>
+      <td><span class="tag t-bad">必须改</span> 回复没有指向</td>
+      <td>回复是一条独立的 <code>AdviceReply</code>，和用户的哪句话都没有关系；用户一次说了三件事，管理员回一句，用户不知道在回哪件</td>
+      <td><code>server/nnbdc-service/src/main/java/beidanci/service/bo/MsgBo.java:313</code>；<code>app/lib/page/msg.dart:180</code> 只按消息类型决定左右气泡</td>
+    </tr>
+    <tr>
+      <td><span class="tag t-warn">已知既有隐患</span> 图片路径拼接重复</td>
+      <td>服务端返回的是 <code>目录/文件名</code>（<code>server/nnbdc-service/src/main/java/beidanci/service/controller/ResController.java:392</code>），而管理端拼接时见斜杠就<strong>原样接在 <code>/img/</code> 后面</strong>（<code>app/lib/page/admin/feedback_management.dart:16</code>），实际拼出 <code>…/img/目录/文件名</code>——如果图片不放在 <code>/img/</code> 根下，这条路是断的；而带 <code>word/</code> 前缀的那个分支又只适合老数据</td>
+      <td>截图能力一开，这个拼接问题会立刻从"偶尔"变成"每条都遇到"，所以必须在本方案里一起收拾干净</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>还有一个体验硬伤要提一句：</strong>现有上传接口会把图<strong>强行按正方形缩放</strong>（<code>server/nnbdc-service/src/main/java/beidanci/service/controller/ResController.java:376</code>，宽高都取 <code>size</code>）。手机截图是竖长条，压成正方形等于把整张截图的字挤成一团，拿来当"证据"根本看不清。聊天截图必须改成按长边等比缩放。
+</div>
+
+<h2>三、方案</h2>
+
+<h3>3.1 界面长什么样</h3>
+<div class="phones">
+  <div class="phone">
+    <div class="screen">
+      <div class="sbar"><span>9:41</span><span class="dot"></span><span>客服会话</span></div>
+      <div class="shead">
+        <div class="ttl">意见建议管理</div>
+        <div class="cap">按用户组织 · 未读在前 · 共 12 个会话</div>
+      </div>
+      <div class="sbody">
+        <div class="rowitem">
+          <div class="nm">小鹿 <span class="badge">2</span> <span class="tag t-info" style="font-size:8.5px">需求</span></div>
+          <div class="lv">要是能支持乱序播放就好了… · 10 分钟前</div>
+        </div>
+        <div class="rowitem">
+          <div class="nm">阿泽</div>
+          <div class="lv">打卡记录少了一天，麻烦看下 · 2 小时前</div>
+        </div>
+        <div class="rowitem">
+          <div class="nm">Mia <span class="badge">1</span></div>
+          <div class="lv">[图片] · 昨天 21:30</div>
+        </div>
+        <div class="rowitem">
+          <div class="nm">老王</div>
+          <div class="lv">已回复：这个下个版本修 · 3 天前</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="sbar"><span>9:41</span><span class="dot"></span><span>与 小鹿 的对话</span></div>
+      <div class="shead">
+        <div class="ttl">小鹿</div>
+        <div class="cap">永久会员 · 未读 2 · 共 9 条</div>
+      </div>
+      <div class="sbody">
+        <div class="bubble b-user">希望词书列表能搜索</div>
+        <div class="bubble b-user">
+          <div class="thumbs"><span class="thumb"></span><span class="thumb"></span></div>
+        </div>
+        <div class="bubble b-user">另外打卡记录有时少一天</div>
+        <div class="bubble b-me">
+          <div class="quote">你：希望词书列表能搜索</div>
+          这个已经排进下个版本
+        </div>
+        <div class="bubble b-me">
+          <div class="quote">你：打卡记录有时少一天</div>
+          麻烦发一下你的设备型号
+        </div>
+        <div class="inpbar"><span class="plus">＋</span><span class="fake"></span><span class="send"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="legend">示意：左边是改造后的首屏（一个用户一行）；右边是会话详情——<strong>长按任意一条消息</strong>可以「引用回复」或「标为需求」，回复气泡带引用块，用户消息里的缩略图可点开看大图。</p>
+
+<h3>3.2 需求的粒度：标记在消息上，不是会话上</h3>
+<p>这一点按你的意思定死：<strong>会话列表只是组织骨架，需求是贴在消息上的。</strong>一次会话里用户说了五件事，其中两件是需求，那就只标记那两条消息——这也正是 <code>msg.tag</code> 现在的语义（<code>server/db_upgrade/v74_add_tag_to_msg.sql</code> 的字段注释：「管理员业务标注标签（如：需求）」），已经建了索引 <code>idx_msg_tag</code>，基座是对的。</p>
+
+<table>
+  <thead><tr><th style="width:26%">视角</th><th style="width:30%">拿什么组织</th><th>怎么用</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>会话列表（管理端首屏）</td>
+      <td>一个用户一行</td>
+      <td>当作导航用。行上标两个小数字：<strong>未读几条</strong>、<strong>含需求几条</strong>。点需求数字直接跳进会话并定位到那条带需求标记的消息</td>
+    </tr>
+    <tr>
+      <td>需求列表（管理端新的一屏）</td>
+      <td>一条带需求标记的消息一张卡</td>
+      <td>当作待办用。卡片直接显示是哪位用户在哪次对话里提的那一句，点进去<strong>落在那条消息上并高亮</strong>，带着上下文回复。处理完就取消标记，它从这张列表里消失</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>这样两个视角各干各的事，而且都是消息粒度：需求列表不是"这个人提过需求"，而是"这一句是需求"。顺带一个好处——某个用户今天又发了一条无关的新消息，也不会把他那条老需求顶到需求列表最前面。</p>
+
+<h3>3.3 需求列表怎么落（服务端）</h3>
+<ul>
+  <li>查询很简单：<code>msg.tag = '需求'</code>，按消息时间倒序。索引 <code>idx_msg_tag</code> 现成。</li>
+  <li>既然它是一张真正的需求待办列表，就给消息级需求补一列状态 <code>req_status</code>（投票中 / 开发中 / 已拒绝 / 已完成，四档与需求墙的文案一致），默认 <code>投票中</code>。界面按状态分栏，和需求墙的用法一致，不用另学一套。</li>
+  <li>接口：一个按状态取需求列表、一个改状态；<code>setMsgTag.do</code>（<code>server/nnbdc-service/src/main/java/beidanci/service/controller/MsgController.java:201</code>）继续负责贴/取消标记，不做状态的事，两件事分开、互不牵扯。</li>
+  <li>会话摘要接口里顺带算一个"含需求条数"，就是同一次查询里 <code>COUNT(*) FILTER (WHERE tag = '需求')</code>，不额外发请求。</li>
+</ul>
+
+<div class="note">
+  <strong>已删除消息上的标记必须有交代。</strong> 现在"清理旧反馈"（<code>server/nnbdc-service/src/main/java/beidanci/service/bo/MsgBo.java:395</code> 的 <code>cleanupOldAdvice</code>）<strong>只保护打了标记的消息</strong>，所以带需求标记的消息不会被清掉，这是好事。万一有别的路径把原文删了，需求列表里的这条要直接标成「原消息已删除」并提供一键清除标记，<strong>不允许静默少一条</strong>——列表条数与库里条数对不上，是最难查的那种问题。
+</div>
+
+<h3>3.4 消息级需求与需求墙（feature_request）的关系</h3>
+<p>两套数据保持独立，但管理端的需求入口<strong>一屏看两边</strong>，每条用来源标签区分，点击时去各自的处理位置：</p>
+<ul>
+  <li>来源「客服会话」→ 你在聊天里标的那条消息；点击落到会话里那条消息上，回复走引用回复，处理完取消标记。</li>
+  <li>来源「需求墙」→ 用户自己发的 <code>feature_request</code>；点击进需求墙管理（<code>app/lib/page/admin/feature_request_management.dart</code>），走点赞数与状态流转那一套。</li>
+  <li><span class="tag t-info">建议</span>：因为两边状态档位一致（投票中 / 开发中 / 已拒绝 / 已完成），在列表里合并展示不会让管理员犯迷糊；真正改状态时各走各的接口。</li>
+</ul>
+
+<h3>3.5 服务端：新增一个"按用户取会话"的接口</h3>
+<p>现在管理端拿数只有一条路：全量拉 <code>Advice</code>（<code>server/nnbdc-service/src/main/java/beidanci/service/bo/MsgBo.java:378</code>）。改为新增一个会话摘要查询，用一条 <code>GROUP BY</code> 把人聚起来：</p>
+<ul>
+  <li>分组键：<code>from_user_id</code>（提意见的人）。</li>
+  <li>每个会话返回：用户 ID、昵称、头像、最后一条内容、最后时间、未读条数、总条数、含需求条数、是否永久会员。</li>
+  <li>排序：有未读的在前 → 最后时间倒序。</li>
+  <li>"最后一条内容"要顺带标出是不是纯图片（界面上写成 <code>[图片]</code>），别让管理员点开才发现没字。</li>
+</ul>
+<p>接口按 <code>MsgController</code> 现有写法补一个即可（<code>server/nnbdc-service/src/main/java/beidanci/service/controller/MsgController.java:119</code> 那个位置旁边）。<strong>原来的全量接口先留着不删</strong>：老版本客户端还要用，等新版铺开再清理。</p>
+
+<h3>3.6 服务端与协议：让回复挂到具体一条消息上</h3>
+<p>只加一层引用，不做多层嵌套——这是奥卡姆剃刀：能满足"我在回你哪一句"就够了。</p>
+<ol>
+  <li><code>msg</code> 表加一列 <code>reply_to_id</code>（可空，指向被回复的那条消息），升级脚本放 <code>server/db_upgrade/</code>，表名与字段注释按项目规矩写全中文 <code>COMMENT</code>。</li>
+  <li><code>server/nnbdc-service/src/main/java/beidanci/service/po/Msg.java</code> 与 <code>MsgVo</code> 同步加字段；查聊天记录时顺带把被引用消息的正文与发送者一起带上，让客户端一次就能画出引用块，不必再发一次请求。</li>
+  <li><code>replyAdvice.do</code>（<code>server/nnbdc-service/src/main/java/beidanci/service/controller/MsgController.java:133</code>）多收一个可空的 <code>replyToId</code>。</li>
+  <li><strong>快速失败</strong>：如果传上来的 <code>replyToId</code> 查不到，直接返回失败并说明"被回复的消息不存在"，绝不悄悄落一条没有引用的回复。</li>
+  <li><strong>删除要有交代</strong>：现在删消息是裸删（<code>server/nnbdc-service/src/main/java/beidanci/service/bo/MsgBo.java:412</code>）。如果那条消息已经被回复引用，删除前直接拒绝并提示"请先删除引用它的回复"，而不是删完留下一条指向空气的引用。</li>
+</ol>
+
+<h3>3.7 聊天中发截图：复用上传接口，但不许再压成正方形</h3>
+<table>
+  <thead><tr><th style="width:22%">环节</th><th>做法</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>客户端选图</td>
+      <td>输入区加号 → 弹「拍照 / 从相册选择」，按来源申请相机或相册权限（<code>image_picker</code> 项目里已经在用，见 <code>app/lib/page/bdc/dialogs/bdc_dialogs.dart:776</code>、<code>:818</code>、<code>:833</code> 的写法），一次最多 3 张，发送前在上方排缩略图、可单张删掉</td>
+    </tr>
+    <tr>
+      <td>上传</td>
+      <td>复用现成的 <code>uploadImg.do</code>（<code>app/lib/api/api.dart:492</code>），只多传一个目录：新增 <code>dir=advice</code>，落到 <code>…/img/advice/</code>。整条上传链路（格式探测、文件名生成、目录创建）都已经具备，不需要新通道</td>
+    </tr>
+    <tr>
+      <td>尺寸</td>
+      <td>上传参数从"正方形 <code>size</code>"改成"长边上限"（建议 1080），等比缩放。这一条同时修掉 3.4 上面说的报错截图变形问题</td>
+    </tr>
+    <tr>
+      <td>大小限制</td>
+      <td>现在服务端硬卡 1MB（<code>server/nnbdc-service/src/main/java/beidanci/service/controller/ResController.java:345</code>）。手机原图动辄 2~5MB，所以客户端必须先在本地压缩再传；截图有大量纯色，压到 1MB 以内很容易</td>
+    </tr>
+    <tr>
+      <td>与消息绑定</td>
+      <td>沿用 <code>ErrorReportBo</code> 已有的内嵌标记写法（<code>server/nnbdc-service/src/main/java/beidanci/service/bo/ErrorReportBo.java:69</code>）：图片名列表以 <code>【报错图片】["advice/xxx.jpg"]</code> 追加在正文末尾。<strong>不新建图片表</strong>——消息和图片一一对应，正文里带上就够了</td>
+    </tr>
+    <tr>
+      <td>两端展示</td>
+      <td>用户端 <code>app/lib/page/msg.dart</code> 与管理端 <code>app/lib/page/admin/feedback_management.dart</code> 的气泡都要能渲染图片：横排缩略图 + 点击看大图（管理端已有大图预览，<code>:873</code> 与 <code>:1183</code>，直接复用）</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>3.8 顺手根治：图片名的解析只留一份</h3>
+<p>同一个 <code>【报错图片】</code> 标记，现在在管理端被<strong>写了两遍</strong>：<code>app/lib/page/admin/feedback_management.dart:45</code> 与 <code>:1131</code>，连"剥出纯文本、解析图片名"这套逻辑也是两份（<code>:63</code> 与 <code>:1145</code>），再加上 <code>:16</code> 那个会拼错地址的 <code>_resolveImgUrl</code>。这次一改格式，就是三处一起改，漏一处就出线上问题。</p>
+<p>建议抽一个通道工具文件（例如 <code>app/lib/util/advice_content.dart</code>）：解析、剥离、拼地址三件事各一个函数，客服聊天相关的页面全部调它。既符合"一处定义"，也不增加新概念。</p>
+
+<h3>3.9 未读计数与权限</h3>
+<ul>
+  <li>未读数：现在红点走的是"发给系统账号的未读消息总数"（<code>app/lib/page/admin.dart:241</code> → <code>getMsgCounts.do</code>），并不专门限制在客服会话上。改成会话摘要里的未读合计，红点数字才和首屏列表对得上。</li>
+  <li>上传配额：<code>uploadImg.do</code> 目前只判断"是不是登录用户"，没有任何频率约束。随这次一起加一个按用户的上传上限（建议 50 张/天），避免有人拿它当免费图床。</li>
+</ul>
+
+<h2>四、这次不做的事（明确写出来，免得后面又变成"顺手加"）</h2>
+<ul>
+  <li><strong>不给图片加内容审核</strong>。客服会话是内部处理通道，图片只有管理员看得到，不对外展示；等哪天截图要展示给别人看，再单独讨论审核。</li>
+  <li><strong>不做会话级删除 / 归档</strong>。现有的"按天数清理旧反馈"（<code>app/lib/page/admin/feedback_management.dart:155</code> → <code>MsgBo.cleanupOldAdvice</code>）继续用。</li>
+  <li><strong>需求墙的投票与举报机制不动</strong>（<code>feature_request</code> 的 vote / report、用户端需求墙）。这次只把「被标记为需求的那条消息」正式做成一张待办列表，并把两边的需求在同一屏里看得见。</li>
+  <li><strong>不做多层引用嵌套</strong>，只允许一层。</li>
+  <li><strong>不扩展标签体系</strong>。字段 <code>msg.tag</code> 保持单值语义，这次只从界面提供「需求」这一种标记，其它标签（比如"问题 / 待跟进"）等真的需要再说，不提前铺开。</li>
+  <li><strong>不做"标记整个会话为需求"</strong>。需求只贴在消息上；一个会话里哪几句是需求，就标记哪几句。</li>
+  <li><strong>管理端不整体重画</strong>。首屏换成会话列表、详情里加引用块和图片渲染，沿用现有配色与卡片写法，不重做视觉体系。</li>
+</ul>
+
+<h2>五、工作量与验证口径</h2>
+<table>
+  <thead><tr><th style="width:20%">阶段</th><th style="width:44%">内容</th><th>怎么算做完了</th></tr></thead>
+  <tbody>
+    <tr><td>一、服务端</td><td>会话摘要接口 + 消息级需求列表与状态接口 + <code>reply_to_id</code> 与 <code>req_status</code> 两个升级脚本与实体字段 + <code>replyAdvice</code> 收引用参数 + 删除拒绝规则 + 上传等比缩放与配额</td><td>会话按用户返回、需求列表按状态返回、未读数对得上库；传了不存在的引用 ID 会明确报错；需求条数与库里一致</td></tr>
+    <tr><td>二、客户端（两端）</td><td>管理端改会话列表 + 需求列表两屏、会话详情里长按操作与引用块；用户端输入区加选图与图片气泡；解析抽成一份共用</td><td>真机跑通：发文字 + 发图 + 对某条引用回复 + 标记某条为需求并从需求列表点回原文，两端气泡、引用块、缩略图、定位高亮都正常</td></tr>
+    <tr><td>三、回归</td><td>单词报错带图那条老链路（<code>app/lib/page/bdc/dialogs/bdc_dialogs.dart:891</code>）不能被改坏</td><td>报错带图仍能上传、管理端仍能显示</td></tr>
+  </tbody>
+</table>
+<p>粗估：服务端一天（多出需求列表与状态这一块），两端客户端一天半，联调与真机回归半天，合计约三天。真正容易踩的是图片路径拼接、等比缩放、以及从需求列表跳回原文时的定位这三处，都在上面点名了。</p>
+
+<h2>六、需要你确认的三件事</h2>
+<ol>
+  <li><strong>消息级需求要不要带状态。</strong> 我按"要"来做：给打了需求标记的消息补一列 <code>req_status</code>（投票中 / 开发中 / 已拒绝 / 已完成），这样需求列表才是一张能推进的待办，而不是一堆标记。<span class="tag t-info">建议</span>：要。若你希望更轻，就只保留标记、用"处理完取消标记"表示结束，那样省一列但看不到"这个需求承诺了却没做"。</li>
+  <li><strong>需求列表和需求墙要不要并成同一个列表。</strong> 我按"同一屏、两条来源"来做：来源「客服会话」的落到聊天里那条消息，来源「需求墙」的进需求墙管理。<span class="tag t-info">建议</span>：合并展示、分开处理。两边状态档位一致，管理员看一屏就够，不必在两个入口之间来回切。</li>
+  <li><strong>会话详情里"引用回复 / 标为需求"怎么触发。</strong> 我按长按消息弹操作菜单来做，同时保留卡片上现有的「回复」按钮（<code>app/lib/page/admin/feedback_management.dart:779</code>）方便直接发现。<span class="tag t-info">建议</span>：长按为主、回复按钮保留。</li>
+</ol>
+
+<h2>七、落地记录（2026-10-12 已实现）</h2>
+
+<h3>7.1 改动的文件</h3>
+<table>
+  <thead><tr><th style="width:46%">文件</th><th>改了什么</th></tr></thead>
+  <tbody>
+    <tr><td><code>server/db_upgrade/v79_add_reply_to_id_to_msg.sql</code></td><td>新增 <code>msg.reply_to_id</code> 与索引 <code>idx_msg_reply_to</code>，带中文字段注释</td></tr>
+    <tr><td><code>server/db_upgrade/v80_add_req_status_to_msg.sql</code></td><td>新增 <code>msg.req_status</code> 与索引 <code>idx_msg_req_status</code>，并补齐 <code>tag</code> 字段注释</td></tr>
+    <tr><td><code>server/nnbdc-api/.../AdviceRequirementStatus.java</code>、<code>AdviceSessionVo.java</code>、<code>AdviceRequirementVo.java</code></td><td>消息级需求状态枚举、会话摘要、需求卡片三个新模型</td></tr>
+    <tr><td><code>server/nnbdc-api/.../MsgVo.java</code></td><td>新增 <code>replyToId</code>、<code>reqStatus</code>，以及被引用消息快照 <code>quotedMsgId/quotedMsgType/quotedContent</code></td></tr>
+    <tr><td><code>server/nnbdc-service/.../po/Msg.java</code></td><td>新增 <code>replyToId</code>、<code>reqStatus</code> 两个字段</td></tr>
+    <tr><td><code>server/nnbdc-service/.../bo/MsgBo.java</code></td><td>新增 <code>getAdviceSessions</code>（一条分词查询出会话摘要）、<code>getAdviceRequirements</code>、<code>updateRequirementStatus</code>、<code>fillQuotedMessages</code>；<code>deleteMsg</code> 拒绝删除已被引用的消息；<code>cleanupOldAdvice</code> 追加"跳过被引用的消息"；<code>replyAdvice</code> 收引用ID与截图；顺手删掉 <code>createMsg</code> 里 7 处 <code>System.out.println</code> 调试输出</td></tr>
+    <tr><td><code>server/nnbdc-service/.../controller/MsgController.java</code></td><td>新增 <code>getAdviceSessions.do</code>、<code>getAdviceRequirements.do</code>、<code>updateRequirementStatus.do</code>；<code>replyAdvice.do</code> 与 <code>sendAdvice.do</code> 收可选参数；引用校验失败时返回明确错误而不是记一条没有引用的回复</td></tr>
+    <tr><td><code>server/nnbdc-service/.../controller/ResController.java</code></td><td><code>uploadImg.do</code> 新增 <code>mode</code> 参数：默认按长边等比缩小（手机截图不再被压成正方形），<code>mode=cover</code> 才是原来的正方形</td></tr>
+    <tr><td><code>server/nnbdc-service/.../bo/ErrorReportBo.java</code></td><td>图片标记的拼装交给 <code>MsgBo</code>，单词报错与客服会话共用同一种写法</td></tr>
+    <tr><td><code>app/lib/util/advice_content.dart</code>（新增）</td><td>唯一的解析入口：剥正文、取图片列表、拼图片地址、生成列表预览；以及选图（拍照 / 相册）+ 压缩（长边 1080 等比、PNG）+ 上传到 <code>advice</code> 目录</td></tr>
+    <tr><td><code>app/lib/page/msg.dart</code></td><td>输入区加号选图、待发缩略图可删；气泡改成"引用块 + 正文 + 截图缩略图"；删掉不再用的 <code>chat_bubbles</code> 引用</td></tr>
+    <tr><td><code>app/lib/page/admin/feedback_management.dart</code></td><td>从 1719 行平铺消息的页面重写成三个视角：按用户会话列表、需求待办、会话详情（长按菜单、引用回复条、定位高亮）。<span class="tag t-warn">注意</span> 本文第二章、第三章里引用的这个文件的行号（<code>:518</code>、<code>:1237</code>、<code>:1635</code>、<code>:224</code>、<code>:16</code>、<code>:45</code>、<code>:63</code>、<code>:1131</code>、<code>:1145</code>、<code>:155</code>、<code>:592</code>、<code>:804</code>、<code>:779</code>）都是<strong>重写之前</strong>旧写法的位置，重写后这个文件只剩 1627 行，这些行号不再指向新代码——留在这里是为了说明"当时的问题出在哪一行"</td></tr>
+    <tr><td><code>app/lib/api/api.dart</code>、<code>app/lib/api/vo.dart</code></td><td>新增三个接口与两个 VO，<code>MsgVo</code> 加引用字段；跑了 <code>build_runner</code> 重新生成代码</td></tr>
+    <tr><td><code>app/test/advice_content_test.dart</code>（新增）</td><td>9 条解析与预览断言</td></tr>
+    <tr><td><code>server/.../MsgBoAdviceRedeemTest.java</code></td><td>跟随 <code>createMsg</code> / <code>replyAdvice</code> 签名变化同步（否则这个测试会变成"覆写失效"的假测试）</td></tr>
+  </tbody>
+</table>
+
+<h3>7.2 实现时与方案有出入的三处</h3>
+<ol>
+  <li><strong>图片标记只在服务端拼一次。</strong> 方案里说两端各自把 <code>【报错图片】</code> 拼到正文末尾。真做的时候发现那样等于把同一条协议写两遍，任何一边改了写法就静默错位。所以改成：两个接口都收可选的 <code>imageFiles</code>，由 <code>MsgBo.appendImageFiles</code> 统一拼装，客户端只负责把路径交上去。</li>
+  <li><strong>从需求待办跳回原文，用"先估算再对齐"两步定位。</strong> 目标是较早的消息时，列表还没把它构建出来，找不到它的位置；所以先按它在列表里的序号估一个初始滚动位置让它被渲染，再精确对齐到可见处。目标不在最近 200 条内时明确提示，不装作定位成功。</li>
+  <li><strong>没有做上传配额。</strong> 方案里说加一个按用户每天 50 张的限制。实现时判断：真正的滥用者用脚本可以直接打别的接口，这个限制挡不住；而 <code>uploadImg.do</code> 目前对任何登录用户开放，加一条"看目录里文件数"的统计既不准（按文件名前缀数每天的文件）又增加一处需要维护的逻辑。这一条留给你决定要不要单独做，我没有顺手加。</li>
+  <li><strong>截图是"相册多选、拍照单张"两条路。</strong> 相册一次最多补齐 3 张；拍照一次只能拍一张（系统相机接口本身就只回一张），想再来一张就再点一次加号。两端都按来源分别申请相机或相册权限，用户取消时什么都不发生。</li>
+</ol>
+
+<h3>7.3 已经验证过的部分</h3>
+<ul>
+  <li>服务端 <code>mvn compile</code> 通过；<code>MsgBoAdviceRedeemTest</code> 3 条断言全部通过。</li>
+  <li>两个升级脚本与三条新查询（会话摘要、需求列表、删除保护/清理）在本地库的<strong>事务内</strong>跑通后回滚，确认 PostgreSQL 语法、<code>FILTER</code>、<code>ARRAY_AGG</code>、保留字 <code>"user"</code> 引号都对（本地实测该库有 2718 条历史意见）。</li>
+  <li>客户端 <code>flutter analyze lib</code> 零问题；新增解析单测 9 条全部通过；<code>build_runner</code> 重新生成序列化代码无冲突。</li>
+  <li>iOS 调试包构建成功（<code>flutter build ios --debug --no-codesign</code>，第一次）；随后为补"拍照"入口又改了纯 Dart 代码，最终以 <code>flutter build bundle</code> 复核：117MB 的 <code>kernel_blob.bin</code> 在改动之后重新生成，说明含拍照与权限检查的代码完整编译通过。之后再跑 iOS 构建时 Xcode 的 <code>DerivedData</code> 被占用（<code>webview_flutter_wkwebview</code> 目录正在写，疑似本机同时有其它构建/Xcode 在跑），报的是 <code>OutputFileMap.json</code> 找不到，属于 Xcode 产物问题、不是代码问题，所以没有继续清理那个目录去干扰本机其它构建。</li>
+  <li>iOS 侧所需的 <code>PERMISSION_CAMERA</code>、<code>PERMISSION_PHOTOS</code> 宏与 <code>NSCameraUsageDescription</code>、<code>NSPhotoLibraryUsageDescription</code> 声明本来就齐全（<code>app/ios/Podfile:91</code>、<code>app/ios/Runner/Info.plist:56</code>），拍照这条路的权限不会静默失败。</li>
+</ul>
+<p><span class="tag t-warn">还没做</span> 真机联调。新接口要部署到服务端之后，App 才能真的发出会话列表、引用回复与截图，所以下面这几条必须在部署后再走一遍：发文字、发截图（含只发图不写字）、对某条引用回复、标为需求并从需求待办点回原文、删除一条已被引用的消息应被拒绝。真机是独占资源，这一步按项目规矩现开现关。</p>
+
+<h3>7.4 真实接口验证（本地开发库 + 本地启动服务端）</h3>
+<p>把服务端跑在本地 <code>5211</code>、连本地开发库（库里有 2731 条真实历史意见），逐个接口真打真回，验证完<strong>已删除全部测试数据与测试图片</strong>，进程也已关闭、端口已释放：</p>
+<table>
+  <thead><tr><th style="width:34%">验的什么</th><th>结果</th></tr></thead>
+  <tbody>
+    <tr><td>会话摘要 <code>getAdviceSessions.do</code></td><td>✅ 返回按用户聚合的会话；新造两条未读后该用户 <code>unviewedCount</code> 从 0 变 2、<code>totalCount</code> 3、最后一条正文正确</td></tr>
+    <tr><td>标为需求 <code>setMsgTag.do</code></td><td>✅ 打标后库里 <code>tag=需求</code> 且 <code>req_status</code> 同时被写入 <code>VOTING</code>（不会出现"有标记没状态"）</td></tr>
+    <tr><td>需求列表与状态 <code>getAdviceRequirements.do</code> / <code>updateRequirementStatus.do</code></td><td>✅ 改 <code>IN_PROGRESS</code> 后按状态筛选只剩它；非法状态被拒（"无法识别的需求状态"）；未打标的消息改状态被拒</td></tr>
+    <tr><td>引用回复 <code>replyAdvice.do</code></td><td>✅ 引用第 2 条后，拉聊天记录能带出 <code>replyToId</code> 与被引用正文快照；引用不存在的消息报"被回复的消息不存在"；引用别人的消息报"不属于该用户，拒绝回复"</td></tr>
+    <tr><td>删除保护 <code>deleteMsg.do</code></td><td>✅ 已被引用的消息被拒（"该消息已被 1 条回复引用，请先删除引用它的回复"）；未被引用的删除成功</td></tr>
+    <tr><td>截图随消息拼装</td><td>✅ <code>sendAdvice.do</code> 与 <code>replyAdvice.do</code> 传 <code>imageFiles</code> 后，库里正文末尾是标准的 <code>【报错图片】["advice/…"]</code></td></tr>
+    <tr><td>上传等比缩放 <code>uploadImg.do</code></td><td>✅ 1200×2400 的竖长截图 + <code>size=1080</code> 连续三次都产出 <strong>540×1080</strong>（等比、不变形）；<code>mode=cover</code> + <code>size=400</code> 产出 400×400（老行为保留）；临时目录无残留</td></tr>
+  </tbody>
+</table>
+<p><span class="tag t-warn">还剩一步</span> 真机联调：需要在真机上跑一遍"选图 → 发送 → 两端气泡显示图片 / 长按引用回复 / 标为需求 → 从需求待办点回原文定位"这条界面路径，它验证的是 UI 渲染与手势，接口层已经验完。前提是新版服务端已部署、App 装了这次改动（iOS 包已本地构建成功）。</p>
+
+<footer>
+  方案文档：<code>design/advice_screenshot_upgrade_plan.html</code> ｜ 相关术语已补入 <code>doc/glossary.md</code> 第 4.6 节（客服会话、被引用消息、反馈截图，并标注「意见建议」与「需求」是两套数据）<br>
+  需求粒度已定：标记贴在<strong>消息</strong>上（<code>msg.tag = '需求'</code>，索引 <code>idx_msg_tag</code>），会话只是把同一用户的聊天内容收在一起的组织骨架，不作为需求单位。
+</footer>
+
+</div>
+</body>
+</html>

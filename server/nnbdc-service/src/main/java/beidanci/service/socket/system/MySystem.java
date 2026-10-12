@@ -31,6 +31,15 @@ public interface MySystem {
         return false;
     }
 
+    /**
+     * 用户带着新连接回来了。若他有一局正在打，就把对局交接到这条新连接上。
+     *
+     * @return true 表示对局已交给新连接继续（调用方不要再按离场处理）
+     */
+    default boolean onUserReconnected(UserVo user) throws IllegalAccessException {
+        return false;
+    }
+
     List<UserVo> getIdleUsers(UserVo except, int count);
 
     String getName();

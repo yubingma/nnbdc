@@ -1061,65 +1061,95 @@ class DataIntegrityChecker {
     }
   }
 
-  /// 检查用户正在学习的单词是否都有释义
+  /// 找出「学习页真的会报缺释义」的那批正在学习的词。
+  ///
+  /// 判据与学习页取释义的 `WordBo.getWordMeaningItems` 一致：学习词书（含父级词书）里
+  /// 没有该词的定制释义、本地又没有通用释义（`dict_id = '0'`）。
+  ///
+  /// 为什么不能只查「本地任何词典都没有释义」：有的词在别的词书里有释义、偏偏缺通用释义，
+  /// 学习页照样抛「通用释义缺失」，而只查「任何词典」的判定会放它过去，
+  /// 用户看着体检全通过、学习页却一直报错。
+  Future<List<String>> _findLearningWordsMissingCommonMeaning(String userId) async {
+    final learningWordsList =
+        await (_db.select(_db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
+    if (learningWordsList.isEmpty) return const [];
+
+    final wordIds = learningWordsList.map((lw) => lw.wordId).toSet().toList();
+
+    // 用户的学习词书 + 父级词书（与 WordBo 取释义时的展开口径一致）
+    final learningDicts =
+        await (_db.select(_db.learningDicts)..where((t) => t.userId.equals(userId))).get();
+    final dictIds = <String>{for (final d in learningDicts) d.dictId};
+    if (dictIds.isNotEmpty) {
+      final dicts = await (_db.select(_db.dicts)..where((d) => d.id.isIn(dictIds.toList()))).get();
+      for (final d in dicts) {
+        if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
+          dictIds.add(d.baseDictId!);
+        }
+      }
+    }
+    final scopedDictIds = <String>{...dictIds, Global.commonDictId}.toList();
+
+    // 一次查出这批词在「学习词书 + 通用词典」范围内的释义，按词典归属分开记
+    const batchSize = 900;
+    final withScopedMeaning = <String>{};
+    final withCommonMeaning = <String>{};
+    for (int i = 0; i < wordIds.length; i += batchSize) {
+      final batch = wordIds.skip(i).take(batchSize).toList();
+      final rows = await (_db.meaningItemsDao.select(_db.meaningItems)
+            ..where((mi) => mi.wordId.isIn(batch) & mi.dictId.isIn(scopedDictIds)))
+          .get();
+      for (final m in rows) {
+        if (m.dictId == Global.commonDictId) {
+          withCommonMeaning.add(m.wordId);
+        } else {
+          withScopedMeaning.add(m.wordId);
+        }
+      }
+    }
+
+    return wordIds
+        .where((id) => !withCommonMeaning.contains(id) && !withScopedMeaning.contains(id))
+        .toList();
+  }
+
+  /// 检查正在学习的单词是否都有释义可用
   Future<void> _checkLearningWordsMeanings(IntegrityCheckResult result, String userId) async {
     try {
-      // 1. 获取用户正在学习的所有单词
-      final learningWordsList = await (_db.select(_db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
-      if (learningWordsList.isEmpty) return;
+      final missingMeanings = await _findLearningWordsMissingCommonMeaning(userId);
+      if (missingMeanings.isEmpty) return;
 
-      final wordIds = learningWordsList.map((lw) => lw.wordId).toSet().toList();
-      
-      // 2. 分批查询这些单词是否有释义（不限词典）
-      const batchSize = 900;
-      final wordsWithMeanings = <String>{};
+      final List<String> details = [];
+      for (final wordId in missingMeanings.take(10)) {
+        // 获取单词拼写
+        final word = await (_db.wordsDao.select(_db.words)..where((w) => w.id.equals(wordId))).getSingleOrNull();
+        final spelling = word?.spell ?? "未知拼写";
+        final shortId = wordId.length > 6 ? wordId.substring(0, 6) : wordId;
 
-      for (int i = 0; i < wordIds.length; i += batchSize) {
-        final batch = wordIds.skip(i).take(batchSize).toList();
-        final existingMeanings = await (_db.meaningItemsDao.select(_db.meaningItems)
-          ..where((mi) => mi.wordId.isIn(batch)))
-        .get();
-        
-        for (final m in existingMeanings) {
-          wordsWithMeanings.add(m.wordId);
+        // 反查所属词典
+        final dictWords = await (_db.dictWordsDao.select(_db.dictWords)..where((dw) => dw.wordId.equals(wordId))).get();
+        final dictNames = <String>[];
+        for (final dw in dictWords) {
+          final dict = await _db.dictsDao.findById(dw.dictId);
+          if (dict != null) dictNames.add(dict.name);
+        }
+        details.add('"$spelling" (ID: $shortId, 来自词典: ${dictNames.isEmpty ? "未知" : dictNames.join(", ")})');
+      }
+
+      String description = '您正在学习的单词中有 ${missingMeanings.length} 个在本地查不到释义：'
+          '学习中的词书里没有这些词，通用词典里也没有。';
+      if (details.isNotEmpty) {
+        description += '\n示例：\n${details.join("\n")}';
+        if (missingMeanings.length > 10) {
+          description += '\n... 等共 ${missingMeanings.length} 个单词';
         }
       }
 
-      // 3. 找出缺失释义的单词及其所属词典
-      final missingMeanings = wordIds.where((id) => !wordsWithMeanings.contains(id)).toList();
-
-      if (missingMeanings.isNotEmpty) {
-        final List<String> details = [];
-        for (final wordId in missingMeanings.take(10)) {
-          // 获取单词拼写
-          final word = await (_db.wordsDao.select(_db.words)..where((w) => w.id.equals(wordId))).getSingleOrNull();
-          final spelling = word?.spell ?? "未知拼写";
-          final shortId = wordId.length > 6 ? wordId.substring(0, 6) : wordId;
-
-          // 反查所属词典
-          final dictWords = await (_db.dictWordsDao.select(_db.dictWords)..where((dw) => dw.wordId.equals(wordId))).get();
-          final dictNames = <String>[];
-          for (final dw in dictWords) {
-            final dict = await _db.dictsDao.findById(dw.dictId);
-            if (dict != null) dictNames.add(dict.name);
-          }
-          details.add('"$spelling" (ID: $shortId, 来自词典: ${dictNames.isEmpty ? "未知" : dictNames.join(", ")})');
-        }
-
-        String description = '您正在学习的单词中有 ${missingMeanings.length} 个在本地查无释义。';
-        if (details.isNotEmpty) {
-          description += '\n示例：\n${details.join("\n")}';
-          if (missingMeanings.length > 10) {
-            description += '\n... 等共 ${missingMeanings.length} 个单词';
-          }
-        }
-
-        result.addIssue(
-          '学习单词缺少释义', 
-          description, 
-          'learning_word_missing_meaning'
-        );
-      }
+      result.addIssue(
+        '学习单词缺少释义',
+        description,
+        'learning_word_missing_meaning'
+      );
     } catch (e, stack) {
       Global.logger.e('检查学习单词释义完整性时出错', error: e, stackTrace: stack);
       result.addError('检查学习单词释义完整性时出错: $e');
@@ -1129,26 +1159,7 @@ class DataIntegrityChecker {
   /// 修复正在学习单词缺失释义的问题
   Future<void> _fixLearningWordMissingMeaning(IntegrityFixResult fixResult, String userId) async {
     try {
-      final learningWordsList = await (_db.select(_db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
-      if (learningWordsList.isEmpty) return;
-
-      final wordIds = learningWordsList.map((lw) => lw.wordId).toSet().toList();
-      const batchSize = 900;
-      final missingWordIds = <String>[];
-
-      for (int i = 0; i < wordIds.length; i += batchSize) {
-        final batch = wordIds.skip(i).take(batchSize).toList();
-        final existingMeanings = await (_db.meaningItemsDao.select(_db.meaningItems)
-          ..where((mi) => mi.wordId.isIn(batch)))
-        .get();
-        final existingIds = existingMeanings.map((mi) => mi.wordId).toSet();
-
-        for (final id in batch) {
-          if (!existingIds.contains(id)) {
-            missingWordIds.add(id);
-          }
-        }
-      }
+      final missingWordIds = await _findLearningWordsMissingCommonMeaning(userId);
 
       if (missingWordIds.isNotEmpty) {
         String jsonStr = jsonEncode(missingWordIds);

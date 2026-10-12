@@ -1577,12 +1577,72 @@ class MsgVo {
   UserVo toUser;
   String? tag;
 
+  /// 这条消息是对哪一条的针对性回复；为空表示不是针对性回复
+  String? replyToId;
+
+  /// 消息级需求的处理状态（VOTING / IN_PROGRESS / REJECTED / COMPLETED）
+  String? reqStatus;
+
+  /// 被引用消息的快照，用来画引用块。被引用的消息已被删除时，quotedMsgId 有值而
+  /// quotedContent 为空，界面据此显示「原消息已删除」
+  String? quotedMsgId;
+  String? quotedMsgType;
+  String? quotedContent;
+
   MsgVo(this.id, this.fromUserName, this.fromUserNickName, this.toUserName, this.toUserNickName, this.content, this.createTimeForDisplay,
-      this.msgType, this.clientType, this.fromUser, this.toUser, this.createTime, this.viewed, [this.tag]);
+      this.msgType, this.clientType, this.fromUser, this.toUser, this.createTime, this.viewed,
+      [this.tag, this.replyToId, this.reqStatus, this.quotedMsgId, this.quotedMsgType, this.quotedContent]);
 
   factory MsgVo.fromJson(Map<String, dynamic> json) => _$MsgVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$MsgVoToJson(this);
+}
+
+/// 客服会话摘要：管理端首屏的一行，一个用户一行
+@JsonSerializable()
+@CustomDateTimeConverter()
+class AdviceSessionVo {
+  String userId;
+  String? userName;
+  String? nickName;
+  String? wechatAvatar;
+  bool premium;
+  int unviewedCount;
+  int totalCount;
+  int requirementCount;
+  String? lastContent;
+  String? lastMsgType;
+  DateTime? lastCreateTime;
+
+  AdviceSessionVo(this.userId, this.userName, this.nickName, this.wechatAvatar, this.premium, this.unviewedCount,
+      this.totalCount, this.requirementCount, this.lastContent, this.lastMsgType, this.lastCreateTime);
+
+  factory AdviceSessionVo.fromJson(Map<String, dynamic> json) => _$AdviceSessionVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AdviceSessionVoToJson(this);
+}
+
+/// 消息级需求：管理端需求列表的一张卡片
+@JsonSerializable()
+@CustomDateTimeConverter()
+class AdviceRequirementVo {
+  String id;
+  String content;
+  String? reqStatus;
+  DateTime createTime;
+  String? clientType;
+  String userId;
+  String? userName;
+  String? nickName;
+  String? wechatAvatar;
+  bool premium;
+
+  AdviceRequirementVo(this.id, this.content, this.reqStatus, this.createTime, this.clientType, this.userId,
+      this.userName, this.nickName, this.wechatAvatar, this.premium);
+
+  factory AdviceRequirementVo.fromJson(Map<String, dynamic> json) => _$AdviceRequirementVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AdviceRequirementVoToJson(this);
 }
 
 // 词典统计信息VO

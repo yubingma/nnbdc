@@ -149,6 +149,26 @@ class DictImportStats {
 /// "学习状态筛选"下推 SQL 的片段：JOIN 子句、三态条件与对应变量
 typedef _StatusFilterSql = ({String joins, String condition, List<Variable> vars});
 
+/// 本地查不到某词的**通用释义**（`dictId = '0'`）时抛出。
+///
+/// 通用释义是学习流程最后的释义来源：学习词书里没有该词的定制释义、本地又没有通用释义时，
+/// 界面拿不到任何释义，只能报错。用独立类型而不是裸 `Exception`，是为了让界面能按类型
+/// 认出这一种情况，进而给出「修复数据」「重建本地数据」这两条出路，而不是去匹配错误文案。
+class MissingCommonMeaningException implements Exception {
+  final String wordId;
+
+  /// 单词拼写。批量查询路径不额外查拼写，此时为 null。
+  final String? spell;
+
+  const MissingCommonMeaningException(this.wordId, [this.spell]);
+
+  String get _shortWordId => wordId.length > 6 ? wordId.substring(0, 6) : wordId;
+
+  @override
+  String toString() =>
+      '通用释义缺失: wordId=$_shortWordId${spell == null ? '' : ', spell=$spell'}';
+}
+
 class WordBo {
   static final WordBo _instance = WordBo._internal();
   factory WordBo() => _instance;
@@ -3335,9 +3355,9 @@ class WordBo {
       // 正常情况下通用释义不应为空，视为数据异常
       final word = await db.wordsDao.getWordById(wordId);
       final spell = word?.spell ?? 'unknown';
-      final shortId = wordId.length > 6 ? wordId.substring(0, 6) : wordId;
-      Global.logger.e('通用释义缺失: wordId=$shortId, spell=$spell');
-      throw Exception('通用释义缺失: wordId=$shortId, spell=$spell');
+      final error = MissingCommonMeaningException(wordId, spell);
+      Global.logger.e(error.toString());
+      throw error;
     }
 
     // 计算最大 popularity limit
@@ -3760,9 +3780,9 @@ class WordBo {
       final common = commonMap[wordId];
       if (common == null || common.isEmpty) {
         // 与 getWordMeaningItems 一致：通用释义缺失视为数据异常
-        final shortId = wordId.length > 6 ? wordId.substring(0, 6) : wordId;
-        Global.logger.e('通用释义缺失: wordId=$shortId');
-        throw Exception('通用释义缺失: wordId=$shortId');
+        final error = MissingCommonMeaningException(wordId);
+        Global.logger.e(error.toString());
+        throw error;
       }
       final limit = masteredIds.contains(wordId) || learningIds.contains(wordId)
           ? null

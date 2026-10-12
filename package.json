@@ -5,6 +5,7 @@
     "render-store": "node design/ui/render_app_store_screens.js"
   },
   "dependencies": {
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "socket.io-client": "^2.4.0"
   }
 }

@@ -238,27 +238,17 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Opacity(
-                  opacity: 0.3,
-                  child: ClipRRect(
+                // 这些图的物理文件在判删时已当场删除、CDN 缓存也刷过，再请求必然 404，
+                // 所以直接画"已删除"占位，不再对已删文件发网络请求
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
                     borderRadius: BorderRadius.circular(8),
-                    child: Builder(
-                      builder: (context) {
-                        final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${img['imageFile']}');
-                        Global.logger.d('加载单词图片 [审核页]: $imageUrl');
-                        return Image.network(
-                          imageUrl,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            Global.logger.e('图片加载失败 [审核页]: $imageUrl', error: error);
-                            return const Center(child: Icon(Icons.broken_image, color: Colors.red));
-                          },
-                        );
-                      }
-                    ),
                   ),
+                  child: Icon(Icons.delete_outline,
+                      size: 36, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

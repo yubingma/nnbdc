@@ -6,6 +6,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
+import beidanci.api.model.AdviceRequirementStatus;
 import beidanci.api.model.MsgType;
 import beidanci.api.model.ClientType;
 
@@ -103,5 +104,35 @@ public class Msg extends UuidPo {
 
     public void setTag(String tag) {
         this.tag = tag;
+    }
+
+    /**
+     * 被引用的消息ID：这条消息是对哪一条的针对性回复。为空表示不是针对性回复。
+     * 只允许一层引用，引用不能再被引用。
+     */
+    @Column(name = "reply_to_id", length = 32)
+    private String replyToId;
+
+    public String getReplyToId() {
+        return replyToId;
+    }
+
+    public void setReplyToId(String replyToId) {
+        this.replyToId = replyToId;
+    }
+
+    /**
+     * 消息级需求的处理状态。仅当 tag 为「需求」时有值，取消需求标记时应置回 null。
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "req_status", length = 20)
+    private AdviceRequirementStatus reqStatus;
+
+    public AdviceRequirementStatus getReqStatus() {
+        return reqStatus;
+    }
+
+    public void setReqStatus(AdviceRequirementStatus reqStatus) {
+        this.reqStatus = reqStatus;
     }
 }

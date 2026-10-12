@@ -30,6 +30,12 @@ public class SocketService {
 
     private final Map<String, MySystem> systems;
 
+    /**
+     * 待送达的对局结果通知：key 为用户 id。断线判负时用户不在线，先存下来，
+     * 等他下次上线（reportUser）时补发，保证"结果必达"。
+     */
+    private final Map<String, String> pendingGameResults = new ConcurrentHashMap<>();
+
     MsgBo msgBo;
 
     UserBo userBo;
@@ -91,7 +97,28 @@ public class SocketService {
     }
 
     protected void onUserLogin(UserVo user) {
+        // 这里不投递待送达的对局结果：刚连上时用户多半还不在游戏页面，没人监听那条事件，
+        // 投了也会丢。统一等他真正回到游戏里（发出对局命令时）再送，见 sendGameResultNotice。
+    }
 
+    /**
+     * 把待送达的对局结果通知发出去（如果有）。断线判负时用户不在线，那条结果事件发不出去，
+     * 只能先存着，等他重新进到游戏里再送，否则用户只会看到对战界面莫名其妙结束。
+     */
+    public void sendGameResultNotice(UserVo user) {
+        String notice = pendingGameResults.remove(user.getId());
+        if (notice != null) {
+            sendEventToUser(user, "gameResultNotice", notice);
+        }
+    }
+
+    /**
+     * 记下一条待送达的对局结果，等用户回到游戏里再发给他（内存态，重启丢失可接受）。
+     */
+    public void noticeGameResult(String userId, String notice) {
+        if (userId != null && notice != null) {
+            pendingGameResults.put(userId, notice);
+        }
     }
 
     protected SocketIONamespace namespace;
@@ -252,12 +279,13 @@ public class SocketService {
                     // 对局必须保留并交接到新连接上，绝不能当成离场（否则会白判负、白扣分，
                     // 而结算事件又发不出去，客户端会永远停在对战界面不再出单词）
                     MySystem russia = systems.get(MySystem.SYSTEM_RUSSIA);
-                    if (russia != null && russia.isUserInPlayingGame(user)) {
-                        log.info(String.format("用户[%s]断线重连，已把进行中的对局交接到新连接",
-                                Util.getNickNameOfUser(user)));
-                    } else {
+                    boolean gameTakenOver = russia != null && russia.onUserReconnected(user);
+                    if (!gameTakenOver) {
                         broadcastUserOffline(user);
                         onUserLogout(user);
+                    } else {
+                        log.info(String.format("用户[%s]的进行中对局已交接到新连接",
+                                Util.getNickNameOfUser(user)));
                     }
                 }
 

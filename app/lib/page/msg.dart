@@ -1,15 +1,19 @@
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/util/advice_content.dart';
+import 'package:nnbdc/util/permission_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../global.dart';
 import '../util/client_type.dart';
@@ -32,6 +36,9 @@ class MsgPageState extends State<MsgPage> {
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   bool _isSending = false;
+
+  /// 已经选好、还没随消息发出去的截图
+  final List<AdviceImageAttachment> _pendingImages = [];
 
   /// 泡泡单词品牌 logo，作为系统自动回复的客服头像
   static const String _bubbleLogoAsset = 'assets/images/logo.png';
@@ -86,7 +93,8 @@ class MsgPageState extends State<MsgPage> {
   }
 
   Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty || _isSending) {
+    final text = _messageController.text.trim();
+    if ((text.isEmpty && _pendingImages.isEmpty) || _isSending) {
       return;
     }
 
@@ -130,13 +138,25 @@ class MsgPageState extends State<MsgPage> {
 
     try {
       final clientType = getClientType();
-      final result = await Api.client.sendAdvice(_messageController.text.trim(), clientType.name, user.id);
+      // 只发截图、没打字时给一句占位正文，服务端不允许空内容
+      final content = text.isEmpty ? AdviceContent.screenshotOnlyText : text;
+      final imagePaths = _pendingImages
+          .map((image) => image.uploadedPath)
+          .whereType<String>()
+          .toList();
+      final result = await Api.client.sendAdvice(
+        content,
+        clientType.name,
+        user.id,
+        imageFiles: imagePaths.isEmpty ? null : jsonEncode(imagePaths),
+      );
       if (result.success) {
         if (result.data != null) {
           // 意见建议兑换会员成功，立即更新本地数据库与内存用户状态
           await MyDatabase.instance.usersDao.saveUser(userVo2User(result.data!), false);
         }
         _messageController.clear();
+        _pendingImages.clear();
         ToastUtil.info("发送成功");
         // 重新加载消息列表
         await loadData();
@@ -149,6 +169,47 @@ class MsgPageState extends State<MsgPage> {
       setState(() {
         _isSending = false;
       });
+    }
+  }
+
+  /// 选截图并上传。上传失败的图一张都不会留在待发送列表里，避免"看起来发出去了其实没图"。
+  Future<void> _pickImages() async {
+    if (_isSending) return;
+
+    final user = Global.getLoggedInUser();
+    if (user == null || Global.isGuest) {
+      ToastUtil.info('登录后才能发送截图');
+      return;
+    }
+
+    final source = await AdviceImages.pickSource(context);
+    if (source == null || !mounted) return;
+
+    await PermissionUtil.requestWithRationale(
+      permission: source == ImageSource.camera ? Permission.camera : Permission.photos,
+      title: source == ImageSource.camera ? '相机权限' : '相册/存储权限',
+      purpose: source == ImageSource.camera ? '用于拍下问题现场发给客服。' : '用于把手机里的截图发给客服。',
+      icon: source == ImageSource.camera ? Icons.camera_alt_rounded : Icons.photo_library_rounded,
+      onGranted: () => _uploadPickedImages(user.id, source),
+    );
+  }
+
+  Future<void> _uploadPickedImages(String userId, ImageSource source) async {
+    try {
+      final picked = await AdviceImages.pickAndUpload(
+        context: context,
+        userId: userId,
+        source: source,
+        baseline: _pendingImages,
+      );
+      if (picked.isEmpty || !mounted) return;
+      setState(() {
+        _pendingImages.addAll(picked);
+      });
+    } catch (e) {
+      if (mounted) {
+        ToastUtil.error(e.toString().replaceFirst('Exception: ', ''));
+      }
     }
   }
 
@@ -207,6 +268,115 @@ class MsgPageState extends State<MsgPage> {
         fontFamily: 'NotoSansSC',
       );
 
+  /// 气泡里的内容：引用块 + 正文 + 随消息发上来的截图
+  Widget _buildBubbleContent(MsgVo msg, {required Color textColor}) {
+    final text = AdviceContent.text(msg.content);
+    final images = AdviceContent.imageFiles(msg.content);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (msg.quotedMsgId != null) _buildQuoteBlock(msg, textColor: textColor),
+        if (text.isNotEmpty) Text(text, style: _bubbleStyle(textColor)),
+        if (images.isNotEmpty) ...[
+          if (text.isNotEmpty) const SizedBox(height: 6),
+          _buildMessageImages(images),
+        ],
+      ],
+    );
+  }
+
+  /// 引用块：明明白白告诉用户「这条回复是在回你哪一句」
+  Widget _buildQuoteBlock(MsgVo msg, {required Color textColor}) {
+    final quoted = AdviceContent.preview(msg.quotedContent ?? '', maxLength: 60);
+    final hasQuoted = quoted.isNotEmpty;
+    // 用户自己的话在气泡上方标「我」，管理员的话标「客服」
+    final speaker = msg.quotedMsgType == 'AdviceReply' ? '客服' : '我';
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: textColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(color: textColor.withValues(alpha: 0.35), width: 2),
+        ),
+      ),
+      child: Text(
+        hasQuoted ? '$speaker：$quoted' : '原消息已删除',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12.5,
+          height: 1.35,
+          color: textColor.withValues(alpha: 0.72),
+          fontFamily: 'NotoSansSC',
+        ),
+      ),
+    );
+  }
+
+  /// 截图预览：点击看大图。用 contain 完整显示，避免长截图被裁掉关键信息。
+  Widget _buildMessageImages(List<String> imageFiles) {
+    final isDarkMode = context.isDarkMode;
+    return SizedBox(
+      height: 160,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        shrinkWrap: true,
+        itemCount: imageFiles.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final url = AdviceContent.imageUrl(imageFiles[index]);
+          return GestureDetector(
+            onTap: () => _showImagePreview(url),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 160,
+                color: isDarkMode ? const Color(0xFF2A333D) : Colors.black.withValues(alpha: 0.04),
+                child: CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.contain,
+                  placeholder: (_, __) => const Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                  errorWidget: (_, __, ___) => Icon(
+                    Icons.broken_image_outlined,
+                    color: isDarkMode ? Colors.white38 : Colors.black26,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showImagePreview(String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: InteractiveViewer(
+            child: CachedNetworkImage(imageUrl: url, fit: BoxFit.contain),
+          ),
+        ),
+      ),
+    );
+  }
+
   // 系统/客服回复：左侧头像（管理员头像 / 泡泡 logo）+ 中性色气泡
   Widget _buildAdminRow(MsgVo msg) {
     final isDarkMode = context.isDarkMode;
@@ -219,12 +389,13 @@ class MsgPageState extends State<MsgPage> {
         _buildAdminAvatar(msg),
         const SizedBox(width: 8),
         Flexible(
-          child: BubbleSpecialOne(
-            text: msg.content,
-            color: bubbleColor,
-            textStyle: _bubbleStyle(context.textPrimary),
-            tail: true,
-            isSender: false,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: bubbleColor,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: _buildBubbleContent(msg, textColor: context.textPrimary),
           ),
         ),
       ],
@@ -277,17 +448,18 @@ class MsgPageState extends State<MsgPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Flexible(
-          child: BubbleSpecialOne(
-            text: msg.content,
-            color: context.primaryColor,
-            textStyle: const TextStyle(
-              fontSize: 15,
-              height: 1.45,
-              color: Colors.white,
-              fontFamily: 'NotoSansSC',
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: context.primaryColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(14),
+                topRight: Radius.circular(14),
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(4),
+              ),
             ),
-            tail: true,
-            isSender: true,
+            child: _buildBubbleContent(msg, textColor: Colors.white),
           ),
         ),
         const SizedBox(width: 6),
@@ -417,40 +589,117 @@ class MsgPageState extends State<MsgPage> {
               top: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: fieldBg,
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(color: fieldBorder, width: 1),
-                        ),
-                        child: TextField(
-                          controller: _messageController,
-                          focusNode: _focusNode,
-                          maxLines: 4,
-                          minLines: 1,
-                          style: TextStyle(color: textColor, fontSize: 15, fontFamily: 'NotoSansSC'),
-                          decoration: InputDecoration(
-                            hintText: '输入您的意见建议...',
-                            hintStyle: TextStyle(color: hintColor, fontSize: 15, fontFamily: 'NotoSansSC'),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                            border: InputBorder.none,
+                    if (_pendingImages.isNotEmpty) ...[
+                      _buildPendingImagesRow(),
+                      const SizedBox(height: 8),
+                    ],
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        _buildPickImageButton(),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: fieldBg,
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: fieldBorder, width: 1),
+                            ),
+                            child: TextField(
+                              controller: _messageController,
+                              focusNode: _focusNode,
+                              maxLines: 4,
+                              minLines: 1,
+                              style: TextStyle(color: textColor, fontSize: 15, fontFamily: 'NotoSansSC'),
+                              decoration: InputDecoration(
+                                hintText: '输入您的意见建议...',
+                                hintStyle: TextStyle(color: hintColor, fontSize: 15, fontFamily: 'NotoSansSC'),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                                border: InputBorder.none,
+                              ),
+                              onSubmitted: (_) => _sendMessage(),
+                            ),
                           ),
-                          onSubmitted: (_) => _sendMessage(),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        _buildSendButton(),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    _buildSendButton(),
                   ],
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// 加号：选截图（相册 / 拍照）并上传，发出去之前还能单张删掉
+  Widget _buildPickImageButton() {
+    final isDarkMode = context.isDarkMode;
+    return GestureDetector(
+      onTap: _isSending ? null : _pickImages,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0xFF232C37) : const Color(0xFFF0F3F7),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+          ),
+        ),
+        child: Icon(
+          Icons.add_photo_alternate_outlined,
+          size: 22,
+          color: context.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  /// 待发送截图的缩略图，右上角一个小叉可以移除
+  Widget _buildPendingImagesRow() {
+    return SizedBox(
+      height: 64,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        shrinkWrap: true,
+        itemCount: _pendingImages.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final image = _pendingImages[index];
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(image.bytes, width: 64, height: 64, fit: BoxFit.cover),
+              ),
+              Positioned(
+                right: -6,
+                top: -6,
+                child: GestureDetector(
+                  onTap: () => setState(() => _pendingImages.removeAt(index)),
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                    child: const Icon(Icons.close_rounded, size: 13, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

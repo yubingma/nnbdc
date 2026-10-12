@@ -444,7 +444,7 @@ class BdcNotifier extends _$BdcNotifier {
       final studyConfig = StudyConfig.fromCurrentUser();
       applyStudyConfig(studyConfig);
 
-      state = state.copyWith(loadError: null);
+      state = state.copyWith(loadError: null, loadErrorCause: null);
 
       final nextWordStopwatch = Stopwatch()..start();
       bool success = await getNextWord(false, currentWordId: _currentStudyWordId());
@@ -471,6 +471,7 @@ class BdcNotifier extends _$BdcNotifier {
         Global.logger.e('loadData: getNextWord failed without loadError. State: word=${state.word}');
         state = state.copyWith(
           loadError: '获取单词失败，请检查网络后重试',
+          loadErrorCause: null,
           dataLoaded: true,
         );
       }
@@ -478,7 +479,7 @@ class BdcNotifier extends _$BdcNotifier {
       if (context.mounted && dialogShown) {
         Navigator.of(context, rootNavigator: true).pop();
       }
-      state = state.copyWith(loadError: e.toString(), dataLoaded: true);
+      state = state.copyWith(loadError: e.toString(), loadErrorCause: e, dataLoaded: true);
       ErrorHandler.handleError(e, st, logPrefix: 'loadData');
     } finally {
       dialogTimer?.cancel(); // 兜底取消定时器，防止泄露或延迟弹窗
@@ -641,6 +642,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (getWordResult.finished) {
       state = state.copyWith(
         loadError: '学习已完成',
+        loadErrorCause: null,
         word: null,
         wordWrapper: null,
         // 已经没有当前词了：标红提示必须跟着消失，否则会留给下一个"词"（其实已无词）
@@ -656,6 +658,7 @@ class BdcNotifier extends _$BdcNotifier {
     } else if (getWordResult.noWord) {
       state = state.copyWith(
         loadError: '当前书本没有正在学习的单词',
+        loadErrorCause: null,
         word: null,
         wordWrapper: null,
         isLatestAnswerWrongToday: false,
@@ -678,6 +681,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (currentStep == 'List') {
       state = state.copyWith(
         loadError: '正在跳转到单词列表...',
+        loadErrorCause: null,
         word: null,
         wordWrapper: null,
         groupStepNo: 0,
@@ -854,6 +858,7 @@ class BdcNotifier extends _$BdcNotifier {
       lastFsrsRatingReason: null,
       currentAsrCandidates: [],
       loadError: null, // Successfully loaded a word, clear error
+      loadErrorCause: null,
       tabIndex: newTabIndex,
       showHandwritingBoard: false,
       isKeyboardVisible: false,
@@ -2264,7 +2269,7 @@ class BdcNotifier extends _$BdcNotifier {
       Global.logger.d('[PERF] getNextWord -> StudyBo().getWord API cost: ${apiStopwatch.elapsedMilliseconds}ms');
       
       if (result.success && result.data != null) {
-        state = state.copyWith(loadError: null, learningGetWordResult: result.data);
+        state = state.copyWith(loadError: null, loadErrorCause: null, learningGetWordResult: result.data);
         final handleStopwatch = Stopwatch()..start();
         final success = await handleWord(result.data, isFromBatchWordList: isFromBatchWordList);
         Global.logger.d('[PERF] getNextWord -> handleWord cost: ${handleStopwatch.elapsedMilliseconds}ms');
@@ -2278,13 +2283,13 @@ class BdcNotifier extends _$BdcNotifier {
           ToastUtil.info('已进入新的一天，请重新开始学习');
           goRouter.go('/index'); // Redirect back to plan page
         } else {
-          state = state.copyWith(loadError: result.msg ?? '获取单词失败');
+          state = state.copyWith(loadError: result.msg ?? '获取单词失败', loadErrorCause: null);
           ToastUtil.error(result.msg ?? '获取单词失败');
         }
         return false;
       }
     } catch (e, st) {
-      state = state.copyWith(loadError: e.toString());
+      state = state.copyWith(loadError: e.toString(), loadErrorCause: e);
       // 同上：流转失败时保留凭据并恢复受理资格，避免当前词被锁死
       _answerAccepted = false;
       ErrorHandler.handleError(e, st, logPrefix: 'getNextWord');

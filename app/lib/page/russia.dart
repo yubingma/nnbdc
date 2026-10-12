@@ -255,6 +255,9 @@ class RussiaPageState extends State<RussiaPage>
   // 断线期间排队等待补发的指令（重连后按序发出去，不静默丢弃）
   final List<Map<String, dynamic>> _pendingUserCmds = [];
 
+  // 对手掉线中：>0 表示服务端告知"对手连接断了，最多等这么多秒"；0 表示对手在线
+  int _opponentOfflineSeconds = 0;
+
   // 长连接状态监听：断线提示 + 重连后恢复对局
   late final _GameSocketStatusListener _socketStatusListener;
 
@@ -583,6 +586,35 @@ class RussiaPageState extends State<RussiaPage>
       _handleForceClose(data?.toString() ?? '');
     });
 
+    socket.off('opponentOffline');
+    socket.on('opponentOffline', (data) {
+      if (!mounted || !isPlaying) return;
+      setState(() {
+        _opponentOfflineSeconds = (data is num) ? data.toInt() : 0;
+      });
+    });
+
+    socket.off('opponentOnline');
+    socket.on('opponentOnline', (data) {
+      if (!mounted || !isPlaying) return;
+      setState(() {
+        _opponentOfflineSeconds = 0;
+      });
+      ToastUtil.success('对手已重连回来，继续对战');
+    });
+
+    socket.off('stackSync');
+    socket.on('stackSync', (data) {
+      if (!mounted || !isPlaying) return;
+      _handleStackSync(data);
+    });
+
+    socket.off('gameResultNotice');
+    socket.on('gameResultNotice', (data) {
+      if (!mounted) return;
+      ToastUtil.error(data?.toString() ?? '');
+    });
+
     socket.off('wordB');
     socket.on('wordB', (data) {
       if (!mounted || !isPlaying) return;
@@ -740,6 +772,10 @@ class RussiaPageState extends State<RussiaPage>
       'wordPack',
       'gameNotInProgress',
       'forceClose',
+      'opponentOffline',
+      'opponentOnline',
+      'stackSync',
+      'gameResultNotice',
       'wordB',
       'giveProps',
       'propsUsed',
@@ -1033,7 +1069,7 @@ class RussiaPageState extends State<RussiaPage>
     _pendingUserCmds.clear();
     if (!isPlaying) return;
     Global.logger.w('SocketIoClient: 服务端已无本局对局，退出对战界面（触发指令[$cmd]）');
-    _exitBattleScreen('本局已结束，请重新开始');
+    _exitBattleScreen('本局已结束（长时间断线会按战败结算），请重新开始');
   }
 
   /// 本连接被服务端顶掉（同一账号在别处登录）：退出对战界面
@@ -1640,6 +1676,15 @@ class RussiaPageState extends State<RussiaPage>
                 child: _buildExerciseOpponentJoinedBanner(),
               ),
 
+            // 3.2 对手掉线提示：别让还在线的人对着静止棋盘猜发生了什么
+            if (isPlaying && _opponentOfflineSeconds > 0)
+              Positioned(
+                top: topPadding + 130,
+                left: 16,
+                right: 16,
+                child: _buildOpponentOfflineBanner(),
+              ),
+
             // 4. 等待/开始游戏浮层
             if (!isPlaying && !isShowingResult)
               Positioned.fill(
@@ -2082,6 +2127,64 @@ class RussiaPageState extends State<RussiaPage>
   }
 
   /// 练习模式下当有新对手进入时的顶部通知胶囊横幅
+  Widget _buildOpponentOfflineBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A).withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFFFBBF24).withValues(alpha: 0.6),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.wifi_off_rounded, color: Color(0xFFFBBF24), size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '对手掉线中，最多等 $_opponentOfflineSeconds 秒；超时未回按战败结算',
+              style: const TextStyle(
+                color: Color(0xFFFDE68A),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 服务端按时间推演出的权威堆叠行数：客户端挂了后台、气泡停在原地的那段时间
+  /// 服务端会补扣，这里把血条校正过来并告诉用户为什么掉血。
+  void _handleStackSync(dynamic data) {
+    final int rows = (data is List && data.isNotEmpty && data[0] is num)
+        ? (data[0] as num).toInt()
+        : 0;
+    final String reason = (data is List && data.length > 1) ? data[1].toString() : '';
+    final int serverHp = max(0, maxHp - rows);
+    // 两边对同一个事实各有一份推演，取更严的一方：服务端更宽松就不动本地的血
+    if (serverHp >= myHp) return;
+
+    final int lost = myHp - serverHp;
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final size = mediaQuery?.size ?? const Size(390, 844);
+    setState(() {
+      myHp = serverHp;
+      myCombo = 0;
+      floatingTexts.add(FloatingText(
+        x: size.width * 0.28,
+        y: 95,
+        text: reason.isEmpty ? '⏳ 漏答 -$lost HP' : '⏳ $reason -$lost HP',
+        color: const Color(0xFFEF4444),
+      ));
+    });
+    HapticFeedback.heavyImpact();
+  }
+
   Widget _buildExerciseOpponentJoinedBanner() {
     final bool isReady = opponentStarted;
     return Container(
