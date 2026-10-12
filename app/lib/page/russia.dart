@@ -1056,8 +1056,13 @@ class RussiaPageState extends State<RussiaPage>
   /// 长连接重连成功：补发断线期间排队的指令，并重新要一包词
   /// （服务端若已无本局对局，会回 gameNotInProgress 让界面明确退出）
   void _onSocketReconnected() {
-    if (!mounted || !isPlaying) return;
+    if (!mounted) return;
+    // 补发必须无条件执行：还没开局时，队列里压着的正是 ENTER_GAME_HALL、
+    // START_EXERCISE 这类"能不能进房间、能不能开赛"的指令。若把它们和
+    // "重新要一包词"一起挡在 isPlaying 后面，等待阶段就会永远进不了房间，
+    // 界面停在「已就绪，等待开赛...」，对手也永远匹配不到。
     _flushPendingUserCmds();
+    if (!isPlaying) return;
     // 断线前在途的那一包可能已经丢了，重连后必须重新要一次
     _wordPack.forgetRequested();
     _requestWordPack(myWordIndex);

@@ -53,6 +53,14 @@ class SocketIoClient {
         .build();
     socket = io.io(Config.socketServerUrl, opts);
 
+    // 长连接失败必须暴露出来：此前不注册任何错误监听，一旦连不上服务器，
+    // App 只会静默停在“等待对手／已就绪”界面上，完全无从定位。
+    socket.onConnectError((e) => Global.logger.e('SocketIoClient: 连接失败: $e'));
+    socket.onError((e) => Global.logger.e('SocketIoClient: 连接错误: $e'));
+    socket.onConnectTimeout((_) => Global.logger.w('SocketIoClient: 连接超时'));
+    socket.onReconnectError((e) => Global.logger.w('SocketIoClient: 重连错误: $e'));
+    socket.onReconnectFailed((_) => Global.logger.w('SocketIoClient: 重连失败'));
+
     Global.logger.d('SocketIoClient: Socket实例已创建，开始设置事件监听器');
 
     socket.onConnect((_) {

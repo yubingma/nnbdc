@@ -506,9 +506,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         }
         break;
       case AppLifecycleState.detached:
-        // 应用即将关闭时，确保资源清理
-        Global.logger.d('应用即将关闭');
-        SocketIoClient.instance.dispose();
+        // detached 只表示"引擎与视图分离"。Android 上按返回键退出 App 也会触发它，
+        // 而此后进程往往仍然存活、widget 树也没有被拆除（重新打开 App 即可直接使用）。
+        // 所以绝不能在这里销毁全局 SocketIoClient 单例：它的 dispose() 会把 _disposed
+        // 永久置位且没有任何复位路径，导致此后游戏长连接（匹配对手、开局）彻底静默失效。
+        // 进程真正结束时由操作系统回收资源，无需手动清理。
+        Global.logger.d('应用即将关闭（引擎与视图分离）');
         break;
       default:
         break;

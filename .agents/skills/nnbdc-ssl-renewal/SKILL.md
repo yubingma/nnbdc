@@ -8,7 +8,15 @@ whenToUse: 用户提到"SSL 证书快过期"、"阿里云证书告警"、"back.n
 
 ## 0. 一句话定位
 
-> 证书到期告警 + 服务器自动续期失败，**根因几乎都是「大陆 ↔ Let's Encrypt 跨境链路双向不通」**，不是脚本/cron/配置坏了。绕开办法是 **DNS-01**（LE 只查 DNS TXT，不连服务器，天然无跨境连接），前提是有一把能写阿里云 DNS 的 AccessKey。
+> 证书到期告警 + 自动续期失败，根因有两类，都跟「Let's Encrypt 要跨境」有关：
+> ① **服务器 → LE 出网时通时断**（`acme-v02.api.letsencrypt.org` 超时）；
+> ② **`www.nnbdc.com` 的 HTTPS 终结在只做中国内地加速的阿里云 CDN 上**，而 LE 的域名校验要从多个地理位置各查一遍，境外那几路连内地边缘节点会超时——只要 www 这一项不过，`nnbdc.com` 这张证书（SAN 含 apex + www）整体就签不下来。**这不是概率问题，是结构性问题。**
+>
+> 绕开办法是 **DNS-01**（LE 只查 DNS TXT 记录，不访问 www、不访问源站），前提是有一把能写阿里云云解析的 AccessKey。
+>
+> **2026-10-13 起已落地**：`nnbdc.com` + `www.nnbdc.com` 由服务器上的 acme.sh 走 DNS 校验（每天 cron 自动跑，续期成功自动部署 + 上传 CDN）；`back.nnbdc.com` 继续用 certbot 文件校验（A 记录直连源站，境外可达，实测能自动续）。
+>
+> ⚠️ **判断"到底续没续上"的唯一硬证据**：`/etc/letsencrypt/archive/<域名>/` 里出现了新的版本号文件（连同 `openssl x509 -noout -dates` 的 notAfter 推后）。日志里那句 `任务圆满完成` / `Reload successful` 只代表**脚本三步跑完了**，证书可能一个字都没换（certbot 判 `not yet due` 时会跳过签发，但脚本照旧 reload nginx 并重新上传旧证书到 CDN）。2026-10 那几次"续期成功"就是这么被误读的。
 
 ## 1. 架构（两个域名、两张证书、各管各的）
 
@@ -26,9 +34,14 @@ whenToUse: 用户提到"SSL 证书快过期"、"阿里云证书告警"、"back.n
 # root crontab（2026-10-12 起改为每天执行，原来错写成每月 1 号）
 0 3 * * * /root/renew-cert.sh >> /var/log/certbot-renew.log 2>&1
 ```
-`/root/renew-cert.sh`：① Docker 内 `certbot renew --webroot -w /webroot`（HTTP-01）→ ② 成功则 `docker exec nginx nginx -s reload` → ③ 调 `/etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh` 把 `live/nnbdc.com` 证书上传到 `www.nnbdc.com` CDN。
 
-**关键坑**：这条链路（证书签发 + LE 反向校验域名）都依赖大陆↔LE 跨境网络；它不稳定 → 续期静默失败，误以为"定时任务坏了"。
+`/root/renew-cert.sh` 每天跑三件事（2026-10-13 起）：
+
+1. **`back.nnbdc.com`：certbot 文件校验**（Docker 里 `certbot renew`，不带 `--webroot`，让每条 renewal 配置用自己保存的校验方式）。
+2. `docker exec nginx nginx -s reload`。
+3. **`nnbdc.com` + `www.nnbdc.com`：acme.sh DNS 校验**（`/root/.acme.sh/acme.sh --cron`，先 `source /root/.aliyun_dns_creds` 提供阿里云密钥）。真正续期成功时，acme.sh 自动执行 `/root/deploy-nnbdc-cert.sh`：写入 `archive/nnbdc.com` 下一个版本号 → 切换 live 软链 → `nginx -t` + reload → `aliyun cdn SetCdnDomainSSLCertificate` 上传到 `www.nnbdc.com`。
+
+**关键坑**：`www` 那张不能用文件校验（见 §0 的根因②，2026-10-13 干跑实测两次校验点都因超时失败）；`back` 那张反而可以，因为它直连源站、不经 CDN。
 
 **节律坑（2026-10-12 修掉）**：原为 `0 3 1 * *`（每月 1 号），而 certbot 只在距到期 ≤30 天时才真正续期。证书 12-02 到期时，11-01 执行距到期还有 31.75 天 → 仍判 `not yet due`；真正第一次尝试要等到 **12-01**，那时距到期只剩 1.75 天。若那天跨境不通（2026-06-01、2026-09-01 都失败过），下次 cron 要等到次年 1-01，证书会整整失效一个月——这就是历史上"到期证书失效"的物理根因。改成每天执行后，容错窗口由 1 天扩到 30 天。
 
@@ -81,6 +94,7 @@ git clone --depth 1 https://github.com/acmesh-official/acme.sh.git /tmp/acmesh; 
 ```
 
 ### 4.3 部署到服务器（archive 新版本 + 改 live 软链 + reload）
+> 2026-10-13 起这套步骤已脚本化为 **`/root/deploy-nnbdc-cert.sh`**（由 acme.sh 的 `--reloadcmd` 在续期成功后自动调用），正常情况下不需要再手敲。下面保留手工步骤备查。
 ```bash
 # 先看当前归档最大版本号，+1 作为新版本（本次：nnbdc.com=9，back.nnbdc.com=10）
 scp -o StrictHostKeyChecking=no /tmp/acmehome/nnbdc.com/fullchain.cer  root@47.108.27.205:/root/certdeploy/nnbdc.fullchain.pem
@@ -119,9 +133,10 @@ done
 ```
 成功：`issuer=Let's Encrypt`，`notAfter≈90 天后`；`www` 由 CDN 呈现、`back` 由源站 nginx 呈现。
 
-## 5. 凭证来源（本地，勿外泄）
+## 5. 凭证来源（本地 + 服务器，勿外泄）
 
-- 证书续期用的阿里云 RAM AccessKey 存在本机 **`~/.nnbdc_aliyun_creds`**（权限 600，**不要提交 git / 不要云同步**）。内容两行：`ALIYUN_SSL_AK_ID=...`、`ALIYUN_SSL_AK_SECRET=...`。用 `source` 加载。
+- **服务器上（自动续期用，2026-10-13 起）**：`/root/.aliyun_dns_creds`（权限 600，仅 root）。里面同时导出 `ALIBABA_CLOUD_ACCESS_KEY_ID/SECRET/REGION_ID`（给 `aliyun` 命令行用）和 `Ali_Key`/`Ali_Secret`（给 acme.sh 的 `dns_ali` 用）。`/root/renew-cert.sh` 与 `/root/deploy-nnbdc-cert.sh` 都 `source` 它。acme.sh 自己还会在 `/root/.acme.sh/account.conf`（600）存一份 `SAVED_Ali_Key`，属正常。
+- 证书续期用的阿里云 RAM AccessKey 也存在本机 **`~/.nnbdc_aliyun_creds`**（权限 600，**不要提交 git / 不要云同步**）。内容两行：`ALIYUN_SSL_AK_ID=...`、`ALIYUN_SSL_AK_SECRET=...`。用 `source` 加载。
 - 我的沙箱**写不进** home（所以该文件由用户在本机创建），但**能读取**；下次直接 `source` 即可，无需用户重新提供。
 - SSH 服务器密码在 `~/.zprofile`（`PROD_DB_SSH_PASSWORD` / `nnbdc_server_pwd`）。
 
@@ -129,18 +144,21 @@ done
 
 - 生产环境**默认只读**；涉及证书部署/替换/上传 CDN/改 nginx 需**用户明确授权**。
 - **不要**在对话/输出里回显 AccessKey Secret 或私钥明文；一律 `source ~/.nnbdc_aliyun_creds`。
-- `~/.zprofile` 里那把旧 AccessKey（`aliyun_access_key_id`，ID 前缀 `LTAI5tFX`）**已被阿里云判"泄露风险"**：在 RAM 删除/禁用，并替换服务器 `aliyun-cdn.sh` 硬编码的旧 key。✅ **2026-10-12 已完成替换**：服务器 `aliyun-cdn.sh` 第 6/7 行已换成 `~/.nnbdc_aliyun_creds` 那把（ID 前缀 `LTAI5t7H`），旧版备份在 `aliyun-cdn.sh.bak.20261012`；但 `~/.zprofile` 里那把旧 key 本身**尚未在 RAM 里删除/禁用**，仍待处理。
+- `~/.zprofile` 里那把旧 AccessKey（`aliyun_access_key_id`，ID 前缀 `LTAI5tFX`）**已被阿里云判"泄露风险"**。✅ 2026-10-12 服务器脚本里的 key 已换成新那把（ID 前缀 `LTAI5t7H`）。⚠️ **2026-10-13 实测：这把旧 key 目前仍然能正常调用阿里云接口**（`aliyun alidns DescribeDomains` 成功返回域列表），也就是说它还在生效、风险是活的，**必须在 RAM 里禁用或删除**（需要账号管理权限，我这边只有 DNS + CDN 权限，做不了）。
+- 服务器上含明文 key 的文件及权限：`/root/.aliyun_dns_creds`（600）、`/root/.acme.sh/account.conf`（600）、`/root/nnbdc-cert-backup-20261013/aliyun-cdn.sh*.orig|retired*`（600，历史备份，含当时那把 key）。
+- 容器内那个必然报错的 certbot deploy 钩子（`/etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh`，容器里没有 `aliyun` 命令）已于 2026-10-13 **退休**，挪到 `/root/nnbdc-cert-backup-20261013/`；CDN 上传改由 `/root/deploy-nnbdc-cert.sh` 在宿主机做。
 - 私钥副本（`/root/certdeploy`、`/tmp/acmehome`）处理完务必删除；`archive/*/privkey*.pem` 保持 `root:root 600`。
 - 若用户决定把 RAM 子账号 key 存进 `~/.nnbdc_aliyun_creds` 留作长期自动续期 → 就别删；否则处理完禁用/删除。
 
-## 7. 长期续期方案（避免 3 个月后又来一遍）
+## 7. 长期续期方案
 
-证书 90 天、LE 约到期前 30 天续期。服务器直连 LE 不可靠 → **服务器上的 certbot cron 注定还会失败**。三选一：
-- **A'（本次采用）**：在能连 LE 的机器（Mac）用 acme.sh DNS-01 续期 + 自动部署到服务器/CDN。
-- **B（最稳，推荐后续切）**：改用阿里云免费 DV 证书（单域名、3 个月、每账号一年 20 张），内网签发/续期，CDN 一键部署 → 彻底摆脱 LE 跨境。（需两张：www + back）
+证书 90 天、LE 按 ARI 窗口在到期前约 30 天续期。三条路：
+- **A'（2026-10-13 已在服务器上落地，现在的正式方案）**：服务器上用 **acme.sh + 阿里云 DNS 校验（`--dns dns_ali`）** 续 `nnbdc.com`+`www`，每天由 `/root/renew-cert.sh` 调 `--cron`；`back` 继续用 certbot 文件校验。不需要手工、不需要 Mac 参与、不依赖任何入站可达性（新增脚本 `/root/deploy-nnbdc-cert.sh` 负责部署 + 上传 CDN）。
+- **B（用户 2026-10-13 明确不做）**：阿里云免费 DV 证书（内网签发/续期，CDN 一键部署）。用户反馈"不好弄"，不要再反复推荐。
 - **C**：给服务器配到 LE 的代理/隧道，让 certbot 能直连（需长期维护网络）。
+- 另有一条"让文件校验重新可用"的路：给 CDN 开通**全球加速**（现在 `Scope=domestic`、`GlobalResourcePlan=off`）——要花钱且改变 CDN 结构，用户未采纳。
 
-## 8. 本次基线（2026-09-03 处理完成）
+## 8. 历史基线（2026-09-03）
 
 - `www.nnbdc.com` / `back.nnbdc.com` 证书均有效至 **2026-12-02**；归档版本 nnbdc.com=v9、back.nnbdc.com=v10；nginx 已 reload、CDN 已更新（`ServerCertificateStatus:on`）。
 - 下次到期提醒 ≈ **2026-11-02**，届时按本 skill 处理；优先考虑切到方案 B（阿里云证书）根治。
@@ -153,4 +171,44 @@ done
 - **改动 2**：`aliyun-cdn.sh` 的旧 key 换成 `~/.nnbdc_aliyun_creds` 那把，实测上传 CDN 成功，备份 `aliyun-cdn.sh.bak.20261012`。
 - **全链路演练**：手动执行 `renew-cert.sh` 通过（certbot `not due` → nginx reload → 新 key 上传 CDN 成功，`RequestId: 01A1308A-B385-5FA0-9819-EA3CAA254228`）。
 - 巡检时实测服务器到 LE 连通性为 **HTTP 200（通的）**，说明跨境链路是**时通时断**而非永久不通——这正是必须靠"每天跑"来兜住的原因。
-- **待办**：① `~/.zprofile` 里那把被判泄露的旧 key 需在 RAM 删除/禁用；② 11-02 之后留意自动续期是否真的签下来（每天都有机会）；③ 建议切方案 B（阿里云免费 DV 证书）彻底摆脱跨境。
+- **待办（已被 §10 取代）**：① `~/.zprofile` 里那把被判泄露的旧 key 需在 RAM 删除/禁用（2026-10-13 实测**仍然有效**，见 §6）；② ~~11-02 之后留意自动续期~~（已查明 11-02 起的 HTTP 文件校验对 www 必失败，见 §10）；③ 不再建议切阿里云 DV 证书（用户明确不做）。
+
+## 10. 2026-10-13 巡检结论与改动（换了续期机制）
+
+### 10.1 巡检发现
+
+- 两张证书当时仍是 **2026-09-03 签发、2026-12-02 到期**；`/etc/letsencrypt/archive/` 里 nnbdc.com 最新是 `cert9.pem`、back 最新是 `cert10.pem`，**整个 10 月没有产生任何新版本文件**。
+- **10 月那几次"续期成功"是误读**：`/var/log/certbot-renew.log` 里 2026-10-01（以及 10-12 的手工演练）中，certbot 明确写的是 `Certificate not yet due for renewal` / `No renewals were attempted`，**一张都没签**；脚本照旧 reload nginx、把**旧证书**重新上传 CDN，最后打印"任务圆满完成"。LE 只在到期前 30 天内才真续（12-02 到期 → **11-02** 才第一次真尝试），所以 10 月怎么看都"成功"。
+- 一次 `certbot renew --dry-run`（staging、不签发/不替换/不部署）当场测出真相：
+  - ✅ `back.nnbdc.com` 模拟续期成功；
+  - ❌ `nnbdc.com` + `www.nnbdc.com` 失败，LE 原话：`During secondary validation: 103.228.211.36: Fetching http://www.nnbdc.com/.well-known/acme-challenge/…: Timeout during connect (likely firewall problem)`，另一个地址是 `45.123.128.188`。注意这两个 IP 是**校验时 www 被解析出来的目标地址**（广西广电 AS63581 / 吉视传媒 AS63701），**不是** LE 校验机的地址。
+- 两个根因：
+  1. **nginx 写错位置**：`conf.d/default.conf` 里 `nnbdc.com` 服务器块把 `return 301 http://www.nnbdc.com$request_uri;` 写在 **server 级**，nginx 在挑选 location 之前就执行它 → 那个 `location /.well-known/acme-challenge/` 等于不存在，校验请求被 301 到 www（实测：apex 挑战路径 301；在源站上用 `Host: nnbdc.com` 直连也是 301）。2026-06-01 的 `403`、以及 `cert7` 于 06-12 到期而 06-14 才补上（www 真断 2 天），都是这个坑。
+  2. **结构性**：`www.nnbdc.com` → 阿里云 CDN（`Scope=domestic` 仅内地加速，`GlobalResourcePlan=off`），源站 `47.108.27.205:80`。LE 的多地校验必然有境外几路连内地边缘节点超时，www 一项不过 → 整张证书签不下来。**只修 nginx 解决不了这个**（这也是当初不再走 HTTP 校验、直接切 DNS 校验的原因）。
+
+### 10.2 本次改动（已执行）
+
+| 项 | 内容 |
+|---|---|
+| 续期工具 | 服务器装 **acme.sh v3.1.7**（`/root/.acme.sh`，`--nocron`，不登记它自己的 cron） |
+| 密钥 | 新建 `/root/.aliyun_dns_creds`（600），从原 `aliyun-cdn.sh` 取同一把 key（ID 前缀 `LTAI5t7H…`） |
+| 校验方式 | `nnbdc.com`+`www` 改 **DNS-01**；`/etc/letsencrypt/renewal/nnbdc.com.conf` 停用（改名 `…conf.disabled-20261013`，certbot 只扫 `*.conf`） |
+| 每日脚本 | `/root/renew-cert.sh` 重写：certbot 只管 back → reload nginx → `acme.sh --cron` 管 nnbdc.com |
+| 部署脚本 | 新增 `/root/deploy-nnbdc-cert.sh`（700）：archive 版本 +1 → 切 live 软链 → `nginx -t` + reload → 上传 CDN；由 acme.sh 的 `--reloadcmd` 自动调用 |
+| nginx | `conf.d/default.conf`：`return 301` 挪进 `location / {}`，校验目录恢复生效（apex 挑战路径由 301 变为 404） |
+| 清理 | 删 `/var/www/html/.well-known/acme-challenge/test.txt`（6-14 残留）；容器内那个必报错的 deploy 钩子挪进备份目录；`/root/nnbdc-cert-backup-20261013/` 统一 700/600 |
+| 仓库同步 | `devops/renew-cert.sh`、`devops/deploy-nnbdc-cert.sh`、`devops/nginx/conf.d/default.conf` 与服务器文件 md5 完全一致 |
+
+### 10.3 验证结果
+
+- 新证书 **2026-10-13 01:08 签发，有效至 2027-01-10 16:15:28 UTC**（首签写 archive v10，强制续期演练写 v11，live 软链指向 v11；私钥 600、证书与私钥配对）。
+- 源站与 CDN 都换了新证书：服务器 `curl https://www.nnbdc.com/` → 200，链为 `nnbdc.com → YR1 → ISRG Root YR`，`Verify return code: 0 (ok)`；指定边缘节点 `1.194.31.54`、`111.62.97.177` 出示的都是新证书；CDN 证书列表里出现到期 2027-01-10 的新条目。
+- **强制演练了一次真实续期**（`acme.sh --cron --force`，等同 2026-12-12 那次）：DNS TXT 增删 → 签发 → 自动部署 v11 → reload nginx → 上传 CDN，全程零人工，结尾 `Reload successful`。
+- 手动跑 `/root/renew-cert.sh` 退出码 0：certbot 只处理 back（`not yet due`），acme.sh 打印 `Skipping. Next renewal time is: 2026-12-12T04:20:41Z`。
+- `back.nnbdc.com` 的证书与 renewal 配置**未被本次改动碰到**（仍是 certbot webroot 方式）。
+- ⚠️ 巡检时我这台 Mac 访问 `www.nnbdc.com` 一度失败（`SSL_ERROR_SYSCALL`），原因是我这条线路到北京联通 `124.200.113.7x` 那几个边缘节点不通——**同一节点从成都服务器访问是 200，境外 11 国节点也是 200**。与证书更换无关，别被它带偏。
+
+### 10.4 下次要做的
+
+- **2026-12-12 之后**核对 `/var/log/certbot-renew.log` 与 `/etc/letsencrypt/archive/nnbdc.com/` 里是否出现 v12（判据见 §0 警示）。若迟迟不出现，只查服务器 → LE 的出网，不要去查 www/CDN。
+- RAM 里那把旧 key（§6）需用户处理。

@@ -354,6 +354,7 @@
 | 游戏服务器长连接 | 客户端 `SocketIoClient` ↔ 服务端 `/all` 命名空间 | 客户端与游戏服务器之间那条一直在线的双向通道，出单词、血条变化都走它 | 它断了就等于听不到服务端说话 |
 | 长连接断线重连 | 客户端 `SocketIoClient` 的心跳定时器 + 服务端 `SocketService.disconnectExistingConnectionOfUser` | 长连接中断后客户端自动再建一条新连接 | 重连会开新连接、换新会话号；服务端按「一个用户只允许一个连接」处理旧连接 |
 | 连接会话 | `sessionId` | 服务端给每条长连接分配的编号，一个在线用户同一时刻只保留一个有效会话 | 会话号换了，服务端就当成另一条连接 |
+| 单人练习对战 | 客户端 `isExercise`（`app/lib/page/russia.dart`），开局指令 `START_EXERCISE`，服务端回 `BEGIN_EXERCISE` | 房间里还没等到对手时，自己一个人先把这一局打起来（服务端 `StartExerciseProcessor` 把该玩家标记为 `exercise`） | ⚠️ 与 4.4 的「练习模式」（例句看答案后继续练习，`_isPracticeMode`）**完全不是一回事**，指代时必须写全「单人练习对战」 |
 
 ### 4.7 词内容资源
 

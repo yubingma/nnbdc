@@ -11,13 +11,15 @@
   - `/etc/letsencrypt/live/back.nnbdc.com/fullchain.pem`
   - `/etc/letsencrypt/live/back.nnbdc.com/privkey.pem`
 - **续期配置**：
-  - `/etc/letsencrypt/renewal/*.conf` 
-- **续期 Hook（示例：CDN 证书同步）**：
-  - `/etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh`
+  - 后端（certbot）：`/etc/letsencrypt/renewal/back.nnbdc.com.conf`
+  - 前端（acme.sh）：`/root/.acme.sh/nnbdc.com/nnbdc.com.conf`（原 certbot 的 `nnbdc.com.conf` 已于 2026-10-13 停用为 `…conf.disabled-20261013`）
+- **CDN 证书同步**：`/root/deploy-nnbdc-cert.sh`（由 acme.sh 续期成功后自动调用）
 
 ### 运维脚本与服务（生产机）
 
 - **证书续签脚本（crontab 调用）**：`/root/renew-cert.sh`
+- **前端证书部署脚本**：`/root/deploy-nnbdc-cert.sh`
+- **阿里云密钥文件（600，勿外泄）**：`/root/.aliyun_dns_creds`
 - **crontab**：`crontab -l`
 - **nginx 容器**：`nginx`（systemd + Docker）
 
@@ -41,7 +43,11 @@
 
 - **back.nnbdc.com**: 使用 Let's Encrypt 证书（有效期90天），实际启用 HTTPS
 - **www.nnbdc.com / nnbdc.com**: 使用 Let's Encrypt 证书（证书 SAN 同时包含 `nnbdc.com` 与 `www.nnbdc.com`），并在 CDN 侧启用 HTTPS
-- **自动续签**: 通过 crontab + certbot 实现自动续签；若前端启用了 CDN HTTPS，需配合 deploy-hook 将新证书同步到 CDN
+- **续期方式（2026-10-13 起）**：
+  - `www.nnbdc.com / nnbdc.com`：**acme.sh + 阿里云 DNS 校验（DNS-01）**。因为 www 的 HTTPS 终结在只做中国内地加速的阿里云 CDN 上，Let's Encrypt 的多地校验有境外几路连不上内地边缘节点，文件校验（HTTP-01）必然失败；DNS 校验只往阿里云云解析写一条 TXT 记录，不依赖任何外部节点访问 www 或源站。
+  - `back.nnbdc.com`：**certbot 文件校验（HTTP-01）**。A 记录直连源站，境外校验节点可达，可自动续。
+  - 两者都由每天的 crontab 任务 `/root/renew-cert.sh` 驱动；前端那张续期成功后，由 `/root/deploy-nnbdc-cert.sh` 自动写入新版本、切换 `/etc/letsencrypt/live/nnbdc.com/` 软链、重载 nginx 并把新证书上传到阿里云 CDN。
+  - 诊断与修复步骤见 `.agents/skills/nnbdc-ssl-renewal/SKILL.md`（含"日志里『任务圆满完成』不等于证书真的换了"这一坑）。
 
 ## 架构图
 
@@ -63,7 +69,7 @@ graph TB
     subgraph "服务器 47.108.27.205"
         FRONTEND[前端服务<br/>www.nnbdc.com<br/>HTTP + HTTPS]
         BACKEND[后端服务<br/>back.nnbdc.com<br/>HTTP + HTTPS]
-        CERT[Let's Encrypt 证书<br/>有效期90天<br/>crontab+certbot自动续签]
+        CERT[Let's Encrypt 证书<br/>有效期90天<br/>cron 自动续签<br/>前端 DNS 校验 / 后端文件校验]
     end
     
     subgraph "第三方服务"
@@ -224,11 +230,13 @@ sequenceDiagram
 
 本项目使用 Docker 容器化部署 certbot，通过 cron 定时任务实现证书自动续签。
 
+> ⚠️ **2026-10-13 起机制有变**：`www.nnbdc.com / nnbdc.com` 那张证书已改由服务器上的 **acme.sh + 阿里云 DNS 校验** 续期（www 走阿里云 CDN 且仅内地加速，Let's Encrypt 的境外校验点连不上内地边缘节点，文件校验必然失败）；`back.nnbdc.com` 仍用下面的 certbot 文件校验流程。本章后续内容只对后端那张完全适用，前端那张的现状与诊断步骤见 `.agents/skills/nnbdc-ssl-renewal/SKILL.md`。
+
 #### crontab 配置
 
 ```bash
-# 每月1号凌晨3点执行证书续签
-0 3 1 * * /root/renew-cert.sh >> /var/log/certbot-renew.log 2>&1
+# 每天凌晨3点执行证书续签（2026-10-12 起；原为每月1号，会错过 Let's Encrypt 的 30 天续期窗口）
+0 3 * * * /root/renew-cert.sh >> /var/log/certbot-renew.log 2>&1
 ```
 
 #### 续签脚本 (`/root/renew-cert.sh`)
@@ -398,8 +406,8 @@ chmod +x /root/renew-cert.sh
 # 编辑 crontab
 crontab -e
 
-# 添加以下内容（每月1号凌晨3点执行）
-0 3 1 * * /root/renew-cert.sh >> /var/log/certbot-renew.log 2>&1
+# 添加以下内容（每天凌晨3点执行）
+0 3 * * * /root/renew-cert.sh >> /var/log/certbot-renew.log 2>&1
 
 # 验证配置
 crontab -l
