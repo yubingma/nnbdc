@@ -3,396 +3,744 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泡泡单词 - 智能背单词应用官方网站</title>
-    <meta name="description" content="泡泡单词是一款专业的智能背单词应用，支持多平台，采用科学的记忆算法，让英语学习更高效。">
-    <meta name="keywords" content="泡泡单词,背单词,英语学习,单词记忆,NNBDC">
+    <title>泡泡单词（NNBDC）· 一个词一个意象的背单词应用</title>
+    <meta name="description" content="泡泡单词为每个单词生成一张核心意象图，把看似毫不相关的多个释义串成一条引申脉络；配合科学复习、单词 PK 对战与勋章打卡，支持 Android、iOS、Windows、macOS 多端同步。">
+    <meta name="keywords" content="泡泡单词,NNBDC,背单词,英语学习,单词记忆,核心意象,单词PK,考研单词,四六级单词">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <style>
+        :root {
+            --brand: #2563EB;
+            --brand-strong: #1D4ED8;
+            --brand-soft: rgba(37, 99, 235, 0.07);
+            --ink: #0B1220;
+            --ink-2: #4B5768;
+            --ink-3: #8B96A5;
+            --line: rgba(11, 18, 32, 0.08);
+            --soft: #F5F7FA;
+            --wrap: 1120px;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f5f5f5;
+            font-family: var(--font);
+            color: var(--ink);
+            background: #fff;
+            line-height: 1.75;
+            -webkit-font-smoothing: antialiased;
         }
-        
-        .container {
-            max-width: 1200px;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .wrap {
+            max-width: var(--wrap);
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 24px;
         }
-        
-        /* 导航栏 */
-        nav {
-            background-color: #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+        /* ---------- 顶部导航 ---------- */
+        .nav {
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.82);
+            -webkit-backdrop-filter: saturate(180%) blur(16px);
+            backdrop-filter: saturate(180%) blur(16px);
+            border-bottom: 1px solid var(--line);
         }
-        
-        nav .container {
+
+        .nav-inner {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
+            justify-content: space-between;
+            height: 64px;
         }
-        
-        .logo {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #667eea;
-            text-decoration: none;
-        }
-        
-        nav ul {
-            list-style: none;
+
+        .brand {
             display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 16.5px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .brand img {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
             gap: 30px;
-            flex-wrap: wrap;
+            font-size: 14.5px;
+            color: var(--ink-2);
         }
-        
-        nav ul li a {
-            color: #333;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
+
+        .nav-links a:hover {
+            color: var(--brand);
         }
-        
-        nav ul li a:hover {
-            color: #667eea;
+
+        .nav-cta {
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: var(--brand);
+            color: #fff !important;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s;
         }
-        
-        /* 首页横幅 */
+
+        .nav-cta:hover {
+            background: var(--brand-strong);
+        }
+
+        /* ---------- 首屏 ---------- */
         .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 80px 20px;
+            padding: 96px 0 40px;
             text-align: center;
         }
-        
+
+        .eyebrow {
+            font-size: 12.5px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--brand);
+            margin-bottom: 22px;
+        }
+
         .hero h1 {
-            font-size: 3em;
-            margin-bottom: 20px;
+            font-size: clamp(38px, 6.4vw, 66px);
+            font-weight: 700;
+            line-height: 1.14;
+            letter-spacing: -0.025em;
         }
-        
-        .hero p {
-            font-size: 1.3em;
-            margin-bottom: 30px;
-            opacity: 0.9;
+
+        .hero h1 .dim {
+            color: var(--ink-3);
+            font-weight: 700;
         }
-        
+
+        .hero-sub {
+            max-width: 660px;
+            margin: 26px auto 0;
+            font-size: clamp(16px, 1.9vw, 18.5px);
+            line-height: 1.85;
+            color: var(--ink-2);
+        }
+
+        .hero-sub b {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .actions {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 36px;
+        }
+
         .btn {
             display: inline-block;
-            padding: 15px 40px;
-            background-color: white;
-            color: #667eea;
-            text-decoration: none;
-            border-radius: 50px;
+            padding: 13px 30px;
+            border-radius: 999px;
+            font-size: 15px;
             font-weight: 600;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
         }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+
+        .btn-primary {
+            background: var(--brand);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.22);
         }
-        
-        /* 内容区域 */
+
+        .btn-primary:hover {
+            background: var(--brand-strong);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+        }
+
+        .btn-ghost {
+            border: 1px solid var(--line);
+            color: var(--ink-2);
+        }
+
+        .btn-ghost:hover {
+            border-color: rgba(37, 99, 235, 0.4);
+            color: var(--brand);
+        }
+
+        /* ---------- 截图 ---------- */
+        .shots {
+            display: flex;
+            gap: 22px;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 64px;
+        }
+
+        .shot {
+            background: var(--soft);
+            border-radius: 26px;
+            padding: 18px;
+            flex: 0 1 268px;
+            transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.35s;
+        }
+
+        .shot img {
+            width: 100%;
+            display: block;
+            border-radius: 12px;
+        }
+
+        .shot:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 18px 40px rgba(11, 18, 32, 0.1);
+        }
+
+        .shot.raised {
+            transform: translateY(-34px);
+        }
+
+        .shot.raised:hover {
+            transform: translateY(-42px);
+        }
+
+        /* ---------- 区块通用 ---------- */
         section {
-            padding: 60px 20px;
-            background-color: #fff;
-            margin-bottom: 20px;
+            padding: 104px 0;
         }
-        
-        section h2 {
-            color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 30px;
+
+        .soft-bg {
+            background: var(--soft);
+        }
+
+        .sec-head {
+            max-width: 680px;
+            margin-bottom: 64px;
+        }
+
+        .sec-head.center {
+            margin-left: auto;
+            margin-right: auto;
             text-align: center;
         }
-        
-        section h3 {
-            color: #764ba2;
-            font-size: 1.8em;
-            margin-top: 40px;
-            margin-bottom: 20px;
+
+        .sec-head h2 {
+            font-size: clamp(26px, 3.6vw, 38px);
+            font-weight: 700;
+            line-height: 1.28;
+            letter-spacing: -0.02em;
         }
-        
-        /* 产品展示 */
-        .product-grid {
+
+        .sec-head p {
+            margin-top: 16px;
+            font-size: 16.5px;
+            color: var(--ink-2);
+        }
+
+        /* ---------- 亮点（图左文右交替）---------- */
+        .feature {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 72px;
+            align-items: center;
+        }
+
+        .feature + .feature {
+            margin-top: 116px;
+        }
+
+        .feature.flip .feature-text {
+            order: 2;
+        }
+
+        .feature.flip .feature-art {
+            order: 1;
+        }
+
+        .feature-num {
+            font-size: 12.5px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            color: var(--brand);
+            text-transform: uppercase;
+        }
+
+        .feature-text h3 {
+            margin-top: 14px;
+            font-size: clamp(22px, 2.7vw, 30px);
+            font-weight: 700;
+            line-height: 1.32;
+            letter-spacing: -0.02em;
+        }
+
+        .feature-text p {
+            margin-top: 20px;
+            font-size: 16px;
+            color: var(--ink-2);
+        }
+
+        .feature-text .highlight {
+            margin-top: 24px;
+            padding: 18px 22px;
+            background: var(--brand-soft);
+            border-radius: 14px;
+            font-size: 14.5px;
+            color: var(--ink-2);
+        }
+
+        .feature-text .highlight b {
+            color: var(--brand-strong);
+            font-weight: 600;
+        }
+
+        .feature-art {
+            background: var(--soft);
+            border-radius: 26px;
+            padding: 22px;
+        }
+
+        .feature-art img {
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            display: block;
+            border-radius: 12px;
+        }
+
+        /* ---------- 更多能力 ---------- */
+        .caps {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
+            gap: 44px 56px;
         }
-        
-        .product-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            transition: transform 0.3s, box-shadow 0.3s;
+
+        .cap h4 {
+            font-size: 16.5px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
         }
-        
-        .product-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .product-card .icon {
-            font-size: 3em;
-            margin-bottom: 20px;
-        }
-        
-        .product-card h4 {
-            color: #667eea;
-            font-size: 1.5em;
-            margin-bottom: 15px;
-        }
-        
-        .product-card p {
-            color: #666;
+
+        .cap p {
+            margin-top: 9px;
+            font-size: 15px;
+            color: var(--ink-2);
             line-height: 1.8;
         }
-        
-        /* 应用介绍 */
-        .app-intro {
-            background-color: #f9f9f9;
-            padding: 40px;
-            border-radius: 15px;
-            margin-top: 30px;
+
+        /* ---------- 平台 ---------- */
+        .platforms-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 40px;
+            justify-content: center;
+            margin-top: 40px;
         }
-        
-        .app-intro p {
-            font-size: 1.1em;
-            line-height: 2;
-            margin-bottom: 20px;
+
+        .platform {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--ink);
         }
-        
-        .app-intro ul {
-            margin-left: 30px;
-            line-height: 2.5;
+
+        .platform span {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 400;
+            color: var(--ink-3);
+            margin-top: 2px;
         }
-        
-        .app-intro ul li {
-            margin-bottom: 10px;
+
+        /* ---------- 联系与合规信息 ---------- */
+        .info-list {
+            display: grid;
+            grid-template-columns: 168px 1fr;
+            gap: 2px 0;
+            border-top: 1px solid var(--line);
         }
-        
-        /* 联系方式 */
-        .contact-info {
-            background-color: #f0f7ff;
-            padding: 30px;
-            border-radius: 15px;
-            margin-top: 30px;
+
+        .info-list dt,
+        .info-list dd {
+            padding: 15px 0;
+            border-bottom: 1px solid var(--line);
+            font-size: 15.5px;
         }
-        
-        .contact-info p {
-            margin: 15px 0;
-            font-size: 1.1em;
+
+        .info-list dt {
+            color: var(--ink-2);
         }
-        
-        .contact-info strong {
-            color: #667eea;
-            min-width: 120px;
-            display: inline-block;
+
+        .info-list dd {
+            color: var(--ink);
+            word-break: break-word;
         }
-        
-        /* 页脚 */
+
+        /* ---------- 页脚 ---------- */
         footer {
-            background-color: #333;
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
+            padding: 56px 0 64px;
+            border-top: 1px solid var(--line);
+            background: var(--soft);
         }
-        
-        footer p {
-            margin: 10px 0;
+
+        .foot-main {
+            display: flex;
+            justify-content: space-between;
+            gap: 32px;
+            flex-wrap: wrap;
         }
-        
-        footer a {
-            color: #667eea;
-            text-decoration: none;
-            margin: 0 10px;
+
+        .foot-brand {
+            font-size: 15px;
+            font-weight: 700;
         }
-        
-        footer a:hover {
-            text-decoration: underline;
+
+        .foot-text {
+            margin-top: 12px;
+            font-size: 13.5px;
+            color: var(--ink-2);
+            line-height: 1.9;
         }
-        
-        .footer-links {
-            margin: 20px 0;
+
+        .foot-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 26px;
+            font-size: 13.5px;
+            color: var(--ink-2);
         }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2em;
-            }
-            
-            .hero p {
-                font-size: 1.1em;
-            }
-            
-            nav ul {
-                gap: 15px;
-                font-size: 0.9em;
-            }
-            
-            section h2 {
-                font-size: 2em;
-            }
-            
-            .product-grid {
+
+        .foot-links a:hover {
+            color: var(--brand);
+        }
+
+        .copyright {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--line);
+            font-size: 13px;
+            color: var(--ink-3);
+        }
+
+        /* ---------- 响应式 ---------- */
+        @media (max-width: 900px) {
+            .feature,
+            .feature.flip {
                 grid-template-columns: 1fr;
+                gap: 36px;
+            }
+
+            .feature.flip .feature-text,
+            .feature.flip .feature-art {
+                order: initial;
+            }
+
+            .feature + .feature {
+                margin-top: 84px;
+            }
+
+            .nav-links a:not(.nav-cta) {
+                display: none;
+            }
+
+            section {
+                padding: 72px 0;
+            }
+
+            .hero {
+                padding: 64px 0 24px;
+            }
+
+            .shots {
+                justify-content: flex-start;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding-bottom: 10px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .shot {
+                flex: 0 0 232px;
+                scroll-snap-align: center;
+            }
+
+            .shot.raised,
+            .shot.raised:hover {
+                transform: none;
+            }
+
+            .info-list {
+                grid-template-columns: 1fr;
+            }
+
+            .info-list dt {
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+
+            .info-list dd {
+                padding-top: 4px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <nav>
-        <div class="container">
-            <a href="#" class="logo">泡泡单词</a>
-            <ul>
-                <li><a href="#home">首页</a></li>
-                <li><a href="#product">产品展示</a></li>
-                <li><a href="#intro">应用介绍</a></li>
-                <li><a href="#contact">联系我们</a></li>
-                <li><a href="protocol.html">用户协议</a></li>
-                <li><a href="privacy.html">隐私政策</a></li>
-            </ul>
+
+<nav class="nav">
+    <div class="wrap nav-inner">
+        <a href="#" class="brand">
+            <img src="favicon-32x32.png" alt="泡泡单词">
+            泡泡单词
+        </a>
+        <div class="nav-links">
+            <a href="#core">核心亮点</a>
+            <a href="#caps">更多能力</a>
+            <a href="#platforms">支持平台</a>
+            <a href="#contact">联系我们</a>
+            <a href="download.html" class="nav-cta">下载</a>
         </div>
-    </nav>
-    
-    <!-- 首页横幅 -->
-    <section id="home" class="hero">
-        <div class="container">
-            <h1>泡泡单词</h1>
-            <p>智能背单词应用 - 让英语学习更高效</p>
-            <a href="http://www.nnbdc.com/download.html" class="btn">下载</a>
+    </div>
+</nav>
+
+<main>
+
+    <!-- 首屏 -->
+    <section class="hero">
+        <div class="wrap">
+            <p class="eyebrow">NNBDC</p>
+            <h1>一个词，一个意象<br><span class="dim">记住它所有的意思</span></h1>
+            <p class="hero-sub">
+                <b>spring</b> 既是春天、也是泉水、弹簧和跳跃——它们本就是同一个动作。
+                泡泡单词为每个单词生成一张<b>核心意象图</b>，把看似毫不相关的多个释义串成一条引申脉络，让记忆有处可挂。
+            </p>
+            <div class="actions">
+                <a href="download.html" class="btn btn-primary">下载泡泡单词</a>
+                <a href="#core" class="btn btn-ghost">看看它怎么背</a>
+            </div>
         </div>
-    </section>
-    
-    <!-- 产品展示 -->
-    <section id="product">
-        <div class="container">
-            <h2>产品展示</h2>
-            <div class="product-grid">
-                <div class="product-card">
-                    <div class="icon">📚</div>
-                    <h4>多词库支持</h4>
-                    <p>涵盖高考、CET4/6、TOEFL、GRE 等各类词库，满足不同学习需求</p>
+
+        <div class="wrap">
+            <div class="shots">
+                <div class="shot">
+                    <img src="site/study.webp" alt="泡泡单词学习界面：先回想词义再选择" loading="lazy">
                 </div>
-                <div class="product-card">
-                    <div class="icon">🎯</div>
-                    <h4>智能算法</h4>
-                    <p>基于艾宾浩斯遗忘曲线的科学记忆算法，自动安排复习时间</p>
+                <div class="shot raised">
+                    <img src="site/core-image.webp" alt="核心意象图：spring 的多个释义由同一条引申脉络串起" loading="lazy">
                 </div>
-                <div class="product-card">
-                    <div class="icon">🎮</div>
-                    <h4>游戏化学习</h4>
-                    <p>趣味学习模式，让背单词变得轻松有趣，不再枯燥</p>
-                </div>
-                <div class="product-card">
-                    <div class="icon">🔊</div>
-                    <h4>语音朗读</h4>
-                    <p>TTS 语音朗读功能，帮助用户学习标准发音</p>
-                </div>
-                <div class="product-card">
-                    <div class="icon">📊</div>
-                    <h4>学习统计</h4>
-                    <p>详细记录学习进度、掌握情况等数据，可视化展示学习成果</p>
-                </div>
-                <div class="product-card">
-                    <div class="icon">💾</div>
-                    <h4>数据同步</h4>
-                    <p>支持多设备数据同步，随时随地继续学习</p>
+                <div class="shot">
+                    <img src="site/pk-hall.webp" alt="单词 PK 大厅：按考试场次实时对战" loading="lazy">
                 </div>
             </div>
         </div>
     </section>
-    
-    <!-- 应用介绍 -->
-    <section id="intro">
-        <div class="container">
-            <h2>应用介绍</h2>
-            <div class="app-intro">
-                <h3>关于泡泡单词（NNBDC）</h3>
-                <p>
-                    泡泡单词（NNBDC）是一款功能强大的智能背单词应用，采用 Flutter 跨平台技术开发，
-                    支持 Android、iOS、Windows、macOS 等多个平台。应用集成了先进的记忆算法，
-                    能够根据用户的学习情况智能调整复习计划，提高学习效率。
-                </p>
-                
-                <h3>核心功能特点</h3>
-                <ul>
-                    <li><strong>多词库支持：</strong>提供高考、大学英语四六级、托福、GRE 等多种词库，满足不同学习需求</li>
-                    <li><strong>智能复习：</strong>基于艾宾浩斯遗忘曲线，自动安排复习时间，提高记忆效率</li>
-                    <li><strong>多种学习模式：</strong>支持看词选义、看义选词、看英说义等多种学习模式</li>
-                    <li><strong>语音功能：</strong>集成 TTS 语音朗读，帮助用户学习标准发音</li>
-                    <li><strong>学习统计：</strong>详细记录学习进度、掌握情况等数据，可视化展示学习成果</li>
-                    <li><strong>数据同步：</strong>支持多设备数据同步，随时随地继续学习</li>
-                    <li><strong>主题切换：</strong>支持深色/浅色主题，保护眼睛，提升使用体验</li>
-                </ul>
-                
-                <h3>技术特点</h3>
-                <p>
-                    泡泡单词采用现代化的技术栈开发，包括 Flutter 跨平台框架、Drift 数据库、
-                    Socket.IO 实时通信等技术，确保应用的稳定性和性能。应用界面简洁美观，
-                    操作流畅，为用户提供优质的学习体验。
-                </p>
-                
-                <h3>适用平台</h3>
-                <p>
-                    泡泡单词支持多平台使用，包括 Android、iOS、Windows、macOS 等，
-                    用户可以根据自己的设备选择相应的版本进行下载和使用。
-                </p>
+
+    <!-- 核心亮点 -->
+    <section id="core" class="soft-bg">
+        <div class="wrap">
+            <div class="sec-head center">
+                <h2>背单词最难的不是记住，是有处可挂</h2>
+                <p>一个词有七八个释义、五个长得像的邻居、还有无数个明天会忘掉的今天——泡泡单词针对的正是这几件事。</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-art">
+                    <img src="site/core-image.webp" alt="核心意象图：以中心意象连接各个释义" loading="lazy">
+                </div>
+                <div class="feature-text">
+                    <p class="feature-num">核心意象</p>
+                    <h3>一词多义，原来只是一个动作</h3>
+                    <p>
+                        从压缩状态瞬间释放、向上或向前猛地跃出——这一个动势，向上伸成了「春天」抽芽，向内收成了「弹簧」，
+                        从地里冒出来成了「泉水」，人做这个动作就是「跳跃」。四个看似无关的释义，其实是同一个画面在不同场景里的分身。
+                    </p>
+                    <p class="highlight">
+                        记住<b>那一个画面</b>，而不是四行中文——这是泡泡单词与普通词表最根本的区别。
+                    </p>
+                </div>
+            </div>
+
+            <div class="feature flip">
+                <div class="feature-text">
+                    <p class="feature-num">主动回忆</p>
+                    <h3>先回想，再看答案</h3>
+                    <p>
+                        每个词都先让你自己回忆词义，想不起来再点「看答案」，而不是直接把中文摆在眼前。
+                        回忆这个动作本身，才是让记忆留得最久的原因。
+                    </p>
+                    <p class="highlight">
+                        同一个词支持<b>看词选义、看义选词、看英说义、听写拼写</b>等多种作答方式，换着练，避免只认得位置。
+                    </p>
+                </div>
+                <div class="feature-art">
+                    <img src="site/study.webp" alt="学习界面：多个释义候选，先回想再点看答案" loading="lazy">
+                </div>
+            </div>
+
+            <div class="feature">
+                <div class="feature-art">
+                    <img src="site/pk-hall.webp" alt="单词 PK 大厅：考研核心、英语四六级、托福等场次" loading="lazy">
+                </div>
+                <div class="feature-text">
+                    <p class="feature-num">单词 PK 大厅</p>
+                    <h3>背不动的时候，去打一局</h3>
+                    <p>
+                        和真实对手在同一批词上实时抢答，谁先答对谁得分。考研核心、英语四六级、托福各有专属场次，
+                        也可以自己开房，拉上朋友用同一本词书比一场。
+                    </p>
+                    <p class="highlight">
+                        赢的是排名，<b>答错的词会回到你的复习队列</b>——玩和学，算的是同一笔账。
+                    </p>
+                </div>
+            </div>
+
+            <div class="feature flip">
+                <div class="feature-text">
+                    <p class="feature-num">坚持看得见</p>
+                    <h3>把坚持做成墙上的勋章</h3>
+                    <p>
+                        连击 3 天种下「萌芽初醒」，21 天点亮「习惯微光」，100 天铸成「百日筑基」；
+                        掌握 100 词是「破冰启航」，1000 词是「千词过海」，满分测验还会记下你到底做到了多少次。
+                    </p>
+                    <p class="highlight">
+                        每枚勋章都带着<b>清晰的进度</b>——比如 780 / 1000 词，离下一枚还有多远，一眼就知道。
+                    </p>
+                </div>
+                <div class="feature-art">
+                    <img src="site/badges.webp" alt="勋章墙：萌芽初醒、习惯微光、百发百中、破冰启航等成就" loading="lazy">
+                </div>
             </div>
         </div>
     </section>
-    
+
+    <!-- 更多能力 -->
+    <section id="caps">
+        <div class="wrap">
+            <div class="sec-head">
+                <h2>还有这些每天都在用的能力</h2>
+            </div>
+
+            <div class="caps">
+                <div class="cap">
+                    <h4>科学安排复习节奏</h4>
+                    <p>依据记忆模型推算每个词的遗忘临界点，该复习的词当天出现，不该复习的绝不浪费你的时间。</p>
+                </div>
+                <div class="cap">
+                    <h4>词书覆盖主流考试</h4>
+                    <p>四六级、考研、雅思、托福、CERF 等分类词书随时切换，也能自建词书导入自己的单词。</p>
+                </div>
+                <div class="cap">
+                    <h4>生词本自动收集</h4>
+                    <p>答错的词自动进入生词本，专项攻克，不必手动抄写。</p>
+                </div>
+                <div class="cap">
+                    <h4>发音朗读</h4>
+                    <p>每个词配美式发音，跟着读，把声音和拼写一起记住。</p>
+                </div>
+                <div class="cap">
+                    <h4>学习数据一目了然</h4>
+                    <p>掌握词数、待复习词数、每日学习量与打卡记录，进展都有据可查。</p>
+                </div>
+                <div class="cap">
+                    <h4>四端同步，离线也能学</h4>
+                    <p>Android、iOS、Windows、macOS 学习进度实时同步；没网时照常背，联网后自动续上。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 支持平台 -->
+    <section id="platforms" class="soft-bg">
+        <div class="wrap">
+            <div class="sec-head center">
+                <h2>你的每一个设备，都是同一张书桌</h2>
+                <p>手机上学到第 42 个词，换到电脑上打开，接着第 43 个继续。</p>
+            </div>
+            <div class="platforms-row">
+                <p class="platform">Android<span>手机 / 平板</span></p>
+                <p class="platform">iOS<span>iPhone / iPad</span></p>
+                <p class="platform">Windows<span>桌面客户端</span></p>
+                <p class="platform">macOS<span>桌面客户端</span></p>
+            </div>
+            <div class="actions" style="margin-top:44px">
+                <a href="download.html" class="btn btn-primary">前往下载</a>
+            </div>
+        </div>
+    </section>
+
     <!-- 联系我们 -->
     <section id="contact">
-        <div class="container">
-            <h2>联系我们</h2>
-            <div class="contact-info">
-                <p><strong>应用名称：</strong>泡泡单词（NNBDC）</p>
-                <p><strong>版权所有者：</strong>成都三马捷科技有限公司</p>
-                <p><strong>应用包名：</strong>com.nn.nnbdc.nnbdc</p>
-                <p><strong>官方网站：</strong>http://www.nnbdc.com</p>
-                <p><strong>网站备案信息：</strong>蜀ICP备12032137号-1（备案主体：成都三马捷科技有限公司）</p>
-                <p><strong>APP备案信息：</strong>蜀ICP备12032137号-4A</p>
-                <p><strong>统一社会信用代码：</strong>91510100MAKEXXMM63</p>
-                <p><strong>联系方式：</strong>请通过应用内反馈功能联系我们</p>
-                <p><strong>技术支持：</strong>请通过应用内反馈功能获取技术支持</p>
+        <div class="wrap">
+            <div class="sec-head">
+                <h2>联系我们</h2>
             </div>
+            <dl class="info-list">
+                <dt>应用名称</dt>
+                <dd>泡泡单词（NNBDC）</dd>
+                <dt>版权所有者</dt>
+                <dd>成都三马捷科技有限公司</dd>
+                <dt>应用包名</dt>
+                <dd>com.nn.nnbdc.nnbdc</dd>
+                <dt>官方网站</dt>
+                <dd>http://www.nnbdc.com</dd>
+                <dt>网站备案信息</dt>
+                <dd>蜀ICP备12032137号-1（备案主体：成都三马捷科技有限公司）</dd>
+                <dt>APP备案信息</dt>
+                <dd>蜀ICP备12032137号-4A</dd>
+                <dt>统一社会信用代码</dt>
+                <dd>91510100MAKEXXMM63</dd>
+                <dt>联系方式</dt>
+                <dd>请通过应用内反馈功能联系我们</dd>
+                <dt>技术支持</dt>
+                <dd>请通过应用内反馈功能获取技术支持</dd>
+            </dl>
         </div>
     </section>
-    
-    <!-- 页脚 -->
-    <footer>
-        <div class="container">
-            <p><strong>版权声明</strong></p>
-            <p>Copyright © 2025 成都三马捷科技有限公司. All rights reserved.</p>
-            <p>泡泡单词（NNBDC）是成都三马捷科技有限公司的注册商标和产品。</p>
-            <p>未经授权，禁止复制、传播或用于商业用途。</p>
-            <div class="footer-links">
+
+</main>
+
+<footer>
+    <div class="wrap">
+        <div class="foot-main">
+            <div>
+                <p class="foot-brand">泡泡单词（NNBDC）</p>
+                <p class="foot-text">
+                    Copyright © 2025 成都三马捷科技有限公司. All rights reserved.<br>
+                    泡泡单词（NNBDC）是成都三马捷科技有限公司的注册商标和产品。<br>
+                    未经授权，禁止复制、传播或用于商业用途。
+                </p>
+            </div>
+            <div class="foot-links">
                 <a href="protocol.html">用户协议</a>
                 <a href="privacy.html">隐私政策</a>
                 <a href="ownership.html">网站授权书</a>
-                <a href="https://beian.miit.gov.cn/" target="_blank">蜀ICP备12032137号-1</a>
-                <a href="https://beian.miit.gov.cn/" target="_blank">蜀ICP备12032137号-4A</a>
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">蜀ICP备12032137号-1</a>
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">蜀ICP备12032137号-4A</a>
             </div>
         </div>
-    </footer>
+        <p class="copyright">成都三马捷科技有限公司 · 蜀ICP备12032137号-1 · 蜀ICP备12032137号-4A</p>
+    </div>
+</footer>
+
 </body>
 </html>
-

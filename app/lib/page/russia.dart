@@ -2416,10 +2416,14 @@ class RussiaPageState extends State<RussiaPage>
               size: 48,
             ),
             const SizedBox(height: 12),
+            // 注意：isReady 只表示"房间里凑够两个人"（服务端 enterReady），
+            // 并不代表对手点了开始——"就绪"这个词只能用在对手真的点了开始之后
             Text(
               myStarted
                   ? '已就绪，等待开赛...'
-                  : (isReady ? '对手已就绪！' : '正在为您匹配对手...'),
+                  : (opponentStarted
+                      ? '对手已准备就绪'
+                      : (isReady ? '对手已进入房间' : '正在为您匹配对手...')),
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -2430,7 +2434,9 @@ class RussiaPageState extends State<RussiaPage>
             Text(
               myStarted
                   ? '双方准备完毕后将立即自动开赛'
-                  : (isReady ? '点击下方按钮立即开始海底泡泡对战' : '若长时间未匹配，可点击下方开启单人练习'),
+                  : (opponentStarted
+                      ? '对手已点开始，你也点一下即可开赛'
+                      : (isReady ? '点击下方按钮准备，双方都准备后即刻开赛' : '若长时间未匹配，可点击下方开启单人练习')),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
