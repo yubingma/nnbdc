@@ -917,38 +917,25 @@ public class DictImportBo {
         }
         aiResult.meanings = expandedMeanings;
 
+        // 1. 预先构建该批次全部释义实体，由 MeaningItemBo 统一做常用度归一化（彻底消除并列与 NULL 裸奔，与全库规则保持 100% 对称）
+        List<MeaningItem> meaningsToSave = new ArrayList<>();
+        List<AiMeaning> validAiMeanings = new ArrayList<>();
         for (int i = 0; i < aiResult.meanings.size(); i++) {
             AiMeaning am = aiResult.meanings.get(i);
             if (am.meaning == null || am.meaning.trim().isEmpty()) continue;
 
             MeaningItem meaning = new MeaningItem();
             meaning.setWord(word);
-            
             String pos = am.pos;
             if (pos != null && pos.length() > 10) {
                 logger.warn("单词词性超长已被截断: [{}] -> [{}] - word: {}", pos, pos.substring(0, 10), word.getSpell());
                 pos = pos.substring(0, 10);
             }
             meaning.setCiXing(Util.sanitizeAiString(pos));
-            
             meaning.setMeaning(Util.sanitizeAiString(am.meaning));
-            
-            // 常用度与常用度百分比规范化赋权（严格杜绝倒挂与 NULL 裸奔）
-            int pop = (am.popularity != null && am.popularity > 0) ? am.popularity : (i + 1);
-            meaning.setPopularity(pop);
-            
-            Integer popPct = am.popularityPercent;
-            if (popPct == null || popPct < 0) {
-                if (aiResult.meanings.size() == 1) {
-                    popPct = 100;
-                } else if (aiResult.meanings.size() == 2) {
-                    popPct = (i == 0) ? 80 : 20;
-                } else {
-                    popPct = (i == 0) ? 75 : (i == 1 ? 15 : Math.max(1, 10 / Math.max(1, aiResult.meanings.size() - 2)));
-                }
-            }
-            meaning.setPopularityPercent(popPct);
-            
+            meaning.setPopularity(am.popularity != null && am.popularity > 0 ? am.popularity : (i + 1));
+            meaning.setPopularityPercent(am.popularityPercent != null && am.popularityPercent > 0 ? am.popularityPercent : null);
+
             User owner = new User();
             owner.setId(ownerId != null ? ownerId : Constants.SYS_USER_SYS_ID);
             meaning.setOwner(owner);
@@ -958,6 +945,15 @@ public class DictImportBo {
                 dict.setId(dictId);
                 meaning.setDict(dict);
             }
+            meaningsToSave.add(meaning);
+            validAiMeanings.add(am);
+        }
+
+        MeaningItemBo.normalizePopularities(meaningsToSave);
+
+        for (int i = 0; i < meaningsToSave.size(); i++) {
+            MeaningItem meaning = meaningsToSave.get(i);
+            AiMeaning am = validAiMeanings.get(i);
             meaningItemBo.createEntity(meaning);
             stats.addedMeaningCount++;
 
@@ -1073,8 +1069,7 @@ public class DictImportBo {
                             "For example, if the manual meaning is a simple noun, generate ONLY one entry with 'pos': 'n.'. " +
                             "DO NOT under any circumstances generate multiple entries in the 'meanings' array unless the provided text explicitly contains multiple distinct senses. " +
                             "Treat this manual meaning as the absolute, single, and only source for the dictionary entry.", 
-                    manualMeaning, spell));
-            userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": " + Constants.DEFAULT_POPULARITY_LIMIT + ", \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"popularity\": 1, \"popularityPercent\": 100, \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
+            userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": " + Constants.DEFAULT_POPULARITY_LIMIT + ", \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"popularity\": 1, \"popularityPercent\": 100, \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}. (If multiple distinct senses are explicitly present, assign popularity strictly increasing as 1, 2, 3... and popularityPercent descending summing to 100).");
         }
 
         Map<String, Object> map = null;

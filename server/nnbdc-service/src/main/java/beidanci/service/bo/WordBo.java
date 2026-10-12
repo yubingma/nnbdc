@@ -281,21 +281,32 @@ public class WordBo extends BaseBo<Word> {
             }
         }
 
-        // 4. 对该词的所有当前有效释义重新做常用度与百分比归一化（守住单义100%、多义主导递减的认知规律）
-        List<MeaningItem> currentItems = meaningItemBo.findEntitiesByWord(word.getId());
-        if (currentItems != null && !currentItems.isEmpty()) {
-            Map<String, Integer> oldPops = new HashMap<>();
-            Map<String, Integer> oldPcts = new HashMap<>();
-            for (MeaningItem item : currentItems) {
-                oldPops.put(item.getId(), item.getPopularity());
-                oldPcts.put(item.getId(), item.getPopularityPercent());
-            }
-            MeaningItemBo.normalizePopularities(currentItems);
-            for (MeaningItem item : currentItems) {
-                if (!Objects.equals(item.getPopularity(), oldPops.get(item.getId()))
-                        || !Objects.equals(item.getPopularityPercent(), oldPcts.get(item.getId()))) {
-                    meaningItemBo.updateEntity(item);
-                    sysDbSyncBo.logOperation("UPDATE", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
+        // 4. 按词典严格隔离：只对本次编辑所涉及词典下的释义项分别做常用度与百分比归一化（杜绝跨词典混合重排污染）
+        Set<String> affectedDictIds = new HashSet<>();
+        affectedDictIds.add(Constants.COMMON_DICT_ID);
+        for (MeaningItem item : existingMeaningItems) {
+            affectedDictIds.add(item.getDict() != null ? item.getDict().getId() : Constants.COMMON_DICT_ID);
+        }
+        for (MeaningItemVo itemVo : wordVo.getMeaningItems()) {
+            affectedDictIds.add(itemVo.getDict() != null ? itemVo.getDict().getId() : Constants.COMMON_DICT_ID);
+        }
+
+        for (String dictId : affectedDictIds) {
+            List<MeaningItem> dictItems = meaningItemBo.findEntitiesByWordAndDict(word.getId(), dictId);
+            if (dictItems != null && !dictItems.isEmpty()) {
+                Map<String, Integer> oldPops = new HashMap<>();
+                Map<String, Integer> oldPcts = new HashMap<>();
+                for (MeaningItem item : dictItems) {
+                    oldPops.put(item.getId(), item.getPopularity());
+                    oldPcts.put(item.getId(), item.getPopularityPercent());
+                }
+                MeaningItemBo.normalizePopularities(dictItems);
+                for (MeaningItem item : dictItems) {
+                    if (!Objects.equals(item.getPopularity(), oldPops.get(item.getId()))
+                            || !Objects.equals(item.getPopularityPercent(), oldPcts.get(item.getId()))) {
+                        meaningItemBo.updateEntity(item);
+                        sysDbSyncBo.logOperation("UPDATE", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
+                    }
                 }
             }
         }

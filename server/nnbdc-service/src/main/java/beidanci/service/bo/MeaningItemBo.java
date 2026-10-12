@@ -114,6 +114,14 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(MeaningItem.class));
     }
 
+    public List<MeaningItem> findEntitiesByWordAndDict(String wordId, String dictId) {
+        String sql = "SELECT * FROM meaning_item WHERE word_id = :wordId AND dict_id = :dictId ORDER BY popularity ASC NULLS LAST, create_time ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("wordId", wordId);
+        params.addValue("dictId", dictId);
+        return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(MeaningItem.class));
+    }
+
     public List<MeaningItemDto> findMeaningsByWordAndDict(String wordId, String dictId) {
         String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, popularity_percent, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId AND dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource();
@@ -228,9 +236,33 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     /**
-     * 对一个单词的一组释义项按认知规律进行常用度归一化（规范 popularity 与 popularity_percent）
+     * 单一事实来源：根据义项所在顺位（0-based）与总义项数，计算认知规律下的默认百分比。
+     */
+    public static int calculateDefaultPercent(int index, int total) {
+        if (total <= 1) {
+            return 100;
+        }
+        if (total == 2) {
+            return index == 0 ? 80 : 20;
+        }
+        if (total == 3) {
+            return index == 0 ? 75 : (index == 1 ? 20 : 5);
+        }
+        if (index == 0) {
+            return 70;
+        } else if (index == 1) {
+            return 18;
+        } else if (index == 2) {
+            return 8;
+        } else {
+            return Math.max(1, 4 / (total - 3));
+        }
+    }
+
+    /**
+     * 对一个单词在特定词典下的一组释义项按认知规律进行常用度归一化（规范 popularity 与 popularity_percent）
      * 1. 单释义：popularity = 1, popularity_percent = 100
-     * 2. 多释义：popularity 从 1 开始连续递增；popularity_percent 倾斜分配主导核心义项，杜绝 null 裸奔
+     * 2. 多释义：彻底消除并列，popularity 从 1 开始严格递增；杜绝 null 或 0 裸奔
      */
     public static void normalizePopularities(List<MeaningItem> items) {
         if (items == null || items.isEmpty()) {
@@ -247,42 +279,66 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         boolean hasValidPcts = true;
         int totalPct = 0;
         for (MeaningItem item : items) {
-            if (item.getPopularityPercent() == null || item.getPopularityPercent() < 0) {
+            if (item.getPopularityPercent() == null || item.getPopularityPercent() <= 0) {
                 hasValidPcts = false;
                 break;
             }
             totalPct += item.getPopularityPercent();
         }
+
         if (hasValidPcts && totalPct >= 90 && totalPct <= 100) {
-            // 已有合法的百分比分布，确保 popularity 严格递增即可
+            // 已有合法的百分比分布：按百分比降序排序，并彻底消除并列（强制按 1, 2, 3... 重新赋权）
+            items.sort((a, b) -> Integer.compare(b.getPopularityPercent(), a.getPopularityPercent()));
             for (int i = 0; i < items.size(); i++) {
-                if (items.get(i).getPopularity() == null || items.get(i).getPopularity() <= 0) {
-                    items.get(i).setPopularity(i + 1);
-                }
+                items.get(i).setPopularity(i + 1);
             }
             return;
         }
 
-        // 否则按顺序分配主导常用度与百分比
+        // 否则按原有顺序分配主导常用度与百分比
         for (int i = 0; i < items.size(); i++) {
             MeaningItem item = items.get(i);
             item.setPopularity(i + 1);
-            if (items.size() == 2) {
-                item.setPopularityPercent(i == 0 ? 80 : 20);
-            } else if (items.size() == 3) {
-                item.setPopularityPercent(i == 0 ? 75 : (i == 1 ? 20 : 5));
-            } else {
-                if (i == 0) {
-                    item.setPopularityPercent(70);
-                } else if (i == 1) {
-                    item.setPopularityPercent(18);
-                } else if (i == 2) {
-                    item.setPopularityPercent(8);
-                } else {
-                    int remaining = Math.max(1, 4 / (items.size() - 3));
-                    item.setPopularityPercent(remaining);
-                }
+            item.setPopularityPercent(calculateDefaultPercent(i, items.size()));
+        }
+    }
+
+    /**
+     * 针对 MeaningItemDto 列表的常用度归一化，与实体规则保持 100% 对称一致。
+     */
+    public static void normalizeDtoPopularities(List<MeaningItemDto> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            return;
+        }
+        if (dtos.size() == 1) {
+            MeaningItemDto dto = dtos.get(0);
+            dto.setPopularity(1);
+            dto.setPopularityPercent(100);
+            return;
+        }
+
+        boolean hasValidPcts = true;
+        int totalPct = 0;
+        for (MeaningItemDto dto : dtos) {
+            if (dto.getPopularityPercent() == null || dto.getPopularityPercent() <= 0) {
+                hasValidPcts = false;
+                break;
             }
+            totalPct += dto.getPopularityPercent();
+        }
+
+        if (hasValidPcts && totalPct >= 90 && totalPct <= 100) {
+            dtos.sort((a, b) -> Integer.compare(b.getPopularityPercent(), a.getPopularityPercent()));
+            for (int i = 0; i < dtos.size(); i++) {
+                dtos.get(i).setPopularity(i + 1);
+            }
+            return;
+        }
+
+        for (int i = 0; i < dtos.size(); i++) {
+            MeaningItemDto dto = dtos.get(i);
+            dto.setPopularity(i + 1);
+            dto.setPopularityPercent(calculateDefaultPercent(i, dtos.size()));
         }
     }
 
@@ -314,8 +370,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
                 insertParams.addValue("ciXing", meaning.get("cixing") != null ? meaning.get("cixing") : "");
                 insertParams.addValue("meaning", meaning.get("meaning") != null ? meaning.get("meaning") : "");
                 insertParams.addValue("popularity", i + 1);
-                int pct = (meanings.size() == 1) ? 100 : (i == 0 ? 80 : (i == 1 ? 15 : 5));
-                insertParams.addValue("popularityPercent", pct);
+                insertParams.addValue("popularityPercent", calculateDefaultPercent(i, meanings.size()));
                 insertParams.addValue("createTime", now);
                 insertParams.addValue("updateTime", now);
                 namedParameterJdbcTemplate.update(insertSql, insertParams);

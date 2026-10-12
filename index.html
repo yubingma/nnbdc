@@ -229,7 +229,7 @@
 
         /* ---------- 区块通用 ---------- */
         section {
-            padding: 104px 0;
+            padding: 92px 0;
         }
 
         .soft-bg {
@@ -270,14 +270,6 @@
 
         .feature + .feature {
             margin-top: 116px;
-        }
-
-        .feature.flip .feature-text {
-            order: 2;
-        }
-
-        .feature.flip .feature-art {
-            order: 1;
         }
 
         .feature-num {
@@ -324,7 +316,7 @@
 
         .feature-art img {
             width: 100%;
-            max-width: 300px;
+            max-width: 330px;
             margin: 0 auto;
             display: block;
             border-radius: 12px;
@@ -451,11 +443,6 @@
                 gap: 36px;
             }
 
-            .feature.flip .feature-text,
-            .feature.flip .feature-art {
-                order: initial;
-            }
-
             .feature + .feature {
                 margin-top: 84px;
             }
@@ -532,7 +519,7 @@
             <h1>一个词，一个意象<br><span class="dim">记住它所有的意思</span></h1>
             <p class="hero-sub">
                 <b>spring</b> 既是春天、也是泉水、弹簧和跳跃——它们本就是同一个动作。
-                泡泡单词为每个单词生成一张<b>核心意象图</b>，把看似毫不相关的多个释义串成一条引申脉络，让记忆有处可挂。
+                泡泡单词为每个单词生成一张<b>核心意象图</b>，把散落的释义串成一条引申脉络，再由 <b>FSRS-5 记忆模型</b>决定它什么时候该回来找你。
             </p>
             <div class="actions">
                 <a href="download.html" class="btn btn-primary">下载泡泡单词</a>
@@ -605,8 +592,8 @@
                     <p class="feature-num">单词 PK 大厅</p>
                     <h3>背不动的时候，去打一局</h3>
                     <p>
-                        和真实对手在同一批词上实时抢答，谁先答对谁得分。考研核心、英语四六级、托福各有专属场次，
-                        也可以自己开房，拉上朋友用同一本词书比一场。
+                        和真实对手在同一批词上实时对战，答题爆破泡泡，谁先答对谁得分。考研核心、英语四六级、托福各有专属场次，
+                        也可以自己开房，把房间号发给朋友，用同一本词书比一场。
                     </p>
                     <p class="highlight">
                         赢的是排名，<b>答错的词会回到你的复习队列</b>——玩和学，算的是同一笔账。
@@ -638,32 +625,41 @@
         <div class="wrap">
             <div class="sec-head">
                 <h2>还有这些每天都在用的能力</h2>
+                <p>从复习排期到发音纠音，装好就有。</p>
             </div>
 
             <div class="caps">
                 <div class="cap">
-                    <h4>科学安排复习节奏</h4>
-                    <p>依据记忆模型推算每个词的遗忘临界点，该复习的词当天出现，不该复习的绝不浪费你的时间。</p>
+                    <h4>FSRS-5 记忆排期</h4>
+                    <p>每次作答后按 FSRS-5 模型重算记忆稳定度，推算出这个词该在第几天与你重逢——该复习的当天出现，不该复习的绝不占用你的时间。</p>
                 </div>
                 <div class="cap">
-                    <h4>词书覆盖主流考试</h4>
-                    <p>四六级、考研、雅思、托福、CERF 等分类词书随时切换，也能自建词书导入自己的单词。</p>
+                    <h4>跟读发音评分</h4>
+                    <p>对着麦克风读出来，App 逐音素比对并给出绿/橙评分，拿不准的发音还会交给大模型复核。</p>
                 </div>
                 <div class="cap">
-                    <h4>生词本自动收集</h4>
-                    <p>答错的词自动进入生词本，专项攻克，不必手动抄写。</p>
+                    <h4>形近词并排对比</h4>
+                    <p>以你学过的词为锚点，把拼写只差一两个字母的「邻居」找出来并排摆放，affect 和 effect 不再看走眼。</p>
                 </div>
                 <div class="cap">
-                    <h4>发音朗读</h4>
-                    <p>每个词配美式发音，跟着读，把声音和拼写一起记住。</p>
+                    <h4>同根词一族</h4>
+                    <p>按词根把同源词聚成一族，act / action / active / react 一起记，一个词根认一串词。</p>
                 </div>
                 <div class="cap">
-                    <h4>学习数据一目了然</h4>
-                    <p>掌握词数、待复习词数、每日学习量与打卡记录，进展都有据可查。</p>
+                    <h4>随身听</h4>
+                    <p>全屏沉浸式听单词，配环境白噪音，锁屏也能听；听到哪，书签自动记到哪。</p>
                 </div>
                 <div class="cap">
-                    <h4>四端同步，离线也能学</h4>
-                    <p>Android、iOS、Windows、macOS 学习进度实时同步；没网时照常背，联网后自动续上。</p>
+                    <h4>AI 情境短文</h4>
+                    <p>把一批词串成一篇小短文，点文中任意单词直接查词，中英双语音频对照。</p>
+                </div>
+                <div class="cap">
+                    <h4>词书与自建词书</h4>
+                    <p>四六级、考研、雅思、托福等分类词书，细到人教版、外研版这样的教材版本；也能从 Excel 导入自己的词表。</p>
+                </div>
+                <div class="cap">
+                    <h4>打卡海报与热力图</h4>
+                    <p>完成当天计划即打卡成功，一键生成海报分享到微信好友或朋友圈；30 天色块看清自己有没有偷懒。</p>
                 </div>
             </div>
         </div>
@@ -673,17 +669,17 @@
     <section id="platforms" class="soft-bg">
         <div class="wrap">
             <div class="sec-head center">
-                <h2>你的每一个设备，都是同一张书桌</h2>
-                <p>手机上学到第 42 个词，换到电脑上打开，接着第 43 个继续。</p>
+                <h2>换台设备，接着上次那个词继续</h2>
+                <p>学习数据先存在本机、再增量同步到云端，换设备登录即可续上，没网时也照常背。</p>
             </div>
             <div class="platforms-row">
-                <p class="platform">Android<span>手机 / 平板</span></p>
-                <p class="platform">iOS<span>iPhone / iPad</span></p>
-                <p class="platform">Windows<span>桌面客户端</span></p>
-                <p class="platform">macOS<span>桌面客户端</span></p>
+                <p class="platform">Android<span>现已上线</span></p>
+                <p class="platform">Windows<span>开发中</span></p>
+                <p class="platform">macOS<span>开发中</span></p>
+                <p class="platform">iOS<span>开发中</span></p>
             </div>
             <div class="actions" style="margin-top:44px">
-                <a href="download.html" class="btn btn-primary">前往下载</a>
+                <a href="download.html" class="btn btn-primary">下载 Android 版</a>
             </div>
         </div>
     </section>

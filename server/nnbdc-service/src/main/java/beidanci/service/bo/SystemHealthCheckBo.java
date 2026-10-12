@@ -1443,7 +1443,7 @@ public class SystemHealthCheckBo {
                             mDto.setDictId(commonDictId);
                             mDto.setOwnerId(Constants.SYS_USER_SYS_ID);
                             mDto.setPopularity(i + 1);
-                            int pct = (copyParts.size() == 1) ? (mDto.getPopularityPercent() != null ? mDto.getPopularityPercent() : 100) : (i == 0 ? 80 : (i == 1 ? 15 : 5));
+                            int pct = (copyParts.size() == 1) ? (mDto.getPopularityPercent() != null ? mDto.getPopularityPercent() : 100) : MeaningItemBo.calculateDefaultPercent(i, copyParts.size());
                             mDto.setPopularityPercent(pct);
                             mDto.setCreateTime(new java.util.Date());
                             mDto.setUpdateTime(new java.util.Date());
@@ -1517,7 +1517,7 @@ public class SystemHealthCheckBo {
                                 newMeaning.setMeaning(part);
                                 newMeaning.setOwnerId(Constants.SYS_USER_SYS_ID);
                                 newMeaning.setPopularity(i + 1);
-                                int pct = (aiParts.size() == 1) ? 100 : (i == 0 ? 80 : (i == 1 ? 15 : 5));
+                                int pct = MeaningItemBo.calculateDefaultPercent(i, aiParts.size());
                                 newMeaning.setPopularityPercent(pct);
                                 newMeaning.setCreateTime(new java.util.Date());
                                 newMeaning.setUpdateTime(new java.util.Date());

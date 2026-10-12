@@ -1034,7 +1034,6 @@ public class DataSanitizeBo {
         }
         first.setMeaning(parts.get(0));
         meaningItemBo.updateEntity(first);
-        logMeaningItemChange(first, "UPDATE");
         updateSentenceWordMeaning(first);
 
         int count = 1;
@@ -1045,11 +1044,21 @@ public class DataSanitizeBo {
             extra.setOwner(first.getOwner());
             extra.setCiXing(first.getCiXing());
             extra.setMeaning(parts.get(i));
-            extra.setPopularity(first.getPopularity());
-            extra.setPopularityPercent(first.getPopularityPercent());
+            extra.setPopularity(i + 1);
+            extra.setPopularityPercent(MeaningItemBo.calculateDefaultPercent(i, parts.size()));
             meaningItemBo.createEntity(extra);
-            logMeaningItemChange(extra, "INSERT");
             count++;
+        }
+
+        // 统一在同词典隔离作用域内做常用度与百分比归一化，彻底消除并列与超额百分比
+        String dictId = first.getDict() != null ? first.getDict().getId() : Constants.COMMON_DICT_ID;
+        List<MeaningItem> dictItems = meaningItemBo.findEntitiesByWordAndDict(first.getWord().getId(), dictId);
+        if (dictItems != null && !dictItems.isEmpty()) {
+            MeaningItemBo.normalizePopularities(dictItems);
+            for (MeaningItem item : dictItems) {
+                meaningItemBo.updateEntity(item);
+                logMeaningItemChange(item, item.getId().equals(first.getId()) ? "UPDATE" : "INSERT");
+            }
         }
         return count;
     }

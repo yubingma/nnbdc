@@ -99,4 +99,41 @@ public class MeaningItemBoPopularityTest {
         assertEquals(35, item2.getPopularityPercent());
         assertEquals(2, item2.getPopularity());
     }
+
+    @Test
+    public void testResolveParallelPopularities() {
+        // 验证关键漏洞修复：哪怕原项都是并列 popularity=1，归一化后也必须消除并列，严格赋为 1, 2, 3
+        MeaningItem item1 = new MeaningItem();
+        item1.setPopularityPercent(60);
+        item1.setPopularity(1);
+
+        MeaningItem item2 = new MeaningItem();
+        item2.setPopularityPercent(30);
+        item2.setPopularity(1);
+
+        MeaningItem item3 = new MeaningItem();
+        item3.setPopularityPercent(10);
+        item3.setPopularity(1);
+
+        List<MeaningItem> list = Arrays.asList(item1, item2, item3);
+        MeaningItemBo.normalizePopularities(list);
+
+        assertEquals(1, item1.getPopularity());
+        assertEquals(2, item2.getPopularity());
+        assertEquals(3, item3.getPopularity());
+    }
+
+    @Test
+    public void testNormalizeDto() {
+        beidanci.api.model.MeaningItemDto dto1 = new beidanci.api.model.MeaningItemDto();
+        beidanci.api.model.MeaningItemDto dto2 = new beidanci.api.model.MeaningItemDto();
+
+        List<beidanci.api.model.MeaningItemDto> dtos = Arrays.asList(dto1, dto2);
+        MeaningItemBo.normalizeDtoPopularities(dtos);
+
+        assertEquals(1, dto1.getPopularity());
+        assertEquals(80, dto1.getPopularityPercent());
+        assertEquals(2, dto2.getPopularity());
+        assertEquals(20, dto2.getPopularityPercent());
+    }
 }
