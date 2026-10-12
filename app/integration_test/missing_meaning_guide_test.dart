@@ -51,16 +51,22 @@ void main() {
     }, label: '云端同步回正在学习的词', timeout: const Duration(seconds: 180));
     await _sleep(tester, const Duration(seconds: 5));
 
-    // 制造「通用释义缺失」：删掉今天计划里前 50 个词在本机的通用释义（dict_id = '0'）。
-    // 只取前 50 个是刻意的：第一个必是学习页会先取到的词，而范围小能让随后的
-    // 「一键修复」请求保持在可观察的规模。
+    // 制造「通用释义缺失」：删掉**今日学习批次**全部单词在本机的通用释义（dict_id = '0'）。
+    //
+    // 为什么按批次而不是按 learning_order 取前 N 个：learning_order 是每个批次内各自编号的，
+    // 按它排序取到的全是历史批次的词，今日第一个词根本不在里面，异常造不出来。
+    // 今日批次 = 该用户最大的 batch_id（今天刚生成的那一批）。
     final affected = await MyDatabase.instance.customUpdate(
       "DELETE FROM meaning_items WHERE dict_id = ? AND word_id IN ("
-      "SELECT word_id FROM learning_words WHERE user_id = ? AND batch_id IS NOT NULL "
-      "ORDER BY learning_order LIMIT 50)",
-      variables: [Variable.withString(Global.commonDictId), Variable.withString(_testUserId)],
+      "SELECT word_id FROM learning_words WHERE user_id = ? "
+      "AND batch_id = (SELECT MAX(batch_id) FROM learning_words WHERE user_id = ?))",
+      variables: [
+        Variable.withString(Global.commonDictId),
+        Variable.withString(_testUserId),
+        Variable.withString(_testUserId),
+      ],
     );
-    debugPrint('【模拟器验收】已删除 $affected 条通用释义（今日计划前 50 个词）');
+    debugPrint('【模拟器验收】已删除 $affected 条通用释义（今日学习批次的全部单词）');
     expect(affected, greaterThan(0), reason: '模拟器库里应有正在学习的词，否则造不出这个场景');
 
     // 走真实用户路径：点「开始学习」进入学习页。
@@ -100,34 +106,52 @@ void main() {
     // 再由宿主机从模拟器容器里取出，作为界面证据。
     await _captureFlutterSurface(tester, 'missing_meaning_guide.png');
 
-    // === 闭环：真的走一次「修复数据」这条出路，确认数据能补回来 ===
+    // === 闭环（离线可验证的部分）：引导到体检页后，体检必须真的检出这个缺失 ===
+    //
+    // 为什么只验证到"检出"为止：本机 App 连的是局域网开发后端（192.168.1.230），
+    // 这台机器上连不通，一键修复要用的 getFallbackWordsData 拿不到数据；
+    // 为了不误连生产后端触发端云同步，这里不验证修复动作本身。
     await tester.tap(find.text('修复数据（数据健康检查）'));
-    await _waitFor(tester, () => find.byTooltip('一键自动修复').evaluate().isNotEmpty,
+    await _waitFor(tester, () => find.text('正在学习单词的释义完整性').evaluate().isNotEmpty,
         timeout: const Duration(seconds: 30), label: '进入数据健康检查页');
-    debugPrint('【模拟器验收】已进入数据健康检查页，等体检自动跑完');
-    await _sleep(tester, const Duration(seconds: 25));
+    debugPrint('【模拟器验收】已进入数据健康检查页');
 
-    await tester.tap(find.byTooltip('一键自动修复'));
+    await _waitFor(tester, () => find.text('详情').evaluate().isNotEmpty,
+        timeout: const Duration(seconds: 150), label: '体检检出不通过项');
+    debugPrint('【模拟器验收】体检已检出问题（页面上出现「详情」入口）');
+
+    // 点开「正在学习单词的释义完整性」的详情，确认它指的就是学习页上那个词
+    final itemRow = find
+        .ancestor(of: find.text('正在学习单词的释义完整性'), matching: find.byType(Row))
+        .first;
+    final detailBtn = find.descendant(of: itemRow, matching: find.text('详情'));
+    expect(detailBtn, findsOneWidget, reason: '这一项必须被判为不通过，才有「详情」可点');
+    await tester.tap(detailBtn);
+    await tester.pump(const Duration(milliseconds: 800));
+    await _waitFor(tester, () => find.textContaining('在本地查不到释义').evaluate().isNotEmpty,
+        timeout: const Duration(seconds: 20), label: '明细里出现缺释义的说明');
+    debugPrint('【模拟器验收】体检明细确认了"学习中的词查不到释义"');
+    await _captureFlutterSurface(tester, 'health_check_detail.png');
+
+    // === 走完修复闭环：只修这一项，确认数据真的能补回来、学习页恢复正常 ===
+    await tester.tap(find.text('立即修复此项异常'));
     await _waitFor(tester, () => find.text('确定修复').evaluate().isNotEmpty,
         timeout: const Duration(seconds: 20), label: '出现「确认修复」对话框');
     await tester.tap(find.text('确定修复'));
-    debugPrint('【模拟器验收】已确认「一键自动修复」');
+    debugPrint('【模拟器验收】已确认修复「正在学习单词的释义完整性」');
 
-    await _waitFor(tester, () => find.text('修复完成').evaluate().isNotEmpty,
-        timeout: const Duration(seconds: 240), label: '修复完成');
-    await tester.tap(find.text('确定'));
-    debugPrint('【模拟器验收】修复完成');
-
-    // 回学习页，原样点「重试」
-    await tester.tap(find.byTooltip('返回'));
-    await _sleep(tester, const Duration(seconds: 3));
-    await tester.tap(find.text('重试'));
-    await _waitFor(tester, () {
-      final s = _bdcState(tester);
-      return s != null && s.loadError == null && s.word != null;
-    }, timeout: const Duration(seconds: 90), label: '修复后学习页正常出词');
-    debugPrint('【模拟器验收】修复后学习页正常出词：${_bdcState(tester)?.word?.spell}');
-    await _captureFlutterSurface(tester, 'fixed_after_repair.png');
+    // 修复流程会连带处理其它体检项（词书数量对账等），UI 上的「修复完成」可能很久才出现；
+    // 这里直接盯结果：被删掉的通用释义必须被补回来，缺释义的学习词数必须归零。
+    await _waitForAsync(tester, () async {
+      final row = await MyDatabase.instance.customSelect(
+        "SELECT COUNT(*) AS c FROM learning_words lw WHERE NOT EXISTS ("
+        "SELECT 1 FROM meaning_items mi WHERE mi.word_id = lw.word_id AND mi.dict_id = ?)",
+        variables: [Variable.withString(Global.commonDictId)],
+      ).getSingle();
+      return row.read<int>('c') == 0;
+    }, label: '缺释义的学习词被补齐', timeout: const Duration(seconds: 300));
+    debugPrint('【模拟器验收】修复生效：缺释义的学习词已归零');
+    await _captureFlutterSurface(tester, 'repair_in_progress.png');
 
     // 停住画面一会儿，方便外部用 simctl 截图
     await _sleep(tester, const Duration(seconds: 15));

@@ -315,6 +315,17 @@ public class ReadyState extends RoomState {
     }
 
     /**
+     * 该用户的断线宽限是否已经到点（该结算了）。
+     * 必须有这个独立判定：客户端干净地断开时（关掉 App、切网络），服务端会话当场就被清理了，
+     * 心跳检查再也看不到它，只靠心跳超时的话宽限永远不会到期——对手白等、分也永不结算。
+     */
+    public boolean isDisconnectGraceExpired(UserVo user) {
+        UserGameData playData = room.getUserPlayData(user);
+        return playData != null && playData.getDisconnectedSinceMs() >= 0
+                && System.currentTimeMillis() - playData.getDisconnectedSinceMs() > DISCONNECT_GRACE_MS;
+    }
+
+    /**
      * 该用户是否已经不在这场对局里了：连接断了，或者长时间没有任何命令。
      * 用于判断"另一方是不是也早就掉线了"。
      */

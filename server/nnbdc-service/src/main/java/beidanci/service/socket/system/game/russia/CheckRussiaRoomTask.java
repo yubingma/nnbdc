@@ -102,6 +102,13 @@ public class CheckRussiaRoomTask extends TimerTask {
                 logger.error("", e);
             }
 
+            // 断线宽限到点的用户按时结算（对手赢、他输；双方都没了就作废）
+            try {
+                hall.settleExpiredDisconnects();
+            } catch (IllegalAccessException e) {
+                logger.error("", e);
+            }
+
             // 清除空房间
             clearEmptyRoom(readyRooms);
             clearEmptyRoom(waitingRooms);

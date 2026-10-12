@@ -274,20 +274,8 @@ public class SocketService {
                 }
 
                 // 关闭用户其他的连接，因为只允许一个用户有一个连接
-                if (disconnectExistingConnectionOfUser(user, client, "一个用户不允许多个连接")) {
-                    // 如果该用户正打着一局，那么这次"新连接"就是他自己的断线重连：
-                    // 对局必须保留并交接到新连接上，绝不能当成离场（否则会白判负、白扣分，
-                    // 而结算事件又发不出去，客户端会永远停在对战界面不再出单词）
-                    MySystem russia = systems.get(MySystem.SYSTEM_RUSSIA);
-                    boolean gameTakenOver = russia != null && russia.onUserReconnected(user);
-                    if (!gameTakenOver) {
-                        broadcastUserOffline(user);
-                        onUserLogout(user);
-                    } else {
-                        log.info(String.format("用户[%s]的进行中对局已交接到新连接",
-                                Util.getNickNameOfUser(user)));
-                    }
-                }
+                boolean replacedOldConnection = disconnectExistingConnectionOfUser(user, client,
+                        "一个用户不允许多个连接");
 
                 // 保存用户相关信息到缓存
                 final UUID sessionId = client.getSessionId();
@@ -297,6 +285,19 @@ public class SocketService {
                     clearUserCache(oldUser.getId(), sessionId);
                 }
                 addUserCache(user, client);
+
+                // 用户回来了：如果他有一局正在打（含"断线宽限中等重连"），把对局交接到这条新连接上。
+                // 注意这一步必须在登记完新连接之后做，而且必须对每条新连接都做——不能只在
+                // "旧连接还挂着"时才做：传输层断开时服务端已经清理过会话，那种情况下
+                // 旧连接早就没了，只按旧连接判断会把最常见的断线重连漏掉。
+                MySystem russia = systems.get(MySystem.SYSTEM_RUSSIA);
+                boolean gameTakenOver = russia != null && russia.onUserReconnected(user);
+
+                // 既没有对局要交接，又确实顶掉了旧连接，才算"这个人从别处登录了"，按离场处理
+                if (replacedOldConnection && !gameTakenOver) {
+                    broadcastUserOffline(user);
+                    onUserLogout(user);
+                }
 
                 // 向所有玩家广播新用户上线信息
                 broadcastUserOnline(user);

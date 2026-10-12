@@ -22,6 +22,11 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 public class AdminImageReviewController {
@@ -30,11 +35,20 @@ public class AdminImageReviewController {
     /** 批量审图的进度放在 sys_param 里：服务重启后能接着上次的位置继续审，不会再从头扫一遍 */
     private static final String PROGRESS_PARAM = "wordImageReviewProgress";
 
-    /** 每审这么多张，把游标落一次库 */
-    private static final int PROGRESS_SAVE_EVERY = 20;
+    /**
+     * 并发送审的路数。
+     *
+     * 实测（2026-10-12，脚本 tmp/probe_sustained.py）：百炼 qwen3-vl-plus 用 16 路连续打满 30 秒、
+     * 814 张零限流零失败，吞吐 26.5 张/秒，单张 p50 从串行时的 0.67 秒降到 0.49 秒；
+     * 32 路也没触发限流。取 16 路是给挂在同一个 API Key 上的语音合成、AI 短文等调用留出余量。
+     */
+    private static final int REVIEW_CONCURRENCY = 16;
 
-    /** 每张图之间的间隔，给 AI 接口留点余量 */
-    private static final long REVIEW_INTERVAL_MILLIS = 800;
+    /**
+     * 一批最多送审多少张。批内并发跑完才把游标落一次库（游标取本批最后一张的 id），
+     * 所以服务重启后最多重审这一批。批太大中断时要重审的张数多，太小则落库太频繁。
+     */
+    private static final int REVIEW_BATCH_SIZE = REVIEW_CONCURRENCY * 4;
 
     @Autowired
     private AiBo aiBo;
@@ -157,6 +171,9 @@ public class AdminImageReviewController {
     /**
      * 全库扫一遍配图，AI 判删就当场删、判过就置为已通过；没结论的图保持审核中，等定时重审。
      *
+     * 送审是多路并发的（见 {@link #REVIEW_CONCURRENCY}）。以前是一张一张串行、每张之间还空等
+     * 800 毫秒，3 万多张要跑将近 18 个小时，而其中四成时间纯粹是睡掉的。
+     *
      * @param resume 上次的进度（为空表示这一轮从头开始）
      */
     private void runBatchReview(String dictId, ReviewProgress resume) {
@@ -165,6 +182,8 @@ public class AdminImageReviewController {
         int deleted = resume == null ? 0 : resume.deletedCount;
         int undecided = resume == null ? 0 : resume.undecidedCount;
         int approvedThisRun = 0;
+        AtomicInteger handled = new AtomicInteger();
+        ExecutorService pool = Executors.newFixedThreadPool(REVIEW_CONCURRENCY);
         try {
             List<WordImageDto> images = new ArrayList<>(wordBo.getWordImagesOfDict(dictId));
             // 按 id 排序，游标才有确定的先后顺序
@@ -175,35 +194,49 @@ public class AdminImageReviewController {
             }
             currentTask.totalImages = images.size();
             currentTask.statusMsg = cursor == null ? "正在从头扫描" : "正在从上次中断处继续扫描";
-            logger.info("开始批量审图: dictId={}, 待审 {} 张, 起点={}", dictId, images.size(), cursor);
+            logger.info("开始批量审图: dictId={}, 待审 {} 张, 起点={}, 并发={}", dictId, images.size(), cursor,
+                    REVIEW_CONCURRENCY);
 
-            for (WordImageDto image : images) {
-                if (!currentTask.isRunning) break;
-                currentTask.currentIndex++;
+            for (int from = 0; from < images.size() && currentTask.isRunning; from += REVIEW_BATCH_SIZE) {
+                List<WordImageDto> batch = images.subList(from, Math.min(from + REVIEW_BATCH_SIZE, images.size()));
+                List<Callable<Map<String, Object>>> tasks = new ArrayList<>(batch.size());
+                for (WordImageDto image : batch) {
+                    tasks.add(() -> {
+                        try {
+                            return reviewOneImage(image);
+                        } finally {
+                            currentTask.currentIndex = handled.incrementAndGet();
+                        }
+                    });
+                }
 
-                try {
-                    Word word = wordBo.findById(image.getWordId());
-                    String spell = word == null ? null : word.getSpell();
-                    Map<String, Object> verdict = wordImageBo.reviewImageAndApply(image.getId(), spell, image.getImageFile());
+                // invokeAll 阻塞到本批全部审完，结果顺序与 batch 一一对应；
+                // 计数与游标都在本线程推进，不给并发留竞态
+                List<Future<Map<String, Object>>> futures = pool.invokeAll(tasks);
+                for (int i = 0; i < batch.size(); i++) {
+                    WordImageDto image = batch.get(i);
+                    Map<String, Object> verdict = null;
+                    try {
+                        verdict = futures.get(i).get();
+                    } catch (Exception e) {
+                        logger.error("审图异常, imgId=" + image.getId(), e);
+                    }
+
                     if (verdict == null) {
                         undecided++;
                     } else if ("DELETE".equals(String.valueOf(verdict.get("action")))) {
                         deleted++;
-                        currentTask.deletedImages.add(buildDeletedInfo(image, spell, verdict));
+                        Word word = wordBo.findById(image.getWordId());
+                        currentTask.deletedImages
+                                .add(buildDeletedInfo(image, word == null ? null : word.getSpell(), verdict));
                     } else {
                         approvedThisRun++;
                     }
-                } catch (Exception e) {
-                    undecided++;
-                    logger.error("审图异常, imgId=" + image.getId(), e);
+                    reviewed++;
                 }
 
-                reviewed++;
-                cursor = image.getId();
-                if (reviewed % PROGRESS_SAVE_EVERY == 0) {
-                    saveProgressQuietly(dictId, cursor, reviewed, deleted, undecided);
-                }
-                Thread.sleep(REVIEW_INTERVAL_MILLIS);
+                cursor = batch.get(batch.size() - 1).getId();
+                saveProgressQuietly(dictId, cursor, reviewed, deleted, undecided);
             }
 
             if (currentTask.isRunning) {
@@ -215,13 +248,25 @@ public class AdminImageReviewController {
                 saveProgressQuietly(dictId, cursor, reviewed, deleted, undecided);
                 currentTask.statusMsg = String.format("已手动停止：共审 %d 张，删除 %d 张，下次从这里继续", reviewed, deleted);
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            saveProgressQuietly(dictId, cursor, reviewed, deleted, undecided);
+            currentTask.statusMsg = String.format("任务被中断：共审 %d 张，删除 %d 张，下次从这里继续", reviewed, deleted);
         } catch (Exception e) {
             saveProgressQuietly(dictId, cursor, reviewed, deleted, undecided);
             logger.error("批量扫描异常", e);
             currentTask.statusMsg = "任务异常退出: " + e.getMessage();
         } finally {
+            pool.shutdown();
             currentTask.isRunning = false;
         }
+    }
+
+    /** 送一张配图给 AI 审，并按结论落库：判删当场删、判过置为已通过、没结论就留在审核中等重审 */
+    private Map<String, Object> reviewOneImage(WordImageDto image) throws IllegalAccessException {
+        Word word = wordBo.findById(image.getWordId());
+        return wordImageBo.reviewImageAndApply(image.getId(), word == null ? null : word.getSpell(),
+                image.getImageFile());
     }
 
     private Map<String, Object> buildDeletedInfo(WordImageDto image, String spell, Map<String, Object> verdict) {

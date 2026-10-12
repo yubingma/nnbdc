@@ -266,6 +266,24 @@ public class Hall {
     }
 
     /**
+     * 把断线宽限已经到点的用户按时结算掉（由房间监控任务每 10 秒调一次）。
+     * 结算动作交给 system.onConnectionBroken：它会按"对手赢、他输；双方都没了就作废"处理。
+     */
+    public void settleExpiredDisconnects() throws IllegalAccessException {
+        for (RussiaRoom room : new ArrayList<>(readyRooms)) {
+            if (!(room.getState() instanceof ReadyState readyState)) {
+                continue;
+            }
+            for (UserVo user : new ArrayList<>(room.getUsers().keySet())) {
+                if (readyState.isDisconnectGraceExpired(user)) {
+                    logger.info(String.format("玩家[%s]断线宽限到点，开始结算", Util.getNickNameOfUser(user)));
+                    system.onConnectionBroken(user, "断线宽限到点");
+                }
+            }
+        }
+    }
+
+    /**
      * 该用户是否正处于一局进行中的对局（正式对战或单人练习都算）。
      */
     public boolean isUserInPlayingGame(UserVo user) {

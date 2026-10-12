@@ -124,10 +124,7 @@ public class Russia implements MySystem {
                             gameHalls.put(hallId, hall);
                         }
                     }
-                    Hall currHall = users.get(user);
-                    if (currHall != null && currHall != hall) {
-                        currHall.userLeave(user);
-                    }
+                    leaveCurrentRoom(user, hall);
                     hall.createPrivateRoomForUser(user);
                     users.put(user, hall);
                 }
@@ -144,10 +141,7 @@ public class Russia implements MySystem {
                             gameHalls.put(hallId, hall);
                         }
                     }
-                    Hall currHall = users.get(user);
-                    if (currHall != null && currHall != hall) {
-                        currHall.userLeave(user);
-                    }
+                    leaveCurrentRoom(user, hall);
                     boolean ok = hall.joinRoomById(user, roomId);
                     if (!ok) {
                         socketService.sendEventToUser(user, "joinRoomFailed", "房间不存在或已满");
@@ -177,16 +171,34 @@ public class Russia implements MySystem {
                     }                      }
         }
 
-        // 用户回到游戏里了：如果上一局是断线判负的，把结果补发给他（那时他不在线，发不出去）
-        if (getHallOfUser(user) != null) {
-            socketService.sendGameResultNotice(user);
-        }
+        // 用户回到游戏里了：如果上一局是断线判负的，把结果补发给他（那时他不在线，发不出去）。
+        // 不要求他此刻还在大厅里——恰恰是被判负的人已经不在大厅了，才会需要这条补发。
+        socketService.sendGameResultNotice(user);
     }
 
     @Override
     public boolean isUserInPlayingGame(UserVo user) {
         Hall hall = getHallOfUser(user);
         return hall != null && hall.isUserInPlayingGame(user);
+    }
+
+    /**
+     * 换房（开好友房、按房号进房）之前，先把人从当前房间里摘出来。
+     * 必须连"同一个大厅里的旧房间"一起处理：否则他会同时挂在两个房间里，
+     * 后续命令被路由到旧房间，旧房间也永远不空。
+     */
+    private void leaveCurrentRoom(UserVo user, Hall targetHall) throws IllegalAccessException {
+        Hall currHall = users.get(user);
+        if (currHall != null && currHall != targetHall) {
+            currHall.userLeave(user);
+            return;
+        }
+        if (targetHall != null) {
+            RussiaRoom currentRoom = targetHall.getRoomOfUser(user);
+            if (currentRoom != null) {
+                currentRoom.userLeave(user);
+            }
+        }
     }
 
     private Hall getHallOfUser(UserVo user) {
@@ -226,7 +238,8 @@ public class Russia implements MySystem {
         RussiaRoom room = (hall == null) ? null : hall.getRoomOfUser(user);
         RoomState state = (room == null) ? null : room.getState();
         if (!(state instanceof ReadyState readyState) || !readyState.isGamePlaying()) {
-            return false;
+            // 单人练习（还没等到对手）：没有对手也没有计分，保留房间让他重连后接着练
+            return room != null && room.isUserPlaying(user);
         }
         if (readyState.markUserReconnected(user)) {
             return true;
@@ -255,7 +268,8 @@ public class Russia implements MySystem {
             readyState.markUserDisconnected(user);
             return true;
         }
-        return false;
+        // 单人练习：没有对手也没有计分，保留房间等他重连接着练（长期不回来由 30 分钟无操作清理兜底）
+        return room != null && room.isUserPlaying(user);
     }
 
     /**
