@@ -529,6 +529,11 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         );
       }
 
+      // 轨道里有本版本不支持的环节：重试同样必然失败（配置没变），只给返回这一条出路
+      if (cause is UnsupportedStudyStepException) {
+        return _buildUnsupportedStepGuide(cause);
+      }
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -634,6 +639,38 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     debugPrint('⚡ [PERF] BdcPage.renderPage cost: ${stopwatch.elapsedMilliseconds}ms');
     return res;
+  }
+
+  /// 轨道里有本版本不支持的环节：说清是哪个环节、给出唯一可行的出路（去升级）
+  Widget _buildUnsupportedStepGuide(UnsupportedStudyStepException cause) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.system_update_alt_rounded, size: 48, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text(
+              '这个学习环节需要升级 App',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '这个词的轨道里有本版本不支持的环节（${cause.steps.join('、')}）。'
+              '升级到最新版本后即可继续学习。',
+              style: const TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('返回今日计划'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// 回看模式横幅：橙色横条自带状态栏内边距，一直铺到状态栏底下，文字落在状态栏下方。

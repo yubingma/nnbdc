@@ -151,6 +151,29 @@ extension StudyStepExt on StudyStep {
         return StudyStep.unknown;
     }
   }
+
+  /// 本版本允许用户在学习轨道里配置的环节（不含轨道末尾固定的 List 浏览环节）。
+  ///
+  /// **题型清单只有这一份来源**：学习轨道设置页与今日计划页的选项都由它派生，
+  /// 严禁各自再抄一份（抄出来的清单一定会漂移）。
+  static const List<String> selectableSteps = <String>[
+    'En2Ch',
+    'Ch2En',
+    'EnSentence2Ch',
+    'ChSentence2En',
+  ];
+
+  /// 本版本认不认识这个环节名。
+  ///
+  /// 不认识 = 更新的 App 版本新增的题型：本版既无法作答它，也绝不能按集合增删来保存轨道
+  /// （那会把这一行静默删掉）。遇到不认识必须显式暴露，不许当成普通环节蒙混过去。
+  static bool isSupported(String step) =>
+      StudyStepExt.fromString(step) != StudyStep.unknown;
+
+  /// 给用户看的环节名：本版本不认识的环节必须明说"不支持"，不能含混成"未知环节"。
+  static String displayName(String step) => StudyStepExt.isSupported(step)
+      ? StudyStepExt.fromString(step).description
+      : '本版本不支持：$step';
 }
 
 enum StudyStepState {

@@ -66,6 +66,9 @@ class MockAsr implements Asr {
   }
 
   @override
+  Future<void> playReadyHint() async {}
+
+  @override
   Future<String?> stopAsr() async {
     stopAsrCallCount++;
     return null;

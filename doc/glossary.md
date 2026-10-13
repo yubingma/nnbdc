@@ -260,6 +260,7 @@
 | 作用域 | `user_study_step.scope` | `'new'` 每日新词流程 / `'review'` 复习流程 | ⚠️ v62 注释写 LEARNING/REVIEW，与代码不符，见第六章 |
 | 步骤状态 | `user_study_step.state` | `'Active'` 进行中 / `'Inactive'` 未激活 | ⚠️ v62 注释写 WAITING/DOING/FINISHED，与服务端代码不符，见第六章 |
 | 首答计分 | `StudyTrack.isFirstAttemptOfStep`（`app/lib/util/study_track.dart:97`） | 一个评分环节只在首次作答时写学习记录、算记忆参数、计进度；答错留在本环节重练，重练只判对错、**不计分** | 判据：今天该词的评分日志条数 ≤ 已走完环节数。日志条数少于进度属异常，按首答处理（宁可重复计分，不静默丢分） |
+| 不支持的环节 | `StudyStepExt.isSupported` / `displayName`（`app/lib/api/enum.dart:170`、`:174`）；可选题型清单唯一来源 `StudyStepExt.selectableSteps`（`app/lib/api/enum.dart:159`） | 学习轨道里出现**本安装包不认识**的环节名，即更高版本的 App 新增的题型（例如将来的拼写环节） | **不许说成"未知环节"**，要明说"本版本不支持：X"。三处行为是定死的：①学习页遇到它绝不进答题流程，给升级提示与返回出口，绝不出现空白题面；②学习轨道设置页与今日计划页遇到它整页只读并说明原因；③保存轨道时只要现有配置含它就直接拒绝（`UnsupportedStudyStepException`，`app/lib/util/study_steps_service.dart:24`）——因为保存是按集合增删的，照旧保存会把它静默删掉 |
 | FSRS | Free Spaced Repetition Scheduler | 记忆曲线算法，负责算出下次该什么时候复习 | |
 | 记忆参数 | `learning_word.stability` / `difficulty` / `elapsed_days` / `scheduled_days` / `reps` / `lapses` | 记忆稳定度、难度、间隔天数、复习次数、遗忘次数 | |
 | 同一天再次评分 | `elapsedDays == 0`，判定见 `app/lib/api/bo/study_bo.dart:1085` | 今天已经见过这个词、并且今天已经给它打过分，同一天里又打一次分 —— 测评之后紧接着的几个巩固环节就是这种 | 与「隔天复习评分」相对；这种评分走「同一天加成」 |

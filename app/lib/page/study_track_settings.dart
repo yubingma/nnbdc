@@ -3,9 +3,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
+import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 
 /// 学习轨道独立二级设置页面
@@ -18,18 +20,18 @@ class StudyTrackSettingsPage extends StatefulWidget {
 }
 
 class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
-  static const List<String> _allStepNames = [
-    'En2Ch',
-    'Ch2En',
-    'EnSentence2Ch',
-    'ChSentence2En',
-  ];
+  /// 可选题型清单的唯一来源在 [StudyStepExt.selectableSteps]，本页不再自带一份。
+  static const List<String> _allStepNames = StudyStepExt.selectableSteps;
 
   static String _getStepIndexLabel(int index) {
     return '环节 ${index + 1}';
   }
 
   bool _isLoading = true;
+
+  /// 现有轨道里本版本不认识的环节（更高版本的 App 新增的题型）。
+  /// 非空时整页只读：本版本没有这些环节的选项，一旦保存就会把它们从配置里删掉。
+  List<String> _unsupportedSteps = const [];
 
   String _newCheckStep = 'En2Ch';
   List<String> _newCorrectSteps = ['Ch2En'];
@@ -59,6 +61,12 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
           _reviewCheckStep = reviewCfg.check;
           _reviewCorrectSteps = List<String>.from(reviewCfg.correct);
           _reviewWrongSteps = List<String>.from(reviewCfg.wrong);
+
+          _unsupportedSteps = <String>{
+            ...newCfg.unsupported,
+            ...reviewCfg.unsupported,
+          }.toList()
+            ..sort();
           _isLoading = false;
         });
       }
@@ -79,7 +87,13 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
         wrong: isNew ? _newWrongSteps : _reviewWrongSteps,
       );
       HapticFeedback.lightImpact();
-    } catch (_) {}
+    } on UnsupportedStudyStepException catch (e) {
+      // 轨道里有本版本不认识的环节：保存会让它消失。明确告诉用户，不许静默失败。
+      ToastUtil.error('轨道里有本版本不支持的环节（${e.steps.join('、')}），请升级 App 后再修改');
+    } catch (e, s) {
+      Global.logger.e('保存学习轨道失败', error: e, stackTrace: s);
+      ToastUtil.error('保存失败，请稍后重试');
+    }
   }
 
   @override
@@ -133,6 +147,9 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                     ),
                   ),
 
+                  // 轨道里有本版本不认识的环节时，整页只读并明确说明原因
+                  if (_unsupportedSteps.isNotEmpty) _buildUnsupportedBanner(isDarkMode),
+
                   // 1. 新词轨道卡片
                   _buildTrackSection(
                     title: '新词轨道',
@@ -161,6 +178,40 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                 ],
               ),
             ),
+    );
+  }
+
+  /// 轨道里存在本版本不认识的环节时的说明条：说清"为什么现在不能改"
+  Widget _buildUnsupportedBanner(bool isDarkMode) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0x33F59E0B) : const Color(0xFFFEF3C7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDarkMode ? const Color(0x66F59E0B) : const Color(0xFFFCD34D),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFD97706)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '轨道里有本版本不支持的环节（${_unsupportedSteps.join('、')}），'
+              '为避免把这些设置弄丢，本页暂时不能修改。升级 App 后即可编辑。',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.5,
+                color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -261,11 +312,13 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                     dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     items: [
-                      for (final s in _allStepNames)
+                      // 不认识的环节也要出现在列表里：否则 DropdownButton 找不到当前值，
+                      // 且用户就看不到自己的轨道到底配了什么
+                      for (final s in <String>[..._allStepNames, ..._unsupportedSteps])
                         DropdownMenuItem(
                           value: s,
                           child: Text(
-                            StudyStepExt.fromString(s).description,
+                            StudyStepExt.displayName(s),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -274,18 +327,20 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                           ),
                         ),
                     ],
-                    onChanged: (v) {
-                      if (v != null) {
-                        setState(() {
-                          if (isNew) {
-                            _newCheckStep = v;
-                          } else {
-                            _reviewCheckStep = v;
+                    onChanged: _unsupportedSteps.isEmpty
+                        ? (v) {
+                            if (v != null) {
+                              setState(() {
+                                if (isNew) {
+                                  _newCheckStep = v;
+                                } else {
+                                  _reviewCheckStep = v;
+                                }
+                              });
+                              unawaited(_saveConfig(scope));
+                            }
                           }
-                        });
-                        unawaited(_saveConfig(scope));
-                      }
-                    },
+                        : null,
                   ),
                 ),
               ],
@@ -334,7 +389,8 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
     required bool isCorrect,
     required bool isDarkMode,
   }) {
-    final bool canAdd = _allStepNames.any((s) => !steps.contains(s));
+    final bool readOnly = _unsupportedSteps.isNotEmpty;
+    final bool canAdd = !readOnly && _allStepNames.any((s) => !steps.contains(s));
     final isNew = scope == 'new';
 
     return Column(
@@ -404,8 +460,10 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: steps.length,
+            buildDefaultDragHandles: !readOnly,
             // ignore: deprecated_member_use
             onReorder: (oldIndex, newIndex) {
+              if (readOnly) return;
               setState(() {
                 if (newIndex > oldIndex) newIndex--;
                 final targetList = isNew
@@ -432,7 +490,10 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.drag_indicator_rounded, size: 16, color: isDarkMode ? Colors.white24 : Colors.black26),
+                    if (!readOnly)
+                      Icon(Icons.drag_indicator_rounded, size: 16, color: isDarkMode ? Colors.white24 : Colors.black26)
+                    else
+                      const SizedBox(width: 16),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -448,7 +509,7 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        StudyStepExt.fromString(stepName).description,
+                        StudyStepExt.displayName(stepName),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -456,21 +517,22 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                         ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          final targetList = isNew
-                              ? (isCorrect ? _newCorrectSteps : _newWrongSteps)
-                              : (isCorrect ? _reviewCorrectSteps : _reviewWrongSteps);
-                          targetList.remove(stepName);
-                        });
-                        unawaited(_saveConfig(scope));
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(Icons.close_rounded, size: 15, color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
+                    if (!readOnly)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            final targetList = isNew
+                                ? (isCorrect ? _newCorrectSteps : _newWrongSteps)
+                                : (isCorrect ? _reviewCorrectSteps : _reviewWrongSteps);
+                            targetList.remove(stepName);
+                          });
+                          unawaited(_saveConfig(scope));
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(Icons.close_rounded, size: 15, color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               );
@@ -544,7 +606,7 @@ class _StudyTrackSettingsPageState extends State<StudyTrackSettingsPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              StudyStepExt.fromString(item).description,
+                              StudyStepExt.displayName(item),
                               style: TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,

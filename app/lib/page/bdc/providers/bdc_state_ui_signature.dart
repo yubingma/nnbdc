@@ -28,8 +28,16 @@ class BdcStateUiSignature {
   final bool isKeyboardVisible;
   final String? loadError;
 
+  /// 当前错误属于哪一类（null = 没有错误）。
+  ///
+  /// 必须按错误「种类」分辨，不能只看 [loadError] 的文案：不同种类的错误渲染的界面完全不同
+  ///（通用释义缺失的引导面板 / 不支持的环节的升级提示 / 普通重试页）。
+  /// 签名分辨不出来时界面不会重建，那张引导卡片就永远不会出现。
+  final Type? loadErrorKind;
+
   /// 当前错误是不是「通用释义缺失」：它决定错误页渲染哪一种界面（引导面板 vs 普通重试页）。
-  final bool isMissingCommonMeaningError;
+  bool get isMissingCommonMeaningError =>
+      loadErrorKind == MissingCommonMeaningException;
   final int progressBarTapCount;
   final bool showAnswerButtons;
   final double slideDirection;
@@ -72,7 +80,7 @@ class BdcStateUiSignature {
         buttonsEnabled = s.buttonsEnabled,
         isKeyboardVisible = s.isKeyboardVisible,
         loadError = s.loadError,
-        isMissingCommonMeaningError = s.loadErrorCause is MissingCommonMeaningException,
+        loadErrorKind = s.loadErrorCause?.runtimeType,
         progressBarTapCount = s.progressBarTapCount,
         showAnswerButtons = s.showAnswerButtons,
         slideDirection = s.slideDirection,
@@ -117,7 +125,7 @@ class BdcStateUiSignature {
         buttonsEnabled == other.buttonsEnabled &&
         isKeyboardVisible == other.isKeyboardVisible &&
         loadError == other.loadError &&
-        isMissingCommonMeaningError == other.isMissingCommonMeaningError &&
+        loadErrorKind == other.loadErrorKind &&
         progressBarTapCount == other.progressBarTapCount &&
         showAnswerButtons == other.showAnswerButtons &&
         slideDirection == other.slideDirection &&
@@ -161,7 +169,7 @@ class BdcStateUiSignature {
         buttonsEnabled,
         isKeyboardVisible,
         loadError,
-        isMissingCommonMeaningError,
+        loadErrorKind,
         progressBarTapCount,
         showAnswerButtons,
         slideDirection,

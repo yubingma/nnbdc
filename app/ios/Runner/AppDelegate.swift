@@ -28,6 +28,16 @@ import Accelerate
     private var isAudioEngineInitialized = false // 跟踪 audioEngine 是否已初始化
     private var skippedBufferCount = 0 // 跟踪跳过的缓冲区数量
     private var contextualPhrases: [String] = [] // 上下文短语，用于 bias
+
+    // ASR 就绪提示音（「叮」）专用通道：进程内常驻一套 AVAudioEngine + AVAudioPlayerNode。
+    // 它与麦克风链路共用同一个 AVAudioSession，绝不能交给外部异步播放器：提示音是用户判断
+    // "已经可以说话了"的唯一信号，必须和开麦落在同一个时钟上（历史教训见 46377d0c）。
+    private let hintPlaybackEngine = AVAudioEngine()
+    private let hintPlaybackNode = AVAudioPlayerNode()
+    private var hintPlaybackFile: AVAudioFile?
+    private var hintPlaybackNodeConnected = false
+    private var hintPlaybackGeneration = 0
+    private var lastReadyHintTime: TimeInterval = 0
     
     // Stream handlers
     private var asrStreamHandler: SimpleStreamHandler?
@@ -44,6 +54,12 @@ import Accelerate
     private var ttsEventSink: FlutterEventSink?
     private var synthesizer = AVSpeechSynthesizer()
     private var currentUtteranceId: String?
+
+    // TTS 借走音频会话前的现场快照。
+    // AVSpeechSynthesizer 在朗读期间会把 AVAudioSession 接管成 playback，并且结束时不负责归还；
+    // 不还原就会让 Dart 侧"会话已是录放模式"的判断失真，直接后果是下一次开麦时
+    // 原生在契约校验处拒绝启动音频引擎（真机日志：音频会话 Category 不是 playAndRecord，当前 Playback）。
+    private var ttsSessionSnapshot: (category: AVAudioSession.Category, mode: AVAudioSession.Mode, options: AVAudioSession.CategoryOptions)?
     
     // ASR 实时性优化
     private var lastPartialResult: String = ""
@@ -164,6 +180,9 @@ import Accelerate
         
         // Initialize TTS
         setupTts()
+        
+        // 预加载 ASR 就绪提示音（进程内常驻，开麦瞬间零加载）
+        setupReadyHintSound()
         
         // Register AI inference channel
         if let registrar = self.registrar(forPlugin: "AiInferenceChannel") {
@@ -372,6 +391,9 @@ import Accelerate
             // iOS natively handles models, no-op needed
             result(nil)
             
+        case "playReadyHint":
+            playReadyHint(result: result)
+            
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -460,7 +482,17 @@ import Accelerate
         // 会话已由 Dart 侧（StudyAudioSessionController.transitTo(record)）配置并激活，这里只负责启动音频引擎。
         // 核心优化：在 startMicrophone 时即初始化并启动音频引擎（Pre-warm），
         // 避免在后续 startAsr 时临时启动引擎产生的音频切换回声或杂音（尤其解决第一个单词的问题）
-        initializeAudioEngine()
+        guard initializeAudioEngine() else {
+            // 引擎没起来就不是"麦克风已开"：绝不能置 isRecording 并回 nil，
+            // 否则 Dart 会带着"已开麦"的错觉走完播提示音、开识别的全流程，
+            // 用户侧表现为进说模式没有"叮"、说话也毫无反应。
+            result(FlutterError(
+                code: "AUDIO_ENGINE_NOT_READY",
+                message: "音频引擎未能启动（录放会话未就绪）",
+                details: nil
+            ))
+            return
+        }
         isRecording = true
         result(nil)
     }
@@ -478,7 +510,14 @@ import Accelerate
         isAsrStopped = false
         lastPartialResult = ""
         
-        startSpeechRecognition()
+        guard startSpeechRecognition() else {
+            result(FlutterError(
+                code: "ASR_START_FAILED",
+                message: "语音识别未能在当前音频会话下启动",
+                details: nil
+            ))
+            return
+        }
         result(nil)
     }
     
@@ -545,6 +584,97 @@ import Accelerate
         result(nil)
     }
     
+    // MARK: - ASR 就绪提示音（进程内原生直通）
+    
+    private func findFlutterAssetPath(_ assetPath: String) -> String? {
+        let key = FlutterDartProject.lookupKey(forAsset: assetPath)
+        if let path = Bundle.main.path(forResource: key, ofType: nil) {
+            return path
+        }
+        if let frameworkPath = Bundle.main.path(forResource: "Frameworks/App.framework/" + key, ofType: nil) {
+            return frameworkPath
+        }
+        return nil
+    }
+    
+    private func setupReadyHintSound() {
+        guard let path = findFlutterAssetPath("assets/audio/asr_ready_hint.wav") else {
+            print("IOS: [ASR] Ready hint asset not found")
+            return
+        }
+        do {
+            hintPlaybackFile = try AVAudioFile(forReading: URL(fileURLWithPath: path))
+            print("IOS: [ASR] Ready hint file loaded from \(path)")
+        } catch {
+            print("IOS: [ASR] Failed to load ready hint file: \(error)")
+        }
+    }
+    
+    /// 懒启动常驻提示音引擎：节点只 attach/connect 一次，引擎只 start 一次。
+    /// 系统中断或路由变化会把引擎停掉，这里检测到就用同一条链路重启，不重建节点。
+    private func ensureHintPlaybackEngine(format: AVAudioFormat) -> Bool {
+        if !hintPlaybackNodeConnected {
+            hintPlaybackEngine.attach(hintPlaybackNode)
+            hintPlaybackEngine.connect(hintPlaybackNode, to: hintPlaybackEngine.mainMixerNode, format: format)
+            hintPlaybackNodeConnected = true
+        }
+        if hintPlaybackEngine.isRunning {
+            return true
+        }
+        hintPlaybackEngine.prepare()
+        do {
+            try hintPlaybackEngine.start()
+            return true
+        } catch {
+            print("IOS: [ASR] 提示音引擎启动失败: \(error)")
+            return false
+        }
+    }
+    
+    private func playReadyHint(result: FlutterResult) {
+        let now = Date().timeIntervalSince1970
+        if now - lastReadyHintTime < 0.3 {
+            print("IOS: [ASR] playReadyHint ignored due to debounce (\(now - lastReadyHintTime)s)")
+            result(nil)
+            return
+        }
+        lastReadyHintTime = now
+        guard let file = hintPlaybackFile else {
+            // 唯一一条"什么都听不到、日志里也没有痕迹"的分支：必须暴露出来，
+            // 否则提示音偶发不响时无从判断是没触发还是资源没就绪。
+            print("IOS: [ASR] playReadyHint 跳过：提示音文件未加载（setupReadyHintSound 未成功）")
+            result(nil)
+            return
+        }
+        guard ensureHintPlaybackEngine(format: file.processingFormat) else {
+            result(nil)
+            return
+        }
+        if hintPlaybackNode.isPlaying {
+            print("IOS: [ASR] Ready hint player is already playing, skipping duplicate playback")
+            result(nil)
+            return
+        }
+        hintPlaybackGeneration += 1
+        let generation = hintPlaybackGeneration
+        hintPlaybackNode.volume = 0.0
+        hintPlaybackNode.stop()
+        file.framePosition = 0 // 同一份 AVAudioFile 反复调度，显式回卷到文件头
+        // 播完必须停掉节点：AVAudioPlayerNode 播完整个 schedule 后 isPlaying 仍为 true，
+        // 不停就会让下一次请求命中上面"正在播放"的判断而被永久跳过
+        //（真机表现：一个进程内只有第一次能听到提示音，之后每次都静默跳过）。
+        hintPlaybackNode.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            DispatchQueue.main.async {
+                guard let self = self, self.hintPlaybackGeneration == generation else { return }
+                self.hintPlaybackNode.volume = 0.0
+                self.hintPlaybackNode.stop()
+            }
+        }
+        hintPlaybackNode.volume = 0.4
+        hintPlaybackNode.play()
+        result(nil)
+    }
+    
     // MARK: - Audio Session Management
     
     /// 修复音频会话配置（**仅供系统触发的引擎重启使用**，见 resetAudioEngineAndTap）。
@@ -586,9 +716,14 @@ import Accelerate
         }
     }
     
-    private func initializeAudioEngine() {
+    /// 启动采集引擎并安装 Tap。返回是否真正就绪。
+    ///
+    /// 失败绝不允许静默咽下：调用方（startMicrophone / startSpeechRecognition）必须把
+    /// "引擎没起来"这一事实回传给 Dart。历史事故就是在这里 print 一句然后 return，
+    /// Dart 侧收到的是成功，于是整轮开麦变成"看着开了、其实没有任何音频数据"。
+    private func initializeAudioEngine() -> Bool {
         guard !isAudioEngineInitialized else {
-            return
+            return audioEngine.isRunning
         }
         
         // 会话的 Category 与激活态由 Dart 侧 StudyAudioSessionController 独占管理，
@@ -598,13 +733,13 @@ import Accelerate
         let audioSession = AVAudioSession.sharedInstance()
         guard audioSession.category == .playAndRecord else {
             print("IOS: [ASR] 音频会话 Category 不是 playAndRecord（当前 \(audioSession.category.rawValue)），拒绝启动音频引擎")
-            return
-        }
-        guard audioSession.sampleRate > 0 && audioSession.inputNumberOfChannels > 0 else {
-            print("IOS: [ASR] Audio session not ready (rate: \(audioSession.sampleRate), channels: \(audioSession.inputNumberOfChannels))")
-            return
+            return false
         }
         
+        // 这里刻意不检查 sampleRate / inputNumberOfChannels：它们是"会话好没好"的猜测，
+        // 在会话刚激活、输入路由尚未落定的那几十毫秒里会读到 0，于是把一整轮开麦静默掐掉。
+        // installTap() 本身已经能容忍 format 为 0（回退 outputFormat，再回退自造格式），
+        // 真正的判据是 audioEngine.start() 能否成功 —— 它失败会走下面的 catch。
         print("IOS: [ASR] Initializing audio engine. Session rate: \(audioSession.sampleRate), channels: \(audioSession.inputNumberOfChannels)")
         
         // 核心修复：先停止并重置引擎，确保状态干净
@@ -628,7 +763,7 @@ import Accelerate
             print("IOS: [ASR] Audio engine started successfully")
         } catch {
             print("IOS: [ASR] Failed to start audio engine: \(error)")
-            return
+            return false
         }
         
         // 安装 Tap
@@ -636,9 +771,11 @@ import Accelerate
         
         isAudioEngineInitialized = true
         print("IOS: [ASR] Audio engine initialization completed")
+        return true
     }
     
-    private func resetAudioEngineAndTap() {
+    @discardableResult
+    private func resetAudioEngineAndTap() -> Bool {
         print("IOS: [ASR] resetAudioEngineAndTap called")
         let inputNode = audioEngine.inputNode
         
@@ -663,11 +800,12 @@ import Accelerate
             print("IOS: [ASR] Audio engine restarted successfully")
         } catch {
             print("IOS: [ASR] Failed to restart audio engine: \(error)")
-            return
+            return false
         }
         
         // 5. 重新安装 Tap
         installTap()
+        return true
     }
     
     private func installTap() {
@@ -731,13 +869,18 @@ import Accelerate
         print("IOS: [ASR] Audio tap installed successfully on bus 0")
     }
     
-    private func startSpeechRecognition() {
+    /// 建立识别任务并放开数据流。返回是否真正开始识别。
+    ///
+    /// 返回 false 的每一条路径，都是过去"什么都不说、Dart 却以为已在识别"的哑火来源；
+    /// 现在统一由 startAsr 回传 FlutterError，让 Dart 把状态退回到可重试的位置。
+    @discardableResult
+    private func startSpeechRecognition() -> Bool {
         print("IOS: [ASR] startSpeechRecognition called, engine.isRunning: \(audioEngine.isRunning)")
         
         // 核心安全哨兵：若 ASR 已经被逻辑停止，绝对禁止创建新的识别请求，直接阻断防重入
         if isAsrStopped {
             print("IOS: [ASR] startSpeechRecognition BLOCKED: isAsrStopped is true.")
-            return
+            return false
         }
         
         asrSessionId += 1
@@ -752,7 +895,10 @@ import Accelerate
         // 即使引擎已经在运行（热启动），重新安装 Tap 也能强制重置数据流状态。
         if !audioEngine.isRunning {
             print("IOS: [ASR] Audio engine NOT running, performing full physical reset and tap installation.")
-            resetAudioEngineAndTap()
+            guard resetAudioEngineAndTap() else {
+                print("IOS: [ASR] startSpeechRecognition ABORTED: 音频引擎未能启动，绝不创建识别任务（建了也永远收不到音频数据）")
+                return false
+            }
         } else {
             print("IOS: [ASR] Audio engine ALREADY running (pre-warmed), reuse active Tap and skip re-installation to avoid pop sounds.")
         }
@@ -760,11 +906,11 @@ import Accelerate
         // 确保使用当前设置的语言创建识别器
         guard let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: currentLocale)) else {
             print("IOS: [ASR] Failed to create speech recognizer for \(currentLocale)")
-            return
+            return false
         }
         guard speechRecognizer.isAvailable else {
             print("IOS: [ASR] Speech recognizer not available for \(currentLocale)")
-            return
+            return false
         }
         print("IOS: [ASR] Speech recognizer created successfully for \(currentLocale)")
         self.speechRecognizer = speechRecognizer
@@ -776,7 +922,7 @@ import Accelerate
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
             print("IOS: [ASR] Unable to create recognition request")
-            return
+            return false
         }
         recognitionRequest.shouldReportPartialResults = true
         if !contextualPhrases.isEmpty {
@@ -890,6 +1036,7 @@ import Accelerate
         print("IOS: [ASR] Speech recognition task started successfully! Opening data stream...")
         self.isAsrStopped = false 
         print("IOS: [ASR] Data stream channel OPENED (isAsrStopped = false). Tap buffers will now feed into the recognition request.")
+        return true
     }
 
     
@@ -993,6 +1140,9 @@ extension AppDelegate {
         print("IOS: TTS speak: text='\(text)', utteranceId='\(utteranceId)', language='\(language)'")
         
         let audioSession = AVAudioSession.sharedInstance()
+        // 借走会话前先记下现场：AVSpeechSynthesizer 起播后会把 Category 接管成 playback，
+        // 且结束时不负责还原（见 restoreAudioSessionAfterTts）。
+        ttsSessionSnapshot = (audioSession.category, audioSession.mode, audioSession.categoryOptions)
         do {
             if audioSession.category != .playback && audioSession.category != .playAndRecord {
                 try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers])
@@ -1038,6 +1188,31 @@ extension AppDelegate {
     private func stopTts() {
         print("IOS: TTS stop requested")
         synthesizer.stopSpeaking(at: .immediate)
+        restoreAudioSessionAfterTts()
+    }
+    
+    /// 把 TTS 借走的音频会话还回去，让 Dart 侧"当前会话是什么"的判断重新与事实一致。
+    ///
+    /// 只在会话仍停在 TTS 留下的 playback、且朗读前的现场不是 playback 时才恢复；
+    /// 期间若已被下发了新意图（例如 Dart 侧刚切到录放模式），一律保持不动，绝不覆盖更新的意图。
+    /// 延迟 100ms 是为了等 AVSpeechSynthesizer 内部真正放开会话，过早 setCategory 会失败。
+    private func restoreAudioSessionAfterTts() {
+        guard ttsSessionSnapshot != nil else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self, let snapshot = self.ttsSessionSnapshot else { return }
+            self.ttsSessionSnapshot = nil
+            let audioSession = AVAudioSession.sharedInstance()
+            guard audioSession.category == .playback, snapshot.category != .playback else {
+                print("IOS: [TTS] 会话当前已是 \(audioSession.category.rawValue)，无需归还（期间已下发新意图）")
+                return
+            }
+            do {
+                try audioSession.setCategory(snapshot.category, mode: snapshot.mode, options: snapshot.options)
+                print("IOS: [TTS] 音频会话已归还为 \(snapshot.category.rawValue)")
+            } catch {
+                print("IOS: [TTS] 音频会话归还原失败: \(error)")
+            }
+        }
     }
 }
 
@@ -1055,6 +1230,7 @@ extension AppDelegate: AVSpeechSynthesizerDelegate {
         } else {
             print("IOS: TTS didFinish but no utteranceId found")
         }
+        restoreAudioSessionAfterTts()
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
@@ -1068,6 +1244,7 @@ extension AppDelegate: AVSpeechSynthesizerDelegate {
         } else {
             print("IOS: TTS didCancel but no utteranceId found")
         }
+        restoreAudioSessionAfterTts()
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {

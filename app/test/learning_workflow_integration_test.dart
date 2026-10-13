@@ -59,6 +59,9 @@ class MockAsr implements Asr {
   Future<void> startAsr(AsrLanguage language, {List<String>? phrases, bool playHintSound = true}) async {}
 
   @override
+  Future<void> playReadyHint() async {}
+
+  @override
   Future<String?> stopAsr() async => null;
 
   @override

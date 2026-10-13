@@ -483,6 +483,11 @@ class Asr {
               'ASR: Exception during start: ${e.message} (instance: $hashCode)');
           if (e.code == 'PERMISSION_DENIED') {
             ToastUtil.error("权限被拒绝，请在设置中开启麦克风和语音识别权限");
+          } else {
+            // 原生已经明确告诉我们这次识别没起来（引擎未就绪 / 识别器不可用）。
+            // 必须让用户看到，并让状态退回 unknown —— 否则下一次 startAsr 会被
+            // "已经以 xx 启动"的短路拦住，用户除重进页面外再也无法恢复。
+            ToastUtil.error("语音未就绪，请重试");
           }
           setState(AsrState.unknown);
         }
@@ -550,11 +555,22 @@ class Asr {
       await _checkAndRequestPermissions();
     }
     
-    if (permissionGranted) {
-      Global.logger.i('ASR: startMicrophone() 触发物理启动... (instance: $hashCode)');
+    if (!permissionGranted) return;
+
+    Global.logger.i('ASR: startMicrophone() 触发物理启动... (instance: $hashCode)');
+    try {
       await asrMethodChannel
           .invokeMethod('startMicrophone')
           .timeout(const Duration(seconds: 5));
+    } on PlatformException catch (e) {
+      // 引擎没起来就绝不能当作"已开麦"继续走完播提示音、开识别的全流程：
+      // 让失败浮到 transitTo 熔断，下一次进入说模式会重新完整下发会话配置并重试，
+      // 而不是在一个坏掉的会话上反复空转（历史表现：进说模式没有"叮"、说话毫无反应）。
+      Global.logger.e('ASR: startMicrophone() 失败: ${e.code} ${e.message}');
+      if (e.code == 'AUDIO_ENGINE_NOT_READY') {
+        ToastUtil.error('语音未就绪，请重试');
+      }
+      rethrow;
     }
   }
 
@@ -641,6 +657,22 @@ class Asr {
       } catch (e) {
         Global.logger.e('ASR: reset failed: $e');
       }
+    }
+  }
+
+  /// 播放 ASR 就绪提示音。
+  ///
+  /// iOS 由原生常驻 AVAudioPlayerNode 在进程内直放：它与麦克风共用同一条 AVAudioSession
+  /// 与同一个时钟，起播零加载、零会话切换。绝不能退回 just_audio 那类外部异步播放器——
+  /// 提示音是用户判断"已经可以说话了"的唯一信号，异步起播会在开麦瞬间丢掉它。
+  Future<void> playReadyHint() async {
+    if (!PlatformUtils.isAsrSupported()) {
+      return;
+    }
+    try {
+      await asrMethodChannel.invokeMethod('playReadyHint');
+    } catch (e) {
+      Global.logger.w('ASR: playReadyHint failed: $e');
     }
   }
 

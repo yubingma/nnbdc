@@ -1,10 +1,35 @@
+import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/study_track.dart';
 
-/// 三组学习规则（check=测评 / correct=答对后 / wrong=答错后）
-typedef ThreeGroupSteps = ({String check, List<String> correct, List<String> wrong});
+/// 三组学习规则（check=测评 / correct=答对后 / wrong=答错后）。
+///
+/// [unsupported] 是本版本不认识的环节名（更高版本的 App 新增的题型）。
+/// 它们仍按原样收进 [check] / [correct] / [wrong]（配置必须如实呈现，不许静默抹掉），
+/// 这里单独列出来供界面判断该怎么提示、该不该禁止编辑。
+typedef ThreeGroupSteps = ({
+  String check,
+  List<String> correct,
+  List<String> wrong,
+  List<String> unsupported,
+});
+
+/// 学习轨道里存在本版本不认识的环节。
+///
+/// 本版本的题型清单装不下它，而保存是按「目标集合 vs 现有集合」做增删的：
+/// 直接保存就会把这一行静默删掉，等于拿本版本的旧清单去覆盖用户在新版本上的设置。
+/// 因此保存必须拒绝，让用户先升级 App。
+class UnsupportedStudyStepException implements Exception {
+  UnsupportedStudyStepException(this.steps);
+
+  /// 不认识的环节名
+  final List<String> steps;
+
+  @override
+  String toString() => '学习轨道里存在本版本不支持的环节：${steps.join('、')}';
+}
 
 /// 用户学习步骤服务：单表三组结构（scope='new' 新词 / 'review' 旧词），
 /// 新词与旧词的学习规则同构，仅默认值与 FSRS 评分语义不同。
@@ -21,8 +46,13 @@ class StudyStepsService {
     String? check;
     final correct = <String>[];
     final wrong = <String>[];
+    final unsupported = <String>[];
     for (final s in steps) {
       if (s.state != 'Active') continue;
+      // 本版本不认识的环节照样按组收下（配置必须如实呈现），同时单独记一份供界面判断
+      if (!StudyStepExt.isSupported(s.studyStep)) {
+        unsupported.add(s.studyStep);
+      }
       switch (s.group) {
         case 'check':
           check = s.studyStep;
@@ -36,12 +66,22 @@ class StudyStepsService {
       }
     }
     if (check != null) {
-      return (check: check, correct: correct, wrong: wrong);
+      return (
+        check: check,
+        correct: correct,
+        wrong: wrong,
+        unsupported: unsupported,
+      );
     }
     // 未配置：默认三组
     if (scope == 'new') {
       const defaultSteps = ['Ch2En'];
-      return (check: 'En2Ch', correct: defaultSteps, wrong: defaultSteps);
+      return (
+        check: 'En2Ch',
+        correct: defaultSteps,
+        wrong: defaultSteps,
+        unsupported: const <String>[],
+      );
     }
     // review 默认：check=新词 check、correct=[]、wrong=[反向互补]
     final newCfg = await getThreeGroupConfig('new');
@@ -49,6 +89,7 @@ class StudyStepsService {
       check: newCfg.check,
       correct: const <String>[],
       wrong: [StudyTrack.oppositeWordStep(newCfg.check)],
+      unsupported: const <String>[],
     );
   }
 
@@ -70,6 +111,17 @@ class StudyStepsService {
     };
 
     final existing = await _db.userStudyStepsDao.getStepsOfScope(user.id, scope);
+
+    // 现有配置里有本版本不认识的环节时一律拒绝保存：下面的增删按集合做，
+    // 而本版本的目标集合根本装不下它，一保存这一行就没了。
+    final unsupported = <String>{
+      for (final e in existing)
+        if (!StudyStepExt.isSupported(e.studyStep)) e.studyStep,
+    };
+    if (unsupported.isNotEmpty) {
+      throw UnsupportedStudyStepException(unsupported.toList()..sort());
+    }
+
     final existingByGroup = <String, Map<String, UserStudyStep>>{};
     for (final e in existing) {
       existingByGroup.putIfAbsent(e.group, () => {})[e.studyStep] = e;

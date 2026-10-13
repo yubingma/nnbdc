@@ -160,16 +160,34 @@ void main() {
       expect(elapsed, lessThan(100));
     });
 
-    test('重复调用 usePlayAndRecordCategory 不重复配置', () async {
+    test('重复调用 usePlayAndRecordCategory 每次都重新下发会话配置（会话真相不靠缓存）', () async {
+      // 记录下发给原生音频会话的每一次配置
+      final configureCalls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('com.ryanheise.audio_session'),
+        (MethodCall methodCall) async {
+          configureCalls.add(methodCall);
+          return null;
+        },
+      );
+
       await StudyAudioSessionController.instance.usePlayAndRecordCategory();
       expect(StudyAudioSessionController.instance.currentSessionCategory, 'playAndRecord');
+      final afterFirst =
+          configureCalls.where((c) => c.method == 'setConfiguration').length;
+      expect(afterFirst, greaterThan(0),
+          reason: '第一次开麦必须真正下发录放会话配置');
 
-      final sw = Stopwatch()..start();
+      // 第二次开麦：真实 AVAudioSession 随时可能被外部改掉（AVSpeechSynthesizer 朗读时
+      // 会把它接管成 playback 且不还原）。因此这里必须再次下发配置，
+      // 绝不允许凭 _currentSessionCategory 短路跳过 —— 那正是线上"进说模式没叮、说话没反应"的根因。
       await StudyAudioSessionController.instance.usePlayAndRecordCategory();
-      final elapsed = sw.elapsedMilliseconds;
-
       expect(StudyAudioSessionController.instance.currentSessionCategory, 'playAndRecord');
-      expect(elapsed, lessThan(100));
+      final afterSecond =
+          configureCalls.where((c) => c.method == 'setConfiguration').length;
+      expect(afterSecond, greaterThan(afterFirst),
+          reason: '第二次开麦必须再次下发配置，不能凭缓存短路');
     });
 
     test('force: true 强制重新配置 playback', () async {

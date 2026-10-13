@@ -678,6 +678,21 @@ class BdcNotifier extends _$BdcNotifier {
         ? getWordResult.stepIndex
         : (trackResult.track.isNotEmpty ? trackResult.track.length - 1 : 0);
     final currentStep = trackResult.track.isNotEmpty ? trackResult.track[stepIdx] : '';
+
+    // 本版本不认识的环节绝不能进答题流程：界面对它没有任何作答分支，
+    // 会留下一张空白题面、底部连出口都没有。这里显式暴露，让用户升级 App。
+    if (currentStep.isNotEmpty && !StudyStepExt.isSupported(currentStep)) {
+      state = state.copyWith(
+        loadError: '这个词的轨道里有本版本不支持的环节（$currentStep），请升级 App 后继续。',
+        loadErrorCause: UnsupportedStudyStepException([currentStep]),
+        word: null,
+        wordWrapper: null,
+        isGroupStepRetry: false,
+        isLatestAnswerWrongToday: false,
+      );
+      return false;
+    }
+
     if (currentStep == 'List') {
       state = state.copyWith(
         loadError: '正在跳转到单词列表...',

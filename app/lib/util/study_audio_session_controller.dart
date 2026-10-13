@@ -294,23 +294,32 @@ class StudyAudioSessionController {
 
     debugPrint('💡 [SessionController] 收到声明式硬件意图同步: isInSpeakTab=$isInSpeakTab, isAnsweringActive=$isAnsweringActive');
 
-    if (isInSpeakTab) {
-      if (isAnsweringActive) {
-        // 1. 需要开始识别答题：启动/恢复 ASR，确保物理麦克风开启
-        await startSession(
-          language: language,
-          phrases: phrases,
-          isSpeakMode: true,
-          bypassStartDebounce: bypassStartDebounce,
-        );
+    try {
+      if (isInSpeakTab) {
+        if (isAnsweringActive) {
+          // 1. 需要开始识别答题：启动/恢复 ASR，确保物理麦克风开启
+          await startSession(
+            language: language,
+            phrases: phrases,
+            isSpeakMode: true,
+            bypassStartDebounce: bypassStartDebounce,
+          );
+        } else {
+          // 2. 虽在说模式，但处于非答题暂态（如已答对、换词中、手写板展开）：热停止 ASR 任务并挂起，但保持麦克风保温稳定
+          final shouldKeepWarm = true; 
+          await stopSession(forceStopMicrophone: !shouldKeepWarm);
+        }
       } else {
-        // 2. 虽在说模式，但处于非答题暂态（如已答对、换词中、手写板展开）：热停止 ASR 任务并挂起，但保持麦克风保温稳定
-        final shouldKeepWarm = true; 
-        await stopSession(forceStopMicrophone: !shouldKeepWarm);
+        // 3. 不在说模式下，或切换到了选择题 Tab：强制物理冷释放麦克风，避免硬件泄漏
+        await stopSession(forceStopMicrophone: true);
       }
-    } else {
-      // 3. 不在说模式下，或切换到了选择题 Tab：强制物理冷释放麦克风，避免硬件泄漏
-      await stopSession(forceStopMicrophone: true);
+    } catch (e, st) {
+      // 开麦失败（例如音频引擎未就绪）已在 transitTo 里熔断降级、并由 ASR 层向用户提示，
+      // 这里只负责不让异常在 unawaited 链路里裸奔。失败本身有日志、有用户可见反馈，
+      // 且下一次进入说模式会重新完整下发会话配置重试 —— 不在这里做任何重试或掩盖。
+      Global.logger.e(
+        '⏱️ [SessionController] 硬件意图同步失败，本次开麦已熔断，下次进入说模式会完整重试: $e',
+        error: e, stackTrace: st);
     }
   }
 
@@ -826,12 +835,16 @@ class StudyAudioSessionController {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
       await _cleanupEarlyExitPlayers();
-      if (_currentSessionCategory == 'playAndRecord') {
-        // Category 已经对了，但仍要确保它处于激活态：系统中断/路由变化后会话可能被停用。
-        await _activateSession();
-        return;
-      }
 
+      // 每次要开麦都无条件下发一次完整的录放会话配置并激活。
+      //
+      // 这里过去用 _currentSessionCategory == 'playAndRecord' 短路，只在缓存不等于它时才
+      // 重新 configure。但那个字符串只是本控制器自己记的账，真实 AVAudioSession 会被
+      // 外部改掉（AVSpeechSynthesizer 朗读时会把它接管成 playback，且结束时不还原），
+      // 缓存一旦失真，开麦前就整段跳过了会话配置；随后原生在契约校验处发现
+      // Category 不是 playAndRecord，静默拒绝启动音频引擎 —— 用户侧就是进说模式
+      // 没有"叮"、说话毫无反应（26.10.11 起线上复现，iPad 真机日志已抓到该状态）。
+      // 会话正确性不能建立在"期间没人改过它"的赌注上，宁可多花这一次 configure。
       final sw = Stopwatch()..start();
       _logAudioState('会话切换前(→playAndRecord)');
       await _waitForAllPlayers();
@@ -1306,6 +1319,12 @@ class StudyAudioSessionController {
   Future<void> _playAsrReadyHintSound() async {
     if (PlatformUtils.isTesting) return;
     debugPrint('🔊 [SessionController] 触发 ASR 就绪提示音播放...');
+    if (PlatformUtils.isIOS) {
+      // iOS 走原生常驻播放节点：起播零加载、与麦克风共用同一条会话与时钟。
+      // just_audio 那种异步外部播放器会在开麦瞬间丢掉这一声（历史事故 46377d0c）。
+      await _asr.playReadyHint();
+      return;
+    }
     final player = _asrHintPlayer;
     try {
       const assetPath = 'assets/audio/asr_ready_hint.wav';

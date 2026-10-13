@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -215,6 +216,73 @@ void main() {
       final result = await checker.performUserCheck(testUser.id);
       final studyStepIssues = result.issues.where((i) => i.category == 'user_study_steps').toList();
       expect(studyStepIssues.isNotEmpty, isTrue);
+    });
+  });
+
+  group('本版本不认识的环节（更高版本新增的题型）', () {
+    test('认识与否、以及给用户看的名字', () {
+      expect(StudyStepExt.isSupported('En2Ch'), isTrue);
+      expect(StudyStepExt.isSupported('List'), isTrue);
+      expect(StudyStepExt.isSupported('Spell'), isFalse);
+      expect(StudyStepExt.displayName('En2Ch'), '英译汉');
+      expect(StudyStepExt.displayName('Spell'), '本版本不支持：Spell');
+    });
+
+    test('读配置：不认识的环节照样按组收下，并单独报出来', () async {
+      final now = AppClock.now();
+      await db.userStudyStepsDao.saveUserStudyStep(UserStudyStep(
+        userId: testUser.id,
+        scope: 'new',
+        group: 'check',
+        studyStep: 'Spell',
+        seq: 0,
+        state: 'Active',
+        createTime: now,
+        updateTime: now,
+      ), false);
+
+      final cfg = await studyStepsService.getThreeGroupConfig('new');
+      // 配置必须如实呈现：不认识也不能把它抹掉换成默认的 En2Ch
+      expect(cfg.check, 'Spell');
+      expect(cfg.unsupported, ['Spell']);
+    });
+
+    test('保存：现有配置含不认识的环节时拒绝保存，且一行都不删', () async {
+      final now = AppClock.now();
+      await db.userStudyStepsDao.saveUserStudyStep(UserStudyStep(
+        userId: testUser.id,
+        scope: 'new',
+        group: 'check',
+        studyStep: 'Spell',
+        seq: 0,
+        state: 'Active',
+        createTime: now,
+        updateTime: now,
+      ), false);
+      await db.userStudyStepsDao.saveUserStudyStep(UserStudyStep(
+        userId: testUser.id,
+        scope: 'new',
+        group: 'correct',
+        studyStep: 'Ch2En',
+        seq: 0,
+        state: 'Active',
+        createTime: now,
+        updateTime: now,
+      ), false);
+
+      await expectLater(
+        studyStepsService.saveThreeGroupConfig(
+          scope: 'new',
+          check: 'En2Ch',
+          correct: ['Ch2En'],
+          wrong: ['Ch2En'],
+        ),
+        throwsA(isA<UnsupportedStudyStepException>()),
+      );
+
+      // 拒绝保存必须是真的什么都没做：Spell 还在，Ch2En 也没被改写
+      final rows = await db.userStudyStepsDao.getStepsOfScope(testUser.id, 'new');
+      expect(rows.map((e) => e.studyStep).toSet(), {'Spell', 'Ch2En'});
     });
   });
 }

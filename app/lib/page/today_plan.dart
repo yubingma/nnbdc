@@ -229,6 +229,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   List<String> _reviewWrongSteps = [];
   bool _reviewConfigSaved = false;
 
+  /// 现有轨道里本版本不认识的环节（更高版本的 App 新增的题型）。
+  /// 非空时轨道不能在本页编辑：本版本没有这些环节的选项，一保存就会把它们从配置里删掉。
+  List<String> _unsupportedSteps = const [];
+
   /// 今日计划词（不含打卡后额外追加的加量批次）。
   /// 所有"今日计划"口径（进度环、词数统计、单词量未满提示）都必须用它，
   /// 否则加量会撑大计划分母，把已达成 100% 的进度打回未完成。
@@ -528,6 +532,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     _reviewCheckStep = reviewCfg.check;
     _reviewCorrectSteps = List.of(reviewCfg.correct);
     _reviewWrongSteps = List.of(reviewCfg.wrong);
+
+    _unsupportedSteps = <String>{
+      ...newCfg.unsupported,
+      ...reviewCfg.unsupported,
+    }.toList()
+      ..sort();
 
     if (user != null) {
       final db = MyDatabase.instance;
@@ -1925,6 +1935,21 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               ? _buildTrackDisplayCard(isDarkMode, onTapScope: onTapScope)
               : _buildTrackEditCard(editingScope, isDarkMode, onDone: onDone, onMutated: onMutated),
         ),
+
+        // 轨道里有本版本不认识的环节时，说清"现在为什么不能在这里改"
+        if (_unsupportedSteps.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 2, right: 2, top: 10),
+            child: Text(
+              '轨道里有本版本不支持的环节（${_unsupportedSteps.join('、')}），'
+              '暂时不能在这里调整，请升级 App。',
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -1974,7 +1999,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final themeConfig = AppThemeConfig.of(themeStyle);
 
     final title = scope == 'new' ? '新词' : '旧词';
-    final checkDesc = StudyStepExt.fromString(checkStep).description;
+    final checkDesc = StudyStepExt.displayName(checkStep);
     final textPrimary = themeConfig.textPrimary;
     final textMuted = themeConfig.textMuted;
     final successGreen = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
@@ -2133,7 +2158,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                           ),
                           child: Text(
-                            StudyStepExt.fromString(steps[i]).description,
+                            StudyStepExt.displayName(steps[i]),
                             style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: textPrimary),
                           ),
                         ),
@@ -2246,9 +2271,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final textColor = isDarkMode ? Colors.white : const Color(0xFF111827);
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    const allStepNames = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
-    String desc(String s) => StudyStepExt.fromString(s).description;
+    // 可选题型清单的唯一来源在 StudyStepExt.selectableSteps，本页不再自带一份
+    const allStepNames = StudyStepExt.selectableSteps;
+    String desc(String s) => StudyStepExt.displayName(s);
     final isNew = scope == 'new';
+    // 轨道里有本版本不认识的环节时只读：本版本没有那些环节的选项，一保存就会把它们删掉
+    final readOnly = _unsupportedSteps.isNotEmpty;
 
     String? checkStep() => isNew ? _newCheckStep : _reviewCheckStep;
     List<String> correctSteps() => isNew ? _newCorrectSteps : _reviewCorrectSteps;
@@ -2331,15 +2359,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   items: [
-                    for (final s in allStepNames)
+                    // 不认识的现有环节也要在列表里出现：否则 DropdownButton 找不到当前值，
+                    // 用户也看不到自己的轨道到底配了什么
+                    for (final s in <String>[...allStepNames, ..._unsupportedSteps])
                       DropdownMenuItem(value: s, child: Text(desc(s))),
                   ],
-                  onChanged: (v) {
-                    if (v != null) {
-                      setCheck(v);
-                      unawaited(saveReviewConfig(scope));
-                    }
-                  },
+                  onChanged: readOnly
+                      ? null
+                      : (v) {
+                          if (v != null) {
+                            setCheck(v);
+                            unawaited(saveReviewConfig(scope));
+                          }
+                        },
                 ),
               ),
             ],
@@ -2355,6 +2387,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           emptyHint: '直接结束',
           steps: correctSteps(),
           allStepNames: allStepNames,
+          readOnly: readOnly,
           isDarkMode: isDarkMode,
           onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: true, onMutated: onMutated),
           onRemove: (s) {
@@ -2380,6 +2413,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           emptyHint: '直接结束',
           steps: wrongSteps(),
           allStepNames: allStepNames,
+          readOnly: readOnly,
           isDarkMode: isDarkMode,
           onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: false, onMutated: onMutated),
           onRemove: (s) {
@@ -2406,6 +2440,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required String emptyHint,
     required List<String> steps,
     required List<String> allStepNames,
+    required bool readOnly,
     required bool isDarkMode,
     required VoidCallback onAdd,
     required void Function(String) onRemove,
@@ -2413,7 +2448,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }) {
     final textColor = isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
     final subColor = isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final bool canAdd = allStepNames.any((s) => !steps.contains(s));
+    final bool canAdd = !readOnly && allStepNames.any((s) => !steps.contains(s));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2528,17 +2563,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   ),
                   child: Row(
                     children: [
-                      ReorderableDragStartListener(
-                        index: i,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: Icon(Icons.drag_indicator_rounded, size: 16, color: subColor),
-                        ),
-                      ),
+                      if (!readOnly)
+                        ReorderableDragStartListener(
+                          index: i,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Icon(Icons.drag_indicator_rounded, size: 16, color: subColor),
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 20),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          StudyStepExt.fromString(steps[i]).description,
+                          StudyStepExt.displayName(steps[i]),
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -2546,14 +2584,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ),
                         ),
                       ),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => onRemove(steps[i]),
-                        child: Padding(
-                          padding: const EdgeInsets.all(3),
-                          child: Icon(Icons.close_rounded, size: 15, color: subColor),
+                      if (!readOnly)
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => onRemove(steps[i]),
+                          child: Padding(
+                            padding: const EdgeInsets.all(3),
+                            child: Icon(Icons.close_rounded, size: 15, color: subColor),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -2712,7 +2751,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              StudyStepExt.fromString(available[i]).description,
+                              StudyStepExt.displayName(available[i]),
                               style: TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,

@@ -24,6 +24,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/phase_presentation_tracker.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_track.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -77,6 +78,9 @@ class MockAsr implements Asr {
   Future<void> startAsr(AsrLanguage language, {List<String>? phrases, bool playHintSound = true}) async {
     startAsrCallCount++;
   }
+
+  @override
+  Future<void> playReadyHint() async {}
 
   @override
   Future<String?> stopAsr() async {
@@ -5042,5 +5046,44 @@ void main() {
     expect(state.canLeaveCurrWord, true, reason: '判过后才谈得上出现「下一词」');
 
     await Future.delayed(const Duration(milliseconds: 50));
+  });
+
+  test('BdcNotifier - 轨道里有本版本不认识的环节时不进答题流程，给出升级提示', () async {
+    StudyCacheManager().clear();
+
+    // 把新词轨道的测评环节换成本版本不认识的 'Spell'（更高版本 App 新增的题型）
+    await (db.delete(db.userStudySteps)..where((uss) => uss.userId.equals(testUser.id))).go();
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          scope: 'new',
+          group: 'check',
+          studyStep: 'Spell',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+
+    final state = container.read(bdcNotifierProvider);
+    // 不给空白题面、也不给一条评分记录：明确拦住并说明原因
+    expect(state.word, isNull);
+    expect(state.loadError, contains('不支持的环节'));
+    expect(state.loadErrorCause, isA<UnsupportedStudyStepException>());
+    expect(state.dataLoaded, true, reason: '错误页要显示出来，不能一直停在加载态');
   });
 }
