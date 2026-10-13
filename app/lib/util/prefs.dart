@@ -13,6 +13,7 @@ class Prefs {
     _prefs = await SharedPreferences.getInstance();
     pronunciationAccentNotifier.value = pronunciationAccent;
     hiddenBottomNavKeysNotifier.value = hiddenBottomNavKeys;
+    bottomNavShortcutKeysNotifier.value = bottomNavShortcutKeys;
     fullScreenNotifier.value = isFullScreen;
     await _migrateFromGetStorage();
     await applyFullScreenMode();
@@ -153,6 +154,26 @@ class Prefs {
   static Future<bool> setHiddenBottomNavKeys(List<String> keys) async {
     final ok = await write(hiddenBottomNavKeysPref, keys);
     hiddenBottomNavKeysNotifier.value = List<String>.unmodifiable(keys);
+    return ok;
+  }
+
+  /// 已放进底栏的唤起型入口偏好键
+  static const String bottomNavShortcutKeysPref = 'bottom_nav_shortcut_keys';
+
+  /// 已放进底栏的唤起型入口响应式通知器
+  static final ValueNotifier<List<String>> bottomNavShortcutKeysNotifier =
+      ValueNotifier<List<String>>(bottomNavShortcutKeys);
+
+  /// 读取已放进底栏的唤起型入口列表
+  static List<String> get bottomNavShortcutKeys {
+    if (_prefs == null) return [];
+    return _prefs!.getStringList(bottomNavShortcutKeysPref) ?? [];
+  }
+
+  /// 保存已放进底栏的唤起型入口列表
+  static Future<bool> setBottomNavShortcutKeys(List<String> keys) async {
+    final ok = await write(bottomNavShortcutKeysPref, keys);
+    bottomNavShortcutKeysNotifier.value = List<String>.unmodifiable(keys);
     return ok;
   }
 

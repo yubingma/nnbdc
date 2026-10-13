@@ -379,6 +379,9 @@
 | 学习提醒 | `app/lib/page/reminder_settings.dart`，路由 `/reminder_settings` | 每天定时提醒用户背单词的本地通知，入口在「我」页的「设置与工具」卡片里 | 用户口中的「通知设置」大多指它；页面标题只有「学习提醒设置」，没有「通知」二字 |
 | 通知权限 | `Permission.notification`（permission_handler） | 系统是否允许本 App 弹通知，由系统弹框授予 | iOS 必须在 `app/ios/Podfile` 声明 `PERMISSION_NOTIFICATIONS=1`，漏声明时状态恒为「已关闭」且永不弹框 |
 | 权限宏 | `app/ios/Podfile` 中 `GCC_PREPROCESSOR_DEFINITIONS` 里的 `PERMISSION_xxx=1` | 告诉 permission_handler_apple 要编译哪些权限的处理代码 | 漏一个宏不会编译报错，只会让该权限在 iOS 上永远返回「已拒绝」 |
+| 底栏 | `app/lib/page/index.dart`、`app/lib/model/nav_tab_config.dart` | App 最底下那一排图标（学习 / 词表 / 查词 / 比赛 / 我），点一下就切页面 | 分两类：**切页型**（`NavTabKey`，选中后就停在那一页、用户可把它移出底栏）与**唤起型**（`NavBarShortcut`，点开就推一个独立全屏页、没有选中态，目前只有随身听）。用户口中的「底部导航」「下方按钮」都是它 |
+| 功能收纳 | `app/lib/widget/nav_stash_widgets.dart` | 底栏放不下的功能统一收在这里，有两个入口：「我」页面的【功能收纳】毛玻璃卡片，以及长按底栏弹出的「快捷功能收纳」弹窗 | 单一认知锚点：底栏没有的，一律去收纳区找。底栏已经有的（含已经被用户放进底栏的随身听）不在收纳区重复出现 |
+| 随身听 | `app/lib/page/walkman.dart`、`app/lib/page/walkman_launcher.dart`，路由 `/walkman` | 不看屏幕连续听词的沉浸全屏页，听哪本词表由「上次收听的来源」决定 | 必须先登录（游客点了只弹提示）。默认只住在「快捷功能收纳」里；想让它常驻的人去「我」页面的「底栏导航管理」行（`app/lib/page/me.dart`，弹窗标题为「底栏导航定制」）打开开关，默认关闭 |
 
 ---
 

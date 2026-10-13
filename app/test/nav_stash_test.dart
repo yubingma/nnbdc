@@ -77,4 +77,24 @@ void main() {
       expect(NavTabKey.fromLegacyIndex(99), NavTabKey.me);
     });
   });
+
+  group('NavBarShortcut 底栏唤起型入口测试', () {
+    test('默认一个都不在底栏：随身听先住在快捷功能收纳里', () {
+      final enabled = NavBarShortcut.getEnabled(isGuest: false, enabledKeys: []);
+      expect(enabled, isEmpty);
+    });
+
+    test('用户打开开关后，随身听进入底栏', () {
+      final enabled = NavBarShortcut.getEnabled(isGuest: false, enabledKeys: ['walkman']);
+      expect(enabled, [NavBarShortcut.walkman]);
+    });
+
+    test('游客既选不了也留不住随身听（它要登录才能听）', () {
+      expect(NavBarShortcut.getSelectable(isGuest: true), isEmpty);
+
+      // 先登录开了开关、又退出登录时，底栏不能再挂着一个点了只弹提示的图标
+      final enabled = NavBarShortcut.getEnabled(isGuest: true, enabledKeys: ['walkman']);
+      expect(enabled, isEmpty);
+    });
+  });
 }

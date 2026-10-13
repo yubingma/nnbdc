@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nnbdc/model/nav_tab_config.dart';
 import 'package:nnbdc/page/today_plan.dart';
 import 'package:nnbdc/page/search.dart';
+import 'package:nnbdc/page/walkman_launcher.dart';
 import 'package:nnbdc/page/word_lists.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/prefs.dart';
@@ -39,10 +40,11 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   NavTabKey _currentTab = NavTabKey.study;
   NavTabKey? _lastProcessedTabFromExtra;
 
-  /// 底栏要同时跟着「哪些 Tab 被收进抽屉」和「今日计划那张壁纸的明暗」两处变，
-  /// 合成一个 Listenable 一次订阅。
+  /// 底栏要同时跟着「哪些 Tab 被收进抽屉」「哪些唤起型入口被放进底栏」和
+  /// 「今日计划那张壁纸的明暗」三处变，合成一个 Listenable 一次订阅。
   late final Listenable _navBarSources = Listenable.merge([
     Prefs.hiddenBottomNavKeysNotifier,
+    Prefs.bottomNavShortcutKeysNotifier,
     planWallpaperIsDark,
   ]);
 
@@ -235,6 +237,53 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     );
   }
 
+  /// 唤起型入口：点开就推一个独立全屏页（随身听），返回后底栏仍停在原来那一页，
+  /// 所以它不吃选中态、也不参与页面容器的下标。
+  Widget _buildShortcutItem(
+    NavBarShortcut shortcut,
+    AppThemeConfig themeConfig,
+    bool? wallpaperIsDark,
+  ) {
+    final ink = _navBarInk(themeConfig, wallpaperIsDark);
+
+    return Expanded(
+      // 与切页型 Tab 一样只有图标、没有文字，必须显式给出语义标签
+      child: Semantics(
+        label: shortcut.label,
+        button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            Asr().stopMicrophone();
+            _openShortcut(shortcut);
+          },
+          onLongPress: () {
+            StashedNavMenuDialog.show(context);
+          },
+          child: Container(
+            height: navBarContentHeight,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(color: Colors.transparent),
+            child: NavTabIcon(
+              shortcut.icon,
+              color: ink.unselected,
+              size: navBarIconSize,
+              shadow: ink.shadow,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 唤起型入口各自的去处：独立路由，不是页面容器里的一页
+  void _openShortcut(NavBarShortcut shortcut) {
+    switch (shortcut) {
+      case NavBarShortcut.walkman:
+        WalkmanLauncher.open(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
@@ -250,6 +299,10 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
         final visibleTabs = NavTabKey.getVisibleTabs(
           isGuest: isGuest,
           hiddenKeys: hiddenKeys,
+        );
+        final shortcuts = NavBarShortcut.getEnabled(
+          isGuest: isGuest,
+          enabledKeys: Prefs.bottomNavShortcutKeysNotifier.value,
         );
 
         // 如果当前选中的 tab 被移出了底栏，自动回退到第一个或“我”
@@ -290,15 +343,25 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
               height: navBarContentHeight,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: visibleTabs.map((tab) {
-                  return _buildCustomNavItem(
-                    tab,
-                    tab == activeTab,
-                    themeConfig,
-                    // 只有今日计划页的底栏底下是照片，其余页面底栏带磨砂底，跟主题走
-                    isStudyTab ? wallpaperIsDark : null,
-                  );
-                }).toList(),
+                children: [
+                  for (final tab in visibleTabs) ...[
+                    // 唤起型入口紧挨「我」的左边：它们「点开即走」，不该把
+                    // 永远在最右端的「我」挤到中间去
+                    if (tab == NavTabKey.me)
+                      ...shortcuts.map((shortcut) => _buildShortcutItem(
+                            shortcut,
+                            themeConfig,
+                            isStudyTab ? wallpaperIsDark : null,
+                          )),
+                    _buildCustomNavItem(
+                      tab,
+                      tab == activeTab,
+                      themeConfig,
+                      // 只有今日计划页的底栏底下是照片，其余页面底栏带磨砂底，跟主题走
+                      isStudyTab ? wallpaperIsDark : null,
+                    ),
+                  ],
+                ],
               ),
             ),
           ),

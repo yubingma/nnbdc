@@ -18,6 +18,11 @@ class StashedNavMenuDialog {
     final isGuest = Global.isGuest;
     final hiddenKeys = Prefs.hiddenBottomNavKeys;
     final stashedTabs = NavTabKey.getStashedTabs(isGuest: isGuest, hiddenKeys: hiddenKeys);
+    // 随身听已经放进底栏时，收纳盒里不再重复列一遍它——底栏有的功能不在收纳区再出现
+    final walkmanOnNavBar = NavBarShortcut.getEnabled(
+      isGuest: isGuest,
+      enabledKeys: Prefs.bottomNavShortcutKeys,
+    ).contains(NavBarShortcut.walkman);
 
     await showGeneralDialog(
       context: context,
@@ -98,18 +103,19 @@ class StashedNavMenuDialog {
                       const SizedBox(height: 12),
 
                       // 快捷功能：不常驻底栏，但值得一步直达
-                      _buildQuickAction(
-                        context,
-                        isDarkMode: isDarkMode,
-                        icon: 'assets/images/nav/headphones.svg',
-                        title: '随身听',
-                        subtitle: '不用看屏幕，随时接着听',
-                        onTap: () {
-                          Navigator.pop(dialogCtx);
-                          HapticFeedback.lightImpact();
-                          WalkmanLauncher.open(context);
-                        },
-                      ),
+                      if (!walkmanOnNavBar)
+                        _buildQuickAction(
+                          context,
+                          isDarkMode: isDarkMode,
+                          icon: 'assets/images/nav/headphones.svg',
+                          title: '随身听',
+                          subtitle: '不用看屏幕，随时接着听',
+                          onTap: () {
+                            Navigator.pop(dialogCtx);
+                            HapticFeedback.lightImpact();
+                            WalkmanLauncher.open(context);
+                          },
+                        ),
 
                       // 被用户移出底栏的导航按钮
                       if (stashedTabs.isNotEmpty)
@@ -288,11 +294,13 @@ class NavBarCustomizationSheet extends StatefulWidget {
 
 class _NavBarCustomizationSheetState extends State<NavBarCustomizationSheet> {
   late List<String> _hiddenKeys;
+  late List<String> _shortcutKeys;
 
   @override
   void initState() {
     super.initState();
     _hiddenKeys = List<String>.from(Prefs.hiddenBottomNavKeys);
+    _shortcutKeys = List<String>.from(Prefs.bottomNavShortcutKeys);
   }
 
   void _toggleTab(NavTabKey tab, bool isVisible) async {
@@ -321,11 +329,116 @@ class _NavBarCustomizationSheetState extends State<NavBarCustomizationSheet> {
     HapticFeedback.lightImpact();
   }
 
+  /// 唤起型入口的开与关。它「点开即走」、不占页面容器，关掉也不会让底栏
+  /// 少于两个按钮，所以不受「底栏至少保留两个」那条限制。
+  void _toggleShortcut(NavBarShortcut shortcut, bool isVisible) async {
+    final next = List<String>.from(_shortcutKeys);
+    if (isVisible) {
+      if (!next.contains(shortcut.key)) {
+        next.add(shortcut.key);
+      }
+    } else {
+      next.remove(shortcut.key);
+    }
+
+    setState(() {
+      _shortcutKeys = next;
+    });
+    await Prefs.setBottomNavShortcutKeys(next);
+    HapticFeedback.lightImpact();
+  }
+
+  /// 定制列表里的一行开关。切页型 Tab 与唤起型入口长得一模一样，
+  /// 只有开关干的事不同，所以把这一行抽出来共用。
+  Widget _buildSwitchRow({
+    required String icon,
+    required String label,
+    required String description,
+    required bool value,
+    required bool isLocked,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? Colors.white.withValues(alpha: 0.04)
+            : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.06)
+              : const Color(0xFFE2E8F0),
+          width: 0.6,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: NavTabIcon(icon, size: 20, color: primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                    fontFamily: 'NotoSansSC',
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontFamily: 'NotoSansSC',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: isLocked
+                ? () => ToastUtil.info('「$label」为核心功能，固定在底栏常驻')
+                : null,
+            child: Opacity(
+              opacity: isLocked ? 0.35 : 1.0,
+              child: Switch.adaptive(
+                value: value,
+                activeTrackColor: isLocked
+                    ? (isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8))
+                    : primaryColor,
+                inactiveThumbColor: isDarkMode ? const Color(0xFF94A3B8) : Colors.white,
+                inactiveTrackColor: isDarkMode ? Colors.white12 : const Color(0xFFE2E8F0),
+                onChanged: isLocked ? null : onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final isGuest = Global.isGuest;
-    final primaryColor = Theme.of(context).primaryColor;
 
     return Container(
       decoration: BoxDecoration(
@@ -402,85 +515,30 @@ class _NavBarCustomizationSheetState extends State<NavBarCustomizationSheet> {
           ),
           const SizedBox(height: 18),
 
-          // 选项列表
+          // 切页型选项列表
           ...NavTabKey.values.map((tab) {
             // 游客模式不展示游戏选项
             if (isGuest && tab == NavTabKey.game) return const SizedBox.shrink();
 
-            final isVisible = !_hiddenKeys.contains(tab.key);
-            final isLocked = !tab.canHide;
+            return _buildSwitchRow(
+              icon: tab.icon,
+              label: tab.label,
+              description: tab.description,
+              value: !_hiddenKeys.contains(tab.key),
+              isLocked: !tab.canHide,
+              onChanged: (val) => _toggleTab(tab, val),
+            );
+          }),
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : const Color(0xFFE2E8F0),
-                  width: 0.6,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: NavTabIcon(tab.icon, size: 20, color: primaryColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tab.label,
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w600,
-                            color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                            fontFamily: 'NotoSansSC',
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          tab.description,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                            fontFamily: 'NotoSansSC',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: isLocked
-                        ? () => ToastUtil.info('「${tab.label}」为核心功能，固定在底栏常驻')
-                        : null,
-                    child: Opacity(
-                      opacity: isLocked ? 0.35 : 1.0,
-                      child: Switch.adaptive(
-                        value: isVisible,
-                        activeTrackColor: isLocked
-                            ? (isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8))
-                            : primaryColor,
-                        inactiveThumbColor: isDarkMode ? const Color(0xFF94A3B8) : Colors.white,
-                        inactiveTrackColor: isDarkMode ? Colors.white12 : const Color(0xFFE2E8F0),
-                        onChanged: isLocked ? null : (val) => _toggleTab(tab, val),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          // 唤起型选项列表：点开即走的独立全屏页（随身听），也允许放进底栏
+          ...NavBarShortcut.getSelectable(isGuest: isGuest).map((shortcut) {
+            return _buildSwitchRow(
+              icon: shortcut.icon,
+              label: shortcut.label,
+              description: shortcut.description,
+              value: _shortcutKeys.contains(shortcut.key),
+              isLocked: false,
+              onChanged: (val) => _toggleShortcut(shortcut, val),
             );
           }),
         ],
