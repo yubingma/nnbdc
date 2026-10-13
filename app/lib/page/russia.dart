@@ -191,6 +191,64 @@ class RussiaPageState extends State<RussiaPage>
   late int? exceptRoom;
   Map<String, dynamic>? extraArgs;
   bool isExercise = false;
+
+  /// 这一局是"我开的私房"（在游戏大厅点「开房」进来的），不是大厅随机匹配。
+  /// 服务端那边私房本来就不参与匹配，界面也得照实说，不能拿匹配话术糊弄用户
+  bool get isPrivateRoomHost => extraArgs?['mode'] == 'createPrivate';
+
+  /// 该给"开房等人"界面吗：我开的房 + 好友还没进来 + 我也还没开始独自练习
+  static bool showsPrivateRoomWaiting({
+    required bool isPrivateHost,
+    required bool isReady,
+    required bool myStarted,
+  }) =>
+      isPrivateHost && !isReady && !myStarted;
+
+  /// 我是按房号进来的那一方（房间是房主开的，我走不走都散不了）
+  bool get isPrivateRoomGuest => extraArgs?['joinRoomId'] != null;
+
+  /// 这一局在私房里跑：我开的房，或者我按房号进别人的房
+  bool get isInPrivateRoom => isPrivateRoomHost || isPrivateRoomGuest;
+
+  /// 离开确认弹窗要说的话。
+  ///
+  /// 三种处境的后果完全不同，文案必须分开说，不能一律拿"判负"吓人：
+  /// 正式对战判负扣费；匹配练习只是退出匹配；私房练习还要交代房间和房号的存亡——
+  /// 而房间散不散，取决于**我是不是房里最后一个人**，不取决于我是房主还是客人
+  /// （房主先走、房里还留着人时，房间照样在，房号照样能用）。
+  static ({String title, String body, String confirmLabel}) leaveGameConfirmText({
+    required bool isBattle,
+    required bool inPrivateRoom,
+    required bool opponentPresent,
+    required bool quitBattle,
+  }) {
+    if (isBattle) {
+      return (
+        title: quitBattle ? '离开这一局' : '换一个房间',
+        body: '本局还没分出胜负，离开会判为战败：按战败扣除积分和魔法泡泡，对手判胜。',
+        confirmLabel: '判负离开',
+      );
+    }
+    if (inPrivateRoom && !opponentPresent) {
+      return (
+        title: quitBattle ? '离开会解散房间' : '换房间会解散房间',
+        body: '练习不计分、也不扣魔法泡泡。房里只剩你一个人，你这一走房间就散了，房号作废。',
+        confirmLabel: '解散并离开',
+      );
+    }
+    if (inPrivateRoom) {
+      return (
+        title: quitBattle ? '退出这个房间' : '换一个房间',
+        body: '练习不计分、也不扣魔法泡泡。离开只是你自己退出去，房间和房号都还在，对方可以继续留在这里。',
+        confirmLabel: '退出房间',
+      );
+    }
+    return (
+      title: quitBattle ? '结束这次练习' : '换一个房间',
+      body: '练习不计分、也不扣魔法泡泡。离开后就退出匹配了，想再练可以从大厅重新开始。',
+      confirmLabel: '结束练习',
+    );
+  }
   bool _showOpponentJoinedBanner = true;
 
   // 开局开场动画：双人对战播「开始对战」、单人练习播「练习开始」。
@@ -805,6 +863,16 @@ class RussiaPageState extends State<RussiaPage>
     socket.on('noEnoughCowDung', (cowDungPerGame) {
       ToastUtil.error('魔法泡泡不足，无法开始游戏！\n至少需要: ${cowDungPerGame ?? 10}');
     });
+
+    // 按房号进房失败（房号打错、房间已满、房主已经散了）：
+    // 服务端此时已把我从原房间摘出来、又没放进任何房间，这个页面上再点什么都石沉大海，
+    // 必须当场说清楚并退回游戏大厅重新输房号
+    socket.off('joinRoomFailed');
+    socket.on('joinRoomFailed', (data) {
+      if (!mounted) return;
+      ToastUtil.error(data?.toString() ?? '房间不存在或已满');
+      context.pop();
+    });
   }
 
   void _cleanupSocketListeners() {
@@ -832,6 +900,7 @@ class RussiaPageState extends State<RussiaPage>
       'scoreAdjust',
       'scoreAdjustPublic',
       'noEnoughCowDung',
+      'joinRoomFailed',
     ]) {
       socket.off(event);
     }
@@ -890,6 +959,12 @@ class RussiaPageState extends State<RussiaPage>
     if (!isPlaying) return true;
 
     final bool isBattle = !isExercise;
+    final text = leaveGameConfirmText(
+      isBattle: isBattle,
+      inPrivateRoom: isInPrivateRoom,
+      opponentPresent: opponentUserId.isNotEmpty,
+      quitBattle: quitBattle,
+    );
     _confirmLeaveOpen = true;
     final bool? ok = await showDialog<bool>(
       context: context,
@@ -916,15 +991,14 @@ class RussiaPageState extends State<RussiaPage>
               ),
               const SizedBox(height: 18),
               Text(
-                quitBattle ? '离开这一局' : '换一个房间',
+                text.title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                     fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
               ),
               const SizedBox(height: 12),
               Text(
-                isBattle
-                    ? '本局还没分出胜负，离开会判为战败：按战败扣除积分和魔法泡泡，对手判胜。'
-                    : '这局单人练习会直接作废（练习不计分，也不扣魔法泡泡）。',
+                text.body,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 14, height: 1.5, color: Colors.white.withValues(alpha: 0.78)),
@@ -941,8 +1015,8 @@ class RussiaPageState extends State<RussiaPage>
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text('继续对局',
-                          style: TextStyle(
+                      child: Text(isBattle ? '继续对局' : '继续练习',
+                          style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
                   ),
@@ -952,11 +1026,13 @@ class RussiaPageState extends State<RussiaPage>
                       onPressed: () => Navigator.of(ctx).pop(true),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 13),
-                        backgroundColor: const Color(0xFFDC2626),
+                        // 只有正式对战才是"危险动作"，练习离开用主题色，别用红色吓人
+                        backgroundColor:
+                            isBattle ? const Color(0xFFDC2626) : const Color(0xFF0284C7),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: Text(quitBattle ? '判负离开' : '换房间',
+                      child: Text(text.confirmLabel,
                           style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
@@ -2661,6 +2737,12 @@ class RussiaPageState extends State<RussiaPage>
   /// 等待与就绪状态卡片
   Widget _buildWaitingOverlay() {
     final bool isReady = (gameState == 'ready');
+    // 自己开的私房还在等好友：直接给开房的那套界面（房号 + 怎么邀请），
+    // 不要显示"正在为您匹配对手"，更不要劝他去点单人练习
+    if (showsPrivateRoomWaiting(
+        isPrivateHost: isPrivateRoomHost, isReady: isReady, myStarted: myStarted)) {
+      return _buildPrivateRoomWaitingOverlay();
+    }
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 32),
@@ -2739,6 +2821,128 @@ class RussiaPageState extends State<RussiaPage>
         ),
       ),
     );
+  }
+
+  /// 私房房主等好友进来：把房号摆到最显眼的位置，并说清好友该怎么加入
+  Widget _buildPrivateRoomWaitingOverlay() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F223D).withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 24,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.meeting_room_rounded, color: Color(0xFF38BDF8), size: 48),
+            const SizedBox(height: 12),
+            const Text(
+              '房间已开好，等好友进来',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF03142B).withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.45)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '房号',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    roomId != null ? '$roomId' : '····',
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF7DD3FC),
+                      letterSpacing: 3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              '把房号发给好友：Ta 在游戏大厅点「进房」输入房号即可加入',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: Colors.white.withValues(alpha: 0.75),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: roomId == null ? null : _copyRoomId,
+                    icon: const Icon(Icons.copy_rounded, size: 15),
+                    label: const Text('复制房号',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF7DD3FC),
+                      disabledForegroundColor: Colors.white.withValues(alpha: 0.3),
+                      side: BorderSide(color: const Color(0xFF38BDF8).withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _handleStartButtonClicked,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: const Text('先独自练习',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _copyRoomId() {
+    final id = roomId;
+    if (id == null) return;
+    Clipboard.setData(ClipboardData(text: '$id'));
+    ToastUtil.success('房号已复制，发给好友吧');
   }
 
   /// 开局开场动画：全屏字幕 + 向外扩散的光环，双人「开始对战」/ 单人「练习开始」
