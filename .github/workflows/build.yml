@@ -190,7 +190,11 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2.18.0
         with:
-          flutter-version: "3.38.5"
+          # Flutter 版本只在 app/pubspec.yaml 的 environment.flutter 声明一处，
+          # 开发者本机与 CI 共用同一个来源，杜绝"两处各写一个版本、互相漂移"。
+          # 历史事故：CI 钉 3.38.5、本机 3.44.0，两边 SDK 对 meta/characters/test_api/
+          # matcher/material_color_utilities 的钉版不同，pubspec.lock 必然对不上。
+          flutter-version-file: app/pubspec.yaml
 
       # 仅缓存 pub 包，避免缓存 .dart_tool/build 造成旧插件残留
       - name: Cache Flutter Dependencies

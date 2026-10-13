@@ -193,6 +193,41 @@ class RussiaPageState extends State<RussiaPage>
   bool isExercise = false;
   bool _showOpponentJoinedBanner = true;
 
+  // 开局开场动画：双人对战播「开始对战」、单人练习播「练习开始」。
+  // 字幕播完才向服务端要第一包单词，避免开场画面和第一题抢用户的注意力
+  static const Duration introDuration = Duration(milliseconds: 1700);
+  double introProgress = 1.0; // 1.0 表示当前没有开场动画在播
+  bool get isIntroPlaying => introProgress < 1.0;
+
+  /// 开场动画标题：双人对战 / 单人练习
+  static String introTitle(bool isExercise) => isExercise ? '练习开始' : '开始对战';
+
+  /// 开场动画不透明度：0～0.18 淡入，0.18～0.78 稳定，0.78～1 淡出
+  static double introOpacity(double t) {
+    const double fadeInEnd = 0.18;
+    const double fadeOutStart = 0.78;
+    if (t <= 0 || t >= 1.0) return 0.0;
+    if (t < fadeInEnd) return t / fadeInEnd;
+    if (t < fadeOutStart) return 1.0;
+    return (1.0 - t) / (1.0 - fadeOutStart);
+  }
+
+  /// 开场动画缩放：入场从 0.7 弹性放大到 1.0，退场再放大冲出去
+  static double introScale(double t) {
+    const double fadeInEnd = 0.18;
+    const double fadeOutStart = 0.78;
+    if (t < fadeInEnd) {
+      final double k = Curves.easeOutBack.transform((t / fadeInEnd).clamp(0.0, 1.0));
+      return 0.7 + 0.3 * k;
+    }
+    if (t < fadeOutStart) return 1.0;
+    final double k = ((t - fadeOutStart) / (1.0 - fadeOutStart)).clamp(0.0, 1.0);
+    return 1.0 + 0.18 * k;
+  }
+
+  /// 屏幕边缘光晕的实际强度：在衰减值上叠一层脉动，比一条死板的红光更像"警告"
+  static double edgeGlowStrength(double decay) => decay * (0.8 + 0.2 * sin(decay * pi * 4));
+
   // 房间与通信状态
   int? roomId;
   String gameState = 'waiting'; // waiting, ready, playing, settled
@@ -266,6 +301,10 @@ class RussiaPageState extends State<RussiaPage>
   int myHp = maxHp;
   int opponentHp = maxHp;
   double wavePhase = 0.0;
+
+  // 屏幕边缘光晕：被对手打击时红色警示、我方治愈时绿色愉悦，强度 1 → 0 衰减
+  double _hitFlash = 0.0;
+  double _healFlash = 0.0;
 
   final Tts _tts = Tts();
 
@@ -668,8 +707,8 @@ class RussiaPageState extends State<RussiaPage>
       if (fromUserId != myUserId) {
         // 对手使用了道具
         if (propsType == 0) {
-          // 对手对我发射了水雷！我方生命扣 1 格
-          _applyDamage(1, '💥 遭受对手水雷轰击！-1 HP');
+          // 对手对我发射了水雷！我方生命扣 1 格，并点亮屏幕边缘红色警示
+          _applyDamage(1, reason: '💥 遭受对手水雷轰击！-1 HP', fromOpponent: true);
         } else {
           // 对手使用了飞针治愈自己！对手生命加 1 格
           setState(() {
@@ -866,12 +905,13 @@ class RussiaPageState extends State<RussiaPage>
       particles.clear();
       floatingTexts.clear();
       _lastPoppedBubblePos = null;
+      introProgress = 0.0;
     });
 
-    // 新一局开打：清空上一局的单词包与排队指令，向服务端领一整包单词
+    // 新一局开打：清空上一局的单词包与排队指令。
+    // 先播开场动画（双人「开始对战」/ 单人「练习开始」），播完再出第一题
     _wordPack.reset();
     _pendingUserCmds.clear();
-    _requestWordPack(myWordIndex);
   }
 
   /// 向服务端要一段单词包（从 fromIndex 开始的连续若干词）：开局、预取、词包用尽时各要一次
@@ -888,7 +928,7 @@ class RussiaPageState extends State<RussiaPage>
 
   /// 从本地单词包取下一题出题；本地没词了就向服务端补一包
   void _playNextWordFromPack() {
-    if (!mounted || !isPlaying) return;
+    if (!mounted || !isPlaying || isIntroPlaying) return;
 
     // 当前这一题还没答完，不要插队出下一题
     if (currWord != null) return;
@@ -1142,11 +1182,14 @@ class RussiaPageState extends State<RussiaPage>
     }
   }
 
-  void _applyDamage(int amount, [String reason = '答错 -1 HP!']) {
+  /// 我方掉血。[fromOpponent] 为真表示这一下是对手打过来的（水雷轰击），
+  /// 屏幕边缘要点亮红色警示光晕；答错、漏答是自己失误，不算"被打击"
+  void _applyDamage(int amount, {String reason = '答错 -1 HP!', bool fromOpponent = false}) {
     if (!isPlaying) return;
     setState(() {
       myHp = max(0, myHp - amount);
       myCombo = 0;
+      if (fromOpponent) _hitFlash = 1.0;
     });
     HapticFeedback.heavyImpact();
     // 向服务端上报当前堆叠行数（堆叠 10 行淘汰，即 10 - myHp）
@@ -1181,10 +1224,24 @@ class RussiaPageState extends State<RussiaPage>
     setState(() {
       purgeProps = max(0, purgeProps - 1);
       myHp = min(maxHp, myHp + 1);
+      _healFlash = 1.0;
     });
     sendUserCmd('USE_PROPS', [1]);
     sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
     HapticFeedback.mediumImpact();
+
+    // 治愈的愉悦感：一串光点从底部上浮
+    for (int i = 0; i < 14; i++) {
+      particles.add(PopParticle(
+        x: rand.nextDouble() * size.width,
+        y: size.height * (0.55 + rand.nextDouble() * 0.45),
+        vx: (rand.nextDouble() - 0.5) * 24.0,
+        vy: -70.0 - rand.nextDouble() * 80.0,
+        radius: 1.5 + rand.nextDouble() * 2.5,
+        color: i.isEven ? const Color(0xFF34D399) : const Color(0xFF6EE7B7),
+        life: 0.9 + rand.nextDouble() * 0.5,
+      ));
+    }
 
     // 治愈光针弹道（从左下角飞针小图标射向左侧我方顶部血条）
     final mediaQuery = MediaQuery.maybeOf(context);
@@ -1266,9 +1323,19 @@ class RussiaPageState extends State<RussiaPage>
       return;
     }
 
+    // 0. 开场动画推进：字幕播完立刻出第一题
+    if (isIntroPlaying) {
+      introProgress = min(1.0, introProgress + dt * 1000 / introDuration.inMilliseconds);
+      if (!isIntroPlaying) _playNextWordFromPack();
+    }
+
     if (opponentShake > 0) {
       opponentShake = max(0.0, opponentShake - dt);
     }
+
+    // 受击红色警示 / 治愈绿色光晕的衰减
+    if (_hitFlash > 0) _hitFlash = max(0.0, _hitFlash - dt * 1.5);
+    if (_healFlash > 0) _healFlash = max(0.0, _healFlash - dt * 1.5);
 
     // 1. 泡泡软斥力防重叠
     for (int i = 0; i < bubbles.length; i++) {
@@ -1317,7 +1384,7 @@ class RussiaPageState extends State<RussiaPage>
       if (b.y - b.radius <= barrierY) {
         if (b.isTarget) {
           targetWordExpired = true;
-          _applyDamage(1, '漏答 -1 HP!');
+          _applyDamage(1, reason: '漏答 -1 HP!');
           _createBurstParticles(b.x, barrierY, const Color(0xFFEF4444), count: 14);
         } else {
           _createBurstParticles(b.x, barrierY, b.baseColor, count: 8);
@@ -1505,7 +1572,7 @@ class RussiaPageState extends State<RussiaPage>
 
     // 戳错干扰词泡泡：播放专属的低沉低音提示音 bubble-wrong.wav，与正确时的高频清脆泡泡爆破音 bubble-pop.wav 形成鲜明反差
     StudyAudioSessionController.instance.playSoundEffect('bubble-wrong.wav', speed: 1.0, volume: 0.55);
-    _applyDamage(1, '答错 -1 HP!');
+    _applyDamage(1, reason: '答错 -1 HP!');
     _createBurstParticles(b.x, b.y, const Color(0xFFEF4444), count: 14);
     HapticFeedback.mediumImpact();
 
@@ -1697,12 +1764,42 @@ class RussiaPageState extends State<RussiaPage>
               ),
 
             // 5. 底部整合控制与题目栏：左侧水雷道具 + 中间中文释义题目 + 右侧飞针道具
-            if (isPlaying)
+            if (isPlaying && !isIntroPlaying)
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
                 child: _buildBottomBar(size, bottomPadding),
+              ),
+
+            // 6. 开局开场动画：双人「开始对战」/ 单人「练习开始」
+            if (isPlaying && isIntroPlaying)
+              Positioned.fill(
+                child: _buildIntroOverlay(),
+              ),
+
+            // 6.1 屏幕边缘光晕：被对手水雷打击时红色警示、我方治愈时绿色愉悦
+            if (_hitFlash > 0)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _EdgeGlowPainter(
+                      color: const Color(0xFFEF4444),
+                      strength: edgeGlowStrength(_hitFlash),
+                    ),
+                  ),
+                ),
+              ),
+            if (_healFlash > 0)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _EdgeGlowPainter(
+                      color: const Color(0xFF34D399),
+                      strength: edgeGlowStrength(_healFlash),
+                    ),
+                  ),
+                ),
               ),
 
             // 7. 结算弹窗
@@ -2472,6 +2569,107 @@ class RussiaPageState extends State<RussiaPage>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 开局开场动画：全屏字幕 + 向外扩散的光环，双人「开始对战」/ 单人「练习开始」
+  Widget _buildIntroOverlay() {
+    final bool exercise = isExercise;
+    final double t = introProgress;
+    final double opacity = introOpacity(t);
+    final Color accent = exercise ? const Color(0xFF34D399) : const Color(0xFF38BDF8);
+    // 扩散光环：开场后向外荡开一圈，强调"开始"
+    final double ringT = ((t - 0.08) / 0.6).clamp(0.0, 1.0);
+
+    return Container(
+      color: const Color(0xFF03142B).withValues(alpha: 0.72 * opacity),
+      child: Center(
+        child: Opacity(
+          opacity: opacity,
+          child: Transform.scale(
+            scale: introScale(t),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 148,
+                  height: 148,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 96 + 52 * ringT,
+                        height: 96 + 52 * ringT,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: accent.withValues(alpha: 0.6 * (1 - ringT)),
+                            width: 2.5,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: accent.withValues(alpha: 0.16),
+                          border: Border.all(color: accent, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accent.withValues(alpha: 0.5),
+                              blurRadius: 28,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: exercise
+                              ? const Icon(Icons.school_rounded, color: Colors.white, size: 44)
+                              : const Text(
+                                  'VS',
+                                  style: TextStyle(
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Text(
+                  introTitle(exercise),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 8,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(color: accent, blurRadius: 24),
+                      Shadow(color: accent.withValues(alpha: 0.6), blurRadius: 48),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  exercise ? '独自练习，随时迎战真人' : '$myNickName  VS  $opponentNickName',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -3402,6 +3600,43 @@ class RussiaPageState extends State<RussiaPage>
       ],
     );
   }
+}
+
+/// 屏幕四边向中间晕开的光晕：被打击时红色警示、我方治愈时绿色愉悦
+class _EdgeGlowPainter extends CustomPainter {
+  _EdgeGlowPainter({required this.color, required this.strength});
+
+  final Color color;
+  final double strength;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 光晕从四边向屏幕中间晕开，四角两两叠加后自然更浓
+    final double thickness = size.shortestSide * 0.42;
+    final Paint paint = Paint();
+
+    void edge(Rect rect, Alignment from, Alignment to) {
+      paint.shader = LinearGradient(
+        begin: from,
+        end: to,
+        colors: [color.withValues(alpha: 0.62 * strength), color.withValues(alpha: 0.0)],
+      ).createShader(rect);
+      canvas.drawRect(rect, paint);
+    }
+
+    edge(Rect.fromLTWH(0, 0, size.width, thickness),
+        Alignment.topCenter, Alignment.bottomCenter);
+    edge(Rect.fromLTWH(0, size.height - thickness, size.width, thickness),
+        Alignment.bottomCenter, Alignment.topCenter);
+    edge(Rect.fromLTWH(0, 0, thickness, size.height),
+        Alignment.centerLeft, Alignment.centerRight);
+    edge(Rect.fromLTWH(size.width - thickness, 0, thickness, size.height),
+        Alignment.centerRight, Alignment.centerLeft);
+  }
+
+  @override
+  bool shouldRepaint(_EdgeGlowPainter oldDelegate) =>
+      oldDelegate.strength != strength || oldDelegate.color != color;
 }
 
 /// 海底世界与超写实通透泡泡高保真绘制器

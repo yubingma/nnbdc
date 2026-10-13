@@ -22,6 +22,12 @@ changes:
 
 environment:
   sdk: ^3.4.0
+  # Flutter 工具链版本：本工程唯一声明处。CI 的 Setup Flutter 直接读这一行
+  # （.github/workflows/build.yml 的 flutter-version-file），app/.metadata 的 revision 与之一致。
+  # 语义是「不低于 3.44.0」：低于此版本时 flutter pub get 会当场报错，
+  # 避免老 SDK 静默换掉 meta/characters/test_api/matcher/material_color_utilities 这 5 个
+  # 由 Flutter SDK 钉死版本号的包，从而把 pubspec.lock 改成另一副样子。
+  flutter: "3.44.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
