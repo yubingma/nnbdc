@@ -515,31 +515,29 @@ class _NavBarCustomizationSheetState extends State<NavBarCustomizationSheet> {
           ),
           const SizedBox(height: 18),
 
-          // 切页型选项列表
-          ...NavTabKey.values.map((tab) {
-            // 游客模式不展示游戏选项
-            if (isGuest && tab == NavTabKey.game) return const SizedBox.shrink();
-
-            return _buildSwitchRow(
-              icon: tab.icon,
-              label: tab.label,
-              description: tab.description,
-              value: !_hiddenKeys.contains(tab.key),
-              isLocked: !tab.canHide,
-              onChanged: (val) => _toggleTab(tab, val),
-            );
-          }),
-
-          // 唤起型选项列表：点开即走的独立全屏页（随身听），也允许放进底栏
-          ...NavBarShortcut.getSelectable(isGuest: isGuest).map((shortcut) {
-            return _buildSwitchRow(
-              icon: shortcut.icon,
-              label: shortcut.label,
-              description: shortcut.description,
-              value: _shortcutKeys.contains(shortcut.key),
-              isLocked: false,
-              onChanged: (val) => _toggleShortcut(shortcut, val),
-            );
+          // 选项列表：次序与底栏从左到右完全一致，用户能拿它当底栏的镜像来读
+          ...NavBarItem.ordered(
+            tabs: NavTabKey.getCustomizable(isGuest: isGuest),
+            shortcuts: NavBarShortcut.getSelectable(isGuest: isGuest),
+          ).map((item) {
+            return switch (item) {
+              NavTabKey tab => _buildSwitchRow(
+                  icon: tab.icon,
+                  label: tab.label,
+                  description: tab.description,
+                  value: !_hiddenKeys.contains(tab.key),
+                  isLocked: !tab.canHide,
+                  onChanged: (val) => _toggleTab(tab, val),
+                ),
+              NavBarShortcut shortcut => _buildSwitchRow(
+                  icon: shortcut.icon,
+                  label: shortcut.label,
+                  description: shortcut.description,
+                  value: _shortcutKeys.contains(shortcut.key),
+                  isLocked: false,
+                  onChanged: (val) => _toggleShortcut(shortcut, val),
+                ),
+            };
           }),
         ],
       ),

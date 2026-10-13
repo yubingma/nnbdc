@@ -91,10 +91,37 @@ void main() {
 
     test('游客既选不了也留不住随身听（它要登录才能听）', () {
       expect(NavBarShortcut.getSelectable(isGuest: true), isEmpty);
+      expect(NavTabKey.getCustomizable(isGuest: true).contains(NavTabKey.game), isFalse);
 
       // 先登录开了开关、又退出登录时，底栏不能再挂着一个点了只弹提示的图标
       final enabled = NavBarShortcut.getEnabled(isGuest: true, enabledKeys: ['walkman']);
       expect(enabled, isEmpty);
+    });
+
+    test('随身听紧挨「我」的左边，「我」永远在最右端', () {
+      final ordered = NavBarItem.ordered(
+        tabs: NavTabKey.getVisibleTabs(isGuest: false, hiddenKeys: []),
+        shortcuts: NavBarShortcut.getEnabled(isGuest: false, enabledKeys: ['walkman']),
+      );
+      expect(ordered.map((item) => item.label), ['学习', '词表', '查词', '比赛', '随身听', '我']);
+    });
+
+    test('定制列表与底栏同序：定制列表从上到下就是底栏从左到右', () {
+      // 底栏与定制列表各排各的，随身听就会在底栏里待在「我」左边、
+      // 在定制列表里掉到「我」下边，用户没法拿定制列表当底栏的镜像来读。
+      final onNavBar = NavBarItem.ordered(
+        tabs: NavTabKey.getVisibleTabs(isGuest: false, hiddenKeys: ['game']),
+        shortcuts: NavBarShortcut.getEnabled(isGuest: false, enabledKeys: ['walkman']),
+      ).map((item) => item.label).toList();
+
+      final inSheet = NavBarItem.ordered(
+        tabs: NavTabKey.getCustomizable(isGuest: false),
+        shortcuts: NavBarShortcut.getSelectable(isGuest: false),
+      ).map((item) => item.label).toList();
+
+      // 定制列表是全集，底栏是它的子序列；共同项的相对次序必须一模一样
+      expect(inSheet, ['学习', '词表', '查词', '比赛', '随身听', '我']);
+      expect(onNavBar, ['学习', '词表', '查词', '随身听', '我']);
     });
   });
 }

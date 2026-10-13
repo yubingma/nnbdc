@@ -76,14 +76,18 @@ enum NavTabKey implements NavBarItem {
     description: '个人中心与功能收纳',
   );
 
+  @override
   final String key;
+  @override
   final String label;
 
   /// 图标的 SVG 资源路径。
+  @override
   final String icon;
 
   final bool canHide;
   final String routePath;
+  @override
   final String description;
 
   const NavTabKey({
@@ -162,7 +166,7 @@ enum NavTabKey implements NavBarItem {
 ///
 /// 默认一个都不在底栏——它们本就住在「快捷功能收纳」里，想让它常驻的人
 /// 自己去「底栏导航管理」打开。
-enum NavBarShortcut {
+enum NavBarShortcut implements NavBarItem {
   walkman(
     key: 'walkman',
     label: '随身听',
@@ -170,12 +174,16 @@ enum NavBarShortcut {
     description: '不用看屏幕，随时接着听',
   );
 
+  @override
   final String key;
+  @override
   final String label;
 
   /// 图标的 SVG 资源路径，与 [NavTabKey] 同一套（24 网格 / 2px 圆头笔宽）。
+  @override
   final String icon;
 
+  @override
   final String description;
 
   const NavBarShortcut({

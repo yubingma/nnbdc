@@ -343,25 +343,23 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
               height: navBarContentHeight,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  for (final tab in visibleTabs) ...[
-                    // 唤起型入口紧挨「我」的左边：它们「点开即走」，不该把
-                    // 永远在最右端的「我」挤到中间去
-                    if (tab == NavTabKey.me)
-                      ...shortcuts.map((shortcut) => _buildShortcutItem(
-                            shortcut,
-                            themeConfig,
-                            isStudyTab ? wallpaperIsDark : null,
-                          )),
-                    _buildCustomNavItem(
-                      tab,
-                      tab == activeTab,
-                      themeConfig,
-                      // 只有今日计划页的底栏底下是照片，其余页面底栏带磨砂底，跟主题走
-                      isStudyTab ? wallpaperIsDark : null,
-                    ),
-                  ],
-                ],
+                children: NavBarItem.ordered(tabs: visibleTabs, shortcuts: shortcuts).map((item) {
+                  // 只有今日计划页的底栏底下是照片，其余页面底栏带磨砂底，跟主题走
+                  final itemWallpaperIsDark = isStudyTab ? wallpaperIsDark : null;
+                  return switch (item) {
+                    NavTabKey tab => _buildCustomNavItem(
+                        tab,
+                        tab == activeTab,
+                        themeConfig,
+                        itemWallpaperIsDark,
+                      ),
+                    NavBarShortcut shortcut => _buildShortcutItem(
+                        shortcut,
+                        themeConfig,
+                        itemWallpaperIsDark,
+                      ),
+                  };
+                }).toList(),
               ),
             ),
           ),
