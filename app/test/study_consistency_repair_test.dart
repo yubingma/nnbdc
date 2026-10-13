@@ -8,12 +8,13 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/study_consistency_checker.dart';
 
-/// 「学习进度与学习记录不一致」的显式修复测试（内存数据库，不是真机端到端测试）。
+/// 「学习进度越界」的显式修复测试（内存数据库，不是真机端到端测试）。
 ///
-/// 覆盖三条安全边界：
-/// 1. 只在"进度多于记录"时下调，改完必须等于今天的记录条数；
-/// 2. 用户确认时看到的进度若已变化，放弃修复（宁可不修，也不能按过期前提改数据）；
-/// 3. 只动 `learning_word.today_learned_times`，不动任何学习记录。
+/// 覆盖四条安全边界：
+/// 1. 只在"进度超过轨道长度上限"时截断回上限，绝不把进度往上补；
+/// 2. 答错写流水但不推进进度（线上 11 条告警的真实形态）属正常作答，扫描不报、修复不动；
+/// 3. 用户确认时看到的进度若已变化，放弃修复（宁可不修，也不能按过期前提改数据）；
+/// 4. 只动 `learning_word.today_learned_times`，不动任何学习记录。
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late MyDatabase db;
@@ -110,21 +111,21 @@ void main() {
         ));
   }
 
-  /// 造 [count] 条属于当前业务日的评分记录
-  Future<void> givenLogs(int count) async {
-    for (int i = 0; i < count; i++) {
+  /// 造属于当前业务日的评分记录，[ratings] 逐个对应一条流水的评分档
+  Future<void> givenLogs(List<int> ratings) async {
+    for (int i = 0; i < ratings.length; i++) {
       await db.learningLogsDao.saveEntity(
         LearningLog(
           id: 'log_$i',
           userId: userId,
           wordId: wordId,
-          rating: FsrsRating.easy.value,
+          rating: ratings[i],
           stability: 1,
           difficulty: 1,
           elapsedDays: 0,
           scheduledDays: 1,
-          createTime: now.subtract(Duration(minutes: count - i)),
-          updateTime: now.subtract(Duration(minutes: count - i)),
+          createTime: now.subtract(Duration(minutes: ratings.length - i)),
+          updateTime: now.subtract(Duration(minutes: ratings.length - i)),
         ),
         false,
       );
@@ -133,16 +134,13 @@ void main() {
 
   StudyConsistencyViolation violationOf({
     required int progress,
-    required int logs,
-    StudyConsistencyRule rule = StudyConsistencyRule.progressExceedsTrack,
     int trackLenMax = 3,
   }) {
     return StudyConsistencyViolation(
-      rule: rule,
+      rule: StudyConsistencyRule.progressExceedsTrack,
       wordId: wordId,
       spell: 'electronic',
       progress: progress,
-      actualLogCount: logs,
       trackLenMax: trackLenMax,
     );
   }
@@ -154,13 +152,12 @@ void main() {
 
   test('进度越界时截断至轨道长度上限，且不动任何学习记录', () async {
     await givenLearningWord(4);
-    await givenLogs(3);
+    await givenLogs([FsrsRating.easy.value, FsrsRating.easy.value, FsrsRating.easy.value]);
 
     final repair = await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(progress: 4, logs: 3, trackLenMax: 3),
+      violation: violationOf(progress: 4, trackLenMax: 3),
       expectedProgress: 4,
-      now: now,
       trackLenMax: 3,
     );
 
@@ -174,39 +171,33 @@ void main() {
     expect(logs.length, 3, reason: '修复不得删除或修改任何学习记录');
   });
 
-  test('流水多于进度时将进度对齐流水条数', () async {
+  test('线上现场：测评答对后巩固答错（2 条流水、进度 1）属正常，扫描不报也不动数据', () async {
     await givenLearningWord(1);
-    await givenLogs(2);
+    await givenLogs([FsrsRating.easy.value, FsrsRating.again.value]);
+
+    expect(await scanTodayStudyConsistency(userId: userId), isEmpty,
+        reason: '答错的环节写流水但不推进进度，这不是"进度与记录对不上"，不得报异常');
 
     final repair = await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(
-        progress: 1,
-        logs: 2,
-        rule: StudyConsistencyRule.logsExceedProgress,
-        trackLenMax: 3,
-      ),
+      violation: violationOf(progress: 1),
       expectedProgress: 1,
-      now: now,
       trackLenMax: 3,
     );
 
     expect(repair, isNotNull);
-    expect(repair!.changed, isTrue);
-    expect(repair.progressBefore, 1);
-    expect(repair.progressAfter, 2, reason: '对齐已作答的 2 条流水');
-    expect(await currentProgress(), 2);
+    expect(repair!.changed, isFalse, reason: '进度未越界，一个字都不该改');
+    expect(await currentProgress(), 1, reason: '绝不能把进度补到流水条数 —— 那等于替用户跳过还没走的环节');
   });
 
   test('进度与轨道长度一致且未超轨道时不改数据', () async {
     await givenLearningWord(3);
-    await givenLogs(3);
+    await givenLogs([FsrsRating.easy.value, FsrsRating.easy.value, FsrsRating.easy.value]);
 
     final repair = await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(progress: 3, logs: 3, trackLenMax: 3),
+      violation: violationOf(progress: 3, trackLenMax: 3),
       expectedProgress: 3,
-      now: now,
       trackLenMax: 3,
     );
 
@@ -218,13 +209,12 @@ void main() {
   test('确认时看到的进度已变化则放弃修复（按过期前提改数据会改错）', () async {
     // 用户确认的是 4，但期间已经变成 3
     await givenLearningWord(3);
-    await givenLogs(3);
+    await givenLogs([FsrsRating.easy.value, FsrsRating.easy.value, FsrsRating.easy.value]);
 
     final repair = await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(progress: 4, logs: 3),
+      violation: violationOf(progress: 4),
       expectedProgress: 4,
-      now: now,
     );
 
     expect(repair, isNull, reason: '前提已变化必须放弃');
@@ -233,13 +223,12 @@ void main() {
 
   test('修复会生成 learning_word 的同步日志，让修复同步到云端与其他设备', () async {
     await givenLearningWord(4);
-    await givenLogs(3);
+    await givenLogs([FsrsRating.easy.value, FsrsRating.easy.value, FsrsRating.easy.value]);
 
     await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(progress: 4, logs: 3),
+      violation: violationOf(progress: 4),
       expectedProgress: 4,
-      now: now,
     );
 
     final logs = await db.userDbLogsDao.getUserDbLogs(userId);
@@ -257,9 +246,8 @@ void main() {
   test('单词已不在学习库时不修（查不到进度行）', () async {
     final repair = await repairStudyConsistency(
       userId: userId,
-      violation: violationOf(progress: 4, logs: 3),
+      violation: violationOf(progress: 4),
       expectedProgress: 4,
-      now: now,
     );
 
     expect(repair, isNull);

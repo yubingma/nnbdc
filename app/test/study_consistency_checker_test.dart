@@ -3,8 +3,9 @@ import 'package:nnbdc/util/study_consistency_checker.dart';
 
 /// 客户端"数据自洽"判定口径的测试。
 ///
-/// 判定口径必须与服务端只读体检一致：某业务日内某词的
-/// 「今日评分流水条数」不得少于「learning_word.today_learned_times」。
+/// 判定口径必须与服务端只读体检一致，且只有一条：某业务日内某词的
+/// 「今日环节进度」不得超过「当前配置下轨道长度上限」。
+/// 「今日评分流水条数」与进度之间刻意不比大小（见 study_consistency_checker.dart 的类注释）。
 void main() {
   group('judgeDuplicateGrade', () {
     GradeLogSummary log(String id, int rating, double stability, DateTime at) =>
@@ -124,69 +125,54 @@ void main() {
   });
 
   group('judgeStudyConsistency', () {
-    test('进度与流水条数相等且未超轨道时自洽', () {
-      expect(judgeStudyConsistency(progress: 3, actualLogCount: 3, trackLenMax: 3), isNull);
+    test('进度未超轨道时自洽', () {
+      expect(judgeStudyConsistency(progress: 3, trackLenMax: 3), isNull);
     });
 
-    test('进度大于流水条数（如走完List或提前掌握）且未超轨道时属于正常合法状态', () {
-      // 走完 List 环节：流水 2 条，进度 3，未超轨道 3
-      expect(judgeStudyConsistency(progress: 3, actualLogCount: 2, trackLenMax: 3), isNull);
-      // 首答掌握提前毕业：流水 1 条，进度 3，未超轨道 3
-      expect(judgeStudyConsistency(progress: 3, actualLogCount: 1, trackLenMax: 3), isNull);
-    });
-
-    test('流水条数多于进度时命中 logsExceedProgress', () {
-      // 重复计分写了多条流水
-      expect(
-        judgeStudyConsistency(progress: 1, actualLogCount: 2, trackLenMax: 3),
-        StudyConsistencyRule.logsExceedProgress,
-      );
+    test('线上现场：测评答对后巩固答错（进度 1、今日 2 条流水）属正常作答，不得报', () {
+      // 2026-10-13 用户 58e3199d 的单词 4259：15:55:32 测评「良好」（进度 0→1，写第 1 条流水），
+      // 16:00:53 巩固「忘记」（写第 2 条流水，进度仍是 1 —— 答错的词留在本环节循环重练）。
+      // 旧口径按"流水条数不得多于进度"把这条绝对正常的作答报成了异常，
+      // 线上 11 条命中全是这个形态（progress=1, businessDayLogs=2），没有一条是重复计分。
+      expect(judgeStudyConsistency(progress: 1, trackLenMax: 3), isNull);
     });
 
     test('进度超过轨道上限时命中 progressExceedsTrack', () {
       // 轨道上限 3，被多推进到 4
       expect(
-        judgeStudyConsistency(progress: 4, actualLogCount: 3, trackLenMax: 3),
+        judgeStudyConsistency(progress: 4, trackLenMax: 3),
         StudyConsistencyRule.progressExceedsTrack,
       );
     });
 
-    test('进度为 0 且有流水时不报（跨天复位后的正常状态）', () {
-      expect(judgeStudyConsistency(progress: 0, actualLogCount: 4, trackLenMax: 3), isNull);
-      expect(judgeStudyConsistency(progress: 0, actualLogCount: 1, trackLenMax: 3), isNull);
+    test('进度为 0 时不自洽也无从越界，直接放行', () {
+      expect(judgeStudyConsistency(progress: 0, trackLenMax: 3), isNull);
     });
 
-    test('进度为 0 且没有流水时自洽（新词还没答过）', () {
-      expect(judgeStudyConsistency(progress: 0, actualLogCount: 0, trackLenMax: 3), isNull);
+    test('拿不到轨道长度上限（配置未就绪）时不报', () {
+      expect(judgeStudyConsistency(progress: 9, trackLenMax: null), isNull);
+      expect(judgeStudyConsistency(progress: 9, trackLenMax: 0), isNull);
     });
   });
 
   group('judgeTodayWord', () {
     test('自洽时返回 null', () {
       expect(
-        judgeTodayWord(progress: 2, actualLogCount: 2, wordId: '15407', trackLenMax: 3),
+        judgeTodayWord(progress: 2, wordId: '15407', trackLenMax: 3),
         isNull,
       );
     });
 
     test('进度越界时带出单词与数值', () {
       final violation =
-          judgeTodayWord(progress: 4, actualLogCount: 3, wordId: '15407', spell: 'electronic', trackLenMax: 3);
+          judgeTodayWord(progress: 4, wordId: '15407', spell: 'electronic', trackLenMax: 3);
 
       expect(violation, isNotNull);
       expect(violation!.wordId, '15407');
       expect(violation.spell, 'electronic');
       expect(violation.progress, 4);
-      expect(violation.actualLogCount, 3);
       expect(violation.trackLenMax, 3);
       expect(violation.rule, StudyConsistencyRule.progressExceedsTrack);
-    });
-
-    test('流水多于进度时命中 logsExceedProgress', () {
-      final violation = judgeTodayWord(progress: 1, actualLogCount: 2, wordId: '15407', trackLenMax: 3);
-
-      expect(violation!.rule, StudyConsistencyRule.logsExceedProgress);
-      expect(violation.spell, '15407');
     });
   });
 
@@ -197,7 +183,6 @@ void main() {
         wordId: '15407',
         spell: 'electronic',
         progress: 4,
-        actualLogCount: 3,
         trackLenMax: 3,
       );
 
@@ -220,7 +205,6 @@ void main() {
         wordId: '15407',
         spell: 'electronic',
         progress: 4,
-        actualLogCount: 3,
         trackLenMax: 3,
       );
 

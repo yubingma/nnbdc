@@ -983,7 +983,6 @@ class BdcNotifier extends _$BdcNotifier {
       final violation = await checkWordStudyConsistency(
         userId: userId,
         wordId: wordId,
-        now: AppClock.now(),
       );
       if (violation != null && !_isDisposed) {
         // 同一词在本次会话里可能被反复呈现，这里交给上报侧去重与限流

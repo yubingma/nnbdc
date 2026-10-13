@@ -9,7 +9,6 @@ import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/client_type.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -872,12 +871,9 @@ class DataIntegrityChecker {
     return fixResult;
   }
 
-  /// 修复"学习进度与学习记录不一致"（用户在体检页显式确认后才会执行）。
+  /// 修复"学习进度越界"（用户在体检页显式确认后才会执行）。
   Future<void> _fixStudyProgressConsistency(IntegrityFixResult fixResult, String userId) async {
-    final violations = await scanTodayStudyConsistency(
-      userId: userId,
-      now: AppClock.now(),
-    );
+    final violations = await scanTodayStudyConsistency(userId: userId);
     if (violations.isEmpty) {
       fixResult.addError('修复时复查发现已经没有需要修复的词（数据可能已自行恢复）');
       return;
@@ -891,7 +887,6 @@ class DataIntegrityChecker {
         userId: userId,
         violation: violation,
         expectedProgress: violation.progress,
-        now: AppClock.now(),
       );
       if (repair == null) {
         fixResult.addError('"${violation.spell}" 的修复前提已变化，已跳过（下次体检会重新核对）');
@@ -902,7 +897,7 @@ class DataIntegrityChecker {
         continue;
       }
       fixResult.addFixed('已修复 "${repair.spell}" 的今日进度：'
-          '${repair.progressBefore} → ${repair.progressAfter}（今日记录 ${repair.logCount} 条）');
+          '${repair.progressBefore} → ${repair.progressAfter}');
       // 修复结果也上报一次：让服务端知道这条不一致已经被处理掉，便于核对告警与终态
       await _reportStudyProgressRepair(userId, repair);
     }
@@ -916,12 +911,12 @@ class DataIntegrityChecker {
       await Api.client.reportSysError(
         userId,
         'CLIENT_DATA_INCONSISTENT_REPAIRED',
-        '规则=progress_gt_logs（今日环节进度 大于 今日评分流水条数）\n'
+        '规则=progress_gt_track（今日环节进度 超过 轨道长度上限）\n'
             '单词=${repair.spell} (${repair.wordId})\n'
             '修复前 progress=${repair.progressBefore}\n'
             '修复后 progress=${repair.progressAfter}\n'
-            '今日评分流水条数=${repair.logCount}\n'
-            '说明: 用户在体检页确认后执行的显式修复，仅下调今日进度，未改动任何学习记录',
+            '说明: 用户在体检页确认后执行的显式修复，仅把越界进度截断回轨道长度上限，'
+            '未改动任何学习记录与记忆参数',
         clientVersion,
         getClientType().name,
       );
@@ -1017,30 +1012,25 @@ class DataIntegrityChecker {
     }
   }
 
-  /// 检查今天的学习进度与学习记录是否自洽。
+  /// 检查今天的学习进度是否越界（今日环节进度超过轨道长度上限）。
   ///
-  /// 判定口径与服务端只读体检、客户端上报探针同源：
-  /// 1. 不变式 1：某词「今日评分流水」不得大于「今日环节进度」（否则说明同一次作答被重复计分）。
-  /// 2. 不变式 2：某词「今日环节进度」不得大于「轨道长度上限」（否则说明环节被多推进越界）。
-  /// 正常情况下，今日进度 >= 流水条数（因末尾 List 环节不评分、提前掌握毕业）且未超轨道上限，属于正常学完。
+  /// 判定口径与服务端只读体检、客户端上报探针同源，只有这一条不变式。
+  /// 「今日评分流水条数」与「今日环节进度」之间刻意不比大小：答错的环节写流水但不推进进度、
+  /// 未作答跳过与走完 List 环节推进进度但不写流水，两个方向都是正常形态（见 study_consistency_checker.dart）。
   ///
   /// 这一项**可以修复**，但只走用户显式确认那条路径（见 `_fixStudyProgressConsistency`）：
-  /// 修复将越界进度截断回轨道上限（正常学完），或将落后进度与实际流水对齐，不动学习记录、不动记忆参数。
+  /// 修复把越界进度截断回轨道长度上限，不动学习记录、不动记忆参数。
   Future<void> _checkStudyProgressConsistency(IntegrityCheckResult result, String userId) async {
     try {
-      final violations = await scanTodayStudyConsistency(
-        userId: userId,
-        now: AppClock.now(),
-      );
+      final violations = await scanTodayStudyConsistency(userId: userId);
       if (violations.isEmpty) return;
 
       final details = violations
           .take(10)
-          .map((v) => v.rule == StudyConsistencyRule.progressExceedsTrack
-              ? '"${v.spell}" (ID: ${v.wordId})：今日进度 ${v.progress} 超过轨道上限 ${v.trackLenMax}'
-              : '"${v.spell}" (ID: ${v.wordId})：今日流水 ${v.actualLogCount} 条超出今日进度 ${v.progress}')
+          .map((v) =>
+              '"${v.spell}" (ID: ${v.wordId})：今日进度 ${v.progress} 超过轨道上限 ${v.trackLenMax}')
           .join('\n');
-      var description = '今天有 ${violations.length} 个单词的学习进度与学习记录对不上。';
+      var description = '今天有 ${violations.length} 个单词的学习进度越界。';
       if (details.isNotEmpty) {
         description += '\n示例：\n$details';
         if (violations.length > 10) {
@@ -1048,16 +1038,16 @@ class DataIntegrityChecker {
         }
       }
       description += '\n该问题明天会自动复位，也可以点"一键自动修复"立即修好：'
-          '修复会将越界进度截断至正常学完上限或对齐实际流水，不删除任何学习记录、不影响记忆进度与复习安排。';
+          '修复会将越界进度截断至正常学完上限，不删除任何学习记录、不影响记忆进度与复习安排。';
 
       result.addIssue(
-        '学习进度与学习记录不一致',
+        '学习进度越界',
         description,
         'study_progress_inconsistent',
       );
     } catch (e, stack) {
-      Global.logger.e('检查学习进度与学习记录一致性时出错', error: e, stackTrace: stack);
-      result.addError('检查学习进度与学习记录一致性时出错: $e');
+      Global.logger.e('检查学习进度越界时出错', error: e, stackTrace: stack);
+      result.addError('检查学习进度越界时出错: $e');
     }
   }
 

@@ -24,7 +24,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   bool _isRunning = false;
   SystemHealthResult? _checkResult;
 
-  /// 「学习进度与学习记录一致性」体检导出的逐词明细（含是否可修），供详情弹窗展示与修复
+  /// 「学习进度越界」体检导出的逐词明细（含是否可修），供详情弹窗展示与修复
   List<LearningProgressRepairItemVo> _learningProgressRepairs = const [];
 
   // 每项检查的状态：null=未开始, false=进行中, true=通过, 'failed'=失败
@@ -68,12 +68,12 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     },
     {
       'id': 14,
-      'title': '学习进度与学习记录一致性',
+      'title': '学习进度越界检查',
       'step': 14,
       'category': 'learning_progress_inconsistent',
-      // 服务端这一项是只读的：只列出不一致的明细，不在服务端批量改用户数据。
+      // 服务端这一项是只读的：只列出越界的明细，不在服务端批量改用户数据。
       // 数据的修复入口在**用户自己的**体检页（"数据健康检查" → 一键自动修复），
-      // 由用户显式确认后只下调"今日进度"，并会把修复结果上报服务端。
+      // 由用户显式确认后把越界进度截断回轨道长度上限，并会把修复结果上报服务端。
       'readonly': true
     },
     {
@@ -512,7 +512,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       return;
     }
 
-    // 「学习进度与学习记录一致性」的每条明细都带着结构化的用户与词：详情按用户分组展示
+    // 「学习进度越界」的每条明细都带着结构化的用户与词：详情按用户分组展示
     // （组头给昵称与他最近上报的客户端版本号，可逐词修复），不再逐条重复渲染问题卡片；
     // 只读导出失败（明细为空）时退回逐条卡片，让失败本身仍然可见。
     final issueCards = (category == 'learning_progress_inconsistent' &&
@@ -780,7 +780,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                           ),
                         );
                         }),
-                        // 「学习进度与学习记录一致性」逐词明细：按用户分组，可修的给出修复按钮
+                        // 「学习进度越界」逐词明细：按用户分组，可修的给出修复按钮
                         if (category == 'learning_progress_inconsistent' &&
                             _learningProgressRepairs.isNotEmpty)
                           _buildLearningProgressGroups(isDarkMode),
@@ -909,7 +909,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 13. 检查例句发音完整性
       await _checkSentenceAudioIntegrity(result, 13);
 
-      // 14. 检查学习进度与学习记录一致性（服务端只读，修复入口在用户端体检页）
+      // 14. 检查学习进度是否越界（服务端只读，修复入口在用户端体检页）
       await _checkLearningProgressConsistency(result, 14);
 
       // 15. 检查学习数据认知难度
@@ -1285,8 +1285,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  /// 只读检查 + 逐词修复入口：学习进度与学习记录是否自洽。
-  /// 判定口径由服务端给出：某业务日内某词的学习记录条数 ≤ 该词记录的今日环节进度 ≤ 当前轨道长度。
+  /// 只读检查 + 逐词修复入口：学习进度是否越界。
+  /// 判定口径由服务端给出：某业务日内某词的「今日环节进度」不得超过当前配置下的轨道长度上限。
+  /// （刻意不比"今日评分流水条数"与进度的大小：答错的环节写流水但不推进进度，属正常作答。）
   /// 服务端只读导出明细与"是否可修"，修复动作由管理员在明细里逐个确认后发起
   /// （会写下行同步日志并递增用户数据版本号，用户下次同步自动生效）。
   Future<void> _checkLearningProgressConsistency(
@@ -1318,7 +1319,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         }
       } else {
         _learningProgressRepairs = const [];
-        result.addIssue('学习进度与学习记录一致性', 'API调用失败: ${apiResult.msg}',
+        result.addIssue('学习进度越界检查', 'API调用失败: ${apiResult.msg}',
             'learning_progress_inconsistent');
         setState(() {
           _checkStates[step] = 'failed';
@@ -1326,14 +1327,14 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       }
     } catch (e, stackTrace) {
       _learningProgressRepairs = const [];
-      Global.logger.e('检查学习进度与学习记录一致性时出错: $e',
+      Global.logger.e('检查学习进度是否越界时出错: $e',
           error: e, stackTrace: stackTrace);
       result.addIssue(
-        '学习进度与学习记录一致性',
-        '检查学习进度与学习记录一致性时出错: $e',
+        '学习进度越界检查',
+        '检查学习进度是否越界时出错: $e',
         'learning_progress_inconsistent',
         stackTrace: stackTrace.toString(),
-        logMessage: '学习进度与学习记录一致性检查: $e',
+        logMessage: '学习进度越界检查: $e',
       );
       setState(() {
         _checkStates[step] = 'failed';

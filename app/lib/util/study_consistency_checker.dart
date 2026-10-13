@@ -8,15 +8,25 @@ import 'package:nnbdc/util/study_steps_service.dart';
 
 /// 数据自洽规则：客户端本地观察到的"数据自相矛盾"。
 ///
-/// 判定口径与服务端保持严格一致：
-/// 1. 不变式 1：今日评分流水条数不得大于今日环节进度（多出来说明同一次作答被重复写记录）
-/// 2. 不变式 2：今日环节进度不得大于轨道长度上限（超过上限说明环节被多推进越界了）
-/// 正常情况下，今日环节进度 >= 评分流水条数（因末尾 List 浏览环节不评分、提前掌握毕业不写后续流水）
-/// 且今日环节进度 <= 轨道长度上限，属于绝对合法且普遍的正常背词完成态。
+/// 判定口径与服务端 `SystemHealthCheckBo.checkLearningProgressConsistency` 保持一致，
+/// 只有一条真正的不变式：**今日环节进度不得大于轨道长度上限**
+/// （超过上限说明环节被多推进越界了：该词会被夹在最后一个环节反复出题、答案揭晓后没有可前进的出口）。
+///
+/// **不存在"今日评分流水条数与今日环节进度谁多谁少"这条不变式，两个方向都不是异常**：
+/// - 评分流水可以多于进度：答错的环节照旧写一条流水（记忆参数该扣的分照扣），但进度不推进 ——
+///   该词留在本环节循环重练。这正是 `StudyTrack.isFirstAttemptOfStep`（`study_track.dart:98`）
+///   判定"本环节已首答过 ⇒ 本次是重练、不计分"的依据，也是 `StudyBo.updateCurrWord` 里
+///   `advanceStep = 评分 != 忘记` 的题中之义。测评答错、巩固答错，都会让流水比进度多一条。
+/// - 进度也可以多于流水：未作答就跳过、走完末尾 List 浏览环节、首答即掌握毕业，都不写流水。
+///
+/// 历史教训：这条关系曾被两个方向各立成规则报了一轮，两次都是误报 ——
+/// `progress_gt_logs`（要求两者相等）把"跳过/List/毕业"报成异常；
+/// `logs_gt_progress`（要求流水不多于进度）把"答错的环节"报成异常，
+/// 线上命中的 11 条现场全部是 `progress=1, businessDayLogs=2`，逐条核对下来全是
+/// "测评答对 + 巩固答错"这种绝对正常的作答，没有一条是重复计分。
+/// 真正的"同一次作答被重复写入流水"只能靠时间差抓（见 [DuplicateGradeViolation]），
+/// 条数关系分辨不出"又答错了一次"与"同一次答了两遍"。
 enum StudyConsistencyRule {
-  /// 今日评分流水条数大于今日环节进度 —— 说明同一次作答被重复写了学习记录
-  logsExceedProgress('logs_gt_progress'),
-
   /// 今日环节进度超过轨道长度上限 —— 说明环节被多推进越界了，
   /// 表现就是该词被夹在最后一个环节反复出题、答案已揭晓却没有可前进的出口。
   progressExceedsTrack('progress_gt_track'),
@@ -35,7 +45,6 @@ class StudyConsistencyViolation {
     required this.wordId,
     required this.spell,
     required this.progress,
-    required this.actualLogCount,
     this.trackLenMax,
   });
 
@@ -46,9 +55,6 @@ class StudyConsistencyViolation {
   /// 记录的今日环节进展（learning_word.today_learned_times）
   final int progress;
 
-  /// 今天真实的评分流水条数（learning_log 在业务日窗口内的条数）
-  final int actualLogCount;
-
   /// 当前配置下轨道长度上限
   final int? trackLenMax;
 
@@ -56,26 +62,15 @@ class StudyConsistencyViolation {
   ///
   /// 刻意只带实体 ID 与数值，不带单词释义、答案等学习内容。
   String toMessage(String clientVersion) {
-    final buffer = StringBuffer();
-    if (rule == StudyConsistencyRule.logsExceedProgress) {
-      buffer
-        ..writeln('规则=${rule.ruleId}（今日评分流水条数 大于 今日环节进度）')
-        ..writeln('单词=$spell ($wordId)')
-        ..writeln('实际值: progress=$progress, businessDayLogs=$actualLogCount')
-        ..writeln('期望值: businessDayLogs 不得大于 progress')
-        ..writeln('客户端版本=$clientVersion')
-        ..write('说明: 同一次作答被重复写入了评分流水');
-    } else {
-      buffer
-        ..writeln('规则=${rule.ruleId}（今日环节进度 超过 轨道长度上限）')
-        ..writeln('单词=$spell ($wordId)')
-        ..writeln('实际值: progress=$progress, trackLenMax=$trackLenMax')
-        ..writeln('期望值: progress 不得超过 trackLenMax')
-        ..writeln('客户端版本=$clientVersion')
-        ..write('说明: 环节被多推进越界，该词会被夹在最后一个环节反复出题，'
-            '用户看到的画面是答案已揭晓但没有可前进的出口，只能强行切走');
-    }
-    return buffer.toString();
+    return (StringBuffer()
+          ..writeln('规则=${rule.ruleId}（今日环节进度 超过 轨道长度上限）')
+          ..writeln('单词=$spell ($wordId)')
+          ..writeln('实际值: progress=$progress, trackLenMax=$trackLenMax')
+          ..writeln('期望值: progress 不得超过 trackLenMax')
+          ..writeln('客户端版本=$clientVersion')
+          ..write('说明: 环节被多推进越界，该词会被夹在最后一个环节反复出题，'
+              '用户看到的画面是答案已揭晓但没有可前进的出口，只能强行切走'))
+        .toString();
   }
 }
 
@@ -146,24 +141,16 @@ Future<int> resolveTrackLenMax(String userId) async {
   }
 }
 
-/// 纯判定：给定"记录的今日进展"、"今天真实流水条数"与"轨道长度上限"，算出违反了哪条规则。
+/// 纯判定：给定"记录的今日进展"与"轨道长度上限"，算出违反了哪条规则。
 /// 抽成纯函数是为了让判定口径能被单元测试直接覆盖。
 StudyConsistencyRule? judgeStudyConsistency({
   required int progress,
-  required int actualLogCount,
   int? trackLenMax,
 }) {
-  // 今天一个环节都还没走完（进度为 0）时不以"流水条数"论短长：
-  // 进度为 0 而今天有流水，绝大多数是"上一个业务日学过、这两天还没开始学"
-  // —— 跨天复位已经把进度清零，属于正常状态。
+  // 今天一个环节都还没走完时不可能越界（进度只会往上走），直接放行
   if (progress <= 0) return null;
 
-  // 不变式 1：评分流水条数不得大于今日环节进度
-  if (actualLogCount > progress) {
-    return StudyConsistencyRule.logsExceedProgress;
-  }
-
-  // 不变式 2：今日环节进度不得超过轨道长度上限
+  // 唯一的不变式：今日环节进度不得超过轨道长度上限
   if (trackLenMax != null && trackLenMax > 0 && progress > trackLenMax) {
     return StudyConsistencyRule.progressExceedsTrack;
   }
@@ -173,41 +160,31 @@ StudyConsistencyRule? judgeStudyConsistency({
 
 /// 检查某一个词今天的数据是否自洽；不自洽时返回现场记录，自洽或查不到时返回 null。
 ///
-/// 只读：只查 `learning_word`、`learning_log`、`word`，不改任何数据。
+/// 只读：只查 `learning_word`，不改任何数据。
 Future<StudyConsistencyViolation?> checkWordStudyConsistency({
   required String userId,
   required String wordId,
-  required DateTime now,
 }) async {
-  final db = MyDatabase.instance;
-  final learningWord = await db.learningWordsDao.getById(userId, wordId);
-  if (learningWord == null || learningWord.todayLearnedTimes <= 0) return null;
-
-  final trackLenMax = await resolveTrackLenMax(userId);
-
-  // 业务日窗口 [03:00, 次日 03:00) 由 DAO 统一给出，不能用 AppClock.today() 当下界
-  final logs = await db.learningLogsDao
-      .getInBusinessDay(userId, wordIds: [wordId], instant: now);
+  final learningWord =
+      await MyDatabase.instance.learningWordsDao.getById(userId, wordId);
+  if (learningWord == null) return null;
 
   return judgeTodayWord(
     progress: learningWord.todayLearnedTimes,
-    actualLogCount: logs.length,
     wordId: wordId,
-    trackLenMax: trackLenMax,
+    trackLenMax: await resolveTrackLenMax(userId),
   );
 }
 
-/// 用"今天已查到的流水条数"判定某个词是否不自洽（纯判定，不查库）。
+/// 用"今天已走完的环节数"判定某个词是否不自洽（纯判定，不查库）。
 StudyConsistencyViolation? judgeTodayWord({
   required int progress,
-  required int actualLogCount,
   required String wordId,
   String? spell,
   int? trackLenMax,
 }) {
   final rule = judgeStudyConsistency(
     progress: progress,
-    actualLogCount: actualLogCount,
     trackLenMax: trackLenMax,
   );
   if (rule == null) return null;
@@ -216,7 +193,6 @@ StudyConsistencyViolation? judgeTodayWord({
     wordId: wordId,
     spell: (spell == null || spell.isEmpty) ? wordId : spell,
     progress: progress,
-    actualLogCount: actualLogCount,
     trackLenMax: trackLenMax,
   );
 }
@@ -226,7 +202,6 @@ StudyConsistencyViolation? judgeTodayWord({
 /// 只查它们既够用又便宜，不需要扫全库。只读，不改任何数据。
 Future<List<StudyConsistencyViolation>> scanTodayStudyConsistency({
   required String userId,
-  required DateTime now,
 }) async {
   final words = await LearningService.getTodayLearningWordsFromDb(userId);
   final candidates =
@@ -235,22 +210,10 @@ Future<List<StudyConsistencyViolation>> scanTodayStudyConsistency({
 
   final trackLenMax = await resolveTrackLenMax(userId);
 
-  // 一次查完这批词今天的学习记录，按词统计条数，避免逐个词查库
-  final logs = await MyDatabase.instance.learningLogsDao.getInBusinessDay(
-    userId,
-    wordIds: candidates.map((w) => w.wordId),
-    instant: now,
-  );
-  final logCounts = <String, int>{};
-  for (final log in logs) {
-    logCounts[log.wordId] = (logCounts[log.wordId] ?? 0) + 1;
-  }
-
   final violations = <StudyConsistencyViolation>[];
   for (final word in candidates) {
     final violation = judgeTodayWord(
       progress: word.todayLearnedTimes,
-      actualLogCount: logCounts[word.wordId] ?? 0,
       wordId: word.wordId,
       trackLenMax: trackLenMax,
     );
@@ -340,23 +303,26 @@ class StudyConsistencyRepairResult {
     required this.spell,
     required this.progressBefore,
     required this.progressAfter,
-    required this.logCount,
   });
 
   final String wordId;
   final String spell;
   final int progressBefore;
   final int progressAfter;
-  final int logCount;
 
   /// 本次是否真的改了数据
   bool get changed => progressBefore != progressAfter;
 }
 
-/// 修复某个词今天的学习自洽性（截断越界进度，或对齐流水条数）。
+/// 修复某个词今天的学习自洽性（把越界的今日进度截断回轨道长度上限）。
 ///
 /// 这是用户在体检页**显式点确认**后才会走的路径，不是自动修复：
 /// 调用方必须先把问题上报服务端（见 [reportStudyConsistency]），并把修复前后的数值写进日志。
+///
+/// 唯一的规则是"进度超过轨道长度上限"，故修复动作也只有一种：截断回上限（视为今日学完，
+/// 退出出题队列，不再被夹在最后一个环节反复出题）。**不改任何学习记录、不动记忆参数**，
+/// 也绝不把进度往上补 —— 进度领先于流水（未作答跳过 / 走完 List / 首答即毕业）是正常形态，
+/// 往上补等于替用户跳过还没走的环节。
 ///
 /// [expectedProgress] 是用户在体检页看到、并据此确认的那个进度值：
 /// 修复前会重新读一遍，若与它不一致（比如期间换了设备或跨了天），说明前提已变，直接放弃修复。
@@ -364,7 +330,6 @@ Future<StudyConsistencyRepairResult?> repairStudyConsistency({
   required String userId,
   required StudyConsistencyViolation violation,
   required int expectedProgress,
-  required DateTime now,
   int? trackLenMax,
 }) async {
   final db = MyDatabase.instance;
@@ -380,17 +345,11 @@ Future<StudyConsistencyRepairResult?> repairStudyConsistency({
   }
 
   final maxTrack = trackLenMax ?? await resolveTrackLenMax(userId);
-  final logs = await db.learningLogsDao
-      .getInBusinessDay(userId, wordIds: [violation.wordId], instant: now);
-  final logCount = logs.length;
 
   int targetProgress = progressBefore;
-  if (violation.rule == StudyConsistencyRule.progressExceedsTrack || progressBefore > maxTrack) {
+  if (progressBefore > maxTrack) {
     // 进度越界：截断至轨道上限（视为今日学完，退出出题队列，不再被夹在最后一环节反复出题）
     targetProgress = maxTrack;
-  } else if (violation.rule == StudyConsistencyRule.logsExceedProgress || logCount > progressBefore) {
-    // 流水多于进度：将进度补齐至真实流水条数（不超过轨道上限）
-    targetProgress = logCount > maxTrack ? maxTrack : logCount;
   }
 
   if (targetProgress == progressBefore) {
@@ -399,7 +358,6 @@ Future<StudyConsistencyRepairResult?> repairStudyConsistency({
       spell: violation.spell,
       progressBefore: progressBefore,
       progressAfter: progressBefore,
-      logCount: logCount,
     );
   }
 
@@ -409,15 +367,14 @@ Future<StudyConsistencyRepairResult?> repairStudyConsistency({
   );
   ThrottledDbSyncService().requestSync();
 
-  Global.logger.i('🔧 [Consistency] 已修复学习进度与学习记录不一致: '
-      'word=${violation.wordId}, progress $progressBefore -> $targetProgress, 今日记录 $logCount 条');
+  Global.logger.i('🔧 [Consistency] 已修复越界的今日学习进度: '
+      'word=${violation.wordId}, progress $progressBefore -> $targetProgress');
 
   return StudyConsistencyRepairResult(
     wordId: violation.wordId,
     spell: violation.spell,
     progressBefore: progressBefore,
     progressAfter: targetProgress,
-    logCount: logCount,
   );
 }
 

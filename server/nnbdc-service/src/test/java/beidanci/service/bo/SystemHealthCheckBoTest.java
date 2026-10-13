@@ -8,14 +8,14 @@ import beidanci.api.model.SystemHealthIssue;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * 「学习进度与学习记录一致性」审计的判定口径测试。
+ * 「学习进度是否越界」审计的判定口径测试。
  *
  * <p>审计窗口是 SQL 侧的事（服务端无法把评分流水的 UTC 写入时刻换算成各用户的当地业务日），
- * 这里只固定不变式的判定与说明文案：
- * <ol>
- * <li>今日评分流水条数不得多于今日环节进度；</li>
- * <li>今日环节进度不得多于当前配置下的轨道长度上限。</li>
- * </ol>
+ * 这里只固定唯一那条不变式的判定与说明文案：
+ * 今日环节进度不得多于当前配置下的轨道长度上限。
+ *
+ * <p>刻意不比较「今日评分流水条数」与「今日环节进度」的大小：答错的环节写流水但不推进进度，
+ * 未作答跳过 / 走完 List / 首答毕业推进进度但不写流水，两个方向都是正常形态。
  */
 public class SystemHealthCheckBoTest {
 
@@ -37,13 +37,15 @@ public class SystemHealthCheckBoTest {
     }
 
     @Test
-    public void 评分流水多于今日进度时提示重复写记录() {
-        // 线上真实形态：同一次作答被写了两条学习记录（进度只加了 1，流水却多出一条）
+    public void 评分流水多于今日进度时不得报警() {
+        // 线上真实形态：测评答对（进度 0→1、写第 1 条流水）后巩固答错（写第 2 条流水、进度仍是 1）。
+        // 答错的环节写流水但不推进进度，这不是重复计分，线上 11 条 logs_gt_progress 告警全是这个形态。
         SystemHealthIssue issue = SystemHealthCheckBo.buildLearningProgressIssue(
-                "user_1", "纪白", "15407", "electronic", 5, 3, 5);
+                "user_1", "纪白", "4259", "gimmick", 2, 1, 3);
 
-        assertTrue(issue.getDescription().contains("重复写了学习记录"),
-                "应提示流水重复写入: " + issue.getDescription());
+        String desc = issue.getDescription();
+        assertFalse(desc.contains("重复写了学习记录"), "答错写流水属正常，不得报重复计分: " + desc);
+        assertFalse(desc.contains("进度超过轨道长度"), "进度未越界，不得报越界: " + desc);
     }
 
     @Test
@@ -70,17 +72,6 @@ public class SystemHealthCheckBoTest {
                 "user_1", "纪白", "15407", "electronic", 3, 5, 3);
         assertTrue(bigger.getDescription().contains("进度超过轨道长度"),
                 "进度超过轨道长度更多时同样要提示: " + bigger.getDescription());
-    }
-
-    @Test
-    public void 两种异常同时存在时两条说明都要给出() {
-        SystemHealthIssue issue = SystemHealthCheckBo.buildLearningProgressIssue(
-                "user_1", "纪白", "15407", "electronic", 5, 4, 3);
-
-        assertTrue(issue.getDescription().contains("重复写了学习记录"),
-                "应提示流水重复写入: " + issue.getDescription());
-        assertTrue(issue.getDescription().contains("进度超过轨道长度"),
-                "应提示环节越界: " + issue.getDescription());
     }
 
     @Test

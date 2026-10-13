@@ -152,29 +152,33 @@ public class SystemHealthCheckBo {
     private static final int LEARNING_PROGRESS_AUDIT_MAX_LOOKBACK_HOURS = 72;
 
     /**
-     * 检查「今日环节进度」与「今日评分流水」是否自洽（只读，不修任何数据）。
+     * 检查「今日环节进度」是否越界（只读，不修任何数据）。
      *
-     * <p>判定两条不变式：
-     * <ol>
-     * <li>今天某词的学习记录条数 &lt;= 该词记录的今日环节进度（today_learned_times）。
-     * 条数多出来说明同一次作答被重复计分。</li>
-     * <li>今日环节进度 &lt;= 该用户当前配置下的轨道长度上限。进度超过上限说明环节被多推进了，
-     * 客户端会把越界的环节编号夹回最后一个环节，于是该词会带着「答案已揭晓」的界面状态被重复出题，
-     * 这正是用户反馈「答对了却卡住、只能强行切走」的成因。</li>
-     * </ol>
+     * <p>只有一条真正的不变式：今日环节进度 &lt;= 该用户当前配置下的轨道长度上限。
+     * 进度超过上限说明环节被多推进了，客户端会把越界的环节编号夹回最后一个环节，
+     * 于是该词会带着「答案已揭晓」的界面状态被重复出题，
+     * 这正是用户反馈「答对了却卡住、只能强行切走」的成因。
      *
-     * <p>两条都成立时数据自洽。第 2 条取「新词轨道」与「复习轨道」中较长的一条作上限：
-     * 只要进度超过了两条中更长的那个，无论该词今天走哪条轨道都必然是越界的，不会误报。
+     * <p>上限取「新词轨道」与「复习轨道」中较长的一条：只要进度超过了两条中更长的那个，
+     * 无论该词今天走哪条轨道都必然是越界的，不会误报。
+     *
+     * <p><b>刻意不比较「今日评分流水条数」与「今日环节进度」的大小</b>（两个方向都不是缺陷）：
+     * 答错的环节照旧写一条流水、但进度不推进（该词留在本环节循环重练），流水因此可以多于进度；
+     * 未作答跳过、走完末尾 List 浏览环节、首答即掌握毕业，进度因此可以多于流水。
+     * 历史教训：这条关系曾被两个方向各立成审计项（`progress_gt_logs`、`logs_gt_progress`）报了一轮，
+     * 两次都是误报 —— 线上命中的 11 条 `logs_gt_progress` 现场全部是 `progress=1` + 2 条流水，
+     * 逐条核对全是"测评答对 + 巩固答错"这种绝对正常的作答。真正的"同一次作答被重复写记录"
+     * 只能靠两条流水的时间差抓（客户端 `DuplicateGradeViolation`），条数关系分辨不出来。
      *
      * <p>「今天」的窗口按用户自己的学习时刻锚定：取该用户最近一条学习记录的写入时刻往前 24 小时。
      * 不用固定回看 36 小时，那样会把更早一个业务日的流水算进「今天」；
      * 而评分流水的 create_time 由服务端写入，无法直接换算各用户的当地业务日。
      *
-     * <p><b>只审计「今日环节进度 &gt; 0」的词</b>：进度为 0、窗口内却查到流水，绝大多数是
-     * 用户上一个业务日学过、客户端的跨天复位已把进度清零（实测这类占了八成的告警），
-     * 属于正常状态、不是缺陷。已知盲点：若某个词的进度被复位成 0 之后又有重复计分，
-     * 这种"差一条记录"的不对称本项不会再报出来；需要时按同一个用户锚定窗口手工核对
-     * learning_word.today_learned_times 与 learning_log 的条数即可。
+     * <p><b>只审计「今日环节进度 &gt; 0」的词</b>：进度为 0 的词不可能越界，
+     * 没必要为它们逐个算轨道长度。
+     *
+     * <p>已知盲点：本项以 `learning_log` 为驱动表，因此"进度越界、但今天一条流水都没有"的词
+     * 不会出现在结果里；需要时按用户手工核对 `learning_word.today_learned_times` 与轨道长度。
      */
     public SystemHealthCheckResult checkLearningProgressConsistency() {
         List<SystemHealthIssue> issues = new ArrayList<>();
@@ -229,10 +233,9 @@ public class SystemHealthCheckBo {
                     + "  AND l.create_time >= now() - make_interval(hours => :maxLookbackHours) "
                     + "GROUP BY l.user_id, u.nick_name, l.word_id, w.spell, lw.today_learned_times, "
                     + "         lw.update_time, ver.client_version, new_max.max_len, rev_max.max_len "
-                    + "HAVING lw.today_learned_times > 0 AND (count(*) > lw.today_learned_times "
-                    + "    OR lw.today_learned_times > "
-                    + "       GREATEST(COALESCE(new_max.max_len, 0), COALESCE(rev_max.max_len, 0)) + 1) "
-                    + "ORDER BY count(*) - lw.today_learned_times DESC, l.user_id, l.word_id "
+                    + "HAVING lw.today_learned_times > 0 AND lw.today_learned_times > "
+                    + "       GREATEST(COALESCE(new_max.max_len, 0), COALESCE(rev_max.max_len, 0)) + 1 "
+                    + "ORDER BY lw.today_learned_times DESC, l.user_id, l.word_id "
                     + "LIMIT :auditLimit";
 
             MapSqlParameterSource params = new MapSqlParameterSource()
@@ -390,7 +393,7 @@ public class SystemHealthCheckBo {
      * <p>四条护栏缺一不可：
      * <ol>
      * <li>进度必须真的超过轨道长度 —— 说明该词今天已经把整条轨道走完、多出来的那一格是重复推进。
-     * 只"比流水多一条"但没超轨道长度的，属于包含 List 浏览环节或提前掌握的正常合法状态，不动。</li>
+     * 没超轨道长度的一律不动（体检项本身也不会把它们列出来）。</li>
      * <li>今天必须有评分流水 —— 否则没有可靠依据判断该整成几。</li>
      * <li>目标值必须小于当前值 —— 只下调，绝不把进度往上补。</li>
      * <li>进度行必须已经"凉"了（{@value #REPAIR_MIN_STALE_HOURS} 小时内没被更新过）——
@@ -417,27 +420,24 @@ public class SystemHealthCheckBo {
         }
         return new LearningProgressRepairItem(userId, nickName, wordId, target, progress,
                 todayLogCount, trackLenMax, blockReason == null, blockReason,
-                buildLearningProgressDiagnosis(todayLogCount, progress, trackLenMax), clientVersion);
+                buildLearningProgressDiagnosis(progress, trackLenMax), clientVersion);
     }
 
     /**
-     * 只表达「这三个数字哪里对不上」的一句话诊断，不做任何修复判断。
+     * 只表达「这几个数字哪里对不上」的一句话诊断，不做任何修复判断。
+     *
+     * <p>刻意不比「评分流水条数」与「今日环节进度」的大小：答错的环节写流水但不推进进度，
+     * 未作答跳过 / 走完 List / 首答毕业推进进度但不写流水，两个方向都是正常形态
+     * （见 {@link #checkLearningProgressConsistency()}）。
      *
      * <p>体检的问题说明与逐词明细共用它，保证界面两处口径永远一致。
      */
-    static String buildLearningProgressDiagnosis(int todayLogCount, int todayLearnedTimes, int trackLenMax) {
-        StringBuilder desc = new StringBuilder();
-        if (todayLogCount > todayLearnedTimes) {
-            desc.append("评分流水多于今日进度，说明同一次作答被重复写了学习记录");
+    static String buildLearningProgressDiagnosis(int todayLearnedTimes, int trackLenMax) {
+        if (todayLearnedTimes <= trackLenMax) {
+            return "";
         }
-        if (todayLearnedTimes > trackLenMax) {
-            if (desc.length() > 0) {
-                desc.append("。");
-            }
-            desc.append("进度超过轨道长度，环节被多推进，"
-                    + "该词会被夹在最后一个环节反复出题、答案揭晓后没有可前进的出口");
-        }
-        return desc.toString();
+        return "进度超过轨道长度，环节被多推进，"
+                + "该词会被夹在最后一个环节反复出题、答案揭晓后没有可前进的出口";
     }
 
     /**
@@ -454,7 +454,7 @@ public class SystemHealthCheckBo {
                 .append(todayLogCount).append(" 条，记录的今日环节进度 ")
                 .append(todayLearnedTimes).append("，当前配置下轨道长度上限 ")
                 .append(trackLenMax);
-        String diagnosis = buildLearningProgressDiagnosis(todayLogCount, todayLearnedTimes, trackLenMax);
+        String diagnosis = buildLearningProgressDiagnosis(todayLearnedTimes, trackLenMax);
         if (!diagnosis.isEmpty()) {
             desc.append("。").append(diagnosis);
         }
