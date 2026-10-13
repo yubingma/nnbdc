@@ -1,0 +1,62 @@
+{
+  "episode": "CI16",
+  "series": "词核心图",
+  "position": "16",
+  "slogan": "一个词 · 一个意象",
+  "word": "conform",
+  "phonetic": "kənˈfɔrm",
+  "core_art": "core_11564.jpeg",
+  "core_text": "同模成形",
+  "core_sub": "conform 只有这一个意象",
+  "accent": "#22D3EE",
+  "voice": "1号",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "符合",
+        "遵守",
+        "适应",
+        "使顺从"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "符合、遵守、适应、使顺从。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：同模成形。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "符合",
+          "relation": "形状与模具相吻合"
+        },
+        {
+          "meaning": "遵守",
+          "relation": "照着模具的轮廓走"
+        },
+        {
+          "meaning": "适应",
+          "relation": "调整自己的形状去贴合"
+        },
+        {
+          "meaning": "使顺从",
+          "relation": "把别人也压进同一个形状"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "theme": "dark"
+}
