@@ -62,42 +62,59 @@ is_flutter_healthy() {
   return 0
 }
 
-decode_base64() {
-  # macOS 的 base64 参数在不同环境可能不同，直接用 python3 解码更稳
-  if command -v python3 >/dev/null 2>&1; then
-    python3 -c 'import base64,sys; print(base64.b64decode(sys.argv[1]).decode("utf-8", "ignore"))' "$1" 2>/dev/null
-    return $?
-  fi
-  # fallback：兼容 GNU/macOS base64
-  echo "$1" | base64 --decode 2>/dev/null || echo "$1" | base64 -D 2>/dev/null
+# 比较两个 x.y.z 版本号：$1 >= $2 时返回 0
+version_ge() {
+  awk -F'[.]' -v a="$1" -v b="$2" 'BEGIN {
+    split(a, x); split(b, y)
+    for (i = 1; i <= 3; i++) {
+      if ((x[i] + 0) > (y[i] + 0)) exit 0
+      if ((x[i] + 0) < (y[i] + 0)) exit 1
+    }
+    exit 0
+  }'
 }
 
-detect_flutter_version_from_project() {
-  # 尝试从 ios/Flutter/flutter_export_environment.sh 中解析 DART_DEFINES 里的 FLUTTER_VERSION
-  # 该文件在 Flutter 构建流程中常见（本仓库也存在），可用来锁定稳定的 Flutter 发布版本
-  ENV_SH="$APP_DIR/ios/Flutter/flutter_export_environment.sh"
-  if [ ! -f "$ENV_SH" ]; then
+project_flutter_version() {
+  # 项目声明的最低 Flutter 版本，取自 app/pubspec.yaml 的 environment.flutter：
+  # 全仓库唯一声明处（GitHub Actions 的 Setup Flutter 读同一行），也是 pub 自己校验的那一行。
+  # 注意 pubspec.yaml 里另有 dependencies.flutter（空值、表示 SDK 依赖），
+  # 所以只在 environment 段内取带版本号的值。
+  awk '
+    /^environment:[[:space:]]*$/ { in_env = 1; next }
+    in_env && /^[^[:space:]#]/ { in_env = 0 }
+    in_env && $1 == "flutter:" { print $2; exit }
+  ' "$APP_DIR/pubspec.yaml" 2>/dev/null | tr -d '"' | tr -d "'"
+}
+
+flutter_installed_version() {
+  # 已安装 Flutter 的版本号（如 3.44.0）；取不到时输出空
+  # 不用 head -n 1：首次运行可能先打印 "Building flutter tool..." 之类的噪声行
+  "$FLUTTER_ROOT/bin/flutter" --version 2>/dev/null \
+    | grep -Eo 'Flutter[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+' | head -n 1 | awk '{print $2}'
+}
+
+is_flutter_version_ok() {
+  # 已安装的 Flutter 是否不低于项目声明的最低版本（纯判定，不打日志）
+  REQUIRED_VERSION=$(project_flutter_version)
+  # 项目没声明下限时不拦，交给 pub 自己校验
+  if [ -z "$REQUIRED_VERSION" ]; then
+    return 0
+  fi
+  INSTALLED_VERSION=$(flutter_installed_version)
+  if [ -z "$INSTALLED_VERSION" ]; then
     return 1
   fi
-  DART_DEFINES_LINE=$(grep '^export "DART_DEFINES=' "$ENV_SH" 2>/dev/null | head -n 1)
-  if [ -z "$DART_DEFINES_LINE" ]; then
+  version_ge "$INSTALLED_VERSION" "$REQUIRED_VERSION"
+}
+
+is_flutter_reusable() {
+  # 可复用 = 能正常报出版本号，且不低于项目声明的最低版本。
+  # 只看 is_flutter_healthy 是不够的：一个"健康"的旧 SDK（例如 3.38.5）照样会把
+  # pubspec.lock 里的 meta/characters/test_api/matcher/material_color_utilities 换成另一副样子。
+  if ! is_flutter_healthy; then
     return 1
   fi
-  # 提取引号内内容
-  DART_DEFINES=$(echo "$DART_DEFINES_LINE" | sed -n 's/^export "DART_DEFINES=\(.*\)"$/\1/p')
-  if [ -z "$DART_DEFINES" ]; then
-    return 1
-  fi
-  for seg in $(echo "$DART_DEFINES" | tr ',' ' '); do
-    decoded=$(decode_base64 "$seg")
-    case "$decoded" in
-      FLUTTER_VERSION=*)
-        echo "${decoded#FLUTTER_VERSION=}"
-        return 0
-        ;;
-    esac
-  done
-  return 1
+  is_flutter_version_ok
 }
 
 ensure_flutter_version_known() {
@@ -192,6 +209,12 @@ FLUTTER_GIT_URL="${FLUTTER_GIT_URL:-https://github.com/flutter/flutter.git}"
 FLUTTER_GIT_REVISION="${FLUTTER_GIT_REVISION:-$METADATA_REVISION}"
 FLUTTER_CHANNEL="${FLUTTER_CHANNEL:-$METADATA_CHANNEL}"
 
+# pub 源必须与 app/pubspec.lock 里记录的源一致（lock 记的是 pub.flutter-io.cn）：
+# 否则 pub 认为 lock 里的包不在默认源(pub.dev)上，会整体丢弃 lock 重新解析，静默换掉依赖版本
+# —— 2026-10-11 GitHub Actions 正是这样把 image 升到 4.11.0，撞上 pdf 3.12.0 的 archive<4.1.0，
+# 导致四个平台全部编译失败。此处与 .github/workflows/build.yml 的 PUB_HOSTED_URL 保持同一个值。
+export PUB_HOSTED_URL="${PUB_HOSTED_URL:-https://pub.flutter-io.cn}"
+
 if [ -n "$FLUTTER_GIT_REVISION" ]; then
   log "📌 Flutter 期望 revision: $FLUTTER_GIT_REVISION${FLUTTER_CHANNEL:+ (channel: $FLUTTER_CHANNEL)}"
 else
@@ -209,27 +232,28 @@ install_flutter_if_needed() {
     export FLUTTER_ROOT="$HOME/flutter"
   fi
 
-  # 若外部环境已经设置了 FLUTTER_ROOT，但 Flutter 版本是 unknown，则忽略并切换到可控目录
+  # 若外部环境已经设置了 FLUTTER_ROOT，但其 Flutter 不可用（unknown/执行失败）或版本低于项目声明，
+  # 则忽略并切换到可控目录
   if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
-    if is_flutter_healthy; then
+    if is_flutter_reusable; then
       return 0
     fi
     if [ -z "$NNBDC_RESPECT_FLUTTER_ROOT" ]; then
-      log "⚠️  检测到现有 Flutter 不可用（版本 unknown 或执行失败）：$FLUTTER_ROOT"
+      log "⚠️  检测到现有 Flutter 不可用（版本 unknown/执行失败）或低于项目声明的最低版本：$FLUTTER_ROOT"
       log "➡️  将改用可控的 Flutter 目录：$MANAGED_FLUTTER_ROOT"
       export FLUTTER_ROOT="$MANAGED_FLUTTER_ROOT"
     else
-      fail "现有 FLUTTER_ROOT 指向的 Flutter 不可用: ${FLUTTER_ROOT}（已设置 NNBDC_RESPECT_FLUTTER_ROOT，拒绝自动切换）"
+      fail "现有 FLUTTER_ROOT 指向的 Flutter 不可用或低于项目声明的最低版本: ${FLUTTER_ROOT}（已设置 NNBDC_RESPECT_FLUTTER_ROOT，拒绝自动切换）"
     fi
   fi
 
-  # 若切换后的 FLUTTER_ROOT 已存在 flutter，可用则直接用；不可用则继续走“修复/重装”逻辑
+  # 若切换后的 FLUTTER_ROOT 已存在 flutter，版本达标则直接用；否则继续走“切换版本/重装”逻辑
   if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
-    if is_flutter_healthy; then
+    if is_flutter_reusable; then
       return 0
     fi
-    log "⚠️  检测到当前 Flutter 不可用（版本 unknown 或执行失败）：$FLUTTER_ROOT"
-    log "➡️  将尝试修复或重新安装"
+    log "⚠️  检测到当前 Flutter 不可用（版本 unknown/执行失败）或低于项目声明的最低版本：$FLUTTER_ROOT"
+    log "➡️  将尝试切换版本或重新安装"
   fi
 
   if command -v flutter >/dev/null 2>&1; then
@@ -237,12 +261,12 @@ install_flutter_if_needed() {
     FLUTTER_BIN=$(command -v flutter 2>/dev/null)
     if [ -n "$FLUTTER_BIN" ]; then
       export FLUTTER_ROOT=$(dirname "$(dirname "$FLUTTER_BIN")")
-      if is_flutter_healthy; then
+      if is_flutter_reusable; then
         return 0
       fi
-      # PATH 里的 flutter 也可能是“残缺版”，同样忽略
+      # PATH 里的 flutter 也可能是“残缺版”或版本不达标，同样忽略
       if [ -z "$NNBDC_RESPECT_FLUTTER_ROOT" ]; then
-        log "⚠️  PATH 中的 flutter 不可用（版本 unknown 或执行失败）：$FLUTTER_ROOT"
+        log "⚠️  PATH 中的 flutter 不可用或版本低于项目声明：$FLUTTER_ROOT"
         log "➡️  将改用可控的 Flutter 目录：$MANAGED_FLUTTER_ROOT"
         export FLUTTER_ROOT="$MANAGED_FLUTTER_ROOT"
       else
@@ -251,22 +275,23 @@ install_flutter_if_needed() {
     fi
   fi
 
-  # 如果目标目录已存在 flutter，但版本 unknown，优先尝试修复（拉 tags / unshallow）
-  if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
-    ensure_flutter_version_known
+  # 目标目录已存在 flutter 且版本达标：直接复用
+  if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ] && is_flutter_reusable; then
     return 0
   fi
+  # 版本不达标的旧 SDK 不能在这里 return，必须往下走 revision checkout / 重新安装，
+  # 把它换到项目要求的版本——否则会带着旧 SDK 去 pub get，静默改掉 lock
 
-  log "🔍 未找到 Flutter SDK，开始自动安装..."
+  log "🔍 未找到可用的 Flutter SDK（缺失或版本不达标），开始安装/切换版本..."
   export GIT_TERMINAL_PROMPT=0
   command -v git >/dev/null 2>&1 || fail "git 不存在，无法自动安装 Flutter（请在 Xcode Cloud 环境中确保 git 可用）"
   log "🧰 git 版本: $(git --version 2>/dev/null || echo "<未知>")"
 
   export FLUTTER_ROOT="${FLUTTER_ROOT:-$MANAGED_FLUTTER_ROOT}"
 
-  # 优先从项目解析 Flutter 发布版本号（例如 3.32.5），用 tag clone 能避免版本 unknown
+  # 优先用 app/pubspec.yaml 声明的发布版本号（例如 3.44.0）作为 clone 的 tag，可避免版本 unknown
   if [ -z "$FLUTTER_TAG" ]; then
-    DETECTED_VER=$(detect_flutter_version_from_project 2>/dev/null || true)
+    DETECTED_VER=$(project_flutter_version)
     if [ -n "$DETECTED_VER" ]; then
       FLUTTER_TAG="$DETECTED_VER"
       log "🏷️  从项目解析到 Flutter 版本: ${FLUTTER_TAG}（将优先使用该 tag）"
@@ -360,6 +385,12 @@ if [ ! -f "$FLUTTER_ROOT/bin/flutter" ]; then
     fail "Flutter 可执行文件不存在: $FLUTTER_ROOT/bin/flutter"
 fi
 
+# 复核版本：只能用满足 app/pubspec.yaml 声明的 Flutter，否则 pub get 会以更含糊的方式失败，
+# 甚至让旧 SDK 静默换掉 pubspec.lock 里由 SDK 钉版的那几个包
+if ! is_flutter_version_ok; then
+    fail "当前 Flutter 版本 $(flutter_installed_version) 低于 app/pubspec.yaml 声明的最低版本 $(project_flutter_version)（app/.metadata 的 revision 应与该版本一致）"
+fi
+
 log "📦 Flutter SDK 路径: $FLUTTER_ROOT"
 log "📦 Flutter 版本:"
 "$FLUTTER_ROOT/bin/flutter" --version || log "  ⚠️  无法获取 Flutter 版本"
@@ -386,8 +417,10 @@ if [ $PRECACHE_EXIT_CODE -ne 0 ]; then
 fi
 
 # 运行 flutter pub get 生成 Generated.xcconfig
+# --enforce-lockfile：解析结果与 app/pubspec.lock 不一致时直接报错，
+# 避免 iOS 这条线重演"CI 悄悄换掉依赖版本"（GitHub Actions 已于 2026-10-12 装上同样闸门）
 log "📥 运行 flutter pub get..."
-"$FLUTTER_ROOT/bin/flutter" pub get
+"$FLUTTER_ROOT/bin/flutter" pub get --enforce-lockfile
 PUB_GET_EXIT_CODE=$?
 
 if [ $PUB_GET_EXIT_CODE -ne 0 ]; then

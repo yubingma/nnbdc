@@ -331,6 +331,13 @@ public class RussiaRoom {
         for (Iterator<UserVo> i = users.keySet().iterator(); i.hasNext(); ) {
             UserVo aUser = i.next();
             if (aUser.equals(user)) {
+                // 局中人主动走了（点离开、换房间、长时间无操作被清理）：这一局必须当场收场。
+                // 不在这里判负的话，这一局会在服务端悬空——留在房间里的对手对着一个没有对手的
+                // 界面把血条打空，谁都不结算，而走掉的人零代价。
+                if (state instanceof ReadyState readyState) {
+                    readyState.handleUserLeft(user);
+                }
+
                 // 广播用户离开消息
                 broadcastEvent("leaveRoom", new Object[]{user.getId(), Util.getNickNameOfUser(user)});
 

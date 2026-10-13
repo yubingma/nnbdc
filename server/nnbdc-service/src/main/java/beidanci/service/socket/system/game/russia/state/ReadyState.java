@@ -351,6 +351,30 @@ public class ReadyState extends RoomState {
     }
 
     /**
+     * 局中人主动离开房间（点离开、换房间、长时间无操作被清理）：
+     * 判他战败、对手判胜，与断线宽限到点判负是同一套结果。
+     * 单人练习、以及房间里混着练习者的那一局都不判——练习不计分，
+     * 而且用"别人离开"去占用 gameOverProcessor 的 loser 位，会把练习者自己的
+     * 练习结束判负一起吃掉（handleLoser 认了第一次就不再认第二次）。
+     */
+    public void handleUserLeft(UserVo user) throws IllegalAccessException {
+        if (!isPlaying) {
+            return;
+        }
+        UserGameData playData = room.getUserPlayData(user);
+        if (playData == null || playData.isExercise()) {
+            return;
+        }
+        boolean anyUserInExercise = room.getUsers().values().stream()
+                .anyMatch(u -> u != null && u.isExercise());
+        if (anyUserInExercise) {
+            return;
+        }
+        log.info(String.format("玩家[%s]主动离开对局，判为战败", Util.getNickNameOfUser(user)));
+        gameOverProcessor.handleLoser(user);
+    }
+
+    /**
      * 按漏答给用户补扣堆叠行数，并把服务端的权威行数同步给客户端校正血条。
      */
     private void addStackRows(UserVo user, int rows, String reason) {
