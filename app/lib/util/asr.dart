@@ -497,12 +497,21 @@ class Asr {
     }
   }
 
-  /// iOS 麦克风预热机制：已由 SoundUtil 状态机在 record 状态切换时统一安全处理。
-  /// 为了兼容旧调用，此方法仅触发 native 模型预热，绝不配置 Category，无任何副作用。
+  /// 麦克风预热。
+  ///
+  /// Android：`startMicrophone` 会真正创建并阻塞住采集流，是「首词 ASR 不工作」的根治点
+  /// （见 `app/android/app/src/main/kotlin/com/nn/nnbdc/Sherpa.kt:519-521`），
+  /// 因此必须在进入背单词页前调用。
+  ///
+  /// iOS：这里**故意什么都不做**。iOS 的 `startMicrophone` 必须在录放会话就绪后
+  /// 才能启动采集引擎（见 `app/ios/Runner/AppDelegate.swift` 的 initializeAudioEngine 契约校验），
+  /// 而今日计划页的会话是播放模式，调它必然失败：旧版靠原生偷偷 setupAudioSession() 兜底
+  /// 才显得"预热成功"，代价是用户还没开始背单词就让麦克风指示灯亮起；26.10.11 起原生不再兜底，
+  /// 它就退化成一次必然失败的空转。iOS 的预热统一交给
+  /// StudyAudioSessionController.transitTo(record) 的既有开麦流程。
   Future<void> warmupMicrophone() async {
-    if (!PlatformUtils.isAsrSupported()) return;
+    if (!PlatformUtils.isAndroid) return;
     try {
-      // 仅触发原生预热，绝不配置全局音频 Session Category
       await asrMethodChannel
           .invokeMethod('startMicrophone')
           .timeout(const Duration(seconds: 5));

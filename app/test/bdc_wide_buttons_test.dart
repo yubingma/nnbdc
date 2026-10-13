@@ -426,13 +426,13 @@ void main() {
     // 顶栏只留答题动作「掌握」和一个「更多」
     expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget,
         reason: '「掌握」是顶栏唯一的答题动作，必须留在明面上');
-    expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.more_horiz_rounded), findsOneWidget);
     expect(find.text('报错'), findsNothing, reason: '报错不得再直接暴露在顶栏');
     expect(find.text('查词'), findsNothing, reason: '查词不得再直接暴露在顶栏');
     expect(find.text('设置'), findsNothing, reason: '设置不得再直接暴露在顶栏');
 
     // 三个动作都在弹出菜单里，且设置写全成「学习设置」
-    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
     await tester.pumpAndSettle();
     expect(find.text('查词'), findsOneWidget);
     expect(find.text('报错'), findsOneWidget);

@@ -1363,7 +1363,9 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildTopButtonsRow() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+      // 顶部留白不再小于底部：原先上 4 下 6 让整排按钮紧贴进度条，
+      // 进度条走到接近满格时，上沿那条长光带会把右侧按钮视觉上"顶"起来。
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1468,7 +1470,8 @@ extension BdcPageStateUIComponents on BdcPageState {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
         child: Icon(
-          Icons.more_vert_rounded,
+          // 横三点：竖三点在 15 号下只有约 3px 宽，视觉重心偏高、又容易被看漏
+          Icons.more_horiz_rounded,
           color: isDark ? const Color(0xFFCBD5E1) : context.textSecondary,
           size: 15,
         ),

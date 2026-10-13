@@ -647,6 +647,7 @@ import Accelerate
             return
         }
         guard ensureHintPlaybackEngine(format: file.processingFormat) else {
+            print("IOS: [ASR] playReadyHint 跳过：提示音引擎未能启动")
             result(nil)
             return
         }
@@ -672,6 +673,9 @@ import Accelerate
         }
         hintPlaybackNode.volume = 0.4
         hintPlaybackNode.play()
+        // 成功路径也必须留痕：否则"叮不响"的反馈无法区分"没被调用"和"调用了但没出声"。
+        // 序号即本进程内真正触发播放的累计次数。上面的三条拦截分支各自已有日志。
+        print("IOS: [ASR] playReadyHint 已触发播放（本进程第 \(hintPlaybackGeneration) 次）")
         result(nil)
     }
     
