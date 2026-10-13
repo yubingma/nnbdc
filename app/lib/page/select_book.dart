@@ -33,7 +33,6 @@ import '../state.dart';
 import 'package:nnbdc/event/events.dart';
 import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
-import '../theme/app_theme_background.dart';
 
 enum DictSortOrder {
   newestFirst, // 最新年份优先
@@ -1705,15 +1704,15 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     final textColor = themeConfig.textPrimary;
 
     if (_isLoading && (parentCategories == null || parentCategories!.isEmpty)) {
-      return const Scaffold(
-        backgroundColor: Colors.transparent,
+      return const AppScaffold(
+        vibrancy: PageVibrancy.selectBook,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (parentCategories == null || parentCategories!.isEmpty) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
+      return AppScaffold(
+        vibrancy: PageVibrancy.selectBook,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           title: const Text('选词书'),
@@ -1726,8 +1725,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     final filteredCategories = _filteredCategories;
     final tabController = _primaryTabController;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    return AppScaffold(
+      vibrancy: PageVibrancy.selectBook,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -1799,27 +1798,17 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         ),
       ),
       bottomNavigationBar: _buildFloatingSaveBar(isDarkMode),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: AppThemeBackground(
-              themeStyle: themeStyle,
-              config: PageVibrancy.selectBook,
+      body: (filteredCategories.isEmpty || tabController == null)
+          ? Center(
+              child: Text(
+                '没有找到匹配的词书',
+                style: TextStyle(color: themeConfig.textSecondary),
+              ),
+            )
+          : TabBarView(
+              controller: tabController,
+              children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
             ),
-          ),
-          (filteredCategories.isEmpty || tabController == null)
-              ? Center(
-                  child: Text(
-                    '没有找到匹配的词书',
-                    style: TextStyle(color: themeConfig.textSecondary),
-                  ),
-                )
-              : TabBarView(
-                  controller: tabController,
-                  children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
-                ),
-        ],
-      ),
     );
   }
 

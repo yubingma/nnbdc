@@ -269,16 +269,16 @@ class PureE2ERegressionRunner:
         time.sleep(1.0)
 
         # 检查是否已能看见「云同步状态」
-        sync_tile = self.device.find_element(text_contains="云同步状态")
+        sync_tile = self.device.find_element(text="云同步状态")
         if not sync_tile:
-            settings_section = self.device.find_element(text_contains="设置与工具")
+            settings_section = self.device.find_element(text="设置与工具")
             if settings_section:
                 self.device.click_element(settings_section)
                 time.sleep(1.0)
             w, h = self.device.get_screen_size()
             self.device.swipe(w // 2, int(h * 0.8), w // 2, int(h * 0.3), duration_ms=400)
             time.sleep(1.0)
-            sync_tile = self.device.find_element(text_contains="云同步状态")
+            sync_tile = self.device.find_element(text="云同步状态")
 
         if sync_tile:
             print("[*] 点击「云同步状态」进入同步页面执行 immediate sync...")
@@ -484,119 +484,130 @@ class PureE2ERegressionRunner:
         self.device.wait_and_click(text="学习", timeout=2, exact=True)
         time.sleep(0.4)
 
-        # 检查首页是否提示「选择词书」
+        # 主页已展示学习入口，说明账号已有生效词书，无需重选
+        if self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习"):
+            shot = self.capture("dict_already_present")
+            self.log("词书就绪校验", "PASSED", "当前账号已具备生效词书，主页已展示学习入口", shot)
+            return
+
         select_dict_btn = self.device.find_element(text="选择词书")
         if not select_dict_btn:
             select_dict_btn = self.device.scroll_and_find("选择词书", max_swipes=2, swipe_up=True)
+        if not select_dict_btn:
+            shot = self.capture("dict_entry_missing")
+            self.log("词书选择入口定位", "FAILED", "主页既无学习入口也无「选择词书」按钮", shot)
+            raise RuntimeError("找不到词书选择入口")
 
-        if select_dict_btn:
-            print("[*] 新用户无选定词书，自动执行选词书流程...")
-            self.device.click_element(select_dict_btn)
-            time.sleep(0.8)
+        print("[*] 新用户无有效词书，进入词书页挑一本真实词书...")
+        self.device.click_element(select_dict_btn)
+        time.sleep(2.5)
 
-            cet_tab = self.device.find_element(text="四六级")
-            if cet_tab:
-                self.device.click_element(cet_tab)
-                time.sleep(0.5)
+        # 词书按分类页签组织（自定义/大学/高中/初中/小学/留学...），切到「大学」页签后再挑
+        uni_tab = self.device.find_element(text="大学", only_clickable=True)
+        if uni_tab:
+            self.device.click_element(uni_tab)
+            time.sleep(1.5)
 
-            target_book = self.device.find_element(text="四级高频词汇") or self.device.find_element(text="六级")
-            if target_book:
-                self.device.click_element(target_book)
-                time.sleep(0.4)
+        # 只挑词数为正的真实词书：0 词的生词本会让主页停在「词书单词量不足」
+        book = None
+        for node in self.device.dump_ui_hierarchy():
+            match = re.search(r"([\d,]+)\s*词", node.get("label") or "")
+            if node.get("clickable") and match and int(match.group(1).replace(",", "")) > 0:
+                book = node
+                break
+        if not book:
+            shot = self.capture("dict_book_missing")
+            self.log("词书列表定位", "FAILED", "当前分类页签下未找到词数为正的词书", shot)
+            raise RuntimeError("词书列表无可选词书")
+        print(f"[*] 选中词书: {(book.get('label') or '').replace(chr(10), ' / ')}")
+        self.device.click_element(book)
+        time.sleep(1.0)
 
-            save_btn = self.device.find_element(text="保存")
-            if save_btn:
-                self.device.click_element(save_btn)
-                time.sleep(0.8)
+        save_btn = self.device.find_element(text="保存")
+        if not save_btn:
+            shot = self.capture("dict_save_missing")
+            self.log("词书保存按钮定位", "FAILED", "词书页未找到「保存」按钮", shot)
+            raise RuntimeError("找不到词书保存按钮")
+        self.device.click_element(save_btn)
+        time.sleep(2.0)
 
-            if not self.device.find_element(text="学习", exact=True):
-                self.device.press_key(4)
-                time.sleep(0.5)
+        # 首次选中词书要把词书内容下载到本地；导入弹窗标题形如「导入词书 (0/2)」，等它消失再继续
+        time.sleep(2.5)
+        deadline = time.time() + 300
+        while time.time() < deadline and self.device.find_element(text="导入词书"):
+            time.sleep(3)
+        if self.device.find_element(text="导入词书"):
+            shot = self.capture("dict_import_timeout")
+            self.log("词书导入", "FAILED", "词书导入超过 300 秒仍未完成", shot)
+            raise RuntimeError("词书导入超时")
+        done_btn = self.device.find_element(text="完成")
+        if done_btn:
+            self.device.click_element(done_btn)
+            time.sleep(2.0)
+        shot = self.capture("dict_imported")
 
-            shot = self.capture("dict_selected")
-            self.log("新用户选词书", "PASSED", "成功在真机词库勾选四六级词书并保存生效", shot)
+        self.device.wait_and_click(text="学习", timeout=3, exact=True)
+        time.sleep(1.5)
+        if self.device.find_element(text="开始学习") or self.device.find_element(text="继续学习"):
+            self.log("新用户选词书", "PASSED", "已选中真实词书并完成导入，主页恢复学习入口", shot)
         else:
-            shot = self.capture("dict_already_present")
-            self.log("词书就绪校验", "PASSED", "当前账号已具备生效词书", shot)
+            self.log("新用户选词书", "FAILED", "词书已保存并导入，但主页仍未出现学习入口", shot)
+            raise RuntimeError("选词书后主页仍未出现学习入口")
 
     def step_7_study_track_regression(self):
         print("\n--- [Step 7] 学习轨道核心体验与配置回归 ---")
         self.device.wait_and_click(text="学习", timeout=2, exact=True)
         time.sleep(0.4)
 
-        # 向上微滑动寻找「学习轨道」区域
-        track_btn = self.device.scroll_and_find("调整轨道", max_swipes=4, swipe_up=True)
-        if not track_btn:
-            track_header = self.device.scroll_and_find("学习轨道", max_swipes=3, swipe_up=True)
-            if track_header:
-                track_btn = self.device.find_element(text="调整轨道")
-
-        if not track_btn:
+        # 主页「学习轨道」区域内每条轨道卡片自带调整入口，旧版的「调整轨道」汇总按钮已下线
+        track_card = self.device.scroll_and_find("新词轨道", max_swipes=4, swipe_up=True) or \
+                     self.device.scroll_and_find("旧词轨道", max_swipes=2, swipe_up=True)
+        if not track_card:
             shot = self.capture("study_track_entry_missing")
-            self.log("学习轨道入口定位", "WARNING", "主页未找到「调整轨道」按钮，跳过详细展开配置", shot)
+            self.log("学习轨道入口定位", "WARNING", "主页未找到「新词轨道/旧词轨道」卡片，跳过该用例", shot)
             return
 
-        print("[*] 点击「调整轨道」进入轨道配置编辑态...")
-        self.device.click_element(track_btn)
-        time.sleep(0.5)
+        label = (track_card.get("label") or "").replace(chr(10), " / ")
+        print(f"[*] 点击轨道卡片「{label}」进入编辑态...")
+        self.device.click_element(track_card)
+        time.sleep(1.2)
+        shot = self.capture("study_track_edit")
 
-        # 验证轨道配置展开，展示「新词轨道」与「旧词轨道」
-        review_tab = self.device.find_element(text="旧词轨道")
-        new_tab = self.device.find_element(text="新词轨道")
+        # 编辑态会展开该条轨道的环节配置（答对后环节 / 答错后环节）
+        if self.device.find_element(text="答对后环节") or self.device.find_element(text="答错后环节"):
+            self.log("学习轨道配置与切换", "PASSED", "已进入轨道编辑态，核验到答对/答错后环节节点", shot)
+        else:
+            self.log("学习轨道配置与切换", "WARNING", "已点击轨道卡片但未识别到轨道环节节点", shot)
 
-        if review_tab:
-            print("[*] 切换至「旧词轨道」查看复习步骤与节点...")
-            self.device.click_element(review_tab)
-            time.sleep(0.5)
-            shot_review = self.capture("study_track_review_tab")
-
-        if new_tab:
-            print("[*] 切换回「新词轨道」查看新词学习环节...")
-            self.device.click_element(new_tab)
-            time.sleep(0.5)
-            shot_new = self.capture("study_track_new_tab")
-
-        # 点击「完成配置」收起面板
-        finish_config_btn = self.device.find_element(text="完成配置")
-        if finish_config_btn:
-            print("[*] 点击「完成配置」收起配置面板...")
-            self.device.click_element(finish_config_btn)
-            time.sleep(0.5)
-
-        shot = self.capture("study_track_completed")
-        self.log("学习轨道配置与切换", "PASSED", "成功进入学习轨道编辑态，核验新词/旧词轨道流转节点并平稳收起", shot)
+        self.device.press_key(4)
+        time.sleep(1)
+        self.device.ensure_app_foreground()
 
     def step_8_set_daily_words_plan(self, target_words: int = 30):
         print(f"\n--- [Step 8] 每日学习计划定制（核验并设定为 {target_words} 词） ---")
         self.device.wait_and_click(text="学习", timeout=2, exact=True)
         time.sleep(1)
 
-        w, h = self.device.get_screen_size()
-        self.device.swipe(w // 2, int(h * 0.25), w // 2, int(h * 0.8), 350)
-        time.sleep(1)
+        def read_target_words():
+            """从主页大仪表盘读取今日目标词数（文案形如「目标 30 词」）"""
+            for node in self.device.dump_ui_hierarchy():
+                match = re.search(r"目标\s*(\d+)\s*词", (node.get("label") or "").replace(chr(10), " "))
+                if match:
+                    return int(match.group(1))
+            return None
 
-        # 检查是否已经是 30 词
-        already_target = bool(self.device.find_element(text=f"{target_words}", exact=True) or 
-                              self.device.find_element(text=f"{target_words}\n词", exact=True))
-        if already_target:
-            print(f"[*] 当前大仪表盘已默认为 {target_words} 词计划，无需重复调起弹窗。")
-        else:
-            target_num_el = (self.device.find_element(text="点击调整目标", exact=False) or
-                             self.device.find_element(text="20", exact=True) or 
-                             self.device.find_element(text="10", exact=True))
-            if target_num_el:
-                self.device.click_element(target_num_el)
-                time.sleep(1.5)
-                opt = self.device.find_element(text=f"{target_words}\n词") or self.device.find_element(text=f"{target_words}")
-                if opt:
-                    self.device.click_element(opt)
-                    time.sleep(2)
-            if self.device.find_element(text="选择每日学习词数"):
-                self.device.press_key(4)
-                time.sleep(1)
+        actual = read_target_words()
+        if actual is None:
+            w, h = self.device.get_screen_size()
+            self.device.swipe(w // 2, int(h * 0.4), w // 2, int(h * 0.8), 350)
+            time.sleep(1)
+            actual = read_target_words()
 
         shot = self.capture("daily_plan_configured")
-        self.log(f"每日学习计划定制", "PASSED", f"今日学习量锁定为标准负载（{target_words}词），覆盖全流程深度学习", shot)
+        if actual == target_words:
+            self.log("每日学习计划定制", "PASSED", f"主页今日目标确认为 {actual} 词", shot)
+        else:
+            self.log("每日学习计划定制", "WARNING", f"主页今日目标为 {actual} 词，未达预期 {target_words} 词", shot)
 
     def step_9_complete_daily_study_and_daka(self):
         print("\n--- [Step 9] 完整学完 30 词计划与打卡全流程 (含 ASR 物理发音 + 抽样掌握) ---")
