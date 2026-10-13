@@ -353,25 +353,30 @@ public class ReadyState extends RoomState {
     /**
      * 局中人主动离开房间（点离开、换房间、长时间无操作被清理）：
      * 判他战败、对手判胜，与断线宽限到点判负是同一套结果。
-     * 单人练习、以及房间里混着练习者的那一局都不判——练习不计分，
-     * 而且用"别人离开"去占用 gameOverProcessor 的 loser 位，会把练习者自己的
-     * 练习结束判负一起吃掉（handleLoser 认了第一次就不再认第二次）。
      */
     public void handleUserLeft(UserVo user) throws IllegalAccessException {
-        if (!isPlaying) {
-            return;
-        }
         UserGameData playData = room.getUserPlayData(user);
-        if (playData == null || playData.isExercise()) {
-            return;
-        }
+        boolean leaverIsExercise = playData == null || playData.isExercise();
         boolean anyUserInExercise = room.getUsers().values().stream()
                 .anyMatch(u -> u != null && u.isExercise());
-        if (anyUserInExercise) {
+        if (!shouldPunishLeaving(isPlaying, leaverIsExercise, anyUserInExercise)) {
             return;
         }
         log.info(String.format("玩家[%s]主动离开对局，判为战败", Util.getNickNameOfUser(user)));
         gameOverProcessor.handleLoser(user);
+    }
+
+    /**
+     * 有人离开房间时，这一局该不该判他战败。
+     *
+     * 三种情况不判：这一局根本没在进行（还在等人、已经结算）；离开的人自己在做单人练习
+     * （练习不计分，没有胜负可判）；房间里混着练习者（这一局同样不计分，而且用"别人离开"
+     * 去占用 gameOverProcessor 的 loser 位，会把练习者自己结束练习时的判负一起吃掉——
+     * handleLoser 认了第一次就不再认第二次，练习就会卡死在场上）。
+     */
+    public static boolean shouldPunishLeaving(boolean isPlaying, boolean leaverIsExercise,
+            boolean anyUserInExercise) {
+        return isPlaying && !leaverIsExercise && !anyUserInExercise;
     }
 
     /**

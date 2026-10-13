@@ -330,6 +330,7 @@
 | 标准叫法 | 代码标识 | 人话解释 | 注意 |
 |---|---|---|---|
 | 牛粪 | `user_cow_dung_log` | 学习货币（积分）的流水，「牛粪」是它的产品名 | 代码与文案里都叫牛粪 |
+| 魔法泡泡 | 与「牛粪」是同一个字段（`user.cow_dung`），每局输赢的额度由 `sys_param` 的 `CowDungPerGame` 决定（键名见 `server/nnbdc-service/src/main/java/beidanci/service/po/SysParam.java:17`） | 游戏大厅里对这笔学习货币的称呼：开局不预扣，结算时赢家加、输家减 | ⚠️ 同一笔钱两个名字：学习端一律叫「牛粪」，游戏端一律叫「魔法泡泡」，别在用户可见文案里混用 |
 | 学分 / 积分 | `user_score_log` | 学分变更历史 | 与牛粪是两套 |
 | 勋章 | `user_badge` | 已解锁的徽章及获得时间 | |
 | 同桌 / 学习小组 | `study_group`（含 member / post / grade / snapshot） | 班级式学习小组 | |
@@ -356,8 +357,9 @@
 | 长连接断线重连 | 客户端 `SocketIoClient` 的心跳定时器 + 服务端 `SocketService.disconnectExistingConnectionOfUser` | 长连接中断后客户端自动再建一条新连接 | 重连会开新连接、换新会话号；服务端按「一个用户只允许一个连接」处理旧连接 |
 | 连接会话 | `sessionId` | 服务端给每条长连接分配的编号，一个在线用户同一时刻只保留一个有效会话 | 会话号换了，服务端就当成另一条连接 |
 | 单人练习对战 | 客户端 `isExercise`（`app/lib/page/russia.dart`），开局指令 `START_EXERCISE`，服务端回 `BEGIN_EXERCISE` | 房间里还没等到对手时，自己一个人先把这一局打起来（服务端 `StartExerciseProcessor` 把该玩家标记为 `exercise`） | ⚠️ 与 4.4 的「练习模式」（例句看答案后继续练习，`_isPracticeMode`）**完全不是一回事**，指代时必须写全「单人练习对战」 |
-| 开局开场动画 | 客户端 `introProgress` 与 `_buildIntroOverlay()`（`app/lib/page/russia.dart:2578`） | 一局真正开打前先播的全屏字幕：双人对战播「开始对战」（副标题"我方昵称 VS 对手昵称"），单人练习对战播「练习开始」，播完才向服务端要第一包单词 | 时长固定 1700ms（`introDuration`），双人对战与单人练习对战两条开局路径共用；字幕期间不出题、不显示底部答题栏 |
-| 受击光晕 / 治愈光晕 | 客户端 `_hitFlash` / `_healFlash` 与 `_EdgeGlowPainter`（`app/lib/page/russia.dart:3606`） | 对局中屏幕四边亮起的光晕：被对手水雷打中时泛红做警示，我方用飞针治愈时泛绿表示愉悦 | 只有「被对手打击」（服务端 `propsUsed` 里对手发来的水雷）才亮红光，自己答错、漏答掉的血不占用这个警示；两个光晕层都必须包 `IgnorePointer`，否则会挡住点泡泡 |
+| 开局开场动画 | 客户端 `introProgress` 与 `_buildIntroOverlay()`（`app/lib/page/russia.dart:2715`） | 一局真正开打前先播的全屏字幕：双人对战播「开始对战」（副标题"我方昵称 VS 对手昵称"），单人练习对战播「练习开始」，播完才向服务端要第一包单词 | 时长固定 1700ms（`introDuration`），双人对战与单人练习对战两条开局路径共用；字幕期间不出题、不显示底部答题栏 |
+| 受击光晕 / 治愈光晕 | 客户端 `_hitFlash` / `_healFlash` 与 `_EdgeGlowPainter`（`app/lib/page/russia.dart:3743`） | 对局中屏幕四边亮起的光晕：被对手水雷打中时泛红做警示，我方用飞针治愈时泛绿表示愉悦 | 只有「被对手打击」（服务端 `propsUsed` 里对手发来的水雷）才亮红光，自己答错、漏答掉的血不占用这个警示；两个光晕层都必须包 `IgnorePointer`，否则会挡住点泡泡 |
+| 主动离开对局 | 客户端 `_confirmLeaveGame`（`app/lib/page/russia.dart:887`）与 `_leftCurrentGame`；服务端 `ReadyState.handleUserLeft`（`server/nnbdc-service/src/main/java/beidanci/service/socket/system/game/russia/state/ReadyState.java:360`），挂载点是 `RussiaRoom.userLeave`（同目录 `RussiaRoom.java:338`） | 对局进行中用户点返回箭头、点换房间、按系统返回键，或长时间无操作被清理时，服务端当场判他战败、对手判胜，与「断线宽限到点判负」同一套结果 | 单人练习、以及房间里混着练习者的那一局都不判（练习不计分，且不能让"别人离开"抢占 `gameOverProcessor` 的 loser 位，否则练习者自己结束练习时判负会失效）；客户端离开前必须先弹确认说清代价，弹窗开着时 `_confirmLeaveOpen` 会把这一局定住，不能一边犹豫一边被泡泡扣血 |
 
 ### 4.7 词内容资源
 

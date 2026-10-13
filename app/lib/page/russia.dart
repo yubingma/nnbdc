@@ -233,6 +233,11 @@ class RussiaPageState extends State<RussiaPage>
   String gameState = 'waiting'; // waiting, ready, playing, settled
   bool isPlaying = false;
   bool isShowingResult = false;
+  // 用户主动放弃了当前这一局（换房间）：服务端照常按战败记账，
+  // 但本局的结算页不再弹给他看，免得刚换完房又被上一局的结算拦住
+  bool _leftCurrentGame = false;
+  // 离开确认弹窗正开着：这一局先定住，别让用户在犹豫的时候被泡泡偷走一格血
+  bool _confirmLeaveOpen = false;
   bool? isWonInLastGame;
   int scoreAdjust = 0;
   int cowDungAdjust = 0;
@@ -305,6 +310,8 @@ class RussiaPageState extends State<RussiaPage>
   // 屏幕边缘光晕：被对手打击时红色警示、我方治愈时绿色愉悦，强度 1 → 0 衰减
   double _hitFlash = 0.0;
   double _healFlash = 0.0;
+  // 屏幕横向震动强度（1 → 0 衰减）：发射水雷的后坐力、被水雷打中、自家水雷命中对手
+  double _screenShake = 0.0;
 
   final Tts _tts = Tts();
 
@@ -566,6 +573,9 @@ class RussiaPageState extends State<RussiaPage>
       } else if (data is Map) {
         leftUserId = (data['id'] ?? data['userId'])?.toString();
       }
+      // 本局已经出了结果、结算页正开着：对手此时的离场跟这一屏无关，
+      // 别把他刚打完的那局对手昵称顺手清成"等待对手加入..."
+      if (isShowingResult) return;
       if (leftUserId == null || leftUserId == opponentUserId) {
         setState(() {
           opponentUserId = '';
@@ -874,6 +884,126 @@ class RussiaPageState extends State<RussiaPage>
     }
   }
 
+  /// 对局没结束时想走，先把代价说清楚：
+  /// 正式对战判战败（扣 1 个魔法泡泡和积分、对手判胜），单人练习只是这局练习作废
+  Future<bool> _confirmLeaveGame({required bool quitBattle}) async {
+    if (!isPlaying) return true;
+
+    final bool isBattle = !isExercise;
+    _confirmLeaveOpen = true;
+    final bool? ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF0F223D),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: (isBattle ? const Color(0xFFEF4444) : const Color(0xFF34D399))
+                      .withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isBattle ? Icons.emoji_events_rounded : Icons.school_rounded,
+                  color: isBattle ? const Color(0xFFF87171) : const Color(0xFF34D399),
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                quitBattle ? '离开这一局' : '换一个房间',
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isBattle
+                    ? '本局还没分出胜负，离开会判为战败：按战败扣除积分和魔法泡泡，对手判胜。'
+                    : '这局单人练习会直接作废（练习不计分，也不扣魔法泡泡）。',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 14, height: 1.5, color: Colors.white.withValues(alpha: 0.78)),
+              ),
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        backgroundColor: Colors.white.withValues(alpha: 0.08),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('继续对局',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        backgroundColor: const Color(0xFFDC2626),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text(quitBattle ? '判负离开' : '换房间',
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (mounted) {
+      setState(() => _confirmLeaveOpen = false);
+    }
+    return ok ?? false;
+  }
+
+  /// 顶部返回按钮：对局中先确认再走
+  Future<void> _handleExitButtonClicked() async {
+    if (!await _confirmLeaveGame(quitBattle: true)) return;
+    if (!mounted) return;
+    context.pop();
+  }
+
+  /// 换房间：对局中先确认，走之前把本地这一局收拾干净。
+  /// 服务端会按战败记账（积分调整照收），但本局的结算页不再弹给用户看
+  Future<void> _handleChangeRoomClicked() async {
+    if (!await _confirmLeaveGame(quitBattle: false)) return;
+    if (!mounted) return;
+
+    _leftCurrentGame = true;
+    _tts.stop();
+    setState(() {
+      isPlaying = false;
+      isShowingResult = false;
+      currWord = null;
+      bubbles.clear();
+      projectiles.clear();
+      particles.clear();
+      floatingTexts.clear();
+      _opponentOfflineSeconds = 0;
+    });
+
+    sendUserCmd('LEAVE_HALL', []);
+    _enterRoom();
+  }
+
   void _onGameBegin() {
     setState(() {
       _showOpponentJoinedBanner = false;
@@ -906,6 +1036,7 @@ class RussiaPageState extends State<RussiaPage>
       floatingTexts.clear();
       _lastPoppedBubblePos = null;
       introProgress = 0.0;
+      _leftCurrentGame = false;
     });
 
     // 新一局开打：清空上一局的单词包与排队指令。
@@ -1054,6 +1185,9 @@ class RussiaPageState extends State<RussiaPage>
   }
 
   void _handleLoser(String loserId) {
+    // 已经主动放弃这一局了（换房间）：服务端的判负只是记账，不用再给用户看一遍结算页
+    if (_leftCurrentGame) return;
+
     _tts.stop();
     final bool amILoser = (loserId == myUserId);
     setState(() {
@@ -1189,8 +1323,15 @@ class RussiaPageState extends State<RussiaPage>
     setState(() {
       myHp = max(0, myHp - amount);
       myCombo = 0;
-      if (fromOpponent) _hitFlash = 1.0;
+      if (fromOpponent) {
+        _hitFlash = 1.0;
+        _screenShake = 1.0;
+      }
     });
+    if (fromOpponent) {
+      // 挨打的实感：一记闷响，配上前面的红色警示和整块画面被撞一下
+      StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 0.9, volume: 0.7);
+    }
     HapticFeedback.heavyImpact();
     // 向服务端上报当前堆叠行数（堆叠 10 行淘汰，即 10 - myHp）
     sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
@@ -1229,6 +1370,9 @@ class RussiaPageState extends State<RussiaPage>
     sendUserCmd('USE_PROPS', [1]);
     sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
     HapticFeedback.mediumImpact();
+    needleSlotScale = 1.45; // 飞针槽果冻弹跳，点击有回弹的手感
+    // 治愈音效：清亮的魔法音，音高略提，听起来轻盈不厚重
+    StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.25, volume: 0.35);
 
     // 治愈的愉悦感：一串光点从底部上浮
     for (int i = 0; i < 14; i++) {
@@ -1270,6 +1414,10 @@ class RussiaPageState extends State<RussiaPage>
     });
     sendUserCmd('USE_PROPS', [0]);
     HapticFeedback.heavyImpact();
+    mineSlotScale = 1.45; // 水雷槽果冻弹跳
+    _screenShake = 0.5; // 发射后坐力：画面被推一下
+    // 发射的闷响压得比命中更低，听起来是"轰出去"而不是"打到了"
+    StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 0.72, volume: 0.5);
 
     // 对手血条消耗完战败
     if (opponentHp <= 0) {
@@ -1318,7 +1466,13 @@ class RussiaPageState extends State<RussiaPage>
       }
     }
 
-    if (!isPlaying) {
+    // 屏幕反馈的衰减（受击红光、治愈绿光、震动）：跟着全局时钟走，
+    // 不放在 isPlaying 之后——不然确认弹窗一开，画面会冻在震到一半的位置上
+    if (_hitFlash > 0) _hitFlash = max(0.0, _hitFlash - dt * 1.5);
+    if (_healFlash > 0) _healFlash = max(0.0, _healFlash - dt * 1.5);
+    if (_screenShake > 0) _screenShake = max(0.0, _screenShake - dt * 4.0);
+
+    if (!isPlaying || _confirmLeaveOpen) {
       if (mounted) setState(() {});
       return;
     }
@@ -1332,10 +1486,6 @@ class RussiaPageState extends State<RussiaPage>
     if (opponentShake > 0) {
       opponentShake = max(0.0, opponentShake - dt);
     }
-
-    // 受击红色警示 / 治愈绿色光晕的衰减
-    if (_hitFlash > 0) _hitFlash = max(0.0, _hitFlash - dt * 1.5);
-    if (_healFlash > 0) _healFlash = max(0.0, _healFlash - dt * 1.5);
 
     // 1. 泡泡软斥力防重叠
     for (int i = 0; i < bubbles.length; i++) {
@@ -1404,6 +1554,8 @@ class RussiaPageState extends State<RussiaPage>
         p.y -= 750.0 * dt;
         if (p.y <= p.targetY) {
           _createBurstParticles(p.targetX, p.targetY, const Color(0xFF34D399), count: 12);
+          // 治愈到位的那一下"叮"，与起飞时的魔法音凑成两拍，听着更圆满
+          StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.5, volume: 0.3);
           projectiles.removeAt(i);
         }
       } else if (p.type == ProjectileType.mine) {
@@ -1413,6 +1565,8 @@ class RussiaPageState extends State<RussiaPage>
         if (p.progress >= 1.0) {
           _createBurstParticles(p.targetX, p.targetY, const Color(0xFFEF4444), count: 18);
           opponentShake = 0.4;
+          _screenShake = 0.8; // 自家水雷炸在对手身上，画面跟着一顿
+          StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 1.2, volume: 0.6);
           projectiles.removeAt(i);
         }
       } else if (p.type == ProjectileType.rewardMine) {
@@ -1636,7 +1790,7 @@ class RussiaPageState extends State<RussiaPage>
     final topPadding = max(MediaQuery.of(context).padding.top, 16.0);
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Scaffold(
+    final Widget page = Scaffold(
       backgroundColor: const Color(0xFF03142B),
       body: GestureDetector(
         onTapDown: _handleTapDown,
@@ -1668,9 +1822,7 @@ class RussiaPageState extends State<RussiaPage>
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new_rounded,
                         color: Colors.white, size: 22),
-                    onPressed: () {
-                      context.pop();
-                    },
+                    onPressed: _handleExitButtonClicked,
                   ),
                   const Spacer(),
                   Container(
@@ -1722,10 +1874,7 @@ class RussiaPageState extends State<RussiaPage>
                   IconButton(
                     icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 22),
                     tooltip: '换房间',
-                    onPressed: () {
-                      sendUserCmd('LEAVE_HALL', []);
-                      _enterRoom();
-                    },
+                    onPressed: _handleChangeRoomClicked,
                   ),
                 ],
               ),
@@ -1808,6 +1957,24 @@ class RussiaPageState extends State<RussiaPage>
                 child: _buildResultDialog(size),
               ),
           ],
+        ),
+      ),
+    );
+
+    // 对局还没结束时，系统返回键也要先问一句，不能一按就溜走
+    return PopScope(
+      canPop: !isPlaying,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleExitButtonClicked();
+      },
+      // 打击感：发射后坐力、被水雷打中、自家水雷命中，整块画面横向顿一下。
+      // 用 cos 起手（强度为 1 时位移最大），外侧垫一层同色底，震动时不露白边
+      child: ColoredBox(
+        color: const Color(0xFF03142B),
+        child: Transform.translate(
+          offset: Offset(cos(_screenShake * 62) * 7.0 * _screenShake, 0),
+          child: page,
         ),
       ),
     );
