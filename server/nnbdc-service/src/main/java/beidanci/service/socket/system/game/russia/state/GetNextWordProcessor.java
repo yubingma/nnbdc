@@ -162,7 +162,7 @@ public final class GetNextWordProcessor {
             }
         }
 
-        // 如果连对3次，奖励道具（加一行/水雷 vs 减一行/飞针 50/50），与前端每连对 3 次奖励道具一致
+        // 如果连对3次，奖励道具（加一行/水雷 vs 减一行/海星 50/50），与前端每连对 3 次奖励道具一致
         if (userPlayData.getCorrectCount() >= 3 && userPlayData.getCorrectCount() % 3 == 0) {
             int props = java.util.concurrent.ThreadLocalRandom.current().nextInt(2); // 0 或 1
             userPlayData.getPropsCounts()[props]++;
@@ -172,9 +172,9 @@ public final class GetNextWordProcessor {
             if (user.getUserName() != null && user.getUserName().startsWith("bot_")) {
                 int c0 = userPlayData.getPropsCounts()[0];
                 int c1 = userPlayData.getPropsCounts()[1];
-                log.info(String.format("机器人[%s] 连击获得道具[%s]，道具库存：水雷(0)=%d，飞针(1)=%d",
+                log.info(String.format("机器人[%s] 连击获得道具[%s]，道具库存：水雷(0)=%d，海星(1)=%d",
                         Util.getNickNameOfUser(user),
-                        (props == 0 ? "水雷(0)" : "飞针(1)"), c0, c1));
+                        (props == 0 ? "水雷(0)" : "海星(1)"), c0, c1));
             }
         }
 

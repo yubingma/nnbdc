@@ -156,7 +156,7 @@ public class ReadyState extends RoomState {
                 }, attackDelay);
             }
 
-            // 2. 自救逻辑（飞针/减一行 - 索引1）：有就自救治愈，带点随机延迟
+            // 2. 自救逻辑（海星/减一行 - 索引1）：有就自救治愈，带点随机延迟
             if (currentBotData.getPropsCounts()[1] > 0 && botPropsDelayTask == null) {
                 long delayMs = 500L + (long) (Math.random() * 1300L);
                 botPropsDelayTask = new TimerTask() {
@@ -174,7 +174,7 @@ public class ReadyState extends RoomState {
                                 propsCmd.setCmd("USE_PROPS");
                                 propsCmd.setArgs(new String[] { "1" });
                                 room.processUserCmd(botUserObj, propsCmd);
-                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了飞针道具(自救治愈)");
+                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了海星道具(自救治愈)");
                             }
                             botPropsDelayTask = null;
                         } catch (Exception ignored) {

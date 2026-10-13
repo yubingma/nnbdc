@@ -93,10 +93,10 @@ class FloatingText {
 
 /// 弹道类型
 enum ProjectileType {
-  needle,       // 使用道具：飞针直奔血条
+  starfish,       // 使用道具：海星直奔血条
   mine,         // 使用道具：水雷弧线轰击血条
   rewardMine,   // 获得道具：水雷能量球飞向左下角道具区
-  rewardNeedle, // 获得道具：飞针能量球飞向右下角道具区
+  rewardStarfish, // 获得道具：海星能量球飞向右下角道具区
 }
 
 /// 飞行弹道与战利品光球
@@ -111,12 +111,12 @@ class GameProjectile {
   double progress = 0.0;
   final int targetCount;
 
-  GameProjectile.needle({
+  GameProjectile.starfish({
     required this.x,
     required this.y,
     required this.targetX,
     required this.targetY,
-  })  : type = ProjectileType.needle,
+  })  : type = ProjectileType.starfish,
         startX = x,
         startY = y,
         targetCount = 0;
@@ -141,13 +141,13 @@ class GameProjectile {
         x = startX,
         y = startY;
 
-  GameProjectile.rewardNeedle({
+  GameProjectile.rewardStarfish({
     required this.startX,
     required this.startY,
     required this.targetX,
     required this.targetY,
     required this.targetCount,
-  })  : type = ProjectileType.rewardNeedle,
+  })  : type = ProjectileType.rewardStarfish,
         x = startX,
         y = startY;
 }
@@ -320,9 +320,9 @@ class RussiaPageState extends State<RussiaPage>
   int myMaxCombo = 0;
   int myWordIndex = 0;
   int attackProps = 0;
-  int purgeProps = 0;
+  int healProps = 0;
   double mineSlotScale = 1.0;
-  double needleSlotScale = 1.0;
+  double starfishSlotScale = 1.0;
   bool myStarted = false;
   int myTotalScore = 0;
   int myCowDung = 0;
@@ -800,14 +800,14 @@ class RussiaPageState extends State<RussiaPage>
           targetCount: count,
         ));
       } else {
-        // 飞针奖励：飞向左下角飞针道具槽，落地后精准同步库存
-        final double needleTargetX = 36.0;
-        final double needleTargetY = size.height - bottomBarHeight * 0.5;
-        projectiles.add(GameProjectile.rewardNeedle(
+        // 海星奖励：飞向左下角海星道具槽，落地后精准同步库存
+        final double starfishTargetX = 36.0;
+        final double starfishTargetY = size.height - bottomBarHeight * 0.5;
+        projectiles.add(GameProjectile.rewardStarfish(
           startX: startX,
           startY: startY,
-          targetX: needleTargetX,
-          targetY: needleTargetY,
+          targetX: starfishTargetX,
+          targetY: starfishTargetY,
           targetCount: count,
         ));
       }
@@ -825,14 +825,14 @@ class RussiaPageState extends State<RussiaPage>
           // 对手对我发射了水雷！我方生命扣 1 格，并点亮屏幕边缘红色警示
           _applyDamage(1, reason: '💥 遭受对手水雷轰击！-1 HP', fromOpponent: true);
         } else {
-          // 对手使用了飞针治愈自己！对手生命加 1 格
+          // 对手使用了海星治愈自己！对手生命加 1 格
           setState(() {
             opponentHp = min(maxHp, opponentHp + 1);
           });
           floatingTexts.add(FloatingText(
             x: 70,
             y: 120,
-            text: '💖 对手治愈 +1 HP',
+            text: '💚 对手用海星治愈 +1 HP',
             color: const Color(0xFFFBBF24),
           ));
         }
@@ -1147,7 +1147,7 @@ class RussiaPageState extends State<RussiaPage>
       myHp = maxHp;
       opponentHp = maxHp;
       attackProps = 0;
-      purgeProps = 0;
+      healProps = 0;
       isPlaying = true;
       gameState = 'playing';
       isShowingResult = false;
@@ -1475,7 +1475,7 @@ class RussiaPageState extends State<RussiaPage>
     }
   }
 
-  bool _firePurgeNeedle(Size size) {
+  bool _fireHealStarfish(Size size) {
     if (myHp >= maxHp) {
       floatingTexts.add(FloatingText(
         x: size.width * 0.28,
@@ -1486,14 +1486,14 @@ class RussiaPageState extends State<RussiaPage>
       return false;
     }
     setState(() {
-      purgeProps = max(0, purgeProps - 1);
+      healProps = max(0, healProps - 1);
       myHp = min(maxHp, myHp + 1);
       _healFlash = 1.0;
     });
     sendUserCmd('USE_PROPS', [1]);
     sendUserCmd('REPORT_STACK_ROWS', [maxHp - myHp]);
     HapticFeedback.mediumImpact();
-    needleSlotScale = 1.45; // 飞针槽果冻弹跳，点击有回弹的手感
+    starfishSlotScale = 1.45; // 海星槽果冻弹跳，点击有回弹的手感
     // 治愈音效：清亮的魔法音，音高略提，听起来轻盈不厚重
     StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.25, volume: 0.35);
 
@@ -1510,11 +1510,11 @@ class RussiaPageState extends State<RussiaPage>
       ));
     }
 
-    // 治愈光针弹道（从左下角飞针小图标射向左侧我方顶部血条）
+    // 治愈海星弹道（从左下角海星小图标飞向左侧我方顶部血条）
     final mediaQuery = MediaQuery.maybeOf(context);
     final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
     final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
-    projectiles.add(GameProjectile.needle(
+    projectiles.add(GameProjectile.starfish(
       x: 36,
       y: size.height - bottomBarHeight * 0.5,
       targetX: size.width * 0.25,
@@ -1524,7 +1524,7 @@ class RussiaPageState extends State<RussiaPage>
     floatingTexts.add(FloatingText(
       x: size.width * 0.28,
       y: 95,
-      text: '💖 飞针治愈 +1 HP!',
+      text: '💚 海星治愈 +1 HP!',
       color: const Color(0xFF34D399),
     ));
     return true;
@@ -1673,7 +1673,7 @@ class RussiaPageState extends State<RussiaPage>
     // 3. 弹道飞行物更新
     for (int i = projectiles.length - 1; i >= 0; i--) {
       final p = projectiles[i];
-      if (p.type == ProjectileType.needle) {
+      if (p.type == ProjectileType.starfish) {
         p.y -= 750.0 * dt;
         if (p.y <= p.targetY) {
           _createBurstParticles(p.targetX, p.targetY, const Color(0xFF34D399), count: 12);
@@ -1722,7 +1722,7 @@ class RussiaPageState extends State<RussiaPage>
           HapticFeedback.mediumImpact();
           projectiles.removeAt(i);
         }
-      } else if (p.type == ProjectileType.rewardNeedle) {
+      } else if (p.type == ProjectileType.rewardStarfish) {
         p.progress += dt * 1.1;
         p.x = p.startX + (p.targetX - p.startX) * p.progress;
         p.y = p.startY + (p.targetY - p.startY) * p.progress - sin(p.progress * pi) * 90.0;
@@ -1739,13 +1739,13 @@ class RussiaPageState extends State<RussiaPage>
           ));
         }
         if (p.progress >= 1.0) {
-          purgeProps = p.targetCount;
-          needleSlotScale = 1.45; // 触发右下角飞针槽果冻弹跳
+          healProps = p.targetCount;
+          starfishSlotScale = 1.45; // 触发右下角海星槽果冻弹跳
           _createBurstParticles(p.targetX, p.targetY, const Color(0xFF34D399), count: 20);
           floatingTexts.add(FloatingText(
             x: p.targetX,
             y: p.targetY - 32,
-            text: '+1 💖',
+            text: '+1 💚',
             color: const Color(0xFF34D399),
           ));
           StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.35, volume: 0.04);
@@ -1759,8 +1759,8 @@ class RussiaPageState extends State<RussiaPage>
     if (mineSlotScale > 1.0) {
       mineSlotScale = max(1.0, mineSlotScale - dt * 2.5);
     }
-    if (needleSlotScale > 1.0) {
-      needleSlotScale = max(1.0, needleSlotScale - dt * 2.5);
+    if (starfishSlotScale > 1.0) {
+      starfishSlotScale = max(1.0, starfishSlotScale - dt * 2.5);
     }
 
     // 6. 粒子更新
@@ -2035,7 +2035,7 @@ class RussiaPageState extends State<RussiaPage>
                 child: _buildWaitingOverlay(),
               ),
 
-            // 5. 底部整合控制与题目栏：左侧水雷道具 + 中间中文释义题目 + 右侧飞针道具
+            // 5. 底部整合控制与题目栏：左侧海星道具 + 中间中文释义题目 + 右侧水雷道具
             if (isPlaying && !isIntroPlaying)
               Positioned(
                 bottom: 0,
@@ -2738,7 +2738,7 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
-  /// 底部整合操作与题目栏：左侧飞针道具（治愈我方） + 中间中文释义题目 + 右侧水雷道具（攻击对手）
+  /// 底部整合操作与题目栏：左侧海星道具（治愈我方） + 中间中文释义题目 + 右侧水雷道具（攻击对手）
   Widget _buildBottomBar(Size size, double bottomPadding) {
     final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
     return Container(
@@ -2769,7 +2769,7 @@ class RussiaPageState extends State<RussiaPage>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildPurgeNeedleProp(size),
+          _buildHealStarfishProp(size),
           const SizedBox(width: 8),
           Expanded(
             child: _buildTargetPromptCard(),
@@ -3177,22 +3177,22 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
-  /// 左侧给自己加血的战术道具小图标（治愈飞针）
-  Widget _buildPurgeNeedleProp(Size size) {
-    final bool hasProp = purgeProps > 0;
+  /// 左侧给自己加血的战术道具小图标（治愈海星）
+  Widget _buildHealStarfishProp(Size size) {
+    final bool hasProp = healProps > 0;
     return Transform.scale(
-      scale: needleSlotScale,
+      scale: starfishSlotScale,
       alignment: Alignment.center,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
           if (hasProp) {
-            _firePurgeNeedle(size);
+            _fireHealStarfish(size);
           } else {
             floatingTexts.add(FloatingText(
               x: 55,
               y: size.height - 120,
-              text: '连对3次可得飞针!',
+              text: '连对3次可得海星!',
               color: Colors.white70,
             ));
           }
@@ -3231,8 +3231,13 @@ class RussiaPageState extends State<RussiaPage>
                       ]
                     : [],
               ),
-              child: const Center(
-                child: Text('💖', style: TextStyle(fontSize: 20)),
+              child: Center(
+                child: CustomPaint(
+                  size: const Size(26, 26),
+                  painter: _StarfishPainter(
+                    color: hasProp ? const Color(0xFF6EE7B7) : const Color(0xFF64748B),
+                  ),
+                ),
               ),
             ),
             Positioned(
@@ -3246,7 +3251,7 @@ class RussiaPageState extends State<RussiaPage>
                   border: Border.all(color: Colors.white, width: 1),
                 ),
                 child: Text(
-                  '$purgeProps',
+                  '$healProps',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -4020,6 +4025,49 @@ class RussiaPageState extends State<RussiaPage>
   }
 }
 
+/// 画一颗海星：五条圆头腕从中心伸出去，再叠一个体盘把它们缝成一体。
+/// 不走"圆角五角星"那条路——那样画出来是一颗星星，不是海星
+void paintStarfish(Canvas canvas, Rect rect, Color color) {
+  final Offset center = rect.center;
+  final double armLength = rect.shortestSide * 0.42;
+  final double armWidth = rect.shortestSide * 0.30;
+
+  final Paint armPaint = Paint()
+    ..color = color
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = armWidth
+    ..strokeCap = StrokeCap.round;
+
+  for (int i = 0; i < 5; i++) {
+    final double angle = -pi / 2 + i * 2 * pi / 5;
+    final Offset direction = Offset(cos(angle), sin(angle));
+    canvas.drawLine(
+      center + direction * (armLength * 0.16),
+      center + direction * armLength,
+      armPaint,
+    );
+  }
+
+  // 中心体盘：把五条腕连成一个整体
+  canvas.drawCircle(center, armWidth * 0.72, Paint()..color = color);
+}
+
+/// 治愈道具「海星」的槽位图标
+class _StarfishPainter extends CustomPainter {
+  const _StarfishPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double inset = size.shortestSide * 0.14;
+    paintStarfish(canvas, (Offset.zero & size).deflate(inset), color);
+  }
+
+  @override
+  bool shouldRepaint(_StarfishPainter oldDelegate) => oldDelegate.color != color;
+}
+
 /// 屏幕四边向中间晕开的光晕：被打击时红色警示、我方治愈时绿色愉悦
 class _EdgeGlowPainter extends CustomPainter {
   _EdgeGlowPainter({required this.color, required this.strength});
@@ -4429,15 +4477,15 @@ class _UnderseaScenePainter extends CustomPainter {
   }
 
   void _drawProjectile(Canvas canvas, GameProjectile p) {
-    if (p.type == ProjectileType.needle) {
-      final needlePaint = Paint()
+    if (p.type == ProjectileType.starfish) {
+      final starfishPaint = Paint()
         ..color = const Color(0xFFFBBF24)
         ..strokeWidth = 3.5
         ..strokeCap = StrokeCap.round;
       canvas.drawLine(
         Offset(p.x, p.y + 16),
         Offset(p.x, p.y - 10),
-        needlePaint,
+        starfishPaint,
       );
       final glowPaint = Paint()
         ..color = Colors.white
@@ -4469,8 +4517,8 @@ class _UnderseaScenePainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
       textPainter.paint(canvas, Offset(p.x - textPainter.width / 2, p.y - textPainter.height / 2));
-    } else if (p.type == ProjectileType.rewardNeedle) {
-      // 获得道具飞针：晶莹翡翠绿微光光球，带有治愈光晕与专属治愈图标
+    } else if (p.type == ProjectileType.rewardStarfish) {
+      // 获得道具海星：晶莹翡翠绿微光光球，带有治愈光晕与专属治愈图标
       final outerGlow = Paint()
         ..color = const Color(0xFF10B981).withValues(alpha: 0.35)
         ..style = PaintingStyle.fill;
@@ -4481,11 +4529,12 @@ class _UnderseaScenePainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(p.x, p.y), 13.0, corePaint);
 
-      final textPainter = TextPainter(
-        text: const TextSpan(text: '💖', style: TextStyle(fontSize: 14)),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      textPainter.paint(canvas, Offset(p.x - textPainter.width / 2, p.y - textPainter.height / 2));
+      // 奖励光球中心就是那颗海星本体，不再借爱心 emoji 顶替
+      paintStarfish(
+        canvas,
+        Rect.fromCircle(center: Offset(p.x, p.y), radius: 8.0),
+        const Color(0xFFECFDF5),
+      );
     }
   }
 
