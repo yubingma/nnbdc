@@ -3266,6 +3266,40 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
+  /// 结算弹窗「对方视角」下的回切提示条。
+  ///
+  /// 21 个字的提示本身就贴着弹窗内宽排：真机报错时这一行只有 255 可用，
+  /// 而 11px 的文字在 1.15 倍字号下要占 270.7，再叠图标 14 与间距 6 共 290.7。
+  /// 所以文字必须交给弹性布局自己折行，不能按自然宽度把 Row 撑爆。
+  static Widget resultBackHintBar() {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF97316).withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFFFB923C)),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              '点击上方【我方】即可随时切回自己的结算数据',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: const Color(0xFFFDBA74).withValues(alpha: 0.9),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 游戏结算与用户分数面板
   Widget _buildResultDialog(Size size) {
     final bool isWon = (isWonInLastGame == true);
@@ -3829,29 +3863,7 @@ class RussiaPageState extends State<RussiaPage>
 
                   // 4. 生词本与零失误贴心提示 / 对方视角友好提示
                   if (_selectedResultPlayerIndex == 1)
-                    Container(
-                      margin: const EdgeInsets.only(top: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF97316).withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.22)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFFFB923C)),
-                          const SizedBox(width: 6),
-                          Text(
-                            '点击上方【我方】即可随时切回自己的结算数据',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: const Color(0xFFFDBA74).withValues(alpha: 0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
+                    resultBackHintBar()
                   else if (_wrongWordsInGame.isNotEmpty)
                     Container(
                       margin: const EdgeInsets.only(top: 10),
