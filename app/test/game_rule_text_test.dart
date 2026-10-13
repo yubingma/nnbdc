@@ -29,12 +29,16 @@ void main() {
 
     test('道具与生命规则必须与实现口径一致', () {
       final rules = rulesSection();
-      // 连对 3 题必掉 1 个（服务端 correctCount % 3），水雷/海星各 50%
+      // 连对 3 题必掉 1 个（服务端 correctCount % 3）
       expect(rules, contains('海星'));
       expect(rules, contains('水雷'));
       expect(rules, contains('连续答对 3 题'));
       // 10 格生命（maxHp）
       expect(rules, contains('10 格生命'));
+      // 掉率 2:1（服务端 rollRewardProps）：文案不能退回"各占一半"
+      expect(rules, contains('水雷 2/3'));
+      expect(rules, contains('海星 1/3'));
+      expect(rules, isNot(contains('各占一半')));
     });
   });
 }

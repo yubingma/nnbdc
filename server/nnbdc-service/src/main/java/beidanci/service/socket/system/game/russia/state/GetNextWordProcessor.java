@@ -162,9 +162,9 @@ public final class GetNextWordProcessor {
             }
         }
 
-        // 如果连对3次，奖励道具（加一行/水雷 vs 减一行/海星 50/50），与前端每连对 3 次奖励道具一致
+        // 如果连对3次，奖励道具（水雷 vs 海星 2:1），与前端每连对 3 次奖励道具一致
         if (userPlayData.getCorrectCount() >= 3 && userPlayData.getCorrectCount() % 3 == 0) {
-            int props = java.util.concurrent.ThreadLocalRandom.current().nextInt(2); // 0 或 1
+            int props = rollRewardProps(java.util.concurrent.ThreadLocalRandom.current().nextInt(3));
             userPlayData.getPropsCounts()[props]++;
             room.sendEventToUser(user, "giveProps",
                     new int[]{props, userPlayData.getPropsCounts()[props]});
@@ -186,6 +186,19 @@ public final class GetNextWordProcessor {
             words.add(wordObj);
             return wordObj;
         }
+    }
+
+    /**
+     * 连对奖励掉哪个道具：水雷 2/3、海星 1/3（进攻道具更常见，让对局更主动）。
+     *
+     * 配比单独抽出来，是为了这个产品参数能被单测钉住——它是要调的，
+     * 不该埋在随机数调用里没人看得见。
+     *
+     * @param dice 0、1、2 三个等概率取值
+     * @return 0=水雷（2/3），1=海星（1/3）
+     */
+    public static int rollRewardProps(int dice) {
+        return dice < 2 ? 0 : 1;
     }
 
     /**

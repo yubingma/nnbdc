@@ -221,167 +221,16 @@ class _GamePageState extends State<GamePage> {
   void _showGameRuleDialog(BuildContext context) {
     final themeStyle = context.read<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
-    final cardBorder = themeConfig.cardBorder;
-    final textMain = themeConfig.textPrimary;
-    final textSub = themeConfig.textSecondary;
-    final accentColor = themeConfig.primaryColor;
-    // 规则弹框作为 modal，取更实的底色，避免底下大厅内容透出来
-    final dialogBg = themeConfig.isDark
-        ? const Color(0xFF1C2127)
-        : themeConfig.cardBg.withValues(alpha: 0.96);
-
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
-      builder: (ctx) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
-            decoration: BoxDecoration(
-              color: dialogBg,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: cardBorder, width: 1),
-              boxShadow: themeConfig.cardShadows,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: themeConfig.subtleBg,
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: Icon(Icons.help_outline_rounded,
-                              size: 20, color: accentColor),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '对战玩法规则',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: textMain,
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close_rounded, size: 20, color: textSub),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                _buildRuleItem('1', '升腾答题', '底部显示中文释义，英文单词泡泡从海底升腾；在泡泡冒过顶部警戒线之前，点中拼写正确的那一个。',
-                    textMain, textSub),
-                const SizedBox(height: 9),
-                _buildRuleItem('2', '失误惩罚', '答错或漏答都会消耗 1 格生命，答错的单词会自动记入生词本。',
-                    textMain, textSub),
-                const SizedBox(height: 9),
-                _buildRuleItem(
-                    '3',
-                    '连对道具',
-                    '每连续答对 3 题必得 1 个道具，水雷与海星各占一半机会：水雷轰掉对手 1 格生命，海星给自己补回 1 格。',
-                    textMain,
-                    textSub),
-                const SizedBox(height: 9),
-                _buildRuleItem('4', '胜负判定', '双方各有 10 格生命，谁先被扣光谁就判负。',
-                    textMain, textSub),
-                const SizedBox(height: 9),
-                _buildRuleItem(
-                    '5',
-                    '匹配与开房',
-                    '【匹配】自动寻找在线学友快速对战；【开房/进房】房主开房生成房间号，好友输入房间号即可私密切磋。',
-                    textMain,
-                    textSub),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: accentColor,
-                      foregroundColor: themeStyle.isDark
-                          ? const Color(0xFF0B1714)
-                          : Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22)),
-                    ),
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('我知道了',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w800, fontSize: 14)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (ctx) => GameRulesDialog(
+        themeStyle: themeStyle,
+        themeConfig: themeConfig,
+      ),
     );
   }
 
-  Widget _buildRuleItem(
-      String index, String title, String desc, Color textMain, Color textSub) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 18,
-          height: 18,
-          margin: const EdgeInsets.only(top: 2),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: textSub.withValues(alpha: 0.15),
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            index,
-            style: TextStyle(
-                fontSize: 10.5, fontWeight: FontWeight.w700, color: textMain),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: '$title：',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: textMain,
-                    height: 1.45,
-                  ),
-                ),
-                TextSpan(
-                  text: desc,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                    color: textSub,
-                    height: 1.45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -864,6 +713,175 @@ class _GamePageState extends State<GamePage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 「对战玩法规则」弹窗。
+///
+/// 抽成独立组件，是为了让放大字号下的布局能被 widget 测试直接验证——
+/// 这里曾经把按钮高度和序号圆圈都写死成像素，iPad 上系统字号调大后
+/// 按钮文字的下半截就被裁掉了。
+class GameRulesDialog extends StatelessWidget {
+  const GameRulesDialog({
+    super.key,
+    required this.themeStyle,
+    required this.themeConfig,
+  });
+
+  final AppThemeStyle themeStyle;
+  final AppThemeConfig themeConfig;
+
+  @override
+  Widget build(BuildContext context) {
+    final cardBorder = themeConfig.cardBorder;
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    // 规则弹框作为 modal，取更实的底色，避免底下大厅内容透出来
+    final dialogBg = themeConfig.isDark
+        ? const Color(0xFF1C2127)
+        : themeConfig.cardBg.withValues(alpha: 0.96);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+        decoration: BoxDecoration(
+          color: dialogBg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: cardBorder, width: 1),
+          boxShadow: themeConfig.cardShadows,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: themeConfig.subtleBg,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(Icons.help_outline_rounded,
+                          size: 20, color: accentColor),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '对战玩法规则',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: textMain,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: Icon(Icons.close_rounded, size: 20, color: textSub),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _buildRuleItem('1', '升腾答题', '底部显示中文释义，英文单词泡泡从海底升腾；在泡泡冒过顶部警戒线之前，点中拼写正确的那一个。',
+                textMain, textSub),
+            const SizedBox(height: 9),
+            _buildRuleItem('2', '失误惩罚', '答错或漏答都会消耗 1 格生命，答错的单词会自动记入生词本。',
+                textMain, textSub),
+            const SizedBox(height: 9),
+            _buildRuleItem('3', '连对道具', '每连续答对 3 题必得 1 个道具，水雷 2/3、海星 1/3：水雷轰掉对手 1 格生命，海星给自己补回 1 格。',
+                textMain, textSub),
+            const SizedBox(height: 9),
+            _buildRuleItem('4', '胜负判定', '双方各有 10 格生命，谁先被扣光谁就判负。',
+                textMain, textSub),
+            const SizedBox(height: 9),
+            _buildRuleItem('5', '匹配与开房', '【匹配】自动寻找在线学友快速对战；【开房/进房】房主开房生成房间号，好友输入房间号即可私密切磋。',
+                textMain, textSub),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor:
+                      themeStyle.isDark ? const Color(0xFF0B1714) : Colors.white,
+                  elevation: 0,
+                  // 只定下限、不写死高度：写死 44 时，系统字号调大后文字行高超过 44，
+                  // 下半截会被容器裁掉（iPad 上就是这个表现）
+                  minimumSize: const Size.fromHeight(44),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22)),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('我知道了',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRuleItem(
+      String index, String title, String desc, Color textMain, Color textSub) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          // 同理不写死 18x18：序号也是文字，字号放大后圆圈得跟着长
+          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+          margin: const EdgeInsets.only(top: 2),
+          padding: const EdgeInsets.all(3),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: textSub.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            index,
+            style: TextStyle(
+                fontSize: 10.5, fontWeight: FontWeight.w700, color: textMain),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$title：',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: textMain,
+                    height: 1.45,
+                  ),
+                ),
+                TextSpan(
+                  text: desc,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: textSub,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
