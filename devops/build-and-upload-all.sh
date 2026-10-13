@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # ==============================================================================
-# 全平台 App 构建与上传总控流水线 (iOS App Store + 华为应用市场 + 小米应用商店)
+# 全平台 App 构建与上传总控流水线 (iOS App Store + 华为应用市场；小米应用商店暂时跳过)
+#
+# 小米应用商店当前暂停发布：默认 ENABLE_XIAOMI=false，本流水线不构建也不上传小米渠道。
+# 恢复发布时，把下方「标志与参数」里的 ENABLE_XIAOMI 改回 true；
+# 只想单独发小米时，也可直接运行 devops/build-and-upload-xiaomi.sh。
 #
 # 特性：
 # 1. 统一前置预检 (版本号、min_ver_code、工具链、全渠道凭证提前验证，避免中途报错)
@@ -47,7 +51,7 @@ mkdir -p "$TMP_DIR"
 # 标志与参数
 ENABLE_IOS=true
 ENABLE_HUAWEI=true
-ENABLE_XIAOMI=true
+ENABLE_XIAOMI=false   # 小米应用商店暂时跳过，恢复发布时改回 true
 SKIP_TESTS=false
 BUILD_ONLY=false
 UPLOAD_ONLY=false
@@ -63,7 +67,6 @@ show_usage() {
   --skip-tests          跳过全局单元测试步骤
   --skip-ios            跳过 iOS 平台的构建与上传
   --skip-huawei         跳过华为平台的构建与上传
-  --skip-xiaomi         跳过小米平台的构建与上传
   --build-only          仅构建所有平台的安装包（不上传）
   --upload-only         仅上传已有构建产物（不重新构建与测试）
   --skip-clean          iOS 构建时跳过 flutter clean
@@ -103,10 +106,6 @@ parse_args() {
                 ;;
             --skip-huawei)
                 ENABLE_HUAWEI=false
-                shift
-                ;;
-            --skip-xiaomi)
-                ENABLE_XIAOMI=false
                 shift
                 ;;
             --build-only)
@@ -271,9 +270,9 @@ preflight_check() {
         print_info "✅ 小米 Python 环境与凭证检查通过"
     fi
 
-    # 检查是否至少启用了一个平台
-    if [ "$ENABLE_IOS" = false ] && [ "$ENABLE_HUAWEI" = false ] && [ "$ENABLE_XIAOMI" = false ]; then
-        print_error "未启用任何平台！请不要同时指定 --skip-ios 和 --skip-huawei 和 --skip-xiaomi。"
+    # 检查是否至少启用了一个平台（小米平台当前已默认跳过，不参与此处判断）
+    if [ "$ENABLE_IOS" = false ] && [ "$ENABLE_HUAWEI" = false ]; then
+        print_error "未启用任何平台！请不要同时指定 --skip-ios 和 --skip-huawei。"
         exit 1
     fi
 }
