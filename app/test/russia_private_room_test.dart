@@ -51,4 +51,61 @@ void main() {
           reason: '监听必须在 _cleanupSocketListeners 里注销，否则离开页面后残留');
     });
   });
+
+  group('换房间不能又回到原来那一间', () {
+    test('按房号进来的客人点换房 → 走大厅匹配，不再重放那个房号', () {
+      expect(
+        RussiaPageState.roomEntryFor(switchRoom: true, extraArgs: {'joinRoomId': '1'}),
+        RoomEntry.match,
+      );
+    });
+
+    test('房主点换房 → 也走大厅匹配，不再自动开一间新房', () {
+      expect(
+        RussiaPageState.roomEntryFor(
+            switchRoom: true, extraArgs: {'mode': 'createPrivate'}),
+        RoomEntry.match,
+      );
+    });
+
+    test('首次进入仍按路由意图走：开房 / 按房号进房 / 匹配', () {
+      expect(
+        RussiaPageState.roomEntryFor(
+            switchRoom: false, extraArgs: {'mode': 'createPrivate'}),
+        RoomEntry.createPrivate,
+      );
+      expect(
+        RussiaPageState.roomEntryFor(switchRoom: false, extraArgs: {'joinRoomId': '7'}),
+        RoomEntry.joinById,
+      );
+      expect(
+        RussiaPageState.roomEntryFor(switchRoom: false, extraArgs: null),
+        RoomEntry.match,
+      );
+    });
+
+    test('换房时排除的房间号就是当前这一间', () {
+      expect(
+        RussiaPageState.roomToExcludeOnEnter(
+            switchRoom: true, currentRoomId: 1, routeExceptRoom: null),
+        1,
+      );
+    });
+
+    test('换房时当前房号还没下发 → 退回路由带来的排除值', () {
+      expect(
+        RussiaPageState.roomToExcludeOnEnter(
+            switchRoom: true, currentRoomId: null, routeExceptRoom: 9),
+        9,
+      );
+    });
+
+    test('首次进入不看当前房号，只认路由带来的排除值', () {
+      expect(
+        RussiaPageState.roomToExcludeOnEnter(
+            switchRoom: false, currentRoomId: 3, routeExceptRoom: null),
+        isNull,
+      );
+    });
+  });
 }

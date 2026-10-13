@@ -173,6 +173,18 @@ class AmbientBubble {
   });
 }
 
+/// 进入游戏房间的方式
+enum RoomEntry {
+  /// 开一间私房（当房主）
+  createPrivate,
+
+  /// 按房号进别人的私房（当客人）
+  joinById,
+
+  /// 大厅匹配
+  match,
+}
+
 /// 泡泡对战（全新升级取代旧版俄罗斯方块）
 class RussiaPage extends StatefulWidget {
   const RussiaPage({super.key});
@@ -502,13 +514,48 @@ class RussiaPageState extends State<RussiaPage>
     }
   }
 
-  void _enterRoom() {
-    if (extraArgs != null && extraArgs!['mode'] == 'createPrivate') {
-      sendUserCmd('CREATE_PRIVATE_ROOM', [gameHall.id]);
-    } else if (extraArgs != null && extraArgs!['joinRoomId'] != null) {
-      sendUserCmd('JOIN_ROOM_BY_ID', [gameHall.id, extraArgs!['joinRoomId']]);
-    } else {
-      sendUserCmd('ENTER_GAME_HALL', [gameHall.id, exceptRoom ?? '']);
+  /// 进房时该排除的房间号：换房间必须排除当前这一间，首次进入才用路由带来的排除值
+  static int? roomToExcludeOnEnter({
+    required bool switchRoom,
+    required int? currentRoomId,
+    required int? routeExceptRoom,
+  }) =>
+      switchRoom ? (currentRoomId ?? routeExceptRoom) : routeExceptRoom;
+
+  /// 这次进房该用哪种方式。
+  ///
+  /// 「换房间」一律按大厅匹配走：若还沿用路由里带来的"开房 / 按房号进房"意图，
+  /// 按房号进来的客人会把同一串房号再输一遍，人又被塞回原来那一间——
+  /// 表现出来就是"换了房，房号还是原来那个"。
+  static RoomEntry roomEntryFor({
+    required bool switchRoom,
+    required Map<String, dynamic>? extraArgs,
+  }) {
+    if (switchRoom) return RoomEntry.match;
+    if (extraArgs?['mode'] == 'createPrivate') return RoomEntry.createPrivate;
+    if (extraArgs?['joinRoomId'] != null) return RoomEntry.joinById;
+    return RoomEntry.match;
+  }
+
+  /// 进房。[switchRoom] 表示用户点的是「换房间」
+  void _enterRoom({bool switchRoom = false}) {
+    final RoomEntry entry = roomEntryFor(switchRoom: switchRoom, extraArgs: extraArgs);
+    // 换房之后既不是那个私房的房主、也不是那个私房的客人了
+    if (switchRoom) extraArgs = null;
+
+    switch (entry) {
+      case RoomEntry.createPrivate:
+        sendUserCmd('CREATE_PRIVATE_ROOM', [gameHall.id]);
+      case RoomEntry.joinById:
+        sendUserCmd('JOIN_ROOM_BY_ID', [gameHall.id, extraArgs!['joinRoomId']]);
+      case RoomEntry.match:
+        final int? exclude = roomToExcludeOnEnter(
+          switchRoom: switchRoom,
+          currentRoomId: roomId,
+          routeExceptRoom: exceptRoom,
+        );
+        // 服务端按字符串解析这个"不想进的房间号"，统一转成字符串再发
+        sendUserCmd('ENTER_GAME_HALL', [gameHall.id, exclude != null ? '$exclude' : '']);
     }
   }
 
@@ -1077,7 +1124,7 @@ class RussiaPageState extends State<RussiaPage>
     });
 
     sendUserCmd('LEAVE_HALL', []);
-    _enterRoom();
+    _enterRoom(switchRoom: true);
   }
 
   void _onGameBegin() {
