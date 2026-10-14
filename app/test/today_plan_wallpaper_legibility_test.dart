@@ -382,19 +382,25 @@ void main() {
             reason: '${wallpaper.name} 的$label次字对比度（实测 ${muted.toStringAsFixed(2)}）');
       }
 
-      // 主按钮：零容器纯文字悬浮形态，直接用真实照片像素与自适应字色计算可读性对比度
+      // 主按钮：住在右侧主操作卡的毛玻璃里（与左侧任务卡同一套玻璃），
+      // 所以按「身下照片 → 局部毛玻璃 → 自适应字色」三段合成后守底线
       final buttonPhoto = (await tester.runAsync(() async {
         final image = await decodedImage(wallpaper.path);
         return photoAverage(image, buttonRect, viewport);
       }))!;
+      final buttonGlassRgb = [
+        palette.cardGlass.r * 255,
+        palette.cardGlass.g * 255,
+        palette.cardGlass.b * 255,
+      ];
       final buttonMeasured = cardContrast(
         photo: buttonPhoto,
-        glass: const [0, 0, 0],
-        glassAlpha: 0.0,
+        glass: buttonGlassRgb,
+        glassAlpha: palette.cardGlass.a,
         ink: palette.actionInk,
       );
-      expect(buttonMeasured, greaterThanOrEqualTo(2.0),
-          reason: '${wallpaper.name} 的主按钮纯文字悬浮在壁纸上的对比度（实测 ${buttonMeasured.toStringAsFixed(2)}）');
+      expect(buttonMeasured, greaterThanOrEqualTo(2.8),
+          reason: '${wallpaper.name} 的主按钮字在毛玻璃卡上的对比度（实测 ${buttonMeasured.toStringAsFixed(2)}）');
 
       final headerGlass = wallpaper.isDark
           ? Colors.black.withValues(alpha: 0.25)

@@ -163,13 +163,13 @@ class LoginPageState extends State<LoginPage>
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'PROGRESS OVER PERFECTION',
+                          '进步而非完美',
                           style: TextStyle(
                             color: textSubColor,
-                            fontSize: 11,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 2.5,
-                            fontFamily: 'Roboto',
+                            letterSpacing: 4.0,
+                            fontFamily: 'NotoSansSC',
                           ),
                         ),
                       ],

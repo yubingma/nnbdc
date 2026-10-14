@@ -232,17 +232,17 @@ void main() {
     }
   }
 
-  /// 两种背景必须渲染同一套结构：中心目标岛 + 左右双任务卡 + 主按钮。
+  /// 两种背景必须渲染同一套结构：中心目标岛 + 左任务量卡（新词 / 旧词）+ 主操作卡。
   void expectSharedStructure() {
     expect(find.text('今日目标'), findsOneWidget, reason: '中心目标岛（壁纸底/主题底共用）');
-    expect(find.text('新词'), findsOneWidget, reason: '左侧新词任务卡');
-    expect(find.text('旧词'), findsOneWidget, reason: '右侧旧词任务卡');
+    expect(find.text('新词'), findsOneWidget, reason: '左任务量卡里的新词量');
+    expect(find.text('旧词'), findsOneWidget, reason: '左任务量卡里的旧词量');
   }
 
   Map<String, Rect> layoutGeometry(WidgetTester tester) => <String, Rect>{
         '中心岛': tester.getRect(find.text('今日目标')),
-        '新词卡': tester.getRect(find.text('新词')),
-        '旧词卡': tester.getRect(find.text('旧词')),
+        '新词量': tester.getRect(find.text('新词')),
+        '旧词量': tester.getRect(find.text('旧词')),
         '主按钮': tester.getRect(find.text('开始学习')),
       };
 

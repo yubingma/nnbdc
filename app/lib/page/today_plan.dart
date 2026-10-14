@@ -1251,7 +1251,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 底部「双任务岛与主操作」：扁平横向磨砂卡（对标「不背单词」Learn & Review）
+  /// 底部「双任务岛与主操作」：
+  /// 左卡片并排新词 / 旧词两项任务量（各自点进对应词表），右卡片装主操作按钮。
   Widget _buildBottomTaskIsland({
     required AppThemeConfig themeConfig,
     required bool hasWallpaper,
@@ -1260,154 +1261,183 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }) {
     final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark);
     final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
-    final textMuted = ink.muted;
-    final countColor = ink.primary;
+    // 词书单词量不足：主操作让位给补救操作（选择词书 / 就这样吧）
+    final bool bookShortage = prepareResult?.code == "NNBDC-0012" ||
+        (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 左右并排双毛玻璃任务卡片（对标「不背单词」Learn & Review 结构）
-        Row(
-          children: [
-            // 左卡片：新词
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  toTodayNewWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 62),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: skin.bg,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: skin.border, width: 0.5),
-                        boxShadow: [skin.shadow],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '新词',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w500,
-                              color: textMuted,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          _buildTaskCount(
-                            count: newWordCount ?? 0,
-                            extraCount: _extraNewCount,
-                            extraKey: const Key('today_plan_extra_new_count'),
-                            color: countColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // 右卡片：旧词
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 62),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: skin.bg,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: skin.border, width: 0.5),
-                        boxShadow: [skin.shadow],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '旧词',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w500,
-                              color: textMuted,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          _buildTaskCount(
-                            count: oldWordCount ?? 0,
-                            extraCount: _extraOldCount,
-                            extraKey: const Key('today_plan_extra_old_count'),
-                            color: countColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-
         // 任务量未满提示条（如有）
         if (prepareResult != null &&
             prepareResult!.success &&
             (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
             !_hasTriedSupplement) ...[
-          const SizedBox(height: 8),
           _buildSupplementNoticeBar(themeConfig, hasWallpaper, onDark),
+          const SizedBox(height: 8),
         ],
 
-        const SizedBox(height: 10),
+        // 左右并排双毛玻璃卡（对标「不背单词」Learn & Review 结构）
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 左卡片：新词与旧词并排，各自可点进对应词表（与右卡片等宽）
+              Expanded(
+                child: _buildIslandCard(
+                  skin: skin,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildTaskMetric(
+                          label: '新词',
+                          count: newWordCount ?? 0,
+                          extraCount: _extraNewCount,
+                          extraKey: const Key('today_plan_extra_new_count'),
+                          labelColor: ink.muted,
+                          countColor: ink.primary,
+                          onTap: () {
+                            toTodayNewWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
+                          },
+                        ),
+                      ),
+                      Container(width: 0.5, height: 26, color: skin.border),
+                      Expanded(
+                        child: _buildTaskMetric(
+                          label: '旧词',
+                          count: oldWordCount ?? 0,
+                          extraCount: _extraOldCount,
+                          extraKey: const Key('today_plan_extra_old_count'),
+                          labelColor: ink.muted,
+                          countColor: ink.primary,
+                          onTap: () {
+                            toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // 右卡片：主操作（词书单词量不足时让位给整行的补救操作）
+              if (!bookShortage) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: renderStartButton(),
+                ),
+              ],
+            ],
+          ),
+        ),
 
-        // 主操作按钮
-        (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
-            ? renderErrorActions()
-            : renderStartButton(),
+        // 词书单词量不足：选择词书 / 就这样吧
+        if (bookShortage) ...[
+          const SizedBox(height: 10),
+          renderErrorActions(),
+        ],
       ],
+    );
+  }
+
+  /// 底部任务岛里的毛玻璃卡壳：左右两张卡共用同一套玻璃与圆角，
+  /// 卡壳只管玻璃与命中层，里面装什么由调用方决定。
+  Widget _buildIslandCard({
+    required ({Color bg, Color border, BoxShadow shadow}) skin,
+    Key? key,
+    VoidCallback? onTap,
+    required Widget child,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 62),
+          decoration: BoxDecoration(
+            color: skin.bg,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: skin.border, width: 0.5),
+            boxShadow: [skin.shadow],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: onTap == null
+                ? child
+                : InkWell(
+                    key: key,
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: onTap,
+                    child: child,
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 左卡片里的一项任务量：标签在上、数字在下，点它进对应词表。
+  Widget _buildTaskMetric({
+    required String label,
+    required int count,
+    required int extraCount,
+    required Key extraKey,
+    required Color labelColor,
+    required Color countColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: labelColor,
+              ),
+            ),
+            const SizedBox(height: 2),
+            _buildTaskCount(
+              count: count,
+              extraCount: extraCount,
+              extraKey: extraKey,
+              color: countColor,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
 
 
 
-  /// 包装主操作按钮：
-  /// 统一零多余容器设计，纯透明背景 + 水波纹点击（零容器悬浮），
-  /// 壁纸上的文字与箭头直接通过明暗自适应色彩与多层弥散光晕（TextHalo / Shadow）保证清晰通透。
+  /// 主操作按钮卡：与左任务卡同一套毛玻璃皮肤，整卡可点。
+  /// 字色沿用原来的自适应档（壁纸底跟照片明暗、经典底跟主题），
+  /// 卡窄时用 [FittedBox] 等比收字，任何机型都不会溢出。
   Widget _wrapActionButton({
     Key? key,
     required VoidCallback onTap,
     required Widget child,
   }) {
-    return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          key: key,
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 18),
-            child: child,
-          ),
+    final hasWallpaper = _hasEffectiveWallpaper;
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final onDark = _wallpaperIsDark ?? isDarkMode;
+    return _buildIslandCard(
+      skin: _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark),
+      key: key,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        child: Center(
+          child: FittedBox(fit: BoxFit.scaleDown, child: child),
         ),
       ),
     );
@@ -1426,17 +1456,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final actionColor = hasWallpaper
         ? (onDark ? Colors.white : const Color(0xFF0F172A))
         : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
-    final actionShadows = hasWallpaper
-        ? (onDark
-            ? const [
-                Shadow(color: Color(0x99000000), blurRadius: 6, offset: Offset(0, 1.5)),
-                Shadow(color: Color(0x4D000000), blurRadius: 14, offset: Offset(0, 3)),
-              ]
-            : [
-                Shadow(color: Colors.white.withValues(alpha: 0.90), blurRadius: 6, offset: const Offset(0, 1)),
-                Shadow(color: Colors.white.withValues(alpha: 0.50), blurRadius: 14, offset: const Offset(0, 2)),
-              ])
-        : null;
     return _wrapActionButton(
       key: key,
       onTap: onPressed,
@@ -1451,7 +1470,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               fontWeight: FontWeight.w700,
               letterSpacing: 0.3,
               color: actionColor,
-              shadows: actionShadows,
             ),
           ),
           const SizedBox(width: 6),
@@ -1459,7 +1477,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             Icons.arrow_forward_rounded,
             size: 18,
             color: actionColor,
-            shadows: actionShadows,
           ),
         ],
       ),
@@ -1531,17 +1548,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final actionColor = hasWallpaper
         ? (onDark ? Colors.white : const Color(0xFF0F172A))
         : (isDarkMode ? themeConfig.primaryLightColor : themeConfig.primaryColor);
-    final actionShadows = hasWallpaper
-        ? (onDark
-            ? const [
-                Shadow(color: Color(0x99000000), blurRadius: 6, offset: Offset(0, 1.5)),
-                Shadow(color: Color(0x4D000000), blurRadius: 14, offset: Offset(0, 3)),
-              ]
-            : [
-                Shadow(color: Colors.white.withValues(alpha: 0.90), blurRadius: 6, offset: const Offset(0, 1)),
-                Shadow(color: Colors.white.withValues(alpha: 0.50), blurRadius: 14, offset: const Offset(0, 2)),
-              ])
-        : null;
 
     Future<void> onStartTap() async {
       if (_isPreparingStudy) return;
@@ -1831,7 +1837,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                   color: actionColor,
-                  shadows: actionShadows,
                 ),
               ),
             ],
@@ -1847,7 +1852,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                   color: actionColor,
-                  shadows: actionShadows,
                 ),
               ),
               const SizedBox(width: 6),
@@ -1855,7 +1859,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 Icons.arrow_forward_rounded,
                 size: 18,
                 color: actionColor,
-                shadows: actionShadows,
               ),
             ],
           );
