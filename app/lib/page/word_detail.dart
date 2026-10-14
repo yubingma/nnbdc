@@ -900,16 +900,17 @@ class WordDetailPageState extends State<WordDetailPage>
           ..groupInfo = localWord.groupInfo;
       }).toList();
 
-      final miQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.isIn(wordIds));
-      final allMeanings = await miQuery.get();
+      // 与学习页同一口径：定制释义强制优先，通用释义按展示条数偏好裁剪
+      final meaningItemsMap = await WordBo()
+          .getWordMeaningItemsBatch(wordIds, Global.getLoggedInUser()?.id);
 
       final Map<String, List<MeaningItemVo>> meaningMap = {};
-      for (final mi in allMeanings) {
-        final miVo =
-            MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null);
-        meaningMap.putIfAbsent(mi.wordId, () => []).add(miVo);
-      }
+      meaningItemsMap.forEach((wordId, items) {
+        meaningMap[wordId] = [
+          for (final mi in items)
+            MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null),
+        ];
+      });
 
       for (final vo in wordVos) {
         vo.meaningItems = meaningMap[vo.id] ?? [];

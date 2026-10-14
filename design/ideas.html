@@ -764,7 +764,7 @@
               </svg>
               <span class="sidebar-title">创意目录 · INDEX</span>
             </div>
-            <span class="sidebar-badge-count">9</span>
+            <span class="sidebar-badge-count">10</span>
           </div>
 
           <nav class="nav-list" id="sidebarNav">
@@ -777,7 +777,16 @@
                 </svg>
                 <span>产品玩法与体验</span>
               </div>
-              <a href="#idea-008" class="nav-item active" data-id="idea-008">
+              <a href="#idea-009" class="nav-item active" data-id="idea-009">
+                <div class="nav-item-header">
+                  <span class="nav-item-id" style="color: var(--accent-amber);">IDEA #009</span>
+                  <span class="nav-dot dot-amber"></span>
+                </div>
+                <div class="nav-item-title">释义按常用度加粗 · 已搁置</div>
+                <div class="nav-item-cat">学习体验 · 暂不实施 · 约束已摸清</div>
+              </a>
+
+              <a href="#idea-008" class="nav-item" data-id="idea-008">
                 <div class="nav-item-header">
                   <span class="nav-item-id" style="color: var(--accent-aurora);">IDEA #008</span>
                   <span class="nav-dot dot-aurora"></span>
@@ -907,8 +916,52 @@
               </svg>
               <span>第一节 · 产品功能与玩法构想（Product & Gameplay）</span>
             </div>
-            <span class="feed-section-tag">8 IDEAS</span>
+            <span class="feed-section-tag">9 IDEAS</span>
           </div>
+
+          <!-- 创意 #009: 释义按常用度加粗（已搁置） -->
+          <article class="idea-card" id="idea-009">
+            <div class="idea-header">
+              <div>
+                <div class="idea-id-date">
+                  <span class="idea-id" style="color: var(--accent-amber);">IDEA #009</span>
+                  <span>•</span>
+                  <span>2026-10-14</span>
+                  <span>•</span>
+                  <span>学习体验微调</span>
+                </div>
+                <h2 class="idea-title">释义按常用度加粗：把最常用的义项在视觉上顶出来</h2>
+              </div>
+              <span class="badge-status status-evaluating">已搁置 / 暂不实施</span>
+            </div>
+
+            <div class="tags-container">
+              <span class="tag">#释义展示</span>
+              <span class="tag">#热度排序</span>
+              <span class="tag">#学习卡片</span>
+              <span class="tag">#已搁置</span>
+            </div>
+
+            <div class="idea-body">
+              <div class="idea-quote" style="border-left-color: var(--accent-amber); background: rgba(251, 191, 36, 0.05);">
+                <p>让用户设一个热度阈值，热度达标也就是更常用的释义项在界面上加粗，一眼看到这个词最该记住的义项。2026-10-14 用户决定不做，本条目只留结论与约束记录。</p>
+              </div>
+
+              <div class="section-title">将来若要捡起，三个约束绕不开</div>
+              <div class="feature-item">
+                <strong>① 展示前释义已被按词性合并</strong>
+                <p>学习卡片、词表、详情页渲染的都是 <code>WordVo.getMergedMeaningItems()</code>（<code>app/lib/api/vo.dart:707</code>）的结果，同词性的多条释义会拼成一条，例如“n. 银行；库；岸”。要让块内某一条单独加粗，必须让合并时把每段文本与它的热度一起带出来，而现在这个信息在合并后就丢了。</p>
+              </div>
+              <div class="feature-item">
+                <strong>② 加粗绝不能改文本</strong>
+                <p>学习页判题（中文默写、语音说中文、例句翻译）直接按分号拆分释义字符串做匹配（<code>app/lib/util/word_util.dart:242</code>）。用任何字符标记来标粗都会立刻打崩判题，只能走 <code>TextSpan</code> 的 <code>fontWeight</code>。</p>
+              </div>
+              <div class="feature-item">
+                <strong>③ 纯文本场景天生加不了粗</strong>
+                <p>随身听、复制释义、朗读、AI 提示词、俄罗斯方块拿的是 <code>getMeaningStr()</code> 的纯字符串，全库约 30 处调用。要覆盖它们得先把这些界面改成富文本，改动与回归风险明显大于收益。</p>
+              </div>
+            </div>
+          </article>
 
           <!-- 创意 #008: 海底泡泡升空对战 · 戳泡爆破与海面下沉压顶 -->
           <article class="idea-card" id="idea-008">

@@ -22,6 +22,7 @@ import '../../services/throttled_sync_service.dart';
 import 'package:nnbdc/util/local_embedding_cache.dart';
 import 'package:nnbdc/util/confusable_sort.dart';
 import 'package:nnbdc/util/spell_normalize.dart';
+import 'package:nnbdc/util/study_config.dart';
 
 
 const _popCountTable = [
@@ -1164,7 +1165,9 @@ class WordBo {
       final currentUser = await Global.refreshLoggedInUser();
       List<MeaningItem> meaningItems;
       if (dictId != null) {
-        final miQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.equals(localWord.id) & mi.dictId.equals(dictId));
+        final miQuery = db.select(db.meaningItems)
+          ..where((mi) => mi.wordId.equals(localWord.id) & mi.dictId.equals(dictId))
+          ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
         meaningItems = await miQuery.get();
       } else if (currentUser != null && currentUser.id != null) {
         // 有用户ID，使用现有的 getWordMeaningItems 方法（包含 popularity limit 过滤）
@@ -1354,12 +1357,8 @@ class WordBo {
       final wordMap = {for (var w in words) w.id: w};
 
       // 批量获取释义项
-      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
-      final allMeaningItems = await meaningItemsQuery.get();
-      final meaningItemsMap = <String, List<MeaningItem>>{};
-      for (var mi in allMeaningItems) {
-        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
-      }
+      // 批量获取释义项（与学习页同一口径：定制释义强制优先，通用释义按展示条数偏好裁剪）
+      final meaningItemsMap = await getWordMeaningItemsBatch(wordIds, userId);
 
       List<LearningWordVo> learningWordVos = [];
       final userVo = UserVo.c2(userId);
@@ -1448,12 +1447,8 @@ class WordBo {
       final wordMap = {for (var w in words) w.id: w};
 
       // 批量获取释义项
-      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
-      final allMeaningItems = await meaningItemsQuery.get();
-      final meaningItemsMap = <String, List<MeaningItem>>{};
-      for (var mi in allMeaningItems) {
-        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
-      }
+      // 批量获取释义项（与学习页同一口径：定制释义强制优先，通用释义按展示条数偏好裁剪）
+      final meaningItemsMap = await getWordMeaningItemsBatch(wordIds, userId);
 
       List<LearningWordVo> learningWordVos = [];
       final userVo = UserVo.c2(userId);
@@ -1543,12 +1538,8 @@ class WordBo {
       final wordMap = {for (var w in words) w.id: w};
 
       // 批量获取释义项
-      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
-      final allMeaningItems = await meaningItemsQuery.get();
-      final meaningItemsMap = <String, List<MeaningItem>>{};
-      for (var mi in allMeaningItems) {
-        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
-      }
+      // 批量获取释义项（与学习页同一口径：定制释义强制优先，通用释义按展示条数偏好裁剪）
+      final meaningItemsMap = await getWordMeaningItemsBatch(wordIds, userId);
 
       List<LearningWordVo> learningWordVos = [];
       final userVo = UserVo.c2(userId);
@@ -1893,22 +1884,22 @@ class WordBo {
         (meaningItemsMap[mi.wordId] ??= []).add(mi);
       }
 
-      // 2) 对没有定制释义的单词，回退到通用释义，并按本词书的 popularityLimit 进行过滤
+      // 2) 对没有定制释义的单词，回退到通用释义，并按用户的「释义展示条数」偏好裁剪
       final wordsWithoutCustom =
           wordIds.where((wordId) => !meaningItemsMap.containsKey(wordId) || (meaningItemsMap[wordId]?.isEmpty ?? true)).toList();
-      int? popularityLimit;
-      if (currDict != null) {
-        popularityLimit = currDict.popularityLimit;
-      }
       if (wordsWithoutCustom.isNotEmpty) {
         final commonDictQuery = db.select(db.meaningItems)
           ..where((mi) => mi.wordId.isIn(wordsWithoutCustom) & mi.dictId.equals(Global.commonDictId))
           ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
         final commonMeaningItems = await commonDictQuery.get();
 
-        for (final mi in commonMeaningItems) {
-          if (popularityLimit == null || mi.popularity <= popularityLimit) {
-            (meaningItemsMap[mi.wordId] ??= []).add(mi);
+        final displayLimit = StudyConfig.fromCurrentUser().meaningDisplayLimit;
+        final commonGrouped = _groupMeaningItemsByWord(commonMeaningItems);
+        for (final wordId in wordsWithoutCustom) {
+          final items = applyMeaningDisplayLimit(
+              commonGrouped[wordId] ?? const <MeaningItem>[], displayLimit);
+          if (items.isNotEmpty) {
+            meaningItemsMap[wordId] = items;
           }
         }
       }
@@ -3203,12 +3194,8 @@ class WordBo {
       // 4. 批量预加载释义项 (优化 N+1 查询)
       // 注意：getWordMeaningItems 逻辑较复杂，这里采用简化版批量加载，或保持原子加载但尽量减少开销
       // 为保持逻辑一致性，我们在这里预先批量获取这些单词的所有释义项
-      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
-      final allMeaningItems = await meaningItemsQuery.get();
-      final meaningItemsMap = <String, List<MeaningItem>>{};
-      for (var mi in allMeaningItems) {
-        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
-      }
+      // 批量获取释义项（与学习页同一口径：定制释义强制优先，通用释义按展示条数偏好裁剪）
+      final meaningItemsMap = await getWordMeaningItemsBatch(wordIds, userId);
 
       List<LearningWordVo> learningWordVos = [];
       final userVo = UserVo.c2(userId);
@@ -3282,11 +3269,9 @@ class WordBo {
   }
 
   /// 获取单词的释义项，遵循如下规则：
-  /// 0) 若提供了 priorityDictIds，则优先在这些词书中查找释义
-  /// 1) 若单词在用户的任一学习词书中有定制释义，则返回这些定制释义的合集（不做 popularity 过滤）
-  /// 2) 否则，使用通用释义，并按最大 popularity limit 进行过滤：
-  ///    - 情况1：若该单词存在于用户的一个或多个学习词书中，则以这些词书中的最大 popularity limit 过滤
-  ///    - 情况2：若该单词不在任何学习词书中，则以用户所有学习词书的最大 popularity limit 过滤
+  /// 0) 若提供了 priorityDictIds，则优先在这些词书中查找释义（严格排他，不再合并通用词典）
+  /// 1) 若单词在用户的任一学习词书中有定制释义，则**强制**返回这些定制释义，且全部返回
+  /// 2) 否则回退通用词典释义，按用户设置的「释义展示条数」偏好裁剪（0 表示全部显示）
   Future<List<MeaningItem>> getWordMeaningItems(String wordId, String? userId, {List<String>? priorityDictIds}) async {
     final db = MyDatabase.instance;
 
@@ -3360,54 +3345,16 @@ class WordBo {
       throw error;
     }
 
-    // 计算最大 popularity limit
-    int? maxPopularityLimit;
-
-
-
-    // 取所有学习词书的最大 limit (采用最宽松策略：只要用户学习的任何一本书允许，就显示该释义)
-    final targetDictIds = selectedDictIds;
-    if (targetDictIds.isNotEmpty) {
-      for (final dictId in targetDictIds) {
-        final dict = await db.dictsDao.findById(dictId);
-        if (dict == null) continue;
-        final limit = dict.popularityLimit;
-        if (limit == null) {
-          // null 视为不限制 → 等价于无限大
-          maxPopularityLimit = null;
-          break;
-        }
-        if (maxPopularityLimit == null || limit > maxPopularityLimit) {
-          maxPopularityLimit = limit;
-        }
-      }
-    } else {
-      // 用户没有学习词书 → 不做限制
-      maxPopularityLimit = null;
-    }
-
-    if (maxPopularityLimit != null && userId != null && userId.isNotEmpty) {
-      final isMastered = await db.masteredWordsDao.isWordMastered(userId, wordId);
-      if (isMastered) {
-        maxPopularityLimit = null;
-      } else {
-        final lw = await (db.select(db.learningWords)..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(wordId))).getSingleOrNull();
-        if (lw != null) {
-          maxPopularityLimit = null;
-        }
-      }
-    }
-
-    // 按最大 popularity limit 过滤通用释义（min-3 保底见 _applyPopularityLimit）
-    return _applyPopularityLimit(commonMeaningItems, maxPopularityLimit);
+    // 定制释义在上面的分支已原样返回，走到这里一定是通用词典释义，按用户的展示条数偏好裁剪
+    return applyMeaningDisplayLimit(
+        commonMeaningItems, StudyConfig.fromCurrentUser().meaningDisplayLimit);
   }
 
-  /// 批量取多个单词的释义项，供形近词列表使用（避免逐词调用 [getWordMeaningItems] 产生 N+1 查询）。
+  /// 批量取多个单词的释义项（避免逐词调用 [getWordMeaningItems] 产生 N+1 查询）。
   ///
-  /// 语义与 [getWordMeaningItems] 完全一致：优先词书（严格排他，含父级展开）→ 学习词书（含父级展开）
-  /// → 通用词典（按 popularity 上限过滤、已掌握/在学则不限制）。
-  /// 区别只在于把"仅依赖 user、与具体单词无关"的查询提到循环外只算一次，
-  /// 并用 `id.isIn(...)` 批量取释义、批量判断已掌握/在学。
+  /// 语义与 [getWordMeaningItems] 完全一致：优先词书（严格排他，含父级展开）→ 学习词书的定制释义
+  /// （全部返回）→ 通用词典（按用户的「释义展示条数」偏好裁剪）。
+  /// 区别只在于把"仅依赖 user、与具体单词无关"的查询提到循环外只算一次，并用 `id.isIn(...)` 批量取释义。
   Future<Map<String, List<MeaningItem>>> getWordMeaningItemsBatch(
       List<String> wordIds, String? userId,
       {List<String>? priorityDictIds}) async {
@@ -3454,7 +3401,7 @@ class WordBo {
       }
     }
 
-    // 仍未命中的词走通用词典：批量取回后逐词按 popularity 上限过滤
+    // 仍未命中的词走通用词典：批量取回后按用户的展示条数偏好裁剪
     final pending = wordIds.where((id) => !result.containsKey(id)).toList();
     if (pending.isNotEmpty) {
       final commonRows = await (db.select(db.meaningItems)
@@ -3464,40 +3411,11 @@ class WordBo {
             ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]))
           .get();
       final commonGrouped = _groupMeaningItemsByWord(commonRows);
-
-      // popularity 上限的基础值只依赖 user：取所有学习词书中最宽松的一个
-      int? baseLimit;
-      if (selectedDictIds.isNotEmpty) {
-        final dicts = await (db.select(db.dicts)
-              ..where((d) => d.id.isIn(selectedDictIds)))
-            .get();
-        for (final dict in dicts) {
-          final limit = dict.popularityLimit;
-          if (limit == null) {
-            baseLimit = null;
-            break;
-          }
-          if (baseLimit == null || limit > baseLimit) baseLimit = limit;
-        }
-      }
-
-      // 已掌握 / 已在学的词不受 popularity 上限约束（批量判断）
-      final unrestricted = <String>{};
-      if (baseLimit != null && userId != null && userId.isNotEmpty) {
-        // 已掌握不是独立表（v20 起改为"已掌握"词书），DAO 已有批量版本
-        unrestricted.addAll(await db.masteredWordsDao
-            .getMasteredWordIdSetForWords(userId, pending));
-        final learning = await (db.select(db.learningWords)
-              ..where((tbl) =>
-                  tbl.userId.equals(userId) & tbl.wordId.isIn(pending)))
-            .get();
-        unrestricted.addAll(learning.map((l) => l.wordId));
-      }
+      final displayLimit = StudyConfig.fromCurrentUser().meaningDisplayLimit;
 
       for (final wordId in pending) {
         final common = commonGrouped[wordId] ?? const <MeaningItem>[];
-        final limit = unrestricted.contains(wordId) ? null : baseLimit;
-        result[wordId] = _applyPopularityLimit(common, limit);
+        result[wordId] = applyMeaningDisplayLimit(common, displayLimit);
       }
     }
 
@@ -3526,18 +3444,15 @@ class WordBo {
     return grouped;
   }
 
-  /// 按 maxPopularityLimit 过滤通用释义；若过滤后不足 min-3 保底取常用度最靠前 3 条，
-  /// 防止出现"暂无释义"（common 需已按 popularity 升序排列；limit 为 null 表示不限制）。
-  static List<MeaningItem> _applyPopularityLimit(List<MeaningItem> common, int? maxPopularityLimit) {
-    if (maxPopularityLimit == null) {
-      return common;
-    }
-    final filtered = common.where((mi) => mi.popularity <= maxPopularityLimit).toList();
-    const minMeanings = 3;
-    if (filtered.length < minMeanings && common.length > filtered.length) {
-      return common.take(minMeanings).toList();
-    }
-    return filtered;
+  /// 按用户的「释义展示条数」偏好裁剪通用词典释义项。
+  ///
+  /// [displayLimit] 为 0 表示全部显示；正数表示只保留热度（popularity）最靠前的 N 条。
+  /// 传入的 [common] 必须已按热度升序排列。服务端已保证每个词的释义热度从 1 开始严格递增，
+  /// 因此"取前 N 条"不会取空，无需任何保底。
+  static List<MeaningItem> applyMeaningDisplayLimit(
+      List<MeaningItem> common, int displayLimit) {
+    if (displayLimit <= 0) return common;
+    return common.take(displayLimit).toList();
   }
 
   /// 提供给UI：根据 wordId 和 userId 获取释义项（封装内部的 popularity limit 逻辑）
@@ -3696,9 +3611,9 @@ class WordBo {
   }
 
   /// 批量获取释义（与 [getWordMeaningItems] 语义一致）：
-  /// 学习词书定制释义优先（含父级词库展开）；无定制释义时用通用释义，按所有学习词书的
-  /// 最大 popularityLimit 过滤，过滤后不足 min-3 保底取常用度最靠前 3 条；已掌握/学习中的
-  /// 单词不参与过滤。一次批量查询实现（wordIds IN + 定制释义批量 + 通用兜底批量），避免逐词循环。
+  /// 学习词书定制释义优先（含父级词库展开），存在则全部返回；无定制释义时用通用释义，
+  /// 按用户设置的「释义展示条数」偏好裁剪。一次批量查询实现（wordIds IN + 定制释义批量 + 通用兜底批量），
+  /// 避免逐词循环。
   Future<Map<String, List<MeaningItem>>> getConfusableMeaningsInBatch(
       Set<String> wordIds, String userId) async {
     final db = MyDatabase.instance;
@@ -3746,30 +3661,9 @@ class WordBo {
       commonMap.putIfAbsent(mi.wordId, () => []).add(mi);
     }
 
-    // 所有学习词书（含父级词库）的最大 popularityLimit，一次计算；null 视为不限制
-    int? maxPopularityLimit;
-    if (expandedDictIds.isNotEmpty) {
-      final dicts = await (db.select(db.dicts)..where((d) => d.id.isIn(expandedDictIds))).get();
-      for (final d in dicts) {
-        final limit = d.popularityLimit;
-        if (limit == null) {
-          maxPopularityLimit = null;
-          break;
-        }
-        if (maxPopularityLimit == null || limit > maxPopularityLimit) {
-          maxPopularityLimit = limit;
-        }
-      }
-    }
+    final displayLimit = StudyConfig.fromCurrentUser().meaningDisplayLimit;
 
-    // 已掌握/学习中的单词不参与 popularity 过滤（批量一次查齐）
-    final masteredIds = await db.masteredWordsDao.getMasteredWordIdSetForWords(userId, wordIdList);
-    final learningRows = await (db.select(db.learningWords)
-          ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.isIn(wordIdList)))
-        .get();
-    final learningIds = {for (final lw in learningRows) lw.wordId};
-
-    // 逐词组装（纯内存过滤，无逐词查库）
+    // 逐词组装（纯内存裁剪，无逐词查库）
     final result = <String, List<MeaningItem>>{};
     for (final wordId in wordIdList) {
       final custom = customMap[wordId];
@@ -3784,10 +3678,7 @@ class WordBo {
         Global.logger.e(error.toString());
         throw error;
       }
-      final limit = masteredIds.contains(wordId) || learningIds.contains(wordId)
-          ? null
-          : maxPopularityLimit;
-      result[wordId] = _applyPopularityLimit(common, limit);
+      result[wordId] = applyMeaningDisplayLimit(common, displayLimit);
     }
     return result;
   }

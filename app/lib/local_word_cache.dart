@@ -7,6 +7,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/study_config.dart';
 
 import 'api/vo.dart';
 
@@ -192,103 +193,31 @@ class LocalWordCache {
       }
 
 
-      // 批量查询所有相关的释义项
-      Map<String, List<MeaningItem>> wordMeanings = {};
+      // 定制释义（在学词书）强制优先：有定制释义的词只用定制释义，且全部展示
+      // 其余词走通用词典，按用户的「释义展示条数」偏好裁剪（0 表示全部显示）
+      final displayLimit = StudyConfig.fromCurrentUser().meaningDisplayLimit;
+      final Map<String, List<MeaningItem>> wordMeanings = {};
+      final customWordIds = <String>{};
 
       if (selectedDictIds.isNotEmpty) {
-        // 查询用户选择词书的释义项
         final userMeaningQuery = db.select(db.meaningItems)
           ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.isIn(selectedDictIds))
           ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-        final userMeanings = await userMeaningQuery.get();
-
-        for (final meaning in userMeanings) {
-          if (!wordMeanings.containsKey(meaning.wordId)) {
-            wordMeanings[meaning.wordId] = [];
-          }
-          wordMeanings[meaning.wordId]!.add(meaning);
+        for (final meaning in await userMeaningQuery.get()) {
+          (wordMeanings[meaning.wordId] ??= []).add(meaning);
+          customWordIds.add(meaning.wordId);
         }
       }
 
-      // 查询通用词典释义项（作为备选）
       final commonMeaningQuery = db.select(db.meaningItems)
         ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.equals(Global.commonDictId))
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-      final commonMeanings = await commonMeaningQuery.get();
-
-      // 如果用户有选择词书，查询这些词书的popularityLimit配置
-      Map<String, int?> dictPopularityLimits = {};
-      if (selectedDictIds.isNotEmpty && userId != null) {
-        // 查询用户选择的词书列表
-        final learningDictsQuery = db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(userId));
-        final learningDicts = await learningDictsQuery.get();
-
-        // 为每个选择的词书查询其popularityLimit
-        for (final learningDict in learningDicts) {
-          final dict = await db.dictsDao.findById(learningDict.dictId);
-          if (dict != null) {
-            dictPopularityLimits[dict.id] = dict.popularityLimit;
-          }
-        }
+      for (final meaning in await commonMeaningQuery.get()) {
+        if (customWordIds.contains(meaning.wordId)) continue;
+        final items = wordMeanings.putIfAbsent(meaning.wordId, () => []);
+        if (displayLimit > 0 && items.length >= displayLimit) continue;
+        items.add(meaning);
       }
-
-      for (final meaning in commonMeanings) {
-        if (!wordMeanings.containsKey(meaning.wordId)) {
-          wordMeanings[meaning.wordId] = [];
-        }
-
-        // 检查是否已存在内容完全相同的释义（避免不同词典间的重复）
-        bool isDuplicate = wordMeanings[meaning.wordId]!
-            .any((m) => m.ciXing == meaning.ciXing && m.meaning == meaning.meaning);
-        if (isDuplicate) {
-          continue;
-        }
-
-        // 检查是否需要过滤通用释义
-        bool shouldInclude = true;
-
-        // 如果有词书配置了popularityLimit，需要检查
-        if (dictPopularityLimits.isNotEmpty) {
-          // 检查是否有任何一个词书设置了popularityLimit
-          final anyLimit = dictPopularityLimits.values.any((limit) => limit != null);
-          if (anyLimit) {
-            final int popularity = meaning.popularity;
-
-            // 检查是否任一词书许可该释义  
-            shouldInclude = false;
-            for (final limit in dictPopularityLimits.values) {
-              if (limit == null || popularity <= limit) {
-                shouldInclude = true;
-                break;
-              }
-            }
-          }
-        }
-
-        if (shouldInclude) {
-          wordMeanings[meaning.wordId]!.add(meaning);
-        }
-      }
-
-      // 【保底逻辑】对所有单词进行检查，确保每个词至少有保底数量的释义（如果词库有的话）
-      const minMeanings = 3;
-      for (final wordId in wordIds) {
-        final currentMeanings = wordMeanings[wordId] ?? [];
-        if (currentMeanings.length < minMeanings) {
-          // 获取该单词在通用词典中的所有释义
-          final allCommonMeanings = commonMeanings.where((m) => m.wordId == wordId).toList();
-          if (allCommonMeanings.length > currentMeanings.length) {
-            // 补齐到 minMeanings 个
-            for (final m in allCommonMeanings) {
-              if (currentMeanings.length >= minMeanings) break;
-              if (!currentMeanings.any((existing) => existing.id == m.id)) {
-                wordMeanings.putIfAbsent(wordId, () => []).add(m);
-              }
-            }
-          }
-        }
-      }
-
 
       // 不再使用任意词典兜底：仅允许通用词典（dictId = '0'）作为兜底
 

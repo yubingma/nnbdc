@@ -33,6 +33,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
+import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/user_helper.dart';
@@ -40,6 +41,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:nnbdc/widget/font_scale_dialog.dart';
+import 'package:nnbdc/widget/meaning_display_dialog.dart';
 import 'package:nnbdc/widget/pronunciation_accent_dialog.dart';
 import 'package:nnbdc/widget/rebuild_database_dialog.dart';
 import 'package:nnbdc/widget/theme_select_dialog.dart';
@@ -1945,6 +1947,16 @@ class MePageState extends State<MePage> implements RefreshableTab {
                             },
                           ),
                           _buildMenuTile(
+                            icon: Icons.format_list_bulleted_rounded,
+                            iconColor: const Color(0xFF06B6D4),
+                            title: '释义展示',
+                            trailingText: _meaningDisplayText(),
+                            onTap: () async {
+                              await MeaningDisplayDialog.show(context);
+                              if (mounted) setState(() {});
+                            },
+                          ),
+                          _buildMenuTile(
                             icon: Icons.person_outline_rounded,
                             iconColor: const Color(0xFF3B82F6),
                             title: '个人信息',
@@ -3167,6 +3179,14 @@ class MePageState extends State<MePage> implements RefreshableTab {
     final hour = NotificationUtil.getReminderHour().toString().padLeft(2, '0');
     final minute = NotificationUtil.getReminderMinute().toString().padLeft(2, '0');
     return '每天 $hour:$minute';
+  }
+
+  /// 释义展示档位文案：0 表示全部显示，1 表示只看最常用，其余为"最多 N 条"。
+  String _meaningDisplayText() {
+    final limit = StudyConfig.fromCurrentUser().meaningDisplayLimit;
+    if (limit <= 0) return '全部显示';
+    if (limit == 1) return '只看最常用';
+    return '最多 $limit 条';
   }
 
   // 菜单项组件 (对标「不背单词」极简排版风：零多余底盒，纯净裸露矢量图标)

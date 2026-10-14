@@ -435,7 +435,6 @@ class _EditDictionaryDialog extends StatefulWidget {
 
 class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
   late TextEditingController _nameController;
-  late TextEditingController _popularityLimitController;
   late bool _isReady;
   late bool _visible;
   bool _isLoading = false;
@@ -450,7 +449,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.dict.name);
-    _popularityLimitController = TextEditingController(text: widget.dict.popularityLimit?.toString() ?? '');
     _isReady = widget.dict.isReady;
     _visible = widget.dict.visible;
     
@@ -497,7 +495,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
   @override
   void dispose() {
     _nameController.dispose();
-    _popularityLimitController.dispose();
     super.dispose();
   }
 
@@ -717,63 +714,6 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
 
                                 const Divider(),
 
-                                // 流行度限制输入
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '流行度限制',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w400,
-                                          color: textColor,
-                                          fontFamily: 'NotoSansSC',
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        '限制通用词典释义的流行度阈值（留空表示不限制）',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                          fontFamily: 'NotoSansSC',
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      TextField(
-                                        controller: _popularityLimitController,
-                                        keyboardType: TextInputType.number,
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontFamily: 'NotoSansSC',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                        decoration: InputDecoration(
-                                          hintText: '请输入流行度限制值（如：1000）',
-                                          hintStyle: TextStyle(
-                                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                            fontFamily: 'NotoSansSC',
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                const Divider(),
-
                                 // 分类归属设置
                                 Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -892,31 +832,14 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
     });
 
     try {
-      // 解析popularityLimit
-      int? popularityLimit;
-      if (_popularityLimitController.text.trim().isNotEmpty) {
-        popularityLimit = int.tryParse(_popularityLimitController.text.trim());
-        if (popularityLimit == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-              '流行度限制必须是有效的数字',
-            )),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
-      }
-
       // 调用更新词典的API
+      // 释义过滤阈值已不参与展示，界面不再提供编辑入口；保存时原值透传，避免把已有数据清空
       final result = await Api.client.updateSystemDict(
         widget.dict.id,
         _nameController.text.trim(),
         _isReady,
         _visible,
-        popularityLimit,
+        widget.dict.popularityLimit,
         _selectedDictGroupId,
         _selectedGameHallIds.isEmpty ? null : jsonEncode(_selectedGameHallIds),
       );

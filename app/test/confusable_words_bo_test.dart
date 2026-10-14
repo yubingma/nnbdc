@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
@@ -145,6 +148,15 @@ void main() {
       updateTime: now,
     isExtra: false,
     ), false);
+  }
+
+  /// 设置用户的释义展示条数档位（0 = 通用词典释义全部显示）
+  Future<void> setMeaningDisplayLimit(int limit) async {
+    final user = Global.getLoggedInUser()!;
+    final updated = user.copyWith(
+        studyConfig: Value(jsonEncode({'meaningDisplayLimit': limit})));
+    await db.usersDao.saveUser(updated, false);
+    Global.updateUserCache(updated);
   }
 
   group('getConfusableWordIds - 锚点语义（学习过的词 + 范围内相近词）', () {
@@ -472,92 +484,40 @@ void main() {
   });
 
   group('getConfusableMeaningsInBatch - 与 getWordMeaningItems 一致', () {
-    test('定制释义优先 / 最大 popularityLimit / min-3 保底 / 学习中与已掌握豁免', () async {
-      // 词书：d1 用户词书 limit=30，d2 系统词书 limit=50 → 最大 limit=50
-      await insertDict('d1', popularityLimit: 30);
-      await insertDict('d2', popularityLimit: 50, ownerId: '15118');
+    test('定制释义强制优先 / 通用释义按用户档位裁剪', () async {
+      await insertUser();
+      await insertDict('d1');
       await insertLearningDict('d1');
-      await insertLearningDict('d2');
-      // 已掌握词书（ownerId=userId 且 name='已掌握'）
-      await insertDict('mastered_dict', name: '已掌握');
 
-      for (final s in ['w1', 'w2', 'w3', 'w4', 'w5']) {
+      for (final s in ['w1', 'w2']) {
         await insertWord(s, s);
         await insertDictWord('d1', s);
       }
 
-      // 通用释义（dictId = Global.commonDictId）
-      await insertMeaningItem('mi_w1_c1', 'w1', Global.commonDictId, 10);
-      await insertMeaningItem('mi_w1_c2', 'w1', Global.commonDictId, 20);
-      // w2 有 5 条通用释义，limit=50 过滤后剩 4 条（≥3，不触发保底），popularity=60 的被过滤
-      await insertMeaningItem('mi_w2_c1', 'w2', Global.commonDictId, 10);
-      await insertMeaningItem('mi_w2_c2', 'w2', Global.commonDictId, 20);
-      await insertMeaningItem('mi_w2_c3', 'w2', Global.commonDictId, 30);
-      await insertMeaningItem('mi_w2_c4', 'w2', Global.commonDictId, 40);
-      await insertMeaningItem('mi_w2_c5', 'w2', Global.commonDictId, 60);
-      await insertMeaningItem('mi_w3_c1', 'w3', Global.commonDictId, 55);
-      await insertMeaningItem('mi_w3_c2', 'w3', Global.commonDictId, 65);
-      await insertMeaningItem('mi_w3_c3', 'w3', Global.commonDictId, 75);
-      // w4/w5 各 4 条通用释义（40 ≤ limit，60/70/80 > limit）：
-      // 若豁免不生效 → limit=50 过滤后剩 1 条 → min-3 保底只返回 3 条；
-      // 豁免生效 → 返回全部 4 条（含 popularity=80 的 c4），可真正区分豁免分支
-      await insertMeaningItem('mi_w4_c1', 'w4', Global.commonDictId, 40);
-      await insertMeaningItem('mi_w4_c2', 'w4', Global.commonDictId, 60);
-      await insertMeaningItem('mi_w4_c3', 'w4', Global.commonDictId, 70);
-      await insertMeaningItem('mi_w4_c4', 'w4', Global.commonDictId, 80);
-      await insertMeaningItem('mi_w5_c1', 'w5', Global.commonDictId, 40);
-      await insertMeaningItem('mi_w5_c2', 'w5', Global.commonDictId, 60);
-      await insertMeaningItem('mi_w5_c3', 'w5', Global.commonDictId, 70);
-      await insertMeaningItem('mi_w5_c4', 'w5', Global.commonDictId, 80);
-
-      // w1 定制释义（学习词书 d1，优先返回）
+      // w1 在学词书有定制释义；w2 只有通用词典的 5 条释义
       await insertMeaningItem('mi_w1_d1_1', 'w1', 'd1', 5);
       await insertMeaningItem('mi_w1_d1_2', 'w1', 'd1', 7);
-
-      // w4 学习中（豁免 limit）；w5 已掌握（豁免 limit）
-      await db.into(db.learningWords).insert(LearningWord(
-        userId: userId,
-        wordId: 'w4',
-        addDay: 1,
-        addTime: now,
-        learningOrder: 1,
-        isTodayNewWord: false,
-        learnedTimes: 1,
-        todayLearnedTimes: 0,
-        createTime: now,
-        updateTime: now,
-      isExtra: false,
-      ));
-      await insertDictWord('mastered_dict', 'w5');
-
-      final wordBo = WordBo();
-      final batch =
-          await wordBo.getConfusableMeaningsInBatch({'w1', 'w2', 'w3', 'w4', 'w5'}, userId);
-
-      // 逐词对比：批量结果与 getWordMeaningItems 完全一致
-      for (final w in ['w1', 'w2', 'w3', 'w4', 'w5']) {
-        final perWord = await wordBo.getWordMeaningItems(w, userId);
-        expect(batch[w], perWord, reason: '批量释义与逐词结果不一致: $w');
+      await insertMeaningItem('mi_w1_c1', 'w1', Global.commonDictId, 10);
+      for (var i = 1; i <= 5; i++) {
+        await insertMeaningItem('mi_w2_c$i', 'w2', Global.commonDictId, i * 10);
       }
 
-      // 语义抽查
-      // 定制释义优先
-      expect(batch['w1']!.map((m) => m.id).toList(), ['mi_w1_d1_1', 'mi_w1_d1_2']);
-      // 最大 popularityLimit=50，过滤掉 popularity=60 的释义（剩余 4 条 ≥3，不触发保底）
-      expect(batch['w2']!.map((m) => m.id).toList(),
-          ['mi_w2_c1', 'mi_w2_c2', 'mi_w2_c3', 'mi_w2_c4']);
-      // 全部被过滤 → min-3 保底取常用度最靠前 3 条
-      expect(batch['w3']!.map((m) => m.id).toList(),
-          ['mi_w3_c1', 'mi_w3_c2', 'mi_w3_c3']);
-      // 学习中豁免 limit：返回全部 4 条（若未豁免只会剩 min-3 保底的 3 条）
-      expect(batch['w4']!.length, 4);
-      expect(batch['w4']!.map((m) => m.id).toList(),
-          ['mi_w4_c1', 'mi_w4_c2', 'mi_w4_c3', 'mi_w4_c4']);
-      // 已掌握豁免 limit
-      expect(batch['w5']!.length, 4);
-      expect(batch['w5']!.map((m) => m.id).toList(),
-          ['mi_w5_c1', 'mi_w5_c2', 'mi_w5_c3', 'mi_w5_c4']);
+      final wordBo = WordBo();
+
+      // 默认档（全部显示）：定制释义全给，通用释义也给全，且批量结果与逐词结果一致
+      final all = await wordBo.getConfusableMeaningsInBatch({'w1', 'w2'}, userId);
+      expect(all['w1'], await wordBo.getWordMeaningItems('w1', userId));
+      expect(all['w2'], await wordBo.getWordMeaningItems('w2', userId));
+      expect(all['w1']!.map((m) => m.id).toList(), ['mi_w1_d1_1', 'mi_w1_d1_2']);
+      expect(all['w2']!.length, 5);
+
+      // 档位设为 2：通用释义只留热度最靠前的 2 条，定制释义不受条数上限约束
+      await setMeaningDisplayLimit(2);
+      final limited = await wordBo.getConfusableMeaningsInBatch({'w1', 'w2'}, userId);
+      expect(limited['w1']!.map((m) => m.id).toList(), ['mi_w1_d1_1', 'mi_w1_d1_2']);
+      expect(limited['w2']!.map((m) => m.id).toList(), ['mi_w2_c1', 'mi_w2_c2']);
     });
+
 
     test('学习词书 baseDictId 父级词库的定制释义优先', () async {
       // d2 的父级词库 base_dict 提供 w6 的定制释义（不在 learning_dicts 中，靠 baseDictId 展开命中）

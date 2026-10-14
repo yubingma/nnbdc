@@ -227,15 +227,8 @@ class StudyBo {
       final wordsList = await db.wordsDao.getWordsByIds(wordIds);
       final wordMap = {for (var w in wordsList) w.id: w};
 
-      // 2. 批量获取释义项 (仅获取通用词典释义作为列表快速显示，或获取所有释义项后在内存过滤)
-      // 注意：为了极致性能，在列表页我们可能不需要 getWordMeaningItems 那么复杂的过滤逻辑
-      // 这里采用类似 getLearningWordsForAPage 的批量获取方式
-      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
-      final allMeaningItems = await meaningItemsQuery.get();
-      final meaningItemsMap = <String, List<MeaningItem>>{};
-      for (var mi in allMeaningItems) {
-        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
-      }
+      // 2. 批量获取释义项（与学习页同一口径：定制释义强制优先，通用释义按展示条数偏好裁剪）
+      final meaningItemsMap = await WordBo().getWordMeaningItemsBatch(wordIds, user.id);
 
       final userVo = UserVo.fromUser(user);
 

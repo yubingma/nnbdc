@@ -232,7 +232,8 @@
 | 选词排序 | `dict.sort_alg` | RANDOM 真乱序 / ALPHABETIC 字母序 / FREQUENCY 高频优先 | |
 | 系统词书 | `dict.owner_id = Constants.SYS_USER_SYS_ID`（`'15118'`，用户 `sys`） | 官方词书，作者是系统用户 sys，其 ID 硬编码为 15118 | 生产库实测 761 本官方词书、NULL 为 0 本；v62 的错误说明已由 v67 修正 |
 | 用户自建词书 | `dict.owner_id` = 用户 ID | 用户自己导入的书，可用 `is_shared` 发布共享 | |
-| 释义过滤阈值 | `dict.popularity_limit`（默认 `Constants.DEFAULT_POPULARITY_LIMIT = 5`） | 用通用词典释义时，`popularity` **大于**该阈值的释义项会被自动隐藏（只留常见释义），避免释义过多干扰背诵 | null 表示不限制 |
+| 释义展示档位 | `StudyConfig.meaningDisplayLimit`（`app/lib/util/study_config.dart`） | 用户自己设的「通用词典释义最多显示几条」：0 = 全部显示，正数 = 只给热度最靠前的 N 条，在「我」页面的「释义展示」里设置 | 只约束通用词典释义；在学词书里的定制释义永远全给 |
+| 释义过滤阈值（已弃用） | `dict.popularity_limit`（默认 `Constants.DEFAULT_POPULARITY_LIMIT = 5`） | **旧机制**：曾按每本词书的阈值隐藏通用词典里 `popularity` 大于它的释义项 | 自 2026-10-14 起不再参与任何展示（原叫「释义过滤阈值」，机制已被「释义展示档位」取代）；字段仍在导入搬运、管理端编辑、端云同步与数据体检中流转，改它不会影响 App 显示 |
 
 ### 4.2 分组与选书
 
