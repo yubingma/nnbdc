@@ -133,16 +133,6 @@ public class MsgVo extends Vo {
         this.replyToId = replyToId;
     }
 
-    private AdviceRequirementStatus reqStatus;
-
-    public AdviceRequirementStatus getReqStatus() {
-        return reqStatus;
-    }
-
-    public void setReqStatus(AdviceRequirementStatus reqStatus) {
-        this.reqStatus = reqStatus;
-    }
-
     // 下面三个字段是「被引用消息」的快照，供界面画引用块，不对应数据库字段。
     // 命名刻意避开 replyToMessage：那个名字会被 PoVoUtils 当成实体关联去递归拷贝。
     private String quotedMsgId;

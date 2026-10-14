@@ -20,9 +20,6 @@ public class AdviceRequirementVo {
     @ApiModelProperty("需求原文")
     private String content;
 
-    @ApiModelProperty("需求处理状态")
-    private AdviceRequirementStatus reqStatus;
-
     @ApiModelProperty("提需求的时间")
     private Date createTime;
 
@@ -58,14 +55,6 @@ public class AdviceRequirementVo {
 
     public void setContent(String content) {
         this.content = content;
-    }
-
-    public AdviceRequirementStatus getReqStatus() {
-        return reqStatus;
-    }
-
-    public void setReqStatus(AdviceRequirementStatus reqStatus) {
-        this.reqStatus = reqStatus;
     }
 
     public Date getCreateTime() {

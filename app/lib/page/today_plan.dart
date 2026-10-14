@@ -21,6 +21,7 @@ import 'package:nnbdc/page/bdc/models/bdc_page_args.dart';
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
+import 'package:nnbdc/services/sync_progress.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/state.dart';
@@ -119,6 +120,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   bool _isSyncingFromCloud = false;
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
+
+  /// 首屏等待端云同步的上限：超过就先用本地数据展示。
+  ///
+  /// 首屏不能被一次同步无限期占住；同步本身仍会在后台继续，进度由 [syncProgress] 展示。
+  static const Duration _cloudSyncWaitTimeout = Duration(seconds: 60);
 
   /// 新用户（本地从未选过壁纸）的默认壁纸：琥珀（暗底照片，底栏会自动改配白图标）。
   static const String _defaultWallpaperPath = 'assets/images/wallpaper/amber.jpg';
@@ -436,10 +442,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         try {
           if (_todayWords == null || _todayWords!.isEmpty) {
             Global.logger.i('今日计划本地为空，发起阻塞式同步...');
-            await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+            await ThrottledDbSyncService()
+                .requestSyncAndWait(immediate: true)
+                .timeout(_cloudSyncWaitTimeout);
           } else {
             ThrottledDbSyncService().requestSync();
           }
+        } on TimeoutException {
+          Global.logger.e('等待端云同步超过 ${_cloudSyncWaitTimeout.inSeconds} 秒仍未结束，'
+              '先用本地数据展示；同步仍在后台继续（进度见首屏加载态）');
         } catch (e) {
           Global.logger.e('进入页面同步失败: $e');
         } finally {
@@ -816,30 +827,51 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           ),
           (!dataLoaded)
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            isDarkMode ? Colors.white70 : const Color(0xFF111827),
+                  child: ValueListenableBuilder<SyncProgress>(
+                    valueListenable: syncProgress,
+                    builder: (context, progress, _) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isDarkMode ? Colors.white70 : const Color(0xFF111827),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        _isSyncingFromCloud ? 'SYNCING FROM CLOUD...' : 'LOADING PLAN',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2.0,
-                        ),
-                      ),
-                    ],
+                          const SizedBox(height: 20),
+                          Text(
+                            _isSyncingFromCloud ? 'SYNCING FROM CLOUD...' : 'LOADING PLAN',
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 2.0,
+                            ),
+                          ),
+                          // 同步进度：数字在跳说明同步还在推进，长时间不动就是真的卡住了
+                          if (_isSyncingFromCloud && !progress.isIdle) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              progress.hasTotal
+                                  ? '${progress.phase} ${progress.done} / ${progress.total}'
+                                  : progress.phase,
+                              style: TextStyle(
+                                color: isDarkMode ? Colors.white30 : const Color(0xFF94A3B8),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 1.2,
+                                fontFamily: 'Roboto',
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 )
               : SafeArea(

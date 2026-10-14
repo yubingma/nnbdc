@@ -579,17 +579,9 @@ abstract class RestClient {
   @GET("/getAdviceSessions.do")
   Future<List<AdviceSessionVo>> getAdviceSessions({@Query("limit") int? limit});
 
-  /// 消息级需求列表（管理员功能）
+  /// 消息级需求列表（管理员功能）：被标记为需求的消息，按时间倒序
   @GET("/getAdviceRequirements.do")
-  Future<Result<List<AdviceRequirementVo>>> getAdviceRequirements({@Query("status") String? status});
-
-  /// 更新消息级需求的处理状态（管理员功能）
-  @POST("/updateRequirementStatus.do")
-  @FormUrlEncoded()
-  Future<Result> updateRequirementStatus(
-      @Field("msgId") String msgId,
-      @Field("status") String status,
-      @Field("adminUserId") String adminUserId);
+  Future<Result<List<AdviceRequirementVo>>> getAdviceRequirements();
 
   @POST("/setMsgTag.do")
   @FormUrlEncoded()

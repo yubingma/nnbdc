@@ -1580,9 +1580,6 @@ class MsgVo {
   /// 这条消息是对哪一条的针对性回复；为空表示不是针对性回复
   String? replyToId;
 
-  /// 消息级需求的处理状态（VOTING / IN_PROGRESS / REJECTED / COMPLETED）
-  String? reqStatus;
-
   /// 被引用消息的快照，用来画引用块。被引用的消息已被删除时，quotedMsgId 有值而
   /// quotedContent 为空，界面据此显示「原消息已删除」
   String? quotedMsgId;
@@ -1591,7 +1588,7 @@ class MsgVo {
 
   MsgVo(this.id, this.fromUserName, this.fromUserNickName, this.toUserName, this.toUserNickName, this.content, this.createTimeForDisplay,
       this.msgType, this.clientType, this.fromUser, this.toUser, this.createTime, this.viewed,
-      [this.tag, this.replyToId, this.reqStatus, this.quotedMsgId, this.quotedMsgType, this.quotedContent]);
+      [this.tag, this.replyToId, this.quotedMsgId, this.quotedMsgType, this.quotedContent]);
 
   factory MsgVo.fromJson(Map<String, dynamic> json) => _$MsgVoFromJson(json);
 
@@ -1628,7 +1625,6 @@ class AdviceSessionVo {
 class AdviceRequirementVo {
   String id;
   String content;
-  String? reqStatus;
   DateTime createTime;
   String? clientType;
   String userId;
@@ -1637,7 +1633,7 @@ class AdviceRequirementVo {
   String? wechatAvatar;
   bool premium;
 
-  AdviceRequirementVo(this.id, this.content, this.reqStatus, this.createTime, this.clientType, this.userId,
+  AdviceRequirementVo(this.id, this.content, this.createTime, this.clientType, this.userId,
       this.userName, this.nickName, this.wechatAvatar, this.premium);
 
   factory AdviceRequirementVo.fromJson(Map<String, dynamic> json) => _$AdviceRequirementVoFromJson(json);

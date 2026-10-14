@@ -10,6 +10,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
+import 'package:nnbdc/services/sync_progress.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/client_type.dart';
@@ -548,6 +549,15 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
 
       for (var log in backendToLocal) {
+        // 每 200 条刷新一次写入进度：首屏加载态靠它分辨"还在写"与"已经卡住"
+        final processed = successCount + failCount;
+        if (processed % 200 == 0) {
+          syncProgress.value = SyncProgress(
+            phase: 'WRITING LOCAL DATA',
+            done: processed,
+            total: backendToLocal.length,
+          );
+        }
         try {
           // 处理BATCH_DELETE操作类型
           if (log.operate == 'BATCH_DELETE') {
@@ -891,6 +901,7 @@ Future<bool> uploadLogsInBatches({
 
   var version = startVersion;
   for (var i = 0; i < batches.length; i++) {
+    syncProgress.value = SyncProgress(phase: 'UPLOADING CHANGES', done: i, total: batches.length);
     final batch = batches[i];
     final result = await upload(version, batch);
     if (!result.success) {
@@ -1215,6 +1226,11 @@ Future<void> syncUserDb(String userId, {bool retried = false}) async {
       if (result1.success) {
         List<UserDbLogDto> remoteLogs = result1.data!;
         Global.logger.i("✅ 获取远程变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
+        syncProgress.value = SyncProgress(
+          phase: 'WRITING LOCAL DATA',
+          done: 0,
+          total: remoteLogs.length,
+        );
 
         // 记录上下行数量
         addUploadCount(localLogs.length);
@@ -1296,6 +1312,7 @@ Future<void> syncDb() async {
 
   try {
     Global.logger.i("🔄 开始数据库同步流程");
+    syncProgress.value = const SyncProgress(phase: 'CHECKING SYSTEM DATA');
 
     // 检查网络连接
     final networkUtil = NetworkUtil();
@@ -1325,6 +1342,7 @@ Future<void> syncDb() async {
 
     // 再同步用户数据（游客不需要同步用户数据）
     if (!Global.isGuest) {
+      syncProgress.value = const SyncProgress(phase: 'FETCHING USER DATA');
       await syncUserDb(loggedInUser.id!);
     }
 
@@ -1352,6 +1370,7 @@ Future<void> syncDb() async {
     rethrow;
   } finally {
     _isSyncDbRunning = false;
+    syncProgress.value = const SyncProgress.idle();
   }
 }
 

@@ -31,7 +31,7 @@ class ThrottledDbSyncService {
     _needsAnotherSync = false;
     _syncRequestedWhileSuspended = false;
     _suspendCount = 0;
-    _waiters.clear();
+    _finishWaiters();
     Global.logger.d('🧹 ThrottledDbSyncService 已重置');
   }
 
@@ -98,6 +98,13 @@ class ThrottledDbSyncService {
     final completer = Completer<void>();
     _waiters.add(completer);
     await requestSync(immediate: immediate);
+    // 导入/大事务期间同步被暂停，requestSync 不会安排任何执行，
+    // 本次等待没有任何同步会来收尾：立即结束等待，让调用方先用本地数据展示，
+    // resume() 之后会自动补一次同步。否则调用方会永远停在加载态。
+    if (_syncTimer == null && !_isPerformingSync) {
+      _waiters.remove(completer);
+      completer.complete();
+    }
     return completer.future;
   }
 
@@ -105,8 +112,11 @@ class ThrottledDbSyncService {
   bool _needsAnotherSync = false; // 同步期间是否有新的请求，需要完成后再次执行
 
   /// 执行实际的同步操作
+  ///
+  /// 无论本次是否真的同步了数据（被暂停、无网络都算），结束时都必须收尾等待者，
+  /// 否则 [requestSyncAndWait] 的调用方会永远停在加载态。
   Future<void> _performSync() async {
-    // 防止并发执行同步操作
+    // 防止并发执行同步操作：正在进行的同步结束时，会按 _needsAnotherSync 再补一次
     if (_isPerformingSync) {
       _needsAnotherSync = true;
       Global.logger.i('⏳ 数据库同步已在进行中，标记为完成后再次执行');
@@ -115,35 +125,28 @@ class ThrottledDbSyncService {
 
     _isPerformingSync = true;
     _needsAnotherSync = false;
+    _syncTimer?.cancel();
+    _syncTimer = null;
 
     final startTime = AppClock.now();
     Global.logger.d('🔄 开始执行数据库同步操作');
 
-    // 若正在导入/大事务，直接跳过，待恢复后再触发一次
-    if (_suspendCount > 0) {
-      _syncRequestedWhileSuspended = true;
-      Global.logger.d('⏸️ 同步被暂停（导入中），跳过本次执行');
-      _isPerformingSync = false;
-      _syncScheduled = false;
-      return;
-    }
-
-    // 检查网络连接
-    bool isConnected = await _networkUtil.isConnected();
-    if (!isConnected) {
-      Global.logger.d('🌐 网络连接不可用，静默跳过同步操作');
-      _isPerformingSync = false;
-      _syncScheduled = false;
-      return;
-    }
-
-    _lastSyncAttemptTime = startTime;
-
-    // 清除待执行的定时器
-    _syncTimer?.cancel();
-    _syncTimer = null;
-
     try {
+      // 若正在导入/大事务，直接跳过，待恢复后再触发一次
+      if (_suspendCount > 0) {
+        _syncRequestedWhileSuspended = true;
+        Global.logger.d('⏸️ 同步被暂停（导入中），跳过本次执行');
+        return;
+      }
+
+      // 检查网络连接
+      if (!await _networkUtil.isConnected()) {
+        Global.logger.d('🌐 网络连接不可用，跳过同步操作');
+        return;
+      }
+
+      _lastSyncAttemptTime = startTime;
+
       await dbsync.syncDb();
 
       final endTime = AppClock.now();
@@ -166,14 +169,8 @@ class ThrottledDbSyncService {
     } finally {
       _isPerformingSync = false;
       _syncScheduled = false;
-      
-      // 完成所有等待者
-      for (final waiter in _waiters) {
-        if (!waiter.isCompleted) {
-          waiter.complete();
-        }
-      }
-      _waiters.clear();
+
+      _finishWaiters();
 
       // 如果同步期间又有新的同步请求，安排再一次同步
       if (_needsAnotherSync) {
@@ -182,6 +179,19 @@ class ThrottledDbSyncService {
         unawaited(requestSync());
       }
     }
+  }
+
+  /// 结束所有等待者。
+  ///
+  /// 任何一次同步执行结束都必须调用：等待者只在"有同步会来收尾"时才被挂起，
+  /// 一旦漏掉收尾，调用方就会永远停在加载态（首页无限转圈）。
+  void _finishWaiters() {
+    for (final waiter in _waiters) {
+      if (!waiter.isCompleted) {
+        waiter.complete();
+      }
+    }
+    _waiters.clear();
   }
 
   /// 暂停同步（可重入）

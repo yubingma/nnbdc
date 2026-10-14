@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import beidanci.api.model.AdviceRequirementStatus;
 import beidanci.api.model.AdviceRequirementVo;
 import beidanci.api.model.AdviceSessionVo;
 import beidanci.api.model.ClientType;
@@ -482,8 +481,8 @@ public class MsgBo extends BaseBo<Msg> {
     /**
      * 更新消息的管理员业务标签（如“需求”，传入空或 null 则清空标签）。
      *
-     * 标记为需求时同时给它一个初始处理状态（投票中），取消标记时把状态一并清掉，
-     * 两者不允许出现一个有一个没有的中间状态。
+     * 打标签就只是给这条消息贴一个标签，不附带任何处理状态或阶段：
+     * 消息级需求与需求墙是两套数据，不打标即不是需求，取消标记即清空标签。
      *
      * @param msgId 消息ID
      * @param tag 标签文本
@@ -491,46 +490,13 @@ public class MsgBo extends BaseBo<Msg> {
     public void updateMsgTag(String msgId, String tag) {
         String normalizedTag = StringUtils.hasText(tag) ? tag.trim() : null;
 
-        if (REQUIREMENT_TAG.equals(normalizedTag)) {
-            String sql = "UPDATE msg SET tag = :tag,"
-                    + " req_status = COALESCE(req_status, :initialStatus) WHERE id = :id";
-            MapSqlParameterSource params = new MapSqlParameterSource();
-            params.addValue("id", msgId);
-            params.addValue("tag", normalizedTag);
-            params.addValue("initialStatus", AdviceRequirementStatus.VOTING.toString());
-            namedParameterJdbcTemplate.update(sql, params);
-        } else {
-            String sql = "UPDATE msg SET tag = :tag, req_status = NULL WHERE id = :id";
-            MapSqlParameterSource params = new MapSqlParameterSource();
-            params.addValue("id", msgId);
-            params.addValue("tag", normalizedTag);
-            namedParameterJdbcTemplate.update(sql, params);
-        }
-
-        logger.info("已更新消息标签: msgId={}, tag={}", msgId, normalizedTag);
-    }
-
-    /**
-     * 更新消息级需求的处理状态（管理员功能）。
-     *
-     * @param msgId 消息ID
-     * @param reqStatus 目标状态
-     */
-    public void updateRequirementStatus(String msgId, AdviceRequirementStatus reqStatus) {
-        Msg msg = findById(msgId);
-        if (msg == null) {
-            throw new IllegalArgumentException("需求对应的消息不存在，可能已被删除");
-        }
-        if (!REQUIREMENT_TAG.equals(msg.getTag())) {
-            throw new IllegalArgumentException("这条消息没有被标记为需求，无法设置需求状态");
-        }
-
-        String sql = "UPDATE msg SET req_status = :reqStatus WHERE id = :id";
+        String sql = "UPDATE msg SET tag = :tag WHERE id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", msgId);
-        params.addValue("reqStatus", reqStatus.toString());
+        params.addValue("tag", normalizedTag);
         namedParameterJdbcTemplate.update(sql, params);
-        logger.info("已更新需求状态: msgId={}, reqStatus={}", msgId, reqStatus);
+
+        logger.info("已更新消息标签: msgId={}, tag={}", msgId, normalizedTag);
     }
 
     /**
@@ -584,29 +550,24 @@ public class MsgBo extends BaseBo<Msg> {
     }
 
     /**
-     * 消息级需求列表（管理员功能）：被标记为需求的消息，按状态筛选。
+     * 消息级需求列表（管理员功能）：被标记为需求的消息，按时间倒序。
      *
-     * @param reqStatus 目标状态，传 null 表示不筛选
+     * 只有「被标过需求」这一个条件，没有状态可分栏——打标签本身就是全部。
      */
-    public List<AdviceRequirementVo> getAdviceRequirements(AdviceRequirementStatus reqStatus) {
-        String sql = "SELECT m.id, m.content, m.req_status, m.create_time, m.client_type, m.from_user_id,"
+    public List<AdviceRequirementVo> getAdviceRequirements() {
+        String sql = "SELECT m.id, m.content, m.create_time, m.client_type, m.from_user_id,"
                 + " u.user_name, u.nick_name, u.wechat_avatar, u.premium_override_enabled"
                 + " FROM msg m JOIN \"user\" u ON u.id = m.from_user_id"
-                + " WHERE m.tag = :requirementTag";
+                + " WHERE m.tag = :requirementTag"
+                + " ORDER BY m.create_time DESC";
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("requirementTag", REQUIREMENT_TAG);
-        if (reqStatus != null) {
-            sql += " AND m.req_status = :reqStatus";
-            params.addValue("reqStatus", reqStatus.toString());
-        }
-        sql += " ORDER BY m.create_time DESC";
 
-        List<AdviceRequirementVo> vos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             AdviceRequirementVo vo = new AdviceRequirementVo();
             vo.setId(rs.getString("id"));
             vo.setContent(rs.getString("content"));
-            vo.setReqStatus(toRequirementStatus(rs.getString("req_status")));
             vo.setCreateTime(rs.getTimestamp("create_time"));
             vo.setClientType(toClientType(rs.getString("client_type")));
             vo.setUserId(rs.getString("from_user_id"));
@@ -616,14 +577,6 @@ public class MsgBo extends BaseBo<Msg> {
             vo.setPremium(rs.getBoolean("premium_override_enabled"));
             return vo;
         });
-
-        // 需求列表也要能按状态分栏筛选，状态为空的旧标记按“投票中”兜住，避免出现无状态卡片
-        for (AdviceRequirementVo vo : vos) {
-            if (vo.getReqStatus() == null) {
-                vo.setReqStatus(AdviceRequirementStatus.VOTING);
-            }
-        }
-        return vos;
     }
 
     /**
@@ -692,15 +645,4 @@ public class MsgBo extends BaseBo<Msg> {
         }
     }
 
-    private AdviceRequirementStatus toRequirementStatus(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-        try {
-            return AdviceRequirementStatus.valueOf(value);
-        } catch (IllegalArgumentException e) {
-            logger.warn("无法识别的需求状态: {}", value);
-            return null;
-        }
-    }
 }

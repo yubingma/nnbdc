@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import beidanci.api.Result;
-import beidanci.api.model.AdviceRequirementStatus;
 import beidanci.api.model.AdviceRequirementVo;
 import beidanci.api.model.AdviceSessionVo;
 import beidanci.api.model.MsgCountVo;
@@ -236,51 +235,10 @@ public class MsgController {
     }
 
     /**
-     * 获取消息级需求列表（管理员功能）
-     *
-     * @param status 需求状态（VOTING/IN_PROGRESS/REJECTED/COMPLETED），不传表示全部
+     * 获取消息级需求列表（管理员功能）：被标记为需求的消息，按时间倒序。
      */
     @GetMapping("/getAdviceRequirements.do")
-    public Result<List<AdviceRequirementVo>> getAdviceRequirements(
-            @RequestParam(name = "status", required = false) String status) {
-        AdviceRequirementStatus reqStatus = null;
-        if (StringUtils.isNotEmpty(status)) {
-            try {
-                reqStatus = AdviceRequirementStatus.valueOf(status.trim().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return Result.fail("无法识别的需求状态: " + status);
-            }
-        }
-        return Result.success(msgBo.getAdviceRequirements(reqStatus));
-    }
-
-    /**
-     * 更新消息级需求的处理状态（管理员功能）
-     *
-     * @param msgId 被标记为需求的那条消息ID
-     * @param status 目标状态（VOTING/IN_PROGRESS/REJECTED/COMPLETED）
-     */
-    @PostMapping("/updateRequirementStatus.do")
-    public Result<Void> updateRequirementStatus(@RequestParam(name = "msgId") String msgId,
-                                                @RequestParam(name = "status") String status,
-                                                @RequestParam(name = "adminUserId") String adminUserId) {
-        User adminUser = userBo.findById(adminUserId);
-        if (adminUser == null || !adminUser.getIsAdmin()) {
-            return Result.fail("管理员权限不足");
-        }
-
-        AdviceRequirementStatus reqStatus;
-        try {
-            reqStatus = AdviceRequirementStatus.valueOf(status.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return Result.fail("无法识别的需求状态: " + status);
-        }
-
-        try {
-            msgBo.updateRequirementStatus(msgId, reqStatus);
-        } catch (IllegalArgumentException e) {
-            return Result.fail(e.getMessage());
-        }
-        return Result.success(null);
+    public Result<List<AdviceRequirementVo>> getAdviceRequirements() {
+        return Result.success(msgBo.getAdviceRequirements());
     }
 }

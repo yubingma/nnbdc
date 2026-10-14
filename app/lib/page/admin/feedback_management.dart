@@ -21,7 +21,8 @@ import 'package:permission_handler/permission_handler.dart';
 ///
 /// 会话列表是「按用户组织」的导航页：一个用户一行，把同一个人的聊天内容收在一起；
 /// 需求列表是消息级需求的待办页（需求贴在具体某条消息上，不贴在会话上）；
-/// 会话详情才是聊天本身，长按任意一条消息可以引用回复或标为需求。
+/// 会话详情才是聊天本身，点用户消息旁的灯图标就能把那条消息标为需求，
+/// 长按消息还有引用回复、删除等操作。
 enum _AdviceView { sessions, requirements, detail }
 
 /// 需求列表里的一张卡片。两个来源用同一个模型承载，靠 isFromWall 区分点击后去哪。
@@ -29,7 +30,8 @@ class _RequirementItem {
   final String id;
   final String title;
   final String body;
-  final String statusKey;
+  /// 需求墙需求自己的推进阶段；消息级需求只是一个标签，没有状态，这里为 null
+  final String? statusKey;
   final int voteCount;
 
   /// true = 用户在需求墙发的需求（feature_request），去需求墙管理处理；
@@ -43,7 +45,7 @@ class _RequirementItem {
     required this.id,
     required this.title,
     required this.body,
-    required this.statusKey,
+    this.statusKey,
     required this.voteCount,
     required this.isFromWall,
     required this.userId,
@@ -77,7 +79,6 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   // ---- 需求列表 ----
   List<_RequirementItem> _requirements = [];
   bool _isLoadingRequirements = true;
-  String _requirementStatusFilter = 'VOTING';
 
   // ---- 会话详情 ----
   AdviceSessionVo? _currentSession;
@@ -147,7 +148,6 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
             id: requirement.id,
             title: '',
             body: requirement.content,
-            statusKey: requirement.reqStatus ?? 'VOTING',
             voteCount: 0,
             isFromWall: false,
             userId: requirement.userId,
@@ -439,25 +439,6 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     }
   }
 
-  Future<void> _updateRequirementStatus(MsgVo message, String status) async {
-    final adminUserId = _adminUserId;
-    if (adminUserId == null) return;
-
-    try {
-      final res = await Api.client.updateRequirementStatus(message.id, status, adminUserId);
-      if (!mounted) return;
-      if (res.success) {
-        setState(() => message.reqStatus = status);
-        ToastUtil.success('需求状态已更新');
-        await _loadRequirements();
-      } else {
-        ToastUtil.error(res.msg ?? '更新失败');
-      }
-    } catch (e) {
-      if (mounted) ToastUtil.error('更新失败: $e');
-    }
-  }
-
   Future<void> _togglePremium(String userId, bool isPremium) async {
     try {
       final result = await Api.client.updatePremiumOverride(
@@ -620,15 +601,6 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                     _toggleRequirementTag(message);
                   },
                 ),
-              if (message.tag == '需求')
-                ListTile(
-                  leading: const Icon(Icons.flag_rounded, color: Color(0xFF3B82F6)),
-                  title: const Text('设置需求状态'),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _showRequirementStatusSheet(message);
-                  },
-                ),
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
                 title: const Text('删除这条消息', style: TextStyle(color: Colors.redAccent)),
@@ -639,34 +611,6 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showRequirementStatusSheet(MsgVo message) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('设置需求状态', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ),
-            for (final status in FeatureRequestStatus.values)
-              ListTile(
-                title: Text(status.description),
-                trailing: message.reqStatus == status.json
-                    ? Icon(Icons.check_rounded, color: context.primaryColor)
-                    : null,
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _updateRequirementStatus(message, status.json);
-                },
-              ),
-          ],
         ),
       ),
     );
@@ -724,7 +668,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         children: [
           _buildViewSwitcher(),
           if (isSessions && _isSearching) _buildSearchBar(),
-          if (isSessions) _buildMembershipFilter() else _buildRequirementStatusFilter(),
+          if (isSessions) _buildMembershipFilter(),
           Expanded(child: isSessions ? _buildSessionList() : _buildRequirementList()),
         ],
       ),
@@ -869,50 +813,6 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
           color: isSelected ? activeColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
           width: 0.5,
         ),
-      ),
-    );
-  }
-
-  Widget _buildRequirementStatusFilter() {
-    final statuses = <(String, String)>[
-      ('VOTING', '投票中'),
-      ('IN_PROGRESS', '开发中'),
-      ('REJECTED', '已拒绝'),
-      ('COMPLETED', '已完成'),
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: statuses.map((status) {
-          final selected = _requirementStatusFilter == status.$1;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(100),
-              onTap: () => setState(() => _requirementStatusFilter = status.$1),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: selected ? context.primaryColor.withValues(alpha: 0.16) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(
-                    color: selected ? context.primaryColor.withValues(alpha: 0.5) : context.themeConfig.cardBorder,
-                  ),
-                ),
-                child: Text(
-                  status.$2,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                    color: selected ? context.primaryColor : context.themeConfig.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }
@@ -1096,18 +996,17 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   Widget _buildRequirementList() {
     if (_isLoadingRequirements) return const Center(child: CircularProgressIndicator());
 
-    final items = _requirements.where((item) => item.statusKey == _requirementStatusFilter).toList();
-    if (items.isEmpty) {
+    if (_requirements.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.lightbulb_outline, size: 56, color: context.themeConfig.textMuted),
             const SizedBox(height: 12),
-            Text('这个状态下没有需求', style: TextStyle(fontSize: 15, color: context.themeConfig.textMuted)),
+            Text('还没有标记需求', style: TextStyle(fontSize: 15, color: context.themeConfig.textMuted)),
             const SizedBox(height: 6),
             Text(
-              '在会话详情里长按用户的消息即可标为需求',
+              '在会话详情里点消息旁的灯图标（或长按消息）即可标为需求',
               style: TextStyle(fontSize: 12.5, color: context.themeConfig.textMuted),
             ),
           ],
@@ -1117,8 +1016,8 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      itemCount: items.length,
-      itemBuilder: (context, index) => _buildRequirementCard(items[index]),
+      itemCount: _requirements.length,
+      itemBuilder: (context, index) => _buildRequirementCard(_requirements[index]),
     );
   }
 
@@ -1141,8 +1040,10 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
             Row(
               children: [
                 _buildBadge(item.isFromWall ? '需求墙' : '客服会话', const Color(0xFF3B82F6)),
-                const SizedBox(width: 6),
-                _buildBadge(FeatureRequestStatusExt.fromString(item.statusKey).description, const Color(0xFF8B5CF6)),
+                if (item.isFromWall) ...[
+                  const SizedBox(width: 6),
+                  _buildBadge(FeatureRequestStatusExt.fromString(item.statusKey!).description, const Color(0xFF8B5CF6)),
+                ],
                 if (item.isFromWall && item.voteCount > 0) ...[
                   const SizedBox(width: 6),
                   _buildBadge('${item.voteCount} 票', const Color(0xFFF97316)),
@@ -1340,10 +1241,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (message.tag == '需求') ...[
-                          _buildBadge(
-                            FeatureRequestStatusExt.fromString(message.reqStatus ?? 'VOTING').description,
-                            const Color(0xFFF59E0B),
-                          ),
+                          _buildBadge('需求', const Color(0xFFF59E0B)),
                           const SizedBox(width: 6),
                         ],
                         Text(
@@ -1353,6 +1251,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                             color: isAdminMessage ? Colors.white70 : theme.textMuted,
                           ),
                         ),
+                        if (!isAdminMessage) _buildRequirementTagButton(message),
                       ],
                     ),
                   ],
@@ -1369,6 +1268,24 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// 用户消息旁的常驻「标为需求」入口：点一下打标、再点一下取消。
+  /// 长按整条消息的菜单仍然保留，引用回复、改需求状态、删除都还收在那里。
+  Widget _buildRequirementTagButton(MsgVo message) {
+    final isRequirement = message.tag == '需求';
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _toggleRequirementTag(message),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8, top: 4, bottom: 4),
+        child: Icon(
+          isRequirement ? Icons.lightbulb : Icons.lightbulb_outline,
+          size: 16,
+          color: const Color(0xFFF59E0B).withValues(alpha: isRequirement ? 1.0 : 0.5),
+        ),
       ),
     );
   }

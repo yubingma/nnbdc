@@ -6,7 +6,6 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
-import beidanci.api.model.AdviceRequirementStatus;
 import beidanci.api.model.MsgType;
 import beidanci.api.model.ClientType;
 
@@ -121,18 +120,4 @@ public class Msg extends UuidPo {
         this.replyToId = replyToId;
     }
 
-    /**
-     * 消息级需求的处理状态。仅当 tag 为「需求」时有值，取消需求标记时应置回 null。
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "req_status", length = 20)
-    private AdviceRequirementStatus reqStatus;
-
-    public AdviceRequirementStatus getReqStatus() {
-        return reqStatus;
-    }
-
-    public void setReqStatus(AdviceRequirementStatus reqStatus) {
-        this.reqStatus = reqStatus;
-    }
 }

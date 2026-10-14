@@ -322,6 +322,7 @@
 | 变更快照 | `user_db_log.record` | 变更时刻整行数据的 JSON | |
 | 同步冲突排查 | `user_db_issue` | 端云同步冲突与异常记录 | |
 | 增量同步 | — | 只传变化的部分，不传全量 | |
+| 同步进度 | `syncProgress` | 端云同步当前所处的阶段与已处理的条数；首屏加载态展示它，让用户能分辨「还在推进」与「已经卡住」 | 见 `app/lib/services/sync_progress.dart` |
 | 缩体删除日志 | `user_db_log.record` 只写 `{"id": …}` 的 DELETE 日志 | 一次性修复批量删除学习记录时，为避免单次同步请求超过服务端 5MB 限制，删除日志只带主键 | 客户端收到后必须按 id 直接删本地行，**禁止整体反序列化成实体**；见 `app/lib/util/sync.dart:531`、`app/lib/util/learning_log_repair.dart:164` |
 | 黄金母版库（简称母版库） | 随包资源 `app/assets/db/initial.sqlite.gz`；制作工具 `app/lib/page/admin/golden_master_tool.dart` + `devops/golden_db_maker/make_golden_db.sh` | 随安装包发布的预置 SQLite 数据库，全新安装时由 `app/lib/db/db.dart:232` 直接解压使用，免去首屏下载通用词典 | **必须携带出品时刻的 `sys_db_version`**：它决定客户端首轮同步从哪个版本起步。这一行缺失时客户端按版本 0 走「首次全量同步」，而该分支按体积设计不含 `word_image` 等明细表（`server/nnbdc-service/src/main/java/beidanci/service/bo/SysDbSyncBo.java:391`），母版库里所有已被服务端删除的明细行将永远无法收敛 |
 
@@ -343,8 +344,8 @@
 | 兑换码 | `promo_redemption` / `promo_activity` | 营销活动与核销记录 | |
 | 站内信 | `msg` | 系统通知 / 同桌消息 / 活动提醒 | |
 | 客服会话 | `msg`，`msg_type = Advice` | 用户在「意见建议 / 客服」里和客服的一整段聊天；一个用户一条会话，会话里有许多条用户提的消息（`Advice`）和管理员的回复（`AdviceReply`） | 管理端「意见建议」页原来按单条消息平铺，同一用户的多条消息各占一行，这是已知的不便。**会话是按用户收纳聊天内容的组织单位，不是需求单位** |
-| 消息级需求 | `msg.tag = '需求'`（标记字段见 `server/db_upgrade/v74_add_tag_to_msg.sql`，索引 `idx_msg_tag`；处理状态 `msg.req_status` 见 `server/db_upgrade/v80_add_req_status_to_msg.sql`，索引 `idx_msg_req_status`） | 管理员在客服会话里把用户的**某一条具体消息**标记为需求，并给它一个处理状态：`VOTING` 投票中 / `IN_PROGRESS` 开发中 / `REJECTED` 已拒绝 / `COMPLETED` 已完成 | **需求挂在被标记的那条消息上**，不挂在会话上、也不挂在用户上；一次会话里用户说了几件事，是需求就标那几条。状态档位与「需求（feature_request）」的 `FeatureRequestStatus` 完全一致，但两套数据各自独立 |
-| 需求待办 | 管理端「意见建议」里的「需求待办」一屏 | 消息级需求与需求墙需求合在一起看的待办列表：来源「客服会话」的点进去落到聊天里那条消息，来源「需求墙」的点进去看原需求 | 一屏看两边、处理各走各的：会话里的需求用 `updateRequirementStatus.do`，需求墙的走需求墙管理页 |
+| 消息级需求 | `msg.tag = '需求'`（标记字段见 `server/db_upgrade/v74_add_tag_to_msg.sql`，索引 `idx_msg_tag`） | 管理员在客服会话里把用户的**某一条具体消息**打上「需求」标签 | **打的只是一个标签**，不附带任何处理状态或阶段（`req_status` 已由 `server/db_upgrade/v82_drop_req_status_from_msg.sql` 撤销）；需求挂在被标记的那条消息上，不挂在会话上、也不挂在用户上。一次会话里用户说了几件事，是需求就标那几条。与「需求（feature_request）」是两套独立数据，互不相干 |
+| 需求待办 | 管理端「意见建议」里的「需求待办」一屏 | 被标记为需求的用户消息，与需求墙需求合在一起看的清单：来源「客服会话」的点进去落到聊天里那条消息，来源「需求墙」的点进去看原需求 | 一屏看两边、处理各走各的：客服会话里的需求只有标签，标完就当待办看待，再点一次灯图标即取消；需求墙的走需求墙管理页 |
 | 被引用消息 | `msg.reply_to_id`（见 `server/db_upgrade/v79_add_reply_to_id_to_msg.sql`，索引 `idx_msg_reply_to`） | 管理员回复时指明"我这句话是回你哪一条"；回复气泡里的引用块显示的就是被引用消息 | 只允许一层引用，引用不能再被引用；已被引用的消息不允许删除，必须先删引用它的回复 |
 | 反馈截图 | `msg.content` 内嵌的 `【报错图片】["目录/文件名", …]` 标记 | 用户提意见、报错时随消息一起发上来的手机截图 | 与「单词配图」不是一回事：配图属于单词，随包展示；截图属于某一条具体消息 |
 | 意见建议 | `feature_request`（含 vote / report） | 用户需求与点赞投票 | ⚠️ 名字与「意见建议 / 客服」页面撞车，但**是两套独立数据**：`feature_request` 走需求墙与投票，客服聊天走 `msg`；引用时一律说「需求（feature_request）」或「客服会话」 |
