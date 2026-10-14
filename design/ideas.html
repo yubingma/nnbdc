@@ -1111,11 +1111,12 @@
                 </tbody>
               </table>
 
-              <div class="section-title">美术素材现状（2026-10-14 入库）</div>
+              <div class="section-title">美术素材现状（2026-10-14 入库并处理）</div>
               <div class="principle-box" style="background: rgba(96, 165, 250, 0.05); border-color: rgba(96, 165, 250, 0.18); color: #dbeafe;">
-                <strong style="color: var(--accent-blue);">已入库：</strong>8 张 1280×1280 的小馋怪形象图存于 <code>assets/images/monster/</code>（与 <code>assets/images/pet/</code> 一样属于美术<strong style="color: var(--accent-blue);">源料</strong>目录，不是 Flutter 运行时目录）。<br/>
-                <strong style="color: var(--accent-blue);">形象已经收敛：</strong>其中 5 张为「橙黄双叶版」系列，而且恰好覆盖了这个玩法需要的动作——抱草莓（抱水果）、瘪嘴站立、侧身行走、泡泡包围（对应泡泡枪）、捂脸要哭（对应“打哭”）；另外 3 张（蓝白嫩芽版、粉紫背袋版、绿色啃苹果版）是早期其他方向，留作参考。<br/>
-                <strong style="color: var(--accent-blue);">入库前必须处理：</strong>这批图全部是<strong style="color: var(--accent-blue);">带米色底的不透明 JPG</strong>，且右下角带「豆包 AI 生成」水印，<strong style="color: var(--accent-blue);">不能直接进安装包</strong>。需抠底转透明 PNG、去掉水印，并由美术统一形象后，才可复制到 <code>app/assets/images/</code> 并在 <code>app/pubspec.yaml</code> 里声明——注意资源目录声明只递归一层，第二层及更深的子目录必须单独声明，否则会被静默跳过。
+                <strong style="color: var(--accent-blue);">形象已收敛：</strong>5 张「橙黄双叶版」为正式素材，存于 <code>assets/images/monster/</code>，恰好覆盖本玩法需要的动作——抱草莓（抱水果）、瘪嘴站立、侧身行走、泡泡包围（对应泡泡枪）、捂脸要哭（对应“打哭”）。另 3 张早期方向（蓝白嫩芽版、粉紫背袋版、绿色啃苹果版）已移入 <code>assets/images/_unused/xiaochanguai_早期方向/</code> 留作参考，不再与新形象混用。<br/>
+                <strong style="color: var(--accent-blue);">已产出透明底成品：</strong>5 张 1280×1280 的 PNG 在 <code>assets/images/monster/cutout/</code>。处理了两件事：去掉右下角固定位置的「豆包 AI 生成」水印，抠掉米色底转透明（只有与图像边框连通的背景才变透明，被轮廓包住的浅色肚子一律保持实心，不会抠成半透明）。<br/>
+                <strong style="color: var(--accent-blue);">一件没做到、如实记录：</strong>画师画的桃色落地投影原样保留在成品里。实测该投影是 <code>(255,218,192)</code> 这类<strong style="color: var(--accent-blue);">饱和桃色</strong>，不是背景被压暗，与半透明气泡、水洼在颜色上无法区分；把抠底阈值抬高到能吞掉它时，气泡与水洼会一起消失、角色右缘还会被啃出缺口。要去掉它只能由美术在源文件里单独分层，或逐张手工蒙版。<br/>
+                <strong style="color: var(--accent-blue);">进安装包前还要做：</strong>这批图仍是美术<strong style="color: var(--accent-blue);">源料</strong>目录里的资产。将来真正接入游戏时，需复制到 <code>app/assets/images/</code> 并在 <code>app/pubspec.yaml</code> 里声明——资源目录声明只递归一层，第二层及更深的子目录必须单独声明，否则会被静默跳过。
               </div>
 
               <div class="section-title">下一步</div>
@@ -2306,7 +2307,7 @@
 - **四条红线**：火力必须有地板（防死亡螺旋）、难度长在词汇上而不是小怪血条上、必须能输（否则打哭只是过场）、答对的回报要看得见（队伍铺满桥面，不是“推进速度 +20%”）。
 - **排行榜三前提**：按 hall_group 的 8 个分组分榜保证公平、分数由服务端用当日种子重算防伪造、每天一关一次机会（Wordle 模式）。
 - **待拍板**：关卡与词库绑定方式、一天几次机会、分数公式、被抢的“水果”落在哪个已有资产、入口位置。
-- **美术素材（2026-10-14 入库）**：8 张小馋怪形象图存于 assets/images/monster/；其中 5 张「橙黄双叶版」已覆盖抱水果/行走/泡泡/要哭等本玩法所需动作，另 3 张是早期方向。全部为带米色底、带「豆包 AI 生成」水印的 JPG，须抠底去水印后再转 app/assets/images/ 并在 pubspec 中声明。
+- **美术素材（2026-10-14 入库并处理）**：正式素材为 5 张「橙黄双叶版」，在 assets/images/monster/；3 张早期方向已移入 assets/images/_unused/xiaochanguai_早期方向/。透明底成品在 assets/images/monster/cutout/（已去「豆包 AI 生成」水印、已抠米色底）。画师画的桃色落地投影因与气泡水洼无法区分而原样保留，待美术分层处理。
 - **定位**：单机闯关 PvE，接词库与复习队列；广告里演的就是游戏里玩的。`;
       } else if (id === 'idea-ui-001') {
         text = `### 今日学习计划：对标「不背单词」极简壁纸画报美学与低频配置收纳

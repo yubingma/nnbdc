@@ -218,7 +218,7 @@ void main() {
             tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).where((d) => d != null).join(' | '));
       }
       expect(extraTags, hasLength(1), reason: '加量态的数字行必须渲染出来（例如「1000 + 200」）');
-      expect(tester.widget<Text>(extraTags.single).data, ' + 200');
+      expect(tester.widget<Text>(extraTags.single).data, '+200');
       expect(tester.takeException(), isNull,
           reason: '${scale}x 字号下，四位计划数 + 三位加量数也不允许溢出');
 

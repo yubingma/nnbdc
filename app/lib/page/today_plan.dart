@@ -1249,12 +1249,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 任务卡上的数字：有加量批次时跟一个更小的「+N」（今天额外追加的那一组），
+  /// 任务卡上的数字：有加量批次时，下面再跟一行更小的「+N」（今天额外追加的那一组），
   /// 让「今天的量」一眼看全，而不是只看到一个不含加量的计划数。
   ///
-  /// 外层套 [FittedBox]：左卡一格只有半张卡宽（156dp 的一半再扣内缩），
-  /// 加量态「20 + 5」加上大字号会撑爆那一格（真机实测溢出 1.9px），
-  /// 这里统一等比收字兜住，避免任何机型/字号下溢出。
+  /// 两行都套 [FittedBox] 兜底：左卡一格只有半张卡宽（真机 360dp 下可用约 49.5dp），
+  /// 位数多或系统字号放大时靠等比收字保证**任何机型/字号下都不溢出**
+  /// （真机曾实测溢出 1.9px；四位数计划 + 三位数加量曾溢出 153px）。
   Widget _buildTaskCount({
     required int count,
     required int extraCount,
@@ -1267,22 +1267,41 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       fontFamily: 'Roboto',
       letterSpacing: -0.5,
     );
-    final Widget content = extraCount <= 0
-        ? Text('$count', style: numberStyle.copyWith(color: color))
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text('$count', style: numberStyle.copyWith(color: color)),
-              Text(
-                ' + $extraCount',
-                key: extraKey,
-                style: numberStyle.copyWith(fontSize: 15, letterSpacing: -0.3, color: color),
-              ),
-            ],
-          );
-    return FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: content);
+    // 只有计划数：独占一行，任何时候都等比收字兜住溢出。
+    if (extraCount <= 0) {
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text('$count', style: numberStyle.copyWith(color: color)),
+      );
+    }
+    // 有加量批次：**数字独占第一行，加量徽标换到第二行**。
+    //
+    // 这两行不能挤在一行：「1000 + 200」在真机 360dp 下净宽 103.7dp，
+    // 而左卡一格只有 49.5dp 可用 —— 整行被等比缩到 0.28 倍，
+    // 22sp 的主数字实际只剩 ~8sp，比它自己的「新词」标签还小。
+    // 拆成两行后数字独占那 49.5dp（四位数的自然宽 55.6dp，只需缩到 0.89 倍 ≈ 19.6sp），
+    // 量级上仍然是这张卡的主角；加量徽标本来次要，小字单列反而更清楚。
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text('$count', style: numberStyle.copyWith(color: color)),
+        ),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '+$extraCount',
+            key: extraKey,
+            style: numberStyle.copyWith(fontSize: 13, letterSpacing: -0.2, color: color),
+          ),
+        ),
+      ],
+    );
   }
 
   /// 底部「双任务岛与主操作」：
