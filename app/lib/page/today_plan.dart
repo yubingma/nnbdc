@@ -42,6 +42,20 @@ import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 
+/// 任务卡上主数字与加量徽标的基准字号（测量自然宽与真实渲染共用这一份，避免两头各写一个数）
+const double _countNumberFontSize = 22;
+const double _countExtraFontSize = 15;
+
+/// 今日计划页里几个定宽/定距的常量。
+///
+/// 提成单一来源是因为「卡内数字要等大」这件事必须在 build 阶段**反推**出
+/// 左卡一格的可用宽（去做文字测量），反推用的数字必须和真正参与布局的是同一套，
+/// 否则量出来的宽和实际不符，等大就会失去意义。
+const double _planPageHPadding = 20; // 页面左右内边距（SingleChildScrollView 的 padding）
+const double _islandCardGap = 12; // 左右两张任务卡之间的间隙
+const double _metricDivider = 0.5; // 左卡两格之间的分隔线宽
+const double _metricHPadding = 14; // 每格文字的左右内缩（_buildTaskMetric 的 padding）
+
 /// 今日计划页可选背景。
 ///
 /// [isDark] 是这张照片的明暗档：卡片只是一层半透明玻璃，字色必须与玻璃成套取色。
@@ -912,7 +926,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       final bool onDark = _wallpaperIsDark ?? isDarkMode;
                       return SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(20, 8, 20, bottomInset),
+                        padding: EdgeInsets.fromLTRB(_planPageHPadding, 8, _planPageHPadding, bottomInset),
                         child: ConstrainedBox(
                           // 内容比屏幕矮时撑满视口：顶部区块留在设计位置、底部任务岛贴住底栏上沿；
                           // 内容比屏幕高时（小屏/横屏/大字号）整页滚动，按钮始终滚得到。
@@ -946,6 +960,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 hasWallpaper: hasWallpaper,
                                 isDarkMode: isDarkMode,
                                 onDark: onDark,
+                                pageWidth: constraints.maxWidth,
                               ),
                             ],
                           ),
@@ -1249,20 +1264,82 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 任务卡上的数字：有加量批次时，下面再跟一行更小的「+N」（今天额外追加的那一组），
+
+  /// 左卡一格的可用宽（build 阶段反推，供 [_sharedCountScale] 做文字测量用）。
+  /// 用的是 [_planPageHPadding]/[_islandCardGap]/[_metricDivider]/[_metricHPadding]
+  /// 这几个真正参与布局的常量，保证量出来的宽和实际布局一致。
+  double _metricSlotWidth(double pageWidth) {
+    final cardsArea = pageWidth - _planPageHPadding * 2;
+    final cardWidth = (cardsArea - _islandCardGap) / 2;
+    return (cardWidth - _metricDivider) / 2 - _metricHPadding * 2;
+  }
+
+  /// 量「计划数 +（可选）加量」这一行在基准字号下的自然宽。
+  /// 用 [TextPainter] 按真字体与当前 textScaler 量，不靠手算字宽，字体/字号改了也不失真。
+  double _countNaturalWidth({required int count, required int extra}) {
+    const numberStyle = TextStyle(
+      fontSize: _countNumberFontSize,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Roboto',
+      letterSpacing: -0.5,
+    );
+    final span = TextSpan(
+      children: [
+        TextSpan(text: '$count', style: numberStyle),
+        if (extra > 0)
+          TextSpan(
+            text: ' + $extra',
+            style: numberStyle.copyWith(fontSize: _countExtraFontSize, letterSpacing: -0.3),
+          ),
+      ],
+    );
+    final painter = TextPainter(
+      text: span,
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    return painter.width;
+  }
+
+  /// 左卡两格数字的**公共缩放比**。
+  ///
+  /// 为什么要公共：两格各自 `FittedBox` 会各缩各的 —— 有加量的那格被挤小、
+  /// 没加量的那格还是原字号，同一个左卡里一大一小很难看。
+  /// 这里取"两格里最紧的那个"算出一个比，两格一起用：要小就一样小。
+  double _sharedCountScale(
+    double slotWidth,
+    List<({int count, int extra})> items,
+  ) {
+    var widest = 0.0;
+    for (final item in items) {
+      final w = _countNaturalWidth(count: item.count, extra: item.extra);
+      if (w > widest) widest = w;
+    }
+    if (widest <= 0 || widest <= slotWidth) return 1;
+    return slotWidth / widest;
+  }
+
+  /// 任务卡上的数字：有加量批次时跟一个更小的「+N」（今天额外追加的那一组），
   /// 让「今天的量」一眼看全，而不是只看到一个不含加量的计划数。
   ///
-  /// 两行都套 [FittedBox] 兜底：左卡一格只有半张卡宽（真机 360dp 下可用约 49.5dp），
+  /// 整行套 [FittedBox]：左卡一格只有半张卡宽（真机 360dp 下可用约 49.5dp），
   /// 位数多或系统字号放大时靠等比收字保证**任何机型/字号下都不溢出**
-  /// （真机曾实测溢出 1.9px；四位数计划 + 三位数加量曾溢出 153px）。
+  ///（真机实测溢出过 1.9px；四位数计划 + 三位数加量会溢出 153px）。
+  ///
+  /// 代价说清楚：一行放全时，三位计划 + 三位加量会被收到约 13–14sp
+  ///（仍大于「新词」标签的 12.5sp，产品已确认可接受）。
+  /// 另一种拆成两行的写法能让三位数保持满 22sp，但那会多占一行、卡片变高。
   Widget _buildTaskCount({
     required int count,
     required int extraCount,
+    required Key numberKey,
     required Key extraKey,
     required Color color,
+    required double fontScale,
   }) {
-    const numberStyle = TextStyle(
-      fontSize: 22,
+    // 字号乘公共缩放比：左卡两格"要小就一样小"（见 _sharedCountScale）
+    final numberStyle = TextStyle(
+      fontSize: _countNumberFontSize * fontScale,
       fontWeight: FontWeight.w700,
       fontFamily: 'Roboto',
       letterSpacing: -0.5,
@@ -1272,7 +1349,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       return FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,
-        child: Text('$count', style: numberStyle.copyWith(color: color)),
+        child: Text('$count', key: numberKey, style: numberStyle.copyWith(color: color)),
       );
     }
     // 有加量批次：**数字独占第一行，加量徽标换到第二行**。
@@ -1282,25 +1359,26 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 22sp 的主数字实际只剩 ~8sp，比它自己的「新词」标签还小。
     // 拆成两行后数字独占那 49.5dp（四位数的自然宽 55.6dp，只需缩到 0.89 倍 ≈ 19.6sp），
     // 量级上仍然是这张卡的主角；加量徽标本来次要，小字单列反而更清楚。
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text('$count', style: numberStyle.copyWith(color: color)),
-        ),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            '+$extraCount',
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text('$count', key: numberKey, style: numberStyle.copyWith(color: color)),
+          Text(
+            ' + $extraCount',
             key: extraKey,
-            style: numberStyle.copyWith(fontSize: 13, letterSpacing: -0.2, color: color),
+            style: numberStyle.copyWith(
+              fontSize: _countExtraFontSize * fontScale,
+              letterSpacing: -0.3,
+              color: color,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1311,9 +1389,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required bool hasWallpaper,
     required bool isDarkMode,
     required bool onDark,
+    required double pageWidth,
   }) {
     final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark);
     final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
+    // 左卡两格的数字共用一个缩放比：要小就一样小，不会一个 22sp 一个 13sp
+    final double countScale = _sharedCountScale(
+      _metricSlotWidth(pageWidth),
+      [
+        (count: newWordCount ?? 0, extra: _extraNewCount),
+        (count: oldWordCount ?? 0, extra: _extraOldCount),
+      ],
+    );
     // 词书单词量不足：主操作让位给补救操作（选择词书 / 就这样吧）
     final bool bookShortage = prepareResult?.code == "NNBDC-0012" ||
         (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0));
@@ -1346,23 +1433,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           label: '新词',
                           count: newWordCount ?? 0,
                           extraCount: _extraNewCount,
+                          numberKey: const Key('today_plan_new_count_number'),
                           extraKey: const Key('today_plan_extra_new_count'),
                           labelColor: ink.muted,
                           countColor: ink.primary,
+                          fontScale: countScale,
                           onTap: () {
                             toTodayNewWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
                           },
                         ),
                       ),
-                      Container(width: 0.5, height: 26, color: skin.border),
+                      Container(width: _metricDivider, height: 26, color: skin.border),
                       Expanded(
                         child: _buildTaskMetric(
                           label: '旧词',
                           count: oldWordCount ?? 0,
                           extraCount: _extraOldCount,
+                          numberKey: const Key('today_plan_old_count_number'),
                           extraKey: const Key('today_plan_extra_old_count'),
                           labelColor: ink.muted,
                           countColor: ink.primary,
+                          fontScale: countScale,
                           onTap: () {
                             toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
                           },
@@ -1374,7 +1465,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               ),
               // 右卡片：主操作（词书单词量不足时让位给整行的补救操作）
               if (!bookShortage) ...[
-                const SizedBox(width: 12),
+                const SizedBox(width: _islandCardGap),
                 Expanded(
                   child: renderStartButton(),
                 ),
@@ -1436,9 +1527,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required String label,
     required int count,
     required int extraCount,
+    required Key numberKey,
     required Key extraKey,
     required Color labelColor,
     required Color countColor,
+    required double fontScale,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -1446,7 +1539,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       onTap: onTap,
       child: Padding(
         // 左对齐 + 14dp 内缩：贴齐不背单词卡内"标签左上、数字在下方同一条左基线"的排版节奏
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: _metricHPadding),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
@@ -1464,8 +1557,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             _buildTaskCount(
               count: count,
               extraCount: extraCount,
+              numberKey: numberKey,
               extraKey: extraKey,
               color: countColor,
+              fontScale: fontScale,
             ),
           ],
         ),

@@ -272,12 +272,23 @@ void main() {
       find.byKey(const Key('today_plan_extra_old_count')),
     ].where((f) => f.evaluate().isNotEmpty).toList();
     expect(extraTags, hasLength(1), reason: '加量 5 个词要并进新词或旧词的数字里，不会两处都加');
-    expect(tester.widget<Text>(extraTags.single).data, '+5',
-        reason: '加量 5 个词以「+5」单独一行挂在计划数字下面（拆行是为了不让长数字行被等比缩小）');
+    expect(tester.widget<Text>(extraTags.single).data, ' + 5',
+        reason: '加量 5 个词以「 + 5」跟在计划数字后面（一行放全，加号左右各留一个空格）');
 
-    // 左卡一格只有半张卡宽：加量态数字行最容易把那一格撑爆
+    // 左卡一格只有半张卡宽：加量态「5 + 5」叠上左对齐内缩最容易把那一格撑爆
     // （真机曾实测溢出 1.9px），这里必须守住"不溢出"。
     expect(tester.takeException(), isNull, reason: '加量态的数字行不允许溢出');
+
+    // 两格数字必须等大：有加量的那格被挤小时，没加量的那格也要跟着小，
+    // 否则同一个左卡里一个大一个小，很难看。
+    //
+    // 注意这里必须比**渲染出来的矩形**，不能只比 style.fontSize：
+    // "各缩各的 FittedBox" 会让同一份 22sp 的 style 渲染出两种大小，
+    // 比 style 是抓不到这个 bug 的（试过，没牙）。
+    final newRect = tester.getRect(find.byKey(const Key('today_plan_new_count_number')));
+    final oldRect = tester.getRect(find.byKey(const Key('today_plan_old_count_number')));
+    expect(newRect.height, closeTo(oldRect.height, 0.5),
+        reason: '新词与旧词的数字渲染高度必须一致（要小就一样小）');
 
     await tester.pump(const Duration(seconds: 60));
   });

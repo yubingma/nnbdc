@@ -218,9 +218,15 @@ void main() {
             tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).where((d) => d != null).join(' | '));
       }
       expect(extraTags, hasLength(1), reason: '加量态的数字行必须渲染出来（例如「1000 + 200」）');
-      expect(tester.widget<Text>(extraTags.single).data, '+200');
+      expect(tester.widget<Text>(extraTags.single).data, ' + 200');
       expect(tester.takeException(), isNull,
           reason: '${scale}x 字号下，四位计划数 + 三位加量数也不允许溢出');
+
+      // 大词量下两格数字同样必须等大（比渲染矩形，不是比 style —— 理由见 daka_seal 那条）
+      final newRect = tester.getRect(find.byKey(const Key('today_plan_new_count_number')));
+      final oldRect = tester.getRect(find.byKey(const Key('today_plan_old_count_number')));
+      expect(newRect.height, closeTo(oldRect.height, 0.5),
+          reason: '${scale}x 字号下，新词与旧词的数字渲染高度也必须一致');
 
       await tester.pump(const Duration(seconds: 60));
     });
