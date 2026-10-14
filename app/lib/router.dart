@@ -12,6 +12,7 @@ import 'package:nnbdc/page/index.dart';
 import 'package:nnbdc/page/login.dart';
 import 'package:nnbdc/page/email_login.dart';
 import 'package:nnbdc/page/msg.dart';
+import 'package:nnbdc/page/monster.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/page/privacy.dart';
 import 'package:nnbdc/page/protocol.dart';
@@ -60,6 +61,7 @@ final goRouter = GoRouter(
     ),
     GoRoute(path: '/walkman', builder: (context, state) => const WalkmanPage()),
     GoRoute(path: '/game', builder: (context, state) => const GamePage()),
+    GoRoute(path: '/monster', builder: (context, state) => const MonsterPage()),
     GoRoute(path: '/russia', builder: (context, state) => const RussiaPage()),
     GoRoute(path: '/word_detail', builder: (context, state) => const WordDetailPage()),
     GoRoute(path: '/word_list', builder: (context, state) => const WordListPage()),

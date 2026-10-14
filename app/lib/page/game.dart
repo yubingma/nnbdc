@@ -409,6 +409,11 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
 
+                // 1.5 单人小游戏入口（不依赖服务端大厅数据）
+                SliverToBoxAdapter(
+                  child: _buildSoloGameSection(themeConfig),
+                ),
+
                 // 2. 主内容区域
                 SliverToBoxAdapter(
                   child: errorMessage != null
@@ -491,6 +496,78 @@ class _GamePageState extends State<GamePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+
+  /// 单人小游戏入口。与下面服务端下发的对战大厅彼此独立，
+  /// 所以放在大厅列表之前、且不受大厅加载失败影响。
+  Widget _buildSoloGameSection(AppThemeConfig themeConfig) {
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final isDarkMode = themeConfig.isDark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      child: FrostedGlassCard(
+        borderRadius: 20,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => context.push('/monster'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Row(
+              children: [
+                Icon(Icons.pets_rounded, size: 20, color: accentColor),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '打哭小馋怪',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.2,
+                          color: textMain,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '守桥 · 左右二选一，答错水果被抢',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w400,
+                          color: textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: accentColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '开始',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
