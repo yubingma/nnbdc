@@ -514,7 +514,8 @@
       font-size: 13.5px;
     }
 
-    .feature-item strong {
+    /* 仅卡片标题（直接子元素）独占一行；<p> 内的行内强调保持行内，不得断行 */
+    .feature-item > strong {
       display: block;
       color: var(--text-primary);
       margin-bottom: 4px;
@@ -740,7 +741,7 @@
       <p class="subtitle">记录随时迸发的产品闪念、动效构想与玩法实验。遵循奥卡姆剃刀原理与极简高级美学，去伪存真，持续沉淀。</p>
       
       <div class="stats-bar">
-        <div class="stat-pill">沉淀创意: <strong>9 (7 产品/架构 + 1 营销 + 1 激励体系)</strong></div>
+        <div class="stat-pill">沉淀创意: <strong>13 (10 玩法 + 1 界面 + 1 导航 + 1 营销)</strong></div>
         <div class="stat-pill">核心哲学: <strong>如非必要 · 勿增实体</strong></div>
         <div class="stat-pill">美学基准: <strong>现代极简 · 灵动克制</strong></div>
       </div>
@@ -764,7 +765,7 @@
               </svg>
               <span class="sidebar-title">创意目录 · INDEX</span>
             </div>
-            <span class="sidebar-badge-count">10</span>
+            <span class="sidebar-badge-count">13</span>
           </div>
 
           <nav class="nav-list" id="sidebarNav">
@@ -777,7 +778,16 @@
                 </svg>
                 <span>产品玩法与体验</span>
               </div>
-              <a href="#idea-009" class="nav-item active" data-id="idea-009">
+              <a href="#idea-010" class="nav-item active" data-id="idea-010">
+                <div class="nav-item-header">
+                  <span class="nav-item-id" style="color: var(--accent-aurora);">IDEA #010</span>
+                  <span class="nav-dot dot-aurora"></span>
+                </div>
+                <div class="nav-item-title">打哭小馋怪 · 左右二选一守桥</div>
+                <div class="nav-item-cat">答对涨火力 · 答错被抢水果 · 当日榜</div>
+              </a>
+
+              <a href="#idea-009" class="nav-item" data-id="idea-009">
                 <div class="nav-item-header">
                   <span class="nav-item-id" style="color: var(--accent-amber);">IDEA #009</span>
                   <span class="nav-dot dot-amber"></span>
@@ -916,8 +926,209 @@
               </svg>
               <span>第一节 · 产品功能与玩法构想（Product & Gameplay）</span>
             </div>
-            <span class="feed-section-tag">9 IDEAS</span>
+            <span class="feed-section-tag">10 IDEAS</span>
           </div>
+
+          <!-- 创意 #010: 打哭小馋怪 · 左右二选一守桥 -->
+          <article class="idea-card" id="idea-010">
+            <div class="idea-header">
+              <div>
+                <div class="idea-id-date">
+                  <span class="idea-id" style="color: var(--accent-aurora);">IDEA #010</span>
+                  <span>•</span>
+                  <span>2026-10-14</span>
+                  <span>•</span>
+                  <span>游戏玩法与每日留存</span>
+                </div>
+                <h2 class="idea-title">打哭小馋怪：左右二选一守桥（答对涨火力 · 答错被抢水果）</h2>
+              </div>
+              <span class="badge-status status-evaluating">设计定型 / 待排期实施</span>
+            </div>
+
+            <div class="tags-container">
+              <span class="tag" style="color: var(--accent-aurora); border-color: rgba(110, 231, 183, 0.2);">#泡泡单词</span>
+              <span class="tag">#打哭小馋怪</span>
+              <span class="tag">#左右二选一答题</span>
+              <span class="tag">#自动战斗</span>
+              <span class="tag">#闯关制</span>
+              <span class="tag">#当日排行榜</span>
+              <span class="tag">#形近词干扰</span>
+              <span class="tag">#广告即玩法</span>
+            </div>
+
+            <div class="idea-body">
+              <div class="idea-quote" style="border-left-color: var(--accent-aurora); background: rgba(110, 231, 183, 0.05);">
+                “小馋怪血量归零不会死，它会蹲下来哭，抹着眼泪跑掉——明天还会再来。这个反过来的情绪不是可爱的装饰：它一次解决了三件事，教育产品不该有的血腥感、家长视角的接受度，以及让同一只怪物能一直用下去——它是个角色，不是一件消耗品。”
+              </div>
+
+              <div class="section-title">灵感来源与定位</div>
+              <div class="principle-box" style="background: rgba(110, 231, 183, 0.04); border-color: rgba(110, 231, 183, 0.16); color: #d1fae5;">
+                <strong style="color: var(--accent-aurora);">来源：</strong>起点是 <em>Evony: The King's Return</em> 的买量素材——桥两侧的倍数门、桥那头压过来的红色人海、这头自动开火的蓝色士兵，用户多次在 YouTube 上刷到。<strong style="color: var(--accent-aurora);">但那条广告的玩法是假的</strong>：Evony 本体是 4X 策略经营（造城/训兵/联盟战），广告里演的滚木、倍数门、人海冲关在游戏里根本不存在，它只承担“3 秒钩子”的功能——不需要能玩通，只需要让人手痒。<br/>
+                <strong style="color: var(--accent-aurora);">本方案走的是相反的路：</strong>把广告里的机制做成<strong>真玩法</strong>——广告里演的就是游戏里玩的。这在买量行业里是稀缺品，也是唯一能长期用的路子：素材不会因为“货不对板”反噬口碑与商店评分，同一套美术还能同时供玩法与投放使用。<br/>
+                <strong style="color: var(--accent-aurora);">定位：</strong>单机闯关 PvE，接在词库与复习队列上。<strong>不做双人对战</strong>，也不进游戏大厅的房间模型。
+              </div>
+
+              <div class="section-title">核心循环（一局怎么打）</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 桥面纵向推进</strong>
+                  <p>小馋怪从桥那头往这头压，小宠物队伍在桥这头自动开火。<strong>玩家没有任何瞄准或射击操作</strong>，射击全自动，操作成本降到零。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 每隔一段路出一道题</strong>
+                  <p>桥面中间飘出中文释义，左右两个木箱上是英文单词，就是这道题的选项。决策只有一个：走哪边。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>③ 唯一的操作：左右移动</strong>
+                  <p>走向你认为是正确答案的那一侧。<strong>过门即锁定、不可回头</strong>——否则左右横跳等于两个都试，二选一的约束立刻失效。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>④ 答对：火力与队伍增长</strong>
+                  <p>武器升级、队伍扩大，火力更猛，把更多小馋怪打哭赶回去。这是纯正反馈。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>⑤ 答错：火力下降</strong>
+                  <p>箱子上的奖励是武器时，答错会让武器火力变差，而小馋怪继续往前挪。答错不直接扣东西，<strong>让出的是一寸桥面</strong>——这个刻度比直接扣道具温和，但连错就会累积成灾。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>⑥ 胜负判定</strong>
+                  <p>一局的小馋怪数量有限：全部打到血量为零、哭着跑掉，即通关并结算表现分；小馋怪走到桥这头就抢走一个水果，<strong>本局失败</strong>。</p>
+                </div>
+              </div>
+
+              <div class="section-title">四条设计红线（防止做跑偏）</div>
+              <div class="feature-grid">
+                <div class="feature-item wide">
+                  <strong>① 火力必须有地板，否则必然死亡螺旋</strong>
+                  <p>“答对变强 / 答错变弱”是对称的，但连错两次就会滚成：火力掉 → 打不动小馋怪 → 怪越堆越多 → 用户越慌 → 越容易再错 → 崩到底。而这个游戏里用户翻不了盘，因为打不过的根因是<strong>这些词他不会</strong>，不是操作失误——植物大战僵尸崩了还能靠操作救回来，这里不能。所以两条底线：<strong>火力掉到某个下限即止</strong>，保证最差也能把这局打完、看到结算与错词；<strong>答对能涨回来</strong>，涨幅要与跌幅打平。否则学得最吃力的那批人第一关就崩，直接退出——恰好放弃的正是最需要它的人。</p>
+                </div>
+                <div class="feature-item wide">
+                  <strong>② 难度必须长在词汇上，不是长在小怪血条上</strong>
+                  <p>“难度主要体现在小怪的强度上”是数值膨胀，不是难度设计：血更厚、走得更快，对玩家来说体验完全没变，只是多打一会儿——第 1 关和第 30 关会是同一个游戏。难度应该做在<strong>决策</strong>上，而这个玩法恰好握着别人没有的武器——词汇本身的难度：前期用一眼就会的词纯上手（<code>apple</code> / <code>banana</code>），中期从项目现成的形近词体系出题（左右 <code>adapt</code> / <code>adopt</code>，见 <code>design/confusable_words_match_rules_tighten_plan.md</code>），后期左右变三箱（三选一）、或作战窗口被小馋怪逼短。<strong>用词汇难度做难度曲线，是这个产品独有的优势。</strong></p>
+                </div>
+                <div class="feature-item wide">
+                  <strong>③ 必须能输，否则“打哭小馋怪”只是过场</strong>
+                  <p>如果答对的唯一后果是“打跑得更快”，那么小馋怪最终一定会被打跑，只是快慢问题——打哭它就不再是成就，而是流程里的固定动画。玩家第一次看它抹眼泪会觉得可爱，第十次就只是在等动画结束。<strong>一个赢不了的失败，会让胜利变得一文不值。</strong>有了“走到桥这头就抢走一个水果、本局结束”这条，打哭它才变成一件用户挣来的事；而代价只是一个水果，轻到不打击人。</p>
+                </div>
+                <div class="feature-item wide">
+                  <strong>④ 答对的回报要“看得见”，不能只是变快</strong>
+                  <p>“答对 → 打跑更快”如果字面实现成“推进速度 +20%”，用户拿到的是<strong>让游戏更快结束</strong>——这是消耗内容，不是获得爽感。倍数门真正爽的地方从来不是数字大，而是<strong>满屏的士兵把敌人碾过去</strong>。所以答对的回报必须落在画面上：队伍从 10 只铺满到 200 只，桥面密密麻麻，小馋怪一个接一个哭。数值上是火力更强，感知上必须是“我的人变多了”——这一条直接决定美术该往哪投。</p>
+                </div>
+              </div>
+
+              <div class="section-title">排行榜的三个硬前提</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 公平：不能是一张全站榜</strong>
+                  <p>每个人抽到的是自己队列里的词，词难度天差地别，分数根本不可比——背小学生词的人凭什么和背 GRE 的人排同一张榜？<strong>解法现成：直接用游戏大厅已有的 8 个分组做分榜</strong>（小学/初中/高中/大学/考级/出国/升学/所有单词，见 <code>doc/glossary.md:245</code>）。同组词库难度接近，分数才谈得上公平，而且一个新实体都不用加。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 防伪：分数必须在服务端算</strong>
+                  <p>单机玩法，分数若在客户端算，改个包就能刷出任意高分。按项目一贯原则（客户端数据一律不信任），这里要<strong>根治而不是防</strong>：让分数成为「当日题目种子 + 答案序列 + 用时」的纯函数——种子由服务端下发，客户端只上传答题记录，<strong>服务端拿种子重算一遍分数</strong>。客户端根本没有伪造的空间，也不需要在下游处处设卡。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>③ 每天一关、一次机会（Wordle 模式）</strong>
+                  <p>过关制配日榜，如果不限次数，排行榜就变成“谁最有耐心反复刷”。建议每天一套固定关卡、一次机会、当天出榜：既一次性解决刷分与公平性，又把“每日仪式感”和产品本来的打卡心智接上。</p>
+                </div>
+              </div>
+
+              <div class="section-title">与现有资产的关系（尽量不新增实体）</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>现有资产</th>
+                    <th>本方案怎么用</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td data-label="现有资产">大厅分组 <code>hall_group</code>（<code>doc/glossary.md:245</code>）</td>
+                    <td data-label="本方案怎么用">直接作为分榜口径，8 个分组的现有数据即日榜维度。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="现有资产">形近词体系（<code>design/confusable_words_match_rules_tighten_plan.md</code>）</td>
+                    <td data-label="本方案怎么用">作为二选一的干扰项。左右两个箱子若是形近词（<code>adapt</code> / <code>adopt</code>），50% 的抛硬币命中率才真正降下来，二选一才有区分度。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="现有资产">错题本 <code>user_wrong_word</code>（<code>doc/glossary.md:277</code>）</td>
+                    <td data-label="本方案怎么用">结算页把本局答错的词一键回流到错题本与复习队列。<strong>这是游戏与背词之间的闭环</strong>，否则它就真成了和背单词无关的独立小游戏。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="现有资产">记忆守护兽（<code>app/lib/widget/guardian_pet.dart</code>，IDEA #007）</td>
+                    <td data-label="本方案怎么用">小宠物直接复用守护兽的原创形象资产，不再另起一套角色。宠物是用户已经养了很久的东西，让它上桥守食物，情感投入可以直接搬过来。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="现有资产">排行榜勋章 <code>RANK_TOP3</code>「登顶时刻」（<code>app/lib/widget/badge_svg_assets.dart:30</code>，当前 <code>isAvailable: false</code>）</td>
+                    <td data-label="本方案怎么用">本方案是第一个能让这枚已设计好、但一直不可达的勋章真正生效的功能。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="现有资产">IDEA #008 海底泡泡升空对战（<code>design/ideas.html:977</code>，已实装于 <code>app/lib/page/russia.dart</code>）</td>
+                    <td data-label="本方案怎么用">同产品内两个游戏必须有明确分工：<strong>泡泡视觉归对战，本方案走纯手工调性</strong>（坚果、弹弓、蜂蜜罐、面包屑）。原先设想的“泡泡枪把小馋怪裹住飘起来”与此撞车——同一个 App 里两套“泡泡裹住东西飘走”，用户只会觉得换皮，建议这条武器换成别的。</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="section-title">不能碰的东西</div>
+              <div class="principle-box" style="background: rgba(251, 113, 133, 0.04); border-color: rgba(251, 113, 133, 0.18); color: #fecdd3;">
+                <strong style="color: var(--accent-rose);">① 不进房间模型，也不产出魔法泡泡。</strong>游戏大厅是房间制双人对战（<code>app/lib/page/game.dart:680</code> 的“匹配”等入口统一进 <code>/russia</code>），输赢结算「魔法泡泡」（即 <code>user.cow_dung</code>，见 <code>doc/glossary.md:335</code>；<code>doc/glossary.md:340</code> 记着 <code>game_type</code> 目前全是 <code>russia</code>）。单机 PvE 没有对手，就没有赢家输家，塞进房间与押注模型是不成立的；更不该让单机玩法产出魔法泡泡——那是直接的刷分与通胀通道。<br/>
+                <strong style="color: var(--accent-rose);">② “水果”目前在项目里不存在。</strong><code>app/lib/page/farm.dart</code> 现在只有种树生长，没有水果产出，也没有可被掠夺的资产。所以“抢走一个水果”要么改成抢已有资产，要么水果只做<strong>表现层</strong>（画面上被叼走，实际扣的是已有货币）。<br/>
+                <strong style="color: var(--accent-rose);">③ 严禁为此新增同步表。</strong>新增一张同步表必须同时做完客户端映射、服务端闸门、按表补拉三件事，漏一件就会打挂老包（项目已有铁律与历史事故）。本方案应尽量只用现有实体。
+              </div>
+
+              <div class="section-title">待拍板</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>决策点</th>
+                    <th>待定内容</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td data-label="决策点">关卡与词库如何绑定</td>
+                    <td data-label="待定内容">推荐「第 N 关 = 词表第 N 组」，这样关卡进度本身就是“练完了多少词”的表征，比分数更有学习意义，也顺势回答了“今天打哪一关”。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="决策点">一天给几次机会</td>
+                    <td data-label="待定内容">每日一关一次（Wordle 模式）还是可反复挑战取最高分。倾向前者。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="决策点">分数公式</td>
+                    <td data-label="待定内容">答对题数 / 剩余小馋怪 / 用时 / 剩余火力 四项的权重与是否分档。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="决策点">被抢的东西落在哪个已有资产上</td>
+                    <td data-label="待定内容">“水果”是纯表现层，还是映射到某个既有货币。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="决策点">入口位置</td>
+                    <td data-label="待定内容">独立入口，还是挂在游戏大厅里作为单机分类（需要先与房间制 PvP 在界面上分开）。</td>
+                  </tr>
+                  <tr>
+                    <td data-label="决策点">一段路几只小馋怪</td>
+                    <td data-label="待定内容">一局小馋怪总数、波次划分、小馋怪强弱档位（注意受红线②约束，强度不是主难度维度）。</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="section-title">美术素材现状（2026-10-14 入库）</div>
+              <div class="principle-box" style="background: rgba(96, 165, 250, 0.05); border-color: rgba(96, 165, 250, 0.18); color: #dbeafe;">
+                <strong style="color: var(--accent-blue);">已入库：</strong>8 张 1280×1280 的小馋怪形象图存于 <code>assets/images/monster/</code>（与 <code>assets/images/pet/</code> 一样属于美术<strong style="color: var(--accent-blue);">源料</strong>目录，不是 Flutter 运行时目录）。<br/>
+                <strong style="color: var(--accent-blue);">形象已经收敛：</strong>其中 5 张为「橙黄双叶版」系列，而且恰好覆盖了这个玩法需要的动作——抱草莓（抱水果）、瘪嘴站立、侧身行走、泡泡包围（对应泡泡枪）、捂脸要哭（对应“打哭”）；另外 3 张（蓝白嫩芽版、粉紫背袋版、绿色啃苹果版）是早期其他方向，留作参考。<br/>
+                <strong style="color: var(--accent-blue);">入库前必须处理：</strong>这批图全部是<strong style="color: var(--accent-blue);">带米色底的不透明 JPG</strong>，且右下角带「豆包 AI 生成」水印，<strong style="color: var(--accent-blue);">不能直接进安装包</strong>。需抠底转透明 PNG、去掉水印，并由美术统一形象后，才可复制到 <code>app/assets/images/</code> 并在 <code>app/pubspec.yaml</code> 里声明——注意资源目录声明只递归一层，第二层及更深的子目录必须单独声明，否则会被静默跳过。
+              </div>
+
+              <div class="section-title">下一步</div>
+              <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.7;">
+                先做<strong>单关可玩原型</strong>：一关、固定 20 个词、纯左右二选一、自动战斗、无排行榜，只验证一件事——<strong>是否 3 秒看懂、且想再来一局</strong>。原型跑通后再接排行榜与分榜口径。<br/>
+                这个原型同时就是一条可以直接投的广告素材：<strong>广告里演的，就是游戏里玩的。</strong>
+              </p>
+
+              <div class="actions-footer">
+                <span class="action-link" onclick="copyIdeaMarkdown('idea-010')">复制摘要 Markdown</span>
+              </div>
+            </div>
+          </article>
 
           <!-- 创意 #009: 释义按常用度加粗（已搁置） -->
           <article class="idea-card" id="idea-009">
@@ -2088,7 +2299,16 @@
   <script>
     function copyIdeaMarkdown(id) {
       let text = '';
-      if (id === 'idea-ui-001') {
+      if (id === 'idea-010') {
+        text = `### 打哭小馋怪：左右二选一守桥（答对涨火力 · 答错被抢水果）
+- **核心循环**：小馋怪从桥那头压过来，小宠物队伍自动开火；桥面每段出一道题（中间中文释义，左右两个木箱是英文单词），玩家唯一的操作是左右移动穿过自己认为正确的那一侧，过门即锁定、不可回头。
+- **胜负**：一局小馋怪数量有限，全部打到血量为零并哭跑即通关并结算表现分；小馋怪走到桥这头抢走一个水果，本局失败。
+- **四条红线**：火力必须有地板（防死亡螺旋）、难度长在词汇上而不是小怪血条上、必须能输（否则打哭只是过场）、答对的回报要看得见（队伍铺满桥面，不是“推进速度 +20%”）。
+- **排行榜三前提**：按 hall_group 的 8 个分组分榜保证公平、分数由服务端用当日种子重算防伪造、每天一关一次机会（Wordle 模式）。
+- **待拍板**：关卡与词库绑定方式、一天几次机会、分数公式、被抢的“水果”落在哪个已有资产、入口位置。
+- **美术素材（2026-10-14 入库）**：8 张小馋怪形象图存于 assets/images/monster/；其中 5 张「橙黄双叶版」已覆盖抱水果/行走/泡泡/要哭等本玩法所需动作，另 3 张是早期方向。全部为带米色底、带「豆包 AI 生成」水印的 JPG，须抠底去水印后再转 app/assets/images/ 并在 pubspec 中声明。
+- **定位**：单机闯关 PvE，接词库与复习队列；广告里演的就是游戏里玩的。`;
+      } else if (id === 'idea-ui-001') {
         text = `### 今日学习计划：对标「不背单词」极简壁纸画报美学与低频配置收纳
 - **核心逻辑**：壁纸成为第一主角（75%+ 留白），UI 元素退后为极简悬浮排版。
 - **低频配置收纳**：常驻占用近 50% 面积的「学习轨道」收进右上角设置抽屉。

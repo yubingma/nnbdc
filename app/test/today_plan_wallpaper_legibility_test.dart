@@ -208,8 +208,8 @@ void main() {
     }
 
     final today = AppClock.today();
-    final dateLabel = '${today.year}.${today.month.toString().padLeft(2, '0')}'
-        '.${today.day.toString().padLeft(2, '0')}';
+    // 日期串的单一来源：跟页面共用同一个格式化函数，杜绝"实现改了测试没跟上"
+    final dateLabel = planIslandDateLabel(today);
     return (
       islandGlass: decorationColor(find.text('今日目标')),
       cardGlass: decorationColor(find.text('新词')),
@@ -304,9 +304,10 @@ void main() {
         await pumpTodayPlan(tester, wallpaper: wallpaper.path, darkTheme: darkTheme);
 
         final palette = renderedPalette(tester);
+        // 亮底白纱 32%：对齐不背单词首页卡面实测厚度（α≈0.25~0.34），原来 45% 更厚、照片透不出来
         final expectedGlass = wallpaper.isDark
             ? (darkTheme ? const Color(0x6018202F) : Colors.black.withValues(alpha: 0.28))
-            : Colors.white.withValues(alpha: 0.45);
+            : Colors.white.withValues(alpha: 0.32);
         expect(palette.islandGlass, expectedGlass, reason: '中心岛玻璃底色自适应壁纸');
         expect(palette.cardGlass, expectedGlass, reason: '任务卡玻璃底色自适应壁纸');
         // 字色根据壁纸明暗档自适应

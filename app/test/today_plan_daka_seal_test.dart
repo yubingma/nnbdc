@@ -179,11 +179,19 @@ void main() {
     }
   }
 
-  Future<void> pumpTodayPlan(WidgetTester tester) async {
+  Future<void> pumpTodayPlan(WidgetTester tester, {double textScale = 1.0}) async {
     await tester.pumpWidget(
       ChangeNotifierProvider<DarkMode>.value(
         value: DarkMode(),
-        child: const MaterialApp(home: TodayPlanPage()),
+        child: MaterialApp(
+          // 真机（荣耀 KKG-AN00）系统字号是 1.15 倍：加量态的数字行正是在这个档位溢出过，
+          // 所以溢出回归必须能在放大字号下复现，否则等于没守。
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
+          home: const TodayPlanPage(),
+        ),
       ),
     );
     await tester.pump(); // 首帧
@@ -203,8 +211,8 @@ void main() {
     final seal = find.byKey(const Key('today_plan_daka_seal_text'));
     final sealDate = find.byKey(const Key('today_plan_daka_seal_date'));
     final today = AppClock.today();
-    final dateLabel = '${today.year}.${today.month.toString().padLeft(2, '0')}'
-        '.${today.day.toString().padLeft(2, '0')}';
+    // 日期串的单一来源：跟页面共用同一个格式化函数，杜绝"实现改了测试没跟上"
+    final dateLabel = planIslandDateLabel(today);
 
     await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
     await pumpTodayPlan(tester);
@@ -249,8 +257,13 @@ void main() {
   });
 
   testWidgets('加量批次的词数用 +N 跟在新词/旧词数字后面', (tester) async {
+    // 必须复现真机档位才守得住：360dp 宽（荣耀 KKG-AN00 逻辑宽）+ 系统字号 1.15 倍。
+    // widget 测试默认 800dp 宽，半格富余很多，加量态怎么都不会挤，等于没测。
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.reset);
     await seedTodayPlan(dakaed: true, extraWords: 5, extraDone: 2);
-    await pumpTodayPlan(tester);
+    await pumpTodayPlan(tester, textScale: 1.15); // 真机档位
     await pumpUntil(tester, find.text('继续学习（加量）'));
 
     // 加量词按自己算新词还是旧词并进对应那张卡，两个键只会命中一个
@@ -261,6 +274,10 @@ void main() {
     expect(extraTags, hasLength(1), reason: '加量 5 个词要并进新词或旧词的数字里，不会两处都加');
     expect(tester.widget<Text>(extraTags.single).data, ' + 5',
         reason: '加量 5 个词就以「 + 5」跟在计划数字后面（例如「5 + 5」，加号左右各留一个空格）');
+
+    // 左卡一格只有半张卡宽：加量态「5 + 5」叠上左对齐内缩最容易把那一格撑爆
+    // （真机曾实测溢出 1.9px），这里必须守住"不溢出"。
+    expect(tester.takeException(), isNull, reason: '加量态的数字行不允许溢出');
 
     await tester.pump(const Duration(seconds: 60));
   });

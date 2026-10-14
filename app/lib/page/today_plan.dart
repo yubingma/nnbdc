@@ -72,7 +72,7 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('清雅', 'assets/images/wallpaper/vase.jpg', isDark: false),
   PlanWallpaper('熊趣', 'assets/images/wallpaper/bears.jpg', isDark: false),
   PlanWallpaper('粉滩', 'assets/images/wallpaper/beach.jpg', isDark: false),
-  PlanWallpaper('孤帆', 'assets/images/wallpaper/sailboat.jpg', isDark: true),
+  PlanWallpaper('孤帆', 'assets/images/wallpaper/sailboat.jpg', isDark: false),
   // 第 4 排：山原温润色调
   PlanWallpaper('琉璃', 'assets/images/wallpaper/glaze.jpg', isDark: true),
   PlanWallpaper('秋林', 'assets/images/wallpaper/autumn.jpg', isDark: false),
@@ -80,10 +80,23 @@ const List<PlanWallpaper> planWallpapers = [
   PlanWallpaper('雄关', 'assets/images/wallpaper/great_wall.jpg', isDark: true),
   // 第 5 排：原野、素简、经典与随机（最后一个固定为随机）
   PlanWallpaper('青峦', 'assets/images/wallpaper/azure_peak.jpg', isDark: false),
-  PlanWallpaper('微光', 'assets/images/wallpaper/glimmer.jpg', isDark: false),
+  PlanWallpaper('微光', 'assets/images/wallpaper/glimmer.jpg', isDark: true),
   PlanWallpaper('经典', 'none', isDark: false),
   PlanWallpaper('随机', 'random', isDark: true),
 ];
+
+/// 中心岛上那行日期：**只显示「月/日 + 周几」，不显示年份**。
+///
+/// 年份对"今天"这类信息没有增量（页面本来就只讲今天），去掉后字符串更短、视线更聚焦；
+/// 补上周几是因为"今天周几"直接影响学习安排，这也是对标不背单词首页的做法。
+/// 周几用**英文缩写**（形如 `10/14 Wed.`）：整串都是 Latin，能统一由 Roboto 渲染，
+/// 不会出现"数字走 Roboto、周几掉回系统中文字体"的字体混排。
+///
+/// 这里是这个日期串的**单一来源**：页面与测试都从这里取，避免各写一份拼接。
+String planIslandDateLabel(DateTime day) {
+  const weekNames = ['Sun.', 'Mon.', 'Tue.', 'Wed.', 'Thu.', 'Fri.', 'Sat.'];
+  return '${day.month}/${day.day} ${weekNames[day.weekday % 7]}';
+}
 
 /// 今日计划页此刻真正压在身下的那张壁纸的明暗档；null 表示「经典」（无壁纸），
 /// 此时整套配色跟 App 主题走。
@@ -882,8 +895,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       final int planTotalWords = _planWords.length;
                       final bool isDakaStamped = hasDakaToday;
                       final DateTime stampDay = AppClock.today();
-                      final String stampDate =
-                          '${stampDay.year}.${stampDay.month.toString().padLeft(2, '0')}.${stampDay.day.toString().padLeft(2, '0')}';
+                      final String stampDate = planIslandDateLabel(stampDay);
 
                       // 壁纸底与主题底共用这一套布局：顶部悬浮设置 / 中心目标岛 / 底部双任务岛 + 主按钮，
                       // 两种背景只差卡片那一层皮肤（见 _cardSkin），结构与间距完全一致。
@@ -891,7 +903,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       // 底部必须给悬浮底栏让位：底栏（透明也一样）占着屏幕最底部且吞掉那一整块点击，
                       // 内容不让开，"开始学习/继续学习"就会被压在底栏下面点不到。
                       // 多让 16：主按钮下沿与底栏命中区之间留一点安全距离，按钮整体压得更低、离底栏更近。
-                      final double bottomInset = widget.bottomNavReserve + 16;
+                      // 卡底离屏幕底的距离按「不背单词」首页实测摆：它的任务卡下沿落在 0.863H
+                      //（实测 y=1968/2280），我们原来贴到 0.913H，卡片整体偏低 38dp，
+                      // 中间那条「岛上沿→卡上沿」的空隙就比它宽出 76dp、显得空旷。
+                      final double bottomInset =
+                          widget.bottomNavReserve + constraints.maxHeight * 0.07;
                       // 字色档：跟壁纸照片的明暗走（无壁纸时等于 App 主题），不与玻璃底色脱钩
                       final bool onDark = _wallpaperIsDark ?? isDarkMode;
                       return SingleChildScrollView(
@@ -911,7 +927,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   _buildTopFloatingHeader(themeConfig, hasWallpaper, onDark),
-                                  SizedBox(height: (constraints.maxHeight * 0.12).clamp(60.0, 110.0)),
+                                  // 中心岛同步下移：让「岛下沿 → 卡上沿」的空隙与它一致（实测 0.372H = 282dp）
+                                  SizedBox(height: (constraints.maxHeight * 0.168).clamp(60.0, 150.0)),
                                   _buildStatusIsland(
                                     hasWallpaper: hasWallpaper,
                                     isDarkMode: isDarkMode,
@@ -969,6 +986,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 卡片玻璃（保持原来的通透磨砂观感，不随照片改透明度）：
   /// 壁纸底沿用最初的透光白 22% / 深色 #6018202F，经典主题底用全站统一卡片色。
+  /// 描边统一取《现代极简美学规范》给第一层毛玻璃卡的那一档（白 14%，仅一丝呼吸）：
+  /// 亮底照片上卡边靠"白纱与照片的亮度差"定义，绝不打一圈看得见的高光边。
   ({Color bg, Color border, BoxShadow shadow}) _cardGlass({
     required bool hasWallpaper,
     required bool isDarkMode,
@@ -982,12 +1001,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
     return (
+      // 亮底白纱 32%：不背单词首页卡面实测 α≈0.25~0.34（沿边走相邻像素反解），
+      // 我们原来 45% 明显更厚、照片透不出来，这里对齐到它的量级。
       bg: onDark
           ? (isDarkMode ? const Color(0x6018202F) : Colors.black.withValues(alpha: 0.28))
-          : Colors.white.withValues(alpha: 0.45),
-      border: onDark
-          ? Colors.white.withValues(alpha: 0.20)
-          : Colors.white.withValues(alpha: 0.70),
+          : Colors.white.withValues(alpha: 0.32),
+      border: const Color(0x24FFFFFF),
       shadow: BoxShadow(
         color: Colors.black.withValues(alpha: 0.04),
         blurRadius: 14,
@@ -1045,7 +1064,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             width: 138,
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+            // 上边距 36dp / 下边距 16dp（不对称）：实测不背单词中心岛图标上方留 39dp、
+            // 文字下方留 22dp，我们下方已经和它一致（22dp），只有上方紧（19dp）——
+            // 补上这 20dp 后岛高从 117dp 到 ~137dp（它 142dp），
+            // 同时因为岛的顶是锚死的，多出来的高度把「岛下沿→卡上沿」的空隙从 300dp 收到 ~280dp
+            //（它实测 282dp），一并把上一轮剩下的那 18dp 空隙差也补平了。
+            padding: const EdgeInsets.only(top: 36, bottom: 16, left: 14, right: 14),
             decoration: BoxDecoration(
               color: skin.bg,
               borderRadius: BorderRadius.circular(24),
@@ -1056,12 +1080,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (isDakaStamped) ...[
+                  // 轻量描边图标：原来是实心绿圆盘（check_circle_rounded），
+                  // 压在薄纱卡上又厚又重、像个实心色块；换成细环 + 对勾的描边版，
+                  // 保住"已打卡"的绿色语义，但不再是实心块（对标不背单词的细描边图标）。
                   Icon(
-                    Icons.check_circle_rounded,
+                    Icons.check_circle_outline_rounded,
                     size: 24,
                     color: sealColor,
                   ),
-                  const SizedBox(height: 6),
+                  // 图标与标题之间的空气：实测不背单词这两者的墨迹间距是 24dp，
+                  // 我们原来只有 14dp（间距 6dp），读起来发闷 —— 放到 14dp 贴齐它的呼吸感。
+                  const SizedBox(height: 14),
                   Semantics(
                     container: true,
                     key: const Key('today_plan_daka_seal_text'),
@@ -1083,7 +1112,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     label: stampDate,
                     child: const SizedBox.shrink(),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 5),
                   ExcludeSemantics(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -1101,12 +1130,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     ),
                   ),
                 ] else ...[
+                  // 同一套轻量原则：细描边日历（原来 calendar_today_rounded 笔画明显更粗）
                   Icon(
-                    Icons.calendar_today_rounded,
+                    Icons.calendar_today_outlined,
                     size: 22,
                     color: ink.muted,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 14),
                   Text(
                     '今日目标',
                     style: TextStyle(
@@ -1116,7 +1146,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       letterSpacing: -0.2,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 5),
                   Text(
                     stampDate,
                     style: TextStyle(
@@ -1221,6 +1251,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 任务卡上的数字：有加量批次时跟一个更小的「+N」（今天额外追加的那一组），
   /// 让「今天的量」一眼看全，而不是只看到一个不含加量的计划数。
+  ///
+  /// 外层套 [FittedBox]：左卡一格只有半张卡宽（156dp 的一半再扣内缩），
+  /// 加量态「20 + 5」加上大字号会撑爆那一格（真机实测溢出 1.9px），
+  /// 这里统一等比收字兜住，避免任何机型/字号下溢出。
   Widget _buildTaskCount({
     required int count,
     required int extraCount,
@@ -1233,22 +1267,22 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       fontFamily: 'Roboto',
       letterSpacing: -0.5,
     );
-    if (extraCount <= 0) {
-      return Text('$count', style: numberStyle.copyWith(color: color));
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Text('$count', style: numberStyle.copyWith(color: color)),
-        Text(
-          ' + $extraCount',
-          key: extraKey,
-          style: numberStyle.copyWith(fontSize: 15, letterSpacing: -0.3, color: color),
-        ),
-      ],
-    );
+    final Widget content = extraCount <= 0
+        ? Text('$count', style: numberStyle.copyWith(color: color))
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text('$count', style: numberStyle.copyWith(color: color)),
+              Text(
+                ' + $extraCount',
+                key: extraKey,
+                style: numberStyle.copyWith(fontSize: 15, letterSpacing: -0.3, color: color),
+              ),
+            ],
+          );
+    return FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: content);
   }
 
   /// 底部「双任务岛与主操作」：
@@ -1347,15 +1381,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     VoidCallback? onTap,
     required Widget child,
   }) {
+    // 圆角 12：对齐「不背单词」底部那两张卡的面板感（实测其圆角 ≈12dp，
+    // 原来 18dp 在 75dp 高的卡上偏"糖果"，一张卡比参考圆一圈）
+    const double radius = 12;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(radius),
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
           constraints: const BoxConstraints(minHeight: 62),
           decoration: BoxDecoration(
             color: skin.bg,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(radius),
             border: Border.all(color: skin.border, width: 0.5),
             boxShadow: [skin.shadow],
           ),
@@ -1365,7 +1402,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ? child
                 : InkWell(
                     key: key,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(radius),
                     onTap: onTap,
                     child: child,
                   ),
@@ -1386,14 +1423,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required VoidCallback onTap,
   }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        // 左对齐 + 14dp 内缩：贴齐不背单词卡内"标签左上、数字在下方同一条左基线"的排版节奏
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
