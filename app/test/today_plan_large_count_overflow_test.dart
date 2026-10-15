@@ -214,8 +214,8 @@ void main() {
       if (extraTags.isEmpty) {
         // 调试：把当前屏幕上的文案打出来，看清页面停在哪个状态
         // ignore: avoid_print
-        print('SCREEN TEXTS: ' +
-            tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).where((d) => d != null).join(' | '));
+        print(
+            'SCREEN TEXTS: ${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).where((d) => d != null).join(' | ')}');
       }
       expect(extraTags, hasLength(1), reason: '加量态的数字行必须渲染出来（例如「1000 + 200」）');
       expect(tester.widget<Text>(extraTags.single).data, ' + 200');
