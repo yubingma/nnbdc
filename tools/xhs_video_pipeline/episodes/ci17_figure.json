@@ -1,0 +1,62 @@
+{
+  "episode": "CI17",
+  "series": "词核心图",
+  "position": "17",
+  "slogan": "一个词 · 一个意象",
+  "word": "figure",
+  "phonetic": "ˈfɪɡjɚ",
+  "core_art": "core_17204.jpeg",
+  "core_text": "塑形使轮廓显现",
+  "core_sub": "figure 只有这一个意象",
+  "accent": "#E879F9",
+  "voice": "1号",
+  "voice_model": "qwen3-tts-flash",
+  "segments": [
+    {
+      "type": "hook",
+      "word_intro": true,
+      "cards": [
+        "数字",
+        "人物",
+        "身材",
+        "认为"
+      ],
+      "line": "这四个意思，是同一个词",
+      "say": "数字、人物、身材、认为。"
+    },
+    {
+      "type": "core",
+      "word_intro": true,
+      "say": "核心意象：塑形，使轮廓显现。"
+    },
+    {
+      "type": "radiate",
+      "items": [
+        {
+          "meaning": "数字",
+          "relation": "用符号把数量塑成形"
+        },
+        {
+          "meaning": "人物",
+          "relation": "轮廓醒目可辨的人"
+        },
+        {
+          "meaning": "身材",
+          "relation": "成形后可见的身体轮廓"
+        },
+        {
+          "meaning": "认为",
+          "relation": "在心里塑出判断形象"
+        }
+      ]
+    },
+    {
+      "type": "outro",
+      "line": "一词多义\n记住一个意象就够了",
+      "ask": "哪个一词多义把你折磨过？",
+      "cta": "告诉我 · 下集就讲它",
+      "say": "一词多义，记住一个意象就够了。"
+    }
+  ],
+  "theme": "dark"
+}

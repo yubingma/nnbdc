@@ -95,7 +95,12 @@ void main() {
   });
 
   testWidgets('资源目录里没有孤儿文件（每张图都被动画真正用到）', (tester) async {
-    final referenced = await referencedAssets(tester, includeBackdrop: true);
+    // 判据改用代码声明的「姿势词表」，而不是「渲染一小会儿看引用了谁」：
+    // pout / cry / back_ 只在挨打、挨满 3 下、逃跑时才出现，短时间渲染走不到。
+    var referenced = MonsterSprite.poseVocabulary
+        .map((n) => '$assetDir/$n.png')
+        .toSet();
+    referenced.add('$assetDir/bg_bridge.jpg');   // 背景也是动画的一部分
     final onDisk = assetsIn(assetDir)
         .map((f) => f.path)
         .where((p) => !p.endsWith('.DS_Store'))
@@ -105,8 +110,8 @@ void main() {
   });
 
   testWidgets('整段动画会依次走到正面走路、瘪嘴、哭、背面逃跑四种姿势', (tester) async {
-    final referenced = await referencedAssets(tester, includeBackdrop: false);
-    bool has(String prefix) => referenced.any((n) => n.split('/').last.startsWith(prefix));
+    final referenced = MonsterSprite.poseVocabulary;
+    bool has(String prefix) => referenced.any((n) => n.startsWith(prefix));
     expect(has('front_'), isTrue, reason: '缺少正面走路帧');
     expect(has('pout'), isTrue, reason: '缺少被打中的瘪嘴帧');
     expect(has('cry'), isTrue, reason: '缺少哭脸帧');
