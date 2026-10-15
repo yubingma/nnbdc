@@ -9,13 +9,13 @@ import 'package:nnbdc/widget/monster_sprite.dart';
 /// 小馋怪走路动画的资源契约。
 ///
 /// 这几条断言都来自真实事故，不是假想：
-///   - 2026-10-14 新增 `assets/images/monster/` 时只加了 `assets/images/`，
+///   - 2026-10-14 新增该资源目录时只加了 `assets/images/`，
 ///     构建产物 `build/flutter_assets/assets/images/` 下**就是没有 monster 这一项**，
 ///     而编译、静态检查、单元测试全都毫无提示（`assets/` 声明**不递归**子目录）；
 ///   - 素材是 1280×1280 的抠底大图，13 张就是 8MB 量级，而手机上一只怪只显示约 160dp；
 ///   - 各帧若不等高、脚底不在同一条线上，走路会一跳一跳、脚会浮空。
 void main() {
-  const assetDir = 'assets/images/monster';
+  const assetDir = 'assets/images/bridge';
 
   List<File> assetsIn(String dir) => Directory(dir)
       .listSync(recursive: true)
@@ -74,15 +74,15 @@ void main() {
     return seen;
   }
 
-  test('pubspec 显式声明了 assets/images/monster/（否则整目录不进包）', () {
+  test('pubspec 显式声明了 assets/images/bridge/（否则整目录不进包）', () {
     // `assets/` 的资源声明**不递归**：声明 `assets/images/` 只覆盖它直接包含的文件，
     // 任何子目录都必须各自单独声明。漏了不会报错，只有真机跑到这一屏才刷
     // 「Unable to load asset」。本目录正是这么被漏掉过一次。
     final pubspec = File('pubspec.yaml').readAsStringSync();
     expect(
-      pubspec.contains('- assets/images/monster/'),
+      pubspec.contains('- assets/images/bridge/'),
       isTrue,
-      reason: 'pubspec.yaml 的 assets 段缺少 `- assets/images/monster/`，整目录不会被打进包',
+      reason: 'pubspec.yaml 的 assets 段缺少 `- assets/images/bridge/`，整目录不会被打进包',
     );
   });
 

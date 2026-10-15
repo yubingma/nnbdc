@@ -67,10 +67,11 @@ class _MonsterPageState extends State<MonsterPage> {
             ),
           ),
           SafeArea(
+            // 靠右下角：我方小宠物站在桥面偏左，居中的话文案会压到它的脚上
             child: Align(
-              alignment: Alignment.bottomCenter,
+              alignment: Alignment.bottomRight,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.only(right: 20, bottom: 14),
                 child: Text(
                   '小馋怪正朝你走来',
                   style: TextStyle(

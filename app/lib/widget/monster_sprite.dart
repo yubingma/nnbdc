@@ -29,7 +29,7 @@ typedef _PoseLayer = ({String asset, double opacity});
 class _MonsterSpriteState extends State<MonsterSprite>
     with SingleTickerProviderStateMixin {
   // ------------------------------------------------------------ 素材
-  static const String _dir = 'assets/images/monster/';
+  static const String _dir = 'assets/images/bridge/';
   static const String _bg = '${_dir}bg_bridge.jpg';
 
   /// 正面走路循环：8 帧 = 2 步。顺序即相位顺序，与 Python 侧 CURATED_FRONT 一致。
@@ -63,7 +63,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
   static const double _canvasH = 1080;
   static const double _imgW = 528;
   static const double _imgH = 537;
-  static const double _imgFeetY = 517;
+  static const double _imgFeetY = 515;
   static const double _refH = 480;
 
   // ------------------------------------------------------------ 行进轨道与透视
@@ -80,7 +80,28 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
   /// 挤压拉伸的支点必须落在**脚底**上：脚踩死、身体自己起伏。
   /// 整体平移会让脚离地、整体旋转会让底座变跷跷板，两者都会被读成打滑。
-  static const Alignment _feetPivot = Alignment(0, 0.9257);
+  static const Alignment _feetPivot = Alignment(0, 0.9181);
+
+  /// 我方小宠物当前该出哪一帧。投掷必须和坚果脱手对齐（_nutLaunch），
+  /// 早了自己先动、晚了坚果凭空出现。
+  static const List<String> _allyPoses = ['ally_stand', 'ally_windup', 'ally_throw'];
+
+  static String _allyPoseAt(double t) {
+    if (t < _allyWindup) return 'ally_stand';
+    if (t < _allyRelease) return 'ally_windup';
+    if (t < _allyRecover) return 'ally_throw';
+    return 'ally_stand';
+  }
+
+  // ------------------------------------------- 我方小宠物（站在桥头、背对镜头、投掷坚果）
+  // 与 Python 侧 render_anim.py 的同名常量逐项对齐。
+  static const double _allyGround = 950;    // 脚底所在的行
+  static const double _allyOffsetX = -0.12; // 横向位置：略偏桥面左侧，别挡住压过来的小馋怪
+  static const double _allyRatio = 0.85;    // 相对同位置小馋怪的大小
+  static const double _allyWindup = 2.28;   // 抬手蓄力
+  static const double _allyRelease = 2.56;  // 挥出、坚果脱手
+  static const double _allyRecover = 2.95;  // 收回站立
+  static const double _nutLaunch = 2.60;    // 坚果起飞（略晚于挥出）
 
   // ------------------------------------------------------------ 时间线（秒）
   static const double _tTotal = 8.80;
@@ -125,7 +146,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
     // 角色会整个消失一下（截图里 t=3.55 / t=4.4 / t=7.4 就是这么空掉的）。
     // 这些姿势要等到 3.4 秒后才用得上，而 14 张小图预解码只要几毫秒，所以进页面
     // 提前点火就足够，不必卡住动画等它完成。
-    final frames = <String>{..._walkFront, ..._walkBack, 'pout', 'cry'};
+    final frames = <String>{..._walkFront, ..._walkBack, ..._allyPoses, 'pout', 'cry'};
     for (final name in frames) {
       precacheImage(AssetImage('$_dir$name.png'), context);
     }
@@ -279,6 +300,26 @@ class _MonsterSpriteState extends State<MonsterSprite>
             final double feetY = toScreenY(gyCanvas);
             final double top = feetY - imgH * (_imgFeetY / _imgH);
 
+            // 把「一个角色摆在画布某个位置」抽出来，小馋怪与我方小宠物共用同一套几何，
+            // 免得两边各算一遍再对不上。
+            ({double cx, double imgH, double imgW, double top}) place(
+                double xCanvas, double groundCanvas, double scaleRatio) {
+              final double canvasH = 900 * _scaleAtGround(groundCanvas) * scaleRatio;
+              final double h = canvasH * cover * (_imgH / _refH);
+              return (
+                cx: toScreenX(xCanvas),
+                imgH: h,
+                imgW: h * (_imgW / _imgH),
+                top: toScreenY(groundCanvas) - h * (_imgFeetY / _imgH),
+              );
+            }
+
+            // 我方小宠物：站在桥头、背对镜头。脚底、横向位置、大小都与 Python 侧一致。
+            final p = place(_canvasW / 2 + _canvasW * _allyOffsetX, _allyGround, _allyRatio);
+            final double allyFeetY = toScreenY(_allyGround);
+            final double allyBob = -0.022 * math.cos(2 * math.pi * 0.9 * t);
+            final String allyPose = _allyPoseAt(t);
+
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -323,6 +364,37 @@ class _MonsterSpriteState extends State<MonsterSprite>
                       ),
                     ),
                   ),
+                // 我方小宠物画在小馋怪之后：它离镜头最近，本来就该盖在上面。
+                Positioned(
+                  left: p.cx - p.imgH * 0.28,
+                  top: allyFeetY - p.imgH * 0.0575,
+                  width: p.imgH * 0.56,
+                  height: p.imgH * 0.115,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF5C483A).withValues(alpha: 0.30),
+                          blurRadius: p.imgH * 0.10,
+                        ),
+                      ],
+                      borderRadius: BorderRadius.all(Radius.elliptical(p.imgH * 0.28, p.imgH * 0.0575)),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: p.cx - p.imgW / 2,
+                  top: p.top,
+                  width: p.imgW,
+                  height: p.imgH,
+                  child: Transform(
+                    alignment: _feetPivot,
+                    transform: Matrix4.identity()
+                      ..scaleByDouble(1 - allyBob * 0.55, 1 + allyBob, 1, 1),
+                    child: Image.asset('$_dir$allyPose.png',
+                        fit: BoxFit.fill, filterQuality: FilterQuality.high),
+                  ),
+                ),
                 Positioned.fill(
                   child: IgnorePointer(
                     child: CustomPaint(
@@ -374,11 +446,25 @@ class _MonsterFxPainter extends CustomPainter {
 
     // 飞向小馋怪的果子：1.45s 起抛出、3.40s 命中，是「被打中」的因。
     // 少了它，后面那下挤压和星芒就成了没来由的。
-    if (t >= 1.45 && t < _MonsterSpriteState._tImpact) {
-      final double k = (t - 1.45) / (_MonsterSpriteState._tImpact - 1.45);
-      final double nx = cx + size.width * 0.13 * (1 - k);
-      final double ny = groundY - 900 * _scaleAt(t) * 0.30 * cover
-          - size.height * 0.375 * (1 - k) + 30 * cover;
+    if (t >= _MonsterSpriteState._nutLaunch && t < _MonsterSpriteState._tImpact) {
+      // 坚果从我方小宠物的手飞向小馋怪。起点改成它的手之后，
+      // 后面那下挤压与星芒才有来由——原来坚果是从画面外凭空出现的。
+      final double k = (t - _MonsterSpriteState._nutLaunch) /
+          (_MonsterSpriteState._tImpact - _MonsterSpriteState._nutLaunch);
+      final double allyH =
+          900 * _MonsterSpriteState._scaleAtGround(_MonsterSpriteState._allyGround) *
+              _MonsterSpriteState._allyRatio;
+      final double hx = offX +
+          (_MonsterSpriteState._canvasW / 2 +
+                  _MonsterSpriteState._canvasW * _MonsterSpriteState._allyOffsetX +
+                  allyH * 0.30) *
+              cover;
+      final double hy = offY + (_MonsterSpriteState._allyGround - allyH * 0.62) * cover;
+      final double tx = cx;
+      final double ty = groundY - 900 * _scaleAt(t) * 0.45 * cover;
+      final double nx = hx + (tx - hx) * k;
+      final double ny = hy + (ty - hy) * k -
+          size.height * 0.13 * math.sin(math.pi * k);   // 抛一条弧线
       for (int j = 0; j < 3; j++) {
         _nut(canvas, nx + j * 26 * cover, ny + j * 20 * cover,
             k * 900 + j * 40, (17 - j * 3) * cover);

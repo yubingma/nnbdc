@@ -57,7 +57,14 @@ CANVAS = (W + MARGIN * 2, H + MARGIN * 2)
 ASSETS = 'assets/images/monster/cutout'
 OUTDIR = 'tmp/xiaochanguai_anim'
 POSES = {'pout': 'xiaochanguai_瘪嘴站立_橙黄双叶版.png',
-         'cry': 'xiaochanguai_捂脸要哭_橙黄双叶版.png'}
+         'cry': 'xiaochanguai_捂脸要哭_橙黄双叶版.png',
+         # 我方小宠物（站在桥头、背对镜头、投掷坚果）
+         'ally_stand': 'ally_stand.png',
+         'ally_windup': 'ally_windup.png',
+         'ally_throw': 'ally_throw.png'}
+
+# 我方三帧来自另一个目录（assets/images/ally），不跟小馋怪混在一起。
+ALLY_ASSETS = 'assets/images/ally'
 # 正面走路循环：8 帧，左右对称、腿高有渐变，且**全部禁用镜像**。
 #
 # 为什么最终放弃了镜像：镜像会把**视线一起翻过去**。原来的循环里位置 1-4 视线偏左、
@@ -142,6 +149,22 @@ T_CRY = 3.95
 T_FLEE = 6.20
 T_END = 8.80
 TURN = 0.30            # 转身时长
+
+# ---- 我方小宠物（站在桥头、背对镜头、用小短手投掷坚果）----
+# 它站在离镜头最近的位置，所以画在最后（盖在小馋怪上面），符合纵深。
+# 尺寸另乘一个比例：它本来就是个头更小的宠物，不按透视的等比放大，
+# 否则会比小馋怪还大、把画面堵住。
+# 脚底所在的行。不能贴到画布最底：App 侧背景走 BoxFit.cover，
+# 在比 16:9 更宽的屏幕上会上下各裁掉约 9%，贴底的话脚会被切掉。
+ALLY_GROUND = 950
+# 横向位置：略偏桥面左侧。正中央会挡住从中间压过来的小馋怪，偏开一点两边都看得清；
+# 偏左后投掷手（画面右侧那只）到小馋怪的弧线也更短、更自然。
+ALLY_OFFSET_X = -0.12
+ALLY_RATIO = 0.85      # 相对同位置小馋怪的大小
+ALLY_WINDUP = 2.28     # 抬手蓄力开始
+ALLY_RELEASE = 2.56    # 挥出、坚果脱手
+ALLY_RECOVER = 2.95    # 收回站立
+NUT_LAUNCH = 2.60      # 坚果起飞（略晚于挥出）
 
 
 def smoothstep(x):
@@ -243,7 +266,8 @@ def body_anchor(alpha):
 def load_assets():
     data, bbox_h, anchor = {}, {}, {}
     for k, fn in POSES.items():
-        im = strip_ground_shadow(Image.open(os.path.join(ASSETS, fn)).convert('RGBA'))
+        src = ALLY_ASSETS if k.startswith('ally') else ASSETS
+        im = strip_ground_shadow(Image.open(os.path.join(src, fn)).convert('RGBA'))
         if FLIP.get(k):
             # 镜像整张图之后再算外框与锚点，下游逻辑就不用为镜像做特殊处理
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
@@ -551,6 +575,20 @@ def pose_blend(t):
     return walk_weights(t, 'back', hz)
 
 
+def ally_pose(t):
+    """我方小宠物当前该出哪一帧：站立 → 抬手蓄力 → 挥出 → 收回。
+
+    投掷动作必须和坚果脱手对齐（NUT_LAUNCH）：早了自己先动、晚了坚果凭空出现。
+    """
+    if t < ALLY_WINDUP:
+        return 'ally_stand'
+    if t < ALLY_RELEASE:
+        return 'ally_windup'
+    if t < ALLY_RECOVER:
+        return 'ally_throw'
+    return 'ally_stand'
+
+
 def render():
     os.makedirs(OUTDIR, exist_ok=True)
     bg = build_background()
@@ -622,6 +660,17 @@ def render():
             paste_char(canvas, img, bb, anchor[pname], (char_x, char_y), height,
                        ref_h[pname], sx=sq_x, sy=sq_y, rot=rot, alpha=wgt)
 
+        # ---- 我方小宠物：站在桥头（离镜头最近），所以画在小馋怪之后、盖在它上面。
+        # 它只做一件事——到点用小短手把坚果扔出去；坚果的起点就是它的手。
+        ally_h = 900 * scale_at_ground(ALLY_GROUND) * ALLY_RATIO
+        ally_x = MARGIN + W / 2 + W * ALLY_OFFSET_X
+        ally_y = ALLY_GROUND
+        ally_bob = -0.022 * math.cos(2 * math.pi * 0.9 * t)     # 站着也别是死的
+        aimg, abb = assets[ally_pose(t)]
+        paste_char(canvas, aimg, abb, anchor[ally_pose(t)], (ally_x, ally_y), ally_h,
+                   ref_h[ally_pose(t)], sx=1 - ally_bob * 0.55, sy=1 + ally_bob)
+        draw_ground_shadow(canvas, ally_x, ally_y, ally_h * 0.62, 0.0)
+
         if fi % 6 == 0 and (approaching or walking):
             dusts.append([char_x + rng.uniform(-26, 26), ground_y,
                           rng.uniform(8, 15), 0.0, 0.45])
@@ -651,9 +700,15 @@ def render():
                 keep.append(p)
         dusts = keep
 
-        if 1.45 <= t < T_IMPACT:
-            k = (t - 1.45) / (T_IMPACT - 1.45)
-            nx, ny = gx + W * 0.13 * (1 - k), ground_y - height * 0.30 - H * 0.375 * (1 - k) + 30
+        if NUT_LAUNCH <= t < T_IMPACT:
+            # 坚果从我方小宠物的手飞向小馋怪。起点改成它的手之后，之前那下挤压与星芒
+            # 才有来由——原来坚果是从画面外凭空出现的。
+            k = (t - NUT_LAUNCH) / (T_IMPACT - NUT_LAUNCH)
+            hx = ally_x + ally_h * 0.30
+            hy = ally_y - ally_h * 0.62
+            tx, ty = gx, ground_y - height * 0.45
+            nx = lerp(hx, tx, k)
+            ny = lerp(hy, ty, k) - H * 0.13 * math.sin(math.pi * k)   # 抛一条弧线
             for j in range(3):
                 fx_nut(canvas, nx + j * 26, ny + j * 20, k * 900 + j * 40, 17 - j * 3)
             fx_nut(canvas, nx, ny, k * 900, 20)
