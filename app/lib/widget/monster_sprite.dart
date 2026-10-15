@@ -66,13 +66,24 @@ class _MonsterSpriteState extends State<MonsterSprite>
   static const double _imgFeetY = 515;
   static const double _refH = 480;
 
+  /// 角色的基准身高（画布像素）：实际身高 = 本值 × 透视缩放。与 Python 侧 CHAR_BASE 一致。
+  /// 2026-10-15 由 900 调到 620：配合加宽的桥面，让桥上放得下更多单位。
+  static const double _charBase = 620;
+
+  /// 与角色同比例缩放的特效尺寸倍率。角色变小了，坚果 / 星芒 / 眼泪 / 尘土也得跟着变小，
+  /// 否则它们相对角色会显得越来越大——这类「绝对像素」的尺寸最容易漏。
+  static const double _fx = _charBase / 900.0;
+
   // ------------------------------------------------------------ 行进轨道与透视
   // 横屏的纵向可视范围只有竖屏的一半多一点，轨道与透视缩放是整套重定的，
   // 不是把竖屏那几个数按比例缩一下。
+  // 角色行进轨道。_groundDefeat 是「走到全程约一半、被打倒」的位置——
+  // 需求是「小馋怪走到大约屏幕一半距离时已经被打倒 3 次」。
   static const double _groundFar = 300;
-  static const double _groundNear = 860;
-  static const double _groundBounce = 740;
-  static const double _groundSettle = 845;
+  static const double _groundDefeat = 580;
+  static const double _groundLift = 500;
+  static const double _groundSettle = 575;
+  static const double _groundFleeEnd = 200;
   static const double _scaleY0 = 240;
   static const double _scaleY1 = 920;
   static const double _scaleS0 = 0.22;
@@ -87,9 +98,10 @@ class _MonsterSpriteState extends State<MonsterSprite>
   static const List<String> _allyPoses = ['ally_stand', 'ally_windup', 'ally_throw'];
 
   static String _allyPoseAt(double t) {
-    if (t < _allyWindup) return 'ally_stand';
-    if (t < _allyRelease) return 'ally_windup';
-    if (t < _allyRecover) return 'ally_throw';
+    for (final double launch in _nutLaunches) {
+      if (t >= launch - _allyWindupLead && t < launch) return 'ally_windup';
+      if (t >= launch && t < launch + _allyThrowHold) return 'ally_throw';
+    }
     return 'ally_stand';
   }
 
@@ -98,16 +110,20 @@ class _MonsterSpriteState extends State<MonsterSprite>
   static const double _allyGround = 950;    // 脚底所在的行
   static const double _allyOffsetX = -0.12; // 横向位置：略偏桥面左侧，别挡住压过来的小馋怪
   static const double _allyRatio = 0.85;    // 相对同位置小馋怪的大小
-  static const double _allyWindup = 2.28;   // 抬手蓄力
-  static const double _allyRelease = 2.56;  // 挥出、坚果脱手
-  static const double _allyRecover = 2.95;  // 收回站立
-  static const double _nutLaunch = 2.60;    // 坚果起飞（略晚于挥出）
+  static const double _allyWindupLead = 0.30;  // 抬手提前量
+  static const double _allyThrowHold = 0.24;   // 挥出姿势保持
+  /// 三次脱手时刻，与三次命中一一对齐。
+  static const List<double> _nutLaunches = [0.58, 1.38, 2.18];
 
   // ------------------------------------------------------------ 时间线（秒）
-  static const double _tTotal = 8.80;
-  static const double _tImpact = 3.40;
-  static const double _tCry = 3.95;
-  static const double _tFlee = 6.20;
+  // 三次命中都在「走到全程一半」之前发生：_tHit3 就是走到 _groundDefeat 的时刻。
+  // 间距 0.8 秒，对应「投掷频率高一点」。
+  static const List<double> _hits = [1.00, 1.80, 2.60];
+  static const double _tHit3 = 2.60;
+  static const double _tImpact = _tHit3;   // 第三下即打倒
+  static const double _tCry = 3.15;
+  static const double _tFlee = 4.60;
+  static const double _tTotal = 6.80;
   static const double _turn = 0.30;
 
   // ------------------------------------------------------------ 运动参数
@@ -180,6 +196,12 @@ class _MonsterSpriteState extends State<MonsterSprite>
     return keys.last.$2;
   }
 
+  /// 先冲过头再回弹，用于星芒的爆开。与 Python 侧 ease_out_back 一致。
+  static double _easeOutBack(double x, {double s = 1.7}) {
+    final double t = x - 1;
+    return t * t * ((s + 1) * t + s) + 1;
+  }
+
   static double _easeOutElastic(double x, {double amp = 0.5, double period = 0.32}) {
     if (x <= 0) return 0;
     if (x >= 1) return 1;
@@ -249,17 +271,17 @@ class _MonsterSpriteState extends State<MonsterSprite>
             // ---- 地面位置（画布坐标 → 屏幕）
             final double gyCanvas;
             if (t < _tImpact) {
-              gyCanvas = _track(t, [(0, _groundFar), (_tImpact, _groundNear)]);
+              gyCanvas = _track(t, [(0, _groundFar), (_tHit3, _groundDefeat)]);
             } else if (t < _tFlee) {
               gyCanvas = _track(t, [
-                (_tImpact, _groundNear),
-                (_tImpact + .10, _groundBounce),
-                (_tImpact + .34, _groundSettle - 8),
+                (_tHit3, _groundDefeat),
+                (_tHit3 + .10, _groundLift),
+                (_tHit3 + .34, _groundSettle - 8),
                 (_tCry, _groundSettle),
                 (_tFlee, _groundSettle),
               ]);
             } else {
-              gyCanvas = _track(t, [(_tFlee, _groundSettle), (_tTotal, _groundFar)]);
+              gyCanvas = _track(t, [(_tFlee, _groundSettle), (_tTotal, _groundFleeEnd)]);
             }
 
             // ---- 挤压拉伸与摇摆
@@ -270,12 +292,17 @@ class _MonsterSpriteState extends State<MonsterSprite>
               sqY *= 1 + bob;
               sqX *= 1 - bob * 0.55;
             }
-            if (t >= _tImpact && t < _tImpact + 0.75) {
-              final double k = (t - _tImpact) / 0.75;
+            // 三次命中都做挤压回弹：前两下只是被打退（幅度小），第三下才是打倒。
+            // 不做的话三次命中在画面上读不出区别，只会看到坚果一颗颗飞过去。
+            for (int i = 0; i < _hits.length; i++) {
+              final double hit = _hits[i];
+              if (t < hit || t >= hit + 0.75) continue;
+              final double k = (t - hit) / 0.75;
               final double e = _easeOutElastic(k, amp: 0.55, period: 0.36);
-              sqY = _lerp(1.0, 0.80, e * (1 - k) * 1.35);
-              sqX = _lerp(1.0, 1.16, e * (1 - k) * 1.35);
-              rot = math.sin(k * math.pi * 3) * 5 * (1 - k);
+              final double amp = i == _hits.length - 1 ? 1.0 : 0.45;
+              sqY *= _lerp(1.0, 0.80, e * (1 - k) * 1.35 * amp);
+              sqX *= _lerp(1.0, 1.16, e * (1 - k) * 1.35 * amp);
+              rot += math.sin(k * math.pi * 3) * 5 * (1 - k) * amp;
             }
             if (t >= _tFlee) {
               final double ph = 2 * math.pi * (_walkHz * 1.9) * t;
@@ -304,7 +331,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
             // 免得两边各算一遍再对不上。
             ({double cx, double imgH, double imgW, double top}) place(
                 double xCanvas, double groundCanvas, double scaleRatio) {
-              final double canvasH = 900 * _scaleAtGround(groundCanvas) * scaleRatio;
+              final double canvasH = _charBase * _scaleAtGround(groundCanvas) * scaleRatio;
               final double h = canvasH * cover * (_imgH / _refH);
               return (
                 cx: toScreenX(xCanvas),
@@ -442,17 +469,23 @@ class _MonsterFxPainter extends CustomPainter {
     final double gy = _groundCanvasY(t);
     final double groundY = _y(gy);
     // 角色大约半身高处，特效都挂在这个高度附近
-    final double bodyY = groundY - 520 * _scaleAt(t) * cover;
+    final double bodyY =
+        groundY - _MonsterSpriteState._charBase * 0.55 * _scaleAt(t) * cover;
 
     // 飞向小馋怪的果子：1.45s 起抛出、3.40s 命中，是「被打中」的因。
     // 少了它，后面那下挤压和星芒就成了没来由的。
-    if (t >= _MonsterSpriteState._nutLaunch && t < _MonsterSpriteState._tImpact) {
-      // 坚果从我方小宠物的手飞向小馋怪。起点改成它的手之后，
-      // 后面那下挤压与星芒才有来由——原来坚果是从画面外凭空出现的。
-      final double k = (t - _MonsterSpriteState._nutLaunch) /
-          (_MonsterSpriteState._tImpact - _MonsterSpriteState._nutLaunch);
+    // 三次投掷的坚果，各自从我方小宠物的手飞向「命中那一刻」小馋怪的身体位置。
+    // 终点取命中时刻而不是当前位置，否则坚果会追着跑、永远差一截。
+    for (int i = 0; i < _MonsterSpriteState._hits.length; i++) {
+      final double hit = _MonsterSpriteState._hits[i];
+      final double launch = _MonsterSpriteState._nutLaunches[i];
+      if (t < launch || t >= hit) continue;
+      final double k = (t - launch) / (hit - launch);
+      final double gAtHit = _MonsterSpriteState._track(
+          hit, [(0, _MonsterSpriteState._groundFar), (_MonsterSpriteState._tHit3, _MonsterSpriteState._groundDefeat)]);
       final double allyH =
-          900 * _MonsterSpriteState._scaleAtGround(_MonsterSpriteState._allyGround) *
+          _MonsterSpriteState._charBase *
+              _MonsterSpriteState._scaleAtGround(_MonsterSpriteState._allyGround) *
               _MonsterSpriteState._allyRatio;
       final double hx = offX +
           (_MonsterSpriteState._canvasW / 2 +
@@ -461,35 +494,69 @@ class _MonsterFxPainter extends CustomPainter {
               cover;
       final double hy = offY + (_MonsterSpriteState._allyGround - allyH * 0.62) * cover;
       final double tx = cx;
-      final double ty = groundY - 900 * _scaleAt(t) * 0.45 * cover;
+      final double ty = offY +
+          (gAtHit - _MonsterSpriteState._charBase * _MonsterSpriteState._scaleAtGround(gAtHit) * 0.45) *
+              cover;
       final double nx = hx + (tx - hx) * k;
-      final double ny = hy + (ty - hy) * k -
-          size.height * 0.13 * math.sin(math.pi * k);   // 抛一条弧线
+      final double ny =
+          hy + (ty - hy) * k - size.height * 0.13 * math.sin(math.pi * k);   // 抛一条弧线
       for (int j = 0; j < 3; j++) {
-        _nut(canvas, nx + j * 26 * cover, ny + j * 20 * cover,
-            k * 900 + j * 40, (17 - j * 3) * cover);
+        _nut(canvas, nx + j * 26 * _MonsterSpriteState._fx * cover,
+            ny + j * 20 * _MonsterSpriteState._fx * cover,
+            k * 900 + j * 40, (17 - j * 3) * _MonsterSpriteState._fx * cover);
       }
-      _nut(canvas, nx, ny, k * 900, 20 * cover);
+      _nut(canvas, nx, ny, k * 900, 20 * _MonsterSpriteState._fx * cover);
     }
 
-    // 被打中的星芒
-    final double fi = t - _MonsterSpriteState._tImpact;
-    if (fi >= 0 && fi < 0.55) {
-      final double k = fi / 0.55;
-      final double r = (40 + 150 * _MonsterSpriteState._easeOutElastic(k, amp: 0.55)) * cover;
-      final Paint p = Paint()
-        ..color = Colors.white.withValues(alpha: (1 - k) * 0.95)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 11 * cover
-        ..strokeCap = StrokeCap.round;
-      for (int i = 0; i < 6; i++) {
-        final double a = i * math.pi / 3 + k * 0.5;
-        canvas.drawLine(
-          Offset(cx + math.cos(a) * r * 0.35, bodyY + math.sin(a) * r * 0.35),
-          Offset(cx + math.cos(a) * r, bodyY + math.sin(a) * r),
-          p,
-        );
+    // 被打中的星芒：与 Python 侧 fx_impact 同构——16 个顶点交替半径的星形
+    // （外圈 r、内圈 0.42r），叠一层向中心缩到 0.62 的白色内星，再套一个圆环描边，
+    // 最后整体做模糊。画成六条细白线和视频里差得很远，所以照搬。
+    for (int hi = 0; hi < _MonsterSpriteState._hits.length; hi++) {
+      final double fi = t - _MonsterSpriteState._hits[hi];
+      if (fi <= 0 || fi >= 0.42) continue;
+      final double k = fi / 0.42;
+      // 前两下的小星芒缩到六成，第三下（打倒）才是满的
+      final double amp = hi == _MonsterSpriteState._hits.length - 1 ? 1.0 : 0.6;
+      final double r = _MonsterSpriteState._lerp(
+              26, 235, _MonsterSpriteState._easeOutBack(math.min(1.0, k * 1.4))) *
+          cover *
+          amp *
+          _MonsterSpriteState._fx;
+      final double a = 1.0 - k;
+      final Path star = Path();
+      for (int i = 0; i < 16; i++) {
+        final double ang = math.pi * 2 * i / 16;
+        final double rr = r * (i.isOdd ? 0.42 : 1.0);
+        final Offset o = Offset(cx + math.cos(ang) * rr, bodyY + math.sin(ang) * rr);
+        if (i == 0) {
+          star.moveTo(o.dx, o.dy);
+        } else {
+          star.lineTo(o.dx, o.dy);
+        }
       }
+      star.close();
+      canvas.drawPath(
+          star,
+          Paint()
+            ..color = const Color(0xFFFFF0AA).withValues(alpha: 0.90 * a)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.5 * cover));
+      canvas.save();
+      canvas.translate(cx, bodyY);
+      canvas.scale(0.62);
+      canvas.translate(-cx, -bodyY);
+      canvas.drawPath(
+          star,
+          Paint()
+            ..color = const Color(0xFFFFFDF5).withValues(alpha: 0.94 * a)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.5 * cover));
+      canvas.restore();
+      canvas.drawCircle(
+          Offset(cx, bodyY),
+          r * 0.95,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = math.max(2, 10 * a) * cover
+            ..color = Colors.white.withValues(alpha: 0.67 * a));
     }
 
     // 哭：往两侧飞的小泪珠
@@ -504,8 +571,8 @@ class _MonsterFxPainter extends CustomPainter {
         canvas.drawOval(
           Rect.fromCenter(
             center: Offset(
-              cx + side * 62 * cover * (0.4 + age * 2.2),
-              bodyY + age * 300 * cover - 40 * cover,
+              cx + side * 62 * _MonsterSpriteState._fx * cover * (0.4 + age * 2.2),
+              bodyY + age * 300 * _MonsterSpriteState._fx * cover - 40 * _MonsterSpriteState._fx * cover,
             ),
             width: 20 * cover,
             height: 28 * cover,
@@ -523,8 +590,8 @@ class _MonsterFxPainter extends CustomPainter {
         canvas.drawOval(
           Rect.fromCenter(
             center: Offset(cx + side * (26 + ph * 60) * cover, groundY - ph * 26 * cover),
-            width: (46 - ph * 22) * cover,
-            height: (20 - ph * 9) * cover,
+            width: (46 - ph * 22) * _MonsterSpriteState._fx * cover,
+            height: (20 - ph * 9) * _MonsterSpriteState._fx * cover,
           ),
           Paint()..color = const Color(0xFFDED4C4).withValues(alpha: 0.5 * (1 - ph)),
         );
@@ -573,14 +640,16 @@ class _MonsterFxPainter extends CustomPainter {
 
   /// 角色当前在画布上的纵向位置，与 build 里的 gyCanvas 轨道一致。
   static double _groundCanvasY(double t) {
-    if (t < _MonsterSpriteState._tImpact) {
-      return _MonsterSpriteState._track(
-          t, [(0, _MonsterSpriteState._groundFar), (_MonsterSpriteState._tImpact, _MonsterSpriteState._groundNear)]);
+    if (t < _MonsterSpriteState._tHit3) {
+      return _MonsterSpriteState._track(t, [
+        (0, _MonsterSpriteState._groundFar),
+        (_MonsterSpriteState._tHit3, _MonsterSpriteState._groundDefeat),
+      ]);
     }
     if (t < _MonsterSpriteState._tFlee) return _MonsterSpriteState._groundSettle;
     return _MonsterSpriteState._track(t, [
       (_MonsterSpriteState._tFlee, _MonsterSpriteState._groundSettle),
-      (_MonsterSpriteState._tTotal, _MonsterSpriteState._groundFar),
+      (_MonsterSpriteState._tTotal, _MonsterSpriteState._groundFleeEnd),
     ]);
   }
 

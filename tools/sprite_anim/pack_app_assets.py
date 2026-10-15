@@ -76,11 +76,13 @@ def _load_renderer():
     return ns
 
 
-def _prepare(renderer, name, flip, src_dir=SRC, poses=None):
+def _prepare(renderer, name, flip, src_dir=SRC, poses=None, strip_shadow=True):
     """取一帧，并把它在 Python 渲染时做的全部校正都应用上。"""
     poses = poses if poses is not None else POSES
     path = os.path.join(src_dir, poses[name][0] + '.png')
-    im = renderer['strip_ground_shadow'](Image.open(path).convert('RGBA'))
+    im = Image.open(path).convert('RGBA')
+    if strip_shadow:
+        im = renderer['strip_ground_shadow'](im)
     if flip:
         im = im.transpose(Image.FLIP_LEFT_RIGHT)
     return renderer['de_lean'](im)
@@ -103,7 +105,10 @@ def pack():
     # 但**共用同一块画布**，这样 Dart 侧只需要一套几何常量。
     groups = {}
     for gname, (src_dir, target_h, poses) in GROUPS.items():
-        frames = {n: _prepare(renderer, n, f, src_dir, poses) for n, (_, f) in poses.items()}
+        # 只有小馋怪的图里带烘焙阴影；我方小宠物不能剥（详见 render_anim.py 的同类注释）
+        strip_shadow = gname != 'ally'
+        frames = {n: _prepare(renderer, n, f, src_dir, poses, strip_shadow)
+                  for n, (_, f) in poses.items()}
         heights = [_metrics(im)[1] - _metrics(im)[0] + 1 for im in frames.values()]
         ref_h = float(np.median(heights))
         groups[gname] = (frames, ref_h, target_h / ref_h)

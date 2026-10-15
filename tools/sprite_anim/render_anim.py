@@ -31,25 +31,41 @@ if LANDSCAPE:
     # 桥面半宽占视口宽度的比例。实测三档（底端占屏 51% / 66% / 80%）后取中间：
     # 51% 时桥只占中间窄窄一条、两侧大片空蓝、构图发虚；80% 时水面几乎没了，
     # 而两侧水面正是放答案箱和 HUD 的地方。66% 桥成为主舞台，两侧仍留得住余地。
-    BRIDGE_TOP_HALF = 0.075
-    BRIDGE_BOT_HALF = 0.33
-    GROUND_FAR, GROUND_NEAR = 300, 860   # 角色行进轨道两端（脚底所在的行）
-    GROUND_BOUNCE = 740         # 被打中时被弹到的位置
-    GROUND_SETTLE = 845         # 战斗段落定的位置
+    # 桥面半宽占视口宽度的比例。2026-10-15 加宽：为了桥上能并排站下更多小怪、
+    # 桥头能站下更多我方小宠物（原来底端 66%，底端桥宽只够并排 2~3 只）。
+    BRIDGE_TOP_HALF = 0.10
+    BRIDGE_BOT_HALF = 0.38
+    # 角色行进轨道。GROUND_DEFEAT 是「走到全程约一半、被打倒」的位置——
+    # 需求是「小馋怪走到大约屏幕一半距离时已经被打倒 3 次」，所以走到这里就结束推进，
+    # 后面的哭与逃跑都在这个位置上发生。
+    GROUND_FAR = 300            # 出发点（桥那头）
+    GROUND_DEFEAT = 580         # 被打倒处：全程 300→860 的一半
+    GROUND_LIFT = 500           # 最后一下被弹起的高度
+    GROUND_SETTLE = 575         # 哭的时候落定的位置
+    GROUND_FLEE_END = 200       # 跑远的终点
     SCALE_Y0, SCALE_Y1 = 240, 920        # 透视缩放的斜坡区间
     SCALE_S0, SCALE_S1 = 0.22, 0.52      # 斜坡两端的缩放
 else:
     W, H = 1080, 1920
-    BRIDGE_TOP_HALF = 0.165
+    BRIDGE_TOP_HALF = 0.20
     BRIDGE_BOT_HALF = 0.476
-    GROUND_FAR, GROUND_NEAR = 420, 980
-    GROUND_BOUNCE = 862
-    GROUND_SETTLE = 960
+    GROUND_FAR = 420
+    GROUND_DEFEAT = 700
+    GROUND_LIFT = 620
+    GROUND_SETTLE = 695
+    GROUND_FLEE_END = 320
     SCALE_Y0, SCALE_Y1 = 380, 1180
     SCALE_S0, SCALE_S1 = 0.30, 0.78
 
+# 角色的基准身高（画布像素）：实际身高 = 本值 × 透视缩放。原为 900。
+# 2026-10-15 调小到 620：配合加宽的桥面，让桥上放得下更多单位。
+CHAR_BASE = 620
+# 与角色同比例缩放的特效尺寸倍率。角色变小了，坚果 / 星芒 / 眼泪 / 尘土也得跟着变小，
+# 否则它们相对角色会显得越来越大——这类「绝对像素」的尺寸最容易漏。
+FX = CHAR_BASE / 900.0
+
 FPS = 30
-DURATION = 8.8
+DURATION = 6.8
 N_FRAMES = int(DURATION * FPS)
 MARGIN = 60
 CANVAS = (W + MARGIN * 2, H + MARGIN * 2)
@@ -144,10 +160,17 @@ WALK_HZ = 1.05         # 走近：每秒腿循环数（8 帧 = 2 步 → 2.1 步
 # 现在：3.4 秒走 560px、2.1 步/秒 → 每步 78px，降到原来的 55%，与腿长同量级。
 # 顺便，姿势播放速率 = 8 × WALK_HZ = 8.4 帧/秒，比原来更快、更顺。
 
-T_IMPACT = 3.40
-T_CRY = 3.95
-T_FLEE = 6.20
-T_END = 8.80
+# ---- 时间线 ----
+# 三次命中都在「走到全程一半」之前发生：T_HIT3 就是走到 GROUND_DEFEAT 的时刻。
+# 间距 0.8 秒（比原来一次命中的节奏密得多），对应「投掷频率高一点」。
+T_HIT1 = 1.00
+T_HIT2 = 1.80
+T_HIT3 = 2.60
+T_IMPACT = T_HIT3          # 第三下即打倒；后续衔接沿用原名
+T_CRY = 3.15
+T_FLEE = 4.60
+T_END = 6.80
+HITS = (T_HIT1, T_HIT2, T_HIT3)
 TURN = 0.30            # 转身时长
 
 # ---- 我方小宠物（站在桥头、背对镜头、用小短手投掷坚果）----
@@ -161,10 +184,12 @@ ALLY_GROUND = 950
 # 偏左后投掷手（画面右侧那只）到小馋怪的弧线也更短、更自然。
 ALLY_OFFSET_X = -0.12
 ALLY_RATIO = 0.85      # 相对同位置小馋怪的大小
-ALLY_WINDUP = 2.28     # 抬手蓄力开始
-ALLY_RELEASE = 2.56    # 挥出、坚果脱手
-ALLY_RECOVER = 2.95    # 收回站立
-NUT_LAUNCH = 2.60      # 坚果起飞（略晚于挥出）
+# 投掷节奏：每次「抬手 0.30 秒 → 挥出脱手 → 收手 0.24 秒」，三次脱手时刻与
+# 三次命中一一对齐（坚果飞 0.42 秒）。总时长与命中间隔一致，所以看起来是连着投。
+ALLY_WINDUP_LEAD = 0.30   # 抬手提前量
+ALLY_THROW_HOLD = 0.24    # 挥出姿势保持
+NUT_FLIGHT = 0.42         # 坚果飞行时间
+NUT_LAUNCHES = tuple(h - NUT_FLIGHT for h in HITS)   # (0.58, 1.38, 2.18)
 
 
 def smoothstep(x):
@@ -267,7 +292,14 @@ def load_assets():
     data, bbox_h, anchor = {}, {}, {}
     for k, fn in POSES.items():
         src = ALLY_ASSETS if k.startswith('ally') else ASSETS
-        im = strip_ground_shadow(Image.open(os.path.join(src, fn)).convert('RGBA'))
+        im = Image.open(os.path.join(src, fn)).convert('RGBA')
+        # 只对小馋怪剥烘焙阴影。**我方小宠物不能剥**：它的身体是淡蓝色，
+        # 而 strip_ground_shadow 的判据是「低饱和 + 够亮 + 从画布外边可达就删」，
+        # 手臂边缘只有细描边挡不住洪泛，结果手臂与身体连接的那一整段被吃掉，
+        # 只剩外侧一小块悬在那里——看起来就是「小手挥出时有一段被截掉了」。
+        # 它本来也没有烘焙阴影（是平色背景抠出来的），这一步对它没有意义。
+        if not k.startswith('ally'):
+            im = strip_ground_shadow(im)
         if FLIP.get(k):
             # 镜像整张图之后再算外框与锚点，下游逻辑就不用为镜像做特殊处理
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
@@ -381,10 +413,10 @@ def fx_dust(frame, x, y, r, alpha):
     frame.alpha_composite(layer, (int(x - layer.width / 2), int(y - layer.height * 0.72)))
 
 
-def fx_impact(frame, x, y, k):
+def fx_impact(frame, x, y, k, scale=1.0):
     if k <= 0 or k >= 1:
         return
-    r = lerp(26, 235, ease_out_back(min(1.0, k * 1.4)))
+    r = lerp(26, 235, ease_out_back(min(1.0, k * 1.4))) * scale
     a = 1.0 - k
     layer = Image.new('RGBA', (int(r * 2.4), int(r * 2.4)), (0, 0, 0, 0))
     ld = ImageDraw.Draw(layer)
@@ -578,14 +610,15 @@ def pose_blend(t):
 def ally_pose(t):
     """我方小宠物当前该出哪一帧：站立 → 抬手蓄力 → 挥出 → 收回。
 
-    投掷动作必须和坚果脱手对齐（NUT_LAUNCH）：早了自己先动、晚了坚果凭空出现。
+    按 NUT_LAUNCHES 里每一次脱手时刻算：抬手提前 ALLY_WINDUP_LEAD 秒起，
+    脱手后保持 ALLY_THROW_HOLD 秒。投掷必须和坚果脱手对齐——早了自己先动、
+    晚了坚果凭空出现。
     """
-    if t < ALLY_WINDUP:
-        return 'ally_stand'
-    if t < ALLY_RELEASE:
-        return 'ally_windup'
-    if t < ALLY_RECOVER:
-        return 'ally_throw'
+    for launch in NUT_LAUNCHES:
+        if launch - ALLY_WINDUP_LEAD <= t < launch:
+            return 'ally_windup'
+        if launch <= t < launch + ALLY_THROW_HOLD:
+            return 'ally_throw'
     return 'ally_stand'
 
 
@@ -606,13 +639,13 @@ def render():
         air = False
 
         if approaching:
-            gy = track(t, [(0, GROUND_FAR), (T_IMPACT, GROUND_NEAR)])
+            gy = track(t, [(0, GROUND_FAR), (T_HIT3, GROUND_DEFEAT)])
         elif t < T_FLEE:
-            gy = track(t, [(T_IMPACT, GROUND_NEAR), (T_IMPACT + .10, GROUND_BOUNCE),
-                           (T_IMPACT + .34, GROUND_SETTLE - 8),
+            gy = track(t, [(T_HIT3, GROUND_DEFEAT), (T_HIT3 + .10, GROUND_LIFT),
+                           (T_HIT3 + .34, GROUND_SETTLE - 8),
                            (T_CRY, GROUND_SETTLE), (T_FLEE, GROUND_SETTLE)])
         else:
-            gy = track(t, [(T_FLEE, GROUND_SETTLE), (T_END, GROUND_FAR)])
+            gy = track(t, [(T_FLEE, GROUND_SETTLE), (T_END, GROUND_FLEE_END)])
 
         fleeing = t >= T_FLEE
         walking = fleeing          # 逃跑仍用背面走路循环
@@ -624,12 +657,17 @@ def render():
             turn_sq = max(0.52, abs(math.cos(k * math.pi)))
 
         sq_x, sq_y, rot = 1.0, 1.0, 0.0
-        if T_IMPACT <= t < T_IMPACT + 0.75:
-            k = (t - T_IMPACT) / 0.75
+        # 三次命中都做挤压回弹：前两下只是被打退（幅度小），第三下才是打倒。
+        # 不做的话三次命中在画面上读不出区别，只会看到坚果一颗颗飞过去。
+        for _i, _hit in enumerate(HITS):
+            if not (_hit <= t < _hit + 0.75):
+                continue
+            k = (t - _hit) / 0.75
             e = ease_out_elastic(k, amp=0.55, period=0.36)
-            sq_y = lerp(1.0, 0.80, e * (1 - k) * 1.35)
-            sq_x = lerp(1.0, 1.16, e * (1 - k) * 1.35)
-            rot = math.sin(k * math.pi * 3) * 5 * (1 - k)
+            amp = 1.0 if _i == len(HITS) - 1 else 0.45
+            sq_y *= lerp(1.0, 0.80, e * (1 - k) * 1.35 * amp)
+            sq_x *= lerp(1.0, 1.16, e * (1 - k) * 1.35 * amp)
+            rot += math.sin(k * math.pi * 3) * 5 * (1 - k) * amp
         sway = 0.0
         if approaching:
             # 走路起伏只做在「以脚底为支点的挤压拉伸」上：脚不动，身体自己起伏。
@@ -646,7 +684,7 @@ def render():
 
         shake_x = math.sin(t * math.pi * 2 * 19) * 3.2 if T_CRY <= t < T_FLEE else 0.0
         ground_y = gy
-        height = 900 * scale_at_ground(ground_y)
+        height = CHAR_BASE * scale_at_ground(ground_y)
         char_y = ground_y + sway * 0.0
         char_x = gx + shake_x
 
@@ -662,7 +700,7 @@ def render():
 
         # ---- 我方小宠物：站在桥头（离镜头最近），所以画在小馋怪之后、盖在它上面。
         # 它只做一件事——到点用小短手把坚果扔出去；坚果的起点就是它的手。
-        ally_h = 900 * scale_at_ground(ALLY_GROUND) * ALLY_RATIO
+        ally_h = CHAR_BASE * scale_at_ground(ALLY_GROUND) * ALLY_RATIO
         ally_x = MARGIN + W / 2 + W * ALLY_OFFSET_X
         ally_y = ALLY_GROUND
         ally_bob = -0.022 * math.cos(2 * math.pi * 0.9 * t)     # 站着也别是死的
@@ -673,7 +711,7 @@ def render():
 
         if fi % 6 == 0 and (approaching or walking):
             dusts.append([char_x + rng.uniform(-26, 26), ground_y,
-                          rng.uniform(8, 15), 0.0, 0.45])
+                          rng.uniform(8, 15) * FX, 0.0, 0.45])
         if T_CRY <= t < T_FLEE and fi % 4 == 0:
             for s in (-1, 1):
                 tears.append([gx + s * height * 0.075, ground_y - height * 0.62,
@@ -686,7 +724,7 @@ def render():
                 p[0] += p[2] / FPS
                 p[1] += p[3] / FPS
                 p[3] += 1500 / FPS
-                fx_tear(canvas, p[0], p[1], 16, 1 - p[4] / 0.9)
+                fx_tear(canvas, p[0], p[1], 16 * FX, 1 - p[4] / 0.9)
                 keep.append(p)
         tears = keep
 
@@ -700,20 +738,27 @@ def render():
                 keep.append(p)
         dusts = keep
 
-        if NUT_LAUNCH <= t < T_IMPACT:
-            # 坚果从我方小宠物的手飞向小馋怪。起点改成它的手之后，之前那下挤压与星芒
-            # 才有来由——原来坚果是从画面外凭空出现的。
-            k = (t - NUT_LAUNCH) / (T_IMPACT - NUT_LAUNCH)
+        for _i, _hit in enumerate(HITS):
+            launch = NUT_LAUNCHES[_i]
+            if not (launch <= t < _hit):
+                continue
+            # 起点是我方小宠物的手；终点取**命中那一刻**小馋怪的身体位置
+            # （不是当前位置，否则坚果会追着跑、永远差一截）。
+            k = (t - launch) / (_hit - launch)
+            g_at_hit = track(_hit, [(0, GROUND_FAR), (T_HIT3, GROUND_DEFEAT)]) \
+                if _hit <= T_HIT3 else GROUND_SETTLE
+            tx = MARGIN + W / 2
+            ty = g_at_hit - CHAR_BASE * scale_at_ground(g_at_hit) * 0.45
             hx = ally_x + ally_h * 0.30
             hy = ally_y - ally_h * 0.62
-            tx, ty = gx, ground_y - height * 0.45
             nx = lerp(hx, tx, k)
-            ny = lerp(hy, ty, k) - H * 0.13 * math.sin(math.pi * k)   # 抛一条弧线
+            ny = lerp(hy, ty, k) - H * 0.13 * math.sin(math.pi * k)
             for j in range(3):
-                fx_nut(canvas, nx + j * 26, ny + j * 20, k * 900 + j * 40, 17 - j * 3)
-            fx_nut(canvas, nx, ny, k * 900, 20)
+                fx_nut(canvas, nx + j * 26 * FX, ny + j * 20 * FX, k * 900 + j * 40, (17 - j * 3) * FX)
+            fx_nut(canvas, nx, ny, k * 900, 20 * FX)
+
         if T_IMPACT <= t < T_IMPACT + 0.42:
-            fx_impact(canvas, gx + 60, ground_y - height * 0.55, (t - T_IMPACT) / 0.42)
+            fx_impact(canvas, gx + 60 * FX, ground_y - height * 0.55, (t - T_IMPACT) / 0.42, FX)
         if t >= T_FLEE + TURN:
             fx_speed(canvas, gx, ground_y - height * 0.45, H * 0.078,
                      (1 - (t - T_FLEE) / 2.4) * 0.9, vertical=True)
