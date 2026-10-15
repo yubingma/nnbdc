@@ -250,7 +250,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
   static const double _tHit3 = 2.60;
   static const double _tImpact = _tHit3;   // 第三下即打倒
   static const double _tCry = 3.15;
-  static const double _tFlee = 4.60;
+  static const double _tFlee = 3.95;
   static const double _tTotal = 6.80;
   static const double _cycle = _tTotal;   // 一只小怪的完整循环＝整个循环的时长
   static const double _turn = 0.30;

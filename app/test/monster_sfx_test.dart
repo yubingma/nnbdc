@@ -43,4 +43,30 @@ void main() {
       expect(f.lengthSync(), lessThan(80 * 1024), reason: '$kind 体积过大');
     }
   });
+
+  test('规则表里写的时长必须与素材实际时长一致', () {
+    // 这个时长不是装饰：播放层用它算「某一路忙到什么时候」，
+    // 写小了会在声音还没放完时又占用同一路（拦腰截断），写大了会白占一路。
+    // 素材换了却忘了改这里，只会表现为「偶尔有点别扭」，很难查，所以断言住。
+    for (final SfxKind kind in SfxKind.values) {
+      final File f = File(GameSfx.assetPathOf(kind));
+      final int dataBytes = f.lengthSync() - 44;   // WAV 头 44 字节
+      final int actualMs = (dataBytes / 2 / 44100 * 1000).round();
+      expect(GameSfx.durationMsOf(kind), closeTo(actualMs, 2),
+          reason: '$kind 规则表写的是 ${GameSfx.durationMsOf(kind)}ms，'
+              '素材实际是 ${actualMs}ms');
+    }
+  });
+
+  test('最小间隔必须大于音效时长（否则重触发会把上一声拦腰截断）', () {
+    // 每类音效只有一个常驻播放器，新的会 seek(0) 打断旧的，所以「不截断」
+    // 完全靠 minGapMs 兜住。变调最慢到 0.92 倍速，实际播放时长要按 1/0.92 放大。
+    const double slowest = 0.92;
+    for (final SfxKind kind in SfxKind.values) {
+      final double longestMs = GameSfx.durationMsOf(kind) / slowest;
+      expect(GameSfx.minGapMsOf(kind).toDouble(), greaterThanOrEqualTo(longestMs),
+          reason: '$kind 间隔 ${GameSfx.minGapMsOf(kind)}ms '
+              '小于最慢变调下的时长 ${longestMs.toStringAsFixed(0)}ms，会被截断');
+    }
+  });
 }
