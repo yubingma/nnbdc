@@ -121,11 +121,52 @@ class _MonsterSpriteState extends State<MonsterSprite>
     [0.91, 0.28, -90, 0.99],
   ];
 
-  /// 我方小宠物：(横向偏移（占视口宽的比例）, 深度抖动(px), 尺寸抖动)
-  static const List<List<double>> _allies = [
-    [-0.31, 26, 1.03], [-0.16, -22, 0.95], [-0.005, 12, 1.01],
-    [0.15, -18, 1.06], [0.30, 28, 0.96],
+  /// 我方小队：编成前后两排，整体可以左右移动（由左下/右下两个按钮控制）。
+  /// 每项：(相对小队中心的横向偏移（占视口宽）, 深度偏移(px), 尺寸抖动)
+  /// 后排更远、更高、略小；前排更近、更低、略大——这样两排才看得出纵深。
+  static const List<List<List<double>>> _allyRows = [
+    [[-0.034, -58, 0.97], [0.034, -50, 1.03]],                    // 后排 2 只
+    [[-0.055, 20, 1.04], [0.000, 28, 0.98], [0.055, 14, 1.06]],    // 前排 3 只
   ];
+
+  /// 小队中心能移到的最大偏移（占视口宽的比例）。
+  /// 0.24 的来历：小队所在深度上桥面横向约占 17.8%~82.2%，而小队本身约 ±9% 宽，
+  /// 所以中心最多挪到 74%/26% —— 再往外就从桥边掉下去了（第一版给了 0.34，会露半边）。
+  static const double _squadLimit = 0.24;
+
+  /// 小队移动速度（占视口宽的比例 / 秒），**恒定**。
+  /// 0.40 约等于 1.2 秒横穿整条可移动范围（0.55 时用户反馈稍快）。
+  ///
+  /// 摇杆只当**方向开关**用：过了死区就按这个速度走，与推杆量无关。
+  /// 第一版做成「推得越远越快」的模拟量，用户明确不要，改成恒定速度。
+  static const double _squadSpeed = 0.40;
+
+  /// 左下角摇杆的尺寸（逻辑像素）。底盘固定不动，只有中间的杆会跟手。
+  static const double _stickBase = 138;
+  static const double _stickKnob = 58;
+  /// 杆能推到的最大半径（归一化到 1 就是推到底）。
+  static const double _stickRadius = 46;
+
+  /// 谁能被打到：只有「最前排」的小怪。后排被前排挡着，打不到。
+  /// 判定用深度抖动 —— 它本来就是「比平均更靠前/更靠后」的意思，正好当排次用。
+  static const double _frontRowDj = 0.0;
+
+  /// 小队全部成员：(画布横向x, 脚底行, 身高, 第几排)。整体跟着 [squadX] 左右平移。
+  static List<({double x, double ground, double h, int row})> _squadMembers(double squadX) {
+    final out = <({double x, double ground, double h, int row})>[];
+    for (int ri = 0; ri < _allyRows.length; ri++) {
+      for (final a in _allyRows[ri]) {
+        final double gy = _allyGround + a[1];
+        out.add((
+          x: _canvasW / 2 + _canvasW * (squadX + a[0]),
+          ground: gy,
+          h: _charBase * _scaleAtGround(gy) * _allyRatio * a[2],
+          row: ri,
+        ));
+      }
+    }
+    return out;
+  }
 
   /// 某一深度处桥面的半宽（画布像素）。小怪的横向偏移是「该处桥面半宽的比例」，
   /// 乘它才不会站到水里去；深处窄、近处宽，本身就是透视的一部分。
@@ -136,7 +177,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
   /// 某只小怪在「它自己的时间」tt 上的状态。
   static ({double gy, bool approaching, bool walking, double sqX, double sqY, double rot, double shake})
-      _unitState(double tt) {
+      _unitState(double tt, {bool front = true}) {
     final double gy;
     if (tt < _tImpact) {
       gy = _track(tt, [(0, _groundFar), (_tHit3, _groundDefeat)]);
@@ -160,7 +201,8 @@ class _MonsterSpriteState extends State<MonsterSprite>
       turnSq = math.max(0.52, math.cos(k * math.pi).abs());
     }
     double sqX = 1, sqY = 1, rot = 0;
-    for (int i = 0; i < _hits.length; i++) {
+    // 后排打不到：没有挨打的挤压回弹，也不会哭（否则会出现「没被打中却在哭」的矛盾）
+    for (int i = 0; front && i < _hits.length; i++) {
       final double hit = _hits[i];
       if (tt < hit || tt >= hit + 0.75) continue;
       final double k = (tt - hit) / 0.75;
@@ -179,8 +221,9 @@ class _MonsterSpriteState extends State<MonsterSprite>
       rot += _leanFlee * math.sin(2 * math.pi * (_walkHz * 2.0) * tt);
     }
     sqX *= turnSq;
-    final double shake =
-        (tt >= _tCry && tt < _tFlee) ? math.sin(tt * math.pi * 2 * 19) * 3.2 : 0;
+    final double shake = (front && tt >= _tCry && tt < _tFlee)
+        ? math.sin(tt * math.pi * 2 * 19) * 3.2
+        : 0;
     return (gy: gy, approaching: approaching, walking: walking,
         sqX: sqX, sqY: sqY, rot: rot, shake: shake);
   }
@@ -220,28 +263,42 @@ class _MonsterSpriteState extends State<MonsterSprite>
     return out;
   }
 
-  /// 把「每只小怪的三次命中」摊平成一张投掷表，再轮流派给我方小宠物。
+  /// 把「最前排小怪的三次命中」摊平成一张投掷表。
+  ///
+  /// 与小怪各自为战的版本有两点区别，都是需求带来的：
+  ///   1. **只有最前排的小怪**会被打到——后排被前排挡着；
+  ///   2. 每次命中挑「**同列最近**」的那只小宠物来投，而不是轮流派。
+  ///      这样弹道才是朝正前方（屏幕上方）出去的，而不是四散乱飞；
+  ///      也正好对应「投掷武器的范围在队形正上方」。
   static List<({double gh, int mi, int hj, int ai})> _nutSchedule() {
+    final members = _squadMembers(0);
     final events = <({double gh, int mi, int hj, int ai})>[];
     for (int i = 0; i < _monsters.length; i++) {
+      final double dj = _monsters[i][2];
+      if (dj <= _frontRowDj) continue;
       for (int j = 0; j < _hits.length; j++) {
-        events.add((gh: (_monsters[i][0] * _cycle + _hits[j]) % _cycle, mi: i, hj: j, ai: 0));
+        final stHit = _unitState(_hits[j]);
+        final double gyHit = stHit.gy + dj;
+        final double tx = _canvasW / 2 + _monsters[i][1] * _bridgeHalf(gyHit);
+        int ai = 0;
+        double best = double.infinity;
+        for (int k = 0; k < members.length; k++) {
+          final double d = (members[k].x - tx).abs();
+          if (d < best) {
+            best = d;
+            ai = k;
+          }
+        }
+        events.add((gh: (_monsters[i][0] * _cycle + _hits[j]) % _cycle, mi: i, hj: j, ai: ai));
       }
     }
     events.sort((a, b) => a.gh.compareTo(b.gh));
-    return [
-      for (int k = 0; k < events.length; k++)
-        (gh: events[k].gh, mi: events[k].mi, hj: events[k].hj, ai: k % _allies.length),
-    ];
+    return events;
   }
 
-  // ------------------------------------------------------------ 时间线（秒）
-  // 三次命中都在「走到全程一半」之前发生：_tHit3 就是走到 _groundDefeat 的时刻。
-  // 间距 0.8 秒，对应「投掷频率高一点」。
-  // ---- 我方小宠物的位置与投掷节奏
   static const double _allyGround = 950;    // 脚底所在的行（不贴画布最底：App 侧背景走
                                             // BoxFit.cover，在比 16:9 更宽的屏幕上会裁掉上下约 9%）
-  static const double _allyRatio = 0.85;    // 相对同位置小馋怪的大小
+  static const double _allyRatio = 0.55;    // 相对同位置小馋怪的大小（原 0.85，用户要求再小一圈）
   static const double _allyWindupLead = 0.30;  // 抬手提前量
   static const double _allyThrowHold = 0.24;   // 挥出姿势保持
   static const double _nutFlight = 0.42;       // 坚果飞行时间
@@ -267,6 +324,112 @@ class _MonsterSpriteState extends State<MonsterSprite>
   );
 
   bool _preloaded = false;
+
+  // ---- 小队左右移动：左下角摇杆控制
+  double _squadX = 0.0;        // 当前小队中心（占视口宽的比例），平滑趋近 _squadTarget
+  double _squadTarget = 0.0;
+  /// 摇杆的**方向意图**：-1 往左、0 不动、+1 往右。
+  ///
+  /// 它由「手指这一帧往哪边滑」决定（看 delta 的正负），**不是**手指相对底盘中心的位置。
+  /// 第一版用的是后者，于是想换向必须先把手指拖回圆心另一侧——
+  /// 那 46px 的空程就是用户感觉到的「迟钝」。看滑动方向就没有这段空程。
+  int _stickDir = 0;
+
+  /// 轮盘里那根杆的**视觉**位置（-1~+1），只跟手，不参与操控判断。
+  double _stickKnobX = 0.0;
+  int _moveClockMs = 0;
+
+  /// 每帧推进小队位置：摇杆只给方向，速度恒定，方向来自「手往哪边滑」。
+  ///
+  /// 两个「不做」都是踩出来的：
+  ///   * **不做「推得越远越快」**——用户明确要恒定速度；
+  ///   * **不做插值缓动**——第一版写成 `_squadX += (_squadTarget - _squadX) * dt/90`，
+  ///     想避免画面一跳一跳，但那正是用户感觉到的「迟钝、像有惯性」。
+  ///     摇杆要的就是直接跟手，位置直接等于积分结果。
+  void _advanceSquad() {
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final int dtMs = _moveClockMs == 0 ? 0 : now - _moveClockMs;
+    _moveClockMs = now;
+    // 掉帧或切后台回来时 dt 会很大，直接跳过这一帧，别让队伍瞬移
+    if (dtMs <= 0 || dtMs > 200) return;
+    if (_stickDir != 0) {
+      _squadTarget = (_squadTarget + _stickDir * _squadSpeed * dtMs / 1000)
+          .clamp(-_squadLimit, _squadLimit);
+    }
+    _squadX = _squadTarget;    // 直接跟手，没有惯性
+  }
+
+  /// 杆的视觉位置：跟手，限制在半径内。
+  void _moveStickKnob(Offset local) {
+    final double v = ((local.dx - _stickBase / 2) / _stickRadius).clamp(-1.0, 1.0);
+    if (v != _stickKnobX) setState(() => _stickKnobX = v);
+  }
+
+  /// 方向只看「手往哪边滑」。用每帧位移而不是相对圆心的位置，
+  /// 所以手指一往回滑立刻换向，没有需要越过圆心的空程。
+  /// 阈值 0.8 逻辑像素：滤掉手指静止时的抖动，又不影响慢速拖动。
+  void _updateStickDir(Offset delta) {
+    if (delta.dx.abs() < 0.8) return;
+    final int dir = delta.dx.isNegative ? -1 : 1;
+    if (dir != _stickDir) setState(() => _stickDir = dir);
+  }
+
+  /// 左下角的移动摇杆（王者荣耀那种）：底盘固定，中间的杆跟手，松手回中。
+  ///
+  /// 右下角**故意留空**——将来放道具栏。
+  Widget _joystick() {
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (PointerDownEvent e) {
+        _moveStickKnob(e.localPosition);   // 按下不改方向：没滑动就不该起步
+      },
+      onPointerMove: (PointerMoveEvent e) {
+        _moveStickKnob(e.localPosition);
+        _updateStickDir(e.delta);
+      },
+      onPointerUp: (_) => setState(() {
+        _stickDir = 0;
+        _stickKnobX = 0;
+      }),
+      onPointerCancel: (_) => setState(() {
+        _stickDir = 0;
+        _stickKnobX = 0;
+      }),
+      child: SizedBox(
+        width: _stickBase,
+        height: _stickBase,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 底盘
+            Container(
+              width: _stickBase,
+              height: _stickBase,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF1C2230).withValues(alpha: 0.42),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.40), width: 1.8),
+              ),
+            ),
+            // 中间那根杆：按推杆量偏移，最多到 _stickRadius
+            Transform.translate(
+              offset: Offset(_stickKnobX * _stickRadius, 0),
+              child: Container(
+                width: _stickKnob,
+                height: _stickKnob,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.30),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.85), width: 2.0),
+                ),
+                child: const Icon(Icons.swap_horiz, color: Colors.white, size: 26),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   // 音效事件的触发靠「这一帧跨过了哪几个事件」来判断，所以要记住上一帧的时刻。
   static final List<({double time, SfxKind kind, int mi})> _sfxEvents = _sfxSchedule();
@@ -301,6 +464,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
       final double? prev = _sfxPrevT;
       _sfxPrevT = now;
       if (prev != null) _fireSfx(prev, now);
+      _advanceSquad();
     });
     if (widget.loop) {
       _clock.repeat();
@@ -383,7 +547,11 @@ class _MonsterSpriteState extends State<MonsterSprite>
   }
 
   /// 当前这一时刻要画哪些层。换姿势时返回两层做短暂交叉淡入，走路时只返回一层。
-  List<_PoseLayer> _posesAt(double t) {
+  List<_PoseLayer> _posesAt(double t, {bool front = true}) {
+    if (!front) {
+      // 后排没被打到：正面走到头，直接转身退回去，不瘪嘴也不哭
+      return [_walkPose(t >= _tFlee ? _walkBack : _walkFront, t, _walkHz)];
+    }
     if (t < _tImpact) {
       return [_walkPose(_walkFront, t, _walkHz)];
     }
@@ -507,16 +675,14 @@ class _MonsterSpriteState extends State<MonsterSprite>
               }
             }
 
-            // ---- 我方小宠物：一排站在桥头，轮流投掷
+            // ---- 我方小队：前后两排，整体随 _squadX 左右移动
             final events = _nutSchedule();
-            for (int ai = 0; ai < _allies.length; ai++) {
-              final a = _allies[ai];
-              final double aGround = _allyGround + a[1];
-              final double ah = _charBase * _scaleAtGround(aGround) * _allyRatio * a[2];
-              final double axx = _canvasW / 2 + _canvasW * a[0];
+            final squad = _MonsterSpriteState._squadMembers(_squadX);
+            for (int ai = 0; ai < squad.length; ai++) {
+              final m2 = squad[ai];
               final double bob = -0.022 * math.cos(2 * math.pi * 0.9 * t + ai * 1.3);
-              final pl = place(axx, aGround, ah);
-              children.add(groundShadow(pl.cx, toScreenY(aGround), pl.imgH));
+              final pl = place(m2.x, m2.ground, m2.h);
+              children.add(groundShadow(pl.cx, toScreenY(m2.ground), pl.imgH));
               children.add(unitImage(pl, _allyPoseFor(t, events, ai),
                   1 - bob * 0.55, 1 + bob, 0));
             }
@@ -524,10 +690,14 @@ class _MonsterSpriteState extends State<MonsterSprite>
             children.add(Positioned.fill(
               child: IgnorePointer(
                 child: CustomPaint(
-                  painter: _MonsterFxPainter(t: t, cover: cover, offX: offX, offY: offY),
+                  painter: _MonsterFxPainter(
+                      t: t, cover: cover, offX: offX, offY: offY, squadX: _squadX),
                 ),
               ),
             ));
+
+            // 左下角摇杆控制小队左右移动；右下角留空，将来放道具
+            children.add(Positioned(left: 22, bottom: 16, child: _joystick()));
 
             return Stack(clipBehavior: Clip.none, children: children);
           },
@@ -546,12 +716,16 @@ class _MonsterFxPainter extends CustomPainter {
     required this.cover,
     required this.offX,
     required this.offY,
+    required this.squadX,
   });
 
   final double t;
   final double cover;
   final double offX;
   final double offY;
+
+  /// 小队当前中心（占视口宽的比例）——投掷起点要跟着队伍走。
+  final double squadX;
 
   double _x(double canvasX) => offX + canvasX * cover;
 
@@ -573,14 +747,9 @@ class _MonsterFxPainter extends CustomPainter {
           m[1] * _MonsterSpriteState._bridgeHalf(gyHit));
       final double ty = _y(gyHit -
           _MonsterSpriteState._charBase * _MonsterSpriteState._scaleAtGround(gyHit) * m[3] * 0.45);
-      final a = _MonsterSpriteState._allies[e.ai];
-      final double aGround = _MonsterSpriteState._allyGround + a[1];
-      final double ah = _MonsterSpriteState._charBase *
-          _MonsterSpriteState._scaleAtGround(aGround) *
-          _MonsterSpriteState._allyRatio * a[2];
-      final double hx = _x(_MonsterSpriteState._canvasW / 2 +
-          _MonsterSpriteState._canvasW * a[0] + ah * 0.30);
-      final double hy = _y(aGround - ah * 0.62);
+      final m2 = _MonsterSpriteState._squadMembers(squadX)[e.ai];
+      final double hx = _x(m2.x + m2.h * 0.30);
+      final double hy = _y(m2.ground - m2.h * 0.62);
       final double nx = hx + (tx - hx) * k;
       final double ny = hy + (ty - hy) * k - size.height * 0.13 * math.sin(math.pi * k);
       for (int jj = 0; jj < 3; jj++) {
@@ -601,7 +770,8 @@ class _MonsterFxPainter extends CustomPainter {
           m[1] * _MonsterSpriteState._bridgeHalf(gy) + st.shake);
       final double feet = _y(gy);
 
-      for (int hi = 0; hi < _MonsterSpriteState._hits.length; hi++) {
+      final bool front = m[2] > _MonsterSpriteState._frontRowDj;
+      for (int hi = 0; front && hi < _MonsterSpriteState._hits.length; hi++) {
         final double fi = tt - _MonsterSpriteState._hits[hi];
         if (fi <= 0 || fi >= 0.42) continue;
         // 前两下的小星芒缩到六成，第三下（打倒）才是满的

@@ -588,8 +588,11 @@ def walk_weights(t, direction, hz):
     return {frames[int((t * hz * n) % n)]: 1.0}
 
 
-def pose_blend(t):
+def pose_blend(t, front=True):
     hz = WALK_HZ if t < T_IMPACT else WALK_HZ * 2.0
+    if not front:
+        # 后排没被打到：正面走到头，直接转身退回去，不瘪嘴也不哭
+        return walk_weights(t, 'back' if t >= T_FLEE else 'front', hz)
     if t < T_IMPACT:
         return walk_weights(t, 'front', WALK_HZ)
     if t < T_IMPACT + 0.18:
@@ -634,9 +637,22 @@ MONSTERS = [
 # 深度抖动给得很大（±150）：只给小抖动的话，十几只全挤在桥的上半段，
 # 桥头与怪群之间空出一大片，画面上「压过来」的势头就没了。
 
-# 我方小宠物：(横向偏移（占视口宽的比例）, 深度抖动（画布像素）, 尺寸抖动)
-ALLIES = [(-0.31, 26, 1.03), (-0.16, -22, 0.95), (-0.005, 12, 1.01),
-          (0.15, -18, 1.06), (0.30, 28, 0.96)]
+# ---- 我方小队 ----
+# 编成前后两排，整体可以左右移动（App 里由左下/右下两个按钮控制）。
+# 每项：(相对小队中心的横向偏移（占视口宽）, 深度偏移（画布像素）, 尺寸抖动)
+# 后排更远、更高、略小；前排更近、更低、略大——这样两排才看得出纵深。
+ALLY_ROWS = [
+    [(-0.034, -58, 0.97), (0.034, -50, 1.03)],                    # 后排 2 只
+    [(-0.055, 20, 1.04), (0.000, 28, 0.98), (0.055, 14, 1.06)],    # 前排 3 只
+]
+ALLY_RATIO = 0.55          # 相对同位置小怪的大小（原来 0.85，用户要求再小一圈）
+SQUAD_SWING = 0.11         # 参考视频里小队左右巡航的幅度（占视口宽）；App 里由摇杆控制
+SQUAD_LIMIT = 0.24         # 小队中心能移到的最远处：再往外就出桥了
+SQUAD_HZ = 0.20            # 巡航频率
+
+# 谁能被打到：只有「最前排」的小怪。后排被前排挡着，打不到。
+# 判定用深度抖动 dj —— 它本来就是「比平均更靠前/更靠后」的意思，正好当排次用。
+FRONT_ROW_DJ = 0.0         # dj > 此值算最前排
 
 
 def bridge_half(y):
@@ -649,8 +665,11 @@ def bridge_half(y):
     return W * lerp(BRIDGE_TOP_HALF, BRIDGE_BOT_HALF, k)
 
 
-def unit_state(tt):
+def unit_state(tt, front=True):
     """某只小怪在「它自己的时间」tt 上的全部状态。
+
+    [front] 为假表示它在后排、打不到：那它就不会有挨打的挤压回弹，也不会哭，
+    只是走上来再退回去——否则会出现「没被打中却在哭」的矛盾。
 
     抽成纯函数是这次重构的关键：十几只小怪跑的是**同一条时间线**，只是各自错开相位，
     所以「一排接一排」与「混乱」都只是相位和横向偏移的差别，不必为每只再写一套逻辑。
@@ -674,7 +693,7 @@ def unit_state(tt):
         turn_sq = max(0.52, abs(math.cos(k * math.pi)))
 
     sq_x, sq_y, rot = 1.0, 1.0, 0.0
-    for _i, _hit in enumerate(HITS):
+    for _i, _hit in (enumerate(HITS) if front else ()):
         if not (_hit <= tt < _hit + 0.75):
             continue
         k = (tt - _hit) / 0.75
@@ -693,17 +712,18 @@ def unit_state(tt):
 
     return {'gy': gy, 'approaching': approaching, 'walking': walking,
             'sq_x': sq_x, 'sq_y': sq_y, 'rot': rot,
-            'shake': math.sin(tt * math.pi * 2 * 19) * 3.2 if T_CRY <= tt < T_FLEE else 0.0}
+            'shake': math.sin(tt * math.pi * 2 * 19) * 3.2
+            if (front and T_CRY <= tt < T_FLEE) else 0.0}
 
 
-def draw_unit(canvas, assets, ref_h, anchor, tt, x, depth_jit, size_jit):
+def draw_unit(canvas, assets, ref_h, anchor, tt, x, depth_jit, size_jit, front=True):
     """把一只小怪按「它自己的时间」画出来。返回 (脚底行, 身高, 中心x) 供调用方定位特效。"""
-    st = unit_state(tt)
+    st = unit_state(tt, front)
     gy = st['gy'] + depth_jit
     h = CHAR_BASE * scale_at_ground(gy) * size_jit
     cx = x + st['shake']
     draw_ground_shadow(canvas, cx, gy, h * 0.62, 0.0)
-    for pname, wgt in pose_blend(tt).items():
+    for pname, wgt in pose_blend(tt, front).items():
         if wgt <= 0.001:
             continue
         img, bb = assets[pname]
@@ -727,14 +747,14 @@ def draw_unit(canvas, assets, ref_h, anchor, tt, x, depth_jit, size_jit):
     _head_rx = h * 0.42
     _head_ry = h * 0.52
 
-    for _i in range(30):
+    for _i in (range(30) if front else ()):
         birth = T_CRY + _i * 0.09
         if birth > tt:
             break
         age = tt - birth
         if age > 0.65:
             continue
-        _st = unit_state(birth)
+        _st = unit_state(birth, front)
         _gy = _st['gy'] + depth_jit
         _hh = CHAR_BASE * scale_at_ground(_gy) * size_jit
         _side = -1 if _i % 2 == 0 else 1
@@ -760,19 +780,150 @@ def draw_unit(canvas, assets, ref_h, anchor, tt, x, depth_jit, size_jit):
     return gy, h, cx
 
 
-def nut_schedule():
-    """把「每只小怪的三次命中」摊平成一张投掷表，再轮流派给我方小宠物。
+def squad_members(squad_x=0.0):
+    """小队全部成员：(画布横向x, 脚底行, 身高, 第几排)。
 
-    每只小怪跑同一条时间线、只是相位不同，所以它的命中时刻 = 相位 + 命中时刻（对循环取模）。
-    按命中时刻排序后轮流分配，画面上就是一阵密集但看着有来由的投掷。
+    整体跟着 [squad_x]（占视口宽的比例）左右平移——这就是左右按钮改的那个量。
+    两排各自有深度偏移，所以画出来有前后纵深。
     """
+    out = []
+    for ri, row in enumerate(ALLY_ROWS):
+        for (rx, rdj, rsj) in row:
+            gy = ALLY_GROUND + rdj
+            h = CHAR_BASE * scale_at_ground(gy) * ALLY_RATIO * rsj
+            out.append((MARGIN + W / 2 + W * (squad_x + rx), gy, h, ri))
+    return out
+
+
+# ---------------------------------------------------------------- 玩法模拟
+#
+# 为什么不再是「每只小怪按相位跑固定时间线」：
+#   需求是「弹丸竖直向前飞、撞到最前面的小怪就停、只有它正在哭才穿透」。
+#   那挨打与哭就必须**由命中触发**——否则会出现「弹丸打中 A，却是 B 在哭」的矛盾。
+#   于是小怪从纯函数时间线改成一台状态机，弹丸由命中驱动它。
+
+NUT_SPEED = 1150          # 弹丸向上飞的速度（画布像素/秒）
+SHOT_INTERVAL = 0.40      # 每隔多久有一发，轮流由小队成员投出
+MOB_WALK_SPEED = 96       # 小怪朝镜头走的速度
+MOB_FLEE_SPEED = 215      # 逃跑速度
+RECOIL_TIME = 0.34        # 被打退一下的时长
+CRY_TIME = 0.80           # 原地哭的时长
+HITS_TO_CRY = 3           # 挨几下会哭
+HOLD_GY = 470             # 走到这附近就停下来对峙，不再往镜头压
+                          # 每只再按自己的深度抖动错开，天然形成前后几排
+
+
+class Mob:
+    """一只小怪：walk（走上来）→ 被打退若干次 → cry（哭）→ flee（跑回去）→ 重新来。"""
+
+    def __init__(self, lane, dj, sj, gy0):
+        self.lane, self.dj, self.sj = lane, dj, sj
+        self.gy0 = gy0
+        self.gy = gy0
+        self.hits = 0
+        self.state = 'walk'
+        self.timer = 0.0
+        self.since_hit = 99.0        # 距上次挨打多久，用来算挤压回弹
+        self.walk_t = 0.0            # 走路循环的累计时间（喂常量 0 腿就不动）
+        # 各自停在哪：抖动 dj 本来就是「比平均更靠前」的意思，用它错开正好
+        self.hold_gy = HOLD_GY + dj * 0.6
+
+    def ground(self):
+        return self.gy + self.dj
+
+    def x(self):
+        return MARGIN + W / 2 + self.lane * bridge_half(self.ground())
+
+    def height(self):
+        return CHAR_BASE * scale_at_ground(self.ground()) * self.sj
+
+    def transparent(self):
+        """正在哭或逃跑的小怪不挡弹丸——需求里那句「除非正在哭，否则不要穿透」。"""
+        return self.state in ('cry', 'flee')
+
+    def hit(self):
+        self.hits += 1
+        self.since_hit = 0.0
+        if self.hits >= HITS_TO_CRY:
+            self.state, self.timer = 'cry', CRY_TIME
+        else:
+            self.state, self.timer = 'recoil', RECOIL_TIME
+
+    def step(self, dt):
+        self.since_hit += dt
+        if self.state in ('walk', 'flee', 'hold'):
+            self.walk_t += dt
+        if self.state == 'walk':
+            self.gy += MOB_WALK_SPEED * dt
+            if self.ground() >= self.hold_gy:
+                self.state = 'hold'          # 到位置了，停下来对峙（走路循环继续，脚下不位移）
+        elif self.state == 'hold':
+            pass
+        elif self.state == 'recoil':
+            self.timer -= dt
+            if self.timer <= 0:
+                self.state = 'hold' if self.ground() >= self.hold_gy else 'walk'
+        elif self.state == 'cry':
+            self.timer -= dt
+            if self.timer <= 0:
+                self.state = 'flee'
+        elif self.state == 'flee':
+            self.gy -= MOB_FLEE_SPEED * dt
+            if self.ground() < GROUND_FLEE_END - 60:
+                self.gy, self.hits, self.state, self.timer = self.gy0, 0, 'walk', 0.0
+
+
+def make_mobs():
+    """开局：按 MONSTERS 的相位把十几只小怪错开铺在桥面上，避免一开始空场。"""
+    mobs = []
+    for (phase, lane, dj, sj) in MONSTERS:
+        gy0 = GROUND_FAR + (GROUND_DEFEAT - GROUND_FAR) * phase
+        mobs.append(Mob(lane, dj, sj, gy0))
+    return mobs
+
+
+def mob_pose(m):
+    """小怪这一刻该出什么姿势。"""
+    if m.state == 'cry':
+        return {'cry': 1.0}
+    if m.state == 'flee':
+        return walk_weights(m.walk_t, 'back', WALK_HZ)
+    if m.state == 'recoil':
+        return {'pout': 1.0}
+    return walk_weights(m.walk_t, 'front', WALK_HZ)   # walk 与 hold 都是正面走路循环
+
+
+def mob_squash(m):
+    """挨打那一下的挤压回弹（弹性曲线，越往后越平）。"""
+    if m.since_hit > 0.62:
+        return 1.0, 1.0
+    k = m.since_hit / 0.62
+    e = ease_out_elastic(k, amp=0.55, period=0.36)
+    w = e * (1 - k) * 1.35 * (1.0 if m.hits >= HITS_TO_CRY else 0.6)
+    return lerp(1.0, 1.16, w), lerp(1.0, 0.80, w)
+
+
+def nut_schedule(squad_x=0.0):
+    """把「最前排小怪的三次命中」摊平成一张投掷表。
+
+    与小怪时代的区别有两点，都是需求带来的：
+      1. **只有最前排的小怪**（dj > FRONT_ROW_DJ）会被打到——后排被前排挡着；
+      2. 每一次命中挑「**同列最近**」的那只小宠物来投，而不是轮流派。
+         这样弹道才是朝正前方（屏幕上方）出去的，而不是四散乱飞；
+         也正好对应「投掷武器的范围在队形正上方」。
+    """
+    members = squad_members(squad_x)
     events = []
     for i, (phase, lane, dj, sj) in enumerate(MONSTERS):
+        if dj <= FRONT_ROW_DJ:
+            continue
         for j, hit in enumerate(HITS):
-            events.append({'gh': (phase * CYCLE + hit) % CYCLE, 'mi': i, 'hj': j})
+            st_hit = unit_state(hit, True)
+            gy_hit = st_hit['gy'] + dj
+            tx = MARGIN + W / 2 + lane * bridge_half(gy_hit)
+            ai = min(range(len(members)), key=lambda k: abs(members[k][0] - tx))
+            events.append({'gh': (phase * CYCLE + hit) % CYCLE, 'mi': i, 'hj': j, 'ai': ai})
     events.sort(key=lambda e: e['gh'])
-    for k, e in enumerate(events):
-        e['ai'] = k % len(ALLIES)
     return events
 
 
@@ -793,72 +944,166 @@ def ally_pose_for(t, events, ai):
     return 'ally_stand'
 
 
+def draw_joystick(canvas, squad_x, lo=-0.34, hi=0.34):
+    """左下角的移动摇杆（王者荣耀那种）。
+
+    App 里它是真正可按的控件（见 monster_sprite.dart 的 _joystick）；这里画出来只是
+    为了让参考视频与 App 的画面一致。右下角**故意留空**——将来放道具栏。
+    """
+    d = ImageDraw.Draw(canvas, 'RGBA')
+    r = 62                      # 底盘半径
+    knob = 26                   # 杆的半径
+    cx = MARGIN + 22 + r
+    cy = CANVAS[1] - 16 - r
+    # 杆按推杆量偏移（参考视频里让 squad_x 线性映射过去，视觉上与 App 一致）
+    k = max(-1.0, min(1.0, squad_x / hi if hi else 0.0))
+    d.ellipse([cx - r, cy - r, cx + r, cy + r],
+              fill=(28, 34, 48, 108), outline=(255, 255, 255, 102), width=4)
+    kx = cx + k * r * 0.62
+    d.ellipse([kx - knob, cy - knob, kx + knob, cy + knob],
+              fill=(255, 255, 255, 78), outline=(255, 255, 255, 216), width=4)
+    # 中间的左右箭头
+    for sign in (-1, 1):
+        a = 11
+        bx = kx + sign * 6
+        d.polygon([(bx - sign * a, cy - a), (bx - sign * a, cy + a), (bx + sign * a, cy)],
+                  fill=(255, 255, 255, 225))
+
+
+def ally_pose_at(t, ai, n):
+    """第 ai 只小宠物这一刻出哪一帧。
+
+    开火是「每 SHOT_INTERVAL 一发、轮流由小队成员投出」，所以它自己的开火时刻
+    就是所有满足 索引 ≡ ai (mod n) 的时刻。抬手提前 0.18 秒，挥出保持 0.22 秒。
+    """
+    k = int(math.floor(t / SHOT_INTERVAL))
+    last = k - ((k - ai) % n)          # 不大于 k 且与 ai 同余的最大索引
+    if last >= 0 and t - last * SHOT_INTERVAL < 0.22:
+        return 'ally_throw'
+    if (last + n) * SHOT_INTERVAL - t <= 0.18:
+        return 'ally_windup'
+    return 'ally_stand'
+
+
+def draw_mob(canvas, assets, ref_h, anchor, m):
+    """按状态机画一只小怪（含挨打的挤压、哭时的飙泪）。"""
+    g = m.ground()
+    h = m.height()
+    cx = m.x()
+    if m.state == 'cry':
+        cx += math.sin(m.timer * math.pi * 2 * 19) * 3.2      # 哭的时候左右抖
+    sx, sy = mob_squash(m)
+    draw_ground_shadow(canvas, cx, g, h * 0.62, 0.0)
+    for pname, wgt in mob_pose(m).items():
+        if wgt <= 0.001:
+            continue
+        img, bb = assets[pname]
+        paste_char(canvas, img, bb, anchor[pname], (cx, g), h, ref_h[pname],
+                   sx=sx, sy=sy, rot=0.0, alpha=wgt)
+
+    # 飙泪：向两旁喷出去，按出生时刻的位置算弹道（转身跑远时会拖出泪迹）
+    if m.state == 'cry' or (m.state == 'flee' and m.hits >= HITS_TO_CRY):
+        for _i in (range(30) if m.state == 'cry' else range(30)):
+            birth = CRY_TIME * 0 + _i * 0.09
+            # 出生时刻用「进入哭的时长」倒推：这里直接用当前状态近似，
+            # 泪珠的横向弹道仍然向两旁，飞出去后不再跟头
+            age = _i * 0.09
+            if age > 0.65:
+                continue
+            side = -1 if _i % 2 == 0 else 1
+            tx = cx + side * h * 0.10 + side * h * 1.9 * age
+            ty = (g - h * 0.62) - h * (1.2 * age - 3.2 * age * age)
+            u = (tx - cx) / (h * 0.42)
+            v = (ty - (g - h * 0.50)) / (h * 0.52)
+            if m.state == 'flee' and u * u + v * v < 1.0:
+                continue
+            fx_tear(canvas, tx, ty, 20 * FX, 0.9 * (1 - age / 0.7))
+    return cx
+
+
 def render():
     os.makedirs(OUTDIR, exist_ok=True)
     bg = build_background()
     assets, ref_h, anchor = load_assets()
-    events = nut_schedule()
+    mobs = make_mobs()
+    projs, stars = [], []
+    shot_t, shot_idx = 0.0, 0
+    dt = 1 / FPS
 
     for fi in range(N_FRAMES):
         t = fi / FPS
         canvas = bg.copy().convert('RGBA')
 
-        # ---- 怪群：一排接一排地压上来。每只跑同一条时间线，只是相位错开。
-        for (phase, lane, dj, sj) in MONSTERS:
-            tt = (t - phase * CYCLE) % CYCLE
-            gy = unit_state(tt)['gy'] + dj
-            x = MARGIN + W / 2 + lane * bridge_half(gy)
-            draw_unit(canvas, assets, ref_h, anchor, tt, x, dj, sj)
+        # ---- 小队位置（参考视频里缓慢巡航，示意摇杆效果；App 里由玩家控制）
+        squad_x = SQUAD_LIMIT * 0.8 * math.sin(2 * math.pi * 0.10 * t)
+        members = squad_members(squad_x)
 
-        # ---- 我方小宠物：一排站在桥头，轮流投掷
-        hands = []
-        for ai, (ax, adj, asj) in enumerate(ALLIES):
-            ah = CHAR_BASE * scale_at_ground(ALLY_GROUND + adj) * ALLY_RATIO * asj
-            axx = MARGIN + W / 2 + W * ax
-            ayy = ALLY_GROUND + adj
+        # ---- 开火：每 SHOT_INTERVAL 一发，轮流由小队成员投出
+        shot_t += dt
+        if shot_t >= SHOT_INTERVAL:
+            shot_t -= SHOT_INTERVAL
+            ai = shot_idx % len(members)
+            shot_idx += 1
+            axx, ayy, ah, _ri = members[ai]
+            projs.append({'x': axx + ah * 0.18, 'y': ayy - ah * 0.62, 'ai': ai,
+                          'trail': [], 'born': t})
+
+        # ---- 弹丸竖直向前飞；撞到最前面的、没在哭的小怪就停下（不穿透）
+        for pr in list(projs):
+            pr['y'] -= NUT_SPEED * dt
+            pr['trail'].append((pr['x'], pr['y']))
+            if len(pr['trail']) > 5:
+                pr['trail'].pop(0)
+            hit = None
+            for m in mobs:
+                if m.transparent():
+                    continue
+                h = m.height()
+                if abs(pr['x'] - m.x()) > h * 0.46:
+                    continue
+                g = m.ground()
+                if g - h <= pr['y'] <= g and (hit is None or g > hit.ground()):
+                    hit = m
+            if hit is not None:
+                hit.hit()
+                stars.append({'x': pr['x'], 'y': pr['y'], 'age': 0.0,
+                              'big': hit.hits >= HITS_TO_CRY})
+                projs.remove(pr)
+            elif pr['y'] < GROUND_FAR - 260:
+                projs.remove(pr)
+
+        for m in mobs:
+            m.step(dt)
+
+        # ---- 小怪：从远到近画，近的盖住远的
+        for m in sorted(mobs, key=lambda m: m.ground()):
+            draw_mob(canvas, assets, ref_h, anchor, m)
+
+        # ---- 我方小队
+        for ai, (axx, ayy, ah, _ri) in enumerate(members):
             bob = -0.022 * math.cos(2 * math.pi * 0.9 * t + ai * 1.3)
-            p = ally_pose_for(t, events, ai)
+            p = ally_pose_at(t, ai, len(members))
             img, bb = assets[p]
             draw_ground_shadow(canvas, axx, ayy, ah * 0.62, 0.0)
             paste_char(canvas, img, bb, anchor[p], (axx, ayy), ah, ref_h[p],
                        sx=1 - bob * 0.55, sy=1 + bob)
-            hands.append((axx + ah * 0.30, ayy - ah * 0.62))
 
-        # ---- 坚果：按投掷表从我方手上飞向「命中那一刻」那只小怪的身体
-        for e in events:
-            launch = (e['gh'] - NUT_FLIGHT) % CYCLE
-            d = (t - launch) % CYCLE
-            if d >= NUT_FLIGHT:
+        # ---- 弹丸（竖直上升 + 短尾迹）
+        for pr in projs:
+            for j, (tx_, ty_) in enumerate(pr['trail']):
+                fx_nut(canvas, tx_, ty_, 0, (8 + j * 3) * FX)
+            fx_nut(canvas, pr['x'], pr['y'], 0, 22 * FX)
+
+        # ---- 命中星芒
+        for st_ in list(stars):
+            st_['age'] += dt
+            k = st_['age'] / 0.42
+            if k >= 1:
+                stars.remove(st_)
                 continue
-            k = d / NUT_FLIGHT
-            phase, lane, dj, sj = MONSTERS[e['mi']]
-            st_hit = unit_state(HITS[e['hj']])
-            gy_hit = st_hit['gy'] + dj
-            tx = MARGIN + W / 2 + lane * bridge_half(gy_hit)
-            ty = gy_hit - CHAR_BASE * scale_at_ground(gy_hit) * sj * 0.45
-            hx, hy = hands[e['ai']]
-            nx = lerp(hx, tx, k)
-            ny = lerp(hy, ty, k) - H * 0.13 * math.sin(math.pi * k)   # 抛一条弧线
-            for j in range(3):
-                fx_nut(canvas, nx + j * 26 * FX, ny + j * 20 * FX,
-                       k * 900 + j * 40, (17 - j * 3) * FX)
-            fx_nut(canvas, nx, ny, k * 900, 20 * FX)
+            fx_impact(canvas, st_['x'], st_['y'], k, FX * (1.0 if st_['big'] else 0.6))
 
-        # ---- 命中星芒 / 逃跑速度线：每只按自己的时间算
-        for (phase, lane, dj, sj) in MONSTERS:
-            tt = (t - phase * CYCLE) % CYCLE
-            gy = unit_state(tt)['gy'] + dj
-            x = MARGIN + W / 2 + lane * bridge_half(gy)
-            h = CHAR_BASE * scale_at_ground(gy) * sj
-            for _i, _hit in enumerate(HITS):
-                if _hit <= tt < _hit + 0.42:
-                    # 前两下的小星芒缩到六成，第三下（打倒）才是满的
-                    fx_impact(canvas, x + 60 * FX, gy - h * 0.55,
-                              (tt - _hit) / 0.42, FX * (1.0 if _i == len(HITS) - 1 else 0.6))
-            if T_FLEE + TURN <= tt < T_END:
-                fx_speed(canvas, x, gy - h * 0.45, H * 0.078,
-                         (1 - (tt - T_FLEE) / 2.4) * 0.9, vertical=True)
-
+        draw_joystick(canvas, squad_x)
         canvas.convert('RGB').save(f'{OUTDIR}/f{fi:04d}.png')
 
     encode(N_FRAMES)
