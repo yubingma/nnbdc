@@ -153,7 +153,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
   /// 小队中心能移到的最大偏移（占视口宽的比例）。
   /// 0.24 的来历：小队所在深度上桥面横向约占 17.8%~82.2%，而小队本身约 ±9% 宽，
   /// 所以中心最多挪到 74%/26% —— 再往外就从桥边掉下去了（第一版给了 0.34，会露半边）。
-  static const double _squadLimit = 0.24;
+  static const double _squadLimit = 0.40;
 
 
 
@@ -204,6 +204,15 @@ class _MonsterSpriteState extends State<MonsterSprite>
   final List<_Mob> _mobs = [];
   final List<_Nut> _nuts = [];
   final List<_Star> _stars = [];
+  // ---- 答题状态
+  int _questionIndex = 0;
+  bool _asking = false;          // true = 正在提问（有倒计时）；false = 问歇
+  double _askDeadline = 0;       // 倒计时截止时刻
+  final List<_WordTarget> _words = [];
+  String? _flash;                // 判定结果提示
+  double _flashUntil = 0;
+  /// 增益等级：答对 +1、答错 −1。持久累积，只在重开时归零。
+  int _buffLevel = 0;
   final List<_Fruit> _fruits = [];
   bool _lost = false;
   double _shotT = 0;
@@ -221,6 +230,12 @@ class _MonsterSpriteState extends State<MonsterSprite>
       ..clear()
       ..addAll(_fruitLanes.map(_Fruit.new));
     _lost = false;
+    _questionIndex = 0;
+    _asking = false;
+    _askDeadline = 0;
+    _words.clear();
+    _flash = null;
+    _buffLevel = 0;
     _nuts.clear();
     _stars.clear();
     _simTime = 0;
@@ -228,6 +243,26 @@ class _MonsterSpriteState extends State<MonsterSprite>
     _shotIdx = 0;
     _petLastFire = List<double>.filled(5, -99);
   }
+
+  /// 结算一题：答对随机奖励、答错罚火力；随后空一段再出下一题。
+  void _answer(bool correct) {
+    _asking = false;
+    _askDeadline = _simTime + _gapSeconds;     // 空一段，避免一题接一题
+    _words.clear();
+    if (correct) {
+      _buffLevel++;
+      _flash = '答对了！火力 ×${_fireFactor().toStringAsFixed(2)}（等级 $_buffLevel）';
+    } else {
+      _buffLevel--;
+      _flash = '答错了…火力 ×${_fireFactor().toStringAsFixed(2)}（等级 $_buffLevel）';
+    }
+    _flashUntil = _simTime + 1.6;
+    _questionIndex++;
+  }
+
+  /// 开火间隔的倍率（<1 更快）：0.8^增益等级，夹在上下限之间。
+  double _fireFactor() =>
+      math.pow(_buffStep, _buffLevel).toDouble().clamp(_fireMin, _fireMax);
 
   static double _nearnessOfMob(_Mob m) => ((m.ground - 40) / 690).clamp(0.0, 1.0);
 
@@ -242,8 +277,9 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
     if (_lost) return;      // 已经输了就不再开火
     _shotT += dt;
-    if (_shotT >= _shotInterval) {
-      _shotT -= _shotInterval;
+    final double interval = _shotInterval * _fireFactor();
+    if (_shotT >= interval) {
+      _shotT -= interval;
       final squad = _squadMembers(_squadX);
       final int shooter = _shotIdx % squad.length;
       final s = squad[shooter];
@@ -271,6 +307,14 @@ class _MonsterSpriteState extends State<MonsterSprite>
           if (hit == null || m.ground > hit.ground) hit = m;
         }
       }
+      // 打中单词靶 = 作答（靶子在平台前方）
+      for (final w in _words) {
+        if ((n.x - w.x).abs() > 70) continue;
+        if (sy <= _WordTarget.depth + 50 && sy >= _WordTarget.depth - 70) {
+          _answer(w.correct);
+          return true;                         // 弹丸命中即消失
+        }
+      }
       if (hit == null) return n.depth < 40;
       hit.hit();
       _stars.add(_Star(n.x, sy, hit.hits >= _hitsToCry));
@@ -284,6 +328,27 @@ class _MonsterSpriteState extends State<MonsterSprite>
     for (final m in _mobs) {
       m.step(dt, _fruits);
     }
+
+    // ---- 出题循环：空一段 → 提问并倒计时 → 判定 → 再空一段
+    if (!_asking) {
+      if (_simTime >= _askDeadline) {          // 这里 _askDeadline 当「下次出题时刻」用
+        _asking = true;
+        _askDeadline = _simTime + _askSeconds;
+        final _Question q = _demoQuestions[_questionIndex % _demoQuestions.length];
+        final bool rightCorrect = math.Random().nextBool();
+        final double hw = _bridgeHalf(_wordDepth);
+        _words
+          ..clear()
+          ..add(_WordTarget(rightCorrect ? q.wrongWord : q.word, !rightCorrect,
+              _canvasW / 2 - _wordLane * hw))
+          ..add(_WordTarget(rightCorrect ? q.word : q.wrongWord, rightCorrect,
+              _canvasW / 2 + _wordLane * hw));
+      }
+    } else if (_simTime >= _askDeadline) {
+      _answer(false);                          // 倒计时内没作答 = 答错
+    }
+
+
     // 水果全被抢走 → 判负。这里只是把状态标出来，画面由 build 输出。
     if (!_lost && _fruits.every((f) => f.taken)) _lost = true;
     for (final st in _stars) {
@@ -528,6 +593,95 @@ class _MonsterSpriteState extends State<MonsterSprite>
               ),
             ));
 
+            // ---- 答题 UI：顶部释义 + 倒计时；单词靶画在平台**前方**（可射击）
+            if (_asking) {
+              final _Question q = _demoQuestions[_questionIndex % _demoQuestions.length];
+              final double left = (_askDeadline - _simTime).clamp(0.0, _askSeconds);
+              final double wy = offY + _WordTarget.depth * cover;
+              for (final w in _words) {
+                final double wx = offX + w.x * cover;
+                children.add(Positioned(
+                  left: wx - 80,
+                  top: wy - 26,
+                  child: Container(
+                    width: 160,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF23303F).withValues(alpha: 0.80),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.60), width: 1.6),
+                    ),
+                    child: Text(w.text,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5)),
+                  ),
+                ));
+              }
+              // 顶部：中文释义 + 倒计时（时限内不作答就算答错）
+              children.add(Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 22, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1C2230).withValues(alpha: 0.74),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(q.meaning,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 23,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 2)),
+                      ),
+                      const SizedBox(height: 6),
+                      // 倒计时条：越短越快见底
+                      SizedBox(
+                        width: 190,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: left / _askSeconds,
+                            minHeight: 6,
+                            backgroundColor: Colors.white.withValues(alpha: 0.25),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                left < 2 ? const Color(0xFFFF7A7A) : const Color(0xFF7BE38B)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ));
+            }
+            if (_flash != null && _simTime < _flashUntil) {
+              children.add(Positioned(
+                top: 92,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Text(_flash!,
+                      style: TextStyle(
+                          color: _flash!.startsWith('答对')
+                              ? const Color(0xFF7BE38B)
+                              : const Color(0xFFFF8A8A),
+                          fontSize: 19,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ));
+            }
+
             // 手指直接拖队伍：屏幕任意位置按下都行，右下角仍留给将来的道具
             _viewCover = cover;
             _viewOffX = offX;
@@ -606,8 +760,11 @@ const double _windupHold = 0.18;
 ///
 /// 不做抛物线：用户判断在手机上根本看不出来，反而绕。只要出手位置对、朝消失点收拢就够了。
 const double _nutForward = 420;
-const double _shotInterval = 0.24;  // 每隔多久一发，轮流由小队成员投出（0.40→0.24，用户要求投快些）
-const double _mobWalkSpeed = 58;    // 小怪的移动速度（96→58，用户要求慢一点）
+// 每隔多久一发，轮流由小队成员投出。
+// 平衡口径：到达率 16 只 / 15 秒 ≈ 1.1 只/秒；火力 1/0.20 = 5 发/秒 ÷ 每只 3 发
+// ≈ 1.7 只/秒，留出余量。原来进场只跨 9 秒（1.8 只/秒）而火力只够 1.4 只/秒，必然崩。
+const double _shotInterval = 0.20;
+const double _mobWalkSpeed = 50;    // 小怪的移动速度（96→58→50，逐步放慢给玩家时间）
 const double _mobFleeSpeed = 215;   // 逃跑速度
 const double _recoilTime = 0.34;    // 被打退一下的时长
 const double _cryTime = 0.80;       // 原地哭的时长
@@ -627,9 +784,64 @@ const double _stealRadius = 46;
 /// 只有进到后半段才向水果集中——正是需求里要的「后半段才向水果密集处集中」。
 const double _seekRadius = 300;
 
+// ---------------------------------------------------------------- 答题平台
+//
+// 桥两侧贴着岸边的加宽平台（「桥肩」），从水果那一行一直延伸到镜头前。
+// 为什么不做成「深处那一小块」：队伍只能左右移动，深处它够不着。
+// 做成从水果行延伸到近处，队伍**只靠左右移动就能滑上去**，不必新增前后移动的操作。
+const double _platDepthFar = _fruitDepth;   // 平台的最深处（＝水果那一行）
+const double _platDepthNear = 1020;         // 延伸到队伍脚下再往前一点
+/// 平台外沿（占该处桥面半宽的比例）；>1 表示伸出桥面之外。
+const double _platOuter = 1.90;
+
+// 出题节奏：先空一段（不上题，避免一题接一题），再给一段答题时间，超时算答错。
+const double _gapSeconds = 2.5;
+const double _askSeconds = 6.0;
+
+/// 单词靶的位置：在平台**前方**（更深），站在平台上朝正前方射击正好打到它。
+const double _wordDepth = 560;
+const double _wordLane = 1.45;
+
+// 增益就是**一个等级**：答对 +1、答错 −1（用户明确要求，持久累积、不清零）。
+// 火力倍率 = 0.8^等级，夹在上下限之间。
+//
+// 为什么要夹：开火间隔趋近 0 在工程上不可能（帧率、音效通道都有限），
+// 而等级为负时 0.8^n 会越乘越大也会失控。与其让它自己崩掉，
+// 不如显式设上下限并写清楚原因。
+const double _buffStep = 0.8;
+const double _fireMin = 0.25;        // 最快：开火间隔缩到 25%
+const double _fireMax = 3.0;         // 最慢：拖到 3 倍
+
+/// 单词靶：给中文释义，左右各一个英文单词，打中哪个就是选哪个。
+class _WordTarget {
+  _WordTarget(this.text, this.correct, this.x);
+  final String text;
+  final bool correct;
+  final double x;
+  static const double depth = _wordDepth;
+}
+
+/// 题目：给中文释义，在桥两侧的两个英文单词里选对的那个。
+/// 先用内置的小词表跑通机制；将来接真实词典（dictWords）。
+class _Question {
+  const _Question(this.word, this.wrongWord, this.meaning);
+  final String word;        // 正确答案（含释义）
+  final String wrongWord;   // 干扰项
+  final String meaning;     // 顶部显示的中文释义
+}
+
+const List<_Question> _demoQuestions = [
+  _Question('bridge', 'fridge', '桥'),
+  _Question('apple', 'maple', '苹果'),
+  _Question('brave', 'grave', '勇敢的'),
+  _Question('listen', 'glisten', '听'),
+  _Question('quiet', 'quite', '安静的'),
+];
+
 /// 开局桥面是空的：小怪在这段时间内**错开**从桥那头走上来。
+/// 这个量直接决定到达率，是平衡的第一杠杆。
 /// 用各自的相位当错开量，所以进场顺序天然是乱的、不是列队。
-const double _entrySpread = 9.0;
+const double _entrySpread = 15.0;
 
 /// 一颗水果。被小怪拿到就 taken，永久消失；5 颗都没了玩家就输了。
 class _Fruit {
@@ -866,6 +1078,31 @@ class _MonsterFxPainter extends CustomPainter {
       final double r = 26 * _MonsterSpriteState._fx * cover *
           (_MonsterSpriteState._scaleAtGround(f.depth) / 0.52).clamp(0.5, 1.4);
       _fruit(canvas, _x(f.x), _y(f.depth) - r * 1.05, r);
+    }
+
+    // ---- 两侧答题平台（桥肩）：从水果那一行延伸到近处
+    for (final int side in const [-1, 1]) {
+      final double yFar = _platDepthFar;
+      final double yNear = _platDepthNear;
+      final double hFar = _MonsterSpriteState._bridgeHalf(yFar);
+      final double hNear = _MonsterSpriteState._bridgeHalf(yNear);
+      final double innerFar = side * hFar;
+      final double outerFar = side * hFar * _platOuter;
+      final double innerNear = side * hNear;
+      final double outerNear = side * hNear * _platOuter;
+      final Path plat = Path()
+        ..moveTo(_x(_MonsterSpriteState._canvasW / 2 + innerFar), _y(yFar))
+        ..lineTo(_x(_MonsterSpriteState._canvasW / 2 + outerFar), _y(yFar))
+        ..lineTo(_x(_MonsterSpriteState._canvasW / 2 + outerNear), _y(yNear))
+        ..lineTo(_x(_MonsterSpriteState._canvasW / 2 + innerNear), _y(yNear))
+        ..close();
+      canvas.drawPath(plat, Paint()..color = const Color(0xFFD9C08A));
+      canvas.drawPath(
+          plat,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = math.max(1.5, 3 * cover)
+            ..color = const Color(0xFF8A6B3A));
     }
 
     // ---- 投掷物：一次只画一个，不拖尾迹。大小按所在深度的透视缩放。
