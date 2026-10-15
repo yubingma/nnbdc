@@ -38,13 +38,18 @@ if LANDSCAPE:
     # 角色行进轨道。GROUND_DEFEAT 是「走到全程约一半、被打倒」的位置——
     # 需求是「小馋怪走到大约屏幕一半距离时已经被打倒 3 次」，所以走到这里就结束推进，
     # 后面的哭与逃跑都在这个位置上发生。
-    GROUND_FAR = 300            # 出发点（桥那头）
-    GROUND_DEFEAT = 580         # 被打倒处：全程 300→860 的一半
+    # 进场起点与出场终点都必须在**画面之外**：可见的画布纵向范围约 y 106~1092
+    # （手机横屏下 BoxFit.cover 会裁掉上下各约 9%）。原来起点 300、终点 200 都在画面内，
+    # 于是小怪是「凭空出现」、逃跑完又跳回起点闪一下。改成屏外→屏外，接缝自然看不见。
+    GROUND_FAR = 40             # 出发点（画面之外的远处）
+    GROUND_DEFEAT = 580         # 被打倒处
     GROUND_LIFT = 500           # 最后一下被弹起的高度
     GROUND_SETTLE = 575         # 哭的时候落定的位置
-    GROUND_FLEE_END = 200       # 跑远的终点
-    SCALE_Y0, SCALE_Y1 = 240, 920        # 透视缩放的斜坡区间
-    SCALE_S0, SCALE_S1 = 0.22, 0.52      # 斜坡两端的缩放
+    GROUND_FLEE_END = 30        # 跑远的终点（同样在画面之外）
+    # 透视斜坡的起点跟着下移到画面之外，远处的小怪才会「由小变大」地走进来；
+    # 原来斜坡从 y=240 才开始，240 以上是一段恒定的 0.22，走进来时大小不变。
+    SCALE_Y0, SCALE_Y1 = 60, 920
+    SCALE_S0, SCALE_S1 = 0.15, 0.52
 else:
     W, H = 1080, 1920
     BRIDGE_TOP_HALF = 0.20
@@ -57,9 +62,9 @@ else:
     SCALE_Y0, SCALE_Y1 = 380, 1180
     SCALE_S0, SCALE_S1 = 0.30, 0.78
 
-# 角色的基准身高（画布像素）：实际身高 = 本值 × 透视缩放。原为 900。
-# 2026-10-15 调小到 620：配合加宽的桥面，让桥上放得下更多单位。
-CHAR_BASE = 620
+# 角色的基准身高（画布像素）：实际身高 = 本值 × 透视缩放。
+# 900 → 620 → 430：配合加宽的桥面，让「每排五六只」放得下。
+CHAR_BASE = 430
 # 与角色同比例缩放的特效尺寸倍率。角色变小了，坚果 / 星芒 / 眼泪 / 尘土也得跟着变小，
 # 否则它们相对角色会显得越来越大——这类「绝对像素」的尺寸最容易漏。
 FX = CHAR_BASE / 900.0
@@ -607,17 +612,150 @@ def pose_blend(t):
     return walk_weights(t, 'back', hz)
 
 
-def ally_pose(t):
-    """我方小宠物当前该出哪一帧：站立 → 抬手蓄力 → 挥出 → 收回。
+# ---------------------------------------------------------------- 怪群与宠物队
 
-    按 NUT_LAUNCHES 里每一次脱手时刻算：抬手提前 ALLY_WINDUP_LEAD 秒起，
-    脱手后保持 ALLY_THROW_HOLD 秒。投掷必须和坚果脱手对齐——早了自己先动、
-    晚了坚果凭空出现。
+CYCLE = DURATION          # 一只小怪走完「压上来 → 挨三下 → 哭 → 逃」的时长＝整个循环
+
+# 每一只小怪：(相位偏移（占整个循环的比例）, 横向偏移（占该处桥面半宽的比例）,
+#              深度抖动（画布像素）, 尺寸抖动)
+#
+# 相位错开 => 「一排接一排」地压上来；横向、深度、尺寸三样都加抖动 => 不至于排得太整齐。
+# 数值是手调的：错落但不至于挤成一团，横向尽量铺开但不越出桥面（横向单位是「半宽的比例」，
+# 所以深处的小怪自然收拢、近处的自然铺开，和透视是一致的）。
+MONSTERS = [
+    (0.00, -0.62, -60, 1.00), (0.05, 0.10, 130, 0.94), (0.09, 0.58, -100, 1.05),
+    (0.16, -0.30, 70, 0.97), (0.21, 0.44, -140, 1.02), (0.26, -0.72, 30, 0.92),
+    (0.33, 0.22, 100, 1.06), (0.38, -0.48, -80, 0.95), (0.44, 0.66, 150, 1.01),
+    (0.52, -0.12, -120, 0.98), (0.58, -0.66, 90, 1.04), (0.63, 0.36, -40, 0.93),
+    (0.71, -0.36, 120, 1.00), (0.77, 0.54, -110, 0.96), (0.84, -0.06, 50, 1.03),
+    (0.91, 0.28, -90, 0.99),
+]
+#
+# 深度抖动给得很大（±150）：只给小抖动的话，十几只全挤在桥的上半段，
+# 桥头与怪群之间空出一大片，画面上「压过来」的势头就没了。
+
+# 我方小宠物：(横向偏移（占视口宽的比例）, 深度抖动（画布像素）, 尺寸抖动)
+ALLIES = [(-0.31, 26, 1.03), (-0.16, -22, 0.95), (-0.005, 12, 1.01),
+          (0.15, -18, 1.06), (0.30, 28, 0.96)]
+
+
+def bridge_half(y):
+    """某一深度处桥面的半宽（画布像素）。
+
+    小怪的横向偏移是「该处桥面半宽的比例」，乘它才不会站到水里去；
+    深处桥面窄、小怪自然收拢，近处宽、自然铺开——这本身就是透视的一部分。
     """
-    for launch in NUT_LAUNCHES:
-        if launch - ALLY_WINDUP_LEAD <= t < launch:
+    k = min(1.0, max(0.0, y / CANVAS[1]))
+    return W * lerp(BRIDGE_TOP_HALF, BRIDGE_BOT_HALF, k)
+
+
+def unit_state(tt):
+    """某只小怪在「它自己的时间」tt 上的全部状态。
+
+    抽成纯函数是这次重构的关键：十几只小怪跑的是**同一条时间线**，只是各自错开相位，
+    所以「一排接一排」与「混乱」都只是相位和横向偏移的差别，不必为每只再写一套逻辑。
+    下面这些辅助函数（track / scale_at_ground / pose_blend / ease_out_elastic）本来就都是
+    对 t 的纯函数，直接喂 tt 即可。
+    """
+    if tt < T_IMPACT:
+        gy = track(tt, [(0, GROUND_FAR), (T_HIT3, GROUND_DEFEAT)])
+    elif tt < T_FLEE:
+        gy = track(tt, [(T_HIT3, GROUND_DEFEAT), (T_HIT3 + .10, GROUND_LIFT),
+                        (T_HIT3 + .34, GROUND_SETTLE - 8),
+                        (T_CRY, GROUND_SETTLE), (T_FLEE, GROUND_SETTLE)])
+    else:
+        gy = track(tt, [(T_FLEE, GROUND_SETTLE), (T_END, GROUND_FLEE_END)])
+
+    approaching = tt < T_IMPACT
+    walking = tt >= T_FLEE
+    turn_sq = 1.0
+    if T_FLEE <= tt < T_FLEE + TURN * 1.6:
+        k = (tt - T_FLEE) / (TURN * 1.6)
+        turn_sq = max(0.52, abs(math.cos(k * math.pi)))
+
+    sq_x, sq_y, rot = 1.0, 1.0, 0.0
+    for _i, _hit in enumerate(HITS):
+        if not (_hit <= tt < _hit + 0.75):
+            continue
+        k = (tt - _hit) / 0.75
+        e = ease_out_elastic(k, amp=0.55, period=0.36)
+        amp = 1.0 if _i == len(HITS) - 1 else 0.45
+        sq_y *= lerp(1.0, 0.80, e * (1 - k) * 1.35 * amp)
+        sq_x *= lerp(1.0, 1.16, e * (1 - k) * 1.35 * amp)
+        rot += math.sin(k * math.pi * 3) * 5 * (1 - k) * amp
+    if approaching:
+        bob = -BOB_SQUASH * math.cos(2 * math.pi * WALK_HZ * 2 * tt)
+        sq_y *= 1 + bob
+        sq_x *= 1 - bob * 0.55
+    if walking:
+        rot += LEAN_FLEE * math.sin(2 * math.pi * (WALK_HZ * 2.0) * tt)
+    sq_x *= turn_sq
+
+    return {'gy': gy, 'approaching': approaching, 'walking': walking,
+            'sq_x': sq_x, 'sq_y': sq_y, 'rot': rot,
+            'shake': math.sin(tt * math.pi * 2 * 19) * 3.2 if T_CRY <= tt < T_FLEE else 0.0}
+
+
+def draw_unit(canvas, assets, ref_h, anchor, tt, x, depth_jit, size_jit):
+    """把一只小怪按「它自己的时间」画出来。返回 (脚底行, 身高, 中心x) 供调用方定位特效。"""
+    st = unit_state(tt)
+    gy = st['gy'] + depth_jit
+    h = CHAR_BASE * scale_at_ground(gy) * size_jit
+    cx = x + st['shake']
+    draw_ground_shadow(canvas, cx, gy, h * 0.62, 0.0)
+    for pname, wgt in pose_blend(tt).items():
+        if wgt <= 0.001:
+            continue
+        img, bb = assets[pname]
+        paste_char(canvas, img, bb, anchor[pname], (cx, gy), h, ref_h[pname],
+                   sx=st['sq_x'], sy=st['sq_y'], rot=st['rot'], alpha=wgt)
+
+    # 眼泪与尘土写成**闭合式**而不是粒子表：粒子表是逐只累加的状态，
+    # 换成十几只之后既难保证确定性、也让 Python 与 Dart 两边更难对齐。
+    if T_CRY <= tt < T_FLEE + 0.3:
+        for i in range(8):
+            age = (tt - T_CRY) - i * 0.14
+            if not (0.0 <= age <= 0.8):
+                continue
+            side = -1 if i % 2 == 0 else 1
+            fx_tear(canvas, cx + side * h * 0.075 * (1 + age * 2.6),
+                    gy - h * 0.62 + age * h * 0.6, 16 * FX, 1 - age / 0.9)
+    if st['approaching'] or st['walking']:
+        for i in range(2):
+            ph = (tt * 2.2 + i * 0.5) % 1.0
+            fx_dust(canvas, cx + (i * 2 - 1) * h * 0.22, gy, (11 - ph * 5) * FX, 1 - ph)
+    return gy, h, cx
+
+
+def nut_schedule():
+    """把「每只小怪的三次命中」摊平成一张投掷表，再轮流派给我方小宠物。
+
+    每只小怪跑同一条时间线、只是相位不同，所以它的命中时刻 = 相位 + 命中时刻（对循环取模）。
+    按命中时刻排序后轮流分配，画面上就是一阵密集但看着有来由的投掷。
+    """
+    events = []
+    for i, (phase, lane, dj, sj) in enumerate(MONSTERS):
+        for j, hit in enumerate(HITS):
+            events.append({'gh': (phase * CYCLE + hit) % CYCLE, 'mi': i, 'hj': j})
+    events.sort(key=lambda e: e['gh'])
+    for k, e in enumerate(events):
+        e['ai'] = k % len(ALLIES)
+    return events
+
+
+def ally_pose_for(t, events, ai):
+    """第 ai 只小宠物这一刻出哪一帧。
+
+    它的投掷时刻来自投掷表（哪几次命中轮到它），抬手提前 ALLY_WINDUP_LEAD 秒。
+    一律用「环形距离」判断，否则跨循环边界的那几次投掷会漏掉抬手动作。
+    """
+    for e in events:
+        if e['ai'] != ai:
+            continue
+        launch = (e['gh'] - NUT_FLIGHT) % CYCLE
+        if (t - (launch - ALLY_WINDUP_LEAD)) % CYCLE < ALLY_WINDUP_LEAD:
             return 'ally_windup'
-        if launch <= t < launch + ALLY_THROW_HOLD:
+        if (t - launch) % CYCLE < ALLY_THROW_HOLD:
             return 'ally_throw'
     return 'ally_stand'
 
@@ -626,152 +764,71 @@ def render():
     os.makedirs(OUTDIR, exist_ok=True)
     bg = build_background()
     assets, ref_h, anchor = load_assets()
-    rng = np.random.default_rng(11)
-    tears, dusts = [], []
+    events = nut_schedule()
 
     for fi in range(N_FRAMES):
         t = fi / FPS
         canvas = bg.copy().convert('RGBA')
 
-        approaching = t < T_IMPACT
-        gx = MARGIN + W / 2
-        hop_h = 0.0          # 当前腾空高度（占角色高度比例）
-        air = False
+        # ---- 怪群：一排接一排地压上来。每只跑同一条时间线，只是相位错开。
+        for (phase, lane, dj, sj) in MONSTERS:
+            tt = (t - phase * CYCLE) % CYCLE
+            gy = unit_state(tt)['gy'] + dj
+            x = MARGIN + W / 2 + lane * bridge_half(gy)
+            draw_unit(canvas, assets, ref_h, anchor, tt, x, dj, sj)
 
-        if approaching:
-            gy = track(t, [(0, GROUND_FAR), (T_HIT3, GROUND_DEFEAT)])
-        elif t < T_FLEE:
-            gy = track(t, [(T_HIT3, GROUND_DEFEAT), (T_HIT3 + .10, GROUND_LIFT),
-                           (T_HIT3 + .34, GROUND_SETTLE - 8),
-                           (T_CRY, GROUND_SETTLE), (T_FLEE, GROUND_SETTLE)])
-        else:
-            gy = track(t, [(T_FLEE, GROUND_SETTLE), (T_END, GROUND_FLEE_END)])
+        # ---- 我方小宠物：一排站在桥头，轮流投掷
+        hands = []
+        for ai, (ax, adj, asj) in enumerate(ALLIES):
+            ah = CHAR_BASE * scale_at_ground(ALLY_GROUND + adj) * ALLY_RATIO * asj
+            axx = MARGIN + W / 2 + W * ax
+            ayy = ALLY_GROUND + adj
+            bob = -0.022 * math.cos(2 * math.pi * 0.9 * t + ai * 1.3)
+            p = ally_pose_for(t, events, ai)
+            img, bb = assets[p]
+            draw_ground_shadow(canvas, axx, ayy, ah * 0.62, 0.0)
+            paste_char(canvas, img, bb, anchor[p], (axx, ayy), ah, ref_h[p],
+                       sx=1 - bob * 0.55, sy=1 + bob)
+            hands.append((axx + ah * 0.30, ayy - ah * 0.62))
 
-        fleeing = t >= T_FLEE
-        walking = fleeing          # 逃跑仍用背面走路循环
-
-        # 转身：横向压扁再弹回
-        turn_sq = 1.0
-        if T_FLEE <= t < T_FLEE + TURN * 1.6:
-            k = (t - T_FLEE) / (TURN * 1.6)
-            turn_sq = max(0.52, abs(math.cos(k * math.pi)))
-
-        sq_x, sq_y, rot = 1.0, 1.0, 0.0
-        # 三次命中都做挤压回弹：前两下只是被打退（幅度小），第三下才是打倒。
-        # 不做的话三次命中在画面上读不出区别，只会看到坚果一颗颗飞过去。
-        for _i, _hit in enumerate(HITS):
-            if not (_hit <= t < _hit + 0.75):
+        # ---- 坚果：按投掷表从我方手上飞向「命中那一刻」那只小怪的身体
+        for e in events:
+            launch = (e['gh'] - NUT_FLIGHT) % CYCLE
+            d = (t - launch) % CYCLE
+            if d >= NUT_FLIGHT:
                 continue
-            k = (t - _hit) / 0.75
-            e = ease_out_elastic(k, amp=0.55, period=0.36)
-            amp = 1.0 if _i == len(HITS) - 1 else 0.45
-            sq_y *= lerp(1.0, 0.80, e * (1 - k) * 1.35 * amp)
-            sq_x *= lerp(1.0, 1.16, e * (1 - k) * 1.35 * amp)
-            rot += math.sin(k * math.pi * 3) * 5 * (1 - k) * amp
-        sway = 0.0
-        if approaching:
-            # 走路起伏只做在「以脚底为支点的挤压拉伸」上：脚不动，身体自己起伏。
-            # 整体上下平移会让脚离地、整体旋转会让底座翘成跷跷板，两者都会被读成打滑。
-            bob = -BOB_SQUASH * math.cos(2 * math.pi * WALK_HZ * 2 * t)
-            sq_y *= 1 + bob
-            sq_x *= 1 - bob * 0.55
-        sway = 0.0 if approaching else sway
-        if walking:
-            ph = 2 * math.pi * (WALK_HZ * 2.0) * t
-            rot += LEAN_FLEE * math.sin(ph)
-            sway = SWAY_FLEE * math.sin(ph)
-        sq_x *= turn_sq
-
-        shake_x = math.sin(t * math.pi * 2 * 19) * 3.2 if T_CRY <= t < T_FLEE else 0.0
-        ground_y = gy
-        height = CHAR_BASE * scale_at_ground(ground_y)
-        char_y = ground_y + sway * 0.0
-        char_x = gx + shake_x
-
-        # 落地影：贴地、随腾空变淡变小；角色则被抬高到 char_y
-        draw_ground_shadow(canvas, char_x, ground_y, height * 0.62, 0.0)
-
-        for pname, wgt in pose_blend(t).items():
-            if wgt <= 0.001:
-                continue
-            img, bb = assets[pname]
-            paste_char(canvas, img, bb, anchor[pname], (char_x, char_y), height,
-                       ref_h[pname], sx=sq_x, sy=sq_y, rot=rot, alpha=wgt)
-
-        # ---- 我方小宠物：站在桥头（离镜头最近），所以画在小馋怪之后、盖在它上面。
-        # 它只做一件事——到点用小短手把坚果扔出去；坚果的起点就是它的手。
-        ally_h = CHAR_BASE * scale_at_ground(ALLY_GROUND) * ALLY_RATIO
-        ally_x = MARGIN + W / 2 + W * ALLY_OFFSET_X
-        ally_y = ALLY_GROUND
-        ally_bob = -0.022 * math.cos(2 * math.pi * 0.9 * t)     # 站着也别是死的
-        aimg, abb = assets[ally_pose(t)]
-        paste_char(canvas, aimg, abb, anchor[ally_pose(t)], (ally_x, ally_y), ally_h,
-                   ref_h[ally_pose(t)], sx=1 - ally_bob * 0.55, sy=1 + ally_bob)
-        draw_ground_shadow(canvas, ally_x, ally_y, ally_h * 0.62, 0.0)
-
-        if fi % 6 == 0 and (approaching or walking):
-            dusts.append([char_x + rng.uniform(-26, 26), ground_y,
-                          rng.uniform(8, 15) * FX, 0.0, 0.45])
-        if T_CRY <= t < T_FLEE and fi % 4 == 0:
-            for s in (-1, 1):
-                tears.append([gx + s * height * 0.075, ground_y - height * 0.62,
-                              s * rng.uniform(90, 190), rng.uniform(-260, -150), 0.0])
-
-        keep = []
-        for p in tears:
-            p[4] += 1 / FPS
-            if p[4] <= 0.9:
-                p[0] += p[2] / FPS
-                p[1] += p[3] / FPS
-                p[3] += 1500 / FPS
-                fx_tear(canvas, p[0], p[1], 16 * FX, 1 - p[4] / 0.9)
-                keep.append(p)
-        tears = keep
-
-        keep = []
-        for p in dusts:
-            p[3] += 1 / FPS
-            if p[3] <= p[4]:
-                kk = p[3] / p[4]
-                fx_dust(canvas, p[0] - (40 if t >= T_FLEE else -20) * kk, p[1] + 10 * kk,
-                        p[2] * (0.6 + kk), 1 - kk)
-                keep.append(p)
-        dusts = keep
-
-        for _i, _hit in enumerate(HITS):
-            launch = NUT_LAUNCHES[_i]
-            if not (launch <= t < _hit):
-                continue
-            # 起点是我方小宠物的手；终点取**命中那一刻**小馋怪的身体位置
-            # （不是当前位置，否则坚果会追着跑、永远差一截）。
-            k = (t - launch) / (_hit - launch)
-            g_at_hit = track(_hit, [(0, GROUND_FAR), (T_HIT3, GROUND_DEFEAT)]) \
-                if _hit <= T_HIT3 else GROUND_SETTLE
-            tx = MARGIN + W / 2
-            ty = g_at_hit - CHAR_BASE * scale_at_ground(g_at_hit) * 0.45
-            hx = ally_x + ally_h * 0.30
-            hy = ally_y - ally_h * 0.62
+            k = d / NUT_FLIGHT
+            phase, lane, dj, sj = MONSTERS[e['mi']]
+            st_hit = unit_state(HITS[e['hj']])
+            gy_hit = st_hit['gy'] + dj
+            tx = MARGIN + W / 2 + lane * bridge_half(gy_hit)
+            ty = gy_hit - CHAR_BASE * scale_at_ground(gy_hit) * sj * 0.45
+            hx, hy = hands[e['ai']]
             nx = lerp(hx, tx, k)
-            ny = lerp(hy, ty, k) - H * 0.13 * math.sin(math.pi * k)
+            ny = lerp(hy, ty, k) - H * 0.13 * math.sin(math.pi * k)   # 抛一条弧线
             for j in range(3):
-                fx_nut(canvas, nx + j * 26 * FX, ny + j * 20 * FX, k * 900 + j * 40, (17 - j * 3) * FX)
+                fx_nut(canvas, nx + j * 26 * FX, ny + j * 20 * FX,
+                       k * 900 + j * 40, (17 - j * 3) * FX)
             fx_nut(canvas, nx, ny, k * 900, 20 * FX)
 
-        if T_IMPACT <= t < T_IMPACT + 0.42:
-            fx_impact(canvas, gx + 60 * FX, ground_y - height * 0.55, (t - T_IMPACT) / 0.42, FX)
-        if t >= T_FLEE + TURN:
-            fx_speed(canvas, gx, ground_y - height * 0.45, H * 0.078,
-                     (1 - (t - T_FLEE) / 2.4) * 0.9, vertical=True)
+        # ---- 命中星芒 / 逃跑速度线：每只按自己的时间算
+        for (phase, lane, dj, sj) in MONSTERS:
+            tt = (t - phase * CYCLE) % CYCLE
+            gy = unit_state(tt)['gy'] + dj
+            x = MARGIN + W / 2 + lane * bridge_half(gy)
+            h = CHAR_BASE * scale_at_ground(gy) * sj
+            for _i, _hit in enumerate(HITS):
+                if _hit <= tt < _hit + 0.42:
+                    # 前两下的小星芒缩到六成，第三下（打倒）才是满的
+                    fx_impact(canvas, x + 60 * FX, gy - h * 0.55,
+                              (tt - _hit) / 0.42, FX * (1.0 if _i == len(HITS) - 1 else 0.6))
+            if T_FLEE + TURN <= tt < T_END:
+                fx_speed(canvas, x, gy - h * 0.45, H * 0.078,
+                         (1 - (tt - T_FLEE) / 2.4) * 0.9, vertical=True)
 
-        if T_IMPACT <= t < T_IMPACT + 0.38:
-            k = (t - T_IMPACT) / 0.38
-            amp = 22 * (1 - k) ** 2
-            ox, oy = MARGIN + int(math.sin(t * 137) * amp), MARGIN + int(math.cos(t * 191) * amp)
-        else:
-            ox = oy = MARGIN
-        canvas.convert('RGB').crop((ox, oy, ox + W, oy + H)).save(
-            os.path.join(OUTDIR, f'f{fi:04d}.png'))
-    return N_FRAMES
+        canvas.convert('RGB').save(f'{OUTDIR}/f{fi:04d}.png')
+
+    encode(N_FRAMES)
 
 
 def encode(n):
