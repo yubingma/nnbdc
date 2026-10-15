@@ -710,16 +710,49 @@ def draw_unit(canvas, assets, ref_h, anchor, tt, x, depth_jit, size_jit):
         paste_char(canvas, img, bb, anchor[pname], (cx, gy), h, ref_h[pname],
                    sx=st['sq_x'], sy=st['sq_y'], rot=st['rot'], alpha=wgt)
 
-    # 眼泪与尘土写成**闭合式**而不是粒子表：粒子表是逐只累加的状态，
-    # 换成十几只之后既难保证确定性、也让 Python 与 Dart 两边更难对齐。
-    if T_CRY <= tt < T_FLEE + 0.3:
-        for i in range(8):
-            age = (tt - T_CRY) - i * 0.14
-            if not (0.0 <= age <= 0.8):
-                continue
-            side = -1 if i % 2 == 0 else 1
-            fx_tear(canvas, cx + side * h * 0.075 * (1 + age * 2.6),
-                    gy - h * 0.62 + age * h * 0.6, 16 * FX, 1 - age / 0.9)
+    # 飙泪：向两旁喷出去的弹道。
+    #
+    # 时间线调整：原来只哭到 T_FLEE+0.3，现在一路飙到逃跑途中——转身跑远还拖着
+    # 一条泪迹，喜感主要来自这里。
+    #
+    # 关键：每颗泪珠按**它出生那一刻小怪的位置**算，而不是按小怪当前位置。
+    # 按当前位置画的话泪珠会黏在脸上跟着跑；按出生位置画，跑动时泪珠会留在身后，
+    # 自然拉成一条轨迹。unit_state() 是纯函数，所以这件事可以直接算，不需要粒子表。
+    # 背对镜头时，眼睛在脑袋的**背面**——泪珠必须被脑袋挡住，
+    # 只有飞出轮廓之外的那一段才看得见。无条件画在最上层的话，
+    # 看起来就像「从后脑勺飙出来的眼泪」。
+    _back = tt >= T_FLEE + TURN
+    _head_cx = cx
+    _head_cy = gy - h * 0.50
+    _head_rx = h * 0.42
+    _head_ry = h * 0.52
+
+    for _i in range(30):
+        birth = T_CRY + _i * 0.09
+        if birth > tt:
+            break
+        age = tt - birth
+        if age > 0.65:
+            continue
+        _st = unit_state(birth)
+        _gy = _st['gy'] + depth_jit
+        _hh = CHAR_BASE * scale_at_ground(_gy) * size_jit
+        _side = -1 if _i % 2 == 0 else 1
+        # 起点在**眼角外侧**：两眼各从自己那一侧出发，否则会像从两眼之间冒出来
+        _ex = x + _st['shake'] + _side * _hh * 0.10
+        _ey = _gy - _hh * 0.62
+        # 横向每秒 1.9 个身高（从眼角算最远约 1.33 个身高）——必须明显超出脑袋轮廓
+        # （横向半径 0.42 身高），否则背对镜头时整段都被挡住、等于看不见。
+        # 纵向先上抛、再被"重力"拉回来。
+        _tx = _ex + _side * _hh * 1.9 * age
+        _ty = _ey - _hh * (1.2 * age - 3.2 * age * age)
+        if _back:
+            _u = (_tx - _head_cx) / _head_rx
+            _v = (_ty - _head_cy) / _head_ry
+            if _u * _u + _v * _v < 1.0:
+                continue                            # 还在脑袋后面，看不见
+        fx_tear(canvas, _tx, _ty, 20 * FX, 1 - age / 0.7)
+
     if st['approaching'] or st['walking']:
         for i in range(2):
             ph = (tt * 2.2 + i * 0.5) % 1.0

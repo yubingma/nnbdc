@@ -609,25 +609,56 @@ class _MonsterFxPainter extends CustomPainter {
             (hi == _MonsterSpriteState._hits.length - 1 ? 1.0 : 0.6) * _MonsterSpriteState._fx);
       }
 
-      // 眼泪与尘土是**闭合式**的（Python 侧同样如此）：粒子表是逐只累加的状态，
-      // 换成十几只之后既难保证确定性、也让两边更难对齐。
-      if (tt >= _MonsterSpriteState._tCry && tt < _MonsterSpriteState._tFlee + 0.3) {
-        for (int i = 0; i < 8; i++) {
-          final double age = (tt - _MonsterSpriteState._tCry) - i * 0.14;
-          if (age < 0 || age > 0.8) continue;
-          final double side = i.isEven ? -1 : 1;
-          canvas.drawOval(
-            Rect.fromCenter(
-              center: Offset(
-                mx + side * h * 0.075 * (1 + age * 2.6) * cover,
-                feet - h * 0.62 * cover + age * h * 0.6 * cover,
-              ),
-              width: 20 * _MonsterSpriteState._fx * cover,
-              height: 28 * _MonsterSpriteState._fx * cover,
-            ),
-            Paint()..color = const Color(0xFF9FD8F5).withValues(alpha: 0.9 * (1 - age / 0.9)),
-          );
+      // 飙泪：向两旁喷出去的弹道。
+      //
+      // 时间线上原来只哭到 T_FLEE+0.3，现在一路飙到逃跑途中——转身跑远还拖着
+      // 一条泪迹，喜感主要来自这里。
+      //
+      // 关键一：每颗泪珠按**它出生那一刻小怪的位置**算，而不是按小怪当前位置。
+      // 按当前位置画的话泪珠会黏在脸上跟着跑；按出生位置画，跑动时泪珠会留在身后，
+      // 自然拉成一条轨迹。unitState() 是纯函数，所以这件事可以直接算，不需要粒子表。
+      //
+      // 关键二：**背对镜头时泪珠要被脑袋挡住**。眼睛长在脑袋正面，转身之后眼睛在
+      // 背面，无条件画在最上层会看起来像「从后脑勺飙出来的眼泪」。所以背对时把
+      // 落在脑袋轮廓椭圆内的泪珠跳过——它一飞出轮廓，自然就出现了。
+      final bool back = tt >= _MonsterSpriteState._tFlee + _MonsterSpriteState._turn;
+      final double headCy = feet - h * 0.50 * cover;
+      final double headRx = h * 0.42 * cover;
+      final double headRy = h * 0.52 * cover;
+      for (int i = 0; i < 30; i++) {
+        final double birth = _MonsterSpriteState._tCry + i * 0.09;
+        if (birth > tt) break;
+        final double age = tt - birth;
+        if (age > 0.65) continue;
+        final stB = _MonsterSpriteState._unitState(birth);
+        final double gyB = stB.gy + m[2];
+        final double hB =
+            _MonsterSpriteState._charBase * _MonsterSpriteState._scaleAtGround(gyB) * m[3];
+        // 起点在**眼角外侧**：两眼各从自己那一侧出发，否则会像从两眼之间冒出来
+        final double side = i.isEven ? -1 : 1;
+        final double ex = _x(_MonsterSpriteState._canvasW / 2 +
+                m[1] * _MonsterSpriteState._bridgeHalf(gyB) +
+                stB.shake +
+                side * hB * 0.10);
+        final double ey = _y(gyB - hB * 0.62);
+        // 横向每秒 1.9 个身高（从眼角算最远约 1.33 个身高）——必须明显超出脑袋轮廓
+        // （横向半径 0.42 身高），否则背对镜头时整段都被挡住、等于看不见。
+        // 纵向先上抛、再被"重力"拉回来。
+        final double tx = ex + side * hB * 1.9 * age * cover;
+        final double ty = ey - hB * (1.2 * age - 3.2 * age * age) * cover;
+        if (back) {
+          final double u = (tx - mx) / headRx;
+          final double v = (ty - headCy) / headRy;
+          if (u * u + v * v < 1.0) continue; // 还在脑袋后面，看不见
         }
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(tx, ty),
+            width: 25 * _MonsterSpriteState._fx * cover,
+            height: 35 * _MonsterSpriteState._fx * cover,
+          ),
+          Paint()..color = const Color(0xFF9FD8F5).withValues(alpha: 0.9 * (1 - age / 0.7)),
+        );
       }
       if (st.approaching || st.walking) {
         for (int i = 0; i < 2; i++) {
