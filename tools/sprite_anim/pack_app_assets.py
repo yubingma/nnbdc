@@ -31,7 +31,8 @@ RENDERER = 'tools/sprite_anim/render_anim.py'
 # 角色在资源里的高度（像素）。手机上约显示 160 逻辑像素，3 倍屏 → 480。
 TARGET_H = 480
 QUANT_COLORS = 256
-BG_SIZE = (540, 960)      # 背景按 9:16 压到手机够用的尺寸
+BG_SIZE = (1280, 720)     # 背景：横屏 16:9。手机横屏逻辑尺寸约 844×390，
+                          # 3 倍屏就是 2532×1170，1280×720 够清晰也够小。
 
 # 动画真正用到的姿态。名字 → (源文件名, 是否水平镜像)。
 # 顺序即 Dart 侧循环数组里的顺序，两边必须一致。
@@ -109,7 +110,8 @@ def pack():
         total += os.path.getsize(out)
         print(f'  {name:24s} {nw:4d}×{nh:<4d} → {os.path.getsize(out)/1024:6.1f} KB')
 
-    # 背景：直接复用 Python 场景的绘制函数，保证与视频里是同一张桥面
+    # 背景：直接复用 Python 场景的绘制函数，保证与视频里是同一张桥面。
+    # 视口横竖（render_anim.py 的 LANDSCAPE）一改，这里自动跟着变。
     bg = renderer['build_background']().convert('RGB').resize(BG_SIZE, Image.LANCZOS)
     bg_path = os.path.join(OUT, 'bg_bridge.jpg')
     bg.save(bg_path, quality=88, optimize=True)

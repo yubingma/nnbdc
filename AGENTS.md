@@ -93,8 +93,9 @@
 - **保留关键字转义铁律**：PostgreSQL 中包含大量系统保留关键字（最典型的如 `"user"`、`"group"`、`"order"`、`"position"`、`"date"` 等）。编写 DDL、SQL 升级脚本或原生查询时，**涉及保留关键字的表名与列名必须强制使用双引号包裹**（如 `COMMENT ON TABLE "user" IS '...';`），严禁裸写导致语法解析异常。
 
 ## Flutter 资源目录声明铁律
-- `pubspec.yaml` 的 `assets:` 声明**只递归一层**：声明 `assets/images/` 只覆盖它直接包含的文件，以及「一层子目录里直接包含的文件」。
-- **`assets/images/pet/moods/` 这类第二层及更深的子目录必须单独声明**，否则整个目录会被静默跳过：代码报 `Unable to load asset`，而编译、静态检查、单元测试全部通过，毫无提示。
+- `pubspec.yaml` 的 `assets:` 声明**完全不递归**：声明 `assets/images/` 只覆盖它**直接包含的文件**，任何子目录（不论第几层）都不会被带上。
+- **每个子目录都必须各自单独声明**（`assets/images/scenes/`、`assets/images/monster/`、`assets/images/pet/moods/` 各占一行），漏了会被静默跳过：代码报 `Unable to load asset`，而编译、静态检查、单元测试全部通过，毫无提示。
+  - 2026-10-14 实测订正：本条此前写作「只递归一层 / 第二层及更深的子目录才必须单独声明」，**是错的**。当时新增 `assets/images/monster/` 只加了 `assets/images/`，执行 `flutter build bundle` 后 `build/flutter_assets/assets/images/` 下**就是没有 `monster` 这一项**；同目录里的 `nav/`、`pet/`、`scenes/`、`wallpaper/` 之所以在，是因为它们都各自显式声明过。
 - **验证必须看打包产物，不能看界面、也不能只看文件是否存在**：执行 `flutter build bundle` 后检查 `build/flutter_assets/` 下是否真有该文件，或查 `.dart_tool/flutter_build/*/flutter_assets.d` 资源清单里有没有该目录条目。
 - **读文件系统的测试验证不了资源能否随包发布**（`File(...).existsSync()` 不经过 Flutter 的资源解析）。新增资源目录时，必须同时在测试中断言 pubspec 里已声明该目录。
 - 资源路径与目录名必须完全一致（含大小写与中文），路径写错同样只在真机运行时才报错，因此新增资源时应补一条「代码引用的资源是否存在」的断言。

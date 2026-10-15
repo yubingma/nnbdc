@@ -16,7 +16,38 @@ import subprocess
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
-W, H = 1080, 1920
+# ---------------------------------------------------------------- 视口（横屏 / 竖屏）
+#
+# 与构图有关的量全部集中在这里，横竖屏只切这一个开关。App 侧
+# （app/lib/widget/monster_sprite.dart）有一份对账的镜像常量，两边必须同时改。
+#
+# 横屏不是「把竖屏那张桥裁一裁」：视口从 9:16 变成 16:9 之后，
+#   ① 竖屏那张 1080×1920 的背景在 cover 下会被裁成中间一条竖缝；
+#   ② 桥面在视口里的合理比例变了——横屏要留出两侧水面（也正好是放 UI 的地方）；
+#   ③ 纵向可视范围只有原来的一半多，角色行进的轨道与透视缩放要整套重定。
+LANDSCAPE = True
+if LANDSCAPE:
+    W, H = 1920, 1080
+    # 桥面半宽占视口宽度的比例。实测三档（底端占屏 51% / 66% / 80%）后取中间：
+    # 51% 时桥只占中间窄窄一条、两侧大片空蓝、构图发虚；80% 时水面几乎没了，
+    # 而两侧水面正是放答案箱和 HUD 的地方。66% 桥成为主舞台，两侧仍留得住余地。
+    BRIDGE_TOP_HALF = 0.075
+    BRIDGE_BOT_HALF = 0.33
+    GROUND_FAR, GROUND_NEAR = 300, 860   # 角色行进轨道两端（脚底所在的行）
+    GROUND_BOUNCE = 740         # 被打中时被弹到的位置
+    GROUND_SETTLE = 845         # 战斗段落定的位置
+    SCALE_Y0, SCALE_Y1 = 240, 920        # 透视缩放的斜坡区间
+    SCALE_S0, SCALE_S1 = 0.22, 0.52      # 斜坡两端的缩放
+else:
+    W, H = 1080, 1920
+    BRIDGE_TOP_HALF = 0.165
+    BRIDGE_BOT_HALF = 0.476
+    GROUND_FAR, GROUND_NEAR = 420, 980
+    GROUND_BOUNCE = 862
+    GROUND_SETTLE = 960
+    SCALE_Y0, SCALE_Y1 = 380, 1180
+    SCALE_S0, SCALE_S1 = 0.30, 0.78
+
 FPS = 30
 DURATION = 8.8
 N_FRAMES = int(DURATION * FPS)
@@ -271,8 +302,10 @@ def build_background():
         ImageDraw.Draw(wob).line([(1, 2), (wl, 2)], fill=(255, 255, 255, a), width=2)
         img.paste(wob, (wx, wy), wob)
 
-    bxl, bxr = ox + 26, ox + W - 26
-    txl, txr = ox + W * 0.335, ox + W * 0.665
+    bxl = ox + W / 2 - W * BRIDGE_BOT_HALF
+    bxr = ox + W / 2 + W * BRIDGE_BOT_HALF
+    txl = ox + W / 2 - W * BRIDGE_TOP_HALF
+    txr = ox + W / 2 + W * BRIDGE_TOP_HALF
     top_y, bot_y = 0, CANVAS[1]
     d.polygon([(txl, top_y), (txr, top_y), (bxr, bot_y), (bxl, bot_y)], fill=(206, 199, 189))
     for i in range(1, 46):
@@ -294,7 +327,7 @@ def build_background():
 
     glow = Image.new('RGBA', CANVAS, (0, 0, 0, 0))
     ImageDraw.Draw(glow).polygon(
-        [(ox + W * .28, H * .55), (ox + W * .72, H * .55), (bxr, bot_y), (bxl, bot_y)],
+        [(txl, H * .55), (txr, H * .55), (bxr, bot_y), (bxl, bot_y)],
         fill=(255, 236, 200, 22))
     haze = Image.new('RGBA', CANVAS, (0, 0, 0, 0))
     hd = ImageDraw.Draw(haze)
@@ -305,8 +338,9 @@ def build_background():
 
 
 def scale_at_ground(y_screen):
-    k = min(1.0, max(0.0, (y_screen - 380) / (1180 - 380)))
-    return lerp(0.30, 0.78, k)
+    """透视：越靠下（离镜头越近）越大。斜坡区间与两端缩放由视口档位决定。"""
+    k = min(1.0, max(0.0, (y_screen - SCALE_Y0) / (SCALE_Y1 - SCALE_Y0)))
+    return lerp(SCALE_S0, SCALE_S1, k)
 
 
 # ---------------------------------------------------------------- 特效
@@ -534,12 +568,13 @@ def render():
         air = False
 
         if approaching:
-            gy = track(t, [(0, 420), (T_IMPACT, 980)])
+            gy = track(t, [(0, GROUND_FAR), (T_IMPACT, GROUND_NEAR)])
         elif t < T_FLEE:
-            gy = track(t, [(T_IMPACT, 980), (T_IMPACT + .10, 862),
-                           (T_IMPACT + .34, 952), (T_CRY, 960), (T_FLEE, 960)])
+            gy = track(t, [(T_IMPACT, GROUND_NEAR), (T_IMPACT + .10, GROUND_BOUNCE),
+                           (T_IMPACT + .34, GROUND_SETTLE - 8),
+                           (T_CRY, GROUND_SETTLE), (T_FLEE, GROUND_SETTLE)])
         else:
-            gy = track(t, [(T_FLEE, 960), (T_END, 400)])
+            gy = track(t, [(T_FLEE, GROUND_SETTLE), (T_END, GROUND_FAR)])
 
         fleeing = t >= T_FLEE
         walking = fleeing          # 逃跑仍用背面走路循环
@@ -618,14 +653,14 @@ def render():
 
         if 1.45 <= t < T_IMPACT:
             k = (t - 1.45) / (T_IMPACT - 1.45)
-            nx, ny = gx + 250 * (1 - k), ground_y - height * 0.30 - 720 * (1 - k) + 30
+            nx, ny = gx + W * 0.13 * (1 - k), ground_y - height * 0.30 - H * 0.375 * (1 - k) + 30
             for j in range(3):
                 fx_nut(canvas, nx + j * 26, ny + j * 20, k * 900 + j * 40, 17 - j * 3)
             fx_nut(canvas, nx, ny, k * 900, 20)
         if T_IMPACT <= t < T_IMPACT + 0.42:
             fx_impact(canvas, gx + 60, ground_y - height * 0.55, (t - T_IMPACT) / 0.42)
         if t >= T_FLEE + TURN:
-            fx_speed(canvas, gx, ground_y - height * 0.45, 150,
+            fx_speed(canvas, gx, ground_y - height * 0.45, H * 0.078,
                      (1 - (t - T_FLEE) / 2.4) * 0.9, vertical=True)
 
         if T_IMPACT <= t < T_IMPACT + 0.38:

@@ -183,7 +183,58 @@ paste_char(c, img, bb, anchor[k], (600, 1300), 900, ref[k])
 一眼就能确认改动有效。同时要出一版**放慢 1.6~2.4 倍、循环两三遍**的观察片给用户，
 逐帧看清楚——用户要的是"能一步步看清"，不是"看起来还行"。
 
-## 10. 交付物与脚本
+## 10. 搬进 App（Flutter）
+
+Python 那版是**参照实现**，App 里必须等价重写一遍（`app/lib/widget/monster_sprite.dart`）。
+时间线、轨道、挤压拉伸、特效幅度都要逐项对齐，改一边就得改另一边。
+
+### 10.1 画布 → 屏幕的映射必须和背景的 `BoxFit` 完全一致
+
+**这是最容易错、而且错得最离谱的一处。** 角色是按画布坐标（如 1920×1080）摆的，
+而屏幕是 844×390（手机横屏）——宽高比根本不一样。若 x 用 `maxWidth/画布宽`、
+y 用 `maxHeight/画布高` 各算一套，角色会**既被拉伸变形、又和桥面透视对不上**；
+实测角色一度大到占屏 45%（应该只有 16%），因为漏乘了画布→屏幕这一步。
+
+正确做法：和背景 `BoxFit.cover` 用**同一套**变换——取较大的那一维做统一缩放，
+多出来的部分居中裁掉，角色与所有特效都走同一个 `toScreenX/toScreenY`。
+
+### 10.2 进页面就把全部帧预解码
+
+Flutter 只在 `Image` 组件**第一次被构建时**才去解码。而走路循环之外的姿势
+（瘪嘴、哭脸、背面）往往要等到 3 秒后才用得上——那一刻才去解码，角色会**整个消失一下**。
+实测截图里 `t=3.55 / 4.4 / 7.4` 就是这么空掉的。
+
+在 `didChangeDependencies` 里对全部帧调一次 `precacheImage` 即可。
+14 张小图只要几毫秒，**不必卡住动画等它完成**。
+
+### 10.3 横竖屏切换不是"裁一裁"
+
+视口从 9:16 变成 16:9 之后有三件事同时变了：
+
+1. 原来那张背景在 `cover` 下会被裁成中间一条竖缝——**必须按新比例重新生成背景**；
+2. 桥面在视口里的合理比例变了（横屏要留出两侧水面，那正是放答案箱和 HUD 的地方）；
+3. 纵向可视范围只剩原来的一半多，**角色行进的轨道与透视缩放要整套重定**，不是按比例缩一下。
+
+所以把所有与构图有关的量集中成**一份视口档位**（画布宽高、桥面上下端半宽、轨道两端、
+透视斜坡区间与两端缩放），横竖屏只切这一个开关，Python 与 Dart 各存一份镜像、同时改。
+`render_anim.py` 顶部的 `LANDSCAPE` 就是这个开关。
+
+### 10.4 用 golden 机制给自己截图验收
+
+`boundary.toImage()` 在 widget 测试里必须走 `runAsync`，而 `runAsync` 与 `pump` 互斥，
+循环里反复调用会**死锁**（实测卡满 10 分钟超时）。改用 Flutter 自带的 golden 机制：
+
+```dart
+await tester.pump(Duration(milliseconds: (mark * 1000).round()));
+await expectLater(find.byType(MonsterSprite), matchesGoldenFile('goldens/x.png'));
+// flutter test test/xx_test.dart --update-goldens
+```
+
+它会把渲染结果直接写成 PNG。每个时刻写成**独立的一个 testWidgets**，
+并在拍之前用一次 `runAsync` 等预解码完成。验收完把测试与 golden 目录一起删掉。
+
+
+## 11. 交付物与脚本
 
 | 路径 | 作用 |
 |---|---|
@@ -193,13 +244,17 @@ paste_char(c, img, bb, anchor[k], (600, 1300), 900, ref[k])
 | `tools/sprite_anim/render_anim.py` | 逐帧渲染 + 编码 mp4/gif（含全部测量与修正函数） |
 | `assets/images/monster/` | 美术源图 |
 | `assets/images/monster/cutout/` | 透明底成品帧 |
+| `tools/sprite_anim/pack_app_assets.py` | 归一化 + 压分辨率 + 量化，导出为 App 资源 |
 | `tmp/xiaochanguai_anim/` | 成品动画（mp4 + gif + 放慢观察片） |
+| `app/lib/widget/monster_sprite.dart` | App 里的等价实现（时间线/轨道/挤压/特效） |
+| `app/lib/page/monster.dart` | 页面（横屏 + 沉浸全屏，退出恢复竖屏） |
+| `app/assets/images/monster/` | 随包发布的帧与背景（约 280KB） |
 
 外部依赖：火山方舟图片 API（`POST https://ark.cn-beijing.volces.com/api/v3/images/generations`，
 模型 `doubao-seedream-4-0-250828`，key 在 `~/.zprofile` 的 `VOLC_API_KEY`，
 body 支持 `image` 传 base64 参考图、`watermark: false`）、`PIL` + `numpy`、`ffmpeg`。
 
-## 11. 二十条踩坑速查
+## 12. 二十条踩坑速查
 
 1. `ImageDraw.floodfill` 在 `L` 模式是静默空操作
 2. 切图不要写死行列数，模型不遵守"每行几个"
@@ -221,3 +276,6 @@ body 支持 `image` 传 base64 参考图、`watermark: false`）、`PIL` + `nump
 18. 每步前进距离超过腿长的 1.5 倍就会读成打滑
 19. 步频要跟着"时长 + 距离"一起定，单独调它没有意义
 20. 分层绑定做不了就是做不了，早点讲清边界
+21. 画布→屏幕的映射必须和背景 `BoxFit` 一致，否则角色大小与透视全错
+22. 进页面要预解码全部帧，否则第一次切到的姿势会让角色整个消失
+23. 横竖屏是换一套视口档位，不是把背景裁一裁

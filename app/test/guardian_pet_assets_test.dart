@@ -44,10 +44,12 @@ void main() {
   }
 
   test('pubspec 声明了 pet 的两个子目录（否则真机整目录不打包）', () {
-    // Flutter 的资源目录声明只递归一层：`assets/images/` 覆盖它直接包含的文件，以及
-    // 「一层子目录里直接包含的文件」。`images/pet/moods/` 属于第二层子目录，不单独声明
-    // 会被整个静默跳过——编译不报错、测试读文件系统也照样通过，只有真机运行才刷
-    // 「Unable to load asset」。这条断言就是为了拦住它。
+    // Flutter 的资源目录声明**不递归**：声明 `assets/images/` 只覆盖它直接包含的文件，
+    // 任何子目录（不论第几层）都必须各自单独声明，否则整个目录会被静默跳过——
+    // 编译不报错、测试读文件系统也照样通过，只有真机运行才刷「Unable to load asset」。
+    // 2026-10-14 新增 `assets/images/monster/` 时实测确认：只加了 `assets/images/`，
+    // 构建产物 `build/flutter_assets/assets/images/` 下就是没有 monster 这一项。
+    // 这条断言就是为了拦住它。
     final pubspec = File('pubspec.yaml').readAsStringSync();
     for (final dir in ['assets/images/pet/moods/', 'assets/images/pet/layers/']) {
       expect(

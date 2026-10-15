@@ -57,13 +57,26 @@ class _MonsterSpriteState extends State<MonsterSprite>
   ];
 
   // ------------------------------------------------------------ 画布与素材几何
-  // 与 Python 的 1080×1920 画布同坐标；导出画布的尺寸与脚底位置来自 pack_app_assets.py。
-  static const double _canvasW = 1080;
-  static const double _canvasH = 1920;
+  // 与 Python 的横屏视口（1920×1080）同坐标，两边必须一起改；
+  // 导出画布的尺寸与脚底位置来自 pack_app_assets.py。
+  static const double _canvasW = 1920;
+  static const double _canvasH = 1080;
   static const double _imgW = 528;
   static const double _imgH = 537;
   static const double _imgFeetY = 517;
   static const double _refH = 480;
+
+  // ------------------------------------------------------------ 行进轨道与透视
+  // 横屏的纵向可视范围只有竖屏的一半多一点，轨道与透视缩放是整套重定的，
+  // 不是把竖屏那几个数按比例缩一下。
+  static const double _groundFar = 300;
+  static const double _groundNear = 860;
+  static const double _groundBounce = 740;
+  static const double _groundSettle = 845;
+  static const double _scaleY0 = 240;
+  static const double _scaleY1 = 920;
+  static const double _scaleS0 = 0.22;
+  static const double _scaleS1 = 0.52;
 
   /// 挤压拉伸的支点必须落在**脚底**上：脚踩死、身体自己起伏。
   /// 整体平移会让脚离地、整体旋转会让底座变跷跷板，两者都会被读成打滑。
@@ -85,8 +98,10 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
   late final AnimationController _clock = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: (_tTotal * 1000).round()),
+    duration: Duration(milliseconds: (_tTotal * 1000).round()),
   );
+
+  bool _preloaded = false;
 
   @override
   void initState() {
@@ -96,6 +111,25 @@ class _MonsterSpriteState extends State<MonsterSprite>
     } else {
       _clock.forward();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_preloaded) return;
+    _preloaded = true;
+    // 进页面就把**全部**帧预解码。
+    //
+    // 不做这一步的后果是实测出来的：Flutter 只在 Image 组件第一次被构建时才去解码，
+    // 于是第一次切到瘪嘴、第一次切到哭脸、第一次转到背面时，那一帧还没解码完，
+    // 角色会整个消失一下（截图里 t=3.55 / t=4.4 / t=7.4 就是这么空掉的）。
+    // 这些姿势要等到 3.4 秒后才用得上，而 14 张小图预解码只要几毫秒，所以进页面
+    // 提前点火就足够，不必卡住动画等它完成。
+    final frames = <String>{..._walkFront, ..._walkBack, 'pout', 'cry'};
+    for (final name in frames) {
+      precacheImage(AssetImage('$_dir$name.png'), context);
+    }
+    precacheImage(const AssetImage(_bg), context);
   }
 
   @override
@@ -133,8 +167,8 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
   /// 透视：越靠下（离镜头越近）越大。与 Python 的 scale_at_ground 一致。
   static double _scaleAtGround(double y) {
-    final double k = ((y - 380) / 800).clamp(0.0, 1.0);
-    return _lerp(0.30, 0.78, k);
+    final double k = ((y - _scaleY0) / (_scaleY1 - _scaleY0)).clamp(0.0, 1.0);
+    return _lerp(_scaleS0, _scaleS1, k);
   }
 
   static _PoseLayer _walkPose(List<String> frames, double t, double hz) {
@@ -180,27 +214,35 @@ class _MonsterSpriteState extends State<MonsterSprite>
         final double t = _clock.value * _tTotal;
         return LayoutBuilder(
           builder: (context, c) {
-            final double sx = c.maxWidth / _canvasW;
-            final double sy = c.maxHeight / _canvasH;
+            // 画布(1080×1920) → 屏幕的映射必须和背景的 BoxFit.cover **完全一致**：
+            // 取较大的那一维做统一缩放，多出来的部分居中裁掉。若这里另算一套
+            // （例如 x 用 maxWidth/1080、y 用 maxHeight/1920），角色会既被拉伸变形、
+            // 又和桥面透视对不上——实测屏幕是 390×844 而画布是 9:16，差得很远。
+            final double cover =
+                math.max(c.maxWidth / _canvasW, c.maxHeight / _canvasH);
+            final double offX = (c.maxWidth - _canvasW * cover) / 2;
+            final double offY = (c.maxHeight - _canvasH * cover) / 2;
+            double toScreenX(double x) => offX + x * cover;
+            double toScreenY(double y) => offY + y * cover;
 
             // ---- 地面位置（画布坐标 → 屏幕）
             final double gyCanvas;
             if (t < _tImpact) {
-              gyCanvas = _track(t, [(0, 420), (_tImpact, 980)]);
+              gyCanvas = _track(t, [(0, _groundFar), (_tImpact, _groundNear)]);
             } else if (t < _tFlee) {
               gyCanvas = _track(t, [
-                (_tImpact, 980),
-                (_tImpact + .10, 862),
-                (_tImpact + .34, 952),
-                (_tCry, 960),
-                (_tFlee, 960),
+                (_tImpact, _groundNear),
+                (_tImpact + .10, _groundBounce),
+                (_tImpact + .34, _groundSettle - 8),
+                (_tCry, _groundSettle),
+                (_tFlee, _groundSettle),
               ]);
             } else {
-              gyCanvas = _track(t, [(_tFlee, 960), (_tTotal, 400)]);
+              gyCanvas = _track(t, [(_tFlee, _groundSettle), (_tTotal, _groundFar)]);
             }
 
             // ---- 挤压拉伸与摇摆
-            double sqX = 1, sqY = 1, rot = 0;
+            double sqX = 1, sqY = 1, rot = 0, swayFrac = 0;
             if (t < _tImpact) {
               // 起伏做在「以脚底为支点的挤压拉伸」上：脚不动，身体自己起伏
               final double bob = -_bobSquash * math.cos(2 * math.pi * _walkHz * 2 * t);
@@ -217,23 +259,25 @@ class _MonsterSpriteState extends State<MonsterSprite>
             if (t >= _tFlee) {
               final double ph = 2 * math.pi * (_walkHz * 1.9) * t;
               rot += _leanFlee * math.sin(ph);
+              swayFrac = _swayFlee * math.sin(ph);
             }
             // 转身：横向压扁再弹回，把「转过去」这个动作补出来
             if (t >= _tFlee && t < _tFlee + _turn * 1.6) {
               final double k = (t - _tFlee) / (_turn * 1.6);
-              sqX *= math.max(0.52, (k * math.pi).cos().abs());
+              sqX *= math.max(0.52, math.cos(k * math.pi).abs());
             }
             // 哭的时候左右抖
             final double shakeCanvas =
                 (t >= _tCry && t < _tFlee) ? math.sin(t * math.pi * 2 * 19) * 3.2 : 0;
 
+            // 角色在画布上的高度 → 屏幕高度；再换算成「图片要画多大」
+            // （图片里角色只占 _refH，画布还留了边）。
             final double charCanvasH = 900 * _scaleAtGround(gyCanvas);
-            final double k = charCanvasH / _refH;
-            final double imgW = _imgW * k;
-            final double imgH = _imgH * k;
-            final double cx = c.maxWidth / 2 + shakeCanvas * sx;
-            final double feetY = gyCanvas * sy;
-            final double top = feetY - _imgFeetY * k * sy;
+            final double imgH = charCanvasH * cover * (_imgH / _refH);
+            final double imgW = imgH * (_imgW / _imgH);
+            final double cx = toScreenX(_canvasW / 2 + shakeCanvas + swayFrac * charCanvasH);
+            final double feetY = toScreenY(gyCanvas);
+            final double top = feetY - imgH * (_imgFeetY / _imgH);
 
             return Stack(
               clipBehavior: Clip.none,
@@ -241,18 +285,23 @@ class _MonsterSpriteState extends State<MonsterSprite>
                 Positioned.fill(
                   child: Image.asset(_bg, fit: BoxFit.cover, filterQuality: FilterQuality.medium),
                 ),
-                // 落地影：程序单独画在地面上，不跟着角色缩放变形
+                // 落地影：程序单独画在地面上，不跟着角色缩放变形。
+                // 长宽比与柔度照 Python 侧对齐（宽 = 角色高×0.62、高 = 宽×0.20、
+                // 中心落在脚底那条线上），否则会读成脚下一根发黑的道杠。
                 Positioned(
-                  left: cx - imgW * 0.34,
-                  top: feetY - imgH * 0.045,
-                  width: imgW * 0.68,
-                  height: imgH * 0.09,
-                  child: const DecoratedBox(
+                  left: cx - imgH * 0.28,
+                  top: feetY - imgH * 0.0575,
+                  width: imgH * 0.56,
+                  height: imgH * 0.115,
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
                       boxShadow: [
-                        BoxShadow(color: Color(0x4D2A1F14), blurRadius: 18, spreadRadius: 4),
+                        BoxShadow(
+                          color: const Color(0xFF5C483A).withValues(alpha: 0.30),
+                          blurRadius: imgH * 0.10,
+                        ),
                       ],
-                      borderRadius: BorderRadius.all(Radius.elliptical(999, 999)),
+                      borderRadius: BorderRadius.all(Radius.elliptical(imgH * 0.28, imgH * 0.0575)),
                     ),
                   ),
                 ),
@@ -268,7 +317,7 @@ class _MonsterSpriteState extends State<MonsterSprite>
                         alignment: _feetPivot,
                         transform: Matrix4.identity()
                           ..rotateZ(rot * math.pi / 180)
-                          ..scale(sqX, sqY),
+                          ..scaleByDouble(sqX, sqY, 1, 1),
                         child: Image.asset('$_dir${p.asset}.png',
                             fit: BoxFit.fill, filterQuality: FilterQuality.high),
                       ),
@@ -276,7 +325,14 @@ class _MonsterSpriteState extends State<MonsterSprite>
                   ),
                 Positioned.fill(
                   child: IgnorePointer(
-                    child: CustomPaint(painter: _MonsterFxPainter(t: t, canvasScale: sx)),
+                    child: CustomPaint(
+                      painter: _MonsterFxPainter(
+                        t: t,
+                        cover: cover,
+                        offX: offX,
+                        offY: offY,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -289,43 +345,62 @@ class _MonsterSpriteState extends State<MonsterSprite>
 }
 
 /// 被打中的星芒、眼泪、脚下尘土、逃跑时的速度线。
+///
+/// 坐标一律走与角色相同的画布→屏幕映射，否则特效会和角色错位。
 class _MonsterFxPainter extends CustomPainter {
-  _MonsterFxPainter({required this.t, required this.canvasScale});
+  _MonsterFxPainter({
+    required this.t,
+    required this.cover,
+    required this.offX,
+    required this.offY,
+  });
 
   final double t;
-  final double canvasScale;
+  final double cover;
+  final double offX;
+  final double offY;
+
+  double _x(double canvasX) => offX + canvasX * cover;
+
+  double _y(double canvasY) => offY + canvasY * cover;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double cx = size.width / 2;
-    final double sy = size.height / _MonsterSpriteState._canvasH;
+    final double cx = _x(_MonsterSpriteState._canvasW / 2);
+    final double gy = _groundCanvasY(t);
+    final double groundY = _y(gy);
+    // 角色大约半身高处，特效都挂在这个高度附近
+    final double bodyY = groundY - 520 * _scaleAt(t) * cover;
 
-    double gy;
-    if (t < _MonsterSpriteState._tImpact) {
-      gy = _MonsterSpriteState._track(t, [(0, 420), (_MonsterSpriteState._tImpact, 980)]);
-    } else if (t < _MonsterSpriteState._tFlee) {
-      gy = 960;
-    } else {
-      gy = _MonsterSpriteState._track(
-          t, [(_MonsterSpriteState._tFlee, 960), (_MonsterSpriteState._tTotal, 400)]);
+    // 飞向小馋怪的果子：1.45s 起抛出、3.40s 命中，是「被打中」的因。
+    // 少了它，后面那下挤压和星芒就成了没来由的。
+    if (t >= 1.45 && t < _MonsterSpriteState._tImpact) {
+      final double k = (t - 1.45) / (_MonsterSpriteState._tImpact - 1.45);
+      final double nx = cx + size.width * 0.13 * (1 - k);
+      final double ny = groundY - 900 * _scaleAt(t) * 0.30 * cover
+          - size.height * 0.375 * (1 - k) + 30 * cover;
+      for (int j = 0; j < 3; j++) {
+        _nut(canvas, nx + j * 26 * cover, ny + j * 20 * cover,
+            k * 900 + j * 40, (17 - j * 3) * cover);
+      }
+      _nut(canvas, nx, ny, k * 900, 20 * cover);
     }
-    final double groundY = gy * sy;
 
     // 被打中的星芒
     final double fi = t - _MonsterSpriteState._tImpact;
     if (fi >= 0 && fi < 0.55) {
       final double k = fi / 0.55;
-      final double r = (40 + 150 * _MonsterSpriteState._easeOutElastic(k, amp: 0.55)) * canvasScale;
+      final double r = (40 + 150 * _MonsterSpriteState._easeOutElastic(k, amp: 0.55)) * cover;
       final Paint p = Paint()
         ..color = Colors.white.withValues(alpha: (1 - k) * 0.95)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 7 * canvasScale
+        ..strokeWidth = 11 * cover
         ..strokeCap = StrokeCap.round;
-      for (int i = 0; i < 8; i++) {
-        final double a = i * math.pi / 4 + k * 0.5;
+      for (int i = 0; i < 6; i++) {
+        final double a = i * math.pi / 3 + k * 0.5;
         canvas.drawLine(
-          Offset(cx + math.cos(a) * r * 0.35, groundY - 640 * sy + math.sin(a) * r * 0.35),
-          Offset(cx + math.cos(a) * r, groundY - 640 * sy + math.sin(a) * r),
+          Offset(cx + math.cos(a) * r * 0.35, bodyY + math.sin(a) * r * 0.35),
+          Offset(cx + math.cos(a) * r, bodyY + math.sin(a) * r),
           p,
         );
       }
@@ -340,10 +415,15 @@ class _MonsterFxPainter extends CustomPainter {
         final double age = base - born;
         if (age < 0 || age > 0.8) continue;
         final double side = i.isEven ? -1 : 1;
-        final double px = cx + side * 74 * canvasScale * (0.4 + age * 2.2);
-        final double py = groundY - 640 * sy + age * 300 * sy - 40 * sy;
         canvas.drawOval(
-          Rect.fromCenter(center: Offset(px, py), width: 20 * canvasScale, height: 28 * canvasScale),
+          Rect.fromCenter(
+            center: Offset(
+              cx + side * 62 * cover * (0.4 + age * 2.2),
+              bodyY + age * 300 * cover - 40 * cover,
+            ),
+            width: 20 * cover,
+            height: 28 * cover,
+          ),
           tear,
         );
       }
@@ -351,17 +431,16 @@ class _MonsterFxPainter extends CustomPainter {
 
     // 脚下尘土
     if (t < _MonsterSpriteState._tImpact || t >= _MonsterSpriteState._tFlee) {
-      final Paint dust = Paint()..color = const Color(0xFFDED4C4).withValues(alpha: 0.5);
       for (int i = 0; i < 6; i++) {
         final double ph = (t * 2.1 + i * 0.37) % 1.0;
         final double side = i.isEven ? -1 : 1;
         canvas.drawOval(
           Rect.fromCenter(
-            center: Offset(cx + side * (26 + ph * 60) * canvasScale, groundY - ph * 26 * sy),
-            width: (46 - ph * 22) * canvasScale,
-            height: (20 - ph * 9) * canvasScale,
+            center: Offset(cx + side * (26 + ph * 60) * cover, groundY - ph * 26 * cover),
+            width: (46 - ph * 22) * cover,
+            height: (20 - ph * 9) * cover,
           ),
-          dust..color = const Color(0xFFDED4C4).withValues(alpha: 0.5 * (1 - ph)),
+          Paint()..color = const Color(0xFFDED4C4).withValues(alpha: 0.5 * (1 - ph)),
         );
       }
     }
@@ -370,19 +449,56 @@ class _MonsterFxPainter extends CustomPainter {
     if (t >= _MonsterSpriteState._tFlee + _MonsterSpriteState._turn) {
       final Paint line = Paint()
         ..color = Colors.white.withValues(alpha: 0.22)
-        ..strokeWidth = 4 * canvasScale
+        ..strokeWidth = 4 * cover
         ..strokeCap = StrokeCap.round;
       for (int i = 0; i < 3; i++) {
         final double ph = (t * 3.0 + i * 0.33) % 1.0;
-        final double x = cx + (i - 1) * 96 * canvasScale;
-        canvas.drawLine(
-          Offset(x, groundY - 900 * sy + ph * 180 * sy),
-          Offset(x, groundY - 900 * sy + ph * 180 * sy + 150 * sy),
-          line,
-        );
+        final double x = cx + (i - 1) * 80 * cover;
+        final double y0 = _y(gy - 520) + ph * 180 * cover;
+        canvas.drawLine(Offset(x, y0), Offset(x, y0 + 150 * cover), line);
       }
     }
   }
+
+
+  /// 一颗果子（椭圆 + 一道弧线），按角度旋转后贴上去。
+  void _nut(Canvas canvas, double x, double y, double deg, double r) {
+    canvas.save();
+    canvas.translate(x, y);
+    canvas.rotate(deg * math.pi / 180);
+    final Paint fill = Paint()..color = const Color(0xFFC48C54);
+    final Paint stroke = Paint()
+      ..color = const Color(0xFF7E542E)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.0, r * 0.18);
+    canvas.drawOval(
+        Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 1.64), fill);
+    canvas.drawOval(
+        Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 1.64), stroke);
+    canvas.drawArc(
+        Rect.fromCenter(center: Offset.zero, width: r * 1.4, height: r * 1.2),
+        200 * math.pi / 180, 140 * math.pi / 180, false,
+        Paint()
+          ..color = const Color(0xFF7E542E)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.0, r * 0.14));
+    canvas.restore();
+  }
+
+  /// 角色当前在画布上的纵向位置，与 build 里的 gyCanvas 轨道一致。
+  static double _groundCanvasY(double t) {
+    if (t < _MonsterSpriteState._tImpact) {
+      return _MonsterSpriteState._track(
+          t, [(0, _MonsterSpriteState._groundFar), (_MonsterSpriteState._tImpact, _MonsterSpriteState._groundNear)]);
+    }
+    if (t < _MonsterSpriteState._tFlee) return _MonsterSpriteState._groundSettle;
+    return _MonsterSpriteState._track(t, [
+      (_MonsterSpriteState._tFlee, _MonsterSpriteState._groundSettle),
+      (_MonsterSpriteState._tTotal, _MonsterSpriteState._groundFar),
+    ]);
+  }
+
+  static double _scaleAt(double t) => _MonsterSpriteState._scaleAtGround(_groundCanvasY(t));
 
   @override
   bool shouldRepaint(_MonsterFxPainter old) => old.t != t;
