@@ -185,6 +185,7 @@ flutter:
     - assets/protocol_android.html
     - assets/audio/
     - assets/audio/scenes/
+    - assets/audio/monster/
     - assets/video/
     - assets/video/scenes/
     - assets/fonts/

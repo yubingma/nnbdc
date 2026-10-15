@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:nnbdc/util/game_sfx.dart';
 
 /// 小馋怪的走路/被打哭/逃跑动画。
 ///
@@ -195,6 +197,29 @@ class _MonsterSpriteState extends State<MonsterSprite>
     return 'ally_stand';
   }
 
+  /// 把整个场景里所有「该出声的时刻」摊平成一张表。
+  ///
+  /// 和投掷表同一个套路：每只小怪跑同一条时间线、只是相位不同，
+  /// 所以每个事件的全域时刻 = 相位 + 该事件在自己时间线上的时刻（对循环取模）。
+  /// 排序之后，动画每推进一帧就只需要看「这一帧跨过了哪几个事件」。
+  static List<({double time, SfxKind kind, int mi})> _sfxSchedule() {
+    final out = <({double time, SfxKind kind, int mi})>[];
+    for (int i = 0; i < _monsters.length; i++) {
+      final double base = _monsters[i][0] * _cycle;
+      for (final double h in _hits) {
+        out.add((time: (base + h) % _cycle, kind: SfxKind.hit, mi: i));
+        out.add((time: (base + h - _nutFlight) % _cycle, kind: SfxKind.throwWhoosh, mi: i));
+      }
+      out.add((time: (base + _tCry) % _cycle, kind: SfxKind.cry, mi: i));
+      // 逃跑的脚步声：整段逃跑里稀疏地铺几下，靠 GameSfx 去重收敛成一层窸窣声
+      for (int k = 0; k < 9; k++) {
+        out.add((time: (base + _tFlee + k * 0.26) % _cycle, kind: SfxKind.step, mi: i));
+      }
+    }
+    out.sort((a, b) => a.time.compareTo(b.time));
+    return out;
+  }
+
   /// 把「每只小怪的三次命中」摊平成一张投掷表，再轮流派给我方小宠物。
   static List<({double gh, int mi, int hj, int ai})> _nutSchedule() {
     final events = <({double gh, int mi, int hj, int ai})>[];
@@ -243,9 +268,40 @@ class _MonsterSpriteState extends State<MonsterSprite>
 
   bool _preloaded = false;
 
+  // 音效事件的触发靠「这一帧跨过了哪几个事件」来判断，所以要记住上一帧的时刻。
+  static final List<({double time, SfxKind kind, int mi})> _sfxEvents = _sfxSchedule();
+  double? _sfxPrevT;
+
+  /// 某只小怪在全域时刻 [time] 的远近程度（0 = 最远、1 = 最近），用于音效音量。
+  static double _nearnessOf(int mi, double time) {
+    final double tt = (time - _monsters[mi][0] * _cycle) % _cycle;
+    final double gy = _unitState(tt).gy + _monsters[mi][2];
+    // 脚步最远处约 y=40、最近处约 y=730（含深度抖动上限），据此归一
+    return ((gy - 40) / 690).clamp(0.0, 1.0);
+  }
+
+  /// 每帧推进时把跨过的事件播出来。
+  void _fireSfx(double prev, double now) {
+    for (final e in _sfxEvents) {
+      // 循环会在 t 从 6.8 跳回 0 时把区间折断，两端都要算上
+      final bool crossed = now >= prev
+          ? (e.time > prev && e.time <= now)
+          : (e.time > prev || e.time <= now);
+      if (!crossed) continue;
+      GameSfx.instance.play(e.kind, nearness: _nearnessOf(e.mi, e.time));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    // 第一帧只用来记住起点，不触发音效——否则进页面会一次性爆出一串声音
+    _clock.addListener(() {
+      final double now = _clock.value * _tTotal;
+      final double? prev = _sfxPrevT;
+      _sfxPrevT = now;
+      if (prev != null) _fireSfx(prev, now);
+    });
     if (widget.loop) {
       _clock.repeat();
     } else {
@@ -270,6 +326,8 @@ class _MonsterSpriteState extends State<MonsterSprite>
       precacheImage(AssetImage('$_dir$name.png'), context);
     }
     precacheImage(const AssetImage(_bg), context);
+    // 音效播放器也一起预加载。不预加载的话第一次命中要等解码，那一下就没了。
+    unawaited(GameSfx.instance.prewarm());
   }
 
   @override
