@@ -134,9 +134,12 @@ public class SysErrorBo extends BaseBo<SysError> {
      *
      * <p>一次最多返回 {@value #ADMIN_LIST_LIMIT} 条：这张表会持续增长，
      * 管理后台是人工排查用的，不需要翻全量；要按分类或版本聚合时再走 SQL。
+     *
+     * <p>昵称优先取记录里的快照（上报当时叫什么），快照为空时（改造前的老记录、
+     * 以及服务端自己写的记录）回退到 user 表的实时昵称。
      */
     public List<SysErrorVo> listRecentErrors() {
-        String sql = "SELECT e.id, e.user_id, u.nick_name, e.error_type, e.details, "
+        String sql = "SELECT e.id, e.user_id, COALESCE(e.nick_name, u.nick_name) AS nick_name, e.error_type, e.details, "
                 + "       e.client_version, e.client_type, e.create_time "
                 + "FROM sys_error e "
                 + "LEFT JOIN \"user\" u ON u.id = e.user_id "
