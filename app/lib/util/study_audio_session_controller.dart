@@ -8,6 +8,7 @@ import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/client_error_reporter.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -655,84 +656,147 @@ class StudyAudioSessionController {
   // State Machine Transitions & Re-configuration
   // ============================================================
 
+  /// 状态机转换超过这个时长仍未完成，就认为它卡住了并上报现场。
+  ///
+  /// 取值依据：record 冷启动把每一层自己的超时全部踩满（清理 1.5s + 会话配置
+  /// 1s×(1+3 次 !pri 重试) + 激活 1s + 开麦 5s + 提示音 2s + 错峰 0.3s）约 13s，
+  /// 而正常路径在 1s 内完成。15s 之内不会误报，真卡住时用户也已经干等了十几秒。
+  static const Duration _stallReportAfterDefault = Duration(seconds: 15);
+
+  /// 测试专用：缩短"多久算卡住"，避免用例真的等 15 秒。
+  @visibleForTesting
+  static Duration? stallReportAfterOverride;
+
+  static Duration get _stallReportAfter =>
+      stallReportAfterOverride ?? _stallReportAfterDefault;
+
   /// 全局唯一的音频工作状态机转换网关（原子化、串行化、硬件防撞车）
   ///
   /// 返回本次转换是否成功。失败时这里已做物理熔断降级（回到 idle 并释放麦克风），
   /// 调用方必须据此决定要不要继续往下走 —— 典型就是开麦失败后不能再启动识别。
   Future<bool> transitTo(AudioMode targetMode) {
     return _stateTransitionLock.protect(() async {
-      // 建立新音频会话前，先等上一次登记的清理任务落地（见 _pendingCleanup）。
-      await _pendingCleanup;
+      final AudioMode fromMode = _activeMode;
       var finalTargetMode = targetMode;
       if (targetMode == AudioMode.record && !PlatformUtils.isAsrSupported()) {
         finalTargetMode = AudioMode.playback;
       }
- 
-      if (_activeMode == finalTargetMode) {
-        if (finalTargetMode == AudioMode.playback) {
-          final bool isCategoryChanged = _currentSessionCategory != 'playback';
-          if (isCategoryChanged) {
-            await _waitForAllPlayers();
-            await _usePlaybackCategory(force: true);
-            await Future.delayed(const Duration(milliseconds: 150));
-          }
-        }
-        return true;
-      }
- 
-      final sw = Stopwatch()..start();
-      debugPrint('🔊 [AudioEngine] 状态机开始转换: $_activeMode ➔ $finalTargetMode');
+
+      // 卡住看门狗：只观测、不中断、不改变任何行为。
+      //
+      // 为什么非要有它：这条路径上任何一个原生调用挂住（历史真凶是 AVAudioSession.setActive），
+      // 表现都是"这个 Future 永不返回"—— 不抛异常、catch 永远收不到、用户只能杀进程重进。
+      // 没有这个哨兵，这类故障在云端完全不可见。
+      var stage = '等待上一次清理任务落地';
+      final stallWatchdog = Timer(_stallReportAfter, () {
+        unawaited(reportClientFailure(
+          errorType: kClientAudioErrorType,
+          scene: '状态机转换卡住|$fromMode→$finalTargetMode',
+          details: '卡住超过 ${_stallReportAfter.inSeconds}s 仍未返回\n'
+              '当前阶段=$stage\n'
+              '会话Category=$_currentSessionCategory\n'
+              'ASR状态=${_asr.state}\n'
+              '监视中的播放器=${_watchedPlayers.length}',
+        ));
+      });
 
       try {
-        switch (finalTargetMode) {
-          case AudioMode.playback:
-            await _asr.stopMicrophone();
-            await _cleanupEarlyExitPlayers();
-            
+        // 建立新音频会话前，先等上一次登记的清理任务落地（见 _pendingCleanup）。
+        await _pendingCleanup;
+
+        if (fromMode == finalTargetMode) {
+          if (finalTargetMode == AudioMode.playback) {
             final bool isCategoryChanged = _currentSessionCategory != 'playback';
-            await _usePlaybackCategory(force: false);
-            final delayMs = isCategoryChanged ? 150 : 80;
-            await Future.delayed(Duration(milliseconds: delayMs));
-            break;
- 
-          case AudioMode.record:
-            await _cleanupEarlyExitPlayers();
-            
-            final bool isColdStart = _currentSessionCategory != 'playAndRecord';
-            await _usePlayAndRecordCategory();
-            await _asr.startMicrophone();
-            
-            final delayMs = isColdStart ? 180 : 60;
-            debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活 (${isColdStart ? "冷启动" : "热复用"})，错峰延迟 ${delayMs}ms 稳定时钟...');
-            await Future.delayed(Duration(milliseconds: delayMs));
-            await _playAsrReadyHintSound();
-            // 提示音全长 100ms：让提示音播完再完成状态切换与开启 ASR 识别，
-            // 确保提示音与 ASR 识别在时间轴上完全错开，避免麦克风录入提示音造成回声感或误识别。
-            await Future.delayed(const Duration(milliseconds: 100));
-            break;
- 
-          case AudioMode.idle:
-            await _asr.stopMicrophone();
-            await _cleanupEarlyExitPlayers();
-            // 这里只关麦克风，不碰 AVAudioSession 的 Category（本控制器从不 setActive(false)），
-            // 所以 _currentSessionCategory 必须保留真实值：写成 'none' 会让下一次录放切换
-            // 无谓地重配一遍 Category（真机实测多耗 ~260ms 并制造一次路由抖动）。
-            break;
+            if (isCategoryChanged) {
+              stage = '重配播放会话(保温复用)';
+              await _waitForAllPlayers();
+              await _usePlaybackCategory(force: true);
+              await Future.delayed(const Duration(milliseconds: 150));
+            }
+          }
+          return true;
         }
-        
-        _activeMode = finalTargetMode;
-        debugPrint('🔊 [AudioEngine] 状态机转换成功: ➔ $_activeMode，总耗时: ${sw.elapsedMilliseconds}ms');
-        return true;
-      } catch (e, st) {
-        Global.logger.e('🔊 [AudioEngine] 状态机转换异常，物理熔断降级: $e', error: e, stackTrace: st);
+
+        final sw = Stopwatch()..start();
+        debugPrint('🔊 [AudioEngine] 状态机开始转换: $fromMode ➔ $finalTargetMode');
+
         try {
-          await _asr.stopMicrophone();
-        } catch (_) {}
-        try {
-          await _cleanupEarlyExitPlayers();
-        } catch (_) {}
-        _activeMode = AudioMode.idle;
-        return false;
+          switch (finalTargetMode) {
+            case AudioMode.playback:
+              stage = '停麦';
+              await _asr.stopMicrophone();
+              stage = '清理残留播放器';
+              await _cleanupEarlyExitPlayers();
+
+              final bool isCategoryChanged = _currentSessionCategory != 'playback';
+              stage = '切到播放会话并激活';
+              await _usePlaybackCategory(force: false);
+              final delayMs = isCategoryChanged ? 150 : 80;
+              stage = '错峰延迟';
+              await Future.delayed(Duration(milliseconds: delayMs));
+              break;
+
+            case AudioMode.record:
+              stage = '清理残留播放器';
+              await _cleanupEarlyExitPlayers();
+
+              final bool isColdStart = _currentSessionCategory != 'playAndRecord';
+              stage = '切到录放会话并激活';
+              await _usePlayAndRecordCategory();
+              stage = '开麦';
+              await _asr.startMicrophone();
+
+              final delayMs = isColdStart ? 180 : 60;
+              debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活 (${isColdStart ? "冷启动" : "热复用"})，错峰延迟 ${delayMs}ms 稳定时钟...');
+              stage = '错峰延迟';
+              await Future.delayed(Duration(milliseconds: delayMs));
+              stage = '播就绪提示音';
+              await _playAsrReadyHintSound();
+              // 提示音全长 100ms：让提示音播完再完成状态切换与开启 ASR 识别，
+              // 确保提示音与 ASR 识别在时间轴上完全错开，避免麦克风录入提示音造成回声感或误识别。
+              stage = '提示音后错峰';
+              await Future.delayed(const Duration(milliseconds: 100));
+              break;
+
+            case AudioMode.idle:
+              stage = '停麦';
+              await _asr.stopMicrophone();
+              stage = '清理残留播放器';
+              await _cleanupEarlyExitPlayers();
+              // 这里只关麦克风，不碰 AVAudioSession 的 Category（本控制器从不 setActive(false)），
+              // 所以 _currentSessionCategory 必须保留真实值：写成 'none' 会让下一次录放切换
+              // 无谓地重配一遍 Category（真机实测多耗 ~260ms 并制造一次路由抖动）。
+              break;
+          }
+
+          _activeMode = finalTargetMode;
+          debugPrint('🔊 [AudioEngine] 状态机转换成功: ➔ $_activeMode，总耗时: ${sw.elapsedMilliseconds}ms');
+          return true;
+        } catch (e, st) {
+          Global.logger.e('🔊 [AudioEngine] 状态机转换异常，物理熔断降级: $e', error: e, stackTrace: st);
+          // 上报现场：这类失败正是"进说模式没有叮、说话毫无反应""点了拼写一直转圈"
+          // 这些用户可见故障的共同来源，过去只留在本机日志里（客户手机上根本看不到）。
+          // 阶段名让它能精确指出卡在哪一步，而不是只知道"状态机失败了"。
+          unawaited(reportClientFailure(
+            errorType: kClientAudioErrorType,
+            scene: '状态机转换失败|$fromMode→$finalTargetMode',
+            details: '失败阶段=$stage\n'
+                '耗时=${sw.elapsedMilliseconds}ms\n'
+                '会话Category=$_currentSessionCategory\n'
+                'ASR状态=${_asr.state}\n'
+                '异常=$e\n$st',
+          ));
+          try {
+            await _asr.stopMicrophone();
+          } catch (_) {}
+          try {
+            await _cleanupEarlyExitPlayers();
+          } catch (_) {}
+          _activeMode = AudioMode.idle;
+          return false;
+        }
+      } finally {
+        stallWatchdog.cancel();
       }
     });
   }
@@ -1375,6 +1439,13 @@ class StudyAudioSessionController {
       _playerBusyUntil[player] = AppClock.now().add(const Duration(milliseconds: 500));
     } catch (e) {
       debugPrint('🔊 [SessionController] 极速播放 ASR 提示音出错: $e');
+      // 提示音是用户判断"已经可以说话了"的唯一信号：它没响，用户就不知道该开口。
+      // 这里过去只 debugPrint，线上完全不可见。
+      unawaited(reportClientFailure(
+        errorType: kClientAudioErrorType,
+        scene: 'ASR 就绪提示音失败',
+        details: '$e',
+      ));
     }
   }
 

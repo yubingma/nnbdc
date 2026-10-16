@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' as ja;
+import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/client_error_reporter.dart';
+import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/asr.dart';
 
@@ -396,6 +400,52 @@ void main() {
   // ============================================================
   // 会话激活卡死：原生 setActive 迟迟不返回时，绝不能让状态机永久瘫痪
   // ============================================================
+  group('状态机转换卡住看门狗', () {
+    const scene = '状态机转换卡住|AudioMode.idle→AudioMode.playback';
+    const errorType = 'CLIENT_AUDIO_ERROR';
+
+    setUp(() {
+      StudyAudioSessionController.instance.resetForTesting();
+      setupDefaultMocks();
+    });
+
+    tearDown(() {
+      StudyAudioSessionController.stallReportAfterOverride = null;
+      AppClock.reset();
+      StudyAudioSessionController.instance.resetForTesting();
+      setupDefaultMocks();
+    });
+
+    test('转换耗时超过阈值时，看门狗会把"卡住"上报上去', () async {
+      // 一次正常转换本身就要 ~150ms，把阈值压到 20ms 就等于宣告它"卡住"：
+      // 用它验证看门狗活着（真卡住时它不抛异常、catch 永远收不到，只能靠它）。
+      AppClock.setClock(FakeClock(DateTime(2026, 10, 20, 10, 0)));
+      StudyAudioSessionController.stallReportAfterOverride =
+          const Duration(milliseconds: 20);
+
+      unawaited(StudyAudioSessionController.instance.transitTo(AudioMode.playback));
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // 额度已被占用 → 看门狗确实上报过一次（它内部先领额度再上报）
+      expect(claimClientReportSlot(errorType, scene), isNull,
+          reason: '转换卡住必须被看见：这条路径挂住时不抛异常，catch 永远收不到');
+    });
+
+    test('转换正常完成后看门狗必须被撤销，不得误报', () async {
+      // 换一天，拿到干净额度（上一个用例已把前一天的额度用掉）
+      AppClock.setClock(FakeClock(DateTime(2026, 10, 21, 10, 0)));
+      StudyAudioSessionController.stallReportAfterOverride =
+          const Duration(seconds: 5);
+
+      final switched = await StudyAudioSessionController.instance.transitTo(AudioMode.playback);
+      expect(switched, isTrue);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      expect(claimClientReportSlot(errorType, scene), isNotNull,
+          reason: '转换已正常完成，看门狗必须撤销，不能在完成后误报"卡住"');
+    });
+  });
+
   group('会话激活超时熔断（静态验证）', () {
     test('控制器里不存在裸调 setActive 的地方', () async {
       // 单测跑在 macOS 上，audio_session 插件在这条分支上直接 return true、根本不走原生通道，
