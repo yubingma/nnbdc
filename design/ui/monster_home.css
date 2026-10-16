@@ -1,0 +1,178 @@
+/* 小馋怪首页 · 三个布局方案共用的骨架与样式
+   浅色暖调底 + App 主题绿（你的行动）+ 小馋怪的橙红（对手），两色对立即语义。 */
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --num: Roboto, ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.device-mockup {
+  --page: radial-gradient(120% 66% at 50% -4%, rgba(255, 168, 108, 0.17), transparent 60%), #FBF9F6;
+  --ink: #241A14;
+  --ink-sub: rgba(36, 26, 20, 0.60);
+  --ink-faint: rgba(36, 26, 20, 0.34);
+  --accent: #10B981;
+  --mango: #E8663C;
+  --track: rgba(36, 26, 20, 0.075);
+  --hair: rgba(36, 26, 20, 0.06);
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font);
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---------- 顶部身份行 ---------- */
+.topbar {
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.day-line {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  letter-spacing: 1.1px;
+}
+
+.day-line b {
+  font-family: var(--num);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-sub);
+  letter-spacing: 0;
+  margin: 0 2px;
+}
+
+.topbar-icons { display: flex; align-items: center; gap: 16px; }
+.topbar-icons svg { width: 19px; height: 19px; color: var(--ink-faint); }
+
+/* ---------- 数字排版（不再套任何容器） ---------- */
+.num-row { display: flex; align-items: baseline; gap: 6px; }
+
+.num-hero {
+  font-family: var(--num);
+  font-size: 54px;
+  font-weight: 700;
+  letter-spacing: -1.8px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.num-unit {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-sub);
+}
+
+.label { font-size: 12px; font-weight: 500; color: var(--ink-sub); }
+.faint { font-size: 11.5px; font-weight: 400; color: var(--ink-faint); }
+.faint-num { font-family: var(--num); font-size: 11.5px; font-weight: 500; color: var(--ink-faint); }
+
+/* ---------- 双段进度条（新词 / 旧词） ---------- */
+.bar {
+  height: 3.5px;
+  border-radius: 2px;
+  background: var(--track);
+  overflow: hidden;
+  position: relative;
+}
+
+.bar i {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: 2px;
+}
+
+.bar .done { background: var(--accent); }
+.bar .ahead { background: rgba(16, 185, 129, 0.28); }
+
+/* ---------- 唯一黄金行动点 ---------- */
+.cta {
+  height: 52px;
+  flex-shrink: 0;
+  margin-bottom: 16px;
+  border: none;
+  border-radius: 26px;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 10px 24px -10px rgba(16, 185, 129, 0.5);
+  position: relative;
+  z-index: 3;
+}
+
+/* ---------- 底栏 ---------- */
+.tabbar {
+  height: 62px;
+  flex-shrink: 0;
+  padding-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  position: relative;
+  z-index: 3;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  letter-spacing: 0.2px;
+}
+
+.tab svg { width: 21px; height: 21px; }
+.tab.on { color: var(--accent); font-weight: 600; }
+
+/* ---------- 小馋怪 ---------- */
+.monster { position: relative; flex-shrink: 0; }
+.monster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+
+/* 情绪/姿势层叠：同一位置放多张，靠 data-pose 显示其中一张 */
+.pose { opacity: 0; transition: opacity 0.35s; }
+.device-mockup[data-pose="hold"] .pose-hold,
+.device-mockup[data-pose="walk"] .pose-walk,
+.device-mockup[data-pose="cry"] .pose-cry { opacity: 1; }
+
+/* ---------- 壳外说明区（渲染真机图时由统一模具脚本自动隐藏） ---------- */
+body {
+  background: #0C1014;
+  font-family: var(--font);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 60px;
+  color: #E5E7EB;
+}
+
+.notes {
+  width: 100%;
+  max-width: 440px;
+  margin-top: 20px;
+  font-size: 12px;
+  line-height: 1.85;
+  color: #9CA3AF;
+}
+
+.notes h3 { font-size: 12.5px; color: #E5E7EB; font-weight: 600; margin-bottom: 6px; }
+.notes code { font-family: var(--num); font-size: 11.5px; color: #A7F3D0; }

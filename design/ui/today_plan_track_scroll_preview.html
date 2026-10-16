@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>首页 · 轨道图可滚动 + 底部毛玻璃渐隐（宠物永远留位）</title>
+<link rel="stylesheet" href="monster_home.css">
+<style>
+  /* 布局约定：宠物区域是「保留位」，不参与滚动；轨道图在自己那块里滚。
+     轨道图超出时，滚动区底部盖一层很薄的毛玻璃渐隐，提示下面还有内容。
+     模糊半径取 7（与项目毛玻璃规范一致）：底下的节点会晕成朦胧色块，而不是糊成一片死白。 */
+  .device-mockup {
+    --line: rgba(36, 26, 20, 0.17);
+    --line-ok: rgba(16, 185, 129, 0.5);
+    --line-no: rgba(232, 102, 60, 0.52);
+    --page-base: 251, 249, 246;
+    --ok-ink: #0B8A61;
+    --no-ink: #C4552F;
+  }
+
+  .flow-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 2px 2px 0;
+  }
+
+  .flow-title { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -0.2px; }
+  .flow-total { font-size: 11.5px; font-weight: 400; color: var(--ink-faint); }
+  .flow-total b { font-family: var(--num); font-size: 13px; font-weight: 700; color: var(--ink-sub); }
+
+  /* 滚动容器：这一块是唯一会被压缩的区域 */
+  .scroll-wrap {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  .flow-scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .flow-scroll::-webkit-scrollbar { display: none; }
+
+  .flow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 26px;
+    padding: 12px 0 26px;
+  }
+
+  /* 宽度不够时（大字号 / 小屏）：两列并排拆成上下两段，每段独占整宽。
+     分支仍并排、每支各占半宽，于是每个节点都拿得到足够宽度、不再被裁。
+     两个数字这时就只能各归自己那一段，不再并排待在最上方——这是降级取舍。 */
+  .device-mockup[data-layout="stacked"] .flow {
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+    padding: 16px 0 30px;
+  }
+
+  .device-mockup[data-layout="stacked"] .track {
+    max-width: none;
+    width: 100%;
+  }
+
+  .track {
+    flex: 1;
+    max-width: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .track-head { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+  .track-head b {
+    font-family: var(--num);
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -1.2px;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .track-head span {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: 1.4px;
+  }
+
+  .stem { width: 1px; height: 24px; background: var(--line); flex-shrink: 0; }
+  .stem.tight { height: 20px; }
+
+  .check-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+  .check-tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.8px;
+    color: var(--ink-faint);
+  }
+
+  .node {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 13px;
+    border-radius: 11px;
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    text-align: center;
+    color: var(--ink);
+    background: rgba(36, 26, 20, 0.035);
+    border: 0.8px solid rgba(36, 26, 20, 0.055);
+  }
+
+  .node.check {
+    background: rgba(16, 185, 129, 0.075);
+    border-color: rgba(16, 185, 129, 0.24);
+    color: var(--ok-ink);
+  }
+
+  .node.end {
+    height: auto;
+    padding: 6px 8px;
+    background: transparent;
+    border-color: transparent;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-faint);
+  }
+
+  .node.stop {
+    padding: 0 11px;
+    background: transparent;
+    border: 0.8px dashed rgba(36, 26, 20, 0.16);
+    color: rgba(36, 26, 20, 0.40);
+    font-weight: 500;
+    font-size: 12px;
+  }
+
+  .split { position: relative; width: 100%; display: flex; gap: 10px; padding-top: 27px; }
+
+  .split::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    width: 25%;
+    height: 27px;
+    border-top: 1px solid var(--line-ok);
+    border-left: 1px solid var(--line-ok);
+    border-top-left-radius: 10px;
+  }
+
+  .split::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 25%;
+    height: 27px;
+    border-top: 1px solid var(--line-no);
+    border-right: 1px solid var(--line-no);
+    border-top-right-radius: 10px;
+  }
+
+  .branch { flex: 1; display: flex; flex-direction: column; align-items: center; }
+
+  .blabel {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding-bottom: 6px;
+  }
+
+  .blabel.ok { color: var(--ok-ink); }
+  .blabel.no { color: var(--no-ink); }
+
+  .branch .stem { height: 20px; }
+  .branch .stem.ok { background: var(--line-ok); }
+  .branch .stem.no { background: var(--line-no); }
+
+  .join { position: relative; width: 100%; height: 52px; }
+
+  .join::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    width: 25%;
+    height: 27px;
+    border-bottom: 1px solid var(--line-ok);
+    border-left: 1px solid var(--line-ok);
+    border-bottom-left-radius: 10px;
+  }
+
+  .join::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 25%;
+    height: 27px;
+    border-bottom: 1px solid var(--line-no);
+    border-right: 1px solid var(--line-no);
+    border-bottom-right-radius: 10px;
+  }
+
+  .join-stem {
+    position: absolute;
+    top: 27px;
+    left: 50%;
+    width: 1px;
+    height: 25px;
+    background: var(--line);
+  }
+
+  /* 底部毛玻璃渐隐：越往下越厚，底部与页面底色融合；模糊半径 7，节点晕成朦胧色块 */
+  .fade-mask {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 84px;
+    pointer-events: none;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    background: linear-gradient(
+      to bottom,
+      rgba(var(--page-base), 0) 0%,
+      rgba(var(--page-base), 0.30) 42%,
+      rgba(var(--page-base), 0.66) 78%,
+      rgba(var(--page-base), 0.88) 100%
+    );
+    transition: opacity 0.25s ease;
+  }
+
+  /* 宠物：保留位，永不参与滚动 */
+  .mate {
+    height: 150px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 14px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .mate .pet {
+    position: relative;
+    width: 132px;
+    height: 140px;
+    filter: drop-shadow(0 10px 18px rgba(120, 90, 140, 0.18));
+  }
+
+  /* 四个表情叠在同一位置，只有当前状态那张显形。
+     四张已按「角色等高 + 底边对齐 + 水平居中」归一化过，
+     所以切换时它不会变大变小、也不会上下跳。 */
+  .mate .pet .pet-mood {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .device-mockup[data-mood="sleepy"] .mood-sleepy,
+  .device-mockup[data-mood="happy"] .mood-happy,
+  .device-mockup[data-mood="excited"] .mood-excited,
+  .device-mockup[data-mood="sad"] .mood-sad { opacity: 1; }
+
+  /* 文案跟着状态走：今天还没开始 / 正在学 / 学完 / 断更好几天 */
+  .mate-line b::after, .mate-line span::after { content: ""; }
+
+  .device-mockup[data-mood="sleepy"] .mate-line b::after { content: "它还在打瞌睡"; }
+  .device-mockup[data-mood="sleepy"] .mate-line span::after { content: "今天还没开始，让它再眯一会儿"; }
+
+  .device-mockup[data-mood="happy"] .mate-line b::after { content: "陪你把这两条走完"; }
+  .device-mockup[data-mood="happy"] .mate-line span::after { content: "背篓里是今天攒下的樱桃"; }
+
+  .device-mockup[data-mood="excited"] .mate-line b::after { content: "今天全走完了"; }
+  .device-mockup[data-mood="excited"] .mate-line span::after { content: "背篓装满了，它高兴得冒星星"; }
+
+  .device-mockup[data-mood="sad"] .mate-line b::after { content: "它等你好几天了"; }
+  .device-mockup[data-mood="sad"] .mate-line span::after { content: "背篓里还是上次那两颗樱桃"; }
+
+  .mate-line { padding-bottom: 32px; }
+  .mate-line b { display: block; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .mate-line span { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-faint); }
+
+  .flow-foot {
+    text-align: center;
+    font-size: 10.5px;
+    font-weight: 400;
+    color: var(--ink-faint);
+    letter-spacing: 0.2px;
+    padding-bottom: 8px;
+    position: relative;
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="device-mockup" data-pose="hold" data-layout="stacked" data-mood="happy">
+  <div class="screen">
+
+    <div class="topbar">
+      <div class="day-line">TODAY · 第 <b>137</b> 个背词日</div>
+      <div class="topbar-icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="5.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="18.5" r="1.3"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="flow-head">
+      <div class="flow-title">今日学习计划</div>
+      <div class="flow-total">共 <b>120</b> 词</div>
+    </div>
+
+    <div class="scroll-wrap">
+      <div class="flow-scroll" id="flowScroll">
+
+        <div class="flow">
+
+          <!-- 新词轨道：答对 4 环、答错 3 环（按大字号尺寸，内容会溢出滚动区） -->
+          <div class="track">
+            <div class="track-head"><b>42</b><span>新词</span></div>
+            <div class="stem"></div>
+            <div class="check-wrap">
+              <span class="check-tag">测评</span>
+              <div class="node check">英译汉</div>
+            </div>
+            <div class="stem tight"></div>
+            <div class="split">
+              <div class="branch">
+                <span class="blabel ok">答对</span>
+                <div class="stem ok"></div>
+                <div class="node">汉译英</div>
+                <div class="stem ok"></div>
+                <div class="node">例句汉译英</div>
+                <div class="stem ok"></div>
+                <div class="node">例句英译汉</div>
+                <div class="stem ok"></div>
+                <div class="node">英译汉</div>
+              </div>
+              <div class="branch">
+                <span class="blabel no">答错</span>
+                <div class="stem no"></div>
+                <div class="node">汉译英</div>
+                <div class="stem no"></div>
+                <div class="node">例句汉译英</div>
+                <div class="stem no"></div>
+                <div class="node">英译汉</div>
+              </div>
+            </div>
+            <div class="join"><div class="join-stem"></div></div>
+            <div class="node end">单词列表</div>
+          </div>
+
+          <!-- 旧词轨道：答对 3 环、答错 2 环 -->
+          <div class="track">
+            <div class="track-head"><b>78</b><span>旧词</span></div>
+            <div class="stem"></div>
+            <div class="check-wrap">
+              <span class="check-tag">测评</span>
+              <div class="node check">英译汉</div>
+            </div>
+            <div class="stem tight"></div>
+            <div class="split">
+              <div class="branch">
+                <span class="blabel ok">答对</span>
+                <div class="stem ok"></div>
+                <div class="node">例句汉译英</div>
+                <div class="stem ok"></div>
+                <div class="node">汉译英</div>
+                <div class="stem ok"></div>
+                <div class="node">英译汉</div>
+              </div>
+              <div class="branch">
+                <span class="blabel no">答错</span>
+                <div class="stem no"></div>
+                <div class="node">汉译英</div>
+                <div class="stem no"></div>
+                <div class="node">例句英译汉</div>
+              </div>
+            </div>
+            <div class="join"><div class="join-stem"></div></div>
+            <div class="node end">单词列表</div>
+          </div>
+
+        </div>
+
+      </div>
+      <div class="fade-mask" id="fadeMask"></div>
+    </div>
+
+    <div class="mate">
+      <div class="pet">
+        <img class="pet-mood mood-sleepy" src="img/pet/pet_berry_sleepy.png" alt="宠物睡着了">
+        <img class="pet-mood mood-happy" src="img/pet/pet_berry_happy.png" alt="宠物很开心">
+        <img class="pet-mood mood-excited" src="img/pet/pet_berry_excited.png" alt="宠物很兴奋">
+        <img class="pet-mood mood-sad" src="img/pet/pet_berry_sad.png" alt="宠物有点委屈">
+      </div>
+      <div class="mate-line">
+        <b></b>
+        <span></span>
+      </div>
+    </div>
+
+    <div class="flow-foot">答对与答错各长各的 · 测评后按首答定轨</div>
+
+    <button class="cta">开始今天的 120 词</button>
+
+    <div class="tabbar">
+      <div class="tab on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        学习
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 6h11M8 12h11M8 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>
+        </svg>
+        词表
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6 20 20"/>
+        </svg>
+        查词
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4l2.4 4.6 5.1.8-3.7 3.6.9 5.1-4.7-2.4-4.7 2.4.9-5.1L4.5 9.4l5.1-.8z"/>
+        </svg>
+        比赛
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 19.5c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/>
+        </svg>
+        我
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="notes">
+  <h3>宠物永远留位 + 底部毛玻璃渐隐</h3>
+  <b>宠物区域是保留位</b>：固定 150 高，不参与滚动，无论轨道图多长都不会被挤掉。<b>轨道图在自己那块里滚</b>：它超出时底部盖一层 84 高的毛玻璃渐隐（模糊半径 7），提示下面还有内容；滚到底时这层自动淡出。<br><br>
+  <h3>这里为什么是宠物、不再是借来的小馋怪</h3>
+  小馋怪是「从桥那头过来抢水果的对手」，摆在陪伴位是角色错位。这一个才是用户自己的宠物：粉紫底色、小牛角加垂耳、背着一个装着两颗樱桃的背篓、肚子上一块浅绿圆斑，表情有点委屈。素材沿用既有那条流水线：原始图 <code>assets/images/_unused/xiaochanguai_早期方向/xiaochanguai_背袋委屈_粉紫版.jpg</code>，经 <code>tools/pet_assets/cutout.py</code> 抠成透明底，四个状态分别是 <code>design/ui/img/pet/pet_berry_{happy,sleepy,excited,sad}.png</code>（统一归一化为 911×948：角色等高、底边对齐、水平居中，所以原地切换不会跳）。<br><br>
+  <h3>为什么模糊半径取 7</h3>
+  按项目毛玻璃规范：12~16px 的正文，笔画只有 1~1.5px，模糊半径一旦到 14 以上就会被上千像素均化、直接蒸发成纯白。取 7 正好把节点文字晕成<b>朦胧的墨水色块</b>，既失去可读性、又还看得出"下面是节点"，这才像"还有内容"而不是"这里什么都没有"。<br><br>
+  <h3>这一定位的字号说明了什么</h3>
+  这一版<b>故意按放大后的字号</b>画（节点 38 高、字号 13.5），对应大字号设置或小屏用户——只有这种时候轨道图才会真的溢出。普通字号 + 主流机型上，即使每组配满 4 环也放得下，那层渐隐根本不会出现。<br><br>
+  <h3>底色没有压太厚</h3>
+  渐隐层最多加到页面底色的 88%，且全程叠在模糊之上。规范里最怕的"白加白糊成实心白"就是靠这个避免的——底部仍能透出模糊的节点轮廓。
+</div>
+
+<script>
+  const scroller = document.getElementById('flowScroll');
+  const mask = document.getElementById('fadeMask');
+
+  function syncMask() {
+    const canScroll = scroller.scrollHeight - scroller.clientHeight > 2;
+    const atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
+    mask.style.opacity = (canScroll && !atEnd) ? '1' : '0';
+  }
+
+  scroller.addEventListener('scroll', syncMask);
+  syncMask();
+</script>
+
+</body>
+</html>

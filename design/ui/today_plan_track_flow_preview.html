@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>首页 · 新词/旧词数量与学习轨道一体化（自上而下）</title>
+<link rel="stylesheet" href="monster_home.css">
+<style>
+  /* 轨道图：数字即起点，自上而下长出「测评 → 答对/答错分叉 → 汇合到单词列表」。
+     分叉与汇合都用带圆角的边框段拼（┌┐ / └┘），比直角折线柔和。 */
+  .device-mockup {
+    --line: rgba(36, 26, 20, 0.17);
+    --line-ok: rgba(16, 185, 129, 0.5);
+    --line-no: rgba(232, 102, 60, 0.52);
+    --ok-ink: #0B8A61;
+    --no-ink: #C4552F;
+  }
+
+  .flow-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 2px 2px 0;
+  }
+
+  .flow-title { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -0.2px; }
+  .flow-total { font-size: 11.5px; font-weight: 400; color: var(--ink-faint); }
+  .flow-total b { font-family: var(--num); font-size: 13px; font-weight: 700; color: var(--ink-sub); }
+
+  /* 两条轨道并排 */
+  .flow {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+    padding-top: 6px;
+  }
+
+  .track {
+    flex: 1;
+    max-width: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* 起点：今天要学的词数 */
+  .track-head { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+
+  .track-head b {
+    font-family: var(--num);
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -1.2px;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .track-head span {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: 1.4px;
+  }
+
+  .stem { width: 1px; height: 30px; background: var(--line); flex-shrink: 0; }
+
+  .check-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+  .check-tag {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 1.8px;
+    color: var(--ink-faint);
+  }
+
+  .node {
+    height: 31px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 13px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    text-align: center;
+    color: var(--ink);
+    background: rgba(36, 26, 20, 0.035);
+    border: 0.8px solid rgba(36, 26, 20, 0.055);
+  }
+
+  .node.check {
+    background: rgba(16, 185, 129, 0.075);
+    border-color: rgba(16, 185, 129, 0.24);
+    color: var(--ok-ink);
+  }
+
+  .node.end {
+    height: auto;
+    padding: 6px 8px;
+    background: transparent;
+    border-color: transparent;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--ink-faint);
+  }
+
+  .node.stop {
+    padding: 0 11px;
+    background: transparent;
+    border: 0.8px dashed rgba(36, 26, 20, 0.16);
+    color: rgba(36, 26, 20, 0.40);
+    font-weight: 500;
+    font-size: 11.5px;
+  }
+
+  /* 分叉：┌┐ 两段圆角线，答对走绿、答错走橙红 */
+  .split { position: relative; width: 100%; display: flex; gap: 10px; padding-top: 26px; }
+
+  .split::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    width: 25%;
+    height: 26px;
+    border-top: 1px solid var(--line-ok);
+    border-left: 1px solid var(--line-ok);
+    border-top-left-radius: 9px;
+  }
+
+  .split::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 25%;
+    height: 26px;
+    border-top: 1px solid var(--line-no);
+    border-right: 1px solid var(--line-no);
+    border-top-right-radius: 9px;
+  }
+
+  .branch { flex: 1; display: flex; flex-direction: column; align-items: center; }
+
+  .blabel {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding-bottom: 6px;
+  }
+
+  .blabel.ok { color: var(--ok-ink); }
+  .blabel.no { color: var(--no-ink); }
+
+  .branch .stem { height: 22px; }
+  .branch .stem.ok { background: var(--line-ok); }
+  .branch .stem.no { background: var(--line-no); }
+
+  /* 汇合：└┘ 两段圆角线收回中线，再往下一段到终点 */
+  .join { position: relative; width: 100%; height: 52px; }
+
+  .join::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    width: 25%;
+    height: 26px;
+    border-bottom: 1px solid var(--line-ok);
+    border-left: 1px solid var(--line-ok);
+    border-bottom-left-radius: 9px;
+  }
+
+  .join::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 25%;
+    height: 26px;
+    border-bottom: 1px solid var(--line-no);
+    border-right: 1px solid var(--line-no);
+    border-bottom-right-radius: 9px;
+  }
+
+  .join-stem {
+    position: absolute;
+    top: 26px;
+    left: 50%;
+    width: 1px;
+    height: 26px;
+    background: var(--line);
+  }
+
+  /* 下半屏：小馋怪蹲在轨道尽头 */
+  .mate {
+    height: 148px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .mate .monster {
+    width: 146px;
+    height: 146px;
+    filter: drop-shadow(0 10px 18px rgba(180, 120, 80, 0.16));
+  }
+
+  .mate-line { padding-bottom: 34px; }
+  .mate-line b { display: block; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .mate-line span { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-faint); }
+
+  .flow-foot {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--ink-faint);
+    letter-spacing: 0.2px;
+    padding-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="device-mockup" data-pose="hold">
+  <div class="screen">
+
+    <div class="topbar">
+      <div class="day-line">TODAY · 第 <b>137</b> 个背词日</div>
+      <div class="topbar-icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="5.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="18.5" r="1.3"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="flow-head">
+      <div class="flow-title">今日学习计划</div>
+      <div class="flow-total">共 <b>120</b> 词</div>
+    </div>
+
+    <div class="flow">
+
+      <!-- 新词轨道 -->
+      <div class="track">
+        <div class="track-head"><b>42</b><span>新词</span></div>
+        <div class="stem"></div>
+        <div class="check-wrap">
+          <span class="check-tag">测评</span>
+          <div class="node check">英译汉</div>
+        </div>
+        <div class="stem"></div>
+        <div class="split">
+          <div class="branch">
+            <span class="blabel ok">答对</span>
+            <div class="stem ok"></div>
+            <div class="node">汉译英</div>
+          </div>
+          <div class="branch">
+            <span class="blabel no">答错</span>
+            <div class="stem no"></div>
+            <div class="node">汉译英</div>
+          </div>
+        </div>
+        <div class="join"><div class="join-stem"></div></div>
+        <div class="node end">单词列表</div>
+      </div>
+
+      <!-- 旧词轨道 -->
+      <div class="track">
+        <div class="track-head"><b>78</b><span>旧词</span></div>
+        <div class="stem"></div>
+        <div class="check-wrap">
+          <span class="check-tag">测评</span>
+          <div class="node check">英译汉</div>
+        </div>
+        <div class="stem"></div>
+        <div class="split">
+          <div class="branch">
+            <span class="blabel ok">答对</span>
+            <div class="stem ok"></div>
+            <div class="node stop">直接结束</div>
+          </div>
+          <div class="branch">
+            <span class="blabel no">答错</span>
+            <div class="stem no"></div>
+            <div class="node">汉译英</div>
+          </div>
+        </div>
+        <div class="join"><div class="join-stem"></div></div>
+        <div class="node end">单词列表</div>
+      </div>
+
+    </div>
+
+    <div class="mate">
+      <div class="monster">
+        <img src="img/monster/hold_strawberry.png" alt="小馋怪抱着草莓">
+      </div>
+      <div class="mate-line">
+        <b>走完这两条</b>
+        <span>它就哭着跑了</span>
+      </div>
+    </div>
+
+    <div class="flow-foot">答对与答错走不同分支 · 测评后按首答定轨</div>
+
+    <button class="cta">开始今天的 120 词</button>
+
+    <div class="tabbar">
+      <div class="tab on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        学习
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 6h11M8 12h11M8 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>
+        </svg>
+        词表
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6 20 20"/>
+        </svg>
+        查词
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4l2.4 4.6 5.1.8-3.7 3.6.9 5.1-4.7-2.4-4.7 2.4.9-5.1L4.5 9.4l5.1-.8z"/>
+        </svg>
+        比赛
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 19.5c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/>
+        </svg>
+        我
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="notes">
+  <h3>这一版画的是什么</h3>
+  把「今日新词数 / 今日旧词数」直接当成两条学习轨道的起点，自上而下长出来：数字 → 测评 → 答对 / 答错分叉 → 汇合到单词列表。数量与轨道是一体的，不再一个数字在上、一张配置表在下。<br><br>
+  <h3>数据是真实的（不是编的）</h3>
+  新词默认：测评 <code>En2Ch</code> 英译汉 → 答对 <code>Ch2En</code> 汉译英、答错 <code>Ch2En</code> 汉译英（<code>app/lib/util/study_steps_service.dart:78</code>）。<br>
+  旧词默认：测评沿用新词测评（英译汉）→ 答对<strong>直接结束</strong>（空组）、答错走反向互补环节（汉译英）；两条轨道末尾都固定接 <code>List</code>「单词列表」。<br>
+  环节名取自 <code>StudyStepExt.description</code>（<code>app/lib/api/enum.dart:120</code>）。<br><br>
+  <h3>配色语义</h3>
+  答对一支走主题绿，答错一支走小馋怪的橙红（与「答错就被它抢走水果」同一套语义）；「直接结束」用虚线圈、不加底色，表示这条支路到此为止。<br><br>
+  <h3>还没定的</h3>
+  ① 每组超过一个环节时怎么排（现在是单步；多步会顺着竖线继续往下串，或用一串节点横向排）；② 小馋怪这一版放在轨道尽头，位置可再调。
+</div>
+
+</body>
+</html>

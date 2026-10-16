@@ -2232,6 +2232,159 @@
           </article>
 
           <!-- UI 美学与交互架构 #001: 今日学习计划页面画报化与配置收纳 -->
+          <!-- 创意 UI#003: 用户宠物形象与四态表情 -->
+          <article class="idea-card" id="idea-ui-003">
+            <div class="idea-header">
+              <div>
+                <div class="idea-id-date">
+                  <span class="idea-id" style="color: var(--accent-aurora);">UI #003</span>
+                  <span>•</span>
+                  <span>2026-10-16</span>
+                  <span>•</span>
+                  <span>用户宠物形象</span>
+                </div>
+                <h2 class="idea-title">用户宠物「背篓樱桃兽」：形象定稿与四态表情</h2>
+              </div>
+              <span class="badge-status status-evaluating">形象已定 · 四态就绪 · 待命名</span>
+            </div>
+
+            <div class="tags-container">
+              <span class="tag" style="color: var(--accent-aurora); border-color: rgba(110, 231, 183, 0.2);">#用户宠物</span>
+              <span class="tag">#背篓樱桃</span>
+              <span class="tag">#四态表情</span>
+              <span class="tag">#Seedream图生图</span>
+              <span class="tag">#替换式指令</span>
+              <span class="tag">#与小馋怪区分</span>
+              <span class="tag">#素材已抠透明底</span>
+            </div>
+
+            <div class="idea-body">
+              <div class="idea-quote" style="border-left-color: var(--accent-aurora); background: rgba(110, 231, 183, 0.05);">
+                “首页底部那个陪伴位原本借用了小馋怪的形象，那是角色错位——小馋怪是「从桥那头过来抢水果的对手」，而这里应该是用户自己的宠物。定稿用的是小馋怪同一族的早期方向之一（背袋委屈 · 粉紫版）：粉紫渐变身体、小牛角加垂耳、背着一个装着两颗樱桃的米色布袋、肚子上一块浅绿圆斑。”
+              </div>
+
+              <div class="section-title">形象与定位</div>
+              <div class="principle-box">
+                • <strong>角色分工</strong>：小馋怪 = 对手（抢水果、被打退，只出现在玩法入口与反馈里）；宠物 = 用户自己的陪伴（首页保留位）。两者不是一回事，不要混用。<br/>
+                • <strong>原始素材</strong>：<code>assets/images/_unused/xiaochanguai_早期方向/xiaochanguai_背袋委屈_粉紫版.jpg</code>（小馋怪的三个早期方向之一，另两个是蓝白嫩芽版、绿色啃苹果版）。这三个方向的共同语言是：<strong>同一个蛋形身体 + 同色系渐变 + 头顶一个小元素 + 短圆四肢 + 脚下的烘焙阴影</strong>，换的只是配色与头顶符号。<br/>
+                • <strong>透明底成品</strong>：<code>design/ui/img/pet/pet_berry_{happy,sleepy,excited,sad}.png</code>，统一归一化为 <code>911×948</code>（角色等高 900、底边距 24、水平居中），所以四个状态原地切换时不会变大变小、也不会上下跳。抠图走既有流水线 <code>tools/pet_assets/cutout.py</code>（rembg u2net）。
+              </div>
+
+              <div class="section-title">四态表情（随今日学习状态切换）</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>还没开始 → 打瞌睡</strong>
+                  <p>站着闭眼、头顶飘几个半透明气泡。文案「它还在打瞌睡 / 今天还没开始，让它再眯一会儿」。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>学习中 → 开心</strong>
+                  <p>月牙笑眼加张嘴笑。文案「陪你把这两条走完 / 背篓里是今天攒下的樱桃」。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>已完成 → 兴奋</strong>
+                  <p>星星眼、大张嘴笑、头顶冒星星。文案「今天全走完了 / 背篓装满了，它高兴得冒星星」。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>断更好几天 → 委屈</strong>
+                  <p>沿用原始形象那副委屈神情。文案「它等你好几天了 / 背篓里还是上次那两颗樱桃」。</p>
+                </div>
+              </div>
+
+              <div class="section-title">做法与踩坑（换形象这件事的通用经验）</div>
+              <div class="principle-box">
+                • <strong>用图生图，不要纯文生图</strong>：纯文生图只说「新角色长什么样」，模型会连身形比例一起重画——圆胖度、眼睛大小、腮红占比全漂走，可爱度当场掉一档（实测：第一版宠物就是因为这样不够可爱）。改用火山方舟 Seedream 4.0 图生图（<code>tools/sprite_anim/gen_pose.py</code> 的 <code>ark_image</code>），并且指令写成<strong>替换式</strong>：「保持参考图完全相同的身体比例、眼睛大小、腮红位置、脸型与四肢、相同画风；只替换颜色和头顶符号」，可爱度立刻回来。<br/>
+                • <strong>参考图必须挑最可爱的那张，不能随手拿</strong>：第一版误用 <code>xiaochanguai_行走正面01</code>（走路帧）当参考——那张为了动作幅度把身体画得侧倾、比例偏长、眼睛偏小，新形象把这套比例整个继承走了。换成 <code>xiaochanguai_瘪嘴站立</code> 之后才对。<br/>
+                • <strong>剪影先做减法</strong>：小馋怪的剪影非常干净（一个球 + 头顶两片叶子 + 额前两小角）。第一版宠物头上叠了小尖耳、大垂耳加气泡三样东西，剪影一乱就不萌了。<br/>
+                • <strong>姿势漂移要靠指令按住</strong>：出四态时若不写「完全保持站立姿势、不坐下、不抬腿、位置大小不变」，模型会自作主张把「睡着」画成坐姿、「兴奋」画成抬腿——而首页这四张是原地替换同一张图，姿势一漂切换时就会跳。<br/>
+                • <strong>临时脚本留在 tmp</strong>：<code>tmp/gen_pet_ark.py</code>（出形象）、<code>tmp/gen_pet_moods.py</code>（出四态）。<br/>
+                • <strong>待办</strong>：正式命名（暂用「宠物」指代，候选「小背篓」「果果」）；四态在首页原型里目前的切换入口是原型预览用的属性，实装时要接今日学习状态。
+              </div>
+            </div>
+
+            <div class="actions-footer">
+              <span class="action-link" onclick="copyIdeaMarkdown('idea-ui-003')">复制摘要 Markdown</span>
+            </div>
+          </article>
+
+          <!-- 创意 UI#002: 首页交给小馋怪（三个布局方案待选） -->
+          <article class="idea-card" id="idea-ui-002">
+            <div class="idea-header">
+              <div>
+                <div class="idea-id-date">
+                  <span class="idea-id" style="color: var(--accent-aurora);">UI #002</span>
+                  <span>•</span>
+                  <span>2026-10-16</span>
+                  <span>•</span>
+                  <span>首页角色化 · 布局三选一</span>
+                </div>
+                <h2 class="idea-title">首页改版：小馋怪 + 新词 / 旧词数量与学习轨道一体化</h2>
+              </div>
+              <span class="badge-status status-evaluating">原型就绪 · 待确认</span>
+            </div>
+
+            <div class="tags-container">
+              <span class="tag" style="color: var(--accent-aurora); border-color: rgba(110, 231, 183, 0.2);">#去同质化</span>
+              <span class="tag">#小馋怪上首页</span>
+              <span class="tag">#角色即主角</span>
+              <span class="tag">#布局三选一</span>
+              <span class="tag">#背词日序数</span>
+              <span class="tag">#零多余容器</span>
+              <span class="tag">#HTML原型已就绪</span>
+            </div>
+
+            <div class="idea-body">
+              <div class="idea-quote" style="border-left-color: var(--accent-aurora); background: rgba(110, 231, 183, 0.05);">
+                “现在的首页不是「有点像」不背单词，而是逐像素朝它对齐：app/lib/page/today_plan.dart 里有六处注释直写「对标「不背单词」」——任务卡下沿取 0.863H、卡面白纱取 0.25~0.34、中心那枚日历签到卡、细描边图标、底部 Learn & Review 双卡结构、卡片圆角。去同质化不靠加装饰，也不能把功能搬上首页：曾把「词核心图」做成首页中心的『今日词画报』，被否决——它是单词详情页里的一个功能，孤零零出现在首页只会让用户困惑「为什么给我看这张图」。真正该上首页的是角色：小馋怪本来就可爱，它来抢水果、答对被它打退，这套世界观已经落在打哭小馋怪里。”
+              </div>
+
+              <div class="section-title">三个布局方案（同一套数据，差异只在角色位置与叙事强度）</div>
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <strong>① 它蹲在底部（最稳）</strong>
+                  <p>数字与进度仍居中当主信息，小馋怪从页面底部探身抱着草莓，右侧一句话把它的立场说清：「它还想吃 102 个词 / 没学完，它就抱走了」。角色是氛围与情感，不承担进度表达，改动最小。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>② 它守在桥那头（角色即进度）</strong>
+                  <p>一条桥面横贯页面：绿色是你已经夺回的词，小馋怪被逼在剩下的那一头（位置 = 还没学的比例），脚下那枚圆点是今天出发的地方。首页与打哭小馋怪共用同一座桥，学得越多它退得越远；学满它换姿势哭着跑。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>③ 它占据中心（角色即主角）</strong>
+                  <p>小馋怪直接站在首页正中央，配一句世界观标题「它想吃掉你今天的 120 个词」，数据退到它脚下用纯排版呈现。第一眼看到的是我们的角色，不是一个数字——去同质化最彻底。</p>
+                </div>
+                <div class="feature-item">
+                  <strong>三案共有的替换</strong>
+                  <p>页面标题从通用的「TODAY'S PLAN / 今日学习计划」换成「第 137 个背词日」（背词日序数 <code>learning_word.add_day</code>，永不归零）；公共风景壁纸换成极简暖色底，把焦点让给角色。</p>
+                </div>
+              </div>
+
+              <div class="section-title">最新一版：新词 / 旧词数量与学习轨道一体化（自上而下）</div>
+              <div class="principle-box">
+                把「今日新词数 / 今日旧词数」直接当成两条学习轨道的起点，自上而下长出来：数字 → 测评 → 答对 / 答错分叉 → 汇合到单词列表。数量与轨道是一体的，不再一个数字在上、一张配置表在下。<br/>
+                • <strong>数据用的是真实默认配置</strong>：新词测评 <code>En2Ch</code> 英译汉 → 答对与答错都走 <code>Ch2En</code> 汉译英；旧词测评沿用新词测评 → 答对<strong>直接结束</strong>（空组）、答错走反向互补环节；两条末尾都固定接 <code>List</code>「单词列表」（<code>app/lib/util/study_steps_service.dart:78</code>、<code>app/lib/util/study_track.dart:48</code>）。<br/>
+                • <strong>配色语义</strong>：答对一支走主题绿，答错一支走小馋怪的橙红（与「答错就被它抢走水果」同一套语义）；「直接结束」用虚线圈、不加底色，表示这条支路到此为止。<br/>
+                • <strong>原型</strong>：<a href="ui/today_plan_track_flow_preview.html" target="_blank" style="color: var(--accent-aurora); text-decoration: underline;">design/ui/today_plan_track_flow_preview.html</a>；真机图 <code>design/ui/png/today_plan_track_flow_preview.png</code>。<br/>
+                • <strong>多环节怎么排（已定）</strong>：顺着竖线继续往下串，每条支路各长各的——新词「答对三环 / 答错两环」、旧词「答对两环 / 答错一环」就是这样长出来的。真实上限是<strong>每组 4 个环节</strong>：可选题型只有 4 种，而设置页添加时只列出「这一组还没用过的题型」（<code>app/lib/page/study_track_settings.dart:550</code>），同一题型不能在同一组里加两次。<br/>
+                • <strong>不去做横向排的原因</strong>：两条轨道并排时，分叉后每支只有约 74 宽，「例句汉译英」这种 5 字节点横着排不下两个；要横着排就得把两条轨道改成上下两段，那样「新词数 / 旧词数」就没法并排放在最上方了。<br/>
+                • <strong>多环节真机图</strong>：<a href="ui/today_plan_track_flow_rich_preview.html" target="_blank" style="color: var(--accent-aurora); text-decoration: underline;">design/ui/today_plan_track_flow_rich_preview.html</a>（<code>design/ui/png/today_plan_track_flow_rich_preview.png</code>）。每多一个环节这条支路往下长 47；1 环很松、2-3 环正好一屏、极限 4 环要收掉底部说明行。                • <strong>多环节真机图</strong>：<a href="ui/today_plan_track_flow_rich_preview.html" target="_blank" style="color: var(--accent-aurora); text-decoration: underline;">design/ui/today_plan_track_flow_rich_preview.html</a>（<code>design/ui/png/today_plan_track_flow_rich_preview.png</code>）。每多一个环节这条支路往下长 47；1 环很松、2-3 环正好一屏、极限 4 环要收掉底部说明行。
+                • <strong>空间不足时：小馋怪永远留位 + 底部毛玻璃渐隐</strong>：小馋怪区域固定 150 高、<strong>不参与滚动</strong>；轨道图在自己那一块里滚，超出时底部盖一层 84 高的毛玻璃渐隐（模糊半径 7 —— 按项目毛玻璃规范取值，12~16px 的正文笔画只有 1~1.5px，半径到 14 以上就会被均化蒸发成纯白；取 7 才能把节点晕成朦胧的墨水色块），滚到底自动淡出。底色峰值只到页面底色的 88%，避免"白加白糊成实心白"。<br/>
+                • <strong>空间不足是两维的（实测发现）</strong>：放大字号后两列并排会<strong>横向</strong>放不下，「例句汉译英」这类 5 字节点会被裁掉右边一列。所以加了一条自适应：宽度不够时把两条轨道改成上下分段、每段独占整宽（分支仍并排、各占半宽），节点就不再被裁；代价是两个数字只能各归自己那一段，不再并排待在最上方（大字号下的降级取舍）。原型 <a href="ui/today_plan_track_scroll_preview.html" target="_blank" style="color: var(--accent-aurora); text-decoration: underline;">design/ui/today_plan_track_scroll_preview.html</a>，真机图 <code>design/ui/png/today_plan_track_scroll_preview.png</code>（滚到顶）与 <code>today_plan_track_scroll_end_preview.png</code>（滚到底）。
+              </div>
+
+              <div class="section-title">素材与交付</div>
+              <div class="principle-box">
+                • <strong>形象</strong>：取 <code>assets/images/monster/cutout/xiaochanguai_抱草莓_橙黄双叶版.png</code>（「抱着水果」那一张，最贴合角色设定）。另有走路正面 / 侧身 / 捂脸要哭 / 背面 / 泡泡包围五张备用，可做状态切换。<br/>
+                • <strong>原型</strong>：<a href="ui/today_plan_monster_dock_preview.html" target="_blank" style="color: var(--accent-aurora); text-decoration: underline;">方案一 底部</a> · <a href="ui/today_plan_monster_track_preview.html" target="_blank" style="color: var(--accent-aurora); text-decoration: underline;">方案二 桥那头</a> · <a href="ui/today_plan_monster_hero_preview.html" target="_blank" style="color: var(--accent-aurora); text-decoration: underline;">方案三 中心</a>（共用样式 <code>design/ui/monster_home.css</code>）<br/>
+                • <strong>真机图</strong>：<code>design/ui/png/today_plan_monster_dock_preview.png</code>、<code>..._track_preview.png</code>、<code>..._hero_preview.png</code><br/>
+                • <strong>被否决的方向（保留作记录）</strong>：<code>design/ui/today_plan_word_postcard_preview.html</code>（今日词画报 + 记忆守护兽水位）。其中「多个释义从核心意象生长出去」的视觉本身成立，更适合放进<strong>单词详情页</strong>的词核心图卡片，不要放首页。<br/>
+                • <strong>顺带修掉的两个渲染脚本缺陷</strong>（<code>design/ui/render_mockup_png.js</code>）：① 它把 <code>&lt;base&gt;</code> 注入到 <code>&lt;/head&gt;</code> 之前，也就是原型自己所有 <code>&lt;link&gt;</code> 之后——渲染时 HTML 被复制到 /tmp 再打开，于是外部样式表全部按 /tmp 解析、整个原型裸奔；改为紧跟 <code>&lt;head&gt;</code> 注入。② 它用「文件里最后一个 <code>&lt;/div&gt;</code>」来补整机 wrapper 的闭合，原型在壳外写设计说明区时会把说明区一起吞进 wrapper（说明区逃过统一样式的隐藏、整机布局也被撑坏）；改为从容器开始标签做一次 div 配对扫描。
+              </div>
+            </div>
+
+            <div class="actions-footer">
+              <span class="action-link" onclick="copyIdeaMarkdown('idea-ui-002')">复制摘要 Markdown</span>
+            </div>
+          </article>
+
           <article class="idea-card" id="idea-ui-001">
             <div class="idea-header">
               <div>
@@ -2313,6 +2466,26 @@
 - **待拍板**：关卡与词库绑定方式、一天几次机会、分数公式、被抢的“水果”落在哪个已有资产、入口位置。
 - **美术素材（2026-10-14 入库并处理）**：正式素材为 5 张「橙黄双叶版」，在 assets/images/monster/；3 张早期方向已移入 assets/images/_unused/xiaochanguai_早期方向/。透明底成品在 assets/images/monster/cutout/（已去「豆包 AI 生成」水印、已抠米色底）。画师画的桃色落地投影因与气泡水洼无法区分而原样保留，待美术分层处理。
 - **定位**：单机闯关 PvE，接词库与复习队列；广告里演的就是游戏里玩的。`;
+      } else if (id === 'idea-ui-003') {
+        text = `### 用户宠物「背篓樱桃兽」：形象定稿与四态表情
+- **角色分工**：小馋怪是对手（抢水果、被打退），宠物是用户自己的陪伴（首页保留位），两者不要混用。
+- **形象来源**：assets/images/_unused/xiaochanguai_早期方向/xiaochanguai_背袋委屈_粉紫版.jpg（小馋怪三个早期方向之一）。
+- **透明底成品**：design/ui/img/pet/pet_berry_{happy,sleepy,excited,sad}.png，统一 911×948（角色等高、底边对齐），切换不跳。
+- **四态**：还没开始打瞌睡 / 学习中开心 / 已完成兴奋 / 断更委屈，各配一句文案。
+- **关键做法**：用 Seedream 图生图 + 替换式指令（保持身形五官画风照抄参考图，只换颜色与头顶符号）；纯文生图会连身形比例一起重画，可爱度会掉。
+- **参考图要挑最可爱的**：走路帧比例偏长、眼睛偏小，会把新形象带歪；瘪嘴站立才对。
+- **待办**：正式命名。`;
+      } else if (id === 'idea-ui-002') {
+        text = `### 首页交给小馋怪：三个布局方案待选
+- **问题**：app/lib/page/today_plan.dart 里六处注释直写「对标「不背单词」」，不是有点像，是逐像素对齐。
+- **被否决的方向**：把「词核心图」做成首页中心的今日词画报——它只是单词详情页里的一个功能，放首页让人困惑；该视觉改留给单词详情页。
+- **① 它蹲在底部（最稳）**：数字与进度居中，小馋怪从页面底部探身抱草莓，旁边一句话说清立场。
+- **② 它守在桥那头（角色即进度）**：一条桥面横贯，绿色是已夺回的词，它被逼在剩下的那一头。
+- **③ 它占据中心（角色即主角）**：它站在正中央配世界观标题「它想吃掉你今天的 120 个词」。
+- **共有替换**：通用标题 → 第 137 个背词日（learning_word.add_day，永不归零）；公共风景壁纸 → 极简暖色底。
+- **素材**：assets/images/monster/cutout/xiaochanguai_抱草莓_橙黄双叶版.png，另有走路 / 捂脸 / 背影 / 泡泡备用。
+- **原型**：design/ui/today_plan_monster_{dock,track,hero}_preview.html 与三张真机图。
+- **最新一版（数量与轨道一体化）**：把今日新词数 / 旧词数直接当成两条学习轨道的起点，自上而下画成「数字 → 测评 → 答对 / 答错分叉 → 汇合到单词列表」；数据取真实默认配置（新词测评英译汉 → 答对与答错都走汉译英；旧词答对直接结束、答错走汉译英）。原型 design/ui/today_plan_track_flow_preview.html。`;
       } else if (id === 'idea-ui-001') {
         text = `### 今日学习计划：对标「不背单词」极简壁纸画报美学与低频配置收纳
 - **核心逻辑**：壁纸成为第一主角（75%+ 留白），UI 元素退后为极简悬浮排版。

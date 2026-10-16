@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>首页方案三 · 它占据中心（角色即主角）</title>
+<link rel="stylesheet" href="monster_home.css">
+<style>
+  /* 方案三专属：小馋怪占满中心，数据退到它脚下 */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .hero .monster { width: 264px; height: 264px; }
+  .hero .monster img { filter: drop-shadow(0 16px 26px rgba(180, 120, 80, 0.18)); }
+
+  .hero-title {
+    max-width: 300px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: -0.3px;
+    color: var(--ink);
+  }
+
+  .hero-title b {
+    font-family: var(--num);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.6px;
+  }
+
+  .hero-sub {
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--ink-faint);
+    letter-spacing: 0.3px;
+  }
+
+  /* 数据块：只有排版与一条细线，没有任何卡片 */
+  .facts {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 48px;
+  }
+
+  .facts-meta { display: flex; align-items: baseline; justify-content: space-between; }
+
+  .facts-num {
+    font-family: var(--num);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+  }
+
+  .facts-num span { font-size: 11.5px; font-weight: 500; color: var(--ink-sub); }
+</style>
+</head>
+<body>
+
+<div class="device-mockup" data-pose="hold">
+  <div class="screen">
+
+    <div class="topbar">
+      <div class="day-line">TODAY · 第 <b>137</b> 个背词日</div>
+      <div class="topbar-icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="5.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="18.5" r="1.3"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="monster">
+        <img class="pose pose-hold" src="img/monster/hold_strawberry.png" alt="小馋怪抱着草莓">
+        <img class="pose pose-walk" src="img/monster/walk_front.png" alt="">
+        <img class="pose pose-cry" src="img/monster/cry.png" alt="">
+      </div>
+      <div class="hero-title">它想吃掉你今天的 <b>120</b> 个词</div>
+      <div class="hero-sub">答对一个，它退一步</div>
+
+      <div class="facts">
+        <div class="bar"><i class="done" style="width: 15%"></i></div>
+        <div class="facts-meta">
+          <div class="facts-num">18 <span>/ 120 词</span></div>
+          <div class="faint">新词 42 · 旧词 78</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="cta">上桥迎战 · 120 词</button>
+
+    <div class="tabbar">
+      <div class="tab on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        学习
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 6h11M8 12h11M8 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>
+        </svg>
+        词表
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6 20 20"/>
+        </svg>
+        查词
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4l2.4 4.6 5.1.8-3.7 3.6.9 5.1-4.7-2.4-4.7 2.4.9-5.1L4.5 9.4l5.1-.8z"/>
+        </svg>
+        比赛
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 19.5c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/>
+        </svg>
+        我
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="notes">
+  <h3>方案三 · 它占据中心（角色即主角）</h3>
+  小馋怪直接站上首页正中心，配一句世界观标题「它想吃掉你今天的 120 个词」，数据退到它脚下用纯排版呈现。<br>
+  这一版最彻底地摆脱了「公共风景壁纸 + 日历签到 + 大数字」的构型：首页第一眼看到的是<b>我们的角色</b>，不是一个数字。<br>
+  代价：角色占掉 232px 高度，信息密度最低；标题文案的语气要你认可。
+</div>
+
+</body>
+</html>

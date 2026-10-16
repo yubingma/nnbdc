@@ -181,9 +181,19 @@ function renderFile(fileName, shouldImportToPhotos = false) {
     targetUrl = `file://${srcPath}?transparent=1`;
   } else {
     let content = fs.readFileSync(srcPath, 'utf8');
-    content = content.replace('</head>', `<base href="file://${UI_DIR}/">\n` + UNIFIED_CSS + '</head>');
-
+    // 先判断「作者自己有没有写状态栏」，再注入统一模具样式。
+    // UNIFIED_CSS 自身含 .unified-status-bar，若在注入之后再判断，这个 includes
+    // 永远为真（每个原型都会被当成"作者已写状态栏"），结果是只插灵动岛、
+    // 整个原型彻底没有时间与电量。必须先判断、后注入。
     const hasOriginalStatusBar = content.includes('status-bar');
+
+    // base 必须紧跟 <head> 出现：它只作用于写在它后面的相对 URL。
+    // 曾经把 base 注入到 </head> 之前（即整份 head 的最后），于是原型自己 head 里的
+    // <link href="xxx.css"> 全部按 /tmp 解析（渲染时 HTML 会被复制到 /tmp 再打开），
+    // 外部样式表一律加载失败、页面裸奔。
+    content = content.replace(/<head([^>]*)>/i, `<head$1>\n<base href="file://${UI_DIR}/">`);
+    content = content.replace('</head>', UNIFIED_CSS + '</head>');
+
     const containerRegex = /(<div class="(?:device-mockup|phone-container|phone-wrapper)"[^>]*>)/;
     const match = content.match(containerRegex);
     if (match) {
@@ -191,21 +201,45 @@ function renderFile(fileName, shouldImportToPhotos = false) {
         ? `<div class="unified-dynamic-island"><div class="unified-camera-lens"></div></div>`
         : STATUS_BAR_HTML;
 
-      const replacement = `
+      // 整机容器要包一层 wrapper，就必须知道它自己的闭合位置。
+      // 不能用「文件里最后一个 </div>」——原型在整机壳外常常还有设计说明区，
+      // 那样会把说明区一起吞进 wrapper：它不再属于 body 的直接子元素，于是
+      // 既逃过统一样式的 display:none、又把整机布局撑坏（整个原型裸奔）。
+      // 这里从容器开始标签起做一次 div 配对扫描，精确取到它自己的结束位置。
+      const openStart = match.index;
+      const openEnd = openStart + match[1].length;
+      let depth = 0;
+      let closeEnd = -1;
+      const tagRe = /<div\b|<\/div>/g;
+      tagRe.lastIndex = openStart;
+      let tag;
+      while ((tag = tagRe.exec(content)) !== null) {
+        if (tag[0] === '</div>') {
+          depth--;
+          if (depth === 0) { closeEnd = tag.index + tag[0].length; break; }
+        } else {
+          depth++;
+        }
+      }
+      if (closeEnd === -1) {
+        throw new Error(`${fileName}: 找不到整机容器的闭合标签，无法套统一真机模具`);
+      }
+
+      const wrapperOpen = `
       <div class="unified-device-wrapper">
         <div class="unified-button unified-btn-action"></div>
         <div class="unified-button unified-btn-vol-up"></div>
         <div class="unified-button unified-btn-vol-down"></div>
         <div class="unified-button unified-btn-power"></div>
-        ${match[1]}
-          ${topElement}
-          <div class="unified-home-indicator"></div>
-      `;
-      content = content.replace(match[1], replacement);
-      const lastDivIdx = content.lastIndexOf('</div>');
-      if (lastDivIdx !== -1) {
-        content = content.slice(0, lastDivIdx) + '</div></div>' + content.slice(lastDivIdx + 6);
-      }
+        `;
+      content =
+        content.slice(0, openStart) +
+        wrapperOpen +
+        match[1] +
+        `\n          ${topElement}\n          <div class="unified-home-indicator"></div>\n      ` +
+        content.slice(openEnd, closeEnd) +
+        '</div>' +
+        content.slice(closeEnd);
     }
 
     const tmpPath = path.join('/tmp', `unified_render_${baseName}.html`);

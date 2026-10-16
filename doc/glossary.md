@@ -4,7 +4,7 @@
 >
 > - **生效方式**：`AGENTS.md` 已引用本表，强制生效。
 > - **维护规则**：只增不删；改了叫法必须保留旧名（标「已弃用（原叫 X）」），否则历史文档会读不懂。
-> - **更新日期**：2026-10-12
+> - **更新日期**：2026-10-16
 
 ---
 
@@ -258,6 +258,7 @@
 | 背词日序数 | `learning_word.add_day` | 用户从首次使用以来的第几个学习业务日，从 1 开始递增 | ⚠️ 名字像日期，实际是 **INTEGER 序号**，不是日期也不是时间戳 |
 | 最近学词时刻 | `learning_word.last_learning_date` | 该词最近一次被学习、复习或测验通过的时间 | ⚠️ 名字叫 date，实际存的是**精确到毫秒的时间戳** |
 | 学习步骤 | `user_study_step` | 学习流程的进度标记：三组（测评 check / 答对后 correct / 答错后 wrong）× 作用域（新词 / 复习） | 用户口中的「测评环节」= 本条的 check 组，「巩固环节」= 本条的 correct 组 |
+| 学习轨道 | 客户端 `StudyTrack`（`app/lib/util/study_track.dart`），推导入口 `StudyTrack.trackOf`；配置存在 `user_study_step` 的三组里，默认值见 `app/lib/util/study_steps_service.dart:78` | 一个词今天要走的环节顺序：**测评 →（按当天首答选答对组或答错组）→ 单词列表**；两条轨道同构，新词与旧词只差评分语义 | 末尾固定那个 `List` 在界面上的名字是「单词列表」，不是「列表」。首页把「今日新词数 / 旧词数」画成轨道起点的那张图见 `design/ideas.html` 的 UI #002 |
 | 作用域 | `user_study_step.scope` | `'new'` 每日新词流程 / `'review'` 复习流程 | ⚠️ v62 注释写 LEARNING/REVIEW，与代码不符，见第六章 |
 | 步骤状态 | `user_study_step.state` | `'Active'` 进行中 / `'Inactive'` 未激活 | ⚠️ v62 注释写 WAITING/DOING/FINISHED，与服务端代码不符，见第六章 |
 | 首答计分 | `StudyTrack.isFirstAttemptOfStep`（`app/lib/util/study_track.dart:97`） | 一个评分环节只在首次作答时写学习记录、算记忆参数、计进度；答错留在本环节重练，重练只判对错、**不计分** | 判据：今天该词的评分日志条数 ≤ 已走完环节数。日志条数少于进度属异常，按首答处理（宁可重复计分，不静默丢分） |
@@ -382,6 +383,9 @@
 | 通用释义缺失 | 客户端 `MissingCommonMeaningException`（`app/lib/api/bo/word_bo.dart`） | 某个词在学习词书里没有定制释义、本地又没有通用释义（`dict_id = '0'`），学习页取不到任何释义而报的错 | 判据与 `WordBo.getWordMeaningItems` 同源；体检第 8 项「正在学习单词的释义完整性」按同一判据检查，可用「一键自动修复」从云端补回。给用户的出路是「修复数据（数据健康检查）」和「清空本地数据重新同步」 |
 | 本机缺释义引导面板 | 客户端 `MissingMeaningGuide`（`app/lib/widget/data_missing_guide.dart`） | 「通用释义缺失」时，学习页与单词详情页错误态展示的引导面板 | 只给「修复数据」和「清空本地数据重新同步」两条出路，因为单纯重试必然再次失败 |
 | 清空本地数据重建 | 客户端 `showRebuildDatabaseDialog`（`app/lib/widget/rebuild_database_dialog.dart`） | 先把数据备份到云端，再清空本地库，然后回登录页重新登录 | 用户口中的「清空本地数据」就是它；界面上标题是「确认重建数据库」，需要二次确认 |
+| 小馋怪 | 素材 `assets/images/monster/`（正式素材是「橙黄双叶版」，透明底成品在同目录 `cutout/`）；走路循环的做法见 `.agents/skills/sprite-walk-animation/` | 打哭小馋怪里的对手：它从桥那头过来抢水果，答对就被打退、答错水果被抢走 | 首页角色化的主角（见 `design/ideas.html` 的 UI #002）。它与「记忆守护兽」是两个完全不同的角色，不要混着叫 |
+| 记忆守护兽 | 客户端 `GuardianPet`（`app/lib/widget/guardian_pet.dart`），三层素材在 `app/assets/images/pet/`（身体层 + 表情层 + 光核层），表情图 `pet/moods/mood_*.png` | 绿色凝胶质感的陪伴形象，目前只在学习结算页（`app/lib/page/finish.dart`）出现 | 与上一条的「小馋怪」不是一回事，不要混用 |
+| 用户宠物 | 形象素材 `design/ui/img/pet/pet_berry_{happy,sleepy,excited,sad}.png`（四态，统一 911×948）；原始图 `assets/images/_unused/xiaochanguai_早期方向/xiaochanguai_背袋委屈_粉紫版.jpg` | 首页底部陪伴位里的那只角色：粉紫渐变身体、小牛角加垂耳、背着一个装着两颗樱桃的米色布袋、肚子上有浅绿圆斑 | **正式名称待定**，暂按「宠物」指代。它与「小馋怪」是两个角色：小馋怪是抢水果的对手，宠物是用户自己的陪伴 |
 
 ### 4.8 客户端设置与系统权限
 

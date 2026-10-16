@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>首页方案二 · 它守在桥那头（进度即桥面）</title>
+<link rel="stylesheet" href="monster_home.css">
+<style>
+  /* 方案二专属：一条桥面横贯，绿色是你夺回的部分，小馋怪被逼在剩下的那一头 */
+  .stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+  }
+
+  .stage-hint {
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--ink-faint);
+    letter-spacing: 0.2px;
+  }
+
+  .bridge-wrap {
+    position: relative;
+    margin: 4px 0 24px;
+    height: 186px;
+  }
+
+  .bridge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 18px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--track);
+    overflow: hidden;
+  }
+
+  .bridge-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  /* 桥那头的目标标记 */
+  .bridge-goal {
+    position: absolute;
+    right: 0;
+    bottom: 26px;
+    width: 1px;
+    height: 12px;
+    background: var(--hair);
+  }
+
+  .monster {
+    position: absolute;
+    bottom: 6px;
+    width: 172px;
+    height: 172px;
+    left: calc(85% - 86px);
+    transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .monster img { filter: drop-shadow(0 10px 18px rgba(180, 120, 80, 0.16)); }
+
+  /* 你这一侧的出发点 */
+  .start-dot {
+    position: absolute;
+    left: 0;
+    bottom: 26px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .stat { display: flex; align-items: baseline; justify-content: center; gap: 5px; }
+
+  .stat-num {
+    font-family: var(--num);
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -1.2px;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .stat-unit { font-size: 12.5px; font-weight: 500; color: var(--ink-sub); }
+
+  .stage .faint { text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="device-mockup" data-pose="hold">
+  <div class="screen">
+
+    <div class="topbar">
+      <div class="day-line">TODAY · 第 <b>137</b> 个背词日</div>
+      <div class="topbar-icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="5.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="18.5" r="1.3"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-hint">它在桥那头，等你把词夺回来</div>
+
+      <div class="bridge-wrap">
+        <div class="monster">
+          <img class="pose pose-hold" src="img/monster/hold_strawberry.png" alt="小馋怪抱着草莓">
+          <img class="pose pose-walk" src="img/monster/walk_side.png" alt="">
+          <img class="pose pose-cry" src="img/monster/cry.png" alt="">
+        </div>
+        <div class="bridge-goal"></div>
+        <div class="bridge"><div class="bridge-fill" style="width: 15%"></div></div>
+        <div class="start-dot"></div>
+      </div>
+
+      <div class="stat"><span class="stat-num">18</span><span class="stat-unit">/ 120 词</span></div>
+      <div class="faint">新词 42 · 旧词 78</div>
+    </div>
+
+    <button class="cta">继续 · 还剩 102 个词</button>
+
+    <div class="tabbar">
+      <div class="tab on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        学习
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 6h11M8 12h11M8 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>
+        </svg>
+        词表
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6 20 20"/>
+        </svg>
+        查词
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4l2.4 4.6 5.1.8-3.7 3.6.9 5.1-4.7-2.4-4.7 2.4.9-5.1L4.5 9.4l5.1-.8z"/>
+        </svg>
+        比赛
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 19.5c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/>
+        </svg>
+        我
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="notes">
+  <h3>方案二 · 它守在桥那头（角色即进度）</h3>
+  一条桥面横贯页面：绿色是你已经夺回的词，小馋怪被逼在剩下的那一头（位置 = 还没学的比例），脚下那枚小圆点是你今天出发的地方。<br>
+  这条桥面就是打哭小馋怪的同一座桥——首页与玩法共用一套世界观，学得越多它退得越远；学满它换姿势哭着跑。<br>
+  代价：角色与进度绑死，位置要跟着数据动（进度 0 时它贴在最右边）。
+</div>
+
+</body>
+</html>

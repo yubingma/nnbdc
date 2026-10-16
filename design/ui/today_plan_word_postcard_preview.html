@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>今日词画报 · 记忆守护兽水位（首页去同质化原型）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --num: Roboto, ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  /* ============ 深空·夜读（默认） ============ */
+  .device-mockup[data-theme="deep"] {
+    background: var(--page-bg);
+    --page-bg:
+      radial-gradient(120% 76% at 50% -6%, rgba(52, 211, 153, 0.13), transparent 58%),
+      radial-gradient(88% 56% at 86% 102%, rgba(56, 189, 248, 0.07), transparent 62%),
+      #090F13;
+    --ink: #F1F5F4;
+    --ink-sub: rgba(241, 245, 244, 0.60);
+    --ink-faint: rgba(241, 245, 244, 0.34);
+    --accent: #34D399;
+    --accent-solid: #10B981;
+    --accent-ink: #FFFFFF;
+    --seal: #E07A6E;
+    --disc-ring: rgba(255, 255, 255, 0.10);
+    --disc-glow: rgba(52, 211, 153, 0.22);
+    --hair: rgba(255, 255, 255, 0.09);
+    --hair-soft: rgba(255, 255, 255, 0.045);
+    --track: rgba(255, 255, 255, 0.09);
+    --cta-shadow: 0 10px 26px -8px rgba(16, 185, 129, 0.55);
+    --star: rgba(255, 255, 255, 0.30);
+    color: var(--ink);
+  }
+
+  /* ============ 宣纸·日读 ============ */
+  .device-mockup[data-theme="light"] {
+    background: var(--page-bg);
+    --page-bg:
+      radial-gradient(120% 76% at 50% -6%, rgba(16, 185, 129, 0.09), transparent 58%),
+      #F7F8F6;
+    --ink: #0F172A;
+    --ink-sub: rgba(15, 23, 42, 0.58);
+    --ink-faint: rgba(15, 23, 42, 0.34);
+    --accent: #10B981;
+    --accent-solid: #10B981;
+    --accent-ink: #FFFFFF;
+    --seal: #B8452F;
+    --disc-ring: rgba(15, 23, 42, 0.05);
+    --disc-glow: rgba(16, 185, 129, 0.14);
+    --hair: rgba(15, 23, 42, 0.075);
+    --hair-soft: rgba(15, 23, 42, 0.04);
+    --track: rgba(15, 23, 42, 0.07);
+    --cta-shadow: 0 10px 24px -10px rgba(16, 185, 129, 0.5);
+    --star: rgba(15, 23, 42, 0.10);
+    color: var(--ink);
+  }
+
+  /* ---------- 真机壳外的预览工具条（渲染真机图时会被统一模具脚本自动隐藏） ---------- */
+  body {
+    background: #0C1014;
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+    color: #E5E7EB;
+  }
+
+  .toolbar {
+    width: 100%;
+    max-width: 440px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toolbar-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .toolbar-title span {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 99px;
+    background: rgba(16, 185, 129, 0.16);
+    color: #34D399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+
+  .toolbar-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .toolbar button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #E5E7EB;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .toolbar button:hover { background: rgba(255, 255, 255, 0.14); }
+  .toolbar button.active { background: #10B981; border-color: #10B981; color: #FFFFFF; }
+
+  .design-notes {
+    width: 100%;
+    max-width: 440px;
+    margin-top: 22px;
+    font-size: 12px;
+    line-height: 1.85;
+    color: #9CA3AF;
+  }
+
+  .design-notes h3 { font-size: 12.5px; color: #E5E7EB; margin-bottom: 6px; font-weight: 600; }
+  .design-notes code { font-family: var(--num); font-size: 11.5px; color: #A7F3D0; }
+
+  /* ================= 屏幕内部 ================= */
+  .screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 22px;
+    position: relative;
+    overflow: hidden;
+    /* 渐变铺在设备层，状态栏那 44px 与屏幕内共用同一张底，不会露出一条白带 */
+    background: transparent;
+  }
+
+  /* 极缓的星点层：让静态底也有呼吸，替代公共风景照片 */
+  .screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1.4px 1.4px at 18% 12%, var(--star), transparent 100%),
+      radial-gradient(1.2px 1.2px at 78% 9%, var(--star), transparent 100%),
+      radial-gradient(1px 1px at 62% 26%, var(--star), transparent 100%),
+      radial-gradient(1.4px 1.4px at 33% 34%, var(--star), transparent 100%),
+      radial-gradient(1px 1px at 88% 42%, var(--star), transparent 100%),
+      radial-gradient(1.2px 1.2px at 9% 56%, var(--star), transparent 100%);
+    opacity: 0.55;
+    animation: drift 9s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift {
+    from { opacity: 0.38; }
+    to { opacity: 0.62; }
+  }
+
+  /* ---------- 顶部：只留一个只属于这个用户的身份行 ---------- */
+  .topbar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+  }
+
+  .day-line {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: 1.1px;
+  }
+
+  .day-line b {
+    font-family: var(--num);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-sub);
+    letter-spacing: 0;
+    margin: 0 2px;
+  }
+
+  .topbar-icons { display: flex; align-items: center; gap: 16px; }
+  .topbar-icons svg { width: 19px; height: 19px; color: var(--ink-faint); }
+
+  /* ---------- 今日词画报（主角） ---------- */
+  .postcard {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    padding-bottom: 8px;
+  }
+
+  .disc-wrap { position: relative; }
+
+  .disc {
+    width: 158px;
+    height: 158px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #FFFFFF;
+    box-shadow:
+      0 0 0 1px var(--disc-ring),
+      0 18px 40px -14px rgba(0, 0, 0, 0.45),
+      0 0 64px -6px var(--disc-glow);
+  }
+
+  .disc img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* 打卡落印：学完才盖上去的那一枚 */
+  .stamp {
+    position: absolute;
+    right: -20px;
+    bottom: -6px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 1.5px solid var(--seal);
+    box-shadow: inset 0 0 0 3px transparent, inset 0 0 0 4px var(--seal);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    transform: rotate(-9deg) scale(0.6);
+    opacity: 0;
+    transition: all 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+    background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06), transparent 70%);
+  }
+
+  .stamp span {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--seal);
+    letter-spacing: 1.2px;
+    line-height: 1;
+  }
+
+  .stamp em {
+    font-family: var(--num);
+    font-style: normal;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--seal);
+    opacity: 0.85;
+    letter-spacing: 0.4px;
+  }
+
+  .device-mockup[data-state="done"] .stamp { opacity: 0.92; transform: rotate(-9deg) scale(1); }
+
+  .word-row {
+    margin-top: 22px;
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+
+  .word {
+    font-family: var(--num);
+    font-size: 38px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -1.1px;
+    line-height: 1;
+  }
+
+  .phonetic {
+    font-family: var(--num);
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--ink-faint);
+    letter-spacing: 0.1px;
+  }
+
+  .core-phrase {
+    margin-top: 11px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 1.3px;
+  }
+
+  /* 从核心意象生长出去的释义：外侧两根线更长，形成扇形 */
+  .branches {
+    margin-top: 2px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 18px;
+  }
+
+  .branch { display: flex; flex-direction: column; align-items: center; }
+
+  .stem {
+    width: 1px;
+    background: linear-gradient(to bottom, var(--hair), transparent);
+  }
+
+  .branch.far .stem { height: 30px; }
+  .branch.near .stem { height: 15px; }
+
+  .node {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-sub);
+    white-space: nowrap;
+    letter-spacing: -0.1px;
+  }
+
+  .node em {
+    font-style: normal;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    margin-right: 3px;
+  }
+
+  /* 意象解读兜在扇形下面：一行小字说明这些释义为什么是同一个意思 */
+  .gloss {
+    margin-top: 26px;
+    max-width: 296px;
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 400;
+    line-height: 1.8;
+    color: var(--ink-faint);
+    letter-spacing: 0.1px;
+  }
+
+  /* ---------- 记忆守护兽 · 水位进度 ---------- */
+  .pet-stage {
+    position: relative;
+    height: 152px;
+    flex-shrink: 0;
+    z-index: 2;
+  }
+
+  .pet-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .pet-track {
+    position: absolute;
+    left: 26px;
+    right: 26px;
+    bottom: 20px;
+    height: 3.5px;
+    border-radius: 2px;
+    background: var(--track);
+    overflow: hidden;
+  }
+
+  .pet-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: calc(var(--p) * 100%);
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .goal-line {
+    position: absolute;
+    right: 26px;
+    bottom: 13px;
+    height: 14px;
+    width: 1px;
+    background: var(--hair);
+  }
+
+  .pet {
+    position: absolute;
+    bottom: 23px;
+    left: calc(26px + (100% - 52px) * var(--p) - 25px);
+    width: 50px;
+    height: 96px;
+    transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: petBob 3.4s ease-in-out infinite alternate;
+  }
+
+  @keyframes petBob {
+    from { transform: translateY(0); }
+    to { transform: translateY(-3.5px); }
+  }
+
+  .pet img { position: absolute; object-fit: contain; }
+
+  .pet-body { inset: 0; width: 100%; height: 100%; }
+  .pet-core { left: 15%; top: 48%; width: 70%; height: 38%; opacity: 0.75; }
+
+  .pet-mood {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .device-mockup[data-state="idle"] .pet-mood-sleepy,
+  .device-mockup[data-state="study"] .pet-mood-excited,
+  .device-mockup[data-state="done"] .pet-mood-happy { opacity: 1; }
+
+  .pet-count { display: flex; align-items: baseline; gap: 3px; flex-shrink: 0; }
+
+  .pet-count b {
+    font-family: var(--num);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.4px;
+  }
+
+  .pet-count span {
+    font-family: var(--num);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: 0.2px;
+  }
+
+  .pet-hint {
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--ink-faint);
+    letter-spacing: 0.2px;
+  }
+
+  .device-mockup[data-state="idle"] .pet-hint::after { content: "守护兽还没醒，等你翻开第一页"; }
+  .device-mockup[data-state="study"] .pet-hint::after { content: "它正浮在你今天走过的水位上"; }
+  .device-mockup[data-state="done"] .pet-hint::after { content: "今天的意象已经落印归档"; }
+
+  /* ---------- 唯一黄金行动点 ---------- */
+  .cta {
+    height: 52px;
+    flex-shrink: 0;
+    margin-bottom: 16px;
+    border: none;
+    border-radius: 26px;
+    background: var(--accent-solid);
+    color: var(--accent-ink);
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: var(--cta-shadow);
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ---------- 底栏 ---------- */
+  .tabbar {
+    height: 62px;
+    flex-shrink: 0;
+    padding-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    position: relative;
+    z-index: 2;
+  }
+
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: 0.2px;
+  }
+
+  .tab svg { width: 21px; height: 21px; }
+
+  .tab.on { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ============ 预览工具条（真机图渲染时被自动隐藏） ============ -->
+<div class="toolbar">
+  <div class="toolbar-title">今日词画报 + 记忆守护兽水位<span>去同质化方向</span></div>
+  <div class="toolbar-row">
+    <button onclick="setState('idle', this)">还没开始</button>
+    <button class="active" onclick="setState('study', this)">学习中 15%</button>
+    <button onclick="setState('done', this)">已打卡落印</button>
+  </div>
+  <div class="toolbar-row">
+    <button class="active" onclick="setTheme('deep', this)">深空·夜读</button>
+    <button onclick="setTheme('light', this)">宣纸·日读</button>
+  </div>
+</div>
+
+<div class="device-mockup" id="mockup" data-state="study" data-theme="deep">
+  <div class="screen">
+
+    <!-- 顶部身份行：第 N 个背词日（永不归零），替代通用的「今日学习计划」标题 -->
+    <div class="topbar">
+      <div class="day-line">TODAY · 第 <b>137</b> 个背词日</div>
+      <div class="topbar-icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="5.5" r="1.3"/>
+          <circle cx="12" cy="12" r="1.3"/>
+          <circle cx="12" cy="18.5" r="1.3"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 今日词画报：主角 = 今天第一个有核心意象的词的意象图 -->
+    <div class="postcard">
+      <div class="disc-wrap">
+        <div class="disc">
+          <img src="img/core_images/core_11564_conform.jpeg" alt="conform 的核心意象：同模成形">
+        </div>
+        <div class="stamp"><span>今日之印</span><em>10.16</em></div>
+      </div>
+
+      <div class="word-row">
+        <span class="word">conform</span>
+        <span class="phonetic">/kənˈfɔːrm/</span>
+      </div>
+
+      <div class="core-phrase">同 模 成 形</div>
+
+      <!-- 释义由核心意象生长出来，而不是一张并列的释义表 -->
+      <div class="branches">
+        <div class="branch far"><span class="stem"></span><span class="node"><em>vi.</em>符合</span></div>
+        <div class="branch near"><span class="stem"></span><span class="node"><em>vt.</em>使一致</span></div>
+        <div class="branch near"><span class="stem"></span><span class="node"><em>vi.</em>遵照</span></div>
+        <div class="branch far"><span class="stem"></span><span class="node"><em>adj.</em>顺从</span></div>
+      </div>
+
+      <div class="gloss">大家共用同一个模具：把自己的形状调整到和模具一样，就引申为符合与适应。</div>
+    </div>
+
+    <!-- 记忆守护兽：它就是进度本身 -->
+    <div class="pet-stage">
+      <div class="pet-meta">
+        <span class="pet-hint"></span>
+        <div class="pet-count"><b id="doneNum">0</b><span>/ 120 步</span></div>
+      </div>
+      <div class="pet-track"><div class="pet-fill"></div></div>
+      <div class="goal-line"></div>
+      <div class="pet">
+        <img class="pet-body" src="img/pet/guardian_body.png" alt="记忆守护兽">
+        <img class="pet-mood pet-mood-sleepy" src="img/pet/mood_sleepy.png" alt="">
+        <img class="pet-mood pet-mood-excited" src="img/pet/mood_excited.png" alt="">
+        <img class="pet-mood pet-mood-happy" src="img/pet/mood_happy.png" alt="">
+        <img class="pet-core" src="img/pet/guardian_core.png" alt="">
+      </div>
+    </div>
+
+    <button class="cta" id="ctaBtn">开始今天的 120 步</button>
+
+    <div class="tabbar">
+      <div class="tab on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z"/>
+          <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9A1.5 1.5 0 0 0 20 15.9z"/>
+        </svg>
+        学习
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 6h11M8 12h11M8 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>
+        </svg>
+        词表
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6 20 20"/>
+        </svg>
+        查词
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4l2.4 4.6 5.1.8-3.7 3.6.9 5.1-4.7-2.4-4.7 2.4.9-5.1L4.5 9.4l5.1-.8z"/>
+        </svg>
+        比赛
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 19.5c0-3.3 2.9-5.4 6.5-5.4s6.5 2.1 6.5 5.4"/>
+        </svg>
+        我
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ 设计说明（真机图渲染时被自动隐藏） ============ -->
+<div class="design-notes">
+  <h3>这一版换掉了什么</h3>
+  1. <strong>中心的日历签到印章</strong>（细描边日历/对勾 + 已打卡 + 日期）→ 换成「今日词画报」：以今天第一个有核心意象的词的意象图为主角，多个释义从核心意象生长出去。<br>
+  2. <strong>3.5px 细胶囊进度条</strong> → 换成记忆守护兽趴在「水位线」上：它就是进度本身，前面是走过的水量，身后是今天还没走的。<br>
+  3. <strong>公共风景壁纸</strong> → 换成极简深空底 + 极缓星点，把视觉焦点让给意象图。<br>
+  4. <strong>通用的「TODAY'S PLAN / 今日学习计划」标题</strong> → 换成只属于这个用户的「第 137 个背词日」（背词日序数，永不归零）。<br>
+  5. <strong>打卡成功</strong> → 在画报上盖一枚「今日之印」，当天学的那个意象就成了这一天的印记。<br>
+  <br>
+  <h3>落地时的真实数据约束</h3>
+  生产库 <code>word_core_image</code> 现有 41681 条核心意象记录，其中已生成图片的 8706 条（全库 79474 词的约 11%），有核心意象文字但还没出图的 32975 条。<br>
+  所以画报是<b>两档一等公民</b>：<b>有图档</b>出意象图；<b>排版档</b>把核心意象短语（如「同模成形」）用大字号排版驱动呈现，配同样的释义生长结构，不依赖图片。<br>
+  主角选取规则：从「今天要学的词」里取第一个有核心意象的词；今天这批一个都没有时，才退回今日第一个新词。<br>
+  <br>
+  <h3>素材说明</h3>
+  意象图：<code>design/ui/img/core_images/core_11564_conform.jpeg</code>（生产库真实词核心图，词条 conform「同模成形」，释义取自其 <code>topology_json</code>）。<br>
+  守护兽：<code>design/ui/img/pet/</code> 下的三层素材副本，原件是 App 现有的 <code>app/assets/images/pet/</code>（身体层 + 表情层 + 光核层），没有新画任何图。<br>
+  <b>注意</b>：原型里的图片路径不能跨出 <code>design/ui/</code> 目录（渲染时 HTML 被复制到 <code>/tmp</code> 再打开，<code>../</code> 跨上级的 file:// 资源一律加载失败），所以 App 素材必须复制副本进 <code>design/ui/img/</code>；App 里的守护兽素材更新后，副本要跟着复制一次。
+</div>
+
+<script>
+  const STATE = {
+    idle:  { p: 0,    num: 0,   cta: '开始今天的 120 步' },
+    study: { p: 0.15, num: 18,  cta: '继续 · 还剩 102 步' },
+    done:  { p: 1,    num: 120, cta: '今天已完成 · 明天见' },
+  };
+
+  const mockup = document.getElementById('mockup');
+
+  function setState(key, btn) {
+    const s = STATE[key];
+    mockup.dataset.state = key;
+    mockup.style.setProperty('--p', s.p);
+    document.getElementById('doneNum').textContent = s.num;
+    document.getElementById('ctaBtn').textContent = s.cta;
+    if (btn) {
+      document.querySelectorAll('.toolbar-row')[0].querySelectorAll('button')
+        .forEach(b => b.classList.toggle('active', b === btn));
+    }
+  }
+
+  function setTheme(key, btn) {
+    mockup.dataset.theme = key;
+    if (btn) {
+      document.querySelectorAll('.toolbar-row')[1].querySelectorAll('button')
+        .forEach(b => b.classList.toggle('active', b === btn));
+    }
+  }
+
+  setState('study');
+  setTheme('deep');
+</script>
+</body>
+</html>
