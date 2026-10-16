@@ -183,9 +183,9 @@ class Tts {
 
       completedUtterances.remove(utteranceId);
     } on PlatformException catch (e) {
-      ErrorHandler.handleError(e, null, logPrefix: 'TTS异常', showToast: false);
+      ErrorHandler.handleAudioError(e, null, audioType: 'TTS 发音');
     } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: 'TTS异常', showToast: false);
+      ErrorHandler.handleAudioError(e, stackTrace, audioType: 'TTS 发音');
     } finally {
       if (generation == _currentGeneration) {
         _isSpeaking = false;
@@ -216,8 +216,7 @@ class Tts {
     try {
       await methodChannel.invokeMethod('stop');
     } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace,
-          logPrefix: 'TTS停止异常', showToast: false);
+      ErrorHandler.handleAudioError(e, stackTrace, audioType: 'TTS 停止');
     }
   }
 

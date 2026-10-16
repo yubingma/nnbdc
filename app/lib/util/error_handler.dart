@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/client_error_reporter.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -88,6 +89,24 @@ class ErrorHandler {
     });
   }
 
+  /// 把一次异常上报服务端（旁路、静默失败，不阻断也不改变任何业务行为）。
+  ///
+  /// 为什么必须做这一步：本机那张 `local_exceptions` 表客户自己看不到、我们也拿不到，
+  /// 异常写进去等于石沉大海。只有到了服务端 `sys_error` 表，才进得了管理端「服务端异常日志」
+  /// 并按分类触发告警邮件。
+  ///
+  /// [scene] 是聚合与去重的维度，用现场能看懂的短名（如 `准备学习单词`）：
+  /// 同一个场景同一天只报一条，且每个分类当日有条数上限，成批故障不会刷屏。
+  static void _reportFailure(
+      String errorType, String? scene, dynamic error, StackTrace? stackTrace) {
+    final sceneName = (scene == null || scene.trim().isEmpty) ? '未知场景' : scene.trim();
+    unawaited(reportClientFailure(
+      errorType: errorType,
+      scene: sceneName,
+      details: '错误=$error\n${stackTrace ?? ''}',
+    ));
+  }
+
   /// 处理一般异常，包含日志记录和用户提示
   static void handleError(
     dynamic error,
@@ -96,6 +115,7 @@ class ErrorHandler {
     String? logPrefix,
     bool showToast = true,
     MyDatabase? db,
+    String errorType = kClientFeatureErrorType,
   }) {
     // 记录统计
     _recordErrorStats(logPrefix ?? 'general');
@@ -107,6 +127,9 @@ class ErrorHandler {
 
     // 异步记录异常到数据库（不等待，避免阻塞）
     _recordExceptionToDb(error, stackTrace, context: logPrefix, explicitDb: db);
+
+    // 上报服务端
+    _reportFailure(errorType, logPrefix, error, stackTrace);
 
     if (showToast) {
       final displayMessage = userMessage != null ? '$userMessage ($error)' : '操作失败: $error';
@@ -137,6 +160,9 @@ class ErrorHandler {
     // 检测是否是表不存在的错误，如果是则自动重建数据库
     if (_isTableNotFoundError(error)) {
       Global.logger.w('⚠️ 检测到表不存在错误，自动重建数据库...');
+      // 表缺失（升级缺脚本、库文件损坏）是灾难级故障：即便重建成功也要让人知道有多少台设备撞上过。
+      // 场景名固定，便于按"发生过多少次"聚合，而不是散在各个 operation 上。
+      _reportFailure(kClientDbErrorType, '表缺失触发重建', error, stackTrace);
       try {
         // 直接调用 wipeAllTables 来重建数据库，并在 root zone 中运行
         if (myDb != null) {
@@ -168,7 +194,10 @@ class ErrorHandler {
     // 4. 异步记录异常到数据库（不等待，避免阻塞）
     _recordExceptionToDb(error, stackTrace, context: '数据库操作: ${operation ?? "未知"}', explicitDb: myDb);
 
-    // 5. 用户提示
+    // 5. 上报服务端（本地库坏了直接关系到用户数据会不会丢，必须让人知道）
+    _reportFailure(kClientDbErrorType, operation, error, stackTrace);
+
+    // 6. 用户提示
     if (showToast) {
       final userMessage = '数据操作失败: $error';
       ToastUtil.error(userMessage);
@@ -289,6 +318,9 @@ class ErrorHandler {
     // 仍记录到数据库以便后台分析
     _recordExceptionToDb(error, stackTrace, context: logPrefix);
 
+    // 上报服务端（服务端按"瞬时网络抖动"处理：只落库、不发告警邮件）
+    _reportFailure(kClientNetworkErrorType, api, error, stackTrace);
+
     if (showToast) {
       ToastUtil.error(userMessage);
     }
@@ -325,6 +357,7 @@ class ErrorHandler {
       userMessage: '音频播放失败',
       logPrefix: logPrefix,
       showToast: showToast,
+      errorType: kClientAudioErrorType,
     );
   }
 

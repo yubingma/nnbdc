@@ -144,6 +144,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                       // 误当成自己写错（历史问题：超时返回空串被当成"答案不正确或未写完整"）
                       onRecognizeFailed: () {
                         ToastUtil.error('手写识别失败，请重写');
+                        // 手写识别服务起不来（模型没下载完/原生通道失败）用户就没法作答，
+                        // 这种"功能坏了"必须留现场，否则只看到用户反复重写
+                        unawaited(reportClientFailure(
+                          errorType: kClientFeatureErrorType,
+                          scene: '手写识别失败',
+                          details: '手写板识别失败或超时（可能是模型未就绪或原生识别通道异常）',
+                        ));
                       },
                       // 落笔接管的当刻读取输入框文本，作为本次手写答案的前缀（"打字→手写"不丢键盘内容）
                       onReadCurrentText: () => notifier.meaningController.text,

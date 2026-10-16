@@ -16,6 +16,7 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/client_error_reporter.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/ai_service.dart';
 import 'package:nnbdc/services/ai_model_manager.dart';
@@ -162,6 +163,14 @@ void main() async {
               'stack': details.stack?.toString() ?? ''
             });
           }
+
+          // 上报服务端：白屏/闪退过去只躺在友盟后台，不在告警体系里；
+          // 崩溃是最该第一时间知道的一类，把现场带进 sys_error。
+          unawaited(reportClientFailure(
+            errorType: kClientCrashErrorType,
+            scene: '框架错误',
+            details: '${details.exceptionAsString()}\n${details.stack ?? ''}',
+          ));
         }
       };
 
@@ -185,6 +194,13 @@ void main() async {
             'stack': stack.toString()
           });
         }
+
+        // 上报服务端（同上：错误已经被这个回调咽掉，不报就没人知道）
+        unawaited(reportClientFailure(
+          errorType: kClientCrashErrorType,
+          scene: '平台/异步错误',
+          details: '$error\n$stack',
+        ));
 
         return true; // 返回true表示错误已处理
       };
@@ -274,6 +290,12 @@ void main() async {
           if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
             unawaited(OcrService.prepareModel().catchError((e) {
               Global.logger.w('后台准备手写识别模型失败: $e');
+              // 模型没准备好 → 用户一开手写板就"识别失败，请重写"，属于功能不可用
+              unawaited(reportClientFailure(
+                errorType: kClientFeatureErrorType,
+                scene: '手写模型准备失败',
+                details: '$e',
+              ));
             }));
           }
           logMark('首帧回调完毕');
@@ -311,6 +333,13 @@ void main() async {
           'stack': stack.toString()
         });
       }
+
+      // 上报服务端（Zone 兜住的异常同样只在这里过一手，不报就没人知道）
+      unawaited(reportClientFailure(
+        errorType: kClientCrashErrorType,
+        scene: 'Zone 未捕获异常',
+        details: '$error\n$stack',
+      ));
     },
   );
 }

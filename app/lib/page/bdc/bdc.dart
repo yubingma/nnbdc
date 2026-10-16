@@ -36,6 +36,7 @@ import '../../services/level_service.dart';
 import '../../theme/app_theme.dart';
 import '../../util/analytics_util.dart';
 import '../../util/app_clock.dart';
+import '../../util/client_error_reporter.dart';
 import '../../util/learning_service.dart';
 import '../../util/study_config.dart';
 import '../../util/study_steps_service.dart';

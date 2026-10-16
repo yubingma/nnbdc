@@ -14,7 +14,6 @@ import 'package:nnbdc/services/sync_progress.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/client_error_reporter.dart';
-import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 
@@ -151,7 +150,11 @@ Future<void> completeSyncLog(
       logId: _currentSyncLogId!,
       errorMessage: errorMessage ?? '同步失败',
     );
-    _reportSysErrorToServer(errorMessage ?? '同步失败', _syncErrorTypeOf(error));
+    // 同步失败每轮至多一次，不需要去重限流，直接上报
+    await reportClientError(
+      errorType: _syncErrorTypeOf(error),
+      details: errorMessage ?? '同步失败',
+    );
   }
   clearCurrentSyncLogId();
 }
@@ -168,71 +171,28 @@ String _syncErrorTypeOf(Object? error) {
       : 'CLIENT_SYNC_ERROR';
 }
 
-/// 异步旁路向服务端上报客户端同步与系统异常（不阻断主流程，静默失败）
-///
-/// 实现统一收拢在 [reportClientError]：那里负责补上客户端平台与版本、
-/// 调服务端接口并静默咽下自己的失败。这里只保留同步域的调用口径。
-void _reportSysErrorToServer(String errorMessage, [String errorType = 'CLIENT_SYNC_ERROR']) {
-  unawaited(reportClientError(errorType: errorType, details: errorMessage));
-}
-
 /// 客户端数据不自洽的上报分类。服务端按分类独立告警，避免被同步失败等噪音压制。
 const String kClientDataInconsistentErrorType = 'CLIENT_DATA_INCONSISTENT';
 
 /// "同一次作答被计分两次"的上报分类（是"数据不自洽"的上游成因，单独归类便于第一时间定位）
 const String kClientDuplicateGradeErrorType = 'CLIENT_DUPLICATE_GRADE';
 
-/// 每个业务日最多上报多少条这类客户端数据问题，避免一个批量问题把服务端刷屏
-@visibleForTesting
-const int maxConsistencyReportsPerDay = 10;
-
-/// 本次会话内已上报过的"规则|业务日|单词"，同一条问题只报一次
-final Set<String> _reportedConsistencyKeys = {};
-
-/// 今天已上报的条数与所属业务日（跨天自动重置）
-int _consistencyReportsToday = 0;
-String? _consistencyReportBusinessDay;
-
-/// 领取一次上报额度：按"规则|业务日|单词"去重、每个业务日有总量上限。
-/// 返回 null 表示这次不该报（重复或已达上限）。
-///
-/// 这类问题一旦出现就是成批的（纪白那次 17 毫秒里命中 18 个词），
-/// 没有这个闸门会瞬间把服务端刷屏、把真正要处理的告警淹掉，所以它本身也要有测试兜着。
-@visibleForTesting
-String? claimConsistencyReportSlot(String ruleId, String wordId) {
-  final businessDay = DateUtils.businessDayStart(AppClock.now()).toIso8601String();
-  if (_consistencyReportBusinessDay != businessDay) {
-    _consistencyReportBusinessDay = businessDay;
-    _consistencyReportsToday = 0;
-    _reportedConsistencyKeys.clear();
-  }
-
-  final dedupeKey = '$ruleId|$businessDay|$wordId';
-  if (_reportedConsistencyKeys.contains(dedupeKey)) return null;
-  if (_consistencyReportsToday >= maxConsistencyReportsPerDay) {
-    Global.logger.d('📊 [Consistency] 本业务日客户端数据问题上报已达上限，跳过: $dedupeKey');
-    return null;
-  }
-  _reportedConsistencyKeys.add(dedupeKey);
-  _consistencyReportsToday++;
-  return dedupeKey;
-}
-
 /// 把一个业务日内同一个词的数据不自洽上报服务端（只上报，绝不修数据）。
 ///
-/// 同一会话内同一条不自洽只报一次，且每个业务日有总量上限：
-/// 这类问题一旦出现就是成批的，不做去重与限流会把真正要处理的告警淹没。
+/// 去重与限流交给 [reportClientFailure]（按「分类 + 业务日 + 场景」去重、
+/// 每个分类当日总量上限）：这类问题一旦出现就是成批的（纪白那次 17 毫秒里命中 18 个词），
+/// 不做去重与限流会把真正要处理的告警淹没。
+///
+/// 场景键取「规则 + 单词」：既保证同一条不自洽只报一次，又不让不同规则互相压制。
 Future<void> reportStudyConsistency(StudyConsistencyViolation violation) async {
   final user = Global.getLoggedInUser();
   if (user == null) return;
-  if (claimConsistencyReportSlot(violation.rule.ruleId, violation.wordId) == null) {
-    return;
-  }
 
   final version = await resolveClientVersion();
-  _reportSysErrorToServer(
-    violation.toMessage(version),
-    kClientDataInconsistentErrorType,
+  await reportClientFailure(
+    errorType: kClientDataInconsistentErrorType,
+    scene: '${violation.rule.ruleId}|${violation.wordId}',
+    details: violation.toMessage(version),
   );
 }
 
@@ -243,14 +203,12 @@ Future<void> reportStudyConsistency(StudyConsistencyViolation violation) async {
 Future<void> reportDuplicateGrade(DuplicateGradeViolation violation) async {
   final user = Global.getLoggedInUser();
   if (user == null) return;
-  if (claimConsistencyReportSlot('duplicate_grade', violation.wordId) == null) {
-    return;
-  }
 
   final version = await resolveClientVersion();
-  _reportSysErrorToServer(
-    violation.toMessage(version),
-    kClientDuplicateGradeErrorType,
+  await reportClientFailure(
+    errorType: kClientDuplicateGradeErrorType,
+    scene: 'duplicate_grade|${violation.wordId}',
+    details: violation.toMessage(version),
   );
 }
 

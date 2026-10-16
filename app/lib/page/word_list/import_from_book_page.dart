@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../services/dialog_service.dart';
 import '../../api/bo/word_bo.dart';
 import '../../api/vo.dart';
 import '../../db/db.dart';
 import '../../global.dart';
+import '../../util/client_error_reporter.dart';
 import '../../util/toast_util.dart';
 import '../../widget/app_scaffold.dart';
 import '../../widget/dict_book_icon.dart';
@@ -143,6 +146,12 @@ class ImportFromBookPageState extends State<ImportFromBookPage> {
       await _loadDicts();
     } catch (e) {
       Global.logger.e('从词书导入-下载失败: $e');
+      // 词书下不下来就学不了：用户侧只看到一句"请稍后重试"，我们这边什么都没有
+      unawaited(reportClientFailure(
+        errorType: kClientFeatureErrorType,
+        scene: '从词书导入-下载失败',
+        details: '$e',
+      ));
       if (mounted) {
         ToastUtil.error('词书下载失败，请稍后重试');
       }

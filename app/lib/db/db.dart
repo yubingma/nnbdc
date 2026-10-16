@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle, ByteData;
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/client_error_reporter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:nnbdc/db/dao.dart';
@@ -217,6 +219,13 @@ class MyDatabase extends _$MyDatabase {
         'app_version': Global.version,
         'reason': rebuildReason ?? 'users_table_missing',
       });
+      // 同样送进告警体系：静默删库若只躺在友盟，等于线上大面积丢本地数据却没人知道
+      unawaited(reportClientFailure(
+        errorType: kClientDbErrorType,
+        scene: '完整性检查失败删库重建',
+        details: '原因=${rebuildReason ?? 'users_table_missing'}\n'
+            '客户端版本=${Global.version}',
+      ));
       await db.wipeAllTables();
       Global.logger.i('✅ 数据库自动重建完成');
     } catch (e, stackTrace) {
@@ -487,6 +496,12 @@ class MyDatabase extends _$MyDatabase {
                 'stage': 'migration_56_57',
                 'error': '$e',
               });
+              // 学习记录修复失败 = 该设备的重复计分没清掉，属于数据问题，要进告警体系
+              unawaited(reportClientFailure(
+                errorType: kClientDbErrorType,
+                scene: '重复计分修复失败(迁移 56→57)',
+                details: '$e',
+              ));
             }
           }
           // 从版本 57 升级到版本 58：新建记忆守护兽养成状态表
@@ -523,6 +538,15 @@ class MyDatabase extends _$MyDatabase {
             'error_type': e.runtimeType.toString(),
             'error': _briefError(e),
           });
+          // 同一个信号也送进告警体系：友盟埋点要人主动去看，而"升级失败要删库重建"
+          // 是决定要不要紧急发版的信号，必须自己找上门来
+          unawaited(reportClientFailure(
+            errorType: kClientDbErrorType,
+            scene: '升级失败删库重建',
+            details: '版本 $from → $to\n'
+                '错误=${e.runtimeType}: ${_briefError(e)}\n'
+                '客户端版本=${Global.version}',
+          ));
 
           // 给用户提示
           _showDatabaseRebuildNotification();
@@ -1724,6 +1748,12 @@ class MyDatabase extends _$MyDatabase {
       Global.logger.i('🎉 数据库重建完成');
     } catch (e, stackTrace) {
       Global.logger.e('❌ 重建数据库失败: $e', error: e, stackTrace: stackTrace);
+      // 重建失败 = 本地库彻底不可用，用户重启也好不了。这是最该找上门来的一类。
+      unawaited(reportClientFailure(
+        errorType: kClientDbErrorType,
+        scene: '数据库重建失败',
+        details: '错误=${e.runtimeType}: ${_briefError(e)}\n$stackTrace',
+      ));
       // 重建失败时也提示用户
       _showDatabaseRebuildFailureNotification();
       rethrow;

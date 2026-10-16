@@ -8,6 +8,7 @@ import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/pinyin.dart';
@@ -1143,6 +1144,8 @@ class StudyAudioSessionController {
         Global.logger.i('🔊 [SessionController] 播放中止: $soundUrl');
       } else {
         Global.logger.e('播放异常: $soundUrl', error: e, stackTrace: st);
+        // 用户侧表现是"点了喇叭没声音"：进统一异常处理，才会到达服务端告警（本机日志客户看不到）
+        ErrorHandler.handleAudioError(e, st, audioType: '单词/例句发音');
         // 播放过程异常且非主动中止时，尝试 TTS 容灾兜底
         if (fallbackText != null && fallbackText.trim().isNotEmpty) {
           try {

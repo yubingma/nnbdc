@@ -12,6 +12,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/services/user_privilege_manager.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/client_error_reporter.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 
@@ -234,10 +235,23 @@ class SubscriptionUtil {
       }
 
       ToastUtil.error(errorMessage);
+      // 购买异常涉及钱：除了用户自己取消（主动行为，不报），其余一律上报现场
+      if (e.code != 'user_cancelled') {
+        unawaited(reportClientFailure(
+          errorType: kClientPaymentErrorType,
+          scene: '拉起购买异常',
+          details: '错误码=${e.code}\n说明=$errorMessage\n$stackTrace',
+        ));
+      }
       return false;
     } catch (e, stackTrace) {
       Global.logger.e('购买异常', error: e, stackTrace: stackTrace);
       ToastUtil.error('购买失败，请重试');
+      unawaited(reportClientFailure(
+        errorType: kClientPaymentErrorType,
+        scene: '拉起购买异常',
+        details: '$e\n$stackTrace',
+      ));
       return false;
     }
   }
@@ -315,6 +329,13 @@ class SubscriptionUtil {
     if (purchaseDetails.status == PurchaseStatus.error) {
       Global.logger.e('购买失败: ${purchaseDetails.error}');
       if (_showToasts) ToastUtil.error('购买失败: ${purchaseDetails.error?.message ?? "未知错误"}');
+      unawaited(reportClientFailure(
+        errorType: kClientPaymentErrorType,
+        scene: '购买流水失败',
+        details: '商品=${purchaseDetails.productID}\n'
+            '错误=${purchaseDetails.error?.message ?? purchaseDetails.error}\n'
+            '错误码=${purchaseDetails.error?.code}',
+      ));
       if (purchaseDetails.pendingCompletePurchase) {
         await _iap.completePurchase(purchaseDetails);
       }
@@ -355,6 +376,14 @@ class SubscriptionUtil {
         if (_showToasts) {
           ToastUtil.error('订阅验证失败，请联系客服');
         }
+        // 最严重的一类：用户付了钱但收据没通过验证，权益没到账。必须让人第一时间知道。
+        unawaited(reportClientFailure(
+          errorType: kClientPaymentErrorType,
+          scene: '收据验证未通过',
+          details: '商品=${purchaseDetails.productID}\n'
+              '状态=${purchaseDetails.status}\n'
+              '购买ID=${purchaseDetails.purchaseID ?? "无"}',
+        ));
       }
 
       // 完成购买

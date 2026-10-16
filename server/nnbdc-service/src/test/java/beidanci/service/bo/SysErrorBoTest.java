@@ -107,6 +107,8 @@ public class SysErrorBoTest {
     public void testTransientNetworkErrorDoesNotAlert() {
         // 用户设备网络抖动：只落库、不发信，避免把真正要处理的告警淹掉
         assertFalse(SysErrorBo.isAlertWorthy("CLIENT_SYNC_NETWORK_JITTER"), "纯网络抖动不应触发告警邮件");
+        // 客户端通用网络请求失败（登录、加载词书、拉取学习数据）性质相同，同样只落库
+        assertFalse(SysErrorBo.isAlertWorthy("CLIENT_NETWORK_ERROR"), "客户端通用网络失败不应触发告警邮件");
         assertFalse(SysErrorBo.isAlertWorthy(null), "无分类不应触发告警邮件");
         assertFalse(SysErrorBo.isAlertWorthy("  "), "空白分类不应触发告警邮件");
 
@@ -118,6 +120,13 @@ public class SysErrorBoTest {
         assertTrue(SysErrorBo.isAlertWorthy("CLIENT_DATA_INCONSISTENT"), "客户端数据不自洽必须告警");
         assertTrue(SysErrorBo.isAlertWorthy("SYNC_DATA_PARSE_ERROR"), "同步数据解析失败必须告警");
         assertTrue(SysErrorBo.isAlertWorthy("DICT_WORD_ORDER_INVALID"), "词序非法必须告警");
+
+        // 客户端功能故障也要告警：崩溃、本地库坏掉、发音失败、支付失败都不是"网络抖动"
+        assertTrue(SysErrorBo.isAlertWorthy("CLIENT_CRASH"), "客户端崩溃必须告警");
+        assertTrue(SysErrorBo.isAlertWorthy("CLIENT_DB_ERROR"), "本地数据库故障必须告警");
+        assertTrue(SysErrorBo.isAlertWorthy("CLIENT_AUDIO_ERROR"), "发音/TTS 失败必须告警");
+        assertTrue(SysErrorBo.isAlertWorthy("CLIENT_PAYMENT_ERROR"), "订阅支付失败必须告警");
+        assertTrue(SysErrorBo.isAlertWorthy("CLIENT_FEATURE_ERROR"), "客户端功能失败必须告警");
     }
 
     @Test

@@ -53,18 +53,22 @@ public class SysErrorBo extends BaseBo<SysError> {
     private final ConcurrentHashMap<String, AtomicLong> lastAlertTimestampByType = new ConcurrentHashMap<>();
 
     /**
-     * 无需告警的分类：客户端明确标注为"纯网络抖动"的同步失败
+     * 无需告警的分类：客户端明确标注为"纯网络抖动"的失败
      * （连接超时、响应超时、连接被中断、DNS 失败等）。
      *
-     * <p>这类异常绝大多数是用户设备网络问题，客户端下一轮同步会自动重试成功，
+     * <p>这类异常绝大多数是用户设备网络问题，客户端下一轮会自动重试成功，
      * 服务端没有任何需要人工干预的动作；而它们数量大，一旦发信会把真正需要处理的
      * 分类（如客户端数据不自洽、同步数据解析失败）淹没掉。
      * 因此仍然照常记录进 sys_error 表供排查，但不再触发告警邮件。
      *
+     * <p>{@code CLIENT_NETWORK_ERROR} 是客户端通用网络请求失败（登录、加载词书、
+     * 拉取学习数据等）的分类，性质与 CLIENT_SYNC_NETWORK_JITTER 相同：只落库不发信。
+     *
      * <p>注意：不要把 {@code CLIENT_SYNC_ERROR} 也放进来 —— 旧版客户端把所有同步失败
      * （含解析失败、服务端 5xx 等真问题）都归在它名下，一律压掉会漏掉真问题。
      */
-    private static final Set<String> TRANSIENT_NETWORK_ERROR_TYPES = Set.of("CLIENT_SYNC_NETWORK_JITTER");
+    private static final Set<String> TRANSIENT_NETWORK_ERROR_TYPES =
+            Set.of("CLIENT_SYNC_NETWORK_JITTER", "CLIENT_NETWORK_ERROR");
 
     /** 判定某个分类的异常是否值得给管理员发告警邮件 */
     static boolean isAlertWorthy(String errorType) {
