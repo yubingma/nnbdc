@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' as ja;
@@ -388,6 +390,32 @@ void main() {
 
       // word1 与 word2 已被代际取消，直接跳过不执行，只执行最新点击的 word3
       expect(executionOrder, ['word3']);
+    });
+  });
+
+  // ============================================================
+  // 会话激活卡死：原生 setActive 迟迟不返回时，绝不能让状态机永久瘫痪
+  // ============================================================
+  group('会话激活超时熔断（静态验证）', () {
+    test('控制器里不存在裸调 setActive 的地方', () async {
+      // 单测跑在 macOS 上，audio_session 插件在这条分支上直接 return true、根本不走原生通道，
+      // 所以"卡住的 setActive"在单测里造不出来，只能用源码闸门守住这条规矩：
+      // 这个原生调用被 await 时正持有会话锁与状态机锁，一旦没有超时，
+      // 之后每一次会话切换、播放、stopSession 都永久排队 ——
+      // 用户侧就是"模式切换中…"的浮层永远转圈、发音永久不出声，只能杀进程重进。
+      final source = await File('lib/util/study_audio_session_controller.dart').readAsString();
+
+      final bareSetActive =
+          RegExp(r'session\.setActive\([^)]*\)\s*;').allMatches(source).length;
+      expect(bareSetActive, 0, reason: '不许裸调 setActive：它没有超时，会永久占住状态机锁');
+
+      expect(source.contains('setActive(true).timeout('), isTrue,
+          reason: '唯一的激活入口 _activateSession() 必须带超时');
+
+      final viaActivateSession =
+          RegExp(r'await _activateSession\(\)').allMatches(source).length;
+      expect(viaActivateSession, 2,
+          reason: 'playback 与 playAndRecord 两条会话路径都必须走 _activateSession()，保持对称');
     });
   });
 }

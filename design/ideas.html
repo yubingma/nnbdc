@@ -2245,7 +2245,7 @@
                 </div>
                 <h2 class="idea-title">用户宠物「背篓樱桃兽」：形象定稿与四态表情</h2>
               </div>
-              <span class="badge-status status-evaluating">形象已定 · 四态就绪 · 待命名</span>
+              <span class="badge-status status-evaluating">形象与樱桃规则已定 · 待命名</span>
             </div>
 
             <div class="tags-container">
@@ -2270,22 +2270,39 @@
                 • <strong>透明底成品</strong>：<code>design/ui/img/pet/pet_berry_{happy,sleepy,excited,sad}.png</code>，统一归一化为 <code>911×948</code>（角色等高 900、底边距 24、水平居中），所以四个状态原地切换时不会变大变小、也不会上下跳。抠图走既有流水线 <code>tools/pet_assets/cutout.py</code>（rembg u2net）。
               </div>
 
+              <div class="section-title">樱桃就是它的口粮，也是今日进度</div>
+              <div class="principle-box">
+                设定是<strong>它一天吃两个樱桃</strong>，于是数字自己闭环了：<br/>
+                • 学完那天攒到 <strong>3 颗</strong> → 它当天吃掉 2 颗 → <strong>第二天进来正好剩 1 颗</strong>；<br/>
+                • 开始学习 → <strong>2 颗</strong>；学完 → <strong>3 颗</strong>；<br/>
+                • 哪天断了就吃光：背篓空着、里面只剩它自己拣的几片蔫巴巴的菜叶，脸上也灰扑扑的（像哭了好几天没洗脸）。<br/>
+                这样背篓不需要任何数字标签，用户扫一眼就知道自己今天走到哪一步了。<br/>
+                <strong>待确认</strong>：断更之后重新开始学习，背篓是从 1 颗从头攒，还是按断更天数扣减——目前原型按「回到 1 颗」处理。<br/><br/>
+                <strong>实测边界：「袋里正好三颗」这个模型画不出来</strong>（2026-10-16，连试五轮）：<br/>
+                ① 只说「多放一颗」→ 第三颗被画到袋子外面；<br/>
+                ② 说「袋子被撑鼓、袋口张更开」→ 模型把袋子整体放大，角色比例与构图一起崩掉；<br/>
+                ③ 强调「袋子尺寸形状一律不变、只多放一颗」→ 它仍然只画两颗；<br/>
+                ④ 改用像素合成（把两颗里的右边那颗抠出来复制一颗贴上去）→ rembg 在这张图上抠不干净，樱桃与袋口交界处带出方形残影；<br/>
+                ⑤ 换「袋口最空」的那张（1 颗的打瞌睡版）当参考、同时改表情与数量 → 仍然两颗，而且朝向还漂了。<br/>
+                结论：<strong>这个模型在「袋口」这个构图上稳定输出两颗</strong>，加不进去第三颗。最终改用<strong>袋里 2 颗 + 嘴边 1 颗（它正准备吃掉这一颗）</strong>：既一眼看得出「多了一颗」（132px 真实尺寸下也看得见），又把「它一天吃两个」的设定演了出来。若将来仍要「袋里三颗」，可行路径是换一家生图模型或手工修图。
+              </div>
+
               <div class="section-title">四态表情（随今日学习状态切换）</div>
               <div class="feature-grid">
                 <div class="feature-item">
-                  <strong>还没开始 → 打瞌睡</strong>
+                  <strong>还没开始 → 打瞌睡（背篓 1 颗樱桃）</strong>
                   <p>站着闭眼、头顶飘几个半透明气泡。文案「它还在打瞌睡 / 今天还没开始，让它再眯一会儿」。</p>
                 </div>
                 <div class="feature-item">
-                  <strong>学习中 → 开心</strong>
+                  <strong>学习中 → 开心（背篓 2 颗樱桃）</strong>
                   <p>月牙笑眼加张嘴笑。文案「陪你把这两条走完 / 背篓里是今天攒下的樱桃」。</p>
                 </div>
                 <div class="feature-item">
-                  <strong>已完成 → 兴奋</strong>
+                  <strong>已完成 → 兴奋（袋里 2 颗 + 嘴边 1 颗）</strong>
                   <p>星星眼、大张嘴笑、头顶冒星星。文案「今天全走完了 / 背篓装满了，它高兴得冒星星」。</p>
                 </div>
                 <div class="feature-item">
-                  <strong>断更好几天 → 委屈</strong>
+                  <strong>断更好几天 → 委屈（背篓空了，换成蔫菜叶，脸上带脏）</strong>
                   <p>沿用原始形象那副委屈神情。文案「它等你好几天了 / 背篓里还是上次那两颗樱桃」。</p>
                 </div>
               </div>

@@ -822,7 +822,12 @@ class StudyAudioSessionController {
         androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
         androidWillPauseWhenDucked: true,
       )).timeout(const Duration(milliseconds: 1000));
-      await session.setActive(true);
+      // 必须走带超时的公共激活入口，不能裸调 setActive(true)：
+      // 这个原生调用在音频会话被抢占（来电、其它 App 占着扬声器、蓝牙切换）时可能长时间不返回，
+      // 而它是在持有 _sessionLock / _stateTransitionLock / _queueLock 的状态机里被 await 的 ——
+      // 一旦挂住，之后每一次会话切换、播放、stopSession 都永久排队，
+      // 用户看到的是"模式切换中..."的浮层永远转圈、发音永久不出声，只能杀进程重进。
+      await _activateSession();
       _currentSessionCategory = 'playback';
       debugPrint('⏱️ [Latency-Sound] Session 切换到 playback 完成，耗时: ${totalSw.elapsedMilliseconds}ms');
       _logAudioState('会话切换完成(→playback ${totalSw.elapsedMilliseconds}ms)');
@@ -1349,7 +1354,10 @@ class StudyAudioSessionController {
     try {
       const assetPath = 'assets/audio/asr_ready_hint.wav';
       if (_playerLoadedAsset[player] != assetPath) {
-        await player.setAsset(assetPath);
+        // 这一步是文件 IO + 解码，同样不能无限等：本方法被 await 在持有状态机锁的
+        // transitTo(record) 里，卡住的效果与 setActive 卡住完全一样（整机状态机瘫痪）。
+        // 超时只会让这一声"叮"不响（下面有 catch），不会拖死后续所有模式切换。
+        await player.setAsset(assetPath).timeout(const Duration(seconds: 2));
         _playerLoadedAsset[player] = assetPath;
       }
       _activeVolumeToken[player] = Object();
