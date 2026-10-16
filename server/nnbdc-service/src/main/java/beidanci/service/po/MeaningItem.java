@@ -38,7 +38,7 @@ public class MeaningItem extends UuidPo implements Ownerable {
     /**
      * 单词词性
      */
-    @Column(name = "ci_xing", length = 10)
+    @Column(name = "ci_xing", length = 20)
     private String ciXing;
 
     /**

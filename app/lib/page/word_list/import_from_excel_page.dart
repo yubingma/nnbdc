@@ -292,16 +292,32 @@ class _ImportFromExcelPageState extends State<ImportFromExcelPage> {
 
   Future<void> _import() async {
     final items = <DictWordImportItem>[];
+    final tooLongCiXingLines = <int>[];
     for (final row in _rows) {
       if (!_selectedLines.contains(row.lineNumber)) continue;
       final wordId = row.wordId;
       if (wordId == null) continue;
+      // 只有确实会把词性写进释义的行才校验：已存在的词在未勾选「更新释义」时不会写释义
+      final willWriteMeaning =
+          row.meaning.isNotEmpty && (row.status != ExcelRowStatus.alreadyInDict || _updateMeanings);
+      if (willWriteMeaning && row.partOfSpeech.length > maxCiXingLength) {
+        tooLongCiXingLines.add(row.lineNumber);
+        continue;
+      }
       items.add(DictWordImportItem(
         wordId: wordId,
         unit: row.unit,
         meaning: row.meaning,
         partOfSpeech: row.partOfSpeech,
       ));
+    }
+
+    // 词性超长会被服务端拒收（meaning_item.ci_xing 上限 20 字符）并回滚整次同步，此处先拦住
+    if (tooLongCiXingLines.isNotEmpty) {
+      final preview = tooLongCiXingLines.take(5).join('、');
+      final more = tooLongCiXingLines.length > 5 ? '（共 ${tooLongCiXingLines.length} 行）' : '';
+      ToastUtil.error('第 $preview 行词性超过 $maxCiXingLength 个字符，请精简后再导入$more');
+      return;
     }
 
     if (items.isEmpty) {

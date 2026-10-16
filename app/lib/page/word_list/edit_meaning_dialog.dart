@@ -352,6 +352,11 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       final cixing = controller.cixingController.text.trim();
       
       if (meaning.isNotEmpty) {
+        // 词性超长会被服务端拒收（meaning_item.ci_xing 上限 20 字符）并回滚整次同步，此处先拦住
+        if (cixing.length > maxCiXingLength) {
+          ToastUtil.error("词性最多 $maxCiXingLength 个字符，当前 ${cixing.length} 个：$cixing");
+          return;
+        }
         mergedMeanings.putIfAbsent(cixing, () => []);
         mergedMeanings[cixing]!.add(meaning);
       }

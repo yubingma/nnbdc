@@ -1101,6 +1101,15 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
       return;
     }
 
+    // 词性超长会被服务端拒收（meaning_item.ci_xing 上限 20 字符）并导致保存失败，此处先拦住
+    final tooLongCiXing = meanings
+        .map((m) => m.ciXing ?? '')
+        .firstWhere((c) => c.length > maxCiXingLength, orElse: () => '');
+    if (tooLongCiXing.isNotEmpty) {
+      ToastUtil.error('词性最多 $maxCiXingLength 个字符，当前 ${tooLongCiXing.length} 个：$tooLongCiXing');
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final wordVo = WordVo(widget.word.id, widget.word.spell, null, null, null, null, null, null, null, meanings,

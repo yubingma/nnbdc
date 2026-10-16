@@ -951,6 +951,10 @@ class MeaningItemVo {
   Map<String, dynamic> toJson() => _$MeaningItemVoToJson(this);
 }
 
+/// 词性（ciXing）的最大长度，与服务端 meaning_item.ci_xing 的 varchar(20) 对齐。
+/// 超长词性会被服务端拒收并回滚整次同步事务，因此写库前必须校验。
+const int maxCiXingLength = 20;
+
 /// 用于更新单词释义的输入参数
 class MeaningUpdateItem {
   final String ciXing;
