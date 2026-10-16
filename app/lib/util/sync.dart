@@ -13,7 +13,7 @@ import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/services/sync_progress.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/client_type.dart';
+import 'package:nnbdc/util/client_error_reporter.dart';
 import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
@@ -170,22 +170,10 @@ String _syncErrorTypeOf(Object? error) {
 
 /// 异步旁路向服务端上报客户端同步与系统异常（不阻断主流程，静默失败）
 ///
-/// 一律带上客户端版本号与平台类型：这类异常往往集中在某一端某一版上，
-/// 服务端按"平台 + 版本"聚合才能快速定性。取值失败时退化为不传，服务端会记为空。
+/// 实现统一收拢在 [reportClientError]：那里负责补上客户端平台与版本、
+/// 调服务端接口并静默咽下自己的失败。这里只保留同步域的调用口径。
 void _reportSysErrorToServer(String errorMessage, [String errorType = 'CLIENT_SYNC_ERROR']) {
-  Future(() async {
-    try {
-      final user = Global.getLoggedInUser();
-      final clientVersion = await resolveClientVersion();
-      final clientType = getClientType().name;
-      await Api.client.reportSysError(
-          user?.id, errorType, errorMessage, clientVersion, clientType);
-      Global.logger.d(
-          "🚀 [SysError] 客户端同步异常已上报服务端: $errorType ($clientType / $clientVersion)");
-    } catch (e) {
-      Global.logger.w("⚠️ [SysError] 上报客户端异常失败 (静默忽略): $e");
-    }
-  });
+  unawaited(reportClientError(errorType: errorType, details: errorMessage));
 }
 
 /// 客户端数据不自洽的上报分类。服务端按分类独立告警，避免被同步失败等噪音压制。

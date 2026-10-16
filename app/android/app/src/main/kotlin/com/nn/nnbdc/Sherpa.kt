@@ -176,6 +176,20 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     lastSentResult = ""
                     result.success(null)
                 }
+                "audioDiagnostics" -> {
+                    // 音频现场快照：只读，供 Dart 在"语音未就绪"时随异常一起上报。
+                    // 与 iOS 侧同名方法对称：拿不到现场的错误码说明不了任何问题。
+                    // 刻意不读 AudioRecord.getState()：实例释放后再读会抛异常，
+                    // 一个只读诊断绝不能反过来把 App 弄崩。
+                    val text = "model=${if (currentModel != null) 1 else 0}" +
+                        " modelType=$currentModelType" +
+                        " stream=${if (currentStream != null) 1 else 0}" +
+                        " recording=${if (isRecording) 1 else 0}" +
+                        " record=${if (audioRecord != null) 1 else 0}" +
+                        " asrStopped=${if (isAsrStopped) 1 else 0}"
+                    Log.i(TAG, "ASR audioDiagnostics: $text")
+                    result.success(text)
+                }
                 "preloadModels" -> {
                     thread {
                         try {

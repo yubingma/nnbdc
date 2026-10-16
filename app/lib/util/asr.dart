@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../services/dialog_service.dart';
 import 'dart:io' show Platform;
 import '../util/permission_util.dart';
+import 'client_error_reporter.dart';
 
 enum AsrState { unknown, initialized, started, stopping, stopped }
 
@@ -20,6 +21,10 @@ enum AsrLanguage {
   const AsrLanguage(this.locale);
   final String locale;
 }
+
+/// 上报分类：用户明确感知到"语音用不了"（开麦或启动识别失败）。
+/// 与同步失败、数据不自洽分开归类，服务端按分类独立告警，不被其它噪音压制。
+const String kAsrNotReadyErrorType = 'CLIENT_ASR_NOT_READY';
 
 class Asr {
   // 单例实现，确保全局只有一个 ASR 实例和一条事件订阅链路，
@@ -488,6 +493,7 @@ class Asr {
             // 必须让用户看到，并让状态退回 unknown —— 否则下一次 startAsr 会被
             // "已经以 xx 启动"的短路拦住，用户除重进页面外再也无法恢复。
             ToastUtil.error("语音未就绪，请重试");
+            _reportFailureOnce('启动识别', e);
           }
           setState(AsrState.unknown);
         }
@@ -579,7 +585,48 @@ class Asr {
       if (e.code == 'AUDIO_ENGINE_NOT_READY') {
         ToastUtil.error('语音未就绪，请重试');
       }
+      _reportFailureOnce('打开麦克风', e);
       rethrow;
+    }
+  }
+
+  /// 本次进程内已上报过的失败环节：同一件事被反复重试只报一次，
+  /// 避免一台坏设备（用户不断点喇叭、收起键盘）把服务端告警刷屏。
+  final Set<String> _reportedFailureStages = {};
+
+  /// 把"语音起不来"的现场上报服务端（旁路、静默失败）。
+  ///
+  /// 上报只负责把现场留下来，不改变任何行为：该弹的提示照旧弹、该失败照旧失败。
+  /// 现场里必须带上原生音频状态 —— 光有一个错误码分不清是录放会话被抢改、
+  /// 音频引擎被别的 App 占用，还是引擎标志自己卡住了（三种成因的处置完全不同）。
+  void _reportFailureOnce(String stage, PlatformException e) {
+    if (!_reportedFailureStages.add(stage)) return;
+    unawaited(() async {
+      final diagnostics = await audioDiagnostics();
+      await reportClientError(
+        errorType: kAsrNotReadyErrorType,
+        details: '环节=$stage\n'
+            '错误码=${e.code}\n'
+            '说明=${e.message ?? ""}\n'
+            '原生现场=[$diagnostics]',
+      );
+    }());
+  }
+
+  /// 读取原生音频现场快照（仅供失败上报使用）。
+  ///
+  /// 诊断自身绝不能再抛错：取不到就返回空串，如实反映"没读到"，
+  /// 不许因为诊断失败而把一个已经失败的流程再搅乱一次。
+  Future<String> audioDiagnostics() async {
+    if (!PlatformUtils.isAsrSupported()) return '';
+    try {
+      final text = await asrMethodChannel
+          .invokeMethod<String>('audioDiagnostics')
+          .timeout(const Duration(milliseconds: 500));
+      return text ?? '';
+    } catch (e) {
+      Global.logger.w('ASR: 读取原生音频现场失败: $e');
+      return '';
     }
   }
 

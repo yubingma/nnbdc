@@ -394,6 +394,9 @@ import Accelerate
         case "playReadyHint":
             playReadyHint(result: result)
             
+        case "audioDiagnostics":
+            audioDiagnostics(result: result)
+            
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -680,6 +683,32 @@ import Accelerate
     }
     
     // MARK: - Audio Session Management
+    
+    /// 音频现场快照：只读，供 Dart 在"语音未就绪"时随异常一起上报。
+    ///
+    /// 引擎起不来有三种完全不同的成因 —— 录放会话被别的模块改成了别的 Category、
+    /// 音频引擎被来电/其它 App 抢占后停掉、以及引擎标志与真实运行状态不一致 ——
+    /// 光凭 `AUDIO_ENGINE_NOT_READY` 这个错误码分不清是哪一种，必须把现场一起带回去。
+    private func audioDiagnostics(result: @escaping FlutterResult) {
+        let session = AVAudioSession.sharedInstance()
+        // 刻意不读 inputNumberOfChannels / inputNode：前者在 category 不是录音类时
+        // 会直接断言崩溃，后者会顺带初始化音频输入节点 —— 一个"只读现场"的诊断
+        // 绝不能反过来把 App 弄崩或者改变状态。路由信息经 currentRoute 读取，安全且更有用。
+        let inputPort = session.currentRoute.inputs.first
+        let text = "cat=\(session.category.rawValue)"
+            + " mode=\(session.mode.rawValue)"
+            + " otherAudio=\(session.isOtherAudioPlaying ? 1 : 0)"
+            + " inputAvailable=\(session.isInputAvailable ? 1 : 0)"
+            + " sr=\(Int(session.sampleRate))"
+            + " route=\(inputPort?.portName ?? "none")"
+            + " routeCh=\(inputPort?.channels?.count ?? 0)"
+            + " engineInit=\(isAudioEngineInitialized ? 1 : 0)"
+            + " engineRunning=\(audioEngine.isRunning ? 1 : 0)"
+            + " recording=\(isRecording ? 1 : 0)"
+            + " asrStopped=\(isAsrStopped ? 1 : 0)"
+        print("IOS: [ASR] audioDiagnostics: \(text)")
+        result(text)
+    }
     
     /// 修复音频会话配置（**仅供系统触发的引擎重启使用**，见 resetAudioEngineAndTap）。
     ///

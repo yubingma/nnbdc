@@ -314,9 +314,10 @@ class StudyAudioSessionController {
         await stopSession(forceStopMicrophone: true);
       }
     } catch (e, st) {
-      // 开麦失败（例如音频引擎未就绪）已在 transitTo 里熔断降级、并由 ASR 层向用户提示，
-      // 这里只负责不让异常在 unawaited 链路里裸奔。失败本身有日志、有用户可见反馈，
-      // 且下一次进入说模式会重新完整下发会话配置重试 —— 不在这里做任何重试或掩盖。
+      // 开麦失败已在 transitTo 里熔断降级并中止本轮（见 startSession 对返回值的判断），
+      // 不会被抛到这里；这里只负责不让其余意外（会话配置、提示音等）在 unawaited 链路里裸奔。
+      // 失败本身有日志、有用户可见反馈，且下一次进入说模式会重新完整下发会话配置重试 ——
+      // 不在这里做任何重试或掩盖。
       Global.logger.e(
         '⏱️ [SessionController] 硬件意图同步失败，本次开麦已熔断，下次进入说模式会完整重试: $e',
         error: e, stackTrace: st);
@@ -353,13 +354,15 @@ class StudyAudioSessionController {
     } catch (_) {}
   }
 
-  Future<void> _prepareSessionForPlayback() {
+  /// 返回是否真的走到了播放会话（false = 切换失败，已由 [transitTo] 熔断降级）。
+  /// 播放链路不关心这个返回值，它只用来保证"等会话就绪再出声"这件事本身不被跳过。
+  Future<bool> _prepareSessionForPlayback() {
     // 会话初始化（含音效池预热）仍在进行时，先等它落地再出声：绝不允许"边预热边播第一个音"。
     final pendingSessionSetup = _configureFuture;
-    if (pendingSessionSetup != null) return pendingSessionSetup;
+    if (pendingSessionSetup != null) return pendingSessionSetup.then((_) => true);
     final shouldKeepRecordCategory = _currentSessionCategory == 'playAndRecord' || keepMicrophoneWarm;
     if (shouldKeepRecordCategory) {
-      return Future.value();
+      return Future.value(true);
     }
     return transitTo(AudioMode.playback);
   }
@@ -535,7 +538,16 @@ class StudyAudioSessionController {
       }
       if (isSpeakMode) {
         final bool isAlreadyRecord = _activeMode == AudioMode.record;
-        await transitTo(AudioMode.record);
+        final bool switched = await transitTo(AudioMode.record);
+        if (!switched) {
+          // 开麦这一关没过（引擎没起来 / 录放会话没配成），本轮到此为止。
+          // 绝不能带着"已开麦"的错觉继续调 startAsr：原生看到 isRecording 仍是 false，
+          // 会立刻回 NOT_RECORDING，用户就收到第二条与刚才一模一样的"语音未就绪"——
+          // 同一次失败被报成两次，真正的根因反而被自己的连锁反应盖住。
+          // 失败本身已在 transitTo 里记了日志、并由 ASR 层向用户提示；下一次进入说模式会重新完整下发会话配置重试。
+          Global.logger.w('⏱️ [SessionController] 开麦未成功，本轮不启动识别 (instance: $hashCode)');
+          return;
+        }
         if (isAlreadyRecord) {
           debugPrint(
             '🔊 [SessionController] 状态机本来已是 record 保温态，执行手动热复用就绪提示音播放...',
@@ -643,7 +655,10 @@ class StudyAudioSessionController {
   // ============================================================
 
   /// 全局唯一的音频工作状态机转换网关（原子化、串行化、硬件防撞车）
-  Future<void> transitTo(AudioMode targetMode) {
+  ///
+  /// 返回本次转换是否成功。失败时这里已做物理熔断降级（回到 idle 并释放麦克风），
+  /// 调用方必须据此决定要不要继续往下走 —— 典型就是开麦失败后不能再启动识别。
+  Future<bool> transitTo(AudioMode targetMode) {
     return _stateTransitionLock.protect(() async {
       // 建立新音频会话前，先等上一次登记的清理任务落地（见 _pendingCleanup）。
       await _pendingCleanup;
@@ -661,7 +676,7 @@ class StudyAudioSessionController {
             await Future.delayed(const Duration(milliseconds: 150));
           }
         }
-        return;
+        return true;
       }
  
       final sw = Stopwatch()..start();
@@ -706,6 +721,7 @@ class StudyAudioSessionController {
         
         _activeMode = finalTargetMode;
         debugPrint('🔊 [AudioEngine] 状态机转换成功: ➔ $_activeMode，总耗时: ${sw.elapsedMilliseconds}ms');
+        return true;
       } catch (e, st) {
         Global.logger.e('🔊 [AudioEngine] 状态机转换异常，物理熔断降级: $e', error: e, stackTrace: st);
         try {
@@ -715,6 +731,7 @@ class StudyAudioSessionController {
           await _cleanupEarlyExitPlayers();
         } catch (_) {}
         _activeMode = AudioMode.idle;
+        return false;
       }
     });
   }

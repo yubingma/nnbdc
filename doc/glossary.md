@@ -326,6 +326,8 @@
 | 同步进度 | `syncProgress` | 端云同步当前所处的阶段与已处理的条数；首屏加载态展示它，让用户能分辨「还在推进」与「已经卡住」 | 见 `app/lib/services/sync_progress.dart` |
 | 缩体删除日志 | `user_db_log.record` 只写 `{"id": …}` 的 DELETE 日志 | 一次性修复批量删除学习记录时，为避免单次同步请求超过服务端 5MB 限制，删除日志只带主键 | 客户端收到后必须按 id 直接删本地行，**禁止整体反序列化成实体**；见 `app/lib/util/sync.dart:531`、`app/lib/util/learning_log_repair.dart:164` |
 | 黄金母版库（简称母版库） | 随包资源 `app/assets/db/initial.sqlite.gz`；制作工具 `app/lib/page/admin/golden_master_tool.dart` + `devops/golden_db_maker/make_golden_db.sh` | 随安装包发布的预置 SQLite 数据库，全新安装时由 `app/lib/db/db.dart:232` 直接解压使用，免去首屏下载通用词典 | **必须携带出品时刻的 `sys_db_version`**：它决定客户端首轮同步从哪个版本起步。这一行缺失时客户端按版本 0 走「首次全量同步」，而该分支按体积设计不含 `word_image` 等明细表（`server/nnbdc-service/src/main/java/beidanci/service/bo/SysDbSyncBo.java:391`），母版库里所有已被服务端删除的明细行将永远无法收敛 |
+| 客户端异常上报 | 客户端唯一入口 `app/lib/util/client_error_reporter.dart` 的 `reportClientError()`；服务端 `POST /reportSysError.do`（`server/nnbdc-service/src/main/java/beidanci/service/controller/SyncController.java:295`） | 手机把用户实际遇到的失败（同步失败、学习数据不自洽、语音起不来等）连同**平台与版本**报给服务端，落 `sys_error` 表，在 App 管理端「服务端异常日志」页看，并按分类发告警邮件 | 分类之间各自独立节流（同类 5 分钟一封，见 `SysErrorBo.java:39`）；`CLIENT_SYNC_NETWORK_JITTER` 这类"纯网络抖动"只落库不发信（`SysErrorBo.java:70`）；**新增分类不需要改服务端**。已有分类：`CLIENT_SYNC_ERROR` / `CLIENT_SYNC_NETWORK_JITTER` / `CLIENT_DATA_INCONSISTENT` / `CLIENT_DUPLICATE_GRADE` / `CLIENT_ASR_NOT_READY` |
+| 语音未就绪 | 上报分类 `CLIENT_ASR_NOT_READY`；现场快照 `Asr.audioDiagnostics()`（`app/lib/util/asr.dart`）→ 原生 `audioDiagnostics`（iOS `AppDelegate.swift`、Android `Sherpa.kt`） | 用户进「说」模式时开麦/启动识别失败，界面提示"语音未就绪，请重试"，说多久都没有识别结果 | 引擎起不来有三种不同成因（录放会话被改成别的 Category / 音频引擎被来电等抢占后停掉 / 引擎标志与真实运行状态不一致），**光凭错误码分不清**，所以上报必须带原生现场；同一进程内每种失败环节只报一次 |
 
 ### 4.6 运营、社交与小游戏
 
