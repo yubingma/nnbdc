@@ -58,45 +58,6 @@ void main() {
     Global.commonDictId = "0";
   });
 
-  /// 造一个"昨天学过、今天还没学"的账号：用户行日期停在昨天，计划里 5 个词带着昨日的今日进度。
-  /// [learningDateIsToday] 为 true 时把最近学习日改成今天，用于复现"今天就学过、本地也有计划词"的
-  /// 同日刷新场景（此时页面会先渲染本地数据，而云端同步与取词仍在途）。
-  Future<void> seedYesterdayPlan(String userId, {bool learningDateIsToday = false}) async {
-    final yesterday = now.subtract(const Duration(days: 1));
-    final user = User(
-      id: userId,
-      userName: 'mock_user',
-      password: '',
-      nickName: 'Tester',
-      email: '',
-      gameScore: 0,
-      dakaScore: 0,
-      learnedDays: 1,
-      learningFinished: false,
-      inviteAwardTaken: false,
-      isSuperAdmin: false,
-      isAdmin: false,
-      isInputor: false,
-      cowDung: 0,
-      throwDiceChance: 0,
-      wordsPerDay: 5,
-      dakaDayCount: 1,
-      masteredWordsCount: 0,
-      maxContinuousDakaDayCount: 1,
-      continuousDakaDayCount: 1,
-      todayStudyStarted: true, // 昨天已开始学习
-      lastLearningDate: learningDateIsToday ? now : yesterday, // 昨天 → 今天跨天；今天 → 同日刷新
-      totalLearningSeconds: 0,
-      todayLearningSeconds: 0,
-      createTime: now,
-      updateTime: now,
-    );
-    await db.usersDao.saveUser(user, false);
-
-    Global.currentUserId = userId;
-    Global.updateUserCache(user);
-    Prefs.write('currentUserId', userId);
-
   Future<void> seedDict(String userId) async {
     const dictId = 'mock_dict_1';
     await db.into(db.dicts).insert(Dict(
