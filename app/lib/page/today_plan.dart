@@ -30,6 +30,7 @@ import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/learning_service.dart';
+import 'package:nnbdc/util/pet_speech.dart';
 import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_config.dart';
@@ -139,6 +140,41 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 是否处于「拖拽编排轨道」的编辑态。编辑态下环节可直接拖动、底部出现环节托盘。
   bool _trackEditing = false;
+
+  /// 宠物当前这句台词（null = 气泡收起）。
+  String? _petSpeech;
+  Timer? _petSpeechTimer;
+  int? _lastPetSpeechIndex;
+  bool _petFirstMet = false;
+
+  /// 宠物当前处于哪一态：选图和抽台词共用它，保证「说」和「看」永远一致。
+  PetMood get _petMood {
+    final u = user;
+    if (u == null) return PetMood.sleepy;
+    final bool planFinished = _totalStepCount > 0 && _completedStepCount >= _totalStepCount;
+    if (hasDakaToday && planFinished) return PetMood.excited;
+    if (u.todayStudyStarted == true) return PetMood.happy;
+    final DateTime? last = u.lastLearningDate;
+    if (last != null && DateUtils.dateOnly(AppClock.today()).difference(DateUtils.dateOnly(last)).inDays > 1) {
+      return PetMood.sad;
+    }
+    return PetMood.sleepy;
+  }
+
+  /// 点一下宠物：随机说一句解释它自己逻辑的话。
+  void _onPetTap() {
+    final bool first = !_petFirstMet;
+    final picked = first
+        ? (text: PetSpeech.firstMeet, index: 0)
+        : PetSpeech.pick(_petMood, lastIndex: _lastPetSpeechIndex);
+    _lastPetSpeechIndex = picked.index;
+    _petFirstMet = true;
+    _petSpeechTimer?.cancel();
+    setState(() => _petSpeech = picked.text);
+    _petSpeechTimer = Timer(const Duration(milliseconds: 2600), () {
+      if (mounted) setState(() => _petSpeech = null);
+    });
+  }
 
   /// 当前正在被拖动的环节（null = 没有在拖）。
   /// 有它才能让「所有」放置条同时知道自己接不接受这一份：不接受的就灰掉，
@@ -377,6 +413,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   @override
   void dispose() {
+    _petSpeechTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _dakaSubscription?.cancel();
     _wordDeletedSubscription?.cancel();
@@ -2189,29 +2226,93 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   ///
   /// 背篓里的樱桃就是今日进度：进来时一颗、开始学习两颗、学完嘴边还有一颗；
   /// 断更时背篓空着只剩拣来的菜叶。所以这里只需要按「今天走到哪一步」选一张。
+  /// 选图只认 [_petMood] 一个来源：图和台词永远指向同一个状态，
+  /// 不会出现「表情是委屈、台词却说吃饱了」这种错位。
   String get _petAssetPath {
-    final u = user;
-    if (u == null) return 'assets/images/pet/companion/pet_berry_sleepy.png';
-    final bool planFinished = _totalStepCount > 0 && _completedStepCount >= _totalStepCount;
-    if (hasDakaToday && planFinished) return 'assets/images/pet/companion/pet_berry_excited.png';
-    if (u.todayStudyStarted == true) return 'assets/images/pet/companion/pet_berry_happy.png';
-    final DateTime? last = u.lastLearningDate;
-    if (last != null) {
-      final int days = DateUtils.dateOnly(AppClock.today()).difference(DateUtils.dateOnly(last)).inDays;
-      if (days > 1) return 'assets/images/pet/companion/pet_berry_sad.png';
+    switch (_petMood) {
+      case PetMood.excited:
+        return 'assets/images/pet/companion/pet_berry_excited.png';
+      case PetMood.happy:
+        return 'assets/images/pet/companion/pet_berry_happy.png';
+      case PetMood.sad:
+        return 'assets/images/pet/companion/pet_berry_sad.png';
+      case PetMood.sleepy:
+        return 'assets/images/pet/companion/pet_berry_sleepy.png';
     }
-    return 'assets/images/pet/companion/pet_berry_sleepy.png';
   }
 
   /// 首页底部的小宠物：只占一条固定的高度，不参与轨道图的排版。
+  /// 点一下它会说一句解释自己逻辑的话（背篓里的智慧果 = 今日进度）。
   Widget _buildPetCompanion() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Image.asset(
-        _petAssetPath,
-        height: 132,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            transitionBuilder: (child, anim) => FadeTransition(
+              opacity: anim,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.92, end: 1).animate(anim),
+                alignment: Alignment.bottomCenter,
+                child: child,
+              ),
+            ),
+            child: _petSpeech == null
+                ? const SizedBox.shrink()
+                : _buildPetSpeechBubble(_petSpeech!, isDarkMode: isDarkMode),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _onPetTap,
+            child: Image.asset(
+              _petAssetPath,
+              height: 132,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 宠物头顶的对话气泡：亮底深字 / 暗底浅字，下方带小尖角指向宠物。
+  Widget _buildPetSpeechBubble(String text, {required bool isDarkMode}) {
+    final bg = isDarkMode ? const Color(0xE61C2230) : const Color(0xF2FFFFFF);
+    final fg = isDarkMode ? const Color(0xFFE8EDF5) : const Color(0xFF1E293B);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            constraints: const BoxConstraints(maxWidth: 240),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.30 : 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 11.5, height: 1.45, color: fg, fontWeight: FontWeight.w500),
+            ),
+          ),
+          // 小尖角
+          CustomPaint(
+            size: const Size(12, 6),
+            painter: _PetBubbleTailPainter(color: bg),
+          ),
+        ],
       ),
     );
   }
@@ -4402,4 +4503,26 @@ class _TrackDragPayload {
   final String step;
 
   bool get fromTray => group == null;
+}
+
+
+/// 气泡下方的小三角。
+class _PetBubbleTailPainter extends CustomPainter {
+  const _PetBubbleTailPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PetBubbleTailPainter oldDelegate) => oldDelegate.color != color;
 }
