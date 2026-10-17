@@ -866,11 +866,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                                                   ),
                                                 ),
                                               ),
-                                              if (state.isAiEvaluating) ...[
-                                                const SizedBox(width: 6),
-                                                _buildAiJudgingBadge(
-                                                    _cachedIsDarkMode),
-                                              ],
                                             ],
                                           ),
                                         )
@@ -2088,43 +2083,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     return buffer.toString();
   }
 
-  Widget _buildAiJudgingBadge(bool isDarkMode) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-      decoration: BoxDecoration(
-        color: context.primaryColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: context.primaryColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 8.5,
-            height: 8.5,
-            child: CircularProgressIndicator(
-              strokeWidth: 1.5,
-              color: context.primaryColor,
-            ),
-          ),
-          const SizedBox(width: 3.5),
-          Text(
-            'AI判定中...',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: context.primaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 例句环节可编辑答案输入框：识别结果写入其中，支持光标定位与语音插入补充。
   /// 不弹系统输入法(readOnly + showCursor)：点击仅显示光标位置作为语音插入点，
   /// 编辑区固定在可视高度内占满答案区，内容多时可内部滚动。
@@ -2172,13 +2130,6 @@ extension BdcPageStateUIComponents on BdcPageState {
             disabledBorder: InputBorder.none,
           ),
         ),
-        if (state.isAiEvaluating) ...[
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _buildAiJudgingBadge(_cachedIsDarkMode),
-          ),
-        ],
         if (state.hasFinishedAnswering &&
             (state.lastFsrsRatingReason?.contains("AI裁判") ?? false)) ...[
           const SizedBox(height: 8),
