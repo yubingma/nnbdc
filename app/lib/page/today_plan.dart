@@ -1453,12 +1453,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         const double cardHPadding = 14 * 2;
         // 两态都必须给「学习轨道」按钮留同样的宽度：预留不同 → 算出的缩放比不同
         // → 新词/旧词的字号会在展开/收起时忽大忽小（用户实测反馈）。
-        // 「收起轨道」按钮改为「浮在两列之间的顶部」，不再占一整列：
-        // 原来给它预留 140，但它只用得到约 80，剩下 60 是纯浪费，
-        // 两列因此被挤到 100px 出头，节点文字只能折行（用户实测反馈）。
+        // 两种状态是两套独立布局：
+        //   收起态 = 「固定宽小卡 + 中间按钮 + 固定宽小卡」三者并排；
+        //   展开态 = 两列平分全部宽度，按钮浮在第一行（不参与列宽分配）。
+        // 字号基准取两套里较窄的那个，保证展开/收起时数字大小不跳。
         const double columnGap = 24;
+        // 按钮实际占宽 = 限宽 84 + 左右内边距 20 = 104
+        const double toggleWidth = 104;
+        final double collapseCardWidth =
+            ((constraints.maxWidth - toggleWidth - 24) / 2).clamp(88.0, 150.0);
+        final double expandTrack = (constraints.maxWidth - cardHPadding - columnGap - 8) / 2;
+        final double collapseTrack = collapseCardWidth - 28;
         final double perTrack =
-            ((constraints.maxWidth - cardHPadding - columnGap - 8) / 2).clamp(40.0, double.infinity);
+            (expandTrack < collapseTrack ? expandTrack : collapseTrack).clamp(40.0, double.infinity);
         final double countScale = _sharedTrackCountScale(
           context: context,
           maxWidth: perTrack,
@@ -1469,13 +1476,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         );
         // 收起态：两张独立的小卡 + 中间一行「学习轨道」，不铺整条长卡
         if (!_trackExpanded) {
-          return Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              Row(
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
+              SizedBox(
+                width: collapseCardWidth,
                 child: _buildCountCard(
                 title: '新词',
                 count: newWordCount ?? 0,
@@ -1489,11 +1495,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 },
                 hasWallpaper: hasWallpaper,
                 onDark: onDark,
+                isDarkMode: isDarkMode,
                 countScale: countScale,
                 ),
               ),
-              const SizedBox(width: columnGap),
-              Expanded(
+              _buildTrackToggle(inkColor: ink.faint),
+              SizedBox(
+                width: collapseCardWidth,
                 child: _buildCountCard(
                 title: '旧词',
                 count: oldWordCount ?? 0,
@@ -1507,14 +1515,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 },
                 hasWallpaper: hasWallpaper,
                 onDark: onDark,
+                isDarkMode: isDarkMode,
                 countScale: countScale,
                 ),
-              ),
-            ],
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: _buildTrackToggle(inkColor: ink.faint),
               ),
             ],
           );
@@ -1567,7 +1570,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 收起态的一枚词数小卡：圆角矩形，只包住「数字 + 新词/旧词」。
-  /// 两张卡各自独立，中间只留一行「学习轨道」，不铺一整条长卡，壁纸能透出来。
+  /// 与下方「开始学习」按钮用同一套毛玻璃（BackdropFilter 磨砂），
+  /// 只用半透明色块会和按钮的通透度明显不一致。
   Widget _buildCountCard({
     required String title,
     required int count,
@@ -1578,49 +1582,55 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required VoidCallback onTap,
     required bool hasWallpaper,
     required bool onDark,
+    required bool isDarkMode,
     required double countScale,
   }) {
-    final bg = !hasWallpaper
-        ? (onDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFF241A14).withValues(alpha: 0.04))
-        : (onDark ? Colors.white.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.62));
-    final border = !hasWallpaper
-        ? (onDark ? Colors.white.withValues(alpha: 0.10) : const Color(0xFF241A14).withValues(alpha: 0.06))
-        : (onDark ? Colors.white.withValues(alpha: 0.26) : Colors.white.withValues(alpha: 0.9));
+    const double radius = 18;
+    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: border, width: 0.8),
-            ),
-            child: _buildTrackCountBlock(
-              title: title,
-              count: count,
-              extraCount: 0,
-              countKey: countKey,
-              extraKey: extraKey,
-              ink: ink,
-              onTap: onTap,
-              countScale: countScale,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(radius),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                // 外层 SizedBox 给的是固定宽，Container 必须显式吃满，
+                // 否则它会按内容（「0」比「150」窄）撑开，两卡宽度就不一致了。
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: skin.bg,
+                  borderRadius: BorderRadius.circular(radius),
+                  border: Border.all(color: skin.border, width: 0.5),
+                  boxShadow: [skin.shadow],
+                ),
+                child: _buildTrackCountBlock(
+                  title: title,
+                  count: count,
+                  extraCount: 0,
+                  countKey: countKey,
+                  extraKey: extraKey,
+                  ink: ink,
+                  onTap: onTap,
+                  countScale: countScale,
+                ),
+              ),
             ),
           ),
           if (extraCount > 0)
             Positioned(
-              top: -4,
-              right: -6,
+              top: -6,
+              right: -8,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: onDark ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: border, width: 0.6),
+                  border: Border.all(color: skin.border, width: 0.6),
                 ),
                 child: Text(
                   ' + $extraCount',
@@ -1644,7 +1654,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         // 大字号下这行「学习轨道 ▾」也可能撑破卡片（2.0x 实测 4.4px），
         // 放不下就等比缩，不截断。
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 112),
+          constraints: const BoxConstraints(maxWidth: 84),
           // ConstrainedBox 只限宽、不居中：不套 Center 的话文字会贴在左边
           child: Center(
             child: FittedBox(
@@ -1842,10 +1852,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     Key? key,
     VoidCallback? onTap,
     required Widget child,
-  }) {
     // 圆角 12：对齐「不背单词」底部那两张卡的面板感（实测其圆角 ≈12dp，
     // 原来 18dp 在 75dp 高的卡上偏"糖果"，一张卡比参考圆一圈）
-    const double radius = 12;
+    double radius = 12,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: BackdropFilter(

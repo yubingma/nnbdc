@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -93,10 +94,11 @@ class FloatingText {
 
 /// 弹道类型
 enum ProjectileType {
-  starfish,       // 使用道具：海星直奔血条
-  mine,         // 使用道具：水雷弧线轰击血条
-  rewardMine,   // 获得道具：水雷能量球飞向左下角道具区
-  rewardStarfish, // 获得道具：海星能量球飞向右下角道具区
+  starfish,         // 使用道具：海星直奔血条
+  mine,             // 使用道具：导弹弧线轰击血条
+  penaltyMissile,   // 错选惩罚：点错泡泡化作导弹反噬轰击我方血条
+  rewardMine,       // 获得道具：导弹能量球飞向道具区
+  rewardStarfish,   // 获得道具：海星能量球飞向道具区
 }
 
 /// 飞行弹道与战利品光球
@@ -110,6 +112,7 @@ class GameProjectile {
   final double targetY;
   double progress = 0.0;
   final int targetCount;
+  final String reason;
 
   GameProjectile.starfish({
     required this.x,
@@ -119,7 +122,8 @@ class GameProjectile {
   })  : type = ProjectileType.starfish,
         startX = x,
         startY = y,
-        targetCount = 0;
+        targetCount = 0,
+        reason = '';
 
   GameProjectile.mine({
     required this.startX,
@@ -127,6 +131,18 @@ class GameProjectile {
     required this.targetX,
     required this.targetY,
   })  : type = ProjectileType.mine,
+        x = startX,
+        y = startY,
+        targetCount = 0,
+        reason = '';
+
+  GameProjectile.penaltyMissile({
+    required this.startX,
+    required this.startY,
+    required this.targetX,
+    required this.targetY,
+    this.reason = '答错 -1 HP!',
+  })  : type = ProjectileType.penaltyMissile,
         x = startX,
         y = startY,
         targetCount = 0;
@@ -139,7 +155,8 @@ class GameProjectile {
     required this.targetCount,
   })  : type = ProjectileType.rewardMine,
         x = startX,
-        y = startY;
+        y = startY,
+        reason = '';
 
   GameProjectile.rewardStarfish({
     required this.startX,
@@ -149,7 +166,8 @@ class GameProjectile {
     required this.targetCount,
   })  : type = ProjectileType.rewardStarfish,
         x = startX,
-        y = startY;
+        y = startY,
+        reason = '';
 }
 
 /// 海底微小散落氛围气泡
@@ -822,8 +840,16 @@ class RussiaPageState extends State<RussiaPage>
       if (fromUserId != myUserId) {
         // 对手使用了道具
         if (propsType == 0) {
-          // 对手对我发射了水雷！我方生命扣 1 格，并点亮屏幕边缘红色警示
-          _applyDamage(1, reason: '💥 遭受对手水雷轰击！-1 HP', fromOpponent: true);
+          // 对手对我发射了导弹！从对手血条区弧线飞向我方左上角血条，命中时再结算扣血与爆炸
+          final mediaQuery = MediaQuery.maybeOf(context);
+          final size = mediaQuery?.size ?? const Size(390, 844);
+          projectiles.add(GameProjectile.penaltyMissile(
+            startX: size.width * 0.75,
+            startY: 80,
+            targetX: size.width * 0.28,
+            targetY: 80,
+            reason: '💥 遭受对手导弹轰击！-1 HP',
+          ));
         } else {
           // 对手使用了海星治愈自己！对手生命加 1 格
           setState(() {
@@ -1542,7 +1568,7 @@ class RussiaPageState extends State<RussiaPage>
     });
     sendUserCmd('USE_PROPS', [0]);
     HapticFeedback.heavyImpact();
-    mineSlotScale = 1.45; // 水雷槽果冻弹跳
+    mineSlotScale = 1.45; // 导弹槽果冻弹跳
     _screenShake = 0.5; // 发射后坐力：画面被推一下
     // 发射的闷响压得比命中更低，听起来是"轰出去"而不是"打到了"
     StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 0.72, volume: 0.5);
@@ -1552,7 +1578,7 @@ class RussiaPageState extends State<RussiaPage>
       sendUserCmd('GAME_OVER', ['B']);
     }
 
-    // 弧线水雷弹道（从右下角水雷小图标轰击右侧对手顶部血条区）
+    // 弧线战术导弹弹道（从右下角导弹小图标轰击右侧对手顶部血条区）
     final mediaQuery = MediaQuery.maybeOf(context);
     final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
     final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
@@ -1566,7 +1592,7 @@ class RussiaPageState extends State<RussiaPage>
     floatingTexts.add(FloatingText(
       x: size.width * 0.72,
       y: 95,
-      text: '🚀 水雷轰击 对手 -1 HP!',
+      text: '🚀 导弹轰击 对手 -1 HP!',
       color: const Color(0xFFF87171),
     ));
   }
@@ -1686,15 +1712,46 @@ class RussiaPageState extends State<RussiaPage>
           StudyAudioSessionController.instance.playSoundEffect('bubble-pop.wav', speed: 1.5, volume: 0.3);
           projectiles.removeAt(i);
         }
-      } else if (p.type == ProjectileType.mine) {
+      } else if (p.type == ProjectileType.mine || p.type == ProjectileType.penaltyMissile) {
+        final bool isPenalty = (p.type == ProjectileType.penaltyMissile);
         p.progress += dt * 1.8;
+        final double arcHeight = isPenalty ? 70.0 : 120.0;
         p.x = p.startX + (p.targetX - p.startX) * p.progress;
-        p.y = p.startY + (p.targetY - p.startY) * p.progress - sin(p.progress * pi) * 120.0;
+        p.y = p.startY + (p.targetY - p.startY) * p.progress - sin(p.progress * pi) * arcHeight;
+
+        // 导弹尾焰火花粒子向后反冲喷射
+        final double dx = p.targetX - p.startX;
+        final double dy = (p.targetY - p.startY) - pi * cos(p.progress * pi) * arcHeight;
+        final double angle = atan2(dy, dx);
+        if (p.progress < 0.95 && rand.nextDouble() < 0.8) {
+          final double tailX = p.x - cos(angle) * 14.0;
+          final double tailY = p.y - sin(angle) * 14.0;
+          final double exhaustAngle = angle + pi + (rand.nextDouble() - 0.5) * 0.5;
+          final double speed = 35.0 + rand.nextDouble() * 45.0;
+          particles.add(PopParticle(
+            x: tailX,
+            y: tailY,
+            vx: cos(exhaustAngle) * speed,
+            vy: sin(exhaustAngle) * speed,
+            radius: 1.8 + rand.nextDouble() * 1.5,
+            color: isPenalty
+                ? (rand.nextBool() ? const Color(0xFFEF4444) : const Color(0xFFF97316))
+                : (rand.nextBool() ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)),
+            life: 0.22,
+          ));
+        }
+
         if (p.progress >= 1.0) {
-          _createBurstParticles(p.targetX, p.targetY, const Color(0xFFEF4444), count: 18);
-          opponentShake = 0.4;
-          _screenShake = 0.8; // 自家水雷炸在对手身上，画面跟着一顿
-          StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 1.2, volume: 0.6);
+          _createBurstParticles(p.targetX, p.targetY, const Color(0xFFEF4444), count: 20);
+          if (isPenalty) {
+            // 惩罚导弹命中我方左上角血条：产生剧烈爆炸、屏幕受击红光、震动并真正扣减生命值
+            _applyDamage(1, reason: p.reason.isNotEmpty ? p.reason : '答错 -1 HP!', fromOpponent: true);
+          } else {
+            // 我方导弹命中对手血条
+            opponentShake = 0.4;
+            _screenShake = 0.8; // 自家导弹炸在对手身上，画面跟着一顿
+            StudyAudioSessionController.instance.playSoundEffect('thud.mp3', speed: 1.2, volume: 0.6);
+          }
           projectiles.removeAt(i);
         }
       } else if (p.type == ProjectileType.rewardMine) {
@@ -1715,12 +1772,12 @@ class RussiaPageState extends State<RussiaPage>
         }
         if (p.progress >= 1.0) {
           attackProps = p.targetCount;
-          mineSlotScale = 1.45; // 触发左下角水雷槽果冻弹跳
+          mineSlotScale = 1.45; // 触发右下角导弹槽果冻弹跳
           _createBurstParticles(p.targetX, p.targetY, const Color(0xFFF97316), count: 20);
           floatingTexts.add(FloatingText(
             x: p.targetX,
             y: p.targetY - 32,
-            text: '+1 💣',
+            text: '+1 🚀',
             color: const Color(0xFFF97316),
           ));
           StudyAudioSessionController.instance.playSoundEffect('magic.mp3', speed: 1.35, volume: 0.04);
@@ -1854,9 +1911,18 @@ class RussiaPageState extends State<RussiaPage>
 
     // 戳错干扰词泡泡：播放专属的低沉低音提示音 bubble-wrong.wav，与正确时的高频清脆泡泡爆破音 bubble-pop.wav 形成鲜明反差
     StudyAudioSessionController.instance.playSoundEffect('bubble-wrong.wav', speed: 1.0, volume: 0.55);
-    _applyDamage(1, reason: '答错 -1 HP!');
     _createBurstParticles(b.x, b.y, const Color(0xFFEF4444), count: 14);
     HapticFeedback.mediumImpact();
+
+    // 错选泡泡破裂并激化成一枚反噬惩罚导弹，呼啸直奔我方左上角血条轰击！命中时扣减生命值
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final size = mediaQuery?.size ?? const Size(390, 844);
+    projectiles.add(GameProjectile.penaltyMissile(
+      startX: b.x,
+      startY: b.y,
+      targetX: size.width * 0.28,
+      targetY: 80,
+    ));
 
     // 1. 将误认的干扰词精准收录至生词本
     _wrongWordsInGame.add(b.word);
@@ -3098,7 +3164,7 @@ class RussiaPageState extends State<RussiaPage>
     );
   }
 
-  /// 右侧给对手用的战术道具小图标（重力水雷）
+  /// 右侧给对手用的战术道具小图标（战术导弹）
   Widget _buildAttackMineProp(Size size) {
     final bool hasProp = attackProps > 0;
     return Transform.scale(
@@ -3113,7 +3179,7 @@ class RussiaPageState extends State<RussiaPage>
             floatingTexts.add(FloatingText(
               x: size.width - 55,
               y: size.height - 120,
-              text: '连对3次可得水雷!',
+              text: '连对3次可得导弹!',
               color: Colors.white70,
             ));
           }
@@ -3152,8 +3218,12 @@ class RussiaPageState extends State<RussiaPage>
                       ]
                     : [],
               ),
-              child: const Center(
-                child: Text('💣', style: TextStyle(fontSize: 20)),
+              child: Center(
+                child: Icon(
+                  Icons.rocket_launch_rounded,
+                  size: 21,
+                  color: hasProp ? Colors.white : Colors.white.withValues(alpha: 0.35),
+                ),
               ),
             ),
             Positioned(
@@ -4493,6 +4563,124 @@ class _UnderseaScenePainter extends CustomPainter {
     canvas.restore();
   }
 
+  void _drawMissile(Canvas canvas, GameProjectile p) {
+    final bool isPenalty = (p.type == ProjectileType.penaltyMissile);
+    final double arcHeight = isPenalty ? 70.0 : 120.0;
+    final double dx = p.targetX - p.startX;
+    final double dy = (p.targetY - p.startY) - pi * cos(p.progress * pi) * arcHeight;
+    final double angle = atan2(dy, dx);
+
+    canvas.save();
+    canvas.translate(p.x, p.y);
+    canvas.rotate(angle);
+
+    // 1. 动态双层尾焰（向后喷射，X 负方向，高频轻微呼吸伸缩）
+    final double flicker = 1.0 + 0.18 * sin(p.progress * 50.0);
+    final double flameLen = (isPenalty ? 18.0 : 22.0) * flicker;
+
+    // 外层炽热烈焰
+    final Path outerFlame = Path()
+      ..moveTo(-10.5, -3.2)
+      ..quadraticBezierTo(-10.5 - flameLen * 0.45, -4.5, -10.5 - flameLen, 0.0)
+      ..quadraticBezierTo(-10.5 - flameLen * 0.45, 4.5, -10.5, 3.2)
+      ..close();
+    final Paint outerFlamePaint = Paint()
+      ..shader = ui.Gradient.linear(
+        const Offset(-10.5, 0),
+        Offset(-10.5 - flameLen, 0),
+        isPenalty
+            ? [const Color(0xFFEF4444), const Color(0x007F1D1D)]
+            : [const Color(0xFFF97316), const Color(0x00EA580C)],
+      );
+    canvas.drawPath(outerFlame, outerFlamePaint);
+
+    // 内层白热核心
+    final Path innerFlame = Path()
+      ..moveTo(-10.5, -1.8)
+      ..lineTo(-10.5 - flameLen * 0.55, 0.0)
+      ..lineTo(-10.5, 1.8)
+      ..close();
+    final Paint innerFlamePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.95);
+    canvas.drawPath(innerFlame, innerFlamePaint);
+
+    // 2. 尾喷口（Nozzle）
+    final Paint nozzlePaint = Paint()
+      ..color = const Color(0xFF334155)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(-12.0, -2.5, 2.0, 5.0),
+        const Radius.circular(1.0),
+      ),
+      nozzlePaint,
+    );
+
+    // 3. 尾翼（Fins）
+    final Path finPath = Path()
+      // 上尾翼
+      ..moveTo(-7.5, -2.5)
+      ..lineTo(-11.5, -7.5)
+      ..lineTo(-7.5, -7.5)
+      ..lineTo(-3.5, -2.5)
+      // 下尾翼
+      ..moveTo(-7.5, 2.5)
+      ..lineTo(-11.5, 7.5)
+      ..lineTo(-7.5, 7.5)
+      ..lineTo(-3.5, 2.5);
+    final Paint finPaint = Paint()
+      ..color = isPenalty ? const Color(0xFF991B1B) : const Color(0xFFDC2626)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(finPath, finPaint);
+
+    // 4. 弹身（Fuselage）
+    final Rect bodyRect = const Rect.fromLTWH(-10.0, -3.2, 16.0, 6.4);
+    final Paint bodyPaint = Paint()
+      ..shader = ui.Gradient.linear(
+        const Offset(0, -3.2),
+        const Offset(0, 3.2),
+        isPenalty
+            ? [const Color(0xFFEF4444), const Color(0xFF7F1D1D)]
+            : [const Color(0xFFF8FAFC), const Color(0xFF94A3B8)],
+      );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(bodyRect, const Radius.circular(1.5)),
+      bodyPaint,
+    );
+
+    // 弹身战术警示条纹
+    final Paint stripePaint = Paint()
+      ..color = isPenalty ? const Color(0xFFFBBF24) : const Color(0xFFEF4444)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(const Rect.fromLTWH(-3.5, -3.2, 2.2, 6.4), stripePaint);
+    canvas.drawRect(const Rect.fromLTWH(1.0, -3.2, 2.2, 6.4), stripePaint);
+
+    // 5. 弹头尖锥（Nose Cone）
+    final Path nosePath = Path()
+      ..moveTo(6.0, -3.2)
+      ..quadraticBezierTo(11.0, -2.2, 15.5, 0.0)
+      ..quadraticBezierTo(11.0, 2.2, 6.0, 3.2)
+      ..close();
+    final Paint nosePaint = Paint()
+      ..shader = ui.Gradient.linear(
+        const Offset(6.0, 0),
+        const Offset(15.5, 0),
+        isPenalty
+            ? [const Color(0xFFEF4444), const Color(0xFF991B1B)]
+            : [const Color(0xFFDC2626), const Color(0xFF991B1B)],
+      );
+    canvas.drawPath(nosePath, nosePaint);
+
+    // 6. 弹体高光流线
+    final Paint highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.65)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(const Offset(-8.5, -1.8), const Offset(9.5, -1.0), highlightPaint);
+
+    canvas.restore();
+  }
+
   void _drawProjectile(Canvas canvas, GameProjectile p) {
     if (p.type == ProjectileType.starfish) {
       final starfishPaint = Paint()
@@ -4508,17 +4696,10 @@ class _UnderseaScenePainter extends CustomPainter {
         ..color = Colors.white
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(p.x, p.y - 10), 3.0, glowPaint);
-    } else if (p.type == ProjectileType.mine) {
-      final minePaint = Paint()
-        ..color = const Color(0xFFDC2626)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(p.x, p.y), 10.0, minePaint);
-      final sparkPaint = Paint()
-        ..color = const Color(0xFFFBBF24)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(p.x + 8, p.y - 8), 3.5, sparkPaint);
+    } else if (p.type == ProjectileType.mine || p.type == ProjectileType.penaltyMissile) {
+      _drawMissile(canvas, p);
     } else if (p.type == ProjectileType.rewardMine) {
-      // 获得道具水雷：璀璨橙红微光光球，带有柔和光晕和专属水雷图标
+      // 获得道具导弹：璀璨橙红微光光球，带有柔和光晕和专属导弹图标
       final outerGlow = Paint()
         ..color = const Color(0xFFEA580C).withValues(alpha: 0.35)
         ..style = PaintingStyle.fill;
@@ -4530,7 +4711,7 @@ class _UnderseaScenePainter extends CustomPainter {
       canvas.drawCircle(Offset(p.x, p.y), 13.0, corePaint);
 
       final textPainter = TextPainter(
-        text: const TextSpan(text: '💣', style: TextStyle(fontSize: 14)),
+        text: const TextSpan(text: '🚀', style: TextStyle(fontSize: 14)),
         textDirection: TextDirection.ltr,
       )..layout();
       textPainter.paint(canvas, Offset(p.x - textPainter.width / 2, p.y - textPainter.height / 2));
