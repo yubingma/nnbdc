@@ -162,6 +162,31 @@ class LearningService {
       // 触发条件：今日为空 / 词数不足且允许补充 / 今日新词数不足配置的最少新词数
       final int minNewWordsPerDay = StudyConfig.fromCurrentUser().minNewWordsPerDay;
       int todayNewCount = planWords.where((w) => w.isTodayNewWord).length;
+
+      // 最少新词被下调（包括改成「不限制」即 0）时，今日计划里多出来的新词必须退回候选池。
+      // 下面这套补词逻辑只有「不足就补」，没有「多了就退」：genTodayWords 里也只在
+      // newDeficit > 0 时补新词。于是用户把 30 改成 20 后，今天那 10 个多出来的新词
+      // 会一直挂在计划里，表现就是「改成 20 也没用」；改成「不限制」时同理不会回到
+      // 「复习词优先、不足才补新词」的自然分配。
+      // 只处理「今日尚未开始学习」：已开始学习时新词已分好组，不能动。
+      if (!user.todayStudyStarted && todayNewCount > minNewWordsPerDay) {
+        final int excess = todayNewCount - minNewWordsPerDay;
+        final removable = planWords
+            .where((w) => w.isTodayNewWord && w.todayLearnedTimes == 0)
+            .take(excess)
+            .toList();
+        for (final w in removable) {
+          await db.learningWordsDao.saveEntity(
+            w.copyWith(batchId: const Value(0), learningOrder: 0, isExtra: false),
+            true,
+          );
+          planWords.remove(w);
+        }
+        todayNewCount = planWords.where((w) => w.isTodayNewWord).length;
+        Global.logger.d(
+            '[FETCH-WORD] [prepareTodayStudy] 最少新词下调至 $minNewWordsPerDay，退回 ${removable.length} 个多余新词，剩余新词 $todayNewCount');
+      }
+
       bool needAddNewWords = planWords.isEmpty ||
           (planWords.length < (user.effectiveWordsPerDay) && addNewWordsIfNotEnough) ||
           (minNewWordsPerDay > 0 && todayNewCount < minNewWordsPerDay);
