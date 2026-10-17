@@ -1257,11 +1257,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 而不是折成「例句英译 / 汉」两行把节点撑高。
     final Widget node = Container(
       key: key,
-      // 撑满父级给定宽度（托盘卡片、拖拽反馈卡片需要固定宽，右边缘才能稳定对齐）
       width: expand ? double.infinity : null,
       constraints: const BoxConstraints(minHeight: 30),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      alignment: Alignment.center,
+      // 这里不能设 alignment：Container 一旦有 alignment 又没显式宽度，
+      // 就会撑满父级的最大约束（Flutter 为了居中子级而扩展自身）。
+      // 托盘里的卡片因此被拉成整行宽——宽度应该由文字决定。
       decoration: BoxDecoration(
         color: bg ?? Colors.transparent,
         borderRadius: BorderRadius.circular(10),
@@ -1309,32 +1310,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       onDragEnd: (_) => setState(() => _draggingPayload = null),
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
       // 反馈卡片放大一点：手指本身会挡住它，放大后才看得清拖的是什么
-      // 反馈卡片固定 130 宽（否则宽度随文字长度变，短环节的右边缘会离手指很远，
-      // 手感不一致），右边缘稳定停在手指左侧 10px。
-      feedback: Transform.translate(
-        offset: const Offset(-140, -18),
-        child: SizedBox(
-          width: 130,
-          child: Material(
-            color: Colors.transparent,
-            child: Transform.scale(
-              scale: 1.18,
-              // 右对齐缩放：放大后右边缘不会往前顶
-              alignment: Alignment.centerRight,
-              child: Opacity(
-                opacity: 0.95,
-                child: _trackNode(
-                  text: text,
-                  inkColor: inkColor,
-                  bg: bg,
-                  borderColor: borderColor,
-                  fontSize: fontSize,
-                  fontWeight: fontWeight,
-                  shadows: shadows,
-                  expand: true,
-                ),
-              ),
-            ),
+      // 宽度按内容自适应；位置由「右边缘贴指针左侧 10px」决定，
+      // 所以宽窄不同的环节，跟手程度也一致。
+      feedback: CustomSingleChildLayout(
+        delegate: const FeedbackRightAligned(gap: 10, dy: -18),
+        child: Material(
+          color: Colors.transparent,
+          child: Transform.scale(
+            scale: 1.18,
+            // 右对齐缩放：放大后右边缘不会往前顶
+            alignment: Alignment.centerRight,
+            child: Opacity(opacity: 0.95, child: node),
           ),
         ),
       ),
@@ -2107,8 +2093,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             borderColor: nodeBorder,
             fontSize: 11,
             shadows: shadows,
-            // 撑满 150 的固定宽：托盘四张卡等宽，拖拽反馈的右边缘也才稳定
-            expand: true,
           ),
         );
 
@@ -2149,34 +2133,36 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   runSpacing: 8,
                   children: [
                     for (final step in steps)
-                      SizedBox(
-                        width: 150,
-                        child: Builder(builder: (context) {
+                      Builder(builder: (context) {
                           final payload = _TrackDragPayload(scope: '', step: step);
                           return LongPressDraggable<_TrackDragPayload>(
                       data: payload,
                       delay: const Duration(milliseconds: 220),
                       dragAnchorStrategy: pointerDragAnchorStrategy,
-                      // 视觉位移在下面的 feedback 里做（feedbackOffset 不管画在哪）
+                      feedbackOffset: const Offset(-62, -18),
                       onDragStarted: () {
                         HapticFeedback.mediumImpact();
                         setState(() => _draggingPayload = payload);
                       },
                       onDragEnd: (_) => setState(() => _draggingPayload = null),
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
-                      feedback: Transform.translate(
-                        // 托盘卡片固定 150 宽，右边缘同样停在手指左侧 10px
-                        offset: const Offset(-160, -18),
-                        // chip 用了 expand（宽度 infinity），拖拽反馈是无约束渲染的，
-                        // 外面必须有定宽容器，否则整张卡片画不出来（流程里那张有 SizedBox）。
-                        child: SizedBox(
-                          width: 150,
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Transform.scale(
-                              scale: 1.18,
-                              alignment: Alignment.centerRight,
-                              child: chip(step),
+                      feedback: CustomSingleChildLayout(
+                        delegate: const FeedbackRightAligned(gap: 10, dy: -18),
+                        // 这里重建一个「不撑满」的节点：托盘里的 chip 是 expand 的
+                        // （宽度 infinity），直接拿来当反馈会在无约束下画不出来；
+                        // 重建后宽度随文字自适应，右边缘仍贴着指针。
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Transform.scale(
+                            scale: 1.18,
+                            alignment: Alignment.centerRight,
+                            child: _trackNode(
+                              text: StudyStepExt.displayName(step),
+                              inkColor: ink.primary,
+                              bg: nodeBg,
+                              borderColor: nodeBorder,
+                              fontSize: 11,
+                              shadows: shadows,
                             ),
                           ),
                         ),
@@ -2186,7 +2172,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             child: chip(step),
                           );
                         }),
-                      ),
                   ],
                 ),
               ],
@@ -4669,4 +4654,28 @@ class _PetBubbleTailPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PetBubbleTailPainter oldDelegate) => oldDelegate.color != color;
+}
+
+
+/// 把拖拽反馈卡片摆到指针左侧：右边缘固定距指针 [gap] 像素。
+/// 用布局而非固定偏移，卡片宽度就能随内容自适应，宽窄不同的环节跟手程度一致。
+@visibleForTesting
+class FeedbackRightAligned extends SingleChildLayoutDelegate {
+  const FeedbackRightAligned({required this.gap, required this.dy});
+
+  final double gap;
+  final double dy;
+
+  @override
+  Size getSize(BoxConstraints constraints) => constraints.constrain(Size.zero);
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) => constraints.loosen();
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) => Offset(-childSize.width - gap, dy);
+
+  @override
+  bool shouldRelayout(covariant FeedbackRightAligned oldDelegate) =>
+      oldDelegate.gap != gap || oldDelegate.dy != dy;
 }

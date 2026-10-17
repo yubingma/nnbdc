@@ -195,4 +195,28 @@ void main() {
     expect(find.text('答对后环节'), findsNWidgets(2));
     expect(find.text('答错后环节'), findsNWidgets(2));
   });
+
+  testWidgets('FeedbackRightAligned 在无界约束(unconstrained/Overlay)下返回有限尺寸且不会抛出 infinite size 异常', (tester) async {
+    const delegate = FeedbackRightAligned(gap: 10, dy: -18);
+    // 模拟 Overlay/Draggable 传给 feedback 的 BoxConstraints(unconstrained)
+    const unconstrained = BoxConstraints();
+    final size = delegate.getSize(unconstrained);
+    expect(size.isFinite, isTrue, reason: 'unconstrained 约束下尺寸必须有限，不能为 Infinity');
+    expect(size, equals(Size.zero));
+
+    // 验证实际 RenderCustomSingleChildLayoutBox 在无约束下布局不抛出 RenderBox infinite size 异常
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: UnconstrainedBox(
+          child: CustomSingleChildLayout(
+            delegate: delegate,
+            child: SizedBox(width: 80, height: 38),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
+
