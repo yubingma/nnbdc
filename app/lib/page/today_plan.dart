@@ -190,6 +190,9 @@ class TodayPlanPageState extends State<TodayPlanPage>
 
   void _showPetSpeech() {
     if (!mounted) return;
+    // 页面不是当前路由（被学习页/词表页等盖住）时不许冒泡：
+    // 气泡挂在根 Overlay 上，会跨页面显示——这正是"本组小结里看到它说话"的原因。
+    if (ModalRoute.of(context)?.isCurrent != true) return;
     final bool first = !_petFirstMet;
     final picked = first
         ? (text: PetSpeech.firstMeet, index: 0)
