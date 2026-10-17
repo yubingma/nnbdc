@@ -1283,7 +1283,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       dragAnchorStrategy: pointerDragAnchorStrategy,
       // 左上角对齐指针后再往右下挪一点：手指按下会盖住指针周围一圈，
       // 不挪的话卡片左上角会被手指压住，正好挡住「拖的是哪个环节」。
-      feedbackOffset: const Offset(16, 22),
+      // 卡片摆在指针的左上：手指正好压在卡片的右下角，卡面大部分露在外面
+      feedbackOffset: const Offset(-104, -16),
       onDragStarted: () => setState(() => _draggingPayload = drag),
       onDragEnd: (_) => setState(() => _draggingPayload = null),
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
@@ -1360,7 +1361,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         ),
         const SizedBox(height: 6),
         _trackVLine(16, lineColor),
-        if (editable) _buildDropZone(scope: scope, group: group, index: 0, accent: labelColor, lineColor: lineColor),
+        if (editable) _buildDropZone(scope: scope, group: group, index: 0, inkColor: inkColor, lineColor: lineColor),
         if (steps.isEmpty) ...[
           _trackNode(
             text: '直接结束',
@@ -1370,7 +1371,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             shadows: shadows,
           ),
           // 空组也能拖进来：末尾留一个放置条
-          _buildDropZone(scope: scope, group: group, index: 0, accent: labelColor, lineColor: lineColor),
+          _buildDropZone(scope: scope, group: group, index: 0, inkColor: inkColor, lineColor: lineColor),
         ] else
           for (int i = 0; i < steps.length; i++) ...[
             if (i > 0) _trackVLine(14, lineColor),
@@ -1385,7 +1386,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   : null,
             ),
             if (editable)
-              _buildDropZone(scope: scope, group: group, index: i + 1, accent: labelColor, lineColor: lineColor),
+              _buildDropZone(scope: scope, group: group, index: i + 1, inkColor: inkColor, lineColor: lineColor),
           ],
       ],
     );
@@ -1936,7 +1937,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required String scope,
     required String group,
     required int index,
-    required Color accent,
+    required Color inkColor,
     required Color lineColor,
   }) {
     if (!_trackEditing) return const SizedBox.shrink();
@@ -1951,30 +1952,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         final String? rejectReason =
             moving == null ? null : _trackStepBlockReason(moving, scope, group, index);
         final bool blocked = rejectReason != null;
-        final Color zoneColor = blocked
-            ? lineColor.withValues(alpha: 0.30)
-            : (active ? accent : lineColor);
-        // 手指正好停在这一格上（rejected 非空）→ 直接把原因写出来，
-        // 比只显示一个 🚫 更能让用户明白为什么放不进去。
-        if (blocked && rejected.isNotEmpty) {
-          return Container(
-            margin: const EdgeInsets.symmetric(vertical: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0x22EF4444),
-              borderRadius: BorderRadius.circular(7),
-              border: Border.all(color: const Color(0xB3EF4444), width: 0.8),
-            ),
-            child: Text(
-              rejectReason,
-              // 字号压到 8、允许两行：这一条本来就只有一百多像素宽，
-              // 9 号字单行一定被截成省略号，用户根本读不出「已有哪个环节」。
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 8, height: 1.15, color: Color(0xFFEF4444)),
-            ),
-          );
-        }
+        // 着色只看「这一格能不能装下当前拖着的环节」，与答对/答错无关：
+        //   没在拖任何环节 → 一律中性灰（不暗示任何倾向）
+        //   拖了且能放     → 高亮（用字色，白/黑，中性）
+        //   拖了但接不住   → 更淡的灰 + 🚫
+        final Color neutral = inkColor.withValues(alpha: 0.26);
+        final Color zoneColor = moving == null
+            ? neutral
+            : (blocked ? neutral.withValues(alpha: 0.55) : inkColor);
+        // 手指停在这一格上（rejected 非空）→ 把原因直接写进胶囊里。
+        // 注意：提示必须**沿用胶囊的尺寸**。之前这里返回的是另一种尺寸的提示条，
+        // 尺寸一变，指针就"移出"了 DragTarget，rejected 清空 → 恢复小胶囊 →
+        // 指针又"移入" → 无限闪烁。
+        final bool showReason = blocked && rejected.isNotEmpty;
         // 两级放大，幅度给足：
         //   一提起（还没压到哪一格）→ 立刻从 72×14 撑到 110×32；
         //   压上去的那一格 → 再撑到 150×50。
@@ -1982,8 +1972,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         final bool dragging = _draggingPayload != null;
         final double zoneWidth = active ? 150 : (dragging ? 110 : 72);
         final double zoneHeight = active ? 50 : (dragging ? 32 : 14);
-        return SizedBox(
-          height: 50,
+        // 外面这圈内边距是「透明命中区」：手指离胶囊还有一段距离就开始感应放大，
+        // 而不是等压进胶囊内部。DragTarget 的命中范围 = 它自己的渲染尺寸，
+        // 所以靠 padding 把尺寸撑大，可见的胶囊仍然保持小尺寸。
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 26),
           child: Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 110),
@@ -1991,15 +1984,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               width: zoneWidth,
               height: zoneHeight,
               decoration: BoxDecoration(
-                color: blocked
-                    ? Colors.transparent
-                    : (active ? accent.withValues(alpha: 0.22) : Colors.transparent),
+                color: (moving != null && !blocked)
+                    ? inkColor.withValues(alpha: active ? 0.18 : 0.06)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(active ? 14 : 7),
                 border: Border.all(color: zoneColor, width: active ? 1.8 : 0.6),
               ),
-              child: blocked
-                  ? Icon(Icons.block_rounded, size: 12, color: lineColor.withValues(alpha: 0.45))
-                  : (active ? Icon(Icons.add_rounded, size: 20, color: accent) : null),
+              child: showReason
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      child: Center(
+                        child: Text(
+                          rejectReason!,
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 8, height: 1.15, color: Color(0xFFEF4444)),
+                        ),
+                      ),
+                    )
+                  : (blocked
+                      ? Icon(Icons.block_rounded, size: 12, color: lineColor.withValues(alpha: 0.45))
+                      : (active ? Icon(Icons.add_rounded, size: 20, color: zoneColor) : null)),
             ),
           ),
         );
@@ -2101,7 +2106,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       data: payload,
                       delay: const Duration(milliseconds: 220),
                       dragAnchorStrategy: pointerDragAnchorStrategy,
-                      feedbackOffset: const Offset(16, 22),
+                      feedbackOffset: const Offset(-104, -16),
                       onDragStarted: () => setState(() => _draggingPayload = payload),
                       onDragEnd: (_) => setState(() => _draggingPayload = null),
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
