@@ -1143,9 +1143,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     List<Shadow>? shadows,
     Key? key,
   }) {
-    // 文字不再用 FittedBox 无下限地缩：列一窄就把「例句汉译英」压到 10px 以下，
-    // 用户反馈「每个环节的文字特别小」。这里给足内边距、允许折成两行，
-    // 放不下就换行（节点变高），而不是把字缩小。
+    // 优先单行：放不下就等比缩一点点（FittedBox 只在超宽时生效，够宽时字号就是 12.5），
+    // 而不是折成「例句英译 / 汉」两行把节点撑高。
     return Container(
       key: key,
       constraints: const BoxConstraints(minHeight: 30),
@@ -1156,16 +1155,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: borderColor ?? Colors.transparent, width: 0.8),
       ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        maxLines: 2,
-        style: TextStyle(
-          fontSize: fontSize < 12.5 ? 12.5 : fontSize,
-          fontWeight: fontWeight,
-          color: inkColor,
-          height: 1.15,
-          shadows: shadows,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          maxLines: 1,
+          softWrap: false,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: fontSize < 12.5 ? 12.5 : fontSize,
+            fontWeight: fontWeight,
+            color: inkColor,
+            height: 1.1,
+            shadows: shadows,
+          ),
         ),
       ),
     );
