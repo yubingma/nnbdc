@@ -137,8 +137,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 卡片很矮、不遮壁纸；用户点一下才展开完整轨道（环节多的时候卡片会很高）。
   bool _trackExpanded = false;
 
-  /// 是否处于「拖拽编排轨道」的编辑态。编辑态下环节可长按拖动、底部出现环节托盘。
+  /// 是否处于「拖拽编排轨道」的编辑态。编辑态下环节可直接拖动、底部出现环节托盘。
   bool _trackEditing = false;
+
+  /// 当前正在被拖动的环节（null = 没有在拖）。
+  /// 有它才能让「所有」放置条同时知道自己接不接受这一份：不接受的就灰掉，
+  /// 而不是等手指拖到跟前才变灰（DragTarget 的 rejected 只对经过过的目标有效）。
+  _TrackDragPayload? _draggingPayload;
   int? todayWordCount;
   bool dataLoaded = false;
   UserVo? user;
@@ -1178,9 +1183,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
 
     if (drag == null) return node;
-    // 长按拖动：短按仍然可以点（节点本身没有点击行为，不冲突）
-    return LongPressDraggable<_TrackDragPayload>(
+    // 直接拖动（与底部托盘一致，不需要长按）：节点本身没有点击行为，不冲突。
+    return Draggable<_TrackDragPayload>(
       data: drag,
+      // 用「指针锚定」而不是默认的「child 锚定」：默认策略要量出「按下点相对 child 的偏移」，
+      // 再按同样尺寸重建 feedback；一旦 feedback 的实际尺寸和按下时的 child 不一致
+      // （托盘里的 chip 在 Wrap + Opacity + Builder 里，重建约束不同），偏移就错位，
+      // 卡片会飘到离手指很远的地方。指针锚定与尺寸无关，两种来源的拖动体验一致。
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      onDragStarted: () => setState(() => _draggingPayload = drag),
+      onDragEnd: (_) => setState(() => _draggingPayload = null),
+      onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
       feedback: Material(
         color: Colors.transparent,
         child: Opacity(opacity: 0.92, child: node),
@@ -1748,17 +1761,26 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
   }
 
-  /// 同组不能重复同一题型，答对/答错各最多 4 个环节。
-  bool _canPlaceTrackStep(_TrackDragPayload d, String scope, String group, int index) {
-    if (group == 'check') return false;
+  /// 为什么这一格接不住这个环节（null = 能接）。
+  String? _trackStepBlockReason(_TrackDragPayload d, String scope, String group, int index) {
+    if (group == 'check') return '测评环节不可调整';
     final List<String> target = List.of(_trackStepsOf(scope, group));
+    // 同组内移动时，先把"自己"从目标里摘掉再判断，否则会被自己挡住
     if (!d.fromTray && d.scope == scope && d.group == group && d.index >= 0 && d.index < target.length) {
       target.removeAt(d.index);
     }
-    if (target.contains(d.step)) return false;
-    if (target.length >= 4) return false;
-    return true;
+    if (target.contains(d.step)) {
+      return '本轨道已有该环节';
+    }
+    if (target.length >= 4) {
+      return '本轨道环节已满';
+    }
+    return null;
   }
+
+  /// 同组不能重复同一题型，答对/答错各最多 4 个环节。
+  bool _canPlaceTrackStep(_TrackDragPayload d, String scope, String group, int index) =>
+      _trackStepBlockReason(d, scope, group, index) == null;
 
   /// 把托盘里的环节放进流程，或在流程内做跨组移动。
   Future<void> _onDropTrackStep(_TrackDragPayload d, String scope, String group, int index) async {
@@ -1826,16 +1848,48 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       onAcceptWithDetails: (d) => _onDropTrackStep(d.data, scope, group, index),
       builder: (context, candidate, rejected) {
         final bool active = candidate.isNotEmpty;
+        // 有环节正在被拖、且这一格接不住（同组重复题型 / 组已满）→ 灰掉，
+        // 用户一眼就能看出「这个环节已经在该轨道设置了」。
+        final _TrackDragPayload? moving = _draggingPayload;
+        final String? rejectReason =
+            moving == null ? null : _trackStepBlockReason(moving, scope, group, index);
+        final bool blocked = rejectReason != null;
+        final Color zoneColor = blocked
+            ? lineColor.withValues(alpha: 0.30)
+            : (active ? accent : lineColor);
+        // 手指正好停在这一格上（rejected 非空）→ 直接把原因写出来，
+        // 比只显示一个 🚫 更能让用户明白为什么放不进去。
+        if (blocked && rejected.isNotEmpty) {
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0x22EF4444),
+              borderRadius: BorderRadius.circular(7),
+              border: Border.all(color: const Color(0xB3EF4444), width: 0.8),
+            ),
+            child: Text(
+              rejectReason,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 9, height: 1.1, color: Color(0xFFEF4444)),
+            ),
+          );
+        }
         return Container(
           width: 72,
           height: 14,
           margin: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(
-            color: active ? accent.withValues(alpha: 0.18) : Colors.transparent,
+            color: blocked
+                ? Colors.transparent
+                : (active ? accent.withValues(alpha: 0.18) : Colors.transparent),
             borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: active ? accent : lineColor, width: active ? 1.2 : 0.6),
+            border: Border.all(color: zoneColor, width: active ? 1.2 : 0.6),
           ),
-          child: active ? Icon(Icons.add_rounded, size: 11, color: accent) : null,
+          child: blocked
+              ? Icon(Icons.block_rounded, size: 10, color: lineColor.withValues(alpha: 0.45))
+              : (active ? Icon(Icons.add_rounded, size: 11, color: accent) : null),
         );
       },
     );
@@ -1925,15 +1979,22 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   runSpacing: 6,
                   children: [
                     for (final step in steps)
-                      Draggable<_TrackDragPayload>(
-                        data: _TrackDragPayload(scope: '', step: step),
-                        feedback: Material(
-                          color: Colors.transparent,
+                      Builder(builder: (context) {
+                        final payload = _TrackDragPayload(scope: '', step: step);
+                        return Draggable<_TrackDragPayload>(
+                          data: payload,
+                          dragAnchorStrategy: pointerDragAnchorStrategy,
+                          onDragStarted: () => setState(() => _draggingPayload = payload),
+                          onDragEnd: (_) => setState(() => _draggingPayload = null),
+                          onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
+                          feedback: Material(
+                            color: Colors.transparent,
+                            child: chip(step),
+                          ),
+                          childWhenDragging: chip(step, dragging: true),
                           child: chip(step),
-                        ),
-                        childWhenDragging: chip(step, dragging: true),
-                        child: chip(step),
-                      ),
+                        );
+                      }),
                   ],
                 ),
               ],
