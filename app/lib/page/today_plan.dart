@@ -1284,7 +1284,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       // 左上角对齐指针后再往右下挪一点：手指按下会盖住指针周围一圈，
       // 不挪的话卡片左上角会被手指压住，正好挡住「拖的是哪个环节」。
       // 卡片摆在指针的左上：手指正好压在卡片的右下角，卡面大部分露在外面
-      feedbackOffset: const Offset(-104, -16),
+      // 卡片整体移到指针左侧（宽度上限约 130，留 10 像素间隙），
+      // 这样手指完全不会盖住卡片
+      feedbackOffset: const Offset(-140, -18),
       onDragStarted: () => setState(() => _draggingPayload = drag),
       onDragEnd: (_) => setState(() => _draggingPayload = null),
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
@@ -1360,7 +1362,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: labelColor, height: 1),
         ),
         const SizedBox(height: 6),
-        _trackVLine(16, lineColor),
+        // 编辑态不画竖线：拖动编排时连线没有信息量，去掉还能省一截纵向空间
+        if (!editable) _trackVLine(16, lineColor),
         if (editable) _buildDropZone(scope: scope, group: group, index: 0, inkColor: inkColor, lineColor: lineColor),
         if (steps.isEmpty) ...[
           _trackNode(
@@ -1374,7 +1377,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           _buildDropZone(scope: scope, group: group, index: 0, inkColor: inkColor, lineColor: lineColor),
         ] else
           for (int i = 0; i < steps.length; i++) ...[
-            if (i > 0) _trackVLine(14, lineColor),
+            if (i > 0 && !editable) _trackVLine(14, lineColor),
             _trackNode(
               text: StudyStepExt.displayName(steps[i]),
               inkColor: inkColor,
@@ -1724,8 +1727,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         Expanded(child: track(isNew: false, countScale: countScale)),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    _buildDakaStatusLine(ink: ink, onDark: onDark),
+                    // 编辑态省掉「打卡状态 + 今日目标」那行：纯信息、不参与编排，
+                    // 去掉又能省一截纵向空间
+                    if (!_trackEditing) ...[
+                      const SizedBox(height: 12),
+                      _buildDakaStatusLine(ink: ink, onDark: onDark),
+                    ],
                     _buildTrackEditBar(ink: ink),
                     if (_trackEditing)
                       _buildTrackTray(ink: ink, nodeBg: nodeBg, nodeBorder: nodeBorder, shadows: shadows),
@@ -1974,7 +1981,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           child: Center(
             child: Container(
               width: 150,
-              height: 40,
+              // 高度从 40 收到 30（减少四分之一），编辑态下支路不至于被拉太长
+              height: 30,
               decoration: BoxDecoration(
                 color: (moving != null && !blocked)
                     ? inkColor.withValues(alpha: active ? 0.18 : 0.06)
@@ -1995,8 +2003,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       ),
                     )
                   : (blocked
-                      ? Icon(Icons.block_rounded, size: 12, color: lineColor.withValues(alpha: 0.45))
-                      : (active ? Icon(Icons.add_rounded, size: 20, color: zoneColor) : null)),
+                      ? Icon(Icons.block_rounded, size: 11, color: lineColor.withValues(alpha: 0.45))
+                      : (active ? Icon(Icons.add_rounded, size: 16, color: zoneColor) : null)),
             ),
           ),
         );
@@ -2013,7 +2021,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         children: [
           Expanded(
             child: Text(
-              _trackEditing ? '按住环节，拖到下方托盘即删除' : '',
+              _trackEditing ? '拖到轨道里添加 · 拖回托盘删除' : '',
               style: TextStyle(fontSize: 10.5, color: ink.faint),
             ),
           ),
@@ -2066,7 +2074,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           final bool active = candidate.isNotEmpty;
           return Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            // 上下留够呼吸空间：8 太局促，卡片贴着边框像被挤住
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
             decoration: BoxDecoration(
               color: active ? const Color(0x33EF4444) : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
@@ -2078,11 +2087,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  active ? '松手删除这个环节' : '把环节拖到上面的轨道里',
-                  style: TextStyle(fontSize: 10, color: active ? const Color(0xFFEF4444) : ink.faint),
-                ),
-                const SizedBox(height: 6),
+                // 平时的操作说明统一由上方编辑条那一句承担，这里只在"拖回托盘"时提示松手
+                if (active) ...[
+                  const Text(
+                    '松手删除这个环节',
+                    style: TextStyle(fontSize: 10, color: Color(0xFFEF4444)),
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 // 流式布局：每张卡固定 150 宽，一行排满再换行。
                 // 手机上一行两个、iPad 横屏一行四个，不会像固定列数那样在宽屏上被拉成巨型卡片。
                 Wrap(
@@ -2098,7 +2110,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       data: payload,
                       delay: const Duration(milliseconds: 220),
                       dragAnchorStrategy: pointerDragAnchorStrategy,
-                      feedbackOffset: const Offset(-104, -16),
+                      feedbackOffset: const Offset(-140, -18),
                       onDragStarted: () => setState(() => _draggingPayload = payload),
                       onDragEnd: (_) => setState(() => _draggingPayload = null),
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
