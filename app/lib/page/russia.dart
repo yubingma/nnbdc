@@ -1397,19 +1397,17 @@ class RussiaPageState extends State<RussiaPage>
   }
 
   /// 服务端明确告知"你已经不在这一局里了"（断线太久被判负、房间已解散等）。
-  /// 必须退出对战界面，绝不允许停在一个永远等不到单词的空壳界面上。
+  /// 必须退出对战界面，绝不允许停在一个永远等不到单词或开赛的空壳界面上。
   void _handleGameNotInProgress(String cmd) {
     _pendingUserCmds.clear();
-    if (!isPlaying) return;
     Global.logger.w('SocketIoClient: 服务端已无本局对局，退出对战界面（触发指令[$cmd]）');
-    _exitBattleScreen('本局已结束（长时间断线会按战败结算），请重新开始');
+    _exitBattleScreen('对局已结束或房间已解散，请重新开始');
   }
 
   /// 本连接被服务端顶掉（同一账号在别处登录）：退出对战界面
   void _handleForceClose(String reason) {
     _pendingUserCmds.clear();
     Global.logger.w('SocketIoClient: 连接被服务端关闭: $reason');
-    if (!isPlaying) return;
     _exitBattleScreen(reason.isEmpty ? '连接已被关闭' : '连接已被关闭：$reason');
   }
 

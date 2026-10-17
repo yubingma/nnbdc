@@ -1509,7 +1509,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 countScale: countScale,
                 ),
               ),
-              _buildTrackToggle(inkColor: ink.faint),
+              _buildTrackToggle(inkColor: ink.muted, shadows: shadows),
               SizedBox(
                 width: collapseCardWidth,
                 child: _buildCountCard(
@@ -1574,7 +1574,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 // 按钮只占第一行：浮在两列中间的顶部，下方两列怎么排跟它无关
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: _buildTrackToggle(inkColor: ink.faint),
+                  child: _buildTrackToggle(inkColor: ink.muted, shadows: shadows),
                 ),
               ],
                 ),
@@ -1662,7 +1662,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 轨道展开 / 收起按钮：默认收起，只露新词旧词两枚数字，点它才展开整条轨道。
-  Widget _buildTrackToggle({required Color inkColor}) {
+  Widget _buildTrackToggle({required Color inkColor, List<Shadow>? shadows}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => setState(() => _trackExpanded = !_trackExpanded),
@@ -1681,7 +1681,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           children: [
             Text(
               _trackExpanded ? '收起轨道' : '学习轨道',
-              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: inkColor, letterSpacing: 0.6),
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: inkColor,
+                letterSpacing: 0.6,
+                shadows: shadows,
+              ),
             ),
             const SizedBox(width: 2),
             Icon(
@@ -3351,6 +3357,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required bool onDark,
   }) {
     final total = _planWords.length;
+    // 这行字直接压在壁纸上（没有卡片底），浅色照片上会糊掉。
+    // 用「与字色相反的柔光投影」把它从背景里托出来：亮底配白投影、暗底配黑投影。
+    final shadows = <Shadow>[
+      Shadow(
+        color: onDark ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.95),
+        blurRadius: 6,
+      ),
+    ];
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _showWordsPerDaySheet,
@@ -3364,12 +3378,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: ink.faint,
+                color: ink.muted,
                 letterSpacing: 0.4,
+                shadows: shadows,
               ),
             ),
             const SizedBox(width: 3),
-            Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: ink.faint),
+            Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: ink.muted),
           ],
         ),
       ),
