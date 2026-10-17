@@ -739,9 +739,12 @@ class Asr {
     }
     if (!permissionGranted) return;
     try {
+      // 热词只是"提高目标词识别率"的提示，不是开麦的前提；但它被 await 在
+      // startAsr/startSession 里，而 startSession 跑在全局音频串行队列上。
+      // 原生若迟迟不回调，整条队列（含之后的切模式、播放）都会永久排队。
       await asrMethodChannel.invokeMethod('setContextualStrings', {
         'phrases': phrases,
-      });
+      }).timeout(const Duration(seconds: 3));
     } catch (e) {
       Global.logger.i('ASR setContextualStrings error: $e');
     }

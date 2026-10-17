@@ -468,4 +468,36 @@ void main() {
           reason: 'playback 与 playAndRecord 两条会话路径都必须走 _activateSession()，保持对称');
     });
   });
+
+  group('切拼写模式永久转圈（静态验证）', () {
+    test('播放任务里的原生命令必须带超时，不允许把整条音频队列拖死', () async {
+      // 事故现场：用户在「本组小结」里背完一组词，切到拼写模式后
+      // "模式切换中..."的浮层一直转，只能退出页面重进。
+      //
+      // 链路是：切模式只等 stopSession（word_list.dart:2791 / :2825）→
+      // stopSession 排在全局音频串行队列（_queueLock）尾部 →
+      // 队列头上的播放任务里只要有一个原生命令永不回调，
+      // 之后每一次播放、停麦、切模式都永久排在它后面。
+      //
+      // iOS 的音频会话被系统抢走时（来电、其它 App 占用扬声器、蓝牙切换），
+      // just_audio 的 stop/seek/setSpeed/setVolume 确实会一直不回调。
+      // 单测跑在 macOS 上造不出"原生不回调"，只能用源码闸门守住这条契约。
+      final source = await File('lib/util/study_audio_session_controller.dart').readAsString();
+      final start = source.indexOf('Future<void> playSoundByUrl(');
+      expect(start, greaterThanOrEqualTo(0), reason: '找不到 playSoundByUrl');
+
+      final end = source.indexOf('/// 统一等待音频播放器播放完成', start);
+      expect(end, greaterThan(start), reason: '找不到 playSoundByUrl 的结尾');
+
+      final bareCommands = RegExp(r'await\s+player\.(?:seek|setSpeed|setVolume|stop)\([^;]*\);')
+          .allMatches(source.substring(start, end))
+          .map((m) => m.group(0)!)
+          .where((statement) => !statement.contains('.timeout('))
+          .toList();
+
+      expect(bareCommands, isEmpty,
+          reason: '队列内的播放器命令必须带超时，否则一次原生不回调就会让切模式永久转圈：\n'
+              '${bareCommands.join('\n')}');
+    });
+  });
 }

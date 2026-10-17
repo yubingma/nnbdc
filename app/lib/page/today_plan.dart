@@ -141,11 +141,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 是否处于「拖拽编排轨道」的编辑态。编辑态下环节可直接拖动、底部出现环节托盘。
   bool _trackEditing = false;
 
-  /// 宠物当前这句台词（null = 气泡收起）。
-  String? _petSpeech;
+  /// 宠物头顶气泡的 Overlay 条目：挂在页面之外，绝不参与首页布局。
+  OverlayEntry? _petSpeechOverlay;
   Timer? _petSpeechTimer;
+  Timer? _autoSpeechTimer;
   int? _lastPetSpeechIndex;
   bool _petFirstMet = false;
+
+  /// 宠物形象所在的锚点，用来把它头顶的气泡定位到正确高度。
+  final GlobalKey _petAnchorKey = GlobalKey();
 
   /// 宠物当前处于哪一态：选图和抽台词共用它，保证「说」和「看」永远一致。
   PetMood get _petMood {
@@ -167,24 +171,50 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 每次进入（或刷新）今日计划页，宠物主动蹦一句，不用点。
   void _autoPetSpeech() {
     if (!mounted) return;
-    // 等页面布局稳定再弹，避免刚切进来就抢注意力
-    Future.delayed(const Duration(milliseconds: 520), () {
-      if (!mounted || _petSpeech != null) return;
+    // 等页面布局稳定再弹，避免刚切进来就抢注意力。
+    // 用可取消的 Timer（不是 Future.delayed）：页面在延时内被销毁时，
+    // 悬挂的定时器会让测试报「A Timer is still pending」。
+    _autoSpeechTimer?.cancel();
+    _autoSpeechTimer = Timer(const Duration(milliseconds: 520), () {
+      if (!mounted || _petSpeechOverlay != null) return;
       _showPetSpeech();
     });
   }
 
   void _showPetSpeech() {
+    if (!mounted) return;
     final bool first = !_petFirstMet;
     final picked = first
         ? (text: PetSpeech.firstMeet, index: 0)
         : PetSpeech.pick(_petMood, lastIndex: _lastPetSpeechIndex);
     _lastPetSpeechIndex = picked.index;
     _petFirstMet = true;
+
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final anchor = _petAnchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (anchor == null || !anchor.hasSize) return;
+    final double petTop = anchor.localToGlobal(Offset.zero).dy;
+
+    _petSpeechOverlay?.remove();
     _petSpeechTimer?.cancel();
-    setState(() => _petSpeech = picked.text);
+    _petSpeechOverlay = OverlayEntry(
+      builder: (ctx) => Positioned(
+        left: 24,
+        right: 24,
+        // 气泡底边贴着宠物头顶（+8 留给小尖角）
+        top: (petTop - 96).clamp(72.0, double.infinity),
+        child: IgnorePointer(
+          child: Material(
+            color: Colors.transparent,
+            child: Center(child: _buildPetSpeechBubble(picked.text, isDarkMode: isDarkMode)),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(_petSpeechOverlay!);
     _petSpeechTimer = Timer(const Duration(milliseconds: 2600), () {
-      if (mounted) setState(() => _petSpeech = null);
+      _petSpeechOverlay?.remove();
+      _petSpeechOverlay = null;
     });
   }
 
@@ -360,6 +390,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   @override
   void initState() {
     super.initState();
+    // 轨道是展开还是收起是用户自己的偏好，跨会话记住
+    _trackExpanded = Prefs.read<bool>('today_plan_track_expanded') ?? false;
     final savedWallpaper = Prefs.read<String>('today_plan_wallpaper');
     final validPaths = planWallpapers.map((w) => w.path).toSet();
     _wallpaperPath = (savedWallpaper != null && validPaths.contains(savedWallpaper))
@@ -425,7 +457,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   @override
   void dispose() {
+    _autoSpeechTimer?.cancel();
     _petSpeechTimer?.cancel();
+    _petSpeechOverlay?.remove();
+    _petSpeechOverlay = null;
     WidgetsBinding.instance.removeObserver(this);
     _dakaSubscription?.cancel();
     _wordDeletedSubscription?.cancel();
@@ -1957,7 +1992,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         children: [
           Expanded(
             child: Text(
-              _trackEditing ? '长按环节可拖动，拖到下方托盘即删除' : '',
+              _trackEditing ? '按住环节，拖到下方托盘即删除' : '',
               style: TextStyle(fontSize: 10.5, color: ink.faint),
             ),
           ),
@@ -2069,7 +2104,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Widget _buildTrackToggle({required Color inkColor, List<Shadow>? shadows}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _trackExpanded = !_trackExpanded),
+      onTap: () {
+        setState(() => _trackExpanded = !_trackExpanded);
+        Prefs.write('today_plan_track_expanded', _trackExpanded);
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
         // 大字号下这行「学习轨道 ▾」也可能撑破卡片（2.0x 实测 4.4px），
@@ -2258,48 +2296,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 首页底部的小宠物：只占一条固定的高度，不参与轨道图的排版。
   /// 点一下它会说一句解释自己逻辑的话（背篓里的智慧果 = 今日进度）。
   Widget _buildPetCompanion() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    const double petHeight = 132;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      // 气泡用「浮层」画在宠物上方，不参与布局：
-      // 否则它一冒出来，spaceBetween 就会被压缩、把上方的新词/旧词卡片顶上去。
-      // 现在它只是盖在上方内容上（2.6 秒后自己消失），布局纹丝不动。
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.bottomCenter,
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _onPetTap,
-            child: Image.asset(
-              _petAssetPath,
-              height: petHeight,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-            ),
-          ),
-          if (_petSpeech != null)
-            Positioned(
-              left: -40,
-              right: -40,
-              bottom: petHeight + 4,
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
-                  transitionBuilder: (child, anim) => FadeTransition(
-                    opacity: anim,
-                    child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.92, end: 1).animate(anim),
-                      alignment: Alignment.bottomCenter,
-                      child: child,
-                    ),
-                  ),
-                  child: _buildPetSpeechBubble(_petSpeech!, isDarkMode: isDarkMode),
-                ),
-              ),
-            ),
-        ],
+      // 气泡走 Overlay（见 _showPetSpeech），这里只留宠物本身：
+      // 否则气泡一出现就会把 spaceBetween 的空白压掉、把上方卡片顶上去。
+      child: GestureDetector(
+        key: _petAnchorKey,
+        behavior: HitTestBehavior.opaque,
+        onTap: _onPetTap,
+        child: Image.asset(
+          _petAssetPath,
+          height: 132,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
       ),
     );
   }

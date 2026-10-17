@@ -169,6 +169,17 @@ class StudyAudioSessionController {
   final List<ja.AudioPlayer> _sfxPool = [];
   static const int _sfxPoolSize = 3;
 
+  /// 播放器原生命令（stop / seek / setSpeed / setVolume）的最长等待时间。
+  ///
+  /// 这些命令全部跑在 [_queueLock] 保护区内。iOS 的音频会话被系统抢走时
+  /// （来电、其它 App 占用扬声器、蓝牙切换），just_audio 的命令会一直不回调；
+  /// 一旦挂住，后面的播放、停麦、切模式全部永久排在这一个命令之后，
+  /// 用户侧就是"模式切换中..."的浮层一直转圈、只能杀进程重进。
+  ///
+  /// 正常命令都是毫秒级，3 秒足够区分"慢"和"永远不返回"；超时按失败处理，
+  /// 由播放链路自己的降级分支收尾，绝不允许它把整条队列拖死。
+  static const Duration _nativeAudioCommandTimeout = Duration(seconds: 3);
+
   final Set<ja.AudioPlayer> _logicallyFinishedPlayers = {};
   final Map<ja.AudioPlayer, DateTime> _playerBusyUntil = {};
   final Map<ja.AudioPlayer, Object> _activeCutToken = {};
@@ -450,7 +461,7 @@ class StudyAudioSessionController {
           try {
             await _audioPlayer.setVolume(0.0).timeout(const Duration(milliseconds: 30));
           } catch (_) {}
-          await _audioPlayer.stop();
+          await _audioPlayer.stop().timeout(_nativeAudioCommandTimeout);
         }
       } catch (_) {}
 
@@ -1015,11 +1026,11 @@ class StudyAudioSessionController {
             try {
               await player.setVolume(0.0).timeout(const Duration(milliseconds: 30));
             } catch (_) {}
-            await player.stop();
+            await player.stop().timeout(_nativeAudioCommandTimeout);
           }
-          await player.seek(Duration.zero);
-          await player.setSpeed(speed);
-          await player.setVolume(1.0);
+          await player.seek(Duration.zero).timeout(_nativeAudioCommandTimeout);
+          await player.setSpeed(speed).timeout(_nativeAudioCommandTimeout);
+          await player.setVolume(1.0).timeout(_nativeAudioCommandTimeout);
           final playSw = Stopwatch()..start();
           unawaited(player.play().catchError((_) {}));
           debugPrint('⚡ [Latency-Sound] 同一音频瞬时重播命中，开播耗时: ${totalSw.elapsedMilliseconds}ms');
@@ -1042,7 +1053,7 @@ class StudyAudioSessionController {
           try {
             await player.setVolume(0.0).timeout(const Duration(milliseconds: 30));
           } catch (_) {}
-          await player.stop();
+          await player.stop().timeout(_nativeAudioCommandTimeout);
           try {
             await player.setVolume(1.0).timeout(const Duration(milliseconds: 30));
           } catch (_) {}
@@ -1072,7 +1083,7 @@ class StudyAudioSessionController {
                 .timeout(Duration(milliseconds: loadTimeoutMs));
             _playerLoadedUrl[player] = filePath;
           } else {
-            await player.seek(Duration.zero);
+            await player.seek(Duration.zero).timeout(_nativeAudioCommandTimeout);
           }
           _playerLoadedUrl[player] = soundUrl;
           return player.processingState == ja.ProcessingState.ready ||
@@ -1189,11 +1200,11 @@ class StudyAudioSessionController {
       }
       
       debugPrint('⏱️ [Latency-Sound] 资源加载耗时: ${loadSw.elapsedMilliseconds}ms');
-      await player.setSpeed(speed);
+      await player.setSpeed(speed).timeout(_nativeAudioCommandTimeout);
 
       final volumeToken = Object();
       _activeVolumeToken[player] = volumeToken;
-      await player.setVolume(1.0);
+      await player.setVolume(1.0).timeout(_nativeAudioCommandTimeout);
 
       final playSw = Stopwatch()..start();
       unawaited(player.play().catchError((_) {}));
@@ -1282,7 +1293,10 @@ class StudyAudioSessionController {
     try {
       const assetPath = 'assets/audio/asr_ready_hint.wav';
       if (_playerLoadedAsset[_asrHintPlayer] != assetPath) {
-        await _asrHintPlayer.setAsset(assetPath);
+        // 与 _playAsrReadyHintSound 同一个理由：这一步是文件 IO + 解码，
+        // 而它被 await 在 configureSession 里，configureSession 又被每一个播放任务 await。
+        // 一旦它挂住，_configureFuture 永远不落地，之后每次播放都卡在这一句上。
+        await _asrHintPlayer.setAsset(assetPath).timeout(const Duration(seconds: 2));
         _playerLoadedAsset[_asrHintPlayer] = assetPath;
         debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热成功');
       }
@@ -1294,7 +1308,7 @@ class StudyAudioSessionController {
       try {
         final correctAsset = PlatformUtils.isIOS ? 'assets/audio/correct_ios.wav' : 'assets/audio/correct.wav';
         if (_playerLoadedAsset[_sfxPool.first] != correctAsset) {
-          await _sfxPool.first.setAsset(correctAsset);
+          await _sfxPool.first.setAsset(correctAsset).timeout(const Duration(seconds: 2));
           _playerLoadedAsset[_sfxPool.first] = correctAsset;
           debugPrint('🔊 [SessionController] 正确音效常驻预热成功: $correctAsset');
         }
