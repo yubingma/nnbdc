@@ -484,7 +484,7 @@ Set<String> _meaningKeys(List<MeaningItemVo> items) {
 }
 
 List<MeaningItemVo> _toMeaningItemVos(List<MeaningItem> items) =>
-    [for (final e in items) MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)];
+    [for (final e in items) MeaningItemVo.fromEntity(e)];
 
 WordVo _buildWordVo(Word word, List<MeaningItemVo> meaningItems) => WordVo.c2(word.spell)
   ..id = word.id

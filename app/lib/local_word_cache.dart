@@ -242,14 +242,7 @@ class LocalWordCache {
         // 添加释义项
         final meanings = wordMeanings[wordId] ?? [];
         final meaningItemVos = meanings
-            .map((mi) => MeaningItemVo(
-                mi.id,
-                mi.ciXing,
-                mi.meaning,
-                null, // dict
-                null, // synonyms
-                null // sentences
-                ))
+            .map((mi) => MeaningItemVo.fromEntity(mi))
             .toList();
 
         wordVo.meaningItems = meaningItemVos;

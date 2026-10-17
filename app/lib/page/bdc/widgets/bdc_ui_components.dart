@@ -3513,16 +3513,22 @@ extension BdcPageStateUIComponents on BdcPageState {
                           Padding(
                             padding:
                                 EdgeInsets.symmetric(vertical: itemVerticalGap),
-                            child: Text(
-                              cleanMeaning(item.meaning),
-                              textAlign: TextAlign.start,
-                              style: TextStyle(
-                                fontSize: meaningFontSize,
-                                fontWeight: FontWeight.w600,
-                                color: meaningColor,
-                                height: 1.4,
-                                letterSpacing: 0.0,
+                            child: Text.rich(
+                              TextSpan(
+                                children: MeaningRenderUtil.buildMeaningSpans(
+                                  item: item,
+                                  meaningStyle: TextStyle(
+                                    fontSize: meaningFontSize,
+                                    fontWeight: FontWeight.w600,
+                                    color: meaningColor,
+                                    height: 1.4,
+                                    letterSpacing: 0.0,
+                                  ),
+                                  dotColor: meaningColor,
+                                  showDots: MeaningRenderUtil.hasMultipleMeanings(displayItems),
+                                ),
                               ),
+                              textAlign: TextAlign.start,
                             ),
                           ),
                         ],

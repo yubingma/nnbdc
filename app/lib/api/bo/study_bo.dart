@@ -250,7 +250,7 @@ class StudyBo {
           // 获取并转换释义项
           final mItems = meaningItemsMap[word.id] ?? [];
           wordVo.meaningItems = mItems
-              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .map((mi) => MeaningItemVo.fromEntity(mi))
               .toList();
 
           // 构建 LearningWordVo
@@ -961,7 +961,7 @@ class StudyBo {
       final swMeaningItems = Stopwatch()..start();
       // 使用 WordBo.getWordMeaningItems 获取目标单词释义并用于生成混淆项
       final targetMeaningItems = await WordBo().getWordMeaningItems(returnWord.wordId, returnWord.userId);
-      final targetMeaningItemVos = targetMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+      final targetMeaningItemVos = targetMeaningItems.map((e) => MeaningItemVo.fromEntity(e)).toList();
       Global.logger.d('🐛 [BDC Performance Item] 加载当前词释义项耗时: ${swMeaningItems.elapsedMilliseconds} ms');
 
       final swDistractor = Stopwatch()..start();
@@ -1398,7 +1398,7 @@ class StudyBo {
   /// 提供给UI：根据 wordId 和 userId 获取释义项（封装内部的 popularity limit 逻辑）
   Future<List<MeaningItemVo>> getMeaningItemsForWord(String wordId, String userId) async {
     final items = await WordBo().getWordMeaningItems(wordId, userId);
-    return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+    return items.map((e) => MeaningItemVo.fromEntity(e)).toList();
   }
 
   /// 计算所有学习批次：以「计划词 / 加量词」为分段边界，段内按 batchSize 连续切片。

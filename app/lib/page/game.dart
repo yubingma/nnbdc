@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
 import '../api/vo.dart';
+import '../db/db.dart';
 import '../global.dart';
 import '../theme/app_theme.dart';
 import '../theme/page_vibrancy.dart';
@@ -28,10 +29,38 @@ class _GamePageState extends State<GamePage> {
   String? errorMessage;
   bool _isLoading = false;
 
+  /// 当前选中的游戏类型：'bubble'（戳泡泡）、'brick'（削砖块）、'monster'（打哭小馋怪）
+  String _selectedGame = 'bubble';
+
+  /// 用户当前正在学习的主词书名称（用于针对性练习专属场）
+  String? _currentLearningDictName;
+
   @override
   void initState() {
     super.initState();
     loadData();
+    _loadCurrentLearningDict();
+  }
+
+  Future<void> _loadCurrentLearningDict() async {
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+    try {
+      final db = MyDatabase.instance;
+      final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user.id);
+      if (learningDicts.isNotEmpty) {
+        final dict = await (db.select(db.dicts)
+              ..where((d) => d.id.equals(learningDicts.first.dictId)))
+            .getSingleOrNull();
+        if (dict != null && mounted) {
+          setState(() {
+            _currentLearningDictName = dict.name;
+          });
+        }
+      }
+    } catch (e) {
+      // 仅用于专属场推荐展示，静默容错
+    }
   }
 
   Future<void> loadData() async {
@@ -354,7 +383,7 @@ class _GamePageState extends State<GamePage> {
                                   const SizedBox(width: 2),
                                 ],
                                 Text(
-                                  '单词PK大厅',
+                                  '单词乐园',
                                   style: TextStyle(
                                     color: textColor,
                                     fontSize: 24,
@@ -366,7 +395,7 @@ class _GamePageState extends State<GamePage> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '实时对战 · 词汇巅峰竞速',
+                              '趣味对战 · 闯关竞速',
                               style: TextStyle(
                                 color: textSubColor,
                                 fontSize: 12.5,
@@ -393,7 +422,7 @@ class _GamePageState extends State<GamePage> {
                                     size: 14, color: textSubColor),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '玩法规则',
+                                  '游戏玩法',
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w500,
@@ -409,10 +438,22 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
 
-                // 1.5 单人小游戏入口（不依赖服务端大厅数据）
+                // 1.5 游戏模式选择卡片（精选三款游戏）
                 SliverToBoxAdapter(
-                  child: _buildSoloGameSection(themeConfig),
+                  child: _buildGameShowcase(themeConfig),
                 ),
+
+                // 1.6 打哭小馋怪专属展示与挑战大卡片（单人守桥）
+                if (_selectedGame == 'monster')
+                  SliverToBoxAdapter(
+                    child: _buildMonsterShowcase(themeConfig),
+                  ),
+
+                // 1.7 针对性强化的「我的当前词书专属场」（当选中对战类游戏且有当前学习词书时展示）
+                if (_selectedGame != 'monster' && _currentLearningDictName != null)
+                  SliverToBoxAdapter(
+                    child: _buildCurrentDictSection(themeConfig),
+                  ),
 
                 // 2. 主内容区域
                 SliverToBoxAdapter(
@@ -501,74 +542,351 @@ class _GamePageState extends State<GamePage> {
   }
 
 
-  /// 单人小游戏入口。与下面服务端下发的对战大厅彼此独立，
-  /// 所以放在大厅列表之前、且不受大厅加载失败影响。
-  Widget _buildSoloGameSection(AppThemeConfig themeConfig) {
-    // 「打哭小馋怪」尚未对外发布：入口只对管理员可见，普通用户看不到这一块。
-    // 与 finish.dart 里「记忆守护兽」的处理方式保持一致。
-    if (Global.getLoggedInUser()?.isAdmin != true) return const SizedBox.shrink();
+  /// 游戏模式选择卡片栏（对标极简高级感规范，三款游戏平铺选择）
+  Widget _buildGameShowcase(AppThemeConfig themeConfig) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: Row(
+        children: [
+          // 1. 戳泡泡（PVP 对战）
+          Expanded(
+            child: _buildGameTabCard(
+              id: 'bubble',
+              title: '戳泡泡',
+              tag: '1v1 对战',
+              icon: Icons.bubble_chart_rounded,
+              themeConfig: themeConfig,
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // 2. 削砖块（PVP 对战，经典下落消除）
+          Expanded(
+            child: _buildGameTabCard(
+              id: 'brick',
+              title: '削砖块',
+              tag: '1v1 消除',
+              icon: Icons.grid_view_rounded,
+              themeConfig: themeConfig,
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // 3. 打哭小馋怪（单人守桥）
+          Expanded(
+            child: _buildGameTabCard(
+              id: 'monster',
+              title: '小馋怪',
+              tag: '单人守桥',
+              icon: Icons.pets_rounded,
+              themeConfig: themeConfig,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 单个游戏卡片（支持选中高亮与极简微边框）
+  Widget _buildGameTabCard({
+    required String id,
+    required String title,
+    required String tag,
+    required IconData icon,
+    required AppThemeConfig themeConfig,
+  }) {
+    final isSelected = _selectedGame == id;
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final isDarkMode = themeConfig.isDark;
+
+    return FrostedGlassCard(
+      borderRadius: 18,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          if (_selectedGame != id) {
+            setState(() {
+              _selectedGame = id;
+            });
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isSelected
+                  ? accentColor.withValues(alpha: isDarkMode ? 0.8 : 0.6)
+                  : (isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05)),
+              width: isSelected ? 1.5 : 0.5,
+            ),
+            color: isSelected
+                ? accentColor.withValues(alpha: isDarkMode ? 0.12 : 0.08)
+                : Colors.transparent,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.18)
+                      : themeConfig.subtleBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 19,
+                  color: isSelected ? accentColor : textSub,
+                ),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  letterSpacing: -0.2,
+                  color: isSelected ? (isDarkMode ? Colors.white : accentColor) : textMain,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? accentColor.withValues(alpha: 0.18)
+                      : themeConfig.subtleBg,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  tag,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? accentColor : textSub,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 打哭小馋怪专属沉浸展示大卡片
+  Widget _buildMonsterShowcase(AppThemeConfig themeConfig) {
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
     final isDarkMode = themeConfig.isDark;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       child: FrostedGlassCard(
-        borderRadius: 20,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => context.push('/monster'),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Row(
-              children: [
-                Icon(Icons.pets_rounded, size: 20, color: accentColor),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '打哭小馋怪',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.2,
-                          color: textMain,
+        borderRadius: 22,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(Icons.pets_rounded, size: 24, color: accentColor),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '打哭小馋怪 · 守桥保卫战',
+                          style: TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                            color: textMain,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '守桥 · 左右二选一，答错水果被抢',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w400,
-                          color: textSub,
+                        const SizedBox(height: 3),
+                        Text(
+                          '左右二选一答词 · 投掷水果击退馋怪',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: textSub,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: themeConfig.subtleBg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                    width: 0.5,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: BorderRadius.circular(12),
+                child: Text(
+                  '贪吃的小馋怪正迈着六亲不认的步伐走过长桥，企图抢走对岸的水果！看准单词释义快速左右选择，答对投掷水果痛击小馋怪，答错水果就会被顺走哦。',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: textSub,
                   ),
-                  child: Text(
-                    '开始',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/monster'),
+                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                  label: const Text(
+                    '进入守桥挑战',
+                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentColor,
+                    foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                    elevation: 1,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 我的当前词书专属定制场（针对性练习，解决词量太大太泛的痛点）
+  Widget _buildCurrentDictSection(AppThemeConfig themeConfig) {
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final isDarkMode = themeConfig.isDark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: FrostedGlassCard(
+        borderRadius: 20,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.local_fire_department_rounded, size: 20, color: Color(0xFFFF9800)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '当前词书专属特训',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                            color: textMain,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF9800).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: const Text(
+                            '针对巩固',
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFFF9800),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '《$_currentLearningDictName》',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: textSub,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              // 如果有可用大厅，借用第一个大厅作为载体以当前词书进入匹配/练习
+              if (gameHallDataResult != null &&
+                  gameHallDataResult!.hallGroups.isNotEmpty &&
+                  gameHallDataResult!.hallGroups.first.gameHalls.isNotEmpty)
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    final hall = gameHallDataResult!.hallGroups.first.gameHalls.first;
+                    context.push('/russia', extra: [
+                      hall,
+                      null,
+                      {'gameMode': _selectedGame}
+                    ]);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '特训对战',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -718,7 +1036,10 @@ class _GamePageState extends State<GamePage> {
                     context.push('/russia', extra: [
                       hall,
                       null,
-                      {'joinRoomId': roomId.toString()}
+                      {
+                        'joinRoomId': roomId.toString(),
+                        'gameMode': _selectedGame,
+                      }
                     ]);
                   }
                 },
@@ -739,7 +1060,10 @@ class _GamePageState extends State<GamePage> {
                 onTap: () => context.push('/russia', extra: [
                   hall,
                   null,
-                  {'mode': 'createPrivate'}
+                  {
+                    'mode': 'createPrivate',
+                    'gameMode': _selectedGame,
+                  }
                 ]),
                 child: Padding(
                   padding:
@@ -757,7 +1081,11 @@ class _GamePageState extends State<GamePage> {
               const SizedBox(width: 8),
               InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => context.push('/russia', extra: [hall, null]),
+                onTap: () => context.push('/russia', extra: [
+                  hall,
+                  null,
+                  {'gameMode': _selectedGame}
+                ]),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

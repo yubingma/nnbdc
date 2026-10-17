@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:nnbdc/util/meaning_render_util.dart';
 import '../../../../theme/app_theme.dart';
 
 /// 词表页面通用的子组件（如单词标题、释义等）
@@ -104,66 +105,28 @@ class ModeComponents {
     final posColor = themeConfig?.textMuted.withValues(alpha: 0.85) ??
         (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
 
-    final posRegex = RegExp(
-        r'(n\.|v\.|adj\.|adv\.|vt\.|vi\.|prep\.|conj\.|pron\.|art\.|num\.|int\.)\s*');
-    final matches = posRegex.allMatches(meaningStr);
+    final spans = MeaningRenderUtil.buildInlineMeaningSpans(
+      word: word.word,
+      meaningStyle: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: textMeaning,
+        height: 1.45,
+        letterSpacing: 0.15,
+      ),
+      posStyle: TextStyle(
+        fontSize: 12,
+        fontFamily: 'NotoSans',
+        fontWeight: FontWeight.w500,
+        color: posColor,
+        letterSpacing: 0.1,
+      ),
+      dotColor: textMeaning,
+    );
 
-    Widget content;
-    if (matches.isEmpty) {
-      content = Text(
-        meaningStr.isNotEmpty ? meaningStr : "（暂无释义）",
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
-          color: textMeaning,
-          height: 1.45,
-          letterSpacing: 0.15,
-        ),
-      );
-    } else {
-      final List<InlineSpan> spans = [];
-      int lastEnd = 0;
-
-      for (final match in matches) {
-        if (match.start > lastEnd) {
-          spans.add(TextSpan(
-            text: meaningStr.substring(lastEnd, match.start),
-            style: TextStyle(
-              color: textMeaning,
-              fontSize: 13,
-              height: 1.45,
-            ),
-          ));
-        }
-        final posText = match.group(1)!;
-        spans.add(TextSpan(
-          text: '$posText ',
-          style: TextStyle(
-            fontSize: 12,
-            fontFamily: 'NotoSans',
-            fontWeight: FontWeight.w500,
-            color: posColor,
-            letterSpacing: 0.1,
-          ),
-        ));
-        lastEnd = match.end;
-      }
-
-      if (lastEnd < meaningStr.length) {
-        spans.add(TextSpan(
-          text: meaningStr.substring(lastEnd),
-          style: TextStyle(
-            color: textMeaning,
-            fontSize: 13,
-            height: 1.45,
-          ),
-        ));
-      }
-
-      content = RichText(
-        text: TextSpan(children: spans),
-      );
-    }
+    final Widget content = RichText(
+      text: TextSpan(children: spans),
+    );
 
     return Padding(
       padding: EdgeInsets.only(top: topPadding),

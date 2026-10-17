@@ -23,6 +23,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:nnbdc/util/meaning_render_util.dart';
 import 'package:provider/provider.dart' hide Consumer;
 
 import '../../api/enum.dart';

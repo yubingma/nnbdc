@@ -724,7 +724,18 @@ class WordVo {
     meaningItemsByCixing.forEach((ciXing, items) {
       Set<String> meanings = {};
       Set<String> addedSubParts = {};
+      List<MeaningPartVo> mergedParts = [];
+      int? maxPopularityPercent;
+
       for (MeaningItemVo item in items) {
+        if (item.popularityPercent != null) {
+          final currentPct = item.popularityPercent!;
+          maxPopularityPercent = maxPopularityPercent == null
+              ? currentPct
+              : (currentPct > maxPopularityPercent
+                  ? currentPct
+                  : maxPopularityPercent);
+        }
         if (item.meaning != null) {
           List<String> rawParts = item.meaning!.split(RegExp(r'[;；]'));
           List<String> parts = [];
@@ -744,7 +755,13 @@ class WordVo {
               parts.add(part);
             }
           }
-          meanings.addAll(parts);
+          for (String p in parts) {
+            final trimmed = p.trim();
+            if (trimmed.isNotEmpty && !meanings.contains(trimmed)) {
+              meanings.add(trimmed);
+              mergedParts.add(MeaningPartVo(trimmed, item.popularityPercent));
+            }
+          }
         }
       }
 
@@ -762,8 +779,9 @@ class WordVo {
           sb.toString(),
           null, // dict
           null, // synonyms
-          null // sentences
-          );
+          null, // sentences
+          maxPopularityPercent);
+      mergedItem.parts = mergedParts;
 
       tempMergedItems[ciXing] = mergedItem;
     });
@@ -775,7 +793,16 @@ class WordVo {
       String viMeaning = tempMergedItems['vi.']!.meaning ?? '';
       if (vtMeaning == viMeaning) {
         // vt.和vi.完全相同，合并为v.
-        tempMergedItems['v.'] = MeaningItemVo(null, 'v.', vtMeaning, null, null, null);
+        final vItem = MeaningItemVo(
+            null,
+            'v.',
+            vtMeaning,
+            null,
+            null,
+            null,
+            tempMergedItems['vt.']!.popularityPercent);
+        vItem.parts = tempMergedItems['vt.']!.parts;
+        tempMergedItems['v.'] = vItem;
         tempMergedItems.remove('vt.');
         tempMergedItems.remove('vi.');
       }
@@ -884,6 +911,16 @@ class WordVo {
   }
 }
 
+class MeaningPartVo {
+  final String text;
+  final int? popularityPercent;
+
+  const MeaningPartVo(this.text, this.popularityPercent);
+
+  @override
+  String toString() => 'MeaningPartVo($text, $popularityPercent%)';
+}
+
 @JsonSerializable()
 class MeaningItemVo {
   String? id;
@@ -894,9 +931,24 @@ class MeaningItemVo {
   List<SentenceVo>? sentences;
   int? popularityPercent;
 
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  List<MeaningPartVo>? parts;
+
   MeaningItemVo(this.id, this.ciXing, this.meaning, this.dict, this.synonyms, this.sentences, [this.popularityPercent]);
 
   MeaningItemVo.from(this.ciXing, this.meaning);
+
+  factory MeaningItemVo.fromEntity(dynamic mi) {
+    return MeaningItemVo(
+      mi.id,
+      mi.ciXing,
+      mi.meaning,
+      null,
+      null,
+      null,
+      mi.popularityPercent,
+    );
+  }
 
   /// 规范化词性：历史数据中存在 "v.，"/"n.，" 这类尾部粘连标点的脏值，
   /// 展示前统一剥离尾部标点（"v.，" → "v."），使词性可正确分组与渲染。

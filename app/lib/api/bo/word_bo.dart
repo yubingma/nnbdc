@@ -903,14 +903,7 @@ class WordBo {
       // 构建释义项VO
       final meaningItemVos = <MeaningItemVo>[];
       for (final mi in meaningItems) {
-        final miVo = MeaningItemVo(
-            mi.id,
-            mi.ciXing,
-            mi.meaning,
-            null, // dict
-            null, // synonyms
-            null // sentences
-            );
+        final miVo = MeaningItemVo.fromEntity(mi);
         meaningItemVos.add(miVo);
       }
       wordVo.meaningItems = meaningItemVos;
@@ -978,14 +971,7 @@ class WordBo {
 
           final similarMeaningItemVos = <MeaningItemVo>[];
           for (final mi in similarMeaningItems) {
-            final miVo = MeaningItemVo(
-                mi.id,
-                mi.ciXing,
-                mi.meaning,
-                null, // dict
-                null, // synonyms
-                null // sentences
-                );
+            final miVo = MeaningItemVo.fromEntity(mi);
             similarMeaningItemVos.add(miVo);
           }
           similarWordVo.meaningItems = similarMeaningItemVos;
@@ -1179,7 +1165,7 @@ class WordBo {
 
       final meaningItemVos = <MeaningItemVo>[];
       for (final mi in meaningItems) {
-        final miVo = MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null);
+        final miVo = MeaningItemVo.fromEntity(mi);
         meaningItemVos.add(miVo);
       }
       wordVo.meaningItems = meaningItemVos;
@@ -1382,7 +1368,7 @@ class WordBo {
 
           final mItems = meaningItemsMap[word.id] ?? [];
           wordVo.meaningItems = mItems
-              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .map((mi) => MeaningItemVo.fromEntity(mi))
               .toList();
 
           final learningWordVo = LearningWordVo(
@@ -1472,7 +1458,7 @@ class WordBo {
 
           final mItems = meaningItemsMap[word.id] ?? [];
           wordVo.meaningItems = mItems
-              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .map((mi) => MeaningItemVo.fromEntity(mi))
               .toList();
 
           final learningWordVo = LearningWordVo(
@@ -1563,7 +1549,7 @@ class WordBo {
 
           final mItems = meaningItemsMap[word.id] ?? [];
           wordVo.meaningItems = mItems
-              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .map((mi) => MeaningItemVo.fromEntity(mi))
               .toList();
 
           final learningWordVo = LearningWordVo(
@@ -1688,7 +1674,7 @@ class WordBo {
         final meaningItems = await getWordMeaningItems(word.id, userId);
         List<MeaningItemVo> meaningItemVos = [];
         for (final mi in meaningItems) {
-          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
+          meaningItemVos.add(MeaningItemVo.fromEntity(mi));
         }
         wordVo.meaningItems = meaningItemVos;
         final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
@@ -1748,7 +1734,7 @@ class WordBo {
           List<MeaningItemVo> meaningItemVos = [];
           if (meaningItemsMap.containsKey(wordEntry.id)) {
             meaningItemVos = meaningItemsMap[wordEntry.id]!.map((mi) {
-              return MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null);
+              return MeaningItemVo.fromEntity(mi);
             }).toList();
           }
           wordVo.meaningItems = meaningItemVos;
@@ -2826,7 +2812,7 @@ class WordBo {
         final meaningItems = await getWordMeaningItems(word.id, userId);
         List<MeaningItemVo> meaningItemVos = [];
         for (final mi in meaningItems) {
-          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
+          meaningItemVos.add(MeaningItemVo.fromEntity(mi));
         }
         wordVo.meaningItems = meaningItemVos;
         wordVos.add(wordVo);
@@ -3222,7 +3208,7 @@ class WordBo {
           // 为了极致速度，暂取该词的所有释义或通用释义
           final mItems = meaningItemsMap[word.id] ?? [];
           wordVo.meaningItems = mItems
-              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .map((mi) => MeaningItemVo.fromEntity(mi))
               .toList();
 
           final learningWordVo = LearningWordVo(
@@ -3458,7 +3444,7 @@ class WordBo {
   /// 提供给UI：根据 wordId 和 userId 获取释义项（封装内部的 popularity limit 逻辑）
   Future<List<MeaningItemVo>> getMeaningItemsForWord(String wordId, String userId) async {
     final items = await getWordMeaningItems(wordId, userId);
-    return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+    return items.map((e) => MeaningItemVo.fromEntity(e)).toList();
   }
 
   // ---------- 易混淆单词：学习词书聚合 / 锚点过滤 / 计数 / 批量释义 ----------

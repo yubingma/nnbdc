@@ -21,6 +21,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/meaning_render_util.dart';
 import 'package:provider/provider.dart';
 
 import '../global.dart';
@@ -908,7 +909,7 @@ class WordDetailPageState extends State<WordDetailPage>
       meaningItemsMap.forEach((wordId, items) {
         meaningMap[wordId] = [
           for (final mi in items)
-            MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null),
+            MeaningItemVo.fromEntity(mi),
         ];
       });
 
@@ -2172,14 +2173,20 @@ class WordDetailPageState extends State<WordDetailPage>
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text.rich(
                     TextSpan(
-                      children: _buildTextSpans(meaningItem.meaning ?? ''),
-                    ),
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.45,
-                      color: isDarkMode
-                          ? const Color(0xFFCBD5E1)
-                          : const Color(0xFF334155),
+                      children: MeaningRenderUtil.buildMeaningSpans(
+                        item: meaningItem,
+                        meaningStyle: TextStyle(
+                          fontSize: 14,
+                          height: 1.45,
+                          color: isDarkMode
+                              ? const Color(0xFFCBD5E1)
+                              : const Color(0xFF334155),
+                        ),
+                        dotColor: isDarkMode
+                            ? const Color(0xFFCBD5E1)
+                            : const Color(0xFF334155),
+                        showDots: MeaningRenderUtil.hasMultipleMeanings(mergedItems),
+                      ),
                     ),
                   ),
                 ),

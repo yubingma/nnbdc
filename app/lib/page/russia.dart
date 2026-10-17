@@ -222,6 +222,9 @@ class RussiaPageState extends State<RussiaPage>
   Map<String, dynamic>? extraArgs;
   bool isExercise = false;
 
+  /// 游戏展示模式：'brick'（削砖块，重力下落消除）或 'bubble'（戳泡泡，浮力上升戳破）
+  bool get isBrickMode => extraArgs?['gameMode'] == 'brick';
+
   /// 这一局是"我开的私房"（在游戏大厅点「开房」进来的），不是大厅随机匹配。
   /// 服务端那边私房本来就不参与匹配，界面也得照实说，不能拿匹配话术糊弄用户
   bool get isPrivateRoomHost => extraArgs?['mode'] == 'createPrivate';
@@ -1449,6 +1452,8 @@ class RussiaPageState extends State<RussiaPage>
     if (currWord == null) return;
 
     final mediaQuery = MediaQuery.maybeOf(context);
+    final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
+    final double barrierY = topPadding + 130.0;
     final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
     final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
     final double bottomBarTopY = size.height - bottomBarHeight;
@@ -1462,8 +1467,10 @@ class RussiaPageState extends State<RussiaPage>
     for (int i = 0; i < roundOptions.length && i < 3; i++) {
       const double radius = 48.0; // 饱满梦幻大泡泡，排版更舒适
       final double baseX = size.width * slotXOffsets[i] + (rand.nextDouble() - 0.5) * 6.0;
-      // 从底栏上边缘直接探出一半：圆心置于上边缘微靠上位置，上半球与主体文字立即露在底栏上方海水中
-      final double startY = bottomBarTopY - 2.0 + (rand.nextDouble() - 0.5) * 4.0;
+      // 削砖块模式自上方天花板向下飘落；戳泡泡模式自底栏上边缘向上浮动探出
+      final double startY = isBrickMode
+          ? barrierY + 28.0 + (rand.nextDouble() - 0.5) * 6.0
+          : bottomBarTopY - 2.0 + (rand.nextDouble() - 0.5) * 4.0;
       final Color color = bubbleColors[i % bubbleColors.length];
       final double speed = speeds[i] + (rand.nextDouble() - 0.5) * 4.0;
 
@@ -1622,6 +1629,9 @@ class RussiaPageState extends State<RussiaPage>
     final size = mediaQuery?.size ?? const Size(390, 844);
     final topPadding = max(mediaQuery?.padding.top ?? 44.0, 16.0);
     final double barrierY = topPadding + 130.0;
+    final bottomPadding = mediaQuery?.padding.bottom ?? 0.0;
+    final double bottomBarHeight = max(bottomPadding, 10.0) + 54.0;
+    final double bottomBarTopY = size.height - bottomBarHeight;
 
     // 水波相位与氛围微泡漂浮（全局活跃）
     wavePhase += dt * 2.2;
@@ -1695,17 +1705,26 @@ class RussiaPageState extends State<RussiaPage>
         }
       }
 
-      b.y -= b.speed * dt;
+      if (isBrickMode) {
+        b.y += b.speed * dt;
+      } else {
+        b.y -= b.speed * dt;
+      }
       b.x += sin(elapsed.inMilliseconds / 1000.0 * b.swingFreq + b.phase) * (b.swingAmplitude * 0.05);
 
-      // 触及能量警戒线：泡泡顶端触碰即碰撞爆破，绝不侵入上方 UI 区域
-      if (b.y - b.radius <= barrierY) {
+      // 触及边界判定：削砖块触碰底部红线警戒基座；戳泡泡升腾触碰顶部能量屏障
+      final bool hitBarrier = isBrickMode
+          ? (b.y + b.radius >= bottomBarTopY)
+          : (b.y - b.radius <= barrierY);
+
+      if (hitBarrier) {
+        final double impactY = isBrickMode ? bottomBarTopY : barrierY;
         if (b.isTarget) {
           targetWordExpired = true;
-          _applyDamage(1, reason: '漏答 -1 HP!');
-          _createBurstParticles(b.x, barrierY, const Color(0xFFEF4444), count: 14);
+          _applyDamage(1, reason: isBrickMode ? '触底堆叠 +1' : '漏答 -1 HP!');
+          _createBurstParticles(b.x, impactY, const Color(0xFFEF4444), count: 14);
         } else {
-          _createBurstParticles(b.x, barrierY, b.baseColor, count: 8);
+          _createBurstParticles(b.x, impactY, b.baseColor, count: 8);
         }
         bubbles.removeAt(i);
       }
@@ -2016,6 +2035,7 @@ class RussiaPageState extends State<RussiaPage>
                   ambientBubbles: ambientBubbles,
                   barrierY: topPadding + 130.0,
                   wavePhase: wavePhase,
+                  isBrickMode: isBrickMode,
                 ),
               ),
             ),
@@ -2043,10 +2063,14 @@ class RussiaPageState extends State<RussiaPage>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.bubble_chart_rounded, color: Color(0xFF38BDF8), size: 13),
+                        Icon(
+                          isBrickMode ? Icons.grid_view_rounded : Icons.bubble_chart_rounded,
+                          color: isBrickMode ? const Color(0xFFF59E0B) : const Color(0xFF38BDF8),
+                          size: 13,
+                        ),
                         const SizedBox(width: 4),
                         Text(
-                          '${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
+                          '${isBrickMode ? '削砖块 · ' : ''}${gameHall.hallName}${roomId != null ? ' · 房号$roomId' : ''}',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
@@ -4215,6 +4239,7 @@ class _UnderseaScenePainter extends CustomPainter {
   final List<AmbientBubble> ambientBubbles;
   final double barrierY;
   final double wavePhase;
+  final bool isBrickMode;
 
   _UnderseaScenePainter({
     required this.bubbles,
@@ -4224,6 +4249,7 @@ class _UnderseaScenePainter extends CustomPainter {
     required this.ambientBubbles,
     required this.barrierY,
     required this.wavePhase,
+    this.isBrickMode = false,
   });
 
   @override
@@ -4256,9 +4282,13 @@ class _UnderseaScenePainter extends CustomPainter {
     // 5. 题目卡片下方的晶莹微光能量警戒线（天花板防护屏障）
     _drawEnergyBarrier(canvas, size);
 
-    // 6. 上升的超拟真梦幻彩色通透泡泡
+    // 6. 单词实体绘制（削砖块模式绘制立体方块，戳泡泡模式绘制彩色通透泡泡）
     for (final b in bubbles) {
-      _drawBubble(canvas, b);
+      if (isBrickMode) {
+        _drawBrick(canvas, b);
+      } else {
+        _drawBubble(canvas, b);
+      }
     }
 
     // 6. 爆破飞溅水珠微粒
@@ -4569,6 +4599,120 @@ class _UnderseaScenePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: r * 1.85);
 
+    textPainter.paint(
+      canvas,
+      Offset(-textPainter.width / 2, -textPainter.height / 2),
+    );
+
+    canvas.restore();
+  }
+
+  /// 绘制削砖块模式下的经典立体圆角方块
+  void _drawBrick(Canvas canvas, BubbleItem b) {
+    if (b.isPopping) {
+      final scale = 1.0 + b.popProgress * 0.35;
+      final alpha = (1.0 - b.popProgress).clamp(0.0, 1.0);
+      final popPaint = Paint()
+        ..color = Colors.white.withValues(alpha: alpha * 0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(b.x, b.y),
+            width: b.radius * 2.1 * scale,
+            height: b.radius * 1.35 * scale,
+          ),
+          const Radius.circular(12),
+        ),
+        popPaint,
+      );
+      return;
+    }
+
+    double scaleX = 1.0;
+    double scaleY = 1.0;
+    if (b.isWrongJiggle) {
+      final phase = b.jiggleProgress * pi * 4;
+      final delta = sin(phase) * 0.16 * (1.0 - b.jiggleProgress);
+      scaleX = 1.0 + delta;
+      scaleY = 1.0 - delta;
+    }
+
+    canvas.save();
+    canvas.translate(b.x, b.y);
+    canvas.scale(scaleX, scaleY);
+
+    final double brickW = b.radius * 2.1;
+    final double brickH = b.radius * 1.35;
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset.zero, width: brickW, height: brickH),
+      const Radius.circular(14),
+    );
+
+    // 1. 方块立体外阴影
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.28)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawRRect(rrect.shift(const Offset(0, 3)), shadowPaint);
+
+    // 2. 方块本体微渐变（微拟物立体砖块质感）
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          b.baseColor.withValues(alpha: 0.95),
+          Color.lerp(b.baseColor, Colors.black, 0.22)!,
+        ],
+      ).createShader(rrect.outerRect);
+    canvas.drawRRect(rrect, fillPaint);
+
+    // 3. 上边缘立体反射高光横条
+    final hlRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(-brickW / 2 + 2, -brickH / 2 + 2, brickW - 4, brickH * 0.38),
+      const Radius.circular(11),
+    );
+    final hlPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.42),
+          Colors.white.withValues(alpha: 0.05),
+        ],
+      ).createShader(hlRect.outerRect);
+    canvas.drawRRect(hlRect, hlPaint);
+
+    // 4. 精细晶体微边框
+    final borderPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    canvas.drawRRect(rrect, borderPaint);
+
+    // 5. 方块中央英文单词
+    final textSpan = TextSpan(
+      text: b.word,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 16.5,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.2,
+        shadows: [
+          Shadow(
+            color: Color(0x99000000),
+            blurRadius: 3,
+            offset: Offset(0, 1.2),
+          ),
+        ],
+      ),
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: brickW - 12);
     textPainter.paint(
       canvas,
       Offset(-textPainter.width / 2, -textPainter.height / 2),
