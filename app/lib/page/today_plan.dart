@@ -162,7 +162,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 点一下宠物：随机说一句解释它自己逻辑的话。
-  void _onPetTap() {
+  void _onPetTap() => _showPetSpeech();
+
+  /// 每次进入（或刷新）今日计划页，宠物主动蹦一句，不用点。
+  void _autoPetSpeech() {
+    if (!mounted) return;
+    // 等页面布局稳定再弹，避免刚切进来就抢注意力
+    Future.delayed(const Duration(milliseconds: 520), () {
+      if (!mounted || _petSpeech != null) return;
+      _showPetSpeech();
+    });
+  }
+
+  void _showPetSpeech() {
     final bool first = !_petFirstMet;
     final picked = first
         ? (text: PetSpeech.firstMeet, index: 0)
@@ -466,6 +478,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     } finally {
       _loadFuture = null;
     }
+    // 数据就绪后再让宠物开口：此时 _petMood 才是准的（能分清"没开始/学习中/已完成/断更"）
+    _autoPetSpeech();
   }
 
   /// 确保今日计划已就绪后再进入学习页：等在途的准备流程结束；若本日计划从未准备过，则主动准备一次。
