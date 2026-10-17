@@ -1476,7 +1476,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         );
         // 收起态：两张独立的小卡 + 中间一行「学习轨道」，不铺整条长卡
         if (!_trackExpanded) {
-          return Row(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTotalWordsEntry(ink: ink, hasWallpaper: hasWallpaper, onDark: onDark),
+              Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -1520,6 +1524,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ),
               ),
             ],
+              ),
+            ],
           );
         }
 
@@ -1538,7 +1544,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
             alignment: Alignment.topCenter,
-            child: Stack(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTotalWordsEntry(ink: ink, hasWallpaper: hasWallpaper, onDark: onDark),
+                Stack(
               alignment: Alignment.topCenter,
               children: [
                 Column(
@@ -1560,6 +1570,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: _buildTrackToggle(inkColor: ink.faint),
+                ),
+              ],
                 ),
               ],
             ),
@@ -3326,6 +3338,309 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 弹出"高级设置"对话框
+  /// 顶部「今日单词总数」入口：点它从底部滑出词量设置。
+  /// 视觉沿用「高级学习设置」那套毛玻璃渐变 + 圆角 + 缓动动画，只是改为底部锚定。
+  Widget _buildTotalWordsEntry({
+    required ({Color primary, Color muted, Color faint}) ink,
+    required bool hasWallpaper,
+    required bool onDark,
+  }) {
+    final total = _planWords.length;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _showWordsPerDaySheet,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '今日 $total 词',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: ink.faint,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(width: 3),
+            Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: ink.faint),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 应用新的「今日单词数」。已开始学习时只保存、当天不生效
+  /// （prepareTodayStudy 在 todayStudyStarted 时不再按配置补词/削减）。
+  Future<void> _applyWordsPerDay(int value) async {
+    final current = user;
+    if (current == null) return;
+    if (value == current.effectiveWordsPerDay) return;
+    await MyDatabase.instance.usersDao.updateWordsPerDay(current.id!, value);
+    await Global.loadUserFromDb();
+    ThrottledDbSyncService().requestSync();
+    if (mounted) setState(() {});
+  }
+
+  /// 底部滑出的「今日单词数量」弹窗。
+  void _showWordsPerDaySheet() {
+    final darkMode = context.read<DarkMode>();
+    final isDarkMode = darkMode.isDarkMode;
+    final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
+    final primaryColor = themeConfig.primaryColor;
+    int selected = user?.effectiveWordsPerDay ?? 20;
+    final bool started = user?.todayStudyStarted == true;
+    const quickValues = <int>[5, 10, 20, 30, 50, 100];
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '今日单词数量',
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.42 : 0.20),
+      transitionDuration: const Duration(milliseconds: 240),
+      transitionBuilder: (context, anim1, anim2, child) {
+        final curved = CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic);
+        return SlideTransition(
+          position: Tween(begin: const Offset(0, 0.10), end: Offset.zero).animate(curved),
+          child: FadeTransition(opacity: curved, child: child),
+        );
+      },
+      pageBuilder: (ctx, _, __) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 14,
+                  right: 14,
+                  bottom: MediaQuery.of(ctx).viewPadding.bottom + 14,
+                ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDarkMode ? 0.38 : 0.10),
+                        blurRadius: 30,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(26),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: isDarkMode
+                                ? [const Color(0xE6161B26), const Color(0xD210141D)]
+                                : [const Color(0xEEFFFFFF), const Color(0xD9FFFFFF)],
+                          ),
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(
+                            color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x99FFFFFF),
+                            width: 1.1,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '今日单词数量',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => Navigator.of(ctx).pop(),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 18,
+                                      color: isDarkMode ? Colors.white38 : Colors.black38,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  _sheetStepBtn(
+                                    icon: Icons.remove_rounded,
+                                    enabled: selected > 2,
+                                    isDarkMode: isDarkMode,
+                                    onTap: () => setSheetState(() => selected = (selected - 1).clamp(2, 500)),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text(
+                                          '$selected',
+                                          style: TextStyle(
+                                            fontSize: 34,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: -1,
+                                            height: 1,
+                                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                            fontFamily: 'Roboto',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          '词',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDarkMode ? Colors.white54 : Colors.black45,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  _sheetStepBtn(
+                                    icon: Icons.add_rounded,
+                                    enabled: selected < 500,
+                                    isDarkMode: isDarkMode,
+                                    onTap: () => setSheetState(() => selected = (selected + 1).clamp(2, 500)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final v in quickValues)
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () => setSheetState(() => selected = v),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                      decoration: BoxDecoration(
+                                        color: selected == v
+                                            ? primaryColor
+                                            : (isDarkMode
+                                                ? Colors.white.withValues(alpha: 0.08)
+                                                : Colors.black.withValues(alpha: 0.045)),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '$v 词',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: selected == v
+                                              ? Colors.white
+                                              : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            if (started) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                '今日已开始学习，改动从明天起生效',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDarkMode ? Colors.white54 : Colors.black45,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () async {
+                                  await _applyWordsPerDay(selected);
+                                  if (ctx.mounted) Navigator.of(ctx).pop();
+                                },
+                                child: Container(
+                                  height: 46,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: primaryColor,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Text(
+                                    '保存',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// 弹窗里的加减按钮。
+  Widget _sheetStepBtn({
+    required IconData icon,
+    required bool enabled,
+    required bool isDarkMode,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.045),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: enabled
+              ? (isDarkMode ? Colors.white70 : const Color(0xFF334155))
+              : (isDarkMode ? Colors.white24 : Colors.black26),
+        ),
+      ),
+    );
+  }
+
   void _showAdvancedSettingsDialog() async {
     final darkMode = context.read<DarkMode>();
     final isDarkMode = darkMode.isDarkMode;
