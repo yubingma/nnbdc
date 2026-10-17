@@ -187,9 +187,13 @@ class LearningService {
             '[FETCH-WORD] [prepareTodayStudy] 最少新词下调至 $minNewWordsPerDay，退回 ${removable.length} 个多余新词，剩余新词 $todayNewCount');
       }
 
+      // 「今日已开始学习」后用户在设置页改了词量 / 最少新词 / 每组词数，按约定当日不生效：
+      // 这里只在「今天还没有任何计划词」时生成，已开始时不再因为配置变化而补词。
+      // 否则把词量改大，一回到首页就被补满，等于当日立刻生效。
       bool needAddNewWords = planWords.isEmpty ||
-          (planWords.length < (user.effectiveWordsPerDay) && addNewWordsIfNotEnough) ||
-          (minNewWordsPerDay > 0 && todayNewCount < minNewWordsPerDay);
+          (!user.todayStudyStarted &&
+              ((planWords.length < (user.effectiveWordsPerDay) && addNewWordsIfNotEnough) ||
+                  (minNewWordsPerDay > 0 && todayNewCount < minNewWordsPerDay)));
       Global.logger.d(
           '[FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: $needAddNewWords (planWords.isEmpty: ${planWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough, minNewWordsPerDay: $minNewWordsPerDay, todayNewCount: $todayNewCount)');
 
@@ -229,7 +233,9 @@ class LearningService {
       }
 
 
-      if (planWords.length > user.effectiveWordsPerDay) {
+      // 今日已开始学习时不按新词量削减：用户在设置页把词量改小，按约定当日不生效，
+      // 否则一回到首页今天的计划就被砍掉，等于立刻生效了。
+      if (!user.todayStudyStarted && planWords.length > user.effectiveWordsPerDay) {
         Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 溢出报警！计划词数 (${planWords.length}) > 计划数 (${user.effectiveWordsPerDay})，准备进入削减逻辑');
         planWords = await shrinkTodayWords(user.id, planWords, user.effectiveWordsPerDay);
       }

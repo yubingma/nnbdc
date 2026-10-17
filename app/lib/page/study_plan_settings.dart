@@ -64,7 +64,8 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
   }
 
   Future<void> _saveSettingsIfChanged() async {
-    if (_isStarted) return;
+    // 已开始学习时也要保存：这三项是「明天的配置」，今天已生成的计划不受影响
+    // （prepareTodayStudy 在今日已开始学习时不再按配置补词/削减/退回新词）。
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
@@ -162,11 +163,11 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.lock_outline_rounded, size: 16, color: isDarkMode ? Colors.white70 : Colors.black54),
+                      Icon(Icons.schedule_rounded, size: 16, color: isDarkMode ? Colors.white70 : Colors.black54),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '今日学习已开始，学习计划与词量设置暂时锁定',
+                          '今日学习已开始，这里的改动从明天起生效',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -183,10 +184,9 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
               _buildSectionCard(
                 isDarkMode: isDarkMode,
                 title: '今日单词数',
-                badgeText: _isStarted ? '$_selectedWordsPerDay 词' : null,
+                badgeText: null,
                 child: Column(
                   children: [
-                    if (!_isStarted) ...[
                       _buildStepper(
                         isDarkMode: isDarkMode,
                         valueText: '$_selectedWordsPerDay',
@@ -282,7 +282,6 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
                           ),
                         ],
                       ),
-                    ],
                   ],
                 ),
               ),
@@ -292,12 +291,11 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
               _buildSectionCard(
                 isDarkMode: isDarkMode,
                 title: '今日最少新词',
-                badgeText: _isStarted ? '$_selectedMinNewWords 词' : null,
+                badgeText: null,
                 actionIcon: Icons.help_outline_rounded,
                 onActionTap: () => _showMinNewWordsExplanationDialog(context),
                 child: Column(
                   children: [
-                    if (!_isStarted) ...[
                       _buildStepper(
                         isDarkMode: isDarkMode,
                         valueText: _selectedMinNewWords == 0 ? '不限制' : '$_selectedMinNewWords',
@@ -372,7 +370,6 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
                           ),
                         ],
                       ),
-                    ],
                   ],
                 ),
               ),
@@ -382,10 +379,9 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
               _buildSectionCard(
                 isDarkMode: isDarkMode,
                 title: '每组单词数',
-                badgeText: _isStarted ? '$_selectedBatchSize 词/组' : null,
+                badgeText: null,
                 child: Column(
                   children: [
-                    if (!_isStarted) ...[
                       _buildStepper(
                         isDarkMode: isDarkMode,
                         valueText: '$_selectedBatchSize',
@@ -458,7 +454,6 @@ class _StudyPlanSettingsPageState extends State<StudyPlanSettingsPage> {
                           ],
                         ],
                       ),
-                    ],
                   ],
                 ),
               ),
