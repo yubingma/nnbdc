@@ -1396,9 +1396,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      // 编辑态用 stretch：占位胶囊与环节卡都撑满列宽，两者宽度完全一致；
+      // 非编辑态保持按内容宽度（文字贴着自己的宽度更像流程图）。
+      crossAxisAlignment: editable ? CrossAxisAlignment.stretch : CrossAxisAlignment.center,
       children: [
         Text(
           label,
+          textAlign: TextAlign.center,
           style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: labelColor, height: 1),
         ),
         const SizedBox(height: 6),
@@ -2026,11 +2030,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         //   平时灰 / 能放高亮 / 不能放更淡的灰 + 🚫。
         // 外层留一圈内边距当透明命中区，DragTarget 的命中范围 = 它自己的渲染尺寸。
         return Container(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-          child: Center(
-            child: Container(
-              width: 150,
-              // 高度从 40 收到 30（减少四分之一），编辑态下支路不至于被拉太长
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Container(
+              // 撑满列宽：与环节卡等宽（编辑态的 Column 是 stretch）
+              width: double.infinity,
               height: 30,
               decoration: BoxDecoration(
                 color: (moving != null && !blocked)
@@ -2054,7 +2057,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   : (blocked
                       ? Icon(Icons.block_rounded, size: 11, color: lineColor.withValues(alpha: 0.45))
                       : (active ? Icon(Icons.add_rounded, size: 16, color: zoneColor) : null)),
-            ),
           ),
         );
       },
@@ -3984,7 +3986,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required bool hasWallpaper,
     required bool onDark,
   }) {
-    final total = _planWords.length;
+    final int total = _planWords.length;
+    final int expected = user?.effectiveWordsPerDay ?? total;
+    // 计划词数没凑满期望值时，用「实际 / 期望」把缺额也讲出来；
+    // 满了就只报一个数，避免多余的斜杠。
+    final String totalLabel = total < expected ? '今日 $total / $expected 词' : '今日 $total 词';
     // 这行字直接压在壁纸上（没有卡片底），浅色照片上会糊掉。
     // 用「与字色相反的柔光投影」把它从背景里托出来：亮底配白投影、暗底配黑投影。
     final shadows = <Shadow>[
@@ -4002,7 +4008,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '今日 $total 词',
+              totalLabel,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
