@@ -1284,18 +1284,22 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       // 左上角对齐指针后再往右下挪一点：手指按下会盖住指针周围一圈，
       // 不挪的话卡片左上角会被手指压住，正好挡住「拖的是哪个环节」。
       // 卡片摆在指针的左上：手指正好压在卡片的右下角，卡面大部分露在外面
-      // 卡片整体移到指针左侧（宽度上限约 130，留 10 像素间隙），
-      // 这样手指完全不会盖住卡片
-      feedbackOffset: const Offset(-140, -18),
+      // 注意：feedbackOffset 只改「命中判定点」，不改卡片画在哪（Flutter 源码里
+      // 它只喂给 hitTestInView）。要挪视觉位置必须在 feedback 内部做位移。
+      // 拖拽时命中点稍微上移，避免手指挡住目标判定。
       onDragStarted: () => setState(() => _draggingPayload = drag),
       onDragEnd: (_) => setState(() => _draggingPayload = null),
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
       // 反馈卡片放大一点：手指本身会挡住它，放大后才看得清拖的是什么
-      feedback: Material(
-        color: Colors.transparent,
-        child: Transform.scale(
-          scale: 1.18,
-          child: Opacity(opacity: 0.95, child: node),
+      feedback: Transform.translate(
+        // 卡片整张落在手指左侧：宽度上限约 130，再留 10 像素间隙
+        offset: const Offset(-140, -18),
+        child: Material(
+          color: Colors.transparent,
+          child: Transform.scale(
+            scale: 1.18,
+            child: Opacity(opacity: 0.95, child: node),
+          ),
         ),
       ),
       childWhenDragging: Opacity(opacity: 0.3, child: node),
@@ -2110,13 +2114,16 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       data: payload,
                       delay: const Duration(milliseconds: 220),
                       dragAnchorStrategy: pointerDragAnchorStrategy,
-                      feedbackOffset: const Offset(-140, -18),
+                      // 视觉位移在下面的 feedback 里做（feedbackOffset 不管画在哪）
                       onDragStarted: () => setState(() => _draggingPayload = payload),
                       onDragEnd: (_) => setState(() => _draggingPayload = null),
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
-                      feedback: Material(
-                        color: Colors.transparent,
-                        child: Transform.scale(scale: 1.18, child: chip(step)),
+                      feedback: Transform.translate(
+                        offset: const Offset(-140, -18),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Transform.scale(scale: 1.18, child: chip(step)),
+                        ),
                       ),
                       childWhenDragging: chip(step, dragging: true),
                             // 节点内部已有 FittedBox 兜底，这里直接放满卡片宽度
