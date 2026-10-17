@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import "package:go_router/go_router.dart";
 import "package:nnbdc/util/prefs.dart";
 import 'package:nnbdc/api/bo/study_bo.dart';
@@ -1301,7 +1302,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       // 注意：feedbackOffset 只改「命中判定点」，不改卡片画在哪（Flutter 源码里
       // 它只喂给 hitTestInView）。要挪视觉位置必须在 feedback 内部做位移。
       // 拖拽时命中点稍微上移，避免手指挡住目标判定。
-      onDragStarted: () => setState(() => _draggingPayload = drag),
+      onDragStarted: () {
+        HapticFeedback.mediumImpact();
+        setState(() => _draggingPayload = drag);
+      },
       onDragEnd: (_) => setState(() => _draggingPayload = null),
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
       // 反馈卡片放大一点：手指本身会挡住它，放大后才看得清拖的是什么
@@ -1931,6 +1935,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       ToastUtil.info('同一组不能重复同一题型，答对/答错各最多 4 个环节');
       return;
     }
+    HapticFeedback.selectionClick();
     setState(() {
       if (!d.fromTray) {
         final List<String> source = List.of(_trackStepsOf(d.scope, d.group!));
@@ -1947,6 +1952,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 把流程里的环节拖回托盘 = 删除。
   Future<void> _removeTrackStep(_TrackDragPayload d) async {
     if (d.fromTray || d.group == null) return;
+    // 删除比新增"重"一点：手感上能区分「放进去」和「拿掉了」
+    HapticFeedback.mediumImpact();
     setState(() {
       final List<String> source = List.of(_trackStepsOf(d.scope, d.group!));
       if (d.index >= 0 && d.index < source.length) source.removeAt(d.index);
@@ -2151,7 +2158,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       delay: const Duration(milliseconds: 220),
                       dragAnchorStrategy: pointerDragAnchorStrategy,
                       // 视觉位移在下面的 feedback 里做（feedbackOffset 不管画在哪）
-                      onDragStarted: () => setState(() => _draggingPayload = payload),
+                      onDragStarted: () {
+                        HapticFeedback.mediumImpact();
+                        setState(() => _draggingPayload = payload);
+                      },
                       onDragEnd: (_) => setState(() => _draggingPayload = null),
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
                       feedback: Transform.translate(
