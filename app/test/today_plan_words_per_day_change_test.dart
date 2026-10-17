@@ -224,8 +224,9 @@ void main() {
     await tester.tap(option10);
     await tester.pumpAndSettle();
 
-    // 今日已开始学习，今日词数保持为 5 词
-    expect(find.text('今日 5 词'), findsOneWidget, reason: '已开始学习时今日词数当天不应改变');
+    // 今日已开始学习，当天词数仍是 5（不因改设置而变）；
+    // 新目标 10 只作为「实际 / 期望」并列展示，标签由裸「今日 5 词」变成「今日 5 / 10 词」。
+    expect(find.text('今日 5 / 10 词'), findsOneWidget, reason: '已开始学习时今日词数当天不应改变（仍是 5 词）');
     expect(find.textContaining('今日已开始学习'), findsNothing, reason: '设置词数后不应弹出 Toast 提示');
 
     final updatedUser = await db.usersDao.getUserById(userId);
