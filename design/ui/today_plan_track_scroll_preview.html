@@ -299,7 +299,7 @@
   .device-mockup[data-mood="sad"] .mate-line b::after { content: "它等你好几天了"; }
   .device-mockup[data-mood="sad"] .mate-line span::after { content: "樱桃吃光了，只能拣点菜叶"; }
 
-  .mate-line { padding-bottom: 32px; }
+  .mate-line { padding-bottom: 32px; min-width: 168px; }
   .mate-line b { display: block; font-size: 13px; font-weight: 600; color: var(--ink); }
   .mate-line span { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-faint); }
 
@@ -473,7 +473,7 @@
   <h3>宠物永远留位 + 底部毛玻璃渐隐</h3>
   <b>宠物区域是保留位</b>：固定 150 高，不参与滚动，无论轨道图多长都不会被挤掉。<b>轨道图在自己那块里滚</b>：它超出时底部盖一层 84 高的毛玻璃渐隐（模糊半径 7），提示下面还有内容；滚到底时这层自动淡出。<br><br>
   <h3>这里为什么是宠物、不再是借来的小馋怪</h3>
-  小馋怪是「从桥那头过来抢水果的对手」，摆在陪伴位是角色错位。这一个才是用户自己的宠物：粉紫底色、小牛角加垂耳、背着一个装着两颗樱桃的背篓、肚子上一块浅绿圆斑，表情随学习状态变。素材沿用既有那条流水线：原始图 <code>assets/images/_unused/xiaochanguai_早期方向/xiaochanguai_背袋委屈_粉紫版.jpg</code>，经 <code>tools/pet_assets/cutout.py</code> 抠成透明底，四个状态分别是 <code>design/ui/img/pet/pet_berry_{happy,sleepy,excited,sad}.png</code>（统一归一化为 917×950：角色等高 900、底边对齐、水平居中，所以原地切换不会跳）。<br/>
+  小馋怪是「从桥那头过来抢水果的对手」，摆在陪伴位是角色错位。这一个才是用户自己的宠物：粉紫底色、小牛角加垂耳、背着一个装着两颗樱桃的背篓、肚子上一块浅绿圆斑，表情随学习状态变。素材沿用既有那条流水线：原始图 <code>assets/images/_unused/xiaochanguai_早期方向/xiaochanguai_背袋委屈_粉紫版.jpg</code>，从原始生图按闭合深色描边直接提取实心角色并归一化，四个状态分别是 <code>design/ui/img/pet/pet_berry_{happy,sleepy,excited,sad}.png</code>（统一归一化为 942×950：角色等高 900、底边对齐、水平居中，所以原地切换不会跳）。<br/>
   <b>背篓里的樱桃就是它的口粮，也是今日进度</b>：设定是它一天吃两个——学完那天攒到 3 颗，它吃掉 2 颗，第二天进来正好剩 1 颗；开始学变 2 颗，学完变 3 颗。哪天断了就吃光，背篓空着、只能拣几片蔫菜叶，脸上也灰扑扑的。<br><br>
   <h3>为什么模糊半径取 7</h3>
   按项目毛玻璃规范：12~16px 的正文，笔画只有 1~1.5px，模糊半径一旦到 14 以上就会被上千像素均化、直接蒸发成纯白。取 7 正好把节点文字晕成<b>朦胧的墨水色块</b>，既失去可读性、又还看得出"下面是节点"，这才像"还有内容"而不是"这里什么都没有"。<br><br>
