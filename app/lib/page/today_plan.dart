@@ -1002,7 +1002,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     },
                   ),
                 )
-              : SafeArea(
+              // 底栏是透明的，但内容不能画进它的区域（会跟按钮图标叠在一起）。
+              // 这里把内容区整体收到「底栏上沿」并做硬裁剪：滚到底时多出来的部分
+              // 直接看不见，而不是透到导航按钮底下。
+              : ClipRect(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: widget.bottomNavReserve),
+                    child: SafeArea(
                   bottom: false,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -1017,8 +1023,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       // 卡底离屏幕底的距离按「不背单词」首页实测摆：它的任务卡下沿落在 0.863H
                       //（实测 y=1968/2280），我们原来贴到 0.913H，卡片整体偏低 38dp，
                       // 中间那条「岛上沿→卡上沿」的空隙就比它宽出 76dp、显得空旷。
-                      final double bottomInset =
-                          widget.bottomNavReserve + constraints.maxHeight * 0.07;
+                      // 底栏高度已经由外层 Padding 让出，这里只留一点呼吸距离
+                      final double bottomInset = constraints.maxHeight * 0.07;
                       // 字色档：跟壁纸照片的明暗走（无壁纸时等于 App 主题），不与玻璃底色脱钩
                       final bool onDark = _wallpaperIsDark ?? isDarkMode;
                       return SingleChildScrollView(
@@ -1050,24 +1056,29 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 onDark: onDark,
                                 pageWidth: constraints.maxWidth,
                               ),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildPetCompanion(),
-                                  _buildBottomTaskIsland(
-                                    themeConfig: themeConfig,
-                                    hasWallpaper: hasWallpaper,
-                                    isDarkMode: isDarkMode,
-                                    onDark: onDark,
-                                    pageWidth: constraints.maxWidth,
-                                  ),
-                                ],
-                              ),
+                              // 编排轨道时把宠物和主按钮收起来：它们的落点固定，
+                              // 留着只会挤占编辑区，还容易误触
+                              if (!_trackEditing)
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildPetCompanion(),
+                                    _buildBottomTaskIsland(
+                                      themeConfig: themeConfig,
+                                      hasWallpaper: hasWallpaper,
+                                      isDarkMode: isDarkMode,
+                                      onDark: onDark,
+                                      pageWidth: constraints.maxWidth,
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                         ),
                       );
                     },
+                  ),
+                    ),
                   ),
                 ),
         ],
@@ -1239,11 +1250,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     List<Shadow>? shadows,
     Key? key,
     _TrackDragPayload? drag,
+    bool expand = false,
   }) {
     // 优先单行：放不下就等比缩一点点（FittedBox 只在超宽时生效，够宽时字号就是 12.5），
     // 而不是折成「例句英译 / 汉」两行把节点撑高。
     final Widget node = Container(
       key: key,
+      // 撑满父级给定宽度（托盘卡片、拖拽反馈卡片需要固定宽，右边缘才能稳定对齐）
+      width: expand ? double.infinity : null,
       constraints: const BoxConstraints(minHeight: 30),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       alignment: Alignment.center,
@@ -1291,14 +1305,32 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       onDragEnd: (_) => setState(() => _draggingPayload = null),
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
       // 反馈卡片放大一点：手指本身会挡住它，放大后才看得清拖的是什么
+      // 反馈卡片固定 130 宽（否则宽度随文字长度变，短环节的右边缘会离手指很远，
+      // 手感不一致），右边缘稳定停在手指左侧 10px。
       feedback: Transform.translate(
-        // 卡片整张落在手指左侧：宽度上限约 130，再留 10 像素间隙
         offset: const Offset(-140, -18),
-        child: Material(
-          color: Colors.transparent,
-          child: Transform.scale(
-            scale: 1.18,
-            child: Opacity(opacity: 0.95, child: node),
+        child: SizedBox(
+          width: 130,
+          child: Material(
+            color: Colors.transparent,
+            child: Transform.scale(
+              scale: 1.18,
+              // 右对齐缩放：放大后右边缘不会往前顶
+              alignment: Alignment.centerRight,
+              child: Opacity(
+                opacity: 0.95,
+                child: _trackNode(
+                  text: text,
+                  inkColor: inkColor,
+                  bg: bg,
+                  borderColor: borderColor,
+                  fontSize: fontSize,
+                  fontWeight: fontWeight,
+                  shadows: shadows,
+                  expand: true,
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -2066,6 +2098,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             borderColor: nodeBorder,
             fontSize: 11,
             shadows: shadows,
+            // 撑满 150 的固定宽：托盘四张卡等宽，拖拽反馈的右边缘也才稳定
+            expand: true,
           ),
         );
 
@@ -2119,10 +2153,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       onDragEnd: (_) => setState(() => _draggingPayload = null),
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
                       feedback: Transform.translate(
-                        offset: const Offset(-140, -18),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Transform.scale(scale: 1.18, child: chip(step)),
+                        // 托盘卡片固定 150 宽，右边缘同样停在手指左侧 10px
+                        offset: const Offset(-160, -18),
+                        // chip 用了 expand（宽度 infinity），拖拽反馈是无约束渲染的，
+                        // 外面必须有定宽容器，否则整张卡片画不出来（流程里那张有 SizedBox）。
+                        child: SizedBox(
+                          width: 150,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Transform.scale(
+                              scale: 1.18,
+                              alignment: Alignment.centerRight,
+                              child: chip(step),
+                            ),
+                          ),
                         ),
                       ),
                       childWhenDragging: chip(step, dragging: true),
