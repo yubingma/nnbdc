@@ -238,7 +238,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   static const Duration _cloudSyncWaitTimeout = Duration(seconds: 60);
 
   /// 新用户（本地从未选过壁纸）的默认壁纸：琥珀（暗底照片，底栏会自动改配白图标）。
-  static const String _defaultWallpaperPath = 'assets/images/wallpaper/amber.jpg';
+  /// 默认本页背景：经典（不铺照片，直接用 App 主题底）。
+  /// 'none' 与 planWallpapers 里的「经典」是同一个值，用户没选过时就走它。
+  static const String _defaultWallpaperPath = 'none';
 
   /// 背景壁纸（支持 'random' 与 'none' 及具体图片路径）
   String _wallpaperPath = _defaultWallpaperPath;
