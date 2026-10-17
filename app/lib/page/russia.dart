@@ -578,6 +578,12 @@ class RussiaPageState extends State<RussiaPage>
     }
   }
 
+  void _notifyOpponentEntered(String opponentId) {
+    if (opponentId.isEmpty || opponentId == myUserId) return;
+    StudyAudioSessionController.instance.playSoundEffect('door.mp3', volume: 0.65);
+    HapticFeedback.lightImpact();
+  }
+
   void _setupSocketListeners() {
     final socket = SocketIoClient.instance.socket;
 
@@ -638,6 +644,7 @@ class RussiaPageState extends State<RussiaPage>
       }
 
       if (incomingUserId != null && incomingUserId != myUserId) {
+        final bool isNewOpponent = opponentUserId != incomingUserId;
         setState(() {
           if (opponentUserId != incomingUserId) {
             _dismissedOpponentBanner = false;
@@ -648,6 +655,9 @@ class RussiaPageState extends State<RussiaPage>
               : '对手';
           opponentStarted = false;
         });
+        if (isNewOpponent) {
+          _notifyOpponentEntered(incomingUserId);
+        }
       }
     });
 
@@ -667,6 +677,8 @@ class RussiaPageState extends State<RussiaPage>
             myLostCount = info.lostCount;
           });
         } else {
+          final bool isNewOpponent =
+              opponentUserId.isEmpty && info.userId.isNotEmpty && info.userId != myUserId;
           setState(() {
             if (opponentUserId != info.userId) {
               _dismissedOpponentBanner = false;
@@ -680,6 +692,9 @@ class RussiaPageState extends State<RussiaPage>
             opponentWinCount = info.winCount;
             opponentLostCount = info.lostCount;
           });
+          if (isNewOpponent) {
+            _notifyOpponentEntered(info.userId);
+          }
         }
       } catch (e) {
         Global.logger.w('解析 userGameInfo 异常: $e');

@@ -27,5 +27,22 @@ void main() {
       final pubspec = File('pubspec.yaml').readAsStringSync();
       expect(pubspec, contains('- assets/audio/'), reason: 'pubspec 未声明音频目录，音效不会随包发布');
     });
+
+    test('对手进房提示音效 door.mp3 契约检查', () {
+      final source = File('lib/page/russia.dart').readAsStringSync();
+      expect(
+        source.contains("playSoundEffect('door.mp3'"),
+        isTrue,
+        reason: '对手进房时必须播放 door.mp3 音效',
+      );
+      expect(
+        source.contains('_notifyOpponentEntered'),
+        isTrue,
+        reason: '必须具备专门的对手进房通知方法 _notifyOpponentEntered',
+      );
+      final doorFile = File('assets/audio/door.mp3');
+      expect(doorFile.existsSync(), isTrue, reason: 'door.mp3 文件必须存在');
+      expect(doorFile.lengthSync(), greaterThan(0), reason: 'door.mp3 不能为空文件');
+    });
   });
 }

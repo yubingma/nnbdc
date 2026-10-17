@@ -136,6 +136,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 学习轨道是否展开。默认收起：壁纸上只留「新词数 / 旧词数」两枚数字，
   /// 卡片很矮、不遮壁纸；用户点一下才展开完整轨道（环节多的时候卡片会很高）。
   bool _trackExpanded = false;
+
+  /// 是否处于「拖拽编排轨道」的编辑态。编辑态下环节可长按拖动、底部出现环节托盘。
+  bool _trackEditing = false;
   int? todayWordCount;
   bool dataLoaded = false;
   UserVo? user;
@@ -1142,10 +1145,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     FontWeight fontWeight = FontWeight.w600,
     List<Shadow>? shadows,
     Key? key,
+    _TrackDragPayload? drag,
   }) {
     // 优先单行：放不下就等比缩一点点（FittedBox 只在超宽时生效，够宽时字号就是 12.5），
     // 而不是折成「例句英译 / 汉」两行把节点撑高。
-    return Container(
+    final Widget node = Container(
       key: key,
       constraints: const BoxConstraints(minHeight: 30),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
@@ -1171,6 +1175,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           ),
         ),
       ),
+    );
+
+    if (drag == null) return node;
+    // 长按拖动：短按仍然可以点（节点本身没有点击行为，不冲突）
+    return LongPressDraggable<_TrackDragPayload>(
+      data: drag,
+      feedback: Material(
+        color: Colors.transparent,
+        child: Opacity(opacity: 0.92, child: node),
+      ),
+      childWhenDragging: Opacity(opacity: 0.3, child: node),
+      child: node,
     );
   }
 
@@ -1221,6 +1237,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required Color nodeBg,
     required Color nodeBorder,
     required List<Shadow>? shadows,
+    required String scope,
+    required String group,
+    required bool editable,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1231,15 +1250,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         ),
         const SizedBox(height: 6),
         _trackVLine(16, lineColor),
-        if (steps.isEmpty)
+        if (editable) _buildDropZone(scope: scope, group: group, index: 0, accent: labelColor, lineColor: lineColor),
+        if (steps.isEmpty) ...[
           _trackNode(
             text: '直接结束',
             inkColor: inkColor.withValues(alpha: 0.62),
             fontSize: 11,
             fontWeight: FontWeight.w500,
             shadows: shadows,
-          )
-        else
+          ),
+          // 空组也能拖进来：末尾留一个放置条
+          _buildDropZone(scope: scope, group: group, index: 0, accent: labelColor, lineColor: lineColor),
+        ] else
           for (int i = 0; i < steps.length; i++) ...[
             if (i > 0) _trackVLine(14, lineColor),
             _trackNode(
@@ -1248,7 +1270,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               bg: nodeBg,
               borderColor: nodeBorder,
               shadows: shadows,
+              drag: editable
+                  ? _TrackDragPayload(scope: scope, group: group, index: i, step: steps[i])
+                  : null,
             ),
+            if (editable)
+              _buildDropZone(scope: scope, group: group, index: i + 1, accent: labelColor, lineColor: lineColor),
           ],
       ],
     );
@@ -1337,6 +1364,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required List<Shadow>? shadows,
     required VoidCallback onTapCount,
     required double countScale,
+    required String scope,
+    required bool editable,
     required bool showTrack,
   }) {
     return Column(
@@ -1382,6 +1411,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   nodeBg: nodeBg,
                   nodeBorder: nodeBorder,
                   shadows: shadows,
+                  scope: scope,
+                  group: 'correct',
+                  editable: editable,
                 ),
               ),
               const SizedBox(width: 10),
@@ -1395,6 +1427,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   nodeBg: nodeBg,
                   nodeBorder: nodeBorder,
                   shadows: shadows,
+                  scope: scope,
+                  group: 'wrong',
+                  editable: editable,
                 ),
               ),
             ],
@@ -1451,6 +1486,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         nodeBorder: nodeBorder,
         shadows: shadows,
         countScale: countScale,
+        scope: isNew ? 'new' : 'review',
+        editable: _trackEditing,
         showTrack: _trackExpanded,
         onTapCount: () {
           final future = isNew ? toTodayNewWordsListPage(true) : toTodayOldWordsListPage(true);
@@ -1578,6 +1615,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     ),
                     const SizedBox(height: 12),
                     _buildDakaStatusLine(ink: ink, onDark: onDark),
+                    _buildTrackEditBar(ink: ink),
+                    if (_trackEditing)
+                      _buildTrackTray(ink: ink, nodeBg: nodeBg, nodeBorder: nodeBorder, shadows: shadows),
                   ],
                 ),
                 // 按钮只占第一行：浮在两列中间的顶部，下方两列怎么排跟它无关
@@ -1666,6 +1706,240 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// 读取某条轨道某一组的环节列表。
+  List<String> _trackStepsOf(String scope, String group) {
+    if (group == 'check') {
+      final s = scope == 'new' ? _newCheckStep : _reviewCheckStep;
+      return s == null ? <String>[] : <String>[s];
+    }
+    if (scope == 'new') {
+      return group == 'correct' ? _newCorrectSteps : _newWrongSteps;
+    }
+    return group == 'correct' ? _reviewCorrectSteps : _reviewWrongSteps;
+  }
+
+  void _setTrackStepsOf(String scope, String group, List<String> steps) {
+    if (group == 'check') {
+      // 测评环节是轨道的入口，不允许删除/清空
+      if (steps.isEmpty) return;
+      if (scope == 'new') {
+        _newCheckStep = steps.first;
+      } else {
+        _reviewCheckStep = steps.first;
+      }
+      return;
+    }
+    if (scope == 'new') {
+      if (group == 'correct') {
+        _newCorrectSteps = steps;
+      } else {
+        _newWrongSteps = steps;
+      }
+    } else {
+      if (group == 'correct') {
+        _reviewCorrectSteps = steps;
+      } else {
+        _reviewWrongSteps = steps;
+      }
+    }
+  }
+
+  /// 同组不能重复同一题型，答对/答错各最多 4 个环节。
+  bool _canPlaceTrackStep(_TrackDragPayload d, String scope, String group, int index) {
+    if (group == 'check') return false;
+    final List<String> target = List.of(_trackStepsOf(scope, group));
+    if (!d.fromTray && d.scope == scope && d.group == group && d.index >= 0 && d.index < target.length) {
+      target.removeAt(d.index);
+    }
+    if (target.contains(d.step)) return false;
+    if (target.length >= 4) return false;
+    return true;
+  }
+
+  /// 把托盘里的环节放进流程，或在流程内做跨组移动。
+  Future<void> _onDropTrackStep(_TrackDragPayload d, String scope, String group, int index) async {
+    if (!_canPlaceTrackStep(d, scope, group, index)) {
+      ToastUtil.info('同一组不能重复同一题型，答对/答错各最多 4 个环节');
+      return;
+    }
+    setState(() {
+      if (!d.fromTray) {
+        final List<String> source = List.of(_trackStepsOf(d.scope, d.group!));
+        if (d.index >= 0 && d.index < source.length) source.removeAt(d.index);
+        _setTrackStepsOf(d.scope, d.group!, source);
+      }
+      final List<String> now = List.of(_trackStepsOf(scope, group));
+      now.insert(index.clamp(0, now.length), d.step);
+      _setTrackStepsOf(scope, group, now);
+    });
+    await _saveTrackConfig();
+  }
+
+  /// 把流程里的环节拖回托盘 = 删除。
+  Future<void> _removeTrackStep(_TrackDragPayload d) async {
+    if (d.fromTray || d.group == null) return;
+    setState(() {
+      final List<String> source = List.of(_trackStepsOf(d.scope, d.group!));
+      if (d.index >= 0 && d.index < source.length) source.removeAt(d.index);
+      _setTrackStepsOf(d.scope, d.group!, source);
+    });
+    await _saveTrackConfig();
+  }
+
+  /// 落盘：两条轨道一起保存，保证前后端一致。
+  Future<void> _saveTrackConfig() async {
+    try {
+      final service = StudyStepsService();
+      await service.saveThreeGroupConfig(
+        scope: 'new',
+        check: _newCheckStep ?? 'En2Ch',
+        correct: _newCorrectSteps,
+        wrong: _newWrongSteps,
+      );
+      await service.saveThreeGroupConfig(
+        scope: 'review',
+        check: _reviewCheckStep ?? 'En2Ch',
+        correct: _reviewCorrectSteps,
+        wrong: _reviewWrongSteps,
+      );
+    } catch (e) {
+      Global.logger.e('保存学习轨道失败: $e');
+      if (mounted) ToastUtil.error('保存失败，请重试');
+    }
+  }
+
+  /// 编辑态的放置条：把环节拖到这里就插在该位置。
+  Widget _buildDropZone({
+    required String scope,
+    required String group,
+    required int index,
+    required Color accent,
+    required Color lineColor,
+  }) {
+    if (!_trackEditing) return const SizedBox.shrink();
+    return DragTarget<_TrackDragPayload>(
+      onWillAcceptWithDetails: (d) => _canPlaceTrackStep(d.data, scope, group, index),
+      onAcceptWithDetails: (d) => _onDropTrackStep(d.data, scope, group, index),
+      builder: (context, candidate, rejected) {
+        final bool active = candidate.isNotEmpty;
+        return Container(
+          width: 72,
+          height: 14,
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          decoration: BoxDecoration(
+            color: active ? accent.withValues(alpha: 0.18) : Colors.transparent,
+            borderRadius: BorderRadius.circular(7),
+            border: Border.all(color: active ? accent : lineColor, width: active ? 1.2 : 0.6),
+          ),
+          child: active ? Icon(Icons.add_rounded, size: 11, color: accent) : null,
+        );
+      },
+    );
+  }
+
+  /// 编辑态入口条：切换「拖拽编排轨道」。
+  Widget _buildTrackEditBar({required ({Color primary, Color muted, Color faint}) ink}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              _trackEditing ? '长按环节可拖动，拖到下方托盘即删除' : '',
+              style: TextStyle(fontSize: 10.5, color: ink.faint),
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _trackEditing = !_trackEditing),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(_trackEditing ? Icons.check_rounded : Icons.edit_outlined, size: 14, color: ink.muted),
+                const SizedBox(width: 3),
+                Text(
+                  _trackEditing ? '完成' : '编辑',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: ink.muted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 编辑态托盘：四个可用环节（可拖到流程里），同时作为删除区（把流程里的环节拖回来即删）。
+  Widget _buildTrackTray({
+    required ({Color primary, Color muted, Color faint}) ink,
+    required Color nodeBg,
+    required Color nodeBorder,
+    required List<Shadow>? shadows,
+  }) {
+    const steps = <String>['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
+    Widget chip(String step, {bool dragging = false}) => Opacity(
+          opacity: dragging ? 0.4 : 1,
+          child: _trackNode(
+            text: StudyStepExt.displayName(step),
+            inkColor: ink.primary,
+            bg: nodeBg,
+            borderColor: nodeBorder,
+            fontSize: 11,
+            shadows: shadows,
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: DragTarget<_TrackDragPayload>(
+        onWillAcceptWithDetails: (d) => !d.data.fromTray,
+        onAcceptWithDetails: (d) => _removeTrackStep(d.data),
+        builder: (context, candidate, rejected) {
+          final bool active = candidate.isNotEmpty;
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              color: active ? const Color(0x33EF4444) : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: active ? const Color(0x99EF4444) : nodeBorder,
+                width: 0.8,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  active ? '松手删除这个环节' : '把环节拖到上面的轨道里',
+                  style: TextStyle(fontSize: 10, color: active ? const Color(0xFFEF4444) : ink.faint),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    for (final step in steps)
+                      Draggable<_TrackDragPayload>(
+                        data: _TrackDragPayload(scope: '', step: step),
+                        feedback: Material(
+                          color: Colors.transparent,
+                          child: chip(step),
+                        ),
+                        childWhenDragging: chip(step, dragging: true),
+                        child: chip(step),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -4034,3 +4308,28 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 }
 
 
+
+
+/// 拖拽编排学习轨道时在节点与托盘之间传递的数据。
+class _TrackDragPayload {
+  const _TrackDragPayload({
+    required this.scope,
+    required this.step,
+    this.group,
+    this.index = -1,
+  });
+
+  /// `new` / `review`
+  final String scope;
+
+  /// `check` / `correct` / `wrong`；为 null 表示这一份来自底部托盘（新增环节）
+  final String? group;
+
+  /// 该组内的位置；-1 表示新增
+  final int index;
+
+  /// 环节名，例如 `En2Ch`
+  final String step;
+
+  bool get fromTray => group == null;
+}
