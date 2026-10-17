@@ -101,6 +101,6 @@ Then persist it in `~/.ssh/config` under the host (or repo-local `git config cor
 ## Repo-specific anchors
 
 - Gate source of truth: `tools/git-hooks/pre-push` (tracked), installed to `.git/hooks/` by `tools/install_git_hooks.sh`. A fresh clone must run the installer once, or there is no gate at all.
-- This repo's `~/.ssh/config` lists `Host github.com` with **no** `ServerAliveInterval` → pushes over a slow (≳10 min) gate hit bucket E. The gate runs ~2 min idle, ~7–12 min when the IDE is also building.
+- This repo's `~/.ssh/config` now carries `ServerAliveInterval 30` / `ServerAliveCountMax 20` for `Host github.com` — added after a 10:38-min gate dropped the idle connection and killed an already-green push. Bucket E therefore shows up only on machines **without** that keepalive (fresh clone, another machine, or if the lines were removed). Check with `ssh -G github.com | grep -i serveraliveinterval`; expect `30`, and a bare `0` means bucket E is live again.
 - Wallpaper/legibility tests read ink colors and card glass by refactored widget keys — the classic bucket A surface.
 - `AppClock`-driven cross-day tests and audio-session singletons are the usual bucket C leakers.
