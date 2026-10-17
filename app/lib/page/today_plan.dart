@@ -32,6 +32,7 @@ import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/pet_speech.dart';
+import 'package:nnbdc/util/plan_route_observer.dart';
 import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_config.dart';
@@ -131,7 +132,8 @@ class TodayPlanPage extends StatefulWidget {
   }
 }
 
-class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMixin, WidgetsBindingObserver {
+class TodayPlanPageState extends State<TodayPlanPage>
+    with TickerProviderStateMixin, WidgetsBindingObserver, RouteAware {
   int? newWordCount;
   int? oldWordCount;
 
@@ -462,8 +464,23 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   StreamSubscription? _wordUnMasteredSubscription;
   StreamSubscription? _todayStudyListChangedSubscription;
 
+  /// 被新页面盖住（进入学习页、词表页等）时收起气泡：
+  /// 气泡挂在根 Overlay 上，不收就会在别的页面上闪一下。
+  @override
+  void didPushNext() => _dismissPetSpeech();
+
+  /// 收起宠物气泡（打开弹窗、离开页面时都要先收）。
+  /// 气泡挂在根 Overlay 上，是所有页面内容里最高的一层——
+  /// 不主动收掉的话，它会盖在「高级学习设置」这类弹窗上面。
+  void _dismissPetSpeech() {
+    _petSpeechTimer?.cancel();
+    _petSpeechOverlay?.remove();
+    _petSpeechOverlay = null;
+  }
+
   @override
   void dispose() {
+    planRouteObserver.unsubscribe(this);
     _autoSpeechTimer?.cancel();
     _petSpeechTimer?.cancel();
     _petSpeechOverlay?.remove();
@@ -492,6 +509,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // 订阅路由变化：被新页面盖住时要收掉宠物气泡
+    final route = ModalRoute.of(context);
+    if (route != null) planRouteObserver.subscribe(this, route);
     if (mounted && !dataLoaded && !_isLoadingData) {
       Timer.run(() {
         if (mounted && !dataLoaded && !_isLoadingData) {
@@ -4053,6 +4073,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 视觉对齐 9 月下旬那一版底部弹窗：上圆角 28、磨砂 7、顶部渐变 + 上浮阴影、
   /// 顶部拖拽把手、4 列规整网格、点击即选中保存（不需要额外确认按钮）。
   void _showWordsPerDaySheet() {
+    _dismissPetSpeech();
     final darkMode = context.read<DarkMode>();
     final isDarkMode = darkMode.isDarkMode;
     final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
@@ -4265,6 +4286,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
 
   void _showAdvancedSettingsDialog() async {
+    _dismissPetSpeech();
     final darkMode = context.read<DarkMode>();
     final isDarkMode = darkMode.isDarkMode;
     final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
@@ -4398,20 +4420,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                             const SizedBox(height: 2),
 
-                            // 2. 学习轨道设置
-                            _buildAdvancedMenuNavigationItem(
-                              title: '学习轨道设置',
-                              onTap: () {
-                                Navigator.pop(ctx);
-                                context.push('/study_track_settings').then((_) {
-                                  if (mounted) loadData();
-                                });
-                              },
-                              isDarkMode: isDarkMode,
-                            ),
-                            const SizedBox(height: 2),
-
-                            // 3. 学习日期说明
+                            // 2. 学习日期说明
                             _buildAdvancedMenuNavigationItem(
                               title: '学习日期说明',
                               onTap: () {
@@ -4422,7 +4431,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                             const SizedBox(height: 18),
 
-                            // 4. 本页背景配置
+                            // 3. 本页背景配置
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [

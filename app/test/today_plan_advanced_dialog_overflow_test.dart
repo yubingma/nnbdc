@@ -197,8 +197,7 @@ void main() {
 
       expect(find.text('高级学习设置'), findsOneWidget, reason: '对话框必须真的打开');
       expect(find.text('每日计划与词量设置'), findsOneWidget);
-      expect(find.text('学习轨道设置'), findsOneWidget);
-      expect(find.text('学习日期说明'), findsOneWidget);
+        expect(find.text('学习日期说明'), findsOneWidget);
       expect(find.text('本页背景'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: '${width.toInt()}dp 大档下对话框文字溢出');
 

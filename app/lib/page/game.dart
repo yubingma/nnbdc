@@ -504,6 +504,9 @@ class _GamePageState extends State<GamePage> {
   /// 单人小游戏入口。与下面服务端下发的对战大厅彼此独立，
   /// 所以放在大厅列表之前、且不受大厅加载失败影响。
   Widget _buildSoloGameSection(AppThemeConfig themeConfig) {
+    // 「打哭小馋怪」尚未对外发布：入口只对管理员可见，普通用户看不到这一块。
+    // 与 finish.dart 里「记忆守护兽」的处理方式保持一致。
+    if (Global.getLoggedInUser()?.isAdmin != true) return const SizedBox.shrink();
     final textMain = themeConfig.textPrimary;
     final textSub = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
