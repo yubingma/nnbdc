@@ -1456,7 +1456,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         const double cardHPadding = 14 * 2;
         // 收起态要在两枚数字之间塞一枚「学习轨道」按钮（省掉它单独占的一行），
         // 这里按它的大致宽度预留；展开态则是两条轨道之间的间隙。
-        const double toggleReserve = 96;
+        // 按钮实际占宽 = 限宽 112 + 左右 padding 20 = 132，再留 8px 余量
+        const double toggleReserve = 140;
         final double reserved = _trackExpanded ? gap : gap + toggleReserve;
         final double perTrack =
             ((constraints.maxWidth - cardHPadding - reserved - 8) / 2).clamp(40.0, double.infinity);
@@ -1486,16 +1487,26 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  crossAxisAlignment: _trackExpanded ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                  children: [
-                    Expanded(child: track(isNew: true, countScale: countScale)),
-                    // 收起态：按钮夹在两枚数字中间，不额外占纵向空间
-                    if (!_trackExpanded) _buildTrackToggle(inkColor: ink.faint),
-                    if (_trackExpanded) SizedBox(width: gap),
-                    Expanded(child: track(isNew: false, countScale: countScale)),
-                  ],
-                ),
+                // 收起态：两枚数字按内容宽度（Flexible），中间夹一枚「学习轨道」按钮，
+                // 三者用 spaceEvenly 均分剩余空间。不能用 Expanded 硬平分——
+                // 数字块的最小宽度会把整行顶超（2.0x 字号下实测溢出 2.2px）。
+                _trackExpanded
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: track(isNew: true, countScale: countScale)),
+                          SizedBox(width: gap),
+                          Expanded(child: track(isNew: false, countScale: countScale)),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          track(isNew: true, countScale: countScale),
+                          _buildTrackToggle(inkColor: ink.faint),
+                          track(isNew: false, countScale: countScale),
+                        ],
+                      ),
                 if (_trackExpanded) ...[
                   const SizedBox(height: 12),
                   _buildDakaStatusLine(ink: ink, onDark: onDark),
@@ -1518,7 +1529,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
         // 大字号下这行「学习轨道 ▾」也可能撑破卡片（2.0x 实测 4.4px），
         // 放不下就等比缩，不截断。
-        child: FittedBox(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 112),
+          child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1534,6 +1547,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               color: inkColor,
             ),
           ],
+          ),
           ),
         ),
       ),
