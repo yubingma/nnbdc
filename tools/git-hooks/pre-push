@@ -1,0 +1,64 @@
+#!/bin/bash
+# ==============================================================================
+# NBDC 推送前全量测试门禁（单一真源）
+#
+# 本文件是项目自定义 pre-push 钩子的唯一真源，被 git 跟踪。
+# 安装：bash tools/install_git_hooks.sh   （会把它符号链接进 .git/hooks/）
+#
+# 注意：git-lfs 的 post-checkout / post-commit / post-merge 以及 `git lfs install`
+# 生成的 pre-push 属 LFS 自身机制，不在此归档；若日后跑过 `git lfs install`
+# 覆盖了本钩子，重新执行一次安装脚本即可恢复。
+# ==============================================================================
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+APP_DIR="$REPO_ROOT/app"
+
+echo "=================================================="
+echo " 🧪 [Git Pre-Push Hook] 正在执行推送前测试检查..."
+echo "=================================================="
+
+# 2. 运行 Flutter 单元测试（全量门禁，并行执行）
+if [ -d "$APP_DIR" ] && [ -f "$APP_DIR/pubspec.yaml" ]; then
+    echo "▶ 正在运行 Flutter 单元测试（全量门禁 · 并行）..."
+    echo "  提示：首次运行需编译，约 1~3 分钟；每台设备只跑一次，不要重复开多个推送。"
+    LOG_FILE="$(mktemp -t nnbdc_prepush_test)"
+    cd "$APP_DIR"
+
+    # 只认 flutter test 自己的退出码（PIPESTATUS[0]）：tee 只是旁观写日志，
+    # 它的成败不该决定这次推送是否放行。切忌把整条管道的状态（pipefail）当成测试结果。
+    set +e
+    flutter test 2>&1 | tee "$LOG_FILE"
+    TEST_STATUS=${PIPESTATUS[0]}
+    set -e
+
+    if [ "$TEST_STATUS" -ne 0 ]; then
+        echo "" >&2
+        echo "❌ [Git Pre-Push Hook] Flutter 单元测试未全部通过，已拦截推送 (git push)！" >&2
+        echo "" >&2
+        if grep -q "^Failing tests:" "$LOG_FILE"; then
+            echo "----- 失败用例清单（可直接复制文件路径复现）-----" >&2
+            sed -n '/^Failing tests:/,$p' "$LOG_FILE" | tail -n +2 >&2
+            echo "------------------------------------------------" >&2
+            echo "💡 快速复现：cd app && flutter test <上面列出的文件路径>" >&2
+        else
+            echo "💡 未能从输出中解析出失败用例清单（可能是编译/加载期错误），请查看完整日志。" >&2
+        fi
+        echo "" >&2
+        echo "💡 完整测试日志：$LOG_FILE" >&2
+        echo "💡 排查路径见 skill：.agents/skills/triage-blocked-prepush/SKILL.md" >&2
+        exit 1
+    fi
+    rm -f "$LOG_FILE"
+fi
+
+echo ""
+echo "✅ [Git Pre-Push Hook] 所有单元测试通过，允许推送！"
+echo "=================================================="
+
+# 3. Git LFS 支持（如果是 git push 实际触发且安装了 git-lfs，则传递执行）
+if [ $# -ge 2 ] && command -v git-lfs >/dev/null 2>&1; then
+    git lfs pre-push "$@"
+fi
+
+exit 0
