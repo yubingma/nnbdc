@@ -195,6 +195,15 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       ref.read(bdcNotifierProvider.notifier).loadData(context);
     });
 
+    // 监听当前学习单词切换：新词入场时立即平滑复原题目区坍缩动画，呈现新题
+    ref.listenManual(bdcNotifierProvider.select((s) => s.word?.id), (previous, next) {
+      if (previous != null && next != null && previous != next) {
+        if (_questionCollapseController.value > 0) {
+          _questionCollapseController.reset();
+        }
+      }
+    });
+
     // 数据就绪后检查新手引导（首次进入学习页自动展示一次）
     ref.listenManual(bdcNotifierProvider.select((s) => s.dataLoaded),
         (previous, next) {
@@ -391,13 +400,13 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       },
     );
 
-    // 第三阶段：等待胶囊飞离中心一段距离后（150ms），平滑复原题目区以迎接新内容
-    await Future.delayed(const Duration(milliseconds: 150));
-    if (mounted) {
+    // 等待飞行动效抵达目标完成吸收（超时安全保护兜底，时长 500ms）
+    await completer.future.timeout(const Duration(milliseconds: 500), onTimeout: () {});
+
+    // 兜底保护：若因特殊情况新词未加载或流转中断，在动效彻底结束后平滑复原题目区，避免永久坍缩
+    if (mounted && _questionCollapseController.value > 0) {
       _questionCollapseController.reset();
     }
-    // 等待飞行动效抵达目标完成吸收（超时安全保护兜底）
-    await completer.future.timeout(const Duration(milliseconds: 280), onTimeout: () {});
   }
 
   /// 首次进入学习页时展示新手引导：只讲「你说，我来听」这一件事，

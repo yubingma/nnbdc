@@ -5089,4 +5089,105 @@ void main() {
     expect(state.loadErrorCause, isA<UnsupportedStudyStepException>());
     expect(state.dataLoaded, true, reason: '错误页要显示出来，不能一直停在加载态');
   });
+
+  test('BdcNotifier - 毕业已掌握单词开绿色通道：即使关闭极速模式或配置答对看详情，依然触发飞行动画并自动切词', () async {
+    // 插入第二个单词供切词验证
+    final word2Id = 'word_2';
+    await db.into(db.words).insert(Word(
+      id: word2Id,
+      spell: 'banana',
+      popularity: 100,
+      createTime: now,
+      updateTime: now,
+    ));
+    await db.into(db.meaningItems).insert(MeaningItem(
+      id: 'mim_2',
+      wordId: word2Id,
+      dictId: Global.commonDictId,
+      ciXing: 'n.',
+      meaning: '香蕉',
+      popularity: 100,
+      ownerId: Global.sysUserId,
+      createTime: now,
+      updateTime: now,
+    ));
+    await db.into(db.dictWords).insert(DictWord(
+      dictId: 'mock_dict_1',
+      wordId: word2Id,
+      seq: 2,
+      unit: 0,
+      createTime: now,
+      updateTime: now,
+    ));
+    await db.into(db.learningWords).insert(LearningWord(
+      userId: testUser.id,
+      wordId: word2Id,
+      addTime: now,
+      addDay: 1,
+      batchId: 1,
+      lastLearningDate: AppClock.today(),
+      stability: 0.0,
+      isTodayNewWord: true,
+      learnedTimes: 0,
+      todayLearnedTimes: 0,
+      learningOrder: 2,
+      createTime: now,
+      updateTime: now,
+      isExtra: false,
+    ));
+
+    // 预置 word_1 为已复习多次的高稳定性单词（答对后稳定度必然 >= Constants.graduationStability）
+    await (db.update(db.learningWords)..where((tbl) => tbl.userId.equals(testUser.id) & tbl.wordId.equals('word_1'))).write(
+      LearningWordsCompanion(
+        stability: const Value(118.0),
+        difficulty: const Value(5.0),
+        elapsedDays: const Value(10),
+        scheduledDays: const Value(30),
+        reps: const Value(5),
+        lapses: const Value(0),
+        state: const Value(2),
+        lastLearningDate: Value(now.subtract(const Duration(days: 10))),
+      ),
+    );
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    // 配置：开启答对看详情，关闭自动切词（极速模式关）
+    notifier.updateShowWordDetailAfterCorrect(true);
+    notifier.updateAutoJumpCh2En(false);
+    notifier.updateAutoJumpEn2Ch(false);
+
+    String? graduatedSpellReceived;
+    notifier.onWordMasteredGraduated = (spell) {
+      graduatedSpellReceived = spell;
+    };
+
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word?.id, 'word_1');
+
+    // 作答答对（语音识别说出正确中文）
+    await _feedVoiceAsr(notifier, container, '苹果', isFinal: true);
+    state = container.read(bdcNotifierProvider);
+
+    // 1. 验证稳定性达到掌握线且触发了掌握动效回调
+    expect(state.fsrsItem!.stability, greaterThanOrEqualTo(Constants.graduationStability));
+    expect(graduatedSpellReceived, 'apple');
+
+    // 2. 验证绿色通道生效：未被 showWordDetail 拦截，而是等待 350ms 后自动调用 getNextWord 流转
+    await Future.delayed(const Duration(milliseconds: 500));
+    state = container.read(bdcNotifierProvider);
+    expect(state.word?.id, isNot('word_1'), reason: '掌握毕业的单词走绿色通道自动切到下一个词');
+  });
 }

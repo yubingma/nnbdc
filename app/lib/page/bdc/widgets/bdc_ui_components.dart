@@ -1266,6 +1266,9 @@ extension BdcPageStateUIComponents on BdcPageState {
     Key? key,
     required IconData icon,
     String? label,
+    double? iconSize,
+    double? fontSize,
+    EdgeInsetsGeometry? padding,
     required VoidCallback onTap,
   }) {
     final isDark = _cachedIsDarkMode;
@@ -1278,10 +1281,11 @@ extension BdcPageStateUIComponents on BdcPageState {
         borderRadius: BorderRadius.circular(10),
         onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: label != null ? 8 : 9,
-            vertical: 7,
-          ),
+          padding: padding ??
+              EdgeInsets.symmetric(
+                horizontal: label != null ? 8 : 9,
+                vertical: 7,
+              ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1289,14 +1293,14 @@ extension BdcPageStateUIComponents on BdcPageState {
               Icon(
                 icon,
                 color: fg,
-                size: 15,
+                size: iconSize ?? 15,
               ),
               if (label != null) ...[
                 const SizedBox(width: 3.5),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: fontSize ?? 11.5,
                     fontWeight: FontWeight.w500,
                     color:
                         isDark ? const Color(0xFFE2E8F0) : context.textPrimary,
@@ -1425,6 +1429,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                     key: _masteredButtonKey,
                     icon: Icons.check_circle_outline_rounded,
                     label: '掌握',
+                    iconSize: 16.5,
+                    fontSize: 12.5,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                     onTap: () async {
                       final spell = state.word?.spell ?? '';
                       notifier.updateHasFinishedAnswering(true);
@@ -1434,6 +1441,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     },
                   ),
                 ),
+                const SizedBox(width: 4),
 
                 // 更多：查词 / 报错 / 学习设置都收在这一层后面。
                 // 它们原先和「掌握」同排、间距只有 6 像素，想查词却点到「掌握」的代价太大。

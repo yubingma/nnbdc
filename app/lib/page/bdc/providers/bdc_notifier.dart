@@ -3282,9 +3282,20 @@ class BdcNotifier extends _$BdcNotifier {
       _playCorrectSound();
     }
 
-    // 发音播放完成后：若达成毕业掌握，统一在此刻触发掌握飞行动画与破茧泡泡音效
+    // 若达成毕业掌握：开绿色通道，触发掌握飞行动画并直接流转切到下一个词。
+    // 用户已彻底掌握该词，无需停留在当前词看详情或受极速模式限制，避免动效与流转脱节。
     if (isMasteredGraduated && graduatedSpell != null) {
       onWordMasteredGraduated?.call(graduatedSpell);
+      if (state.historyIndex == -1) {
+        final correctWordId = state.word?.id;
+        _autoJumpTimer = Timer(const Duration(milliseconds: 350), () {
+          if (!_isDisposed && state.word?.id == correctWordId && state.hasFinishedAnswering) {
+            getNextWord(true, fsrsRating: rating);
+          }
+        });
+      }
+      Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
+      return;
     }
 
     if (state.showWordDetailAfterCorrect && state.word != null && state.historyIndex == -1) {
@@ -3304,14 +3315,11 @@ class BdcNotifier extends _$BdcNotifier {
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
-      // 若触发了毕业掌握动效，留出适当时间(350ms)让用户欣赏胶囊破茧飞入掌握按钮并吸收；
       // 普通答对时，中英模式发音已播完直接跳转(0ms)，其他模式保留原有延迟(1000ms)。
-      final jumpDelayMs = isMasteredGraduated
-          ? 350
-          : ((state.studyStep == StudyStep.ch2En.json ||
-                  state.studyStep == StudyStep.chSentence2En.json)
-              ? 0
-              : 1000);
+      final jumpDelayMs = (state.studyStep == StudyStep.ch2En.json ||
+              state.studyStep == StudyStep.chSentence2En.json)
+          ? 0
+          : 1000;
       final correctWordId = state.word?.id;
       _autoJumpTimer = Timer(Duration(milliseconds: jumpDelayMs), () {
         if (!_isDisposed && state.word?.id == correctWordId && state.hasFinishedAnswering) {
