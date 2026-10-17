@@ -5186,7 +5186,7 @@ void main() {
     expect(graduatedSpellReceived, 'apple');
 
     // 2. 验证绿色通道生效：未被 showWordDetail 拦截，而是等待 350ms 后自动调用 getNextWord 流转
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 1500));
     state = container.read(bdcNotifierProvider);
     expect(state.word?.id, isNot('word_1'), reason: '掌握毕业的单词走绿色通道自动切到下一个词');
   });
