@@ -20,7 +20,6 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/models/bdc_page_args.dart';
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
-import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/services/sync_progress.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -43,8 +42,6 @@ import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 
 /// 任务卡上主数字与加量徽标的基准字号（测量自然宽与真实渲染共用这一份，避免两头各写一个数）
-const double _countNumberFontSize = 22;
-const double _countExtraFontSize = 15;
 
 /// 今日计划页里几个定宽/定距的常量。
 ///
@@ -52,9 +49,6 @@ const double _countExtraFontSize = 15;
 /// 左卡一格的可用宽（去做文字测量），反推用的数字必须和真正参与布局的是同一套，
 /// 否则量出来的宽和实际不符，等大就会失去意义。
 const double _planPageHPadding = 20; // 页面左右内边距（SingleChildScrollView 的 padding）
-const double _islandCardGap = 12; // 左右两张任务卡之间的间隙
-const double _metricDivider = 0.5; // 左卡两格之间的分隔线宽
-const double _metricHPadding = 14; // 每格文字的左右内缩（_buildTaskMetric 的 padding）
 
 /// 今日计划页可选背景。
 ///
@@ -906,10 +900,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final hasWallpaper = _hasEffectiveWallpaper;
-                      final int planTotalWords = _planWords.length;
-                      final bool isDakaStamped = hasDakaToday;
-                      final DateTime stampDay = AppClock.today();
-                      final String stampDate = planIslandDateLabel(stampDay);
 
                       // 壁纸底与主题底共用这一套布局：顶部悬浮设置 / 中心目标岛 / 底部双任务岛 + 主按钮，
                       // 两种背景只差卡片那一层皮肤（见 _cardSkin），结构与间距完全一致。
@@ -943,13 +933,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                   _buildTopFloatingHeader(themeConfig, hasWallpaper, onDark),
                                   // 中心岛同步下移：让「岛下沿 → 卡上沿」的空隙与它一致（实测 0.372H = 282dp）
                                   SizedBox(height: (constraints.maxHeight * 0.168).clamp(60.0, 150.0)),
-                                  _buildStatusIsland(
+                                  _buildTrackFlow(
                                     hasWallpaper: hasWallpaper,
                                     isDarkMode: isDarkMode,
                                     onDark: onDark,
-                                    isDakaStamped: isDakaStamped,
-                                    stampDate: stampDate,
-                                    planTotalWords: planTotalWords,
+                                    pageWidth: constraints.maxWidth,
                                   ),
                                   // 放不下而滚动时的最小间距，避免中心岛与任务岛贴在一起
                                   const SizedBox(height: 16),
@@ -1056,136 +1044,455 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           );
   }
 
-  /// 中心「打卡/日程岛」：高透圆角磨砂卡（对标「不背单词」日历签到卡）
-  Widget _buildStatusIsland({
-    required bool hasWallpaper,
-    required bool isDarkMode,
-    required bool onDark,
-    required bool isDakaStamped,
-    required String stampDate,
-    required int planTotalWords,
+  // ==================== 今日轨道图 ====================
+  //
+  // 把「新词数 / 旧词数」当成两条学习轨道的起点，自上而下画到「单词列表」：
+  // 数字 → 测评 → 答对 / 答错分叉 → 各自后续环节 → 汇合到单词列表。
+  // 与 design/ui/today_plan_track_flow_preview.html 同构。
+  //
+  // 分叉与汇合用「只带两条边框 + 一个圆角」的方块拼出来（Border + BorderRadius.only），
+  // 而不是自定义绘制：这样它天然跟着主题色，也没有绘制坐标算错的风险。
+
+  /// 两条轨道的数字行共用一个缩放比：要缩就一起缩，不会一个新词 30sp、一个旧词 22sp。
+  ///
+  /// 必须把系统字号缩放（textScaler）算进来，否则「字号 2.0x」时测出来的宽度只有实际的一半，
+  /// 缩了等于没缩、照样溢出。
+  double _sharedTrackCountScale({
+    required BuildContext context,
+    required double maxWidth,
+    required List<({int count, int extra})> rows,
+    double baseFontSize = 32,
+    double extraFontSize = 11,
   }) {
-    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark);
-    final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
-    final sealColor = onDark ? const Color(0xFF34D399) : const Color(0xFF059669);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        toTodayWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            width: 138,
-            // 上边距 36dp / 下边距 16dp（不对称）：实测不背单词中心岛图标上方留 39dp、
-            // 文字下方留 22dp，我们下方已经和它一致（22dp），只有上方紧（19dp）——
-            // 补上这 20dp 后岛高从 117dp 到 ~137dp（它 142dp），
-            // 同时因为岛的顶是锚死的，多出来的高度把「岛下沿→卡上沿」的空隙从 300dp 收到 ~280dp
-            //（它实测 282dp），一并把上一轮剩下的那 18dp 空隙差也补平了。
-            padding: const EdgeInsets.only(top: 36, bottom: 16, left: 14, right: 14),
-            decoration: BoxDecoration(
-              color: skin.bg,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: skin.border, width: 0.5),
-              boxShadow: [skin.shadow],
+    if (maxWidth <= 0 || rows.isEmpty) return 1;
+    final scaler = MediaQuery.textScalerOf(context);
+    final painter = TextPainter(textDirection: TextDirection.ltr, maxLines: 1, textScaler: scaler);
+    double widest = 0;
+    for (final row in rows) {
+      painter.text = TextSpan(
+        children: [
+          TextSpan(
+            text: '${row.count}',
+            style: TextStyle(
+              fontSize: baseFontSize,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -1.1,
+              fontFamily: 'Roboto',
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isDakaStamped) ...[
-                  // 轻量描边图标：原来是实心绿圆盘（check_circle_rounded），
-                  // 压在薄纱卡上又厚又重、像个实心色块；换成细环 + 对勾的描边版，
-                  // 保住"已打卡"的绿色语义，但不再是实心块（对标不背单词的细描边图标）。
-                  Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 24,
-                    color: sealColor,
-                  ),
-                  // 图标与标题之间的空气：实测不背单词这两者的墨迹间距是 24dp，
-                  // 我们原来只有 14dp（间距 6dp），读起来发闷 —— 放到 14dp 贴齐它的呼吸感。
-                  const SizedBox(height: 14),
-                  Semantics(
-                    container: true,
-                    key: const Key('today_plan_daka_seal_text'),
-                    label: '已打卡',
-                    excludeSemantics: true,
-                    child: Text(
-                      '已打卡',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: ink.primary,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                  ),
-                  Semantics(
-                    container: true,
-                    key: const Key('today_plan_daka_seal_date'),
-                    label: stampDate,
-                    child: const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 5),
-                  ExcludeSemantics(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          stampDate,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: ink.muted,
-                            fontFamily: 'Roboto',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ] else ...[
-                  // 同一套轻量原则：细描边日历（原来 calendar_today_rounded 笔画明显更粗）
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 22,
-                    color: ink.muted,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    '今日目标',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: ink.primary,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    stampDate,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: ink.muted,
-                      fontFamily: 'Roboto',
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '目标 $planTotalWords 词',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: ink.faint,
-                      fontFamily: 'Roboto',
-                    ),
-                  ),
-                ],
-              ],
+          ),
+          if (row.extra > 0)
+            TextSpan(
+              text: ' + ${row.extra}',
+              style: TextStyle(fontSize: extraFontSize, fontWeight: FontWeight.w600, fontFamily: 'Roboto'),
+            ),
+        ],
+      );
+      painter.layout();
+      if (painter.width > widest) widest = painter.width;
+    }
+    // 实测在「刚好等于可用宽」时仍会溢出 1~3px：TextPainter 量的是文字本身，
+    // 不含 Row 里基线与加量小字之间的对齐余量。留 4% 安全余量。
+    const double safety = 0.96;
+    if (widest <= maxWidth * safety) return 1;
+    return (maxWidth * safety / widest).clamp(0.35, 1.0);
+  }
+
+  /// 连线颜色。
+  ///
+  /// 壁纸模式下必须比主题模式明显更亮/更实：照片底纹一直在变，
+  /// 22% 透明度的 1px 细线压在上面基本等于隐形（实装第一版就是这样，用户完全看不到连线）。
+  Color _trackLineColor({required bool hasWallpaper, required bool onDark}) {
+    if (!hasWallpaper) return const Color(0xFF241A14).withValues(alpha: 0.17);
+    if (onDark) return Colors.white.withValues(alpha: 0.55);
+    return const Color(0xFF241A14).withValues(alpha: 0.42);
+  }
+
+  Widget _trackVLine(double height, Color color) =>
+      Container(width: 1.5, height: height, color: color);
+
+  /// 一个轨道节点。环节用淡底，`直接结束` 用灰字表示到此为止。
+  Widget _trackNode({
+    required String text,
+    required Color inkColor,
+    Color? bg,
+    Color? borderColor,
+    double fontSize = 12,
+    FontWeight fontWeight = FontWeight.w600,
+    List<Shadow>? shadows,
+    Key? key,
+  }) {
+    return Container(
+      key: key,
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: bg ?? Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor ?? Colors.transparent, width: 0.8),
+      ),
+      // 分支列可能只有七八十宽，「例句汉译英」「直接结束」这类文字放不下时必须等比缩，
+      // 绝不能用省略号截断：截断后屏幕上会出现「直接结…」，用户根本读不出这是"直接结束"。
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          maxLines: 1,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: inkColor,
+            height: 1,
+            shadows: shadows,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 分叉：中线落下来，左右各拐一个圆角接到两条支路上。
+  Widget _trackFork({required double height, required Color leftColor, required Color rightColor}) {
+    Widget half(Color color, {required bool left}) {
+      return Expanded(
+        child: FractionallySizedBox(
+          widthFactor: 0.5,
+          alignment: left ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            height: height,
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: color, width: 1.5),
+                left: left ? BorderSide(color: color, width: 1.5) : BorderSide.none,
+                right: left ? BorderSide.none : BorderSide(color: color, width: 1.5),
+              ),
+              borderRadius: left
+                  ? const BorderRadius.only(topLeft: Radius.circular(9))
+                  : const BorderRadius.only(topRight: Radius.circular(9)),
             ),
           ),
         ),
+      );
+    }
+
+    // 这里的间隙必须与下面「两条支路」那行的 SizedBox(width: 10) 完全一致：
+    // 否则分叉竖线落在 25%/75%，支路竖线落在 25%-2.5 / 75%+7.5，两者差几个像素，
+    // 就是用户截图里那种「答错那根线歪到标签右边」的错位。
+    return Row(
+      children: [
+        half(leftColor, left: true),
+        const SizedBox(width: 10),
+        half(rightColor, left: false),
+      ],
+    );
+  }
+
+
+  /// 一条支路：答对 / 答错标签 → 环节依次往下串（环节多就往下长）。
+  Widget _trackBranch({
+    required String label,
+    required Color labelColor,
+    required Color lineColor,
+    required List<String> steps,
+    required Color inkColor,
+    required Color nodeBg,
+    required Color nodeBorder,
+    required List<Shadow>? shadows,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: labelColor, height: 1),
+        ),
+        const SizedBox(height: 6),
+        _trackVLine(16, lineColor),
+        if (steps.isEmpty)
+          _trackNode(
+            text: '直接结束',
+            inkColor: inkColor.withValues(alpha: 0.62),
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            shadows: shadows,
+          )
+        else
+          for (int i = 0; i < steps.length; i++) ...[
+            if (i > 0) _trackVLine(14, lineColor),
+            _trackNode(
+              text: StudyStepExt.displayName(steps[i]),
+              inkColor: inkColor,
+              bg: nodeBg,
+              borderColor: nodeBorder,
+              shadows: shadows,
+            ),
+          ],
+      ],
+    );
+  }
+
+  /// 一条完整轨道（新词或旧词）。
+  Widget _buildTrackColumn({
+    required String title,
+    required int count,
+    required int extraCount,
+    required Key countKey,
+    required Key extraKey,
+    required String checkStep,
+    required List<String> correctSteps,
+    required List<String> wrongSteps,
+    required ({Color primary, Color muted, Color faint}) ink,
+    required Color line,
+    required Color ok,
+    required Color no,
+    required Color okLine,
+    required Color noLine,
+    required Color nodeBg,
+    required Color nodeBorder,
+    required List<Shadow>? shadows,
+    required VoidCallback onTapCount,
+    required double countScale,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 起点：今天要学的词数（点它进对应词表）
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTapCount,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 数字行按「两条轨道共用的缩放比」缩小字号（而不是各自 FittedBox），
+              // 这样新词与旧词的数字渲染高度始终一致，大字号 + 四位数字时也不会溢出。
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '$count',
+                    key: countKey,
+                    style: TextStyle(
+                      fontSize: 32 * countScale,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -1.1,
+                      height: 1,
+                      color: ink.primary,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                    if (extraCount > 0) ...[
+                      const SizedBox(width: 3),
+                      Text(
+                        ' + $extraCount',
+                        key: extraKey,
+                        style: TextStyle(
+                          fontSize: 11 * countScale,
+                          fontWeight: FontWeight.w600,
+                          color: ink.faint,
+                          fontFamily: 'Roboto',
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              const SizedBox(height: 3),
+              Text(
+                title,
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w500, color: ink.faint, letterSpacing: 1.4),
+              ),
+            ],
+          ),
+        ),
+        _trackVLine(20, line),
+        Text(
+          '测评',
+          style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: ink.faint, letterSpacing: 1.6),
+        ),
+        const SizedBox(height: 2),
+        _trackNode(
+          text: StudyStepExt.displayName(checkStep),
+          inkColor: ok,
+          bg: ok.withValues(alpha: 0.075),
+          borderColor: ok.withValues(alpha: 0.24),
+          fontSize: 12.5,
+          shadows: shadows,
+        ),
+        _trackVLine(18, line),
+        _trackFork(height: 26, leftColor: okLine, rightColor: noLine),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _trackBranch(
+                label: '答对',
+                labelColor: ok,
+                lineColor: okLine,
+                steps: correctSteps,
+                inkColor: ink.primary,
+                nodeBg: nodeBg,
+                nodeBorder: nodeBorder,
+                shadows: shadows,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _trackBranch(
+                label: '答错',
+                labelColor: no,
+                lineColor: noLine,
+                steps: wrongSteps,
+                inkColor: ink.primary,
+                nodeBg: nodeBg,
+                nodeBorder: nodeBorder,
+                shadows: shadows,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 轨道图整体：两条轨道并排，下面是打卡状态。
+  Widget _buildTrackFlow({
+    required bool hasWallpaper,
+    required bool isDarkMode,
+    required bool onDark,
+    required double pageWidth,
+  }) {
+    final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
+    final line = _trackLineColor(hasWallpaper: hasWallpaper, onDark: onDark);
+    final ok = onDark ? const Color(0xFF34D399) : const Color(0xFF059669);
+    final no = onDark ? const Color(0xFFF87171) : const Color(0xFFC4552F);
+    final okLine = ok.withValues(alpha: hasWallpaper ? 0.8 : 0.55);
+    final noLine = no.withValues(alpha: hasWallpaper ? 0.8 : 0.55);
+    // 壁纸底：节点要有真的底与描边，否则节点文字直接压在照片纹理上；
+    // 暗底再加一层黑色投影、亮底加白色投影，保证在明暗交界处也读得出来。
+    final nodeBg = !hasWallpaper
+        ? (onDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFF241A14).withValues(alpha: 0.035))
+        : (onDark ? Colors.white.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.62));
+    final nodeBorder = !hasWallpaper
+        ? (onDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFF241A14).withValues(alpha: 0.055))
+        : (onDark ? Colors.white.withValues(alpha: 0.26) : Colors.white.withValues(alpha: 0.9));
+    final List<Shadow>? shadows = !hasWallpaper
+        ? null
+        : (onDark
+            ? [Shadow(color: Colors.black.withValues(alpha: 0.65), blurRadius: 6)]
+            : [Shadow(color: Colors.white.withValues(alpha: 0.9), blurRadius: 6)]);
+
+    final double gap = (pageWidth * 0.075).clamp(18.0, 34.0);
+
+    Widget track({required bool isNew, required double countScale}) {
+      return _buildTrackColumn(
+        title: isNew ? '新词' : '旧词',
+        count: (isNew ? newWordCount : oldWordCount) ?? 0,
+        extraCount: isNew ? _extraNewCount : _extraOldCount,
+        countKey: Key(isNew ? 'today_plan_new_count_number' : 'today_plan_old_count_number'),
+        extraKey: Key(isNew ? 'today_plan_extra_new_count' : 'today_plan_extra_old_count'),
+        checkStep: (isNew ? _newCheckStep : _reviewCheckStep) ?? 'En2Ch',
+        correctSteps: isNew ? _newCorrectSteps : _reviewCorrectSteps,
+        wrongSteps: isNew ? _newWrongSteps : _reviewWrongSteps,
+        ink: ink,
+        line: line,
+        ok: ok,
+        no: no,
+        okLine: okLine,
+        noLine: noLine,
+        nodeBg: nodeBg,
+        nodeBorder: nodeBorder,
+        shadows: shadows,
+        countScale: countScale,
+        onTapCount: () {
+          final future = isNew ? toTodayNewWordsListPage(true) : toTodayOldWordsListPage(true);
+          future?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
+        },
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 两条轨道共用一个数字缩放比，保证新词与旧词的数字一样大、且都不溢出。
+        final double perTrack = ((constraints.maxWidth - gap) / 2).clamp(40.0, double.infinity);
+        final double countScale = _sharedTrackCountScale(
+          context: context,
+          maxWidth: perTrack,
+          rows: [
+            (count: newWordCount ?? 0, extra: _extraNewCount),
+            (count: oldWordCount ?? 0, extra: _extraOldCount),
+          ],
+        );
+        // 整张轨道图包在一张毛玻璃卡里：壁纸底纹一直在变，不隔绝一层的话
+        // 连线与节点文字会跟照片纹理糊在一起（实装后用户反馈"还是看不清楚"）。
+        final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark);
+        return FrostedGlassCard(
+          bgColor: skin.bg,
+          borderColor: skin.border,
+          shadow: skin.shadow,
+          padding: const EdgeInsets.fromLTRB(14, 18, 14, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: track(isNew: true, countScale: countScale)),
+                  SizedBox(width: gap),
+                  Expanded(child: track(isNew: false, countScale: countScale)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildDakaStatusLine(ink: ink, onDark: onDark),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 轨道图底部的打卡状态：已打卡就盖一枚「已打卡 · MM-DD」，没打卡就写今日目标。
+  Widget _buildDakaStatusLine({
+    required ({Color primary, Color muted, Color faint}) ink,
+    required bool onDark,
+  }) {
+    final date = planIslandDateLabel(AppClock.today());
+    final sealColor = onDark ? const Color(0xFF34D399) : const Color(0xFF059669);
+    // 大字号下「日期 + 已打卡/今日目标 + 词数」会撑破屏宽（实测 110px），
+    // 整行按可用宽度等比缩，宁可小一点也不许溢出。
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasDakaToday) ...[
+          Icon(Icons.check_circle_outline_rounded, size: 14, color: sealColor),
+          const SizedBox(width: 5),
+          Text(
+            '已打卡',
+            key: const Key('today_plan_daka_seal_text'),
+            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: ink.muted),
+          ),
+          const SizedBox(width: 6),
+        ],
+        Text(
+          date,
+          key: hasDakaToday ? const Key('today_plan_daka_seal_date') : null,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ink.faint, fontFamily: 'Roboto'),
+        ),
+        if (!hasDakaToday) ...[
+          const SizedBox(width: 8),
+          Text(
+            '今日目标',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ink.faint),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${_planWords.length} 词',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: ink.faint, fontFamily: 'Roboto'),
+          ),
+        ],
+      ],
       ),
     );
   }
@@ -1265,122 +1572,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
 
-  /// 左卡一格的可用宽（build 阶段反推，供 [_sharedCountScale] 做文字测量用）。
-  /// 用的是 [_planPageHPadding]/[_islandCardGap]/[_metricDivider]/[_metricHPadding]
-  /// 这几个真正参与布局的常量，保证量出来的宽和实际布局一致。
-  double _metricSlotWidth(double pageWidth) {
-    final cardsArea = pageWidth - _planPageHPadding * 2;
-    final cardWidth = (cardsArea - _islandCardGap) / 2;
-    return (cardWidth - _metricDivider) / 2 - _metricHPadding * 2;
-  }
 
-  /// 量「计划数 +（可选）加量」这一行在基准字号下的自然宽。
-  /// 用 [TextPainter] 按真字体与当前 textScaler 量，不靠手算字宽，字体/字号改了也不失真。
-  double _countNaturalWidth({required int count, required int extra}) {
-    const numberStyle = TextStyle(
-      fontSize: _countNumberFontSize,
-      fontWeight: FontWeight.w700,
-      fontFamily: 'Roboto',
-      letterSpacing: -0.5,
-    );
-    final span = TextSpan(
-      children: [
-        TextSpan(text: '$count', style: numberStyle),
-        if (extra > 0)
-          TextSpan(
-            text: ' + $extra',
-            style: numberStyle.copyWith(fontSize: _countExtraFontSize, letterSpacing: -0.3),
-          ),
-      ],
-    );
-    final painter = TextPainter(
-      text: span,
-      textDirection: TextDirection.ltr,
-      textScaler: MediaQuery.textScalerOf(context),
-    )..layout();
-    return painter.width;
-  }
 
-  /// 左卡两格数字的**公共缩放比**。
-  ///
-  /// 为什么要公共：两格各自 `FittedBox` 会各缩各的 —— 有加量的那格被挤小、
-  /// 没加量的那格还是原字号，同一个左卡里一大一小很难看。
-  /// 这里取"两格里最紧的那个"算出一个比，两格一起用：要小就一样小。
-  double _sharedCountScale(
-    double slotWidth,
-    List<({int count, int extra})> items,
-  ) {
-    var widest = 0.0;
-    for (final item in items) {
-      final w = _countNaturalWidth(count: item.count, extra: item.extra);
-      if (w > widest) widest = w;
-    }
-    if (widest <= 0 || widest <= slotWidth) return 1;
-    return slotWidth / widest;
-  }
 
-  /// 任务卡上的数字：有加量批次时跟一个更小的「+N」（今天额外追加的那一组），
-  /// 让「今天的量」一眼看全，而不是只看到一个不含加量的计划数。
-  ///
-  /// 整行套 [FittedBox]：左卡一格只有半张卡宽（真机 360dp 下可用约 49.5dp），
-  /// 位数多或系统字号放大时靠等比收字保证**任何机型/字号下都不溢出**
-  ///（真机实测溢出过 1.9px；四位数计划 + 三位数加量会溢出 153px）。
-  ///
-  /// 代价说清楚：一行放全时，三位计划 + 三位加量会被收到约 13–14sp
-  ///（仍大于「新词」标签的 12.5sp，产品已确认可接受）。
-  /// 另一种拆成两行的写法能让三位数保持满 22sp，但那会多占一行、卡片变高。
-  Widget _buildTaskCount({
-    required int count,
-    required int extraCount,
-    required Key numberKey,
-    required Key extraKey,
-    required Color color,
-    required double fontScale,
-  }) {
-    // 字号乘公共缩放比：左卡两格"要小就一样小"（见 _sharedCountScale）
-    final numberStyle = TextStyle(
-      fontSize: _countNumberFontSize * fontScale,
-      fontWeight: FontWeight.w700,
-      fontFamily: 'Roboto',
-      letterSpacing: -0.5,
-    );
-    // 只有计划数：独占一行，任何时候都等比收字兜住溢出。
-    if (extraCount <= 0) {
-      return FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Text('$count', key: numberKey, style: numberStyle.copyWith(color: color)),
-      );
-    }
-    // 有加量批次：**数字独占第一行，加量徽标换到第二行**。
-    //
-    // 这两行不能挤在一行：「1000 + 200」在真机 360dp 下净宽 103.7dp，
-    // 而左卡一格只有 49.5dp 可用 —— 整行被等比缩到 0.28 倍，
-    // 22sp 的主数字实际只剩 ~8sp，比它自己的「新词」标签还小。
-    // 拆成两行后数字独占那 49.5dp（四位数的自然宽 55.6dp，只需缩到 0.89 倍 ≈ 19.6sp），
-    // 量级上仍然是这张卡的主角；加量徽标本来次要，小字单列反而更清楚。
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Text('$count', key: numberKey, style: numberStyle.copyWith(color: color)),
-          Text(
-            ' + $extraCount',
-            key: extraKey,
-            style: numberStyle.copyWith(
-              fontSize: _countExtraFontSize * fontScale,
-              letterSpacing: -0.3,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// 底部「双任务岛与主操作」：
   /// 左卡片并排新词 / 旧词两项任务量（各自点进对应词表），右卡片装主操作按钮。
@@ -1391,16 +1585,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required bool onDark,
     required double pageWidth,
   }) {
-    final skin = _cardGlass(hasWallpaper: hasWallpaper, isDarkMode: isDarkMode, onDark: onDark);
-    final ink = _cardInk(hasWallpaper: hasWallpaper, onDark: onDark);
-    // 左卡两格的数字共用一个缩放比：要小就一样小，不会一个 22sp 一个 13sp
-    final double countScale = _sharedCountScale(
-      _metricSlotWidth(pageWidth),
-      [
-        (count: newWordCount ?? 0, extra: _extraNewCount),
-        (count: oldWordCount ?? 0, extra: _extraOldCount),
-      ],
-    );
     // 词书单词量不足：主操作让位给补救操作（选择词书 / 就这样吧）
     final bool bookShortage = prepareResult?.code == "NNBDC-0012" ||
         (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0));
@@ -1417,62 +1601,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           const SizedBox(height: 8),
         ],
 
-        // 左右并排双毛玻璃卡（对标「不背单词」Learn & Review 结构）
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 左卡片：新词与旧词并排，各自可点进对应词表（与右卡片等宽）
-              Expanded(
-                child: _buildIslandCard(
-                  skin: skin,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildTaskMetric(
-                          label: '新词',
-                          count: newWordCount ?? 0,
-                          extraCount: _extraNewCount,
-                          numberKey: const Key('today_plan_new_count_number'),
-                          extraKey: const Key('today_plan_extra_new_count'),
-                          labelColor: ink.muted,
-                          countColor: ink.primary,
-                          fontScale: countScale,
-                          onTap: () {
-                            toTodayNewWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-                          },
-                        ),
-                      ),
-                      Container(width: _metricDivider, height: 26, color: skin.border),
-                      Expanded(
-                        child: _buildTaskMetric(
-                          label: '旧词',
-                          count: oldWordCount ?? 0,
-                          extraCount: _extraOldCount,
-                          numberKey: const Key('today_plan_old_count_number'),
-                          extraKey: const Key('today_plan_extra_old_count'),
-                          labelColor: ink.muted,
-                          countColor: ink.primary,
-                          fontScale: countScale,
-                          onTap: () {
-                            toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // 右卡片：主操作（词书单词量不足时让位给整行的补救操作）
-              if (!bookShortage) ...[
-                const SizedBox(width: _islandCardGap),
-                Expanded(
-                  child: renderStartButton(),
-                ),
-              ],
-            ],
-          ),
-        ),
+        // 新词 / 旧词的数量已经上移成两条轨道的起点（见 _buildTrackFlow），
+        // 底部这里只留唯一的行动点：开始 / 继续 / 加量。
+        if (!bookShortage) renderStartButton(),
 
         // 词书单词量不足：选择词书 / 就这样吧
         if (bookShortage) ...[
@@ -1522,58 +1653,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 左卡片里的一项任务量：标签在上、数字在下，点它进对应词表。
-  Widget _buildTaskMetric({
-    required String label,
-    required int count,
-    required int extraCount,
-    required Key numberKey,
-    required Key extraKey,
-    required Color labelColor,
-    required Color countColor,
-    required double fontScale,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Padding(
-        // 左对齐 + 14dp 内缩：贴齐不背单词卡内"标签左上、数字在下方同一条左基线"的排版节奏
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: _metricHPadding),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: labelColor,
-              ),
-            ),
-            const SizedBox(height: 2),
-            _buildTaskCount(
-              count: count,
-              extraCount: extraCount,
-              numberKey: numberKey,
-              extraKey: extraKey,
-              color: countColor,
-              fontScale: fontScale,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-
-
-  /// 主操作按钮卡：与左任务卡同一套毛玻璃皮肤，整卡可点。
-  /// 字色沿用原来的自适应档（壁纸底跟照片明暗、经典底跟主题），
-  /// 卡窄时用 [FittedBox] 等比收字，任何机型都不会溢出。
   Widget _wrapActionButton({
     Key? key,
     required VoidCallback onTap,
@@ -3390,4 +3469,5 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 }
+
 
