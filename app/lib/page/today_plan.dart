@@ -769,6 +769,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // 左上角：今日单词总数（点它从底部滑出词量设置），与右上角设置钮同一水平线
+        _buildTotalWordsEntry(
+          ink: _cardInk(hasWallpaper: hasWallpaper, onDark: onDark),
+          hasWallpaper: hasWallpaper,
+          onDark: onDark,
+        ),
+        const Spacer(),
         if (_isSyncingFromCloud) ...[
           SizedBox(
             width: 14,
@@ -1479,7 +1486,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildTotalWordsEntry(ink: ink, hasWallpaper: hasWallpaper, onDark: onDark),
               Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1547,8 +1553,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildTotalWordsEntry(ink: ink, hasWallpaper: hasWallpaper, onDark: onDark),
-                Stack(
+                  Stack(
               alignment: Alignment.topCenter,
               children: [
                 Column(
@@ -3384,262 +3389,219 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 底部滑出的「今日单词数量」弹窗。
+  /// 视觉对齐 9 月下旬那一版底部弹窗：上圆角 28、磨砂 7、顶部渐变 + 上浮阴影、
+  /// 顶部拖拽把手、4 列规整网格、点击即选中保存（不需要额外确认按钮）。
   void _showWordsPerDaySheet() {
     final darkMode = context.read<DarkMode>();
     final isDarkMode = darkMode.isDarkMode;
     final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
     final primaryColor = themeConfig.primaryColor;
-    int selected = user?.effectiveWordsPerDay ?? 20;
+    final currentValue = user?.effectiveWordsPerDay ?? 20;
     final bool started = user?.todayStudyStarted == true;
-    const quickValues = <int>[5, 10, 20, 30, 50, 100];
+    const wordOptions = <int>[2, 3, 5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
 
-    showGeneralDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: '今日单词数量',
-      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.42 : 0.20),
-      transitionDuration: const Duration(milliseconds: 240),
-      transitionBuilder: (context, anim1, anim2, child) {
-        final curved = CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic);
-        return SlideTransition(
-          position: Tween(begin: const Offset(0, 0.10), end: Offset.zero).animate(curved),
-          child: FadeTransition(opacity: curved, child: child),
-        );
-      },
-      pageBuilder: (ctx, _, __) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 14,
-                  right: 14,
-                  bottom: MediaQuery.of(ctx).viewPadding.bottom + 14,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.15),
+      isScrollControlled: true,
+      builder: (ctx) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDarkMode
+                      ? [const Color(0xB8161B26), const Color(0x9910141D)]
+                      : [const Color(0x66FFFFFF), const Color(0x4DFFFFFF)],
                 ),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(26),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDarkMode ? 0.38 : 0.10),
-                        blurRadius: 30,
-                        offset: const Offset(0, 12),
-                      ),
-                    ],
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x80FFFFFF),
+                    width: 1.2,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(26),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: isDarkMode
-                                ? [const Color(0xE6161B26), const Color(0xD210141D)]
-                                : [const Color(0xEEFFFFFF), const Color(0xD9FFFFFF)],
-                          ),
-                          borderRadius: BorderRadius.circular(26),
-                          border: Border.all(
-                            color: isDarkMode ? const Color(0x33FFFFFF) : const Color(0x99FFFFFF),
-                            width: 1.1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, -6),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 顶部居中拖拽把手
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '今日单词数量',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => Navigator.of(ctx).pop(),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(4),
-                                    child: Icon(
-                                      Icons.close_rounded,
-                                      size: 18,
-                                      color: isDarkMode ? Colors.white38 : Colors.black38,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  _sheetStepBtn(
-                                    icon: Icons.remove_rounded,
-                                    enabled: selected > 2,
-                                    isDarkMode: isDarkMode,
-                                    onTap: () => setSheetState(() => selected = (selected - 1).clamp(2, 500)),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                                      textBaseline: TextBaseline.alphabetic,
-                                      children: [
-                                        Text(
-                                          '$selected',
-                                          style: TextStyle(
-                                            fontSize: 34,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: -1,
-                                            height: 1,
-                                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                                            fontFamily: 'Roboto',
-                                          ),
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '词',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDarkMode ? Colors.white54 : Colors.black45,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  _sheetStepBtn(
-                                    icon: Icons.add_rounded,
-                                    enabled: selected < 500,
-                                    isDarkMode: isDarkMode,
-                                    onTap: () => setSheetState(() => selected = (selected + 1).clamp(2, 500)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final v in quickValues)
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => setSheetState(() => selected = v),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                                      decoration: BoxDecoration(
-                                        color: selected == v
-                                            ? primaryColor
-                                            : (isDarkMode
-                                                ? Colors.white.withValues(alpha: 0.08)
-                                                : Colors.black.withValues(alpha: 0.045)),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        '$v 词',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: selected == v
-                                              ? Colors.white
-                                              : (isDarkMode ? Colors.white70 : const Color(0xFF334155)),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            if (started) ...[
-                              const SizedBox(height: 12),
+                      ),
+                      const SizedBox(height: 14),
+                      // 标题栏（主副标题 + 轻圆关闭按钮）
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                '今日已开始学习，改动从明天起生效',
+                                '选择每日学习词数',
                                 style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: isDarkMode ? Colors.white54 : Colors.black45,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                started ? '今日已开始学习，改动从明天起生效' : '根据每天的时间节奏定制专注目标',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: isDarkMode ? Colors.white38 : const Color(0xFF475569),
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () async {
-                                  await _applyWordsPerDay(selected);
-                                  if (ctx.mounted) Navigator.of(ctx).pop();
-                                },
-                                child: Container(
-                                  height: 46,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: primaryColor,
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: const Text(
-                                    '保存',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : Colors.black.withValues(alpha: 0.04),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: isDarkMode ? Colors.white60 : Colors.black54,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      // 4 列规整网格
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: wordOptions.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 9,
+                          crossAxisSpacing: 9,
+                          childAspectRatio: 1.9,
+                        ),
+                        itemBuilder: (context, index) {
+                          final v = wordOptions[index];
+                          final isSelected = v == currentValue;
+                          final isRestricted = !UserPrivilegeManager.isDailyWordsAllowed(v);
+
+                          return GestureDetector(
+                            onTap: () async {
+                              if (isRestricted) {
+                                ToastUtil.info('开通会员可选择更多单词数量');
+                                return;
+                              }
+                              Navigator.pop(ctx);
+                              await _applyWordsPerDay(v);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? primaryColor
+                                    : (isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.05)
+                                        : Colors.white.withValues(alpha: 0.35)),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.transparent
+                                      : (isDarkMode ? const Color(0x20FFFFFF) : const Color(0x80FFFFFF)),
+                                  width: 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: primaryColor.withValues(alpha: 0.32),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '$v',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
+                                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                      fontSize: 15,
+                                      fontFamily: 'Roboto',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '词',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white.withValues(alpha: 0.88)
+                                          : (isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  if (isRestricted) ...[
+                                    const SizedBox(width: 3),
+                                    Icon(
+                                      Icons.workspace_premium_rounded,
+                                      color: isSelected ? Colors.white : Colors.amber,
+                                      size: 12,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 6),
+                    ],
                   ),
                 ),
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
   }
 
-  /// 弹窗里的加减按钮。
-  Widget _sheetStepBtn({
-    required IconData icon,
-    required bool enabled,
-    required bool isDarkMode,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.045),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: enabled
-              ? (isDarkMode ? Colors.white70 : const Color(0xFF334155))
-              : (isDarkMode ? Colors.white24 : Colors.black26),
-        ),
-      ),
-    );
-  }
 
   void _showAdvancedSettingsDialog() async {
     final darkMode = context.read<DarkMode>();
