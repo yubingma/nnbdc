@@ -1965,37 +1965,29 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         // 尺寸一变，指针就"移出"了 DragTarget，rejected 清空 → 恢复小胶囊 →
         // 指针又"移入" → 无限闪烁。
         final bool showReason = blocked && rejected.isNotEmpty;
-        // 两级放大，幅度给足：
-        //   一提起（还没压到哪一格）→ 立刻从 72×14 撑到 110×32；
-        //   压上去的那一格 → 再撑到 150×50。
-        // 外面套固定 50 高的容器：放大时只改它自己的尺寸，不会把上下节点顶来顶去。
-        final bool dragging = _draggingPayload != null;
-        final double zoneWidth = active ? 150 : (dragging ? 110 : 72);
-        final double zoneHeight = active ? 50 : (dragging ? 32 : 14);
-        // 外面这圈内边距是「透明命中区」：手指离胶囊还有一段距离就开始感应放大，
-        // 而不是等压进胶囊内部。DragTarget 的命中范围 = 它自己的渲染尺寸，
-        // 所以靠 padding 把尺寸撑大，可见的胶囊仍然保持小尺寸。
+        // 尺寸固定、不再随拖动变化：之前的「感应放大」会让整条支路忽大忽小，
+        // 界面一直晃。现在一开始就做成足够大的 150×40，靠颜色表达状态：
+        //   平时灰 / 能放高亮 / 不能放更淡的灰 + 🚫。
+        // 外层留一圈内边距当透明命中区，DragTarget 的命中范围 = 它自己的渲染尺寸。
         return Container(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 26),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
           child: Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 110),
-              curve: Curves.easeOut,
-              width: zoneWidth,
-              height: zoneHeight,
+            child: Container(
+              width: 150,
+              height: 40,
               decoration: BoxDecoration(
                 color: (moving != null && !blocked)
                     ? inkColor.withValues(alpha: active ? 0.18 : 0.06)
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(active ? 14 : 7),
-                border: Border.all(color: zoneColor, width: active ? 1.8 : 0.6),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: zoneColor, width: active ? 1.8 : 0.8),
               ),
               child: showReason
                   ? Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       child: Center(
                         child: Text(
-                          rejectReason!,
+                          rejectReason,
                           maxLines: 2,
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontSize: 8, height: 1.15, color: Color(0xFFEF4444)),
@@ -3957,12 +3949,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       ThrottledDbSyncService().requestSync();
     }
     if (current.todayStudyStarted == true) {
-      ToastUtil.info('今日已开始学习，新计划明日生效');
       if (mounted) setState(() {});
     } else {
       if (mounted) {
         await loadData(forceSupplement: true);
-        ToastUtil.success('已调整为每日 $value 词');
       }
     }
   }
