@@ -152,6 +152,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 宠物形象所在的锚点，用来把它头顶的气泡定位到正确高度。
   final GlobalKey _petAnchorKey = GlobalKey();
 
+  /// 拖动时最近一次悬停在「接不住」的格子上记下的原因。
+  /// 松手时若 wasAccepted 为 false 且它非空，就弹 Toast 把原因讲清楚。
+  String? _hoveredBlockReason;
+
   /// 宠物当前处于哪一态：选图和抽台词共用它，保证「说」和「看」永远一致。
   PetMood get _petMood {
     final u = user;
@@ -1305,9 +1309,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       // 拖拽时命中点稍微上移，避免手指挡住目标判定。
       onDragStarted: () {
         HapticFeedback.mediumImpact();
+        _hoveredBlockReason = null;
         setState(() => _draggingPayload = drag);
       },
-      onDragEnd: (_) => setState(() => _draggingPayload = null),
+      onDragEnd: (details) {
+        // 松手时没被任何格子接收、且刚才确实停在一个"接不住"的格子上 → 讲清原因。
+        // 只是拖到空白处松手不会弹，避免噪音。
+        final reason = _hoveredBlockReason;
+        _hoveredBlockReason = null;
+        if (!details.wasAccepted && reason != null) {
+          ToastUtil.info(reason);
+        }
+        setState(() => _draggingPayload = null);
+      },
       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
       // 反馈卡片放大一点：手指本身会挡住它，放大后才看得清拖的是什么
       // 宽度按内容自适应；位置由「右边缘贴指针左侧 10px」决定，
@@ -1980,7 +1994,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }) {
     if (!_trackEditing) return const SizedBox.shrink();
     return DragTarget<_TrackDragPayload>(
-      onWillAcceptWithDetails: (d) => _canPlaceTrackStep(d.data, scope, group, index),
+      onWillAcceptWithDetails: (d) {
+        final reason = _trackStepBlockReason(d.data, scope, group, index);
+        if (reason != null) _hoveredBlockReason = reason;
+        return reason == null;
+      },
       onAcceptWithDetails: (d) => _onDropTrackStep(d.data, scope, group, index),
       builder: (context, candidate, rejected) {
         final bool active = candidate.isNotEmpty;
@@ -2142,9 +2160,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       feedbackOffset: const Offset(-62, -18),
                       onDragStarted: () {
                         HapticFeedback.mediumImpact();
+                        _hoveredBlockReason = null;
                         setState(() => _draggingPayload = payload);
                       },
-                      onDragEnd: (_) => setState(() => _draggingPayload = null),
+                      onDragEnd: (details) {
+                        final reason = _hoveredBlockReason;
+                        _hoveredBlockReason = null;
+                        if (!details.wasAccepted && reason != null) {
+                          ToastUtil.info(reason);
+                        }
+                        setState(() => _draggingPayload = null);
+                      },
                       onDraggableCanceled: (_, __) => setState(() => _draggingPayload = null),
                       feedback: CustomSingleChildLayout(
                         delegate: const FeedbackRightAligned(gap: 10, dy: -18),
